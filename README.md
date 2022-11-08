@@ -1,0 +1,1 @@
+# vscode-visual-xml-schema-editor

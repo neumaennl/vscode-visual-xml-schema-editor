@@ -5,6 +5,7 @@ Uses VS Code's [custom editor API](https://code.visualstudio.com/api/extension-g
 - use [TypeScript decorators and (de-)serializer for xmldom](https://github.com/andersnm/xmldom-decorators)
 - port this [free xml schema definition diagram viewer](https://github.com/dgis/xsddiagram) to generate the diagram
 - try out [Eclipse diagram editor framework for VS Code](https://eclipsesource.com/de/blogs/2021/04/16/a-diagram-editor-framework-for-vs-code/) to help editing the diagram
+- possibly use [React](https://medium.com/younited-tech-blog/reactception-extending-vs-code-extension-with-webviews-and-react-12be2a5898fd) or [Svelte](https://blog.kylekukshtel.com/game-data-editor-vscode-part-2)
 
 ## VS Code API
 

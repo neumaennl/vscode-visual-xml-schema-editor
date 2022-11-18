@@ -1,21 +1,23 @@
 {
-	"name": "cat-customs",
-	"displayName": "Cat Customs",
-	"description": "Custom Editor API Samples",
+	"name": "vscode-visual-xml-schema-editor",
+	"displayName": "Visual XML Schema Editor",
+	"description": "Visual XML Schema Editor Extension for Visual Studio Code",
+	"preview": true,
 	"version": "0.0.1",
-	"publisher": "vscode-samples",
-	"private": true,
-	"license": "MIT",
+	"publisher": "neumaennl",
+	"license": "AGPL-3.0-only",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/Microsoft/vscode-extension-samples"
+		"url": "https://github.com/neumaennl/vscode-visual-xml-schema-editor"
 	},
 	"engines": {
 		"vscode": "^1.65.0"
 	},
 	"categories": [
-		"Other"
+		"Programming Languages",
+		"Visualization"
 	],
+	"keywords": ["xml", "schema", "xsd"],
 	"activationEvents": [
 		"onCustomEditor:catCustoms.catScratch",
 		"onCustomEditor:catCustoms.pawDraw",

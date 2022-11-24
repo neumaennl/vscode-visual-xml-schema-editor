@@ -21,6 +21,7 @@
 	"activationEvents": [
 		"onCustomEditor:catCustoms.catScratch",
 		"onCustomEditor:catCustoms.pawDraw",
+		"onCustomEditor:visual.xmlSchema",
 		"onCommand:catCustoms.pawDraw.new"
 	],
 	"main": "./out/extension.js",
@@ -41,6 +42,15 @@
 				"selector": [
 					{
 						"filenamePattern": "*.pawdraw"
+					}
+				]
+			},
+			{
+				"viewType": "visual.xmlSchema",
+				"displayName": "Visual XML Schema Editor",
+				"selector": [
+					{
+						"filenamePattern": "*.xsd"
 					}
 				]
 			}
@@ -69,5 +79,8 @@
 	},
 	"dependencies": {
 		"@neumaennl/xmldom-decorators": "1.0.3"
-	}
+	},
+	"extensionDependencies": [
+		"redhat.vscode-xml"
+	]
 }

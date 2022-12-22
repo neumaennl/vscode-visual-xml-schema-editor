@@ -1,5 +1,4 @@
-import { XMLRoot, XMLElement, XMLArray, XMLAttribute, XMLText } from '@neumaennl/xmldom-decorators';
-// import { ElementAttributes } from 'xmldom/sax';
+import { XMLRoot, XMLElement, XMLArray, XMLAttribute } from '@neumaennl/xmldom-decorators';
 import { DeserializerContext } from '@neumaennl/xmldom-decorators';
 import { SerializerContext } from '@neumaennl/xmldom-decorators';
 

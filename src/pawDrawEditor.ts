@@ -92,7 +92,7 @@ class PawDrawDocument extends Disposable implements vscode.CustomDocument {
 	 *
 	 * This happens when all editors for it have been closed.
 	 */
-	dispose(): void {
+	override dispose(): void {
 		this._onDidDispose.fire();
 		super.dispose();
 	}

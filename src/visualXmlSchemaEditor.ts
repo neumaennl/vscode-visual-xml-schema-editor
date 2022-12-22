@@ -1,3 +1,5 @@
+import { XMLDecoratorDeserializer } from '@neumaennl/xmldom-decorators';
+import { Schema } from './xmlschema';
 import * as vscode from 'vscode';
 import { getNonce } from './util';
 
@@ -38,9 +40,10 @@ export class VisualXmlSchemaEditorProvider implements vscode.CustomTextEditorPro
 		webviewPanel.webview.html = this.getHtmlForWebview(webviewPanel.webview);
 
 		function updateWebview() {
+			const schema = new XMLDecoratorDeserializer().deserialize<Schema>(document.getText(), Schema);
 			webviewPanel.webview.postMessage({
 				type: 'update',
-				text: document.getText(),
+				text: schema.items.length,
 			});
 		}
 

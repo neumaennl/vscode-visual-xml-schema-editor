@@ -1,15 +1,26 @@
 {
 	"compilerOptions": {
+        "jsx": "react",
         "experimentalDecorators": true,
 		"emitDecoratorMetadata": true,
 		"module": "commonjs",
 		"target": "es2020",
-		"lib": ["es2020"],
+		"lib": ["es2020", "DOM"],
 		"outDir": "out",
 		"sourceMap": true,
 		"strict": true,
 		"rootDir": "src",
+		"declaration": false,
+		"declarationMap": false,
+        "moduleResolution": "node",
+        "noUnusedLocals": true,
+        "noImplicitOverride": true,
+        "skipLibCheck": true,
+        "strictPropertyInitialization": false
 	},
+	"include": [
+	  "src"
+	],
 	"exclude": ["node_modules", ".vscode-test"],
 	
 }

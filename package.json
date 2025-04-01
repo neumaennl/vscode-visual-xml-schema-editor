@@ -1,93 +1,60 @@
 {
-	"name": "vscode-visual-xml-schema-editor",
-	"displayName": "Visual XML Schema Editor",
-	"description": "Visual XML Schema Editor Extension for Visual Studio Code",
-	"preview": true,
-	"version": "0.0.1",
-	"publisher": "neumaennl",
-	"license": "AGPL-3.0-only",
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/neumaennl/vscode-visual-xml-schema-editor"
-	},
-	"engines": {
-		"vscode": "^1.65.0"
-	},
-	"categories": [
-		"Programming Languages",
-		"Visualization"
-	],
-	"keywords": ["xml", "schema", "xsd"],
-	"activationEvents": [
-		"onCustomEditor:catCustoms.catScratch",
-		"onCustomEditor:catCustoms.pawDraw",
-		"onCustomEditor:visual.xmlSchema",
-		"onCommand:catCustoms.pawDraw.new"
-	],
-	"main": "./out/extension.js",
-	"contributes": {
-		"customEditors": [
-			{
-				"viewType": "catCustoms.catScratch",
-				"displayName": "Cat Scratch",
-				"selector": [
-					{
-						"filenamePattern": "*.cscratch"
-					}
-				]
-			},
-			{
-				"viewType": "catCustoms.pawDraw",
-				"displayName": "Paw Draw",
-				"selector": [
-					{
-						"filenamePattern": "*.pawdraw"
-					}
-				]
-			},
-			{
-				"viewType": "visual.xmlSchema",
-				"displayName": "Visual XML Schema Editor",
-				"selector": [
-					{
-						"filenamePattern": "*.xsd"
-					}
-				]
-			}
-		],
-		"commands": [
-			{
-				"command": "catCustoms.pawDraw.new",
-				"title": "Create new Paw Draw Document",
-				"category": "Paw Draw"
-			}
-		]
-	},
-	"scripts": {
-		"vscode:prepublish": "npm run compile",
-		"compile": "tsc -p ./",
-		"lint": "eslint \"src/**/*.ts\"",
-		"watch": "tsc -w -p ./"
-	},
-	"devDependencies": {
-		"sprotty-vscode": "^0.4.0",
-		"sprotty-protocol": "~0.12.0",
-		"sprotty-vscode-protocol": "^0.4.0",
-		"vscode-languageclient": "^8.0.2",
-		"@types/node": "^16.11.7",
-		"@types/vscode": "^1.65.0",
-		"@typescript-eslint/eslint-plugin": "^5.42.0",
-		"@typescript-eslint/parser": "^5.42.0",
-		"eslint": "^8.26.0",
-		"typescript": "^4.8.4"
-	},
-	"dependencies": {
-		"reflect-metadata": "^0.1.13",
-		"@neumaennl/xmldom-decorators": "1.0.3",
-		"sprotty": "~0.12.0",
-		"sprotty-vscode-webview": "^0.4.0"
-	},
-	"extensionDependencies": [
-		"redhat.vscode-xml"
-	]
+  "name": "vscode-visual-xml-schema-editor",
+  "displayName": "Visual XML Schema Editor",
+  "description": "Visual XML Schema Editor Extension for Visual Studio Code",
+  "preview": true,
+  "version": "0.0.1",
+  "publisher": "neumaennl",
+  "license": "AGPL-3.0-only",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/neumaennl/vscode-visual-xml-schema-editor"
+  },
+  "engines": {
+    "vscode": "^1.97.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Visualization"
+  ],
+  "keywords": [
+    "xml",
+    "schema",
+    "xsd"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "customEditors": [
+      {
+        "viewType": "visual.xmlSchema",
+        "displayName": "Visual XML Schema Editor",
+        "selector": [
+          {
+            "filenamePattern": "*.xsd"
+          }
+        ]
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "tsc -p .",
+    "watch": "tsc -watch -p .",
+    "lint": "eslint \"src/**/*.ts\"",
+    "vscode:prepublish": "npm run compile"
+  },
+  "devDependencies": {
+    "@types/d3": "^7.4.3",
+    "@types/node": "^22.13.4",
+    "@types/vscode": "^1.97.0",
+    "@types/vscode-webview": "^1.57.5",
+    "@typescript-eslint/eslint-plugin": "^8.24.0",
+    "@typescript-eslint/parser": "^8.24.0",
+    "eslint": "^9.20.1",
+    "typescript": "^5.7.3"
+  },
+  "dependencies": {
+    "@neumaennl/xmldom-decorators": "1.0.3",
+    "d3": "^7.9.0",
+    "reflect-metadata": "^0.1.12"
+  }
 }

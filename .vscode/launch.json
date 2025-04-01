@@ -12,7 +12,8 @@
 			"runtimeExecutable": "${execPath}",
 			"args": ["--extensionDevelopmentPath=${workspaceRoot}"],
 			"outFiles": ["${workspaceFolder}/out/**/*.js"],
-			"preLaunchTask": "npm: compile"
+			"preLaunchTask": "npm: compile",
+			"pauseForSourceMap": true
 		}
 	]
 }

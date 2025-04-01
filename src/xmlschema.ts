@@ -9,13 +9,13 @@ export interface QName {
 
 function QNameReader(value: string, ctx: DeserializerContext): QName {
     const cpos = value.indexOf(":");
-    const prefix = cpos !== -1 ? value.substr(0, cpos) : "";
+    const prefix = cpos !== -1 ? value.substring(0, cpos) : "";
     let namespaceUri = "";
     if (prefix) {
         namespaceUri = ctx.resolvePrefix(prefix);
     }
 
-    return { localName: value.substr(cpos + 1), namespaceUri: namespaceUri };
+    return { localName: value.substring(cpos + 1), namespaceUri: namespaceUri };
 }
 
 function QNameWriter(value: QName, ctx: SerializerContext): string {
@@ -28,13 +28,13 @@ function QNameArrayReader(value: string, ctx: DeserializerContext): QName[] {
     for (let i = 0; i < parts.length; i++) {
         const part = parts[i].trim();
         const cpos = part.indexOf(":");
-        const prefix = cpos !== -1 ? part.substr(0, cpos) : "";
+        const prefix = cpos !== -1 ? part.substring(0, cpos) : "";
         let namespaceUri = "";
         if (prefix) {
             namespaceUri = ctx.resolvePrefix(prefix);
         }
 
-        result.push({ localName: part.substr(cpos + 1), namespaceUri: namespaceUri });
+        result.push({ localName: part.substring(cpos + 1), namespaceUri: namespaceUri });
     }
 
     return result;

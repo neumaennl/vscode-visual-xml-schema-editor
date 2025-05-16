@@ -53,8 +53,7 @@
     "typescript": "^5.7.3"
   },
   "dependencies": {
-    "@neumaennl/xmldom-decorators": "1.0.3",
-    "d3": "^7.9.0",
-    "reflect-metadata": "^0.1.12"
+    "@xmldom/xmldom": "^0.9.8",
+    "d3": "^7.9.0"
   }
 }

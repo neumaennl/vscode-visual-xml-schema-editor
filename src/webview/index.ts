@@ -1,4 +1,5 @@
 import * as d3 from "d3";
+import { VisualXsdComponent, XsdSchema } from "../model/xsd";
 
 const vscode = acquireVsCodeApi();
 
@@ -12,13 +13,14 @@ window.addEventListener("message", (event) => {
 });
 
 // function to display the XML schema with D3.js
-function renderTree(model: any) {
+function renderTree(model: XsdSchema) {
   const width = 800,
     height = 600;
 
   // create hierarchy from the model
-  const root = d3.hierarchy(model);
-  const treeLayout = d3.tree().size([width, height]);
+  const root = d3.hierarchy(model as VisualXsdComponent, (node) => node.getChildren());
+  debugger;
+  const treeLayout = d3.tree<VisualXsdComponent>().size([width, height]);
   treeLayout(root);
 
   // create SVG element
@@ -54,24 +56,25 @@ function renderTree(model: any) {
     .attr("class", "node")
     .attr("transform", (d) => `translate(${d.y},${d.x})`);
 
-  nodes.append("circle").attr("r", 4.5);
+  nodes.each(function(d) {
+        (d.data as VisualXsdComponent).render(d3.select(this));
+    });
 
   nodes
     .append("text")
     .attr("dy", "0.31em")
     .attr("x", (d) => (d.children ? -8 : 8))
     .style("text-anchor", (d) => (d.children ? "end" : "start"))
-    .text((d) => d.data.name);
+    .text((d) => d.data.getName());
 
   nodes.on("click", function (event, d) {
-    console.log("Selected:", d.data.name);
+    console.log("Selected:", d.data.getName());
     d3.select(this).attr("class", "node selected");
-	if(event == null) {
-		updateModel(5);
-	}
+    //TODO: Add logic to handle node selection
   });
 }
 
+// @ts-ignore TODO: unused function
 function updateModel(newModel: any) {
   vscode.postMessage({ command: "update", model: newModel });
 }

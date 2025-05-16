@@ -1,10 +1,7 @@
 import * as vscode from "vscode";
 import * as path from "path";
-import {
-  XMLDecoratorDeserializer,
-  XMLDecoratorSerializer,
-} from "@neumaennl/xmldom-decorators";
-import { Schema } from "./xmlschema";
+import { XsdParser } from "./parser/xsdParser";
+import { XsdSchema } from "./model/xsd";
 import { getNonce } from "./util";
 
 export function activate(context: vscode.ExtensionContext) {
@@ -23,11 +20,7 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 class XmlSchemaEditorProvider implements vscode.CustomTextEditorProvider {
-  private deserializer: XMLDecoratorDeserializer;
-  private serializer: XMLDecoratorSerializer;
   constructor(private readonly context: vscode.ExtensionContext) {
-    this.serializer = new XMLDecoratorSerializer();
-    this.deserializer = new XMLDecoratorDeserializer();
   }
 
   async resolveCustomTextEditor(
@@ -41,7 +34,7 @@ class XmlSchemaEditorProvider implements vscode.CustomTextEditorProvider {
 
     webviewPanel.webview.html = this.getWebviewContent(webviewPanel.webview);
 
-    const schemaModel = this.parseXMLSchema(document.getText());
+    const schemaModel = this.parseXMLSchema(document.fileName, document.getText());
 
     webviewPanel.webview.postMessage({ command: "init", model: schemaModel });
 
@@ -67,12 +60,12 @@ class XmlSchemaEditorProvider implements vscode.CustomTextEditorProvider {
     );
   }
 
-  private parseXMLSchema(xmlString: string): Schema {
-    return this.deserializer.deserialize(xmlString, Schema);
+  private parseXMLSchema(fileName: string, xmlString: string): XsdSchema {
+    return XsdParser.parse(fileName, xmlString);
   }
 
-  private serializeXMLSchema(model: Schema): string {
-    return this.serializer.serialize(model, Schema);
+  private serializeXMLSchema(model: XsdSchema): string {
+    return model.toXsd();
   }
 
   private getWebviewContent(webview: vscode.Webview): string {

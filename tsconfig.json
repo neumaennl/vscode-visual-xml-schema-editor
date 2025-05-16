@@ -5,7 +5,9 @@
 		"module": "CommonJS",
 		"target": "ES6",
 		"outDir": "out",
-		"sourceMap": true,
+		"sourceMap": false,
+		"inlineSourceMap": true,
+		"inlineSources": true,
 		"strict": true,
 		"rootDir": "src",
 		"esModuleInterop": true,
@@ -13,7 +15,7 @@
         "noImplicitOverride": true,
         "skipLibCheck": true,
 		"forceConsistentCasingInFileNames": true,
-        "strictPropertyInitialization": false
+        "strictPropertyInitialization": false,
 	},
 	"include": [
 	  "src/**/*.ts"

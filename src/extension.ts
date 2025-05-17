@@ -32,7 +32,7 @@ class XmlSchemaEditorProvider implements vscode.CustomTextEditorProvider {
 
     webviewPanel.webview.html = this.getWebviewContent(webviewPanel.webview);
 
-    const schemaModel = this.parseXMLSchema(document.fileName, document.getText());
+    const schemaModel = this.parseXMLSchema(document.fileName.split(/[\/|\\]/).at(-1)!, document.getText());
     webviewPanel.webview.postMessage({ 
         command: "init", 
         model: schemaModel.toJSON()  // Serialize using toJSON
@@ -74,16 +74,30 @@ class XmlSchemaEditorProvider implements vscode.CustomTextEditorProvider {
     );
 
     return `<!DOCTYPE html>
-        <html>
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Visual XML Schema Editor</title>
-            </head>
-            <body>
-                <div id="tree"></div>
-                <script src="${scriptUri}"></script>
-            </body>
-        </html>`;
+    <html>
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Visual XML Schema Editor</title>
+        <style>
+          body, html {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+          }
+          #tree {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+          }
+        </style>
+      </head>
+      <body>
+        <div id="tree"></div>
+        <script src="${scriptUri}"></script>
+      </body>
+    </html>`;
   }
 }

@@ -1,6 +1,7 @@
 import { XsdAttribute } from './attribute';
-import { XsdAll, XsdChoice, XsdSequence } from './compositors';
-import { VisualXsdComponent, ValidationError } from './xsd';
+import { XsdAll, XsdChoice, XsdSequence, XsdCompositor } from './compositors';
+import { ValidationError } from "./types";
+import { SerializedNode, VisualXsdComponent } from "./base";
 
 export class XsdComplexType extends VisualXsdComponent {
     constructor(
@@ -9,6 +10,28 @@ export class XsdComplexType extends VisualXsdComponent {
         public attributes: XsdAttribute[] = [],
         public isAbstract: boolean = false
     ) { super(); }
+
+    toJSON(): SerializedNode {
+        return {
+            nodeKind: 'complexType',
+            name: this.name,
+            contentModel: this.contentModel?.toJSON(),
+            attributes: this.attributes.map(a => a.toJSON()),
+            isAbstract: this.isAbstract
+        };
+    }
+
+    static fromJSON(json: SerializedNode): XsdComplexType {
+        if (json.nodeKind !== 'complexType') {
+            throw new Error('Invalid complexType JSON');
+        }
+        return new XsdComplexType(
+            json.name,
+            json.contentModel && XsdCompositor.fromJSON(json.contentModel),
+            json.attributes?.map((a: SerializedNode) => XsdAttribute.fromJSON(a)) ?? [],
+            json.isAbstract
+        );
+    }
 
     override getName(): string {
         return this.name;

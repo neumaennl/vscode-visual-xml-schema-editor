@@ -3,6 +3,7 @@
         "experimentalDecorators": true,
 		"emitDecoratorMetadata": true,
 		"module": "CommonJS",
+		"moduleResolution": "node",
 		"target": "ES6",
 		"outDir": "out",
 		"sourceMap": false,
@@ -16,9 +17,20 @@
         "skipLibCheck": true,
 		"forceConsistentCasingInFileNames": true,
         "strictPropertyInitialization": false,
+		"lib": [
+            "ES2020",
+            "DOM",
+            "DOM.Iterable"
+        ],
+        "types": [
+            "node",
+            "vscode"
+        ]
 	},
 	"include": [
 	  "src/**/*.ts"
 	],
-	
+	"exclude": [
+		"src/webview/**/*.ts",
+	]	
 }

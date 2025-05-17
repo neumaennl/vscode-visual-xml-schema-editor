@@ -1,5 +1,6 @@
 import { RestrictionType, XsdType } from './types';
-import { VisualXsdComponent, ValidationError } from './xsd';
+import { ValidationError } from "./types";
+import { SerializedNode, VisualXsdComponent } from "./base";
 
 export class XsdSimpleType extends VisualXsdComponent {
     constructor(
@@ -8,6 +9,28 @@ export class XsdSimpleType extends VisualXsdComponent {
         public restrictions: XsdRestriction[] = [],
         public isList: boolean = false
     ) { super(); }
+
+    toJSON(): SerializedNode {
+        return {
+            nodeKind: 'simpleType',
+            name: this.name,
+            baseType: this.baseType,
+            restrictions: this.restrictions.map(r => r.toJSON()),
+            isList: this.isList
+        };
+    }
+
+    static fromJSON(json: SerializedNode): XsdSimpleType {
+        if (json.nodeKind !== 'simpleType') {
+            throw new Error('Invalid simpleType JSON');
+        }
+        return new XsdSimpleType(
+            json.name,
+            json.baseType,
+            json.restrictions?.map((r: SerializedNode) => XsdRestriction.fromJSON(r)) ?? [],
+            json.isList ?? false
+        );
+    }
 
     override getName(): string {
         return this.name;
@@ -54,6 +77,24 @@ export class XsdRestriction extends VisualXsdComponent {
         public type: RestrictionType,
         public value: string
     ) { super(); }
+
+    toJSON(): SerializedNode {
+        return {
+            nodeKind: 'restriction',
+            type: this.type,
+            value: this.value
+        };
+    }
+
+    static fromJSON(json: SerializedNode): XsdRestriction {
+        if (json.nodeKind !== 'restriction') {
+            throw new Error('Invalid restriction JSON');
+        }
+        return new XsdRestriction(
+            json.type,
+            json.value
+        );
+    }
 
     override getName(): string {
         return this.type;

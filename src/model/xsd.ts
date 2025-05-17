@@ -1,40 +1,10 @@
+import * as d3 from "d3";
 import { XsdAttribute } from "./attribute";
 import { XsdComplexType } from "./complexType";
 import { XsdElement } from "./element";
 import { XsdSimpleType } from "./simpleType";
-
-export abstract class VisualXsdComponent {
-    abstract toXsd(): string;
-    abstract validate(): ValidationError[];
-    
-    protected validateName(name: string, componentType: string): ValidationError[] {
-        const errors: ValidationError[] = [];
-        if (!name) {
-            errors.push({
-                code: 'MISSING_NAME',
-                message: `${componentType} name is required`,
-                component: componentType
-            });
-        } else if (!/^[a-zA-Z_][\w.-]*$/.test(name)) {
-            errors.push({
-                code: 'INVALID_NAME',
-                message: `Invalid ${componentType} name: ${name}`,
-                component: componentType
-            });
-        }
-        return errors;
-    }
-    abstract render(selection: d3.Selection<SVGGElement, any, any, any>): void;
-    abstract getChildren(): VisualXsdComponent[];
-    abstract getName(): string;
-}
-
-export type ValidationError = {
-    code: string;
-    message: string;
-    component: string;
-    path?: string;
-};
+import { SerializedNode, VisualXsdComponent } from "./base";
+import { ValidationError } from "./types";
 
 export class XsdSchema extends VisualXsdComponent {
     constructor(
@@ -117,5 +87,33 @@ export class XsdSchema extends VisualXsdComponent {
     removeElement(name: string): this {
         this.elements = this.elements.filter(e => e.name !== name);
         return this;
+    }
+
+    toJSON(): SerializedNode {
+        return {
+            nodeKind: 'schema',
+            name: this.name,
+            targetNamespace: this.targetNamespace,
+            xmlns: this.xmlns,
+            elements: this.elements.map(e => e.toJSON()),
+            complexTypes: this.complexTypes.map(ct => ct.toJSON()),
+            simpleTypes: this.simpleTypes.map(st => st.toJSON()),
+            attributes: this.attributes.map(a => a.toJSON())
+        };
+    }
+
+    static fromJSON(json: SerializedNode): XsdSchema {
+        if (json.nodeKind !== 'schema') {
+            throw new Error('Invalid schema JSON');
+        }
+        return new XsdSchema(
+            json.name,
+            json.targetNamespace,
+            json.xmlns,
+            json.elements?.map((e: SerializedNode) => XsdElement.fromJSON(e)) ?? [],
+            json.complexTypes?.map((ct: SerializedNode) => XsdComplexType.fromJSON(ct)) ?? [],
+            json.simpleTypes?.map((st: SerializedNode) => XsdSimpleType.fromJSON(st)) ?? [],
+            json.attributes?.map((a: SerializedNode) => XsdAttribute.fromJSON(a)) ?? []
+        );
     }
 }

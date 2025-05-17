@@ -49,7 +49,7 @@ export class XsdComplexType extends VisualXsdComponent {
     }
 
     validate(): ValidationError[] {
-        let errors = this.validateName(this.name, 'ComplexType');
+        const errors = this.validateName(this.name, 'ComplexType');
         
         if (!this.contentModel) {
             errors.push({

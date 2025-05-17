@@ -45,7 +45,7 @@ export class XsdSimpleType extends VisualXsdComponent {
     }
 
     validate(): ValidationError[] {
-        let errors = this.validateName(this.name, 'SimpleType');
+        const errors = this.validateName(this.name, 'SimpleType');
         
         if (!this.baseType) {
             errors.push({

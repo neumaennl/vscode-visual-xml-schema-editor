@@ -48,7 +48,7 @@ export class XsdAttribute extends VisualXsdComponent {
     }
 
     validate(): ValidationError[] {
-        let errors = this.validateName(this.name, 'Attribute');
+        const errors = this.validateName(this.name, 'Attribute');
         
         if (!this.type) {
             errors.push({

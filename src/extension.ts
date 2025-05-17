@@ -32,7 +32,7 @@ class XmlSchemaEditorProvider implements vscode.CustomTextEditorProvider {
 
     webviewPanel.webview.html = this.getWebviewContent(webviewPanel.webview);
 
-    const schemaModel = this.parseXMLSchema(document.fileName.split(/[\/|\\]/).at(-1)!, document.getText());
+    const schemaModel = this.parseXMLSchema(document.fileName.split(/[/|\\]/).at(-1)!, document.getText());
     webviewPanel.webview.postMessage({ 
         command: "init", 
         model: schemaModel.toJSON()  // Serialize using toJSON

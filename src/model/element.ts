@@ -25,7 +25,7 @@ export class XsdElement extends VisualXsdComponent {
     }
 
     validate(): ValidationError[] {
-        let errors = this.validateName(this.name, 'Element');
+        const errors = this.validateName(this.name, 'Element');
 
         if (this.constraints.minOccurs !== undefined && this.constraints.minOccurs < 0) {
             errors.push({

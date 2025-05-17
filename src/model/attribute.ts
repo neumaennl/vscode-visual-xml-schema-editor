@@ -1,5 +1,6 @@
 import { XsdType } from './types';
-import { VisualXsdComponent, ValidationError } from './xsd';
+import { ValidationError } from "./types";
+import { SerializedNode, VisualXsdComponent } from "./base";
 
 export class XsdAttribute extends VisualXsdComponent {
     constructor(
@@ -9,6 +10,30 @@ export class XsdAttribute extends VisualXsdComponent {
         public defaultValue?: string,
         public fixedValue?: string
     ) { super(); }
+
+    toJSON(): SerializedNode {
+        return {
+            nodeKind: 'attribute',
+            name: this.name,
+            type: this.type,
+            use: this.use,
+            defaultValue: this.defaultValue,
+            fixedValue: this.fixedValue
+        };
+    }
+
+    static fromJSON(json: SerializedNode): XsdAttribute {
+        if (json.nodeKind !== 'attribute') {
+            throw new Error('Invalid attribute JSON');
+        }
+        return new XsdAttribute(
+            json.name,
+            json.type,
+            json.use ?? 'optional',
+            json.defaultValue,
+            json.fixedValue
+        );
+    }
 
     override getName(): string {
         return this.name;

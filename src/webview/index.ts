@@ -1,13 +1,16 @@
 import * as d3 from "d3";
-import { VisualXsdComponent, XsdSchema } from "../model/xsd";
+import { XsdSchema } from "../model/xsd";
+import { VisualXsdComponent } from "../model/base";
 
+// @ts-ignore VS Code API is provided by the host
 const vscode = acquireVsCodeApi();
 
 window.addEventListener("message", (event) => {
   const message = event.data;
   switch (message.command) {
     case "init":
-      renderTree(message.model);
+      const model = XsdSchema.fromJSON(message.model);
+      renderTree(model);
       break;
   }
 });
@@ -18,8 +21,7 @@ function renderTree(model: XsdSchema) {
     height = 600;
 
   // create hierarchy from the model
-  const root = d3.hierarchy(model as VisualXsdComponent, (node) => node.getChildren());
-  debugger;
+  const root = d3.hierarchy(model as VisualXsdComponent, (node) => node?.getChildren());
   const treeLayout = d3.tree<VisualXsdComponent>().size([width, height]);
   treeLayout(root);
 

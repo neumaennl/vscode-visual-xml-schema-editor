@@ -1,4 +1,5 @@
-import { VisualXsdComponent, ValidationError } from './xsd';
+import { ValidationError } from "./types";
+import { SerializedNode, VisualXsdComponent } from "./base";
 import { OccurrenceConstraints, XsdType } from './types';
 import { XsdComplexType } from './complexType';
 import { XsdSimpleType } from './simpleType';
@@ -53,5 +54,31 @@ export class XsdElement extends VisualXsdComponent {
         <xs:element ${attrs}>
         ${this.contentModel?.toXsd()}
         </xs:element>`;
+    }
+
+    toJSON(): SerializedNode {
+        return {
+            nodeKind: 'element',
+            name: this.name,
+            xsdType: this.type,  // renamed from 'type' to avoid confusion
+            constraints: this.constraints,
+            contentModel: this.contentModel?.toJSON()
+        };
+    }
+
+    static fromJSON(json: SerializedNode): XsdElement {
+        if (json.nodeKind !== 'element') {
+            throw new Error('Invalid element JSON');
+        }
+        return new XsdElement(
+            json.name,
+            json.xsdType,
+            json.constraints,
+            json.contentModel && (
+                json.contentModel.nodeKind === 'complexType' 
+                    ? XsdComplexType.fromJSON(json.contentModel)
+                    : XsdSimpleType.fromJSON(json.contentModel)
+            )
+        );
     }
 }

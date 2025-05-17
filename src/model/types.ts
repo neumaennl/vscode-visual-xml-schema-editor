@@ -29,3 +29,9 @@ export type SchemaValidationOptions = {
 };
 
 export type RestrictionType = 'minExclusive' | 'minInclusive' | 'maxExclusive' | 'maxInclusive' | 'totalDigits' | 'fractionDigits' | 'length' | 'minLength' | 'maxLength' | 'enumeration' | 'whiteSpace' | 'pattern';
+export type ValidationError = {
+    code: string;
+    message: string;
+    component: string;
+    path?: string;
+};

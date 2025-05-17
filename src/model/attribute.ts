@@ -49,7 +49,7 @@ export class XsdAttribute extends VisualXsdComponent {
 
     validate(): ValidationError[] {
         const errors = this.validateName(this.name, 'Attribute');
-        
+
         if (!this.type) {
             errors.push({
                 code: 'MISSING_TYPE',

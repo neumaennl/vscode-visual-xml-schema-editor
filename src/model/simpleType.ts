@@ -46,7 +46,7 @@ export class XsdSimpleType extends VisualXsdComponent {
 
     validate(): ValidationError[] {
         const errors = this.validateName(this.name, 'SimpleType');
-        
+
         if (!this.baseType) {
             errors.push({
                 code: 'MISSING_BASE_TYPE',
@@ -60,10 +60,10 @@ export class XsdSimpleType extends VisualXsdComponent {
 
     toXsd(): string {
         const restrictionContent = this.restrictions.map(r => r.toXsd()).join('\n');
-        
+
         return `
         <xs:simpleType name="${this.name}">
-            ${this.isList ? 
+            ${this.isList ?
                 `<xs:list itemType="${this.baseType}"/>` :
                 `<xs:restriction base="${this.baseType}">
                     ${restrictionContent}
@@ -110,7 +110,7 @@ export class XsdRestriction extends VisualXsdComponent {
 
     validate(): ValidationError[] {
         const errors: ValidationError[] = [];
-        
+
         if (this.type === 'length' && isNaN(Number(this.value))) {
             errors.push({
                 code: 'INVALID_RESTRICTION',

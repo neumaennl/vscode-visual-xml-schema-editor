@@ -1,5 +1,5 @@
-export type XsdType = 
-    | 'xs:string' 
+export type XsdType =
+    | 'xs:string'
     | 'xs:decimal'
     | 'xs:integer'
     | 'xs:boolean'

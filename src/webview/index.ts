@@ -2,16 +2,16 @@ import * as d3 from "d3";
 import { XsdSchema } from "../model/xsd";
 import { VisualXsdComponent } from "../model/base";
 
-// @ts-ignore VS Code API is provided by the host
 const vscode = acquireVsCodeApi();
 
 window.addEventListener("message", (event) => {
   const message = event.data;
   switch (message.command) {
-    case "init":
+    case "init": {
       const model = XsdSchema.fromJSON(message.model);
       renderTree(model);
       break;
+    }
   }
 });
 
@@ -84,7 +84,6 @@ function renderTree(model: XsdSchema) {
   });
 }
 
-// @ts-ignore TODO: unused function
 function updateModel(newModel: any) {
   vscode.postMessage({ command: "update", model: newModel });
 }

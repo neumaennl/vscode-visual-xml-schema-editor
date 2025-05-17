@@ -35,7 +35,7 @@ export class XsdSchema extends VisualXsdComponent {
 
     override validate(): ValidationError[] {
         const errors: ValidationError[] = [];
-        
+
         // Unique name validation
         const allNames = [
             ...this.elements.map(e => e.name),

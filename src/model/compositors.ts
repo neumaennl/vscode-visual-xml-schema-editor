@@ -21,7 +21,7 @@ export abstract class XsdCompositor extends VisualXsdComponent {
 
     validate(): ValidationError[] {
         const errors: ValidationError[] = [];
-        
+
         if (this.children.length === 0) {
             errors.push({
                 code: 'EMPTY_COMPOSITOR',

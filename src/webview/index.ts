@@ -66,9 +66,9 @@ function renderTree(model: XsdSchema) {
     .attr("class", "node")
     .attr("transform", (d) => `translate(${d.y},${d.x})`);
 
-  nodes.each(function(d) {
-        d.data?.render(d3.select(this));
-    });
+  nodes.each(function (d) {
+    d.data?.render(d3.select(this));
+  });
 
   nodes
     .append("text")

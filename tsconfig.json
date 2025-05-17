@@ -1,6 +1,6 @@
 {
 	"compilerOptions": {
-        "experimentalDecorators": true,
+		"experimentalDecorators": true,
 		"emitDecoratorMetadata": true,
 		"module": "CommonJS",
 		"moduleResolution": "node",
@@ -12,25 +12,25 @@
 		"strict": true,
 		"rootDir": "src",
 		"esModuleInterop": true,
-        "noUnusedLocals": true,
-        "noImplicitOverride": true,
-        "skipLibCheck": true,
+		"noUnusedLocals": true,
+		"noImplicitOverride": true,
+		"skipLibCheck": true,
 		"forceConsistentCasingInFileNames": true,
-        "strictPropertyInitialization": false,
+		"strictPropertyInitialization": false,
 		"lib": [
-            "ES2020",
-            "DOM",
-            "DOM.Iterable"
-        ],
-        "types": [
-            "node",
-            "vscode"
-        ]
+			"ES2020",
+			"DOM",
+			"DOM.Iterable"
+		],
+		"types": [
+			"node",
+			"vscode"
+		]
 	},
 	"include": [
-	  "src/**/*.ts"
+		"src/**/*.ts"
 	],
 	"exclude": [
 		"src/webview/**/*.ts",
-	]	
+	]
 }

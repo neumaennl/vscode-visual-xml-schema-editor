@@ -9,7 +9,7 @@ export class XsdElement extends VisualXsdComponent {
         public name: string,
         public type?: XsdType,
         public constraints: OccurrenceConstraints = {},
-        public contentModel?: XsdComplexType|XsdSimpleType,
+        public contentModel?: XsdComplexType | XsdSimpleType,
     ) { super(); }
 
     override getName(): string {
@@ -36,7 +36,7 @@ export class XsdElement extends VisualXsdComponent {
             });
         }
 
-        if(this.contentModel) {
+        if (this.contentModel) {
             errors.push(...this.contentModel.validate());
         }
 
@@ -75,7 +75,7 @@ export class XsdElement extends VisualXsdComponent {
             json.xsdType,
             json.constraints,
             json.contentModel && (
-                json.contentModel.nodeKind === 'complexType' 
+                json.contentModel.nodeKind === 'complexType'
                     ? XsdComplexType.fromJSON(json.contentModel)
                     : XsdSimpleType.fromJSON(json.contentModel)
             )

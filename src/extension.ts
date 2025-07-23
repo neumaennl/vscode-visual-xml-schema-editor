@@ -92,6 +92,9 @@ class XmlSchemaEditorProvider implements vscode.CustomTextEditorProvider {
             height: 100%;
             position: absolute;
           }
+          svg {
+            background-color: white;
+          }
         </style>
       </head>
       <body>

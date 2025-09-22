@@ -18,8 +18,7 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 class XmlSchemaEditorProvider implements vscode.CustomTextEditorProvider {
-  constructor(private readonly context: vscode.ExtensionContext) {
-  }
+  constructor(private readonly context: vscode.ExtensionContext) {}
 
   async resolveCustomTextEditor(
     document: vscode.TextDocument,
@@ -32,17 +31,20 @@ class XmlSchemaEditorProvider implements vscode.CustomTextEditorProvider {
 
     webviewPanel.webview.html = this.getWebviewContent(webviewPanel.webview);
 
-    const schemaModel = this.parseXMLSchema(document.fileName.split(/[/|\\]/).at(-1)!, document.getText());
+    const schemaModel = this.parseXMLSchema(
+      document.fileName.split(/[/|\\]/).slice(-1)[0],
+      document.getText()
+    );
     webviewPanel.webview.postMessage({
       command: "init",
-      model: schemaModel.toJSON()  // Serialize using toJSON
+      model: schemaModel.toJSON(), // Serialize using toJSON
     });
 
     webviewPanel.webview.onDidReceiveMessage(
       async (message) => {
         switch (message.command) {
           case "update": {
-            const model = XsdSchema.fromJSON(message.model);  // Deserialize using fromJSON
+            const model = XsdSchema.fromJSON(message.model); // Deserialize using fromJSON
             const updatedXmlString = this.serializeXMLSchema(model);
             const edit = new vscode.WorkspaceEdit();
             edit.replace(
@@ -70,7 +72,12 @@ class XmlSchemaEditorProvider implements vscode.CustomTextEditorProvider {
 
   private getWebviewContent(webview: vscode.Webview): string {
     const scriptUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(this.context.extensionUri, 'out', 'webview', 'webview.js')
+      vscode.Uri.joinPath(
+        this.context.extensionUri,
+        "out",
+        "webview",
+        "webview.js"
+      )
     );
 
     return `<!DOCTYPE html>

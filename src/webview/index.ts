@@ -2,6 +2,8 @@ import * as d3 from "d3";
 import { XsdSchema } from "../model/xsd";
 import { VisualXsdComponent } from "../model/base";
 
+declare function acquireVsCodeApi(): any;
+
 const vscode = acquireVsCodeApi();
 
 window.addEventListener("message", (event) => {

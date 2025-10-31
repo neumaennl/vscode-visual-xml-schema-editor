@@ -37,8 +37,8 @@
     ]
   },
   "scripts": {
-    "compile": "tsc -p . && webpack --config webpack.webview.config.js",
-    "watch": "tsc -watch -p . & webpack --watch --config webpack.webview.config.js",
+    "compile": "tsc -p . && webpack --config webpack.webview.config.mjs",
+    "watch": "tsc -watch -p . & webpack --watch --config webpack.webview.config.mjs",
     "vscode:prepublish": "npm run compile",
     "lint": "eslint \"src/**/*.ts\""
   },

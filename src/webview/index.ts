@@ -2,6 +2,8 @@ import * as d3 from "d3";
 import { XsdSchema } from "../model/xsd";
 import { VisualXsdComponent } from "../model/base";
 
+declare let acquireVsCodeApi: any;
+
 const vscode = acquireVsCodeApi();
 
 window.addEventListener("message", (event) => {
@@ -36,8 +38,11 @@ function renderTree(model: XsdSchema) {
     .attr("transform", `translate(${width * 0.1}, ${height * 0.1})`); // 10% margin
 
   // Create hierarchy and layout with dynamic sizing
-  const root = d3.hierarchy(model as VisualXsdComponent, (node) => node?.getChildren());
-  const treeLayout = d3.tree<VisualXsdComponent>()
+  const root = d3.hierarchy(model as VisualXsdComponent, (node) =>
+    node?.getChildren()
+  );
+  const treeLayout = d3
+    .tree<VisualXsdComponent>()
     .size([height * 0.8, width * 0.8]); // 80% of space for content
 
   treeLayout(root);

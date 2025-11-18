@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="http://example.com/library"
+           xmlns:lib="http://example.com/library"
+           elementFormDefault="qualified">
+
+  <!-- Simple Type: Book Category -->
+  <xs:simpleType name="CategoryType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Fiction"/>
+      <xs:enumeration value="Non-Fiction"/>
+      <xs:enumeration value="Science"/>
+      <xs:enumeration value="History"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Complex Type: Address -->
+  <xs:complexType name="AddressType">
+    <xs:sequence>
+      <xs:element name="street" type="xs:string"/>
+      <xs:element name="city" type="xs:string"/>
+      <xs:element name="zipCode" type="xs:string"/>
+      <xs:element name="country" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Complex Type: Author -->
+  <xs:complexType name="AuthorType">
+    <xs:sequence>
+      <xs:element name="name" type="xs:string"/>
+      <xs:element name="birthYear" type="xs:int" minOccurs="0"/>
+      <xs:element name="address" type="lib:AddressType" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="id" type="xs:string" use="required"/>
+  </xs:complexType>
+
+  <!-- Complex Type: Book -->
+  <xs:complexType name="BookType">
+    <xs:sequence>
+      <xs:element name="title" type="xs:string"/>
+      <xs:element name="author" type="lib:AuthorType" maxOccurs="unbounded"/>
+      <xs:element name="isbn" type="xs:string"/>
+      <xs:element name="publishYear" type="xs:int"/>
+      <xs:element name="category" type="lib:CategoryType"/>
+      <xs:element name="description" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="id" type="xs:string" use="required"/>
+  </xs:complexType>
+
+  <!-- Root Element: Library -->
+  <xs:element name="Library">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="name" type="xs:string"/>
+        <xs:element name="address" type="lib:AddressType"/>
+        <xs:element name="books">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="book" type="lib:BookType" maxOccurs="unbounded"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+</xs:schema>

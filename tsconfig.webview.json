@@ -1,24 +1,24 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
+    "module": "ESNext",
     "target": "ES2020",
-    "outDir": "out",
     "lib": [
-      "ES2020"
+      "ES2020",
+      "DOM"
     ],
     "sourceMap": true,
     "rootDirs": [
-      "src",
+      "webview-src",
       "shared"
     ],
+    "outDir": "webview",
     "strict": true,
     "esModuleInterop": true,
-    "noUnusedLocals": true,
-    "noImplicitOverride": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
     "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
     "baseUrl": ".",
     "paths": {
       "shared/*": [
@@ -27,14 +27,12 @@
     }
   },
   "include": [
-    "src/**/*",
+    "webview-src/**/*",
     "shared/**/*"
   ],
   "exclude": [
     "node_modules",
-    ".vscode-test",
-    "webview-src",
-    "webview",
-    "out"
+    "out",
+    "webview"
   ]
 }

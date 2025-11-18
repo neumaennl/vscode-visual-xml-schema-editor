@@ -1,0 +1,249 @@
+body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    font-family: var(--vscode-font-family);
+    color: var(--vscode-foreground);
+    background-color: var(--vscode-editor-background);
+}
+
+#toolbar {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 100;
+    display: flex;
+    gap: 5px;
+}
+
+#toolbar button {
+    padding: 5px 10px;
+    background-color: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: var(--vscode-font-family);
+}
+
+#toolbar button:hover {
+    background-color: var(--vscode-button-hoverBackground);
+}
+
+#canvas-container {
+    width: calc(100vw - 300px);
+    height: 100vh;
+    overflow: hidden;
+}
+
+#schema-canvas {
+    cursor: grab;
+    width: 100%;
+    height: 100%;
+}
+
+#schema-canvas:active {
+    cursor: grabbing;
+}
+
+#properties-panel {
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 300px;
+    height: 100vh;
+    background-color: var(--vscode-sideBar-background);
+    border-left: 1px solid var(--vscode-sideBar-border);
+    padding: 15px;
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+
+#properties-panel h3 {
+    margin-top: 0;
+    color: var(--vscode-sideBarTitle-foreground);
+    font-size: 16px;
+}
+
+.property {
+    margin-bottom: 15px;
+    line-height: 1.4;
+}
+
+.property label {
+    font-weight: bold;
+    display: block;
+    margin-bottom: 5px;
+    color: var(--vscode-foreground);
+}
+
+.property span {
+    color: var(--vscode-descriptionForeground);
+}
+
+.property p {
+    margin: 5px 0 0 0;
+    color: var(--vscode-descriptionForeground);
+    white-space: pre-wrap;
+}
+
+.attribute-list {
+    list-style: none;
+    padding: 0;
+    margin: 5px 0 0 0;
+}
+
+.attribute-list li {
+    padding: 5px;
+    margin-bottom: 5px;
+    background-color: var(--vscode-editor-background);
+    border-radius: 3px;
+    font-size: 12px;
+}
+
+.attr-use {
+    color: var(--vscode-descriptionForeground);
+    font-style: italic;
+    font-size: 11px;
+}
+
+.attr-default,
+.attr-fixed {
+    display: block;
+    color: var(--vscode-textLink-foreground);
+    font-size: 11px;
+    margin-top: 2px;
+}
+
+/* SVG Node Styles */
+.schema-node {
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.schema-node:hover {
+    opacity: 0.8;
+}
+
+.schema-node.selected rect {
+    stroke: var(--vscode-focusBorder);
+    stroke-width: 3;
+    filter: drop-shadow(0 0 5px var(--vscode-focusBorder));
+}
+
+.schema-node rect {
+    fill: var(--vscode-editor-background);
+    stroke: var(--vscode-panel-border);
+    stroke-width: 2;
+    transition: all 0.2s;
+}
+
+/* Node type-specific colors */
+.node-element rect {
+    fill: #4a90e2;
+    fill-opacity: 0.2;
+    stroke: #4a90e2;
+}
+
+.node-complexType rect {
+    fill: #e27a3f;
+    fill-opacity: 0.2;
+    stroke: #e27a3f;
+}
+
+.node-simpleType rect {
+    fill: #9b59b6;
+    fill-opacity: 0.2;
+    stroke: #9b59b6;
+}
+
+.node-sequence rect {
+    fill: #45b7af;
+    fill-opacity: 0.2;
+    stroke: #45b7af;
+}
+
+.node-choice rect {
+    fill: #df5a49;
+    fill-opacity: 0.2;
+    stroke: #df5a49;
+}
+
+.node-all rect {
+    fill: #f39c12;
+    fill-opacity: 0.2;
+    stroke: #f39c12;
+}
+
+.node-group rect {
+    fill: #16a085;
+    fill-opacity: 0.2;
+    stroke: #16a085;
+}
+
+.node-attribute rect {
+    fill: #8e44ad;
+    fill-opacity: 0.2;
+    stroke: #8e44ad;
+}
+
+.node-any rect {
+    fill: #95a5a6;
+    fill-opacity: 0.2;
+    stroke: #95a5a6;
+}
+
+.node-label {
+    fill: var(--vscode-editor-foreground);
+    font-size: 14px;
+    font-weight: bold;
+    pointer-events: none;
+}
+
+.node-type {
+    fill: var(--vscode-descriptionForeground);
+    font-size: 11px;
+    pointer-events: none;
+}
+
+.node-cardinality {
+    fill: var(--vscode-descriptionForeground);
+    font-size: 10px;
+    font-style: italic;
+    pointer-events: none;
+}
+
+.connection-line {
+    stroke: var(--vscode-panel-border);
+    stroke-width: 2;
+    fill: none;
+    pointer-events: none;
+}
+
+.error-message {
+    fill: var(--vscode-errorForeground);
+    font-size: 16px;
+}
+
+.info-message {
+    fill: var(--vscode-descriptionForeground);
+    font-size: 16px;
+}
+
+/* Scrollbar styling for properties panel */
+#properties-panel::-webkit-scrollbar {
+    width: 10px;
+}
+
+#properties-panel::-webkit-scrollbar-track {
+    background: var(--vscode-scrollbarSlider-background);
+}
+
+#properties-panel::-webkit-scrollbar-thumb {
+    background: var(--vscode-scrollbarSlider-activeBackground);
+    border-radius: 5px;
+}
+
+#properties-panel::-webkit-scrollbar-thumb:hover {
+    background: var(--vscode-scrollbarSlider-hoverBackground);
+}

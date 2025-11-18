@@ -1,63 +1,72 @@
 {
-  "name": "vscode-visual-xml-schema-editor",
-  "displayName": "Visual XML Schema Editor",
-  "description": "Visual XML Schema Editor Extension for Visual Studio Code",
-  "preview": true,
+  "name": "xml-schema-visual-editor",
+  "displayName": "XML Schema Visual Editor",
+  "description": "Visual editor for XML schemas with diagram view",
   "version": "0.0.1",
   "publisher": "neumaennl",
-  "license": "AGPL-3.0-only",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/neumaennl/vscode-visual-xml-schema-editor"
-  },
   "engines": {
-    "vscode": "^1.97.0"
+    "vscode": "^1.74.0"
   },
   "categories": [
-    "Programming Languages",
-    "Visualization"
+    "Other"
   ],
-  "keywords": [
-    "xml",
-    "schema",
-    "xsd"
-  ],
+  "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
     "customEditors": [
       {
-        "viewType": "visual.xmlSchema",
-        "displayName": "Visual XML Schema Editor",
+        "viewType": "xmlSchemaVisualEditor.editor",
+        "displayName": "XML Schema Visual Editor",
         "selector": [
           {
             "filenamePattern": "*.xsd"
           }
-        ]
+        ],
+        "priority": "option"
       }
-    ]
+    ],
+    "commands": [
+      {
+        "command": "xmlSchemaVisualEditor.openEditor",
+        "title": "Open in XML Schema Visual Editor"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "when": "resourceExtname == .xsd",
+          "command": "xmlSchemaVisualEditor.openEditor",
+          "group": "navigation"
+        }
+      ]
+    }
   },
   "scripts": {
-    "compile": "tsc -p . && webpack --config webpack.webview.config.mjs",
-    "watch": "tsc -watch -p . & webpack --watch --config webpack.webview.config.mjs",
-    "vscode:prepublish": "npm run compile",
-    "lint": "eslint \"src/**/*.ts\""
+    "vscode:prepublish": "npm run compile && npm run compile-webview",
+    "compile": "tsc -p ./tsconfig.json",
+    "compile-webview": "webpack --mode production",
+    "watch": "concurrently \"npm run watch-extension\" \"npm run watch-webview\"",
+    "watch-extension": "tsc -watch -p ./tsconfig.json",
+    "watch-webview": "webpack --mode development --watch",
+    "pretest": "npm run compile && npm run compile-webview",
+    "package": "vsce package",
+    "clean": "rimraf out webview"
   },
   "devDependencies": {
-    "@eslint/js": "^9.27.0",
-    "@types/d3": "^7.4.3",
-    "@types/node": "^24.0.3",
-    "@types/vscode": "^1.97.0",
-    "@types/vscode-webview": "^1.57.5",
-    "eslint": "^9.27.0",
-    "globals": "^16.1.0",
-    "ts-loader": "^9.5.2",
-    "typescript": "^5.7.3",
-    "typescript-eslint": "^8.32.1",
-    "webpack": "^5.99.8",
-    "webpack-cli": "^6.0.1"
+    "@types/node": "^18.0.0",
+    "@types/vscode": "^1.74.0",
+    "@vscode/vsce": "^2.22.0",
+    "concurrently": "^8.2.2",
+    "copy-webpack-plugin": "^11.0.0",
+    "css-loader": "^6.8.1",
+    "rimraf": "^5.0.5",
+    "style-loader": "^3.3.3",
+    "ts-loader": "^9.5.0",
+    "typescript": "^5.0.0",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4"
   },
   "dependencies": {
-    "@xmldom/xmldom": "^0.9.8",
-    "d3": "^7.9.0"
+    "@neumaennl/xmlbind-ts": "^0.5.0"
   }
 }

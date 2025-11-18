@@ -1,0 +1,147 @@
+import * as vscode from "vscode";
+import { unmarshal } from "@neumaennl/xmlbind-ts";
+import { schema } from "../shared/types";
+
+export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
+  constructor(private readonly context: vscode.ExtensionContext) {}
+
+  public async resolveCustomTextEditor(
+    document: vscode.TextDocument,
+    webviewPanel: vscode.WebviewPanel,
+    _token: vscode.CancellationToken
+  ): Promise<void> {
+    webviewPanel.webview.options = {
+      enableScripts: true,
+    };
+
+    webviewPanel.webview.html = this.getHtmlForWebview(webviewPanel.webview);
+
+    // Send initial schema to webview
+    this.updateWebview(document, webviewPanel.webview);
+
+    // Listen for document changes
+    const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument(
+      (e) => {
+        if (e.document.uri.toString() === document.uri.toString()) {
+          this.updateWebview(document, webviewPanel.webview);
+        }
+      }
+    );
+
+    // Listen for messages from webview
+    webviewPanel.webview.onDidReceiveMessage(
+      (message) => this.handleWebviewMessage(message, document),
+      undefined,
+      this.context.subscriptions
+    );
+
+    webviewPanel.onDidDispose(() => {
+      changeDocumentSubscription.dispose();
+    });
+  }
+
+  private updateWebview(
+    document: vscode.TextDocument,
+    webview: vscode.Webview
+  ) {
+    try {
+      // Parse XSD directly using xmlbind-ts unmarshal
+      const schemaObj = unmarshal(schema, document.getText());
+
+      // Send the schema object to the webview for visualization
+      webview.postMessage({
+        command: "updateSchema",
+        data: schemaObj,
+      });
+    } catch (error) {
+      webview.postMessage({
+        command: "error",
+        data: { message: (error as Error).message },
+      });
+    }
+  }
+
+  private async handleWebviewMessage(
+    message: any,
+    document: vscode.TextDocument
+  ) {
+    switch (message.command) {
+      case "schemaModified":
+        await this.applySchemaChanges(document, message.data);
+        break;
+      case "nodeClicked":
+        console.log("Node clicked:", message.data);
+        break;
+      case "requestClasses":
+        // Send information about generated classes
+        await this.sendGeneratedClassesInfo(message.data.webview);
+        break;
+    }
+  }
+
+  private async sendGeneratedClassesInfo(webview: vscode.Webview) {
+    // This could send metadata about generated classes to the webview
+    // for enhanced editing capabilities
+  }
+
+  private async applySchemaChanges(
+    document: vscode.TextDocument,
+    schemaObj: schema
+  ) {
+    // TODO: Marshal the schema object back to XML
+    // const xmlContent = marshal(schemaObj);
+    // Then apply the edit to the document
+
+    const edit = new vscode.WorkspaceEdit();
+    // Implementation needed
+    await vscode.workspace.applyEdit(edit);
+  }
+
+  private getHtmlForWebview(webview: vscode.Webview): string {
+    const scriptUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this.context.extensionUri, "webview", "main.js")
+    );
+    const styleUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this.context.extensionUri, "webview", "styles.css")
+    );
+
+    const nonce = this.getNonce();
+
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}';">
+    <link href="${styleUri}" rel="stylesheet">
+    <title>XML Schema Visual Editor</title>
+</head>
+<body>
+    <div id="toolbar">
+        <button id="zoomIn">Zoom In</button>
+        <button id="zoomOut">Zoom Out</button>
+        <button id="fitView">Fit View</button>
+        <button id="exportClasses">Generate TS Classes</button>
+    </div>
+    <div id="canvas-container">
+        <svg id="schema-canvas" width="100%" height="100%"></svg>
+    </div>
+    <div id="properties-panel">
+        <h3>Properties</h3>
+        <div id="properties-content"></div>
+    </div>
+    <script nonce="${nonce}" src="${scriptUri}"></script>
+</body>
+</html>`;
+  }
+
+  private getNonce(): string {
+    let text = "";
+    const possible =
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    for (let i = 0; i < 32; i++) {
+      text += possible.charAt(Math.floor(Math.random() * possible.length));
+    }
+    return text;
+  }
+}

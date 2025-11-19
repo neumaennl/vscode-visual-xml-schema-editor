@@ -5,10 +5,10 @@ export class annotation extends openAttrs {
   @XmlAttribute('id')
   id?: String;
 
-  @XmlElement('appinfo', { namespace: 'http://www.w3.org/2001/XMLSchema' })
-  appinfo?: any;
+  @XmlElement('appinfo', { array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  appinfo?: any[];
 
-  @XmlElement('documentation', { namespace: 'http://www.w3.org/2001/XMLSchema' })
-  documentation?: any;
+  @XmlElement('documentation', { array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  documentation?: any[];
 
 }

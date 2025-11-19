@@ -16,11 +16,11 @@ export class namedAttributeGroup {
   @XmlElement('annotation', { namespace: 'http://www.w3.org/2001/XMLSchema' })
   annotation?: any;
 
-  @XmlElement('attribute', { type: attribute, namespace: 'http://www.w3.org/2001/XMLSchema' })
-  attribute?: attribute;
+  @XmlElement('attribute', { type: attribute, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  attribute?: attribute[];
 
-  @XmlElement('attributeGroup', { type: attributeGroupRef, namespace: 'http://www.w3.org/2001/XMLSchema' })
-  attributeGroup?: attributeGroupRef;
+  @XmlElement('attributeGroup', { type: attributeGroupRef, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  attributeGroup?: attributeGroupRef[];
 
   @XmlElement('anyAttribute', { type: wildcard, namespace: 'http://www.w3.org/2001/XMLSchema' })
   anyAttribute?: wildcard;

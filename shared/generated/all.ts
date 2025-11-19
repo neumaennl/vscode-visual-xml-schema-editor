@@ -14,7 +14,7 @@ export class all {
   @XmlElement('annotation', { namespace: 'http://www.w3.org/2001/XMLSchema' })
   annotation?: any;
 
-  @XmlElement('element', { type: narrowMaxMin, namespace: 'http://www.w3.org/2001/XMLSchema' })
-  element?: narrowMaxMin;
+  @XmlElement('element', { type: narrowMaxMin, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  element?: narrowMaxMin[];
 
 }

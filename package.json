@@ -11,7 +11,7 @@
     "Other"
   ],
   "activationEvents": [],
-  "main": "./out/extension.js",
+  "main": "./out/src/extension.js",
   "contributes": {
     "customEditors": [
       {
@@ -67,6 +67,6 @@
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
-    "@neumaennl/xmlbind-ts": "^0.5.0"
+    "@neumaennl/xmlbind-ts": "^0.7.1"
   }
 }

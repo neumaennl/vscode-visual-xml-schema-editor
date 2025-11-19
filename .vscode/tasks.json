@@ -6,10 +6,7 @@
     {
       "type": "npm",
       "script": "compile",
-      "group": {
-        "kind": "build",
-        "isDefault": true
-      },
+      "group": "build",
       "problemMatcher": "$tsc",
       "label": "npm: compile",
       "detail": "tsc -p ./tsconfig.json"
@@ -22,17 +19,28 @@
       "presentation": {
         "reveal": "never"
       },
-      "group": {
-        "kind": "build",
-        "isDefault": true
-      },
+      "group": "build",
       "label": "npm: watch"
     },
     {
       "type": "npm",
       "script": "compile-webview",
       "problemMatcher": [],
+      "group": "build",
       "label": "npm: compile-webview"
+    },
+    {
+      "label": "Build All",
+      "dependsOn": [
+        "npm: compile",
+        "npm: compile-webview"
+      ],
+      "dependsOrder": "parallel",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": []
     }
   ]
 }

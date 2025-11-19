@@ -45,8 +45,18 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
     webview: vscode.Webview
   ) {
     try {
+      console.log("Parsing XSD document...");
+      const xmlContent = document.getText();
+      console.log("XML content length:", xmlContent.length);
+      console.log("XML content preview:", xmlContent.substring(0, 200));
+
       // Parse XSD directly using xmlbind-ts unmarshal
-      const schemaObj = unmarshal(schema, document.getText());
+      const schemaObj = unmarshal(schema, xmlContent);
+
+      console.log("Schema parsed successfully");
+      console.log("Schema object:", schemaObj);
+      console.log("Schema type:", typeof schemaObj);
+      console.log("Schema keys:", Object.keys(schemaObj || {}));
 
       // Send the schema object to the webview for visualization
       webview.postMessage({
@@ -54,6 +64,7 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
         data: schemaObj,
       });
     } catch (error) {
+      console.error("Error parsing schema:", error);
       webview.postMessage({
         command: "error",
         data: { message: (error as Error).message },
@@ -121,7 +132,6 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
         <button id="zoomIn">Zoom In</button>
         <button id="zoomOut">Zoom Out</button>
         <button id="fitView">Fit View</button>
-        <button id="exportClasses">Generate TS Classes</button>
     </div>
     <div id="canvas-container">
         <svg id="schema-canvas" width="100%" height="100%"></svg>

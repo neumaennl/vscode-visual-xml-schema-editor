@@ -66,11 +66,18 @@ class SchemaEditorApp {
       return;
     }
 
-    // TODO: Implement rendering logic that works directly with schema object
-    // The renderer will need to traverse the schema structure
-    this.renderer.renderSchema(schemaObj, (node: any) => {
-      this.onNodeClick(node);
-    });
+    try {
+      console.log("Schema object received:", schemaObj);
+      console.log("Schema keys:", Object.keys(schemaObj));
+
+      // The renderer will need to traverse the schema structure
+      this.renderer.renderSchema(schemaObj, (node: any) => {
+        this.onNodeClick(node);
+      });
+    } catch (error) {
+      console.error("Error rendering schema:", error);
+      this.showError(`Failed to render: ${(error as Error).message}`);
+    }
   }
 
   private onNodeClick(node: any): void {

@@ -22,13 +22,27 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand(
       "xmlSchemaVisualEditor.openEditor",
-      async () => {
-        const editor = vscode.window.activeTextEditor;
-        if (editor && editor.document.fileName.endsWith(".xsd")) {
+      async (uri?: vscode.Uri) => {
+        // If URI is provided (from context menu), use it
+        // Otherwise, try to get URI from active editor
+        let fileUri = uri;
+
+        if (!fileUri) {
+          const editor = vscode.window.activeTextEditor;
+          if (editor && editor.document.fileName.endsWith(".xsd")) {
+            fileUri = editor.document.uri;
+          }
+        }
+
+        if (fileUri && fileUri.fsPath.endsWith(".xsd")) {
           await vscode.commands.executeCommand(
             "vscode.openWith",
-            editor.document.uri,
+            fileUri,
             "xmlSchemaVisualEditor.editor"
+          );
+        } else {
+          vscode.window.showErrorMessage(
+            "Please select an XSD file to open in the visual editor."
           );
         }
       }

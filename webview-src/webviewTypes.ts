@@ -1,5 +1,5 @@
 // Webview-specific types (only used in webview-src, not in extension)
-import { SchemaNode } from './types';
+import { DiagramItem } from "./diagram";
 
 export interface VSCodeAPI {
   postMessage(message: any): void;
@@ -19,7 +19,7 @@ export interface ViewState {
 }
 
 export interface RenderedNode {
-  node: SchemaNode;
+  node: DiagramItem;
   element: SVGGElement;
   x: number;
   y: number;

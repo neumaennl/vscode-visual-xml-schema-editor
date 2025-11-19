@@ -13,8 +13,8 @@ node node_modules/@neumaennl/xmlbind-ts/dist/xsd/cli.js xsd2ts -i schemas/XMLSch
 ## Source
 
 - **Source XSD**: W3C XML Schema 1.0 (https://www.w3.org/2001/XMLSchema.xsd)
-- **Generated**: November 18, 2025
-- **Tool**: @neumaennl/xmlbind-ts v0.5.0
+- **Generated**: November 19, 2025
+- **Tool**: @neumaennl/xmlbind-ts v0.7.1
 
 ## Usage
 
@@ -51,15 +51,6 @@ The generator creates several organized files:
 - `types.ts` - Type aliases for XML Schema built-in types
 - `enums.ts` - Enumeration types used throughout the schema
 - Individual class files for each XML Schema construct
-
-## New in v0.5.0
-
-The updated xmlbind-ts generator now:
-
-- Automatically generates proper imports in all files
-- Organizes types and enums into separate files
-- Creates a comprehensive barrel export (index.ts)
-- No manual import fixes needed!
 
 ## Note
 

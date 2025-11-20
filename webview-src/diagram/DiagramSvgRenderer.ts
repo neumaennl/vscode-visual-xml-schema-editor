@@ -15,14 +15,23 @@ import {
 export class DiagramSvgRenderer {
   private svg: SVGSVGElement;
   private mainGroup: SVGGElement;
+  private contentGroup: SVGGElement;
 
-  constructor(svg: SVGSVGElement) {
+  constructor(svg: SVGSVGElement, containerGroup?: SVGGElement) {
     this.svg = svg;
-    this.mainGroup = document.createElementNS(
+    // Use provided container group or create our own
+    this.mainGroup =
+      containerGroup ||
+      document.createElementNS("http://www.w3.org/2000/svg", "g");
+    if (!containerGroup) {
+      this.svg.appendChild(this.mainGroup);
+    }
+    // Create a content group for actual diagram items
+    this.contentGroup = document.createElementNS(
       "http://www.w3.org/2000/svg",
       "g"
     );
-    this.svg.appendChild(this.mainGroup);
+    this.mainGroup.appendChild(this.contentGroup);
   }
 
   /**
@@ -30,16 +39,13 @@ export class DiagramSvgRenderer {
    */
   public render(diagram: Diagram): void {
     // Clear existing content
-    this.mainGroup.innerHTML = "";
+    this.contentGroup.innerHTML = "";
 
-    // Set SVG viewBox based on diagram bounds
-    const bounds = diagram.scaleRectangle(diagram.boundingBox);
-    this.svg.setAttribute(
-      "viewBox",
-      `${bounds.x} ${bounds.y} ${bounds.width} ${bounds.height}`
-    );
-    this.svg.setAttribute("width", bounds.width.toString());
-    this.svg.setAttribute("height", bounds.height.toString());
+    console.log("Rendering diagram:", diagram);
+
+    // Don't set viewBox - let the SVG fill the container and use transform for pan/zoom
+    // Remove any previously set viewBox
+    this.svg.removeAttribute("viewBox");
 
     // Render each root element
     for (const root of diagram.rootElements) {
@@ -55,6 +61,16 @@ export class DiagramSvgRenderer {
     group.setAttribute("data-item-id", item.id);
     group.setAttribute("class", "diagram-item");
 
+    // Add tooltip for group items (sequence, choice, all)
+    if (item.itemType === DiagramItemType.group) {
+      const title = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "title"
+      );
+      title.textContent = item.name;
+      group.appendChild(title);
+    }
+
     // Render children first (so they appear behind parent)
     if (item.showChildElements) {
       for (const child of item.childElements) {
@@ -66,8 +82,10 @@ export class DiagramSvgRenderer {
     // Render the main shape
     this.renderShape(item, group);
 
-    // Render text
-    this.renderText(item, group);
+    // Render text (skip for group items - they only show the symbol)
+    if (item.itemType !== DiagramItemType.group) {
+      this.renderText(item, group);
+    }
 
     // Render documentation if present
     if (item.diagram?.showDocumentation && item.documentation) {
@@ -87,7 +105,7 @@ export class DiagramSvgRenderer {
       this.renderReferenceArrow(item, group);
     }
 
-    this.mainGroup.appendChild(group);
+    this.contentGroup.appendChild(group);
   }
 
   /**
@@ -98,27 +116,70 @@ export class DiagramSvgRenderer {
 
     const foregroundPen = `stroke:${item.diagram?.style.lineColor};stroke-width:1;stroke-linecap:round`;
     const parentMidY = item.scaleInt(item.location.y + item.size.height / 2);
+    const horizontalConnectorLength = 30; // Length of horizontal line from vertical to child
 
     if (item.childElements.length === 1) {
       // Single child - direct line
-      const childMidY = item.scaleInt(
-        item.childElements[0].location.y + item.childElements[0].size.height / 2
+      const child = item.childElements[0];
+      const childMidY = item.scaleInt(child.location.y + child.size.height / 2);
+
+      // Calculate where the horizontal line from parent should start (after expand button)
+      // Expand button is at parent.x + parent.width + 5, with width 12, plus 5px spacing = +22
+      const expandButtonOffset = 22;
+      const parentLineStartX = item.scaleInt(
+        item.location.x + item.size.width + expandButtonOffset
       );
+
+      // Horizontal line from parent (starting after expand button)
+      const midPointX =
+        parentLineStartX +
+        (item.scaleInt(child.location.x) - parentLineStartX) / 2;
+
       this.svgLine(
         group,
         foregroundPen,
-        item.scaleInt(item.location.x + item.size.width),
+        parentLineStartX,
         parentMidY,
-        item.scaleInt(item.childElements[0].location.x),
+        midPointX,
+        parentMidY
+      );
+
+      // Vertical line
+      this.svgLine(
+        group,
+        foregroundPen,
+        midPointX,
+        parentMidY,
+        midPointX,
+        childMidY
+      );
+
+      // Horizontal line to child
+      this.svgLine(
+        group,
+        foregroundPen,
+        midPointX,
+        childMidY,
+        item.scaleInt(child.location.x),
         childMidY
       );
     } else {
-      // Multiple children - vertical connector
+      // Multiple children - vertical connector with horizontal connectors to each child
       const firstChild = item.childElements[0];
       const lastChild = item.childElements[item.childElements.length - 1];
-      const verticalLine = item.scaleInt(firstChild.boundingBox.x);
 
-      // Draw individual child lines
+      // Position vertical line with some spacing before the children
+      const verticalLineX =
+        item.scaleInt(firstChild.location.x) - horizontalConnectorLength;
+
+      // Calculate where the horizontal line from parent should start (after expand button)
+      // Expand button is at parent.x + parent.width + 5, with width 12, plus 5px spacing = +22
+      const expandButtonOffset = 22;
+      const parentLineStartX = item.scaleInt(
+        item.location.x + item.size.width + expandButtonOffset
+      );
+
+      // Draw horizontal connectors from vertical line to each child
       for (const child of item.childElements) {
         const childMidY = item.scaleInt(
           child.location.y + child.size.height / 2
@@ -126,7 +187,7 @@ export class DiagramSvgRenderer {
         this.svgLine(
           group,
           foregroundPen,
-          verticalLine,
+          verticalLineX,
           childMidY,
           item.scaleInt(child.location.x),
           childMidY
@@ -143,19 +204,19 @@ export class DiagramSvgRenderer {
       this.svgLine(
         group,
         foregroundPen,
-        verticalLine,
+        verticalLineX,
         firstMidY,
-        verticalLine,
+        verticalLineX,
         lastMidY
       );
 
-      // Connect to parent
+      // Connect to parent (starting after expand button)
       this.svgLine(
         group,
         foregroundPen,
-        item.scaleInt(item.location.x + item.size.width),
+        parentLineStartX,
         parentMidY,
-        verticalLine,
+        verticalLineX,
         parentMidY
       );
     }
@@ -166,8 +227,9 @@ export class DiagramSvgRenderer {
    */
   private renderShape(item: DiagramItem, group: SVGElement): void {
     const scaledBox = item.scaleRectangle(item.elementBox);
+    // Use semi-transparent background so it works with any theme
     const backgroundBrush = `fill:${item.diagram?.style.backgroundColor}`;
-    const foregroundPen = `stroke:${item.diagram?.style.lineColor};stroke-width:1`;
+    const foregroundPen = `stroke:${item.diagram?.style.lineColor};stroke-width:2`;
     const dashed = item.minOccurrence === 0 ? "stroke-dasharray:4,1;" : "";
 
     switch (item.itemType) {
@@ -379,13 +441,74 @@ export class DiagramSvgRenderer {
       displayText += `: ${item.type}`;
     }
 
+    // Truncate text to fit in box with some padding
+    const maxWidth = scaledBox.width - 10; // 5px padding on each side
+    const fontSize = item.diagram?.style.fontSize || 10;
+    const truncatedText = this.truncateText(displayText, maxWidth, fontSize);
+
     this.svgText(
       group,
-      displayText,
+      truncatedText,
       centerX,
       centerY,
-      `font-family:${item.diagram?.style.fontFamily};font-size:${item.diagram?.style.fontSize}pt;fill:${item.diagram?.style.foregroundColor};font-weight:bold;text-anchor:middle;dominant-baseline:central`
+      `font-family:${item.diagram?.style.fontFamily};font-size:${item.diagram?.style.fontSize}pt;fill:${item.diagram?.style.foregroundColor};font-weight:bold;text-anchor:middle;dominant-baseline:central`,
+      truncatedText !== displayText ? displayText : undefined // Show full text as tooltip if truncated
     );
+  }
+
+  /**
+   * Truncate text to fit within a maximum width
+   */
+  private truncateText(
+    text: string,
+    maxWidth: number,
+    fontSize: number
+  ): string {
+    // Create a temporary SVG text element to measure actual width
+    const tempText = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "text"
+    );
+    tempText.setAttribute(
+      "style",
+      `font-family:${
+        this.svg.style.fontFamily || "Arial"
+      };font-size:${fontSize}pt;font-weight:bold`
+    );
+    tempText.textContent = text;
+    this.svg.appendChild(tempText);
+
+    const textWidth = tempText.getBBox().width;
+    this.svg.removeChild(tempText);
+
+    // If it fits, return as-is
+    if (textWidth <= maxWidth) {
+      return text;
+    }
+
+    // Binary search to find the right length
+    let left = 0;
+    let right = text.length;
+    let result = text;
+
+    while (left < right) {
+      const mid = Math.floor((left + right) / 2);
+      const testText = text.substring(0, mid) + "...";
+
+      tempText.textContent = testText;
+      this.svg.appendChild(tempText);
+      const testWidth = tempText.getBBox().width;
+      this.svg.removeChild(tempText);
+
+      if (testWidth <= maxWidth) {
+        result = testText;
+        left = mid + 1;
+      } else {
+        right = mid;
+      }
+    }
+
+    return result;
   }
 
   /**
@@ -445,7 +568,15 @@ export class DiagramSvgRenderer {
     const foregroundPen = `stroke:${item.diagram?.style.lineColor};stroke-width:1`;
     const backgroundBrush = `fill:${item.diagram?.style.backgroundColor}`;
 
-    this.svgRectangle(group, scaledBox, backgroundBrush, foregroundPen);
+    // Create a dedicated group for the button
+    const buttonGroup = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "g"
+    );
+    buttonGroup.setAttribute("class", "expand-button");
+    buttonGroup.setAttribute("cursor", "pointer");
+
+    this.svgRectangle(buttonGroup, scaledBox, backgroundBrush, foregroundPen);
 
     // Draw + or - sign
     const centerX = scaledBox.x + scaledBox.width / 2;
@@ -454,7 +585,7 @@ export class DiagramSvgRenderer {
 
     // Horizontal line
     this.svgLine(
-      group,
+      buttonGroup,
       foregroundPen,
       centerX - size,
       centerY,
@@ -465,7 +596,7 @@ export class DiagramSvgRenderer {
     if (!item.showChildElements) {
       // Vertical line for +
       this.svgLine(
-        group,
+        buttonGroup,
         foregroundPen,
         centerX,
         centerY - size,
@@ -474,12 +605,7 @@ export class DiagramSvgRenderer {
       );
     }
 
-    // Make button clickable
-    const button = group.lastChild as SVGElement;
-    if (button) {
-      button.setAttribute("class", "expand-button");
-      button.setAttribute("cursor", "pointer");
-    }
+    group.appendChild(buttonGroup);
   }
 
   /**
@@ -586,7 +712,8 @@ export class DiagramSvgRenderer {
     text: string,
     x: number,
     y: number,
-    style: string
+    style: string,
+    title?: string
   ): void {
     const textElement = document.createElementNS(
       "http://www.w3.org/2000/svg",
@@ -596,6 +723,17 @@ export class DiagramSvgRenderer {
     textElement.setAttribute("y", y.toString());
     textElement.setAttribute("style", style);
     textElement.textContent = text;
+
+    // Add title for tooltip if provided
+    if (title) {
+      const titleElement = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "title"
+      );
+      titleElement.textContent = title;
+      textElement.appendChild(titleElement);
+    }
+
     group.appendChild(textElement);
   }
 }

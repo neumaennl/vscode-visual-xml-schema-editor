@@ -26,11 +26,6 @@ export class DiagramBuilder {
     this.idCounter = 0;
 
     console.log("DiagramBuilder - Building from schema:", schemaObj);
-    console.log("DiagramBuilder - Schema type:", typeof schemaObj);
-    console.log(
-      "DiagramBuilder - Schema constructor:",
-      schemaObj?.constructor?.name
-    );
 
     // For now, create a simplified representation
     // TODO: Properly traverse the schema structure once we understand the generated class hierarchy better

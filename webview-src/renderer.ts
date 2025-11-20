@@ -16,7 +16,9 @@ export class DiagramRenderer {
   private currentDiagram: Diagram | null = null;
   private svgRenderer: DiagramSvgRenderer;
   private layout: DiagramLayout;
-  private onNodeClickCallback: ((node: DiagramItem) => void) | null = null;
+  private onNodeClickCallback:
+    | ((node: DiagramItem, isExpandButton: boolean) => void)
+    | null = null;
 
   constructor(canvas: SVGSVGElement, viewState: ViewState) {
     this.canvas = canvas;
@@ -31,7 +33,7 @@ export class DiagramRenderer {
     this.updateView(viewState);
 
     // Initialize diagram rendering components
-    this.svgRenderer = new DiagramSvgRenderer(this.canvas);
+    this.svgRenderer = new DiagramSvgRenderer(this.canvas, this.mainGroup);
     this.layout = new DiagramLayout();
 
     // Setup click handling
@@ -40,7 +42,7 @@ export class DiagramRenderer {
 
   public renderSchema(
     schemaObj: schema,
-    onNodeClick: (node: any) => void
+    onNodeClick: (node: DiagramItem, isExpandButton: boolean) => void
   ): void {
     this.onNodeClickCallback = onNodeClick;
     this.renderedNodes.clear();
@@ -51,9 +53,15 @@ export class DiagramRenderer {
     }
 
     try {
+      // Save expand state before rebuilding
+      const expandState = this.saveExpandState();
+
       // Build diagram from schema
       const builder = new DiagramBuilder();
       this.currentDiagram = builder.buildFromSchema(schemaObj);
+
+      // Restore expand state
+      this.restoreExpandState(expandState);
 
       // Calculate layout
       this.layout.layout(this.currentDiagram);
@@ -69,16 +77,41 @@ export class DiagramRenderer {
     }
   }
 
+  /**
+   * Refresh the current diagram (re-layout and re-render)
+   */
+  public refresh(): void {
+    if (!this.currentDiagram) return;
+
+    try {
+      // Recalculate layout
+      this.layout.layout(this.currentDiagram);
+
+      // Re-render to SVG
+      this.svgRenderer.render(this.currentDiagram);
+
+      // Apply view transformations
+      this.updateView(this.viewState);
+    } catch (error) {
+      this.showError(`Failed to refresh diagram: ${(error as Error).message}`);
+      console.error("Diagram refresh error:", error);
+    }
+  }
+
   private setupClickHandling(): void {
     this.canvas.addEventListener("click", (e: MouseEvent) => {
       const target = e.target as SVGElement;
 
-      // Check if clicked on expand button
-      if (target.classList.contains("expand-button")) {
-        const itemGroup = target.closest("[data-item-id]") as SVGElement;
+      // Check if clicked on expand button (or inside expand button group)
+      const expandButton = target.closest(".expand-button") as SVGElement;
+      if (expandButton) {
+        const itemGroup = expandButton.closest("[data-item-id]") as SVGElement;
         if (itemGroup) {
           const itemId = itemGroup.getAttribute("data-item-id");
-          this.toggleExpand(itemId);
+          const item = this.findItemById(itemId);
+          if (item && this.onNodeClickCallback) {
+            this.onNodeClickCallback(item, true);
+          }
         }
         e.stopPropagation();
         return;
@@ -90,7 +123,7 @@ export class DiagramRenderer {
         const itemId = itemGroup.getAttribute("data-item-id");
         const item = this.findItemById(itemId);
         if (item && this.onNodeClickCallback) {
-          this.onNodeClickCallback(item);
+          this.onNodeClickCallback(item, false);
         }
       }
     });
@@ -135,6 +168,47 @@ export class DiagramRenderer {
     return null;
   }
 
+  /**
+   * Save the expand state of all items in the diagram
+   */
+  private saveExpandState(): Map<string, boolean> {
+    const state = new Map<string, boolean>();
+    if (!this.currentDiagram) return state;
+
+    const saveItemState = (item: DiagramItem): void => {
+      state.set(item.id, item.showChildElements);
+      for (const child of item.childElements) {
+        saveItemState(child);
+      }
+    };
+
+    for (const root of this.currentDiagram.rootElements) {
+      saveItemState(root);
+    }
+
+    return state;
+  }
+
+  /**
+   * Restore the expand state of all items in the diagram
+   */
+  private restoreExpandState(state: Map<string, boolean>): void {
+    if (!this.currentDiagram) return;
+
+    const restoreItemState = (item: DiagramItem): void => {
+      if (state.has(item.id)) {
+        item.showChildElements = state.get(item.id)!;
+      }
+      for (const child of item.childElements) {
+        restoreItemState(child);
+      }
+    };
+
+    for (const root of this.currentDiagram.rootElements) {
+      restoreItemState(root);
+    }
+  }
+
   private createText(
     x: number,
     y: number,
@@ -151,6 +225,8 @@ export class DiagramRenderer {
 
   public updateView(viewState: ViewState): void {
     this.viewState = viewState;
+    // Apply scale first, then translate (order matters in SVG transforms)
+    // This way pan values work in screen space regardless of zoom
     this.mainGroup.setAttribute(
       "transform",
       `translate(${viewState.panX}, ${viewState.panY}) scale(${viewState.zoom})`

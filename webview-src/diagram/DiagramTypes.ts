@@ -49,12 +49,24 @@ export interface DiagramStyle {
   lineColor: string;
 }
 
+// Function to get computed CSS variable value
+function getCssVar(name: string, fallback: string): string {
+  if (typeof document !== "undefined") {
+    return (
+      getComputedStyle(document.documentElement)
+        .getPropertyValue(name)
+        .trim() || fallback
+    );
+  }
+  return fallback;
+}
+
 export const defaultDiagramStyle: DiagramStyle = {
-  fontFamily: "Arial, sans-serif",
+  fontFamily: getCssVar("--vscode-font-family", "Arial, sans-serif"),
   fontSize: 10,
   smallFontSize: 8,
   documentationFontSize: 9,
-  foregroundColor: "rgb(0,0,0)",
-  backgroundColor: "rgb(255,255,255)",
-  lineColor: "rgb(0,0,0)",
+  foregroundColor: getCssVar("--vscode-editor-foreground", "rgb(0,0,0)"),
+  backgroundColor: getCssVar("--vscode-editor-background", "rgb(255,255,255)"),
+  lineColor: getCssVar("--vscode-editor-foreground", "rgb(0,0,0)"),
 };

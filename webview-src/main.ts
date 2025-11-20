@@ -2,6 +2,7 @@ import { DiagramRenderer } from "./renderer";
 import { PropertyPanel } from "./propertyPanel";
 import { schema } from "../shared/types";
 import { VSCodeAPI, MessageFromExtension, ViewState } from "./webviewTypes";
+import { DiagramItem } from "./diagram";
 
 declare function acquireVsCodeApi(): VSCodeAPI;
 
@@ -71,61 +72,106 @@ class SchemaEditorApp {
       console.log("Schema keys:", Object.keys(schemaObj));
 
       // The renderer will need to traverse the schema structure
-      this.renderer.renderSchema(schemaObj, (node: any) => {
-        this.onNodeClick(node);
-      });
+      this.renderer.renderSchema(
+        schemaObj,
+        (item: DiagramItem, isExpandButton: boolean) => {
+          this.onNodeClick(item, isExpandButton);
+        }
+      );
+
+      // Center the diagram if this is the first render (no saved pan position)
+      if (this.viewState.panX === 0 && this.viewState.panY === 0) {
+        this.centerDiagram();
+      }
     } catch (error) {
       console.error("Error rendering schema:", error);
       this.showError(`Failed to render: ${(error as Error).message}`);
     }
   }
 
-  private onNodeClick(node: any): void {
-    // TODO: Adapt to work with generated class instances
-    this.propertyPanel.display(node);
+  private centerDiagram(): void {
+    const canvas = document.getElementById("schema-canvas");
+    if (!canvas) return;
 
-    this.vscode.postMessage({
-      command: "nodeClicked",
-      data: { nodeId: node.id },
-    });
+    // Get canvas dimensions
+    const canvasWidth = canvas.clientWidth;
+    const canvasHeight = canvas.clientHeight;
+
+    // Center the diagram by offsetting to middle of canvas
+    // Start with some offset from top-left to avoid toolbar
+    this.viewState.panX = canvasWidth / 2 - 100;
+    this.viewState.panY = canvasHeight / 2 - 100;
+
+    this.renderer.updateView(this.viewState);
+    this.saveState();
+  }
+
+  private onNodeClick(
+    item: DiagramItem,
+    isExpandButton: boolean = false
+  ): void {
+    if (isExpandButton) {
+      // Toggle expand/collapse
+      item.showChildElements = !item.showChildElements;
+
+      // Refresh the diagram (re-layout and re-render without rebuilding)
+      this.renderer.refresh();
+    } else {
+      // Display item properties in the property panel
+      this.propertyPanel.display(item);
+
+      // Notify extension about the selection
+      this.vscode.postMessage({
+        command: "nodeClicked",
+        data: { nodeId: item.id },
+      });
+    }
   }
 
   private setupToolbar(): void {
     const zoomInBtn = document.getElementById("zoomIn");
     const zoomOutBtn = document.getElementById("zoomOut");
     const fitViewBtn = document.getElementById("fitView");
-    const exportClassesBtn = document.getElementById("exportClasses");
 
     zoomInBtn?.addEventListener("click", () => {
-      this.viewState.zoom *= 1.2;
-      if (this.currentSchema) {
-        this.renderer.updateView(this.viewState);
-        this.saveState();
-      }
+      this.zoomTowardsCenter(1.2);
     });
 
     zoomOutBtn?.addEventListener("click", () => {
-      this.viewState.zoom *= 0.8;
-      if (this.currentSchema) {
-        this.renderer.updateView(this.viewState);
-        this.saveState();
-      }
+      this.zoomTowardsCenter(0.8);
     });
 
     fitViewBtn?.addEventListener("click", () => {
       this.viewState = { zoom: 1, panX: 0, panY: 0 };
       if (this.currentSchema) {
-        this.renderer.updateView(this.viewState);
-        this.saveState();
+        this.centerDiagram();
       }
     });
+  }
 
-    exportClassesBtn?.addEventListener("click", () => {
-      this.vscode.postMessage({
-        command: "requestClasses",
-        data: {},
-      });
-    });
+  private zoomTowardsCenter(delta: number): void {
+    if (!this.currentSchema) return;
+
+    const canvas = document.getElementById("schema-canvas");
+    if (!canvas) return;
+
+    // Get center of canvas
+    const centerX = canvas.clientWidth / 2;
+    const centerY = canvas.clientHeight / 2;
+
+    // Calculate point in diagram space before zoom
+    const pointX = (centerX - this.viewState.panX) / this.viewState.zoom;
+    const pointY = (centerY - this.viewState.panY) / this.viewState.zoom;
+
+    // Apply zoom
+    this.viewState.zoom *= delta;
+
+    // Adjust pan to keep the center point in the same position
+    this.viewState.panX = centerX - pointX * this.viewState.zoom;
+    this.viewState.panY = centerY - pointY * this.viewState.zoom;
+
+    this.renderer.updateView(this.viewState);
+    this.saveState();
   }
 
   private setupCanvasInteraction(): void {
@@ -136,36 +182,69 @@ class SchemaEditorApp {
     let isPanning = false;
     let startX = 0;
     let startY = 0;
+    let hasMoved = false;
 
     canvas.addEventListener("mousedown", (e: MouseEvent) => {
-      if (e.button === 1 || (e.button === 0 && e.ctrlKey)) {
+      const target = e.target as SVGElement;
+
+      // Allow panning with middle button, Ctrl+left button, or left button on canvas background
+      const isMiddleButton = e.button === 1;
+      const isCtrlLeftButton = e.button === 0 && e.ctrlKey;
+      const isBackgroundClick = e.button === 0 && target === canvas;
+
+      if (isMiddleButton || isCtrlLeftButton || isBackgroundClick) {
         isPanning = true;
+        hasMoved = false;
         startX = e.clientX - this.viewState.panX;
         startY = e.clientY - this.viewState.panY;
         e.preventDefault();
+        canvas.style.cursor = "grabbing";
       }
     });
 
-    document.addEventListener("mousemove", (e: MouseEvent) => {
+    canvas.addEventListener("mousemove", (e: MouseEvent) => {
       if (isPanning) {
+        hasMoved = true;
         this.viewState.panX = e.clientX - startX;
         this.viewState.panY = e.clientY - startY;
         this.renderer.updateView(this.viewState);
       }
     });
 
-    document.addEventListener("mouseup", () => {
+    canvas.addEventListener("mouseup", (e: MouseEvent) => {
       if (isPanning) {
         isPanning = false;
-        this.saveState();
+        canvas.style.cursor = "grab";
+        if (hasMoved) {
+          this.saveState();
+          // Prevent click event if we were panning
+          e.stopPropagation();
+        }
       }
     });
 
     // Zoom with mouse wheel
     canvas.addEventListener("wheel", (e: WheelEvent) => {
       e.preventDefault();
+
+      // Get mouse position relative to canvas
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+
+      // Calculate point in diagram space before zoom
+      const pointX = (mouseX - this.viewState.panX) / this.viewState.zoom;
+      const pointY = (mouseY - this.viewState.panY) / this.viewState.zoom;
+
+      // Apply zoom
       const delta = e.deltaY > 0 ? 0.9 : 1.1;
+      const oldZoom = this.viewState.zoom;
       this.viewState.zoom *= delta;
+
+      // Adjust pan to keep the point under the mouse in the same position
+      this.viewState.panX = mouseX - pointX * this.viewState.zoom;
+      this.viewState.panY = mouseY - pointY * this.viewState.zoom;
+
       this.renderer.updateView(this.viewState);
       this.saveState();
     });

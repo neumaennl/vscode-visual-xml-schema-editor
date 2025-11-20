@@ -67,6 +67,6 @@
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
-    "@neumaennl/xmlbind-ts": "^0.7.1"
+    "@neumaennl/xmlbind-ts": "^0.7.2"
   }
 }

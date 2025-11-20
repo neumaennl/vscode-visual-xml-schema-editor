@@ -1,26 +1,42 @@
 import { XmlRoot, XmlElement, XmlAttribute, XmlAnyAttribute } from '@neumaennl/xmlbind-ts';
+import { blockSet, derivationSet } from './enums';
 import { localSimpleType } from './localSimpleType';
 import { localComplexType } from './localComplexType';
 import { keybase } from './keybase';
 @XmlRoot('topLevelElement', { namespace: 'http://www.w3.org/2001/XMLSchema', prefixes: { 'http://www.w3.org/2001/XMLSchema': 'xs', 'http://www.w3.org/2001/XMLSchema-hasFacetAndProperty': 'hfp', 'http://www.w3.org/XML/1998/namespace': 'imp1' } })
 export class topLevelElement {
-  @XmlAttribute('ref')
-  ref?: String;
+  @XmlAnyAttribute()
+  _anyAttributes?: { [name: string]: string };
 
-  @XmlAttribute('form')
-  form?: String;
+  @XmlAttribute('id')
+  id?: String;
 
-  @XmlAttribute('minOccurs')
-  minOccurs?: String;
+  @XmlAttribute('type')
+  type_?: String;
 
-  @XmlAttribute('maxOccurs')
-  maxOccurs?: String;
+  @XmlAttribute('substitutionGroup')
+  substitutionGroup?: String;
+
+  @XmlAttribute('default')
+  default_?: String;
+
+  @XmlAttribute('fixed')
+  fixed?: String;
+
+  @XmlAttribute('nillable')
+  nillable?: Boolean;
+
+  @XmlAttribute('abstract')
+  abstract?: Boolean;
+
+  @XmlAttribute('final')
+  final?: derivationSet;
+
+  @XmlAttribute('block')
+  block?: blockSet;
 
   @XmlAttribute('name')
   name!: String;
-
-  @XmlAnyAttribute()
-  _anyAttributes?: { [name: string]: string };
 
   @XmlElement('annotation', { namespace: 'http://www.w3.org/2001/XMLSchema' })
   annotation?: any;

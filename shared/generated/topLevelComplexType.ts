@@ -1,4 +1,5 @@
 import { XmlRoot, XmlElement, XmlAttribute, XmlAnyAttribute } from '@neumaennl/xmlbind-ts';
+import { derivationSet } from './enums';
 import { groupRef } from './groupRef';
 import { all } from './all';
 import { explicitGroup } from './explicitGroup';
@@ -7,11 +8,26 @@ import { attributeGroupRef } from './attributeGroupRef';
 import { wildcard } from './wildcard';
 @XmlRoot('topLevelComplexType', { namespace: 'http://www.w3.org/2001/XMLSchema', prefixes: { 'http://www.w3.org/2001/XMLSchema': 'xs', 'http://www.w3.org/2001/XMLSchema-hasFacetAndProperty': 'hfp', 'http://www.w3.org/XML/1998/namespace': 'imp1' } })
 export class topLevelComplexType {
-  @XmlAttribute('name')
-  name!: String;
-
   @XmlAnyAttribute()
   _anyAttributes?: { [name: string]: string };
+
+  @XmlAttribute('id')
+  id?: String;
+
+  @XmlAttribute('mixed')
+  mixed?: Boolean;
+
+  @XmlAttribute('abstract')
+  abstract?: Boolean;
+
+  @XmlAttribute('final')
+  final?: derivationSet;
+
+  @XmlAttribute('block')
+  block?: derivationSet;
+
+  @XmlAttribute('name')
+  name!: String;
 
   @XmlElement('annotation', { namespace: 'http://www.w3.org/2001/XMLSchema' })
   annotation?: any;

@@ -33,5 +33,6 @@ module.exports = {
       patterns: [{ from: "webview-src/styles.css", to: "styles.css" }],
     }),
   ],
-  devtool: "source-map",
+  devtool:
+    process.env.NODE_ENV === "production" ? "source-map" : "inline-source-map",
 };

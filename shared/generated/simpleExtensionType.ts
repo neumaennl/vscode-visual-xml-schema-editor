@@ -1,4 +1,4 @@
-import { XmlRoot, XmlElement, XmlAnyAttribute } from '@neumaennl/xmlbind-ts';
+import { XmlRoot, XmlElement, XmlAttribute, XmlAnyAttribute } from '@neumaennl/xmlbind-ts';
 import { attribute } from './attribute';
 import { attributeGroupRef } from './attributeGroupRef';
 import { wildcard } from './wildcard';
@@ -6,6 +6,12 @@ import { wildcard } from './wildcard';
 export class simpleExtensionType {
   @XmlAnyAttribute()
   _anyAttributes?: { [name: string]: string };
+
+  @XmlAttribute('id')
+  id?: String;
+
+  @XmlAttribute('base')
+  base!: String;
 
   @XmlElement('annotation', { namespace: 'http://www.w3.org/2001/XMLSchema' })
   annotation?: any;

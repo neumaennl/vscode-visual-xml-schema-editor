@@ -1,4 +1,4 @@
-import { XmlRoot, XmlElement, XmlAnyAttribute } from '@neumaennl/xmlbind-ts';
+import { XmlRoot, XmlElement, XmlAttribute, XmlAnyAttribute } from '@neumaennl/xmlbind-ts';
 import { groupRef } from './groupRef';
 import { all } from './all';
 import { explicitGroup } from './explicitGroup';
@@ -9,6 +9,12 @@ import { wildcard } from './wildcard';
 export class complexRestrictionType {
   @XmlAnyAttribute()
   _anyAttributes?: { [name: string]: string };
+
+  @XmlAttribute('id')
+  id?: String;
+
+  @XmlAttribute('base')
+  base!: String;
 
   @XmlElement('annotation', { namespace: 'http://www.w3.org/2001/XMLSchema' })
   annotation?: any;

@@ -19,7 +19,10 @@
       "presentation": {
         "reveal": "never"
       },
-      "group": "build",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
       "label": "npm: watch"
     },
     {
@@ -36,10 +39,7 @@
         "npm: compile-webview"
       ],
       "dependsOrder": "parallel",
-      "group": {
-        "kind": "build",
-        "isDefault": true
-      },
+      "group": "build",
       "problemMatcher": []
     }
   ]

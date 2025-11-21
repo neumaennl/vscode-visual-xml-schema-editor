@@ -117,15 +117,16 @@ export class DiagramSvgRenderer {
     const foregroundPen = `stroke:${item.diagram?.style.lineColor};stroke-width:1;stroke-linecap:round`;
     const parentMidY = item.scaleInt(item.location.y + item.size.height / 2);
     const horizontalConnectorLength = 30; // Length of horizontal line from vertical to child
+    
+    // Calculate where the horizontal line from parent should start (after expand button)
+    // Expand button is at parent.x + parent.width + 5, with width 12, plus 5px spacing = +22
+    const expandButtonOffset = 22;
 
     if (item.childElements.length === 1) {
       // Single child - direct line
       const child = item.childElements[0];
       const childMidY = item.scaleInt(child.location.y + child.size.height / 2);
 
-      // Calculate where the horizontal line from parent should start (after expand button)
-      // Expand button is at parent.x + parent.width + 5, with width 12, plus 5px spacing = +22
-      const expandButtonOffset = 22;
       const parentLineStartX = item.scaleInt(
         item.location.x + item.size.width + expandButtonOffset
       );
@@ -168,16 +169,13 @@ export class DiagramSvgRenderer {
       const firstChild = item.childElements[0];
       const lastChild = item.childElements[item.childElements.length - 1];
 
-      // Position vertical line with some spacing before the children
-      const verticalLineX =
-        item.scaleInt(firstChild.location.x) - horizontalConnectorLength;
-
-      // Calculate where the horizontal line from parent should start (after expand button)
-      // Expand button is at parent.x + parent.width + 5, with width 12, plus 5px spacing = +22
-      const expandButtonOffset = 22;
       const parentLineStartX = item.scaleInt(
         item.location.x + item.size.width + expandButtonOffset
       );
+
+      // Position vertical line midway between parent button and children
+      const childStartX = item.scaleInt(firstChild.location.x);
+      const verticalLineX = Math.floor((parentLineStartX + childStartX) / 2);
 
       // Draw horizontal connectors from vertical line to each child
       for (const child of item.childElements) {
@@ -230,7 +228,7 @@ export class DiagramSvgRenderer {
     // Use semi-transparent background so it works with any theme
     const backgroundBrush = `fill:${item.diagram?.style.backgroundColor}`;
     const foregroundPen = `stroke:${item.diagram?.style.lineColor};stroke-width:2`;
-    const dashed = item.minOccurrence === 0 ? "stroke-dasharray:4,1;" : "";
+    const dashed = item.minOccurrence === 0 ? "stroke-dasharray:5,3;" : "";
 
     switch (item.itemType) {
       case DiagramItemType.element:

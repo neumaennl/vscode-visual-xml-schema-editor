@@ -15,7 +15,6 @@ export class DiagramLayout {
   private readonly GROUP_HEIGHT = 40;
   private readonly HORIZONTAL_SPACING = 40;
   private readonly VERTICAL_SPACING = 20;
-  private readonly CHILD_INDENT = 150;
   private readonly EXPAND_BUTTON_SIZE = 12;
   private readonly DOCUMENTATION_MAX_WIDTH = 200;
 
@@ -114,7 +113,13 @@ export class DiagramLayout {
    */
   private layoutChildren(parent: DiagramItem): void {
     let currentY = parent.location.y;
-    const startX = parent.location.x + this.CHILD_INDENT;
+    // Position children relative to parent's width + expand button + spacing
+    // Expand button: 5px gap + 12px button + 5px gap = 22px
+    // Use single spacing for one child (no vertical line), double spacing for multiple (with vertical line)
+    const horizontalSpacing = parent.childElements.length === 1 
+      ? this.HORIZONTAL_SPACING 
+      : this.HORIZONTAL_SPACING * 2;
+    const startX = parent.location.x + parent.size.width + 22 + horizontalSpacing;
 
     // Layout each child
     for (const child of parent.childElements) {

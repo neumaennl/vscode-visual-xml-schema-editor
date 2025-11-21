@@ -1,8 +1,6 @@
 node_modules/
 out/
-webview/*.js
-webview/*.js.map
-webview/*.d.ts
+webview/
 *.vsix
 .vscode-test/
 .DS_Store

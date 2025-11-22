@@ -13,12 +13,17 @@ export class DiagramBuilder {
   private elementMap: Map<string, DiagramItem> = new Map();
   private idCounter: number = 0;
 
+  /**
+   * Create a new DiagramBuilder
+   */
   constructor() {
     this.diagram = new Diagram();
   }
 
   /**
    * Build a diagram from a schema object
+   * @param schemaObj - The XSD schema object to build from
+   * @returns The constructed diagram
    */
   public buildFromSchema(schemaObj: schema | any): Diagram {
     this.diagram = new Diagram();
@@ -95,6 +100,11 @@ export class DiagramBuilder {
     return this.diagram;
   }
 
+  /**
+   * Create a diagram item node from an element definition
+   * @param element - Element definition from schema
+   * @returns The created diagram item or null if element is invalid
+   */
   private createElementNode(element: any): DiagramItem | null {
     if (!element || !element.name) {
       return null;
@@ -138,6 +148,11 @@ export class DiagramBuilder {
     return item;
   }
 
+  /**
+   * Create a diagram item node from a complex type definition
+   * @param complexType - Complex type definition from schema
+   * @returns The created diagram item or null if type is invalid
+   */
   private createComplexTypeNode(complexType: any): DiagramItem | null {
     if (!complexType || !complexType.name) {
       return null;
@@ -155,6 +170,11 @@ export class DiagramBuilder {
     return item;
   }
 
+  /**
+   * Create a diagram item node from a simple type definition
+   * @param simpleType - Simple type definition from schema
+   * @returns The created diagram item or null if type is invalid
+   */
   private createSimpleTypeNode(simpleType: any): DiagramItem | null {
     if (!simpleType || !simpleType.name) {
       return null;
@@ -180,6 +200,11 @@ export class DiagramBuilder {
     return item;
   }
 
+  /**
+   * Process a complex type and add its children to the parent item
+   * @param parent - Parent diagram item to add children to
+   * @param complexType - Complex type definition from schema
+   */
   private processComplexType(parent: DiagramItem, complexType: any): void {
     // Process sequence
     if (complexType.sequence) {
@@ -207,71 +232,58 @@ export class DiagramBuilder {
     }
   }
 
+  /**
+   * Process a sequence group in the schema
+   * @param parent - Parent diagram item to add the sequence to
+   * @param sequence - Sequence definition from schema
+   */
   private processSequence(parent: DiagramItem, sequence: any): void {
-    const groupNode = new DiagramItem(
-      this.generateId(),
-      "sequence",
-      DiagramItemType.group,
-      this.diagram
-    );
-    groupNode.groupType = DiagramItemGroupType.Sequence;
-
-    if (sequence.element) {
-      const elements = Array.isArray(sequence.element)
-        ? sequence.element
-        : [sequence.element];
-
-      for (const elem of elements) {
-        const elemNode = this.createElementNode(elem);
-        if (elemNode) {
-          groupNode.addChild(elemNode);
-        }
-      }
-    }
-
-    if (groupNode.childElements.length > 0) {
-      parent.addChild(groupNode);
-    }
+    this.processGroup(parent, sequence, "sequence", DiagramItemGroupType.Sequence);
   }
 
+  /**
+   * Process a choice group in the schema
+   * @param parent - Parent diagram item to add the choice to
+   * @param choice - Choice definition from schema
+   */
   private processChoice(parent: DiagramItem, choice: any): void {
-    const groupNode = new DiagramItem(
-      this.generateId(),
-      "choice",
-      DiagramItemType.group,
-      this.diagram
-    );
-    groupNode.groupType = DiagramItemGroupType.Choice;
-
-    if (choice.element) {
-      const elements = Array.isArray(choice.element)
-        ? choice.element
-        : [choice.element];
-
-      for (const elem of elements) {
-        const elemNode = this.createElementNode(elem);
-        if (elemNode) {
-          groupNode.addChild(elemNode);
-        }
-      }
-    }
-
-    if (groupNode.childElements.length > 0) {
-      parent.addChild(groupNode);
-    }
+    this.processGroup(parent, choice, "choice", DiagramItemGroupType.Choice);
   }
 
+  /**
+   * Process an all group in the schema
+   * @param parent - Parent diagram item to add the all group to
+   * @param all - All definition from schema
+   */
   private processAll(parent: DiagramItem, all: any): void {
+    this.processGroup(parent, all, "all", DiagramItemGroupType.All);
+  }
+
+  /**
+   * Generic method to process any group type (sequence, choice, all)
+   * @param parent - Parent diagram item to add the group to
+   * @param groupDef - Group definition from schema
+   * @param name - Name of the group type
+   * @param groupType - Type of the group
+   */
+  private processGroup(
+    parent: DiagramItem,
+    groupDef: any,
+    name: string,
+    groupType: DiagramItemGroupType
+  ): void {
     const groupNode = new DiagramItem(
       this.generateId(),
-      "all",
+      name,
       DiagramItemType.group,
       this.diagram
     );
-    groupNode.groupType = DiagramItemGroupType.All;
+    groupNode.groupType = groupType;
 
-    if (all.element) {
-      const elements = Array.isArray(all.element) ? all.element : [all.element];
+    if (groupDef.element) {
+      const elements = Array.isArray(groupDef.element)
+        ? groupDef.element
+        : [groupDef.element];
 
       for (const elem of elements) {
         const elemNode = this.createElementNode(elem);
@@ -286,6 +298,11 @@ export class DiagramBuilder {
     }
   }
 
+  /**
+   * Process an extension and apply it to the parent item
+   * @param parent - Parent diagram item to extend
+   * @param extension - Extension definition from schema
+   */
   private processExtension(parent: DiagramItem, extension: any): void {
     // Process base type reference
     if (extension.base) {
@@ -298,6 +315,10 @@ export class DiagramBuilder {
     }
   }
 
+  /**
+   * Generate a unique ID for a diagram item
+   * @returns A unique string identifier
+   */
   private generateId(): string {
     return `item_${this.idCounter++}`;
   }

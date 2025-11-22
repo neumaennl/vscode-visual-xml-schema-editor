@@ -20,6 +20,11 @@ export class DiagramRenderer {
     | ((node: DiagramItem, isExpandButton: boolean) => void)
     | null = null;
 
+  /**
+   * Create a new DiagramRenderer
+   * @param canvas - The SVG canvas element to render into
+   * @param viewState - Initial view state (zoom and pan)
+   */
   constructor(canvas: SVGSVGElement, viewState: ViewState) {
     this.canvas = canvas;
     this.viewState = viewState;
@@ -40,6 +45,11 @@ export class DiagramRenderer {
     this.setupClickHandling();
   }
 
+  /**
+   * Render a schema object to the canvas
+   * @param schemaObj - The schema to render
+   * @param onNodeClick - Callback function for node click events
+   */
   public renderSchema(
     schemaObj: schema,
     onNodeClick: (node: DiagramItem, isExpandButton: boolean) => void
@@ -78,7 +88,8 @@ export class DiagramRenderer {
   }
 
   /**
-   * Refresh the current diagram (re-layout and re-render)
+   * Refresh the current diagram by re-calculating layout and re-rendering
+   * without rebuilding from schema
    */
   public refresh(): void {
     if (!this.currentDiagram) return;
@@ -98,6 +109,9 @@ export class DiagramRenderer {
     }
   }
 
+  /**
+   * Set up click event handlers for diagram items and expand buttons
+   */
   private setupClickHandling(): void {
     this.canvas.addEventListener("click", (e: MouseEvent) => {
       const target = e.target as SVGElement;
@@ -129,6 +143,10 @@ export class DiagramRenderer {
     });
   }
 
+  /**
+   * Toggle the expand/collapse state of a diagram item
+   * @param itemId - ID of the item to toggle
+   */
   private toggleExpand(itemId: string | null): void {
     if (!itemId || !this.currentDiagram) return;
 
@@ -146,6 +164,11 @@ export class DiagramRenderer {
     this.updateView(this.viewState);
   }
 
+  /**
+   * Find a diagram item by its ID
+   * @param itemId - ID of the item to find
+   * @returns The diagram item or null if not found
+   */
   private findItemById(itemId: string | null): DiagramItem | null {
     if (!itemId || !this.currentDiagram) return null;
 
@@ -169,7 +192,8 @@ export class DiagramRenderer {
   }
 
   /**
-   * Save the expand state of all items in the diagram
+   * Save the expand/collapse state of all items in the diagram
+   * @returns A map of item IDs to their expand state
    */
   private saveExpandState(): Map<string, boolean> {
     const state = new Map<string, boolean>();
@@ -190,7 +214,8 @@ export class DiagramRenderer {
   }
 
   /**
-   * Restore the expand state of all items in the diagram
+   * Restore the expand/collapse state of all items in the diagram
+   * @param state - Map of item IDs to their expand state
    */
   private restoreExpandState(state: Map<string, boolean>): void {
     if (!this.currentDiagram) return;
@@ -209,6 +234,14 @@ export class DiagramRenderer {
     }
   }
 
+  /**
+   * Create an SVG text element
+   * @param x - X coordinate
+   * @param y - Y coordinate
+   * @param content - Text content
+   * @param className - CSS class name
+   * @returns The created SVG text element
+   */
   private createText(
     x: number,
     y: number,
@@ -223,6 +256,10 @@ export class DiagramRenderer {
     return text;
   }
 
+  /**
+   * Update the view transformation (zoom and pan)
+   * @param viewState - New view state to apply
+   */
   public updateView(viewState: ViewState): void {
     this.viewState = viewState;
     // Apply scale first, then translate (order matters in SVG transforms)
@@ -233,6 +270,10 @@ export class DiagramRenderer {
     );
   }
 
+  /**
+   * Select a specific node in the diagram
+   * @param nodeId - ID of the node to select
+   */
   public selectNode(nodeId: string): void {
     // Remove selection from all nodes
     this.canvas.querySelectorAll(".diagram-item").forEach((el) => {
@@ -246,6 +287,10 @@ export class DiagramRenderer {
     }
   }
 
+  /**
+   * Display an error message on the canvas
+   * @param message - Error message to display
+   */
   public showError(message: string): void {
     // Clear canvas and show error
     this.canvas.innerHTML = "";
@@ -259,6 +304,10 @@ export class DiagramRenderer {
     this.mainGroup.appendChild(text);
   }
 
+  /**
+   * Display an informational message on the canvas
+   * @param message - Message to display
+   */
   public showMessage(message: string): void {
     // Clear canvas and show message
     this.canvas.innerHTML = "";

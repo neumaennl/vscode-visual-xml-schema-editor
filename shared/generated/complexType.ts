@@ -7,11 +7,21 @@ import { explicitGroup } from './explicitGroup';
 import { attribute } from './attribute';
 import { attributeGroupRef } from './attributeGroupRef';
 import { wildcard } from './wildcard';
+/**
+ * Will be restricted to required or forbidden
+ */
 @XmlRoot('complexType', { namespace: 'http://www.w3.org/2001/XMLSchema', prefixes: { 'http://www.w3.org/2001/XMLSchema': 'xs', 'http://www.w3.org/2001/XMLSchema-hasFacetAndProperty': 'hfp', 'http://www.w3.org/XML/1998/namespace': 'imp1' } })
 export class complexType extends annotated {
+  /**
+   * Will be restricted to required or forbidden
+   */
   @XmlAttribute('name')
   name?: String;
 
+  /**
+   * Not allowed if simpleContent child is chosen.
+   * May be overriden by setting on complexContent child.
+   */
   @XmlAttribute('mixed')
   mixed?: Boolean;
 

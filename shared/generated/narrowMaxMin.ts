@@ -3,6 +3,9 @@ import { blockSet, formChoice } from './enums';
 import { localSimpleType } from './localSimpleType';
 import { localComplexType } from './localComplexType';
 import { keybase } from './keybase';
+/**
+ * restricted max/min
+ */
 @XmlRoot('narrowMaxMin', { namespace: 'http://www.w3.org/2001/XMLSchema', prefixes: { 'http://www.w3.org/2001/XMLSchema': 'xs', 'http://www.w3.org/2001/XMLSchema-hasFacetAndProperty': 'hfp', 'http://www.w3.org/XML/1998/namespace': 'imp1' } })
 export class narrowMaxMin {
   @XmlAnyAttribute()

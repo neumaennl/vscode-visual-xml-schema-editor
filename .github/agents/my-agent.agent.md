@@ -15,6 +15,9 @@ For everything I tell you to do, remember these base rules:
 - no TypeScript file should have more than 500 lines
   - extract code into functions in a separate file if necessary
 - no function should have more than 120 lines
+- avoid code duplication
+  - extract duplicated code into functions or classes
+- follow best practices for TypeScript and VS Code extensions
 - all code should be tested
   - test files should only test one feature
   - avoid scattering test cases for the same feature over multiple test files

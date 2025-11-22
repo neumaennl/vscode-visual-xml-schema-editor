@@ -5,7 +5,6 @@
 
 import { DiagramItem } from "./DiagramItem";
 import {
-  DiagramAlignement,
   Size,
   Rectangle,
   DiagramStyle,
@@ -21,12 +20,9 @@ export class Diagram {
   public padding: Size = { width: 20, height: 20 };
   public boundingBox: Rectangle = { x: 0, y: 0, width: 0, height: 0 };
   public scale: number = 1.0;
-  public alignement: DiagramAlignement = DiagramAlignement.Near;
-  public showBoundingBox: boolean = false;
   public showDocumentation: boolean = true;
   public alwaysShowOccurence: boolean = false;
   public showType: boolean = true;
-  public compactLayoutDensity: boolean = false;
 
   // Style settings
   public style: DiagramStyle = { ...defaultDiagramStyle };

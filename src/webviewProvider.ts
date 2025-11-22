@@ -83,16 +83,7 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
       case "nodeClicked":
         console.log("Node clicked:", message.data);
         break;
-      case "requestClasses":
-        // Send information about generated classes
-        await this.sendGeneratedClassesInfo(message.data.webview);
-        break;
     }
-  }
-
-  private async sendGeneratedClassesInfo(webview: vscode.Webview) {
-    // This could send metadata about generated classes to the webview
-    // for enhanced editing capabilities
   }
 
   private async applySchemaChanges(

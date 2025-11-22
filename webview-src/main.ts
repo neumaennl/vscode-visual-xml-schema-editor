@@ -13,6 +13,9 @@ class SchemaEditorApp {
   private currentSchema: schema | null = null;
   private viewState: ViewState;
 
+  /**
+   * Create and initialize the schema editor application
+   */
   constructor() {
     this.vscode = acquireVsCodeApi();
     this.viewState = { zoom: 1, panX: 0, panY: 0 };
@@ -42,6 +45,9 @@ class SchemaEditorApp {
     }
   }
 
+  /**
+   * Set up message listener for communication with VS Code extension
+   */
   private setupMessageListener(): void {
     window.addEventListener(
       "message",
@@ -61,6 +67,10 @@ class SchemaEditorApp {
     );
   }
 
+  /**
+   * Render a schema object to the diagram
+   * @param schemaObj - The schema to render
+   */
   private renderSchema(schemaObj: schema): void {
     if (!schemaObj) {
       this.showMessage("No schema to display");
@@ -89,6 +99,9 @@ class SchemaEditorApp {
     }
   }
 
+  /**
+   * Center the diagram in the canvas viewport
+   */
   private centerDiagram(): void {
     const canvas = document.getElementById("schema-canvas");
     if (!canvas) return;
@@ -106,6 +119,11 @@ class SchemaEditorApp {
     this.saveState();
   }
 
+  /**
+   * Handle node click events
+   * @param item - The diagram item that was clicked
+   * @param isExpandButton - True if the expand button was clicked
+   */
   private onNodeClick(
     item: DiagramItem,
     isExpandButton: boolean = false
@@ -128,6 +146,9 @@ class SchemaEditorApp {
     }
   }
 
+  /**
+   * Set up toolbar button event handlers
+   */
   private setupToolbar(): void {
     const zoomInBtn = document.getElementById("zoomIn");
     const zoomOutBtn = document.getElementById("zoomOut");
@@ -149,6 +170,10 @@ class SchemaEditorApp {
     });
   }
 
+  /**
+   * Zoom towards the center of the canvas
+   * @param delta - Zoom factor (e.g., 1.2 for zoom in, 0.8 for zoom out)
+   */
   private zoomTowardsCenter(delta: number): void {
     if (!this.currentSchema) return;
 
@@ -174,6 +199,9 @@ class SchemaEditorApp {
     this.saveState();
   }
 
+  /**
+   * Set up canvas interaction handlers for panning and zooming
+   */
   private setupCanvasInteraction(): void {
     const canvas = document.getElementById("schema-canvas");
     if (!canvas || !(canvas instanceof SVGSVGElement)) {
@@ -250,14 +278,25 @@ class SchemaEditorApp {
     });
   }
 
+  /**
+   * Display an error message
+   * @param message - Error message to display
+   */
   private showError(message: string): void {
     this.renderer.showError(message);
   }
 
+  /**
+   * Display an informational message
+   * @param message - Message to display
+   */
   private showMessage(message: string): void {
     this.renderer.showMessage(message);
   }
 
+  /**
+   * Save the current application state to VS Code
+   */
   private saveState(): void {
     this.vscode.setState({
       schema: this.currentSchema,

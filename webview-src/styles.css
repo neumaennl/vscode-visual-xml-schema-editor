@@ -115,29 +115,6 @@ body {
   margin-top: 2px;
 }
 
-/* SVG Node Styles */
-.schema-node {
-  cursor: pointer;
-  transition: opacity 0.2s;
-}
-
-.schema-node:hover {
-  opacity: 0.8;
-}
-
-.schema-node.selected rect {
-  stroke: var(--vscode-focusBorder);
-  stroke-width: 3;
-  filter: drop-shadow(0 0 5px var(--vscode-focusBorder));
-}
-
-.schema-node rect {
-  fill: var(--vscode-editor-background);
-  stroke: var(--vscode-panel-border);
-  stroke-width: 2;
-  transition: all 0.2s;
-}
-
 /* Diagram item styles (from xsddiagram port) */
 .diagram-item {
   cursor: pointer;
@@ -161,88 +138,6 @@ body {
 
 .expand-button:hover {
   opacity: 0.8;
-}
-
-/* Node type-specific colors */
-.node-element rect {
-  fill: #4a90e2;
-  fill-opacity: 0.2;
-  stroke: #4a90e2;
-}
-
-.node-complexType rect {
-  fill: #e27a3f;
-  fill-opacity: 0.2;
-  stroke: #e27a3f;
-}
-
-.node-simpleType rect {
-  fill: #9b59b6;
-  fill-opacity: 0.2;
-  stroke: #9b59b6;
-}
-
-.node-sequence rect {
-  fill: #45b7af;
-  fill-opacity: 0.2;
-  stroke: #45b7af;
-}
-
-.node-choice rect {
-  fill: #df5a49;
-  fill-opacity: 0.2;
-  stroke: #df5a49;
-}
-
-.node-all rect {
-  fill: #f39c12;
-  fill-opacity: 0.2;
-  stroke: #f39c12;
-}
-
-.node-group rect {
-  fill: #16a085;
-  fill-opacity: 0.2;
-  stroke: #16a085;
-}
-
-.node-attribute rect {
-  fill: #8e44ad;
-  fill-opacity: 0.2;
-  stroke: #8e44ad;
-}
-
-.node-any rect {
-  fill: #95a5a6;
-  fill-opacity: 0.2;
-  stroke: #95a5a6;
-}
-
-.node-label {
-  fill: var(--vscode-editor-foreground);
-  font-size: 14px;
-  font-weight: bold;
-  pointer-events: none;
-}
-
-.node-type {
-  fill: var(--vscode-descriptionForeground);
-  font-size: 11px;
-  pointer-events: none;
-}
-
-.node-cardinality {
-  fill: var(--vscode-descriptionForeground);
-  font-size: 10px;
-  font-style: italic;
-  pointer-events: none;
-}
-
-.connection-line {
-  stroke: var(--vscode-panel-border);
-  stroke-width: 2;
-  fill: none;
-  pointer-events: none;
 }
 
 .error-message {

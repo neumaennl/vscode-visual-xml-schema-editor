@@ -139,7 +139,6 @@ export class DiagramSvgRenderer {
 
     const foregroundPen = `stroke:${item.diagram?.style.lineColor};stroke-width:1;stroke-linecap:round`;
     const parentMidY = item.scaleInt(item.location.y + item.size.height / 2);
-    const horizontalConnectorLength = 30; // Length of horizontal line from vertical to child
     
     // Calculate where the horizontal line from parent should start (after expand button)
     // Expand button is at parent.x + parent.width + 5, with width 12, plus 5px spacing = +22
@@ -253,7 +252,7 @@ export class DiagramSvgRenderer {
     // Use semi-transparent background so it works with any theme
     const backgroundBrush = `fill:${item.diagram?.style.backgroundColor}`;
     const foregroundPen = `stroke:${item.diagram?.style.lineColor};stroke-width:2`;
-    const dashed = item.minOccurrence === 0 ? "stroke-dasharray:5,3;" : "";
+      const dashed = item.minOccurrence === 0 ? ";stroke-dasharray:5,3" : "";
 
     switch (item.itemType) {
       case DiagramItemType.element:

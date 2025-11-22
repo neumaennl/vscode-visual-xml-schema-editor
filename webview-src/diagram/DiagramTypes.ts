@@ -16,12 +16,6 @@ export enum DiagramItemGroupType {
   All = "all",
 }
 
-export enum DiagramAlignement {
-  Near = "near",
-  Center = "center",
-  Far = "far",
-}
-
 export interface Point {
   x: number;
   y: number;
@@ -49,24 +43,26 @@ export interface DiagramStyle {
   lineColor: string;
 }
 
-// Function to get computed CSS variable value
-function getCssVar(name: string, fallback: string): string {
-  if (typeof document !== "undefined") {
-    return (
-      getComputedStyle(document.documentElement)
-        .getPropertyValue(name)
-        .trim() || fallback
-    );
+  /**
+   * Get computed value of a CSS variable from the document root
+   */
+  function getCssVar(name: string, fallback: string): string {
+    if (typeof document !== "undefined") {
+      return (
+        getComputedStyle(document.documentElement)
+          .getPropertyValue(name)
+          .trim() || fallback
+      );
+    }
+    return fallback;
   }
-  return fallback;
-}
 
-export const defaultDiagramStyle: DiagramStyle = {
-  fontFamily: getCssVar("--vscode-font-family", "Arial, sans-serif"),
-  fontSize: 10,
-  smallFontSize: 8,
-  documentationFontSize: 9,
-  foregroundColor: getCssVar("--vscode-editor-foreground", "rgb(0,0,0)"),
-  backgroundColor: getCssVar("--vscode-editor-background", "rgb(255,255,255)"),
-  lineColor: getCssVar("--vscode-editor-foreground", "rgb(0,0,0)"),
-};
+  export const defaultDiagramStyle: DiagramStyle = {
+    fontFamily: getCssVar("--vscode-font-family", "Arial, sans-serif"),
+    fontSize: 10,
+    smallFontSize: 8,
+    documentationFontSize: 9,
+    foregroundColor: getCssVar("--vscode-editor-foreground", "rgb(0,0,0)"),
+    backgroundColor: getCssVar("--vscode-editor-background", "rgb(255,255,255)"),
+    lineColor: getCssVar("--vscode-editor-foreground", "rgb(0,0,0)"),
+  };

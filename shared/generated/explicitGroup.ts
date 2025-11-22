@@ -2,6 +2,9 @@ import { XmlRoot, XmlElement, XmlAttribute, XmlAnyAttribute } from '@neumaennl/x
 import { allNNI } from './enums';
 import { localElement } from './localElement';
 import { groupRef } from './groupRef';
+/**
+ * group type for the three kinds of group
+ */
 @XmlRoot('explicitGroup', { namespace: 'http://www.w3.org/2001/XMLSchema', prefixes: { 'http://www.w3.org/2001/XMLSchema': 'xs', 'http://www.w3.org/2001/XMLSchema-hasFacetAndProperty': 'hfp', 'http://www.w3.org/XML/1998/namespace': 'imp1' } })
 export class explicitGroup {
   @XmlAnyAttribute()

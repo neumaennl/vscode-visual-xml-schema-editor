@@ -4,6 +4,13 @@ import { annotated } from './annotated';
 import { localSimpleType } from './localSimpleType';
 import { localComplexType } from './localComplexType';
 import { keybase } from './keybase';
+/**
+ * The element element can be used either
+ * at the top level to define an element-type binding globally,
+ * or within a content model to either reference a globally-defined
+ * element or type or declare an element-type binding locally.
+ * The ref form is not allowed at the top level.
+ */
 @XmlRoot('element', { namespace: 'http://www.w3.org/2001/XMLSchema', prefixes: { 'http://www.w3.org/2001/XMLSchema': 'xs', 'http://www.w3.org/2001/XMLSchema-hasFacetAndProperty': 'hfp', 'http://www.w3.org/XML/1998/namespace': 'imp1' } })
 export class element extends annotated {
   @XmlAttribute('type')

@@ -1,4 +1,5 @@
 import { XmlRoot, XmlElement, XmlAttribute, XmlAnyAttribute } from '@neumaennl/xmlbind-ts';
+import { annotationType } from './annotationType';
 import { attribute } from './attribute';
 import { attributeGroupRef } from './attributeGroupRef';
 import { wildcard } from './wildcard';
@@ -13,8 +14,8 @@ export class namedAttributeGroup {
   @XmlAttribute('name')
   name!: String;
 
-  @XmlElement('annotation', { namespace: 'http://www.w3.org/2001/XMLSchema' })
-  annotation?: any;
+  @XmlElement('annotation', { type: annotationType, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  annotation?: annotationType;
 
   @XmlElement('attribute', { type: attribute, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
   attribute?: attribute[];

@@ -1,5 +1,6 @@
 import { XmlRoot, XmlElement, XmlAttribute } from '@neumaennl/xmlbind-ts';
 import { openAttrs } from './openAttrs';
+import { annotationType } from './annotationType';
 /**
  * This type is extended by all types which allow annotation
  * other than <schema> itself
@@ -9,7 +10,7 @@ export class annotated extends openAttrs {
   @XmlAttribute('id')
   id?: String;
 
-  @XmlElement('annotation', { namespace: 'http://www.w3.org/2001/XMLSchema' })
-  annotation?: any;
+  @XmlElement('annotation', { type: annotationType, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  annotation?: annotationType;
 
 }

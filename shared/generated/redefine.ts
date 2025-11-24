@@ -1,30 +1,4 @@
-import { XmlRoot, XmlElement, XmlAttribute } from '@neumaennl/xmlbind-ts';
-import { openAttrs } from './openAttrs';
-import { topLevelSimpleType } from './topLevelSimpleType';
-import { topLevelComplexType } from './topLevelComplexType';
-import { namedGroup } from './namedGroup';
-import { namedAttributeGroup } from './namedAttributeGroup';
+import { XmlRoot } from '@neumaennl/xmlbind-ts';
+import { redefineType } from './redefineType';
 @XmlRoot('redefine', { namespace: 'http://www.w3.org/2001/XMLSchema', prefixes: { 'http://www.w3.org/2001/XMLSchema': 'xs', 'http://www.w3.org/2001/XMLSchema-hasFacetAndProperty': 'hfp', 'http://www.w3.org/XML/1998/namespace': 'imp1' } })
-export class redefine extends openAttrs {
-  @XmlAttribute('schemaLocation')
-  schemaLocation!: String;
-
-  @XmlAttribute('id')
-  id?: String;
-
-  @XmlElement('annotation', { array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
-  annotation?: any[];
-
-  @XmlElement('simpleType', { type: topLevelSimpleType, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
-  simpleType?: topLevelSimpleType[];
-
-  @XmlElement('complexType', { type: topLevelComplexType, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
-  complexType?: topLevelComplexType[];
-
-  @XmlElement('group', { type: namedGroup, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
-  group?: namedGroup[];
-
-  @XmlElement('attributeGroup', { type: namedAttributeGroup, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
-  attributeGroup?: namedAttributeGroup[];
-
-}
+export class redefine extends redefineType {}

@@ -1,8 +1,12 @@
 import { XmlRoot, XmlElement, XmlAttribute, XmlAnyAttribute } from '@neumaennl/xmlbind-ts';
+import { annotationType } from './annotationType';
 import { localSimpleType } from './localSimpleType';
 import { facet } from './facet';
+import { totalDigitsType } from './totalDigitsType';
 import { numFacet } from './numFacet';
 import { noFixedFacet } from './noFixedFacet';
+import { whiteSpaceType } from './whiteSpaceType';
+import { patternType } from './patternType';
 import { attribute } from './attribute';
 import { attributeGroupRef } from './attributeGroupRef';
 import { wildcard } from './wildcard';
@@ -21,8 +25,8 @@ export class simpleRestrictionType {
   @XmlAttribute('base')
   base!: String;
 
-  @XmlElement('annotation', { namespace: 'http://www.w3.org/2001/XMLSchema' })
-  annotation?: any;
+  @XmlElement('annotation', { type: annotationType, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  annotation?: annotationType;
 
   @XmlElement('simpleType', { type: localSimpleType, namespace: 'http://www.w3.org/2001/XMLSchema' })
   simpleType?: localSimpleType;
@@ -39,8 +43,8 @@ export class simpleRestrictionType {
   @XmlElement('maxInclusive', { type: facet, namespace: 'http://www.w3.org/2001/XMLSchema' })
   maxInclusive?: facet;
 
-  @XmlElement('totalDigits', { namespace: 'http://www.w3.org/2001/XMLSchema' })
-  totalDigits?: any;
+  @XmlElement('totalDigits', { type: totalDigitsType, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  totalDigits?: totalDigitsType;
 
   @XmlElement('fractionDigits', { type: numFacet, namespace: 'http://www.w3.org/2001/XMLSchema' })
   fractionDigits?: numFacet;
@@ -57,11 +61,11 @@ export class simpleRestrictionType {
   @XmlElement('enumeration', { type: noFixedFacet, namespace: 'http://www.w3.org/2001/XMLSchema' })
   enumeration?: noFixedFacet;
 
-  @XmlElement('whiteSpace', { namespace: 'http://www.w3.org/2001/XMLSchema' })
-  whiteSpace?: any;
+  @XmlElement('whiteSpace', { type: whiteSpaceType, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  whiteSpace?: whiteSpaceType;
 
-  @XmlElement('pattern', { namespace: 'http://www.w3.org/2001/XMLSchema' })
-  pattern?: any;
+  @XmlElement('pattern', { type: patternType, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  pattern?: patternType;
 
   @XmlElement('attribute', { type: attribute, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
   attribute?: attribute[];

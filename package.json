@@ -58,7 +58,7 @@
     "@types/vscode": "^1.74.0",
     "@vscode/vsce": "^2.22.0",
     "concurrently": "^8.2.2",
-    "copy-webpack-plugin": "^11.0.0",
+    "copy-webpack-plugin": "^13.0.1",
     "css-loader": "^6.8.1",
     "rimraf": "^5.0.5",
     "style-loader": "^3.3.3",

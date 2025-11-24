@@ -42,13 +42,14 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile && npm run compile-webview",
-    "compile": "tsc -p ./tsconfig.json",
+    "vscode:prepublish": "npm run compile",
+    "compile": "npm run compile-extension && npm run compile-webview",
+    "compile-extension": "tsc -p ./tsconfig.json",
     "compile-webview": "webpack --mode production",
     "watch": "concurrently \"npm run watch-extension\" \"npm run watch-webview\"",
     "watch-extension": "tsc -watch -p ./tsconfig.json",
     "watch-webview": "webpack --mode development --watch",
-    "pretest": "npm run compile && npm run compile-webview",
+    "pretest": "npm run compile",
     "package": "vsce package",
     "clean": "rimraf out webview"
   },

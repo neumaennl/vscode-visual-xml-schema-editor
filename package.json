@@ -61,7 +61,7 @@
     "copy-webpack-plugin": "^11.0.0",
     "css-loader": "^6.8.1",
     "rimraf": "^5.0.5",
-    "style-loader": "^3.3.3",
+    "style-loader": "^4.0.0",
     "ts-loader": "^9.5.0",
     "typescript": "^5.0.0",
     "webpack": "^5.89.0",

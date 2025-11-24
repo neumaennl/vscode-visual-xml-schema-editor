@@ -54,7 +54,7 @@
     "clean": "rimraf out webview"
   },
   "devDependencies": {
-    "@types/node": "^18.0.0",
+    "@types/node": "^24.10.1",
     "@types/vscode": "^1.74.0",
     "@vscode/vsce": "^2.22.0",
     "concurrently": "^9.2.1",

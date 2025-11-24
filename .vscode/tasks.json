@@ -5,42 +5,67 @@
   "tasks": [
     {
       "type": "npm",
-      "script": "compile",
+      "script": "compile-extension",
       "group": "build",
       "problemMatcher": "$tsc",
-      "label": "npm: compile",
+      "label": "npm: compile-extension",
       "detail": "tsc -p ./tsconfig.json"
     },
     {
       "type": "npm",
-      "script": "watch",
-      "problemMatcher": "$tsc-watch",
-      "isBackground": true,
-      "presentation": {
-        "reveal": "never"
-      },
-      "group": {
-        "kind": "build",
-        "isDefault": true
-      },
-      "label": "npm: watch"
-    },
-    {
-      "type": "npm",
       "script": "compile-webview",
-      "problemMatcher": [],
       "group": "build",
       "label": "npm: compile-webview"
     },
     {
       "label": "Build All",
       "dependsOn": [
-        "npm: compile",
+        "npm: compile-extension",
         "npm: compile-webview"
       ],
       "dependsOrder": "parallel",
+      "group": "build"
+    },
+    {
+      "type": "npm",
+      "script": "watch-extension",
       "group": "build",
-      "problemMatcher": []
+      "problemMatcher": "$tsc-watch",
+      "label": "npm: watch-extension",
+      "isBackground": true
+    },
+    {
+      "type": "npm",
+      "script": "watch-webview",
+      "group": "build",
+      "label": "npm: watch-webview",
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "custom",
+        "pattern": {
+          "regexp": "\\[tsl\\] ERROR in ((\\/[\\w-]+)+\\.ts)\\((\\d+,\\d+)\\)\\n\\s+(.*)",
+          "file": 1,
+          "location": 3,
+          "message": 4
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".*",
+          "endsPattern": "webpack \\d\\.\\d+\\.\\d compiled .*"
+        }
+      }
+    },
+    {
+      "label": "Watch All",
+      "dependsOn": [
+        "npm: watch-extension",
+        "npm: watch-webview"
+      ],
+      "dependsOrder": "parallel",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
     }
   ]
 }

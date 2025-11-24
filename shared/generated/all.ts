@@ -1,4 +1,5 @@
 import { XmlRoot, XmlElement, XmlAttribute, XmlAnyAttribute } from '@neumaennl/xmlbind-ts';
+import { annotationType } from './annotationType';
 import { narrowMaxMin } from './narrowMaxMin';
 /**
  * Only elements allowed inside
@@ -17,8 +18,8 @@ export class all {
   @XmlAttribute('maxOccurs')
   maxOccurs?: String;
 
-  @XmlElement('annotation', { namespace: 'http://www.w3.org/2001/XMLSchema' })
-  annotation?: any;
+  @XmlElement('annotation', { type: annotationType, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  annotation?: annotationType;
 
   @XmlElement('element', { type: narrowMaxMin, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
   element?: narrowMaxMin[];

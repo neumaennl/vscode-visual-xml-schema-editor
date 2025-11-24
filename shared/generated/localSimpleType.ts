@@ -1,4 +1,8 @@
 import { XmlRoot, XmlElement, XmlAttribute, XmlAnyAttribute } from '@neumaennl/xmlbind-ts';
+import { annotationType } from './annotationType';
+import { restrictionType } from './restrictionType';
+import { listType } from './listType';
+import { unionType } from './unionType';
 /**
  * Forbidden when nested
  */
@@ -10,28 +14,28 @@ export class localSimpleType {
   @XmlAttribute('id')
   id?: String;
 
-  @XmlElement('annotation', { namespace: 'http://www.w3.org/2001/XMLSchema' })
-  annotation?: any;
+  @XmlElement('annotation', { type: annotationType, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  annotation?: annotationType;
 
   /**
    * base attribute and simpleType child are mutually
    * exclusive, but one or other is required
    */
-  @XmlElement('restriction', { namespace: 'http://www.w3.org/2001/XMLSchema' })
-  restriction?: any;
+  @XmlElement('restriction', { type: restrictionType, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  restriction?: restrictionType;
 
   /**
    * itemType attribute and simpleType child are mutually
    * exclusive, but one or other is required
    */
-  @XmlElement('list', { namespace: 'http://www.w3.org/2001/XMLSchema' })
-  list?: any;
+  @XmlElement('list', { type: listType, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  list?: listType;
 
   /**
    * memberTypes attribute must be non-empty or there must be
    * at least one simpleType child
    */
-  @XmlElement('union', { namespace: 'http://www.w3.org/2001/XMLSchema' })
-  union?: any;
+  @XmlElement('union', { type: unionType, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  union?: unionType;
 
 }

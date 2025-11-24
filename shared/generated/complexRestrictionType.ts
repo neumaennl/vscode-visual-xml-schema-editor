@@ -1,4 +1,5 @@
 import { XmlRoot, XmlElement, XmlAttribute, XmlAnyAttribute } from '@neumaennl/xmlbind-ts';
+import { annotationType } from './annotationType';
 import { groupRef } from './groupRef';
 import { all } from './all';
 import { explicitGroup } from './explicitGroup';
@@ -20,8 +21,8 @@ export class complexRestrictionType {
   @XmlAttribute('base')
   base!: String;
 
-  @XmlElement('annotation', { namespace: 'http://www.w3.org/2001/XMLSchema' })
-  annotation?: any;
+  @XmlElement('annotation', { type: annotationType, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  annotation?: annotationType;
 
   @XmlElement('group', { type: groupRef, namespace: 'http://www.w3.org/2001/XMLSchema' })
   group?: groupRef;

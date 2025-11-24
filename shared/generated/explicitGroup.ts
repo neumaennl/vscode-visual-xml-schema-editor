@@ -1,7 +1,9 @@
 import { XmlRoot, XmlElement, XmlAttribute, XmlAnyAttribute } from '@neumaennl/xmlbind-ts';
 import { allNNI } from './enums';
+import { annotationType } from './annotationType';
 import { localElement } from './localElement';
 import { groupRef } from './groupRef';
+import { anyType } from './anyType';
 /**
  * group type for the three kinds of group
  */
@@ -19,8 +21,8 @@ export class explicitGroup {
   @XmlAttribute('maxOccurs')
   maxOccurs?: allNNI;
 
-  @XmlElement('annotation', { namespace: 'http://www.w3.org/2001/XMLSchema' })
-  annotation?: any;
+  @XmlElement('annotation', { type: annotationType, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  annotation?: annotationType;
 
   @XmlElement('element', { type: localElement, namespace: 'http://www.w3.org/2001/XMLSchema' })
   element?: localElement;
@@ -34,7 +36,7 @@ export class explicitGroup {
   @XmlElement('sequence', { namespace: 'http://www.w3.org/2001/XMLSchema' })
   sequence?: explicitGroup;
 
-  @XmlElement('any', { namespace: 'http://www.w3.org/2001/XMLSchema' })
-  any_?: any;
+  @XmlElement('any', { type: anyType, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  any_?: anyType;
 
 }

@@ -1,4 +1,7 @@
 import { XmlRoot, XmlElement, XmlAttribute, XmlAnyAttribute } from '@neumaennl/xmlbind-ts';
+import { annotationType } from './annotationType';
+import { simpleContentType } from './simpleContentType';
+import { complexContentType } from './complexContentType';
 import { groupRef } from './groupRef';
 import { all } from './all';
 import { explicitGroup } from './explicitGroup';
@@ -16,14 +19,14 @@ export class localComplexType {
   @XmlAttribute('mixed')
   mixed?: Boolean;
 
-  @XmlElement('annotation', { namespace: 'http://www.w3.org/2001/XMLSchema' })
-  annotation?: any;
+  @XmlElement('annotation', { type: annotationType, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  annotation?: annotationType;
 
-  @XmlElement('simpleContent', { namespace: 'http://www.w3.org/2001/XMLSchema' })
-  simpleContent?: any;
+  @XmlElement('simpleContent', { type: simpleContentType, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  simpleContent?: simpleContentType;
 
-  @XmlElement('complexContent', { namespace: 'http://www.w3.org/2001/XMLSchema' })
-  complexContent?: any;
+  @XmlElement('complexContent', { type: complexContentType, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  complexContent?: complexContentType;
 
   @XmlElement('group', { type: groupRef, namespace: 'http://www.w3.org/2001/XMLSchema' })
   group?: groupRef;

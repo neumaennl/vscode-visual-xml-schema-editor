@@ -1,8 +1,5 @@
-import { XmlRoot, XmlElement, XmlAttribute } from '@neumaennl/xmlbind-ts';
+import { XmlElement, XmlAttribute } from '@neumaennl/xmlbind-ts';
 import { annotated } from './annotated';
-import { groupRef } from './groupRef';
-import { all } from './all';
-import { explicitGroup } from './explicitGroup';
 import { localSimpleType } from './localSimpleType';
 import { facet } from './facet';
 import { totalDigitsType } from './totalDigitsType';
@@ -10,25 +7,13 @@ import { numFacet } from './numFacet';
 import { noFixedFacet } from './noFixedFacet';
 import { whiteSpaceType } from './whiteSpaceType';
 import { patternType } from './patternType';
-import { attribute } from './attribute';
-import { attributeGroupRef } from './attributeGroupRef';
-import { wildcard } from './wildcard';
-@XmlRoot('restrictionType', { namespace: 'http://www.w3.org/2001/XMLSchema', prefixes: { 'http://www.w3.org/2001/XMLSchema': 'xs', 'http://www.w3.org/2001/XMLSchema-hasFacetAndProperty': 'hfp', 'http://www.w3.org/XML/1998/namespace': 'imp1' } })
-export class restrictionType extends annotated {
+/**
+ * base attribute and simpleType child are mutually
+ * exclusive, but one or other is required
+ */
+export class restrictionType_1 extends annotated {
   @XmlAttribute('base')
-  base!: String;
-
-  @XmlElement('group', { type: groupRef, namespace: 'http://www.w3.org/2001/XMLSchema' })
-  group?: groupRef;
-
-  @XmlElement('all', { type: all, namespace: 'http://www.w3.org/2001/XMLSchema' })
-  all?: all;
-
-  @XmlElement('choice', { type: explicitGroup, namespace: 'http://www.w3.org/2001/XMLSchema' })
-  choice?: explicitGroup;
-
-  @XmlElement('sequence', { type: explicitGroup, namespace: 'http://www.w3.org/2001/XMLSchema' })
-  sequence?: explicitGroup;
+  base?: String;
 
   @XmlElement('simpleType', { type: localSimpleType, namespace: 'http://www.w3.org/2001/XMLSchema' })
   simpleType?: localSimpleType;
@@ -68,14 +53,5 @@ export class restrictionType extends annotated {
 
   @XmlElement('pattern', { type: patternType, namespace: 'http://www.w3.org/2001/XMLSchema' })
   pattern?: patternType;
-
-  @XmlElement('attribute', { type: attribute, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
-  attribute?: attribute[];
-
-  @XmlElement('attributeGroup', { type: attributeGroupRef, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
-  attributeGroup?: attributeGroupRef[];
-
-  @XmlElement('anyAttribute', { type: wildcard, namespace: 'http://www.w3.org/2001/XMLSchema' })
-  anyAttribute?: wildcard;
 
 }

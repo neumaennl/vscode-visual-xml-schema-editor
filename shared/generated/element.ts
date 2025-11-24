@@ -4,6 +4,7 @@ import { annotated } from './annotated';
 import { localSimpleType } from './localSimpleType';
 import { localComplexType } from './localComplexType';
 import { keybase } from './keybase';
+import { keyrefType } from './keyrefType';
 /**
  * The element element can be used either
  * at the top level to define an element-type binding globally,
@@ -64,7 +65,7 @@ export class element extends annotated {
   @XmlElement('key', { type: keybase, namespace: 'http://www.w3.org/2001/XMLSchema' })
   key?: keybase;
 
-  @XmlElement('keyref', { namespace: 'http://www.w3.org/2001/XMLSchema' })
-  keyref?: any;
+  @XmlElement('keyref', { type: keyrefType, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  keyref?: keyrefType;
 
 }

@@ -5,6 +5,7 @@ import { localElement } from './localElement';
 import { groupRef } from './groupRef';
 import { all } from './all';
 import { explicitGroup } from './explicitGroup';
+import { anyType } from './anyType';
 /**
  * group type for explicit groups, named top-level groups and
  * group references
@@ -38,7 +39,7 @@ export class group extends annotated {
   @XmlElement('sequence', { type: explicitGroup, namespace: 'http://www.w3.org/2001/XMLSchema' })
   sequence?: explicitGroup;
 
-  @XmlElement('any', { namespace: 'http://www.w3.org/2001/XMLSchema' })
-  any_?: any;
+  @XmlElement('any', { type: anyType, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  any_?: anyType;
 
 }

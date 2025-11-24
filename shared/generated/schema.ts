@@ -1,12 +1,17 @@
 import { XmlRoot, XmlElement, XmlAttribute } from '@neumaennl/xmlbind-ts';
 import { blockSet, formChoice, fullDerivationSet } from './enums';
 import { openAttrs } from './openAttrs';
+import { includeType } from './includeType';
+import { importType } from './importType';
+import { redefineType } from './redefineType';
+import { annotationType } from './annotationType';
 import { topLevelSimpleType } from './topLevelSimpleType';
 import { topLevelComplexType } from './topLevelComplexType';
 import { namedGroup } from './namedGroup';
 import { namedAttributeGroup } from './namedAttributeGroup';
 import { topLevelElement } from './topLevelElement';
 import { topLevelAttribute } from './topLevelAttribute';
+import { notationType } from './notationType';
 @XmlRoot('schema', { namespace: 'http://www.w3.org/2001/XMLSchema', prefixes: { 'http://www.w3.org/2001/XMLSchema': 'xs', 'http://www.w3.org/2001/XMLSchema-hasFacetAndProperty': 'hfp', 'http://www.w3.org/XML/1998/namespace': 'imp1' } })
 export class schema extends openAttrs {
   @XmlAttribute('targetNamespace')
@@ -30,17 +35,17 @@ export class schema extends openAttrs {
   @XmlAttribute('id')
   id?: String;
 
-  @XmlElement('include', { array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
-  include?: any[];
+  @XmlElement('include', { type: includeType, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  include?: includeType[];
 
-  @XmlElement('import', { array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
-  import_?: any[];
+  @XmlElement('import', { type: importType, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  import_?: importType[];
 
-  @XmlElement('redefine', { array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
-  redefine?: any[];
+  @XmlElement('redefine', { type: redefineType, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  redefine?: redefineType[];
 
-  @XmlElement('annotation', { array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
-  annotation?: any[];
+  @XmlElement('annotation', { type: annotationType, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  annotation?: annotationType[];
 
   @XmlElement('simpleType', { type: topLevelSimpleType, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
   simpleType?: topLevelSimpleType[];
@@ -60,7 +65,7 @@ export class schema extends openAttrs {
   @XmlElement('attribute', { type: topLevelAttribute, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
   attribute?: topLevelAttribute[];
 
-  @XmlElement('notation', { array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
-  notation?: any[];
+  @XmlElement('notation', { type: notationType, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  notation?: notationType[];
 
 }

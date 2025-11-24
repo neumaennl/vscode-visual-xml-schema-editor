@@ -1,6 +1,8 @@
 import { XmlRoot, XmlElement, XmlAttribute } from '@neumaennl/xmlbind-ts';
 import { derivationSet } from './enums';
 import { annotated } from './annotated';
+import { simpleContentType } from './simpleContentType';
+import { complexContentType } from './complexContentType';
 import { groupRef } from './groupRef';
 import { all } from './all';
 import { explicitGroup } from './explicitGroup';
@@ -34,11 +36,11 @@ export class complexType extends annotated {
   @XmlAttribute('block')
   block?: derivationSet;
 
-  @XmlElement('simpleContent', { namespace: 'http://www.w3.org/2001/XMLSchema' })
-  simpleContent?: any;
+  @XmlElement('simpleContent', { type: simpleContentType, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  simpleContent?: simpleContentType;
 
-  @XmlElement('complexContent', { namespace: 'http://www.w3.org/2001/XMLSchema' })
-  complexContent?: any;
+  @XmlElement('complexContent', { type: complexContentType, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  complexContent?: complexContentType;
 
   @XmlElement('group', { type: groupRef, namespace: 'http://www.w3.org/2001/XMLSchema' })
   group?: groupRef;

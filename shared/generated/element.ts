@@ -53,19 +53,19 @@ export class element extends annotated {
   @XmlAttribute('maxOccurs')
   maxOccurs?: allNNI;
 
-  @XmlElement('simpleType', { type: localSimpleType, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  @XmlElement('simpleType', { type: () => localSimpleType, namespace: 'http://www.w3.org/2001/XMLSchema' })
   simpleType?: localSimpleType;
 
-  @XmlElement('complexType', { type: localComplexType, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  @XmlElement('complexType', { type: () => localComplexType, namespace: 'http://www.w3.org/2001/XMLSchema' })
   complexType?: localComplexType;
 
-  @XmlElement('unique', { type: keybase, namespace: 'http://www.w3.org/2001/XMLSchema' })
-  unique?: keybase;
+  @XmlElement('unique', { type: () => keybase, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  unique?: keybase[];
 
-  @XmlElement('key', { type: keybase, namespace: 'http://www.w3.org/2001/XMLSchema' })
-  key?: keybase;
+  @XmlElement('key', { type: () => keybase, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  key?: keybase[];
 
-  @XmlElement('keyref', { type: keyrefType, namespace: 'http://www.w3.org/2001/XMLSchema' })
-  keyref?: keyrefType;
+  @XmlElement('keyref', { type: () => keyrefType, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  keyref?: keyrefType[];
 
 }

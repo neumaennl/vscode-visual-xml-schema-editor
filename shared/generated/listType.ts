@@ -9,7 +9,7 @@ export class listType extends annotated {
   @XmlAttribute('itemType')
   itemType?: String;
 
-  @XmlElement('simpleType', { type: localSimpleType, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  @XmlElement('simpleType', { type: () => localSimpleType, namespace: 'http://www.w3.org/2001/XMLSchema' })
   simpleType?: localSimpleType;
 
 }

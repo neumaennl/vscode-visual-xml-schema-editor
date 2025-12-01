@@ -23,16 +23,16 @@ export class realGroup {
   @XmlAttribute('maxOccurs')
   maxOccurs?: allNNI;
 
-  @XmlElement('annotation', { type: annotationType, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  @XmlElement('annotation', { type: () => annotationType, namespace: 'http://www.w3.org/2001/XMLSchema' })
   annotation?: annotationType;
 
-  @XmlElement('all', { type: all, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  @XmlElement('all', { type: () => all, namespace: 'http://www.w3.org/2001/XMLSchema' })
   all?: all;
 
-  @XmlElement('choice', { type: explicitGroup, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  @XmlElement('choice', { type: () => explicitGroup, namespace: 'http://www.w3.org/2001/XMLSchema' })
   choice?: explicitGroup;
 
-  @XmlElement('sequence', { type: explicitGroup, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  @XmlElement('sequence', { type: () => explicitGroup, namespace: 'http://www.w3.org/2001/XMLSchema' })
   sequence?: explicitGroup;
 
 }

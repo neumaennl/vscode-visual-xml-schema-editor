@@ -7,10 +7,10 @@ export class keybase extends annotated {
   @XmlAttribute('name')
   name!: String;
 
-  @XmlElement('selector', { type: selectorType, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  @XmlElement('selector', { type: () => selectorType, namespace: 'http://www.w3.org/2001/XMLSchema' })
   selector!: selectorType;
 
-  @XmlElement('field', { type: fieldType, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  @XmlElement('field', { type: () => fieldType, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
   field!: fieldType[];
 
 }

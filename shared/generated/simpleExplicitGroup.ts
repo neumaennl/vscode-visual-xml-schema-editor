@@ -12,22 +12,22 @@ export class simpleExplicitGroup {
   @XmlAttribute('id')
   id?: String;
 
-  @XmlElement('annotation', { type: annotationType, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  @XmlElement('annotation', { type: () => annotationType, namespace: 'http://www.w3.org/2001/XMLSchema' })
   annotation?: annotationType;
 
-  @XmlElement('element', { type: localElement, namespace: 'http://www.w3.org/2001/XMLSchema' })
-  element?: localElement;
+  @XmlElement('element', { type: () => localElement, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  element?: localElement[];
 
-  @XmlElement('group', { type: groupRef, namespace: 'http://www.w3.org/2001/XMLSchema' })
-  group?: groupRef;
+  @XmlElement('group', { type: () => groupRef, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  group?: groupRef[];
 
-  @XmlElement('choice', { type: explicitGroup, namespace: 'http://www.w3.org/2001/XMLSchema' })
-  choice?: explicitGroup;
+  @XmlElement('choice', { type: () => explicitGroup, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  choice?: explicitGroup[];
 
-  @XmlElement('sequence', { type: explicitGroup, namespace: 'http://www.w3.org/2001/XMLSchema' })
-  sequence?: explicitGroup;
+  @XmlElement('sequence', { type: () => explicitGroup, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  sequence?: explicitGroup[];
 
-  @XmlElement('any', { type: anyType, namespace: 'http://www.w3.org/2001/XMLSchema' })
-  any_?: anyType;
+  @XmlElement('any', { type: () => anyType, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  any_?: anyType[];
 
 }

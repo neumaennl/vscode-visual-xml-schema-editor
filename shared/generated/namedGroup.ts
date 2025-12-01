@@ -13,16 +13,16 @@ export class namedGroup {
   @XmlAttribute('name')
   name!: String;
 
-  @XmlElement('annotation', { type: annotationType, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  @XmlElement('annotation', { type: () => annotationType, namespace: 'http://www.w3.org/2001/XMLSchema' })
   annotation?: annotationType;
 
-  @XmlElement('all', { type: allType, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  @XmlElement('all', { type: () => allType, namespace: 'http://www.w3.org/2001/XMLSchema' })
   all?: allType;
 
-  @XmlElement('choice', { type: simpleExplicitGroup, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  @XmlElement('choice', { type: () => simpleExplicitGroup, namespace: 'http://www.w3.org/2001/XMLSchema' })
   choice?: simpleExplicitGroup;
 
-  @XmlElement('sequence', { type: simpleExplicitGroup, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  @XmlElement('sequence', { type: () => simpleExplicitGroup, namespace: 'http://www.w3.org/2001/XMLSchema' })
   sequence?: simpleExplicitGroup;
 
 }

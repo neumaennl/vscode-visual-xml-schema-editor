@@ -6,10 +6,10 @@ export class annotationType extends openAttrs {
   @XmlAttribute('id')
   id?: String;
 
-  @XmlElement('appinfo', { type: appinfoType, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  @XmlElement('appinfo', { type: () => appinfoType, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
   appinfo?: appinfoType[];
 
-  @XmlElement('documentation', { type: documentationType, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  @XmlElement('documentation', { type: () => documentationType, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
   documentation?: documentationType[];
 
 }

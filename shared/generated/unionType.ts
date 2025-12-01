@@ -9,7 +9,7 @@ export class unionType extends annotated {
   @XmlAttribute('memberTypes')
   memberTypes?: String;
 
-  @XmlElement('simpleType', { type: localSimpleType, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  @XmlElement('simpleType', { type: () => localSimpleType, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
   simpleType?: localSimpleType[];
 
 }

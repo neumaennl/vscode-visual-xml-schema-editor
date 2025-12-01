@@ -12,19 +12,19 @@ export class redefineType extends openAttrs {
   @XmlAttribute('id')
   id?: String;
 
-  @XmlElement('annotation', { type: annotationType, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  @XmlElement('annotation', { type: () => annotationType, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
   annotation?: annotationType[];
 
-  @XmlElement('simpleType', { type: topLevelSimpleType, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  @XmlElement('simpleType', { type: () => topLevelSimpleType, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
   simpleType?: topLevelSimpleType[];
 
-  @XmlElement('complexType', { type: topLevelComplexType, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  @XmlElement('complexType', { type: () => topLevelComplexType, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
   complexType?: topLevelComplexType[];
 
-  @XmlElement('group', { type: namedGroup, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  @XmlElement('group', { type: () => namedGroup, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
   group?: namedGroup[];
 
-  @XmlElement('attributeGroup', { type: namedAttributeGroup, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  @XmlElement('attributeGroup', { type: () => namedAttributeGroup, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
   attributeGroup?: namedAttributeGroup[];
 
 }

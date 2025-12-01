@@ -12,10 +12,10 @@ export class complexContentType extends annotated {
   @XmlAttribute('mixed')
   mixed?: Boolean;
 
-  @XmlElement('restriction', { type: complexRestrictionType, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  @XmlElement('restriction', { type: () => complexRestrictionType, namespace: 'http://www.w3.org/2001/XMLSchema' })
   restriction?: complexRestrictionType;
 
-  @XmlElement('extension', { type: extensionType, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  @XmlElement('extension', { type: () => extensionType, namespace: 'http://www.w3.org/2001/XMLSchema' })
   extension?: extensionType;
 
 }

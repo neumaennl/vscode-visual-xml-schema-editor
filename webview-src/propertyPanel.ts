@@ -1,5 +1,7 @@
 // Property panel for displaying node details
 
+import { DiagramItem } from "./diagram";
+
 export class PropertyPanel {
   private container: HTMLDivElement;
 
@@ -7,19 +9,15 @@ export class PropertyPanel {
     this.container = container;
   }
 
-  public display(node: any): void {
-    // TODO: Adapt to work with generated class instances
+  public display(node: DiagramItem): void {
     this.container.innerHTML = "";
 
     // Name property
     this.addProperty("Name", node.name);
 
     // Type property
-    this.addProperty("Type", node.type);
-
-    // Data type if present
-    if (node.dataType) {
-      this.addProperty("Data Type", node.dataType);
+    if (node.type) {
+      this.addProperty("Type", node.type);
     }
 
     // Namespace if present
@@ -28,9 +26,9 @@ export class PropertyPanel {
     }
 
     // Cardinality
-    if (node.minOccurs !== undefined || node.maxOccurs !== undefined) {
-      const min = node.minOccurs ?? 1;
-      const max = node.maxOccurs === "unbounded" ? "∞" : node.maxOccurs ?? 1;
+    if (node.minOccurrence !== undefined || node.maxOccurrence !== undefined) {
+      const min = node.minOccurrence ?? 1;
+      const max = node.maxOccurrence === -1 ? "∞" : node.maxOccurrence ?? 1;
       this.addProperty("Cardinality", `${min}..${max}`);
     }
 
@@ -63,8 +61,8 @@ export class PropertyPanel {
     }
 
     // Children count
-    if (node.children && node.children.length > 0) {
-      this.addProperty("Children", node.children.length.toString());
+    if (node.childElements && node.childElements.length > 0) {
+      this.addProperty("Children", node.childElements.length.toString());
     }
   }
 

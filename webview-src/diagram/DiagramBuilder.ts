@@ -118,8 +118,13 @@ export class DiagramBuilder {
     );
 
     // Extract type information
-    if (element.type) {
-      item.type = element.type.toString();
+    if (element.type_) {
+      item.type = element.type_.toString();
+    }
+
+    // Extract namespace
+    if (element.targetNamespace) {
+      item.namespace = element.targetNamespace.toString();
     }
 
     // Extract occurrence constraints
@@ -133,16 +138,16 @@ export class DiagramBuilder {
     }
 
     // Extract documentation
-    if (element.annotation?.documentation) {
-      const docs = Array.isArray(element.annotation.documentation)
-        ? element.annotation.documentation
-        : [element.annotation.documentation];
-      item.documentation = docs.map((d: any) => d.toString()).join("\n");
+    item.documentation = this.extractDocumentation(element.annotation) ?? "";
+
+    // Process anonymous inline complex type
+    if (element.complexType) {
+      this.processAnonymousComplexType(item, element.complexType);
     }
 
-    // Process child elements if present
-    if (element.complexType) {
-      this.processComplexType(item, element.complexType);
+    // Process anonymous inline simple type
+    if (element.simpleType) {
+      this.processAnonymousSimpleType(item, element.simpleType);
     }
 
     return item;
@@ -190,14 +195,82 @@ export class DiagramBuilder {
     item.isSimpleContent = true;
 
     // Extract documentation
-    if (simpleType.annotation?.documentation) {
-      const docs = Array.isArray(simpleType.annotation.documentation)
-        ? simpleType.annotation.documentation
-        : [simpleType.annotation.documentation];
-      item.documentation = docs.map((d: any) => d.toString()).join("\n");
-    }
+    item.documentation = this.extractDocumentation(simpleType.annotation) ?? "";
 
     return item;
+  }
+
+  /**
+   * Process an anonymous inline complex type within an element
+   * @param parent - Parent element item containing the anonymous type
+   * @param complexType - Anonymous complex type definition
+   */
+  private processAnonymousComplexType(
+    parent: DiagramItem,
+    complexType: any
+  ): void {
+    // Mark the parent type as anonymous complex type
+    if (!parent.type) {
+      parent.type = "<anonymous complexType>";
+    }
+
+    // Merge documentation from the anonymous type if parent has none
+    if (!parent.documentation) {
+      parent.documentation =
+        this.extractDocumentation(complexType.annotation) ?? "";
+    }
+
+    // Process the complex type structure directly on the parent
+    // This will attach attributes and groups to the parent element
+    this.processComplexType(parent, complexType);
+  }
+
+  /**
+   * Process an anonymous inline simple type within an element
+   * @param parent - Parent element item containing the anonymous type
+   * @param simpleType - Anonymous simple type definition
+   */
+  private processAnonymousSimpleType(
+    parent: DiagramItem,
+    simpleType: any
+  ): void {
+    // Mark the parent as having simple content
+    parent.isSimpleContent = true;
+
+    // Merge documentation from the anonymous type if parent has none
+    if (!parent.documentation) {
+      parent.documentation =
+        this.extractDocumentation(simpleType.annotation) ?? "";
+    }
+
+    // Process restriction/list/union if present to extract base type
+    if (simpleType.restriction) {
+      this.processSimpleTypeRestriction(parent, simpleType.restriction);
+    }
+
+    // Set type if not already set
+    if (!parent.type && simpleType.restriction?.base) {
+      parent.type = `<simpleType: ${simpleType.restriction.base.toString()}>`;
+    } else if (!parent.type) {
+      parent.type = "<anonymous simpleType>";
+    }
+  }
+
+  /**
+   * Process a simple type restriction to extract base type and facets
+   * @param parent - Parent simple type item
+   * @param restriction - Restriction definition
+   */
+  private processSimpleTypeRestriction(
+    parent: DiagramItem,
+    restriction: any
+  ): void {
+    // Extract base type
+    if (restriction.base) {
+      parent.type = restriction.base.toString();
+    }
+
+    // TODO: Could also extract enumeration values, patterns, etc. here in the future
   }
 
   /**
@@ -206,6 +279,9 @@ export class DiagramBuilder {
    * @param complexType - Complex type definition from schema
    */
   private processComplexType(parent: DiagramItem, complexType: any): void {
+    // Process attributes
+    this.extractAttributes(parent, complexType);
+
     // Process sequence
     if (complexType.sequence) {
       this.processSequence(parent, complexType.sequence);
@@ -238,7 +314,12 @@ export class DiagramBuilder {
    * @param sequence - Sequence definition from schema
    */
   private processSequence(parent: DiagramItem, sequence: any): void {
-    this.processGroup(parent, sequence, "sequence", DiagramItemGroupType.Sequence);
+    this.processGroup(
+      parent,
+      sequence,
+      "sequence",
+      DiagramItemGroupType.Sequence
+    );
   }
 
   /**
@@ -309,10 +390,61 @@ export class DiagramBuilder {
       parent.type = extension.base.toString();
     }
 
+    // Extract attributes from extension
+    this.extractAttributes(parent, extension);
+
     // Process sequence in extension
     if (extension.sequence) {
       this.processSequence(parent, extension.sequence);
     }
+  }
+
+  /**
+   * Extract attributes from a complex type or extension
+   * @param item - Diagram item to add attributes to
+   * @param source - Source object that may contain attribute definitions
+   */
+  private extractAttributes(item: DiagramItem, source: any): void {
+    if (!source) {
+      return;
+    }
+
+    const attributes = source.attribute;
+    if (!attributes) {
+      return;
+    }
+
+    const attrArray = Array.isArray(attributes) ? attributes : [attributes];
+
+    for (const attr of attrArray) {
+      if (!attr.name) {
+        continue;
+      }
+
+      item.attributes.push({
+        name: attr.name.toString(),
+        type: attr.type_ ? attr.type_.toString() : "inner simpleType or ref",
+        use: attr.use ? attr.use.toString() : undefined,
+        defaultValue: attr.default_ ? attr.default_.toString() : undefined,
+        fixedValue: attr.fixed ? attr.fixed.toString() : undefined,
+      });
+    }
+  }
+
+  /**
+   * Extract documentation from an annotation object
+   * @param annotation - Annotation object from schema element
+   * @returns Concatenated documentation string or undefined
+   */
+  private extractDocumentation(annotation: any): string | undefined {
+    if (!annotation?.documentation) {
+      return undefined;
+    }
+
+    const docs = Array.isArray(annotation.documentation)
+      ? annotation.documentation
+      : [annotation.documentation];
+    return docs.map((d: any) => d.value).join("\n");
   }
 
   /**

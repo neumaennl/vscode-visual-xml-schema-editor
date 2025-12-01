@@ -9,7 +9,6 @@ import {
   Point,
   Size,
   Rectangle,
-  DiagramStyle,
 } from "./DiagramTypes";
 import type { Diagram } from "./Diagram";
 
@@ -45,6 +44,18 @@ export class DiagramItem {
 
   // Documentation
   public documentation: string = "";
+
+  // Namespace
+  public namespace: string = "";
+
+  // Attributes
+  public attributes: Array<{
+    name: string;
+    type: string;
+    use?: string;
+    defaultValue?: string;
+    fixedValue?: string;
+  }> = [];
 
   // Reference to diagram for accessing settings
   public diagram: Diagram | null = null;

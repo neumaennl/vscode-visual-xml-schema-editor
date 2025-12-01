@@ -9,10 +9,10 @@ export class allType {
   @XmlAttribute('id')
   id?: String;
 
-  @XmlElement('annotation', { type: annotationType, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  @XmlElement('annotation', { type: () => annotationType, namespace: 'http://www.w3.org/2001/XMLSchema' })
   annotation?: annotationType;
 
-  @XmlElement('element', { type: narrowMaxMin, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  @XmlElement('element', { type: () => narrowMaxMin, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
   element?: narrowMaxMin[];
 
 }

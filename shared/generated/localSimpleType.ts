@@ -14,28 +14,28 @@ export class localSimpleType {
   @XmlAttribute('id')
   id?: String;
 
-  @XmlElement('annotation', { type: annotationType, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  @XmlElement('annotation', { type: () => annotationType, namespace: 'http://www.w3.org/2001/XMLSchema' })
   annotation?: annotationType;
 
   /**
    * base attribute and simpleType child are mutually
    * exclusive, but one or other is required
    */
-  @XmlElement('restriction', { type: restrictionType, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  @XmlElement('restriction', { type: () => restrictionType, namespace: 'http://www.w3.org/2001/XMLSchema' })
   restriction?: restrictionType;
 
   /**
    * itemType attribute and simpleType child are mutually
    * exclusive, but one or other is required
    */
-  @XmlElement('list', { type: listType, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  @XmlElement('list', { type: () => listType, namespace: 'http://www.w3.org/2001/XMLSchema' })
   list?: listType;
 
   /**
    * memberTypes attribute must be non-empty or there must be
    * at least one simpleType child
    */
-  @XmlElement('union', { type: unionType, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  @XmlElement('union', { type: () => unionType, namespace: 'http://www.w3.org/2001/XMLSchema' })
   union?: unionType;
 
 }

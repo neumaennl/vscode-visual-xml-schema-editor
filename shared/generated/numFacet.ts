@@ -14,7 +14,7 @@ export class numFacet {
   @XmlAttribute('value')
   value!: Number;
 
-  @XmlElement('annotation', { type: annotationType, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  @XmlElement('annotation', { type: () => annotationType, namespace: 'http://www.w3.org/2001/XMLSchema' })
   annotation?: annotationType;
 
 }

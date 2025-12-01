@@ -15,7 +15,11 @@ const MAX_DOC_LINE_LENGTH = 50;
  * @param group - The SVG group to append text to
  * @param svg - The SVG element for text measurement
  */
-export function renderText(item: DiagramItem, group: SVGElement, svg: SVGSVGElement): void {
+export function renderText(
+  item: DiagramItem,
+  group: SVGElement,
+  svg: SVGSVGElement
+): void {
   const scaledBox = item.scaleRectangle(item.elementBox);
   const centerX = scaledBox.x + scaledBox.width / 2;
   const centerY = scaledBox.y + scaledBox.height / 2;
@@ -106,7 +110,10 @@ export function truncateText(
  * @param item - The diagram item with documentation
  * @param group - The SVG group to append documentation to
  */
-export function renderDocumentation(item: DiagramItem, group: SVGElement): void {
+export function renderDocumentation(
+  item: DiagramItem,
+  group: SVGElement
+): void {
   const scaledBox = item.scaleRectangle(item.documentationBox);
   if (scaledBox.width === 0 || scaledBox.height === 0) return;
 
@@ -133,7 +140,7 @@ export function renderDocumentation(item: DiagramItem, group: SVGElement): void 
  */
 export function renderOccurrence(item: DiagramItem, group: SVGElement): void {
   if (
-    !item.diagram?.alwaysShowOccurence &&
+    !item.diagram?.alwaysShowOccurrence &&
     item.maxOccurrence <= 1 &&
     item.minOccurrence === 1
   ) {

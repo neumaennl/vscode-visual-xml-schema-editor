@@ -79,7 +79,6 @@ class SchemaEditorApp {
 
     try {
       console.log("Schema object received:", schemaObj);
-      console.log("Schema keys:", Object.keys(schemaObj));
 
       // The renderer will need to traverse the schema structure
       this.renderer.renderSchema(
@@ -141,7 +140,7 @@ class SchemaEditorApp {
       // Notify extension about the selection
       this.vscode.postMessage({
         command: "nodeClicked",
-        data: { nodeId: item.id },
+        data: item.name,
       });
     }
   }

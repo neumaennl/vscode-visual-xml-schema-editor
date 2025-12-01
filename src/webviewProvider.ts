@@ -55,8 +55,6 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
 
       console.log("Schema parsed successfully");
       console.log("Schema object:", schemaObj);
-      console.log("Schema type:", typeof schemaObj);
-      console.log("Schema keys:", Object.keys(schemaObj || {}));
 
       // Send the schema object to the webview for visualization
       webview.postMessage({

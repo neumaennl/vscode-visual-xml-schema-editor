@@ -15,43 +15,43 @@ export class restrictionType_1 extends annotated {
   @XmlAttribute('base')
   base?: String;
 
-  @XmlElement('simpleType', { type: localSimpleType, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  @XmlElement('simpleType', { type: () => localSimpleType, namespace: 'http://www.w3.org/2001/XMLSchema' })
   simpleType?: localSimpleType;
 
-  @XmlElement('minExclusive', { type: facet, namespace: 'http://www.w3.org/2001/XMLSchema' })
-  minExclusive?: facet;
+  @XmlElement('minExclusive', { type: () => facet, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  minExclusive?: facet[];
 
-  @XmlElement('minInclusive', { type: facet, namespace: 'http://www.w3.org/2001/XMLSchema' })
-  minInclusive?: facet;
+  @XmlElement('minInclusive', { type: () => facet, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  minInclusive?: facet[];
 
-  @XmlElement('maxExclusive', { type: facet, namespace: 'http://www.w3.org/2001/XMLSchema' })
-  maxExclusive?: facet;
+  @XmlElement('maxExclusive', { type: () => facet, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  maxExclusive?: facet[];
 
-  @XmlElement('maxInclusive', { type: facet, namespace: 'http://www.w3.org/2001/XMLSchema' })
-  maxInclusive?: facet;
+  @XmlElement('maxInclusive', { type: () => facet, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  maxInclusive?: facet[];
 
-  @XmlElement('totalDigits', { type: totalDigitsType, namespace: 'http://www.w3.org/2001/XMLSchema' })
-  totalDigits?: totalDigitsType;
+  @XmlElement('totalDigits', { type: () => totalDigitsType, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  totalDigits?: totalDigitsType[];
 
-  @XmlElement('fractionDigits', { type: numFacet, namespace: 'http://www.w3.org/2001/XMLSchema' })
-  fractionDigits?: numFacet;
+  @XmlElement('fractionDigits', { type: () => numFacet, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  fractionDigits?: numFacet[];
 
-  @XmlElement('length', { type: numFacet, namespace: 'http://www.w3.org/2001/XMLSchema' })
-  length?: numFacet;
+  @XmlElement('length', { type: () => numFacet, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  length?: numFacet[];
 
-  @XmlElement('minLength', { type: numFacet, namespace: 'http://www.w3.org/2001/XMLSchema' })
-  minLength?: numFacet;
+  @XmlElement('minLength', { type: () => numFacet, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  minLength?: numFacet[];
 
-  @XmlElement('maxLength', { type: numFacet, namespace: 'http://www.w3.org/2001/XMLSchema' })
-  maxLength?: numFacet;
+  @XmlElement('maxLength', { type: () => numFacet, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  maxLength?: numFacet[];
 
-  @XmlElement('enumeration', { type: noFixedFacet, namespace: 'http://www.w3.org/2001/XMLSchema' })
-  enumeration?: noFixedFacet;
+  @XmlElement('enumeration', { type: () => noFixedFacet, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  enumeration?: noFixedFacet[];
 
-  @XmlElement('whiteSpace', { type: whiteSpaceType, namespace: 'http://www.w3.org/2001/XMLSchema' })
-  whiteSpace?: whiteSpaceType;
+  @XmlElement('whiteSpace', { type: () => whiteSpaceType, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  whiteSpace?: whiteSpaceType[];
 
-  @XmlElement('pattern', { type: patternType, namespace: 'http://www.w3.org/2001/XMLSchema' })
-  pattern?: patternType;
+  @XmlElement('pattern', { type: () => patternType, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  pattern?: patternType[];
 
 }

@@ -13,8 +13,8 @@ node node_modules/@neumaennl/xmlbind-ts/dist/xsd/cli.js xsd2ts -i schemas/XMLSch
 ## Source
 
 - **Source XSD**: W3C XML Schema 1.0 (https://www.w3.org/2001/XMLSchema.xsd)
-- **Generated**: November 24, 2025
-- **Tool**: @neumaennl/xmlbind-ts v0.10.0
+- **Generated**: December 1, 2025
+- **Tool**: @neumaennl/xmlbind-ts v0.12.1
 
 ## Usage
 

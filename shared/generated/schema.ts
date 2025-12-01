@@ -35,37 +35,37 @@ export class schema extends openAttrs {
   @XmlAttribute('id')
   id?: String;
 
-  @XmlElement('include', { type: includeType, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  @XmlElement('include', { type: () => includeType, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
   include?: includeType[];
 
-  @XmlElement('import', { type: importType, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  @XmlElement('import', { type: () => importType, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
   import_?: importType[];
 
-  @XmlElement('redefine', { type: redefineType, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  @XmlElement('redefine', { type: () => redefineType, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
   redefine?: redefineType[];
 
-  @XmlElement('annotation', { type: annotationType, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  @XmlElement('annotation', { type: () => annotationType, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
   annotation?: annotationType[];
 
-  @XmlElement('simpleType', { type: topLevelSimpleType, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  @XmlElement('simpleType', { type: () => topLevelSimpleType, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
   simpleType?: topLevelSimpleType[];
 
-  @XmlElement('complexType', { type: topLevelComplexType, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  @XmlElement('complexType', { type: () => topLevelComplexType, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
   complexType?: topLevelComplexType[];
 
-  @XmlElement('group', { type: namedGroup, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  @XmlElement('group', { type: () => namedGroup, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
   group?: namedGroup[];
 
-  @XmlElement('attributeGroup', { type: namedAttributeGroup, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  @XmlElement('attributeGroup', { type: () => namedAttributeGroup, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
   attributeGroup?: namedAttributeGroup[];
 
-  @XmlElement('element', { type: topLevelElement, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  @XmlElement('element', { type: () => topLevelElement, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
   element?: topLevelElement[];
 
-  @XmlElement('attribute', { type: topLevelAttribute, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  @XmlElement('attribute', { type: () => topLevelAttribute, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
   attribute?: topLevelAttribute[];
 
-  @XmlElement('notation', { type: notationType, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  @XmlElement('notation', { type: () => notationType, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
   notation?: notationType[];
 
 }

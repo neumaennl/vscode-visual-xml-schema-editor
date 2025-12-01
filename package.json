@@ -51,7 +51,8 @@
     "watch-webview": "webpack --mode development --watch",
     "pretest": "npm run compile",
     "package": "vsce package",
-    "clean": "rimraf out webview"
+    "clean": "rimraf out webview",
+    "generate-classes-from-schema": "node node_modules/.bin/xsd2ts xsd2ts -i schema/XMLSchema.xsd -o shared/generated"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",
@@ -68,6 +69,6 @@
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
-    "@neumaennl/xmlbind-ts": "^0.10.0"
+    "@neumaennl/xmlbind-ts": "^0.12.1"
   }
 }

@@ -537,7 +537,7 @@ class DiagramRenderer {
 - [ ] Implement element commands (add, remove, modify)
 - [ ] Implement attribute commands (add, remove, modify)
 - [ ] Implement simpleType and complexType commands
-- [ ] Connect commands to document edits via WorkspaceEdit
+- [ ] Connect commands to document edits via [WorkspaceEdit](https://code.visualstudio.com/api/references/vscode-api#WorkspaceEdit) (VS Code's API for programmatic text edits with undo/redo support)
 - [ ] Implement rollback on validation failures
 - [ ] Test with simple schema modifications
 - [ ] Verify undo/redo functionality
@@ -625,7 +625,7 @@ Testing is critical to ensure the editor works reliably across diverse schemas a
 - **Selection Manager**: Selection state transitions (select, deselect, multi-select) work correctly
 - **Schema Model Queries**: Finding nodes, traversing hierarchy, checking constraints
 
-**Tools**: Jest or Mocha with assertion libraries. Mock VS Code API where needed.
+**Tools**: [Jest](https://jestjs.io/) or [Mocha](https://mochajs.org/) with assertion libraries. Mock VS Code API where needed.
 
 **Coverage Goal**: 80%+ code coverage for core business logic.
 
@@ -642,7 +642,7 @@ Testing is critical to ensure the editor works reliably across diverse schemas a
 - **State Persistence**: Webview state (selection, zoom, scroll) persists across VS Code restarts
 - **Multi-Step Workflows**: Complex operations like "add element, set properties, add child" work end-to-end
 
-**Tools**: VS Code Extension Test Runner with integration test suite.
+**Tools**: [VS Code Extension Test Runner](https://code.visualstudio.com/api/working-with-extensions/testing-extension) with integration test suite.
 
 **Test Data**: Diverse schema samples (simple, complex, with references, with namespaces).
 
@@ -658,7 +658,7 @@ Testing is critical to ensure the editor works reliably across diverse schemas a
 - **Import/Export**: Edit schema with imports, verify references remain valid
 - **Collaboration Simulation**: Simulate external file changes while editor is open
 
-**Tools**: Automated UI testing framework (e.g., Playwright or Selenium for webview).
+**Tools**: Automated UI testing framework (e.g., [Playwright](https://playwright.dev/) or [Selenium](https://www.selenium.dev/) for webview).
 
 **Scenarios**: Based on common user workflows and reported issues.
 
@@ -673,7 +673,7 @@ Testing is critical to ensure the editor works reliably across diverse schemas a
 - **Command Latency**: Measure end-to-end time from user action to UI update (target: <200ms)
 - **Diff Computation Speed**: Measure reconciler performance with large schemas
 
-**Tools**: Performance profiling tools (Chrome DevTools for webview, VS Code profiler).
+**Tools**: Performance profiling tools ([Chrome DevTools](https://developer.chrome.com/docs/devtools/) for webview, [VS Code profiler](https://code.visualstudio.com/docs/editor/profiles)).
 
 **Metrics**: Load time, update latency, memory footprint, CPU usage.
 
@@ -747,23 +747,22 @@ This section outlines potential improvements beyond the initial editor implement
 
 ### High Priority
 
-#### Git Diff Visualization
+#### Schema Refactoring Tools
 
-**Value**: Enable visual comparison of schema changes for code review and understanding schema evolution.
+**Value**: Safely restructure schemas while preserving semantics.
 
 **Features**:
-- Highlight added, removed, and modified elements in the diagram view
-- Color-code changes (green for additions, red for deletions, yellow for modifications)
-- Support diff view between commits, branches, or working tree and HEAD
-- Show before/after comparison in split-pane view
-- Navigate between changes with prev/next buttons
-- Integration with VS Code's source control panel
+- Rename element/type with automatic reference updates
+- Extract complexType from inline definition
+- Inline complexType (replace references with definition)
+- Convert between element and attribute
+- Split large schema into multiple files with imports
+- Merge small schemas into a single file
 
 **Use Cases**:
-- Review pull requests visually
-- Understand impact of schema changes before merging
-- Track schema evolution over time
-- Identify breaking changes quickly
+- Improve schema organization and maintainability
+- Safely rename schema components
+- Optimize schema structure
 
 #### Advanced Validation
 
@@ -782,6 +781,8 @@ This section outlines potential improvements beyond the initial editor implement
 - Enforce organizational standards
 - Improve schema quality and maintainability
 
+### Medium Priority
+
 #### Visualization Options
 
 **Value**: Support diverse user preferences and schema characteristics.
@@ -799,26 +800,6 @@ This section outlines potential improvements beyond the initial editor implement
 - Navigate large schemas efficiently
 - Customize visual appearance to preference
 - Print diagrams for offline review
-
-### Medium Priority
-
-#### Import/Export
-
-**Value**: Support interoperability with other schema tools and formats.
-
-**Features**:
-- Import from DTD (convert to XSD)
-- Import from JSON Schema (convert to XSD)
-- Export to JSON Schema
-- Export to TypeScript interfaces (via codegen)
-- Schema templates and starter snippets
-- Import/export custom type libraries
-
-**Use Cases**:
-- Migrate from legacy DTD schemas
-- Integrate with REST APIs using JSON Schema
-- Generate type-safe code from schemas
-- Accelerate schema creation with templates
 
 #### Search and Navigation
 
@@ -839,38 +820,41 @@ This section outlines potential improvements beyond the initial editor implement
 
 ### Low Priority
 
-#### Schema Refactoring Tools
+#### Import/Export
 
-**Value**: Safely restructure schemas while preserving semantics.
+**Value**: Support interoperability with other schema tools and formats.
 
 **Features**:
-- Rename element/type with automatic reference updates
-- Extract complexType from inline definition
-- Inline complexType (replace references with definition)
-- Convert between element and attribute
-- Split large schema into multiple files with imports
-- Merge small schemas into a single file
+- Import from DTD (convert to XSD)
+- Import from JSON Schema (convert to XSD)
+- Export to JSON Schema
+- Export to TypeScript interfaces (via codegen)
+- Schema templates and starter snippets
+- Import/export custom type libraries
 
 **Use Cases**:
-- Improve schema organization and maintainability
-- Safely rename schema components
-- Optimize schema structure
+- Migrate from legacy DTD schemas
+- Integrate with REST APIs using JSON Schema
+- Generate type-safe code from schemas
+- Accelerate schema creation with templates
 
-#### Collaborative Features (Deprioritized)
+#### Git Diff Visualization
 
-**Rationale**: Multi-user real-time collaboration (operational transformation, live presence) adds significant complexity and is not well-suited to file-based editing in VS Code. Git-based workflows provide sufficient collaboration through branching, merging, and diff visualization.
+**Value**: Enable visual comparison of schema changes for code review and understanding schema evolution.
 
-**Limited Scope Features** (if revisited):
-- Comment/annotation system for team discussions on schema design
-- Change tracking log (who changed what, when) leveraging Git history
-- Schema review workflow integration (request review, approve, merge)
+**Features**:
+- Highlight added, removed, and modified elements in the diagram view
+- Color-code changes (green for additions, red for deletions, yellow for modifications)
+- Support diff view between commits, branches, or working tree and HEAD
+- Show before/after comparison in split-pane view
+- Navigate between changes with prev/next buttons
+- Integration with VS Code's source control panel
 
-**Why Deprioritized**:
-- Single-file editing doesn't benefit from real-time collaborative editing
-- VS Code's Live Share extension already provides collaborative editing
-- Git provides robust, asynchronous collaboration workflow
-- Implementation complexity is very high relative to user value
-- Operational transformation and conflict resolution are non-trivial
+**Use Cases**:
+- Review pull requests visually
+- Understand impact of schema changes before merging
+- Track schema evolution over time
+- Identify breaking changes quickly
 
 ## 8. Conclusion
 

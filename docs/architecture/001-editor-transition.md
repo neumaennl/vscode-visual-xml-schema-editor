@@ -47,29 +47,33 @@ graph TB
         Diagram["Diagram<br/>Renderer"]
         Properties["Properties<br/>Panel"]
         Toolbar["Toolbar<br/>Actions"]
+        ActionCreators["Action Creators"]
         
-        Diagram -->|User Actions| ActionCreators["Action Creators"]
+        Diagram -->|User Actions| ActionCreators
         Properties -->|User Actions| ActionCreators
         Toolbar -->|User Actions| ActionCreators
     end
     
-    ActionCreators -->|Command Messages| PostMessage["postMessage()"]
-    PostMessage -->|postMessage()| CommandProcessor
-    
     subgraph Extension["VS Code Extension (Backend)"]
         CommandProcessor["Command Processor"]
+        SchemaManager["Schema<br/>Model<br/>Manager"]
+        XMLMarshal["XML<br/>Marshal<br/>/Unmarshal"]
+        DocumentEditor["Document<br/>Editor<br/>(VSCode)"]
         
-        CommandProcessor --> SchemaManager["Schema<br/>Model<br/>Manager"]
-        CommandProcessor --> XMLMarshal["XML<br/>Marshal<br/>/Unmarshal"]
-        CommandProcessor --> DocumentEditor["Document<br/>Editor<br/>(VSCode)"]
+        CommandProcessor --> SchemaManager
+        CommandProcessor --> XMLMarshal
+        CommandProcessor --> DocumentEditor
     end
     
     subgraph WebviewUpdate["Webview (UI Update)"]
         StateReconciler["State Reconciler"]
-        StateReconciler --> DiagramRenderer["Diagram Renderer<br/>(Re-render)"]
+        DiagramRenderer["Diagram Renderer<br/>(Re-render)"]
+        
+        StateReconciler --> DiagramRenderer
     end
     
-    Extension -->|Update Messages| StateReconciler
+    ActionCreators -->|Command Messages| CommandProcessor
+    CommandProcessor -->|Update Messages| StateReconciler
     
     style Webview fill:#e3f2fd
     style Extension fill:#fff3e0

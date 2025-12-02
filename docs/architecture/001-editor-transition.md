@@ -41,54 +41,41 @@ The editor will use a **Command Pattern** architecture to manage state updates, 
 
 ### Key Components
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                      Webview (UI)                       │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐ │
-│  │   Diagram    │  │  Properties  │  │   Toolbar    │ │
-│  │   Renderer   │  │    Panel     │  │   Actions    │ │
-│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘ │
-│         └────────────┬────────────────────────┘        │
-│                      │ User Actions                     │
-│                      ▼                                  │
-│            ┌─────────────────┐                         │
-│            │ Action Creators │                         │
-│            └────────┬────────┘                         │
-│                     │ Command Messages                 │
-└─────────────────────┼──────────────────────────────────┘
-                      │ postMessage()
-                      ▼
-┌─────────────────────────────────────────────────────────┐
-│            VS Code Extension (Backend)                  │
-│                                                         │
-│            ┌────────────────────┐                      │
-│            │ Command Processor  │                      │
-│            └─────────┬──────────┘                      │
-│                      │                                  │
-│         ┌────────────┼────────────┐                    │
-│         ▼            ▼            ▼                     │
-│    ┌─────────┐ ┌─────────┐ ┌──────────┐               │
-│    │ Schema  │ │   XML   │ │ Document │               │
-│    │ Model   │ │ Marshal │ │  Editor  │               │
-│    │ Manager │ │ /Unmarshal│ (VSCode) │               │
-│    └─────────┘ └─────────┘ └──────────┘               │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
-                      │ Update Messages
-                      ▼
-┌─────────────────────────────────────────────────────────┐
-│                  Webview (UI Update)                    │
-│                                                         │
-│            ┌────────────────────┐                      │
-│            │ State Reconciler   │                      │
-│            └─────────┬──────────┘                      │
-│                      │                                  │
-│                      ▼                                  │
-│            ┌────────────────────┐                      │
-│            │  Diagram Renderer  │                      │
-│            │    (Re-render)     │                      │
-│            └────────────────────┘                      │
-└─────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph Webview["Webview (UI)"]
+        Diagram["Diagram<br/>Renderer"]
+        Properties["Properties<br/>Panel"]
+        Toolbar["Toolbar<br/>Actions"]
+        
+        Diagram --> UserActions["User Actions"]
+        Properties --> UserActions
+        Toolbar --> UserActions
+        
+        UserActions --> ActionCreators["Action Creators"]
+        ActionCreators -->|Command Messages| PostMessage["postMessage()"]
+    end
+    
+    PostMessage -->|"postMessage()"| Extension
+    
+    subgraph Extension["VS Code Extension (Backend)"]
+        CommandProcessor["Command Processor"]
+        
+        CommandProcessor --> SchemaManager["Schema<br/>Model<br/>Manager"]
+        CommandProcessor --> XMLMarshal["XML<br/>Marshal<br/>/Unmarshal"]
+        CommandProcessor --> DocumentEditor["Document<br/>Editor<br/>(VSCode)"]
+    end
+    
+    Extension -->|Update Messages| WebviewUpdate
+    
+    subgraph WebviewUpdate["Webview (UI Update)"]
+        StateReconciler["State Reconciler"]
+        StateReconciler --> DiagramRenderer["Diagram Renderer<br/>(Re-render)"]
+    end
+    
+    style Webview fill:#e3f2fd
+    style Extension fill:#fff3e0
+    style WebviewUpdate fill:#e8f5e9
 ```
 
 ### Why This Pattern?
@@ -103,10 +90,22 @@ The editor will use a **Command Pattern** architecture to manage state updates, 
 
 ### Detailed Flow
 
-```
-User Interaction → Action Creation → Command Dispatch → Validation → 
-Execution → State Update → XML Serialization → Document Edit → 
-Change Event → State Sync → UI Reconciliation → Render Update
+```mermaid
+graph LR
+    A[User Interaction] --> B[Action Creation]
+    B --> C[Command Dispatch]
+    C --> D[Validation]
+    D --> E[Execution]
+    E --> F[State Update]
+    F --> G[XML Serialization]
+    G --> H[Document Edit]
+    H --> I[Change Event]
+    I --> J[State Sync]
+    J --> K[UI Reconciliation]
+    K --> L[Render Update]
+    
+    style A fill:#e3f2fd
+    style L fill:#e8f5e9
 ```
 
 ### Step-by-Step Process

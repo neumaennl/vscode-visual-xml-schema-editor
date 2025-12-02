@@ -54,7 +54,7 @@ graph TB
     end
     
     ActionCreators -->|Command Messages| PostMessage["postMessage()"]
-    PostMessage -->|"postMessage()"| CommandProcessor
+    PostMessage -->|postMessage()| CommandProcessor
     
     subgraph Extension["VS Code Extension (Backend)"]
         CommandProcessor["Command Processor"]
@@ -64,12 +64,12 @@ graph TB
         CommandProcessor --> DocumentEditor["Document<br/>Editor<br/>(VSCode)"]
     end
     
-    Extension -->|Update Messages| StateReconciler
-    
     subgraph WebviewUpdate["Webview (UI Update)"]
         StateReconciler["State Reconciler"]
         StateReconciler --> DiagramRenderer["Diagram Renderer<br/>(Re-render)"]
     end
+    
+    Extension -->|Update Messages| StateReconciler
     
     style Webview fill:#e3f2fd
     style Extension fill:#fff3e0

@@ -8,14 +8,18 @@
 ## 1. Overview (Goal)
 
 ### Current State
+
 The Visual XML Schema Editor currently operates as a **viewer** with limited editing capabilities. The architecture follows a one-way data flow pattern where:
+
 - The VS Code extension parses XSD files and sends schema objects to the webview
 - The webview renders the schema diagram but has minimal interaction capabilities
 - Document changes trigger re-parsing and full diagram updates
 - The `applySchemaChanges` method is stubbed but not implemented
 
 ### Goal
+
 Transform the viewer into a fully-functional **visual editor** that allows users to:
+
 - Modify XML schema elements, attributes, and types directly through the diagram
 - Add, remove, and edit schema components visually
 - See changes reflected immediately in both the diagram and the underlying XSD file
@@ -23,6 +27,7 @@ Transform the viewer into a fully-functional **visual editor** that allows users
 - Support undo/redo operations through VS Code's native editing infrastructure
 
 ### Success Criteria
+
 - Users can perform common schema editing operations (add/remove/modify elements) through the diagram
 - Changes are persisted back to the XSD file correctly
 - The editing experience is responsive and intuitive
@@ -34,6 +39,7 @@ Transform the viewer into a fully-functional **visual editor** that allows users
 ### Pattern Choice: Command Pattern with Event Sourcing Principles
 
 The editor will use a **Command Pattern** architecture to manage state updates, providing:
+
 - **Encapsulation**: Each editing operation is encapsulated as a command object
 - **Reversibility**: Commands can be undone/redone by design
 - **Auditability**: Command history provides a log of all editing operations
@@ -48,33 +54,33 @@ graph TB
         Properties["Properties<br/>Panel"]
         Toolbar["Toolbar<br/>Actions"]
         ActionCreators["Action Creators"]
-        
+
         Diagram -->|User Actions| ActionCreators
         Properties -->|User Actions| ActionCreators
         Toolbar -->|User Actions| ActionCreators
     end
-    
+
     subgraph Extension["VS Code Extension (Backend)"]
         CommandProcessor["Command Processor"]
         SchemaManager["Schema<br/>Model<br/>Manager"]
         XMLMarshal["XML<br/>Marshal<br/>/Unmarshal"]
         DocumentEditor["Document<br/>Editor<br/>(VSCode)"]
-        
+
         CommandProcessor --> SchemaManager
         CommandProcessor --> XMLMarshal
         CommandProcessor --> DocumentEditor
     end
-    
+
     subgraph WebviewUpdate["Webview (UI Update)"]
         StateReconciler["State Reconciler"]
         DiagramRenderer["Diagram Renderer<br/>(Re-render)"]
-        
+
         StateReconciler --> DiagramRenderer
     end
-    
-    ActionCreators -->|Command Messages| CommandProcessor
-    CommandProcessor -->|Update Messages| StateReconciler
-    
+
+    ActionCreators -->|"Command Messages<br/>postMessage()"| CommandProcessor
+    Extension ---->|Update Messages| WebviewUpdate
+
     style Webview fill:#e3f2fd
     style Extension fill:#fff3e0
     style WebviewUpdate fill:#e8f5e9
@@ -98,16 +104,16 @@ flowchart TD
     B --> C[Command Dispatch]
     C --> D[Validation]
     D --> E[Execution]
-    
+
     E --> F[State Update]
     F --> G[XML Serialization]
     G --> H[Document Edit]
-    
+
     H --> I[Change Event]
     I --> J[State Sync]
     J --> K[UI Reconciliation]
     K --> L[Render Update]
-    
+
     style A fill:#e3f2fd
     style E fill:#fff3e0
     style H fill:#fff3e0
@@ -117,42 +123,45 @@ flowchart TD
 ### Step-by-Step Process
 
 #### 3.1 User Interaction & Action Creation (Webview)
+
 ```typescript
 // User clicks "Add Element" button
-button.addEventListener('click', () => {
+button.addEventListener("click", () => {
   const command = {
-    type: 'addElement',
+    type: "addElement",
     payload: {
       parentId: selectedNode.id,
-      elementName: 'newElement',
-      elementType: 'string'
-    }
+      elementName: "newElement",
+      elementType: "string",
+    },
   };
   vscode.postMessage({
-    command: 'executeCommand',
-    data: command
+    command: "executeCommand",
+    data: command,
   });
 });
 ```
 
 #### 3.2 Command Dispatch & Validation (Extension)
+
 ```typescript
 // Extension receives command
 handleWebviewMessage(message) {
   const command = message.data;
-  
+
   // Validate command
   if (!this.validator.isValid(command)) {
     this.sendError('Invalid command');
     return;
   }
-  
+
   // Execute command
   this.commandProcessor.execute(command, this.schemaModel);
 }
 ```
 
 #### 3.3 Execution & State Update (Extension)
+
 ```typescript
 // Command processor updates schema model
 execute(command, schemaModel) {
@@ -168,6 +177,7 @@ execute(command, schemaModel) {
 ```
 
 #### 3.4 XML Serialization & Document Edit (Extension)
+
 ```typescript
 // Marshal updated schema to XML
 const xmlContent = marshal(schemaModel);
@@ -183,6 +193,7 @@ await vscode.workspace.applyEdit(edit);
 ```
 
 #### 3.5 Change Event & State Sync (Extension)
+
 ```typescript
 // VS Code triggers document change event
 vscode.workspace.onDidChangeTextDocument((e) => {
@@ -190,23 +201,21 @@ vscode.workspace.onDidChangeTextDocument((e) => {
     // Re-parse and send to webview
     const updatedSchema = unmarshal(schema, e.document.getText());
     webview.postMessage({
-      command: 'updateSchema',
-      data: updatedSchema
+      command: "updateSchema",
+      data: updatedSchema,
     });
   }
 });
 ```
 
 #### 3.6 UI Reconciliation & Render Update (Webview)
+
 ```typescript
 // Webview receives updated schema
-window.addEventListener('message', (event) => {
-  if (event.data.command === 'updateSchema') {
+window.addEventListener("message", (event) => {
+  if (event.data.command === "updateSchema") {
     // Smart reconciliation - only update what changed
-    this.reconciler.updateDiagram(
-      this.currentSchema,
-      event.data.data
-    );
+    this.reconciler.updateDiagram(this.currentSchema, event.data.data);
     this.currentSchema = event.data.data;
   }
 });
@@ -225,6 +234,7 @@ window.addEventListener('message', (event) => {
 ### 4.1 Shared Types (shared/types.ts)
 
 #### Command Definitions
+
 ```typescript
 // Base command interface
 export interface Command {
@@ -236,55 +246,55 @@ export interface Command {
 
 // Specific command types
 export interface AddElementCommand extends Command {
-  type: 'addElement';
+  type: "addElement";
   payload: {
     parentId: string;
     elementName: string;
     elementType: string;
     minOccurs?: number;
-    maxOccurs?: number | 'unbounded';
+    maxOccurs?: number | "unbounded";
   };
 }
 
 export interface RemoveElementCommand extends Command {
-  type: 'removeElement';
+  type: "removeElement";
   payload: {
     elementId: string;
   };
 }
 
 export interface ModifyElementCommand extends Command {
-  type: 'modifyElement';
+  type: "modifyElement";
   payload: {
     elementId: string;
     properties: {
       name?: string;
       type?: string;
       minOccurs?: number;
-      maxOccurs?: number | 'unbounded';
+      maxOccurs?: number | "unbounded";
     };
   };
 }
 
 export interface AddAttributeCommand extends Command {
-  type: 'addAttribute';
+  type: "addAttribute";
   payload: {
     elementId: string;
     attributeName: string;
     attributeType: string;
-    use?: 'optional' | 'required' | 'prohibited';
+    use?: "optional" | "required" | "prohibited";
   };
 }
 
 export interface ModifyAttributeCommand extends Command {
-  type: 'modifyAttribute';
+  type: "modifyAttribute";
   payload: {
     elementId: string;
     attributeId: string;
     properties: {
       name?: string;
       type?: string;
-      use?: 'optional' | 'required' | 'prohibited';
+      use?: "optional" | "required" | "prohibited";
     };
   };
 }
@@ -299,10 +309,11 @@ export type SchemaCommand =
 ```
 
 #### Message Protocol
+
 ```typescript
 // Extension → Webview messages
 export interface CommandExecutedMessage extends Message {
-  command: 'commandExecuted';
+  command: "commandExecuted";
   data: {
     success: boolean;
     commandType: string;
@@ -312,7 +323,7 @@ export interface CommandExecutedMessage extends Message {
 
 // Webview → Extension messages
 export interface ExecuteCommandMessage extends Message {
-  command: 'executeCommand';
+  command: "executeCommand";
   data: SchemaCommand;
 }
 ```
@@ -320,28 +331,35 @@ export interface ExecuteCommandMessage extends Message {
 ### 4.2 Extension Side (src/)
 
 #### Command Processor (src/commandProcessor.ts)
+
 ```typescript
 export class CommandProcessor {
   execute(command: SchemaCommand, schemaModel: schema): void {
     switch (command.type) {
-      case 'addElement':
+      case "addElement":
         this.addElement(command.payload, schemaModel);
         break;
-      case 'removeElement':
+      case "removeElement":
         this.removeElement(command.payload, schemaModel);
         break;
-      case 'modifyElement':
+      case "modifyElement":
         this.modifyElement(command.payload, schemaModel);
         break;
       // ... other command handlers
     }
   }
 
-  private addElement(payload: AddElementCommand['payload'], schema: schema): void {
+  private addElement(
+    payload: AddElementCommand["payload"],
+    schema: schema
+  ): void {
     // Implementation: navigate schema tree, add new element
   }
 
-  private removeElement(payload: RemoveElementCommand['payload'], schema: schema): void {
+  private removeElement(
+    payload: RemoveElementCommand["payload"],
+    schema: schema
+  ): void {
     // Implementation: navigate schema tree, remove element
   }
 
@@ -350,6 +368,7 @@ export class CommandProcessor {
 ```
 
 #### Schema Model Manager (src/schemaModelManager.ts)
+
 ```typescript
 export class SchemaModelManager {
   private currentSchema: schema | null = null;
@@ -360,13 +379,13 @@ export class SchemaModelManager {
 
   applyCommand(command: SchemaCommand): void {
     if (!this.currentSchema) return;
-    
+
     const processor = new CommandProcessor();
     processor.execute(command, this.currentSchema);
   }
 
   serialize(): string {
-    if (!this.currentSchema) return '';
+    if (!this.currentSchema) return "";
     return marshal(this.currentSchema);
   }
 
@@ -377,6 +396,7 @@ export class SchemaModelManager {
 ```
 
 #### Updated WebviewProvider (src/webviewProvider.ts)
+
 ```typescript
 export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
   private schemaManager: SchemaModelManager;
@@ -387,9 +407,12 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
     this.commandProcessor = new CommandProcessor();
   }
 
-  private async handleWebviewMessage(message: any, document: vscode.TextDocument) {
+  private async handleWebviewMessage(
+    message: any,
+    document: vscode.TextDocument
+  ) {
     switch (message.command) {
-      case 'executeCommand':
+      case "executeCommand":
         await this.executeCommand(message.data, document);
         break;
       // ... other message handlers
@@ -414,25 +437,25 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
         new vscode.Range(0, 0, document.lineCount, 0),
         xmlContent
       );
-      
+
       const success = await vscode.workspace.applyEdit(edit);
-      
+
       // Send feedback to webview
       this.webview.postMessage({
-        command: 'commandExecuted',
-        data: { 
+        command: "commandExecuted",
+        data: {
           success,
-          commandType: command.type
-        }
+          commandType: command.type,
+        },
       });
     } catch (error) {
       this.webview.postMessage({
-        command: 'commandExecuted',
+        command: "commandExecuted",
         data: {
           success: false,
           commandType: command.type,
-          error: (error as Error).message
-        }
+          error: (error as Error).message,
+        },
       });
     }
   }
@@ -442,49 +465,51 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
 ### 4.3 Webview Side (webview-src/)
 
 #### Action Creators (webview-src/actions.ts)
+
 ```typescript
 export class SchemaActions {
   constructor(private vscode: VSCodeAPI) {}
 
   addElement(parentId: string, elementName: string, elementType: string): void {
     const command: AddElementCommand = {
-      type: 'addElement',
-      payload: { parentId, elementName, elementType }
+      type: "addElement",
+      payload: { parentId, elementName, elementType },
     };
-    
+
     this.vscode.postMessage({
-      command: 'executeCommand',
-      data: command
+      command: "executeCommand",
+      data: command,
     });
   }
 
   removeElement(elementId: string): void {
     const command: RemoveElementCommand = {
-      type: 'removeElement',
-      payload: { elementId }
+      type: "removeElement",
+      payload: { elementId },
     };
-    
+
     this.vscode.postMessage({
-      command: 'executeCommand',
-      data: command
+      command: "executeCommand",
+      data: command,
     });
   }
 
   modifyElement(elementId: string, properties: any): void {
     const command: ModifyElementCommand = {
-      type: 'modifyElement',
-      payload: { elementId, properties }
+      type: "modifyElement",
+      payload: { elementId, properties },
     };
-    
+
     this.vscode.postMessage({
-      command: 'executeCommand',
-      data: command
+      command: "executeCommand",
+      data: command,
     });
   }
 }
 ```
 
 #### State Reconciler (webview-src/reconciler.ts)
+
 ```typescript
 export class StateReconciler {
   /**
@@ -504,14 +529,14 @@ export class StateReconciler {
 
     // Find differences
     const diff = this.computeDiff(oldSchema, newSchema);
-    
+
     if (diff.requiresFullRerender) {
       renderer.renderSchema(newSchema);
     } else {
       // Apply incremental updates
-      diff.additions.forEach(node => renderer.addNode(node));
-      diff.removals.forEach(nodeId => renderer.removeNode(nodeId));
-      diff.modifications.forEach(change => renderer.updateNode(change));
+      diff.additions.forEach((node) => renderer.addNode(node));
+      diff.removals.forEach((nodeId) => renderer.removeNode(nodeId));
+      diff.modifications.forEach((change) => renderer.updateNode(change));
     }
   }
 
@@ -523,6 +548,7 @@ export class StateReconciler {
 ```
 
 #### Updated Main App (webview-src/main.ts)
+
 ```typescript
 class SchemaEditorApp {
   private actions: SchemaActions;
@@ -532,18 +558,18 @@ class SchemaEditorApp {
     this.vscode = acquireVsCodeApi();
     this.actions = new SchemaActions(this.vscode);
     this.reconciler = new StateReconciler();
-    
+
     // ... existing initialization
-    
+
     this.setupEditingActions();
   }
 
   private setupEditingActions(): void {
     // Connect UI elements to actions
-    document.getElementById('addElementBtn')?.addEventListener('click', () => {
+    document.getElementById("addElementBtn")?.addEventListener("click", () => {
       const selectedNodeId = this.propertyPanel.getSelectedNodeId();
       if (selectedNodeId) {
-        this.actions.addElement(selectedNodeId, 'newElement', 'string');
+        this.actions.addElement(selectedNodeId, "newElement", "string");
       }
     });
 
@@ -551,10 +577,10 @@ class SchemaEditorApp {
   }
 
   private setupMessageListener(): void {
-    window.addEventListener('message', (event) => {
+    window.addEventListener("message", (event) => {
       const message = event.data;
       switch (message.command) {
-        case 'updateSchema':
+        case "updateSchema":
           this.reconciler.updateDiagram(
             this.currentSchema,
             message.data,
@@ -563,11 +589,11 @@ class SchemaEditorApp {
           this.currentSchema = message.data;
           this.saveState();
           break;
-        
-        case 'commandExecuted':
+
+        case "commandExecuted":
           this.handleCommandFeedback(message.data);
           break;
-        
+
         // ... other message handlers
       }
     });
@@ -579,7 +605,9 @@ class SchemaEditorApp {
       this.showNotification(`${feedback.commandType} executed successfully`);
     } else {
       // Show error
-      this.showError(`Failed to execute ${feedback.commandType}: ${feedback.error}`);
+      this.showError(
+        `Failed to execute ${feedback.commandType}: ${feedback.error}`
+      );
     }
   }
 }
@@ -588,7 +616,9 @@ class SchemaEditorApp {
 ## 5. Diagram Integration Strategy
 
 ### Current Diagram Renderer
+
 The existing diagram renderer (ported from xsddiagram) handles:
+
 - Parsing schema structure into diagram items
 - Layout calculation (positioning elements)
 - SVG rendering
@@ -597,11 +627,12 @@ The existing diagram renderer (ported from xsddiagram) handles:
 ### Integration Approach
 
 #### 5.1 Make Diagram Interactive
+
 ```typescript
 // Add editing capabilities to diagram items
 class DiagramItem {
   // Existing properties...
-  
+
   // New: Enable editing interactions
   enableEditing(): void {
     this.addContextMenu();
@@ -624,6 +655,7 @@ class DiagramItem {
 ```
 
 #### 5.2 Visual Feedback for Editing
+
 ```typescript
 // Provide visual feedback during editing
 class DiagramRenderer {
@@ -635,13 +667,17 @@ class DiagramRenderer {
     // Preview of new node before creation
   }
 
-  animateNodeChange(nodeId: string, changeType: 'add' | 'remove' | 'modify'): void {
+  animateNodeChange(
+    nodeId: string,
+    changeType: "add" | "remove" | "modify"
+  ): void {
     // Smooth transitions for changes
   }
 }
 ```
 
 #### 5.3 Toolbar Enhancement
+
 ```html
 <!-- Add editing tools to toolbar -->
 <div id="toolbar">
@@ -649,13 +685,13 @@ class DiagramRenderer {
   <button id="zoomIn">Zoom In</button>
   <button id="zoomOut">Zoom Out</button>
   <button id="fitView">Fit View</button>
-  
+
   <!-- New editing tools -->
   <div class="toolbar-separator"></div>
   <button id="addElement" title="Add Element">➕ Element</button>
   <button id="addAttribute" title="Add Attribute">🏷️ Attribute</button>
   <button id="deleteSelected" title="Delete">🗑️ Delete</button>
-  
+
   <!-- Selection info -->
   <div id="selection-info">
     <span id="selected-node-name"></span>
@@ -664,17 +700,18 @@ class DiagramRenderer {
 ```
 
 #### 5.4 Properties Panel Enhancement
+
 ```typescript
 class PropertyPanel {
   display(item: DiagramItem): void {
     // Current: Read-only display
     // New: Editable form fields
-    
+
     this.renderEditableProperties(item, {
-      name: { type: 'text', validator: validateXMLName },
-      type: { type: 'select', options: this.getAvailableTypes() },
-      minOccurs: { type: 'number', min: 0 },
-      maxOccurs: { type: 'number', min: 1, allowUnbounded: true }
+      name: { type: "text", validator: validateXMLName },
+      type: { type: "select", options: this.getAvailableTypes() },
+      minOccurs: { type: "number", min: 0 },
+      maxOccurs: { type: "number", min: 1, allowUnbounded: true },
     });
   }
 
@@ -686,6 +723,7 @@ class PropertyPanel {
 ```
 
 ### 5.5 Selection Model
+
 ```typescript
 // Manage selected nodes for editing operations
 class SelectionManager {
@@ -696,7 +734,7 @@ class SelectionManager {
       this.selectedNodeIds.clear();
     }
     this.selectedNodeIds.add(nodeId);
-    this.emit('selectionChanged', Array.from(this.selectedNodeIds));
+    this.emit("selectionChanged", Array.from(this.selectedNodeIds));
   }
 
   getSelection(): string[] {
@@ -705,7 +743,7 @@ class SelectionManager {
 
   clearSelection(): void {
     this.selectedNodeIds.clear();
-    this.emit('selectionChanged', []);
+    this.emit("selectionChanged", []);
   }
 }
 ```
@@ -713,9 +751,11 @@ class SelectionManager {
 ## 6. Implementation Roadmap
 
 ### Phase 1: Foundation (Weeks 1-2)
+
 **Goal**: Establish command infrastructure
 
 #### Milestones:
+
 - [ ] Define command types in shared/types.ts
 - [ ] Implement CommandProcessor class
 - [ ] Implement SchemaModelManager class
@@ -726,9 +766,11 @@ class SelectionManager {
 **Success Criteria**: Commands can be defined, validated, and executed in isolation
 
 ### Phase 2: Basic Editing (Weeks 3-4)
+
 **Goal**: Implement core editing operations
 
 #### Milestones:
+
 - [ ] Implement AddElementCommand handler
 - [ ] Implement RemoveElementCommand handler
 - [ ] Implement ModifyElementCommand handler
@@ -739,9 +781,11 @@ class SelectionManager {
 **Success Criteria**: Can add, remove, and modify elements programmatically
 
 ### Phase 3: UI Integration (Weeks 5-6)
+
 **Goal**: Make diagram interactive
 
 #### Milestones:
+
 - [ ] Implement SchemaActions in webview
 - [ ] Add context menu to diagram items
 - [ ] Implement toolbar editing buttons
@@ -752,9 +796,11 @@ class SelectionManager {
 **Success Criteria**: Users can perform editing operations through the UI
 
 ### Phase 4: State Reconciliation (Weeks 7-8)
+
 **Goal**: Optimize diagram updates
 
 #### Milestones:
+
 - [ ] Implement StateReconciler
 - [ ] Add diff computation algorithm
 - [ ] Implement incremental diagram updates
@@ -765,9 +811,11 @@ class SelectionManager {
 **Success Criteria**: Diagram updates are smooth and only re-render what changed
 
 ### Phase 5: Advanced Features (Weeks 9-10)
+
 **Goal**: Add sophisticated editing capabilities
 
 #### Milestones:
+
 - [ ] Implement attribute editing commands
 - [ ] Add drag-and-drop reordering
 - [ ] Implement copy/paste functionality
@@ -778,9 +826,11 @@ class SelectionManager {
 **Success Criteria**: Editor supports full range of schema modifications
 
 ### Phase 6: Polish & Testing (Weeks 11-12)
+
 **Goal**: Production readiness
 
 #### Milestones:
+
 - [ ] Comprehensive integration testing
 - [ ] Error handling and recovery
 - [ ] Performance testing with large schemas
@@ -793,18 +843,21 @@ class SelectionManager {
 ### Testing Strategy
 
 #### Unit Tests
+
 - Command execution logic
 - Schema model updates
 - XML marshaling/unmarshaling
 - Diff computation
 
 #### Integration Tests
+
 - End-to-end command flow
 - Document synchronization
 - Webview message handling
 - Error scenarios
 
 #### Manual Testing
+
 - User workflows (add/edit/delete)
 - Complex schema modifications
 - Performance with large schemas
@@ -813,26 +866,34 @@ class SelectionManager {
 ### Risk Mitigation
 
 #### Risk 1: XML Marshaling Complexity
-**Mitigation**: 
+
+**Mitigation**:
+
 - Use existing xmlbind-ts library
 - Extensive testing of round-trip conversions
 - Fallback to text-based edits if marshaling fails
 
 #### Risk 2: Performance with Large Schemas
+
 **Mitigation**:
+
 - Implement incremental updates (StateReconciler)
 - Lazy rendering of collapsed nodes
 - Virtual scrolling for large diagrams
 - Performance profiling and optimization
 
 #### Risk 3: Undo/Redo Integration
+
 **Mitigation**:
+
 - Rely on VS Code's native undo/redo for documents
 - Ensure all edits go through WorkspaceEdit API
 - Test undo/redo extensively
 
 #### Risk 4: State Synchronization
+
 **Mitigation**:
+
 - Single source of truth in extension
 - Webview only holds derived state
 - Reconciliation handles conflicts
@@ -841,22 +902,26 @@ class SelectionManager {
 ## 7. Future Enhancements
 
 ### Multi-User Collaboration
+
 - Command log for conflict resolution
 - Operational transformation for concurrent edits
 - Live presence indicators
 
 ### Advanced Validation
+
 - Real-time schema validation
 - Type checking
 - Cross-reference validation
 - Custom validation rules
 
 ### Import/Export
+
 - Import from other formats (DTD, JSON Schema)
 - Export to other formats
 - Schema templates and snippets
 
 ### Visualization Options
+
 - Multiple diagram layouts (tree, graph, compact)
 - Customizable themes
 - Print and export diagram as image

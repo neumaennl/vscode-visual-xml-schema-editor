@@ -231,387 +231,135 @@ window.addEventListener("message", (event) => {
 
 ## 4. Proposed Changes
 
-### 4.1 Shared Types (shared/types.ts)
+This section outlines the high-level architectural changes required to transform the viewer into an editor. The focus is on component responsibilities and design principles rather than implementation details.
 
-#### Command Definitions
+### 4.1 Shared Type System (shared/types.ts)
 
-```typescript
-// Base command interface
-export interface Command {
-  type: string;
-  payload: any;
-  timestamp?: number;
-  userId?: string; // For future multi-user support
-}
+**Responsibility**: Define the contract between webview and extension for editing operations.
 
-// Specific command types
-export interface AddElementCommand extends Command {
-  type: "addElement";
-  payload: {
-    parentId: string;
-    elementName: string;
-    elementType: string;
-    minOccurs?: number;
-    maxOccurs?: number | "unbounded";
-  };
-}
+**Key Concepts**:
+- **Command Types**: Establish a type-safe vocabulary of editing operations (add, remove, modify) for all schema constructs (elements, attributes, simpleTypes, complexTypes, groups, attributeGroups, annotations, documentation, imports, includes)
+- **Message Protocol**: Define bidirectional communication patterns between webview and extension
+- **Payload Structures**: Specify the data required for each command type with appropriate validation constraints
+- **Response Types**: Standardize success/failure feedback with error information
 
-export interface RemoveElementCommand extends Command {
-  type: "removeElement";
-  payload: {
-    elementId: string;
-  };
-}
+**Design Principles**:
+- Type safety through TypeScript interfaces and union types
+- Extensibility for adding new command types
+- Consistency across all schema modification operations
+- Clear separation between command intent and execution logic
 
-export interface ModifyElementCommand extends Command {
-  type: "modifyElement";
-  payload: {
-    elementId: string;
-    properties: {
-      name?: string;
-      type?: string;
-      minOccurs?: number;
-      maxOccurs?: number | "unbounded";
-    };
-  };
-}
+### 4.2 Extension-Side Architecture (src/)
 
-export interface AddAttributeCommand extends Command {
-  type: "addAttribute";
-  payload: {
-    elementId: string;
-    attributeName: string;
-    attributeType: string;
-    use?: "optional" | "required" | "prohibited";
-  };
-}
+**Responsibility**: Manage schema state, execute commands, and synchronize with VS Code's document model.
 
-export interface ModifyAttributeCommand extends Command {
-  type: "modifyAttribute";
-  payload: {
-    elementId: string;
-    attributeId: string;
-    properties: {
-      name?: string;
-      type?: string;
-      use?: "optional" | "required" | "prohibited";
-    };
-  };
-}
+#### Command Processor
 
-// Union type for type safety
-export type SchemaCommand =
-  | AddElementCommand
-  | RemoveElementCommand
-  | ModifyElementCommand
-  | AddAttributeCommand
-  | ModifyAttributeCommand;
-```
+**Role**: Central dispatcher for all editing commands with validation and execution logic.
 
-#### Message Protocol
+**Responsibilities**:
+- Validate incoming commands against schema rules and constraints
+- Route commands to appropriate handlers based on command type
+- Maintain command execution order and transactionality
+- Provide error handling and recovery mechanisms
+- Support all schema modification types (elements, attributes, simpleTypes, complexTypes, groups, attributeGroups, annotations, documentation, imports, includes)
 
-```typescript
-// Extension → Webview messages
-export interface CommandExecutedMessage extends Message {
-  command: "commandExecuted";
-  data: {
-    success: boolean;
-    commandType: string;
-    error?: string;
-  };
-}
+**Design Principles**:
+- Single responsibility for each command handler
+- Fail-fast validation before any state modification
+- Atomic operations at the schema model level
+- Comprehensive logging for debugging
 
-// Webview → Extension messages
-export interface ExecuteCommandMessage extends Message {
-  command: "executeCommand";
-  data: SchemaCommand;
-}
-```
+#### Schema Model Manager
 
-### 4.2 Extension Side (src/)
+**Role**: Maintain authoritative schema state and orchestrate updates.
 
-#### Command Processor (src/commandProcessor.ts)
+**Responsibilities**:
+- Hold the current parsed schema model as single source of truth
+- Coordinate between command execution and document synchronization
+- Handle schema unmarshaling from XML and marshaling back to XML
+- Manage schema references and imports
+- Provide query interface for schema introspection
 
-```typescript
-export class CommandProcessor {
-  execute(command: SchemaCommand, schemaModel: schema): void {
-    switch (command.type) {
-      case "addElement":
-        this.addElement(command.payload, schemaModel);
-        break;
-      case "removeElement":
-        this.removeElement(command.payload, schemaModel);
-        break;
-      case "modifyElement":
-        this.modifyElement(command.payload, schemaModel);
-        break;
-      // ... other command handlers
-    }
-  }
+**Design Principles**:
+- Encapsulate schema complexity behind clean API
+- Ensure model consistency through controlled mutations
+- Support efficient diff computation for incremental updates
+- Maintain immutability where possible for predictable behavior
 
-  private addElement(
-    payload: AddElementCommand["payload"],
-    schema: schema
-  ): void {
-    // Implementation: navigate schema tree, add new element
-  }
+#### Webview Provider Integration
 
-  private removeElement(
-    payload: RemoveElementCommand["payload"],
-    schema: schema
-  ): void {
-    // Implementation: navigate schema tree, remove element
-  }
+**Role**: Bridge between VS Code's editor infrastructure and custom editing logic.
 
-  // ... other command implementations
-}
-```
+**Responsibilities**:
+- Manage webview lifecycle (creation, disposal, state persistence)
+- Route messages between webview and command processor
+- Apply edits to VS Code documents through WorkspaceEdit API
+- Handle document change events and trigger re-synchronization
+- Coordinate undo/redo through VS Code's native stack
+- Manage dirty state and save operations
 
-#### Schema Model Manager (src/schemaModelManager.ts)
+**Design Principles**:
+- Leverage VS Code's document editing primitives
+- Maintain separation between UI logic and business logic
+- Ensure all edits are undoable through standard mechanisms
+- Handle concurrent edits gracefully
 
-```typescript
-export class SchemaModelManager {
-  private currentSchema: schema | null = null;
+### 4.3 Webview-Side Architecture (webview-src/)
 
-  updateFromDocument(document: vscode.TextDocument): void {
-    this.currentSchema = unmarshal(schema, document.getText());
-  }
+**Responsibility**: Provide interactive UI and translate user actions into commands.
 
-  applyCommand(command: SchemaCommand): void {
-    if (!this.currentSchema) return;
+#### Action Creators
 
-    const processor = new CommandProcessor();
-    processor.execute(command, this.currentSchema);
-  }
+**Role**: Convert user interactions into typed command messages.
 
-  serialize(): string {
-    if (!this.currentSchema) return "";
-    return marshal(this.currentSchema);
-  }
+**Responsibilities**:
+- Encapsulate command construction logic
+- Validate user input before command creation
+- Provide user-friendly API for UI components
+- Handle command serialization for message passing
+- Support all editing operations across schema constructs
 
-  getSchema(): schema | null {
-    return this.currentSchema;
-  }
-}
-```
+**Design Principles**:
+- Pure functions with no side effects
+- Type-safe command construction
+- Clear naming conventions matching command types
+- Consistent error handling patterns
 
-#### Updated WebviewProvider (src/webviewProvider.ts)
+#### State Reconciler
 
-```typescript
-export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
-  private schemaManager: SchemaModelManager;
-  private commandProcessor: CommandProcessor;
+**Role**: Efficiently update UI in response to schema changes.
 
-  constructor(private readonly context: vscode.ExtensionContext) {
-    this.schemaManager = new SchemaModelManager();
-    this.commandProcessor = new CommandProcessor();
-  }
+**Responsibilities**:
+- Compute minimal diff between old and new schema states
+- Determine optimal re-render strategy (full vs. incremental)
+- Coordinate with diagram renderer for visual updates
+- Preserve user state (selection, scroll position, expanded nodes)
+- Handle animation and transitions for smooth UX
 
-  private async handleWebviewMessage(
-    message: any,
-    document: vscode.TextDocument
-  ) {
-    switch (message.command) {
-      case "executeCommand":
-        await this.executeCommand(message.data, document);
-        break;
-      // ... other message handlers
-    }
-  }
+**Design Principles**:
+- Minimize re-renders for performance
+- Predictable update semantics
+- Preserve focus and selection across updates
+- Support both fine-grained and coarse-grained updates
 
-  private async executeCommand(
-    command: SchemaCommand,
-    document: vscode.TextDocument
-  ): Promise<void> {
-    try {
-      // Apply command to schema model
-      this.schemaManager.applyCommand(command);
+#### Main Application Orchestration
 
-      // Serialize to XML
-      const xmlContent = this.schemaManager.serialize();
+**Role**: Coordinate all webview components and manage application lifecycle.
 
-      // Apply edit to document
-      const edit = new vscode.WorkspaceEdit();
-      edit.replace(
-        document.uri,
-        new vscode.Range(0, 0, document.lineCount, 0),
-        xmlContent
-      );
+**Responsibilities**:
+- Initialize all subsystems (renderer, actions, reconciler)
+- Set up message handling and routing
+- Manage user interaction handlers (clicks, drags, keyboard)
+- Coordinate between diagram, toolbar, and properties panel
+- Provide user feedback (notifications, errors, loading states)
+- Persist and restore webview state
 
-      const success = await vscode.workspace.applyEdit(edit);
-
-      // Send feedback to webview
-      this.webview.postMessage({
-        command: "commandExecuted",
-        data: {
-          success,
-          commandType: command.type,
-        },
-      });
-    } catch (error) {
-      this.webview.postMessage({
-        command: "commandExecuted",
-        data: {
-          success: false,
-          commandType: command.type,
-          error: (error as Error).message,
-        },
-      });
-    }
-  }
-}
-```
-
-### 4.3 Webview Side (webview-src/)
-
-#### Action Creators (webview-src/actions.ts)
-
-```typescript
-export class SchemaActions {
-  constructor(private vscode: VSCodeAPI) {}
-
-  addElement(parentId: string, elementName: string, elementType: string): void {
-    const command: AddElementCommand = {
-      type: "addElement",
-      payload: { parentId, elementName, elementType },
-    };
-
-    this.vscode.postMessage({
-      command: "executeCommand",
-      data: command,
-    });
-  }
-
-  removeElement(elementId: string): void {
-    const command: RemoveElementCommand = {
-      type: "removeElement",
-      payload: { elementId },
-    };
-
-    this.vscode.postMessage({
-      command: "executeCommand",
-      data: command,
-    });
-  }
-
-  modifyElement(elementId: string, properties: any): void {
-    const command: ModifyElementCommand = {
-      type: "modifyElement",
-      payload: { elementId, properties },
-    };
-
-    this.vscode.postMessage({
-      command: "executeCommand",
-      data: command,
-    });
-  }
-}
-```
-
-#### State Reconciler (webview-src/reconciler.ts)
-
-```typescript
-export class StateReconciler {
-  /**
-   * Intelligently update the diagram by comparing old and new schema
-   * Only re-render changed portions of the diagram
-   */
-  updateDiagram(
-    oldSchema: schema | null,
-    newSchema: schema,
-    renderer: DiagramRenderer
-  ): void {
-    if (!oldSchema) {
-      // First render - do full render
-      renderer.renderSchema(newSchema);
-      return;
-    }
-
-    // Find differences
-    const diff = this.computeDiff(oldSchema, newSchema);
-
-    if (diff.requiresFullRerender) {
-      renderer.renderSchema(newSchema);
-    } else {
-      // Apply incremental updates
-      diff.additions.forEach((node) => renderer.addNode(node));
-      diff.removals.forEach((nodeId) => renderer.removeNode(nodeId));
-      diff.modifications.forEach((change) => renderer.updateNode(change));
-    }
-  }
-
-  private computeDiff(oldSchema: schema, newSchema: schema): SchemaDiff {
-    // Implementation: compare schema trees and identify changes
-    // Return structured diff object
-  }
-}
-```
-
-#### Updated Main App (webview-src/main.ts)
-
-```typescript
-class SchemaEditorApp {
-  private actions: SchemaActions;
-  private reconciler: StateReconciler;
-
-  constructor() {
-    this.vscode = acquireVsCodeApi();
-    this.actions = new SchemaActions(this.vscode);
-    this.reconciler = new StateReconciler();
-
-    // ... existing initialization
-
-    this.setupEditingActions();
-  }
-
-  private setupEditingActions(): void {
-    // Connect UI elements to actions
-    document.getElementById("addElementBtn")?.addEventListener("click", () => {
-      const selectedNodeId = this.propertyPanel.getSelectedNodeId();
-      if (selectedNodeId) {
-        this.actions.addElement(selectedNodeId, "newElement", "string");
-      }
-    });
-
-    // ... other editing actions
-  }
-
-  private setupMessageListener(): void {
-    window.addEventListener("message", (event) => {
-      const message = event.data;
-      switch (message.command) {
-        case "updateSchema":
-          this.reconciler.updateDiagram(
-            this.currentSchema,
-            message.data,
-            this.renderer
-          );
-          this.currentSchema = message.data;
-          this.saveState();
-          break;
-
-        case "commandExecuted":
-          this.handleCommandFeedback(message.data);
-          break;
-
-        // ... other message handlers
-      }
-    });
-  }
-
-  private handleCommandFeedback(feedback: any): void {
-    if (feedback.success) {
-      // Show success indicator
-      this.showNotification(`${feedback.commandType} executed successfully`);
-    } else {
-      // Show error
-      this.showError(
-        `Failed to execute ${feedback.commandType}: ${feedback.error}`
-      );
-    }
-  }
-}
-```
+**Design Principles**:
+- Clear component boundaries
+- Event-driven architecture
+- Centralized error handling
+- Responsive user feedback
 
 ## 5. Diagram Integration Strategy
 
@@ -701,167 +449,255 @@ class DiagramRenderer {
 
 #### 5.4 Properties Panel Enhancement
 
-```typescript
-class PropertyPanel {
-  display(item: DiagramItem): void {
-    // Current: Read-only display
-    // New: Editable form fields
+**Goal**: Transform the read-only properties panel into an editable interface for modifying schema elements.
 
-    this.renderEditableProperties(item, {
-      name: { type: "text", validator: validateXMLName },
-      type: { type: "select", options: this.getAvailableTypes() },
-      minOccurs: { type: "number", min: 0 },
-      maxOccurs: { type: "number", min: 1, allowUnbounded: true },
-    });
-  }
+**Approach**: Enhance existing property display components to support in-place editing rather than creating a separate editable area.
 
-  private renderEditableProperties(item: DiagramItem, fields: any): void {
-    // Create form with editable fields
-    // On change, emit command through actions
-  }
-}
-```
+**Key Changes**:
+- Make property values editable where appropriate (e.g., element names, types, occurrence constraints)
+- Add appropriate input controls based on property type (text fields, dropdowns, number spinners)
+- Implement inline validation with immediate user feedback
+- Connect property changes to command actions for persistence
+- Preserve read-only display for computed or non-editable properties
+- Support keyboard navigation and accessibility standards
 
-### 5.5 Selection Model
+**Design Considerations**:
+- Match VS Code's form styling and interaction patterns
+- Provide clear visual distinction between editable and read-only properties
+- Support validation at the UI level before sending commands
+- Enable batch edits (e.g., editing multiple properties before applying changes)
+- Handle error states gracefully with informative messages
 
-```typescript
-// Manage selected nodes for editing operations
-class SelectionManager {
-  private selectedNodeIds: Set<string> = new Set();
+### 5.5 Selection Model and Usage
 
-  select(nodeId: string, multi: boolean = false): void {
-    if (!multi) {
-      this.selectedNodeIds.clear();
-    }
-    this.selectedNodeIds.add(nodeId);
-    this.emit("selectionChanged", Array.from(this.selectedNodeIds));
-  }
+**Purpose**: Manage user selection state to enable context-aware editing operations.
 
-  getSelection(): string[] {
-    return Array.from(this.selectedNodeIds);
-  }
+**Core Responsibilities**:
+- Track currently selected diagram nodes (single or multiple selection)
+- Emit selection change events for UI coordination
+- Provide selection queries for editing commands
+- Support keyboard-based selection changes
+- Maintain selection across diagram updates when possible
 
-  clearSelection(): void {
-    this.selectedNodeIds.clear();
-    this.emit("selectionChanged", []);
-  }
-}
-```
+**Integration Points**:
+
+1. **Toolbar Actions**: Toolbar buttons (Add Element, Delete, etc.) operate on the current selection. Buttons are enabled/disabled based on selection state and valid operations.
+
+2. **Properties Panel**: The properties panel displays details for the currently selected node. Selection changes trigger property panel updates.
+
+3. **Context Menus**: Right-click menus show operations valid for the selected node's type. The selection determines available menu items.
+
+4. **Keyboard Shortcuts**: Arrow keys navigate between nodes, updating selection. Hotkeys (Delete, Ctrl+C, Ctrl+V) operate on the selected nodes.
+
+5. **Command Execution**: Commands include the selected node IDs in their payload. For example, "Add Element" adds a child to the selected parent node.
+
+6. **Visual Feedback**: The diagram renderer highlights selected nodes with distinct styling (border, background, etc.) to provide clear visual feedback.
+
+**Selection Patterns**:
+- Click to select single node (replaces previous selection)
+- Ctrl+Click to toggle node in multi-selection
+- Click on canvas background to clear selection
+- Arrow keys to navigate selection
+- Shift+Arrow for extending selection (future enhancement)
+
+**State Preservation**:
+- Selection IDs are preserved across diagram re-renders when nodes still exist
+- Selection is cleared for deleted nodes
+- Selection is adjusted for nodes that have moved in the hierarchy
 
 ## 6. Implementation Roadmap
 
-### Phase 1: Foundation (Weeks 1-2)
+### Phase 1: Foundation
 
-**Goal**: Establish command infrastructure
+**Goal**: Establish command infrastructure and core abstractions.
 
 #### Milestones:
 
-- [ ] Define command types in shared/types.ts
-- [ ] Implement CommandProcessor class
-- [ ] Implement SchemaModelManager class
-- [ ] Update message protocol
-- [ ] Add command validation
+- [ ] Define command types in shared/types.ts for all schema constructs (elements, attributes, simpleTypes, complexTypes, groups, attributeGroups, annotations, documentation, imports, includes)
+- [ ] Implement CommandProcessor class with validation framework
+- [ ] Implement SchemaModelManager class with state management
+- [ ] Update message protocol for bidirectional communication
+- [ ] Add comprehensive command validation
 - [ ] Write unit tests for command execution
+- [ ] Establish error handling patterns
 
-**Success Criteria**: Commands can be defined, validated, and executed in isolation
+**Success Criteria**: Commands can be defined, validated, and executed in isolation with proper error handling.
 
-### Phase 2: Basic Editing (Weeks 3-4)
+### Phase 2: Basic Editing Operations
 
-**Goal**: Implement core editing operations
+**Goal**: Implement core CRUD operations for schema elements.
 
 #### Milestones:
 
-- [ ] Implement AddElementCommand handler
-- [ ] Implement RemoveElementCommand handler
-- [ ] Implement ModifyElementCommand handler
-- [ ] Connect commands to document edits
-- [ ] Implement basic error handling
+- [ ] Implement element commands (add, remove, modify)
+- [ ] Implement attribute commands (add, remove, modify)
+- [ ] Implement simpleType and complexType commands
+- [ ] Connect commands to document edits via WorkspaceEdit
+- [ ] Implement rollback on validation failures
 - [ ] Test with simple schema modifications
+- [ ] Verify undo/redo functionality
 
-**Success Criteria**: Can add, remove, and modify elements programmatically
+**Success Criteria**: Can programmatically add, remove, and modify all major schema constructs with proper VS Code integration.
 
-### Phase 3: UI Integration (Weeks 5-6)
+### Phase 3: UI Integration
 
-**Goal**: Make diagram interactive
+**Goal**: Make diagram and properties panel interactive for user-driven editing.
 
 #### Milestones:
 
-- [ ] Implement SchemaActions in webview
-- [ ] Add context menu to diagram items
+- [ ] Implement SchemaActions in webview for command dispatch
+- [ ] Add context menu to diagram items with relevant actions
 - [ ] Implement toolbar editing buttons
-- [ ] Make properties panel editable
-- [ ] Add visual feedback for operations
-- [ ] Implement selection manager
+- [ ] Make properties panel editable with inline validation
+- [ ] Add visual feedback for operations (loading states, confirmations)
+- [ ] Implement selection manager with multi-select support
+- [ ] Add keyboard shortcuts for common operations
 
-**Success Criteria**: Users can perform editing operations through the UI
+**Success Criteria**: Users can perform all basic editing operations through intuitive UI interactions.
 
-### Phase 4: State Reconciliation (Weeks 7-8)
+### Phase 4: State Reconciliation and Performance
 
-**Goal**: Optimize diagram updates
-
-#### Milestones:
-
-- [ ] Implement StateReconciler
-- [ ] Add diff computation algorithm
-- [ ] Implement incremental diagram updates
-- [ ] Add animation/transitions for changes
-- [ ] Test with complex schemas
-- [ ] Performance optimization
-
-**Success Criteria**: Diagram updates are smooth and only re-render what changed
-
-### Phase 5: Advanced Features (Weeks 9-10)
-
-**Goal**: Add sophisticated editing capabilities
+**Goal**: Optimize diagram updates for responsiveness with large schemas.
 
 #### Milestones:
 
-- [ ] Implement attribute editing commands
-- [ ] Add drag-and-drop reordering
-- [ ] Implement copy/paste functionality
-- [ ] Add keyboard shortcuts
-- [ ] Implement inline editing (double-click)
-- [ ] Add validation feedback in UI
+- [ ] Implement StateReconciler with diff computation
+- [ ] Add incremental diagram updates (avoid full re-renders)
+- [ ] Implement animation/transitions for changes
+- [ ] Add lazy rendering for collapsed nodes
+- [ ] Test with complex schemas (100+ elements) and profile performance
+- [ ] Optimize bottlenecks to achieve smooth operation with medium schemas (200-300 elements)
+- [ ] Implement virtual scrolling if needed for very large schemas
 
-**Success Criteria**: Editor supports full range of schema modifications
+**Success Criteria**: Diagram updates are smooth, only re-render changed portions, and handle large schemas (500+ elements) efficiently. Medium-sized schemas (100-300 elements) should update in under 100ms.
 
-### Phase 6: Polish & Testing (Weeks 11-12)
+### Phase 5: Advanced Editing Features
 
-**Goal**: Production readiness
+**Goal**: Add sophisticated editing capabilities for power users.
 
 #### Milestones:
 
-- [ ] Comprehensive integration testing
-- [ ] Error handling and recovery
-- [ ] Performance testing with large schemas
-- [ ] Accessibility improvements
-- [ ] Documentation and user guide
-- [ ] Bug fixes and refinements
+- [ ] Implement drag-and-drop reordering of elements
+- [ ] Add copy/paste functionality with clipboard integration
+- [ ] Implement inline editing (double-click to rename)
+- [ ] Add find/replace functionality
+- [ ] Implement batch operations (multi-delete, bulk property changes)
+- [ ] Add validation feedback in UI with actionable messages
+- [ ] Support for schema refactoring operations
 
-**Success Criteria**: Editor is stable, performant, and ready for users
+**Success Criteria**: Editor supports full range of schema modifications with advanced productivity features.
+
+### Phase 6: Polish and Hardening
+
+**Goal**: Ensure production readiness with comprehensive testing and refinement.
+
+#### Milestones:
+
+- [ ] Comprehensive integration testing (see Testing Strategy below)
+- [ ] Error handling and recovery for edge cases
+- [ ] Performance testing with large, real-world schemas
+- [ ] Accessibility improvements (ARIA labels, keyboard navigation)
+- [ ] User documentation and guided tutorials
+- [ ] Bug fixes and UI/UX refinements
+- [ ] Security review and vulnerability assessment
+
+**Success Criteria**: Editor is stable, performant, accessible, and ready for production use.
 
 ### Testing Strategy
 
+Testing is critical to ensure the editor works reliably across diverse schemas and usage patterns. The strategy encompasses multiple testing levels:
+
 #### Unit Tests
 
-- Command execution logic
-- Schema model updates
-- XML marshaling/unmarshaling
-- Diff computation
+**Scope**: Individual components and functions in isolation.
+
+**What to Test**:
+- **Command Validation**: Each command type validates its payload correctly, rejecting invalid inputs
+- **Command Execution**: Command processors correctly modify the schema model for all operation types (add, remove, modify)
+- **XML Marshaling/Unmarshaling**: Round-trip conversion preserves schema semantics and structure
+- **Diff Computation**: StateReconciler correctly identifies additions, removals, and modifications
+- **Selection Manager**: Selection state transitions (select, deselect, multi-select) work correctly
+- **Schema Model Queries**: Finding nodes, traversing hierarchy, checking constraints
+
+**Tools**: Jest or Mocha with assertion libraries. Mock VS Code API where needed.
+
+**Coverage Goal**: 80%+ code coverage for core business logic.
 
 #### Integration Tests
 
-- End-to-end command flow
-- Document synchronization
-- Webview message handling
-- Error scenarios
+**Scope**: Component interactions and end-to-end workflows.
+
+**What to Test**:
+- **Command Flow**: User action → command creation → validation → execution → document update → UI refresh
+- **Document Synchronization**: Changes made externally (e.g., direct XML edits) are reflected in diagram
+- **Webview Message Handling**: Messages between webview and extension are correctly serialized, deserialized, and routed
+- **Error Scenarios**: Invalid commands, XML parsing failures, conflicting edits handled gracefully
+- **Undo/Redo**: VS Code's undo/redo stack correctly reverses editing operations
+- **State Persistence**: Webview state (selection, zoom, scroll) persists across VS Code restarts
+- **Multi-Step Workflows**: Complex operations like "add element, set properties, add child" work end-to-end
+
+**Tools**: VS Code Extension Test Runner with integration test suite.
+
+**Test Data**: Diverse schema samples (simple, complex, with references, with namespaces).
+
+#### End-to-End Tests
+
+**Scope**: Complete user workflows from UI interaction to file system changes.
+
+**What to Test**:
+- **Element Lifecycle**: Add element → modify properties → add children → delete element
+- **Attribute Management**: Add attributes → modify properties → remove attributes
+- **Type Editing**: Create simpleType/complexType → reference from element → modify → delete
+- **Refactoring**: Rename element used in multiple places, rename type referenced by elements
+- **Import/Export**: Edit schema with imports, verify references remain valid
+- **Collaboration Simulation**: Simulate external file changes while editor is open
+
+**Tools**: Automated UI testing framework (e.g., Playwright or Selenium for webview).
+
+**Scenarios**: Based on common user workflows and reported issues.
+
+#### Performance Testing
+
+**Scope**: Responsiveness and resource usage with realistic workloads.
+
+**What to Test**:
+- **Large Schema Handling**: Load and edit schemas with 500+ elements
+- **Rendering Performance**: Time to render diagram after edits (target: <100ms for incremental updates)
+- **Memory Usage**: Monitor memory consumption over extended editing sessions
+- **Command Latency**: Measure end-to-end time from user action to UI update (target: <200ms)
+- **Diff Computation Speed**: Measure reconciler performance with large schemas
+
+**Tools**: Performance profiling tools (Chrome DevTools for webview, VS Code profiler).
+
+**Metrics**: Load time, update latency, memory footprint, CPU usage.
 
 #### Manual Testing
 
-- User workflows (add/edit/delete)
-- Complex schema modifications
-- Performance with large schemas
-- Edge cases and error conditions
+**Scope**: Exploratory testing and usability validation.
+
+**What to Test**:
+- **User Workflows**: Realistic editing scenarios (e.g., building a schema from scratch)
+- **Edge Cases**: Unusual schema structures, boundary conditions, error recovery
+- **UX Quality**: Intuitive interactions, clear feedback, consistent behavior
+- **Accessibility**: Screen reader support, keyboard navigation, high contrast themes
+- **Cross-Platform**: Verify on Windows, macOS, Linux with different VS Code versions
+
+**Process**: Dedicated testing sessions with diverse schemas and usage patterns.
+
+**Feedback Loop**: Capture user experience issues and iterate on design.
+
+#### Regression Testing
+
+**Scope**: Ensure new changes don't break existing functionality.
+
+**What to Test**:
+- Re-run unit, integration, and E2E test suites after each change
+- Maintain test suite that covers previously reported bugs
+- Automated CI/CD pipeline runs full test suite on every commit
+
+**Tools**: GitHub Actions or similar CI/CD platform.
+
+**Policy**: All tests must pass before merging to main branch.
 
 ### Risk Mitigation
 
@@ -901,31 +737,134 @@ class SelectionManager {
 
 ## 7. Future Enhancements
 
-### Multi-User Collaboration
+This section outlines potential improvements beyond the initial editor implementation. These are prioritized based on user value and implementation feasibility for a single-developer hobby project.
 
-- Command log for conflict resolution
-- Operational transformation for concurrent edits
-- Live presence indicators
+### High Priority
 
-### Advanced Validation
+#### Git Diff Visualization
 
-- Real-time schema validation
-- Type checking
-- Cross-reference validation
-- Custom validation rules
+**Value**: Enable visual comparison of schema changes for code review and understanding schema evolution.
 
-### Import/Export
+**Features**:
+- Highlight added, removed, and modified elements in the diagram view
+- Color-code changes (green for additions, red for deletions, yellow for modifications)
+- Support diff view between commits, branches, or working tree and HEAD
+- Show before/after comparison in split-pane view
+- Navigate between changes with prev/next buttons
+- Integration with VS Code's source control panel
 
-- Import from other formats (DTD, JSON Schema)
-- Export to other formats
-- Schema templates and snippets
+**Use Cases**:
+- Review pull requests visually
+- Understand impact of schema changes before merging
+- Track schema evolution over time
+- Identify breaking changes quickly
 
-### Visualization Options
+#### Advanced Validation
 
-- Multiple diagram layouts (tree, graph, compact)
-- Customizable themes
-- Print and export diagram as image
-- Minimap for large schemas
+**Value**: Catch schema design errors early and enforce best practices.
+
+**Features**:
+- Real-time schema validation as user edits
+- Type checking for references (ensure referenced types exist)
+- Cross-reference validation (detect circular dependencies)
+- Naming convention enforcement (configurable rules)
+- Complexity metrics (depth, breadth, total elements)
+- Actionable validation messages with quick fixes
+
+**Use Cases**:
+- Prevent invalid schemas from being saved
+- Enforce organizational standards
+- Improve schema quality and maintainability
+
+#### Visualization Options
+
+**Value**: Support diverse user preferences and schema characteristics.
+
+**Features**:
+- Multiple diagram layouts: tree (current), compact tree, horizontal tree
+- Customizable themes matching VS Code color schemes
+- Print and export diagram as SVG/PNG/PDF
+- Minimap for large schemas with viewport indicator
+- Zoom to fit / zoom to selection
+- Collapsible annotations and documentation blocks
+
+**Use Cases**:
+- Present schemas in documentation
+- Navigate large schemas efficiently
+- Customize visual appearance to preference
+- Print diagrams for offline review
+
+### Medium Priority
+
+#### Import/Export
+
+**Value**: Support interoperability with other schema tools and formats.
+
+**Features**:
+- Import from DTD (convert to XSD)
+- Import from JSON Schema (convert to XSD)
+- Export to JSON Schema
+- Export to TypeScript interfaces (via codegen)
+- Schema templates and starter snippets
+- Import/export custom type libraries
+
+**Use Cases**:
+- Migrate from legacy DTD schemas
+- Integrate with REST APIs using JSON Schema
+- Generate type-safe code from schemas
+- Accelerate schema creation with templates
+
+#### Search and Navigation
+
+**Value**: Improve productivity when working with large schemas.
+
+**Features**:
+- Full-text search across element names, types, annotations
+- Find all references to a type or element
+- Go to definition (navigate to type definition)
+- Breadcrumb navigation showing current location in hierarchy
+- Bookmark frequently accessed schema sections
+- Filter diagram by element type or namespace
+
+**Use Cases**:
+- Quickly locate specific elements in large schemas
+- Understand type usage and dependencies
+- Navigate complex schema hierarchies efficiently
+
+### Low Priority
+
+#### Schema Refactoring Tools
+
+**Value**: Safely restructure schemas while preserving semantics.
+
+**Features**:
+- Rename element/type with automatic reference updates
+- Extract complexType from inline definition
+- Inline complexType (replace references with definition)
+- Convert between element and attribute
+- Split large schema into multiple files with imports
+- Merge small schemas into a single file
+
+**Use Cases**:
+- Improve schema organization and maintainability
+- Safely rename schema components
+- Optimize schema structure
+
+#### Collaborative Features (Deprioritized)
+
+**Rationale**: Multi-user real-time collaboration (operational transformation, live presence) adds significant complexity and is not well-suited to file-based editing in VS Code. Git-based workflows provide sufficient collaboration through branching, merging, and diff visualization.
+
+**Limited Scope Features** (if revisited):
+- Comment/annotation system for team discussions on schema design
+- Change tracking log (who changed what, when) leveraging Git history
+- Schema review workflow integration (request review, approve, merge)
+
+**Why Deprioritized**:
+- Single-file editing doesn't benefit from real-time collaborative editing
+- VS Code's Live Share extension already provides collaborative editing
+- Git provides robust, asynchronous collaboration workflow
+- Implementation complexity is very high relative to user value
+- Operational transformation and conflict resolution are non-trivial
 
 ## 8. Conclusion
 

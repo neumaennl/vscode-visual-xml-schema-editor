@@ -673,7 +673,7 @@ Testing is critical to ensure the editor works reliably across diverse schemas a
 - **Command Latency**: Measure end-to-end time from user action to UI update (target: <200ms)
 - **Diff Computation Speed**: Measure reconciler performance with large schemas
 
-**Tools**: Performance profiling tools ([Chrome DevTools](https://developer.chrome.com/docs/devtools/) for webview, [VS Code profiler](https://code.visualstudio.com/docs/editor/profiles)).
+**Tools**: Performance profiling tools ([Chrome DevTools](https://developer.chrome.com/docs/devtools/) for webview, [VS Code performance profiling](https://code.visualstudio.com/api/advanced-topics/extension-host#performance-considerations)).
 
 **Metrics**: Load time, update latency, memory footprint, CPU usage.
 

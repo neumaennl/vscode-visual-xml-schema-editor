@@ -48,15 +48,13 @@ graph TB
         Properties["Properties<br/>Panel"]
         Toolbar["Toolbar<br/>Actions"]
         
-        Diagram --> UserActions["User Actions"]
-        Properties --> UserActions
-        Toolbar --> UserActions
-        
-        UserActions --> ActionCreators["Action Creators"]
-        ActionCreators -->|Command Messages| PostMessage["postMessage()"]
+        Diagram -->|User Actions| ActionCreators["Action Creators"]
+        Properties -->|User Actions| ActionCreators
+        Toolbar -->|User Actions| ActionCreators
     end
     
-    PostMessage -->|"postMessage()"| Extension
+    ActionCreators -->|Command Messages| PostMessage["postMessage()"]
+    PostMessage -->|"postMessage()"| CommandProcessor
     
     subgraph Extension["VS Code Extension (Backend)"]
         CommandProcessor["Command Processor"]
@@ -66,7 +64,7 @@ graph TB
         CommandProcessor --> DocumentEditor["Document<br/>Editor<br/>(VSCode)"]
     end
     
-    Extension -->|Update Messages| WebviewUpdate
+    Extension -->|Update Messages| StateReconciler
     
     subgraph WebviewUpdate["Webview (UI Update)"]
         StateReconciler["State Reconciler"]
@@ -91,20 +89,24 @@ graph TB
 ### Detailed Flow
 
 ```mermaid
-graph LR
+flowchart TD
     A[User Interaction] --> B[Action Creation]
     B --> C[Command Dispatch]
     C --> D[Validation]
     D --> E[Execution]
+    
     E --> F[State Update]
     F --> G[XML Serialization]
     G --> H[Document Edit]
+    
     H --> I[Change Event]
     I --> J[State Sync]
     J --> K[UI Reconciliation]
     K --> L[Render Update]
     
     style A fill:#e3f2fd
+    style E fill:#fff3e0
+    style H fill:#fff3e0
     style L fill:#e8f5e9
 ```
 

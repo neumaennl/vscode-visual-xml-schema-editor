@@ -32,9 +32,6 @@ export class DiagramBuilder {
 
     console.log("DiagramBuilder - Building from schema:", schemaObj);
 
-    // For now, create a simplified representation
-    // TODO: Properly traverse the schema structure once we understand the generated class hierarchy better
-
     // Create a root node representing the schema
     const targetNs = schemaObj?.targetNamespace?.toString() || "no namespace";
     const schemaNode = new DiagramItem(
@@ -196,6 +193,11 @@ export class DiagramBuilder {
 
     // Extract documentation
     item.documentation = this.extractDocumentation(simpleType.annotation) ?? "";
+
+    // Process restriction/list/union if present to extract base type
+    if (simpleType.restriction) {
+      this.processSimpleTypeRestriction(item, simpleType.restriction);
+    }
 
     return item;
   }

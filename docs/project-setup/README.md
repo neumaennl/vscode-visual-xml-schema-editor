@@ -16,10 +16,10 @@ Columns:
 - Phase 3: UI Integration - Webview actions, toolbar, properties panel
 - Phase 4: State Reconciliation - Implement StateReconciler and incremental updates
 - Phase 5: Advanced Features - Attributes, drag/drop, copy/paste
-- Phase 6: Polish &amp; Testing - Integration and performance testing
+- Phase 6: Polish & Testing - Integration and performance testing
 
 ## How to create the board
-1. Go to the repository &gt; Projects &gt; New project
+1. Go to the repository > Projects > New project
 2. Name: `Editor Refactor`
 3. Visibility: Repository
 4. Create columns as recommended above

@@ -238,7 +238,12 @@ This section outlines the high-level architectural changes required to transform
 **Responsibility**: Define the contract between webview and extension for editing operations.
 
 **Key Concepts**:
-- **Command Types**: Establish a type-safe vocabulary of editing operations (add, remove, modify) for all schema constructs (elements, attributes, simpleTypes, complexTypes, groups, attributeGroups, annotations, documentation, imports, includes)
+- **Command Types**: Establish a type-safe vocabulary of editing operations (add, remove, modify) for all schema constructs:
+  - Core structures: elements, attributes
+  - Type definitions: simpleTypes, complexTypes
+  - Organizational: groups, attributeGroups
+  - Metadata: annotations, documentation
+  - Modularity: imports, includes
 - **Message Protocol**: Define bidirectional communication patterns between webview and extension
 - **Payload Structures**: Specify the data required for each command type with appropriate validation constraints
 - **Response Types**: Standardize success/failure feedback with error information
@@ -565,11 +570,12 @@ class DiagramRenderer {
 - [ ] Add incremental diagram updates (avoid full re-renders)
 - [ ] Implement animation/transitions for changes
 - [ ] Add lazy rendering for collapsed nodes
-- [ ] Test with complex schemas (100+ elements) and profile performance
-- [ ] Optimize bottlenecks to achieve smooth operation with medium schemas (200-300 elements)
+- [ ] Test with medium schemas (100-300 elements) and profile performance
+- [ ] Optimize bottlenecks to achieve smooth operation
+- [ ] Test with large schemas (500+ elements) and verify acceptable performance
 - [ ] Implement virtual scrolling if needed for very large schemas
 
-**Success Criteria**: Diagram updates are smooth, only re-render changed portions, and handle large schemas (500+ elements) efficiently. Medium-sized schemas (100-300 elements) should update in under 100ms.
+**Success Criteria**: Diagram updates are smooth, only re-render changed portions, and handle medium schemas (100-300 elements) with updates in under 100ms. Large schemas (500+ elements) should remain usable with acceptable response times (<500ms for updates).
 
 ### Phase 5: Advanced Editing Features
 
@@ -585,7 +591,7 @@ class DiagramRenderer {
 - [ ] Add validation feedback in UI with actionable messages
 - [ ] Support for schema refactoring operations
 
-**Success Criteria**: Editor supports full range of schema modifications with advanced productivity features.
+**Success Criteria**: Users can perform all editing operations defined in Phase 1-4 using advanced methods (drag-and-drop, copy/paste, keyboard shortcuts, batch operations). Operations that span multiple elements (find/replace, bulk edits) work reliably. UI provides real-time validation feedback.
 
 ### Phase 6: Polish and Hardening
 

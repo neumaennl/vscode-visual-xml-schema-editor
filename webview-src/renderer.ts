@@ -271,6 +271,58 @@ export class DiagramRenderer {
   }
 
   /**
+   * Fit the rendered diagram content into the canvas viewport
+   * keeping a small padding around all sides.
+   * @param padding - Padding in screen pixels
+   */
+  public fitToCanvas(padding: number = 24): ViewState {
+    // Ensure there is content
+    if (!this.canvas || !this.mainGroup) {
+      return this.viewState;
+    }
+
+    const bbox = this.mainGroup.getBBox();
+    const canvasWidth =
+      this.canvas.clientWidth || this.canvas.viewBox.baseVal.width || 0;
+    const canvasHeight =
+      this.canvas.clientHeight || this.canvas.viewBox.baseVal.height || 0;
+
+    if (
+      canvasWidth === 0 ||
+      canvasHeight === 0 ||
+      bbox.width === 0 ||
+      bbox.height === 0
+    ) {
+      return this.viewState;
+    }
+
+    // Add padding around the content box
+    const paddedWidth = bbox.width + padding * 2;
+    const paddedHeight = bbox.height + padding * 2;
+
+    // Compute scale to fit both width and height
+    const scaleX = canvasWidth / paddedWidth;
+    const scaleY = canvasHeight / paddedHeight;
+    const scale = Math.min(scaleX, scaleY);
+
+    // Target center of content in diagram space
+    const contentCenterX = bbox.x + bbox.width / 2;
+    const contentCenterY = bbox.y + bbox.height / 2;
+
+    // Canvas center in screen space
+    const centerX = canvasWidth / 2;
+    const centerY = canvasHeight / 2;
+
+    // Compute pan so that content center maps to canvas center
+    const panX = centerX - contentCenterX * scale;
+    const panY = centerY - contentCenterY * scale;
+
+    const newView: ViewState = { zoom: scale, panX, panY };
+    this.updateView(newView);
+    return newView;
+  }
+
+  /**
    * Select a specific node in the diagram
    * @param nodeId - ID of the node to select
    */

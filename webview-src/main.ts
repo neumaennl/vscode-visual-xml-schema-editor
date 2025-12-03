@@ -162,10 +162,11 @@ class SchemaEditorApp {
     });
 
     fitViewBtn?.addEventListener("click", () => {
-      this.viewState = { zoom: 1, panX: 0, panY: 0 };
-      if (this.currentSchema) {
-        this.centerDiagram();
-      }
+      if (!this.currentSchema) return;
+      // Fit the diagram content precisely into the canvas
+      const newView = this.renderer.fitToCanvas(24);
+      this.viewState = newView;
+      this.saveState();
     });
   }
 

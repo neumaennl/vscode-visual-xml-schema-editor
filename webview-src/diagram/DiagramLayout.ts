@@ -12,7 +12,7 @@ export class DiagramLayout {
   private readonly ELEMENT_WIDTH = 120;
   private readonly ELEMENT_HEIGHT = 40;
   private readonly GROUP_WIDTH = 40;
-  private readonly GROUP_HEIGHT = 40;
+  private readonly GROUP_HEIGHT = 20;
   private readonly HORIZONTAL_SPACING = 40;
   private readonly VERTICAL_SPACING = 20;
   private readonly EXPAND_BUTTON_SIZE = 12;
@@ -112,18 +112,24 @@ export class DiagramLayout {
    * Layout children of an item
    */
   private layoutChildren(parent: DiagramItem): void {
-    let currentY = parent.location.y;
     // Position children relative to parent's width + expand button + spacing
     // Expand button: 5px gap + 12px button + 5px gap = 22px
     // Use single spacing for one child (no vertical line), double spacing for multiple (with vertical line)
-    const horizontalSpacing = parent.childElements.length === 1 
-      ? this.HORIZONTAL_SPACING 
-      : this.HORIZONTAL_SPACING * 2;
-    const startX = parent.location.x + parent.size.width + 22 + horizontalSpacing;
+    const horizontalSpacing =
+      parent.childElements.length === 1
+        ? this.HORIZONTAL_SPACING
+        : this.HORIZONTAL_SPACING * 2;
+    const startX =
+      parent.location.x + parent.size.width + 22 + horizontalSpacing;
+    const parentCenterY = parent.location.y + parent.size.height / 2;
 
-    // Layout each child
+    let currentY = parentCenterY;
     for (const child of parent.childElements) {
-      child.location = { x: startX, y: currentY };
+      // Calculate child size first to know its height
+      this.calculateSize(child);
+      // Center child vertically with parent
+      const childY = currentY - child.size.height / 2;
+      child.location = { x: startX, y: childY };
       this.layoutItem(child);
       currentY += child.boundingBox.height + this.VERTICAL_SPACING;
     }

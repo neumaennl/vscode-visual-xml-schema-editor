@@ -91,7 +91,7 @@ export function renderTypeShape(
   item: DiagramItem,
   group: SVGElement
 ): void {
-  const bevel = Math.round(rect.height * 0.3);
+  const bevel = Math.round(rect.height * 0.2);
   const points: Point[] = [
     { x: rect.x + bevel, y: rect.y },
     { x: rect.x + rect.width, y: rect.y },
@@ -109,7 +109,22 @@ export function renderTypeShape(
     }));
     svgPolygon(group, shadowPoints, fill, stroke);
   }
+
+  // Draw main shape
   svgPolygon(group, points, fill, stroke);
+
+  // For simple types, fill the beveled area with the stroke color
+  if (item.isSimpleContent) {
+    const bevelFillPoints: Point[] = [
+      { x: rect.x, y: rect.y + bevel },
+      { x: rect.x + bevel, y: rect.y },
+      { x: rect.x + bevel, y: rect.y + rect.height },
+      { x: rect.x, y: rect.y + rect.height - bevel },
+    ];
+    // Extract stroke color from stroke style string
+    const strokeColor = stroke.replace(/^stroke:/, "").split(";")[0];
+    svgPolygon(group, bevelFillPoints, `fill:${strokeColor}`, "stroke:none");
+  }
 }
 
 /**

@@ -41,46 +41,24 @@ export class DiagramBuilder {
       this.diagram
     );
 
-    // Try to extract any available information from the schema
-    // Note: The generated classes need to be enhanced to properly expose child elements
-    if ((schemaObj as any).element) {
-      const elements = Array.isArray((schemaObj as any).element)
-        ? (schemaObj as any).element
-        : [(schemaObj as any).element];
+    // Process schema child elements
+    this.processChildCollection(
+      schemaNode,
+      (schemaObj as any).element,
+      (elem) => this.createElementNode(elem)
+    );
 
-      for (const elem of elements) {
-        const elemNode = this.createElementNode(elem);
-        if (elemNode) {
-          schemaNode.addChild(elemNode);
-        }
-      }
-    }
+    this.processChildCollection(
+      schemaNode,
+      (schemaObj as any).complexType,
+      (ct) => this.createComplexTypeNode(ct)
+    );
 
-    if ((schemaObj as any).complexType) {
-      const complexTypes = Array.isArray((schemaObj as any).complexType)
-        ? (schemaObj as any).complexType
-        : [(schemaObj as any).complexType];
-
-      for (const ct of complexTypes) {
-        const typeNode = this.createComplexTypeNode(ct);
-        if (typeNode) {
-          schemaNode.addChild(typeNode);
-        }
-      }
-    }
-
-    if ((schemaObj as any).simpleType) {
-      const simpleTypes = Array.isArray((schemaObj as any).simpleType)
-        ? (schemaObj as any).simpleType
-        : [(schemaObj as any).simpleType];
-
-      for (const st of simpleTypes) {
-        const typeNode = this.createSimpleTypeNode(st);
-        if (typeNode) {
-          schemaNode.addChild(typeNode);
-        }
-      }
-    }
+    this.processChildCollection(
+      schemaNode,
+      (schemaObj as any).simpleType,
+      (st) => this.createSimpleTypeNode(st)
+    );
 
     // If no children were added, add a placeholder
     if (schemaNode.childElements.length === 0) {
@@ -125,14 +103,7 @@ export class DiagramBuilder {
     }
 
     // Extract occurrence constraints
-    if (element.minOccurs !== undefined) {
-      item.minOccurrence = parseInt(element.minOccurs.toString(), 10) || 0;
-    }
-    if (element.maxOccurs !== undefined) {
-      const maxOccurs = element.maxOccurs.toString();
-      item.maxOccurrence =
-        maxOccurs === "unbounded" ? -1 : parseInt(maxOccurs, 10) || 1;
-    }
+    this.extractOccurrenceConstraints(item, element);
 
     // Extract documentation
     item.documentation = this.extractDocumentation(element.annotation) ?? "";
@@ -167,6 +138,9 @@ export class DiagramBuilder {
       this.diagram
     );
 
+    // Set initial type
+    item.type = "complexType";
+
     this.processComplexType(item, complexType);
 
     return item;
@@ -189,6 +163,8 @@ export class DiagramBuilder {
       this.diagram
     );
 
+    item.type = "simpleType";
+
     item.isSimpleContent = true;
 
     // Extract documentation
@@ -196,7 +172,7 @@ export class DiagramBuilder {
 
     // Process restriction/list/union if present to extract base type
     if (simpleType.restriction) {
-      this.processSimpleTypeRestriction(item, simpleType.restriction);
+      this.processRestriction(item, simpleType.restriction);
     }
 
     return item;
@@ -247,7 +223,7 @@ export class DiagramBuilder {
 
     // Process restriction/list/union if present to extract base type
     if (simpleType.restriction) {
-      this.processSimpleTypeRestriction(parent, simpleType.restriction);
+      this.processRestriction(parent, simpleType.restriction);
     }
 
     // Set type if not already set
@@ -259,23 +235,6 @@ export class DiagramBuilder {
   }
 
   /**
-   * Process a simple type restriction to extract base type and facets
-   * @param parent - Parent simple type item
-   * @param restriction - Restriction definition
-   */
-  private processSimpleTypeRestriction(
-    parent: DiagramItem,
-    restriction: any
-  ): void {
-    // Extract base type
-    if (restriction.base) {
-      parent.type = restriction.base.toString();
-    }
-
-    // TODO: Could also extract enumeration values, patterns, etc. here in the future
-  }
-
-  /**
    * Process a complex type and add its children to the parent item
    * @param parent - Parent diagram item to add children to
    * @param complexType - Complex type definition from schema
@@ -283,6 +242,33 @@ export class DiagramBuilder {
   private processComplexType(parent: DiagramItem, complexType: any): void {
     // Process attributes
     this.extractAttributes(parent, complexType);
+
+    // Process complexContent
+    if (complexType.complexContent) {
+      parent.type += " with complexContent";
+
+      if (complexType.complexContent.extension) {
+        this.processExtension(parent, complexType.complexContent.extension);
+      }
+
+      if (complexType.complexContent.restriction) {
+        this.processRestriction(parent, complexType.complexContent.restriction);
+      }
+    }
+
+    // Process simpleContent
+    if (complexType.simpleContent) {
+      parent.isSimpleContent = true;
+      parent.type += " with simpleContent";
+
+      if (complexType.simpleContent.extension) {
+        this.processExtension(parent, complexType.simpleContent.extension);
+      }
+
+      if (complexType.simpleContent.restriction) {
+        this.processRestriction(parent, complexType.simpleContent.restriction);
+      }
+    }
 
     // Process sequence
     if (complexType.sequence) {
@@ -297,16 +283,6 @@ export class DiagramBuilder {
     // Process all
     if (complexType.all) {
       this.processAll(parent, complexType.all);
-    }
-
-    // Process complexContent/extension
-    if (complexType.complexContent?.extension) {
-      this.processExtension(parent, complexType.complexContent.extension);
-    }
-
-    // Process simpleContent
-    if (complexType.simpleContent) {
-      parent.isSimpleContent = true;
     }
   }
 
@@ -363,18 +339,12 @@ export class DiagramBuilder {
     );
     groupNode.groupType = groupType;
 
-    if (groupDef.element) {
-      const elements = Array.isArray(groupDef.element)
-        ? groupDef.element
-        : [groupDef.element];
+    // Extract occurrence constraints for the group
+    this.extractOccurrenceConstraints(groupNode, groupDef);
 
-      for (const elem of elements) {
-        const elemNode = this.createElementNode(elem);
-        if (elemNode) {
-          groupNode.addChild(elemNode);
-        }
-      }
-    }
+    this.processChildCollection(groupNode, groupDef.element, (elem) =>
+      this.createElementNode(elem)
+    );
 
     if (groupNode.childElements.length > 0) {
       parent.addChild(groupNode);
@@ -387,11 +357,9 @@ export class DiagramBuilder {
    * @param extension - Extension definition from schema
    */
   private processExtension(parent: DiagramItem, extension: any): void {
-    // Process base type reference
     if (extension.base) {
-      parent.type = extension.base.toString();
+      parent.type += ` (extension of ${extension.base.toString()})`;
     }
-
     // Extract attributes from extension
     this.extractAttributes(parent, extension);
 
@@ -399,6 +367,45 @@ export class DiagramBuilder {
     if (extension.sequence) {
       this.processSequence(parent, extension.sequence);
     }
+
+    // Process choice in extension
+    if (extension.choice) {
+      this.processChoice(parent, extension.choice);
+    }
+
+    // Process all in extension
+    if (extension.all) {
+      this.processAll(parent, extension.all);
+    }
+  }
+
+  /**
+   * Process a restriction and apply it to the parent item
+   * @param parent - Parent diagram item to restrict
+   * @param restriction - Restriction definition from schema
+   */
+  private processRestriction(parent: DiagramItem, restriction: any): void {
+    if (restriction.base) {
+      parent.type += ` (restriction on ${restriction.base.toString()})`;
+    }
+    // Extract attributes from restriction
+    this.extractAttributes(parent, restriction);
+
+    // Process sequence in restriction
+    if (restriction.sequence) {
+      this.processSequence(parent, restriction.sequence);
+    }
+
+    // Process choice in restriction
+    if (restriction.choice) {
+      this.processChoice(parent, restriction.choice);
+    }
+
+    // Process all in restriction
+    if (restriction.all) {
+      this.processAll(parent, restriction.all);
+    }
+    // TODO: Could also extract enumeration values, patterns, etc. here in the future
   }
 
   /**
@@ -411,12 +418,7 @@ export class DiagramBuilder {
       return;
     }
 
-    const attributes = source.attribute;
-    if (!attributes) {
-      return;
-    }
-
-    const attrArray = Array.isArray(attributes) ? attributes : [attributes];
+    const attrArray = this.toArray(source.attribute);
 
     for (const attr of attrArray) {
       if (!attr.name) {
@@ -443,10 +445,56 @@ export class DiagramBuilder {
       return undefined;
     }
 
-    const docs = Array.isArray(annotation.documentation)
-      ? annotation.documentation
-      : [annotation.documentation];
+    const docs = this.toArray(annotation.documentation);
     return docs.map((d: any) => d.value).join("\n");
+  }
+
+  /**
+   * Normalize a value to an array (handles both single values and arrays)
+   * @param value - Value that may be a single item or array
+   * @returns Array of items
+   */
+  private toArray<T>(value: T | T[] | undefined): T[] {
+    if (!value) {
+      return [];
+    }
+    return Array.isArray(value) ? value : [value];
+  }
+
+  /**
+   * Extract occurrence constraints from an element
+   * @param item - Diagram item to update
+   * @param source - Source object with minOccurs/maxOccurs properties
+   */
+  private extractOccurrenceConstraints(item: DiagramItem, source: any): void {
+    if (source.minOccurs !== undefined) {
+      item.minOccurrence = parseInt(source.minOccurs.toString(), 10) || 0;
+    }
+    if (source.maxOccurs !== undefined) {
+      const maxOccurs = source.maxOccurs.toString();
+      item.maxOccurrence =
+        maxOccurs === "unbounded" ? -1 : parseInt(maxOccurs, 10) || 1;
+    }
+  }
+
+  /**
+   * Process child items from a schema collection and add them to parent
+   * @param parent - Parent diagram item
+   * @param items - Collection of items to process
+   * @param createFn - Function to create diagram item from schema item
+   */
+  private processChildCollection(
+    parent: DiagramItem,
+    items: any,
+    createFn: (item: any) => DiagramItem | null
+  ): void {
+    const itemArray = this.toArray(items);
+    for (const item of itemArray) {
+      const node = createFn(item);
+      if (node) {
+        parent.addChild(node);
+      }
+    }
   }
 
   /**

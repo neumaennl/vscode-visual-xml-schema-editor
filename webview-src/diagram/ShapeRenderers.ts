@@ -36,7 +36,7 @@ export function renderElementShape(
 }
 
 /**
- * Render a group as a diamond shape with optional shadow for multiple occurrences
+ * Render a group as an octagon shape with optional shadow for multiple occurrences
  * @param rect - Rectangle dimensions and position
  * @param fill - Fill style string
  * @param stroke - Stroke style string
@@ -52,12 +52,14 @@ export function renderGroupShape(
 ): void {
   const bevel = Math.round(rect.height * 0.3);
   const points: Point[] = [
-    { x: rect.x, y: rect.y + bevel },
-    { x: rect.x + rect.width / 2, y: rect.y },
+    { x: rect.x + bevel, y: rect.y },
+    { x: rect.x + rect.width - bevel, y: rect.y },
     { x: rect.x + rect.width, y: rect.y + bevel },
     { x: rect.x + rect.width, y: rect.y + rect.height - bevel },
-    { x: rect.x + rect.width / 2, y: rect.y + rect.height },
+    { x: rect.x + rect.width - bevel, y: rect.y + rect.height },
+    { x: rect.x + bevel, y: rect.y + rect.height },
     { x: rect.x, y: rect.y + rect.height - bevel },
+    { x: rect.x, y: rect.y + bevel },
   ];
 
   if (item.maxOccurrence !== 1) {

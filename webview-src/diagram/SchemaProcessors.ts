@@ -202,6 +202,8 @@ function processGroup(
   groupItem.groupType = groupType;
 
   // Process elements within the group
+  // Import and use createElementNode from TypeNodeCreators would create a circular dependency,
+  // so we create a lightweight element node inline with essential properties
   processChildCollection(groupItem, groupDef.element, (elem) => {
     const item = new DiagramItem(
       generateId(),
@@ -213,10 +215,24 @@ function processGroup(
       item.type = elem.type_.toString();
     }
     item.documentation = extractDocumentation(elem.annotation) ?? "";
+    
+    // Extract occurrence constraints for the element
+    if (elem.minOccurs !== undefined) {
+      item.minOccurrence = parseInt(elem.minOccurs.toString(), 10) || 0;
+    }
+    if (elem.maxOccurs !== undefined) {
+      const maxOccurs = elem.maxOccurs.toString();
+      item.maxOccurrence =
+        maxOccurs === "unbounded" ? -1 : parseInt(maxOccurs, 10) || 1;
+    }
+    
     return item;
   });
 
-  parent.addChild(groupItem);
+  // Only add the group if it has children
+  if (groupItem.childElements.length > 0) {
+    parent.addChild(groupItem);
+  }
 }
 
 /**
@@ -227,9 +243,13 @@ function processGroup(
  * @param extension - Extension definition from schema
  */
 export function processExtension(parent: DiagramItem, extension: any): void {
-  // Extract base type
+  // Extract base type - preserve existing type info by appending
   if (extension.base) {
-    parent.type = `extends ${extension.base.toString()}`;
+    if (parent.type) {
+      parent.type += ` (extends ${extension.base.toString()})`;
+    } else {
+      parent.type = `extends ${extension.base.toString()}`;
+    }
   }
 
   // Extract attributes from extension

@@ -714,6 +714,20 @@ describe("Command Types", () => {
       expect(message.data.code).toBe("VALIDATION_ERROR");
     });
 
+    test("ErrorMessage with stack trace", () => {
+      const message: ErrorMessage = {
+        command: "error",
+        data: {
+          message: "Runtime error",
+          code: "RUNTIME_ERROR",
+          stack: "Error: Runtime error\n  at line 1",
+        },
+      };
+
+      expect(message.data.stack).toBeDefined();
+      expect(message.data.stack).toContain("Runtime error");
+    });
+
     test("CommandResultMessage should have correct structure", () => {
       const message: CommandResultMessage = {
         command: "commandResult",
@@ -771,6 +785,16 @@ describe("Command Types", () => {
       expect(messages[0].command).toBe("updateSchema");
       expect(messages[1].command).toBe("error");
       expect(messages[2].command).toBe("commandResult");
+    });
+
+    test("NodeClickedMessage should have correct structure", () => {
+      const message: NodeClickedMessage = {
+        command: "nodeClicked",
+        data: { nodeId: "node-123" },
+      };
+
+      expect(message.command).toBe("nodeClicked");
+      expect(message.data.nodeId).toBe("node-123");
     });
   });
 

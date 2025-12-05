@@ -7,6 +7,25 @@ import { DiagramItem } from "../diagram/DiagramItem";
 import { Diagram } from "../diagram/Diagram";
 import { DiagramItemType } from "../diagram/DiagramTypes";
 
+/**
+ * Helper function to check if two strings appear adjacent in HTML content.
+ * Ensures they are close together with only whitespace/formatting between them.
+ */
+function expectAdjacentText(container: HTMLElement, first: string, second: string): void {
+  const html = container.innerHTML;
+  const firstIndex = html.indexOf(first);
+  const secondIndex = html.indexOf(second);
+  
+  expect(firstIndex).toBeGreaterThan(-1);
+  expect(secondIndex).toBeGreaterThan(-1);
+  expect(secondIndex).toBeGreaterThan(firstIndex);
+  
+  // Check that there's minimal content between them (only tags and whitespace)
+  const between = html.substring(firstIndex + first.length, secondIndex);
+  const hasOnlyFormatting = /^[<>/\s\w="'-]*$/.test(between);
+  expect(hasOnlyFormatting).toBe(true);
+}
+
 describe("PropertyPanel", () => {
   let container: HTMLDivElement;
   let panel: PropertyPanel;
@@ -33,8 +52,7 @@ describe("PropertyPanel", () => {
 
       panel.display(item);
 
-      expect(container.textContent).toContain("Name:");
-      expect(container.textContent).toContain("TestItem");
+      expectAdjacentText(container, "Name:", "TestItem");
     });
 
     it("should display type if present", () => {
@@ -43,8 +61,7 @@ describe("PropertyPanel", () => {
 
       panel.display(item);
 
-      expect(container.textContent).toContain("Type:");
-      expect(container.textContent).toContain("string");
+      expectAdjacentText(container, "Type:", "string");
     });
 
     it("should display cardinality", () => {
@@ -54,8 +71,7 @@ describe("PropertyPanel", () => {
 
       panel.display(item);
 
-      expect(container.textContent).toContain("Cardinality:");
-      expect(container.textContent).toContain("0..∞");
+      expectAdjacentText(container, "Cardinality:", "0..∞");
     });
   });
 

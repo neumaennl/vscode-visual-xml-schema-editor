@@ -19,8 +19,8 @@ describe("Diagram", () => {
     });
 
     it("should initialize with default settings", () => {
-      expect(diagram.scale).toBe(1.0);
       expect(diagram.showDocumentation).toBe(false);
+      expect(diagram.alwaysShowOccurrence).toBe(false);
       expect(diagram.showType).toBe(false);
     });
   });

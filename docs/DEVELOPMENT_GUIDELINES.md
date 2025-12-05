@@ -97,9 +97,10 @@ This document outlines the development best practices and architectural vision f
   - `shared/__tests__/` - Tests for shared code
   - `src/__tests__/` - Tests for extension code
   - `webview-src/__tests__/` - Tests for webview code
-  - Test structure is flat within each `__tests__` folder
-  - This provides clear separation while keeping tests close to source
-  - Balances Java/Maven-style separation with TypeScript conventions
+  - **Directory structure within `__tests__` mirrors the source directory structure**:
+    - Tests for `webview-src/diagram/DiagramBuilder.ts` go in `webview-src/__tests__/diagram/DiagramBuilder.test.ts`
+    - Tests for `shared/commands/element.ts` go in `shared/__tests__/commands/element.test.ts`
+    - This makes it easy to locate tests for any source file
 
 ### Test Resources
 
@@ -107,7 +108,6 @@ This document outlines the development best practices and architectural vision f
   - Only the extension handles XML (un)marshalling
   - Keep test files clean and focused
   - Reuse test fixtures across multiple tests
-  - Name test resource files descriptively
 
 ### Test Structure
 

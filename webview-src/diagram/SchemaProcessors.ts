@@ -302,5 +302,7 @@ export function processRestriction(parent: DiagramItem, restriction: any): void 
   if (restriction.all) {
     processAll(parent, restriction.all);
   }
-  // TODO: Could also extract enumeration values, patterns, etc. here in the future
+  
+  // Note: Enumeration values, patterns, and other restriction facets
+  // are not currently extracted. This could be added in future enhancements.
 }

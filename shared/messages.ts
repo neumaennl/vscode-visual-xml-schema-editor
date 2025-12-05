@@ -45,23 +45,6 @@ export interface UpdateSchemaMessage extends Message<"updateSchema", unknown> {
 }
 
 /**
- * Data structure for node click events.
- */
-export interface NodeClickedData {
-  /** ID of the clicked node */
-  nodeId: string;
-}
-
-/**
- * Message when a node is clicked in the diagram.
- */
-export interface NodeClickedMessage
-  extends Message<"nodeClicked", NodeClickedData> {
-  command: "nodeClicked";
-  data: NodeClickedData;
-}
-
-/**
  * Message when the schema has been modified.
  */
 export interface SchemaModifiedMessage
@@ -90,7 +73,7 @@ export interface CommandResultMessage
 /**
  * Union type of all messages from webview to extension.
  */
-export type WebviewMessage = ExecuteCommandMessage | NodeClickedMessage;
+export type WebviewMessage = ExecuteCommandMessage;
 
 /**
  * Union type of all messages from extension to webview.

@@ -9,7 +9,6 @@ import {
   CommandResultMessage,
   WebviewMessage,
   ExtensionMessage,
-  NodeClickedMessage,
 } from "../messages";
 import {
   SchemaCommand,
@@ -99,15 +98,10 @@ describe("Message Types", () => {
           },
         },
       },
-      {
-        command: "nodeClicked",
-        data: { nodeId: "node-123" },
-      },
     ];
 
-    expect(messages).toHaveLength(2);
+    expect(messages).toHaveLength(1);
     expect(messages[0].command).toBe("executeCommand");
-    expect(messages[1].command).toBe("nodeClicked");
   });
 
   test("ExtensionMessage union type", () => {
@@ -132,15 +126,6 @@ describe("Message Types", () => {
     expect(messages[2].command).toBe("commandResult");
   });
 
-  test("NodeClickedMessage should have correct structure", () => {
-    const message: NodeClickedMessage = {
-      command: "nodeClicked",
-      data: { nodeId: "node-123" },
-    };
-
-    expect(message.command).toBe("nodeClicked");
-    expect(message.data.nodeId).toBe("node-123");
-  });
 });
 
 describe("CommandResponse", () => {

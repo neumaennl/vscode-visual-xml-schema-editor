@@ -1,6 +1,6 @@
 # Command Types Documentation
 
-This document provides an overview of the command types defined in `shared/types.ts` for the Visual XML Schema Editor.
+This document provides an overview of the command types for the Visual XML Schema Editor.
 
 ## Overview
 
@@ -312,13 +312,38 @@ const modifyElementCmd: ModifyElementCommand = {
 3. **Optional Fields**: Modify commands use optional fields for partial updates
 4. **Literal Types**: Command types use string literals for precise type checking
 
-## Testing
+## File Structure
 
-Comprehensive unit tests are provided in `shared/__tests__/types.test.ts`:
-- Tests for each command type
+The command types are organized into focused modules for maintainability:
+
+### Type Definitions
+- `shared/types.ts` - Main export point, re-exports all command types
+- `shared/commands/base.ts` - Base command interfaces (`BaseCommand`, `CommandResponse`)
+- `shared/commands/element.ts` - Element commands (Add, Remove, Modify)
+- `shared/commands/attribute.ts` - Attribute commands
+- `shared/commands/schemaTypes.ts` - Simple and complex type commands
+- `shared/commands/group.ts` - Element group and attribute group commands
+- `shared/commands/metadata.ts` - Annotation and documentation commands
+- `shared/commands/module.ts` - Import and include commands
+- `shared/commands/index.ts` - Exports `SchemaCommand` union type
+- `shared/messages.ts` - Message protocol types for extension/webview communication
+
+### Testing
+
+Comprehensive unit tests mirror the source structure:
+- `shared/__tests__/commands/element.test.ts` - Element command tests
+- `shared/__tests__/commands/attribute.test.ts` - Attribute command tests
+- `shared/__tests__/commands/schemaTypes.test.ts` - Type command tests
+- `shared/__tests__/commands/group.test.ts` - Group command tests
+- `shared/__tests__/commands/metadata.test.ts` - Metadata command tests
+- `shared/__tests__/commands/module.test.ts` - Module command tests
+- `shared/__tests__/messages.test.ts` - Message protocol, union types, and type safety tests
+
+Each test file covers:
+- Command structure validation
 - Edge case handling
 - Type discrimination validation
-- Message protocol verification
+- Optional field semantics
 
 Run tests with:
 ```bash

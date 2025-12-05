@@ -103,7 +103,8 @@ This document outlines the development best practices and architectural vision f
 
 ### Test Resources
 
-- **Move larger XML snippets to `shared/__tests__/test-resources`**
+- **Move larger XML snippets to `src/__tests__/test-resources`**
+  - Only the extension handles XML (un)marshalling
   - Keep test files clean and focused
   - Reuse test fixtures across multiple tests
   - Name test resource files descriptively

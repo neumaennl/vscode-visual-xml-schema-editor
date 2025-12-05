@@ -93,14 +93,17 @@ This document outlines the development best practices and architectural vision f
 
 ### Test Organization Structure
 
-- **One `__tests__` directory per source root**:
-  - `shared/__tests__/` - Tests for shared code
-  - `src/__tests__/` - Tests for extension code
-  - `webview-src/__tests__/` - Tests for webview code
-  - **Directory structure within `__tests__` mirrors the source directory structure**:
-    - Tests for `webview-src/diagram/DiagramBuilder.ts` go in `webview-src/__tests__/diagram/DiagramBuilder.test.ts`
-    - Tests for `shared/commands/element.ts` go in `shared/__tests__/commands/element.test.ts`
-    - This makes it easy to locate tests for any source file
+- **Unit tests** (testing a single unit/function) should be in the **same folder** as the source file:
+  - Test for `src/extension.ts` → `src/extension.test.ts`
+  - Test for `webview-src/renderer.ts` → `webview-src/renderer.test.ts`
+  - Test for `webview-src/diagram/Diagram.ts` → `webview-src/diagram/Diagram.test.ts`
+  - This makes it easy to find the test for any source file
+
+- **Integration tests** (testing multiple components together) go in `__tests__` directories:
+  - `shared/__tests__/` - Integration tests for shared code
+  - `src/__tests__/` - Integration tests for extension code (if needed)
+  - `webview-src/__tests__/` - Integration tests for webview code (if needed)
+  - Directory structure within `__tests__` mirrors source structure if needed
 
 ### Test Resources
 

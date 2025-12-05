@@ -78,16 +78,14 @@ export function processAnonymousSimpleType(
     parent.documentation = extractDocumentation(simpleType.annotation) ?? "";
   }
 
+  // Set type before processing restriction so += works correctly
+  if (!parent.type) {
+    parent.type = "<anonymous simpleType>";
+  }
+
   // Process restriction/list/union if present to extract base type
   if (simpleType.restriction) {
     processRestriction(parent, simpleType.restriction);
-  }
-
-  // Set type if not already set
-  if (!parent.type && simpleType.restriction?.base) {
-    parent.type = `<simpleType: ${simpleType.restriction.base.toString()}>`;
-  } else if (!parent.type) {
-    parent.type = "<anonymous simpleType>";
   }
 }
 
@@ -245,9 +243,7 @@ function processGroup(
 export function processExtension(parent: DiagramItem, extension: any): void {
   // Extract base type - append to existing type info
   if (extension.base) {
-    parent.type = parent.type 
-      ? `${parent.type} (extends ${extension.base.toString()})`
-      : `extends ${extension.base.toString()}`;
+    parent.type += ` (extends ${extension.base.toString()})`;
   }
 
   // Extract attributes from extension
@@ -279,9 +275,7 @@ export function processExtension(parent: DiagramItem, extension: any): void {
 export function processRestriction(parent: DiagramItem, restriction: any): void {
   // Extract base type from restriction - append to existing type info
   if (restriction.base) {
-    parent.type = parent.type
-      ? `${parent.type} (restricts ${restriction.base.toString()})`
-      : `restricts ${restriction.base.toString()}`;
+    parent.type += ` (restricts ${restriction.base.toString()})`;
   }
 
   // Process sequence in restriction

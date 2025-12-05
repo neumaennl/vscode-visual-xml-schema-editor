@@ -1,7 +1,7 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  roots: ['<rootDir>/shared', '<rootDir>/src', '<rootDir>/webview-src'],
+  roots: ['<rootDir>/__tests__'],
   testMatch: ['**/__tests__/**/*.test.ts', '**/?(*.)+(spec|test).ts'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   collectCoverageFrom: [
@@ -13,6 +13,8 @@ module.exports = {
     '!**/generated/**'
   ],
   moduleNameMapper: {
-    '^shared/(.*)$': '<rootDir>/shared/$1'
+    '^shared/(.*)$': '<rootDir>/shared/$1',
+    '^webview-src/(.*)$': '<rootDir>/webview-src/$1',
+    '^src/(.*)$': '<rootDir>/src/$1'
   }
 };

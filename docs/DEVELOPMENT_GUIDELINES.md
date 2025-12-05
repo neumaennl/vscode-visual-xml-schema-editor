@@ -91,6 +91,15 @@ This document outlines the development best practices and architectural vision f
   - Avoid scattering test cases for the same feature across multiple files
   - Avoid multiple test cases testing the exact same thing
 
+### Test Organization Structure
+
+- **Centralized test directory**: All tests are located in `__tests__/` at the repository root
+  - `__tests__/shared/` - Tests for shared code
+  - `__tests__/src/` - Tests for extension code
+  - `__tests__/webview-src/` - Tests for webview code
+  - This mirrors the source code structure for easy navigation
+  - Keeps test code separate from production code
+
 ### Test Resources
 
 - **Move larger XML snippets to `__tests__/test-resources`**

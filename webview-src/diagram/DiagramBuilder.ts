@@ -71,19 +71,19 @@ export class DiagramBuilder {
     processChildCollection(
       schemaNode,
       (schemaObj as any).element,
-      (elem) => this.createElementNodeWithProcessing(elem)
+      (elem) => this.createElementWithChildren(elem)
     );
 
     processChildCollection(
       schemaNode,
       (schemaObj as any).complexType,
-      (ct) => this.createComplexTypeNodeWithProcessing(ct)
+      (ct) => this.createComplexType(ct)
     );
 
     processChildCollection(
       schemaNode,
       (schemaObj as any).simpleType,
-      (st) => this.createSimpleTypeNodeWithProcessing(st)
+      (st) => this.createSimpleType(st)
     );
 
     // If no children were added, add a placeholder
@@ -102,13 +102,13 @@ export class DiagramBuilder {
   }
 
   /**
-   * Creates a diagram item node from an element definition and processes anonymous types.
-   * Wrapper around createElementNode that also handles inline type definitions.
+   * Creates an element node including its child types.
+   * Wraps createElementNode and processes inline complex/simple types.
    * 
    * @param element - Element definition from schema
    * @returns The created diagram item or null if element is invalid
    */
-  private createElementNodeWithProcessing(element: any): DiagramItem | null {
+  private createElementWithChildren(element: any): DiagramItem | null {
     const item = createElementNode(element, this.diagram);
     if (!item) {
       return null;
@@ -128,13 +128,13 @@ export class DiagramBuilder {
   }
 
   /**
-   * Creates a diagram item node from a complex type definition and processes its structure.
-   * Wrapper around createComplexTypeNode that also processes the type's content.
+   * Creates a complex type node with full structure.
+   * Wraps createComplexTypeNode and processes type content.
    * 
    * @param complexType - Complex type definition from schema
    * @returns The created diagram item or null if type is invalid
    */
-  private createComplexTypeNodeWithProcessing(complexType: any): DiagramItem | null {
+  private createComplexType(complexType: any): DiagramItem | null {
     const item = createComplexTypeNode(complexType, this.diagram);
     if (!item) {
       return null;
@@ -146,13 +146,13 @@ export class DiagramBuilder {
   }
 
   /**
-   * Creates a diagram item node from a simple type definition and processes restrictions.
-   * Wrapper around createSimpleTypeNode that also processes restrictions.
+   * Creates a simple type node with restrictions.
+   * Wraps createSimpleTypeNode and processes restrictions.
    * 
    * @param simpleType - Simple type definition from schema
    * @returns The created diagram item or null if type is invalid
    */
-  private createSimpleTypeNodeWithProcessing(simpleType: any): DiagramItem | null {
+  private createSimpleType(simpleType: any): DiagramItem | null {
     const item = createSimpleTypeNode(simpleType, this.diagram);
     if (!item) {
       return null;

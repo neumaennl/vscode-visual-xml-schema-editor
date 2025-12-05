@@ -5,6 +5,7 @@
  */
 
 import { DiagramItem } from "./DiagramItem";
+import { annotationType } from "../../shared/generated";
 
 /**
  * Normalizes a value to an array (handles both single values and arrays).
@@ -34,13 +35,13 @@ export function toArray<T>(value: T | T[] | undefined): T[] {
  * @param annotation - Annotation object from schema element
  * @returns Concatenated documentation string or undefined if no documentation exists
  */
-export function extractDocumentation(annotation: any): string | undefined {
+export function extractDocumentation(annotation?: annotationType): string | undefined {
   if (!annotation?.documentation) {
     return undefined;
   }
 
   const docs = toArray(annotation.documentation);
-  return docs.map((d: any) => d.value).join("\n");
+  return docs.map((d) => d.value?.toString() || "").join("\n");
 }
 
 /**

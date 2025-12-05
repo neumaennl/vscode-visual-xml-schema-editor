@@ -64,6 +64,17 @@ This document outlines the development best practices and architectural vision f
 - Use UPPER_CASE for constants
 - Use descriptive names that convey intent
 
+### Identifier Length Guidelines
+
+- **Soft limit**: 25-30 characters for identifiers
+- **Bonus**: Keep identifiers under 15 characters when possible
+- **Priority**: Clarity over brevity - be descriptive but concise
+- **Examples**:
+  - Good: `createElementWithChildren` (26 chars, clear purpose)
+  - Better: `createElement` (14 chars, clear and concise)
+  - Avoid: `createElementNodeWithProcessingOfAnonymousTypes` (too long)
+  - Avoid: `cen` (too cryptic)
+
 ## Testing Guidelines
 
 ### Test Coverage

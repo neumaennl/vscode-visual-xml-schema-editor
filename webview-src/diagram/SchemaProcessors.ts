@@ -243,13 +243,11 @@ function processGroup(
  * @param extension - Extension definition from schema
  */
 export function processExtension(parent: DiagramItem, extension: any): void {
-  // Extract base type - preserve existing type info by appending
+  // Extract base type - append to existing type info
   if (extension.base) {
-    if (parent.type) {
-      parent.type += ` (extends ${extension.base.toString()})`;
-    } else {
-      parent.type = `extends ${extension.base.toString()}`;
-    }
+    parent.type = parent.type 
+      ? `${parent.type} (extends ${extension.base.toString()})`
+      : `extends ${extension.base.toString()}`;
   }
 
   // Extract attributes from extension
@@ -279,13 +277,11 @@ export function processExtension(parent: DiagramItem, extension: any): void {
  * @param restriction - Restriction definition from schema
  */
 export function processRestriction(parent: DiagramItem, restriction: any): void {
-  // Extract base type from restriction
+  // Extract base type from restriction - append to existing type info
   if (restriction.base) {
-    if (parent.type) {
-      parent.type = `${parent.type} (restricts ${restriction.base.toString()})`;
-    } else {
-      parent.type = `restricts ${restriction.base.toString()}`;
-    }
+    parent.type = parent.type
+      ? `${parent.type} (restricts ${restriction.base.toString()})`
+      : `restricts ${restriction.base.toString()}`;
   }
 
   // Process sequence in restriction

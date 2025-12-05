@@ -140,7 +140,7 @@ class SchemaEditorApp {
       // Notify extension about the selection
       this.vscode.postMessage({
         command: "nodeClicked",
-        data: item.name,
+        data: { nodeId: item.id },
       });
     }
   }

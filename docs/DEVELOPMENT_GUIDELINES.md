@@ -93,16 +93,17 @@ This document outlines the development best practices and architectural vision f
 
 ### Test Organization Structure
 
-- **Centralized test directory**: All tests are located in `__tests__/` at the repository root
-  - `__tests__/shared/` - Tests for shared code
-  - `__tests__/src/` - Tests for extension code
-  - `__tests__/webview-src/` - Tests for webview code
-  - This mirrors the source code structure for easy navigation
-  - Keeps test code separate from production code
+- **One `__tests__` directory per source root**:
+  - `shared/__tests__/` - Tests for shared code
+  - `src/__tests__/` - Tests for extension code
+  - `webview-src/__tests__/` - Tests for webview code
+  - Test structure is flat within each `__tests__` folder
+  - This provides clear separation while keeping tests close to source
+  - Balances Java/Maven-style separation with TypeScript conventions
 
 ### Test Resources
 
-- **Move larger XML snippets to `__tests__/test-resources`**
+- **Move larger XML snippets to `shared/__tests__/test-resources`**
   - Keep test files clean and focused
   - Reuse test fixtures across multiple tests
   - Name test resource files descriptively

@@ -136,12 +136,6 @@ class SchemaEditorApp {
     } else {
       // Display item properties in the property panel
       this.propertyPanel.display(item);
-
-      // Notify extension about the selection
-      this.vscode.postMessage({
-        command: "nodeClicked",
-        data: item.name,
-      });
     }
   }
 

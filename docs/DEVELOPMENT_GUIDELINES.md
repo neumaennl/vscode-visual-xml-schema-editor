@@ -194,11 +194,9 @@ vscode-visual-xml-schema-editor/
 │   ├── generated/           # Auto-generated types from XSD
 │   ├── messages.ts          # Message protocol
 │   └── types.ts             # Shared type exports
-├── docs/                     # Documentation
-│   ├── architecture/        # Architecture decision records
-│   └── DEVELOPMENT_GUIDELINES.md
-└── __tests__/               # Test files
-    └── test-resources/      # Test fixtures and data
+└── docs/                     # Documentation
+    ├── architecture/        # Architecture decision records
+    └── DEVELOPMENT_GUIDELINES.md
 ```
 
 ### Key Architectural Principles

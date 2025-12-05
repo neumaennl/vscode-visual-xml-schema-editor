@@ -1,7 +1,7 @@
 out/
 dist/
-webview/
 node_modules/
 **/*.d.ts
 **/generated/**
 webpack.config.js
+!webview-src/

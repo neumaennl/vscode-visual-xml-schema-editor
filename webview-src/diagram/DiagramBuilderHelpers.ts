@@ -41,7 +41,7 @@ export function extractDocumentation(annotation?: annotationType): string | unde
   }
 
   const docs = toArray(annotation.documentation);
-  return docs.map((d) => d.value?.toString() || "").join("\n");
+  return docs.map((doc) => doc.value?.toString() || "").join("\n");
 }
 
 /**

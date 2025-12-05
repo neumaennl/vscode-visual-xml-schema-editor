@@ -78,9 +78,6 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
       case "schemaModified":
         await this.applySchemaChanges(document, message.data);
         break;
-      case "nodeClicked":
-        console.log("Node clicked:", message.data);
-        break;
     }
   }
 

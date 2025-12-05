@@ -1,0 +1,67 @@
+name: CI
+
+permissions:
+  checks: write
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    name: Install, build and test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [22.x]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run compile
+
+      - name: Run tests (coverage + JSON; JUnit via config)
+        run: |
+          mkdir -p test-results
+          npm test -- --coverage --runInBand --json --outputFile=test-results/jest-results.json --coverageReporters=json-summary
+
+      - name: Summarize coverage in job summary
+        if: always()
+        run: |
+          node <<'EOF'
+          const fs = require('fs');
+          const p = 'coverage/coverage-summary.json';
+          const out = process.env.GITHUB_STEP_SUMMARY;
+          if (!out) { console.log('GITHUB_STEP_SUMMARY not set; skipping summary'); process.exit(0); }
+          if (fs.existsSync(p)) {
+            const d = JSON.parse(fs.readFileSync(p));
+            let summary = '## Coverage report\n\n| Metric | % |\n|---|---|\n';
+            for (const k in d.total) {
+              summary += `| ${k} | ${d.total[k].pct}% |\n`;
+            }
+            fs.appendFileSync(out, summary);
+          }
+          EOF
+
+      - name: Publish JUnit test report to GitHub Checks
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: Jest
+          path: test-results/jest-junit.xml
+          reporter: jest-junit

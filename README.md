@@ -1,5 +1,7 @@
 # Visual XML Schema Editor Extension for Visual Studio Code
 
+[![CI](https://github.com/neumaennl/vscode-visual-xml-schema-editor/actions/workflows/ci.yml/badge.svg)](https://github.com/neumaennl/vscode-visual-xml-schema-editor/actions/workflows/ci.yml)
+
 Uses VS Code's [custom editor API](https://code.visualstudio.com/api/extension-guides/custom-editors) to allow editing XML schemas in a visual manner similar to [Altova XMLSpy](https://www.altova.com/xmlspy-xml-editor).
 
 ## References

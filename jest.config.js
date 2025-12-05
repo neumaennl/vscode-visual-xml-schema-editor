@@ -15,5 +15,12 @@ module.exports = {
   ],
   moduleNameMapper: {
     '^shared/(.*)$': '<rootDir>/shared/$1'
-  }
+  },
+  reporters: [
+    'default',
+    ['jest-junit', {
+      outputDirectory: 'test-results',
+      outputName: 'jest-junit.xml'
+    }]
+  ]
 };

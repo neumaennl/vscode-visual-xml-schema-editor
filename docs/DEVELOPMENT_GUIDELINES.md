@@ -34,6 +34,15 @@ This document outlines the development best practices and architectural vision f
   - Create utility modules for common operations
   - Use inheritance or composition patterns where appropriate
 
+### Linting
+
+- **Use ESLint to enforce code quality standards**
+  - Run `npm run lint` before committing changes
+  - Use `npm run lint:fix` to automatically fix issues
+  - ESLint is configured with TypeScript-specific rules
+  - Address all linting errors; warnings should be minimized
+  - Configuration: `.eslintrc.json`
+
 ### Code Review
 
 - **Use Copilot code review to ensure code quality**
@@ -271,6 +280,12 @@ npm run compile
 # Watch mode for development
 npm run watch
 
+# Lint code
+npm run lint
+
+# Lint and auto-fix
+npm run lint:fix
+
 # Run tests
 npm test
 
@@ -281,11 +296,27 @@ npm run test:coverage
 npm run package
 ```
 
+### Continuous Integration
+
+The project uses GitHub Actions for continuous integration:
+
+- **Workflow**: `.github/workflows/ci.yml`
+- **Runs on**: Push to `main` and pull requests
+- **Steps**:
+  1. Install dependencies
+  2. Run linting
+  3. Build the project
+  4. Run tests with coverage
+  5. Generate coverage report
+  6. Publish test results
+
+**CI Badge**: The README includes a CI status badge showing the current build status.
+
 ### Before Committing
 
 1. Ensure all files compile without errors
-2. Run all tests and ensure they pass
-3. Run linter and fix any issues
+2. Run linter and fix any issues (`npm run lint`)
+3. Run all tests and ensure they pass (`npm test`)
 4. Review changes for compliance with these guidelines
 5. Update documentation if needed
 6. Run Copilot code review on changed files

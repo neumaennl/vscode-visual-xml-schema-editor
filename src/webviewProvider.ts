@@ -2,9 +2,27 @@ import * as vscode from "vscode";
 import { unmarshal } from "@neumaennl/xmlbind-ts";
 import { schema } from "../shared/types";
 
+/**
+ * Provider for the XML Schema Visual Editor custom text editor.
+ * Implements VS Code's CustomTextEditorProvider interface to provide
+ * a visual editing experience for XML Schema files.
+ */
 export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
+  /**
+   * Creates a new SchemaEditorProvider.
+   * 
+   * @param context - The extension context provided by VS Code
+   */
   constructor(private readonly context: vscode.ExtensionContext) {}
 
+  /**
+   * Resolves and initializes the custom text editor for an XSD document.
+   * Sets up the webview, establishes communication channels, and loads the initial schema.
+   * 
+   * @param document - The text document being edited
+   * @param webviewPanel - The webview panel to display the custom editor
+   * @param _token - Cancellation token for the operation
+   */
   public async resolveCustomTextEditor(
     document: vscode.TextDocument,
     webviewPanel: vscode.WebviewPanel,
@@ -40,6 +58,13 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
     });
   }
 
+  /**
+   * Updates the webview with the current document content.
+   * Parses the XSD document and sends the schema object to the webview for visualization.
+   * 
+   * @param document - The text document containing the XSD content
+   * @param webview - The webview to update with the parsed schema
+   */
   private updateWebview(
     document: vscode.TextDocument,
     webview: vscode.Webview
@@ -70,6 +95,13 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
     }
   }
 
+  /**
+   * Handles messages received from the webview.
+   * Processes commands sent from the visual editor to modify the document.
+   * 
+   * @param message - The message received from the webview
+   * @param document - The document being edited
+   */
   private async handleWebviewMessage(
     message: any,
     document: vscode.TextDocument
@@ -81,6 +113,13 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
     }
   }
 
+  /**
+   * Applies schema changes from the webview back to the document.
+   * Converts the schema object to XML and updates the document.
+   * 
+   * @param document - The document to update
+   * @param schemaObj - The modified schema object from the webview
+   */
   private async applySchemaChanges(
     document: vscode.TextDocument,
     schemaObj: schema
@@ -94,6 +133,14 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
     await vscode.workspace.applyEdit(edit);
   }
 
+  /**
+   * Generates the HTML content for the webview.
+   * Creates a complete HTML page with the editor UI, including toolbar,
+   * canvas, and properties panel.
+   * 
+   * @param webview - The webview to generate HTML for
+   * @returns The complete HTML content as a string
+   */
   private getHtmlForWebview(webview: vscode.Webview): string {
     const scriptUri = webview.asWebviewUri(
       vscode.Uri.joinPath(this.context.extensionUri, "webview", "main.js")
@@ -131,6 +178,12 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
 </html>`;
   }
 
+  /**
+   * Generates a cryptographically secure nonce for Content Security Policy.
+   * Used to allow only specific inline scripts to execute in the webview.
+   * 
+   * @returns A random 32-character nonce string
+   */
   private getNonce(): string {
     let text = "";
     const possible =

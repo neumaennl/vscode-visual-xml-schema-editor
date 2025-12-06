@@ -5,7 +5,7 @@
 
 import { Diagram } from "./Diagram";
 import { DiagramItem } from "./DiagramItem";
-import { DiagramItemType, Rectangle, Size } from "./DiagramTypes";
+import { DiagramItemType } from "./DiagramTypes";
 
 export class DiagramLayout {
   // Default dimensions

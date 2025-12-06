@@ -8,7 +8,6 @@ import { DiagramItem } from "./DiagramItem";
 import {
   DiagramItemType,
   Point,
-  Rectangle,
 } from "./DiagramTypes";
 import {
   svgLine,

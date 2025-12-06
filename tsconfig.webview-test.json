@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.webview.json",
+  "compilerOptions": {
+    "types": [
+      "jest",
+      "node"
+    ]
+  },
+  "include": [
+    "webview-src/**/*.ts",
+    "shared/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "out",
+    "webview",
+    "src"
+  ]
+}

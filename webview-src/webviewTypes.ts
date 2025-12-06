@@ -1,10 +1,11 @@
 // Webview-specific types (only used in webview-src, not in extension)
 import { DiagramItem } from "./diagram";
+import { schema, WebviewMessage } from "../shared/types";
 
-export interface VSCodeAPI {
-  postMessage(message: any): void;
-  getState(): any;
-  setState(state: any): void;
+export interface VSCodeAPI<State = unknown> {
+  postMessage(message: WebviewMessage): void;
+  getState(): State | undefined;
+  setState(state: State): void;
 }
 
 export interface Point {
@@ -18,6 +19,11 @@ export interface ViewState {
   panY: number;
 }
 
+export interface WebviewState {
+  viewState?: ViewState;
+  schema?: schema;
+}
+
 export interface RenderedNode {
   node: DiagramItem;
   element: SVGGElement;
@@ -25,14 +31,4 @@ export interface RenderedNode {
   y: number;
   width: number;
   height: number;
-}
-
-export interface MessageFromExtension {
-  command: "updateSchema" | "error";
-  data?: any;
-}
-
-export interface MessageToExtension {
-  command: "schemaModified" | "nodeClicked" | "requestClasses";
-  data?: any;
 }

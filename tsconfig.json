@@ -35,6 +35,8 @@
     ".vscode-test",
     "webview-src",
     "webview",
-    "out"
+    "out",
+    "**/*.test.ts",
+    "**/__tests__/**"
   ]
 }

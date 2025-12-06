@@ -11,7 +11,35 @@ const defaultDiagramOptions: DiagramOptions = {
   showType: false,
 };
 
+/**
+ * Extended interface for Element to include getBBox method used in SVG tests.
+ * jsdom doesn't implement getBBox, so we need to add it for testing.
+ */
+interface ElementWithGetBBox extends Element {
+  getBBox(): DOMRect;
+}
 
+/**
+ * Mock getBBox for SVG elements in jsdom environment.
+ * jsdom doesn't implement SVG layout calculations, so we need to mock this.
+ */
+function setupGetBBoxMock(): void {
+  // Mock implementation for getBBox
+  (Element.prototype as ElementWithGetBBox).getBBox = function (): DOMRect {
+    const textContent = this.textContent || "";
+    return {
+      x: 0,
+      y: 0,
+      width: textContent.length * 6,
+      height: 10,
+      top: 0,
+      right: textContent.length * 6,
+      bottom: 10,
+      left: 0,
+      toJSON: () => ({}),
+    } as DOMRect;
+  };
+}
 
 describe("DiagramRenderer", () => {
   let mockCanvas: SVGSVGElement;
@@ -51,22 +79,7 @@ describe("DiagramRenderer", () => {
 
   describe("renderSchema", () => {
     beforeEach(() => {
-      // Mock getBBox for SVG text elements (not supported in jsdom)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-      (Element.prototype as any).getBBox = jest.fn(function (this: SVGTextElement): DOMRect {
-        const textContent = this.textContent || "";
-        return {
-          x: 0,
-          y: 0,
-          width: textContent.length * 6,
-          height: 10,
-          top: 0,
-          right: textContent.length * 6,
-          bottom: 10,
-          left: 0,
-          toJSON: () => ({}),
-        } as DOMRect;
-      });
+      setupGetBBoxMock();
     });
 
     it("should clear previous content before rendering", () => {
@@ -99,8 +112,10 @@ describe("DiagramRenderer", () => {
     it("should handle null schema", () => {
       const onNodeClick = jest.fn();
       
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
-      renderer.renderSchema(null as any, defaultDiagramOptions, onNodeClick);
+      // Test error handling with invalid input by bypassing type checking
+      // This is intentional to ensure robustness
+      type RenderSchemaFn = (schema: unknown, options: DiagramOptions, callback: typeof onNodeClick) => void;
+      (renderer.renderSchema as RenderSchemaFn)(null, defaultDiagramOptions, onNodeClick);
       
       // Should show message instead of throwing
       expect(mockCanvas.textContent).toContain("No schema to display");
@@ -136,22 +151,7 @@ describe("DiagramRenderer", () => {
 
   describe("refresh", () => {
     beforeEach(() => {
-      // Mock getBBox for SVG text elements (not supported in jsdom)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-      (Element.prototype as any).getBBox = jest.fn(function (this: SVGTextElement): DOMRect {
-        const textContent = this.textContent || "";
-        return {
-          x: 0,
-          y: 0,
-          width: textContent.length * 6,
-          height: 10,
-          top: 0,
-          right: textContent.length * 6,
-          bottom: 10,
-          left: 0,
-          toJSON: () => ({}),
-        } as DOMRect;
-      });
+      setupGetBBoxMock();
     });
 
     it("should not throw if no diagram exists", () => {
@@ -178,22 +178,7 @@ describe("DiagramRenderer", () => {
 
   describe("diagram options", () => {
     beforeEach(() => {
-      // Mock getBBox for SVG text elements (not supported in jsdom)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-      (Element.prototype as any).getBBox = jest.fn(function (this: SVGTextElement): DOMRect {
-        const textContent = this.textContent || "";
-        return {
-          x: 0,
-          y: 0,
-          width: textContent.length * 6,
-          height: 10,
-          top: 0,
-          right: textContent.length * 6,
-          bottom: 10,
-          left: 0,
-          toJSON: () => ({}),
-        } as DOMRect;
-      });
+      setupGetBBoxMock();
     });
 
     it("should apply showDocumentation option to diagram", () => {

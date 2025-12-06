@@ -3,6 +3,13 @@
  */
 
 import { DiagramRenderer } from "./renderer";
+import { DiagramOptions } from "../shared/messages";
+
+const defaultDiagramOptions: DiagramOptions = {
+  showDocumentation: false,
+  alwaysShowOccurrence: false,
+  showType: false,
+};
 
 describe("DiagramRenderer", () => {
   let mockCanvas: SVGSVGElement;
@@ -66,7 +73,7 @@ describe("DiagramRenderer", () => {
       };
       const onNodeClick = jest.fn();
       
-      renderer.renderSchema(mockSchema, onNodeClick);
+      renderer.renderSchema(mockSchema, defaultDiagramOptions, onNodeClick);
       
       // Verify diagram was created (main group should exist)
       const groups = mockCanvas.getElementsByTagName("g");
@@ -78,7 +85,7 @@ describe("DiagramRenderer", () => {
       const onNodeClick = jest.fn();
       
       expect(() => {
-        renderer.renderSchema(emptySchema, onNodeClick);
+        renderer.renderSchema(emptySchema, defaultDiagramOptions, onNodeClick);
       }).not.toThrow();
     });
 
@@ -86,7 +93,7 @@ describe("DiagramRenderer", () => {
       const onNodeClick = jest.fn();
       
       // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
-      renderer.renderSchema(null as any, onNodeClick);
+      renderer.renderSchema(null as any, defaultDiagramOptions, onNodeClick);
       
       // Should show message instead of throwing
       expect(mockCanvas.textContent).toContain("No schema to display");
@@ -101,7 +108,7 @@ describe("DiagramRenderer", () => {
       };
       const onNodeClick = jest.fn();
       
-      renderer.renderSchema(mockSchema, onNodeClick);
+      renderer.renderSchema(mockSchema, defaultDiagramOptions, onNodeClick);
       
       const items = mockCanvas.querySelectorAll(".diagram-item");
       expect(items.length).toBeGreaterThan(0);
@@ -113,7 +120,7 @@ describe("DiagramRenderer", () => {
       };
       const onNodeClick = jest.fn();
       
-      renderer.renderSchema(mockSchema, onNodeClick);
+      renderer.renderSchema(mockSchema, defaultDiagramOptions, onNodeClick);
       
       // Callback should be stored for click handling
       expect(onNodeClick).toBeDefined();
@@ -142,13 +149,82 @@ describe("DiagramRenderer", () => {
       };
       const onNodeClick = jest.fn();
       
-      renderer.renderSchema(mockSchema, onNodeClick);
+      renderer.renderSchema(mockSchema, defaultDiagramOptions, onNodeClick);
       const itemsBeforeRefresh = mockCanvas.querySelectorAll(".diagram-item").length;
       
       renderer.refresh();
       const itemsAfterRefresh = mockCanvas.querySelectorAll(".diagram-item").length;
       
       expect(itemsAfterRefresh).toBe(itemsBeforeRefresh);
+    });
+  });
+
+  describe("diagram options", () => {
+    beforeEach(() => {
+      // Mock getBBox for SVG text elements (not supported in jsdom)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+      (Element.prototype as any).getBBox = jest.fn(function (this: SVGTextElement) {
+        const textContent = this.textContent || "";
+        return { x: 0, y: 0, width: textContent.length * 6, height: 10 };
+      });
+    });
+
+    it("should apply showDocumentation option to diagram", () => {
+      const mockSchema = {
+        element: [{ name: "Test", type_: "string" }],
+      };
+      const onNodeClick = jest.fn();
+      const options: DiagramOptions = {
+        showDocumentation: true,
+        alwaysShowOccurrence: false,
+        showType: false,
+      };
+      
+      renderer.renderSchema(mockSchema, options, onNodeClick);
+      
+      // Access private currentDiagram through the renderer
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+      const diagram = (renderer as any).currentDiagram;
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      expect(diagram.showDocumentation).toBe(true);
+    });
+
+    it("should apply alwaysShowOccurrence option to diagram", () => {
+      const mockSchema = {
+        element: [{ name: "Test", type_: "string" }],
+      };
+      const onNodeClick = jest.fn();
+      const options: DiagramOptions = {
+        showDocumentation: false,
+        alwaysShowOccurrence: true,
+        showType: false,
+      };
+      
+      renderer.renderSchema(mockSchema, options, onNodeClick);
+      
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+      const diagram = (renderer as any).currentDiagram;
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      expect(diagram.alwaysShowOccurrence).toBe(true);
+    });
+
+    it("should apply showType option to diagram", () => {
+      const mockSchema = {
+        element: [{ name: "Test", type_: "string" }],
+      };
+      const onNodeClick = jest.fn();
+      const options: DiagramOptions = {
+        showDocumentation: false,
+        alwaysShowOccurrence: false,
+        showType: true,
+      };
+      
+      renderer.renderSchema(mockSchema, options, onNodeClick);
+      
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+      const diagram = (renderer as any).currentDiagram;
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      expect(diagram.showType).toBe(true);
     });
   });
 

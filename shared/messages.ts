@@ -38,11 +38,32 @@ export interface ExecuteCommandMessage
 }
 
 /**
+ * Diagram display options from settings.
+ */
+export interface DiagramOptions {
+  /** Whether to display documentation annotations */
+  showDocumentation: boolean;
+  /** Whether to always show occurrence constraints */
+  alwaysShowOccurrence: boolean;
+  /** Whether to show type information */
+  showType: boolean;
+}
+
+/**
  * Message to update the schema in the webview.
  */
 export interface UpdateSchemaMessage extends Message<"updateSchema", schema> {
   command: "updateSchema";
   data: schema; // Schema object serialized for webview
+}
+
+/**
+ * Message to update diagram options in the webview.
+ */
+export interface UpdateDiagramOptionsMessage
+  extends Message<"updateDiagramOptions", DiagramOptions> {
+  command: "updateDiagramOptions";
+  data: DiagramOptions;
 }
 
 /**
@@ -81,6 +102,7 @@ export type WebviewMessage = ExecuteCommandMessage;
  */
 export type ExtensionMessage =
   | UpdateSchemaMessage
+  | UpdateDiagramOptionsMessage
   | SchemaModifiedMessage
   | ErrorMessage
   | CommandResultMessage;

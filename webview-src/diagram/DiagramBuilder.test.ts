@@ -61,5 +61,76 @@ describe("DiagramBuilder", () => {
       expect(schemaNode.childElements).toHaveLength(1);
       expect(schemaNode.childElements[0].name).toBe("No elements found");
     });
+
+    it("should process simple types", () => {
+      const schemaObj = {
+        simpleType: { name: "EmailType", restriction: { base: "string" } },
+      };
+
+      const diagram = builder.buildFromSchema(schemaObj);
+
+      const schemaNode = diagram.rootElements[0];
+      expect(schemaNode.childElements).toHaveLength(1);
+      expect(schemaNode.childElements[0].type).toContain("simpleType");
+    });
+
+    it("should process multiple simple types", () => {
+      const schemaObj = {
+        simpleType: [
+          { name: "Type1", restriction: { base: "string" } },
+          { name: "Type2", restriction: { base: "int" } },
+        ],
+      };
+
+      const diagram = builder.buildFromSchema(schemaObj);
+
+      const schemaNode = diagram.rootElements[0];
+      expect(schemaNode.childElements).toHaveLength(2);
+    });
+
+    it("should process elements with inline complex types", () => {
+      const schemaObj = {
+        element: {
+          name: "Person",
+          complexType: {
+            sequence: {
+              element: { name: "name", type_: "string" },
+            },
+          },
+        },
+      };
+
+      const diagram = builder.buildFromSchema(schemaObj);
+
+      const schemaNode = diagram.rootElements[0];
+      expect(schemaNode.childElements).toHaveLength(1);
+    });
+
+    it("should process elements with inline simple types", () => {
+      const schemaObj = {
+        element: {
+          name: "Age",
+          simpleType: {
+            restriction: { base: "int" },
+          },
+        },
+      };
+
+      const diagram = builder.buildFromSchema(schemaObj);
+
+      const schemaNode = diagram.rootElements[0];
+      expect(schemaNode.childElements).toHaveLength(1);
+    });
+
+    it("should handle schema without targetNamespace", () => {
+      const schemaObj = {
+        element: { name: "Test" },
+      };
+
+      const diagram = builder.buildFromSchema(schemaObj);
+
+      const schemaNode = diagram.rootElements[0];
+      expect(schemaNode.name).toContain("Schema:");
+    });
   });
 });

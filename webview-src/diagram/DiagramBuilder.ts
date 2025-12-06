@@ -11,7 +11,12 @@
 import { Diagram } from "./Diagram";
 import { DiagramItem } from "./DiagramItem";
 import { DiagramItemType } from "./DiagramTypes";
-import { schema } from "../../shared/types";
+import {
+  schema,
+  topLevelElement,
+  topLevelComplexType,
+  topLevelSimpleType,
+} from "../../shared/types";
 import {
   generateId,
   resetIdCounter,
@@ -51,7 +56,7 @@ export class DiagramBuilder {
    * @param schemaObj - The XSD schema object to build from
    * @returns The constructed diagram with all schema elements visualized
    */
-  public buildFromSchema(schemaObj: schema | any): Diagram {
+  public buildFromSchema(schemaObj: schema): Diagram {
     this.diagram = new Diagram();
     this.elementMap.clear();
     resetIdCounter();
@@ -70,19 +75,19 @@ export class DiagramBuilder {
     // Process schema child elements
     processChildCollection(
       schemaNode,
-      (schemaObj as any).element,
+      schemaObj.element,
       (elem) => this.createElementWithChildren(elem)
     );
 
     processChildCollection(
       schemaNode,
-      (schemaObj as any).complexType,
+      schemaObj.complexType,
       (ct) => this.createComplexType(ct)
     );
 
     processChildCollection(
       schemaNode,
-      (schemaObj as any).simpleType,
+      schemaObj.simpleType,
       (st) => this.createSimpleType(st)
     );
 
@@ -108,7 +113,7 @@ export class DiagramBuilder {
    * @param element - Element definition from schema
    * @returns The created diagram item or null if element is invalid
    */
-  private createElementWithChildren(element: any): DiagramItem | null {
+  private createElementWithChildren(element: topLevelElement): DiagramItem | null {
     const item = createElementNode(element, this.diagram);
     if (!item) {
       return null;
@@ -134,7 +139,7 @@ export class DiagramBuilder {
    * @param complexType - Complex type definition from schema
    * @returns The created diagram item or null if type is invalid
    */
-  private createComplexType(complexType: any): DiagramItem | null {
+  private createComplexType(complexType: topLevelComplexType): DiagramItem | null {
     const item = createComplexTypeNode(complexType, this.diagram);
     if (!item) {
       return null;
@@ -152,7 +157,7 @@ export class DiagramBuilder {
    * @param simpleType - Simple type definition from schema
    * @returns The created diagram item or null if type is invalid
    */
-  private createSimpleType(simpleType: any): DiagramItem | null {
+  private createSimpleType(simpleType: topLevelSimpleType): DiagramItem | null {
     const item = createSimpleTypeNode(simpleType, this.diagram);
     if (!item) {
       return null;

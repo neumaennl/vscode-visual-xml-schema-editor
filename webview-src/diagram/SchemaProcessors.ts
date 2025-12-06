@@ -20,10 +20,10 @@ import {
  * @param items - Collection of items to process (may be undefined, single item, or array)
  * @param createFn - Function to create diagram item from schema item
  */
-export function processChildCollection(
+export function processChildCollection<T>(
   parent: DiagramItem,
-  items: any,
-  createFn: (item: any) => DiagramItem | null
+  items: T[] | T | undefined,
+  createFn: (item: T) => DiagramItem | null
 ): void {
   const itemArray = toArray(items);
   for (const item of itemArray) {

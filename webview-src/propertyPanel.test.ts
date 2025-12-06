@@ -39,6 +39,7 @@ describe("PropertyPanel", () => {
 
   describe("display", () => {
     it("should clear container before displaying", () => {
+      expect.hasAssertions();
       container.innerHTML = "<p>Old content</p>";
       const item = new DiagramItem("test-1", "TestItem", DiagramItemType.element, diagram);
 
@@ -48,6 +49,7 @@ describe("PropertyPanel", () => {
     });
 
     it("should display item name", () => {
+      expect.hasAssertions();
       const item = new DiagramItem("test-1", "TestItem", DiagramItemType.element, diagram);
 
       panel.display(item);
@@ -56,6 +58,7 @@ describe("PropertyPanel", () => {
     });
 
     it("should display type if present", () => {
+      expect.hasAssertions();
       const item = new DiagramItem("test-1", "TestItem", DiagramItemType.element, diagram);
       item.type = "string";
 
@@ -65,6 +68,7 @@ describe("PropertyPanel", () => {
     });
 
     it("should display cardinality", () => {
+      expect.hasAssertions();
       const item = new DiagramItem("test-1", "TestItem", DiagramItemType.element, diagram);
       item.minOccurrence = 0;
       item.maxOccurrence = -1;
@@ -77,6 +81,7 @@ describe("PropertyPanel", () => {
 
   describe("clear", () => {
     it("should clear container content", () => {
+      expect.hasAssertions();
       container.innerHTML = "<p>Test content</p>";
 
       panel.clear();

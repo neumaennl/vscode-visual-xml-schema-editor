@@ -47,7 +47,7 @@ export function activate(context: vscode.ExtensionContext) {
             "xmlSchemaVisualEditor.editor"
           );
         } else {
-          vscode.window.showErrorMessage(
+          await vscode.window.showErrorMessage(
             "Please select an XSD file to open in the visual editor."
           );
         }

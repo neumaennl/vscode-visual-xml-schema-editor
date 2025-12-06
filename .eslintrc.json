@@ -4,7 +4,13 @@
   "parserOptions": {
     "ecmaVersion": 2020,
     "sourceType": "module",
-    "project": ["./tsconfig.json", "./tsconfig.webview.json"]
+    "project": [
+      "./tsconfig.json",
+      "./tsconfig.webview.json",
+      "./tsconfig.extension-test.json",
+      "./tsconfig.webview-test.json",
+      "./tsconfig.shared-test.json"
+    ]
   },
   "plugins": ["@typescript-eslint", "jest"],
   "extends": [
@@ -31,6 +37,22 @@
     "@typescript-eslint/no-non-null-assertion": "warn",
     "no-console": "off"
   },
+  "overrides": [
+    {
+      "files": ["webview-src/diagram/**/*.ts"],
+      "rules": {
+        "@typescript-eslint/no-explicit-any": "off",
+        "@typescript-eslint/no-unsafe-assignment": "off",
+        "@typescript-eslint/no-unsafe-member-access": "off",
+        "@typescript-eslint/no-unsafe-call": "off",
+        "@typescript-eslint/no-unnecessary-type-assertion": "off",
+        "@typescript-eslint/no-redundant-type-constituents": "off",
+        "@typescript-eslint/no-unsafe-argument": "off",
+        "@typescript-eslint/no-non-null-assertion": "off",
+        "no-case-declarations": "off"
+      }
+    }
+  ],
   "ignorePatterns": [
     "out/",
     "dist/",

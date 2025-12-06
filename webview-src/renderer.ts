@@ -201,7 +201,8 @@ export class DiagramRenderer {
 
     const restoreItemState = (item: DiagramItem): void => {
       if (state.has(item.id)) {
-        item.showChildElements = state.get(item.id)!;
+        const savedState = state.get(item.id);
+        item.showChildElements = savedState ?? item.showChildElements;
       }
       for (const child of item.childElements) {
         restoreItemState(child);

@@ -7,6 +7,10 @@ import { activate, deactivate } from "./extension";
 
 describe("Extension", () => {
   let mockContext: vscode.ExtensionContext;
+  const registerCommandMock =
+    vscode.commands.registerCommand as jest.MockedFunction<
+      typeof vscode.commands.registerCommand
+    >;
 
   beforeEach(() => {
     // Clear all mocks before each test
@@ -15,7 +19,7 @@ describe("Extension", () => {
     // Create mock context
     mockContext = {
       subscriptions: [],
-    } as any;
+    } as unknown as vscode.ExtensionContext;
   });
 
   describe("activate", () => {
@@ -55,13 +59,16 @@ describe("Extension", () => {
       activate(mockContext);
 
       // Get the registered command handler
-      const registerCommandCall = (vscode.commands.registerCommand as jest.Mock).mock.calls.find(
-        call => call[0] === "xmlSchemaVisualEditor.openEditor"
-      );
-      const commandHandler = registerCommandCall[1];
+      const commandHandler = registerCommandMock.mock.calls.find(
+        ([command]) => command === "xmlSchemaVisualEditor.openEditor"
+      )?.[1];
+
+      if (!commandHandler) {
+        throw new Error("openEditor command handler not registered");
+      }
 
       // Call command with XSD URI
-      const testUri = { fsPath: "/test/file.xsd" } as vscode.Uri;
+      const testUri = vscode.Uri.file("/test/file.xsd");
       await commandHandler(testUri);
 
       expect(vscode.commands.executeCommand).toHaveBeenCalledWith(
@@ -74,12 +81,15 @@ describe("Extension", () => {
     it("should show error when non-XSD file is provided", async () => {
       activate(mockContext);
 
-      const registerCommandCall = (vscode.commands.registerCommand as jest.Mock).mock.calls.find(
-        call => call[0] === "xmlSchemaVisualEditor.openEditor"
-      );
-      const commandHandler = registerCommandCall[1];
+      const commandHandler = registerCommandMock.mock.calls.find(
+        ([command]) => command === "xmlSchemaVisualEditor.openEditor"
+      )?.[1];
 
-      const testUri = { fsPath: "/test/file.txt" } as vscode.Uri;
+      if (!commandHandler) {
+        throw new Error("openEditor command handler not registered");
+      }
+
+      const testUri = vscode.Uri.file("/test/file.txt");
       await commandHandler(testUri);
 
       expect(vscode.window.showErrorMessage).toHaveBeenCalledWith(

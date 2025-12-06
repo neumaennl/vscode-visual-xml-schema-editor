@@ -7,7 +7,17 @@ const mockPostMessage = jest.fn();
 const mockGetState = jest.fn();
 const mockSetState = jest.fn();
 
-(global as any).acquireVsCodeApi = jest.fn(() => ({
+type MockVsCodeApi = {
+  postMessage: jest.Mock;
+  getState: jest.Mock;
+  setState: jest.Mock;
+};
+
+const globalWithAcquire = globalThis as typeof globalThis & {
+  acquireVsCodeApi: jest.Mock<MockVsCodeApi, []>;
+};
+
+globalWithAcquire.acquireVsCodeApi = jest.fn(() => ({
   postMessage: mockPostMessage,
   getState: mockGetState,
   setState: mockSetState,
@@ -26,9 +36,9 @@ describe("SchemaEditorApp", () => {
         <g id="content"></g>
       </svg>
       <div id="properties-content"></div>
-      <button id="zoom-in"></button>
-      <button id="zoom-out"></button>
-      <button id="zoom-reset"></button>
+      <button id="zoomIn"></button>
+      <button id="zoomOut"></button>
+      <button id="fitView"></button>
     `;
   });
 
@@ -95,19 +105,17 @@ describe("SchemaEditorApp", () => {
   });
 
   it("should setup zoom controls", () => {
+    const addEventListenerSpy = jest.spyOn(HTMLElement.prototype, "addEventListener");
+
     require("./main");
 
-    const zoomInButton = document.getElementById("zoom-in");
-    const zoomOutButton = document.getElementById("zoom-out");
-    const zoomResetButton = document.getElementById("zoom-reset");
+    expect(document.getElementById("zoomIn")).toBeTruthy();
+    expect(document.getElementById("zoomOut")).toBeTruthy();
+    expect(document.getElementById("fitView")).toBeTruthy();
 
-    expect(zoomInButton).toBeTruthy();
-    expect(zoomOutButton).toBeTruthy();
-    expect(zoomResetButton).toBeTruthy();
+    // Each button attaches a click handler
+    expect(addEventListenerSpy).toHaveBeenCalledWith("click", expect.any(Function));
 
-    // Verify click handlers are attached
-    expect((zoomInButton as any).onclick).toBeDefined();
-    expect((zoomOutButton as any).onclick).toBeDefined();
-    expect((zoomResetButton as any).onclick).toBeDefined();
+    addEventListenerSpy.mockRestore();
   });
 });

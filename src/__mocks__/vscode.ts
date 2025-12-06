@@ -16,7 +16,7 @@ export const Uri = {
     path: value,
     toString: () => value
   })),
-  joinPath: jest.fn((base: any, ...paths: string[]) => ({
+  joinPath: jest.fn((_base: unknown, ...paths: string[]) => ({
     fsPath: paths.join("/"),
     scheme: 'file',
     path: paths.join("/"),

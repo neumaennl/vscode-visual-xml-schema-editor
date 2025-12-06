@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { unmarshal } from "@neumaennl/xmlbind-ts";
 import { schema } from "../shared/types";
+import { SchemaModifiedMessage } from "../shared/messages";
 
 /**
  * Provider for the XML Schema Visual Editor custom text editor.
@@ -8,6 +9,7 @@ import { schema } from "../shared/types";
  * a visual editing experience for XML Schema files.
  */
 export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
+
   /**
    * Creates a new SchemaEditorProvider.
    * 
@@ -23,11 +25,11 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
    * @param webviewPanel - The webview panel to display the custom editor
    * @param _token - Cancellation token for the operation
    */
-  public async resolveCustomTextEditor(
+  public resolveCustomTextEditor(
     document: vscode.TextDocument,
     webviewPanel: vscode.WebviewPanel,
     _token: vscode.CancellationToken
-  ): Promise<void> {
+  ): void {
     webviewPanel.webview.options = {
       enableScripts: true,
     };
@@ -48,7 +50,8 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
 
     // Listen for messages from webview
     webviewPanel.webview.onDidReceiveMessage(
-      (message) => this.handleWebviewMessage(message, document),
+      (message: SchemaModifiedMessage) =>
+        void this.handleWebviewMessage(message, document),
       undefined,
       this.context.subscriptions
     );
@@ -82,13 +85,13 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
       console.log("Schema object:", schemaObj);
 
       // Send the schema object to the webview for visualization
-      webview.postMessage({
+      void webview.postMessage({
         command: "updateSchema",
         data: schemaObj,
       });
     } catch (error) {
       console.error("Error parsing schema:", error);
-      webview.postMessage({
+      void webview.postMessage({
         command: "error",
         data: { message: (error as Error).message },
       });
@@ -103,13 +106,14 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
    * @param document - The document being edited
    */
   private async handleWebviewMessage(
-    message: any,
+    message: SchemaModifiedMessage,
     document: vscode.TextDocument
-  ) {
+  ): Promise<void> {
     switch (message.command) {
-      case "schemaModified":
+      case "schemaModified": {
         await this.applySchemaChanges(document, message.data);
         break;
+      }
     }
   }
 
@@ -121,15 +125,13 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
    * @param schemaObj - The modified schema object from the webview
    */
   private async applySchemaChanges(
-    document: vscode.TextDocument,
-    schemaObj: schema
-  ) {
+    _document: vscode.TextDocument,
+    _schemaObj: schema
+  ): Promise<void> {
     // TODO: Marshal the schema object back to XML
     // const xmlContent = marshal(schemaObj);
     // Then apply the edit to the document
-
     const edit = new vscode.WorkspaceEdit();
-    // Implementation needed
     await vscode.workspace.applyEdit(edit);
   }
 
@@ -148,6 +150,8 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
     const styleUri = webview.asWebviewUri(
       vscode.Uri.joinPath(this.context.extensionUri, "webview", "styles.css")
     );
+    const scriptSrc = scriptUri.toString();
+    const styleSrc = styleUri.toString();
 
     const nonce = this.getNonce();
 
@@ -157,7 +161,7 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}';">
-    <link href="${styleUri}" rel="stylesheet">
+    <link href="${styleSrc}" rel="stylesheet">
     <title>XML Schema Visual Editor</title>
 </head>
 <body>
@@ -173,7 +177,7 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
         <h3>Properties</h3>
         <div id="properties-content"></div>
     </div>
-    <script nonce="${nonce}" src="${scriptUri}"></script>
+    <script nonce="${nonce}" src="${scriptSrc}"></script>
 </body>
 </html>`;
   }

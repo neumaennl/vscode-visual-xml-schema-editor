@@ -59,7 +59,7 @@ export class PropertyPanel {
       const attrList = document.createElement("ul");
       attrList.className = "attribute-list";
 
-      node.attributes.forEach((attr: any) => {
+      node.attributes.forEach((attr) => {
         const li = document.createElement("li");
         li.innerHTML = `
                     <strong>${attr.name}</strong>: ${attr.type}

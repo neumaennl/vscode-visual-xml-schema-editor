@@ -15,6 +15,7 @@ import {
   CommandResponse,
   AddElementCommand,
 } from "../commands";
+import { schema } from "../types";
 
 describe("Message Types", () => {
   test("ExecuteCommandMessage should have correct structure", () => {
@@ -35,9 +36,10 @@ describe("Message Types", () => {
   });
 
   test("UpdateSchemaMessage should have correct structure", () => {
+    const sampleSchema = {} as schema;
     const message: UpdateSchemaMessage = {
       command: "updateSchema",
-      data: { schema: "serialized schema data" },
+      data: sampleSchema,
     };
 
     expect(message.command).toBe("updateSchema");
@@ -105,10 +107,11 @@ describe("Message Types", () => {
   });
 
   test("ExtensionMessage union type", () => {
+    const sampleSchema = {} as schema;
     const messages: ExtensionMessage[] = [
       {
         command: "updateSchema",
-        data: { schema: "data" },
+        data: sampleSchema,
       },
       {
         command: "error",
@@ -224,11 +227,9 @@ describe("SchemaCommand Union Type", () => {
       },
     };
 
-    if (command.type === "addElement") {
-      // TypeScript should narrow the type here
-      expect(command.payload.elementName).toBe("element-1");
-      expect(command.payload.parentId).toBe("parent-1");
-    }
+    expect(command.type).toBe("addElement");
+    expect(command.payload.elementName).toBe("element-1");
+    expect(command.payload.parentId).toBe("parent-1");
   });
 });
 

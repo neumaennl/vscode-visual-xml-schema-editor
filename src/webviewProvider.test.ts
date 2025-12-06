@@ -20,8 +20,9 @@ describe("SchemaEditorProvider", () => {
     jest.clearAllMocks();
 
     mockContext = {
-      extensionUri: { toString: () => "/extension/path" } as vscode.Uri,
-    } as any;
+      extensionUri: vscode.Uri.file("/extension/path"),
+      subscriptions: [],
+    } as unknown as vscode.ExtensionContext;
 
     mockWebview = {
       options: {},
@@ -29,17 +30,17 @@ describe("SchemaEditorProvider", () => {
       asWebviewUri: mockGetUri,
       postMessage: mockPostMessage,
       onDidReceiveMessage: jest.fn(),
-    } as any;
+    } as unknown as vscode.Webview;
 
     mockWebviewPanel = {
       webview: mockWebview,
       onDidDispose: jest.fn(),
-    } as any;
+    } as unknown as vscode.WebviewPanel;
 
     mockDocument = {
       uri: { toString: () => "/test/schema.xsd" } as vscode.Uri,
       getText: jest.fn(() => "<xs:schema></xs:schema>"),
-    } as any;
+    } as unknown as vscode.TextDocument;
 
     provider = new SchemaEditorProvider(mockContext);
   });
@@ -55,8 +56,8 @@ describe("SchemaEditorProvider", () => {
   });
 
   describe("resolveCustomTextEditor", () => {
-    it("should enable scripts in webview", async () => {
-      await provider.resolveCustomTextEditor(
+    it("should enable scripts in webview", () => {
+      provider.resolveCustomTextEditor(
         mockDocument,
         mockWebviewPanel,
         {} as vscode.CancellationToken
@@ -65,8 +66,8 @@ describe("SchemaEditorProvider", () => {
       expect(mockWebview.options).toEqual({ enableScripts: true });
     });
 
-    it("should set HTML content in webview", async () => {
-      await provider.resolveCustomTextEditor(
+    it("should set HTML content in webview", () => {
+      provider.resolveCustomTextEditor(
         mockDocument,
         mockWebviewPanel,
         {} as vscode.CancellationToken
@@ -76,8 +77,8 @@ describe("SchemaEditorProvider", () => {
       expect(mockWebview.html.length).toBeGreaterThan(0);
     });
 
-    it("should register document change listener", async () => {
-      await provider.resolveCustomTextEditor(
+    it("should register document change listener", () => {
+      provider.resolveCustomTextEditor(
         mockDocument,
         mockWebviewPanel,
         {} as vscode.CancellationToken
@@ -86,8 +87,8 @@ describe("SchemaEditorProvider", () => {
       expect(vscode.workspace.onDidChangeTextDocument).toHaveBeenCalled();
     });
 
-    it("should register message listener from webview", async () => {
-      await provider.resolveCustomTextEditor(
+    it("should register message listener from webview", () => {
+      provider.resolveCustomTextEditor(
         mockDocument,
         mockWebviewPanel,
         {} as vscode.CancellationToken

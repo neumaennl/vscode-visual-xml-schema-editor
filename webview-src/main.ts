@@ -1,23 +1,28 @@
 import { DiagramRenderer } from "./renderer";
 import { PropertyPanel } from "./propertyPanel";
 import { schema } from "../shared/types";
-import { VSCodeAPI, MessageFromExtension, ViewState } from "./webviewTypes";
+import {
+  VSCodeAPI,
+  ViewState,
+  WebviewState,
+} from "./webviewTypes";
 import { DiagramItem } from "./diagram";
+import { ExtensionMessage } from "../shared/messages";
 
-declare function acquireVsCodeApi(): VSCodeAPI;
+declare function acquireVsCodeApi<State>(): VSCodeAPI<State>;
 
 class SchemaEditorApp {
-  private vscode: VSCodeAPI;
+  private vscode: VSCodeAPI<WebviewState>;
   private renderer: DiagramRenderer;
   private propertyPanel: PropertyPanel;
-  private currentSchema: schema | null = null;
+  private currentSchema: schema | undefined;
   private viewState: ViewState;
 
   /**
    * Create and initialize the schema editor application
    */
   constructor() {
-    this.vscode = acquireVsCodeApi();
+    this.vscode = acquireVsCodeApi<WebviewState>();
     this.viewState = { zoom: 1, panX: 0, panY: 0 };
 
     const canvas = document.getElementById("schema-canvas");
@@ -51,17 +56,22 @@ class SchemaEditorApp {
   private setupMessageListener(): void {
     window.addEventListener(
       "message",
-      (event: MessageEvent<MessageFromExtension>) => {
+      (event: MessageEvent<ExtensionMessage>) => {
         const message = event.data;
+
         switch (message.command) {
-          case "updateSchema":
-            this.currentSchema = message.data as schema;
-            this.renderSchema(message.data as schema);
+          case "updateSchema": {
+            this.currentSchema = message.data;
+            this.renderSchema(message.data);
             this.saveState();
             break;
-          case "error":
-            this.showError(message.data?.message || "Unknown error");
+          }
+
+          case "error": {
+            const errorMessage = message.data.message ?? "Unknown error";
+            this.showError(errorMessage);
             break;
+          }
         }
       }
     );

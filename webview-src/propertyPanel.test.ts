@@ -85,8 +85,7 @@ describe("PropertyPanel", () => {
 
       panel.display(item);
 
-      expect(container.textContent).toContain("Documentation:");
-      expect(container.textContent).toContain("This is test documentation");
+      expectAdjacentText(container, "Documentation:", "This is test documentation");
     });
 
     it("should display attributes if present", () => {
@@ -111,8 +110,7 @@ describe("PropertyPanel", () => {
 
       panel.display(item);
 
-      expect(container.textContent).toContain("Namespace:");
-      expect(container.textContent).toContain("http://example.com/ns");
+      expectAdjacentText(container, "Namespace:", "http://example.com/ns");
     });
 
     it("should handle item without optional properties", () => {

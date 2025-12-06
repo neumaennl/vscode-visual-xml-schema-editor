@@ -5,6 +5,7 @@
 
 import { CommandResponse } from "./commands/base";
 import { SchemaCommand } from "./commands";
+import { schema } from "./generated";
 
 /**
  * Base interface for messages between extension and webview.
@@ -39,18 +40,18 @@ export interface ExecuteCommandMessage
 /**
  * Message to update the schema in the webview.
  */
-export interface UpdateSchemaMessage extends Message<"updateSchema", unknown> {
+export interface UpdateSchemaMessage extends Message<"updateSchema", schema> {
   command: "updateSchema";
-  data: unknown; // Schema object serialized for webview
+  data: schema; // Schema object serialized for webview
 }
 
 /**
  * Message when the schema has been modified.
  */
 export interface SchemaModifiedMessage
-  extends Message<"schemaModified", unknown> {
+  extends Message<"schemaModified", schema> {
   command: "schemaModified";
-  data: unknown; // Updated schema object
+  data: schema; // Updated schema object
 }
 
 /**

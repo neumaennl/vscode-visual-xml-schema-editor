@@ -1,6 +1,12 @@
 import * as vscode from "vscode";
 import { SchemaEditorProvider } from "./webviewProvider";
 
+/**
+ * Activates the XML Schema Visual Editor extension.
+ * Registers the custom editor provider and commands.
+ * 
+ * @param context - The extension context provided by VS Code
+ */
 export function activate(context: vscode.ExtensionContext) {
   // Register custom editor provider
   const provider = new SchemaEditorProvider(context);
@@ -41,7 +47,7 @@ export function activate(context: vscode.ExtensionContext) {
             "xmlSchemaVisualEditor.editor"
           );
         } else {
-          vscode.window.showErrorMessage(
+          await vscode.window.showErrorMessage(
             "Please select an XSD file to open in the visual editor."
           );
         }
@@ -50,4 +56,8 @@ export function activate(context: vscode.ExtensionContext) {
   );
 }
 
+/**
+ * Deactivates the extension.
+ * Called when the extension is being shut down.
+ */
 export function deactivate() {}

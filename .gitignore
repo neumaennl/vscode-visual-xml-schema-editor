@@ -4,3 +4,4 @@ webview/
 *.vsix
 .vscode-test/
 .DS_Store
+test-results/

@@ -42,7 +42,8 @@ describe("DiagramRenderer", () => {
 
   describe("renderSchema", () => {
     beforeEach(() => {
-      // Mock getBBox for SVG text elements
+      // Mock getBBox for SVG text elements (not supported in jsdom)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
       (Element.prototype as any).getBBox = jest.fn(function (this: SVGTextElement) {
         const textContent = this.textContent || "";
         return {
@@ -84,6 +85,7 @@ describe("DiagramRenderer", () => {
     it("should handle null schema", () => {
       const onNodeClick = jest.fn();
       
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
       renderer.renderSchema(null as any, onNodeClick);
       
       // Should show message instead of throwing
@@ -120,6 +122,8 @@ describe("DiagramRenderer", () => {
 
   describe("refresh", () => {
     beforeEach(() => {
+      // Mock getBBox for SVG text elements (not supported in jsdom)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
       (Element.prototype as any).getBBox = jest.fn(function (this: SVGTextElement) {
         const textContent = this.textContent || "";
         return { x: 0, y: 0, width: textContent.length * 6, height: 10 };

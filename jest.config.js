@@ -12,7 +12,8 @@ module.exports = {
     '!**/*.d.ts',
     '!**/node_modules/**',
     '!**/generated/**',
-    '!**/__tests__/**'
+    '!**/__tests__/**',
+    '!**/*.test.ts'
   ],
   moduleNameMapper: {
     '^shared/(.*)$': '<rootDir>/shared/$1'

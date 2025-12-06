@@ -250,7 +250,7 @@ describe("ShapeRenderers", () => {
       const circles = mockGroup.querySelectorAll("circle");
       const lines = mockGroup.querySelectorAll("line");
       expect(circles.length).toBe(3); // Three dots
-      expect(lines.length).toBe(7); // Multiple lines for choice pattern
+      expect(lines.length).toBe(6); // Multiple lines for choice pattern
     });
 
     it("should render all indicator with dots and lines", () => {

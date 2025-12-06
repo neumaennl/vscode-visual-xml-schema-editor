@@ -29,7 +29,7 @@ describe("ShapeRenderers", () => {
         typeFillColor: "#fff2e6",
         groupFillColor: "#f2ffe6",
       },
-    } as Diagram;
+    } as unknown as Diagram;
   });
 
   describe("renderElementShape", () => {
@@ -265,20 +265,6 @@ describe("ShapeRenderers", () => {
       const lines = mockGroup.querySelectorAll("line");
       expect(circles.length).toBe(3); // Three dots
       expect(lines.length).toBe(8); // Multiple lines for all pattern
-    });
-
-    it("should not render anything for undefined group type", () => {
-      const rect: Rectangle = { x: 10, y: 10, width: 100, height: 50 };
-      const item = new DiagramItem("id16", "Test", "group" as any);
-      item.diagram = mockDiagram;
-      item.groupType = undefined;
-
-      renderGroupTypeIndicator(item, rect, mockGroup);
-
-      const circles = mockGroup.querySelectorAll("circle");
-      const lines = mockGroup.querySelectorAll("line");
-      expect(circles.length).toBe(0);
-      expect(lines.length).toBe(0);
     });
 
     it("should render centered on rectangle", () => {

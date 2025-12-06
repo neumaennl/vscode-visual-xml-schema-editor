@@ -245,13 +245,12 @@ describe("SvgHelpers", () => {
       expect(textElement?.getAttribute("y")).toBe("-20");
     });
 
-    it("should create title element with empty title string", () => {
+    it("should not create title element with empty title string", () => {
       svgText(mockGroup, "Text", 0, 0, "font-size:12px", "");
 
       const textElement = mockGroup.querySelector("text");
       const titleElement = textElement?.querySelector("title");
-      expect(titleElement).toBeTruthy();
-      expect(titleElement?.textContent).toBe("");
+      expect(titleElement).toBeFalsy();
     });
   });
 

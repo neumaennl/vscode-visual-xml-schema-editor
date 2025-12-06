@@ -25,6 +25,14 @@ describe("TextRenderers", () => {
     ) as SVGSVGElement;
     document.body.appendChild(mockSvg);
 
+    // Mock getBBox for SVG text elements (not supported in jsdom)
+    Element.prototype.getBBox = jest.fn(() => ({
+      x: 0,
+      y: 0,
+      width: 50, // Mock width
+      height: 10,
+    })) as any;
+
     mockDiagram = {
       style: {
         fontFamily: "Arial",

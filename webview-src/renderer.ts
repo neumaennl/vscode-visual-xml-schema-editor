@@ -22,6 +22,14 @@ export class DiagramRenderer {
     | null = null;
 
   /**
+   * Get the current diagram (exposed for testing).
+   * @returns The current diagram or null if no diagram is loaded
+   */
+  public getCurrentDiagram(): Diagram | null {
+    return this.currentDiagram;
+  }
+
+  /**
    * Create a new DiagramRenderer
    * @param canvas - The SVG canvas element to render into
    * @param viewState - Initial view state (zoom and pan)

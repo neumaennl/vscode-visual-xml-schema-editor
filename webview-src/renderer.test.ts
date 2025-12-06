@@ -11,6 +11,8 @@ const defaultDiagramOptions: DiagramOptions = {
   showType: false,
 };
 
+
+
 describe("DiagramRenderer", () => {
   let mockCanvas: SVGSVGElement;
   let renderer: DiagramRenderer;
@@ -51,14 +53,19 @@ describe("DiagramRenderer", () => {
     beforeEach(() => {
       // Mock getBBox for SVG text elements (not supported in jsdom)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-      (Element.prototype as any).getBBox = jest.fn(function (this: SVGTextElement) {
+      (Element.prototype as any).getBBox = jest.fn(function (this: SVGTextElement): DOMRect {
         const textContent = this.textContent || "";
         return {
           x: 0,
           y: 0,
           width: textContent.length * 6,
           height: 10,
-        };
+          top: 0,
+          right: textContent.length * 6,
+          bottom: 10,
+          left: 0,
+          toJSON: () => ({}),
+        } as DOMRect;
       });
     });
 
@@ -131,9 +138,19 @@ describe("DiagramRenderer", () => {
     beforeEach(() => {
       // Mock getBBox for SVG text elements (not supported in jsdom)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-      (Element.prototype as any).getBBox = jest.fn(function (this: SVGTextElement) {
+      (Element.prototype as any).getBBox = jest.fn(function (this: SVGTextElement): DOMRect {
         const textContent = this.textContent || "";
-        return { x: 0, y: 0, width: textContent.length * 6, height: 10 };
+        return {
+          x: 0,
+          y: 0,
+          width: textContent.length * 6,
+          height: 10,
+          top: 0,
+          right: textContent.length * 6,
+          bottom: 10,
+          left: 0,
+          toJSON: () => ({}),
+        } as DOMRect;
       });
     });
 
@@ -163,9 +180,19 @@ describe("DiagramRenderer", () => {
     beforeEach(() => {
       // Mock getBBox for SVG text elements (not supported in jsdom)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-      (Element.prototype as any).getBBox = jest.fn(function (this: SVGTextElement) {
+      (Element.prototype as any).getBBox = jest.fn(function (this: SVGTextElement): DOMRect {
         const textContent = this.textContent || "";
-        return { x: 0, y: 0, width: textContent.length * 6, height: 10 };
+        return {
+          x: 0,
+          y: 0,
+          width: textContent.length * 6,
+          height: 10,
+          top: 0,
+          right: textContent.length * 6,
+          bottom: 10,
+          left: 0,
+          toJSON: () => ({}),
+        } as DOMRect;
       });
     });
 
@@ -182,11 +209,9 @@ describe("DiagramRenderer", () => {
       
       renderer.renderSchema(mockSchema, options, onNodeClick);
       
-      // Access private currentDiagram through the renderer
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-      const diagram = (renderer as any).currentDiagram;
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      expect(diagram.showDocumentation).toBe(true);
+      const diagram = renderer.getCurrentDiagram();
+      expect(diagram).not.toBeNull();
+      expect(diagram?.showDocumentation).toBe(true);
     });
 
     it("should apply alwaysShowOccurrence option to diagram", () => {
@@ -202,10 +227,9 @@ describe("DiagramRenderer", () => {
       
       renderer.renderSchema(mockSchema, options, onNodeClick);
       
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-      const diagram = (renderer as any).currentDiagram;
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      expect(diagram.alwaysShowOccurrence).toBe(true);
+      const diagram = renderer.getCurrentDiagram();
+      expect(diagram).not.toBeNull();
+      expect(diagram?.alwaysShowOccurrence).toBe(true);
     });
 
     it("should apply showType option to diagram", () => {
@@ -221,10 +245,9 @@ describe("DiagramRenderer", () => {
       
       renderer.renderSchema(mockSchema, options, onNodeClick);
       
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-      const diagram = (renderer as any).currentDiagram;
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      expect(diagram.showType).toBe(true);
+      const diagram = renderer.getCurrentDiagram();
+      expect(diagram).not.toBeNull();
+      expect(diagram?.showType).toBe(true);
     });
   });
 

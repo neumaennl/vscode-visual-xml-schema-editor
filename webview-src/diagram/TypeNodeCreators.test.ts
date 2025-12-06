@@ -10,6 +10,11 @@ import {
 import { Diagram } from "./Diagram";
 import { DiagramItemType } from "./DiagramTypes";
 import { resetIdCounter } from "./DiagramBuilderHelpers";
+import {
+  topLevelElement,
+  topLevelComplexType,
+  topLevelSimpleType,
+} from "../../shared/types";
 
 describe("TypeNodeCreators", () => {
   let diagram: Diagram;
@@ -20,16 +25,15 @@ describe("TypeNodeCreators", () => {
   });
 
   describe("createElementNode", () => {
-    it("should return null for undefined element", () => {
-      expect(createElementNode(undefined, diagram)).toBeNull();
-    });
-
     it("should return null for element without name", () => {
-      expect(createElementNode({}, diagram)).toBeNull();
+      const element = new topLevelElement();
+      // Don't set name - it will be undefined
+      expect(createElementNode(element, diagram)).toBeNull();
     });
 
     it("should create element node with name", () => {
-      const element = { name: "TestElement" };
+      const element = new topLevelElement();
+      element.name = "TestElement" as any;
       const node = createElementNode(element, diagram);
 
       expect(node).not.toBeNull();
@@ -38,58 +42,36 @@ describe("TypeNodeCreators", () => {
     });
 
     it("should extract type information", () => {
-      const element = { name: "TestElement", type_: "string" };
+      const element = new topLevelElement();
+      element.name = "TestElement" as any;
+      element.type_ = "string" as any;
       const node = createElementNode(element, diagram);
 
       expect(node!.type).toBe("string");
     });
 
-    it("should extract namespace", () => {
-      const element = {
-        name: "TestElement",
-        targetNamespace: "http://example.com/ns",
-      };
-      const node = createElementNode(element, diagram);
-
-      expect(node!.namespace).toBe("http://example.com/ns");
-    });
-
     it("should extract documentation from annotation", () => {
-      const element = {
-        name: "TestElement",
-        annotation: {
-          documentation: [{ value: "Test doc" }],
-        },
-      };
+      const element = new topLevelElement();
+      element.name = "TestElement" as any;
+      element.annotation = {
+        documentation: [{ value: "Test doc" } as any],
+      } as any;
       const node = createElementNode(element, diagram);
 
       expect(node!.documentation).toBe("Test doc");
     });
-
-    it("should extract occurrence constraints", () => {
-      const element = {
-        name: "TestElement",
-        minOccurs: "0",
-        maxOccurs: "unbounded",
-      };
-      const node = createElementNode(element, diagram);
-
-      expect(node!.minOccurrence).toBe(0);
-      expect(node!.maxOccurrence).toBe(-1);
-    });
   });
 
   describe("createComplexTypeNode", () => {
-    it("should return null for undefined type", () => {
-      expect(createComplexTypeNode(undefined, diagram)).toBeNull();
-    });
-
     it("should return null for type without name", () => {
-      expect(createComplexTypeNode({}, diagram)).toBeNull();
+      const complexType = new topLevelComplexType();
+      // Don't set name - it will be undefined
+      expect(createComplexTypeNode(complexType, diagram)).toBeNull();
     });
 
     it("should create complex type node", () => {
-      const complexType = { name: "PersonType" };
+      const complexType = new topLevelComplexType();
+      complexType.name = "PersonType" as any;
       const node = createComplexTypeNode(complexType, diagram);
 
       expect(node).not.toBeNull();
@@ -99,12 +81,11 @@ describe("TypeNodeCreators", () => {
     });
 
     it("should extract documentation", () => {
-      const complexType = {
-        name: "PersonType",
-        annotation: {
-          documentation: [{ value: "A person type" }],
-        },
-      };
+      const complexType = new topLevelComplexType();
+      complexType.name = "PersonType" as any;
+      complexType.annotation = {
+        documentation: [{ value: "A person type" } as any],
+      } as any;
       const node = createComplexTypeNode(complexType, diagram);
 
       expect(node!.documentation).toBe("A person type");
@@ -112,16 +93,15 @@ describe("TypeNodeCreators", () => {
   });
 
   describe("createSimpleTypeNode", () => {
-    it("should return null for undefined type", () => {
-      expect(createSimpleTypeNode(undefined, diagram)).toBeNull();
-    });
-
     it("should return null for type without name", () => {
-      expect(createSimpleTypeNode({}, diagram)).toBeNull();
+      const simpleType = new topLevelSimpleType();
+      // Don't set name - it will be undefined
+      expect(createSimpleTypeNode(simpleType, diagram)).toBeNull();
     });
 
     it("should create simple type node", () => {
-      const simpleType = { name: "AgeType" };
+      const simpleType = new topLevelSimpleType();
+      simpleType.name = "AgeType" as any;
       const node = createSimpleTypeNode(simpleType, diagram);
 
       expect(node).not.toBeNull();

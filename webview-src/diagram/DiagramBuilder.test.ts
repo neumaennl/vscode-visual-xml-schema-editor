@@ -3,6 +3,17 @@
  */
 
 import { DiagramBuilder } from "../diagram/DiagramBuilder";
+import { schema } from "../../shared/types";
+
+/**
+ * Creates a valid schema object for testing.
+ * Properly typed to match the schema class structure.
+ */
+function createTestSchema(overrides: Partial<schema> = {}): schema {
+  const testSchema = new schema();
+  Object.assign(testSchema, overrides);
+  return testSchema;
+}
 
 describe("DiagramBuilder", () => {
   let builder: DiagramBuilder;
@@ -13,9 +24,9 @@ describe("DiagramBuilder", () => {
 
   describe("buildFromSchema", () => {
     it("should create diagram with schema root node", () => {
-      const schemaObj = {
-        targetNamespace: "http://example.com/ns",
-      };
+      const schemaObj = createTestSchema({
+        targetNamespace: "http://example.com/ns" as any,
+      });
 
       const diagram = builder.buildFromSchema(schemaObj);
 
@@ -25,12 +36,12 @@ describe("DiagramBuilder", () => {
     });
 
     it("should process schema elements", () => {
-      const schemaObj = {
+      const schemaObj = createTestSchema({
         element: [
-          { name: "Person", type_: "PersonType" },
-          { name: "Address", type_: "AddressType" },
-        ],
-      };
+          { name: "Person" as any, type_: "PersonType" as any },
+          { name: "Address" as any, type_: "AddressType" as any },
+        ] as any,
+      });
 
       const diagram = builder.buildFromSchema(schemaObj);
 
@@ -41,9 +52,9 @@ describe("DiagramBuilder", () => {
     });
 
     it("should process complex types", () => {
-      const schemaObj = {
-        complexType: { name: "PersonType" },
-      };
+      const schemaObj = createTestSchema({
+        complexType: [{ name: "PersonType" as any }] as any,
+      });
 
       const diagram = builder.buildFromSchema(schemaObj);
 
@@ -53,7 +64,7 @@ describe("DiagramBuilder", () => {
     });
 
     it("should add placeholder when no children found", () => {
-      const schemaObj = {};
+      const schemaObj = createTestSchema();
 
       const diagram = builder.buildFromSchema(schemaObj);
 
@@ -63,9 +74,9 @@ describe("DiagramBuilder", () => {
     });
 
     it("should process simple types", () => {
-      const schemaObj = {
-        simpleType: { name: "EmailType", restriction: { base: "string" } },
-      };
+      const schemaObj = createTestSchema({
+        simpleType: [{ name: "EmailType" as any, restriction: { base: "string" } as any }] as any,
+      });
 
       const diagram = builder.buildFromSchema(schemaObj);
 
@@ -75,12 +86,12 @@ describe("DiagramBuilder", () => {
     });
 
     it("should process multiple simple types", () => {
-      const schemaObj = {
+      const schemaObj = createTestSchema({
         simpleType: [
-          { name: "Type1", restriction: { base: "string" } },
-          { name: "Type2", restriction: { base: "int" } },
-        ],
-      };
+          { name: "Type1" as any, restriction: { base: "string" } as any },
+          { name: "Type2" as any, restriction: { base: "int" } as any },
+        ] as any,
+      });
 
       const diagram = builder.buildFromSchema(schemaObj);
 
@@ -89,16 +100,16 @@ describe("DiagramBuilder", () => {
     });
 
     it("should process elements with inline complex types", () => {
-      const schemaObj = {
-        element: {
-          name: "Person",
+      const schemaObj = createTestSchema({
+        element: [{
+          name: "Person" as any,
           complexType: {
             sequence: {
-              element: { name: "name", type_: "string" },
+              element: { name: "name" as any, type_: "string" as any },
             },
-          },
-        },
-      };
+          } as any,
+        }] as any,
+      });
 
       const diagram = builder.buildFromSchema(schemaObj);
 
@@ -107,14 +118,14 @@ describe("DiagramBuilder", () => {
     });
 
     it("should process elements with inline simple types", () => {
-      const schemaObj = {
-        element: {
-          name: "Age",
+      const schemaObj = createTestSchema({
+        element: [{
+          name: "Age" as any,
           simpleType: {
-            restriction: { base: "int" },
-          },
-        },
-      };
+            restriction: { base: "int" } as any,
+          } as any,
+        }] as any,
+      });
 
       const diagram = builder.buildFromSchema(schemaObj);
 
@@ -123,9 +134,9 @@ describe("DiagramBuilder", () => {
     });
 
     it("should handle schema without targetNamespace", () => {
-      const schemaObj = {
-        element: { name: "Test" },
-      };
+      const schemaObj = createTestSchema({
+        element: [{ name: "Test" as any }] as any,
+      });
 
       const diagram = builder.buildFromSchema(schemaObj);
 

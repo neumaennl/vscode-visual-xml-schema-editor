@@ -7,6 +7,11 @@ import { Diagram } from "./Diagram";
 import { DiagramItem } from "./DiagramItem";
 import { DiagramItemType } from "./DiagramTypes";
 import {
+  topLevelElement,
+  topLevelComplexType,
+  topLevelSimpleType,
+} from "../../shared/types";
+import {
   generateId,
   extractDocumentation,
   extractOccurrenceConstraints,
@@ -21,10 +26,10 @@ import {
  * @returns The created diagram item or null if element is invalid
  */
 export function createElementNode(
-  element: any,
+  element: topLevelElement,
   diagram: Diagram
 ): DiagramItem | null {
-  if (!element || !element.name) {
+  if (!element.name) {
     return null;
   }
 
@@ -38,11 +43,6 @@ export function createElementNode(
   // Extract type information
   if (element.type_) {
     item.type = element.type_.toString();
-  }
-
-  // Extract namespace
-  if (element.targetNamespace) {
-    item.namespace = element.targetNamespace.toString();
   }
 
   // Extract documentation
@@ -63,10 +63,10 @@ export function createElementNode(
  * @returns The created diagram item or null if type is invalid
  */
 export function createComplexTypeNode(
-  complexType: any,
+  complexType: topLevelComplexType,
   diagram: Diagram
 ): DiagramItem | null {
-  if (!complexType || !complexType.name) {
+  if (!complexType.name) {
     return null;
   }
 
@@ -94,10 +94,10 @@ export function createComplexTypeNode(
  * @returns The created diagram item or null if type is invalid
  */
 export function createSimpleTypeNode(
-  simpleType: any,
+  simpleType: topLevelSimpleType,
   diagram: Diagram
 ): DiagramItem | null {
-  if (!simpleType || !simpleType.name) {
+  if (!simpleType.name) {
     return null;
   }
 

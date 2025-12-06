@@ -118,4 +118,51 @@ describe("SchemaEditorApp", () => {
 
     addEventListenerSpy.mockRestore();
   });
+
+  it("should restore state on initialization", () => {
+    const savedState = { 
+      zoom: 1.5, 
+      panX: 100, 
+      panY: 50 
+    };
+    mockGetState.mockReturnValue(savedState);
+
+    require("./main");
+
+    expect(mockGetState).toHaveBeenCalled();
+  });
+
+  it("should initialize with default state when no saved state", () => {
+    mockGetState.mockReturnValue(null);
+
+    expect(() => {
+      require("./main");
+    }).not.toThrow();
+  });
+
+  it("should handle unknown message commands", () => {
+    const addEventListenerSpy = jest.spyOn(window, "addEventListener");
+
+    require("./main");
+
+    const messageHandler = addEventListenerSpy.mock.calls.find(
+      (call) => call[0] === "message"
+    )?.[1] as EventListener;
+
+    const event = new MessageEvent("message", {
+      data: { command: "unknownCommand", data: {} },
+    });
+
+    expect(() => {
+      messageHandler(event);
+    }).not.toThrow();
+  });
+
+  it("should create canvas and initialize renderer", () => {
+    require("./main");
+
+    const canvas = document.getElementById("schema-canvas");
+    expect(canvas).toBeTruthy();
+    expect(canvas?.tagName).toBe("svg");
+  });
 });

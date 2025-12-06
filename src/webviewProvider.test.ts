@@ -96,5 +96,78 @@ describe("SchemaEditorProvider", () => {
 
       expect(mockWebview.onDidReceiveMessage).toHaveBeenCalled();
     });
+
+    it("should parse and send schema to webview", () => {
+      provider.resolveCustomTextEditor(
+        mockDocument,
+        mockWebviewPanel,
+        {} as vscode.CancellationToken
+      );
+
+      // Check that postMessage was called
+      expect(mockPostMessage).toHaveBeenCalled();
+    });
+
+    it("should handle empty document", () => {
+      const emptyMockDocument = {
+        uri: { toString: () => "/test/empty.xsd" } as vscode.Uri,
+        getText: jest.fn(() => ""),
+      } as unknown as vscode.TextDocument;
+
+      expect(() => {
+        provider.resolveCustomTextEditor(
+          emptyMockDocument,
+          mockWebviewPanel,
+          {} as vscode.CancellationToken
+        );
+      }).not.toThrow();
+    });
+
+    it("should create HTML with script tag", () => {
+      provider.resolveCustomTextEditor(
+        mockDocument,
+        mockWebviewPanel,
+        {} as vscode.CancellationToken
+      );
+
+      expect(mockWebview.html).toContain("<script");
+      expect(mockWebview.html).toContain("</html>");
+    });
+
+    it("should include webview resources in HTML", () => {
+      provider.resolveCustomTextEditor(
+        mockDocument,
+        mockWebviewPanel,
+        {} as vscode.CancellationToken
+      );
+
+      expect(mockGetUri).toHaveBeenCalled();
+    });
+  });
+
+  describe("HTML generation", () => {
+    it("should generate valid HTML structure", () => {
+      provider.resolveCustomTextEditor(
+        mockDocument,
+        mockWebviewPanel,
+        {} as vscode.CancellationToken
+      );
+
+      const html = mockWebview.html;
+      expect(html).toContain("<!DOCTYPE html>");
+      expect(html).toContain("<html");
+      expect(html).toContain("</html>");
+    });
+
+    it("should include meta tags for security", () => {
+      provider.resolveCustomTextEditor(
+        mockDocument,
+        mockWebviewPanel,
+        {} as vscode.CancellationToken
+      );
+
+      const html = mockWebview.html;
+      expect(html).toContain('Content-Security-Policy');
+    });
   });
 });

@@ -43,6 +43,23 @@ describe("DiagramBuilderHelpers", () => {
       };
       expect(extractDocumentation(annotation)).toBe("Test documentation");
     });
+
+    it("should extract multiple documentation entries", () => {
+      const annotation = {
+        documentation: [
+          { value: "First line" },
+          { value: "Second line" },
+        ],
+      };
+      expect(extractDocumentation(annotation)).toBe("First line\nSecond line");
+    });
+
+    it("should handle empty documentation array", () => {
+      const annotation = {
+        documentation: [],
+      };
+      expect(extractDocumentation(annotation)).toBe("");
+    });
   });
 
   describe("extractOccurrenceConstraints", () => {
@@ -89,6 +106,60 @@ describe("DiagramBuilderHelpers", () => {
       expect(item.attributes).toHaveLength(1);
       expect(item.attributes[0].name).toBe("id");
       expect(item.attributes[0].type).toBe("string");
+    });
+
+    it("should handle null/undefined source", () => {
+      extractAttributes(item, null);
+      expect(item.attributes).toHaveLength(0);
+      
+      extractAttributes(item, undefined);
+      expect(item.attributes).toHaveLength(0);
+    });
+
+    it("should skip attributes without name", () => {
+      const source = {
+        attribute: [
+          { type_: "string" }, // No name
+          { name: "validAttr", type_: "string" },
+        ],
+      };
+      extractAttributes(item, source);
+      expect(item.attributes).toHaveLength(1);
+      expect(item.attributes[0].name).toBe("validAttr");
+    });
+
+    it("should extract multiple attributes", () => {
+      const source = {
+        attribute: [
+          { name: "id", type_: "string" },
+          { name: "value", type_: "number" },
+        ],
+      };
+      extractAttributes(item, source);
+      expect(item.attributes).toHaveLength(2);
+    });
+
+    it("should handle attribute without type", () => {
+      const source = {
+        attribute: {
+          name: "id",
+        },
+      };
+      extractAttributes(item, source);
+      expect(item.attributes).toHaveLength(1);
+      expect(item.attributes[0].type).toBe("inner simpleType or ref");
+    });
+
+    it("should handle attribute without use", () => {
+      const source = {
+        attribute: {
+          name: "id",
+          type_: "string",
+        },
+      };
+      extractAttributes(item, source);
+      expect(item.attributes).toHaveLength(1);
+      expect(item.attributes[0].use).toBeUndefined();
     });
   });
 

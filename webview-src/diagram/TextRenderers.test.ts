@@ -22,7 +22,7 @@ describe("TextRenderers", () => {
     mockSvg = document.createElementNS(
       "http://www.w3.org/2000/svg",
       "svg"
-    ) as SVGSVGElement;
+    );
     document.body.appendChild(mockSvg);
 
     // Mock getBBox for SVG text elements (not supported in jsdom)

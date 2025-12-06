@@ -79,7 +79,7 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
       console.log("XML content preview:", xmlContent.substring(0, 200));
 
       // Parse XSD directly using xmlbind-ts unmarshal
-      const schemaObj = unmarshal(xmlContent, schema);
+      const schemaObj = unmarshal(schema, xmlContent);
 
       console.log("Schema parsed successfully");
       console.log("Schema object:", schemaObj);

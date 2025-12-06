@@ -28,7 +28,7 @@
 
 	<xs:complexType name="loggingType">
 		<xs:annotation>
-			<xs:documentation>complexType secribing a log entry</xs:documentation>
+			<xs:documentation>complexType decribing a log entry</xs:documentation>
 		</xs:annotation>
 
 		<xs:all>

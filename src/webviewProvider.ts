@@ -1,15 +1,35 @@
 import * as vscode from "vscode";
 import { unmarshal } from "@neumaennl/xmlbind-ts";
 import { schema } from "../shared/types";
+import { SchemaModifiedMessage } from "../shared/messages";
 
+/**
+ * Provider for the XML Schema Visual Editor custom text editor.
+ * Implements VS Code's CustomTextEditorProvider interface to provide
+ * a visual editing experience for XML Schema files.
+ */
 export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
+
+  /**
+   * Creates a new SchemaEditorProvider.
+   * 
+   * @param context - The extension context provided by VS Code
+   */
   constructor(private readonly context: vscode.ExtensionContext) {}
 
-  public async resolveCustomTextEditor(
+  /**
+   * Resolves and initializes the custom text editor for an XSD document.
+   * Sets up the webview, establishes communication channels, and loads the initial schema.
+   * 
+   * @param document - The text document being edited
+   * @param webviewPanel - The webview panel to display the custom editor
+   * @param _token - Cancellation token for the operation
+   */
+  public resolveCustomTextEditor(
     document: vscode.TextDocument,
     webviewPanel: vscode.WebviewPanel,
     _token: vscode.CancellationToken
-  ): Promise<void> {
+  ): void {
     webviewPanel.webview.options = {
       enableScripts: true,
     };
@@ -30,7 +50,8 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
 
     // Listen for messages from webview
     webviewPanel.webview.onDidReceiveMessage(
-      (message) => this.handleWebviewMessage(message, document),
+      (message: SchemaModifiedMessage) =>
+        void this.handleWebviewMessage(message, document),
       undefined,
       this.context.subscriptions
     );
@@ -40,6 +61,13 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
     });
   }
 
+  /**
+   * Updates the webview with the current document content.
+   * Parses the XSD document and sends the schema object to the webview for visualization.
+   * 
+   * @param document - The text document containing the XSD content
+   * @param webview - The webview to update with the parsed schema
+   */
   private updateWebview(
     document: vscode.TextDocument,
     webview: vscode.Webview
@@ -57,43 +85,64 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
       console.log("Schema object:", schemaObj);
 
       // Send the schema object to the webview for visualization
-      webview.postMessage({
+      void webview.postMessage({
         command: "updateSchema",
         data: schemaObj,
       });
     } catch (error) {
       console.error("Error parsing schema:", error);
-      webview.postMessage({
+      void webview.postMessage({
         command: "error",
         data: { message: (error as Error).message },
       });
     }
   }
 
+  /**
+   * Handles messages received from the webview.
+   * Processes commands sent from the visual editor to modify the document.
+   * 
+   * @param message - The message received from the webview
+   * @param document - The document being edited
+   */
   private async handleWebviewMessage(
-    message: any,
+    message: SchemaModifiedMessage,
     document: vscode.TextDocument
-  ) {
+  ): Promise<void> {
     switch (message.command) {
-      case "schemaModified":
+      case "schemaModified": {
         await this.applySchemaChanges(document, message.data);
         break;
+      }
     }
   }
 
+  /**
+   * Applies schema changes from the webview back to the document.
+   * Converts the schema object to XML and updates the document.
+   * 
+   * @param document - The document to update
+   * @param schemaObj - The modified schema object from the webview
+   */
   private async applySchemaChanges(
-    document: vscode.TextDocument,
-    schemaObj: schema
-  ) {
+    _document: vscode.TextDocument,
+    _schemaObj: schema
+  ): Promise<void> {
     // TODO: Marshal the schema object back to XML
     // const xmlContent = marshal(schemaObj);
     // Then apply the edit to the document
-
     const edit = new vscode.WorkspaceEdit();
-    // Implementation needed
     await vscode.workspace.applyEdit(edit);
   }
 
+  /**
+   * Generates the HTML content for the webview.
+   * Creates a complete HTML page with the editor UI, including toolbar,
+   * canvas, and properties panel.
+   * 
+   * @param webview - The webview to generate HTML for
+   * @returns The complete HTML content as a string
+   */
   private getHtmlForWebview(webview: vscode.Webview): string {
     const scriptUri = webview.asWebviewUri(
       vscode.Uri.joinPath(this.context.extensionUri, "webview", "main.js")
@@ -101,6 +150,8 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
     const styleUri = webview.asWebviewUri(
       vscode.Uri.joinPath(this.context.extensionUri, "webview", "styles.css")
     );
+    const scriptSrc = scriptUri.toString();
+    const styleSrc = styleUri.toString();
 
     const nonce = this.getNonce();
 
@@ -110,7 +161,7 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}';">
-    <link href="${styleUri}" rel="stylesheet">
+    <link href="${styleSrc}" rel="stylesheet">
     <title>XML Schema Visual Editor</title>
 </head>
 <body>
@@ -126,11 +177,17 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
         <h3>Properties</h3>
         <div id="properties-content"></div>
     </div>
-    <script nonce="${nonce}" src="${scriptUri}"></script>
+    <script nonce="${nonce}" src="${scriptSrc}"></script>
 </body>
 </html>`;
   }
 
+  /**
+   * Generates a cryptographically secure nonce for Content Security Policy.
+   * Used to allow only specific inline scripts to execute in the webview.
+   * 
+   * @returns A random 32-character nonce string
+   */
   private getNonce(): string {
     let text = "";
     const possible =

@@ -17,12 +17,17 @@ module.exports = {
   moduleNameMapper: {
     '^shared/(.*)$': '<rootDir>/shared/$1'
   },
-  reporters: [
-    'default',
-    ['jest-junit', {
-      outputDirectory: 'test-results',
-      outputName: 'jest-junit.xml'
-    }]
+    reporters: [
+    "default",
+    [
+      "jest-junit",
+      {
+        outputDirectory: "test-results",
+        outputName: "jest-junit.xml",
+        classNameTemplate: "{filename}",
+        titleTemplate: "{title}",
+      },
+    ],
   ],
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   projects: [

@@ -5,3 +5,4 @@ webview/
 .vscode-test/
 .DS_Store
 test-results/
+coverage/

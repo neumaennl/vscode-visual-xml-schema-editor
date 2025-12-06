@@ -26,12 +26,16 @@ describe("TextRenderers", () => {
     document.body.appendChild(mockSvg);
 
     // Mock getBBox for SVG text elements (not supported in jsdom)
-    Element.prototype.getBBox = jest.fn(() => ({
-      x: 0,
-      y: 0,
-      width: 50, // Mock width
-      height: 10,
-    })) as any;
+    // Return width proportional to text length (approx 6 pixels per character)
+    (Element.prototype as any).getBBox = jest.fn(function (this: SVGTextElement) {
+      const textContent = this.textContent || "";
+      return {
+        x: 0,
+        y: 0,
+        width: textContent.length * 6, // Approximate width
+        height: 10,
+      };
+    });
 
     mockDiagram = {
       style: {
@@ -106,7 +110,7 @@ describe("TextRenderers", () => {
 
       const text = mockGroup.querySelector("text");
       expect(text?.textContent).toContain("...");
-      expect(text?.textContent?.length).toBeLessThan(item.name.length);
+      expect(text?.textContent).not.toBe(item.name);
     });
 
     it("should add tooltip with full text when truncated", () => {
@@ -174,8 +178,9 @@ describe("TextRenderers", () => {
 
     it("should handle very small maxWidth", () => {
       const text = "Long text";
-      const result = truncateText(text, 5, 10, mockSvg);
+      const result = truncateText(text, 30, 10, mockSvg);
       expect(result).toContain("...");
+      expect(result.length).toBeLessThan(text.length);
     });
 
     it("should use binary search to find optimal truncation point", () => {

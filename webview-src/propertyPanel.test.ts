@@ -77,12 +77,92 @@ describe("PropertyPanel", () => {
 
       expectAdjacentText(container, "Cardinality:", "0..∞");
     });
+
+    it("should display documentation if present", () => {
+      expect.hasAssertions();
+      const item = new DiagramItem("test-1", "TestItem", DiagramItemType.element, diagram);
+      item.documentation = "This is test documentation";
+
+      panel.display(item);
+
+      expect(container.textContent).toContain("Documentation:");
+      expect(container.textContent).toContain("This is test documentation");
+    });
+
+    it("should display attributes if present", () => {
+      expect.hasAssertions();
+      const item = new DiagramItem("test-1", "TestItem", DiagramItemType.element, diagram);
+      item.attributes = [
+        { name: "id", type: "string", use: "required" },
+        { name: "value", type: "number" },
+      ];
+
+      panel.display(item);
+
+      expect(container.textContent).toContain("Attributes:");
+      expect(container.textContent).toContain("id");
+      expect(container.textContent).toContain("string");
+    });
+
+    it("should display namespace if present", () => {
+      expect.hasAssertions();
+      const item = new DiagramItem("test-1", "TestItem", DiagramItemType.element, diagram);
+      item.namespace = "http://example.com/ns";
+
+      panel.display(item);
+
+      expect(container.textContent).toContain("Namespace:");
+      expect(container.textContent).toContain("http://example.com/ns");
+    });
+
+    it("should handle item without optional properties", () => {
+      expect.hasAssertions();
+      const item = new DiagramItem("test-1", "TestItem", DiagramItemType.element, diagram);
+
+      expect(() => {
+        panel.display(item);
+      }).not.toThrow();
+
+      expect(container.textContent).toContain("TestItem");
+    });
+
+    it("should display group type items", () => {
+      expect.hasAssertions();
+      const item = new DiagramItem("test-1", "TestGroup", DiagramItemType.group, diagram);
+
+      panel.display(item);
+
+      expect(container.textContent).toContain("TestGroup");
+    });
+
+    it("should display type items with type information", () => {
+      expect.hasAssertions();
+      const item = new DiagramItem("test-1", "TestType", DiagramItemType.type, diagram);
+      item.type = "complexType";
+
+      panel.display(item);
+
+      expect(container.textContent).toContain("TestType");
+      expect(container.textContent).toContain("complexType");
+    });
   });
 
   describe("clear", () => {
     it("should clear container content", () => {
       expect.hasAssertions();
       container.innerHTML = "<p>Test content</p>";
+
+      panel.clear();
+
+      expect(container.innerHTML).toBe("");
+    });
+
+    it("should clear after displaying item", () => {
+      expect.hasAssertions();
+      const item = new DiagramItem("test-1", "TestItem", DiagramItemType.element, diagram);
+      panel.display(item);
+
+      expect(container.innerHTML).not.toBe("");
 
       panel.clear();
 

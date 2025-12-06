@@ -2,7 +2,7 @@
  * Unit tests for DiagramRenderer class.
  */
 
-import { DiagramRenderer } from "../renderer";
+import { DiagramRenderer } from "./renderer";
 
 describe("DiagramRenderer", () => {
   let mockCanvas: SVGSVGElement;

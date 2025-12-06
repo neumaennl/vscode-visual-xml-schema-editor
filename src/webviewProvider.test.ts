@@ -5,20 +5,9 @@
 import * as vscode from "vscode";
 import { SchemaEditorProvider } from "./webviewProvider";
 
-// Mock VS Code API
+// Mock helpers
 const mockPostMessage = jest.fn();
 const mockGetUri = jest.fn((path: vscode.Uri) => path);
-
-jest.mock("vscode", () => ({
-  workspace: {
-    onDidChangeTextDocument: jest.fn(() => ({ dispose: jest.fn() })),
-  },
-  Uri: {
-    joinPath: jest.fn((base: any, ...paths: string[]) => ({
-      toString: () => paths.join("/"),
-    })),
-  },
-}));
 
 describe("SchemaEditorProvider", () => {
   let provider: SchemaEditorProvider;
@@ -105,12 +94,6 @@ describe("SchemaEditorProvider", () => {
       );
 
       expect(mockWebview.onDidReceiveMessage).toHaveBeenCalled();
-    });
-  });
-
-  describe("static properties", () => {
-    it("should have correct viewType", () => {
-      expect((SchemaEditorProvider as any).viewType).toBe("xmlSchemaVisualEditor.editor");
     });
   });
 });

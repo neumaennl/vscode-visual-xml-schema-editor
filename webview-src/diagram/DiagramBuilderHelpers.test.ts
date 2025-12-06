@@ -9,10 +9,10 @@ import {
   extractAttributes,
   generateId,
   resetIdCounter,
-} from "../DiagramBuilderHelpers";
-import { DiagramItem } from "../DiagramItem";
-import { Diagram } from "../Diagram";
-import { DiagramItemType } from "../DiagramTypes";
+} from "./DiagramBuilderHelpers";
+import { DiagramItem } from "./DiagramItem";
+import { Diagram } from "./Diagram";
+import { DiagramItemType } from "./DiagramTypes";
 
 describe("DiagramBuilderHelpers", () => {
   describe("toArray", () => {
@@ -39,7 +39,7 @@ describe("DiagramBuilderHelpers", () => {
 
     it("should extract single documentation", () => {
       const annotation = {
-        documentation: { value: "Test documentation" },
+        documentation: [{ value: "Test documentation" }],
       };
       expect(extractDocumentation(annotation)).toBe("Test documentation");
     });

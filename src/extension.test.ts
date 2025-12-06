@@ -5,22 +5,6 @@
 import * as vscode from "vscode";
 import { activate, deactivate } from "./extension";
 
-// Mock VS Code API
-jest.mock("vscode", () => ({
-  window: {
-    registerCustomEditorProvider: jest.fn(),
-    activeTextEditor: undefined,
-    showErrorMessage: jest.fn(),
-  },
-  commands: {
-    registerCommand: jest.fn(),
-    executeCommand: jest.fn(),
-  },
-  Uri: {
-    file: jest.fn((path: string) => ({ fsPath: path })),
-  },
-}));
-
 describe("Extension", () => {
   let mockContext: vscode.ExtensionContext;
 

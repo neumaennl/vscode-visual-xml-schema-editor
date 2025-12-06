@@ -2,10 +2,10 @@
  * Unit tests for PropertyPanel class.
  */
 
-import { PropertyPanel } from "../propertyPanel";
-import { DiagramItem } from "../diagram/DiagramItem";
-import { Diagram } from "../diagram/Diagram";
-import { DiagramItemType } from "../diagram/DiagramTypes";
+import { PropertyPanel } from "./propertyPanel";
+import { DiagramItem } from "./diagram/DiagramItem";
+import { Diagram } from "./diagram/Diagram";
+import { DiagramItemType } from "./diagram/DiagramTypes";
 
 /**
  * Helper function to check if two strings appear adjacent in HTML content.

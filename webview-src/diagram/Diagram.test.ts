@@ -2,9 +2,9 @@
  * Unit tests for Diagram class.
  */
 
-import { Diagram } from "../Diagram";
-import { DiagramItem } from "../DiagramItem";
-import { DiagramItemType } from "../DiagramTypes";
+import { Diagram } from "./Diagram";
+import { DiagramItem } from "./DiagramItem";
+import { DiagramItemType } from "./DiagramTypes";
 
 describe("Diagram", () => {
   let diagram: Diagram;
@@ -54,7 +54,8 @@ describe("Diagram", () => {
 
     it("should calculate bounding box with padding", () => {
       const item = new DiagramItem("test-1", "TestItem", DiagramItemType.element, diagram);
-      item.boundingBox = { x: 10, y: 20, width: 100, height: 50 };
+      item.location = { x: 10, y: 20 };
+      item.size = { width: 100, height: 50 };
       diagram.addRootElement(item);
 
       const box = diagram.calculateBoundingBox();

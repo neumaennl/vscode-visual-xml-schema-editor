@@ -260,7 +260,6 @@ class SchemaEditorApp {
 
       // Apply zoom
       const delta = e.deltaY > 0 ? 0.9 : 1.1;
-      const oldZoom = this.viewState.zoom;
       this.viewState.zoom *= delta;
 
       // Adjust pan to keep the point under the mouse in the same position

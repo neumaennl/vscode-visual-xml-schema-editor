@@ -3,6 +3,7 @@ module.exports = {
   testEnvironment: 'node',
   roots: ['<rootDir>/shared', '<rootDir>/src', '<rootDir>/webview-src'],
   testMatch: ['**/__tests__/**/*.test.ts', '**/?(*.)+(spec|test).ts'],
+  testPathIgnorePatterns: ['/node_modules/', '/out/', '/webview/'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   collectCoverageFrom: [
     'shared/**/*.ts',
@@ -22,5 +23,54 @@ module.exports = {
       outputDirectory: 'test-results',
       outputName: 'jest-junit.xml'
     }]
+  ],
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+  projects: [
+    {
+      displayName: 'webview',
+      testEnvironment: 'jsdom',
+      testMatch: ['<rootDir>/webview-src/**/*.test.ts'],
+      testPathIgnorePatterns: ['/node_modules/', '/out/', '/webview/'],
+      preset: 'ts-jest',
+      transform: {
+        '^.+\\.ts$': ['ts-jest', {
+          tsconfig: 'tsconfig.webview-test.json'
+        }]
+      },
+      moduleNameMapper: {
+        '^shared/(.*)$': '<rootDir>/shared/$1'
+      }
+    },
+    {
+      displayName: 'extension',
+      testEnvironment: 'node',
+      testMatch: ['<rootDir>/src/**/*.test.ts'],
+      testPathIgnorePatterns: ['/node_modules/', '/out/', '/webview/'],
+      preset: 'ts-jest',
+      transform: {
+        '^.+\\.ts$': ['ts-jest', {
+          tsconfig: 'tsconfig.extension-test.json'
+        }]
+      },
+      moduleNameMapper: {
+        '^shared/(.*)$': '<rootDir>/shared/$1',
+        '^vscode$': '<rootDir>/src/__mocks__/vscode.ts'
+      }
+    },
+    {
+      displayName: 'shared',
+      testEnvironment: 'node',
+      testMatch: ['<rootDir>/shared/**/*.test.ts'],
+      testPathIgnorePatterns: ['/node_modules/', '/out/', '/webview/'],
+      preset: 'ts-jest',
+      transform: {
+        '^.+\\.ts$': ['ts-jest', {
+          tsconfig: 'tsconfig.shared-test.json'
+        }]
+      },
+      moduleNameMapper: {
+        '^vscode$': '<rootDir>/src/__mocks__/vscode.ts'
+      }
+    }
   ]
 };

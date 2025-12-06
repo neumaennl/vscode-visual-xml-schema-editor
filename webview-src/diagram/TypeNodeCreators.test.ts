@@ -6,10 +6,10 @@ import {
   createElementNode,
   createComplexTypeNode,
   createSimpleTypeNode,
-} from "../TypeNodeCreators";
-import { Diagram } from "../Diagram";
-import { DiagramItemType } from "../DiagramTypes";
-import { resetIdCounter } from "../DiagramBuilderHelpers";
+} from "./TypeNodeCreators";
+import { Diagram } from "./Diagram";
+import { DiagramItemType } from "./DiagramTypes";
+import { resetIdCounter } from "./DiagramBuilderHelpers";
 
 describe("TypeNodeCreators", () => {
   let diagram: Diagram;

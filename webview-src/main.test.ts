@@ -17,11 +17,14 @@ describe("SchemaEditorApp", () => {
   beforeEach(() => {
     // Clear mocks
     jest.clearAllMocks();
+    jest.resetModules();
     mockGetState.mockReturnValue(null);
 
-    // Setup DOM
+    // Setup complete DOM structure
     document.body.innerHTML = `
-      <svg id="schema-canvas"></svg>
+      <svg id="schema-canvas" width="800" height="600">
+        <g id="content"></g>
+      </svg>
       <div id="properties-content"></div>
       <button id="zoom-in"></button>
       <button id="zoom-out"></button>
@@ -30,10 +33,8 @@ describe("SchemaEditorApp", () => {
   });
 
   it("should initialize and setup message listener", () => {
-    // Mock window.addEventListener to capture the listener
     const addEventListenerSpy = jest.spyOn(window, "addEventListener");
 
-    // Dynamically import to trigger constructor after mocks are setup
     require("./main");
 
     expect(addEventListenerSpy).toHaveBeenCalledWith(
@@ -49,7 +50,7 @@ describe("SchemaEditorApp", () => {
 
     // Get the message handler
     const messageHandler = addEventListenerSpy.mock.calls.find(
-      call => call[0] === "message"
+      (call) => call[0] === "message"
     )?.[1] as EventListener;
 
     expect(messageHandler).toBeDefined();
@@ -68,13 +69,17 @@ describe("SchemaEditorApp", () => {
 
   it("should handle error message", () => {
     const addEventListenerSpy = jest.spyOn(window, "addEventListener");
-    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation();
 
     require("./main");
 
     const messageHandler = addEventListenerSpy.mock.calls.find(
-      call => call[0] === "message"
+      (call) => call[0] === "message"
     )?.[1] as EventListener;
+
+    // Get the canvas element
+    const canvas = document.getElementById("schema-canvas");
+    expect(canvas).toBeTruthy();
+    const textContentBefore = canvas?.textContent || "";
 
     const event = new MessageEvent("message", {
       data: { command: "error", data: { message: "Test error" } },
@@ -82,7 +87,27 @@ describe("SchemaEditorApp", () => {
 
     messageHandler(event);
 
-    expect(consoleErrorSpy).toHaveBeenCalled();
-    consoleErrorSpy.mockRestore();
+    // Verify the error is displayed in the canvas
+    // The showError method adds text to the SVG canvas
+    const textContentAfter = canvas?.textContent || "";
+    expect(textContentAfter).not.toBe(textContentBefore);
+    expect(textContentAfter).toContain("Test error");
+  });
+
+  it("should setup zoom controls", () => {
+    require("./main");
+
+    const zoomInButton = document.getElementById("zoom-in");
+    const zoomOutButton = document.getElementById("zoom-out");
+    const zoomResetButton = document.getElementById("zoom-reset");
+
+    expect(zoomInButton).toBeTruthy();
+    expect(zoomOutButton).toBeTruthy();
+    expect(zoomResetButton).toBeTruthy();
+
+    // Verify click handlers are attached
+    expect((zoomInButton as any).onclick).toBeDefined();
+    expect((zoomOutButton as any).onclick).toBeDefined();
+    expect((zoomResetButton as any).onclick).toBeDefined();
   });
 });

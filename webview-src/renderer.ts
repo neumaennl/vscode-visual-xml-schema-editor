@@ -144,27 +144,6 @@ export class DiagramRenderer {
   }
 
   /**
-   * Toggle the expand/collapse state of a diagram item
-   * @param itemId - ID of the item to toggle
-   */
-  private toggleExpand(itemId: string | null): void {
-    if (!itemId || !this.currentDiagram) return;
-
-    const item = this.findItemById(itemId);
-    if (!item) return;
-
-    // Toggle expansion
-    item.showChildElements = !item.showChildElements;
-
-    // Recalculate layout
-    this.layout.relayoutItem(item);
-
-    // Re-render
-    this.svgRenderer.render(this.currentDiagram);
-    this.updateView(this.viewState);
-  }
-
-  /**
    * Find a diagram item by its ID
    * @param itemId - ID of the item to find
    * @returns The diagram item or null if not found

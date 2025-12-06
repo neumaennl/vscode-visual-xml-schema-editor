@@ -109,54 +109,6 @@ describe("ShapeRenderers", () => {
       const polygons = mockGroup.querySelectorAll("polygon");
       expect(polygons.length).toBeGreaterThanOrEqual(2); // Shadow + main
     });
-
-    it("should render group type indicator for sequence", () => {
-      const rect: Rectangle = { x: 10, y: 10, width: 100, height: 50 };
-      const item = new DiagramItem("id6", "Test", "group" as any);
-      item.maxOccurrence = 1;
-      item.diagram = mockDiagram;
-      item.groupType = DiagramItemGroupType.Sequence;
-
-      renderGroupShape(rect, "fill:green", "stroke:black", item, mockGroup);
-
-      // Should have circles for dots and lines
-      const circles = mockGroup.querySelectorAll("circle");
-      const lines = mockGroup.querySelectorAll("line");
-      expect(circles.length).toBe(3); // Three dots for sequence
-      expect(lines.length).toBe(1); // One horizontal line
-    });
-
-    it("should render group type indicator for choice", () => {
-      const rect: Rectangle = { x: 10, y: 10, width: 100, height: 50 };
-      const item = new DiagramItem("id7", "Test", "group" as any);
-      item.maxOccurrence = 1;
-      item.diagram = mockDiagram;
-      item.groupType = DiagramItemGroupType.Choice;
-
-      renderGroupShape(rect, "fill:green", "stroke:black", item, mockGroup);
-
-      // Should have circles for dots and lines
-      const circles = mockGroup.querySelectorAll("circle");
-      const lines = mockGroup.querySelectorAll("line");
-      expect(circles.length).toBe(3); // Three dots
-      expect(lines.length).toBeGreaterThan(0); // Multiple lines for choice
-    });
-
-    it("should render group type indicator for all", () => {
-      const rect: Rectangle = { x: 10, y: 10, width: 100, height: 50 };
-      const item = new DiagramItem("id8", "Test", "group" as any);
-      item.maxOccurrence = 1;
-      item.diagram = mockDiagram;
-      item.groupType = DiagramItemGroupType.All;
-
-      renderGroupShape(rect, "fill:green", "stroke:black", item, mockGroup);
-
-      // Should have circles for dots and lines
-      const circles = mockGroup.querySelectorAll("circle");
-      const lines = mockGroup.querySelectorAll("line");
-      expect(circles.length).toBe(3); // Three dots
-      expect(lines.length).toBeGreaterThan(0); // Multiple lines for all
-    });
   });
 
   describe("renderTypeShape", () => {

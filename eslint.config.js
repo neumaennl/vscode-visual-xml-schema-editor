@@ -1,0 +1,142 @@
+const eslint = require('@eslint/js');
+const tseslint = require('@typescript-eslint/eslint-plugin');
+const tsparser = require('@typescript-eslint/parser');
+const jestPlugin = require('eslint-plugin-jest');
+
+module.exports = [
+  // Global ignores
+  {
+    ignores: [
+      'out/',
+      'dist/',
+      'node_modules/',
+      '**/*.d.ts',
+      '**/generated/**',
+      'webpack.config.js',
+      'eslint.config.js',
+    ],
+  },
+  // Base configuration for all files
+  eslint.configs.recommended,
+  // JavaScript configuration files (jest.config.js, etc.)
+  {
+    files: ['*.js'],
+    languageOptions: {
+      ecmaVersion: 2020,
+      sourceType: 'commonjs',
+      globals: {
+        // CommonJS/Node.js globals
+        process: 'readonly',
+        __dirname: 'readonly',
+        __filename: 'readonly',
+        Buffer: 'readonly',
+        module: 'readonly',
+        require: 'readonly',
+        exports: 'readonly',
+        console: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
+        // Jest globals for jest.setup.js
+        jest: 'readonly',
+      },
+    },
+  },
+  // TypeScript files configuration
+  {
+    files: ['**/*.ts'],
+    languageOptions: {
+      parser: tsparser,
+      parserOptions: {
+        ecmaVersion: 2020,
+        sourceType: 'module',
+        project: [
+          './tsconfig.json',
+          './tsconfig.webview.json',
+          './tsconfig.extension-test.json',
+          './tsconfig.webview-test.json',
+          './tsconfig.shared-test.json',
+        ],
+      },
+      globals: {
+        // Node.js globals
+        process: 'readonly',
+        __dirname: 'readonly',
+        __filename: 'readonly',
+        Buffer: 'readonly',
+        module: 'readonly',
+        require: 'readonly',
+        exports: 'readonly',
+        console: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
+      },
+    },
+    plugins: {
+      '@typescript-eslint': tseslint,
+      jest: jestPlugin,
+    },
+    rules: {
+      ...tseslint.configs.recommended.rules,
+      ...tseslint.configs['recommended-requiring-type-checking'].rules,
+      ...jestPlugin.configs.recommended.rules,
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+        },
+      ],
+      '@typescript-eslint/explicit-function-return-type': 'off',
+      '@typescript-eslint/explicit-module-boundary-types': 'off',
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-non-null-assertion': 'warn',
+      'no-console': 'off',
+    },
+  },
+  // Webview TypeScript files configuration (browser environment)
+  {
+    files: ['webview-src/**/*.ts'],
+    languageOptions: {
+      globals: {
+        // Browser globals
+        document: 'readonly',
+        window: 'readonly',
+        navigator: 'readonly',
+        Element: 'readonly',
+        HTMLElement: 'readonly',
+        SVGElement: 'readonly',
+        getComputedStyle: 'readonly',
+        Event: 'readonly',
+        CustomEvent: 'readonly',
+        MouseEvent: 'readonly',
+        KeyboardEvent: 'readonly',
+      },
+    },
+  },
+  // Test files configuration
+  {
+    files: ['**/*.test.ts', '**/__mocks__/**/*.ts'],
+    languageOptions: {
+      globals: {
+        // Jest globals
+        describe: 'readonly',
+        test: 'readonly',
+        it: 'readonly',
+        expect: 'readonly',
+        beforeAll: 'readonly',
+        afterAll: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+        jest: 'readonly',
+      },
+    },
+    rules: {
+      '@typescript-eslint/no-non-null-assertion': 'off',
+      '@typescript-eslint/no-require-imports': 'off',
+    },
+  },
+];

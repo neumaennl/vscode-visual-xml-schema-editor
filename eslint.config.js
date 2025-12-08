@@ -100,9 +100,46 @@ module.exports = [
       'no-console': 'off',
     },
   },
+  // Test files configuration (must come before webview config to avoid conflicts)
+  {
+    files: ['**/*.test.ts', '**/__mocks__/**/*.ts'],
+    languageOptions: {
+      globals: {
+        // Jest globals
+        describe: 'readonly',
+        test: 'readonly',
+        it: 'readonly',
+        expect: 'readonly',
+        beforeAll: 'readonly',
+        afterAll: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+        jest: 'readonly',
+        // Browser globals for webview tests
+        document: 'readonly',
+        window: 'readonly',
+        navigator: 'readonly',
+        Element: 'readonly',
+        HTMLElement: 'readonly',
+        SVGElement: 'readonly',
+        getComputedStyle: 'readonly',
+        Event: 'readonly',
+        CustomEvent: 'readonly',
+        MouseEvent: 'readonly',
+        KeyboardEvent: 'readonly',
+      },
+    },
+    rules: {
+      // Disabled in tests where we have more control over the test environment
+      '@typescript-eslint/no-non-null-assertion': 'off',
+      // Disabled to allow dynamic require() in tests for module initialization testing
+      '@typescript-eslint/no-require-imports': 'off',
+    },
+  },
   // Webview TypeScript files configuration (browser environment)
   {
     files: ['webview-src/**/*.ts'],
+    ignores: ['**/*.test.ts', '**/__mocks__/**/*.ts'],
     languageOptions: {
       globals: {
         // Browser globals
@@ -118,30 +155,6 @@ module.exports = [
         MouseEvent: 'readonly',
         KeyboardEvent: 'readonly',
       },
-    },
-  },
-  // Test files configuration
-  {
-    files: ['**/*.test.ts', '**/__mocks__/**/*.ts'],
-    languageOptions: {
-      globals: {
-        // Jest globals
-        describe: 'readonly',
-        test: 'readonly',
-        it: 'readonly',
-        expect: 'readonly',
-        beforeAll: 'readonly',
-        afterAll: 'readonly',
-        beforeEach: 'readonly',
-        afterEach: 'readonly',
-        jest: 'readonly',
-      },
-    },
-    rules: {
-      // Disabled in tests where we have more control over the test environment
-      '@typescript-eslint/no-non-null-assertion': 'off',
-      // Disabled to allow dynamic require() in tests for module initialization testing
-      '@typescript-eslint/no-require-imports': 'off',
     },
   },
 ];

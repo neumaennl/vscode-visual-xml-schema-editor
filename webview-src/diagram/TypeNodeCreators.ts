@@ -14,7 +14,6 @@ import {
 import {
   generateId,
   extractDocumentation,
-  extractOccurrenceConstraints,
 } from "./DiagramBuilderHelpers";
 
 /**
@@ -48,8 +47,8 @@ export function createElementNode(
   // Extract documentation
   item.documentation = extractDocumentation(element.annotation) ?? "";
 
-  // Extract occurrence constraints
-  extractOccurrenceConstraints(item, element);
+  // Note: topLevelElement does not have occurrence constraints (minOccurs/maxOccurs)
+  // Those only exist on localElement within complex types
 
   return item;
 }

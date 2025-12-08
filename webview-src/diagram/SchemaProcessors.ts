@@ -10,7 +10,87 @@ import {
   generateId,
   extractDocumentation,
   extractAttributes,
+  extractOccurrenceConstraints,
 } from "./DiagramBuilderHelpers";
+import type { annotationType } from "../../shared/generated/annotationType";
+import type { explicitGroup } from "../../shared/generated/explicitGroup";
+import type { all } from "../../shared/generated/all";
+import type { localElement } from "../../shared/generated/localElement";
+
+/**
+ * Interface for attribute-like objects from schema.
+ * Re-export from DiagramBuilderHelpers for consistency.
+ */
+interface AttributeLike {
+  name?: string;
+  type_?: string;
+  use?: string;
+  default_?: string;
+  fixed?: string;
+}
+
+/**
+ * Interface for complex type structures (localComplexType, topLevelComplexType).
+ * Captures the common properties used when processing complex types.
+ */
+interface ComplexTypeLike {
+  annotation?: annotationType;
+  simpleContent?: {
+    extension?: ExtensionLike;
+    restriction?: RestrictionLike;
+  };
+  complexContent?: {
+    extension?: ExtensionLike;
+    restriction?: RestrictionLike;
+  };
+  sequence?: explicitGroup;
+  choice?: explicitGroup;
+  all?: all;
+  attribute?: AttributeLike | AttributeLike[];
+}
+
+/**
+ * Interface for simple type structures (localSimpleType, topLevelSimpleType).
+ * Captures the common properties used when processing simple types.
+ */
+interface SimpleTypeLike {
+  annotation?: annotationType;
+  restriction?: RestrictionLike;
+}
+
+/**
+ * Interface for extension structures in complexContent/simpleContent.
+ */
+interface ExtensionLike {
+  base?: string;
+  sequence?: explicitGroup;
+  choice?: explicitGroup;
+  all?: all;
+  attribute?: AttributeLike | AttributeLike[];
+}
+
+/**
+ * Interface for restriction structures in complexContent/simpleContent.
+ */
+interface RestrictionLike {
+  base?: string;
+  sequence?: explicitGroup;
+  choice?: explicitGroup;
+  all?: all;
+  attribute?: AttributeLike | AttributeLike[];
+}
+
+/**
+ * Interface for group reference structures that need expansion.
+ * Represents sequence, choice, or all group structures.
+ * Note: sequence and choice can be arrays because groups can be nested.
+ */
+interface GroupDefLike {
+  element?: unknown;
+  sequence?: explicitGroup | explicitGroup[];
+  choice?: explicitGroup | explicitGroup[];
+  all?: all;
+}
 
 /**
  * Processes child items from a schema collection and adds them to a parent.
@@ -43,7 +123,7 @@ export function processChildCollection<T>(
  */
 export function processAnonymousComplexType(
   parent: DiagramItem,
-  complexType: any
+  complexType: ComplexTypeLike
 ): void {
   // Mark the parent type as anonymous complex type
   if (!parent.type) {
@@ -68,7 +148,7 @@ export function processAnonymousComplexType(
  */
 export function processAnonymousSimpleType(
   parent: DiagramItem,
-  simpleType: any
+  simpleType: SimpleTypeLike
 ): void {
   // Mark the parent as having simple content
   parent.isSimpleContent = true;
@@ -96,7 +176,7 @@ export function processAnonymousSimpleType(
  * @param parent - Parent diagram item to add children to
  * @param complexType - Complex type definition from schema
  */
-export function processComplexType(parent: DiagramItem, complexType: any): void {
+export function processComplexType(parent: DiagramItem, complexType: ComplexTypeLike): void {
   // Process attributes
   extractAttributes(parent, complexType);
 
@@ -150,7 +230,7 @@ export function processComplexType(parent: DiagramItem, complexType: any): void 
  * @param parent - Parent diagram item to add the sequence to
  * @param sequence - Sequence definition from schema
  */
-export function processSequence(parent: DiagramItem, sequence: any): void {
+export function processSequence(parent: DiagramItem, sequence: explicitGroup): void {
   processGroup(parent, sequence, "sequence", DiagramItemGroupType.Sequence);
 }
 
@@ -161,7 +241,7 @@ export function processSequence(parent: DiagramItem, sequence: any): void {
  * @param parent - Parent diagram item to add the choice to
  * @param choice - Choice definition from schema
  */
-export function processChoice(parent: DiagramItem, choice: any): void {
+export function processChoice(parent: DiagramItem, choice: explicitGroup): void {
   processGroup(parent, choice, "choice", DiagramItemGroupType.Choice);
 }
 
@@ -172,7 +252,7 @@ export function processChoice(parent: DiagramItem, choice: any): void {
  * @param parent - Parent diagram item to add the all group to
  * @param all - All group definition from schema
  */
-export function processAll(parent: DiagramItem, all: any): void {
+export function processAll(parent: DiagramItem, all: all): void {
   processGroup(parent, all, "all", DiagramItemGroupType.All);
 }
 
@@ -187,7 +267,7 @@ export function processAll(parent: DiagramItem, all: any): void {
  */
 function processGroup(
   parent: DiagramItem,
-  groupDef: any,
+  groupDef: GroupDefLike,
   groupName: string,
   groupType: DiagramItemGroupType
 ): void {
@@ -202,27 +282,20 @@ function processGroup(
   // Process elements within the group
   // Import and use createElementNode from TypeNodeCreators would create a circular dependency,
   // so we create a lightweight element node inline with essential properties
-  processChildCollection(groupItem, groupDef.element, (elem) => {
+  processChildCollection(groupItem, groupDef.element as localElement | localElement[] | undefined, (elem: localElement) => {
     const item = new DiagramItem(
       generateId(),
-      elem.name?.toString() || "unnamed",
+      elem.name || "unnamed",
       DiagramItemType.element,
       parent.diagram
     );
     if (elem.type_) {
-      item.type = elem.type_.toString();
+      item.type = elem.type_;
     }
     item.documentation = extractDocumentation(elem.annotation) ?? "";
     
     // Extract occurrence constraints for the element
-    if (elem.minOccurs !== undefined) {
-      item.minOccurrence = parseInt(elem.minOccurs.toString(), 10) || 0;
-    }
-    if (elem.maxOccurs !== undefined) {
-      const maxOccurs = elem.maxOccurs.toString();
-      item.maxOccurrence =
-        maxOccurs === "unbounded" ? -1 : parseInt(maxOccurs, 10) || 1;
-    }
+    extractOccurrenceConstraints(item, elem);
     
     return item;
   });
@@ -240,10 +313,10 @@ function processGroup(
  * @param parent - Parent diagram item to extend
  * @param extension - Extension definition from schema
  */
-export function processExtension(parent: DiagramItem, extension: any): void {
+export function processExtension(parent: DiagramItem, extension: ExtensionLike): void {
   // Extract base type - append to existing type info
   if (extension.base) {
-    parent.type += ` (extends ${extension.base.toString()})`;
+    parent.type += ` (extends ${extension.base})`;
   }
 
   // Extract attributes from extension
@@ -272,10 +345,10 @@ export function processExtension(parent: DiagramItem, extension: any): void {
  * @param parent - Parent diagram item being restricted
  * @param restriction - Restriction definition from schema
  */
-export function processRestriction(parent: DiagramItem, restriction: any): void {
+export function processRestriction(parent: DiagramItem, restriction: RestrictionLike): void {
   // Extract base type from restriction - append to existing type info
   if (restriction.base) {
-    parent.type += ` (restricts ${restriction.base.toString()})`;
+    parent.type += ` (restricts ${restriction.base})`;
   }
 
   // Process sequence in restriction

@@ -33,7 +33,7 @@ describe("TypeNodeCreators", () => {
 
     it("should create element node with name", () => {
       const element = new topLevelElement();
-      element.name = "TestElement" as any;
+      element.name = "TestElement";
       const node = createElementNode(element, diagram);
 
       expect(node).not.toBeNull();
@@ -43,8 +43,8 @@ describe("TypeNodeCreators", () => {
 
     it("should extract type information", () => {
       const element = new topLevelElement();
-      element.name = "TestElement" as any;
-      element.type_ = "string" as any;
+      element.name = "TestElement";
+      element.type_ = "string";
       const node = createElementNode(element, diagram);
 
       expect(node!.type).toBe("string");
@@ -52,10 +52,10 @@ describe("TypeNodeCreators", () => {
 
     it("should extract documentation from annotation", () => {
       const element = new topLevelElement();
-      element.name = "TestElement" as any;
+      element.name = "TestElement";
       element.annotation = {
-        documentation: [{ value: "Test doc" } as any],
-      } as any;
+        documentation: [{ value: "Test doc" }],
+      };
       const node = createElementNode(element, diagram);
 
       expect(node!.documentation).toBe("Test doc");
@@ -71,7 +71,7 @@ describe("TypeNodeCreators", () => {
 
     it("should create complex type node", () => {
       const complexType = new topLevelComplexType();
-      complexType.name = "PersonType" as any;
+      complexType.name = "PersonType";
       const node = createComplexTypeNode(complexType, diagram);
 
       expect(node).not.toBeNull();
@@ -82,10 +82,10 @@ describe("TypeNodeCreators", () => {
 
     it("should extract documentation", () => {
       const complexType = new topLevelComplexType();
-      complexType.name = "PersonType" as any;
+      complexType.name = "PersonType";
       complexType.annotation = {
-        documentation: [{ value: "A person type" } as any],
-      } as any;
+        documentation: [{ value: "A person type" }],
+      };
       const node = createComplexTypeNode(complexType, diagram);
 
       expect(node!.documentation).toBe("A person type");
@@ -101,7 +101,7 @@ describe("TypeNodeCreators", () => {
 
     it("should create simple type node", () => {
       const simpleType = new topLevelSimpleType();
-      simpleType.name = "AgeType" as any;
+      simpleType.name = "AgeType";
       const node = createSimpleTypeNode(simpleType, diagram);
 
       expect(node).not.toBeNull();
@@ -112,11 +112,10 @@ describe("TypeNodeCreators", () => {
     });
 
     it("should extract documentation", () => {
-      const simpleType = {
-        name: "AgeType",
-        annotation: {
-          documentation: [{ value: "Age restriction" }],
-        },
+      const simpleType = new topLevelSimpleType();
+      simpleType.name = "AgeType";
+      simpleType.annotation = {
+        documentation: [{ value: "Age restriction" }],
       };
       const node = createSimpleTypeNode(simpleType, diagram);
 

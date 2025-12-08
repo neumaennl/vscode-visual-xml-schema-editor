@@ -322,19 +322,22 @@ export function extractRestrictionFacets(parent: DiagramItem, restriction: Restr
 
   // Now TypeScript knows restriction has the facet properties
   // Check if there are any restriction facets to extract
-  const hasRestrictions = 
-    hasElements(restriction.enumeration) || 
-    hasElements(restriction.pattern) || 
-    hasElements(restriction.length) || 
-    hasElements(restriction.minLength) || 
-    hasElements(restriction.maxLength) ||
-    hasElements(restriction.minInclusive) || 
-    hasElements(restriction.maxInclusive) ||
-    hasElements(restriction.minExclusive) || 
-    hasElements(restriction.maxExclusive) ||
-    hasElements(restriction.totalDigits) || 
-    hasElements(restriction.fractionDigits) ||
-    hasElements(restriction.whiteSpace);
+  const facetProperties = [
+    restriction.enumeration,
+    restriction.pattern,
+    restriction.length,
+    restriction.minLength,
+    restriction.maxLength,
+    restriction.minInclusive,
+    restriction.maxInclusive,
+    restriction.minExclusive,
+    restriction.maxExclusive,
+    restriction.totalDigits,
+    restriction.fractionDigits,
+    restriction.whiteSpace,
+  ];
+  
+  const hasRestrictions = facetProperties.some((prop) => hasElements(prop));
 
   if (!hasRestrictions) {
     return;

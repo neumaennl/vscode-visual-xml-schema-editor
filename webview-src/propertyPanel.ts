@@ -246,7 +246,6 @@ export class PropertyPanel {
 
   /**
    * Creates a restriction item div with label and value safely.
-   * 
    * @param label - The restriction label
    * @param value - The restriction value as string or number
    * @returns A div element containing the formatted restriction

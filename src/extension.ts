@@ -7,7 +7,7 @@ import { SchemaEditorProvider } from "./webviewProvider";
  * 
  * @param context - The extension context provided by VS Code
  */
-export function activate(context: vscode.ExtensionContext) {
+export function activate(context: vscode.ExtensionContext): void {
   // Register custom editor provider
   const provider = new SchemaEditorProvider(context);
 
@@ -60,4 +60,4 @@ export function activate(context: vscode.ExtensionContext) {
  * Deactivates the extension.
  * Called when the extension is being shut down.
  */
-export function deactivate() {}
+export function deactivate(): void {}

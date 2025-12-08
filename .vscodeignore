@@ -9,6 +9,10 @@ tsconfig.json
 tsconfig.webview.json
 **/*.map
 **/*.ts
+**/*.test.ts
+**/*.test.js
+**/__tests__/**
+**/__mocks__/**
 !out/**/*.js
 !webview/**/*.js
 node_modules/**

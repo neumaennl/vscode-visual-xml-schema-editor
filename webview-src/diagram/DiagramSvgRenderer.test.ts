@@ -6,7 +6,7 @@ import { DiagramSvgRenderer } from "./DiagramSvgRenderer";
 import { Diagram } from "./Diagram";
 import { DiagramItem } from "./DiagramItem";
 import { DiagramItemType } from "./DiagramTypes";
-import { setupGetBBoxMock } from "../testUtils/svgTestUtils";
+import { setupGetBBoxMock } from "../__tests__/svgTestUtils";
 
 describe("DiagramSvgRenderer", () => {
   let svg: SVGSVGElement;

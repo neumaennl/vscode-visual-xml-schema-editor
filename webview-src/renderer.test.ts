@@ -4,7 +4,7 @@
 
 import { DiagramRenderer } from "./renderer";
 import { DiagramOptions } from "../shared/messages";
-import { setupGetBBoxMock } from "./testUtils/svgTestUtils";
+import { setupGetBBoxMock } from "./__tests__/svgTestUtils";
 
 const defaultDiagramOptions: DiagramOptions = {
   showDocumentation: false,

@@ -270,8 +270,102 @@ export function processExtension(parent: DiagramItem, extension: ContentTypeLike
 }
 
 /**
+ * Helper function to check if an array has elements
+ */
+function hasElements(arr: any): boolean {
+  return Array.isArray(arr) && arr.length > 0;
+}
+
+/**
+ * Extracts restriction facets from a restriction definition.
+ * Handles enumeration values, patterns, length constraints, min/max values, etc.
+ * 
+ * @param parent - Parent diagram item to store restrictions on
+ * @param restriction - Restriction definition from schema (any type with restriction facets)
+ */
+export function extractRestrictionFacets(parent: DiagramItem, restriction: any): void {
+  // Check if there are any restriction facets to extract
+  const hasRestrictions = 
+    hasElements(restriction.enumeration) || 
+    hasElements(restriction.pattern) || 
+    hasElements(restriction.length) || 
+    hasElements(restriction.minLength) || 
+    hasElements(restriction.maxLength) ||
+    hasElements(restriction.minInclusive) || 
+    hasElements(restriction.maxInclusive) ||
+    hasElements(restriction.minExclusive) || 
+    hasElements(restriction.maxExclusive) ||
+    hasElements(restriction.totalDigits) || 
+    hasElements(restriction.fractionDigits) ||
+    hasElements(restriction.whiteSpace);
+
+  if (!hasRestrictions) {
+    return;
+  }
+
+  // Initialize restrictions object if not exists
+  if (!parent.restrictions) {
+    parent.restrictions = {};
+  }
+
+  // Extract enumeration values
+  if (hasElements(restriction.enumeration)) {
+    parent.restrictions.enumeration = restriction.enumeration.map((e: any) => e.value);
+  }
+
+  // Extract pattern values
+  if (hasElements(restriction.pattern)) {
+    parent.restrictions.pattern = restriction.pattern.map((p: any) => p.value);
+  }
+
+  // Extract length constraints (only the first one is used per XSD spec)
+  if (restriction.length && Array.isArray(restriction.length) && restriction.length.length > 0) {
+    parent.restrictions.length = restriction.length[0].value;
+  }
+
+  if (restriction.minLength && Array.isArray(restriction.minLength) && restriction.minLength.length > 0) {
+    parent.restrictions.minLength = restriction.minLength[0].value;
+  }
+
+  if (restriction.maxLength && Array.isArray(restriction.maxLength) && restriction.maxLength.length > 0) {
+    parent.restrictions.maxLength = restriction.maxLength[0].value;
+  }
+
+  // Extract min/max value constraints (only the first one is used per XSD spec)
+  if (restriction.minInclusive && Array.isArray(restriction.minInclusive) && restriction.minInclusive.length > 0) {
+    parent.restrictions.minInclusive = restriction.minInclusive[0].value;
+  }
+
+  if (restriction.maxInclusive && Array.isArray(restriction.maxInclusive) && restriction.maxInclusive.length > 0) {
+    parent.restrictions.maxInclusive = restriction.maxInclusive[0].value;
+  }
+
+  if (restriction.minExclusive && Array.isArray(restriction.minExclusive) && restriction.minExclusive.length > 0) {
+    parent.restrictions.minExclusive = restriction.minExclusive[0].value;
+  }
+
+  if (restriction.maxExclusive && Array.isArray(restriction.maxExclusive) && restriction.maxExclusive.length > 0) {
+    parent.restrictions.maxExclusive = restriction.maxExclusive[0].value;
+  }
+
+  // Extract digit constraints
+  if (restriction.totalDigits && Array.isArray(restriction.totalDigits) && restriction.totalDigits.length > 0) {
+    parent.restrictions.totalDigits = restriction.totalDigits[0].value;
+  }
+
+  if (restriction.fractionDigits && Array.isArray(restriction.fractionDigits) && restriction.fractionDigits.length > 0) {
+    parent.restrictions.fractionDigits = restriction.fractionDigits[0].value;
+  }
+
+  // Extract whiteSpace constraint
+  if (restriction.whiteSpace && Array.isArray(restriction.whiteSpace) && restriction.whiteSpace.length > 0) {
+    parent.restrictions.whiteSpace = restriction.whiteSpace[0].value;
+  }
+}
+
+/**
  * Processes a restriction in complexContent or simpleContent.
- * Extracts base type and processes child groups.
+ * Extracts base type, restriction facets, and processes child groups.
  * 
  * @param parent - Parent diagram item being restricted
  * @param restriction - Restriction definition from schema
@@ -281,6 +375,9 @@ export function processRestriction(parent: DiagramItem, restriction: ContentType
   if (restriction.base) {
     parent.type += ` (restricts ${restriction.base})`;
   }
+
+  // Extract restriction facets (enumeration, pattern, length, etc.)
+  extractRestrictionFacets(parent, restriction);
 
   // Process sequence in restriction
   if (restriction.sequence) {
@@ -296,7 +393,4 @@ export function processRestriction(parent: DiagramItem, restriction: ContentType
   if (restriction.all) {
     processAll(parent, restriction.all);
   }
-  
-  // Note: Enumeration values, patterns, and other restriction facets
-  // are not currently extracted. This could be added in future enhancements.
 }

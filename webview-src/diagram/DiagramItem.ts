@@ -57,6 +57,22 @@ export class DiagramItem {
     fixedValue?: string;
   }> = [];
 
+  // Restrictions (for simpleType restrictions)
+  public restrictions: {
+    enumeration?: string[];
+    pattern?: string[];
+    length?: number;
+    minLength?: number;
+    maxLength?: number;
+    minInclusive?: string;
+    maxInclusive?: string;
+    minExclusive?: string;
+    maxExclusive?: string;
+    totalDigits?: number;
+    fractionDigits?: number;
+    whiteSpace?: string;
+  } | null = null;
+
   // Reference to diagram for accessing settings
   public diagram: Diagram | null = null;
 

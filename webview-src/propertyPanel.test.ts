@@ -143,6 +143,159 @@ describe("PropertyPanel", () => {
       expect(container.textContent).toContain("TestType");
       expect(container.textContent).toContain("complexType");
     });
+
+    it("should display enumeration restrictions", () => {
+      expect.hasAssertions();
+      const item = new DiagramItem("test-1", "LogLevel", DiagramItemType.type, diagram);
+      item.restrictions = {
+        enumeration: ["error", "warning", "info", "debug"],
+      };
+
+      panel.display(item);
+
+      expect(container.textContent).toContain("Restrictions:");
+      expect(container.textContent).toContain("Enumeration:");
+      expect(container.textContent).toContain("error, warning, info, debug");
+    });
+
+    it("should display pattern restrictions", () => {
+      expect.hasAssertions();
+      const item = new DiagramItem("test-1", "CodePattern", DiagramItemType.type, diagram);
+      item.restrictions = {
+        pattern: ["[A-Z]{3}", "[0-9]+"],
+      };
+
+      panel.display(item);
+
+      expect(container.textContent).toContain("Restrictions:");
+      expect(container.textContent).toContain("Pattern:");
+      expect(container.textContent).toContain("[A-Z]{3}, [0-9]+");
+    });
+
+    it("should display length restrictions", () => {
+      expect.hasAssertions();
+      const item = new DiagramItem("test-1", "FixedLength", DiagramItemType.type, diagram);
+      item.restrictions = {
+        length: 10,
+      };
+
+      panel.display(item);
+
+      expect(container.textContent).toContain("Restrictions:");
+      expect(container.textContent).toContain("Length:");
+      expect(container.textContent).toContain("10");
+    });
+
+    it("should display min/max length restrictions", () => {
+      expect.hasAssertions();
+      const item = new DiagramItem("test-1", "BoundedLength", DiagramItemType.type, diagram);
+      item.restrictions = {
+        minLength: 1,
+        maxLength: 255,
+      };
+
+      panel.display(item);
+
+      expect(container.textContent).toContain("Restrictions:");
+      expect(container.textContent).toContain("Length Range:");
+      expect(container.textContent).toContain("min: 1");
+      expect(container.textContent).toContain("max: 255");
+    });
+
+    it("should display value range restrictions with inclusive bounds", () => {
+      expect.hasAssertions();
+      const item = new DiagramItem("test-1", "Percentage", DiagramItemType.type, diagram);
+      item.restrictions = {
+        minInclusive: "0",
+        maxInclusive: "100",
+      };
+
+      panel.display(item);
+
+      expect(container.textContent).toContain("Restrictions:");
+      expect(container.textContent).toContain("Value Range:");
+      expect(container.textContent).toContain("≥ 0");
+      expect(container.textContent).toContain("≤ 100");
+    });
+
+    it("should display value range restrictions with exclusive bounds", () => {
+      expect.hasAssertions();
+      const item = new DiagramItem("test-1", "OpenRange", DiagramItemType.type, diagram);
+      item.restrictions = {
+        minExclusive: "0",
+        maxExclusive: "1",
+      };
+
+      panel.display(item);
+
+      expect(container.textContent).toContain("Restrictions:");
+      expect(container.textContent).toContain("Value Range:");
+      expect(container.textContent).toContain("> 0");
+      expect(container.textContent).toContain("< 1");
+    });
+
+    it("should display digit constraints", () => {
+      expect.hasAssertions();
+      const item = new DiagramItem("test-1", "Decimal", DiagramItemType.type, diagram);
+      item.restrictions = {
+        totalDigits: 10,
+        fractionDigits: 2,
+      };
+
+      panel.display(item);
+
+      expect(container.textContent).toContain("Restrictions:");
+      expect(container.textContent).toContain("Total Digits:");
+      expect(container.textContent).toContain("10");
+      expect(container.textContent).toContain("Fraction Digits:");
+      expect(container.textContent).toContain("2");
+    });
+
+    it("should display whiteSpace constraint", () => {
+      expect.hasAssertions();
+      const item = new DiagramItem("test-1", "Token", DiagramItemType.type, diagram);
+      item.restrictions = {
+        whiteSpace: "collapse",
+      };
+
+      panel.display(item);
+
+      expect(container.textContent).toContain("Restrictions:");
+      expect(container.textContent).toContain("White Space:");
+      expect(container.textContent).toContain("collapse");
+    });
+
+    it("should display multiple restrictions together", () => {
+      expect.hasAssertions();
+      const item = new DiagramItem("test-1", "ComplexRestriction", DiagramItemType.type, diagram);
+      item.restrictions = {
+        enumeration: ["A", "B", "C"],
+        pattern: ["[A-Z]"],
+        minLength: 1,
+        maxLength: 5,
+      };
+
+      panel.display(item);
+
+      expect(container.textContent).toContain("Restrictions:");
+      expect(container.textContent).toContain("Enumeration:");
+      expect(container.textContent).toContain("A, B, C");
+      expect(container.textContent).toContain("Pattern:");
+      expect(container.textContent).toContain("[A-Z]");
+      expect(container.textContent).toContain("Length Range:");
+      expect(container.textContent).toContain("min: 1");
+      expect(container.textContent).toContain("max: 5");
+    });
+
+    it("should not display restrictions section when restrictions is null", () => {
+      expect.hasAssertions();
+      const item = new DiagramItem("test-1", "NoRestrictions", DiagramItemType.type, diagram);
+      item.restrictions = null;
+
+      panel.display(item);
+
+      expect(container.textContent).not.toContain("Restrictions:");
+    });
   });
 
   describe("clear", () => {

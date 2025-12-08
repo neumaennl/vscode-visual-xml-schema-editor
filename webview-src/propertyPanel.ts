@@ -77,6 +77,111 @@ export class PropertyPanel {
       this.addPropertyWithElement("Attributes", attrList);
     }
 
+    // Restrictions (for simpleType restrictions)
+    if (node.restrictions) {
+      const restrictionList = document.createElement("div");
+      restrictionList.className = "restriction-list";
+
+      // Enumeration values
+      if (node.restrictions.enumeration && node.restrictions.enumeration.length > 0) {
+        const enumDiv = document.createElement("div");
+        enumDiv.className = "restriction-item";
+        const enumLabel = document.createElement("strong");
+        enumLabel.textContent = "Enumeration: ";
+        enumDiv.appendChild(enumLabel);
+        const enumValues = document.createElement("span");
+        enumValues.textContent = node.restrictions.enumeration.join(", ");
+        enumDiv.appendChild(enumValues);
+        restrictionList.appendChild(enumDiv);
+      }
+
+      // Pattern values
+      if (node.restrictions.pattern && node.restrictions.pattern.length > 0) {
+        const patternDiv = document.createElement("div");
+        patternDiv.className = "restriction-item";
+        const patternLabel = document.createElement("strong");
+        patternLabel.textContent = "Pattern: ";
+        patternDiv.appendChild(patternLabel);
+        const patternValues = document.createElement("span");
+        patternValues.textContent = node.restrictions.pattern.join(", ");
+        patternDiv.appendChild(patternValues);
+        restrictionList.appendChild(patternDiv);
+      }
+
+      // Length constraint
+      if (node.restrictions.length !== undefined) {
+        const lengthDiv = document.createElement("div");
+        lengthDiv.className = "restriction-item";
+        lengthDiv.innerHTML = `<strong>Length:</strong> ${node.restrictions.length}`;
+        restrictionList.appendChild(lengthDiv);
+      }
+
+      // Min/Max length constraints
+      if (node.restrictions.minLength !== undefined || node.restrictions.maxLength !== undefined) {
+        const lengthDiv = document.createElement("div");
+        lengthDiv.className = "restriction-item";
+        const parts: string[] = [];
+        if (node.restrictions.minLength !== undefined) {
+          parts.push(`min: ${node.restrictions.minLength}`);
+        }
+        if (node.restrictions.maxLength !== undefined) {
+          parts.push(`max: ${node.restrictions.maxLength}`);
+        }
+        lengthDiv.innerHTML = `<strong>Length Range:</strong> ${parts.join(", ")}`;
+        restrictionList.appendChild(lengthDiv);
+      }
+
+      // Min/Max value constraints
+      const valueConstraints: string[] = [];
+      if (node.restrictions.minInclusive !== undefined) {
+        valueConstraints.push(`≥ ${node.restrictions.minInclusive}`);
+      }
+      if (node.restrictions.minExclusive !== undefined) {
+        valueConstraints.push(`> ${node.restrictions.minExclusive}`);
+      }
+      if (node.restrictions.maxInclusive !== undefined) {
+        valueConstraints.push(`≤ ${node.restrictions.maxInclusive}`);
+      }
+      if (node.restrictions.maxExclusive !== undefined) {
+        valueConstraints.push(`< ${node.restrictions.maxExclusive}`);
+      }
+      if (valueConstraints.length > 0) {
+        const valueDiv = document.createElement("div");
+        valueDiv.className = "restriction-item";
+        valueDiv.innerHTML = `<strong>Value Range:</strong> ${valueConstraints.join(", ")}`;
+        restrictionList.appendChild(valueDiv);
+      }
+
+      // Total digits
+      if (node.restrictions.totalDigits !== undefined) {
+        const digitsDiv = document.createElement("div");
+        digitsDiv.className = "restriction-item";
+        digitsDiv.innerHTML = `<strong>Total Digits:</strong> ${node.restrictions.totalDigits}`;
+        restrictionList.appendChild(digitsDiv);
+      }
+
+      // Fraction digits
+      if (node.restrictions.fractionDigits !== undefined) {
+        const fracDiv = document.createElement("div");
+        fracDiv.className = "restriction-item";
+        fracDiv.innerHTML = `<strong>Fraction Digits:</strong> ${node.restrictions.fractionDigits}`;
+        restrictionList.appendChild(fracDiv);
+      }
+
+      // White space
+      if (node.restrictions.whiteSpace !== undefined) {
+        const wsDiv = document.createElement("div");
+        wsDiv.className = "restriction-item";
+        wsDiv.innerHTML = `<strong>White Space:</strong> ${node.restrictions.whiteSpace}`;
+        restrictionList.appendChild(wsDiv);
+      }
+
+      // Only add the restrictions section if we have content
+      if (restrictionList.children.length > 0) {
+        this.addPropertyWithElement("Restrictions", restrictionList);
+      }
+    }
+
     // Children count
     if (node.childElements && node.childElements.length > 0) {
       this.addProperty("Children", node.childElements.length.toString());

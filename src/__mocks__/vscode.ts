@@ -8,19 +8,19 @@ export const Uri = {
     fsPath: path,
     scheme: 'file',
     path,
-    toString: () => path
+    toString: (): string => path
   })),
   parse: jest.fn((value: string) => ({
     fsPath: value,
     scheme: 'file',
     path: value,
-    toString: () => value
+    toString: (): string => value
   })),
   joinPath: jest.fn((_base: unknown, ...paths: string[]) => ({
     fsPath: paths.join("/"),
     scheme: 'file',
     path: paths.join("/"),
-    toString: () => paths.join("/")
+    toString: (): string => paths.join("/")
   }))
 };
 

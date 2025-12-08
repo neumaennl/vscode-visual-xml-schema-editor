@@ -54,7 +54,7 @@ describe("TextRenderers", () => {
       item.name = "TestElement";
       item.diagram = mockDiagram;
       item.elementBox = { x: 0, y: 0, width: 100, height: 50 };
-      item.scaleRectangle = (rect: Rectangle) => rect;
+      item.scaleRectangle = (rect: Rectangle): Rectangle => rect;
 
       renderText(item, mockGroup, mockSvg);
 
@@ -69,7 +69,7 @@ describe("TextRenderers", () => {
       item.type = "string";
       item.diagram = {...mockDiagram, showType: true} as Diagram;
       item.elementBox = { x: 0, y: 0, width: 200, height: 50 };
-      item.scaleRectangle = (rect: Rectangle) => rect;
+      item.scaleRectangle = (rect: Rectangle): Rectangle => rect;
 
       renderText(item, mockGroup, mockSvg);
 
@@ -83,7 +83,7 @@ describe("TextRenderers", () => {
       item.type = "string";
       item.diagram = mockDiagram;
       item.elementBox = { x: 0, y: 0, width: 200, height: 50 };
-      item.scaleRectangle = (rect: Rectangle) => rect;
+      item.scaleRectangle = (rect: Rectangle): Rectangle => rect;
 
       renderText(item, mockGroup, mockSvg);
 
@@ -96,7 +96,7 @@ describe("TextRenderers", () => {
       item.name = "ThisIsAVeryLongElementNameThatShouldBeTruncated";
       item.diagram = mockDiagram;
       item.elementBox = { x: 0, y: 0, width: 50, height: 30 };
-      item.scaleRectangle = (rect: Rectangle) => rect;
+      item.scaleRectangle = (rect: Rectangle): Rectangle => rect;
 
       renderText(item, mockGroup, mockSvg);
 
@@ -110,7 +110,7 @@ describe("TextRenderers", () => {
       item.name = "ThisIsAVeryLongElementNameThatShouldBeTruncated";
       item.diagram = mockDiagram;
       item.elementBox = { x: 0, y: 0, width: 50, height: 30 };
-      item.scaleRectangle = (rect: Rectangle) => rect;
+      item.scaleRectangle = (rect: Rectangle): Rectangle => rect;
 
       renderText(item, mockGroup, mockSvg);
 
@@ -125,7 +125,7 @@ describe("TextRenderers", () => {
       item.name = "Short";
       item.diagram = mockDiagram;
       item.elementBox = { x: 0, y: 0, width: 200, height: 50 };
-      item.scaleRectangle = (rect: Rectangle) => rect;
+      item.scaleRectangle = (rect: Rectangle): Rectangle => rect;
 
       renderText(item, mockGroup, mockSvg);
 
@@ -139,7 +139,7 @@ describe("TextRenderers", () => {
       item.name = "Test";
       item.diagram = mockDiagram;
       item.elementBox = { x: 10, y: 20, width: 100, height: 50 };
-      item.scaleRectangle = (rect: Rectangle) => rect;
+      item.scaleRectangle = (rect: Rectangle): Rectangle => rect;
 
       renderText(item, mockGroup, mockSvg);
 
@@ -189,7 +189,7 @@ describe("TextRenderers", () => {
       item.documentation = "This is documentation";
       item.diagram = mockDiagram;
       item.documentationBox = { x: 10, y: 100, width: 200, height: 50 };
-      item.scaleRectangle = (rect: Rectangle) => rect;
+      item.scaleRectangle = (rect: Rectangle): Rectangle => rect;
 
       renderDocumentation(item, mockGroup);
 
@@ -203,7 +203,7 @@ describe("TextRenderers", () => {
       item.documentation = "Line 1\nLine 2\nLine 3";
       item.diagram = mockDiagram;
       item.documentationBox = { x: 10, y: 100, width: 200, height: 100 };
-      item.scaleRectangle = (rect: Rectangle) => rect;
+      item.scaleRectangle = (rect: Rectangle): Rectangle => rect;
 
       renderDocumentation(item, mockGroup);
 
@@ -219,7 +219,7 @@ describe("TextRenderers", () => {
       item.documentation = "Line 1\nLine 2\nLine 3\nLine 4\nLine 5";
       item.diagram = mockDiagram;
       item.documentationBox = { x: 10, y: 100, width: 200, height: 150 };
-      item.scaleRectangle = (rect: Rectangle) => rect;
+      item.scaleRectangle = (rect: Rectangle): Rectangle => rect;
 
       renderDocumentation(item, mockGroup);
 
@@ -233,7 +233,7 @@ describe("TextRenderers", () => {
       item.documentation = longLine;
       item.diagram = mockDiagram;
       item.documentationBox = { x: 10, y: 100, width: 200, height: 50 };
-      item.scaleRectangle = (rect: Rectangle) => rect;
+      item.scaleRectangle = (rect: Rectangle): Rectangle => rect;
 
       renderDocumentation(item, mockGroup);
 
@@ -246,7 +246,7 @@ describe("TextRenderers", () => {
       item.documentation = "Some documentation";
       item.diagram = mockDiagram;
       item.documentationBox = { x: 0, y: 0, width: 0, height: 50 };
-      item.scaleRectangle = (rect: Rectangle) => rect;
+      item.scaleRectangle = (rect: Rectangle): Rectangle => rect;
 
       renderDocumentation(item, mockGroup);
 
@@ -259,7 +259,7 @@ describe("TextRenderers", () => {
       item.documentation = "Some documentation";
       item.diagram = mockDiagram;
       item.documentationBox = { x: 0, y: 0, width: 100, height: 0 };
-      item.scaleRectangle = (rect: Rectangle) => rect;
+      item.scaleRectangle = (rect: Rectangle): Rectangle => rect;
 
       renderDocumentation(item, mockGroup);
 
@@ -275,7 +275,7 @@ describe("TextRenderers", () => {
       item.maxOccurrence = -1; // Unbounded
       item.diagram = mockDiagram;
       item.elementBox = { x: 10, y: 10, width: 100, height: 50 };
-      item.scaleRectangle = (rect: Rectangle) => rect;
+      item.scaleRectangle = (rect: Rectangle): Rectangle => rect;
 
       renderOccurrence(item, mockGroup);
 
@@ -290,7 +290,7 @@ describe("TextRenderers", () => {
       item.maxOccurrence = 5;
       item.diagram = mockDiagram;
       item.elementBox = { x: 10, y: 10, width: 100, height: 50 };
-      item.scaleRectangle = (rect: Rectangle) => rect;
+      item.scaleRectangle = (rect: Rectangle): Rectangle => rect;
 
       renderOccurrence(item, mockGroup);
 
@@ -304,7 +304,7 @@ describe("TextRenderers", () => {
       item.maxOccurrence = 1;
       item.diagram = mockDiagram;
       item.elementBox = { x: 10, y: 10, width: 100, height: 50 };
-      item.scaleRectangle = (rect: Rectangle) => rect;
+      item.scaleRectangle = (rect: Rectangle): Rectangle => rect;
 
       renderOccurrence(item, mockGroup);
 
@@ -318,7 +318,7 @@ describe("TextRenderers", () => {
       item.maxOccurrence = 1;
       item.diagram = {...mockDiagram, alwaysShowOccurrence: true} as Diagram;
       item.elementBox = { x: 10, y: 10, width: 100, height: 50 };
-      item.scaleRectangle = (rect: Rectangle) => rect;
+      item.scaleRectangle = (rect: Rectangle): Rectangle => rect;
 
       renderOccurrence(item, mockGroup);
 
@@ -333,7 +333,7 @@ describe("TextRenderers", () => {
       item.maxOccurrence = 1;
       item.diagram = mockDiagram;
       item.elementBox = { x: 10, y: 10, width: 100, height: 50 };
-      item.scaleRectangle = (rect: Rectangle) => rect;
+      item.scaleRectangle = (rect: Rectangle): Rectangle => rect;
 
       renderOccurrence(item, mockGroup);
 
@@ -347,7 +347,7 @@ describe("TextRenderers", () => {
       item.maxOccurrence = -1;
       item.diagram = mockDiagram;
       item.elementBox = { x: 20, y: 30, width: 80, height: 40 };
-      item.scaleRectangle = (rect: Rectangle) => rect;
+      item.scaleRectangle = (rect: Rectangle): Rectangle => rect;
 
       renderOccurrence(item, mockGroup);
 

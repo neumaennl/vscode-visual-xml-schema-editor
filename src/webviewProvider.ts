@@ -101,7 +101,7 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
   private updateWebview(
     document: vscode.TextDocument,
     webview: vscode.Webview
-  ) {
+  ): void {
     try {
       console.log("Parsing XSD document...");
       const xmlContent = document.getText();

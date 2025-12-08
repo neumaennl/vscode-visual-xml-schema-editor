@@ -4,42 +4,13 @@
 
 import { DiagramRenderer } from "./renderer";
 import { DiagramOptions } from "../shared/messages";
+import { setupGetBBoxMock } from "./testUtils/svgTestUtils";
 
 const defaultDiagramOptions: DiagramOptions = {
   showDocumentation: false,
   alwaysShowOccurrence: false,
   showType: false,
 };
-
-/**
- * Extended interface for Element to include getBBox method used in SVG tests.
- * jsdom doesn't implement getBBox, so we need to add it for testing.
- */
-interface ElementWithGetBBox extends Element {
-  getBBox(): DOMRect;
-}
-
-/**
- * Mock getBBox for SVG elements in jsdom environment.
- * jsdom doesn't implement SVG layout calculations, so we need to mock this.
- */
-function setupGetBBoxMock(): void {
-  // Mock implementation for getBBox
-  (Element.prototype as ElementWithGetBBox).getBBox = function (): DOMRect {
-    const textContent = this.textContent || "";
-    return {
-      x: 0,
-      y: 0,
-      width: textContent.length * 6,
-      height: 10,
-      top: 0,
-      right: textContent.length * 6,
-      bottom: 10,
-      left: 0,
-      toJSON: () => ({}),
-    } as DOMRect;
-  };
-}
 
 describe("DiagramRenderer", () => {
   let mockCanvas: SVGSVGElement;

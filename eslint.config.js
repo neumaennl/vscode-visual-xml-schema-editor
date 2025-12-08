@@ -77,12 +77,10 @@ module.exports = [
     },
     plugins: {
       '@typescript-eslint': tseslint,
-      jest: jestPlugin,
     },
     rules: {
       ...tseslint.configs.recommended.rules,
       ...tseslint.configs['recommended-requiring-type-checking'].rules,
-      ...jestPlugin.configs.recommended.rules,
       '@typescript-eslint/no-unused-vars': [
         'error',
         {
@@ -102,6 +100,9 @@ module.exports = [
   // Test files configuration (must come before webview config to avoid conflicts)
   {
     files: ['**/*.test.ts', '**/__mocks__/**/*.ts'],
+    plugins: {
+      jest: jestPlugin,
+    },
     languageOptions: {
       globals: {
         // Jest globals
@@ -129,6 +130,7 @@ module.exports = [
       },
     },
     rules: {
+      ...jestPlugin.configs.recommended.rules,
       // Disabled in tests where we have more control over the test environment
       '@typescript-eslint/no-non-null-assertion': 'off',
       // Disabled to allow dynamic require() in tests for module initialization testing

@@ -90,10 +90,13 @@ module.exports = [
           varsIgnorePattern: '^_',
         },
       ],
+      // Disabled to allow type inference for cleaner code
       '@typescript-eslint/explicit-function-return-type': 'off',
+      // Disabled to allow type inference at module boundaries
       '@typescript-eslint/explicit-module-boundary-types': 'off',
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-non-null-assertion': 'warn',
+      // Disabled to allow console logging in VS Code extension
       'no-console': 'off',
     },
   },
@@ -135,7 +138,9 @@ module.exports = [
       },
     },
     rules: {
+      // Disabled in tests where we have more control over the test environment
       '@typescript-eslint/no-non-null-assertion': 'off',
+      // Disabled to allow dynamic require() in tests for module initialization testing
       '@typescript-eslint/no-require-imports': 'off',
     },
   },

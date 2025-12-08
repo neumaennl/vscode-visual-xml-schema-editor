@@ -1,5 +1,5 @@
 import { XmlRoot, XmlElement, XmlAttribute } from '@neumaennl/xmlbind-ts';
-import { derivationSet } from './enums';
+import type { derivationSet } from './types';
 import { annotated } from './annotated';
 import { simpleContentType } from './simpleContentType';
 import { complexContentType } from './complexContentType';
@@ -18,17 +18,17 @@ export class complexType extends annotated {
    * Will be restricted to required or forbidden
    */
   @XmlAttribute('name')
-  name?: String;
+  name?: string;
 
   /**
    * Not allowed if simpleContent child is chosen.
    * May be overriden by setting on complexContent child.
    */
   @XmlAttribute('mixed')
-  mixed?: Boolean;
+  mixed?: boolean;
 
   @XmlAttribute('abstract')
-  abstract?: Boolean;
+  abstract?: boolean;
 
   @XmlAttribute('final')
   final?: derivationSet;

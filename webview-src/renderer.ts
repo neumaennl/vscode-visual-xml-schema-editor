@@ -1,5 +1,6 @@
 import { schema } from "../shared/types";
 import { ViewState, RenderedNode } from "./webviewTypes";
+import { DiagramOptions } from "../shared/messages";
 import {
   DiagramBuilder,
   DiagramLayout,
@@ -19,6 +20,14 @@ export class DiagramRenderer {
   private onNodeClickCallback:
     | ((node: DiagramItem, isExpandButton: boolean) => void)
     | null = null;
+
+  /**
+   * Get the current diagram (exposed for testing).
+   * @returns The current diagram or null if no diagram is loaded
+   */
+  public getCurrentDiagram(): Diagram | null {
+    return this.currentDiagram;
+  }
 
   /**
    * Create a new DiagramRenderer
@@ -48,10 +57,12 @@ export class DiagramRenderer {
   /**
    * Render a schema object to the canvas
    * @param schemaObj - The schema to render
+   * @param diagramOptions - Display options for the diagram
    * @param onNodeClick - Callback function for node click events
    */
   public renderSchema(
     schemaObj: schema,
+    diagramOptions: DiagramOptions,
     onNodeClick: (node: DiagramItem, isExpandButton: boolean) => void
   ): void {
     this.onNodeClickCallback = onNodeClick;
@@ -69,6 +80,12 @@ export class DiagramRenderer {
       // Build diagram from schema
       const builder = new DiagramBuilder();
       this.currentDiagram = builder.buildFromSchema(schemaObj);
+
+      // Apply diagram options
+      this.currentDiagram.showDocumentation = diagramOptions.showDocumentation;
+      this.currentDiagram.alwaysShowOccurrence =
+        diagramOptions.alwaysShowOccurrence;
+      this.currentDiagram.showType = diagramOptions.showType;
 
       // Restore expand state
       this.restoreExpandState(expandState);

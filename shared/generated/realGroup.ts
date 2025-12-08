@@ -1,5 +1,5 @@
 import { XmlRoot, XmlElement, XmlAttribute, XmlAnyAttribute } from '@neumaennl/xmlbind-ts';
-import { allNNI } from './enums';
+import type { allNNI } from './types';
 import { annotationType } from './annotationType';
 import { all } from './all';
 import { explicitGroup } from './explicitGroup';
@@ -9,16 +9,16 @@ export class realGroup {
   _anyAttributes?: { [name: string]: string };
 
   @XmlAttribute('id')
-  id?: String;
+  id?: string;
 
   @XmlAttribute('name')
-  name?: String;
+  name?: string;
 
   @XmlAttribute('ref')
-  ref?: String;
+  ref?: string;
 
   @XmlAttribute('minOccurs')
-  minOccurs?: Number;
+  minOccurs?: number;
 
   @XmlAttribute('maxOccurs')
   maxOccurs?: allNNI;

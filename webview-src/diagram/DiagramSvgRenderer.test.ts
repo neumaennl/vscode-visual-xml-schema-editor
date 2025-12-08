@@ -6,6 +6,7 @@ import { DiagramSvgRenderer } from "./DiagramSvgRenderer";
 import { Diagram } from "./Diagram";
 import { DiagramItem } from "./DiagramItem";
 import { DiagramItemType } from "./DiagramTypes";
+import { setupGetBBoxMock } from "../__tests__/svgTestUtils";
 
 describe("DiagramSvgRenderer", () => {
   let svg: SVGSVGElement;
@@ -19,16 +20,7 @@ describe("DiagramSvgRenderer", () => {
     diagram = new Diagram();
 
     // Mock getBBox for SVG text elements (not supported in jsdom)
-    // Return width proportional to text length (approx 6 pixels per character)
-    (Element.prototype as any).getBBox = jest.fn(function (this: SVGTextElement) {
-      const textContent = this.textContent || "";
-      return {
-        x: 0,
-        y: 0,
-        width: textContent.length * 6,
-        height: 10,
-      };
-    });
+    setupGetBBoxMock();
   });
 
   afterEach(() => {

@@ -7,10 +7,10 @@ import { namedGroup } from './namedGroup';
 import { namedAttributeGroup } from './namedAttributeGroup';
 export class redefineType extends openAttrs {
   @XmlAttribute('schemaLocation')
-  schemaLocation!: String;
+  schemaLocation!: string;
 
   @XmlAttribute('id')
-  id?: String;
+  id?: string;
 
   @XmlElement('annotation', { type: () => annotationType, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
   annotation?: annotationType[];

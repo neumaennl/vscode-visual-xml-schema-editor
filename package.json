@@ -73,8 +73,8 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "package": "vsce package",
     "clean": "rimraf out webview",
     "generate-classes-from-schema": "node node_modules/.bin/xsd2ts xsd2ts -i schema/XMLSchema.xsd -o shared/generated"

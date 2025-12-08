@@ -12,6 +12,6 @@ export class anyType {
   _any?: unknown[];
 
   @XmlText()
-  value?: String;
+  value?: string;
 
 }

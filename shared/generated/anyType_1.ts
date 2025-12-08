@@ -1,9 +1,9 @@
 import { XmlAttribute } from '@neumaennl/xmlbind-ts';
-import { allNNI } from './enums';
+import type { allNNI } from './types';
 import { wildcard } from './wildcard';
 export class anyType_1 extends wildcard {
   @XmlAttribute('minOccurs')
-  minOccurs?: Number;
+  minOccurs?: number;
 
   @XmlAttribute('maxOccurs')
   maxOccurs?: allNNI;

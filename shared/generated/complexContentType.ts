@@ -10,7 +10,7 @@ export class complexContentType extends annotated {
    * Overrides any setting on complexType parent.
    */
   @XmlAttribute('mixed')
-  mixed?: Boolean;
+  mixed?: boolean;
 
   @XmlElement('restriction', { type: () => complexRestrictionType, namespace: 'http://www.w3.org/2001/XMLSchema' })
   restriction?: complexRestrictionType;

@@ -10,6 +10,6 @@ export class selectorType extends annotated {
    * in selectors
    */
   @XmlAttribute('xpath')
-  xpath!: String;
+  xpath!: string;
 
 }

@@ -1,5 +1,6 @@
 import { XmlRoot, XmlElement, XmlAttribute } from '@neumaennl/xmlbind-ts';
-import { blockSet, formChoice, fullDerivationSet } from './enums';
+import type { blockSet, fullDerivationSet } from './types';
+import { formChoice } from './enums';
 import { openAttrs } from './openAttrs';
 import { includeType } from './includeType';
 import { importType } from './importType';
@@ -15,10 +16,10 @@ import { notationType } from './notationType';
 @XmlRoot('schema', { namespace: 'http://www.w3.org/2001/XMLSchema', prefixes: { 'http://www.w3.org/2001/XMLSchema': 'xs', 'http://www.w3.org/2001/XMLSchema-hasFacetAndProperty': 'hfp', 'http://www.w3.org/XML/1998/namespace': 'imp1' } })
 export class schema extends openAttrs {
   @XmlAttribute('targetNamespace')
-  targetNamespace?: String;
+  targetNamespace?: string;
 
   @XmlAttribute('version')
-  version?: String;
+  version?: string;
 
   @XmlAttribute('finalDefault')
   finalDefault?: fullDerivationSet;
@@ -33,7 +34,7 @@ export class schema extends openAttrs {
   elementFormDefault?: formChoice;
 
   @XmlAttribute('id')
-  id?: String;
+  id?: string;
 
   @XmlElement('include', { type: () => includeType, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
   include?: includeType[];

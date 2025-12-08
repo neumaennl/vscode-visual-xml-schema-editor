@@ -10,6 +10,6 @@ export class fieldType extends annotated {
    * in fields
    */
   @XmlAttribute('xpath')
-  xpath!: String;
+  xpath!: string;
 
 }

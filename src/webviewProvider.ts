@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { unmarshal } from "@neumaennl/xmlbind-ts";
 import { schema } from "../shared/types";
-import { SchemaModifiedMessage } from "../shared/messages";
+import { SchemaModifiedMessage, DiagramOptions } from "../shared/messages";
 
 /**
  * Provider for the XML Schema Visual Editor custom text editor.
@@ -36,14 +36,24 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
 
     webviewPanel.webview.html = this.getHtmlForWebview(webviewPanel.webview);
 
-    // Send initial schema to webview
+    // Send initial schema and diagram options to webview
     this.updateWebview(document, webviewPanel.webview);
+    this.sendDiagramOptions(webviewPanel.webview);
 
     // Listen for document changes
     const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument(
       (e) => {
         if (e.document.uri.toString() === document.uri.toString()) {
           this.updateWebview(document, webviewPanel.webview);
+        }
+      }
+    );
+
+    // Listen for configuration changes
+    const changeConfigSubscription = vscode.workspace.onDidChangeConfiguration(
+      (e) => {
+        if (e.affectsConfiguration("xmlSchemaVisualEditor")) {
+          this.sendDiagramOptions(webviewPanel.webview);
         }
       }
     );
@@ -58,6 +68,26 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
 
     webviewPanel.onDidDispose(() => {
       changeDocumentSubscription.dispose();
+      changeConfigSubscription.dispose();
+    });
+  }
+
+  /**
+   * Reads diagram options from VS Code settings and sends them to the webview.
+   * 
+   * @param webview - The webview to send the diagram options to
+   */
+  private sendDiagramOptions(webview: vscode.Webview): void {
+    const config = vscode.workspace.getConfiguration("xmlSchemaVisualEditor");
+    const diagramOptions: DiagramOptions = {
+      showDocumentation: config.get<boolean>("showDocumentation", false),
+      alwaysShowOccurrence: config.get<boolean>("alwaysShowOccurrence", false),
+      showType: config.get<boolean>("showType", false),
+    };
+
+    void webview.postMessage({
+      command: "updateDiagramOptions",
+      data: diagramOptions,
     });
   }
 

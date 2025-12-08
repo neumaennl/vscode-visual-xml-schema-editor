@@ -39,6 +39,26 @@
           "group": "navigation"
         }
       ]
+    },
+    "configuration": {
+      "title": "XML Schema Visual Editor",
+      "properties": {
+        "xmlSchemaVisualEditor.showDocumentation": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show documentation annotations in the diagram"
+        },
+        "xmlSchemaVisualEditor.alwaysShowOccurrence": {
+          "type": "boolean",
+          "default": false,
+          "description": "Always show occurrence constraints (minOccurs/maxOccurs) even for default values (1..1)"
+        },
+        "xmlSchemaVisualEditor.showType": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show type information for elements in the diagram"
+        }
+      }
     }
   },
   "scripts": {
@@ -83,6 +103,6 @@
     "webpack-cli": "^6.0.1"
   },
   "dependencies": {
-    "@neumaennl/xmlbind-ts": "^0.12.1"
+    "@neumaennl/xmlbind-ts": "^0.13.0"
   }
 }

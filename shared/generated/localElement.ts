@@ -1,5 +1,6 @@
 import { XmlRoot, XmlElement, XmlAttribute, XmlAnyAttribute } from '@neumaennl/xmlbind-ts';
-import { allNNI, blockSet, formChoice } from './enums';
+import type { allNNI, blockSet } from './types';
+import { formChoice } from './enums';
 import { annotationType } from './annotationType';
 import { localSimpleType } from './localSimpleType';
 import { localComplexType } from './localComplexType';
@@ -11,31 +12,31 @@ export class localElement {
   _anyAttributes?: { [name: string]: string };
 
   @XmlAttribute('id')
-  id?: String;
+  id?: string;
 
   @XmlAttribute('name')
-  name?: String;
+  name?: string;
 
   @XmlAttribute('ref')
-  ref?: String;
+  ref?: string;
 
   @XmlAttribute('minOccurs')
-  minOccurs?: Number;
+  minOccurs?: number;
 
   @XmlAttribute('maxOccurs')
   maxOccurs?: allNNI;
 
   @XmlAttribute('type')
-  type_?: String;
+  type_?: string;
 
   @XmlAttribute('default')
-  default_?: String;
+  default_?: string;
 
   @XmlAttribute('fixed')
-  fixed?: String;
+  fixed?: string;
 
   @XmlAttribute('nillable')
-  nillable?: Boolean;
+  nillable?: boolean;
 
   @XmlAttribute('block')
   block?: blockSet;

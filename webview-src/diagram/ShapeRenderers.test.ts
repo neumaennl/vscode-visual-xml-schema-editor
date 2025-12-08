@@ -9,7 +9,7 @@ import {
   renderGroupTypeIndicator,
 } from "./ShapeRenderers";
 import { DiagramItem } from "./DiagramItem";
-import { DiagramItemGroupType, Rectangle } from "./DiagramTypes";
+import { DiagramItemGroupType, DiagramItemType, Rectangle } from "./DiagramTypes";
 import { Diagram } from "./Diagram";
 
 describe("ShapeRenderers", () => {
@@ -35,7 +35,7 @@ describe("ShapeRenderers", () => {
   describe("renderElementShape", () => {
     it("should render a single rectangle for single occurrence", () => {
       const rect: Rectangle = { x: 10, y: 10, width: 100, height: 50 };
-      const item = new DiagramItem("id1", "Test", "element" as any);
+      const item = new DiagramItem("id1", "Test", DiagramItemType.element);
       item.maxOccurrence = 1;
 
       renderElementShape(rect, "fill:blue", "stroke:black", item, mockGroup);
@@ -50,7 +50,7 @@ describe("ShapeRenderers", () => {
 
     it("should render shadow for multiple occurrences", () => {
       const rect: Rectangle = { x: 10, y: 10, width: 100, height: 50 };
-      const item = new DiagramItem("id2", "Test", "element" as any);
+      const item = new DiagramItem("id2", "Test", DiagramItemType.element);
       item.maxOccurrence = -1; // Unbounded
 
       renderElementShape(rect, "fill:blue", "stroke:black", item, mockGroup);
@@ -69,7 +69,7 @@ describe("ShapeRenderers", () => {
 
     it("should render shadow for maxOccurrence > 1", () => {
       const rect: Rectangle = { x: 0, y: 0, width: 50, height: 30 };
-      const item = new DiagramItem("id3", "Test", "element" as any);
+      const item = new DiagramItem("id3", "Test", DiagramItemType.element);
       item.maxOccurrence = 5;
 
       renderElementShape(rect, "fill:red", "stroke:blue", item, mockGroup);
@@ -82,7 +82,7 @@ describe("ShapeRenderers", () => {
   describe("renderGroupShape", () => {
     it("should render an octagon for single occurrence", () => {
       const rect: Rectangle = { x: 10, y: 10, width: 100, height: 50 };
-      const item = new DiagramItem("id4", "Test", "group" as any);
+      const item = new DiagramItem("id4", "Test", DiagramItemType.group);
       item.maxOccurrence = 1;
       item.diagram = mockDiagram;
       item.groupType = DiagramItemGroupType.Sequence;
@@ -99,7 +99,7 @@ describe("ShapeRenderers", () => {
 
     it("should render shadow for multiple occurrences", () => {
       const rect: Rectangle = { x: 10, y: 10, width: 100, height: 50 };
-      const item = new DiagramItem("id5", "Test", "group" as any);
+      const item = new DiagramItem("id5", "Test", DiagramItemType.group);
       item.maxOccurrence = -1;
       item.diagram = mockDiagram;
       item.groupType = DiagramItemGroupType.Choice;
@@ -114,7 +114,7 @@ describe("ShapeRenderers", () => {
   describe("renderTypeShape", () => {
     it("should render a beveled rectangle for single occurrence", () => {
       const rect: Rectangle = { x: 10, y: 10, width: 100, height: 50 };
-      const item = new DiagramItem("id9", "Test", "type" as any);
+      const item = new DiagramItem("id9", "Test", DiagramItemType.type);
       item.maxOccurrence = 1;
       item.isSimpleContent = false;
 
@@ -130,7 +130,7 @@ describe("ShapeRenderers", () => {
 
     it("should render shadow for multiple occurrences", () => {
       const rect: Rectangle = { x: 10, y: 10, width: 100, height: 50 };
-      const item = new DiagramItem("id10", "Test", "type" as any);
+      const item = new DiagramItem("id10", "Test", DiagramItemType.type);
       item.maxOccurrence = 2;
       item.isSimpleContent = false;
 
@@ -142,7 +142,7 @@ describe("ShapeRenderers", () => {
 
     it("should render filled bevel area for simple content", () => {
       const rect: Rectangle = { x: 10, y: 10, width: 100, height: 50 };
-      const item = new DiagramItem("id11", "Test", "type" as any);
+      const item = new DiagramItem("id11", "Test", DiagramItemType.type);
       item.maxOccurrence = 1;
       item.isSimpleContent = true;
 
@@ -158,7 +158,7 @@ describe("ShapeRenderers", () => {
 
     it("should handle stroke color with semicolon", () => {
       const rect: Rectangle = { x: 10, y: 10, width: 100, height: 50 };
-      const item = new DiagramItem("id12", "Test", "type" as any);
+      const item = new DiagramItem("id12", "Test", DiagramItemType.type);
       item.maxOccurrence = 1;
       item.isSimpleContent = true;
 
@@ -179,7 +179,7 @@ describe("ShapeRenderers", () => {
   describe("renderGroupTypeIndicator", () => {
     it("should render sequence indicator with dots and line", () => {
       const rect: Rectangle = { x: 10, y: 10, width: 100, height: 50 };
-      const item = new DiagramItem("id13", "Test", "group" as any);
+      const item = new DiagramItem("id13", "Test", DiagramItemType.group);
       item.diagram = mockDiagram;
       item.groupType = DiagramItemGroupType.Sequence;
 
@@ -193,7 +193,7 @@ describe("ShapeRenderers", () => {
 
     it("should render choice indicator with dots and lines", () => {
       const rect: Rectangle = { x: 10, y: 10, width: 100, height: 50 };
-      const item = new DiagramItem("id14", "Test", "group" as any);
+      const item = new DiagramItem("id14", "Test", DiagramItemType.group);
       item.diagram = mockDiagram;
       item.groupType = DiagramItemGroupType.Choice;
 
@@ -207,7 +207,7 @@ describe("ShapeRenderers", () => {
 
     it("should render all indicator with dots and lines", () => {
       const rect: Rectangle = { x: 10, y: 10, width: 100, height: 50 };
-      const item = new DiagramItem("id15", "Test", "group" as any);
+      const item = new DiagramItem("id15", "Test", DiagramItemType.group);
       item.diagram = mockDiagram;
       item.groupType = DiagramItemGroupType.All;
 
@@ -221,7 +221,7 @@ describe("ShapeRenderers", () => {
 
     it("should render centered on rectangle", () => {
       const rect: Rectangle = { x: 50, y: 50, width: 100, height: 60 };
-      const item = new DiagramItem("id17", "Test", "group" as any);
+      const item = new DiagramItem("id17", "Test", DiagramItemType.group);
       item.diagram = mockDiagram;
       item.groupType = DiagramItemGroupType.Sequence;
 

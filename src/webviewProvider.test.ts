@@ -170,4 +170,60 @@ describe("SchemaEditorProvider", () => {
       expect(html).toContain('Content-Security-Policy');
     });
   });
+
+  describe("diagram options", () => {
+    it("should send diagram options to webview on initialization", () => {
+      const mockConfig = {
+        get: jest.fn((key: string, defaultValue: boolean) => {
+          if (key === "showDocumentation") return true;
+          if (key === "alwaysShowOccurrence") return false;
+          if (key === "showType") return true;
+          return defaultValue;
+        }),
+      };
+      (vscode.workspace.getConfiguration as jest.Mock).mockReturnValue(mockConfig);
+
+      provider.resolveCustomTextEditor(
+        mockDocument,
+        mockWebviewPanel,
+        {} as vscode.CancellationToken
+      );
+
+      // Should have called postMessage twice: once for updateSchema, once for updateDiagramOptions
+      expect(mockPostMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          command: "updateDiagramOptions",
+          data: {
+            showDocumentation: true,
+            alwaysShowOccurrence: false,
+            showType: true,
+          },
+        })
+      );
+    });
+
+    it("should use default values when configuration is not set", () => {
+      const mockConfig = {
+        get: jest.fn((_key: string, defaultValue: boolean) => defaultValue),
+      };
+      (vscode.workspace.getConfiguration as jest.Mock).mockReturnValue(mockConfig);
+
+      provider.resolveCustomTextEditor(
+        mockDocument,
+        mockWebviewPanel,
+        {} as vscode.CancellationToken
+      );
+
+      expect(mockPostMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          command: "updateDiagramOptions",
+          data: {
+            showDocumentation: false,
+            alwaysShowOccurrence: false,
+            showType: false,
+          },
+        })
+      );
+    });
+  });
 });

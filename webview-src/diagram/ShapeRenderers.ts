@@ -144,7 +144,7 @@ export function renderGroupTypeIndicator(
   const centerY = rect.y + rect.height / 2;
 
   switch (item.groupType) {
-    case DiagramItemGroupType.Sequence:
+    case DiagramItemGroupType.Sequence: {
       // Three dots in a row with horizontal line
       const dotSize = 2;
       const spacing = dotSize * 3;
@@ -168,8 +168,9 @@ export function renderGroupTypeIndicator(
         );
       }
       break;
+    }
 
-    case DiagramItemGroupType.Choice:
+    case DiagramItemGroupType.Choice: {
       // Choice indicator with lines and three dots
       const yMiddle = centerY;
       const yUp = yMiddle - 4;
@@ -198,8 +199,9 @@ export function renderGroupTypeIndicator(
       svgCircle(group, xMiddle, yMiddle, choiceDotSize, foregroundBrush);
       svgCircle(group, xMiddle, yDown, choiceDotSize, foregroundBrush);
       break;
+    }
 
-    case DiagramItemGroupType.All:
+    case DiagramItemGroupType.All: {
       // All indicator with lines and three dots (similar to choice but with different line pattern)
       const allYMiddle = centerY;
       const allYUp = allYMiddle - 4;
@@ -244,5 +246,6 @@ export function renderGroupTypeIndicator(
       svgCircle(group, allXMiddle, allYMiddle, allDotSize, foregroundBrush);
       svgCircle(group, allXMiddle, allYDown, allDotSize, foregroundBrush);
       break;
+    }
   }
 }

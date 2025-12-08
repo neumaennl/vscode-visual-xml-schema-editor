@@ -14,10 +14,10 @@ export class localComplexType {
   _anyAttributes?: { [name: string]: string };
 
   @XmlAttribute('id')
-  id?: String;
+  id?: string;
 
   @XmlAttribute('mixed')
-  mixed?: Boolean;
+  mixed?: boolean;
 
   @XmlElement('annotation', { type: () => annotationType, namespace: 'http://www.w3.org/2001/XMLSchema' })
   annotation?: annotationType;

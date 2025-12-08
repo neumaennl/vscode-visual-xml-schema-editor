@@ -5,13 +5,13 @@ export class totalDigitsType {
   _anyAttributes?: { [name: string]: string };
 
   @XmlAttribute('id')
-  id?: String;
+  id?: string;
 
   @XmlAttribute('fixed')
-  fixed?: Boolean;
+  fixed?: boolean;
 
   @XmlAttribute('value')
-  value!: Number;
+  value!: number;
 
   @XmlElement('annotation', { type: () => annotationType, namespace: 'http://www.w3.org/2001/XMLSchema' })
   annotation?: annotationType;

@@ -50,7 +50,7 @@ describe("SchemaProcessors", () => {
 
       extractRestrictionFacets(item, restriction);
 
-      expect(item.restrictions).not.toBeNull();
+      expect(item.restrictions).toBeDefined();
       expect(item.restrictions?.enumeration).toEqual(["error", "warning", "info"]);
     });
 
@@ -61,7 +61,7 @@ describe("SchemaProcessors", () => {
 
       extractRestrictionFacets(item, restriction);
 
-      expect(item.restrictions).not.toBeNull();
+      expect(item.restrictions).toBeDefined();
       expect(item.restrictions?.pattern).toEqual(["[A-Z]{3}", "[0-9]+"]);
     });
 
@@ -74,7 +74,7 @@ describe("SchemaProcessors", () => {
 
       extractRestrictionFacets(item, restriction);
 
-      expect(item.restrictions).not.toBeNull();
+      expect(item.restrictions).toBeDefined();
       expect(item.restrictions?.length).toBe(10);
       expect(item.restrictions?.minLength).toBe(5);
       expect(item.restrictions?.maxLength).toBe(255);
@@ -88,7 +88,7 @@ describe("SchemaProcessors", () => {
 
       extractRestrictionFacets(item, restriction);
 
-      expect(item.restrictions).not.toBeNull();
+      expect(item.restrictions).toBeDefined();
       expect(item.restrictions?.minInclusive).toBe("0");
       expect(item.restrictions?.maxInclusive).toBe("100");
     });
@@ -101,7 +101,7 @@ describe("SchemaProcessors", () => {
 
       extractRestrictionFacets(item, restriction);
 
-      expect(item.restrictions).not.toBeNull();
+      expect(item.restrictions).toBeDefined();
       expect(item.restrictions?.minExclusive).toBe("-10");
       expect(item.restrictions?.maxExclusive).toBe("10");
     });
@@ -114,7 +114,7 @@ describe("SchemaProcessors", () => {
 
       extractRestrictionFacets(item, restriction);
 
-      expect(item.restrictions).not.toBeNull();
+      expect(item.restrictions).toBeDefined();
       expect(item.restrictions?.totalDigits).toBe(10);
       expect(item.restrictions?.fractionDigits).toBe(2);
     });
@@ -126,7 +126,7 @@ describe("SchemaProcessors", () => {
 
       extractRestrictionFacets(item, restriction);
 
-      expect(item.restrictions).not.toBeNull();
+      expect(item.restrictions).toBeDefined();
       expect(item.restrictions?.whiteSpace).toBe("collapse");
     });
 
@@ -140,7 +140,7 @@ describe("SchemaProcessors", () => {
 
       extractRestrictionFacets(item, restriction);
 
-      expect(item.restrictions).not.toBeNull();
+      expect(item.restrictions).toBeDefined();
       expect(item.restrictions?.enumeration).toEqual(["one", "two"]);
       expect(item.restrictions?.pattern).toEqual(["[a-z]+"]);
       expect(item.restrictions?.minLength).toBe(1);
@@ -152,7 +152,7 @@ describe("SchemaProcessors", () => {
 
       extractRestrictionFacets(item, restriction);
 
-      expect(item.restrictions).toBeNull();
+      expect(item.restrictions).toBeUndefined();
     });
 
     it("should handle empty arrays", () => {
@@ -163,7 +163,7 @@ describe("SchemaProcessors", () => {
 
       extractRestrictionFacets(item, restriction);
 
-      expect(item.restrictions).toBeNull();
+      expect(item.restrictions).toBeUndefined();
     });
   });
 
@@ -197,7 +197,7 @@ describe("SchemaProcessors", () => {
       processRestriction(item, restriction);
 
       expect(item.type).toBe("simpleType (restricts string)");
-      expect(item.restrictions).not.toBeNull();
+      expect(item.restrictions).toBeDefined();
       expect(item.restrictions?.enumeration).toEqual(["A", "B"]);
       expect(item.restrictions?.maxLength).toBe(10);
     });

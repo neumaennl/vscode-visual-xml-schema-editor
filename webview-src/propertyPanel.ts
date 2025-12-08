@@ -84,28 +84,16 @@ export class PropertyPanel {
 
       // Enumeration values
       if (node.restrictions.enumeration && node.restrictions.enumeration.length > 0) {
-        const enumDiv = document.createElement("div");
-        enumDiv.className = "restriction-item";
-        const enumLabel = document.createElement("strong");
-        enumLabel.textContent = "Enumeration: ";
-        enumDiv.appendChild(enumLabel);
-        const enumValues = document.createElement("span");
-        enumValues.textContent = node.restrictions.enumeration.join(", ");
-        enumDiv.appendChild(enumValues);
-        restrictionList.appendChild(enumDiv);
+        restrictionList.appendChild(
+          this.createRestrictionItem("Enumeration", node.restrictions.enumeration.join(", "))
+        );
       }
 
       // Pattern values
       if (node.restrictions.pattern && node.restrictions.pattern.length > 0) {
-        const patternDiv = document.createElement("div");
-        patternDiv.className = "restriction-item";
-        const patternLabel = document.createElement("strong");
-        patternLabel.textContent = "Pattern: ";
-        patternDiv.appendChild(patternLabel);
-        const patternValues = document.createElement("span");
-        patternValues.textContent = node.restrictions.pattern.join(", ");
-        patternDiv.appendChild(patternValues);
-        restrictionList.appendChild(patternDiv);
+        restrictionList.appendChild(
+          this.createRestrictionItem("Pattern", node.restrictions.pattern.join(", "))
+        );
       }
 
       // Length constraint

@@ -154,8 +154,7 @@ describe("PropertyPanel", () => {
       panel.display(item);
 
       expect(container.textContent).toContain("Restrictions:");
-      expect(container.textContent).toContain("Enumeration:");
-      expect(container.textContent).toContain("error, warning, info, debug");
+      expectAdjacentText(container, "Enumeration:", "error, warning, info, debug");
     });
 
     it("should display pattern restrictions", () => {
@@ -168,8 +167,7 @@ describe("PropertyPanel", () => {
       panel.display(item);
 
       expect(container.textContent).toContain("Restrictions:");
-      expect(container.textContent).toContain("Pattern:");
-      expect(container.textContent).toContain("[A-Z]{3}, [0-9]+");
+      expectAdjacentText(container, "Pattern:", "[A-Z]{3}, [0-9]+");
     });
 
     it("should display length restrictions", () => {
@@ -182,8 +180,7 @@ describe("PropertyPanel", () => {
       panel.display(item);
 
       expect(container.textContent).toContain("Restrictions:");
-      expect(container.textContent).toContain("Length:");
-      expect(container.textContent).toContain("10");
+      expectAdjacentText(container, "Length:", "10");
     });
 
     it("should display min/max length restrictions", () => {
@@ -261,8 +258,7 @@ describe("PropertyPanel", () => {
       panel.display(item);
 
       expect(container.textContent).toContain("Restrictions:");
-      expect(container.textContent).toContain("White Space:");
-      expect(container.textContent).toContain("collapse");
+      expectAdjacentText(container, "White Space:", "collapse");
     });
 
     it("should display multiple restrictions together", () => {
@@ -287,10 +283,10 @@ describe("PropertyPanel", () => {
       expect(container.textContent).toContain("max: 5");
     });
 
-    it("should not display restrictions section when restrictions is null", () => {
+    it("should not display restrictions section when restrictions is undefined", () => {
       expect.hasAssertions();
       const item = new DiagramItem("test-1", "NoRestrictions", DiagramItemType.type, diagram);
-      item.restrictions = null;
+      item.restrictions = undefined;
 
       panel.display(item);
 

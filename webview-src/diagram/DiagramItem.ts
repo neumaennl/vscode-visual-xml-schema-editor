@@ -58,7 +58,7 @@ export class DiagramItem {
   }> = [];
 
   // Restrictions (for simpleType restrictions)
-  public restrictions: {
+  public restrictions?: {
     enumeration?: string[];
     pattern?: string[];
     length?: number;
@@ -71,7 +71,7 @@ export class DiagramItem {
     totalDigits?: number;
     fractionDigits?: number;
     whiteSpace?: string;
-  } | null = null;
+  };
 
   // Reference to diagram for accessing settings
   public diagram: Diagram | null = null;

@@ -5,28 +5,8 @@
  */
 
 import { DiagramItem } from "./DiagramItem";
+import type { ElementWithOccurrence, ElementWithAttributes } from "./DiagramTypes";
 import type { annotationType } from "../../shared/generated/annotationType";
-import type { attribute } from "../../shared/generated/attribute";
-import type { allNNI } from "../../shared/generated/types";
-
-/**
- * Interface for schema elements that have occurrence constraints.
- * This includes localElement, groupRef, and other elements that can appear
- * within complex types.
- */
-export interface ElementWithOccurrence {
-  minOccurs?: number;
-  maxOccurs?: allNNI;
-}
-
-/**
- * Interface for schema elements that have attribute definitions.
- * This includes complexType, extension, and restriction definitions.
- * Uses the generated attribute class directly.
- */
-export interface ElementWithAttributes {
-  attribute?: attribute | attribute[];
-}
 
 /**
  * Normalizes a value to an array (handles both single values and arrays).

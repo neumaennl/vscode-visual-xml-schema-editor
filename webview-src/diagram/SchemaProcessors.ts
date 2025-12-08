@@ -4,57 +4,24 @@
  */
 
 import { DiagramItem } from "./DiagramItem";
-import { DiagramItemType, DiagramItemGroupType } from "./DiagramTypes";
+import {
+  DiagramItemType,
+  DiagramItemGroupType,
+  ComplexTypeLike,
+  SimpleTypeLike,
+  ContentTypeLike,
+  GroupDefLike,
+} from "./DiagramTypes";
 import {
   toArray,
   generateId,
   extractDocumentation,
   extractAttributes,
   extractOccurrenceConstraints,
-  ElementWithAttributes,
 } from "./DiagramBuilderHelpers";
+import type { localElement } from "../../shared/generated/localElement";
 import type { explicitGroup } from "../../shared/generated/explicitGroup";
 import type { all } from "../../shared/generated/all";
-import type { localElement } from "../../shared/generated/localElement";
-import type { localComplexType } from "../../shared/generated/localComplexType";
-import type { topLevelComplexType } from "../../shared/generated/topLevelComplexType";
-import type { localSimpleType } from "../../shared/generated/localSimpleType";
-import type { topLevelSimpleType } from "../../shared/generated/topLevelSimpleType";
-
-/**
- * Union type for complex type structures (localComplexType, topLevelComplexType).
- * These types share common structure for sequences, choices, all groups, and attributes.
- */
-type ComplexTypeLike = localComplexType | topLevelComplexType;
-
-/**
- * Union type for simple type structures (localSimpleType, topLevelSimpleType).
- * These types share common structure for restrictions.
- */
-type SimpleTypeLike = localSimpleType | topLevelSimpleType;
-
-/**
- * Interface for extension/restriction structures that may have attributes and content model groups.
- * This interface allows processing both complex and simple content extensions/restrictions uniformly.
- */
-interface ContentTypeLike extends ElementWithAttributes {
-  base?: string;
-  sequence?: explicitGroup;
-  choice?: explicitGroup;
-  all?: all;
-}
-
-/**
- * Interface for group reference structures that need expansion.
- * Represents sequence, choice, or all group structures.
- * Note: sequence and choice can be arrays because groups can be nested.
- */
-interface GroupDefLike {
-  element?: unknown;
-  sequence?: explicitGroup | explicitGroup[];
-  choice?: explicitGroup | explicitGroup[];
-  all?: all;
-}
 
 /**
  * Processes child items from a schema collection and adds them to a parent.

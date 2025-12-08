@@ -5,7 +5,8 @@
  */
 
 import { DiagramItem } from "./DiagramItem";
-import { annotationType } from "../../shared/generated";
+import type { annotationType } from "../../shared/generated/annotationType";
+import type { attribute } from "../../shared/generated/attribute";
 import type { allNNI } from "../../shared/generated/types";
 
 /**
@@ -13,29 +14,18 @@ import type { allNNI } from "../../shared/generated/types";
  * This includes localElement, groupRef, and other elements that can appear
  * within complex types.
  */
-interface ElementWithOccurrence {
+export interface ElementWithOccurrence {
   minOccurs?: number;
   maxOccurs?: allNNI;
 }
 
 /**
- * Interface for attribute-like objects from schema.
- * Captures the common properties used when extracting attributes.
- */
-interface AttributeLike {
-  name?: string;
-  type_?: string;
-  use?: string;
-  default_?: string;
-  fixed?: string;
-}
-
-/**
  * Interface for schema elements that have attribute definitions.
  * This includes complexType, extension, and restriction definitions.
+ * Uses the generated attribute class directly.
  */
-interface ElementWithAttributes {
-  attribute?: AttributeLike | AttributeLike[];
+export interface ElementWithAttributes {
+  attribute?: attribute | attribute[];
 }
 
 /**

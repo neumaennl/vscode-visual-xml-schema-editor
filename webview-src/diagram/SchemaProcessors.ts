@@ -11,73 +11,37 @@ import {
   extractDocumentation,
   extractAttributes,
   extractOccurrenceConstraints,
+  ElementWithAttributes,
 } from "./DiagramBuilderHelpers";
-import type { annotationType } from "../../shared/generated/annotationType";
 import type { explicitGroup } from "../../shared/generated/explicitGroup";
 import type { all } from "../../shared/generated/all";
 import type { localElement } from "../../shared/generated/localElement";
+import type { localComplexType } from "../../shared/generated/localComplexType";
+import type { topLevelComplexType } from "../../shared/generated/topLevelComplexType";
+import type { localSimpleType } from "../../shared/generated/localSimpleType";
+import type { topLevelSimpleType } from "../../shared/generated/topLevelSimpleType";
 
 /**
- * Interface for attribute-like objects from schema.
- * Re-export from DiagramBuilderHelpers for consistency.
+ * Union type for complex type structures (localComplexType, topLevelComplexType).
+ * These types share common structure for sequences, choices, all groups, and attributes.
  */
-interface AttributeLike {
-  name?: string;
-  type_?: string;
-  use?: string;
-  default_?: string;
-  fixed?: string;
-}
+type ComplexTypeLike = localComplexType | topLevelComplexType;
 
 /**
- * Interface for complex type structures (localComplexType, topLevelComplexType).
- * Captures the common properties used when processing complex types.
+ * Union type for simple type structures (localSimpleType, topLevelSimpleType).
+ * These types share common structure for restrictions.
  */
-interface ComplexTypeLike {
-  annotation?: annotationType;
-  simpleContent?: {
-    extension?: ExtensionLike;
-    restriction?: RestrictionLike;
-  };
-  complexContent?: {
-    extension?: ExtensionLike;
-    restriction?: RestrictionLike;
-  };
-  sequence?: explicitGroup;
-  choice?: explicitGroup;
-  all?: all;
-  attribute?: AttributeLike | AttributeLike[];
-}
+type SimpleTypeLike = localSimpleType | topLevelSimpleType;
 
 /**
- * Interface for simple type structures (localSimpleType, topLevelSimpleType).
- * Captures the common properties used when processing simple types.
+ * Interface for extension/restriction structures that may have attributes and content model groups.
+ * This interface allows processing both complex and simple content extensions/restrictions uniformly.
  */
-interface SimpleTypeLike {
-  annotation?: annotationType;
-  restriction?: RestrictionLike;
-}
-
-/**
- * Interface for extension structures in complexContent/simpleContent.
- */
-interface ExtensionLike {
+interface ContentTypeLike extends ElementWithAttributes {
   base?: string;
   sequence?: explicitGroup;
   choice?: explicitGroup;
   all?: all;
-  attribute?: AttributeLike | AttributeLike[];
-}
-
-/**
- * Interface for restriction structures in complexContent/simpleContent.
- */
-interface RestrictionLike {
-  base?: string;
-  sequence?: explicitGroup;
-  choice?: explicitGroup;
-  all?: all;
-  attribute?: AttributeLike | AttributeLike[];
 }
 
 /**
@@ -313,7 +277,7 @@ function processGroup(
  * @param parent - Parent diagram item to extend
  * @param extension - Extension definition from schema
  */
-export function processExtension(parent: DiagramItem, extension: ExtensionLike): void {
+export function processExtension(parent: DiagramItem, extension: ContentTypeLike): void {
   // Extract base type - append to existing type info
   if (extension.base) {
     parent.type += ` (extends ${extension.base})`;
@@ -345,7 +309,7 @@ export function processExtension(parent: DiagramItem, extension: ExtensionLike):
  * @param parent - Parent diagram item being restricted
  * @param restriction - Restriction definition from schema
  */
-export function processRestriction(parent: DiagramItem, restriction: RestrictionLike): void {
+export function processRestriction(parent: DiagramItem, restriction: ContentTypeLike): void {
   // Extract base type from restriction - append to existing type info
   if (restriction.base) {
     parent.type += ` (restricts ${restriction.base})`;

@@ -110,16 +110,13 @@ export class PropertyPanel {
 
       // Length constraint
       if (node.restrictions.length !== undefined) {
-        const lengthDiv = document.createElement("div");
-        lengthDiv.className = "restriction-item";
-        lengthDiv.innerHTML = `<strong>Length:</strong> ${node.restrictions.length}`;
-        restrictionList.appendChild(lengthDiv);
+        restrictionList.appendChild(
+          this.createRestrictionItem("Length", node.restrictions.length)
+        );
       }
 
       // Min/Max length constraints
       if (node.restrictions.minLength !== undefined || node.restrictions.maxLength !== undefined) {
-        const lengthDiv = document.createElement("div");
-        lengthDiv.className = "restriction-item";
         const parts: string[] = [];
         if (node.restrictions.minLength !== undefined) {
           parts.push(`min: ${node.restrictions.minLength}`);
@@ -127,8 +124,9 @@ export class PropertyPanel {
         if (node.restrictions.maxLength !== undefined) {
           parts.push(`max: ${node.restrictions.maxLength}`);
         }
-        lengthDiv.innerHTML = `<strong>Length Range:</strong> ${parts.join(", ")}`;
-        restrictionList.appendChild(lengthDiv);
+        restrictionList.appendChild(
+          this.createRestrictionItem("Length Range", parts.join(", "))
+        );
       }
 
       // Min/Max value constraints
@@ -146,34 +144,30 @@ export class PropertyPanel {
         valueConstraints.push(`< ${node.restrictions.maxExclusive}`);
       }
       if (valueConstraints.length > 0) {
-        const valueDiv = document.createElement("div");
-        valueDiv.className = "restriction-item";
-        valueDiv.innerHTML = `<strong>Value Range:</strong> ${valueConstraints.join(", ")}`;
-        restrictionList.appendChild(valueDiv);
+        restrictionList.appendChild(
+          this.createRestrictionItem("Value Range", valueConstraints.join(", "))
+        );
       }
 
       // Total digits
       if (node.restrictions.totalDigits !== undefined) {
-        const digitsDiv = document.createElement("div");
-        digitsDiv.className = "restriction-item";
-        digitsDiv.innerHTML = `<strong>Total Digits:</strong> ${node.restrictions.totalDigits}`;
-        restrictionList.appendChild(digitsDiv);
+        restrictionList.appendChild(
+          this.createRestrictionItem("Total Digits", node.restrictions.totalDigits)
+        );
       }
 
       // Fraction digits
       if (node.restrictions.fractionDigits !== undefined) {
-        const fracDiv = document.createElement("div");
-        fracDiv.className = "restriction-item";
-        fracDiv.innerHTML = `<strong>Fraction Digits:</strong> ${node.restrictions.fractionDigits}`;
-        restrictionList.appendChild(fracDiv);
+        restrictionList.appendChild(
+          this.createRestrictionItem("Fraction Digits", node.restrictions.fractionDigits)
+        );
       }
 
       // White space
       if (node.restrictions.whiteSpace !== undefined) {
-        const wsDiv = document.createElement("div");
-        wsDiv.className = "restriction-item";
-        wsDiv.innerHTML = `<strong>White Space:</strong> ${node.restrictions.whiteSpace}`;
-        restrictionList.appendChild(wsDiv);
+        restrictionList.appendChild(
+          this.createRestrictionItem("White Space", node.restrictions.whiteSpace)
+        );
       }
 
       // Only add the restrictions section if we have content
@@ -248,6 +242,28 @@ export class PropertyPanel {
     propertyDiv.appendChild(labelEl);
     propertyDiv.appendChild(element);
     this.container.appendChild(propertyDiv);
+  }
+
+  /**
+   * Creates a restriction item div with label and value safely.
+   * 
+   * @param label - The restriction label
+   * @param value - The restriction value as string or number
+   * @returns A div element containing the formatted restriction
+   */
+  private createRestrictionItem(label: string, value: string | number): HTMLDivElement {
+    const div = document.createElement("div");
+    div.className = "restriction-item";
+
+    const labelEl = document.createElement("strong");
+    labelEl.textContent = `${label}: `;
+    div.appendChild(labelEl);
+
+    const valueEl = document.createElement("span");
+    valueEl.textContent = String(value);
+    div.appendChild(valueEl);
+
+    return div;
   }
 
   /**

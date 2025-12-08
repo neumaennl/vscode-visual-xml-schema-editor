@@ -32,6 +32,29 @@ import type { restrictionType_1 } from "../../shared/generated/restrictionType_1
 type RestrictionTypeLike = restrictionType | restrictionType_1 | ContentTypeLike;
 
 /**
+ * Type guard to check if a restriction has simple type facets.
+ * These facets are present on restrictionType and restrictionType_1.
+ */
+function hasSimpleTypeFacets(
+  restriction: RestrictionTypeLike
+): restriction is restrictionType | restrictionType_1 {
+  return (
+    'enumeration' in restriction ||
+    'pattern' in restriction ||
+    'length' in restriction ||
+    'minLength' in restriction ||
+    'maxLength' in restriction ||
+    'minInclusive' in restriction ||
+    'maxInclusive' in restriction ||
+    'minExclusive' in restriction ||
+    'maxExclusive' in restriction ||
+    'totalDigits' in restriction ||
+    'fractionDigits' in restriction ||
+    'whiteSpace' in restriction
+  );
+}
+
+/**
  * Processes child items from a schema collection and adds them to a parent.
  * Uses a factory function to create diagram items from schema items.
  * 
@@ -292,39 +315,26 @@ function hasElements(arr: unknown): boolean {
  * @param restriction - Restriction definition from schema (any type with restriction facets)
  */
 export function extractRestrictionFacets(parent: DiagramItem, restriction: RestrictionTypeLike): void {
-  // Cast to any to access properties that may or may not exist on all restriction types
-  // This is necessary because ContentTypeLike doesn't have all the restriction facet properties
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
-  const r = restriction as any;
-  
+  // Early return if the restriction doesn't have simple type facets
+  if (!hasSimpleTypeFacets(restriction)) {
+    return;
+  }
+
+  // Now TypeScript knows restriction has the facet properties
   // Check if there are any restriction facets to extract
-   
-  const hasRestrictions = (
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    hasElements(r.enumeration) || 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    hasElements(r.pattern) || 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    hasElements(r.length) || 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    hasElements(r.minLength) || 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    hasElements(r.maxLength) ||
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    hasElements(r.minInclusive) || 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    hasElements(r.maxInclusive) ||
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    hasElements(r.minExclusive) || 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    hasElements(r.maxExclusive) ||
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    hasElements(r.totalDigits) || 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    hasElements(r.fractionDigits) ||
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    hasElements(r.whiteSpace)
-  );
+  const hasRestrictions = 
+    hasElements(restriction.enumeration) || 
+    hasElements(restriction.pattern) || 
+    hasElements(restriction.length) || 
+    hasElements(restriction.minLength) || 
+    hasElements(restriction.maxLength) ||
+    hasElements(restriction.minInclusive) || 
+    hasElements(restriction.maxInclusive) ||
+    hasElements(restriction.minExclusive) || 
+    hasElements(restriction.maxExclusive) ||
+    hasElements(restriction.totalDigits) || 
+    hasElements(restriction.fractionDigits) ||
+    hasElements(restriction.whiteSpace);
 
   if (!hasRestrictions) {
     return;
@@ -336,81 +346,57 @@ export function extractRestrictionFacets(parent: DiagramItem, restriction: Restr
   }
 
   // Extract enumeration values
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-  if (hasElements(r.enumeration)) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
-    parent.restrictions.enumeration = r.enumeration.map((e: { value: string }) => e.value);
+  if (restriction.enumeration && hasElements(restriction.enumeration)) {
+    parent.restrictions.enumeration = restriction.enumeration.map((e) => e.value);
   }
 
   // Extract pattern values
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-  if (hasElements(r.pattern)) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
-    parent.restrictions.pattern = r.pattern.map((p: { value: string }) => p.value);
+  if (restriction.pattern && hasElements(restriction.pattern)) {
+    parent.restrictions.pattern = restriction.pattern.map((p) => p.value);
   }
 
   // Extract length constraints (only the first one is used per XSD spec)
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-  if (hasElements(r.length)) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
-    parent.restrictions.length = r.length[0].value;
+  if (restriction.length && hasElements(restriction.length)) {
+    parent.restrictions.length = restriction.length[0].value;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-  if (hasElements(r.minLength)) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
-    parent.restrictions.minLength = r.minLength[0].value;
+  if (restriction.minLength && hasElements(restriction.minLength)) {
+    parent.restrictions.minLength = restriction.minLength[0].value;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-  if (hasElements(r.maxLength)) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
-    parent.restrictions.maxLength = r.maxLength[0].value;
+  if (restriction.maxLength && hasElements(restriction.maxLength)) {
+    parent.restrictions.maxLength = restriction.maxLength[0].value;
   }
 
   // Extract min/max value constraints (only the first one is used per XSD spec)
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-  if (hasElements(r.minInclusive)) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
-    parent.restrictions.minInclusive = r.minInclusive[0].value;
+  if (restriction.minInclusive && hasElements(restriction.minInclusive)) {
+    parent.restrictions.minInclusive = restriction.minInclusive[0].value;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-  if (hasElements(r.maxInclusive)) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
-    parent.restrictions.maxInclusive = r.maxInclusive[0].value;
+  if (restriction.maxInclusive && hasElements(restriction.maxInclusive)) {
+    parent.restrictions.maxInclusive = restriction.maxInclusive[0].value;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-  if (hasElements(r.minExclusive)) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
-    parent.restrictions.minExclusive = r.minExclusive[0].value;
+  if (restriction.minExclusive && hasElements(restriction.minExclusive)) {
+    parent.restrictions.minExclusive = restriction.minExclusive[0].value;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-  if (hasElements(r.maxExclusive)) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
-    parent.restrictions.maxExclusive = r.maxExclusive[0].value;
+  if (restriction.maxExclusive && hasElements(restriction.maxExclusive)) {
+    parent.restrictions.maxExclusive = restriction.maxExclusive[0].value;
   }
 
   // Extract digit constraints
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-  if (hasElements(r.totalDigits)) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
-    parent.restrictions.totalDigits = r.totalDigits[0].value;
+  if (restriction.totalDigits && hasElements(restriction.totalDigits)) {
+    parent.restrictions.totalDigits = restriction.totalDigits[0].value;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-  if (hasElements(r.fractionDigits)) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
-    parent.restrictions.fractionDigits = r.fractionDigits[0].value;
+  if (restriction.fractionDigits && hasElements(restriction.fractionDigits)) {
+    parent.restrictions.fractionDigits = restriction.fractionDigits[0].value;
   }
 
   // Extract whiteSpace constraint
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-  if (hasElements(r.whiteSpace)) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
-    parent.restrictions.whiteSpace = r.whiteSpace[0].value;
+  if (restriction.whiteSpace && hasElements(restriction.whiteSpace)) {
+    parent.restrictions.whiteSpace = restriction.whiteSpace[0].value;
   }
 }
 

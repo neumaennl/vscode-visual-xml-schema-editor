@@ -90,8 +90,7 @@ module.exports = [
           varsIgnorePattern: '^_',
         },
       ],
-      // Disabled to allow type inference for cleaner code
-      '@typescript-eslint/explicit-function-return-type': 'off',
+      '@typescript-eslint/explicit-function-return-type': 'error',
       // Disabled to allow type inference at module boundaries
       '@typescript-eslint/explicit-module-boundary-types': 'off',
       '@typescript-eslint/no-explicit-any': 'error',

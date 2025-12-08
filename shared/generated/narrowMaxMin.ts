@@ -1,5 +1,6 @@
 import { XmlRoot, XmlElement, XmlAttribute, XmlAnyAttribute } from '@neumaennl/xmlbind-ts';
-import { blockSet, formChoice } from './enums';
+import type { blockSet } from './types';
+import { formChoice } from './enums';
 import { annotationType } from './annotationType';
 import { localSimpleType } from './localSimpleType';
 import { localComplexType } from './localComplexType';
@@ -14,25 +15,25 @@ export class narrowMaxMin {
   _anyAttributes?: { [name: string]: string };
 
   @XmlAttribute('id')
-  id?: String;
+  id?: string;
 
   @XmlAttribute('name')
-  name?: String;
+  name?: string;
 
   @XmlAttribute('ref')
-  ref?: String;
+  ref?: string;
 
   @XmlAttribute('type')
-  type_?: String;
+  type_?: string;
 
   @XmlAttribute('default')
-  default_?: String;
+  default_?: string;
 
   @XmlAttribute('fixed')
-  fixed?: String;
+  fixed?: string;
 
   @XmlAttribute('nillable')
-  nillable?: Boolean;
+  nillable?: boolean;
 
   @XmlAttribute('block')
   block?: blockSet;
@@ -41,10 +42,10 @@ export class narrowMaxMin {
   form?: formChoice;
 
   @XmlAttribute('minOccurs')
-  minOccurs?: String;
+  minOccurs?: string;
 
   @XmlAttribute('maxOccurs')
-  maxOccurs?: String;
+  maxOccurs?: string;
 
   @XmlElement('annotation', { type: () => annotationType, namespace: 'http://www.w3.org/2001/XMLSchema' })
   annotation?: annotationType;

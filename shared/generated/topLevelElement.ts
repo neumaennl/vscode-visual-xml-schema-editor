@@ -1,5 +1,5 @@
 import { XmlRoot, XmlElement, XmlAttribute, XmlAnyAttribute } from '@neumaennl/xmlbind-ts';
-import { blockSet, derivationSet } from './enums';
+import type { blockSet, derivationSet } from './types';
 import { annotationType } from './annotationType';
 import { localSimpleType } from './localSimpleType';
 import { localComplexType } from './localComplexType';
@@ -11,25 +11,25 @@ export class topLevelElement {
   _anyAttributes?: { [name: string]: string };
 
   @XmlAttribute('id')
-  id?: String;
+  id?: string;
 
   @XmlAttribute('type')
-  type_?: String;
+  type_?: string;
 
   @XmlAttribute('substitutionGroup')
-  substitutionGroup?: String;
+  substitutionGroup?: string;
 
   @XmlAttribute('default')
-  default_?: String;
+  default_?: string;
 
   @XmlAttribute('fixed')
-  fixed?: String;
+  fixed?: string;
 
   @XmlAttribute('nillable')
-  nillable?: Boolean;
+  nillable?: boolean;
 
   @XmlAttribute('abstract')
-  abstract?: Boolean;
+  abstract?: boolean;
 
   @XmlAttribute('final')
   final?: derivationSet;
@@ -38,7 +38,7 @@ export class topLevelElement {
   block?: blockSet;
 
   @XmlAttribute('name')
-  name!: String;
+  name!: string;
 
   @XmlElement('annotation', { type: () => annotationType, namespace: 'http://www.w3.org/2001/XMLSchema' })
   annotation?: annotationType;

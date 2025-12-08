@@ -1,5 +1,5 @@
 import { XmlRoot, XmlElement, XmlAttribute, XmlAnyAttribute } from '@neumaennl/xmlbind-ts';
-import { derivationSet } from './enums';
+import type { derivationSet } from './types';
 import { annotationType } from './annotationType';
 import { simpleContentType } from './simpleContentType';
 import { complexContentType } from './complexContentType';
@@ -15,13 +15,13 @@ export class topLevelComplexType {
   _anyAttributes?: { [name: string]: string };
 
   @XmlAttribute('id')
-  id?: String;
+  id?: string;
 
   @XmlAttribute('mixed')
-  mixed?: Boolean;
+  mixed?: boolean;
 
   @XmlAttribute('abstract')
-  abstract?: Boolean;
+  abstract?: boolean;
 
   @XmlAttribute('final')
   final?: derivationSet;
@@ -30,7 +30,7 @@ export class topLevelComplexType {
   block?: derivationSet;
 
   @XmlAttribute('name')
-  name!: String;
+  name!: string;
 
   @XmlElement('annotation', { type: () => annotationType, namespace: 'http://www.w3.org/2001/XMLSchema' })
   annotation?: annotationType;

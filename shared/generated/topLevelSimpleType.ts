@@ -1,5 +1,5 @@
 import { XmlRoot, XmlElement, XmlAttribute, XmlAnyAttribute } from '@neumaennl/xmlbind-ts';
-import { simpleDerivationSet } from './enums';
+import type { simpleDerivationSet } from './types';
 import { annotationType } from './annotationType';
 import { restrictionType } from './restrictionType';
 import { listType } from './listType';
@@ -13,13 +13,13 @@ export class topLevelSimpleType {
   _anyAttributes?: { [name: string]: string };
 
   @XmlAttribute('id')
-  id?: String;
+  id?: string;
 
   @XmlAttribute('final')
   final?: simpleDerivationSet;
 
   @XmlAttribute('name')
-  name!: String;
+  name!: string;
 
   @XmlElement('annotation', { type: () => annotationType, namespace: 'http://www.w3.org/2001/XMLSchema' })
   annotation?: annotationType;

@@ -64,7 +64,7 @@ jobs:
 
       - name: Publish JUnit test report to GitHub Checks
         if: always()
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v2
         with:
           name: Jest
           path: test-results/jest-junit.xml

@@ -9,6 +9,7 @@ module.exports = [
     ignores: [
       'out/',
       'dist/',
+      'webview/',
       'node_modules/',
       '**/*.d.ts',
       '**/generated/**',

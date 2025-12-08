@@ -3,6 +3,15 @@
  * Based on https://github.com/dgis/xsddiagram
  */
 
+import type { attribute } from "../../shared/generated/attribute";
+import type { allNNI } from "../../shared/generated/types";
+import type { explicitGroup } from "../../shared/generated/explicitGroup";
+import type { all } from "../../shared/generated/all";
+import type { localComplexType } from "../../shared/generated/localComplexType";
+import type { topLevelComplexType } from "../../shared/generated/topLevelComplexType";
+import type { localSimpleType } from "../../shared/generated/localSimpleType";
+import type { topLevelSimpleType } from "../../shared/generated/topLevelSimpleType";
+
 export enum DiagramItemType {
   element = "element",
   group = "group",
@@ -32,6 +41,55 @@ export interface Rectangle {
   width: number;
   height: number;
 }
+
+/**
+ * Interface for schema elements that have occurrence constraints.
+ * This includes localElement, groupRef, and other elements that can appear
+ * within complex types.
+ */
+export interface ElementWithOccurrence {
+  minOccurs?: number;
+  maxOccurs?: allNNI;
+}
+
+/**
+ * Interface for schema elements that have attribute definitions.
+ * This includes complexType, extension, and restriction definitions.
+ * Uses the generated attribute class directly.
+ */
+export interface ElementWithAttributes {
+  attribute?: attribute | attribute[];
+}
+
+/**
+ * Union type for complex type structures (localComplexType, topLevelComplexType).
+ * These types share common structure for sequences, choices, all groups, and attributes.
+ */
+export type ComplexTypeLike = localComplexType | topLevelComplexType;
+
+/**
+ * Union type for simple type structures (localSimpleType, topLevelSimpleType).
+ * These types share common structure for restrictions.
+ */
+export type SimpleTypeLike = localSimpleType | topLevelSimpleType;
+
+/**
+ * Interface for extension/restriction structures that may have attributes and content model groups.
+ * This interface allows processing both complex and simple content extensions/restrictions uniformly.
+ */
+export interface ContentTypeLike extends ElementWithAttributes {
+  base?: string;
+  sequence?: explicitGroup;
+  choice?: explicitGroup;
+  all?: all;
+}
+
+/**
+ * Union type for group structures that need expansion.
+ * Represents sequence, choice, or all group structures.
+ * Includes the generated schema types directly.
+ */
+export type GroupDefLike = explicitGroup | all;
 
 export interface DiagramStyle {
   fontFamily: string;

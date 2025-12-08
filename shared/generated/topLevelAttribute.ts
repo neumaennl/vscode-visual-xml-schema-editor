@@ -7,19 +7,19 @@ export class topLevelAttribute {
   _anyAttributes?: { [name: string]: string };
 
   @XmlAttribute('id')
-  id?: String;
+  id?: string;
 
   @XmlAttribute('type')
-  type_?: String;
+  type_?: string;
 
   @XmlAttribute('default')
-  default_?: String;
+  default_?: string;
 
   @XmlAttribute('fixed')
-  fixed?: String;
+  fixed?: string;
 
   @XmlAttribute('name')
-  name!: String;
+  name!: string;
 
   @XmlElement('annotation', { type: () => annotationType, namespace: 'http://www.w3.org/2001/XMLSchema' })
   annotation?: annotationType;

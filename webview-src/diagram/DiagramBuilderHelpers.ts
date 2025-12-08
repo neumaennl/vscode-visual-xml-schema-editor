@@ -5,7 +5,8 @@
  */
 
 import { DiagramItem } from "./DiagramItem";
-import { annotationType } from "../../shared/generated";
+import type { ElementWithOccurrence, ElementWithAttributes } from "./DiagramTypes";
+import type { annotationType } from "../../shared/generated/annotationType";
 
 /**
  * Normalizes a value to an array (handles both single values and arrays).
@@ -53,15 +54,14 @@ export function extractDocumentation(annotation?: annotationType): string | unde
  */
 export function extractOccurrenceConstraints(
   item: DiagramItem,
-  source: any
+  source: ElementWithOccurrence
 ): void {
   if (source.minOccurs !== undefined) {
-    item.minOccurrence = parseInt(source.minOccurs.toString(), 10) || 0;
+    item.minOccurrence = source.minOccurs;
   }
   if (source.maxOccurs !== undefined) {
-    const maxOccurs = source.maxOccurs.toString();
     item.maxOccurrence =
-      maxOccurs === "unbounded" ? -1 : parseInt(maxOccurs, 10) || 1;
+      source.maxOccurs === "unbounded" ? -1 : source.maxOccurs;
   }
 }
 
@@ -72,7 +72,7 @@ export function extractOccurrenceConstraints(
  * @param item - Diagram item to add attributes to
  * @param source - Source object that may contain attribute definitions
  */
-export function extractAttributes(item: DiagramItem, source: any): void {
+export function extractAttributes(item: DiagramItem, source: ElementWithAttributes | null | undefined): void {
   if (!source) {
     return;
   }
@@ -85,11 +85,11 @@ export function extractAttributes(item: DiagramItem, source: any): void {
     }
 
     item.attributes.push({
-      name: attr.name.toString(),
-      type: attr.type_ ? attr.type_.toString() : "inner simpleType or ref",
-      use: attr.use ? attr.use.toString() : undefined,
-      defaultValue: attr.default_ ? attr.default_.toString() : undefined,
-      fixedValue: attr.fixed ? attr.fixed.toString() : undefined,
+      name: attr.name,
+      type: attr.type_ || "inner simpleType or ref",
+      use: attr.use,
+      defaultValue: attr.default_,
+      fixedValue: attr.fixed,
     });
   }
 }

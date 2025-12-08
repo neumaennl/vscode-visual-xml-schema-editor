@@ -13,7 +13,7 @@ import { patternType } from './patternType';
  */
 export class restrictionType_1 extends annotated {
   @XmlAttribute('base')
-  base?: String;
+  base?: string;
 
   @XmlElement('simpleType', { type: () => localSimpleType, namespace: 'http://www.w3.org/2001/XMLSchema' })
   simpleType?: localSimpleType;

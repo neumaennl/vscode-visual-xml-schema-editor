@@ -7,7 +7,7 @@ import {
   WebviewState,
 } from "./webviewTypes";
 import { DiagramItem } from "./diagram";
-import { ExtensionMessage } from "../shared/messages";
+import { ExtensionMessage, DiagramOptions } from "../shared/messages";
 
 declare function acquireVsCodeApi<State>(): VSCodeAPI<State>;
 
@@ -17,6 +17,7 @@ class SchemaEditorApp {
   private propertyPanel: PropertyPanel;
   private currentSchema: schema | undefined;
   private viewState: ViewState;
+  private diagramOptions: DiagramOptions;
 
   /**
    * Create and initialize the schema editor application
@@ -24,6 +25,11 @@ class SchemaEditorApp {
   constructor() {
     this.vscode = acquireVsCodeApi<WebviewState>();
     this.viewState = { zoom: 1, panX: 0, panY: 0 };
+    this.diagramOptions = {
+      showDocumentation: false,
+      alwaysShowOccurrence: false,
+      showType: false,
+    };
 
     const canvas = document.getElementById("schema-canvas");
     if (!canvas || !(canvas instanceof SVGSVGElement)) {
@@ -43,6 +49,7 @@ class SchemaEditorApp {
     const state = this.vscode.getState();
     if (state) {
       this.viewState = state.viewState || this.viewState;
+      this.diagramOptions = state.diagramOptions || this.diagramOptions;
       if (state.schema) {
         this.currentSchema = state.schema;
         this.renderSchema(state.schema);
@@ -64,6 +71,16 @@ class SchemaEditorApp {
             this.currentSchema = message.data;
             this.renderSchema(message.data);
             this.saveState();
+            break;
+          }
+
+          case "updateDiagramOptions": {
+            this.diagramOptions = message.data;
+            this.saveState();
+            // Re-render with new options if schema is loaded
+            if (this.currentSchema) {
+              this.renderSchema(this.currentSchema);
+            }
             break;
           }
 
@@ -93,6 +110,7 @@ class SchemaEditorApp {
       // The renderer will need to traverse the schema structure
       this.renderer.renderSchema(
         schemaObj,
+        this.diagramOptions,
         (item: DiagramItem, isExpandButton: boolean) => {
           this.onNodeClick(item, isExpandButton);
         }
@@ -304,6 +322,7 @@ class SchemaEditorApp {
     this.vscode.setState({
       schema: this.currentSchema,
       viewState: this.viewState,
+      diagramOptions: this.diagramOptions,
     });
   }
 }

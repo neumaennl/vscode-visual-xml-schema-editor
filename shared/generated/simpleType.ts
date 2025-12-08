@@ -1,5 +1,5 @@
 import { XmlRoot, XmlElement, XmlAttribute } from '@neumaennl/xmlbind-ts';
-import { simpleDerivationSet } from './enums';
+import type { simpleDerivationSet } from './types';
 import { annotated } from './annotated';
 import { restrictionType } from './restrictionType';
 import { listType } from './listType';
@@ -16,7 +16,7 @@ export class simpleType extends annotated {
    * Can be restricted to required or forbidden
    */
   @XmlAttribute('name')
-  name?: String;
+  name?: string;
 
   /**
    * base attribute and simpleType child are mutually

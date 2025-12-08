@@ -72,14 +72,14 @@ describe("DiagramBuilderHelpers", () => {
     });
 
     it("should extract minOccurs and maxOccurs", () => {
-      const source = { minOccurs: "0", maxOccurs: "10" };
+      const source = { minOccurs: 0, maxOccurs: 10 };
       extractOccurrenceConstraints(item, source);
       expect(item.minOccurrence).toBe(0);
       expect(item.maxOccurrence).toBe(10);
     });
 
     it("should handle unbounded maxOccurs", () => {
-      const source = { maxOccurs: "unbounded" };
+      const source = { maxOccurs: "unbounded" as const };
       extractOccurrenceConstraints(item, source);
       expect(item.maxOccurrence).toBe(-1);
     });

@@ -7,7 +7,7 @@ import { localSimpleType } from './localSimpleType';
  */
 export class listType extends annotated {
   @XmlAttribute('itemType')
-  itemType?: String;
+  itemType?: string;
 
   @XmlElement('simpleType', { type: () => localSimpleType, namespace: 'http://www.w3.org/2001/XMLSchema' })
   simpleType?: localSimpleType;

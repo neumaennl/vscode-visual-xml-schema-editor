@@ -1,5 +1,6 @@
 import { XmlRoot, XmlElement, XmlAttribute } from '@neumaennl/xmlbind-ts';
-import { allNNI, blockSet, derivationSet, formChoice } from './enums';
+import type { allNNI, blockSet, derivationSet } from './types';
+import { formChoice } from './enums';
 import { annotated } from './annotated';
 import { localSimpleType } from './localSimpleType';
 import { localComplexType } from './localComplexType';
@@ -15,22 +16,22 @@ import { keyrefType } from './keyrefType';
 @XmlRoot('element', { namespace: 'http://www.w3.org/2001/XMLSchema', prefixes: { 'http://www.w3.org/2001/XMLSchema': 'xs', 'http://www.w3.org/2001/XMLSchema-hasFacetAndProperty': 'hfp', 'http://www.w3.org/XML/1998/namespace': 'imp1' } })
 export class element extends annotated {
   @XmlAttribute('type')
-  type_?: String;
+  type_?: string;
 
   @XmlAttribute('substitutionGroup')
-  substitutionGroup?: String;
+  substitutionGroup?: string;
 
   @XmlAttribute('default')
-  default_?: String;
+  default_?: string;
 
   @XmlAttribute('fixed')
-  fixed?: String;
+  fixed?: string;
 
   @XmlAttribute('nillable')
-  nillable?: Boolean;
+  nillable?: boolean;
 
   @XmlAttribute('abstract')
-  abstract?: Boolean;
+  abstract?: boolean;
 
   @XmlAttribute('final')
   final?: derivationSet;
@@ -42,13 +43,13 @@ export class element extends annotated {
   form?: formChoice;
 
   @XmlAttribute('name')
-  name?: String;
+  name?: string;
 
   @XmlAttribute('ref')
-  ref?: String;
+  ref?: string;
 
   @XmlAttribute('minOccurs')
-  minOccurs?: Number;
+  minOccurs?: number;
 
   @XmlAttribute('maxOccurs')
   maxOccurs?: allNNI;

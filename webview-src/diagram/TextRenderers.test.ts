@@ -10,7 +10,15 @@ import {
 } from "./TextRenderers";
 import { DiagramItem } from "./DiagramItem";
 import { Diagram } from "./Diagram";
-import { Rectangle } from "./DiagramTypes";
+import { DiagramItemType, Rectangle } from "./DiagramTypes";
+
+/**
+ * Extended interface for Element to include getBBox method used in SVG tests.
+ * jsdom doesn't implement getBBox, so we need to add it for testing.
+ */
+interface ElementWithGetBBox extends Element {
+  getBBox(): DOMRect;
+}
 
 describe("TextRenderers", () => {
   let mockGroup: SVGElement;
@@ -27,14 +35,20 @@ describe("TextRenderers", () => {
 
     // Mock getBBox for SVG text elements (not supported in jsdom)
     // Return width proportional to text length (approx 6 pixels per character)
-    (Element.prototype as any).getBBox = jest.fn(function (this: SVGTextElement) {
+    (Element.prototype as ElementWithGetBBox).getBBox = jest.fn(function (this: SVGTextElement): DOMRect {
       const textContent = this.textContent || "";
+      const width = textContent.length * 6;
       return {
         x: 0,
         y: 0,
-        width: textContent.length * 6, // Approximate width
+        width,
         height: 10,
-      };
+        top: 0,
+        right: width,
+        bottom: 10,
+        left: 0,
+        toJSON: () => ({}),
+      } as DOMRect;
     });
 
     mockDiagram = {
@@ -58,7 +72,7 @@ describe("TextRenderers", () => {
 
   describe("renderText", () => {
     it("should render item name", () => {
-      const item = new DiagramItem("test-id", "Test", "element" as any);
+      const item = new DiagramItem("test-id", "Test", DiagramItemType.element);
       item.name = "TestElement";
       item.diagram = mockDiagram;
       item.elementBox = { x: 0, y: 0, width: 100, height: 50 };
@@ -72,10 +86,10 @@ describe("TextRenderers", () => {
     });
 
     it("should render item name with type when showType is true", () => {
-      const item = new DiagramItem("test-id", "Test", "element" as any);
+      const item = new DiagramItem("test-id", "Test", DiagramItemType.element);
       item.name = "TestElement";
       item.type = "string";
-      item.diagram = {...mockDiagram, showType: true} as any;
+      item.diagram = {...mockDiagram, showType: true} as Diagram;
       item.elementBox = { x: 0, y: 0, width: 200, height: 50 };
       item.scaleRectangle = (rect: Rectangle) => rect;
 
@@ -86,7 +100,7 @@ describe("TextRenderers", () => {
     });
 
     it("should not show type when showType is false", () => {
-      const item = new DiagramItem("test-id", "Test", "element" as any);
+      const item = new DiagramItem("test-id", "Test", DiagramItemType.element);
       item.name = "TestElement";
       item.type = "string";
       item.diagram = mockDiagram;
@@ -100,7 +114,7 @@ describe("TextRenderers", () => {
     });
 
     it("should truncate long text", () => {
-      const item = new DiagramItem("test-id", "Test", "element" as any);
+      const item = new DiagramItem("test-id", "Test", DiagramItemType.element);
       item.name = "ThisIsAVeryLongElementNameThatShouldBeTruncated";
       item.diagram = mockDiagram;
       item.elementBox = { x: 0, y: 0, width: 50, height: 30 };
@@ -114,7 +128,7 @@ describe("TextRenderers", () => {
     });
 
     it("should add tooltip with full text when truncated", () => {
-      const item = new DiagramItem("test-id", "Test", "element" as any);
+      const item = new DiagramItem("test-id", "Test", DiagramItemType.element);
       item.name = "ThisIsAVeryLongElementNameThatShouldBeTruncated";
       item.diagram = mockDiagram;
       item.elementBox = { x: 0, y: 0, width: 50, height: 30 };
@@ -129,7 +143,7 @@ describe("TextRenderers", () => {
     });
 
     it("should not add tooltip when text is not truncated", () => {
-      const item = new DiagramItem("test-id", "Test", "element" as any);
+      const item = new DiagramItem("test-id", "Test", DiagramItemType.element);
       item.name = "Short";
       item.diagram = mockDiagram;
       item.elementBox = { x: 0, y: 0, width: 200, height: 50 };
@@ -143,7 +157,7 @@ describe("TextRenderers", () => {
     });
 
     it("should center text in element box", () => {
-      const item = new DiagramItem("test-id", "Test", "element" as any);
+      const item = new DiagramItem("test-id", "Test", DiagramItemType.element);
       item.name = "Test";
       item.diagram = mockDiagram;
       item.elementBox = { x: 10, y: 20, width: 100, height: 50 };
@@ -193,7 +207,7 @@ describe("TextRenderers", () => {
 
   describe("renderDocumentation", () => {
     it("should render documentation text", () => {
-      const item = new DiagramItem("test-id", "Test", "element" as any);
+      const item = new DiagramItem("test-id", "Test", DiagramItemType.element);
       item.documentation = "This is documentation";
       item.diagram = mockDiagram;
       item.documentationBox = { x: 10, y: 100, width: 200, height: 50 };
@@ -207,7 +221,7 @@ describe("TextRenderers", () => {
     });
 
     it("should render multiple lines of documentation", () => {
-      const item = new DiagramItem("test-id", "Test", "element" as any);
+      const item = new DiagramItem("test-id", "Test", DiagramItemType.element);
       item.documentation = "Line 1\nLine 2\nLine 3";
       item.diagram = mockDiagram;
       item.documentationBox = { x: 10, y: 100, width: 200, height: 100 };
@@ -223,7 +237,7 @@ describe("TextRenderers", () => {
     });
 
     it("should limit to 3 lines of documentation", () => {
-      const item = new DiagramItem("test-id", "Test", "element" as any);
+      const item = new DiagramItem("test-id", "Test", DiagramItemType.element);
       item.documentation = "Line 1\nLine 2\nLine 3\nLine 4\nLine 5";
       item.diagram = mockDiagram;
       item.documentationBox = { x: 10, y: 100, width: 200, height: 150 };
@@ -236,7 +250,7 @@ describe("TextRenderers", () => {
     });
 
     it("should truncate long documentation lines", () => {
-      const item = new DiagramItem("test-id", "Test", "element" as any);
+      const item = new DiagramItem("test-id", "Test", DiagramItemType.element);
       const longLine = "A".repeat(100);
       item.documentation = longLine;
       item.diagram = mockDiagram;
@@ -250,7 +264,7 @@ describe("TextRenderers", () => {
     });
 
     it("should not render when documentation box has zero width", () => {
-      const item = new DiagramItem("test-id", "Test", "element" as any);
+      const item = new DiagramItem("test-id", "Test", DiagramItemType.element);
       item.documentation = "Some documentation";
       item.diagram = mockDiagram;
       item.documentationBox = { x: 0, y: 0, width: 0, height: 50 };
@@ -263,7 +277,7 @@ describe("TextRenderers", () => {
     });
 
     it("should not render when documentation box has zero height", () => {
-      const item = new DiagramItem("test-id", "Test", "element" as any);
+      const item = new DiagramItem("test-id", "Test", DiagramItemType.element);
       item.documentation = "Some documentation";
       item.diagram = mockDiagram;
       item.documentationBox = { x: 0, y: 0, width: 100, height: 0 };
@@ -278,7 +292,7 @@ describe("TextRenderers", () => {
 
   describe("renderOccurrence", () => {
     it("should render occurrence for unbounded max", () => {
-      const item = new DiagramItem("test-id", "Test", "element" as any);
+      const item = new DiagramItem("test-id", "Test", DiagramItemType.element);
       item.minOccurrence = 0;
       item.maxOccurrence = -1; // Unbounded
       item.diagram = mockDiagram;
@@ -293,7 +307,7 @@ describe("TextRenderers", () => {
     });
 
     it("should render occurrence for specific range", () => {
-      const item = new DiagramItem("test-id", "Test", "element" as any);
+      const item = new DiagramItem("test-id", "Test", DiagramItemType.element);
       item.minOccurrence = 1;
       item.maxOccurrence = 5;
       item.diagram = mockDiagram;
@@ -307,7 +321,7 @@ describe("TextRenderers", () => {
     });
 
     it("should not render occurrence for default 1..1 when alwaysShowOccurrence is false", () => {
-      const item = new DiagramItem("test-id", "Test", "element" as any);
+      const item = new DiagramItem("test-id", "Test", DiagramItemType.element);
       item.minOccurrence = 1;
       item.maxOccurrence = 1;
       item.diagram = mockDiagram;
@@ -321,10 +335,10 @@ describe("TextRenderers", () => {
     });
 
     it("should render occurrence for default 1..1 when alwaysShowOccurrence is true", () => {
-      const item = new DiagramItem("test-id", "Test", "element" as any);
+      const item = new DiagramItem("test-id", "Test", DiagramItemType.element);
       item.minOccurrence = 1;
       item.maxOccurrence = 1;
-      item.diagram = {...mockDiagram, alwaysShowOccurrence: true} as any;
+      item.diagram = {...mockDiagram, alwaysShowOccurrence: true} as Diagram;
       item.elementBox = { x: 10, y: 10, width: 100, height: 50 };
       item.scaleRectangle = (rect: Rectangle) => rect;
 
@@ -336,7 +350,7 @@ describe("TextRenderers", () => {
     });
 
     it("should render occurrence for 0..1", () => {
-      const item = new DiagramItem("test-id", "Test", "element" as any);
+      const item = new DiagramItem("test-id", "Test", DiagramItemType.element);
       item.minOccurrence = 0;
       item.maxOccurrence = 1;
       item.diagram = mockDiagram;
@@ -350,7 +364,7 @@ describe("TextRenderers", () => {
     });
 
     it("should position text relative to element box", () => {
-      const item = new DiagramItem("test-id", "Test", "element" as any);
+      const item = new DiagramItem("test-id", "Test", DiagramItemType.element);
       item.minOccurrence = 0;
       item.maxOccurrence = -1;
       item.diagram = mockDiagram;

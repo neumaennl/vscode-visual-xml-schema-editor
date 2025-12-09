@@ -311,14 +311,17 @@ describe("CommandProcessor", () => {
       });
 
       test("should reject addComplexType with missing contentModel", () => {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const command = {
           type: "addComplexType",
           payload: {
             typeName: "TestType",
             contentModel: "",
           },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any;
 
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         const result = processor.execute(command, simpleSchemaXml);
         expect(result.success).toBe(false);
         expect(result.error).toBe("Content model is required");
@@ -367,14 +370,17 @@ describe("CommandProcessor", () => {
       });
 
       test("should reject addGroup with missing contentModel", () => {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const command = {
           type: "addGroup",
           payload: {
             groupName: "TestGroup",
             contentModel: "",
           },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any;
 
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         const result = processor.execute(command, simpleSchemaXml);
         expect(result.success).toBe(false);
         expect(result.error).toBe("Content model is required");
@@ -547,28 +553,34 @@ describe("CommandProcessor", () => {
       });
 
       test("should reject addImport with missing namespace", () => {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const command = {
           type: "addImport",
           payload: {
             namespace: "",
             schemaLocation: "schema.xsd",
           },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any;
 
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         const result = processor.execute(command, simpleSchemaXml);
         expect(result.success).toBe(false);
         expect(result.error).toBe("Namespace is required");
       });
 
       test("should reject addImport with missing schemaLocation", () => {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const command = {
           type: "addImport",
           payload: {
             namespace: "http://example.com/schema",
             schemaLocation: "",
           },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any;
 
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         const result = processor.execute(command, simpleSchemaXml);
         expect(result.success).toBe(false);
         expect(result.error).toBe("Schema location is required");
@@ -644,32 +656,41 @@ describe("CommandProcessor", () => {
 
     describe("Invalid Commands", () => {
       test("should reject command with missing type", () => {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const command = {
           type: "",
           payload: {},
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any;
 
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         const result = processor.execute(command, simpleSchemaXml);
         expect(result.success).toBe(false);
         expect(result.error).toBe("Command type is required");
       });
 
       test("should reject command with missing payload", () => {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const command = {
           type: "addElement",
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any;
 
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         const result = processor.execute(command, simpleSchemaXml);
         expect(result.success).toBe(false);
         expect(result.error).toBe("Command payload is required");
       });
 
       test("should reject command with unknown type", () => {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const command = {
           type: "unknownCommand",
           payload: {},
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any;
 
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         const result = processor.execute(command, simpleSchemaXml);
         expect(result.success).toBe(false);
         expect(result.error).toContain("Unknown command type");

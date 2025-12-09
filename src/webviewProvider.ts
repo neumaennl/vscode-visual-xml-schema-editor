@@ -1,7 +1,12 @@
 import * as vscode from "vscode";
 import { unmarshal } from "@neumaennl/xmlbind-ts";
 import { schema } from "../shared/types";
-import { SchemaModifiedMessage, DiagramOptions } from "../shared/messages";
+import {
+  ExecuteCommandMessage,
+  WebviewMessage,
+  DiagramOptions,
+} from "../shared/messages";
+import { CommandProcessor } from "./commandProcessor";
 
 /**
  * Provider for the XML Schema Visual Editor custom text editor.
@@ -9,13 +14,16 @@ import { SchemaModifiedMessage, DiagramOptions } from "../shared/messages";
  * a visual editing experience for XML Schema files.
  */
 export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
+  private readonly commandProcessor: CommandProcessor;
 
   /**
    * Creates a new SchemaEditorProvider.
    * 
    * @param context - The extension context provided by VS Code
    */
-  constructor(private readonly context: vscode.ExtensionContext) {}
+  constructor(private readonly context: vscode.ExtensionContext) {
+    this.commandProcessor = new CommandProcessor();
+  }
 
   /**
    * Resolves and initializes the custom text editor for an XSD document.
@@ -60,8 +68,8 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
 
     // Listen for messages from webview
     webviewPanel.webview.onDidReceiveMessage(
-      (message: SchemaModifiedMessage) =>
-        void this.handleWebviewMessage(message, document),
+      (message: WebviewMessage) =>
+        void this.handleWebviewMessage(message, document, webviewPanel.webview),
       undefined,
       this.context.subscriptions
     );
@@ -134,35 +142,76 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
    * 
    * @param message - The message received from the webview
    * @param document - The document being edited
+   * @param webview - The webview to send responses back to
    */
   private async handleWebviewMessage(
-    message: SchemaModifiedMessage,
-    document: vscode.TextDocument
+    message: WebviewMessage,
+    document: vscode.TextDocument,
+    webview: vscode.Webview
   ): Promise<void> {
     switch (message.command) {
-      case "schemaModified": {
-        await this.applySchemaChanges(document, message.data);
+      case "executeCommand": {
+        await this.executeCommand(message, document, webview);
         break;
       }
     }
   }
 
   /**
-   * Applies schema changes from the webview back to the document.
-   * Converts the schema object to XML and updates the document.
+   * Executes a command using the CommandProcessor.
+   * Applies the resulting changes to the document if successful.
    * 
+   * @param message - The execute command message from the webview
    * @param document - The document to update
-   * @param schemaObj - The modified schema object from the webview
+   * @param webview - The webview to send responses back to
    */
-  private async applySchemaChanges(
-    _document: vscode.TextDocument,
-    _schemaObj: schema
+  private async executeCommand(
+    message: ExecuteCommandMessage,
+    document: vscode.TextDocument,
+    webview: vscode.Webview
   ): Promise<void> {
-    // TODO: Marshal the schema object back to XML
-    // const xmlContent = marshal(schemaObj);
-    // Then apply the edit to the document
-    const edit = new vscode.WorkspaceEdit();
-    await vscode.workspace.applyEdit(edit);
+    try {
+      const currentXml = document.getText();
+      const result = this.commandProcessor.execute(message.data, currentXml);
+
+      if (result.success && result.xmlContent) {
+        // Apply the changes to the document
+        const edit = new vscode.WorkspaceEdit();
+        const fullRange = new vscode.Range(
+          0,
+          0,
+          document.lineCount,
+          document.lineAt(document.lineCount - 1).text.length
+        );
+        edit.replace(document.uri, fullRange, result.xmlContent);
+        await vscode.workspace.applyEdit(edit);
+
+        // Send success response
+        void webview.postMessage({
+          command: "commandResult",
+          data: {
+            success: true,
+          },
+        });
+      } else {
+        // Send error response
+        void webview.postMessage({
+          command: "commandResult",
+          data: {
+            success: false,
+            error: result.error,
+          },
+        });
+      }
+    } catch (error) {
+      // Send error response for unexpected errors
+      void webview.postMessage({
+        command: "error",
+        data: {
+          message: `Failed to execute command: ${(error as Error).message}`,
+        },
+      });
+    }
   }
 
   /**

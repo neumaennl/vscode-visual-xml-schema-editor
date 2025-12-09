@@ -141,9 +141,13 @@ export class CommandProcessor {
   /**
    * Create a deep copy of the schema for transactional execution.
    * This allows rollback if execution fails.
+   * 
+   * Note: Uses marshal/unmarshal for cloning to ensure perfect fidelity
+   * with actual XML representation. While less efficient than JSON cloning,
+   * this guarantees that the cloned schema can be serialized identically.
    */
   private cloneSchema(schemaObj: schema): schema {
-    // Use unmarshal/marshal for deep cloning
+    // Use unmarshal/marshal for deep cloning to ensure XML fidelity
     const xml = marshal(schemaObj);
     return unmarshal(schema, xml);
   }
@@ -231,7 +235,9 @@ export class CommandProcessor {
       default:
         return {
           valid: false,
-          error: `Unknown command type: ${(command as SchemaCommand).type}`,
+          error: `Unknown command type: ${
+            (command as SchemaCommand).type ?? "undefined"
+          }`,
         };
     }
   }
@@ -334,7 +340,9 @@ export class CommandProcessor {
         break;
       default:
         throw new Error(
-          `Unknown command type: ${(command as SchemaCommand).type}`
+          `Unknown command type: ${
+            (command as SchemaCommand).type ?? "undefined"
+          }`
         );
     }
   }

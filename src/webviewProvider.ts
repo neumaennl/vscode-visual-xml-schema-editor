@@ -177,11 +177,13 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
       if (result.success && result.xmlContent) {
         // Apply the changes to the document
         const edit = new vscode.WorkspaceEdit();
+        // Calculate the full range of the document, handling empty documents
+        const lastLine = Math.max(0, document.lineCount - 1);
         const fullRange = new vscode.Range(
           0,
           0,
-          document.lineCount,
-          document.lineAt(document.lineCount - 1).text.length
+          lastLine,
+          document.lineAt(lastLine).text.length
         );
         edit.replace(document.uri, fullRange, result.xmlContent);
         await vscode.workspace.applyEdit(edit);

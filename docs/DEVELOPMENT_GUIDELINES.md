@@ -41,7 +41,7 @@ This document outlines the development best practices and architectural vision f
   - Use `npm run lint:fix` to automatically fix issues
   - ESLint is configured with TypeScript-specific rules
   - Address all linting errors; warnings should be minimized
-  - Configuration: `.eslintrc.json`
+  - Configuration: `eslint.config.js`
 
 ### Code Review
 
@@ -103,6 +103,7 @@ This document outlines the development best practices and architectural vision f
 ### Test Organization Structure
 
 - **Unit tests** (testing a single unit/function) should be in the **same folder** as the source file:
+
   - Test for `src/extension.ts` → `src/extension.test.ts`
   - Test for `webview-src/renderer.ts` → `webview-src/renderer.test.ts`
   - Test for `webview-src/diagram/Diagram.ts` → `webview-src/diagram/Diagram.test.ts`
@@ -124,15 +125,15 @@ This document outlines the development best practices and architectural vision f
 ### Test Structure
 
 ```typescript
-describe('FeatureName', () => {
-  describe('methodName', () => {
-    it('should handle normal case', () => {
+describe("FeatureName", () => {
+  describe("methodName", () => {
+    it("should handle normal case", () => {
       // Arrange
       // Act
       // Assert
     });
 
-    it('should handle edge case', () => {
+    it("should handle edge case", () => {
       // Arrange
       // Act
       // Assert
@@ -154,15 +155,15 @@ describe('FeatureName', () => {
 
 ### Example TSDoc Format
 
-```typescript
+````typescript
 /**
  * Processes an XML schema element and creates a diagram item.
- * 
+ *
  * @param element - The XML schema element to process
  * @param parentId - The ID of the parent diagram item
  * @returns A new DiagramItem representing the element, or null if invalid
  * @throws {SchemaParseError} If the element structure is invalid
- * 
+ *
  * @example
  * ```typescript
  * const item = processElement(schemaElement, "parent-123");
@@ -171,10 +172,13 @@ describe('FeatureName', () => {
  * }
  * ```
  */
-function processElement(element: SchemaElement, parentId: string): DiagramItem | null {
+function processElement(
+  element: SchemaElement,
+  parentId: string
+): DiagramItem | null {
   // Implementation
 }
-```
+````
 
 ### README and Documentation Files
 
@@ -211,20 +215,22 @@ vscode-visual-xml-schema-editor/
 ### Key Architectural Principles
 
 1. **Separation of Concerns**
+
    - Extension code handles VS Code integration
    - Webview code handles visualization
    - Shared code defines the contract between them
 
 2. **Message-Based Communication**
+
    - Extension and webview communicate via messages
    - Commands define operations on the schema
    - Messages follow a type-safe protocol
 
 3. **Diagram Builder Pattern**
-   - DiagramBuilder creates diagram structure from XSD
-   - DiagramLayout handles positioning
-   - DiagramSvgRenderer handles SVG generation
-   - DiagramRenderer orchestrates the rendering pipeline
+
+   - `DiagramBuilder` creates diagram structure from XSD
+   - `DiagramLayout` handles positioning
+   - `DiagramSvgRenderer` handles SVG generation
 
 4. **Type Safety**
    - Auto-generated types from XSD schema
@@ -291,6 +297,12 @@ npm test
 
 # Run tests with coverage
 npm run test:coverage
+
+# Clean build artifacts
+npm run clean
+
+# Generate TypeScript classes from XSD schema
+npm run generate-classes-from-schema
 
 # Package extension
 npm run package

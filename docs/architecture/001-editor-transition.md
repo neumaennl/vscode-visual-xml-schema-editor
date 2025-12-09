@@ -238,6 +238,7 @@ This section outlines the high-level architectural changes required to transform
 **Responsibility**: Define the contract between webview and extension for editing operations.
 
 **Key Concepts**:
+
 - **Command Types**: Establish a type-safe vocabulary of editing operations (add, remove, modify) for all schema constructs:
   - Core structures: elements, attributes
   - Type definitions: simpleTypes, complexTypes
@@ -249,6 +250,7 @@ This section outlines the high-level architectural changes required to transform
 - **Response Types**: Standardize success/failure feedback with error information
 
 **Design Principles**:
+
 - Type safety through TypeScript interfaces and union types
 - Extensibility for adding new command types
 - Consistency across all schema modification operations
@@ -263,6 +265,7 @@ This section outlines the high-level architectural changes required to transform
 **Role**: Central dispatcher for all editing commands with validation and execution logic.
 
 **Responsibilities**:
+
 - Validate incoming commands against schema rules and constraints
 - Route commands to appropriate handlers based on command type
 - Maintain command execution order and transactionality
@@ -270,6 +273,7 @@ This section outlines the high-level architectural changes required to transform
 - Support all schema modification types (elements, attributes, simpleTypes, complexTypes, groups, attributeGroups, annotations, documentation, imports, includes)
 
 **Design Principles**:
+
 - Single responsibility for each command handler
 - Fail-fast validation before any state modification
 - Atomic operations at the schema model level
@@ -280,6 +284,7 @@ This section outlines the high-level architectural changes required to transform
 **Role**: Maintain authoritative schema state and orchestrate updates.
 
 **Responsibilities**:
+
 - Hold the current parsed schema model as single source of truth
 - Coordinate between command execution and document synchronization
 - Handle schema unmarshaling from XML and marshaling back to XML
@@ -287,6 +292,7 @@ This section outlines the high-level architectural changes required to transform
 - Provide query interface for schema introspection
 
 **Design Principles**:
+
 - Encapsulate schema complexity behind clean API
 - Ensure model consistency through controlled mutations
 - Support efficient diff computation for incremental updates
@@ -297,6 +303,7 @@ This section outlines the high-level architectural changes required to transform
 **Role**: Bridge between VS Code's editor infrastructure and custom editing logic.
 
 **Responsibilities**:
+
 - Manage webview lifecycle (creation, disposal, state persistence)
 - Route messages between webview and command processor
 - Apply edits to VS Code documents through WorkspaceEdit API
@@ -305,6 +312,7 @@ This section outlines the high-level architectural changes required to transform
 - Manage dirty state and save operations
 
 **Design Principles**:
+
 - Leverage VS Code's document editing primitives
 - Maintain separation between UI logic and business logic
 - Ensure all edits are undoable through standard mechanisms
@@ -319,6 +327,7 @@ This section outlines the high-level architectural changes required to transform
 **Role**: Convert user interactions into typed command messages.
 
 **Responsibilities**:
+
 - Encapsulate command construction logic
 - Validate user input before command creation
 - Provide user-friendly API for UI components
@@ -326,6 +335,7 @@ This section outlines the high-level architectural changes required to transform
 - Support all editing operations across schema constructs
 
 **Design Principles**:
+
 - Pure functions with no side effects
 - Type-safe command construction
 - Clear naming conventions matching command types
@@ -336,6 +346,7 @@ This section outlines the high-level architectural changes required to transform
 **Role**: Efficiently update UI in response to schema changes.
 
 **Responsibilities**:
+
 - Compute minimal diff between old and new schema states
 - Determine optimal re-render strategy (full vs. incremental)
 - Coordinate with diagram renderer for visual updates
@@ -343,6 +354,7 @@ This section outlines the high-level architectural changes required to transform
 - Handle animation and transitions for smooth UX
 
 **Design Principles**:
+
 - Minimize re-renders for performance
 - Predictable update semantics
 - Preserve focus and selection across updates
@@ -353,6 +365,7 @@ This section outlines the high-level architectural changes required to transform
 **Role**: Coordinate all webview components and manage application lifecycle.
 
 **Responsibilities**:
+
 - Initialize all subsystems (renderer, actions, reconciler)
 - Set up message handling and routing
 - Manage user interaction handlers (clicks, drags, keyboard)
@@ -361,6 +374,7 @@ This section outlines the high-level architectural changes required to transform
 - Persist and restore webview state
 
 **Design Principles**:
+
 - Clear component boundaries
 - Event-driven architecture
 - Centralized error handling
@@ -459,6 +473,7 @@ class DiagramRenderer {
 **Approach**: Enhance existing property display components to support in-place editing rather than creating a separate editable area.
 
 **Key Changes**:
+
 - Make property values editable where appropriate (e.g., element names, types, occurrence constraints)
 - Add appropriate input controls based on property type (text fields, dropdowns, number spinners)
 - Implement inline validation with immediate user feedback
@@ -467,6 +482,7 @@ class DiagramRenderer {
 - Support keyboard navigation and accessibility standards
 
 **Design Considerations**:
+
 - Match VS Code's form styling and interaction patterns
 - Provide clear visual distinction between editable and read-only properties
 - Support validation at the UI level before sending commands
@@ -478,6 +494,7 @@ class DiagramRenderer {
 **Purpose**: Manage user selection state to enable context-aware editing operations.
 
 **Core Responsibilities**:
+
 - Track currently selected diagram nodes (single or multiple selection)
 - Emit selection change events for UI coordination
 - Provide selection queries for editing commands
@@ -499,6 +516,7 @@ class DiagramRenderer {
 6. **Visual Feedback**: The diagram renderer highlights selected nodes with distinct styling (border, background, etc.) to provide clear visual feedback.
 
 **Selection Patterns**:
+
 - Click to select single node (replaces previous selection)
 - Ctrl+Click to toggle node in multi-selection
 - Click on canvas background to clear selection
@@ -506,6 +524,7 @@ class DiagramRenderer {
 - Shift+Arrow for extending selection (future enhancement)
 
 **State Preservation**:
+
 - Selection IDs are preserved across diagram re-renders when nodes still exist
 - Selection is cleared for deleted nodes
 - Selection is adjusted for nodes that have moved in the hierarchy
@@ -618,6 +637,7 @@ Testing is critical to ensure the editor works reliably across diverse schemas a
 **Scope**: Individual components and functions in isolation.
 
 **What to Test**:
+
 - **Command Validation**: Each command type validates its payload correctly, rejecting invalid inputs
 - **Command Execution**: Command processors correctly modify the schema model for all operation types (add, remove, modify)
 - **XML Marshaling/Unmarshaling**: Round-trip conversion preserves schema semantics and structure
@@ -634,6 +654,7 @@ Testing is critical to ensure the editor works reliably across diverse schemas a
 **Scope**: Component interactions and end-to-end workflows.
 
 **What to Test**:
+
 - **Command Flow**: User action → command creation → validation → execution → document update → UI refresh
 - **Document Synchronization**: Changes made externally (e.g., direct XML edits) are reflected in diagram
 - **Webview Message Handling**: Messages between webview and extension are correctly serialized, deserialized, and routed
@@ -651,6 +672,7 @@ Testing is critical to ensure the editor works reliably across diverse schemas a
 **Scope**: Complete user workflows from UI interaction to file system changes.
 
 **What to Test**:
+
 - **Element Lifecycle**: Add element → modify properties → add children → delete element
 - **Attribute Management**: Add attributes → modify properties → remove attributes
 - **Type Editing**: Create simpleType/complexType → reference from element → modify → delete
@@ -667,6 +689,7 @@ Testing is critical to ensure the editor works reliably across diverse schemas a
 **Scope**: Responsiveness and resource usage with realistic workloads.
 
 **What to Test**:
+
 - **Large Schema Handling**: Load and edit schemas with 500+ elements
 - **Rendering Performance**: Time to render diagram after edits (target: <100ms for incremental updates)
 - **Memory Usage**: Monitor memory consumption over extended editing sessions
@@ -682,6 +705,7 @@ Testing is critical to ensure the editor works reliably across diverse schemas a
 **Scope**: Exploratory testing and usability validation.
 
 **What to Test**:
+
 - **User Workflows**: Realistic editing scenarios (e.g., building a schema from scratch)
 - **Edge Cases**: Unusual schema structures, boundary conditions, error recovery
 - **UX Quality**: Intuitive interactions, clear feedback, consistent behavior
@@ -697,6 +721,7 @@ Testing is critical to ensure the editor works reliably across diverse schemas a
 **Scope**: Ensure new changes don't break existing functionality.
 
 **What to Test**:
+
 - Re-run unit, integration, and E2E test suites after each change
 - Maintain test suite that covers previously reported bugs
 - Automated CI/CD pipeline runs full test suite on every commit
@@ -752,6 +777,7 @@ This section outlines potential improvements beyond the initial editor implement
 **Value**: Safely restructure schemas while preserving semantics.
 
 **Features**:
+
 - Rename element/type with automatic reference updates
 - Extract complexType from inline definition
 - Inline complexType (replace references with definition)
@@ -760,6 +786,7 @@ This section outlines potential improvements beyond the initial editor implement
 - Merge small schemas into a single file
 
 **Use Cases**:
+
 - Improve schema organization and maintainability
 - Safely rename schema components
 - Optimize schema structure
@@ -769,6 +796,7 @@ This section outlines potential improvements beyond the initial editor implement
 **Value**: Catch schema design errors early and enforce best practices.
 
 **Features**:
+
 - Real-time schema validation as user edits
 - Type checking for references (ensure referenced types exist)
 - Cross-reference validation (detect circular dependencies)
@@ -777,6 +805,7 @@ This section outlines potential improvements beyond the initial editor implement
 - Actionable validation messages with quick fixes
 
 **Use Cases**:
+
 - Prevent invalid schemas from being saved
 - Enforce organizational standards
 - Improve schema quality and maintainability
@@ -788,6 +817,7 @@ This section outlines potential improvements beyond the initial editor implement
 **Value**: Support diverse user preferences and schema characteristics.
 
 **Features**:
+
 - Multiple diagram layouts: tree (current), compact tree, horizontal tree
 - Customizable themes matching VS Code color schemes
 - Print and export diagram as SVG/PNG/PDF
@@ -796,6 +826,7 @@ This section outlines potential improvements beyond the initial editor implement
 - Collapsible annotations and documentation blocks
 
 **Use Cases**:
+
 - Present schemas in documentation
 - Navigate large schemas efficiently
 - Customize visual appearance to preference
@@ -806,6 +837,7 @@ This section outlines potential improvements beyond the initial editor implement
 **Value**: Improve productivity when working with large schemas.
 
 **Features**:
+
 - Full-text search across element names, types, annotations
 - Find all references to a type or element
 - Go to definition (navigate to type definition)
@@ -814,6 +846,7 @@ This section outlines potential improvements beyond the initial editor implement
 - Filter diagram by element type or namespace
 
 **Use Cases**:
+
 - Quickly locate specific elements in large schemas
 - Understand type usage and dependencies
 - Navigate complex schema hierarchies efficiently
@@ -825,6 +858,7 @@ This section outlines potential improvements beyond the initial editor implement
 **Value**: Support interoperability with other schema tools and formats.
 
 **Features**:
+
 - Import from DTD (convert to XSD)
 - Import from JSON Schema (convert to XSD)
 - Export to JSON Schema
@@ -833,6 +867,7 @@ This section outlines potential improvements beyond the initial editor implement
 - Import/export custom type libraries
 
 **Use Cases**:
+
 - Migrate from legacy DTD schemas
 - Integrate with REST APIs using JSON Schema
 - Generate type-safe code from schemas
@@ -843,6 +878,7 @@ This section outlines potential improvements beyond the initial editor implement
 **Value**: Enable visual comparison of schema changes for code review and understanding schema evolution.
 
 **Features**:
+
 - Highlight added, removed, and modified elements in the diagram view
 - Color-code changes (green for additions, red for deletions, yellow for modifications)
 - Support diff view between commits, branches, or working tree and HEAD
@@ -851,6 +887,7 @@ This section outlines potential improvements beyond the initial editor implement
 - Integration with VS Code's source control panel
 
 **Use Cases**:
+
 - Review pull requests visually
 - Understand impact of schema changes before merging
 - Track schema evolution over time

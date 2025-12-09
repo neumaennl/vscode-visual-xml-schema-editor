@@ -77,6 +77,93 @@ export class PropertyPanel {
       this.addPropertyWithElement("Attributes", attrList);
     }
 
+    // Restrictions (for simpleType restrictions)
+    if (node.restrictions) {
+      const restrictionList = document.createElement("div");
+      restrictionList.className = "restriction-list";
+
+      // Enumeration values
+      if (node.restrictions.enumeration && node.restrictions.enumeration.length > 0) {
+        restrictionList.appendChild(
+          this.createRestrictionItem("Enumeration", node.restrictions.enumeration.join(", "))
+        );
+      }
+
+      // Pattern values
+      if (node.restrictions.pattern && node.restrictions.pattern.length > 0) {
+        restrictionList.appendChild(
+          this.createRestrictionItem("Pattern", node.restrictions.pattern.join(", "))
+        );
+      }
+
+      // Length constraint
+      if (node.restrictions.length !== undefined) {
+        restrictionList.appendChild(
+          this.createRestrictionItem("Length", node.restrictions.length)
+        );
+      }
+
+      // Min/Max length constraints
+      if (node.restrictions.minLength !== undefined || node.restrictions.maxLength !== undefined) {
+        const parts: string[] = [];
+        if (node.restrictions.minLength !== undefined) {
+          parts.push(`min: ${node.restrictions.minLength}`);
+        }
+        if (node.restrictions.maxLength !== undefined) {
+          parts.push(`max: ${node.restrictions.maxLength}`);
+        }
+        restrictionList.appendChild(
+          this.createRestrictionItem("Length Range", parts.join(", "))
+        );
+      }
+
+      // Min/Max value constraints
+      const valueConstraints: string[] = [];
+      if (node.restrictions.minInclusive !== undefined) {
+        valueConstraints.push(`≥ ${node.restrictions.minInclusive}`);
+      }
+      if (node.restrictions.minExclusive !== undefined) {
+        valueConstraints.push(`> ${node.restrictions.minExclusive}`);
+      }
+      if (node.restrictions.maxInclusive !== undefined) {
+        valueConstraints.push(`≤ ${node.restrictions.maxInclusive}`);
+      }
+      if (node.restrictions.maxExclusive !== undefined) {
+        valueConstraints.push(`< ${node.restrictions.maxExclusive}`);
+      }
+      if (valueConstraints.length > 0) {
+        restrictionList.appendChild(
+          this.createRestrictionItem("Value Range", valueConstraints.join(", "))
+        );
+      }
+
+      // Total digits
+      if (node.restrictions.totalDigits !== undefined) {
+        restrictionList.appendChild(
+          this.createRestrictionItem("Total Digits", node.restrictions.totalDigits)
+        );
+      }
+
+      // Fraction digits
+      if (node.restrictions.fractionDigits !== undefined) {
+        restrictionList.appendChild(
+          this.createRestrictionItem("Fraction Digits", node.restrictions.fractionDigits)
+        );
+      }
+
+      // White space
+      if (node.restrictions.whiteSpace !== undefined) {
+        restrictionList.appendChild(
+          this.createRestrictionItem("White Space", node.restrictions.whiteSpace)
+        );
+      }
+
+      // Only add the restrictions section if we have content
+      if (restrictionList.children.length > 0) {
+        this.addPropertyWithElement("Restrictions", restrictionList);
+      }
+    }
+
     // Children count
     if (node.childElements && node.childElements.length > 0) {
       this.addProperty("Children", node.childElements.length.toString());
@@ -143,6 +230,27 @@ export class PropertyPanel {
     propertyDiv.appendChild(labelEl);
     propertyDiv.appendChild(element);
     this.container.appendChild(propertyDiv);
+  }
+
+  /**
+   * Creates a restriction item div with label and value safely.
+   * @param label - The restriction label
+   * @param value - The restriction value as string or number
+   * @returns A div element containing the formatted restriction
+   */
+  private createRestrictionItem(label: string, value: string | number): HTMLDivElement {
+    const div = document.createElement("div");
+    div.className = "restriction-item";
+
+    const labelEl = document.createElement("strong");
+    labelEl.textContent = `${label}: `;
+    div.appendChild(labelEl);
+
+    const valueEl = document.createElement("span");
+    valueEl.textContent = String(value);
+    div.appendChild(valueEl);
+
+    return div;
   }
 
   /**

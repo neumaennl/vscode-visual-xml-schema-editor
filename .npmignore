@@ -1,9 +1,0 @@
-src/
-webview-src/
-.vscode/
-.vscode-test/
-*.vsix
-tsconfig.json
-tsconfig.webview.json
-webpack.config.js
-.gitignore

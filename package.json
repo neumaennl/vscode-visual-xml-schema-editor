@@ -77,7 +77,7 @@
     "lint:fix": "eslint . --fix",
     "package": "vsce package",
     "clean": "rimraf out webview",
-    "generate-classes-from-schema": "node node_modules/.bin/xsd2ts xsd2ts -i schema/XMLSchema.xsd -o shared/generated"
+    "generate-classes-from-schema": "xsd2ts --force -i schema/XMLSchema.xsd -o shared/generated"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",
@@ -103,6 +103,6 @@
     "webpack-cli": "^6.0.1"
   },
   "dependencies": {
-    "@neumaennl/xmlbind-ts": "^0.13.0"
+    "@neumaennl/xmlbind-ts": "^0.14.0"
   }
 }

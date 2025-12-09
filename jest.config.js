@@ -1,24 +1,26 @@
 module.exports = {
-  preset: 'ts-jest',
-  testEnvironment: 'node',
-  roots: ['<rootDir>/shared', '<rootDir>/src', '<rootDir>/webview-src'],
-  testMatch: ['**/__tests__/**/*.test.ts', '**/?(*.)+(spec|test).ts'],
-  testPathIgnorePatterns: ['/node_modules/', '/out/', '/webview/'],
-  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
+  preset: "ts-jest",
+  testEnvironment: "node",
+  roots: ["<rootDir>/shared", "<rootDir>/src", "<rootDir>/webview-src"],
+  testMatch: ["**/__tests__/**/*.test.ts", "**/?(*.)+(spec|test).ts"],
+  testPathIgnorePatterns: ["/node_modules/", "/out/", "/webview/"],
+  // Avoid picking up compiled manual mocks from the build output
+  modulePathIgnorePatterns: ["/out/"],
+  moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json", "node"],
   collectCoverageFrom: [
-    'shared/**/*.ts',
-    'src/**/*.ts',
-    'webview-src/**/*.ts',
-    '!**/*.d.ts',
-    '!**/node_modules/**',
-    '!**/generated/**',
-    '!**/__tests__/**',
-    '!**/*.test.ts'
+    "shared/**/*.ts",
+    "src/**/*.ts",
+    "webview-src/**/*.ts",
+    "!**/*.d.ts",
+    "!**/node_modules/**",
+    "!**/generated/**",
+    "!**/__tests__/**",
+    "!**/*.test.ts",
   ],
   moduleNameMapper: {
-    '^shared/(.*)$': '<rootDir>/shared/$1'
+    "^shared/(.*)$": "<rootDir>/shared/$1",
   },
-    reporters: [
+  reporters: [
     "default",
     [
       "jest-junit",
@@ -30,53 +32,65 @@ module.exports = {
       },
     ],
   ],
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+  setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
   projects: [
     {
-      displayName: 'webview',
-      testEnvironment: 'jsdom',
-      testMatch: ['<rootDir>/webview-src/**/*.test.ts'],
-      testPathIgnorePatterns: ['/node_modules/', '/out/', '/webview/'],
-      preset: 'ts-jest',
+      displayName: "webview",
+      testEnvironment: "jsdom",
+      testMatch: ["<rootDir>/webview-src/**/*.test.ts"],
+      testPathIgnorePatterns: ["/node_modules/", "/out/", "/webview/"],
+      modulePathIgnorePatterns: ["/out/"],
+      preset: "ts-jest",
       transform: {
-        '^.+\\.ts$': ['ts-jest', {
-          tsconfig: 'tsconfig.webview-test.json'
-        }]
+        "^.+\\.ts$": [
+          "ts-jest",
+          {
+            tsconfig: "tsconfig.webview-test.json",
+          },
+        ],
       },
       moduleNameMapper: {
-        '^shared/(.*)$': '<rootDir>/shared/$1'
-      }
+        "^shared/(.*)$": "<rootDir>/shared/$1",
+      },
     },
     {
-      displayName: 'extension',
-      testEnvironment: 'node',
-      testMatch: ['<rootDir>/src/**/*.test.ts'],
-      testPathIgnorePatterns: ['/node_modules/', '/out/', '/webview/'],
-      preset: 'ts-jest',
+      displayName: "extension",
+      testEnvironment: "node",
+      testMatch: ["<rootDir>/src/**/*.test.ts"],
+      testPathIgnorePatterns: ["/node_modules/", "/out/", "/webview/"],
+      modulePathIgnorePatterns: ["/out/"],
+      preset: "ts-jest",
       transform: {
-        '^.+\\.ts$': ['ts-jest', {
-          tsconfig: 'tsconfig.extension-test.json'
-        }]
+        "^.+\\.ts$": [
+          "ts-jest",
+          {
+            tsconfig: "tsconfig.extension-test.json",
+          },
+        ],
       },
       moduleNameMapper: {
-        '^shared/(.*)$': '<rootDir>/shared/$1',
-        '^vscode$': '<rootDir>/src/__mocks__/vscode.ts'
-      }
+        "^shared/(.*)$": "<rootDir>/shared/$1",
+        "^vscode$": "<rootDir>/src/__mocks__/vscode.ts",
+      },
     },
     {
-      displayName: 'shared',
-      testEnvironment: 'node',
-      testMatch: ['<rootDir>/shared/**/*.test.ts'],
-      testPathIgnorePatterns: ['/node_modules/', '/out/', '/webview/'],
-      preset: 'ts-jest',
+      displayName: "shared",
+      testEnvironment: "node",
+      testMatch: ["<rootDir>/shared/**/*.test.ts"],
+      testPathIgnorePatterns: ["/node_modules/", "/out/", "/webview/"],
+      modulePathIgnorePatterns: ["/out/"],
+      preset: "ts-jest",
       transform: {
-        '^.+\\.ts$': ['ts-jest', {
-          tsconfig: 'tsconfig.shared-test.json'
-        }]
+        "^.+\\.ts$": [
+          "ts-jest",
+          {
+            tsconfig: "tsconfig.shared-test.json",
+          },
+        ],
       },
       moduleNameMapper: {
-        '^vscode$': '<rootDir>/src/__mocks__/vscode.ts'
-      }
-    }
-  ]
+        "^vscode$": "<rootDir>/src/__mocks__/vscode.ts",
+      },
+    },
+  ],
 };

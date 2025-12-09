@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+  
+  <!-- Test enumeration restrictions -->
+  <xs:simpleType name="LogLevelType">
+    <xs:annotation>
+      <xs:documentation>Log level with enumeration restriction</xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="error"/>
+      <xs:enumeration value="warning"/>
+      <xs:enumeration value="info"/>
+      <xs:enumeration value="debug"/>
+      <xs:enumeration value="trace"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Test pattern restrictions -->
+  <xs:simpleType name="ZipCodeType">
+    <xs:annotation>
+      <xs:documentation>US zip code with pattern restriction</xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[0-9]{5}"/>
+      <xs:pattern value="[0-9]{5}-[0-9]{4}"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Test length restrictions -->
+  <xs:simpleType name="CountryCodeType">
+    <xs:annotation>
+      <xs:documentation>Country code with fixed length</xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:length value="2"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Test min/max length restrictions -->
+  <xs:simpleType name="UsernameType">
+    <xs:annotation>
+      <xs:documentation>Username with min and max length</xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:minLength value="3"/>
+      <xs:maxLength value="20"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Test value range with inclusive bounds -->
+  <xs:simpleType name="PercentageType">
+    <xs:annotation>
+      <xs:documentation>Percentage value 0-100 inclusive</xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:decimal">
+      <xs:minInclusive value="0"/>
+      <xs:maxInclusive value="100"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Test value range with exclusive bounds -->
+  <xs:simpleType name="ProbabilityType">
+    <xs:annotation>
+      <xs:documentation>Probability value between 0 and 1 exclusive</xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:decimal">
+      <xs:minExclusive value="0"/>
+      <xs:maxExclusive value="1"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Test digit restrictions -->
+  <xs:simpleType name="PriceType">
+    <xs:annotation>
+      <xs:documentation>Price with total digits and fraction digits</xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:decimal">
+      <xs:totalDigits value="10"/>
+      <xs:fractionDigits value="2"/>
+      <xs:minInclusive value="0"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Test whiteSpace restriction -->
+  <xs:simpleType name="TokenType">
+    <xs:annotation>
+      <xs:documentation>Token with collapsed whitespace</xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:whiteSpace value="collapse"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Test multiple restrictions combined -->
+  <xs:simpleType name="ProductCodeType">
+    <xs:annotation>
+      <xs:documentation>Product code with multiple restrictions</xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[A-Z]{3}-[0-9]{4}"/>
+      <xs:minLength value="8"/>
+      <xs:maxLength value="8"/>
+      <xs:whiteSpace value="collapse"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Root element using the restricted types -->
+  <xs:element name="TestData">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="logLevel" type="LogLevelType"/>
+        <xs:element name="zipCode" type="ZipCodeType"/>
+        <xs:element name="countryCode" type="CountryCodeType"/>
+        <xs:element name="username" type="UsernameType"/>
+        <xs:element name="percentage" type="PercentageType"/>
+        <xs:element name="probability" type="ProbabilityType"/>
+        <xs:element name="price" type="PriceType"/>
+        <xs:element name="token" type="TokenType"/>
+        <xs:element name="productCode" type="ProductCodeType"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+</xs:schema>

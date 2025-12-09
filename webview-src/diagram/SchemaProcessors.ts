@@ -29,7 +29,10 @@ import type { restrictionType_1 } from "../../shared/generated/restrictionType_1
  * Union type for restriction structures that may contain facets.
  * Includes both simple and complex restriction types.
  */
-type RestrictionTypeLike = restrictionType | restrictionType_1 | ContentTypeLike;
+type RestrictionTypeLike =
+  | restrictionType
+  | restrictionType_1
+  | ContentTypeLike;
 
 /**
  * Type guard to check if a restriction has simple type facets.
@@ -39,25 +42,25 @@ function hasSimpleTypeFacets(
   restriction: RestrictionTypeLike
 ): restriction is restrictionType | restrictionType_1 {
   return (
-    'enumeration' in restriction ||
-    'pattern' in restriction ||
-    'length' in restriction ||
-    'minLength' in restriction ||
-    'maxLength' in restriction ||
-    'minInclusive' in restriction ||
-    'maxInclusive' in restriction ||
-    'minExclusive' in restriction ||
-    'maxExclusive' in restriction ||
-    'totalDigits' in restriction ||
-    'fractionDigits' in restriction ||
-    'whiteSpace' in restriction
+    "enumeration" in restriction ||
+    "pattern" in restriction ||
+    "length" in restriction ||
+    "minLength" in restriction ||
+    "maxLength" in restriction ||
+    "minInclusive" in restriction ||
+    "maxInclusive" in restriction ||
+    "minExclusive" in restriction ||
+    "maxExclusive" in restriction ||
+    "totalDigits" in restriction ||
+    "fractionDigits" in restriction ||
+    "whiteSpace" in restriction
   );
 }
 
 /**
  * Processes child items from a schema collection and adds them to a parent.
  * Uses a factory function to create diagram items from schema items.
- * 
+ *
  * @param parent - Parent diagram item to add children to
  * @param items - Collection of items to process (may be undefined, single item, or array)
  * @param createFn - Function to create diagram item from schema item
@@ -79,7 +82,7 @@ export function processChildCollection<T>(
 /**
  * Processes an anonymous inline complex type within an element.
  * Merges the complex type structure directly into the parent element.
- * 
+ *
  * @param parent - Parent element item containing the anonymous type
  * @param complexType - Anonymous complex type definition
  */
@@ -104,7 +107,7 @@ export function processAnonymousComplexType(
 /**
  * Processes an anonymous inline simple type within an element.
  * Marks the parent as having simple content and extracts base type information.
- * 
+ *
  * @param parent - Parent element item containing the anonymous type
  * @param simpleType - Anonymous simple type definition
  */
@@ -134,11 +137,14 @@ export function processAnonymousSimpleType(
 /**
  * Processes a complex type and adds its children to the parent item.
  * Handles complexContent, simpleContent, sequences, choices, and all groups.
- * 
+ *
  * @param parent - Parent diagram item to add children to
  * @param complexType - Complex type definition from schema
  */
-export function processComplexType(parent: DiagramItem, complexType: ComplexTypeLike): void {
+export function processComplexType(
+  parent: DiagramItem,
+  complexType: ComplexTypeLike
+): void {
   // Process attributes
   extractAttributes(parent, complexType);
 
@@ -188,29 +194,35 @@ export function processComplexType(parent: DiagramItem, complexType: ComplexType
 /**
  * Processes a sequence group in the schema.
  * Creates a sequence group container and processes its elements.
- * 
+ *
  * @param parent - Parent diagram item to add the sequence to
  * @param sequence - Sequence definition from schema
  */
-export function processSequence(parent: DiagramItem, sequence: explicitGroup): void {
+export function processSequence(
+  parent: DiagramItem,
+  sequence: explicitGroup
+): void {
   processGroup(parent, sequence, "sequence", DiagramItemGroupType.Sequence);
 }
 
 /**
  * Processes a choice group in the schema.
  * Creates a choice group container and processes its elements.
- * 
+ *
  * @param parent - Parent diagram item to add the choice to
  * @param choice - Choice definition from schema
  */
-export function processChoice(parent: DiagramItem, choice: explicitGroup): void {
+export function processChoice(
+  parent: DiagramItem,
+  choice: explicitGroup
+): void {
   processGroup(parent, choice, "choice", DiagramItemGroupType.Choice);
 }
 
 /**
  * Processes an all group in the schema.
  * Creates an all group container and processes its elements.
- * 
+ *
  * @param parent - Parent diagram item to add the all group to
  * @param all - All group definition from schema
  */
@@ -221,7 +233,7 @@ export function processAll(parent: DiagramItem, all: all): void {
 /**
  * Generic function to process a group (sequence, choice, or all).
  * Creates a group container and processes child elements.
- * 
+ *
  * @param parent - Parent diagram item
  * @param groupDef - Group definition from schema
  * @param groupName - Name of the group type for display
@@ -244,23 +256,27 @@ function processGroup(
   // Process elements within the group
   // Import and use createElementNode from TypeNodeCreators would create a circular dependency,
   // so we create a lightweight element node inline with essential properties
-  processChildCollection(groupItem, groupDef.element as localElement | localElement[] | undefined, (elem: localElement) => {
-    const item = new DiagramItem(
-      generateId(),
-      elem.name || "unnamed",
-      DiagramItemType.element,
-      parent.diagram
-    );
-    if (elem.type_) {
-      item.type = elem.type_;
+  processChildCollection(
+    groupItem,
+    groupDef.element as localElement | localElement[] | undefined,
+    (elem: localElement) => {
+      const item = new DiagramItem(
+        generateId(),
+        elem.name || "unnamed",
+        DiagramItemType.element,
+        parent.diagram
+      );
+      if (elem.type_) {
+        item.type = elem.type_;
+      }
+      item.documentation = extractDocumentation(elem.annotation) ?? "";
+
+      // Extract occurrence constraints for the element
+      extractOccurrenceConstraints(item, elem);
+
+      return item;
     }
-    item.documentation = extractDocumentation(elem.annotation) ?? "";
-    
-    // Extract occurrence constraints for the element
-    extractOccurrenceConstraints(item, elem);
-    
-    return item;
-  });
+  );
 
   // Only add the group if it has children
   if (groupItem.childElements.length > 0) {
@@ -271,11 +287,14 @@ function processGroup(
 /**
  * Processes an extension in complexContent or simpleContent.
  * Extracts base type and attributes, then processes child groups.
- * 
+ *
  * @param parent - Parent diagram item to extend
  * @param extension - Extension definition from schema
  */
-export function processExtension(parent: DiagramItem, extension: ContentTypeLike): void {
+export function processExtension(
+  parent: DiagramItem,
+  extension: ContentTypeLike
+): void {
   // Extract base type - append to existing type info
   if (extension.base) {
     parent.type += ` (extends ${extension.base})`;
@@ -301,43 +320,53 @@ export function processExtension(parent: DiagramItem, extension: ContentTypeLike
 }
 
 /**
- * Helper function to check if an array has elements
- */
-function hasElements(arr: unknown): boolean {
-  return Array.isArray(arr) && arr.length > 0;
-}
-
-/**
  * Extracts restriction facets from a restriction definition.
  * Handles enumeration values, patterns, length constraints, min/max values, etc.
- * 
+ *
  * @param parent - Parent diagram item to store restrictions on
  * @param restriction - Restriction definition from schema (any type with restriction facets)
  */
-export function extractRestrictionFacets(parent: DiagramItem, restriction: RestrictionTypeLike): void {
+export function extractRestrictionFacets(
+  parent: DiagramItem,
+  restriction: RestrictionTypeLike
+): void {
   // Early return if the restriction doesn't have simple type facets
   if (!hasSimpleTypeFacets(restriction)) {
     return;
   }
 
-  // Now TypeScript knows restriction has the facet properties
+  // Normalize all facet collections to arrays because XML unmarshalling
+  // may provide a single object instead of an array when there is only one facet.
+  const enumeration = toArray(restriction.enumeration);
+  const pattern = toArray(restriction.pattern);
+  const length = toArray(restriction.length);
+  const minLength = toArray(restriction.minLength);
+  const maxLength = toArray(restriction.maxLength);
+  const minInclusive = toArray(restriction.minInclusive);
+  const maxInclusive = toArray(restriction.maxInclusive);
+  const minExclusive = toArray(restriction.minExclusive);
+  const maxExclusive = toArray(restriction.maxExclusive);
+  const totalDigits = toArray(restriction.totalDigits);
+  const fractionDigits = toArray(restriction.fractionDigits);
+  const whiteSpace = toArray(restriction.whiteSpace);
+
   // Check if there are any restriction facets to extract
-  const facetProperties = [
-    restriction.enumeration,
-    restriction.pattern,
-    restriction.length,
-    restriction.minLength,
-    restriction.maxLength,
-    restriction.minInclusive,
-    restriction.maxInclusive,
-    restriction.minExclusive,
-    restriction.maxExclusive,
-    restriction.totalDigits,
-    restriction.fractionDigits,
-    restriction.whiteSpace,
+  const facetArrays = [
+    enumeration,
+    pattern,
+    length,
+    minLength,
+    maxLength,
+    minInclusive,
+    maxInclusive,
+    minExclusive,
+    maxExclusive,
+    totalDigits,
+    fractionDigits,
+    whiteSpace,
   ];
-  
-  const hasRestrictions = facetProperties.some((prop) => hasElements(prop));
+
+  const hasRestrictions = facetArrays.some((arr) => arr.length > 0);
 
   if (!hasRestrictions) {
     return;
@@ -349,68 +378,71 @@ export function extractRestrictionFacets(parent: DiagramItem, restriction: Restr
   }
 
   // Extract enumeration values
-  if (restriction.enumeration && hasElements(restriction.enumeration)) {
-    parent.restrictions.enumeration = restriction.enumeration.map((e) => e.value);
+  if (enumeration.length > 0) {
+    parent.restrictions.enumeration = enumeration.map((e) => e.value);
   }
 
   // Extract pattern values
-  if (restriction.pattern && hasElements(restriction.pattern)) {
-    parent.restrictions.pattern = restriction.pattern.map((p) => p.value);
+  if (pattern.length > 0) {
+    parent.restrictions.pattern = pattern.map((p) => p.value);
   }
 
   // Extract length constraints (only the first one is used per XSD spec)
-  if (restriction.length && hasElements(restriction.length)) {
-    parent.restrictions.length = restriction.length[0].value;
+  if (length.length > 0) {
+    parent.restrictions.length = length[0].value;
   }
 
-  if (restriction.minLength && hasElements(restriction.minLength)) {
-    parent.restrictions.minLength = restriction.minLength[0].value;
+  if (minLength.length > 0) {
+    parent.restrictions.minLength = minLength[0].value;
   }
 
-  if (restriction.maxLength && hasElements(restriction.maxLength)) {
-    parent.restrictions.maxLength = restriction.maxLength[0].value;
+  if (maxLength.length > 0) {
+    parent.restrictions.maxLength = maxLength[0].value;
   }
 
   // Extract min/max value constraints (only the first one is used per XSD spec)
-  if (restriction.minInclusive && hasElements(restriction.minInclusive)) {
-    parent.restrictions.minInclusive = restriction.minInclusive[0].value;
+  if (minInclusive.length > 0) {
+    parent.restrictions.minInclusive = minInclusive[0].value;
   }
 
-  if (restriction.maxInclusive && hasElements(restriction.maxInclusive)) {
-    parent.restrictions.maxInclusive = restriction.maxInclusive[0].value;
+  if (maxInclusive.length > 0) {
+    parent.restrictions.maxInclusive = maxInclusive[0].value;
   }
 
-  if (restriction.minExclusive && hasElements(restriction.minExclusive)) {
-    parent.restrictions.minExclusive = restriction.minExclusive[0].value;
+  if (minExclusive.length > 0) {
+    parent.restrictions.minExclusive = minExclusive[0].value;
   }
 
-  if (restriction.maxExclusive && hasElements(restriction.maxExclusive)) {
-    parent.restrictions.maxExclusive = restriction.maxExclusive[0].value;
+  if (maxExclusive.length > 0) {
+    parent.restrictions.maxExclusive = maxExclusive[0].value;
   }
 
   // Extract digit constraints
-  if (restriction.totalDigits && hasElements(restriction.totalDigits)) {
-    parent.restrictions.totalDigits = restriction.totalDigits[0].value;
+  if (totalDigits.length > 0) {
+    parent.restrictions.totalDigits = totalDigits[0].value;
   }
 
-  if (restriction.fractionDigits && hasElements(restriction.fractionDigits)) {
-    parent.restrictions.fractionDigits = restriction.fractionDigits[0].value;
+  if (fractionDigits.length > 0) {
+    parent.restrictions.fractionDigits = fractionDigits[0].value;
   }
 
   // Extract whiteSpace constraint
-  if (restriction.whiteSpace && hasElements(restriction.whiteSpace)) {
-    parent.restrictions.whiteSpace = restriction.whiteSpace[0].value;
+  if (whiteSpace.length > 0) {
+    parent.restrictions.whiteSpace = whiteSpace[0].value;
   }
 }
 
 /**
  * Processes a restriction in complexContent or simpleContent.
  * Extracts base type, restriction facets, and processes child groups.
- * 
+ *
  * @param parent - Parent diagram item being restricted
  * @param restriction - Restriction definition from schema
  */
-export function processRestriction(parent: DiagramItem, restriction: ContentTypeLike): void {
+export function processRestriction(
+  parent: DiagramItem,
+  restriction: ContentTypeLike
+): void {
   // Extract base type from restriction - append to existing type info
   if (restriction.base) {
     parent.type += ` (restricts ${restriction.base})`;

@@ -11,15 +11,18 @@ The command types follow the **Command Pattern** to encapsulate editing operatio
 ### Base Types
 
 #### `BaseCommand<T>`
+
 ```typescript
 interface BaseCommand<T = unknown> {
   type: string;
   payload: T;
 }
 ```
+
 The base interface for all commands. Uses a generic type parameter to ensure type-safe payloads.
 
 #### `CommandResponse`
+
 ```typescript
 interface CommandResponse {
   success: boolean;
@@ -27,6 +30,7 @@ interface CommandResponse {
   data?: unknown;
 }
 ```
+
 Standard response structure for command execution results.
 
 ## Command Categories
@@ -36,10 +40,12 @@ Standard response structure for command execution results.
 Commands for managing XML schema elements:
 
 - **AddElementCommand**: Create a new element
+
   - Requires: `parentId`, `elementName`, `elementType`
   - Optional: `minOccurs`, `maxOccurs`, `documentation`
 
 - **RemoveElementCommand**: Delete an existing element
+
   - Requires: `elementId`
 
 - **ModifyElementCommand**: Update element properties
@@ -51,10 +57,12 @@ Commands for managing XML schema elements:
 Commands for managing element attributes:
 
 - **AddAttributeCommand**: Add an attribute to an element
+
   - Requires: `parentId`, `attributeName`, `attributeType`
   - Optional: `required`, `defaultValue`, `fixedValue`, `documentation`
 
 - **RemoveAttributeCommand**: Delete an attribute
+
   - Requires: `attributeId`
 
 - **ModifyAttributeCommand**: Update attribute properties
@@ -66,10 +74,12 @@ Commands for managing element attributes:
 Commands for managing simple type definitions with restriction facets:
 
 - **AddSimpleTypeCommand**: Create a simple type
+
   - Requires: `typeName`, `baseType`
   - Optional: `restrictions` (enumeration, pattern, length, etc.), `documentation`
 
 - **RemoveSimpleTypeCommand**: Delete a simple type
+
   - Requires: `typeId`
 
 - **ModifySimpleTypeCommand**: Update simple type properties
@@ -79,6 +89,7 @@ Commands for managing simple type definitions with restriction facets:
 #### Restriction Facets
 
 Simple types support all standard XSD restriction facets:
+
 - `minInclusive`, `maxInclusive`, `minExclusive`, `maxExclusive`
 - `length`, `minLength`, `maxLength`
 - `pattern` (regular expression)
@@ -91,10 +102,12 @@ Simple types support all standard XSD restriction facets:
 Commands for managing complex type definitions:
 
 - **AddComplexTypeCommand**: Create a complex type
+
   - Requires: `typeName`, `contentModel` ("sequence" | "choice" | "all")
   - Optional: `abstract`, `baseType`, `mixed`, `documentation`
 
 - **RemoveComplexTypeCommand**: Delete a complex type
+
   - Requires: `typeId`
 
 - **ModifyComplexTypeCommand**: Update complex type properties
@@ -106,10 +119,12 @@ Commands for managing complex type definitions:
 Commands for managing element groups:
 
 - **AddGroupCommand**: Create a group definition
+
   - Requires: `groupName`, `contentModel`
   - Optional: `documentation`
 
 - **RemoveGroupCommand**: Delete a group
+
   - Requires: `groupId`
 
 - **ModifyGroupCommand**: Update group properties
@@ -121,10 +136,12 @@ Commands for managing element groups:
 Commands for managing attribute groups:
 
 - **AddAttributeGroupCommand**: Create an attribute group
+
   - Requires: `groupName`
   - Optional: `documentation`
 
 - **RemoveAttributeGroupCommand**: Delete an attribute group
+
   - Requires: `groupId`
 
 - **ModifyAttributeGroupCommand**: Update attribute group properties
@@ -136,10 +153,12 @@ Commands for managing attribute groups:
 Commands for managing annotations:
 
 - **AddAnnotationCommand**: Add an annotation to a schema component
+
   - Requires: `targetId`
   - Optional: `documentation`, `appInfo`
 
 - **RemoveAnnotationCommand**: Delete an annotation
+
   - Requires: `annotationId`
 
 - **ModifyAnnotationCommand**: Update annotation content
@@ -151,10 +170,12 @@ Commands for managing annotations:
 Commands for managing documentation elements:
 
 - **AddDocumentationCommand**: Add documentation to a component
+
   - Requires: `targetId`, `content`
   - Optional: `lang` (language code)
 
 - **RemoveDocumentationCommand**: Delete documentation
+
   - Requires: `documentationId`
 
 - **ModifyDocumentationCommand**: Update documentation
@@ -166,9 +187,11 @@ Commands for managing documentation elements:
 Commands for managing schema imports:
 
 - **AddImportCommand**: Import another schema namespace
+
   - Requires: `namespace`, `schemaLocation`
 
 - **RemoveImportCommand**: Remove an import
+
   - Requires: `importId`
 
 - **ModifyImportCommand**: Update import properties
@@ -180,9 +203,11 @@ Commands for managing schema imports:
 Commands for managing schema includes:
 
 - **AddIncludeCommand**: Include another schema file
+
   - Requires: `schemaLocation`
 
 - **RemoveIncludeCommand**: Remove an include
+
   - Requires: `includeId`
 
 - **ModifyIncludeCommand**: Update include location
@@ -192,6 +217,7 @@ Commands for managing schema includes:
 ## Union Types
 
 ### `SchemaCommand`
+
 A discriminated union of all command types. Enables type-safe command handling:
 
 ```typescript
@@ -199,8 +225,8 @@ type SchemaCommand =
   | AddElementCommand
   | RemoveElementCommand
   | ModifyElementCommand
-  | AddAttributeCommand
-  // ... all other commands
+  | AddAttributeCommand;
+// ... all other commands
 ```
 
 ## Message Protocol
@@ -208,44 +234,53 @@ type SchemaCommand =
 ### Webview to Extension
 
 #### `ExecuteCommandMessage`
+
 ```typescript
 {
   command: "executeCommand",
   data: SchemaCommand
 }
 ```
+
 Sent from webview to execute a schema editing command.
 
 #### `NodeClickedMessage`
+
 ```typescript
 {
   command: "nodeClicked",
   data: { nodeId: string }
 }
 ```
+
 Sent when a user clicks on a diagram node.
 
 ### Extension to Webview
 
 #### `CommandResultMessage`
+
 ```typescript
 {
   command: "commandResult",
   data: CommandResponse
 }
 ```
+
 Returns the result of command execution.
 
 #### `UpdateSchemaMessage`
+
 ```typescript
 {
   command: "updateSchema",
   data: <serialized schema>
 }
 ```
+
 Sends updated schema to webview for rendering.
 
 #### `ErrorMessage`
+
 ```typescript
 {
   command: "error",
@@ -256,6 +291,7 @@ Sends updated schema to webview for rendering.
   }
 }
 ```
+
 Reports errors to the webview.
 
 ## Usage Examples
@@ -270,8 +306,8 @@ const addElementCmd: AddElementCommand = {
     elementName: "person",
     elementType: "PersonType",
     minOccurs: 1,
-    maxOccurs: "unbounded"
-  }
+    maxOccurs: "unbounded",
+  },
 };
 ```
 
@@ -285,10 +321,10 @@ const addSimpleTypeCmd: AddSimpleTypeCommand = {
     baseType: "string",
     restrictions: {
       pattern: "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}",
-      maxLength: 255
+      maxLength: 255,
     },
-    documentation: "Email address format"
-  }
+    documentation: "Email address format",
+  },
 };
 ```
 
@@ -299,9 +335,9 @@ const modifyElementCmd: ModifyElementCommand = {
   type: "modifyElement",
   payload: {
     elementId: "person-element",
-    maxOccurs: "unbounded",  // Only update maxOccurs
-    documentation: "Updated documentation"
-  }
+    maxOccurs: "unbounded", // Only update maxOccurs
+    documentation: "Updated documentation",
+  },
 };
 ```
 
@@ -317,6 +353,7 @@ const modifyElementCmd: ModifyElementCommand = {
 The command types are organized into focused modules for maintainability:
 
 ### Type Definitions
+
 - `shared/types.ts` - Main export point, re-exports all command types
 - `shared/commands/base.ts` - Base command interfaces (`BaseCommand`, `CommandResponse`)
 - `shared/commands/element.ts` - Element commands (Add, Remove, Modify)
@@ -331,6 +368,7 @@ The command types are organized into focused modules for maintainability:
 ### Testing
 
 Comprehensive unit tests mirror the source structure:
+
 - `shared/__tests__/commands/element.test.ts` - Element command tests
 - `shared/__tests__/commands/attribute.test.ts` - Attribute command tests
 - `shared/__tests__/commands/schemaTypes.test.ts` - Type command tests
@@ -340,12 +378,14 @@ Comprehensive unit tests mirror the source structure:
 - `shared/__tests__/messages.test.ts` - Message protocol, union types, and type safety tests
 
 Each test file covers:
+
 - Command structure validation
 - Edge case handling
 - Type discrimination validation
 - Optional field semantics
 
 Run tests with:
+
 ```bash
 npm test
 ```

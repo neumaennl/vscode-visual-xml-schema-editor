@@ -30,9 +30,18 @@ export class CommandProcessor {
   private readonly validator: CommandValidator;
   private readonly executor: CommandExecutor;
 
-  constructor() {
-    this.validator = new CommandValidator();
-    this.executor = new CommandExecutor();
+  /**
+   * Creates a new CommandProcessor.
+   *
+   * @param validator - Command validator instance (optional, creates default if not provided)
+   * @param executor - Command executor instance (optional, creates default if not provided)
+   */
+  constructor(
+    validator?: CommandValidator,
+    executor?: CommandExecutor
+  ) {
+    this.validator = validator ?? new CommandValidator();
+    this.executor = executor ?? new CommandExecutor();
   }
 
   /**

@@ -79,7 +79,7 @@ export class CommandValidator {
    * @param name - The name to validate
    * @returns true if valid XML name, false otherwise
    *
-   * Note: This is a simplified pattern for Phase 1 that validates basic ASCII
+   * TODO: This is a simplified pattern for Phase 1 that validates basic ASCII
    * XML names. It does not support namespace-prefixed names (e.g., xs:element)
    * or Unicode characters beyond ASCII. XSD element/type names typically don't
    * use prefixes in schema definitions.

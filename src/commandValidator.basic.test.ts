@@ -60,7 +60,7 @@ describe("CommandValidator - Basic Commands", () => {
 
       const result = validator.validate(command, schemaObj);
       expect(result.valid).toBe(false);
-      expect(result.error).toBe("Element name is required");
+      expect(result.error).toBe("Element name must be a valid XML name");
     });
 
     test("should reject addElement with missing elementType", () => {
@@ -90,7 +90,7 @@ describe("CommandValidator - Basic Commands", () => {
 
       const result = validator.validate(command, schemaObj);
       expect(result.valid).toBe(false);
-      expect(result.error).toBe("Parent ID is required");
+      expect(result.error).toBe("Parent ID cannot be empty");
     });
 
     test("should reject removeElement with missing elementId", () => {
@@ -103,7 +103,7 @@ describe("CommandValidator - Basic Commands", () => {
 
       const result = validator.validate(command, schemaObj);
       expect(result.valid).toBe(false);
-      expect(result.error).toBe("Element ID is required");
+      expect(result.error).toBe("Element ID cannot be empty");
     });
 
     test("should reject modifyElement with missing elementId", () => {
@@ -117,7 +117,7 @@ describe("CommandValidator - Basic Commands", () => {
 
       const result = validator.validate(command, schemaObj);
       expect(result.valid).toBe(false);
-      expect(result.error).toBe("Element ID is required");
+      expect(result.error).toBe("Element ID cannot be empty");
     });
   });
 
@@ -134,7 +134,7 @@ describe("CommandValidator - Basic Commands", () => {
 
       const result = validator.validate(command, schemaObj);
       expect(result.valid).toBe(false);
-      expect(result.error).toBe("Attribute name is required");
+      expect(result.error).toBe("Attribute name must be a valid XML name");
     });
 
     test("should reject addAttribute with missing parentId", () => {
@@ -149,7 +149,7 @@ describe("CommandValidator - Basic Commands", () => {
 
       const result = validator.validate(command, schemaObj);
       expect(result.valid).toBe(false);
-      expect(result.error).toBe("Parent ID is required");
+      expect(result.error).toBe("Parent ID cannot be empty");
     });
 
     test("should reject removeAttribute with missing attributeId", () => {
@@ -162,7 +162,7 @@ describe("CommandValidator - Basic Commands", () => {
 
       const result = validator.validate(command, schemaObj);
       expect(result.valid).toBe(false);
-      expect(result.error).toBe("Attribute ID is required");
+      expect(result.error).toBe("Attribute ID cannot be empty");
     });
 
     test("should reject modifyAttribute with missing attributeId", () => {
@@ -175,7 +175,7 @@ describe("CommandValidator - Basic Commands", () => {
 
       const result = validator.validate(command, schemaObj);
       expect(result.valid).toBe(false);
-      expect(result.error).toBe("Attribute ID is required");
+      expect(result.error).toBe("Attribute ID cannot be empty");
     });
   });
 
@@ -191,7 +191,7 @@ describe("CommandValidator - Basic Commands", () => {
 
       const result = validator.validate(command, schemaObj);
       expect(result.valid).toBe(false);
-      expect(result.error).toBe("Type name is required");
+      expect(result.error).toBe("Type name must be a valid XML name");
     });
 
     test("should reject removeSimpleType with missing typeId", () => {
@@ -204,7 +204,7 @@ describe("CommandValidator - Basic Commands", () => {
 
       const result = validator.validate(command, schemaObj);
       expect(result.valid).toBe(false);
-      expect(result.error).toBe("Type ID is required");
+      expect(result.error).toBe("Type ID cannot be empty");
     });
 
     test("should reject modifySimpleType with missing typeId", () => {
@@ -217,7 +217,7 @@ describe("CommandValidator - Basic Commands", () => {
 
       const result = validator.validate(command, schemaObj);
       expect(result.valid).toBe(false);
-      expect(result.error).toBe("Type ID is required");
+      expect(result.error).toBe("Type ID cannot be empty");
     });
   });
 
@@ -233,7 +233,7 @@ describe("CommandValidator - Basic Commands", () => {
 
       const result = validator.validate(command, schemaObj);
       expect(result.valid).toBe(false);
-      expect(result.error).toBe("Type name is required");
+      expect(result.error).toBe("Type name must be a valid XML name");
     });
 
     test("should reject addComplexType with missing contentModel", () => {
@@ -263,7 +263,7 @@ describe("CommandValidator - Basic Commands", () => {
 
       const result = validator.validate(command, schemaObj);
       expect(result.valid).toBe(false);
-      expect(result.error).toBe("Type ID is required");
+      expect(result.error).toBe("Type ID cannot be empty");
     });
 
     test("should reject modifyComplexType with missing typeId", () => {
@@ -276,7 +276,7 @@ describe("CommandValidator - Basic Commands", () => {
 
       const result = validator.validate(command, schemaObj);
       expect(result.valid).toBe(false);
-      expect(result.error).toBe("Type ID is required");
+      expect(result.error).toBe("Type ID cannot be empty");
     });
   });
 });

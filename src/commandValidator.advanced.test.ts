@@ -51,7 +51,7 @@ describe("CommandValidator - Advanced Commands", () => {
 
       const result = validator.validate(command, schemaObj);
       expect(result.valid).toBe(false);
-      expect(result.error).toBe("Group name is required");
+      expect(result.error).toBe("Group name must be a valid XML name");
     });
 
     test("should reject addGroup with missing contentModel", () => {
@@ -81,7 +81,7 @@ describe("CommandValidator - Advanced Commands", () => {
 
       const result = validator.validate(command, schemaObj);
       expect(result.valid).toBe(false);
-      expect(result.error).toBe("Group ID is required");
+      expect(result.error).toBe("Group ID cannot be empty");
     });
 
     test("should reject modifyGroup with missing groupId", () => {
@@ -94,7 +94,7 @@ describe("CommandValidator - Advanced Commands", () => {
 
       const result = validator.validate(command, schemaObj);
       expect(result.valid).toBe(false);
-      expect(result.error).toBe("Group ID is required");
+      expect(result.error).toBe("Group ID cannot be empty");
     });
   });
 
@@ -109,7 +109,7 @@ describe("CommandValidator - Advanced Commands", () => {
 
       const result = validator.validate(command, schemaObj);
       expect(result.valid).toBe(false);
-      expect(result.error).toBe("Attribute group name is required");
+      expect(result.error).toBe("Attribute group name must be a valid XML name");
     });
 
     test("should reject removeAttributeGroup with missing groupId", () => {
@@ -122,7 +122,7 @@ describe("CommandValidator - Advanced Commands", () => {
 
       const result = validator.validate(command, schemaObj);
       expect(result.valid).toBe(false);
-      expect(result.error).toBe("Attribute group ID is required");
+      expect(result.error).toBe("Attribute group ID cannot be empty");
     });
 
     test("should reject modifyAttributeGroup with missing groupId", () => {
@@ -135,7 +135,7 @@ describe("CommandValidator - Advanced Commands", () => {
 
       const result = validator.validate(command, schemaObj);
       expect(result.valid).toBe(false);
-      expect(result.error).toBe("Attribute group ID is required");
+      expect(result.error).toBe("Attribute group ID cannot be empty");
     });
   });
 
@@ -150,7 +150,7 @@ describe("CommandValidator - Advanced Commands", () => {
 
       const result = validator.validate(command, schemaObj);
       expect(result.valid).toBe(false);
-      expect(result.error).toBe("Target ID is required");
+      expect(result.error).toBe("Target ID cannot be empty");
     });
 
     test("should reject removeAnnotation with missing annotationId", () => {
@@ -163,7 +163,7 @@ describe("CommandValidator - Advanced Commands", () => {
 
       const result = validator.validate(command, schemaObj);
       expect(result.valid).toBe(false);
-      expect(result.error).toBe("Annotation ID is required");
+      expect(result.error).toBe("Annotation ID cannot be empty");
     });
 
     test("should reject modifyAnnotation with missing annotationId", () => {
@@ -176,7 +176,7 @@ describe("CommandValidator - Advanced Commands", () => {
 
       const result = validator.validate(command, schemaObj);
       expect(result.valid).toBe(false);
-      expect(result.error).toBe("Annotation ID is required");
+      expect(result.error).toBe("Annotation ID cannot be empty");
     });
   });
 
@@ -192,7 +192,7 @@ describe("CommandValidator - Advanced Commands", () => {
 
       const result = validator.validate(command, schemaObj);
       expect(result.valid).toBe(false);
-      expect(result.error).toBe("Target ID is required");
+      expect(result.error).toBe("Target ID cannot be empty");
     });
 
     test("should reject removeDocumentation with missing documentationId", () => {
@@ -205,7 +205,7 @@ describe("CommandValidator - Advanced Commands", () => {
 
       const result = validator.validate(command, schemaObj);
       expect(result.valid).toBe(false);
-      expect(result.error).toBe("Documentation ID is required");
+      expect(result.error).toBe("Documentation ID cannot be empty");
     });
 
     test("should reject modifyDocumentation with missing documentationId", () => {
@@ -218,7 +218,7 @@ describe("CommandValidator - Advanced Commands", () => {
 
       const result = validator.validate(command, schemaObj);
       expect(result.valid).toBe(false);
-      expect(result.error).toBe("Documentation ID is required");
+      expect(result.error).toBe("Documentation ID cannot be empty");
     });
   });
 
@@ -250,7 +250,7 @@ describe("CommandValidator - Advanced Commands", () => {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const result = validator.validate(command, schemaObj);
       expect(result.valid).toBe(false);
-      expect(result.error).toBe("Namespace is required");
+      expect(result.error).toBe("Namespace cannot be empty");
     });
 
     test("should reject addImport with missing schemaLocation", () => {
@@ -267,7 +267,7 @@ describe("CommandValidator - Advanced Commands", () => {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const result = validator.validate(command, schemaObj);
       expect(result.valid).toBe(false);
-      expect(result.error).toBe("Schema location is required");
+      expect(result.error).toBe("Schema location cannot be empty");
     });
 
     test("should reject removeImport with missing importId", () => {
@@ -280,7 +280,7 @@ describe("CommandValidator - Advanced Commands", () => {
 
       const result = validator.validate(command, schemaObj);
       expect(result.valid).toBe(false);
-      expect(result.error).toBe("Import ID is required");
+      expect(result.error).toBe("Import ID cannot be empty");
     });
 
     test("should reject modifyImport with missing importId", () => {
@@ -293,7 +293,7 @@ describe("CommandValidator - Advanced Commands", () => {
 
       const result = validator.validate(command, schemaObj);
       expect(result.valid).toBe(false);
-      expect(result.error).toBe("Import ID is required");
+      expect(result.error).toBe("Import ID cannot be empty");
     });
   });
 
@@ -308,7 +308,7 @@ describe("CommandValidator - Advanced Commands", () => {
 
       const result = validator.validate(command, schemaObj);
       expect(result.valid).toBe(false);
-      expect(result.error).toBe("Schema location is required");
+      expect(result.error).toBe("Schema location cannot be empty");
     });
 
     test("should reject removeInclude with missing includeId", () => {
@@ -321,7 +321,7 @@ describe("CommandValidator - Advanced Commands", () => {
 
       const result = validator.validate(command, schemaObj);
       expect(result.valid).toBe(false);
-      expect(result.error).toBe("Include ID is required");
+      expect(result.error).toBe("Include ID cannot be empty");
     });
 
     test("should reject modifyInclude with missing includeId", () => {
@@ -334,7 +334,7 @@ describe("CommandValidator - Advanced Commands", () => {
 
       const result = validator.validate(command, schemaObj);
       expect(result.valid).toBe(false);
-      expect(result.error).toBe("Include ID is required");
+      expect(result.error).toBe("Include ID cannot be empty");
     });
   });
 });

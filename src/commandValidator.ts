@@ -1,6 +1,22 @@
 /**
  * CommandValidator: Validates commands before execution.
  * Implements validation logic for all schema editing commands.
+ * 
+ * Current Implementation (Phase 1):
+ * - Validates XML name syntax
+ * - Validates occurrence constraints (minOccurs, maxOccurs)
+ * - Validates basic value types and ranges
+ * 
+ * TODO (Phase 2 - Enhanced Validation):
+ * - Validate that referenced IDs actually exist in the schema
+ * - Check if operations are semantically valid (e.g., can add to parent)
+ * - Validate type references (ensure referenced types exist)
+ * - Verify namespace declarations
+ * - Check for circular dependencies
+ * - Validate XPath expressions in constraints
+ * - Ensure resulting schema will be valid XML Schema
+ * 
+ * See ADR 001 Phase 1 milestone: "Add comprehensive command validation"
  */
 
 import {
@@ -50,6 +66,24 @@ export interface ValidationResult {
  * Validates schema commands before execution.
  */
 export class CommandValidator {
+  /**
+   * Validates if a string is a valid XML name.
+   * XML names must start with a letter or underscore, and contain only
+   * letters, digits, hyphens, underscores, and periods.
+   *
+   * @param name - The name to validate
+   * @returns true if valid XML name, false otherwise
+   */
+  private isValidXmlName(name: string): boolean {
+    if (!name || name.trim().length === 0) {
+      return false;
+    }
+    // XML name pattern: starts with letter or underscore, 
+    // followed by letters, digits, hyphens, underscores, or periods
+    const xmlNamePattern = /^[a-zA-Z_][\w.-]*$/;
+    return xmlNamePattern.test(name);
+  }
+
   /**
    * Validate a command before execution.
    *
@@ -149,15 +183,51 @@ export class CommandValidator {
     command: AddElementCommand,
     _schemaObj: schema
   ): ValidationResult {
-    if (!command.payload.elementName) {
-      return { valid: false, error: "Element name is required" };
+    // Validate element name is a valid XML name
+    if (!this.isValidXmlName(command.payload.elementName)) {
+      return { valid: false, error: "Element name must be a valid XML name" };
     }
-    if (!command.payload.elementType) {
+    
+    // Validate parentId is not empty
+    // TODO Phase 2: Validate that parentId exists in the schema
+    if (!command.payload.parentId.trim()) {
+      return { valid: false, error: "Parent ID cannot be empty" };
+    }
+    
+    // Validate elementType is not empty
+    // TODO Phase 2: Validate that elementType is a valid built-in or user-defined type
+    if (!command.payload.elementType.trim()) {
       return { valid: false, error: "Element type is required" };
     }
-    if (!command.payload.parentId) {
-      return { valid: false, error: "Parent ID is required" };
+    
+    // Validate minOccurs if provided
+    if (command.payload.minOccurs !== undefined) {
+      if (command.payload.minOccurs < 0) {
+        return { valid: false, error: "minOccurs must be >= 0" };
+      }
+      if (!Number.isInteger(command.payload.minOccurs)) {
+        return { valid: false, error: "minOccurs must be an integer" };
+      }
     }
+    
+    // Validate maxOccurs if provided
+    if (command.payload.maxOccurs !== undefined) {
+      if (command.payload.maxOccurs !== "unbounded") {
+        if (typeof command.payload.maxOccurs !== "number" || command.payload.maxOccurs < 0) {
+          return { valid: false, error: "maxOccurs must be a positive integer or 'unbounded'" };
+        }
+        if (!Number.isInteger(command.payload.maxOccurs)) {
+          return { valid: false, error: "maxOccurs must be an integer or 'unbounded'" };
+        }
+        // Validate minOccurs <= maxOccurs
+        if (command.payload.minOccurs !== undefined && 
+            typeof command.payload.maxOccurs === "number" &&
+            command.payload.minOccurs > command.payload.maxOccurs) {
+          return { valid: false, error: "minOccurs must be <= maxOccurs" };
+        }
+      }
+    }
+    
     return { valid: true };
   }
 
@@ -165,8 +235,10 @@ export class CommandValidator {
     command: RemoveElementCommand,
     _schemaObj: schema
   ): ValidationResult {
-    if (!command.payload.elementId) {
-      return { valid: false, error: "Element ID is required" };
+    // In Phase 2, we would validate that elementId exists in the schema
+    // For now, just validate it's not empty
+    if (!command.payload.elementId.trim()) {
+      return { valid: false, error: "Element ID cannot be empty" };
     }
     return { valid: true };
   }
@@ -175,9 +247,39 @@ export class CommandValidator {
     command: ModifyElementCommand,
     _schemaObj: schema
   ): ValidationResult {
-    if (!command.payload.elementId) {
-      return { valid: false, error: "Element ID is required" };
+    // In Phase 2, we would validate that elementId exists in the schema
+    if (!command.payload.elementId.trim()) {
+      return { valid: false, error: "Element ID cannot be empty" };
     }
+    
+    // Validate element name if provided
+    if (command.payload.elementName !== undefined && 
+        !this.isValidXmlName(command.payload.elementName)) {
+      return { valid: false, error: "Element name must be a valid XML name" };
+    }
+    
+    // Validate minOccurs if provided
+    if (command.payload.minOccurs !== undefined) {
+      if (command.payload.minOccurs < 0) {
+        return { valid: false, error: "minOccurs must be >= 0" };
+      }
+      if (!Number.isInteger(command.payload.minOccurs)) {
+        return { valid: false, error: "minOccurs must be an integer" };
+      }
+    }
+    
+    // Validate maxOccurs if provided
+    if (command.payload.maxOccurs !== undefined) {
+      if (command.payload.maxOccurs !== "unbounded") {
+        if (typeof command.payload.maxOccurs !== "number" || command.payload.maxOccurs < 0) {
+          return { valid: false, error: "maxOccurs must be a positive integer or 'unbounded'" };
+        }
+        if (!Number.isInteger(command.payload.maxOccurs)) {
+          return { valid: false, error: "maxOccurs must be an integer or 'unbounded'" };
+        }
+      }
+    }
+    
     return { valid: true };
   }
 
@@ -187,12 +289,16 @@ export class CommandValidator {
     command: AddAttributeCommand,
     _schemaObj: schema
   ): ValidationResult {
-    if (!command.payload.attributeName) {
-      return { valid: false, error: "Attribute name is required" };
+    // Validate attribute name is a valid XML name
+    if (!this.isValidXmlName(command.payload.attributeName)) {
+      return { valid: false, error: "Attribute name must be a valid XML name" };
     }
-    if (!command.payload.parentId) {
-      return { valid: false, error: "Parent ID is required" };
+    
+    // In Phase 2, validate that parentId exists in the schema
+    if (!command.payload.parentId.trim()) {
+      return { valid: false, error: "Parent ID cannot be empty" };
     }
+    
     return { valid: true };
   }
 
@@ -200,8 +306,9 @@ export class CommandValidator {
     command: RemoveAttributeCommand,
     _schemaObj: schema
   ): ValidationResult {
-    if (!command.payload.attributeId) {
-      return { valid: false, error: "Attribute ID is required" };
+    // In Phase 2, validate that attributeId exists in the schema
+    if (!command.payload.attributeId.trim()) {
+      return { valid: false, error: "Attribute ID cannot be empty" };
     }
     return { valid: true };
   }
@@ -210,8 +317,9 @@ export class CommandValidator {
     command: ModifyAttributeCommand,
     _schemaObj: schema
   ): ValidationResult {
-    if (!command.payload.attributeId) {
-      return { valid: false, error: "Attribute ID is required" };
+    // In Phase 2, validate that attributeId exists in the schema
+    if (!command.payload.attributeId.trim()) {
+      return { valid: false, error: "Attribute ID cannot be empty" };
     }
     return { valid: true };
   }
@@ -222,9 +330,12 @@ export class CommandValidator {
     command: AddSimpleTypeCommand,
     _schemaObj: schema
   ): ValidationResult {
-    if (!command.payload.typeName) {
-      return { valid: false, error: "Type name is required" };
+    // Validate type name is a valid XML name
+    if (!this.isValidXmlName(command.payload.typeName)) {
+      return { valid: false, error: "Type name must be a valid XML name" };
     }
+    // TODO Phase 2: Check if type name already exists in schema
+    // TODO Phase 2: Validate baseType exists if specified
     return { valid: true };
   }
 
@@ -232,9 +343,11 @@ export class CommandValidator {
     command: RemoveSimpleTypeCommand,
     _schemaObj: schema
   ): ValidationResult {
-    if (!command.payload.typeId) {
-      return { valid: false, error: "Type ID is required" };
+    if (!command.payload.typeId.trim()) {
+      return { valid: false, error: "Type ID cannot be empty" };
     }
+    // TODO Phase 2: Validate that typeId exists in schema
+    // TODO Phase 2: Check if type is being used by other elements/types
     return { valid: true };
   }
 
@@ -242,9 +355,10 @@ export class CommandValidator {
     command: ModifySimpleTypeCommand,
     _schemaObj: schema
   ): ValidationResult {
-    if (!command.payload.typeId) {
-      return { valid: false, error: "Type ID is required" };
+    if (!command.payload.typeId.trim()) {
+      return { valid: false, error: "Type ID cannot be empty" };
     }
+    // TODO Phase 2: Validate that typeId exists in schema
     return { valid: true };
   }
 
@@ -254,12 +368,19 @@ export class CommandValidator {
     command: AddComplexTypeCommand,
     _schemaObj: schema
   ): ValidationResult {
-    if (!command.payload.typeName) {
-      return { valid: false, error: "Type name is required" };
+    // Validate type name is a valid XML name
+    if (!this.isValidXmlName(command.payload.typeName)) {
+      return { valid: false, error: "Type name must be a valid XML name" };
     }
     if (!command.payload.contentModel) {
       return { valid: false, error: "Content model is required" };
     }
+    // Validate content model is one of the valid options
+    const validModels = ["sequence", "choice", "all", "simpleContent", "complexContent"];
+    if (!validModels.includes(command.payload.contentModel)) {
+      return { valid: false, error: `Content model must be one of: ${validModels.join(", ")}` };
+    }
+    // TODO Phase 2: Check if type name already exists in schema
     return { valid: true };
   }
 
@@ -267,9 +388,11 @@ export class CommandValidator {
     command: RemoveComplexTypeCommand,
     _schemaObj: schema
   ): ValidationResult {
-    if (!command.payload.typeId) {
-      return { valid: false, error: "Type ID is required" };
+    if (!command.payload.typeId.trim()) {
+      return { valid: false, error: "Type ID cannot be empty" };
     }
+    // TODO Phase 2: Validate that typeId exists in schema
+    // TODO Phase 2: Check if type is being used by other elements/types
     return { valid: true };
   }
 
@@ -277,9 +400,10 @@ export class CommandValidator {
     command: ModifyComplexTypeCommand,
     _schemaObj: schema
   ): ValidationResult {
-    if (!command.payload.typeId) {
-      return { valid: false, error: "Type ID is required" };
+    if (!command.payload.typeId.trim()) {
+      return { valid: false, error: "Type ID cannot be empty" };
     }
+    // TODO Phase 2: Validate that typeId exists in schema
     return { valid: true };
   }
 
@@ -289,12 +413,19 @@ export class CommandValidator {
     command: AddGroupCommand,
     _schemaObj: schema
   ): ValidationResult {
-    if (!command.payload.groupName) {
-      return { valid: false, error: "Group name is required" };
+    // Validate group name is a valid XML name
+    if (!this.isValidXmlName(command.payload.groupName)) {
+      return { valid: false, error: "Group name must be a valid XML name" };
     }
     if (!command.payload.contentModel) {
       return { valid: false, error: "Content model is required" };
     }
+    // Validate content model
+    const validModels = ["sequence", "choice", "all"];
+    if (!validModels.includes(command.payload.contentModel)) {
+      return { valid: false, error: `Content model must be one of: ${validModels.join(", ")}` };
+    }
+    // TODO Phase 2: Check if group name already exists
     return { valid: true };
   }
 
@@ -302,9 +433,11 @@ export class CommandValidator {
     command: RemoveGroupCommand,
     _schemaObj: schema
   ): ValidationResult {
-    if (!command.payload.groupId) {
-      return { valid: false, error: "Group ID is required" };
+    if (!command.payload.groupId.trim()) {
+      return { valid: false, error: "Group ID cannot be empty" };
     }
+    // TODO Phase 2: Validate that groupId exists in schema
+    // TODO Phase 2: Check if group is being referenced
     return { valid: true };
   }
 
@@ -312,9 +445,10 @@ export class CommandValidator {
     command: ModifyGroupCommand,
     _schemaObj: schema
   ): ValidationResult {
-    if (!command.payload.groupId) {
-      return { valid: false, error: "Group ID is required" };
+    if (!command.payload.groupId.trim()) {
+      return { valid: false, error: "Group ID cannot be empty" };
     }
+    // TODO Phase 2: Validate that groupId exists in schema
     return { valid: true };
   }
 
@@ -324,9 +458,11 @@ export class CommandValidator {
     command: AddAttributeGroupCommand,
     _schemaObj: schema
   ): ValidationResult {
-    if (!command.payload.groupName) {
-      return { valid: false, error: "Attribute group name is required" };
+    // Validate group name is a valid XML name
+    if (!this.isValidXmlName(command.payload.groupName)) {
+      return { valid: false, error: "Attribute group name must be a valid XML name" };
     }
+    // TODO Phase 2: Check if attribute group name already exists
     return { valid: true };
   }
 
@@ -334,9 +470,11 @@ export class CommandValidator {
     command: RemoveAttributeGroupCommand,
     _schemaObj: schema
   ): ValidationResult {
-    if (!command.payload.groupId) {
-      return { valid: false, error: "Attribute group ID is required" };
+    if (!command.payload.groupId.trim()) {
+      return { valid: false, error: "Attribute group ID cannot be empty" };
     }
+    // TODO Phase 2: Validate that groupId exists in schema
+    // TODO Phase 2: Check if attribute group is being referenced
     return { valid: true };
   }
 
@@ -344,9 +482,10 @@ export class CommandValidator {
     command: ModifyAttributeGroupCommand,
     _schemaObj: schema
   ): ValidationResult {
-    if (!command.payload.groupId) {
-      return { valid: false, error: "Attribute group ID is required" };
+    if (!command.payload.groupId.trim()) {
+      return { valid: false, error: "Attribute group ID cannot be empty" };
     }
+    // TODO Phase 2: Validate that groupId exists in schema
     return { valid: true };
   }
 
@@ -356,9 +495,10 @@ export class CommandValidator {
     command: AddAnnotationCommand,
     _schemaObj: schema
   ): ValidationResult {
-    if (!command.payload.targetId) {
-      return { valid: false, error: "Target ID is required" };
+    if (!command.payload.targetId.trim()) {
+      return { valid: false, error: "Target ID cannot be empty" };
     }
+    // TODO Phase 2: Validate that targetId exists in schema
     return { valid: true };
   }
 
@@ -366,9 +506,10 @@ export class CommandValidator {
     command: RemoveAnnotationCommand,
     _schemaObj: schema
   ): ValidationResult {
-    if (!command.payload.annotationId) {
-      return { valid: false, error: "Annotation ID is required" };
+    if (!command.payload.annotationId.trim()) {
+      return { valid: false, error: "Annotation ID cannot be empty" };
     }
+    // TODO Phase 2: Validate that annotationId exists in schema
     return { valid: true };
   }
 
@@ -376,9 +517,10 @@ export class CommandValidator {
     command: ModifyAnnotationCommand,
     _schemaObj: schema
   ): ValidationResult {
-    if (!command.payload.annotationId) {
-      return { valid: false, error: "Annotation ID is required" };
+    if (!command.payload.annotationId.trim()) {
+      return { valid: false, error: "Annotation ID cannot be empty" };
     }
+    // TODO Phase 2: Validate that annotationId exists in schema
     return { valid: true };
   }
 
@@ -388,9 +530,10 @@ export class CommandValidator {
     command: AddDocumentationCommand,
     _schemaObj: schema
   ): ValidationResult {
-    if (!command.payload.targetId) {
-      return { valid: false, error: "Target ID is required" };
+    if (!command.payload.targetId.trim()) {
+      return { valid: false, error: "Target ID cannot be empty" };
     }
+    // TODO Phase 2: Validate that targetId exists in schema
     return { valid: true };
   }
 
@@ -398,9 +541,10 @@ export class CommandValidator {
     command: RemoveDocumentationCommand,
     _schemaObj: schema
   ): ValidationResult {
-    if (!command.payload.documentationId) {
-      return { valid: false, error: "Documentation ID is required" };
+    if (!command.payload.documentationId.trim()) {
+      return { valid: false, error: "Documentation ID cannot be empty" };
     }
+    // TODO Phase 2: Validate that documentationId exists in schema
     return { valid: true };
   }
 
@@ -408,9 +552,10 @@ export class CommandValidator {
     command: ModifyDocumentationCommand,
     _schemaObj: schema
   ): ValidationResult {
-    if (!command.payload.documentationId) {
-      return { valid: false, error: "Documentation ID is required" };
+    if (!command.payload.documentationId.trim()) {
+      return { valid: false, error: "Documentation ID cannot be empty" };
     }
+    // TODO Phase 2: Validate that documentationId exists in schema
     return { valid: true };
   }
 
@@ -420,12 +565,15 @@ export class CommandValidator {
     command: AddImportCommand,
     _schemaObj: schema
   ): ValidationResult {
-    if (!command.payload.namespace) {
-      return { valid: false, error: "Namespace is required" };
+    if (!command.payload.namespace.trim()) {
+      return { valid: false, error: "Namespace cannot be empty" };
     }
-    if (!command.payload.schemaLocation) {
-      return { valid: false, error: "Schema location is required" };
+    if (!command.payload.schemaLocation.trim()) {
+      return { valid: false, error: "Schema location cannot be empty" };
     }
+    // TODO Phase 2: Validate namespace URI format
+    // TODO Phase 2: Check if import already exists
+    // TODO Phase 2: Validate schemaLocation is a valid path/URI
     return { valid: true };
   }
 
@@ -433,9 +581,10 @@ export class CommandValidator {
     command: RemoveImportCommand,
     _schemaObj: schema
   ): ValidationResult {
-    if (!command.payload.importId) {
-      return { valid: false, error: "Import ID is required" };
+    if (!command.payload.importId.trim()) {
+      return { valid: false, error: "Import ID cannot be empty" };
     }
+    // TODO Phase 2: Validate that importId exists in schema
     return { valid: true };
   }
 
@@ -443,9 +592,10 @@ export class CommandValidator {
     command: ModifyImportCommand,
     _schemaObj: schema
   ): ValidationResult {
-    if (!command.payload.importId) {
-      return { valid: false, error: "Import ID is required" };
+    if (!command.payload.importId.trim()) {
+      return { valid: false, error: "Import ID cannot be empty" };
     }
+    // TODO Phase 2: Validate that importId exists in schema
     return { valid: true };
   }
 
@@ -455,9 +605,11 @@ export class CommandValidator {
     command: AddIncludeCommand,
     _schemaObj: schema
   ): ValidationResult {
-    if (!command.payload.schemaLocation) {
-      return { valid: false, error: "Schema location is required" };
+    if (!command.payload.schemaLocation.trim()) {
+      return { valid: false, error: "Schema location cannot be empty" };
     }
+    // TODO Phase 2: Validate schemaLocation is a valid path/URI
+    // TODO Phase 2: Check if include already exists
     return { valid: true };
   }
 
@@ -465,9 +617,10 @@ export class CommandValidator {
     command: RemoveIncludeCommand,
     _schemaObj: schema
   ): ValidationResult {
-    if (!command.payload.includeId) {
-      return { valid: false, error: "Include ID is required" };
+    if (!command.payload.includeId.trim()) {
+      return { valid: false, error: "Include ID cannot be empty" };
     }
+    // TODO Phase 2: Validate that includeId exists in schema
     return { valid: true };
   }
 
@@ -475,9 +628,10 @@ export class CommandValidator {
     command: ModifyIncludeCommand,
     _schemaObj: schema
   ): ValidationResult {
-    if (!command.payload.includeId) {
-      return { valid: false, error: "Include ID is required" };
+    if (!command.payload.includeId.trim()) {
+      return { valid: false, error: "Include ID cannot be empty" };
     }
+    // TODO Phase 2: Validate that includeId exists in schema
     return { valid: true };
   }
 }

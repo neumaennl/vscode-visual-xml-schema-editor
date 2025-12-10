@@ -296,7 +296,7 @@ describe("CommandProcessor", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "",
+          parentId: " ",  // Whitespace-only string
           elementName: "test",
           elementType: "string",
         },
@@ -304,7 +304,7 @@ describe("CommandProcessor", () => {
 
       const result = processor.execute(command, simpleSchemaXml);
       expect(result.success).toBe(false);
-      expect(result.error).toBe("Parent ID is required");
+      expect(result.error).toBe("Parent ID cannot be empty");
     });
 
     test("should handle multiple validation errors", () => {
@@ -312,7 +312,7 @@ describe("CommandProcessor", () => {
         type: "addElement",
         payload: {
           parentId: "schema",
-          elementName: "",
+          elementName: "123invalid",  // Invalid XML name (starts with digit)
           elementType: "string",
         },
       };
@@ -320,7 +320,7 @@ describe("CommandProcessor", () => {
       const result = processor.execute(command, simpleSchemaXml);
       expect(result.success).toBe(false);
       // Should catch the first validation error
-      expect(result.error).toBe("Element name is required");
+      expect(result.error).toBe("Element name must be a valid XML name");
     });
 
     test("should handle executor exceptions gracefully", () => {

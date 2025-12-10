@@ -78,6 +78,11 @@ export class CommandValidator {
    *
    * @param name - The name to validate
    * @returns true if valid XML name, false otherwise
+   *
+   * Note: This is a simplified pattern for Phase 1 that validates basic ASCII
+   * XML names. It does not support namespace-prefixed names (e.g., xs:element)
+   * or Unicode characters beyond ASCII. XSD element/type names typically don't
+   * use prefixes in schema definitions.
    */
   private isValidXmlName(name: string): boolean {
     if (!name || name.trim().length === 0) {
@@ -211,7 +216,7 @@ export class CommandValidator {
         ) {
           return {
             valid: false,
-            error: "maxOccurs must be a positive integer or 'unbounded'",
+            error: "maxOccurs must be a non-negative integer or 'unbounded'",
           };
         }
         if (!Number.isInteger(command.payload.maxOccurs)) {
@@ -282,7 +287,7 @@ export class CommandValidator {
         ) {
           return {
             valid: false,
-            error: "maxOccurs must be a positive integer or 'unbounded'",
+            error: "maxOccurs must be a non-negative integer or 'unbounded'",
           };
         }
         if (!Number.isInteger(command.payload.maxOccurs)) {
@@ -290,6 +295,16 @@ export class CommandValidator {
             valid: false,
             error: "maxOccurs must be an integer or 'unbounded'",
           };
+        }
+        // Ensure minOccurs <= maxOccurs if both are provided
+        // (we're already inside the block where maxOccurs is a number)
+        if (command.payload.minOccurs !== undefined) {
+          if (command.payload.minOccurs > command.payload.maxOccurs) {
+            return {
+              valid: false,
+              error: "minOccurs cannot be greater than maxOccurs",
+            };
+          }
         }
       }
     }

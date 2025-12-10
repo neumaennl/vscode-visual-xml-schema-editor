@@ -186,15 +186,26 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
           document.lineAt(lastLine).text.length
         );
         edit.replace(document.uri, fullRange, result.xmlContent);
-        await vscode.workspace.applyEdit(edit);
+        const success = await vscode.workspace.applyEdit(edit);
 
-        // Send success response
-        void webview.postMessage({
-          command: "commandResult",
-          data: {
-            success: true,
-          },
-        });
+        if (success) {
+          // Send success response
+          void webview.postMessage({
+            command: "commandResult",
+            data: {
+              success: true,
+            },
+          });
+        } else {
+          // Send error response if edit failed
+          void webview.postMessage({
+            command: "commandResult",
+            data: {
+              success: false,
+              error: "Failed to apply edit to the document.",
+            },
+          });
+        }
       } else {
         // Send error response
         void webview.postMessage({

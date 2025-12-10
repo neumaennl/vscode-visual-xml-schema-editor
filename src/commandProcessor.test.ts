@@ -3,7 +3,7 @@
  * Tests transactional behavior, error handling, and orchestration.
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, jest/no-conditional-expect */
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
 
 import { CommandProcessor } from "./commandProcessor";
 import { AddElementCommand } from "../shared/types";
@@ -437,14 +437,12 @@ describe("CommandProcessor", () => {
       expect(result.xmlContent).not.toBeNull();
 
       // The serialized XML should be parseable
-      if (result.xmlContent) {
-        // Try to execute another command with the result to verify round-trip
-        const retryResult = processorWithMock.execute(
-          command,
-          result.xmlContent
-        );
-        expect(retryResult.success).toBe(true);
-      }
+      // Try to execute another command with the result to verify round-trip
+      const retryResult = processorWithMock.execute(
+        command,
+        result.xmlContent!
+      );
+      expect(retryResult.success).toBe(true);
     });
 
     test("should successfully handle schema modifications", () => {
@@ -479,13 +477,11 @@ describe("CommandProcessor", () => {
       expect(result.schema?.elementFormDefault).toBe("qualified");
 
       // The resulting XML should be parseable
-      if (result.xmlContent) {
-        const retryResult = processorWithMock.execute(
-          command,
-          result.xmlContent
-        );
-        expect(retryResult.success).toBe(true);
-      }
+      const retryResult = processorWithMock.execute(
+        command,
+        result.xmlContent!
+      );
+      expect(retryResult.success).toBe(true);
     });
   });
 

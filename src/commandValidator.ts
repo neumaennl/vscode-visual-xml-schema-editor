@@ -296,15 +296,12 @@ export class CommandValidator {
             error: "maxOccurs must be an integer or 'unbounded'",
           };
         }
-        // Ensure minOccurs <= maxOccurs if both are provided
-        // (we're already inside the block where maxOccurs is a number)
-        if (command.payload.minOccurs !== undefined) {
-          if (command.payload.minOccurs > command.payload.maxOccurs) {
-            return {
-              valid: false,
-              error: "minOccurs cannot be greater than maxOccurs",
-            };
-          }
+        // Validate minOccurs <= maxOccurs
+        if (
+          command.payload.minOccurs !== undefined &&
+          command.payload.minOccurs > command.payload.maxOccurs
+        ) {
+          return { valid: false, error: "minOccurs must be <= maxOccurs" };
         }
       }
     }

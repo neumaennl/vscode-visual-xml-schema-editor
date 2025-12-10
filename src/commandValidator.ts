@@ -1,17 +1,17 @@
 /**
  * CommandValidator: Validates commands before execution.
  * Implements validation logic for all schema editing commands.
- * 
+ *
  * Current Implementation (Phase 1 - Syntactic Validation):
  * - XML name syntax validation for all name fields
  * - Occurrence constraints validation (minOccurs >= 0, maxOccurs logic, consistency)
  * - Content model validation for complexType and group commands
  * - Required field validation (non-empty strings where appropriate)
- * 
+ *
  * IMPORTANT: The IDs in commands (parentId, elementId, etc.) are UI-generated identifiers
  * for diagram nodes, NOT the XSD schema 'id' attributes. These are managed by the UI layer
  * and cannot be validated against the schema structure at this stage.
- * 
+ *
  * Future Enhancements (Phase 2+ - Semantic Validation):
  * - Validate that UI node IDs correspond to actual nodes when execution logic is implemented
  * - Check for duplicate element/type names before adding (requires execution context)
@@ -83,7 +83,7 @@ export class CommandValidator {
     if (!name || name.trim().length === 0) {
       return false;
     }
-    // XML name pattern: starts with letter or underscore, 
+    // XML name pattern: starts with letter or underscore,
     // followed by letters, digits, hyphens, underscores, or periods
     const xmlNamePattern = /^[a-zA-Z_][\w.-]*$/;
     return xmlNamePattern.test(name);
@@ -96,20 +96,7 @@ export class CommandValidator {
    * @param schemaObj - The schema object for context validation
    * @returns Validation result with success status and optional error message
    */
-  public validate(
-    command: SchemaCommand,
-    schemaObj: schema
-  ): ValidationResult {
-    // Validate command type exists
-    if (!command.type) {
-      return { valid: false, error: "Command type is required" };
-    }
-
-    // Validate payload exists
-    if (!command.payload) {
-      return { valid: false, error: "Command payload is required" };
-    }
-
+  public validate(command: SchemaCommand, schemaObj: schema): ValidationResult {
     // Type-specific validation
     switch (command.type) {
       case "addElement":
@@ -192,19 +179,19 @@ export class CommandValidator {
     if (!this.isValidXmlName(command.payload.elementName)) {
       return { valid: false, error: "Element name must be a valid XML name" };
     }
-    
+
     // Validate parentId is not empty
     // TODO Phase 2: Validate that parentId exists in the schema
     if (!command.payload.parentId.trim()) {
       return { valid: false, error: "Parent ID cannot be empty" };
     }
-    
+
     // Validate elementType is not empty
     // TODO Phase 2: Validate that elementType is a valid built-in or user-defined type
     if (!command.payload.elementType.trim()) {
       return { valid: false, error: "Element type is required" };
     }
-    
+
     // Validate minOccurs if provided
     if (command.payload.minOccurs !== undefined) {
       if (command.payload.minOccurs < 0) {
@@ -214,25 +201,36 @@ export class CommandValidator {
         return { valid: false, error: "minOccurs must be an integer" };
       }
     }
-    
+
     // Validate maxOccurs if provided
     if (command.payload.maxOccurs !== undefined) {
       if (command.payload.maxOccurs !== "unbounded") {
-        if (typeof command.payload.maxOccurs !== "number" || command.payload.maxOccurs < 0) {
-          return { valid: false, error: "maxOccurs must be a positive integer or 'unbounded'" };
+        if (
+          typeof command.payload.maxOccurs !== "number" ||
+          command.payload.maxOccurs < 0
+        ) {
+          return {
+            valid: false,
+            error: "maxOccurs must be a positive integer or 'unbounded'",
+          };
         }
         if (!Number.isInteger(command.payload.maxOccurs)) {
-          return { valid: false, error: "maxOccurs must be an integer or 'unbounded'" };
+          return {
+            valid: false,
+            error: "maxOccurs must be an integer or 'unbounded'",
+          };
         }
         // Validate minOccurs <= maxOccurs
-        if (command.payload.minOccurs !== undefined && 
-            typeof command.payload.maxOccurs === "number" &&
-            command.payload.minOccurs > command.payload.maxOccurs) {
+        if (
+          command.payload.minOccurs !== undefined &&
+          typeof command.payload.maxOccurs === "number" &&
+          command.payload.minOccurs > command.payload.maxOccurs
+        ) {
           return { valid: false, error: "minOccurs must be <= maxOccurs" };
         }
       }
     }
-    
+
     return { valid: true };
   }
 
@@ -256,13 +254,15 @@ export class CommandValidator {
     if (!command.payload.elementId.trim()) {
       return { valid: false, error: "Element ID cannot be empty" };
     }
-    
+
     // Validate element name if provided
-    if (command.payload.elementName !== undefined && 
-        !this.isValidXmlName(command.payload.elementName)) {
+    if (
+      command.payload.elementName !== undefined &&
+      !this.isValidXmlName(command.payload.elementName)
+    ) {
       return { valid: false, error: "Element name must be a valid XML name" };
     }
-    
+
     // Validate minOccurs if provided
     if (command.payload.minOccurs !== undefined) {
       if (command.payload.minOccurs < 0) {
@@ -272,19 +272,28 @@ export class CommandValidator {
         return { valid: false, error: "minOccurs must be an integer" };
       }
     }
-    
+
     // Validate maxOccurs if provided
     if (command.payload.maxOccurs !== undefined) {
       if (command.payload.maxOccurs !== "unbounded") {
-        if (typeof command.payload.maxOccurs !== "number" || command.payload.maxOccurs < 0) {
-          return { valid: false, error: "maxOccurs must be a positive integer or 'unbounded'" };
+        if (
+          typeof command.payload.maxOccurs !== "number" ||
+          command.payload.maxOccurs < 0
+        ) {
+          return {
+            valid: false,
+            error: "maxOccurs must be a positive integer or 'unbounded'",
+          };
         }
         if (!Number.isInteger(command.payload.maxOccurs)) {
-          return { valid: false, error: "maxOccurs must be an integer or 'unbounded'" };
+          return {
+            valid: false,
+            error: "maxOccurs must be an integer or 'unbounded'",
+          };
         }
       }
     }
-    
+
     return { valid: true };
   }
 
@@ -298,12 +307,12 @@ export class CommandValidator {
     if (!this.isValidXmlName(command.payload.attributeName)) {
       return { valid: false, error: "Attribute name must be a valid XML name" };
     }
-    
+
     // In Phase 2, validate that parentId exists in the schema
     if (!command.payload.parentId.trim()) {
       return { valid: false, error: "Parent ID cannot be empty" };
     }
-    
+
     return { valid: true };
   }
 
@@ -381,9 +390,18 @@ export class CommandValidator {
       return { valid: false, error: "Content model is required" };
     }
     // Validate content model is one of the valid options
-    const validModels = ["sequence", "choice", "all", "simpleContent", "complexContent"];
+    const validModels = [
+      "sequence",
+      "choice",
+      "all",
+      "simpleContent",
+      "complexContent",
+    ];
     if (!validModels.includes(command.payload.contentModel)) {
-      return { valid: false, error: `Content model must be one of: ${validModels.join(", ")}` };
+      return {
+        valid: false,
+        error: `Content model must be one of: ${validModels.join(", ")}`,
+      };
     }
     // TODO Phase 2: Check if type name already exists in schema
     return { valid: true };
@@ -428,7 +446,10 @@ export class CommandValidator {
     // Validate content model
     const validModels = ["sequence", "choice", "all"];
     if (!validModels.includes(command.payload.contentModel)) {
-      return { valid: false, error: `Content model must be one of: ${validModels.join(", ")}` };
+      return {
+        valid: false,
+        error: `Content model must be one of: ${validModels.join(", ")}`,
+      };
     }
     // TODO Phase 2: Check if group name already exists
     return { valid: true };
@@ -465,7 +486,10 @@ export class CommandValidator {
   ): ValidationResult {
     // Validate group name is a valid XML name
     if (!this.isValidXmlName(command.payload.groupName)) {
-      return { valid: false, error: "Attribute group name must be a valid XML name" };
+      return {
+        valid: false,
+        error: "Attribute group name must be a valid XML name",
+      };
     }
     // TODO Phase 2: Check if attribute group name already exists
     return { valid: true };

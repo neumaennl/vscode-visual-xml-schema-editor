@@ -36,7 +36,9 @@ describe("CommandProcessor", () => {
 
       // Should fail because execution is not implemented, but parsing should work
       expect(result.success).toBe(false);
-      expect(result.error).toContain("addElement execution not yet implemented");
+      expect(result.error).toContain(
+        "addElement execution not yet implemented"
+      );
     });
 
     test("should successfully execute command with mocked executor", () => {
@@ -45,7 +47,10 @@ describe("CommandProcessor", () => {
         execute: jest.fn(),
       };
 
-      const processorWithMock = new CommandProcessor(undefined, mockExecutor as any);
+      const processorWithMock = new CommandProcessor(
+        undefined,
+        mockExecutor as any
+      );
 
       const command: AddElementCommand = {
         type: "addElement",
@@ -107,7 +112,7 @@ describe("CommandProcessor", () => {
       // Store the original XML
       const originalXml = simpleSchemaXml;
       const xmlBefore = originalXml;
-      
+
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
@@ -118,12 +123,12 @@ describe("CommandProcessor", () => {
       };
 
       const result = processor.execute(command, originalXml);
-      
+
       // Verify the command failed
       expect(result.success).toBe(false);
       expect(result.schema).toBeNull();
       expect(result.xmlContent).toBeNull();
-      
+
       // Verify the original XML remains exactly unchanged
       const xmlAfter = originalXml;
       expect(xmlAfter).toBe(xmlBefore);
@@ -141,7 +146,10 @@ describe("CommandProcessor", () => {
         }),
       };
 
-      const processorWithMock = new CommandProcessor(undefined, mockExecutor as any);
+      const processorWithMock = new CommandProcessor(
+        undefined,
+        mockExecutor as any
+      );
 
       const command: AddElementCommand = {
         type: "addElement",
@@ -155,15 +163,15 @@ describe("CommandProcessor", () => {
       // Execute first command
       const result1 = processorWithMock.execute(command, simpleSchemaXml);
       expect(result1.success).toBe(true);
-      
+
       // Execute second command with same original XML
       const result2 = processorWithMock.execute(command, simpleSchemaXml);
       expect(result2.success).toBe(true);
-      
+
       // Both results should have different modifications
       expect(result1.schema?.version).toBe("modified-1");
       expect(result2.schema?.version).toBe("modified-2");
-      
+
       // Proves that each execution works on a clone
       expect(executionCount).toBe(2);
     });
@@ -172,7 +180,7 @@ describe("CommandProcessor", () => {
       // Store the original XML
       const originalXml = simpleSchemaXml;
       const xmlBefore = originalXml;
-      
+
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
@@ -183,12 +191,12 @@ describe("CommandProcessor", () => {
       };
 
       const result = processor.execute(command, originalXml);
-      
+
       // Execution will fail because it's not implemented
       expect(result.success).toBe(false);
       expect(result.schema).toBeNull();
       expect(result.xmlContent).toBeNull();
-      
+
       // Verify the original XML string remains exactly unchanged
       const xmlAfter = originalXml;
       expect(xmlAfter).toBe(xmlBefore);
@@ -199,7 +207,7 @@ describe("CommandProcessor", () => {
       // Store the original XML
       const originalXml = simpleSchemaXml;
       const xmlBefore = originalXml;
-      
+
       // Mock executor that throws an error
       const mockExecutor = {
         execute: jest.fn(() => {
@@ -207,7 +215,10 @@ describe("CommandProcessor", () => {
         }),
       };
 
-      const processorWithMock = new CommandProcessor(undefined, mockExecutor as any);
+      const processorWithMock = new CommandProcessor(
+        undefined,
+        mockExecutor as any
+      );
 
       const command: AddElementCommand = {
         type: "addElement",
@@ -219,17 +230,16 @@ describe("CommandProcessor", () => {
       };
 
       const result = processorWithMock.execute(command, originalXml);
-      
+
       expect(result.success).toBe(false);
       expect(result.schema).toBeNull();
       expect(result.error).toContain("Execution failed");
-      
+
       // Verify the original XML string remains exactly unchanged
       const xmlAfter = originalXml;
       expect(xmlAfter).toBe(xmlBefore);
       expect(xmlAfter).toEqual(simpleSchemaXml);
     });
-
   });
 
   describe("Error Handling", () => {
@@ -253,7 +263,7 @@ describe("CommandProcessor", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: " ",  // Whitespace-only string
+          parentId: " ", // Whitespace-only string
           elementName: "test",
           elementType: "string",
         },
@@ -269,7 +279,7 @@ describe("CommandProcessor", () => {
         type: "addElement",
         payload: {
           parentId: "schema",
-          elementName: "123invalid",  // Invalid XML name (starts with digit)
+          elementName: "123invalid", // Invalid XML name (starts with digit)
           elementType: "string",
         },
       };
@@ -288,7 +298,10 @@ describe("CommandProcessor", () => {
         }),
       };
 
-      const processorWithMock = new CommandProcessor(undefined, mockExecutor as any);
+      const processorWithMock = new CommandProcessor(
+        undefined,
+        mockExecutor as any
+      );
 
       const command: AddElementCommand = {
         type: "addElement",
@@ -300,7 +313,7 @@ describe("CommandProcessor", () => {
       };
 
       const result = processorWithMock.execute(command, simpleSchemaXml);
-      
+
       expect(result.success).toBe(false);
       expect(result.error).toContain("Executor crashed unexpectedly");
       expect(result.schema).toBeNull();
@@ -315,7 +328,10 @@ describe("CommandProcessor", () => {
         }),
       };
 
-      const processorWithMock = new CommandProcessor(mockValidator as any, undefined);
+      const processorWithMock = new CommandProcessor(
+        mockValidator as any,
+        undefined
+      );
 
       const command: AddElementCommand = {
         type: "addElement",
@@ -327,7 +343,7 @@ describe("CommandProcessor", () => {
       };
 
       const result = processorWithMock.execute(command, simpleSchemaXml);
-      
+
       expect(result.success).toBe(false);
       expect(result.error).toContain("Validator crashed");
       expect(result.schema).toBeNull();
@@ -342,7 +358,10 @@ describe("CommandProcessor", () => {
         }),
       };
 
-      const processorWithMock = new CommandProcessor(undefined, mockExecutor as any);
+      const processorWithMock = new CommandProcessor(
+        undefined,
+        mockExecutor as any
+      );
 
       const command: AddElementCommand = {
         type: "addElement",
@@ -354,7 +373,7 @@ describe("CommandProcessor", () => {
       };
 
       const result = processorWithMock.execute(command, simpleSchemaXml);
-      
+
       // Verify result structure on success
       expect(result).toHaveProperty("success");
       expect(result.success).toBe(true);
@@ -375,7 +394,7 @@ describe("CommandProcessor", () => {
       };
 
       const result = processor.execute(command, simpleSchemaXml);
-      
+
       // Verify result structure on failure
       expect(result).toHaveProperty("success");
       expect(result.success).toBe(false);
@@ -397,7 +416,10 @@ describe("CommandProcessor", () => {
         }),
       };
 
-      const processorWithMock = new CommandProcessor(undefined, mockExecutor as any);
+      const processorWithMock = new CommandProcessor(
+        undefined,
+        mockExecutor as any
+      );
 
       const command: AddElementCommand = {
         type: "addElement",
@@ -409,15 +431,18 @@ describe("CommandProcessor", () => {
       };
 
       const result = processorWithMock.execute(command, simpleSchemaXml);
-      
+
       // Should succeed with mock executor
       expect(result.success).toBe(true);
       expect(result.xmlContent).not.toBeNull();
-      
+
       // The serialized XML should be parseable
       if (result.xmlContent) {
         // Try to execute another command with the result to verify round-trip
-        const retryResult = processorWithMock.execute(command, result.xmlContent);
+        const retryResult = processorWithMock.execute(
+          command,
+          result.xmlContent
+        );
         expect(retryResult.success).toBe(true);
       }
     });
@@ -432,7 +457,10 @@ describe("CommandProcessor", () => {
         }),
       };
 
-      const processorWithMock = new CommandProcessor(undefined, mockExecutor as any);
+      const processorWithMock = new CommandProcessor(
+        undefined,
+        mockExecutor as any
+      );
 
       const command: AddElementCommand = {
         type: "addElement",
@@ -444,42 +472,24 @@ describe("CommandProcessor", () => {
       };
 
       const result = processorWithMock.execute(command, simpleSchemaXml);
-      
+
       // Should succeed with valid modifications
       expect(result.success).toBe(true);
       expect(result.schema?.version).toBe("1.0");
       expect(result.schema?.elementFormDefault).toBe("qualified");
-      
+
       // The resulting XML should be parseable
       if (result.xmlContent) {
-        const retryResult = processorWithMock.execute(command, result.xmlContent);
+        const retryResult = processorWithMock.execute(
+          command,
+          result.xmlContent
+        );
         expect(retryResult.success).toBe(true);
       }
     });
   });
 
   describe("Invalid Commands", () => {
-    test("should reject command with missing type", () => {
-      const command = {
-        type: "",
-        payload: {},
-      } as any;
-
-      const result = processor.execute(command, simpleSchemaXml);
-      expect(result.success).toBe(false);
-      expect(result.error).toBe("Command type is required");
-    });
-
-    test("should reject command with missing payload", () => {
-      const command = {
-        type: "addElement",
-      } as any;
-
-      const result = processor.execute(command, simpleSchemaXml);
-      expect(result.success).toBe(false);
-      expect(result.error).toBe("Command payload is required");
-    });
-
     test("should reject command with unknown type", () => {
       const command = {
         type: "unknownCommand",

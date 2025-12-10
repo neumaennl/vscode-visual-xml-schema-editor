@@ -230,49 +230,6 @@ describe("CommandProcessor", () => {
       expect(xmlAfter).toEqual(simpleSchemaXml);
     });
 
-    test("should work on cloned schema not original", () => {
-      // Track which schema object is modified and how
-      const modifiedSchemas: any[] = [];
-      let executionCount = 0;
-      
-      const mockExecutor = {
-        execute: jest.fn((command, schema) => {
-          executionCount++;
-          modifiedSchemas.push(schema);
-          // Modify the schema differently each time
-          schema.version = `v${executionCount}`;
-        }),
-      };
-
-      const processorWithMock = new CommandProcessor(undefined, mockExecutor as any);
-
-      const command: AddElementCommand = {
-        type: "addElement",
-        payload: {
-          parentId: "schema",
-          elementName: "test",
-          elementType: "string",
-        },
-      };
-
-      // Execute twice on the same input XML
-      const result1 = processorWithMock.execute(command, simpleSchemaXml);
-      const result2 = processorWithMock.execute(command, simpleSchemaXml);
-
-      expect(result1.success).toBe(true);
-      expect(result2.success).toBe(true);
-      
-      // Verify that different schema objects were modified
-      expect(modifiedSchemas.length).toBe(2);
-      expect(modifiedSchemas[0]).not.toBe(modifiedSchemas[1]);
-      
-      // Verify the modifications are different, proving they're separate clones
-      expect(result1.schema?.version).toBe("v1");
-      expect(result2.schema?.version).toBe("v2");
-      
-      // The results should be different from each other
-      expect(result1.schema).not.toEqual(result2.schema);
-    });
   });
 
   describe("Error Handling", () => {

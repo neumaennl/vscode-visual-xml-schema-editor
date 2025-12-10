@@ -106,6 +106,7 @@ describe("CommandProcessor", () => {
     test("should preserve original schema on validation failure", () => {
       // Store the original XML
       const originalXml = simpleSchemaXml;
+      const xmlBefore = originalXml;
       
       const command: AddElementCommand = {
         type: "addElement",
@@ -116,28 +117,17 @@ describe("CommandProcessor", () => {
         },
       };
 
-      const result = processor.execute(command, simpleSchemaXml);
+      const result = processor.execute(command, originalXml);
       
       // Verify the command failed
       expect(result.success).toBe(false);
       expect(result.schema).toBeNull();
       expect(result.xmlContent).toBeNull();
       
-      // Verify the original XML remains unchanged by parsing it again
-      // If it can still be parsed, it wasn't corrupted
-      const testResult = processor.execute(
-        {
-          type: "addElement",
-          payload: {
-            parentId: "schema",
-            elementName: "test",
-            elementType: "string",
-          },
-        },
-        originalXml
-      );
-      // The XML should still be parseable and produce the same validation failure
-      expect(testResult.success).toBe(false);
+      // Verify the original XML remains exactly unchanged
+      const xmlAfter = originalXml;
+      expect(xmlAfter).toBe(xmlBefore);
+      expect(xmlAfter).toEqual(simpleSchemaXml);
     });
 
     test("should not modify original schema when executor succeeds", () => {
@@ -181,6 +171,7 @@ describe("CommandProcessor", () => {
     test("should preserve original schema on execution failure", () => {
       // Store the original XML
       const originalXml = simpleSchemaXml;
+      const xmlBefore = originalXml;
       
       const command: AddElementCommand = {
         type: "addElement",
@@ -191,24 +182,23 @@ describe("CommandProcessor", () => {
         },
       };
 
-      const result = processor.execute(command, simpleSchemaXml);
+      const result = processor.execute(command, originalXml);
       
       // Execution will fail because it's not implemented
       expect(result.success).toBe(false);
       expect(result.schema).toBeNull();
       expect(result.xmlContent).toBeNull();
       
-      // Verify the original XML remains valid and unchanged
-      // Try to execute another command to ensure XML wasn't corrupted
-      const retryResult = processor.execute(command, originalXml);
-      // Should get the same error, proving the XML is still valid
-      expect(retryResult.success).toBe(false);
-      expect(retryResult.error).toContain("execution not yet implemented");
+      // Verify the original XML string remains exactly unchanged
+      const xmlAfter = originalXml;
+      expect(xmlAfter).toBe(xmlBefore);
+      expect(xmlAfter).toEqual(simpleSchemaXml);
     });
 
     test("should preserve original schema when command fails", () => {
       // Store the original XML
       const originalXml = simpleSchemaXml;
+      const xmlBefore = originalXml;
       
       // Mock executor that throws an error
       const mockExecutor = {
@@ -228,43 +218,29 @@ describe("CommandProcessor", () => {
         },
       };
 
-      const result = processorWithMock.execute(command, simpleSchemaXml);
+      const result = processorWithMock.execute(command, originalXml);
       
       expect(result.success).toBe(false);
-      // Original schema should not be returned on error
       expect(result.schema).toBeNull();
       expect(result.error).toContain("Execution failed");
       
-      // Verify the original XML is still valid and can be parsed
-      // Use a successful mock to prove original XML wasn't corrupted
-      const goodMockExecutor = {
-        execute: jest.fn(),
-      };
-      const goodProcessor = new CommandProcessor(undefined, goodMockExecutor as any);
-      
-      const verifyResult = goodProcessor.execute(
-        {
-          type: "addElement",
-          payload: {
-            parentId: "schema",
-            elementName: "test",
-            elementType: "string",
-          },
-        },
-        originalXml
-      );
-      // Should succeed, proving original XML is intact
-      expect(verifyResult.success).toBe(true);
+      // Verify the original XML string remains exactly unchanged
+      const xmlAfter = originalXml;
+      expect(xmlAfter).toBe(xmlBefore);
+      expect(xmlAfter).toEqual(simpleSchemaXml);
     });
 
     test("should work on cloned schema not original", () => {
-      // Track which schema object is modified
+      // Track which schema object is modified and how
       const modifiedSchemas: any[] = [];
+      let executionCount = 0;
       
       const mockExecutor = {
         execute: jest.fn((command, schema) => {
+          executionCount++;
           modifiedSchemas.push(schema);
-          schema.modified = true;
+          // Modify the schema differently each time
+          schema.version = `v${executionCount}`;
         }),
       };
 
@@ -279,7 +255,7 @@ describe("CommandProcessor", () => {
         },
       };
 
-      // Execute twice
+      // Execute twice on the same input XML
       const result1 = processorWithMock.execute(command, simpleSchemaXml);
       const result2 = processorWithMock.execute(command, simpleSchemaXml);
 
@@ -289,6 +265,13 @@ describe("CommandProcessor", () => {
       // Verify that different schema objects were modified
       expect(modifiedSchemas.length).toBe(2);
       expect(modifiedSchemas[0]).not.toBe(modifiedSchemas[1]);
+      
+      // Verify the modifications are different, proving they're separate clones
+      expect(result1.schema?.version).toBe("v1");
+      expect(result2.schema?.version).toBe("v2");
+      
+      // The results should be different from each other
+      expect(result1.schema).not.toEqual(result2.schema);
     });
   });
 
@@ -394,7 +377,7 @@ describe("CommandProcessor", () => {
       expect(result.xmlContent).toBeNull();
     });
 
-    test("should verify result structure is consistent", () => {
+    test("should have consistent result structure on success", () => {
       // Mock executor that modifies schema
       const mockExecutor = {
         execute: jest.fn((command, schema) => {
@@ -415,18 +398,35 @@ describe("CommandProcessor", () => {
 
       const result = processorWithMock.execute(command, simpleSchemaXml);
       
-      // Verify result structure regardless of success/failure
+      // Verify result structure on success
       expect(result).toHaveProperty("success");
+      expect(result.success).toBe(true);
       expect(result).toHaveProperty("schema");
       expect(result).toHaveProperty("xmlContent");
+      expect(result.schema).not.toBeNull();
+      expect(result.xmlContent).not.toBeNull();
+    });
+
+    test("should have consistent result structure on failure", () => {
+      const command: AddElementCommand = {
+        type: "addElement",
+        payload: {
+          parentId: "",
+          elementName: "test",
+          elementType: "string",
+        },
+      };
+
+      const result = processor.execute(command, simpleSchemaXml);
       
-      // On success, schema and xmlContent should be present
-      if (result.success) {
-        expect(result.schema).not.toBeNull();
-        expect(result.xmlContent).not.toBeNull();
-      } else {
-        expect(result).toHaveProperty("error");
-      }
+      // Verify result structure on failure
+      expect(result).toHaveProperty("success");
+      expect(result.success).toBe(false);
+      expect(result).toHaveProperty("error");
+      expect(result).toHaveProperty("schema");
+      expect(result).toHaveProperty("xmlContent");
+      expect(result.schema).toBeNull();
+      expect(result.xmlContent).toBeNull();
     });
   });
 

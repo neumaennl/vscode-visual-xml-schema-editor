@@ -4,7 +4,7 @@
  */
 
 import { CommandProcessor } from "./commandProcessor";
-import { AddElementCommand, SchemaCommand } from "../shared/types";
+import { AddElementCommand, SchemaCommand, formChoice } from "../shared/types";
 import type { CommandValidator } from "./commandValidator";
 import type { CommandExecutor } from "./commandExecutor";
 
@@ -462,7 +462,7 @@ describe("CommandProcessor", () => {
         execute: jest.fn((command, schema) => {
           // Make a valid modification
           schema.version = "1.0";
-          schema.elementFormDefault = "qualified";
+          schema.elementFormDefault = formChoice.qualified;
         }),
       };
 

@@ -14,8 +14,17 @@ import {
 import {
   ValidationResult,
   isValidXmlName,
-  VALID_GROUP_CONTENT_MODELS,
 } from "./validationUtils";
+
+/**
+ * Valid content models for Group elements.
+ * Groups can only use structure models (sequence, choice, all).
+ */
+export const VALID_GROUP_CONTENT_MODELS = [
+  "sequence",
+  "choice",
+  "all",
+] as const;
 
 // ===== Group Command Validation =====
 

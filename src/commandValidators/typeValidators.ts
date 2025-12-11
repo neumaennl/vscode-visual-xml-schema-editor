@@ -14,8 +14,19 @@ import {
 import {
   ValidationResult,
   isValidXmlName,
-  VALID_COMPLEX_TYPE_CONTENT_MODELS,
 } from "./validationUtils";
+
+/**
+ * Valid content models for ComplexType elements.
+ * Includes structure models (sequence, choice, all) and content extension models.
+ */
+export const VALID_COMPLEX_TYPE_CONTENT_MODELS = [
+  "sequence",
+  "choice",
+  "all",
+  "simpleContent",
+  "complexContent",
+] as const;
 
 // ===== SimpleType Command Validation =====
 

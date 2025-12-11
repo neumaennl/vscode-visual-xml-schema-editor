@@ -87,13 +87,12 @@ export class CommandProcessor {
       // Step 4: Execute the command on the working copy
       this.executor.execute(command, workingSchema);
 
-      // Step 5: Serialize back to XML using SchemaModelManager
-      const workingManager = new SchemaModelManager(workingSchema);
-      const updatedXml = workingManager.toXml();
+      // Step 5: Update the model manager with the working schema and serialize
+      this.modelManager.setSchema(workingSchema);
+      const updatedXml = this.modelManager.toXml();
 
       // Step 6: Validate the resulting XML can be parsed (round-trip validation)
-      const validationManager = new SchemaModelManager();
-      validationManager.loadFromXml(updatedXml);
+      this.modelManager.loadFromXml(updatedXml);
 
       return {
         success: true,

@@ -25,6 +25,48 @@
  */
 
 import { SchemaCommand, schema } from "../shared/types";
+import {
+  AddElementCommand,
+  RemoveElementCommand,
+  ModifyElementCommand,
+} from "../shared/commands/element";
+import {
+  AddAttributeCommand,
+  RemoveAttributeCommand,
+  ModifyAttributeCommand,
+} from "../shared/commands/attribute";
+import {
+  AddSimpleTypeCommand,
+  RemoveSimpleTypeCommand,
+  ModifySimpleTypeCommand,
+  AddComplexTypeCommand,
+  RemoveComplexTypeCommand,
+  ModifyComplexTypeCommand,
+} from "../shared/commands/schemaTypes";
+import {
+  AddGroupCommand,
+  RemoveGroupCommand,
+  ModifyGroupCommand,
+  AddAttributeGroupCommand,
+  RemoveAttributeGroupCommand,
+  ModifyAttributeGroupCommand,
+} from "../shared/commands/group";
+import {
+  AddAnnotationCommand,
+  RemoveAnnotationCommand,
+  ModifyAnnotationCommand,
+  AddDocumentationCommand,
+  RemoveDocumentationCommand,
+  ModifyDocumentationCommand,
+} from "../shared/commands/metadata";
+import {
+  AddImportCommand,
+  RemoveImportCommand,
+  ModifyImportCommand,
+  AddIncludeCommand,
+  RemoveIncludeCommand,
+  ModifyIncludeCommand,
+} from "../shared/commands/module";
 import { ValidationResult } from "./commandValidators/validationUtils";
 
 // Import validation functions from specialized modules for default usage

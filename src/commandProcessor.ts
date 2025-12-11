@@ -93,6 +93,9 @@ export class CommandProcessor {
 
       // Step 6: Validate the resulting XML can be parsed (round-trip validation)
       this.modelManager.loadFromXml(updatedXml);
+      
+      // Restore the working schema to maintain consistency in modelManager state
+      this.modelManager.setSchema(workingSchema);
 
       return {
         success: true,

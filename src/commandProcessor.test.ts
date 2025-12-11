@@ -4,13 +4,20 @@
  */
 
 import { CommandProcessor } from "./commandProcessor";
-import { AddElementCommand } from "../shared/types";
+import { AddElementCommand, SchemaCommand } from "../shared/types";
 import type { CommandValidator } from "./commandValidator";
 import type { CommandExecutor } from "./commandExecutor";
 
 // Type-safe mock types for testing
 type MockValidator = Pick<CommandValidator, "validate">;
 type MockExecutor = Pick<CommandExecutor, "execute">;
+
+// Test helper for invalid command that bypasses type system
+// This represents a command type that doesn't exist in the SchemaCommand union
+interface InvalidCommand {
+  type: "unknownCommand";
+  payload: Record<string, never>;
+}
 
 describe("CommandProcessor", () => {
   let processor: CommandProcessor;
@@ -491,12 +498,14 @@ describe("CommandProcessor", () => {
 
   describe("Invalid Commands", () => {
     test("should reject command with unknown type", () => {
-      const command = {
-        type: "unknownCommand" as const,
+      // Create an invalid command that bypasses the type system
+      // This simulates a runtime scenario where an unknown command type is received
+      const invalidCommand: InvalidCommand = {
+        type: "unknownCommand",
         payload: {},
-      } as unknown as AddElementCommand;
+      };
 
-      const result = processor.execute(command, simpleSchemaXml);
+      const result = processor.execute(invalidCommand as unknown as SchemaCommand, simpleSchemaXml);
       expect(result.success).toBe(false);
       expect(result.error).toContain("Unknown command type");
     });

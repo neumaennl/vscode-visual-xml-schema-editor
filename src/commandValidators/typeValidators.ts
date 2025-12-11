@@ -72,7 +72,7 @@ export function validateAddComplexType(
     "simpleContent",
     "complexContent",
   ];
-  if (validModels.indexOf(command.payload.contentModel) === -1) {
+  if (!validModels.includes(command.payload.contentModel)) {
     return {
       valid: false,
       error: `Content model must be one of: ${validModels.join(", ")}`,

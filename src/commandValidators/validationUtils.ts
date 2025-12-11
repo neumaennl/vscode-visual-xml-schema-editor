@@ -50,7 +50,7 @@ export function validateMinOccurs(
     };
   }
 
-  if (minOccurs !== Math.floor(minOccurs)) {
+  if (!Number.isInteger(minOccurs)) {
     return { valid: false, error: "minOccurs must be an integer" };
   }
 
@@ -81,7 +81,7 @@ export function validateMaxOccurs(
         error: "maxOccurs must be a non-negative integer or 'unbounded'",
       };
     }
-    if (maxOccurs !== Math.floor(maxOccurs)) {
+    if (!Number.isInteger(maxOccurs)) {
       return {
         valid: false,
         error: "maxOccurs must be an integer or 'unbounded'",

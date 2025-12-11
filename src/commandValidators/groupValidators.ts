@@ -28,7 +28,7 @@ export function validateAddGroup(
   }
   // Validate content model
   const validModels = ["sequence", "choice", "all"];
-  if (validModels.indexOf(command.payload.contentModel) === -1) {
+  if (!validModels.includes(command.payload.contentModel)) {
     return {
       valid: false,
       error: `Content model must be one of: ${validModels.join(", ")}`,

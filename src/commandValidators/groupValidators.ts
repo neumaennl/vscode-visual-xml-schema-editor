@@ -11,7 +11,11 @@ import {
   RemoveAttributeGroupCommand,
   ModifyAttributeGroupCommand,
 } from "../../shared/types";
-import { ValidationResult, isValidXmlName } from "./validationUtils";
+import {
+  ValidationResult,
+  isValidXmlName,
+  VALID_GROUP_CONTENT_MODELS,
+} from "./validationUtils";
 
 // ===== Group Command Validation =====
 
@@ -27,11 +31,10 @@ export function validateAddGroup(
     return { valid: false, error: "Content model is required" };
   }
   // Validate content model
-  const validModels = ["sequence", "choice", "all"];
-  if (!validModels.includes(command.payload.contentModel)) {
+  if (!VALID_GROUP_CONTENT_MODELS.includes(command.payload.contentModel)) {
     return {
       valid: false,
-      error: `Content model must be one of: ${validModels.join(", ")}`,
+      error: `Content model must be one of: ${VALID_GROUP_CONTENT_MODELS.join(", ")}`,
     };
   }
   // TODO Phase 2: Check if group name already exists

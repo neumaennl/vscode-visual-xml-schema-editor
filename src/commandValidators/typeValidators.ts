@@ -11,7 +11,11 @@ import {
   RemoveComplexTypeCommand,
   ModifyComplexTypeCommand,
 } from "../../shared/types";
-import { ValidationResult, isValidXmlName } from "./validationUtils";
+import {
+  ValidationResult,
+  isValidXmlName,
+  VALID_COMPLEX_TYPE_CONTENT_MODELS,
+} from "./validationUtils";
 
 // ===== SimpleType Command Validation =====
 
@@ -65,17 +69,10 @@ export function validateAddComplexType(
     return { valid: false, error: "Content model is required" };
   }
   // Validate content model is one of the valid options
-  const validModels = [
-    "sequence",
-    "choice",
-    "all",
-    "simpleContent",
-    "complexContent",
-  ];
-  if (!validModels.includes(command.payload.contentModel)) {
+  if (!VALID_COMPLEX_TYPE_CONTENT_MODELS.includes(command.payload.contentModel)) {
     return {
       valid: false,
-      error: `Content model must be one of: ${validModels.join(", ")}`,
+      error: `Content model must be one of: ${VALID_COMPLEX_TYPE_CONTENT_MODELS.join(", ")}`,
     };
   }
   // TODO Phase 2: Check if type name already exists in schema

@@ -8,6 +8,28 @@ export interface ValidationResult {
 }
 
 /**
+ * Valid content models for ComplexType elements.
+ * Includes structure models (sequence, choice, all) and content extension models.
+ */
+export const VALID_COMPLEX_TYPE_CONTENT_MODELS = [
+  "sequence",
+  "choice",
+  "all",
+  "simpleContent",
+  "complexContent",
+] as const;
+
+/**
+ * Valid content models for Group elements.
+ * Groups can only use structure models (sequence, choice, all).
+ */
+export const VALID_GROUP_CONTENT_MODELS = [
+  "sequence",
+  "choice",
+  "all",
+] as const;
+
+/**
  * Validates if a string is a valid XML name.
  * XML names must start with a letter or underscore, and contain only
  * letters, digits, hyphens, underscores, and periods.

@@ -35,47 +35,49 @@ import * as annotationValidators from "./commandValidators/annotationValidators"
 import * as schemaValidators from "./commandValidators/schemaValidators";
 
 /**
- * Type for validator functions that validate commands.
- * Uses any to allow specific command types while maintaining type safety through SchemaCommand union.
+ * Generic type for validator functions that validate commands.
+ * Allows specifying a specific SchemaCommand subtype for type safety.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type ValidatorFunction = (command: any, schemaObj: schema) => ValidationResult;
+type ValidatorFunction<T extends SchemaCommand = SchemaCommand> = (
+  command: T,
+  schemaObj: schema
+) => ValidationResult;
 
 /**
  * Interface for all validator functions used by CommandValidator.
  * Enables dependency injection for testing.
  */
 export interface ValidatorFunctions {
-  validateAddElement: ValidatorFunction;
-  validateRemoveElement: ValidatorFunction;
-  validateModifyElement: ValidatorFunction;
-  validateAddAttribute: ValidatorFunction;
-  validateRemoveAttribute: ValidatorFunction;
-  validateModifyAttribute: ValidatorFunction;
-  validateAddSimpleType: ValidatorFunction;
-  validateRemoveSimpleType: ValidatorFunction;
-  validateModifySimpleType: ValidatorFunction;
-  validateAddComplexType: ValidatorFunction;
-  validateRemoveComplexType: ValidatorFunction;
-  validateModifyComplexType: ValidatorFunction;
-  validateAddGroup: ValidatorFunction;
-  validateRemoveGroup: ValidatorFunction;
-  validateModifyGroup: ValidatorFunction;
-  validateAddAttributeGroup: ValidatorFunction;
-  validateRemoveAttributeGroup: ValidatorFunction;
-  validateModifyAttributeGroup: ValidatorFunction;
-  validateAddAnnotation: ValidatorFunction;
-  validateRemoveAnnotation: ValidatorFunction;
-  validateModifyAnnotation: ValidatorFunction;
-  validateAddDocumentation: ValidatorFunction;
-  validateRemoveDocumentation: ValidatorFunction;
-  validateModifyDocumentation: ValidatorFunction;
-  validateAddImport: ValidatorFunction;
-  validateRemoveImport: ValidatorFunction;
-  validateModifyImport: ValidatorFunction;
-  validateAddInclude: ValidatorFunction;
-  validateRemoveInclude: ValidatorFunction;
-  validateModifyInclude: ValidatorFunction;
+  validateAddElement: ValidatorFunction<AddElementCommand>;
+  validateRemoveElement: ValidatorFunction<RemoveElementCommand>;
+  validateModifyElement: ValidatorFunction<ModifyElementCommand>;
+  validateAddAttribute: ValidatorFunction<AddAttributeCommand>;
+  validateRemoveAttribute: ValidatorFunction<RemoveAttributeCommand>;
+  validateModifyAttribute: ValidatorFunction<ModifyAttributeCommand>;
+  validateAddSimpleType: ValidatorFunction<AddSimpleTypeCommand>;
+  validateRemoveSimpleType: ValidatorFunction<RemoveSimpleTypeCommand>;
+  validateModifySimpleType: ValidatorFunction<ModifySimpleTypeCommand>;
+  validateAddComplexType: ValidatorFunction<AddComplexTypeCommand>;
+  validateRemoveComplexType: ValidatorFunction<RemoveComplexTypeCommand>;
+  validateModifyComplexType: ValidatorFunction<ModifyComplexTypeCommand>;
+  validateAddGroup: ValidatorFunction<AddGroupCommand>;
+  validateRemoveGroup: ValidatorFunction<RemoveGroupCommand>;
+  validateModifyGroup: ValidatorFunction<ModifyGroupCommand>;
+  validateAddAttributeGroup: ValidatorFunction<AddAttributeGroupCommand>;
+  validateRemoveAttributeGroup: ValidatorFunction<RemoveAttributeGroupCommand>;
+  validateModifyAttributeGroup: ValidatorFunction<ModifyAttributeGroupCommand>;
+  validateAddAnnotation: ValidatorFunction<AddAnnotationCommand>;
+  validateRemoveAnnotation: ValidatorFunction<RemoveAnnotationCommand>;
+  validateModifyAnnotation: ValidatorFunction<ModifyAnnotationCommand>;
+  validateAddDocumentation: ValidatorFunction<AddDocumentationCommand>;
+  validateRemoveDocumentation: ValidatorFunction<RemoveDocumentationCommand>;
+  validateModifyDocumentation: ValidatorFunction<ModifyDocumentationCommand>;
+  validateAddImport: ValidatorFunction<AddImportCommand>;
+  validateRemoveImport: ValidatorFunction<RemoveImportCommand>;
+  validateModifyImport: ValidatorFunction<ModifyImportCommand>;
+  validateAddInclude: ValidatorFunction<AddIncludeCommand>;
+  validateRemoveInclude: ValidatorFunction<RemoveIncludeCommand>;
+  validateModifyInclude: ValidatorFunction<ModifyIncludeCommand>;
 }
 
 /**

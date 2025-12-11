@@ -25,11 +25,13 @@ export interface CommandExecutionResult {
 /**
  * CommandProcessor manages the execution of schema editing commands.
  * Ensures validation, transactionality, and rollback support.
+ * Prevents concurrent command executions to maintain state consistency.
  */
 export class CommandProcessor {
   private readonly validator: CommandValidator;
   private readonly executor: CommandExecutor;
   private readonly modelManager: SchemaModelManager;
+  private isExecuting: boolean = false;
 
   /**
    * Creates a new CommandProcessor.
@@ -52,6 +54,7 @@ export class CommandProcessor {
    * Execute a command on the given schema.
    * Validates the command, executes it, and returns the result.
    * If execution fails, the original schema is preserved.
+   * Prevents concurrent executions to maintain state consistency.
    *
    * @param command - The command to execute
    * @param currentXml - The current XML content of the schema
@@ -61,6 +64,18 @@ export class CommandProcessor {
     command: SchemaCommand,
     currentXml: string
   ): CommandExecutionResult {
+    // Prevent concurrent executions
+    if (this.isExecuting) {
+      return {
+        success: false,
+        error: "Another command is currently being executed. Please wait for it to complete.",
+        schema: null,
+        xmlContent: null,
+      };
+    }
+
+    this.isExecuting = true;
+
     try {
       // Step 1: Parse current XML to schema object using SchemaModelManager
       this.modelManager.loadFromXml(currentXml);
@@ -110,6 +125,9 @@ export class CommandProcessor {
         schema: null,
         xmlContent: null,
       };
+    } finally {
+      // Always release the lock, even if an error occurred
+      this.isExecuting = false;
     }
   }
 }

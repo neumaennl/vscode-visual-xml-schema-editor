@@ -666,4 +666,135 @@ describe("CommandProcessor", () => {
       expect(result.error).toContain("execution not yet implemented");
     });
   });
+
+  describe("Concurrency Control", () => {
+    test("should prevent concurrent command executions", () => {
+      const mockExecutor: MockExecutor = {
+        execute: jest.fn(),
+      };
+
+      const mockModelManager: MockModelManager = {
+        loadFromXml: jest.fn(),
+        getSchema: jest.fn().mockReturnValue(mockSchema),
+        setSchema: jest.fn(),
+        cloneSchema: jest.fn().mockReturnValue(mockSchema),
+        toXml: jest.fn().mockReturnValue(simpleSchemaXml),
+      };
+
+      const processorWithMock = new CommandProcessor(
+        undefined,
+        mockExecutor as CommandExecutor,
+        mockModelManager as SchemaModelManager
+      );
+
+      const command: AddElementCommand = {
+        type: "addElement",
+        payload: {
+          parentId: "schema",
+          elementName: "test",
+          elementType: "string",
+        },
+      };
+
+      // Manually set the isExecuting flag to simulate in-progress execution
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+      (processorWithMock as any).isExecuting = true;
+
+      // Try to execute command while another is "in progress"
+      const result = processorWithMock.execute(command, simpleSchemaXml);
+
+      // Should be rejected due to concurrent execution
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("Another command is currently being executed");
+      
+      // Reset the flag
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+      (processorWithMock as any).isExecuting = false;
+    });
+
+    test("should allow execution after previous command completes", () => {
+      const mockModelManager: MockModelManager = {
+        loadFromXml: jest.fn(),
+        getSchema: jest.fn().mockReturnValue(mockSchema),
+        setSchema: jest.fn(),
+        cloneSchema: jest.fn().mockReturnValue(mockSchema),
+        toXml: jest.fn().mockReturnValue(simpleSchemaXml),
+      };
+
+      const mockExecutor: MockExecutor = {
+        execute: jest.fn((command, schema) => {
+          schema.version = "1.0";
+        }),
+      };
+
+      const processorWithMock = new CommandProcessor(
+        undefined,
+        mockExecutor as CommandExecutor,
+        mockModelManager as SchemaModelManager
+      );
+
+      const command: AddElementCommand = {
+        type: "addElement",
+        payload: {
+          parentId: "schema",
+          elementName: "test",
+          elementType: "string",
+        },
+      };
+
+      // Execute first command
+      const result1 = processorWithMock.execute(command, simpleSchemaXml);
+      expect(result1.success).toBe(true);
+
+      // Execute second command after first completes
+      const result2 = processorWithMock.execute(command, simpleSchemaXml);
+      expect(result2.success).toBe(true);
+
+      // Both should have executed successfully
+      expect(mockExecutor.execute).toHaveBeenCalledTimes(2);
+    });
+
+    test("should release lock even when execution fails", () => {
+      const mockModelManager: MockModelManager = {
+        loadFromXml: jest.fn(),
+        getSchema: jest.fn().mockReturnValue(mockSchema),
+        setSchema: jest.fn(),
+        cloneSchema: jest.fn().mockReturnValue(mockSchema),
+        toXml: jest.fn().mockReturnValue(simpleSchemaXml),
+      };
+
+      const mockExecutor: MockExecutor = {
+        execute: jest.fn(() => {
+          throw new Error("Execution failed");
+        }),
+      };
+
+      const processorWithMock = new CommandProcessor(
+        undefined,
+        mockExecutor as CommandExecutor,
+        mockModelManager as SchemaModelManager
+      );
+
+      const command: AddElementCommand = {
+        type: "addElement",
+        payload: {
+          parentId: "schema",
+          elementName: "test",
+          elementType: "string",
+        },
+      };
+
+      // Execute first command that will fail
+      const result1 = processorWithMock.execute(command, simpleSchemaXml);
+      expect(result1.success).toBe(false);
+
+      // Execute second command - should be allowed since lock was released
+      const result2 = processorWithMock.execute(command, simpleSchemaXml);
+      expect(result2.success).toBe(false);
+      expect(result2.error).toContain("Execution failed");
+
+      // Should not be the concurrency error
+      expect(result2.error).not.toContain("Another command is currently being executed");
+    });
+  });
 });

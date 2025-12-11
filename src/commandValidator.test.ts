@@ -78,7 +78,7 @@ describe("CommandValidator", () => {
       };
 
       const result = validator.validate(
-        invalidCommand as SchemaCommand,
+        invalidCommand as unknown as SchemaCommand,
         mockSchema
       );
 
@@ -237,7 +237,7 @@ describe("CommandValidator", () => {
       const command: SchemaCommand = {
         type: "removeAttributeGroup",
         payload: {
-          attributeGroupId: "attrGroup1",
+          groupId: "attrGroup1",
         },
       };
 

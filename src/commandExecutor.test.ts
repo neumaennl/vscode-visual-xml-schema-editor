@@ -33,7 +33,7 @@ describe("CommandExecutor", () => {
       };
 
       expect(() => {
-        executor.execute(invalidCommand as SchemaCommand, mockSchema);
+        executor.execute(invalidCommand as unknown as SchemaCommand, mockSchema);
       }).toThrow("Unknown command type: unknownCommandType");
     });
 

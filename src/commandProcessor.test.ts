@@ -3,10 +3,14 @@
  * Tests transactional behavior, error handling, and orchestration.
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
-
 import { CommandProcessor } from "./commandProcessor";
 import { AddElementCommand } from "../shared/types";
+import type { CommandValidator } from "./commandValidator";
+import type { CommandExecutor } from "./commandExecutor";
+
+// Type-safe mock types for testing
+type MockValidator = Pick<CommandValidator, "validate">;
+type MockExecutor = Pick<CommandExecutor, "execute">;
 
 describe("CommandProcessor", () => {
   let processor: CommandProcessor;
@@ -43,13 +47,13 @@ describe("CommandProcessor", () => {
 
     test("should successfully execute command with mocked executor", () => {
       // Mock executor that succeeds
-      const mockExecutor = {
+      const mockExecutor: MockExecutor = {
         execute: jest.fn(),
       };
 
       const processorWithMock = new CommandProcessor(
         undefined,
-        mockExecutor as any
+        mockExecutor as CommandExecutor
       );
 
       const command: AddElementCommand = {
@@ -138,7 +142,7 @@ describe("CommandProcessor", () => {
     test("should not modify original schema when executor succeeds", () => {
       // Create a mock executor that modifies the schema
       let executionCount = 0;
-      const mockExecutor = {
+      const mockExecutor: MockExecutor = {
         execute: jest.fn((command, schema) => {
           executionCount++;
           // Simulate modification
@@ -148,7 +152,7 @@ describe("CommandProcessor", () => {
 
       const processorWithMock = new CommandProcessor(
         undefined,
-        mockExecutor as any
+        mockExecutor as CommandExecutor
       );
 
       const command: AddElementCommand = {
@@ -209,7 +213,7 @@ describe("CommandProcessor", () => {
       const xmlBefore = originalXml;
 
       // Mock executor that throws an error
-      const mockExecutor = {
+      const mockExecutor: MockExecutor = {
         execute: jest.fn(() => {
           throw new Error("Execution failed");
         }),
@@ -217,7 +221,7 @@ describe("CommandProcessor", () => {
 
       const processorWithMock = new CommandProcessor(
         undefined,
-        mockExecutor as any
+        mockExecutor as CommandExecutor
       );
 
       const command: AddElementCommand = {
@@ -292,7 +296,7 @@ describe("CommandProcessor", () => {
 
     test("should handle executor exceptions gracefully", () => {
       // Mock executor that throws an exception
-      const mockExecutor = {
+      const mockExecutor: MockExecutor = {
         execute: jest.fn(() => {
           throw new Error("Executor crashed unexpectedly");
         }),
@@ -300,7 +304,7 @@ describe("CommandProcessor", () => {
 
       const processorWithMock = new CommandProcessor(
         undefined,
-        mockExecutor as any
+        mockExecutor as CommandExecutor
       );
 
       const command: AddElementCommand = {
@@ -322,14 +326,14 @@ describe("CommandProcessor", () => {
 
     test("should handle validator exceptions gracefully", () => {
       // Mock validator that throws an exception
-      const mockValidator = {
+      const mockValidator: MockValidator = {
         validate: jest.fn(() => {
           throw new Error("Validator crashed");
         }),
       };
 
       const processorWithMock = new CommandProcessor(
-        mockValidator as any,
+        mockValidator as CommandValidator,
         undefined
       );
 
@@ -352,7 +356,7 @@ describe("CommandProcessor", () => {
 
     test("should have consistent result structure on success", () => {
       // Mock executor that modifies schema
-      const mockExecutor = {
+      const mockExecutor: MockExecutor = {
         execute: jest.fn((command, schema) => {
           schema.version = "1.0";
         }),
@@ -360,7 +364,7 @@ describe("CommandProcessor", () => {
 
       const processorWithMock = new CommandProcessor(
         undefined,
-        mockExecutor as any
+        mockExecutor as CommandExecutor
       );
 
       const command: AddElementCommand = {
@@ -409,7 +413,7 @@ describe("CommandProcessor", () => {
   describe("Round-trip Validation", () => {
     test("should ensure serialized XML can be parsed back", () => {
       // Mock executor that modifies the schema
-      const mockExecutor = {
+      const mockExecutor: MockExecutor = {
         execute: jest.fn((command, schema) => {
           // Simulate adding an element to the schema
           schema.element = schema.element || [];
@@ -418,7 +422,7 @@ describe("CommandProcessor", () => {
 
       const processorWithMock = new CommandProcessor(
         undefined,
-        mockExecutor as any
+        mockExecutor as CommandExecutor
       );
 
       const command: AddElementCommand = {
@@ -447,7 +451,7 @@ describe("CommandProcessor", () => {
 
     test("should successfully handle schema modifications", () => {
       // Mock executor that modifies the schema in a valid way
-      const mockExecutor = {
+      const mockExecutor: MockExecutor = {
         execute: jest.fn((command, schema) => {
           // Make a valid modification
           schema.version = "1.0";
@@ -457,7 +461,7 @@ describe("CommandProcessor", () => {
 
       const processorWithMock = new CommandProcessor(
         undefined,
-        mockExecutor as any
+        mockExecutor as CommandExecutor
       );
 
       const command: AddElementCommand = {
@@ -488,9 +492,9 @@ describe("CommandProcessor", () => {
   describe("Invalid Commands", () => {
     test("should reject command with unknown type", () => {
       const command = {
-        type: "unknownCommand",
+        type: "unknownCommand" as const,
         payload: {},
-      } as any;
+      } as unknown as AddElementCommand;
 
       const result = processor.execute(command, simpleSchemaXml);
       expect(result.success).toBe(false);
@@ -501,12 +505,12 @@ describe("CommandProcessor", () => {
   describe("Dependency Injection", () => {
     test("should accept custom validator and executor", () => {
       // Create mock validator that always returns valid
-      const mockValidator = {
+      const mockValidator: MockValidator = {
         validate: jest.fn().mockReturnValue({ valid: true }),
       };
 
       // Create mock executor that throws a specific error
-      const mockExecutor = {
+      const mockExecutor: MockExecutor = {
         execute: jest.fn().mockImplementation(() => {
           throw new Error("Mock executor error");
         }),
@@ -514,8 +518,8 @@ describe("CommandProcessor", () => {
 
       // Create processor with mocked dependencies
       const customProcessor = new CommandProcessor(
-        mockValidator as any,
-        mockExecutor as any
+        mockValidator as CommandValidator,
+        mockExecutor as CommandExecutor
       );
 
       const command: AddElementCommand = {

@@ -26,6 +26,27 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
   }
 
   /**
+   * Safely sends a message to the webview with error logging.
+   * This prevents unhandled promise rejections and avoids infinite error loops
+   * when postMessage itself fails.
+   * 
+   * @param webview - The webview to send the message to
+   * @param message - The message to send
+   */
+  private async safePostMessage(
+    webview: vscode.Webview,
+    message: unknown
+  ): Promise<void> {
+    try {
+      await webview.postMessage(message);
+    } catch (error) {
+      // Log postMessage failures but don't try to send another message
+      // to avoid infinite error loops
+      console.error("Failed to send message to webview:", error);
+    }
+  }
+
+  /**
    * Resolves and initializes the custom text editor for an XSD document.
    * Sets up the webview, establishes communication channels, and loads the initial schema.
    * 
@@ -93,7 +114,7 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
       showType: config.get<boolean>("showType", false),
     };
 
-    void webview.postMessage({
+    void this.safePostMessage(webview, {
       command: "updateDiagramOptions",
       data: diagramOptions,
     });
@@ -123,13 +144,13 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
       console.log("Schema object:", schemaObj);
 
       // Send the schema object to the webview for visualization
-      void webview.postMessage({
+      void this.safePostMessage(webview, {
         command: "updateSchema",
         data: schemaObj,
       });
     } catch (error) {
       console.error("Error parsing schema:", error);
-      void webview.postMessage({
+      void this.safePostMessage(webview, {
         command: "error",
         data: { message: (error as Error).message },
       });
@@ -190,7 +211,7 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
 
         if (success) {
           // Send success response
-          void webview.postMessage({
+          void this.safePostMessage(webview, {
             command: "commandResult",
             data: {
               success: true,
@@ -198,7 +219,7 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
           });
         } else {
           // Send error response if edit failed
-          void webview.postMessage({
+          void this.safePostMessage(webview, {
             command: "commandResult",
             data: {
               success: false,
@@ -208,7 +229,7 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
         }
       } else {
         // Send error response
-        void webview.postMessage({
+        void this.safePostMessage(webview, {
           command: "commandResult",
           data: {
             success: false,
@@ -218,7 +239,9 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
       }
     } catch (error) {
       // Send error response for unexpected errors
-      void webview.postMessage({
+      // Note: If this postMessage fails, it will be logged by safePostMessage
+      // to avoid infinite error loops
+      void this.safePostMessage(webview, {
         command: "error",
         data: {
           message: `Failed to execute command: ${(error as Error).message}`,

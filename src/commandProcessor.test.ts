@@ -1,16 +1,22 @@
 /**
  * Unit tests for CommandProcessor core functionality.
  * Tests transactional behavior, error handling, and orchestration.
+ * SchemaModelManager is mocked to focus on CommandProcessor logic.
  */
 
 import { CommandProcessor } from "./commandProcessor";
-import { AddElementCommand, SchemaCommand, formChoice } from "../shared/types";
+import { AddElementCommand, SchemaCommand, schema } from "../shared/types";
 import type { CommandValidator } from "./commandValidator";
 import type { CommandExecutor } from "./commandExecutor";
+import type { SchemaModelManager } from "./schemaModelManager";
 
 // Type-safe mock types for testing
 type MockValidator = Pick<CommandValidator, "validate">;
 type MockExecutor = Pick<CommandExecutor, "execute">;
+type MockModelManager = Pick<
+  SchemaModelManager,
+  "loadFromXml" | "getSchema" | "setSchema" | "cloneSchema" | "toXml"
+>;
 
 // Test helper for invalid command that bypasses type system
 // This represents a command type that doesn't exist in the SchemaCommand union
@@ -22,6 +28,7 @@ interface InvalidCommand {
 describe("CommandProcessor", () => {
   let processor: CommandProcessor;
   let simpleSchemaXml: string;
+  let mockSchema: schema;
 
   beforeEach(() => {
     processor = new CommandProcessor();
@@ -29,30 +36,22 @@ describe("CommandProcessor", () => {
     simpleSchemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
 </xs:schema>`;
+    
+    // Create a mock schema object
+    mockSchema = new schema();
   });
 
   describe("Core Functionality", () => {
-    test("should parse valid schema XML", () => {
-      const result = processor.execute(
-        {
-          type: "addElement",
-          payload: {
-            parentId: "schema",
-            elementName: "testElement",
-            elementType: "string",
-          },
-        },
-        simpleSchemaXml
-      );
+    test("should successfully execute command with mocked dependencies", () => {
+      // Mock SchemaModelManager
+      const mockModelManager: MockModelManager = {
+        loadFromXml: jest.fn(),
+        getSchema: jest.fn().mockReturnValue(mockSchema),
+        setSchema: jest.fn(),
+        cloneSchema: jest.fn().mockReturnValue(mockSchema),
+        toXml: jest.fn().mockReturnValue(simpleSchemaXml),
+      };
 
-      // Should fail because execution is not implemented, but parsing should work
-      expect(result.success).toBe(false);
-      expect(result.error).toContain(
-        "addElement execution not yet implemented"
-      );
-    });
-
-    test("should successfully execute command with mocked executor", () => {
       // Mock executor that modifies the schema (executor must modify schema in-place)
       const mockExecutor: MockExecutor = {
         execute: jest.fn((cmd, schemaObj) => {
@@ -63,7 +62,8 @@ describe("CommandProcessor", () => {
 
       const processorWithMock = new CommandProcessor(
         undefined,
-        mockExecutor as CommandExecutor
+        mockExecutor as CommandExecutor,
+        mockModelManager as SchemaModelManager
       );
 
       const command: AddElementCommand = {
@@ -77,29 +77,52 @@ describe("CommandProcessor", () => {
 
       const result = processorWithMock.execute(command, simpleSchemaXml);
 
+      // Verify mocks were called in correct order
+      expect(mockModelManager.loadFromXml).toHaveBeenCalledWith(simpleSchemaXml);
+      expect(mockModelManager.getSchema).toHaveBeenCalled();
+      expect(mockModelManager.cloneSchema).toHaveBeenCalled();
+      expect(mockExecutor.execute).toHaveBeenCalled();
+      expect(mockModelManager.setSchema).toHaveBeenCalled();
+      expect(mockModelManager.toXml).toHaveBeenCalled();
+
       // With a successful executor, command should succeed
       expect(result.success).toBe(true);
       expect(result.schema).not.toBeNull();
       expect(result.xmlContent).not.toBeNull();
-      expect(mockExecutor.execute).toHaveBeenCalled();
     });
 
-    test("should reject invalid schema XML", () => {
-      const invalidXml = "not valid xml at all";
-      const result = processor.execute(
-        {
-          type: "addElement",
-          payload: {
-            parentId: "schema",
-            elementName: "testElement",
-            elementType: "string",
-          },
-        },
-        invalidXml
+    test("should handle SchemaModelManager load failure", () => {
+      // Mock SchemaModelManager that throws on load
+      const mockModelManager: MockModelManager = {
+        loadFromXml: jest.fn(() => {
+          throw new Error("Failed to load schema from XML: Invalid XML");
+        }),
+        getSchema: jest.fn(),
+        setSchema: jest.fn(),
+        cloneSchema: jest.fn(),
+        toXml: jest.fn(),
+      };
+
+      const processorWithMock = new CommandProcessor(
+        undefined,
+        undefined,
+        mockModelManager as SchemaModelManager
       );
+
+      const command: AddElementCommand = {
+        type: "addElement",
+        payload: {
+          parentId: "schema",
+          elementName: "testElement",
+          elementType: "string",
+        },
+      };
+
+      const result = processorWithMock.execute(command, simpleSchemaXml);
 
       expect(result.success).toBe(false);
       expect(result.error).toContain("Failed to load schema from XML");
+      expect(mockModelManager.loadFromXml).toHaveBeenCalled();
     });
 
     test("should return null schema and xmlContent on failure", () => {
@@ -149,20 +172,32 @@ describe("CommandProcessor", () => {
       expect(xmlAfter).toEqual(simpleSchemaXml);
     });
 
-    test("should not modify original schema when executor succeeds", () => {
-      // Create a mock executor that modifies the schema
-      let executionCount = 0;
+    test("should clone schema before executing commands", () => {
+      const mockClonedSchema = new schema();
+      mockClonedSchema.version = "cloned";
+
+      // Mock SchemaModelManager
+      const mockModelManager: MockModelManager = {
+        loadFromXml: jest.fn(),
+        getSchema: jest.fn().mockReturnValue(mockSchema),
+        setSchema: jest.fn(),
+        cloneSchema: jest.fn().mockReturnValue(mockClonedSchema),
+        toXml: jest.fn().mockReturnValue(simpleSchemaXml),
+      };
+
+      // Mock executor
       const mockExecutor: MockExecutor = {
         execute: jest.fn((command, schema) => {
-          executionCount++;
-          // Simulate modification
-          schema.version = `modified-${executionCount}`;
+          // Verify we're working on the cloned schema
+          expect(schema.version).toBe("cloned");
+          schema.version = "modified";
         }),
       };
 
       const processorWithMock = new CommandProcessor(
         undefined,
-        mockExecutor as CommandExecutor
+        mockExecutor as CommandExecutor,
+        mockModelManager as SchemaModelManager
       );
 
       const command: AddElementCommand = {
@@ -174,20 +209,11 @@ describe("CommandProcessor", () => {
         },
       };
 
-      // Execute first command
-      const result1 = processorWithMock.execute(command, simpleSchemaXml);
-      expect(result1.success).toBe(true);
+      const result = processorWithMock.execute(command, simpleSchemaXml);
 
-      // Execute second command with same original XML
-      const result2 = processorWithMock.execute(command, simpleSchemaXml);
-      expect(result2.success).toBe(true);
-
-      // Both results should have different modifications
-      expect(result1.schema?.version).toBe("modified-1");
-      expect(result2.schema?.version).toBe("modified-2");
-
-      // Proves that each execution works on a clone
-      expect(executionCount).toBe(2);
+      expect(result.success).toBe(true);
+      expect(mockModelManager.cloneSchema).toHaveBeenCalled();
+      expect(mockExecutor.execute).toHaveBeenCalledWith(command, mockClonedSchema);
     });
 
     test("should preserve original schema on execution failure", () => {
@@ -365,7 +391,15 @@ describe("CommandProcessor", () => {
     });
 
     test("should have consistent result structure on success", () => {
-      // Mock executor that modifies schema
+      // Mock dependencies for successful execution
+      const mockModelManager: MockModelManager = {
+        loadFromXml: jest.fn(),
+        getSchema: jest.fn().mockReturnValue(mockSchema),
+        setSchema: jest.fn(),
+        cloneSchema: jest.fn().mockReturnValue(mockSchema),
+        toXml: jest.fn().mockReturnValue(simpleSchemaXml),
+      };
+
       const mockExecutor: MockExecutor = {
         execute: jest.fn((command, schema) => {
           schema.version = "1.0";
@@ -374,7 +408,8 @@ describe("CommandProcessor", () => {
 
       const processorWithMock = new CommandProcessor(
         undefined,
-        mockExecutor as CommandExecutor
+        mockExecutor as CommandExecutor,
+        mockModelManager as SchemaModelManager
       );
 
       const command: AddElementCommand = {
@@ -418,21 +453,67 @@ describe("CommandProcessor", () => {
       expect(result.schema).toBeNull();
       expect(result.xmlContent).toBeNull();
     });
+
+    test("should handle SchemaModelManager toXml failure", () => {
+      // Mock SchemaModelManager that fails on toXml
+      const mockModelManager: MockModelManager = {
+        loadFromXml: jest.fn(),
+        getSchema: jest.fn().mockReturnValue(mockSchema),
+        setSchema: jest.fn(),
+        cloneSchema: jest.fn().mockReturnValue(mockSchema),
+        toXml: jest.fn(() => {
+          throw new Error("Failed to serialize schema");
+        }),
+      };
+
+      const mockExecutor: MockExecutor = {
+        execute: jest.fn((command, schema) => {
+          schema.version = "1.0";
+        }),
+      };
+
+      const processorWithMock = new CommandProcessor(
+        undefined,
+        mockExecutor as CommandExecutor,
+        mockModelManager as SchemaModelManager
+      );
+
+      const command: AddElementCommand = {
+        type: "addElement",
+        payload: {
+          parentId: "schema",
+          elementName: "test",
+          elementType: "string",
+        },
+      };
+
+      const result = processorWithMock.execute(command, simpleSchemaXml);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("Failed to serialize schema");
+    });
   });
 
   describe("Round-trip Validation", () => {
-    test("should ensure serialized XML can be parsed back", () => {
-      // Mock executor that modifies the schema
+    test("should validate serialized XML can be parsed back", () => {
+      const mockModelManager: MockModelManager = {
+        loadFromXml: jest.fn(),
+        getSchema: jest.fn().mockReturnValue(mockSchema),
+        setSchema: jest.fn(),
+        cloneSchema: jest.fn().mockReturnValue(mockSchema),
+        toXml: jest.fn().mockReturnValue(simpleSchemaXml),
+      };
+
       const mockExecutor: MockExecutor = {
         execute: jest.fn((command, schema) => {
-          // Simulate adding an element to the schema
           schema.element = schema.element || [];
         }),
       };
 
       const processorWithMock = new CommandProcessor(
         undefined,
-        mockExecutor as CommandExecutor
+        mockExecutor as CommandExecutor,
+        mockModelManager as SchemaModelManager
       );
 
       const command: AddElementCommand = {
@@ -446,32 +527,40 @@ describe("CommandProcessor", () => {
 
       const result = processorWithMock.execute(command, simpleSchemaXml);
 
-      // Should succeed with mock executor
+      // Should succeed with mock
       expect(result.success).toBe(true);
       expect(result.xmlContent).not.toBeNull();
 
-      // The serialized XML should be parseable
-      // Try to execute another command with the result to verify round-trip
-      const retryResult = processorWithMock.execute(
-        command,
-        result.xmlContent!
-      );
-      expect(retryResult.success).toBe(true);
+      // Verify loadFromXml was called for round-trip validation
+      expect(mockModelManager.loadFromXml).toHaveBeenCalledTimes(2); // Initial + validation
     });
 
-    test("should successfully handle schema modifications", () => {
-      // Mock executor that modifies the schema in a valid way
+    test("should fail if round-trip validation fails", () => {
+      let loadCallCount = 0;
+      const mockModelManager: MockModelManager = {
+        loadFromXml: jest.fn(() => {
+          loadCallCount++;
+          if (loadCallCount === 2) {
+            // Fail on round-trip validation
+            throw new Error("Round-trip validation failed");
+          }
+        }),
+        getSchema: jest.fn().mockReturnValue(mockSchema),
+        setSchema: jest.fn(),
+        cloneSchema: jest.fn().mockReturnValue(mockSchema),
+        toXml: jest.fn().mockReturnValue(simpleSchemaXml),
+      };
+
       const mockExecutor: MockExecutor = {
         execute: jest.fn((command, schema) => {
-          // Make a valid modification
           schema.version = "1.0";
-          schema.elementFormDefault = formChoice.qualified;
         }),
       };
 
       const processorWithMock = new CommandProcessor(
         undefined,
-        mockExecutor as CommandExecutor
+        mockExecutor as CommandExecutor,
+        mockModelManager as SchemaModelManager
       );
 
       const command: AddElementCommand = {
@@ -485,17 +574,8 @@ describe("CommandProcessor", () => {
 
       const result = processorWithMock.execute(command, simpleSchemaXml);
 
-      // Should succeed with valid modifications
-      expect(result.success).toBe(true);
-      expect(result.schema?.version).toBe("1.0");
-      expect(result.schema?.elementFormDefault).toBe("qualified");
-
-      // The resulting XML should be parseable
-      const retryResult = processorWithMock.execute(
-        command,
-        result.xmlContent!
-      );
-      expect(retryResult.success).toBe(true);
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("Round-trip validation failed");
     });
   });
 
@@ -515,23 +595,31 @@ describe("CommandProcessor", () => {
   });
 
   describe("Dependency Injection", () => {
-    test("should accept custom validator and executor", () => {
+    test("should accept custom validator, executor, and model manager", () => {
       // Create mock validator that always returns valid
       const mockValidator: MockValidator = {
         validate: jest.fn().mockReturnValue({ valid: true }),
       };
 
-      // Create mock executor that throws a specific error
+      // Create mock executor
       const mockExecutor: MockExecutor = {
-        execute: jest.fn().mockImplementation(() => {
-          throw new Error("Mock executor error");
-        }),
+        execute: jest.fn(),
+      };
+
+      // Create mock model manager
+      const mockModelManager: MockModelManager = {
+        loadFromXml: jest.fn(),
+        getSchema: jest.fn().mockReturnValue(mockSchema),
+        setSchema: jest.fn(),
+        cloneSchema: jest.fn().mockReturnValue(mockSchema),
+        toXml: jest.fn().mockReturnValue(simpleSchemaXml),
       };
 
       // Create processor with mocked dependencies
       const customProcessor = new CommandProcessor(
         mockValidator as CommandValidator,
-        mockExecutor as CommandExecutor
+        mockExecutor as CommandExecutor,
+        mockModelManager as SchemaModelManager
       );
 
       const command: AddElementCommand = {
@@ -548,10 +636,14 @@ describe("CommandProcessor", () => {
       // Verify mocks were called
       expect(mockValidator.validate).toHaveBeenCalled();
       expect(mockExecutor.execute).toHaveBeenCalled();
+      expect(mockModelManager.loadFromXml).toHaveBeenCalled();
+      expect(mockModelManager.getSchema).toHaveBeenCalled();
+      expect(mockModelManager.cloneSchema).toHaveBeenCalled();
+      expect(mockModelManager.setSchema).toHaveBeenCalled();
+      expect(mockModelManager.toXml).toHaveBeenCalled();
 
-      // Verify the result reflects the mock behavior
-      expect(result.success).toBe(false);
-      expect(result.error).toContain("Mock executor error");
+      // Verify the result
+      expect(result.success).toBe(true);
     });
 
     test("should use default dependencies when none provided", () => {

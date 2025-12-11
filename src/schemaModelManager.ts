@@ -19,6 +19,8 @@ import {
   topLevelComplexType,
   namedGroup,
   namedAttributeGroup,
+  importType,
+  includeType,
 } from "../shared/types";
 
 /**
@@ -324,19 +326,14 @@ export class SchemaModelManager {
    * 
    * @returns Array of import declarations
    */
-  public getImports(): Array<{ namespace?: string; schemaLocation?: string }> {
+  public getImports(): importType[] {
     if (!this.schemaState?.import_) {
       return [];
     }
 
-    const imports = Array.isArray(this.schemaState.import_)
+    return Array.isArray(this.schemaState.import_)
       ? this.schemaState.import_
       : [this.schemaState.import_];
-
-    return imports.map((imp) => ({
-      namespace: imp.namespace,
-      schemaLocation: imp.schemaLocation,
-    }));
   }
 
   /**
@@ -344,17 +341,13 @@ export class SchemaModelManager {
    * 
    * @returns Array of include declarations
    */
-  public getIncludes(): Array<{ schemaLocation?: string }> {
+  public getIncludes(): includeType[] {
     if (!this.schemaState?.include) {
       return [];
     }
 
-    const includes = Array.isArray(this.schemaState.include)
+    return Array.isArray(this.schemaState.include)
       ? this.schemaState.include
       : [this.schemaState.include];
-
-    return includes.map((inc) => ({
-      schemaLocation: inc.schemaLocation,
-    }));
   }
 }

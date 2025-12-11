@@ -98,7 +98,6 @@ describe("CommandExecutor", () => {
       const command: SchemaCommand = {
         type: "addSimpleType",
         payload: {
-          parentId: "schema",
           typeName: "testType",
           baseType: "string",
         },
@@ -113,7 +112,6 @@ describe("CommandExecutor", () => {
       const command: SchemaCommand = {
         type: "addComplexType",
         payload: {
-          parentId: "schema",
           typeName: "testComplexType",
           contentModel: "sequence",
         },
@@ -128,7 +126,6 @@ describe("CommandExecutor", () => {
       const command: SchemaCommand = {
         type: "addGroup",
         payload: {
-          parentId: "schema",
           groupName: "testGroup",
           contentModel: "sequence",
         },
@@ -143,7 +140,6 @@ describe("CommandExecutor", () => {
       const command: SchemaCommand = {
         type: "addAttributeGroup",
         payload: {
-          parentId: "schema",
           groupName: "testAttrGroup",
         },
       };
@@ -157,8 +153,8 @@ describe("CommandExecutor", () => {
       const command: SchemaCommand = {
         type: "addAnnotation",
         payload: {
-          parentId: "element1",
-          content: "Test annotation",
+          targetId: "element1",
+          documentation: "Test annotation",
         },
       };
 
@@ -171,7 +167,7 @@ describe("CommandExecutor", () => {
       const command: SchemaCommand = {
         type: "addDocumentation",
         payload: {
-          parentId: "element1",
+          targetId: "element1",
           content: "Test documentation",
         },
       };
@@ -185,7 +181,6 @@ describe("CommandExecutor", () => {
       const command: SchemaCommand = {
         type: "addImport",
         payload: {
-          parentId: "schema",
           namespace: "http://example.com/imported",
           schemaLocation: "imported.xsd",
         },
@@ -200,7 +195,6 @@ describe("CommandExecutor", () => {
       const command: SchemaCommand = {
         type: "addInclude",
         payload: {
-          parentId: "schema",
           schemaLocation: "included.xsd",
         },
       };

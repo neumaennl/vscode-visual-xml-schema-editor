@@ -116,7 +116,6 @@ describe("CommandValidator", () => {
       const command: SchemaCommand = {
         type: "addSimpleType",
         payload: {
-          parentId: "schema",
           typeName: "testType",
           baseType: "string",
         },
@@ -136,7 +135,6 @@ describe("CommandValidator", () => {
       const command: SchemaCommand = {
         type: "addGroup",
         payload: {
-          parentId: "schema",
           groupName: "testGroup",
           contentModel: "sequence",
         },
@@ -156,8 +154,8 @@ describe("CommandValidator", () => {
       const command: SchemaCommand = {
         type: "addAnnotation",
         payload: {
-          parentId: "element1",
-          content: "Test annotation",
+          targetId: "element1",
+          documentation: "Test annotation",
         },
       };
 
@@ -175,7 +173,6 @@ describe("CommandValidator", () => {
       const command: SchemaCommand = {
         type: "addImport",
         payload: {
-          parentId: "schema",
           namespace: "http://example.com/imported",
           schemaLocation: "imported.xsd",
         },

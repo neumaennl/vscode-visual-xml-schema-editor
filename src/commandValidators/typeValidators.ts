@@ -18,14 +18,13 @@ import {
 
 /**
  * Valid content models for ComplexType elements.
- * Includes structure models (sequence, choice, all) and content extension models.
+ * Only compositor models are supported in Phase 1 (sequence, choice, all).
+ * Note: ContentModel type in shared/commands/schemaTypes.ts defines: "sequence" | "choice" | "all"
  */
 export const VALID_COMPLEX_TYPE_CONTENT_MODELS = [
   "sequence",
   "choice",
   "all",
-  "simpleContent",
-  "complexContent",
 ] as const;
 
 // ===== SimpleType Command Validation =====

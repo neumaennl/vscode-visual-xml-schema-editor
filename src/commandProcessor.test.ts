@@ -99,7 +99,7 @@ describe("CommandProcessor", () => {
       );
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain("Failed to parse schema XML");
+      expect(result.error).toContain("Failed to load schema from XML");
     });
 
     test("should return null schema and xmlContent on failure", () => {
@@ -270,7 +270,7 @@ describe("CommandProcessor", () => {
 
       const result = processor.execute(command, malformedXml);
       expect(result.success).toBe(false);
-      expect(result.error).toContain("Failed to parse schema XML");
+      expect(result.error).toContain("Failed to load schema from XML");
     });
 
     test("should provide meaningful error messages", () => {

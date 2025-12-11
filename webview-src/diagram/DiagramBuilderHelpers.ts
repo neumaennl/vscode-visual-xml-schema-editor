@@ -8,8 +8,6 @@ import type { ElementWithOccurrence, ElementWithAttributes } from "./DiagramType
 import type { annotationType } from "../../shared/generated/annotationType";
 import { toArray } from "../../shared/schemaUtils";
 
-export { toArray };
-
 /**
  * Extracts documentation from an annotation object in an XSD schema.
  * Concatenates multiple documentation elements with newlines.

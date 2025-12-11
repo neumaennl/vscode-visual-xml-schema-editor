@@ -47,16 +47,16 @@ describe("Group Validators", () => {
     });
 
     test("should reject addGroup with missing contentModel", () => {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
+      // Using type assertion to test validation of missing content model
       const command = {
         type: "addGroup",
         payload: {
+          parentId: "schema",
           groupName: "TestGroup",
-          contentModel: "",
+          contentModel: undefined,
         },
-      } as any;
+      } as unknown as AddGroupCommand;
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const result = validateAddGroup(command, schemaObj);
       expect(result.valid).toBe(false);
       expect(result.error).toBe("Content model is required");

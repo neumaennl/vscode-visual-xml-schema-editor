@@ -104,16 +104,16 @@ describe("ComplexType Validators", () => {
     });
 
     test("should reject addComplexType with missing contentModel", () => {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
+      // Using type assertion to test validation of missing content model
       const command = {
         type: "addComplexType",
         payload: {
+          parentId: "schema",
           typeName: "TestType",
-          contentModel: "",
+          contentModel: undefined,
         },
-      } as any;
+      } as unknown as AddComplexTypeCommand;
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const result = validateAddComplexType(command, schemaObj);
       expect(result.valid).toBe(false);
       expect(result.error).toBe("Content model is required");

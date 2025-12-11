@@ -46,32 +46,28 @@ describe("Import Validators", () => {
     });
 
     test("should reject addImport with missing namespace", () => {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
-      const command = {
+      const command: AddImportCommand = {
         type: "addImport",
         payload: {
           namespace: "",
           schemaLocation: "schema.xsd",
         },
-      } as any;
+      };
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const result = validateAddImport(command, schemaObj);
       expect(result.valid).toBe(false);
       expect(result.error).toBe("Namespace cannot be empty");
     });
 
     test("should reject addImport with missing schemaLocation", () => {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
-      const command = {
+      const command: AddImportCommand = {
         type: "addImport",
         payload: {
           namespace: "http://example.com/schema",
           schemaLocation: "",
         },
-      } as any;
+      };
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const result = validateAddImport(command, schemaObj);
       expect(result.valid).toBe(false);
       expect(result.error).toBe("Schema location cannot be empty");

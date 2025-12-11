@@ -22,6 +22,7 @@ import {
   importType,
   includeType,
 } from "../shared/types";
+import { toArray } from "../shared/schemaUtils";
 
 /**
  * Result of a schema query operation.
@@ -146,22 +147,29 @@ export class SchemaModelManager {
   // ===== Query Methods =====
 
   /**
+   * Helper method to find an item by name in a collection.
+   * 
+   * @param items - The collection to search (may be undefined, single item, or array)
+   * @param name - The name to search for
+   * @returns Query result containing the item if found
+   */
+  private findByName<T extends { name: string }>(
+    items: T | T[] | undefined,
+    name: string
+  ): QueryResult<T> {
+    const itemsArray = toArray(items);
+    const item = itemsArray.find((el) => el.name === name);
+    return item ? { found: true, item } : { found: false };
+  }
+
+  /**
    * Finds a top-level element by name.
    * 
    * @param name - The name of the element to find
    * @returns Query result containing the element if found
    */
   public findElement(name: string): QueryResult<topLevelElement> {
-    if (!this.schemaState?.element) {
-      return { found: false };
-    }
-
-    const elements = Array.isArray(this.schemaState.element)
-      ? this.schemaState.element
-      : [this.schemaState.element];
-
-    const item = elements.find((el) => el.name === name);
-    return item ? { found: true, item } : { found: false };
+    return this.findByName(this.schemaState?.element, name);
   }
 
   /**
@@ -171,16 +179,7 @@ export class SchemaModelManager {
    * @returns Query result containing the simple type if found
    */
   public findSimpleType(name: string): QueryResult<topLevelSimpleType> {
-    if (!this.schemaState?.simpleType) {
-      return { found: false };
-    }
-
-    const simpleTypes = Array.isArray(this.schemaState.simpleType)
-      ? this.schemaState.simpleType
-      : [this.schemaState.simpleType];
-
-    const item = simpleTypes.find((st) => st.name === name);
-    return item ? { found: true, item } : { found: false };
+    return this.findByName(this.schemaState?.simpleType, name);
   }
 
   /**
@@ -190,16 +189,7 @@ export class SchemaModelManager {
    * @returns Query result containing the complex type if found
    */
   public findComplexType(name: string): QueryResult<topLevelComplexType> {
-    if (!this.schemaState?.complexType) {
-      return { found: false };
-    }
-
-    const complexTypes = Array.isArray(this.schemaState.complexType)
-      ? this.schemaState.complexType
-      : [this.schemaState.complexType];
-
-    const item = complexTypes.find((ct) => ct.name === name);
-    return item ? { found: true, item } : { found: false };
+    return this.findByName(this.schemaState?.complexType, name);
   }
 
   /**
@@ -209,16 +199,7 @@ export class SchemaModelManager {
    * @returns Query result containing the group if found
    */
   public findGroup(name: string): QueryResult<namedGroup> {
-    if (!this.schemaState?.group) {
-      return { found: false };
-    }
-
-    const groups = Array.isArray(this.schemaState.group)
-      ? this.schemaState.group
-      : [this.schemaState.group];
-
-    const item = groups.find((g) => g.name === name);
-    return item ? { found: true, item } : { found: false };
+    return this.findByName(this.schemaState?.group, name);
   }
 
   /**
@@ -230,16 +211,7 @@ export class SchemaModelManager {
   public findAttributeGroup(
     name: string
   ): QueryResult<namedAttributeGroup> {
-    if (!this.schemaState?.attributeGroup) {
-      return { found: false };
-    }
-
-    const attributeGroups = Array.isArray(this.schemaState.attributeGroup)
-      ? this.schemaState.attributeGroup
-      : [this.schemaState.attributeGroup];
-
-    const item = attributeGroups.find((ag) => ag.name === name);
-    return item ? { found: true, item } : { found: false };
+    return this.findByName(this.schemaState?.attributeGroup, name);
   }
 
   /**
@@ -248,12 +220,7 @@ export class SchemaModelManager {
    * @returns Array of top-level elements, or empty array if none exist
    */
   public getAllElements(): topLevelElement[] {
-    if (!this.schemaState?.element) {
-      return [];
-    }
-    return Array.isArray(this.schemaState.element)
-      ? this.schemaState.element
-      : [this.schemaState.element];
+    return toArray(this.schemaState?.element);
   }
 
   /**
@@ -262,12 +229,7 @@ export class SchemaModelManager {
    * @returns Array of simple types, or empty array if none exist
    */
   public getAllSimpleTypes(): topLevelSimpleType[] {
-    if (!this.schemaState?.simpleType) {
-      return [];
-    }
-    return Array.isArray(this.schemaState.simpleType)
-      ? this.schemaState.simpleType
-      : [this.schemaState.simpleType];
+    return toArray(this.schemaState?.simpleType);
   }
 
   /**
@@ -276,12 +238,7 @@ export class SchemaModelManager {
    * @returns Array of complex types, or empty array if none exist
    */
   public getAllComplexTypes(): topLevelComplexType[] {
-    if (!this.schemaState?.complexType) {
-      return [];
-    }
-    return Array.isArray(this.schemaState.complexType)
-      ? this.schemaState.complexType
-      : [this.schemaState.complexType];
+    return toArray(this.schemaState?.complexType);
   }
 
   /**
@@ -290,12 +247,7 @@ export class SchemaModelManager {
    * @returns Array of groups, or empty array if none exist
    */
   public getAllGroups(): namedGroup[] {
-    if (!this.schemaState?.group) {
-      return [];
-    }
-    return Array.isArray(this.schemaState.group)
-      ? this.schemaState.group
-      : [this.schemaState.group];
+    return toArray(this.schemaState?.group);
   }
 
   /**
@@ -304,12 +256,7 @@ export class SchemaModelManager {
    * @returns Array of attribute groups, or empty array if none exist
    */
   public getAllAttributeGroups(): namedAttributeGroup[] {
-    if (!this.schemaState?.attributeGroup) {
-      return [];
-    }
-    return Array.isArray(this.schemaState.attributeGroup)
-      ? this.schemaState.attributeGroup
-      : [this.schemaState.attributeGroup];
+    return toArray(this.schemaState?.attributeGroup);
   }
 
   /**
@@ -327,13 +274,7 @@ export class SchemaModelManager {
    * @returns Array of import declarations
    */
   public getImports(): importType[] {
-    if (!this.schemaState?.import_) {
-      return [];
-    }
-
-    return Array.isArray(this.schemaState.import_)
-      ? this.schemaState.import_
-      : [this.schemaState.import_];
+    return toArray(this.schemaState?.import_);
   }
 
   /**
@@ -342,12 +283,6 @@ export class SchemaModelManager {
    * @returns Array of include declarations
    */
   public getIncludes(): includeType[] {
-    if (!this.schemaState?.include) {
-      return [];
-    }
-
-    return Array.isArray(this.schemaState.include)
-      ? this.schemaState.include
-      : [this.schemaState.include];
+    return toArray(this.schemaState?.include);
   }
 }

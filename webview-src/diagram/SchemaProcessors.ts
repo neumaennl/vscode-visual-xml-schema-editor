@@ -13,12 +13,12 @@ import {
   GroupDefLike,
 } from "./DiagramTypes";
 import {
-  toArray,
   generateId,
   extractDocumentation,
   extractAttributes,
   extractOccurrenceConstraints,
 } from "./DiagramBuilderHelpers";
+import { toArray } from "../../shared/schemaUtils";
 import type { localElement } from "../../shared/generated/localElement";
 import type { explicitGroup } from "../../shared/generated/explicitGroup";
 import type { all } from "../../shared/generated/all";

@@ -3,7 +3,6 @@
  */
 
 import {
-  toArray,
   extractDocumentation,
   extractOccurrenceConstraints,
   extractAttributes,
@@ -15,22 +14,6 @@ import { Diagram } from "./Diagram";
 import { DiagramItemType } from "./DiagramTypes";
 
 describe("DiagramBuilderHelpers", () => {
-  describe("toArray", () => {
-    it("should return empty array for undefined", () => {
-      expect(toArray(undefined)).toEqual([]);
-    });
-
-    it("should wrap single value in array", () => {
-      expect(toArray("single")).toEqual(["single"]);
-      expect(toArray(42)).toEqual([42]);
-    });
-
-    it("should return array unchanged", () => {
-      const arr = ["a", "b", "c"];
-      expect(toArray(arr)).toEqual(arr);
-    });
-  });
-
   describe("extractDocumentation", () => {
     it("should return undefined when no annotation", () => {
       expect(extractDocumentation(undefined)).toBeUndefined();

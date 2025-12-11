@@ -1,33 +1,12 @@
 /**
  * Helper utility functions for DiagramBuilder.
- * Contains common operations like array normalization, ID generation,
- * and extraction of schema metadata.
+ * Contains common operations like ID generation and extraction of schema metadata.
  */
 
 import { DiagramItem } from "./DiagramItem";
 import type { ElementWithOccurrence, ElementWithAttributes } from "./DiagramTypes";
 import type { annotationType } from "../../shared/generated/annotationType";
-
-/**
- * Normalizes a value to an array (handles both single values and arrays).
- * This is useful for XML unmarshalling where a single item may not be wrapped in an array.
- * 
- * @param value - Value that may be a single item, an array, or undefined
- * @returns Array of items (empty array if value is undefined)
- * 
- * @example
- * ```typescript
- * toArray(undefined) // => []
- * toArray("single") // => ["single"]
- * toArray(["a", "b"]) // => ["a", "b"]
- * ```
- */
-export function toArray<T>(value: T | T[] | undefined): T[] {
-  if (!value) {
-    return [];
-  }
-  return Array.isArray(value) ? value : [value];
-}
+import { toArray } from "../../shared/schemaUtils";
 
 /**
  * Extracts documentation from an annotation object in an XSD schema.

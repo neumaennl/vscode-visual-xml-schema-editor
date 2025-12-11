@@ -53,9 +53,12 @@ describe("CommandProcessor", () => {
     });
 
     test("should successfully execute command with mocked executor", () => {
-      // Mock executor that succeeds
+      // Mock executor that modifies the schema (executor must modify schema in-place)
       const mockExecutor: MockExecutor = {
-        execute: jest.fn(),
+        execute: jest.fn((cmd, schemaObj) => {
+          // Modify the schema object to simulate successful execution
+          schemaObj.version = "1.0";
+        }),
       };
 
       const processorWithMock = new CommandProcessor(

@@ -136,14 +136,15 @@ export class CommandProcessor {
    * Create a deep copy of the schema for transactional execution.
    * This allows rollback if execution fails.
    * 
-   * Uses JSON-based deep cloning for performance. This is sufficient for
-   * working copies during editing. For final XML serialization, marshal is used.
+   * Uses marshal/unmarshal for deep cloning to preserve xmlbind metadata.
+   * This ensures the cloned schema can be properly serialized back to XML.
    *
    * @param schemaObj - The schema object to clone
    * @returns A deep copy of the schema object
    */
   private cloneSchema(schemaObj: schema): schema {
-    // Use JSON deep clone for performance; sufficient for working copy
-    return JSON.parse(JSON.stringify(schemaObj)) as schema;
+    // Use marshal/unmarshal to preserve xmlbind metadata
+    const xml = marshal(schemaObj);
+    return unmarshal(schema, xml);
   }
 }

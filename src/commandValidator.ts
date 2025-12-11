@@ -27,57 +27,105 @@
 import { SchemaCommand, schema } from "../shared/types";
 import { ValidationResult } from "./commandValidators/validationUtils";
 
-// Import validation functions from specialized modules
-import {
-  validateAddElement,
-  validateRemoveElement,
-  validateModifyElement,
-  validateAddAttribute,
-  validateRemoveAttribute,
-  validateModifyAttribute,
-} from "./commandValidators/elementValidators";
+// Import validation functions from specialized modules for default usage
+import * as elementValidators from "./commandValidators/elementValidators";
+import * as typeValidators from "./commandValidators/typeValidators";
+import * as groupValidators from "./commandValidators/groupValidators";
+import * as annotationValidators from "./commandValidators/annotationValidators";
+import * as schemaValidators from "./commandValidators/schemaValidators";
 
-import {
-  validateAddSimpleType,
-  validateRemoveSimpleType,
-  validateModifySimpleType,
-  validateAddComplexType,
-  validateRemoveComplexType,
-  validateModifyComplexType,
-} from "./commandValidators/typeValidators";
+/**
+ * Type for validator functions that validate commands.
+ * Uses any to allow specific command types while maintaining type safety through SchemaCommand union.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ValidatorFunction = (command: any, schemaObj: schema) => ValidationResult;
 
-import {
-  validateAddGroup,
-  validateRemoveGroup,
-  validateModifyGroup,
-  validateAddAttributeGroup,
-  validateRemoveAttributeGroup,
-  validateModifyAttributeGroup,
-} from "./commandValidators/groupValidators";
-
-import {
-  validateAddAnnotation,
-  validateRemoveAnnotation,
-  validateModifyAnnotation,
-  validateAddDocumentation,
-  validateRemoveDocumentation,
-  validateModifyDocumentation,
-} from "./commandValidators/annotationValidators";
-
-import {
-  validateAddImport,
-  validateRemoveImport,
-  validateModifyImport,
-  validateAddInclude,
-  validateRemoveInclude,
-  validateModifyInclude,
-} from "./commandValidators/schemaValidators";
+/**
+ * Interface for all validator functions used by CommandValidator.
+ * Enables dependency injection for testing.
+ */
+export interface ValidatorFunctions {
+  validateAddElement: ValidatorFunction;
+  validateRemoveElement: ValidatorFunction;
+  validateModifyElement: ValidatorFunction;
+  validateAddAttribute: ValidatorFunction;
+  validateRemoveAttribute: ValidatorFunction;
+  validateModifyAttribute: ValidatorFunction;
+  validateAddSimpleType: ValidatorFunction;
+  validateRemoveSimpleType: ValidatorFunction;
+  validateModifySimpleType: ValidatorFunction;
+  validateAddComplexType: ValidatorFunction;
+  validateRemoveComplexType: ValidatorFunction;
+  validateModifyComplexType: ValidatorFunction;
+  validateAddGroup: ValidatorFunction;
+  validateRemoveGroup: ValidatorFunction;
+  validateModifyGroup: ValidatorFunction;
+  validateAddAttributeGroup: ValidatorFunction;
+  validateRemoveAttributeGroup: ValidatorFunction;
+  validateModifyAttributeGroup: ValidatorFunction;
+  validateAddAnnotation: ValidatorFunction;
+  validateRemoveAnnotation: ValidatorFunction;
+  validateModifyAnnotation: ValidatorFunction;
+  validateAddDocumentation: ValidatorFunction;
+  validateRemoveDocumentation: ValidatorFunction;
+  validateModifyDocumentation: ValidatorFunction;
+  validateAddImport: ValidatorFunction;
+  validateRemoveImport: ValidatorFunction;
+  validateModifyImport: ValidatorFunction;
+  validateAddInclude: ValidatorFunction;
+  validateRemoveInclude: ValidatorFunction;
+  validateModifyInclude: ValidatorFunction;
+}
 
 /**
  * CommandValidator class.
  * Validates commands before execution by delegating to specialized validator modules.
  */
 export class CommandValidator {
+  private readonly validators: ValidatorFunctions;
+
+  /**
+   * Creates a new CommandValidator.
+   *
+   * @param validators - Validator functions (optional, uses actual validators if not provided)
+   */
+  constructor(validators?: ValidatorFunctions) {
+    // Use provided validators or default to actual validator modules
+    this.validators = validators ?? {
+      validateAddElement: elementValidators.validateAddElement,
+      validateRemoveElement: elementValidators.validateRemoveElement,
+      validateModifyElement: elementValidators.validateModifyElement,
+      validateAddAttribute: elementValidators.validateAddAttribute,
+      validateRemoveAttribute: elementValidators.validateRemoveAttribute,
+      validateModifyAttribute: elementValidators.validateModifyAttribute,
+      validateAddSimpleType: typeValidators.validateAddSimpleType,
+      validateRemoveSimpleType: typeValidators.validateRemoveSimpleType,
+      validateModifySimpleType: typeValidators.validateModifySimpleType,
+      validateAddComplexType: typeValidators.validateAddComplexType,
+      validateRemoveComplexType: typeValidators.validateRemoveComplexType,
+      validateModifyComplexType: typeValidators.validateModifyComplexType,
+      validateAddGroup: groupValidators.validateAddGroup,
+      validateRemoveGroup: groupValidators.validateRemoveGroup,
+      validateModifyGroup: groupValidators.validateModifyGroup,
+      validateAddAttributeGroup: groupValidators.validateAddAttributeGroup,
+      validateRemoveAttributeGroup: groupValidators.validateRemoveAttributeGroup,
+      validateModifyAttributeGroup: groupValidators.validateModifyAttributeGroup,
+      validateAddAnnotation: annotationValidators.validateAddAnnotation,
+      validateRemoveAnnotation: annotationValidators.validateRemoveAnnotation,
+      validateModifyAnnotation: annotationValidators.validateModifyAnnotation,
+      validateAddDocumentation: annotationValidators.validateAddDocumentation,
+      validateRemoveDocumentation: annotationValidators.validateRemoveDocumentation,
+      validateModifyDocumentation: annotationValidators.validateModifyDocumentation,
+      validateAddImport: schemaValidators.validateAddImport,
+      validateRemoveImport: schemaValidators.validateRemoveImport,
+      validateModifyImport: schemaValidators.validateModifyImport,
+      validateAddInclude: schemaValidators.validateAddInclude,
+      validateRemoveInclude: schemaValidators.validateRemoveInclude,
+      validateModifyInclude: schemaValidators.validateModifyInclude,
+    };
+  }
+
   /**
    * Validate a command before execution.
    *
@@ -89,65 +137,65 @@ export class CommandValidator {
     // Type-specific validation - delegate to specialized validators
     switch (command.type) {
       case "addElement":
-        return validateAddElement(command, schemaObj);
+        return this.validators.validateAddElement(command, schemaObj);
       case "removeElement":
-        return validateRemoveElement(command, schemaObj);
+        return this.validators.validateRemoveElement(command, schemaObj);
       case "modifyElement":
-        return validateModifyElement(command, schemaObj);
+        return this.validators.validateModifyElement(command, schemaObj);
       case "addAttribute":
-        return validateAddAttribute(command, schemaObj);
+        return this.validators.validateAddAttribute(command, schemaObj);
       case "removeAttribute":
-        return validateRemoveAttribute(command, schemaObj);
+        return this.validators.validateRemoveAttribute(command, schemaObj);
       case "modifyAttribute":
-        return validateModifyAttribute(command, schemaObj);
+        return this.validators.validateModifyAttribute(command, schemaObj);
       case "addSimpleType":
-        return validateAddSimpleType(command, schemaObj);
+        return this.validators.validateAddSimpleType(command, schemaObj);
       case "removeSimpleType":
-        return validateRemoveSimpleType(command, schemaObj);
+        return this.validators.validateRemoveSimpleType(command, schemaObj);
       case "modifySimpleType":
-        return validateModifySimpleType(command, schemaObj);
+        return this.validators.validateModifySimpleType(command, schemaObj);
       case "addComplexType":
-        return validateAddComplexType(command, schemaObj);
+        return this.validators.validateAddComplexType(command, schemaObj);
       case "removeComplexType":
-        return validateRemoveComplexType(command, schemaObj);
+        return this.validators.validateRemoveComplexType(command, schemaObj);
       case "modifyComplexType":
-        return validateModifyComplexType(command, schemaObj);
+        return this.validators.validateModifyComplexType(command, schemaObj);
       case "addGroup":
-        return validateAddGroup(command, schemaObj);
+        return this.validators.validateAddGroup(command, schemaObj);
       case "removeGroup":
-        return validateRemoveGroup(command, schemaObj);
+        return this.validators.validateRemoveGroup(command, schemaObj);
       case "modifyGroup":
-        return validateModifyGroup(command, schemaObj);
+        return this.validators.validateModifyGroup(command, schemaObj);
       case "addAttributeGroup":
-        return validateAddAttributeGroup(command, schemaObj);
+        return this.validators.validateAddAttributeGroup(command, schemaObj);
       case "removeAttributeGroup":
-        return validateRemoveAttributeGroup(command, schemaObj);
+        return this.validators.validateRemoveAttributeGroup(command, schemaObj);
       case "modifyAttributeGroup":
-        return validateModifyAttributeGroup(command, schemaObj);
+        return this.validators.validateModifyAttributeGroup(command, schemaObj);
       case "addAnnotation":
-        return validateAddAnnotation(command, schemaObj);
+        return this.validators.validateAddAnnotation(command, schemaObj);
       case "removeAnnotation":
-        return validateRemoveAnnotation(command, schemaObj);
+        return this.validators.validateRemoveAnnotation(command, schemaObj);
       case "modifyAnnotation":
-        return validateModifyAnnotation(command, schemaObj);
+        return this.validators.validateModifyAnnotation(command, schemaObj);
       case "addDocumentation":
-        return validateAddDocumentation(command, schemaObj);
+        return this.validators.validateAddDocumentation(command, schemaObj);
       case "removeDocumentation":
-        return validateRemoveDocumentation(command, schemaObj);
+        return this.validators.validateRemoveDocumentation(command, schemaObj);
       case "modifyDocumentation":
-        return validateModifyDocumentation(command, schemaObj);
+        return this.validators.validateModifyDocumentation(command, schemaObj);
       case "addImport":
-        return validateAddImport(command, schemaObj);
+        return this.validators.validateAddImport(command, schemaObj);
       case "removeImport":
-        return validateRemoveImport(command, schemaObj);
+        return this.validators.validateRemoveImport(command, schemaObj);
       case "modifyImport":
-        return validateModifyImport(command, schemaObj);
+        return this.validators.validateModifyImport(command, schemaObj);
       case "addInclude":
-        return validateAddInclude(command, schemaObj);
+        return this.validators.validateAddInclude(command, schemaObj);
       case "removeInclude":
-        return validateRemoveInclude(command, schemaObj);
+        return this.validators.validateRemoveInclude(command, schemaObj);
       case "modifyInclude":
-        return validateModifyInclude(command, schemaObj);
+        return this.validators.validateModifyInclude(command, schemaObj);
       default:
         return {
           valid: false,

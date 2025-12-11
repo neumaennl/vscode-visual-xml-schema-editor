@@ -1,7 +1,12 @@
 import * as vscode from "vscode";
 import { unmarshal } from "@neumaennl/xmlbind-ts";
 import { schema } from "../shared/types";
-import { SchemaModifiedMessage, DiagramOptions } from "../shared/messages";
+import {
+  ExecuteCommandMessage,
+  WebviewMessage,
+  DiagramOptions,
+} from "../shared/messages";
+import { CommandProcessor } from "./commandProcessor";
 
 /**
  * Provider for the XML Schema Visual Editor custom text editor.
@@ -9,13 +14,37 @@ import { SchemaModifiedMessage, DiagramOptions } from "../shared/messages";
  * a visual editing experience for XML Schema files.
  */
 export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
+  private readonly commandProcessor: CommandProcessor;
 
   /**
    * Creates a new SchemaEditorProvider.
    * 
    * @param context - The extension context provided by VS Code
    */
-  constructor(private readonly context: vscode.ExtensionContext) {}
+  constructor(private readonly context: vscode.ExtensionContext) {
+    this.commandProcessor = new CommandProcessor();
+  }
+
+  /**
+   * Safely sends a message to the webview with error logging.
+   * This prevents unhandled promise rejections and avoids infinite error loops
+   * when postMessage itself fails.
+   * 
+   * @param webview - The webview to send the message to
+   * @param message - The message to send
+   */
+  private async safePostMessage(
+    webview: vscode.Webview,
+    message: unknown
+  ): Promise<void> {
+    try {
+      await webview.postMessage(message);
+    } catch (error) {
+      // Log postMessage failures but don't try to send another message
+      // to avoid infinite error loops
+      console.error("Failed to send message to webview:", error);
+    }
+  }
 
   /**
    * Resolves and initializes the custom text editor for an XSD document.
@@ -60,8 +89,8 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
 
     // Listen for messages from webview
     webviewPanel.webview.onDidReceiveMessage(
-      (message: SchemaModifiedMessage) =>
-        void this.handleWebviewMessage(message, document),
+      (message: WebviewMessage) =>
+        void this.handleWebviewMessage(message, document, webviewPanel.webview),
       undefined,
       this.context.subscriptions
     );
@@ -85,7 +114,7 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
       showType: config.get<boolean>("showType", false),
     };
 
-    void webview.postMessage({
+    void this.safePostMessage(webview, {
       command: "updateDiagramOptions",
       data: diagramOptions,
     });
@@ -115,13 +144,13 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
       console.log("Schema object:", schemaObj);
 
       // Send the schema object to the webview for visualization
-      void webview.postMessage({
+      void this.safePostMessage(webview, {
         command: "updateSchema",
         data: schemaObj,
       });
     } catch (error) {
       console.error("Error parsing schema:", error);
-      void webview.postMessage({
+      void this.safePostMessage(webview, {
         command: "error",
         data: { message: (error as Error).message },
       });
@@ -134,35 +163,91 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
    * 
    * @param message - The message received from the webview
    * @param document - The document being edited
+   * @param webview - The webview to send responses back to
    */
   private async handleWebviewMessage(
-    message: SchemaModifiedMessage,
-    document: vscode.TextDocument
+    message: WebviewMessage,
+    document: vscode.TextDocument,
+    webview: vscode.Webview
   ): Promise<void> {
     switch (message.command) {
-      case "schemaModified": {
-        await this.applySchemaChanges(document, message.data);
+      case "executeCommand": {
+        await this.executeCommand(message, document, webview);
         break;
       }
     }
   }
 
   /**
-   * Applies schema changes from the webview back to the document.
-   * Converts the schema object to XML and updates the document.
+   * Executes a command using the CommandProcessor.
+   * Applies the resulting changes to the document if successful.
    * 
+   * @param message - The execute command message from the webview
    * @param document - The document to update
-   * @param schemaObj - The modified schema object from the webview
+   * @param webview - The webview to send responses back to
    */
-  private async applySchemaChanges(
-    _document: vscode.TextDocument,
-    _schemaObj: schema
+  private async executeCommand(
+    message: ExecuteCommandMessage,
+    document: vscode.TextDocument,
+    webview: vscode.Webview
   ): Promise<void> {
-    // TODO: Marshal the schema object back to XML
-    // const xmlContent = marshal(schemaObj);
-    // Then apply the edit to the document
-    const edit = new vscode.WorkspaceEdit();
-    await vscode.workspace.applyEdit(edit);
+    try {
+      const currentXml = document.getText();
+      const result = this.commandProcessor.execute(message.data, currentXml);
+
+      if (result.success && result.xmlContent) {
+        // Apply the changes to the document
+        const edit = new vscode.WorkspaceEdit();
+        // Calculate the full range of the document, handling empty documents
+        const lastLine = Math.max(0, document.lineCount - 1);
+        const fullRange = new vscode.Range(
+          0,
+          0,
+          lastLine,
+          document.lineAt(lastLine).text.length
+        );
+        edit.replace(document.uri, fullRange, result.xmlContent);
+        const success = await vscode.workspace.applyEdit(edit);
+
+        if (success) {
+          // Send success response
+          void this.safePostMessage(webview, {
+            command: "commandResult",
+            data: {
+              success: true,
+            },
+          });
+        } else {
+          // Send error response if edit failed
+          void this.safePostMessage(webview, {
+            command: "commandResult",
+            data: {
+              success: false,
+              error: "Failed to apply edit to the document.",
+            },
+          });
+        }
+      } else {
+        // Send error response
+        void this.safePostMessage(webview, {
+          command: "commandResult",
+          data: {
+            success: false,
+            error: result.error,
+          },
+        });
+      }
+    } catch (error) {
+      // Send error response for unexpected errors
+      // Note: If this postMessage fails, it will be logged by safePostMessage
+      // to avoid infinite error loops
+      void this.safePostMessage(webview, {
+        command: "error",
+        data: {
+          message: `Failed to execute command: ${(error as Error).message}`,
+        },
+      });
+    }
   }
 
   /**

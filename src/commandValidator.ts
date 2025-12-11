@@ -74,93 +74,86 @@ import {
 } from "./commandValidators/schemaValidators";
 
 /**
- * Validate a command before execution.
- *
- * @param command - The command to validate
- * @param schemaObj - The schema object for context validation
- * @returns Validation result with success status and optional error message
- */
-export function validateCommand(
-  command: SchemaCommand,
-  schemaObj: schema
-): ValidationResult {
-  // Type-specific validation - delegate to specialized validators
-  switch (command.type) {
-    case "addElement":
-      return validateAddElement(command, schemaObj);
-    case "removeElement":
-      return validateRemoveElement(command, schemaObj);
-    case "modifyElement":
-      return validateModifyElement(command, schemaObj);
-    case "addAttribute":
-      return validateAddAttribute(command, schemaObj);
-    case "removeAttribute":
-      return validateRemoveAttribute(command, schemaObj);
-    case "modifyAttribute":
-      return validateModifyAttribute(command, schemaObj);
-    case "addSimpleType":
-      return validateAddSimpleType(command, schemaObj);
-    case "removeSimpleType":
-      return validateRemoveSimpleType(command, schemaObj);
-    case "modifySimpleType":
-      return validateModifySimpleType(command, schemaObj);
-    case "addComplexType":
-      return validateAddComplexType(command, schemaObj);
-    case "removeComplexType":
-      return validateRemoveComplexType(command, schemaObj);
-    case "modifyComplexType":
-      return validateModifyComplexType(command, schemaObj);
-    case "addGroup":
-      return validateAddGroup(command, schemaObj);
-    case "removeGroup":
-      return validateRemoveGroup(command, schemaObj);
-    case "modifyGroup":
-      return validateModifyGroup(command, schemaObj);
-    case "addAttributeGroup":
-      return validateAddAttributeGroup(command, schemaObj);
-    case "removeAttributeGroup":
-      return validateRemoveAttributeGroup(command, schemaObj);
-    case "modifyAttributeGroup":
-      return validateModifyAttributeGroup(command, schemaObj);
-    case "addAnnotation":
-      return validateAddAnnotation(command, schemaObj);
-    case "removeAnnotation":
-      return validateRemoveAnnotation(command, schemaObj);
-    case "modifyAnnotation":
-      return validateModifyAnnotation(command, schemaObj);
-    case "addDocumentation":
-      return validateAddDocumentation(command, schemaObj);
-    case "removeDocumentation":
-      return validateRemoveDocumentation(command, schemaObj);
-    case "modifyDocumentation":
-      return validateModifyDocumentation(command, schemaObj);
-    case "addImport":
-      return validateAddImport(command, schemaObj);
-    case "removeImport":
-      return validateRemoveImport(command, schemaObj);
-    case "modifyImport":
-      return validateModifyImport(command, schemaObj);
-    case "addInclude":
-      return validateAddInclude(command, schemaObj);
-    case "removeInclude":
-      return validateRemoveInclude(command, schemaObj);
-    case "modifyInclude":
-      return validateModifyInclude(command, schemaObj);
-    default:
-      return {
-        valid: false,
-        error: `Unknown command type: ${(command as SchemaCommand).type}`,
-      };
-  }
-}
-
-/**
- * CommandValidator class for backward compatibility.
- * Delegates to the validateCommand function.
+ * CommandValidator class.
+ * Validates commands before execution by delegating to specialized validator modules.
  */
 export class CommandValidator {
+  /**
+   * Validate a command before execution.
+   *
+   * @param command - The command to validate
+   * @param schemaObj - The schema object for context validation
+   * @returns Validation result with success status and optional error message
+   */
   public validate(command: SchemaCommand, schemaObj: schema): ValidationResult {
-    return validateCommand(command, schemaObj);
+    // Type-specific validation - delegate to specialized validators
+    switch (command.type) {
+      case "addElement":
+        return validateAddElement(command, schemaObj);
+      case "removeElement":
+        return validateRemoveElement(command, schemaObj);
+      case "modifyElement":
+        return validateModifyElement(command, schemaObj);
+      case "addAttribute":
+        return validateAddAttribute(command, schemaObj);
+      case "removeAttribute":
+        return validateRemoveAttribute(command, schemaObj);
+      case "modifyAttribute":
+        return validateModifyAttribute(command, schemaObj);
+      case "addSimpleType":
+        return validateAddSimpleType(command, schemaObj);
+      case "removeSimpleType":
+        return validateRemoveSimpleType(command, schemaObj);
+      case "modifySimpleType":
+        return validateModifySimpleType(command, schemaObj);
+      case "addComplexType":
+        return validateAddComplexType(command, schemaObj);
+      case "removeComplexType":
+        return validateRemoveComplexType(command, schemaObj);
+      case "modifyComplexType":
+        return validateModifyComplexType(command, schemaObj);
+      case "addGroup":
+        return validateAddGroup(command, schemaObj);
+      case "removeGroup":
+        return validateRemoveGroup(command, schemaObj);
+      case "modifyGroup":
+        return validateModifyGroup(command, schemaObj);
+      case "addAttributeGroup":
+        return validateAddAttributeGroup(command, schemaObj);
+      case "removeAttributeGroup":
+        return validateRemoveAttributeGroup(command, schemaObj);
+      case "modifyAttributeGroup":
+        return validateModifyAttributeGroup(command, schemaObj);
+      case "addAnnotation":
+        return validateAddAnnotation(command, schemaObj);
+      case "removeAnnotation":
+        return validateRemoveAnnotation(command, schemaObj);
+      case "modifyAnnotation":
+        return validateModifyAnnotation(command, schemaObj);
+      case "addDocumentation":
+        return validateAddDocumentation(command, schemaObj);
+      case "removeDocumentation":
+        return validateRemoveDocumentation(command, schemaObj);
+      case "modifyDocumentation":
+        return validateModifyDocumentation(command, schemaObj);
+      case "addImport":
+        return validateAddImport(command, schemaObj);
+      case "removeImport":
+        return validateRemoveImport(command, schemaObj);
+      case "modifyImport":
+        return validateModifyImport(command, schemaObj);
+      case "addInclude":
+        return validateAddInclude(command, schemaObj);
+      case "removeInclude":
+        return validateRemoveInclude(command, schemaObj);
+      case "modifyInclude":
+        return validateModifyInclude(command, schemaObj);
+      default:
+        return {
+          valid: false,
+          error: `Unknown command type: ${(command as SchemaCommand).type}`,
+        };
+    }
   }
 }
 

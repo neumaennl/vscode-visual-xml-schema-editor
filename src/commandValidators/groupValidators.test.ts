@@ -147,5 +147,18 @@ describe("AttributeGroup Validators", () => {
       expect(result.valid).toBe(false);
       expect(result.error).toBe("Attribute group ID cannot be empty");
     });
+
+    test("should accept modifyAttributeGroup with valid payload", () => {
+      const command: ModifyAttributeGroupCommand = {
+        type: "modifyAttributeGroup",
+        payload: {
+          groupId: "group1",
+          groupName: "validGroupName",
+        },
+      };
+
+      const result = validateModifyAttributeGroup(command, schemaObj);
+      expect(result.valid).toBe(true);
+    });
   });
 });

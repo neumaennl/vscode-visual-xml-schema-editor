@@ -131,5 +131,18 @@ describe("Documentation Validators", () => {
       expect(result.valid).toBe(false);
       expect(result.error).toBe("Documentation ID cannot be empty");
     });
+
+    test("should accept modifyDocumentation with valid payload", () => {
+      const command: ModifyDocumentationCommand = {
+        type: "modifyDocumentation",
+        payload: {
+          documentationId: "doc1",
+          content: "Updated documentation content",
+        },
+      };
+
+      const result = validateModifyDocumentation(command, schemaObj);
+      expect(result.valid).toBe(true);
+    });
   });
 });

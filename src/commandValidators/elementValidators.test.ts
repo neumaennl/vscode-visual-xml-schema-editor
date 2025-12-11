@@ -121,6 +121,49 @@ describe("Element Validators", () => {
       expect(result.valid).toBe(false);
       expect(result.error).toBe("Element ID cannot be empty");
     });
+
+    test("should reject modifyElement with invalid elementName", () => {
+      const command: ModifyElementCommand = {
+        type: "modifyElement",
+        payload: {
+          elementId: "elem1",
+          elementName: "123invalid",
+        },
+      };
+
+      const result = validateModifyElement(command, schemaObj);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe("Element name must be a valid XML name");
+    });
+
+    test("should accept modifyElement with valid minOccurs and maxOccurs", () => {
+      const command: ModifyElementCommand = {
+        type: "modifyElement",
+        payload: {
+          elementId: "elem1",
+          minOccurs: 1,
+          maxOccurs: 10,
+        },
+      };
+
+      const result = validateModifyElement(command, schemaObj);
+      expect(result.valid).toBe(true);
+    });
+
+    test("should reject modifyElement with minOccurs > maxOccurs", () => {
+      const command: ModifyElementCommand = {
+        type: "modifyElement",
+        payload: {
+          elementId: "elem1",
+          minOccurs: 10,
+          maxOccurs: 5,
+        },
+      };
+
+      const result = validateModifyElement(command, schemaObj);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe("minOccurs must be <= maxOccurs");
+    });
   });
 });
 
@@ -193,6 +236,20 @@ describe("Attribute Validators", () => {
       const result = validateModifyAttribute(command, schemaObj);
       expect(result.valid).toBe(false);
       expect(result.error).toBe("Attribute ID cannot be empty");
+    });
+
+    test("should accept modifyAttribute with valid payload", () => {
+      const command: ModifyAttributeCommand = {
+        type: "modifyAttribute",
+        payload: {
+          attributeId: "attr1",
+          attributeName: "validName",
+          attributeType: "string",
+        },
+      };
+
+      const result = validateModifyAttribute(command, schemaObj);
+      expect(result.valid).toBe(true);
     });
   });
 });

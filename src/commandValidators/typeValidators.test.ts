@@ -148,5 +148,18 @@ describe("ComplexType Validators", () => {
       expect(result.valid).toBe(false);
       expect(result.error).toBe("Type ID cannot be empty");
     });
+
+    test("should accept modifyComplexType with valid payload", () => {
+      const command: ModifyComplexTypeCommand = {
+        type: "modifyComplexType",
+        payload: {
+          typeId: "type1",
+          typeName: "validTypeName",
+        },
+      };
+
+      const result = validateModifyComplexType(command, schemaObj);
+      expect(result.valid).toBe(true);
+    });
   });
 });

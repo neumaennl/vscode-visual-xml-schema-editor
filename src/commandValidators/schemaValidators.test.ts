@@ -158,5 +158,18 @@ describe("Include Validators", () => {
       expect(result.valid).toBe(false);
       expect(result.error).toBe("Include ID cannot be empty");
     });
+
+    test("should accept modifyInclude with valid payload", () => {
+      const command: ModifyIncludeCommand = {
+        type: "modifyInclude",
+        payload: {
+          includeId: "include1",
+          schemaLocation: "newSchema.xsd",
+        },
+      };
+
+      const result = validateModifyInclude(command, schemaObj);
+      expect(result.valid).toBe(true);
+    });
   });
 });

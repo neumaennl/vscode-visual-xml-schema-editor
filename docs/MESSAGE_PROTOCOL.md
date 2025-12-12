@@ -16,74 +16,46 @@ The editor uses a **bidirectional message-passing protocol** to enable editing o
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                          Webview (UI)                           │
-│  ┌─────────────┐  ┌──────────────┐  ┌──────────────────────┐  │
-│  │  Diagram    │  │  Properties  │  │      Toolbar         │  │
-│  │  Renderer   │  │    Panel     │  │      Actions         │  │
-│  └──────┬──────┘  └──────┬───────┘  └──────┬───────────────┘  │
-│         │                │                  │                   │
-│         └────────────────┴──────────────────┘                   │
-│                          │                                      │
-│                          ▼                                      │
-│              ┌───────────────────────┐                          │
-│              │  Action Creators      │                          │
-│              │  (Create Commands)    │                          │
-│              └───────────┬───────────┘                          │
-└──────────────────────────┼──────────────────────────────────────┘
-                           │
-                           │ postMessage(ExecuteCommandMessage)
-                           │
-                           ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                     VS Code Extension                           │
-│              ┌───────────────────────┐                          │
-│              │  Message Router       │                          │
-│              └───────────┬───────────┘                          │
-│                          │                                      │
-│                          ▼                                      │
-│              ┌───────────────────────┐                          │
-│              │  Command Processor    │                          │
-│              │  (Validate & Execute) │                          │
-│              └───────────┬───────────┘                          │
-│                          │                                      │
-│                          ▼                                      │
-│              ┌───────────────────────┐                          │
-│              │  Schema Model Manager │                          │
-│              │  (Update State)       │                          │
-│              └───────────┬───────────┘                          │
-│                          │                                      │
-│                          ▼                                      │
-│              ┌───────────────────────┐                          │
-│              │  Document Editor      │                          │
-│              │  (Apply to XSD)       │                          │
-│              └───────────┬───────────┘                          │
-└──────────────────────────┼──────────────────────────────────────┘
-                           │
-                           │ postMessage(UpdateSchemaMessage)
-                           │ postMessage(CommandResultMessage)
-                           │ postMessage(ErrorMessage)
-                           │
-                           ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                          Webview (UI)                           │
-│              ┌───────────────────────┐                          │
-│              │  Message Handler      │                          │
-│              └───────────┬───────────┘                          │
-│                          │                                      │
-│                          ▼                                      │
-│              ┌───────────────────────┐                          │
-│              │  State Reconciler     │                          │
-│              │  (Update UI)          │                          │
-│              └───────────┬───────────┘                          │
-│                          │                                      │
-│                          ▼                                      │
-│              ┌───────────────────────┐                          │
-│              │  Diagram Renderer     │                          │
-│              │  (Re-render)          │                          │
-│              └───────────────────────┘                          │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph Webview["Webview (UI)"]
+        Diagram["Diagram<br/>Renderer"]
+        Properties["Properties<br/>Panel"]
+        Toolbar["Toolbar<br/>Actions"]
+        ActionCreators["Action Creators<br/>(Create Commands)"]
+        
+        Diagram --> ActionCreators
+        Properties --> ActionCreators
+        Toolbar --> ActionCreators
+    end
+    
+    ActionCreators -->|postMessage<br/>ExecuteCommandMessage| MessageRouter
+    
+    subgraph Extension["VS Code Extension"]
+        MessageRouter["Message Router"]
+        CommandProcessor["Command Processor<br/>(Validate & Execute)"]
+        SchemaManager["Schema Model Manager<br/>(Update State)"]
+        DocumentEditor["Document Editor<br/>(Apply to XSD)"]
+        
+        MessageRouter --> CommandProcessor
+        CommandProcessor --> SchemaManager
+        SchemaManager --> DocumentEditor
+    end
+    
+    DocumentEditor -->|postMessage<br/>UpdateSchemaMessage<br/>CommandResultMessage<br/>ErrorMessage| MessageHandler
+    
+    subgraph WebviewUpdate["Webview (UI Update)"]
+        MessageHandler["Message Handler"]
+        StateReconciler["State Reconciler<br/>(Update UI)"]
+        DiagramRenderer["Diagram Renderer<br/>(Re-render)"]
+        
+        MessageHandler --> StateReconciler
+        StateReconciler --> DiagramRenderer
+    end
+    
+    style Webview fill:#e3f2fd
+    style Extension fill:#fff3e0
+    style WebviewUpdate fill:#e8f5e9
 ```
 
 ## Message Types

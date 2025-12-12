@@ -18,6 +18,7 @@ import {
   ModifyComplexTypeCommand,
 } from "../commands";
 import { generateSchemaId, SchemaNodeType } from "../idStrategy";
+import { schema } from "../types";
 
 describe("Message Protocol Integration", () => {
   describe("Command execution flow", () => {
@@ -96,11 +97,10 @@ describe("Message Protocol Integration", () => {
       };
 
       expect(message.data.type).toBe("removeElement");
-      if (message.data.type === "removeElement") {
-        expect(message.data.payload.elementId).toBe(
-          "/element:person/element:oldField[2]"
-        );
-      }
+      // Type narrowing is required for union types
+      expect((message.data as RemoveElementCommand).payload.elementId).toBe(
+        "/element:person/element:oldField[2]"
+      );
     });
   });
 
@@ -185,10 +185,15 @@ describe("Message Protocol Integration", () => {
     });
 
     test("should accept all valid ExtensionMessage types", () => {
+      // Mock schema object with minimal required structure
+      const mockSchema: Partial<schema> = {
+        targetNamespace: "http://example.com",
+      };
+
       const messages: ExtensionMessage[] = [
         {
           command: "updateSchema",
-          data: {} as any, // Mock schema object
+          data: mockSchema as schema,
         },
         {
           command: "commandResult",
@@ -208,7 +213,7 @@ describe("Message Protocol Integration", () => {
         },
         {
           command: "schemaModified",
-          data: {} as any, // Mock schema object
+          data: mockSchema as schema,
         },
       ];
 
@@ -264,12 +269,13 @@ describe("Message Protocol Integration", () => {
       };
 
       expect(addCommand.data.type).toBe("addElement");
-      if (addCommand.data.type === "addElement") {
-        expect(addCommand.data.payload.parentId).toBe("/element:person");
-      }
-      expect((result.data.data as any).elementId).toBe(
-        "/element:person/element:address[0]"
+      // Type narrowing for union types
+      expect((addCommand.data as AddElementCommand).payload.parentId).toBe(
+        "/element:person"
       );
+      expect(
+        (result.data.data as { elementId: string }).elementId
+      ).toBe("/element:person/element:address[0]");
       expect(modifyCmd.payload.elementId).toBe(
         "/element:person/element:address[0]"
       );
@@ -522,9 +528,12 @@ describe("Message Protocol Integration", () => {
       };
 
       // 3. Extension sends updated schema
+      const mockSchema: Partial<schema> = {
+        targetNamespace: "http://example.com",
+      };
       const updateMsg: UpdateSchemaMessage = {
         command: "updateSchema",
-        data: {} as any, // Mock schema
+        data: mockSchema as schema,
       };
 
       // Verify message sequence

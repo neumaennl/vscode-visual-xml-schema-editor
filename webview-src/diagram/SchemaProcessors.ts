@@ -13,7 +13,10 @@ import {
   GroupDefLike,
 } from "./DiagramTypes";
 import {
-  generateId,
+  generateSchemaId,
+  SchemaNodeType,
+} from "../../shared/idStrategy";
+import {
   extractDocumentation,
   extractAttributes,
   extractOccurrenceConstraints,
@@ -245,8 +248,14 @@ function processGroup(
   groupName: string,
   groupType: DiagramItemGroupType
 ): void {
+  // Groups don't have names, so we use position-based ID
+  const position = parent.childElements.length;
   const groupItem = new DiagramItem(
-    generateId(),
+    generateSchemaId({
+      nodeType: SchemaNodeType.Group,
+      parentId: parent.id,
+      position,
+    }),
     groupName,
     DiagramItemType.group,
     parent.diagram
@@ -256,27 +265,31 @@ function processGroup(
   // Process elements within the group
   // Import and use createElementNode from TypeNodeCreators would create a circular dependency,
   // so we create a lightweight element node inline with essential properties
-  processChildCollection(
-    groupItem,
-    groupDef.element as localElement | localElement[] | undefined,
-    (elem: localElement) => {
-      const item = new DiagramItem(
-        generateId(),
-        elem.name || "unnamed",
-        DiagramItemType.element,
-        parent.diagram
-      );
-      if (elem.type_) {
-        item.type = elem.type_;
-      }
-      item.documentation = extractDocumentation(elem.annotation) ?? "";
-
-      // Extract occurrence constraints for the element
-      extractOccurrenceConstraints(item, elem);
-
-      return item;
-    }
+  const elementsArray = toArray(
+    groupDef.element as localElement | localElement[] | undefined
   );
+  elementsArray.forEach((elem, elemPosition) => {
+    const item = new DiagramItem(
+      generateSchemaId({
+        nodeType: SchemaNodeType.Element,
+        name: elem.name || "unnamed",
+        parentId: groupItem.id,
+        position: elemPosition,
+      }),
+      elem.name || "unnamed",
+      DiagramItemType.element,
+      parent.diagram
+    );
+    if (elem.type_) {
+      item.type = elem.type_;
+    }
+    item.documentation = extractDocumentation(elem.annotation) ?? "";
+
+    // Extract occurrence constraints for the element
+    extractOccurrenceConstraints(item, elem);
+
+    groupItem.addChild(item);
+  });
 
   // Only add the group if it has children
   if (groupItem.childElements.length > 0) {

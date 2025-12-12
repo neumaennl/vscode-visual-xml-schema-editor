@@ -18,9 +18,9 @@ import {
   topLevelSimpleType,
 } from "../../shared/types";
 import {
-  generateId,
-  resetIdCounter,
-} from "./DiagramBuilderHelpers";
+  generateSchemaId,
+  SchemaNodeType,
+} from "../../shared/idStrategy";
 import {
   createElementNode,
   createComplexTypeNode,
@@ -59,14 +59,13 @@ export class DiagramBuilder {
   public buildFromSchema(schemaObj: schema): Diagram {
     this.diagram = new Diagram();
     this.elementMap.clear();
-    resetIdCounter();
 
     console.log("DiagramBuilder - Building from schema:", schemaObj);
 
     // Create a root node representing the schema
     const targetNs = schemaObj?.targetNamespace?.toString() || "no namespace";
     const schemaNode = new DiagramItem(
-      generateId(),
+      generateSchemaId({ nodeType: SchemaNodeType.Schema }),
       `Schema: ${targetNs}`,
       DiagramItemType.element,
       this.diagram
@@ -94,7 +93,12 @@ export class DiagramBuilder {
     // If no children were added, add a placeholder
     if (schemaNode.childElements.length === 0) {
       const placeholder = new DiagramItem(
-        generateId(),
+        generateSchemaId({
+          nodeType: SchemaNodeType.Element,
+          name: "placeholder",
+          parentId: schemaNode.id,
+          position: 0,
+        }),
         "No elements found",
         DiagramItemType.element,
         this.diagram

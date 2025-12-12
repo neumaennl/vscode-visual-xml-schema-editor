@@ -118,7 +118,7 @@ export function generateSchemaId(params: IdGenerationParams): string {
   const { nodeType, name, parentId, position, namespace } = params;
 
   // Build the node identifier
-  let nodeId: string = nodeType;
+  let nodeId: string;
   if (name) {
     // Include namespace if provided
     const qualifiedName = namespace ? `{${namespace}}${name}` : name;

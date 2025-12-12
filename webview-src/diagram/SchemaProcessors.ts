@@ -249,13 +249,9 @@ function processGroup(
   groupType: DiagramItemGroupType
 ): void {
   // Groups don't have names, so we use position-based ID
-  const position = parent.childElements.length;
+  // Create the group item first (without ID) to ensure proper position tracking
   const groupItem = new DiagramItem(
-    generateSchemaId({
-      nodeType: SchemaNodeType.Group,
-      parentId: parent.id,
-      position,
-    }),
+    "", // Temporary ID, will be set after determining position
     groupName,
     DiagramItemType.group,
     parent.diagram
@@ -293,6 +289,13 @@ function processGroup(
 
   // Only add the group if it has children
   if (groupItem.childElements.length > 0) {
+    // Calculate position right before adding to ensure uniqueness
+    const position = parent.childElements.length;
+    groupItem.id = generateSchemaId({
+      nodeType: SchemaNodeType.Group,
+      parentId: parent.id,
+      position,
+    });
     parent.addChild(groupItem);
   }
 }

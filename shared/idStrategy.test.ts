@@ -289,6 +289,20 @@ describe("isTopLevelId", () => {
   test("should return true for schema root", () => {
     expect(isTopLevelId("/schema")).toBe(true);
   });
+
+  test("should return true for top-level element with namespace", () => {
+    expect(isTopLevelId("/element:{http://example.com/schema}person")).toBe(
+      true
+    );
+  });
+
+  test("should return false for child element with namespace", () => {
+    expect(
+      isTopLevelId(
+        "/element:{http://example.com/schema}person/element:{http://example.com/schema}address[0]"
+      )
+    ).toBe(false);
+  });
 });
 
 describe("getParentId", () => {

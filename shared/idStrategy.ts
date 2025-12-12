@@ -325,7 +325,7 @@ function parseQualifiedName(qualifiedName: string): {
  * ```
  */
 export function isTopLevelId(id: string): boolean {
-  const segments = id.substring(1).split("/");
+  const segments = splitPath(id.substring(1));
   return segments.length === 1;
 }
 

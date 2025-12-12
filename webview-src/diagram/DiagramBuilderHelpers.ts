@@ -72,27 +72,3 @@ export function extractAttributes(item: DiagramItem, source: ElementWithAttribut
     });
   }
 }
-
-/**
- * ID counter for generating unique diagram item identifiers.
- * Starts at 0 and increments with each call to generateId.
- */
-let idCounter: number = 0;
-
-/**
- * Generates a unique ID for a diagram item.
- * Uses an internal counter to ensure uniqueness within a diagram build session.
- * 
- * @returns A unique string identifier in the format "item_N"
- */
-export function generateId(): string {
-  return `item_${idCounter++}`;
-}
-
-/**
- * Resets the ID counter to zero.
- * Should be called at the start of building a new diagram.
- */
-export function resetIdCounter(): void {
-  idCounter = 0;
-}

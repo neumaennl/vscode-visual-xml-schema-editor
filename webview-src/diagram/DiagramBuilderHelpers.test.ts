@@ -6,8 +6,6 @@ import {
   extractDocumentation,
   extractOccurrenceConstraints,
   extractAttributes,
-  generateId,
-  resetIdCounter,
 } from "./DiagramBuilderHelpers";
 import { DiagramItem } from "./DiagramItem";
 import { Diagram } from "./Diagram";
@@ -143,17 +141,6 @@ describe("DiagramBuilderHelpers", () => {
       extractAttributes(item, source);
       expect(item.attributes).toHaveLength(1);
       expect(item.attributes[0].use).toBeUndefined();
-    });
-  });
-
-  describe("generateId", () => {
-    it("should generate unique sequential IDs", () => {
-      resetIdCounter();
-      const id1 = generateId();
-      const id2 = generateId();
-
-      expect(id1).toBe("item_0");
-      expect(id2).toBe("item_1");
     });
   });
 });

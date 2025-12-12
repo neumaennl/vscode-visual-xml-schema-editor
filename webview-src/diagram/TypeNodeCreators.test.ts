@@ -9,7 +9,6 @@ import {
 } from "./TypeNodeCreators";
 import { Diagram } from "./Diagram";
 import { DiagramItemType } from "./DiagramTypes";
-import { resetIdCounter } from "./DiagramBuilderHelpers";
 import {
   topLevelElement,
   topLevelComplexType,
@@ -21,7 +20,6 @@ describe("TypeNodeCreators", () => {
 
   beforeEach(() => {
     diagram = new Diagram();
-    resetIdCounter();
   });
 
   describe("createElementNode", () => {

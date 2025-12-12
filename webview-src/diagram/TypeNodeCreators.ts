@@ -12,9 +12,10 @@ import {
   topLevelSimpleType,
 } from "../../shared/types";
 import {
-  generateId,
-  extractDocumentation,
-} from "./DiagramBuilderHelpers";
+  generateSchemaId,
+  SchemaNodeType,
+} from "../../shared/idStrategy";
+import { extractDocumentation } from "./DiagramBuilderHelpers";
 
 /**
  * Creates a diagram item node from an element definition in the schema.
@@ -33,7 +34,10 @@ export function createElementNode(
   }
 
   const item = new DiagramItem(
-    generateId(),
+    generateSchemaId({
+      nodeType: SchemaNodeType.Element,
+      name: element.name.toString(),
+    }),
     element.name.toString(),
     DiagramItemType.element,
     diagram
@@ -70,7 +74,10 @@ export function createComplexTypeNode(
   }
 
   const item = new DiagramItem(
-    generateId(),
+    generateSchemaId({
+      nodeType: SchemaNodeType.ComplexType,
+      name: complexType.name.toString(),
+    }),
     complexType.name.toString(),
     DiagramItemType.type,
     diagram
@@ -101,7 +108,10 @@ export function createSimpleTypeNode(
   }
 
   const item = new DiagramItem(
-    generateId(),
+    generateSchemaId({
+      nodeType: SchemaNodeType.SimpleType,
+      name: simpleType.name.toString(),
+    }),
     simpleType.name.toString(),
     DiagramItemType.type,
     diagram

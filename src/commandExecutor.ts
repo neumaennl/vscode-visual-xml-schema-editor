@@ -40,6 +40,7 @@ import {
   ModifyIncludeCommand,
   topLevelElement,
   localElement,
+  narrowMaxMin,
   annotationType,
   documentationType,
   explicitGroup,
@@ -182,7 +183,8 @@ export class CommandExecutor {
       minOccurs,
       maxOccurs,
       documentation,
-      location.parentType === "schema"
+      location.parentType === "schema",
+      location.parentType === "all"
     );
 
     // Add the element to the appropriate parent
@@ -198,23 +200,41 @@ export class CommandExecutor {
     minOccurs?: number,
     maxOccurs?: number | "unbounded",
     documentation?: string,
-    isTopLevel: boolean = false
-  ): topLevelElement | localElement {
-    const element: topLevelElement | localElement = isTopLevel
-      ? new topLevelElement()
-      : new localElement();
+    isTopLevel: boolean = false,
+    isInAllGroup: boolean = false
+  ): topLevelElement | localElement | narrowMaxMin {
+    let element: topLevelElement | localElement | narrowMaxMin;
+    
+    if (isTopLevel) {
+      element = new topLevelElement();
+    } else if (isInAllGroup) {
+      // For 'all' groups, we need to use narrowMaxMin which has string-typed occurrences
+      element = new narrowMaxMin();
+    } else {
+      element = new localElement();
+    }
 
     element.name = name;
     element.type_ = type;
 
-    // For local elements, set minOccurs and maxOccurs
+    // For local elements and narrowMaxMin, set minOccurs and maxOccurs
     if (!isTopLevel) {
-      const localElem = element as localElement;
-      if (minOccurs !== undefined) {
-        localElem.minOccurs = minOccurs;
-      }
-      if (maxOccurs !== undefined) {
-        localElem.maxOccurs = maxOccurs;
+      if (isInAllGroup) {
+        const allElement = element as narrowMaxMin;
+        if (minOccurs !== undefined) {
+          allElement.minOccurs = String(minOccurs);
+        }
+        if (maxOccurs !== undefined) {
+          allElement.maxOccurs = String(maxOccurs);
+        }
+      } else {
+        const localElem = element as localElement;
+        if (minOccurs !== undefined) {
+          localElem.minOccurs = minOccurs;
+        }
+        if (maxOccurs !== undefined) {
+          localElem.maxOccurs = maxOccurs;
+        }
       }
     }
 
@@ -236,7 +256,7 @@ export class CommandExecutor {
   private addElementToParent(
     parent: unknown,
     parentType: string,
-    element: topLevelElement | localElement
+    element: topLevelElement | localElement | narrowMaxMin
   ): void {
     if (parentType === "schema") {
       const schemaObj = parent as schema;
@@ -254,11 +274,8 @@ export class CommandExecutor {
     } else if (parentType === "all") {
       const allGroup = parent as all;
       const elements = toArray(allGroup.element);
-      // For 'all' groups, elements must use narrowMaxMin type
-      // We need to cast the localElement to the correct type
-      const allElement = element as localElement;
-      elements.push(allElement as any);
-      allGroup.element = elements as any;
+      elements.push(element as narrowMaxMin);
+      allGroup.element = elements;
     } else {
       throw new Error(`Cannot add element to parent of type: ${parentType}`);
     }

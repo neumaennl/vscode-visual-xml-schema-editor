@@ -38,7 +38,15 @@ import {
   AddIncludeCommand,
   RemoveIncludeCommand,
   ModifyIncludeCommand,
+  topLevelElement,
+  localElement,
+  annotationType,
+  documentationType,
+  explicitGroup,
+  all,
 } from "../shared/types";
+import { toArray } from "../shared/schemaUtils";
+import { locateNodeById } from "./schemaNavigator";
 
 /**
  * Executes validated schema commands.
@@ -156,10 +164,104 @@ export class CommandExecutor {
   // ===== Execution Methods (Stubs for Phase 2) =====
 
   private executeAddElement(
-    _command: AddElementCommand,
-    _schemaObj: schema
+    command: AddElementCommand,
+    schemaObj: schema
   ): void {
-    throw new Error("addElement execution not yet implemented");
+    const { parentId, elementName, elementType, minOccurs, maxOccurs, documentation } = command.payload;
+
+    // Locate the parent node
+    const location = locateNodeById(schemaObj, parentId);
+    if (!location.found || !location.parent) {
+      throw new Error(`Parent node not found: ${parentId}`);
+    }
+
+    // Create the new element
+    const newElement = this.createNewElement(
+      elementName,
+      elementType,
+      minOccurs,
+      maxOccurs,
+      documentation,
+      location.parentType === "schema"
+    );
+
+    // Add the element to the appropriate parent
+    this.addElementToParent(location.parent, location.parentType!, newElement);
+  }
+
+  /**
+   * Creates a new element (either top-level or local).
+   */
+  private createNewElement(
+    name: string,
+    type: string,
+    minOccurs?: number,
+    maxOccurs?: number | "unbounded",
+    documentation?: string,
+    isTopLevel: boolean = false
+  ): topLevelElement | localElement {
+    const element: topLevelElement | localElement = isTopLevel
+      ? new topLevelElement()
+      : new localElement();
+
+    element.name = name;
+    element.type_ = type;
+
+    // For local elements, set minOccurs and maxOccurs
+    if (!isTopLevel) {
+      const localElem = element as localElement;
+      if (minOccurs !== undefined) {
+        localElem.minOccurs = minOccurs;
+      }
+      if (maxOccurs !== undefined) {
+        localElem.maxOccurs = maxOccurs;
+      }
+    }
+
+    // Add documentation if provided
+    if (documentation) {
+      const annotation = new annotationType();
+      const doc = new documentationType();
+      doc.value = documentation;
+      annotation.documentation = [doc];
+      element.annotation = annotation;
+    }
+
+    return element;
+  }
+
+  /**
+   * Adds an element to its parent container.
+   */
+  private addElementToParent(
+    parent: unknown,
+    parentType: string,
+    element: topLevelElement | localElement
+  ): void {
+    if (parentType === "schema") {
+      const schemaObj = parent as schema;
+      const elements = toArray(schemaObj.element);
+      elements.push(element as topLevelElement);
+      schemaObj.element = elements;
+    } else if (
+      parentType === "sequence" ||
+      parentType === "choice"
+    ) {
+      const group = parent as explicitGroup;
+      const elements = toArray(group.element);
+      elements.push(element as localElement);
+      group.element = elements;
+    } else if (parentType === "all") {
+      const allGroup = parent as all;
+      const elements = toArray(allGroup.element);
+      // For 'all' groups, elements must use narrowMaxMin type
+      // We need to cast the localElement to the correct type
+      const allElement = element as localElement;
+      elements.push(allElement as any);
+      allGroup.element = elements as any;
+    } else {
+      throw new Error(`Cannot add element to parent of type: ${parentType}`);
+    }
   }
 
   private executeRemoveElement(

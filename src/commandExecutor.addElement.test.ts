@@ -350,6 +350,34 @@ describe("CommandExecutor - executeAddElement", () => {
         executor.execute(command, schemaObj);
       }).toThrow("Cannot add element to parent of type");
     });
+
+    it("should reject adding duplicate element names in same sequence", () => {
+      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="person">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="firstName" type="xs:string"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>`;
+      const schemaObj = unmarshal(schema, schemaXml);
+
+      const command: AddElementCommand = {
+        type: "addElement",
+        payload: {
+          parentId: "/element:person/anonymousComplexType[0]/sequence",
+          elementName: "firstName",
+          elementType: "xs:int",
+        },
+      };
+
+      // This should fail because duplicate element names are not allowed in XSD
+      expect(() => {
+        executor.execute(command, schemaObj);
+      }).toThrow("duplicate");
+    });
   });
 
   describe("XML marshalling", () => {

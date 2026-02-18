@@ -2,6 +2,7 @@ import eslint from '@eslint/js';
 import tseslint from '@typescript-eslint/eslint-plugin';
 import tsparser from '@typescript-eslint/parser';
 import jestPlugin from 'eslint-plugin-jest';
+import globals from 'globals';
 
 export default [
   // Global ignores
@@ -15,6 +16,19 @@ export default [
       '**/generated/**',
     ],
   },
+  // Disallow .js and .cjs files (project uses ESM with .mjs and TypeScript)
+  {
+    files: ['**/*.js', '**/*.cjs'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'Program',
+          message: 'JavaScript (.js) and CommonJS (.cjs) files are not allowed. Use TypeScript (.ts) or ES modules (.mjs) instead.',
+        },
+      ],
+    },
+  },
   // JavaScript configuration files (jest.config.mjs, etc.)
   {
     files: ['*.mjs'],
@@ -23,41 +37,8 @@ export default [
       ecmaVersion: 2020,
       sourceType: 'module',
       globals: {
-        // CommonJS/Node.js globals
-        process: 'readonly',
-        Buffer: 'readonly',
-        console: 'readonly',
-        setTimeout: 'readonly',
-        clearTimeout: 'readonly',
-        setInterval: 'readonly',
-        clearInterval: 'readonly',
-        // Jest globals for jest.setup.js
-        jest: 'readonly',
-      },
-    },
-  },
-  // JavaScript configuration files (jest.setup.js, etc.) - CommonJS
-  {
-    files: ['*.js'],
-    languageOptions: {
-      ecmaVersion: 2020,
-      sourceType: 'commonjs',
-      globals: {
-        // CommonJS/Node.js globals
-        process: 'readonly',
-        __dirname: 'readonly',
-        __filename: 'readonly',
-        Buffer: 'readonly',
-        module: 'readonly',
-        require: 'readonly',
-        exports: 'readonly',
-        console: 'readonly',
-        setTimeout: 'readonly',
-        clearTimeout: 'readonly',
-        setInterval: 'readonly',
-        clearInterval: 'readonly',
-        // Jest globals for jest.setup.js
-        jest: 'readonly',
+        ...globals.node,
+        ...globals.jest,
       },
     },
   },
@@ -78,19 +59,7 @@ export default [
         ],
       },
       globals: {
-        // Node.js globals
-        process: 'readonly',
-        __dirname: 'readonly',
-        __filename: 'readonly',
-        Buffer: 'readonly',
-        module: 'readonly',
-        require: 'readonly',
-        exports: 'readonly',
-        console: 'readonly',
-        setTimeout: 'readonly',
-        clearTimeout: 'readonly',
-        setInterval: 'readonly',
-        clearInterval: 'readonly',
+        ...globals.node,
       },
     },
     plugins: {
@@ -123,28 +92,8 @@ export default [
     },
     languageOptions: {
       globals: {
-        // Jest globals
-        describe: 'readonly',
-        test: 'readonly',
-        it: 'readonly',
-        expect: 'readonly',
-        beforeAll: 'readonly',
-        afterAll: 'readonly',
-        beforeEach: 'readonly',
-        afterEach: 'readonly',
-        jest: 'readonly',
-        // Browser globals for webview tests
-        document: 'readonly',
-        window: 'readonly',
-        navigator: 'readonly',
-        Element: 'readonly',
-        HTMLElement: 'readonly',
-        SVGElement: 'readonly',
-        getComputedStyle: 'readonly',
-        Event: 'readonly',
-        CustomEvent: 'readonly',
-        MouseEvent: 'readonly',
-        KeyboardEvent: 'readonly',
+        ...globals.jest,
+        ...globals.browser,
       },
     },
     rules: {
@@ -161,18 +110,7 @@ export default [
     ignores: ['**/*.test.ts', '**/__mocks__/**/*.ts'],
     languageOptions: {
       globals: {
-        // Browser globals
-        document: 'readonly',
-        window: 'readonly',
-        navigator: 'readonly',
-        Element: 'readonly',
-        HTMLElement: 'readonly',
-        SVGElement: 'readonly',
-        getComputedStyle: 'readonly',
-        Event: 'readonly',
-        CustomEvent: 'readonly',
-        MouseEvent: 'readonly',
-        KeyboardEvent: 'readonly',
+        ...globals.browser,
       },
     },
   },

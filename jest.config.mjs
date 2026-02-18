@@ -32,7 +32,7 @@ export default {
       },
     ],
   ],
-  setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
+  setupFilesAfterEnv: ["<rootDir>/jest.setup.mjs"],
   projects: [
     {
       displayName: "webview",

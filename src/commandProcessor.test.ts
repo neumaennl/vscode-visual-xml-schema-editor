@@ -125,12 +125,12 @@ describe("CommandProcessor", () => {
       expect(mockModelManager.loadFromXml).toHaveBeenCalled();
     });
 
-    test("should return null schema and xmlContent on failure", () => {
+    test("should return failure when parent node is not found", () => {
       const result = processor.execute(
         {
           type: "addElement",
           payload: {
-            parentId: "schema",
+            parentId: "/element:nonexistent",
             elementName: "testElement",
             elementType: "string",
           },
@@ -224,7 +224,7 @@ describe("CommandProcessor", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/element:nonexistent",
           elementName: "test",
           elementType: "string",
         },
@@ -232,7 +232,7 @@ describe("CommandProcessor", () => {
 
       const result = processor.execute(command, originalXml);
 
-      // Execution will fail because it's not implemented
+      // Execution will fail because parent node doesn't exist
       expect(result.success).toBe(false);
       expect(result.schema).toBeNull();
       expect(result.xmlContent).toBeNull();
@@ -661,9 +661,10 @@ describe("CommandProcessor", () => {
 
       const result = defaultProcessor.execute(command, simpleSchemaXml);
 
-      // Should use default validator and executor
-      expect(result.success).toBe(false);
-      expect(result.error).toContain("execution not yet implemented");
+      // Should use default validator and executor successfully
+      expect(result.success).toBe(true);
+      expect(result.xmlContent).toBeTruthy();
+      expect(result.xmlContent).toContain('name="test"');
     });
   });
 

@@ -382,10 +382,182 @@ export class CommandExecutor {
 
 
   private executeModifyElement(
-    _command: ModifyElementCommand,
-    _schemaObj: schema
+    command: ModifyElementCommand,
+    schemaObj: schema
   ): void {
-    throw new Error("modifyElement execution not yet implemented");
+    const { elementId, elementName, elementType, minOccurs, maxOccurs, documentation } = command.payload;
+
+    // Parse the element ID to get information about the element
+    const parsed = parseSchemaId(elementId);
+    
+    // Determine the parent location from the parsed ID
+    const parentId = parsed.parentId || "schema";
+    const location = locateNodeById(schemaObj, parentId);
+    
+    if (!location.found || !location.parent || !location.parentType) {
+      throw new Error(`Parent node not found for element: ${elementId}`);
+    }
+
+    // Find and modify the element in its parent container
+    this.modifyElementInParent(
+      location.parent,
+      location.parentType,
+      parsed.name,
+      parsed.position,
+      elementName,
+      elementType,
+      minOccurs,
+      maxOccurs,
+      documentation
+    );
+  }
+
+  /**
+   * Modifies an element in its parent container.
+   */
+  private modifyElementInParent(
+    parent: unknown,
+    parentType: string,
+    targetName?: string,
+    targetPosition?: number,
+    newName?: string,
+    newType?: string,
+    newMinOccurs?: number,
+    newMaxOccurs?: number | "unbounded",
+    newDocumentation?: string
+  ): void {
+    if (parentType === "schema") {
+      const schemaObj = parent as schema;
+      const elements = toArray(schemaObj.element);
+      const element = this.findElement(elements, targetName, targetPosition);
+      
+      if (!element) {
+        throw new Error(`Element not found: ${targetName ?? `at position ${targetPosition}`}`);
+      }
+      
+      this.updateElementProperties(
+        element,
+        newName,
+        newType,
+        undefined, // top-level elements don't have occurrences
+        undefined,
+        newDocumentation,
+        false
+      );
+    } else if (
+      parentType === "sequence" ||
+      parentType === "choice"
+    ) {
+      const group = parent as explicitGroup;
+      const elements = toArray(group.element);
+      const element = this.findElement(elements, targetName, targetPosition);
+      
+      if (!element) {
+        throw new Error(`Element not found: ${targetName ?? `at position ${targetPosition}`}`);
+      }
+      
+      this.updateElementProperties(
+        element,
+        newName,
+        newType,
+        newMinOccurs,
+        newMaxOccurs,
+        newDocumentation,
+        false
+      );
+    } else if (parentType === "all") {
+      const allGroup = parent as all;
+      const elements = toArray(allGroup.element);
+      const element = this.findElement(elements, targetName, targetPosition);
+      
+      if (!element) {
+        throw new Error(`Element not found: ${targetName ?? `at position ${targetPosition}`}`);
+      }
+      
+      this.updateElementProperties(
+        element,
+        newName,
+        newType,
+        newMinOccurs,
+        newMaxOccurs,
+        newDocumentation,
+        true
+      );
+    } else {
+      throw new Error(`Cannot modify element in parent of type: ${parentType}`);
+    }
+  }
+
+  /**
+   * Finds an element in an array by name or position.
+   */
+  private findElement<T extends { name?: string }>(
+    elements: T[],
+    elementName?: string,
+    position?: number
+  ): T | undefined {
+    // When both are provided, position takes precedence (more specific)
+    if (position !== undefined) {
+      return elements[position];
+    } else if (elementName !== undefined) {
+      return elements.find(el => el.name === elementName);
+    }
+    return undefined;
+  }
+
+  /**
+   * Updates element properties based on provided values.
+   */
+  private updateElementProperties(
+    element: topLevelElement | localElement | narrowMaxMin,
+    newName?: string,
+    newType?: string,
+    newMinOccurs?: number,
+    newMaxOccurs?: number | "unbounded",
+    newDocumentation?: string,
+    isInAllGroup: boolean = false
+  ): void {
+    // Update name if provided
+    if (newName !== undefined) {
+      element.name = newName;
+    }
+
+    // Update type if provided
+    if (newType !== undefined) {
+      element.type_ = newType;
+    }
+
+    // Update occurrences if provided (only for local elements and narrowMaxMin)
+    if (newMinOccurs !== undefined || newMaxOccurs !== undefined) {
+      if (isInAllGroup) {
+        const allElement = element as narrowMaxMin;
+        if (newMinOccurs !== undefined) {
+          allElement.minOccurs = String(newMinOccurs);
+        }
+        if (newMaxOccurs !== undefined) {
+          allElement.maxOccurs = String(newMaxOccurs);
+        }
+      } else if ('minOccurs' in element) {
+        const localElem = element as localElement;
+        if (newMinOccurs !== undefined) {
+          localElem.minOccurs = newMinOccurs;
+        }
+        if (newMaxOccurs !== undefined) {
+          localElem.maxOccurs = newMaxOccurs;
+        }
+      }
+    }
+
+    // Update documentation if provided
+    if (newDocumentation !== undefined) {
+      if (!element.annotation) {
+        element.annotation = new annotationType();
+      }
+      
+      const doc = new documentationType();
+      doc.value = newDocumentation;
+      element.annotation.documentation = [doc];
+    }
   }
 
   private executeAddAttribute(

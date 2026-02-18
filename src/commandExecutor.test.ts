@@ -80,18 +80,30 @@ describe("CommandExecutor", () => {
       expect(mockSchema.element).toBeUndefined();
     });
 
-    it("should delegate modifyElement execution and throw not implemented error", () => {
+    it("should delegate modifyElement execution", () => {
+      // Add an element first so we have something to modify
+      const testSchema = new schema();
+      const element = new topLevelElement();
+      element.name = "testElement";
+      element.type_ = "string";
+      testSchema.element = [element];
+
       const command: SchemaCommand = {
         type: "modifyElement",
         payload: {
-          elementId: "element1",
+          elementId: "/element:testElement",
           elementName: "modifiedElement",
+          elementType: "int",
         },
       };
 
-      expect(() => {
-        executor.execute(command, mockSchema);
-      }).toThrow("modifyElement execution not yet implemented");
+      executor.execute(command, testSchema);
+      
+      // Verify the element was modified
+      expect(testSchema.element).toBeDefined();
+      const elements = Array.isArray(testSchema.element) ? testSchema.element : [testSchema.element];
+      expect(elements[0]!.name).toBe("modifiedElement");
+      expect(elements[0]!.type_).toBe("int");
     });
 
     it("should delegate addAttribute execution and throw not implemented error", () => {

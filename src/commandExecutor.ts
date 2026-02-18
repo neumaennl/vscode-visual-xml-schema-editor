@@ -262,6 +262,12 @@ export class CommandExecutor {
     if (parentType === "schema") {
       const schemaObj = parent as schema;
       const elements = toArray(schemaObj.element);
+      
+      // Check for duplicate element names
+      if (element.name && elements.some(el => el.name === element.name)) {
+        throw new Error(`Cannot add element: duplicate element name '${element.name}' in schema`);
+      }
+      
       elements.push(element as topLevelElement);
       schemaObj.element = elements;
     } else if (
@@ -270,11 +276,23 @@ export class CommandExecutor {
     ) {
       const group = parent as explicitGroup;
       const elements = toArray(group.element);
+      
+      // Check for duplicate element names
+      if (element.name && elements.some(el => el.name === element.name)) {
+        throw new Error(`Cannot add element: duplicate element name '${element.name}' in ${parentType}`);
+      }
+      
       elements.push(element as localElement);
       group.element = elements;
     } else if (parentType === "all") {
       const allGroup = parent as all;
       const elements = toArray(allGroup.element);
+      
+      // Check for duplicate element names
+      if (element.name && elements.some(el => el.name === element.name)) {
+        throw new Error(`Cannot add element: duplicate element name '${element.name}' in all group`);
+      }
+      
       elements.push(element as narrowMaxMin);
       allGroup.element = elements;
     } else {

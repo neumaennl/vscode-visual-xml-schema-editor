@@ -469,7 +469,7 @@ describe("CommandExecutor - executeRemoveElement", () => {
       expect(elements[0].annotation).toBeDefined();
     });
 
-    it("should remove element by position when names differ", () => {
+    it("should remove element by name from sequence", () => {
       const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:element name="person">
@@ -487,13 +487,13 @@ describe("CommandExecutor - executeRemoveElement", () => {
       const command: RemoveElementCommand = {
         type: "removeElement",
         payload: {
-          elementId: "/element:person/anonymousComplexType[0]/sequence/element:firstName[0]",
+          elementId: "/element:person/anonymousComplexType[0]/sequence/element:firstName",
         },
       };
 
       executor.execute(command, schemaObj);
 
-      // Verify the element at position 0 was removed
+      // Verify the element named "firstName" was removed
       const personElement = Array.isArray(schemaObj.element)
         ? schemaObj.element[0]
         : schemaObj.element;

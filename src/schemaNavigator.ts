@@ -84,8 +84,15 @@ export function locateNodeById(
         };
       }
 
+      if (!result.nodeType) {
+        return {
+          found: false,
+          error: `Invalid navigation result: missing nodeType for segment: ${segment}`,
+        };
+      }
+
       currentNode = result.node;
-      currentType = result.nodeType ?? "";
+      currentType = result.nodeType;
     }
 
     return {
@@ -161,7 +168,7 @@ function navigateToChild(
     parentType === "localElement"
   ) {
     return navigateFromElement(
-      parent as topLevelElement,
+      parent as topLevelElement | localElement,
       nodeType,
       name,
       position

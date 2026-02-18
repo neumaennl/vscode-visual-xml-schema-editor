@@ -80,6 +80,7 @@
     "generate-classes-from-schema": "xsd2ts --force -i schema/XMLSchema.xsd -o shared/generated"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/jest": "^30.0.0",
     "@types/node": "^25.2.3",
     "@types/vscode": "^1.109.0",

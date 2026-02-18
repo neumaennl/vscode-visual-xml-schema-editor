@@ -37,7 +37,7 @@ describe("CommandExecutor", () => {
       }).toThrow("Unknown command type: unknownCommandType");
     });
 
-    it("should delegate addElement execution and throw not implemented error", () => {
+    it("should delegate addElement execution successfully", () => {
       const command: SchemaCommand = {
         type: "addElement",
         payload: {
@@ -49,7 +49,10 @@ describe("CommandExecutor", () => {
 
       expect(() => {
         executor.execute(command, mockSchema);
-      }).toThrow("addElement execution not yet implemented");
+      }).not.toThrow();
+      
+      // Verify the element was added
+      expect(mockSchema.element).toBeDefined();
     });
 
     it("should delegate removeElement execution and throw not implemented error", () => {

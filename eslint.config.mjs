@@ -1,3 +1,4 @@
+import eslint from '@eslint/js';
 import tseslint from '@typescript-eslint/eslint-plugin';
 import tsparser from '@typescript-eslint/parser';
 import jestPlugin from 'eslint-plugin-jest';
@@ -12,13 +13,12 @@ export default [
       'node_modules/',
       '**/*.d.ts',
       '**/generated/**',
-      'webpack.config.mjs',
-      'eslint.config.mjs',
     ],
   },
   // JavaScript configuration files (jest.config.mjs, etc.)
   {
     files: ['*.mjs'],
+    ...eslint.configs.recommended,
     languageOptions: {
       ecmaVersion: 2020,
       sourceType: 'module',

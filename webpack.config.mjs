@@ -1,7 +1,11 @@
-const path = require("path");
-const CopyPlugin = require("copy-webpack-plugin");
+import path from "path";
+import { fileURLToPath } from "url";
+import CopyPlugin from "copy-webpack-plugin";
 
-module.exports = {
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+export default {
   entry: "./webview-src/main.ts",
   output: {
     path: path.resolve(__dirname, "webview"),

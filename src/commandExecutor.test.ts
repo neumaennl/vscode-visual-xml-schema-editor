@@ -4,7 +4,7 @@
  */
 
 import { CommandExecutor } from "./commandExecutor";
-import { schema, SchemaCommand } from "../shared/types";
+import { schema, SchemaCommand, topLevelElement } from "../shared/types";
 
 describe("CommandExecutor", () => {
   let executor: CommandExecutor;
@@ -55,17 +55,29 @@ describe("CommandExecutor", () => {
       expect(mockSchema.element).toBeDefined();
     });
 
-    it("should delegate removeElement execution and throw not implemented error", () => {
+    it("should delegate removeElement execution successfully", () => {
+      // Add an element first
+      mockSchema.element = [
+        {
+          name: "element1",
+          type_: "string",
+        } as topLevelElement,
+      ];
+
       const command: SchemaCommand = {
         type: "removeElement",
         payload: {
-          elementId: "element1",
+          elementId: "/element:element1",
         },
       };
 
+      // Should not throw
       expect(() => {
         executor.execute(command, mockSchema);
-      }).toThrow("removeElement execution not yet implemented");
+      }).not.toThrow();
+      
+      // Verify the element was removed
+      expect(mockSchema.element).toBeUndefined();
     });
 
     it("should delegate modifyElement execution and throw not implemented error", () => {

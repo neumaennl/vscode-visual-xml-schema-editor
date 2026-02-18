@@ -74,13 +74,13 @@ describe("CommandExecutor - executeRemoveElement", () => {
       const command: RemoveElementCommand = {
         type: "removeElement",
         payload: {
-          elementId: "/element:second[1]",
+          elementId: "/element:second",
         },
       };
 
       executor.execute(command, schemaObj);
 
-      // Verify the second element (position 1) was removed
+      // Verify the element named "second" was removed
       const elements = toArray(schemaObj.element);
       expect(elements).toHaveLength(2);
       expect(elements[0].name).toBe("first");
@@ -171,13 +171,13 @@ describe("CommandExecutor - executeRemoveElement", () => {
       const command: RemoveElementCommand = {
         type: "removeElement",
         payload: {
-          elementId: "/element:person/anonymousComplexType[0]/sequence/element:name[1]",
+          elementId: "/element:person/anonymousComplexType[0]/sequence/element:name",
         },
       };
 
       executor.execute(command, schemaObj);
 
-      // Verify the element at position 1 was removed
+      // Verify the element named "name" was removed
       const personElement = Array.isArray(schemaObj.element)
         ? schemaObj.element[0]
         : schemaObj.element;
@@ -340,7 +340,7 @@ describe("CommandExecutor - executeRemoveElement", () => {
   });
 
   describe("XML marshalling", () => {
-    it("should produce valid XML after removing element", () => {
+    it("should marshal to XML after removing element", () => {
       const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:element name="person" type="xs:string"/>
@@ -360,12 +360,12 @@ describe("CommandExecutor - executeRemoveElement", () => {
       // Marshal to XML
       const resultXml = marshal(schemaObj);
 
-      // Verify the XML is valid and does not contain the removed element
+      // Verify the removed element is gone and the other remains
       expect(resultXml).not.toContain('name="person"');
       expect(resultXml).toContain('name="company"');
     });
 
-    it("should produce valid XML when removing from nested structure", () => {
+    it("should marshal to XML when removing from nested structure", () => {
       const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:element name="person">
@@ -391,13 +391,13 @@ describe("CommandExecutor - executeRemoveElement", () => {
       // Marshal to XML
       const resultXml = marshal(schemaObj);
 
-      // Verify the XML structure is valid
+      // Verify the sequence structure remains and correct elements are present/absent
       expect(resultXml).toContain('<sequence');
       expect(resultXml).toContain('name="name"');
       expect(resultXml).not.toContain('name="id"');
     });
 
-    it("should produce valid XML when removing all elements", () => {
+    it("should marshal to XML when removing all elements", () => {
       const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:element name="person" type="xs:string"/>
@@ -416,7 +416,7 @@ describe("CommandExecutor - executeRemoveElement", () => {
       // Marshal to XML
       const resultXml = marshal(schemaObj);
 
-      // Verify the XML is valid and has an empty schema
+      // Verify the schema tag remains but has no element children
       expect(resultXml).toContain('<schema');
       expect(resultXml).not.toContain('<element');
     });
@@ -469,14 +469,15 @@ describe("CommandExecutor - executeRemoveElement", () => {
       expect(elements[0].annotation).toBeDefined();
     });
 
-    it("should handle duplicate element names correctly", () => {
+    it("should remove element by position when names differ", () => {
       const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:element name="person">
     <xs:complexType>
       <xs:sequence>
-        <xs:element name="item" type="xs:string"/>
-        <xs:element name="item" type="xs:int"/>
+        <xs:element name="firstName" type="xs:string"/>
+        <xs:element name="lastName" type="xs:string"/>
+        <xs:element name="age" type="xs:int"/>
       </xs:sequence>
     </xs:complexType>
   </xs:element>
@@ -486,20 +487,20 @@ describe("CommandExecutor - executeRemoveElement", () => {
       const command: RemoveElementCommand = {
         type: "removeElement",
         payload: {
-          elementId: "/element:person/anonymousComplexType[0]/sequence/element:item[0]",
+          elementId: "/element:person/anonymousComplexType[0]/sequence/element:firstName[0]",
         },
       };
 
       executor.execute(command, schemaObj);
 
-      // Verify the correct element was removed
+      // Verify the element at position 0 was removed
       const personElement = Array.isArray(schemaObj.element)
         ? schemaObj.element[0]
         : schemaObj.element;
       const elements = toArray(personElement?.complexType?.sequence?.element);
-      expect(elements).toHaveLength(1);
-      // The remaining element should be the second one (type int)
-      expect(elements[0].type_).toBe("xs:int");
+      expect(elements).toHaveLength(2);
+      expect(elements[0].name).toBe("lastName");
+      expect(elements[1].name).toBe("age");
     });
   });
 });

@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   preset: "ts-jest",
   testEnvironment: "node",
   roots: ["<rootDir>/shared", "<rootDir>/src", "<rootDir>/webview-src"],
@@ -32,7 +32,7 @@ module.exports = {
       },
     ],
   ],
-  setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
+  setupFilesAfterEnv: ["<rootDir>/jest.setup.mjs"],
   projects: [
     {
       displayName: "webview",

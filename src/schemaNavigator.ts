@@ -6,6 +6,7 @@
 import {
   schema,
   topLevelElement,
+  localElement,
   topLevelComplexType,
   localComplexType,
   explicitGroup,
@@ -84,7 +85,7 @@ export function locateNodeById(
       }
 
       currentNode = result.node;
-      currentType = result.nodeType!;
+      currentType = result.nodeType ?? "";
     }
 
     return {
@@ -228,10 +229,10 @@ function navigateFromSchema(
  * Navigate from an element to a child.
  */
 function navigateFromElement(
-  element: topLevelElement,
+  element: topLevelElement | localElement,
   nodeType: SchemaNodeType,
-  name?: string,
-  position?: number
+  _name?: string,
+  _position?: number
 ): { found: boolean; node?: unknown; nodeType?: string } {
   if (nodeType === SchemaNodeType.AnonymousComplexType) {
     if (element.complexType) {

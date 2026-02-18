@@ -1,9 +1,8 @@
-const eslint = require('@eslint/js');
-const tseslint = require('@typescript-eslint/eslint-plugin');
-const tsparser = require('@typescript-eslint/parser');
-const jestPlugin = require('eslint-plugin-jest');
+import tseslint from '@typescript-eslint/eslint-plugin';
+import tsparser from '@typescript-eslint/parser';
+import jestPlugin from 'eslint-plugin-jest';
 
-module.exports = [
+export default [
   // Global ignores
   {
     ignores: [
@@ -13,13 +12,31 @@ module.exports = [
       'node_modules/',
       '**/*.d.ts',
       '**/generated/**',
-      'webpack.config.js',
-      'eslint.config.js',
+      'webpack.config.mjs',
+      'eslint.config.mjs',
     ],
   },
-  // Base configuration for all files
-  eslint.configs.recommended,
-  // JavaScript configuration files (jest.config.js, etc.)
+  // JavaScript configuration files (jest.config.mjs, etc.)
+  {
+    files: ['*.mjs'],
+    languageOptions: {
+      ecmaVersion: 2020,
+      sourceType: 'module',
+      globals: {
+        // CommonJS/Node.js globals
+        process: 'readonly',
+        Buffer: 'readonly',
+        console: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
+        // Jest globals for jest.setup.js
+        jest: 'readonly',
+      },
+    },
+  },
+  // JavaScript configuration files (jest.setup.js, etc.) - CommonJS
   {
     files: ['*.js'],
     languageOptions: {

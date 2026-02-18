@@ -48,6 +48,7 @@ import {
 } from "../shared/types";
 import { toArray } from "../shared/schemaUtils";
 import { locateNodeById } from "./schemaNavigator";
+import { parseSchemaId } from "../shared/idStrategy";
 
 /**
  * Executes validated schema commands.
@@ -172,7 +173,7 @@ export class CommandExecutor {
 
     // Locate the parent node
     const location = locateNodeById(schemaObj, parentId);
-    if (!location.found || !location.parent) {
+    if (!location.found || !location.parent || !location.parentType) {
       throw new Error(`Parent node not found: ${parentId}`);
     }
 
@@ -188,7 +189,7 @@ export class CommandExecutor {
     );
 
     // Add the element to the appropriate parent
-    this.addElementToParent(location.parent, location.parentType!, newElement);
+    this.addElementToParent(location.parent, location.parentType, newElement);
   }
 
   /**
@@ -282,11 +283,85 @@ export class CommandExecutor {
   }
 
   private executeRemoveElement(
-    _command: RemoveElementCommand,
-    _schemaObj: schema
+    command: RemoveElementCommand,
+    schemaObj: schema
   ): void {
-    throw new Error("removeElement execution not yet implemented");
+    const { elementId } = command.payload;
+
+    // Parse the element ID to get information about the element
+    const parsed = parseSchemaId(elementId);
+    
+    // Determine the parent location
+    const parentId = parsed.parentId || "schema";
+    const location = locateNodeById(schemaObj, parentId);
+    
+    if (!location.found || !location.parent || !location.parentType) {
+      throw new Error(`Parent node not found for element: ${elementId}`);
+    }
+
+    // Remove the element from its parent container
+    this.removeElementFromParent(location.parent, location.parentType, parsed.name, parsed.position);
   }
+
+  /**
+   * Removes an element from its parent container.
+   */
+  private removeElementFromParent(
+    parent: unknown,
+    parentType: string,
+    elementName?: string,
+    position?: number
+  ): void {
+    if (parentType === "schema") {
+      const schemaObj = parent as schema;
+      const elements = toArray(schemaObj.element);
+      const filtered = this.filterElement(elements, elementName, position);
+      schemaObj.element = filtered.length > 0 ? filtered : undefined;
+    } else if (
+      parentType === "sequence" ||
+      parentType === "choice"
+    ) {
+      const group = parent as explicitGroup;
+      const elements = toArray(group.element);
+      const filtered = this.filterElement(elements, elementName, position);
+      group.element = filtered.length > 0 ? filtered : undefined;
+    } else if (parentType === "all") {
+      const allGroup = parent as all;
+      const elements = toArray(allGroup.element);
+      const filtered = this.filterElement(elements, elementName, position);
+      allGroup.element = filtered.length > 0 ? filtered : undefined;
+    } else {
+      throw new Error(`Cannot remove element from parent of type: ${parentType}`);
+    }
+  }
+
+  /**
+   * Filters out an element from an array by name or position.
+   * When both name and position are provided, position takes precedence.
+   */
+  private filterElement<T extends { name?: string }>(
+    elements: T[],
+    elementName?: string,
+    position?: number
+  ): T[] {
+    // When both are provided, position takes precedence (more specific)
+    if (position !== undefined) {
+      // Filter by position
+      if (position < 0 || position >= elements.length) {
+        throw new Error(`Element not found at position: ${position}`);
+      }
+      return elements.filter((_, idx) => idx !== position);
+    } else if (elementName !== undefined) {
+      // Filter by name
+      const filtered = elements.filter(el => el.name !== elementName);
+      if (filtered.length === elements.length) {
+        throw new Error(`Element not found with name: ${elementName}`);
+      }
+      return filtered;
+    }
+    throw new Error("Either elementName or position must be provided");
+  }
+
 
   private executeModifyElement(
     _command: ModifyElementCommand,

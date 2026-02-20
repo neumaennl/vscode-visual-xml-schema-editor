@@ -102,8 +102,8 @@ describe("CommandExecutor", () => {
       // Verify the element was modified
       expect(testSchema.element).toBeDefined();
       const elements = Array.isArray(testSchema.element) ? testSchema.element : [testSchema.element];
-      expect(elements[0]!.name).toBe("modifiedElement");
-      expect(elements[0]!.type_).toBe("int");
+      expect(elements[0].name).toBe("modifiedElement");
+      expect(elements[0].type_).toBe("int");
     });
 
     it("should delegate addAttribute execution and throw not implemented error", () => {

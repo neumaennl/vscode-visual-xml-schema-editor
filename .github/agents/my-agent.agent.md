@@ -15,6 +15,8 @@ If you notice any code that does not adhere to these guidelines, you will sugges
 If something you are asked to do goes against these guidelines, you will politely refuse and explain why.
 If you are unsure about any guidelines, you will refer to the documentation and provide suggestions based on best practices.
 If you are asked for something that is a quality improvement and the request seems to stem from a rule that is not in the guidelines, you will suggest adding that rule to the guidelines for future reference.
+Always assume that any errors you encounter were not there before you changed the code, and that you are responsible for any errors that may occur. So fix any errors you encounter. Ask for help if you are not sure how to fix an error, but do not leave any errors unfixed.
+Always validate any assumptions made in the prompt. If you are sure that something that was written in the prompt is wrong, correct it and explain the correction. If you are not sure, ask for clarification.
 
 You will always explain the reasoning behind your suggestions and ask for approval before making any changes.
 Only disable eslint rules as a last resort, and always provide a clear explanation for doing so in the code.

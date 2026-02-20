@@ -119,6 +119,22 @@ describe("Element Validators", () => {
       expect(result.error).toContain("invalidType");
     });
 
+    test("should reject prefixed type when no imports or includes exist", () => {
+      const command: AddElementCommand = {
+        type: "addElement",
+        payload: {
+          parentId: "schema",
+          elementName: "testElement",
+          elementType: "unknown:SomeType",
+        },
+      };
+
+      const result = validateAddElement(command, schemaObj);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("Invalid element type");
+      expect(result.error).toContain("unknown:SomeType");
+    });
+
     test("should accept user-defined complex type", () => {
       const schemaWithTypes = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">

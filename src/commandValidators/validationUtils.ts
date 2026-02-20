@@ -278,19 +278,31 @@ export function validateElementType(
   }
 
   // If the type has a prefix, it could be from an import or include
-  // We allow these through as we cannot fully validate imported/included types
-  // without loading the external schemas
+  // Note: We cannot definitively match prefixes to imports without the schema's
+  // namespace prefix mappings (xmlns declarations), which are not available in the
+  // parsed schema object. We can only check if imports/includes exist.
   if (trimmedType.includes(':')) {
-    // Check if there are any imports or includes that could define this type
+    // Check if there are imports that could define this type
+    // Imports bring in types from other namespaces (typically with a prefix)
     const hasImports = schemaObj.import_ && (
       Array.isArray(schemaObj.import_) ? schemaObj.import_.length > 0 : true
     );
+    
+    if (hasImports) {
+      // Type could be from an import, allow it through
+      // In a full implementation, we would load and validate the imported schema
+      return { valid: true };
+    }
+    
+    // Check if there are includes that could define this type
+    // Includes bring in definitions from the same namespace
+    // While types from includes typically don't need prefixes, they may use them
     const hasIncludes = schemaObj.include && (
       Array.isArray(schemaObj.include) ? schemaObj.include.length > 0 : true
     );
     
-    if (hasImports || hasIncludes) {
-      // Type could be from an import/include, allow it through
+    if (hasIncludes) {
+      // Type could be from an include, allow it through
       return { valid: true };
     }
   }

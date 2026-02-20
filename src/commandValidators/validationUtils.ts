@@ -140,3 +140,113 @@ export function validateOccurrences(
   // Validate constraint
   return validateOccurrenceConstraint(minOccurs, maxOccurs);
 }
+
+/**
+ * List of built-in XSD types (with and without namespace prefix).
+ * Includes both xs: prefixed and unprefixed versions.
+ */
+const BUILT_IN_XSD_TYPES = new Set([
+  // String types
+  "string", "xs:string",
+  "normalizedString", "xs:normalizedString",
+  "token", "xs:token",
+  "language", "xs:language",
+  "Name", "xs:Name",
+  "NCName", "xs:NCName",
+  "ID", "xs:ID",
+  "IDREF", "xs:IDREF",
+  "IDREFS", "xs:IDREFS",
+  "ENTITY", "xs:ENTITY",
+  "ENTITIES", "xs:ENTITIES",
+  "NMTOKEN", "xs:NMTOKEN",
+  "NMTOKENS", "xs:NMTOKENS",
+  
+  // Numeric types
+  "decimal", "xs:decimal",
+  "integer", "xs:integer",
+  "int", "xs:int",
+  "long", "xs:long",
+  "short", "xs:short",
+  "byte", "xs:byte",
+  "nonNegativeInteger", "xs:nonNegativeInteger",
+  "positiveInteger", "xs:positiveInteger",
+  "nonPositiveInteger", "xs:nonPositiveInteger",
+  "negativeInteger", "xs:negativeInteger",
+  "unsignedLong", "xs:unsignedLong",
+  "unsignedInt", "xs:unsignedInt",
+  "unsignedShort", "xs:unsignedShort",
+  "unsignedByte", "xs:unsignedByte",
+  "float", "xs:float",
+  "double", "xs:double",
+  
+  // Date and time types
+  "date", "xs:date",
+  "time", "xs:time",
+  "dateTime", "xs:dateTime",
+  "duration", "xs:duration",
+  "gDay", "xs:gDay",
+  "gMonth", "xs:gMonth",
+  "gMonthDay", "xs:gMonthDay",
+  "gYear", "xs:gYear",
+  "gYearMonth", "xs:gYearMonth",
+  
+  // Other types
+  "boolean", "xs:boolean",
+  "base64Binary", "xs:base64Binary",
+  "hexBinary", "xs:hexBinary",
+  "anyURI", "xs:anyURI",
+  "QName", "xs:QName",
+  "NOTATION", "xs:NOTATION",
+  "anyType", "xs:anyType",
+  "anySimpleType", "xs:anySimpleType",
+]);
+
+/**
+ * Validates if a type name is a valid built-in or user-defined type.
+ *
+ * @param typeName - The type name to validate
+ * @param schemaObj - The schema object to check for user-defined types
+ * @returns Validation result
+ */
+export function validateElementType(
+  typeName: string,
+  schemaObj: { simpleType?: Array<{ name?: string }>, complexType?: Array<{ name?: string }> }
+): ValidationResult {
+  if (!typeName || typeName.trim().length === 0) {
+    return { valid: false, error: "Element type is required" };
+  }
+
+  const trimmedType = typeName.trim();
+
+  // Check if it's a built-in XSD type
+  if (BUILT_IN_XSD_TYPES.has(trimmedType)) {
+    return { valid: true };
+  }
+
+  // Check if it's a user-defined simple type
+  if (schemaObj.simpleType) {
+    const simpleTypes = Array.isArray(schemaObj.simpleType) 
+      ? schemaObj.simpleType 
+      : [schemaObj.simpleType];
+    
+    if (simpleTypes.some(type => type.name === trimmedType)) {
+      return { valid: true };
+    }
+  }
+
+  // Check if it's a user-defined complex type
+  if (schemaObj.complexType) {
+    const complexTypes = Array.isArray(schemaObj.complexType)
+      ? schemaObj.complexType
+      : [schemaObj.complexType];
+    
+    if (complexTypes.some(type => type.name === trimmedType)) {
+      return { valid: true };
+    }
+  }
+
+  return { 
+    valid: false, 
+    error: `Invalid element type '${trimmedType}': must be a built-in XSD type or a user-defined type in the schema` 
+  };
+}

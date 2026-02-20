@@ -15,6 +15,7 @@ import {
   ValidationResult,
   isValidXmlName,
   validateOccurrences,
+  validateElementType,
 } from "./validationUtils";
 import { locateNodeById } from "../schemaNavigator";
 import { parseSchemaId } from "../../shared/idStrategy";
@@ -39,10 +40,10 @@ export function validateAddElement(
     return { valid: false, error: `Parent node not found: ${command.payload.parentId}` };
   }
 
-  // Validate elementType is not empty
-  // TODO Phase 2+: Validate that elementType is a valid built-in or user-defined type
-  if (!command.payload.elementType.trim()) {
-    return { valid: false, error: "Element type is required" };
+  // Validate elementType is a valid built-in or user-defined type
+  const typeValidation = validateElementType(command.payload.elementType, schemaObj);
+  if (!typeValidation.valid) {
+    return typeValidation;
   }
 
   // Validate occurrences
@@ -97,6 +98,14 @@ export function validateModifyElement(
     !isValidXmlName(command.payload.elementName)
   ) {
     return { valid: false, error: "Element name must be a valid XML name" };
+  }
+
+  // Validate elementType if provided
+  if (command.payload.elementType !== undefined) {
+    const typeValidation = validateElementType(command.payload.elementType, schemaObj);
+    if (!typeValidation.valid) {
+      return typeValidation;
+    }
   }
 
   // Validate occurrences

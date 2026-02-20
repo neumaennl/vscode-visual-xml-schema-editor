@@ -27,6 +27,7 @@ describe("Element Validators", () => {
   beforeEach(() => {
     const simpleSchemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="person" type="xs:string"/>
 </xs:schema>`;
     schemaObj = unmarshal(schema, simpleSchemaXml);
   });
@@ -43,6 +44,208 @@ describe("Element Validators", () => {
       };
 
       const result = validateAddElement(command, schemaObj);
+      expect(result.valid).toBe(true);
+    });
+
+    test("should accept built-in XSD types with xs: prefix", () => {
+      const command: AddElementCommand = {
+        type: "addElement",
+        payload: {
+          parentId: "schema",
+          elementName: "testElement",
+          elementType: "xs:string",
+        },
+      };
+
+      const result = validateAddElement(command, schemaObj);
+      expect(result.valid).toBe(true);
+    });
+
+    test("should accept built-in XSD types with xsd: prefix", () => {
+      const command: AddElementCommand = {
+        type: "addElement",
+        payload: {
+          parentId: "schema",
+          elementName: "testElement",
+          elementType: "xsd:string",
+        },
+      };
+
+      const result = validateAddElement(command, schemaObj);
+      expect(result.valid).toBe(true);
+    });
+
+    test("should accept built-in XSD types with any custom prefix", () => {
+      const command: AddElementCommand = {
+        type: "addElement",
+        payload: {
+          parentId: "schema",
+          elementName: "testElement",
+          elementType: "myprefix:int",
+        },
+      };
+
+      const result = validateAddElement(command, schemaObj);
+      expect(result.valid).toBe(true);
+    });
+
+    test("should accept built-in XSD types without prefix", () => {
+      const command: AddElementCommand = {
+        type: "addElement",
+        payload: {
+          parentId: "schema",
+          elementName: "testElement",
+          elementType: "int",
+        },
+      };
+
+      const result = validateAddElement(command, schemaObj);
+      expect(result.valid).toBe(true);
+    });
+
+    test("should reject invalid element type", () => {
+      const command: AddElementCommand = {
+        type: "addElement",
+        payload: {
+          parentId: "schema",
+          elementName: "testElement",
+          elementType: "invalidType",
+        },
+      };
+
+      const result = validateAddElement(command, schemaObj);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("Invalid element type");
+      expect(result.error).toContain("invalidType");
+    });
+
+    test("should reject prefixed type when no imports or includes exist", () => {
+      const command: AddElementCommand = {
+        type: "addElement",
+        payload: {
+          parentId: "schema",
+          elementName: "testElement",
+          elementType: "unknown:SomeType",
+        },
+      };
+
+      const result = validateAddElement(command, schemaObj);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("Invalid element type");
+      expect(result.error).toContain("unknown:SomeType");
+    });
+
+    test("should accept user-defined complex type", () => {
+      const schemaWithTypes = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:complexType name="PersonType">
+    <xs:sequence>
+      <xs:element name="name" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>`;
+      const customSchema = unmarshal(schema, schemaWithTypes);
+
+      const command: AddElementCommand = {
+        type: "addElement",
+        payload: {
+          parentId: "schema",
+          elementName: "person",
+          elementType: "PersonType",
+        },
+      };
+
+      const result = validateAddElement(command, customSchema);
+      expect(result.valid).toBe(true);
+    });
+
+    test("should accept user-defined simple type", () => {
+      const schemaWithTypes = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:simpleType name="AgeType">
+    <xs:restriction base="xs:integer">
+      <xs:minInclusive value="0"/>
+      <xs:maxInclusive value="120"/>
+    </xs:restriction>
+  </xs:simpleType>
+</xs:schema>`;
+      const customSchema = unmarshal(schema, schemaWithTypes);
+
+      const command: AddElementCommand = {
+        type: "addElement",
+        payload: {
+          parentId: "schema",
+          elementName: "age",
+          elementType: "AgeType",
+        },
+      };
+
+      const result = validateAddElement(command, customSchema);
+      expect(result.valid).toBe(true);
+    });
+
+    test("should accept user-defined type with prefix", () => {
+      const schemaWithTypes = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:complexType name="PersonType">
+    <xs:sequence>
+      <xs:element name="name" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>`;
+      const customSchema = unmarshal(schema, schemaWithTypes);
+
+      const command: AddElementCommand = {
+        type: "addElement",
+        payload: {
+          parentId: "schema",
+          elementName: "person",
+          elementType: "tns:PersonType",
+        },
+      };
+
+      const result = validateAddElement(command, customSchema);
+      expect(result.valid).toBe(true);
+    });
+
+    test("should accept type from import", () => {
+      const schemaWithImport = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+           xmlns:ext="http://example.com/external">
+  <xs:import namespace="http://example.com/external" schemaLocation="external.xsd"/>
+</xs:schema>`;
+      const customSchema = unmarshal(schema, schemaWithImport);
+
+      const command: AddElementCommand = {
+        type: "addElement",
+        payload: {
+          parentId: "schema",
+          elementName: "externalElement",
+          elementType: "ext:ExternalType",
+        },
+      };
+
+      const result = validateAddElement(command, customSchema);
+      expect(result.valid).toBe(true);
+    });
+
+    test("should accept type from include", () => {
+      const schemaWithInclude = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:include schemaLocation="included.xsd"/>
+</xs:schema>`;
+      const customSchema = unmarshal(schema, schemaWithInclude);
+
+      const command: AddElementCommand = {
+        type: "addElement",
+        payload: {
+          parentId: "schema",
+          elementName: "includedElement",
+          elementType: "inc:IncludedType",
+        },
+      };
+
+      const result = validateAddElement(command, customSchema);
       expect(result.valid).toBe(true);
     });
 
@@ -126,7 +329,7 @@ describe("Element Validators", () => {
       const command: ModifyElementCommand = {
         type: "modifyElement",
         payload: {
-          elementId: "elem1",
+          elementId: "/element:person",
           elementName: "123invalid",
         },
       };
@@ -136,11 +339,63 @@ describe("Element Validators", () => {
       expect(result.error).toBe("Element name must be a valid XML name");
     });
 
+    test("should reject modifyElement with invalid elementType", () => {
+      const command: ModifyElementCommand = {
+        type: "modifyElement",
+        payload: {
+          elementId: "/element:person",
+          elementType: "invalidType",
+        },
+      };
+
+      const result = validateModifyElement(command, schemaObj);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("Invalid element type");
+      expect(result.error).toContain("invalidType");
+    });
+
+    test("should accept modifyElement with valid built-in type", () => {
+      const command: ModifyElementCommand = {
+        type: "modifyElement",
+        payload: {
+          elementId: "/element:person",
+          elementType: "xs:int",
+        },
+      };
+
+      const result = validateModifyElement(command, schemaObj);
+      expect(result.valid).toBe(true);
+    });
+
+    test("should accept modifyElement with user-defined type", () => {
+      const schemaWithTypes = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="person" type="xs:string"/>
+  <xs:complexType name="PersonType">
+    <xs:sequence>
+      <xs:element name="name" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>`;
+      const customSchema = unmarshal(schema, schemaWithTypes);
+
+      const command: ModifyElementCommand = {
+        type: "modifyElement",
+        payload: {
+          elementId: "/element:person",
+          elementType: "PersonType",
+        },
+      };
+
+      const result = validateModifyElement(command, customSchema);
+      expect(result.valid).toBe(true);
+    });
+
     test("should accept modifyElement with valid minOccurs and maxOccurs", () => {
       const command: ModifyElementCommand = {
         type: "modifyElement",
         payload: {
-          elementId: "elem1",
+          elementId: "/element:person",
           minOccurs: 1,
           maxOccurs: 10,
         },
@@ -154,7 +409,7 @@ describe("Element Validators", () => {
       const command: ModifyElementCommand = {
         type: "modifyElement",
         payload: {
-          elementId: "elem1",
+          elementId: "/element:person",
           minOccurs: 10,
           maxOccurs: 5,
         },

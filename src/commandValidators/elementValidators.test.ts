@@ -61,6 +61,34 @@ describe("Element Validators", () => {
       expect(result.valid).toBe(true);
     });
 
+    test("should accept built-in XSD types with xsd: prefix", () => {
+      const command: AddElementCommand = {
+        type: "addElement",
+        payload: {
+          parentId: "schema",
+          elementName: "testElement",
+          elementType: "xsd:string",
+        },
+      };
+
+      const result = validateAddElement(command, schemaObj);
+      expect(result.valid).toBe(true);
+    });
+
+    test("should accept built-in XSD types with any custom prefix", () => {
+      const command: AddElementCommand = {
+        type: "addElement",
+        payload: {
+          parentId: "schema",
+          elementName: "testElement",
+          elementType: "myprefix:int",
+        },
+      };
+
+      const result = validateAddElement(command, schemaObj);
+      expect(result.valid).toBe(true);
+    });
+
     test("should accept built-in XSD types without prefix", () => {
       const command: AddElementCommand = {
         type: "addElement",
@@ -133,6 +161,71 @@ describe("Element Validators", () => {
           parentId: "schema",
           elementName: "age",
           elementType: "AgeType",
+        },
+      };
+
+      const result = validateAddElement(command, customSchema);
+      expect(result.valid).toBe(true);
+    });
+
+    test("should accept user-defined type with prefix", () => {
+      const schemaWithTypes = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:complexType name="PersonType">
+    <xs:sequence>
+      <xs:element name="name" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>`;
+      const customSchema = unmarshal(schema, schemaWithTypes);
+
+      const command: AddElementCommand = {
+        type: "addElement",
+        payload: {
+          parentId: "schema",
+          elementName: "person",
+          elementType: "tns:PersonType",
+        },
+      };
+
+      const result = validateAddElement(command, customSchema);
+      expect(result.valid).toBe(true);
+    });
+
+    test("should accept type from import", () => {
+      const schemaWithImport = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+           xmlns:ext="http://example.com/external">
+  <xs:import namespace="http://example.com/external" schemaLocation="external.xsd"/>
+</xs:schema>`;
+      const customSchema = unmarshal(schema, schemaWithImport);
+
+      const command: AddElementCommand = {
+        type: "addElement",
+        payload: {
+          parentId: "schema",
+          elementName: "externalElement",
+          elementType: "ext:ExternalType",
+        },
+      };
+
+      const result = validateAddElement(command, customSchema);
+      expect(result.valid).toBe(true);
+    });
+
+    test("should accept type from include", () => {
+      const schemaWithInclude = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:include schemaLocation="included.xsd"/>
+</xs:schema>`;
+      const customSchema = unmarshal(schema, schemaWithInclude);
+
+      const command: AddElementCommand = {
+        type: "addElement",
+        payload: {
+          parentId: "schema",
+          elementName: "includedElement",
+          elementType: "inc:IncludedType",
         },
       };
 

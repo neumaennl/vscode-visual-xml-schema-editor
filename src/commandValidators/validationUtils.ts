@@ -142,64 +142,88 @@ export function validateOccurrences(
 }
 
 /**
- * List of built-in XSD types (with and without namespace prefix).
- * Includes both xs: prefixed and unprefixed versions.
+ * List of built-in XSD type names (without namespace prefix).
+ * The actual type reference can use any prefix (xs:, xsd:, etc.) or no prefix.
  */
-const BUILT_IN_XSD_TYPES = new Set([
+const BUILT_IN_XSD_TYPE_NAMES = new Set([
   // String types
-  "string", "xs:string",
-  "normalizedString", "xs:normalizedString",
-  "token", "xs:token",
-  "language", "xs:language",
-  "Name", "xs:Name",
-  "NCName", "xs:NCName",
-  "ID", "xs:ID",
-  "IDREF", "xs:IDREF",
-  "IDREFS", "xs:IDREFS",
-  "ENTITY", "xs:ENTITY",
-  "ENTITIES", "xs:ENTITIES",
-  "NMTOKEN", "xs:NMTOKEN",
-  "NMTOKENS", "xs:NMTOKENS",
+  "string",
+  "normalizedString",
+  "token",
+  "language",
+  "Name",
+  "NCName",
+  "ID",
+  "IDREF",
+  "IDREFS",
+  "ENTITY",
+  "ENTITIES",
+  "NMTOKEN",
+  "NMTOKENS",
   
   // Numeric types
-  "decimal", "xs:decimal",
-  "integer", "xs:integer",
-  "int", "xs:int",
-  "long", "xs:long",
-  "short", "xs:short",
-  "byte", "xs:byte",
-  "nonNegativeInteger", "xs:nonNegativeInteger",
-  "positiveInteger", "xs:positiveInteger",
-  "nonPositiveInteger", "xs:nonPositiveInteger",
-  "negativeInteger", "xs:negativeInteger",
-  "unsignedLong", "xs:unsignedLong",
-  "unsignedInt", "xs:unsignedInt",
-  "unsignedShort", "xs:unsignedShort",
-  "unsignedByte", "xs:unsignedByte",
-  "float", "xs:float",
-  "double", "xs:double",
+  "decimal",
+  "integer",
+  "int",
+  "long",
+  "short",
+  "byte",
+  "nonNegativeInteger",
+  "positiveInteger",
+  "nonPositiveInteger",
+  "negativeInteger",
+  "unsignedLong",
+  "unsignedInt",
+  "unsignedShort",
+  "unsignedByte",
+  "float",
+  "double",
   
   // Date and time types
-  "date", "xs:date",
-  "time", "xs:time",
-  "dateTime", "xs:dateTime",
-  "duration", "xs:duration",
-  "gDay", "xs:gDay",
-  "gMonth", "xs:gMonth",
-  "gMonthDay", "xs:gMonthDay",
-  "gYear", "xs:gYear",
-  "gYearMonth", "xs:gYearMonth",
+  "date",
+  "time",
+  "dateTime",
+  "duration",
+  "gDay",
+  "gMonth",
+  "gMonthDay",
+  "gYear",
+  "gYearMonth",
   
   // Other types
-  "boolean", "xs:boolean",
-  "base64Binary", "xs:base64Binary",
-  "hexBinary", "xs:hexBinary",
-  "anyURI", "xs:anyURI",
-  "QName", "xs:QName",
-  "NOTATION", "xs:NOTATION",
-  "anyType", "xs:anyType",
-  "anySimpleType", "xs:anySimpleType",
+  "boolean",
+  "base64Binary",
+  "hexBinary",
+  "anyURI",
+  "QName",
+  "NOTATION",
+  "anyType",
+  "anySimpleType",
 ]);
+
+/**
+ * Extracts the local name from a potentially prefixed type name.
+ * For example: "xs:string" -> "string", "string" -> "string"
+ *
+ * @param typeName - The type name (possibly with namespace prefix)
+ * @returns The local name without prefix
+ */
+function getLocalTypeName(typeName: string): string {
+  const colonIndex = typeName.indexOf(':');
+  return colonIndex >= 0 ? typeName.substring(colonIndex + 1) : typeName;
+}
+
+/**
+ * Checks if a type name is a built-in XSD type.
+ * Handles any namespace prefix (xs:, xsd:, etc.) or no prefix.
+ *
+ * @param typeName - The type name to check
+ * @returns true if it's a built-in XSD type
+ */
+function isBuiltInXsdType(typeName: string): boolean {
+  const localName = getLocalTypeName(typeName);
+  return BUILT_IN_XSD_TYPE_NAMES.has(localName);
+}
 
 /**
  * Validates if a type name is a valid built-in or user-defined type.
@@ -210,7 +234,12 @@ const BUILT_IN_XSD_TYPES = new Set([
  */
 export function validateElementType(
   typeName: string,
-  schemaObj: { simpleType?: Array<{ name?: string }>, complexType?: Array<{ name?: string }> }
+  schemaObj: { 
+    simpleType?: Array<{ name?: string }>, 
+    complexType?: Array<{ name?: string }>,
+    import_?: Array<{ namespace?: string }>,
+    include?: Array<{ schemaLocation?: string }>
+  }
 ): ValidationResult {
   if (!typeName || typeName.trim().length === 0) {
     return { valid: false, error: "Element type is required" };
@@ -218,10 +247,13 @@ export function validateElementType(
 
   const trimmedType = typeName.trim();
 
-  // Check if it's a built-in XSD type
-  if (BUILT_IN_XSD_TYPES.has(trimmedType)) {
+  // Check if it's a built-in XSD type (handles any prefix like xs:, xsd:, or no prefix)
+  if (isBuiltInXsdType(trimmedType)) {
     return { valid: true };
   }
+
+  // Extract local name (without prefix) for user-defined type comparison
+  const localTypeName = getLocalTypeName(trimmedType);
 
   // Check if it's a user-defined simple type
   if (schemaObj.simpleType) {
@@ -229,7 +261,7 @@ export function validateElementType(
       ? schemaObj.simpleType 
       : [schemaObj.simpleType];
     
-    if (simpleTypes.some(type => type.name === trimmedType)) {
+    if (simpleTypes.some(type => type.name === localTypeName)) {
       return { valid: true };
     }
   }
@@ -240,7 +272,25 @@ export function validateElementType(
       ? schemaObj.complexType
       : [schemaObj.complexType];
     
-    if (complexTypes.some(type => type.name === trimmedType)) {
+    if (complexTypes.some(type => type.name === localTypeName)) {
+      return { valid: true };
+    }
+  }
+
+  // If the type has a prefix, it could be from an import or include
+  // We allow these through as we cannot fully validate imported/included types
+  // without loading the external schemas
+  if (trimmedType.includes(':')) {
+    // Check if there are any imports or includes that could define this type
+    const hasImports = schemaObj.import_ && (
+      Array.isArray(schemaObj.import_) ? schemaObj.import_.length > 0 : true
+    );
+    const hasIncludes = schemaObj.include && (
+      Array.isArray(schemaObj.include) ? schemaObj.include.length > 0 : true
+    );
+    
+    if (hasImports || hasIncludes) {
+      // Type could be from an import/include, allow it through
       return { valid: true };
     }
   }

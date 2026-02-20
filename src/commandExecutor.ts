@@ -1,13 +1,10 @@
 /**
  * CommandExecutor: Executes validated commands on the schema.
- * Implements execution logic for all schema editing commands.
- * 
- * Note: All execution methods are stubbed for Phase 2 implementation.
+ * Implements execution logic by delegating to specialized executor modules.
  */
 
+import { SchemaCommand, schema } from "../shared/types";
 import {
-  SchemaCommand,
-  schema,
   AddElementCommand,
   RemoveElementCommand,
   ModifyElementCommand,
@@ -38,22 +35,110 @@ import {
   AddIncludeCommand,
   RemoveIncludeCommand,
   ModifyIncludeCommand,
-  topLevelElement,
-  localElement,
-  narrowMaxMin,
-  annotationType,
-  documentationType,
-  explicitGroup,
-  all,
-} from "../shared/types";
-import { toArray } from "../shared/schemaUtils";
-import { locateNodeById } from "./schemaNavigator";
-import { parseSchemaId } from "../shared/idStrategy";
+} from "../shared/commands";
+
+// Import execution functions from specialized modules
+import * as elementExecutors from "./commandExecutors/elementExecutors";
+import * as attributeExecutors from "./commandExecutors/attributeExecutors";
+import * as typeExecutors from "./commandExecutors/typeExecutors";
+import * as groupExecutors from "./commandExecutors/groupExecutors";
+import * as annotationExecutors from "./commandExecutors/annotationExecutors";
+import * as schemaExecutors from "./commandExecutors/schemaExecutors";
 
 /**
- * Executes validated schema commands.
+ * Generic type for executor functions that execute commands.
+ * Allows specifying a specific SchemaCommand subtype for type safety.
+ */
+type ExecutorFunction<T extends SchemaCommand = SchemaCommand> = (
+  command: T,
+  schemaObj: schema
+) => void;
+
+/**
+ * Interface for all executor functions used by CommandExecutor.
+ * Enables dependency injection for testing.
+ */
+export interface ExecutorFunctions {
+  executeAddElement: ExecutorFunction<AddElementCommand>;
+  executeRemoveElement: ExecutorFunction<RemoveElementCommand>;
+  executeModifyElement: ExecutorFunction<ModifyElementCommand>;
+  executeAddAttribute: ExecutorFunction<AddAttributeCommand>;
+  executeRemoveAttribute: ExecutorFunction<RemoveAttributeCommand>;
+  executeModifyAttribute: ExecutorFunction<ModifyAttributeCommand>;
+  executeAddSimpleType: ExecutorFunction<AddSimpleTypeCommand>;
+  executeRemoveSimpleType: ExecutorFunction<RemoveSimpleTypeCommand>;
+  executeModifySimpleType: ExecutorFunction<ModifySimpleTypeCommand>;
+  executeAddComplexType: ExecutorFunction<AddComplexTypeCommand>;
+  executeRemoveComplexType: ExecutorFunction<RemoveComplexTypeCommand>;
+  executeModifyComplexType: ExecutorFunction<ModifyComplexTypeCommand>;
+  executeAddGroup: ExecutorFunction<AddGroupCommand>;
+  executeRemoveGroup: ExecutorFunction<RemoveGroupCommand>;
+  executeModifyGroup: ExecutorFunction<ModifyGroupCommand>;
+  executeAddAttributeGroup: ExecutorFunction<AddAttributeGroupCommand>;
+  executeRemoveAttributeGroup: ExecutorFunction<RemoveAttributeGroupCommand>;
+  executeModifyAttributeGroup: ExecutorFunction<ModifyAttributeGroupCommand>;
+  executeAddAnnotation: ExecutorFunction<AddAnnotationCommand>;
+  executeRemoveAnnotation: ExecutorFunction<RemoveAnnotationCommand>;
+  executeModifyAnnotation: ExecutorFunction<ModifyAnnotationCommand>;
+  executeAddDocumentation: ExecutorFunction<AddDocumentationCommand>;
+  executeRemoveDocumentation: ExecutorFunction<RemoveDocumentationCommand>;
+  executeModifyDocumentation: ExecutorFunction<ModifyDocumentationCommand>;
+  executeAddImport: ExecutorFunction<AddImportCommand>;
+  executeRemoveImport: ExecutorFunction<RemoveImportCommand>;
+  executeModifyImport: ExecutorFunction<ModifyImportCommand>;
+  executeAddInclude: ExecutorFunction<AddIncludeCommand>;
+  executeRemoveInclude: ExecutorFunction<RemoveIncludeCommand>;
+  executeModifyInclude: ExecutorFunction<ModifyIncludeCommand>;
+}
+
+/**
+ * CommandExecutor class.
+ * Executes validated commands by delegating to specialized executor modules.
  */
 export class CommandExecutor {
+  private readonly executors: ExecutorFunctions;
+
+  /**
+   * Creates a new CommandExecutor.
+   *
+   * @param executors - Executor functions (optional, uses actual executors if not provided)
+   */
+  constructor(executors?: ExecutorFunctions) {
+    // Use provided executors or default to actual executor modules
+    this.executors = executors ?? {
+      executeAddElement: elementExecutors.executeAddElement,
+      executeRemoveElement: elementExecutors.executeRemoveElement,
+      executeModifyElement: elementExecutors.executeModifyElement,
+      executeAddAttribute: attributeExecutors.executeAddAttribute,
+      executeRemoveAttribute: attributeExecutors.executeRemoveAttribute,
+      executeModifyAttribute: attributeExecutors.executeModifyAttribute,
+      executeAddSimpleType: typeExecutors.executeAddSimpleType,
+      executeRemoveSimpleType: typeExecutors.executeRemoveSimpleType,
+      executeModifySimpleType: typeExecutors.executeModifySimpleType,
+      executeAddComplexType: typeExecutors.executeAddComplexType,
+      executeRemoveComplexType: typeExecutors.executeRemoveComplexType,
+      executeModifyComplexType: typeExecutors.executeModifyComplexType,
+      executeAddGroup: groupExecutors.executeAddGroup,
+      executeRemoveGroup: groupExecutors.executeRemoveGroup,
+      executeModifyGroup: groupExecutors.executeModifyGroup,
+      executeAddAttributeGroup: groupExecutors.executeAddAttributeGroup,
+      executeRemoveAttributeGroup: groupExecutors.executeRemoveAttributeGroup,
+      executeModifyAttributeGroup: groupExecutors.executeModifyAttributeGroup,
+      executeAddAnnotation: annotationExecutors.executeAddAnnotation,
+      executeRemoveAnnotation: annotationExecutors.executeRemoveAnnotation,
+      executeModifyAnnotation: annotationExecutors.executeModifyAnnotation,
+      executeAddDocumentation: annotationExecutors.executeAddDocumentation,
+      executeRemoveDocumentation: annotationExecutors.executeRemoveDocumentation,
+      executeModifyDocumentation: annotationExecutors.executeModifyDocumentation,
+      executeAddImport: schemaExecutors.executeAddImport,
+      executeRemoveImport: schemaExecutors.executeRemoveImport,
+      executeModifyImport: schemaExecutors.executeModifyImport,
+      executeAddInclude: schemaExecutors.executeAddInclude,
+      executeRemoveInclude: schemaExecutors.executeRemoveInclude,
+      executeModifyInclude: schemaExecutors.executeModifyInclude,
+    };
+  }
+
   /**
    * Execute a validated command on the schema.
    * This method modifies the schema object in place.
@@ -63,96 +148,97 @@ export class CommandExecutor {
    * @throws Error if command type is unknown or execution fails
    */
   public execute(command: SchemaCommand, schemaObj: schema): void {
+    // Type-specific execution - delegate to specialized executors
     switch (command.type) {
       case "addElement":
-        this.executeAddElement(command, schemaObj);
+        this.executors.executeAddElement(command, schemaObj);
         break;
       case "removeElement":
-        this.executeRemoveElement(command, schemaObj);
+        this.executors.executeRemoveElement(command, schemaObj);
         break;
       case "modifyElement":
-        this.executeModifyElement(command, schemaObj);
+        this.executors.executeModifyElement(command, schemaObj);
         break;
       case "addAttribute":
-        this.executeAddAttribute(command, schemaObj);
+        this.executors.executeAddAttribute(command, schemaObj);
         break;
       case "removeAttribute":
-        this.executeRemoveAttribute(command, schemaObj);
+        this.executors.executeRemoveAttribute(command, schemaObj);
         break;
       case "modifyAttribute":
-        this.executeModifyAttribute(command, schemaObj);
+        this.executors.executeModifyAttribute(command, schemaObj);
         break;
       case "addSimpleType":
-        this.executeAddSimpleType(command, schemaObj);
+        this.executors.executeAddSimpleType(command, schemaObj);
         break;
       case "removeSimpleType":
-        this.executeRemoveSimpleType(command, schemaObj);
+        this.executors.executeRemoveSimpleType(command, schemaObj);
         break;
       case "modifySimpleType":
-        this.executeModifySimpleType(command, schemaObj);
+        this.executors.executeModifySimpleType(command, schemaObj);
         break;
       case "addComplexType":
-        this.executeAddComplexType(command, schemaObj);
+        this.executors.executeAddComplexType(command, schemaObj);
         break;
       case "removeComplexType":
-        this.executeRemoveComplexType(command, schemaObj);
+        this.executors.executeRemoveComplexType(command, schemaObj);
         break;
       case "modifyComplexType":
-        this.executeModifyComplexType(command, schemaObj);
+        this.executors.executeModifyComplexType(command, schemaObj);
         break;
       case "addGroup":
-        this.executeAddGroup(command, schemaObj);
+        this.executors.executeAddGroup(command, schemaObj);
         break;
       case "removeGroup":
-        this.executeRemoveGroup(command, schemaObj);
+        this.executors.executeRemoveGroup(command, schemaObj);
         break;
       case "modifyGroup":
-        this.executeModifyGroup(command, schemaObj);
+        this.executors.executeModifyGroup(command, schemaObj);
         break;
       case "addAttributeGroup":
-        this.executeAddAttributeGroup(command, schemaObj);
+        this.executors.executeAddAttributeGroup(command, schemaObj);
         break;
       case "removeAttributeGroup":
-        this.executeRemoveAttributeGroup(command, schemaObj);
+        this.executors.executeRemoveAttributeGroup(command, schemaObj);
         break;
       case "modifyAttributeGroup":
-        this.executeModifyAttributeGroup(command, schemaObj);
+        this.executors.executeModifyAttributeGroup(command, schemaObj);
         break;
       case "addAnnotation":
-        this.executeAddAnnotation(command, schemaObj);
+        this.executors.executeAddAnnotation(command, schemaObj);
         break;
       case "removeAnnotation":
-        this.executeRemoveAnnotation(command, schemaObj);
+        this.executors.executeRemoveAnnotation(command, schemaObj);
         break;
       case "modifyAnnotation":
-        this.executeModifyAnnotation(command, schemaObj);
+        this.executors.executeModifyAnnotation(command, schemaObj);
         break;
       case "addDocumentation":
-        this.executeAddDocumentation(command, schemaObj);
+        this.executors.executeAddDocumentation(command, schemaObj);
         break;
       case "removeDocumentation":
-        this.executeRemoveDocumentation(command, schemaObj);
+        this.executors.executeRemoveDocumentation(command, schemaObj);
         break;
       case "modifyDocumentation":
-        this.executeModifyDocumentation(command, schemaObj);
+        this.executors.executeModifyDocumentation(command, schemaObj);
         break;
       case "addImport":
-        this.executeAddImport(command, schemaObj);
+        this.executors.executeAddImport(command, schemaObj);
         break;
       case "removeImport":
-        this.executeRemoveImport(command, schemaObj);
+        this.executors.executeRemoveImport(command, schemaObj);
         break;
       case "modifyImport":
-        this.executeModifyImport(command, schemaObj);
+        this.executors.executeModifyImport(command, schemaObj);
         break;
       case "addInclude":
-        this.executeAddInclude(command, schemaObj);
+        this.executors.executeAddInclude(command, schemaObj);
         break;
       case "removeInclude":
-        this.executeRemoveInclude(command, schemaObj);
+        this.executors.executeRemoveInclude(command, schemaObj);
         break;
       case "modifyInclude":
-        this.executeModifyInclude(command, schemaObj);
+        this.executors.executeModifyInclude(command, schemaObj);
         break;
       default:
         throw new Error(
@@ -161,591 +247,5 @@ export class CommandExecutor {
           }`
         );
     }
-  }
-
-  // ===== Execution Methods (Stubs for Phase 2) =====
-
-  private executeAddElement(
-    command: AddElementCommand,
-    schemaObj: schema
-  ): void {
-    const { parentId, elementName, elementType, minOccurs, maxOccurs, documentation } = command.payload;
-
-    // Locate the parent node
-    const location = locateNodeById(schemaObj, parentId);
-    if (!location.found || !location.parent || !location.parentType) {
-      throw new Error(`Parent node not found: ${parentId}`);
-    }
-
-    // Create the new element
-    const newElement = this.createNewElement(
-      elementName,
-      elementType,
-      minOccurs,
-      maxOccurs,
-      documentation,
-      location.parentType === "schema",
-      location.parentType === "all"
-    );
-
-    // Add the element to the appropriate parent
-    this.addElementToParent(location.parent, location.parentType, newElement);
-  }
-
-  /**
-   * Creates a new element (either top-level or local).
-   */
-  private createNewElement(
-    name: string,
-    type: string,
-    minOccurs?: number,
-    maxOccurs?: number | "unbounded",
-    documentation?: string,
-    isTopLevel: boolean = false,
-    isInAllGroup: boolean = false
-  ): topLevelElement | localElement | narrowMaxMin {
-    let element: topLevelElement | localElement | narrowMaxMin;
-    
-    if (isTopLevel) {
-      element = new topLevelElement();
-    } else if (isInAllGroup) {
-      // For 'all' groups, we need to use narrowMaxMin which has string-typed occurrences
-      element = new narrowMaxMin();
-    } else {
-      element = new localElement();
-    }
-
-    element.name = name;
-    element.type_ = type;
-
-    // For local elements and narrowMaxMin, set minOccurs and maxOccurs
-    if (!isTopLevel) {
-      if (isInAllGroup) {
-        const allElement = element as narrowMaxMin;
-        if (minOccurs !== undefined) {
-          allElement.minOccurs = String(minOccurs);
-        }
-        if (maxOccurs !== undefined) {
-          allElement.maxOccurs = String(maxOccurs);
-        }
-      } else {
-        const localElem = element as localElement;
-        if (minOccurs !== undefined) {
-          localElem.minOccurs = minOccurs;
-        }
-        if (maxOccurs !== undefined) {
-          localElem.maxOccurs = maxOccurs;
-        }
-      }
-    }
-
-    // Add documentation if provided
-    if (documentation) {
-      const annotation = new annotationType();
-      const doc = new documentationType();
-      doc.value = documentation;
-      annotation.documentation = [doc];
-      element.annotation = annotation;
-    }
-
-    return element;
-  }
-
-  /**
-   * Adds an element to its parent container.
-   */
-  private addElementToParent(
-    parent: unknown,
-    parentType: string,
-    element: topLevelElement | localElement | narrowMaxMin
-  ): void {
-    if (parentType === "schema") {
-      const schemaObj = parent as schema;
-      const elements = toArray(schemaObj.element);
-      
-      // Check for duplicate element names
-      if (element.name && elements.some(el => el.name === element.name)) {
-        throw new Error(`Cannot add element: duplicate element name '${element.name}' in schema`);
-      }
-      
-      elements.push(element as topLevelElement);
-      schemaObj.element = elements;
-    } else if (
-      parentType === "sequence" ||
-      parentType === "choice"
-    ) {
-      const group = parent as explicitGroup;
-      const elements = toArray(group.element);
-      
-      // Check for duplicate element names
-      if (element.name && elements.some(el => el.name === element.name)) {
-        throw new Error(`Cannot add element: duplicate element name '${element.name}' in ${parentType}`);
-      }
-      
-      elements.push(element as localElement);
-      group.element = elements;
-    } else if (parentType === "all") {
-      const allGroup = parent as all;
-      const elements = toArray(allGroup.element);
-      
-      // Check for duplicate element names
-      if (element.name && elements.some(el => el.name === element.name)) {
-        throw new Error(`Cannot add element: duplicate element name '${element.name}' in all group`);
-      }
-      
-      elements.push(element as narrowMaxMin);
-      allGroup.element = elements;
-    } else {
-      throw new Error(`Cannot add element to parent of type: ${parentType}`);
-    }
-  }
-
-  private executeRemoveElement(
-    command: RemoveElementCommand,
-    schemaObj: schema
-  ): void {
-    const { elementId } = command.payload;
-
-    // Parse the element ID to get information about the element
-    const parsed = parseSchemaId(elementId);
-    
-    // Determine the parent location
-    const parentId = parsed.parentId || "schema";
-    const location = locateNodeById(schemaObj, parentId);
-    
-    if (!location.found || !location.parent || !location.parentType) {
-      throw new Error(`Parent node not found for element: ${elementId}`);
-    }
-
-    // Remove the element from its parent container
-    this.removeElementFromParent(location.parent, location.parentType, parsed.name, parsed.position);
-  }
-
-  /**
-   * Removes an element from its parent container.
-   */
-  private removeElementFromParent(
-    parent: unknown,
-    parentType: string,
-    elementName?: string,
-    position?: number
-  ): void {
-    if (parentType === "schema") {
-      const schemaObj = parent as schema;
-      const elements = toArray(schemaObj.element);
-      const filtered = this.filterElement(elements, elementName, position);
-      schemaObj.element = filtered.length > 0 ? filtered : undefined;
-    } else if (
-      parentType === "sequence" ||
-      parentType === "choice"
-    ) {
-      const group = parent as explicitGroup;
-      const elements = toArray(group.element);
-      const filtered = this.filterElement(elements, elementName, position);
-      group.element = filtered.length > 0 ? filtered : undefined;
-    } else if (parentType === "all") {
-      const allGroup = parent as all;
-      const elements = toArray(allGroup.element);
-      const filtered = this.filterElement(elements, elementName, position);
-      allGroup.element = filtered.length > 0 ? filtered : undefined;
-    } else {
-      throw new Error(`Cannot remove element from parent of type: ${parentType}`);
-    }
-  }
-
-  /**
-   * Filters out an element from an array by name or position.
-   * When both name and position are provided, position takes precedence.
-   */
-  private filterElement<T extends { name?: string }>(
-    elements: T[],
-    elementName?: string,
-    position?: number
-  ): T[] {
-    // When both are provided, position takes precedence (more specific)
-    if (position !== undefined) {
-      // Filter by position
-      if (position < 0 || position >= elements.length) {
-        throw new Error(`Element not found at position: ${position}`);
-      }
-      return elements.filter((_, idx) => idx !== position);
-    } else if (elementName !== undefined) {
-      // Filter by name
-      const filtered = elements.filter(el => el.name !== elementName);
-      if (filtered.length === elements.length) {
-        throw new Error(`Element not found with name: ${elementName}`);
-      }
-      return filtered;
-    }
-    throw new Error("Either elementName or position must be provided");
-  }
-
-
-  private executeModifyElement(
-    command: ModifyElementCommand,
-    schemaObj: schema
-  ): void {
-    const { elementId, elementName, elementType, minOccurs, maxOccurs, documentation } = command.payload;
-
-    // Parse the element ID to get information about the element
-    const parsed = parseSchemaId(elementId);
-    
-    // Determine the parent location from the parsed ID
-    const parentId = parsed.parentId || "schema";
-    const location = locateNodeById(schemaObj, parentId);
-    
-    if (!location.found || !location.parent || !location.parentType) {
-      throw new Error(`Parent node not found for element: ${elementId}`);
-    }
-
-    // Find and modify the element in its parent container
-    this.modifyElementInParent(
-      location.parent,
-      location.parentType,
-      parsed.name,
-      parsed.position,
-      elementName,
-      elementType,
-      minOccurs,
-      maxOccurs,
-      documentation
-    );
-  }
-
-  /**
-   * Modifies an element in its parent container.
-   */
-  private modifyElementInParent(
-    parent: unknown,
-    parentType: string,
-    targetName?: string,
-    targetPosition?: number,
-    newName?: string,
-    newType?: string,
-    newMinOccurs?: number,
-    newMaxOccurs?: number | "unbounded",
-    newDocumentation?: string
-  ): void {
-    if (parentType === "schema") {
-      const schemaObj = parent as schema;
-      const elements = toArray(schemaObj.element);
-      const element = this.findElement(elements, targetName, targetPosition);
-      
-      if (!element) {
-        throw new Error(`Element not found: ${targetName ?? `at position ${targetPosition}`}`);
-      }
-      
-      this.updateElementProperties(
-        element,
-        newName,
-        newType,
-        undefined, // top-level elements don't have occurrences
-        undefined,
-        newDocumentation,
-        false
-      );
-    } else if (
-      parentType === "sequence" ||
-      parentType === "choice"
-    ) {
-      const group = parent as explicitGroup;
-      const elements = toArray(group.element);
-      const element = this.findElement(elements, targetName, targetPosition);
-      
-      if (!element) {
-        throw new Error(`Element not found: ${targetName ?? `at position ${targetPosition}`}`);
-      }
-      
-      this.updateElementProperties(
-        element,
-        newName,
-        newType,
-        newMinOccurs,
-        newMaxOccurs,
-        newDocumentation,
-        false
-      );
-    } else if (parentType === "all") {
-      const allGroup = parent as all;
-      const elements = toArray(allGroup.element);
-      const element = this.findElement(elements, targetName, targetPosition);
-      
-      if (!element) {
-        throw new Error(`Element not found: ${targetName ?? `at position ${targetPosition}`}`);
-      }
-      
-      this.updateElementProperties(
-        element,
-        newName,
-        newType,
-        newMinOccurs,
-        newMaxOccurs,
-        newDocumentation,
-        true
-      );
-    } else {
-      throw new Error(`Cannot modify element in parent of type: ${parentType}`);
-    }
-  }
-
-  /**
-   * Finds an element in an array by name or position.
-   */
-  private findElement<T extends { name?: string }>(
-    elements: T[],
-    elementName?: string,
-    position?: number
-  ): T | undefined {
-    // When both are provided, position takes precedence (more specific)
-    if (position !== undefined) {
-      return elements[position];
-    } else if (elementName !== undefined) {
-      return elements.find(el => el.name === elementName);
-    }
-    return undefined;
-  }
-
-  /**
-   * Updates element properties based on provided values.
-   */
-  private updateElementProperties(
-    element: topLevelElement | localElement | narrowMaxMin,
-    newName?: string,
-    newType?: string,
-    newMinOccurs?: number,
-    newMaxOccurs?: number | "unbounded",
-    newDocumentation?: string,
-    isInAllGroup: boolean = false
-  ): void {
-    // Update name if provided
-    if (newName !== undefined) {
-      element.name = newName;
-    }
-
-    // Update type if provided
-    if (newType !== undefined) {
-      element.type_ = newType;
-    }
-
-    // Update occurrences if provided (only for local elements and narrowMaxMin)
-    if (newMinOccurs !== undefined || newMaxOccurs !== undefined) {
-      if (isInAllGroup) {
-        const allElement = element as narrowMaxMin;
-        if (newMinOccurs !== undefined) {
-          allElement.minOccurs = String(newMinOccurs);
-        }
-        if (newMaxOccurs !== undefined) {
-          allElement.maxOccurs = String(newMaxOccurs);
-        }
-      } else if ('minOccurs' in element) {
-        const localElem = element as localElement;
-        if (newMinOccurs !== undefined) {
-          localElem.minOccurs = newMinOccurs;
-        }
-        if (newMaxOccurs !== undefined) {
-          localElem.maxOccurs = newMaxOccurs;
-        }
-      }
-    }
-
-    // Update documentation if provided
-    if (newDocumentation !== undefined) {
-      if (!element.annotation) {
-        element.annotation = new annotationType();
-      }
-      
-      const doc = new documentationType();
-      doc.value = newDocumentation;
-      element.annotation.documentation = [doc];
-    }
-  }
-
-  private executeAddAttribute(
-    _command: AddAttributeCommand,
-    _schemaObj: schema
-  ): void {
-    throw new Error("addAttribute execution not yet implemented");
-  }
-
-  private executeRemoveAttribute(
-    _command: RemoveAttributeCommand,
-    _schemaObj: schema
-  ): void {
-    throw new Error("removeAttribute execution not yet implemented");
-  }
-
-  private executeModifyAttribute(
-    _command: ModifyAttributeCommand,
-    _schemaObj: schema
-  ): void {
-    throw new Error("modifyAttribute execution not yet implemented");
-  }
-
-  private executeAddSimpleType(
-    _command: AddSimpleTypeCommand,
-    _schemaObj: schema
-  ): void {
-    throw new Error("addSimpleType execution not yet implemented");
-  }
-
-  private executeRemoveSimpleType(
-    _command: RemoveSimpleTypeCommand,
-    _schemaObj: schema
-  ): void {
-    throw new Error("removeSimpleType execution not yet implemented");
-  }
-
-  private executeModifySimpleType(
-    _command: ModifySimpleTypeCommand,
-    _schemaObj: schema
-  ): void {
-    throw new Error("modifySimpleType execution not yet implemented");
-  }
-
-  private executeAddComplexType(
-    _command: AddComplexTypeCommand,
-    _schemaObj: schema
-  ): void {
-    throw new Error("addComplexType execution not yet implemented");
-  }
-
-  private executeRemoveComplexType(
-    _command: RemoveComplexTypeCommand,
-    _schemaObj: schema
-  ): void {
-    throw new Error("removeComplexType execution not yet implemented");
-  }
-
-  private executeModifyComplexType(
-    _command: ModifyComplexTypeCommand,
-    _schemaObj: schema
-  ): void {
-    throw new Error("modifyComplexType execution not yet implemented");
-  }
-
-  private executeAddGroup(
-    _command: AddGroupCommand,
-    _schemaObj: schema
-  ): void {
-    throw new Error("addGroup execution not yet implemented");
-  }
-
-  private executeRemoveGroup(
-    _command: RemoveGroupCommand,
-    _schemaObj: schema
-  ): void {
-    throw new Error("removeGroup execution not yet implemented");
-  }
-
-  private executeModifyGroup(
-    _command: ModifyGroupCommand,
-    _schemaObj: schema
-  ): void {
-    throw new Error("modifyGroup execution not yet implemented");
-  }
-
-  private executeAddAttributeGroup(
-    _command: AddAttributeGroupCommand,
-    _schemaObj: schema
-  ): void {
-    throw new Error("addAttributeGroup execution not yet implemented");
-  }
-
-  private executeRemoveAttributeGroup(
-    _command: RemoveAttributeGroupCommand,
-    _schemaObj: schema
-  ): void {
-    throw new Error("removeAttributeGroup execution not yet implemented");
-  }
-
-  private executeModifyAttributeGroup(
-    _command: ModifyAttributeGroupCommand,
-    _schemaObj: schema
-  ): void {
-    throw new Error("modifyAttributeGroup execution not yet implemented");
-  }
-
-  private executeAddAnnotation(
-    _command: AddAnnotationCommand,
-    _schemaObj: schema
-  ): void {
-    throw new Error("addAnnotation execution not yet implemented");
-  }
-
-  private executeRemoveAnnotation(
-    _command: RemoveAnnotationCommand,
-    _schemaObj: schema
-  ): void {
-    throw new Error("removeAnnotation execution not yet implemented");
-  }
-
-  private executeModifyAnnotation(
-    _command: ModifyAnnotationCommand,
-    _schemaObj: schema
-  ): void {
-    throw new Error("modifyAnnotation execution not yet implemented");
-  }
-
-  private executeAddDocumentation(
-    _command: AddDocumentationCommand,
-    _schemaObj: schema
-  ): void {
-    throw new Error("addDocumentation execution not yet implemented");
-  }
-
-  private executeRemoveDocumentation(
-    _command: RemoveDocumentationCommand,
-    _schemaObj: schema
-  ): void {
-    throw new Error("removeDocumentation execution not yet implemented");
-  }
-
-  private executeModifyDocumentation(
-    _command: ModifyDocumentationCommand,
-    _schemaObj: schema
-  ): void {
-    throw new Error("modifyDocumentation execution not yet implemented");
-  }
-
-  private executeAddImport(
-    _command: AddImportCommand,
-    _schemaObj: schema
-  ): void {
-    throw new Error("addImport execution not yet implemented");
-  }
-
-  private executeRemoveImport(
-    _command: RemoveImportCommand,
-    _schemaObj: schema
-  ): void {
-    throw new Error("removeImport execution not yet implemented");
-  }
-
-  private executeModifyImport(
-    _command: ModifyImportCommand,
-    _schemaObj: schema
-  ): void {
-    throw new Error("modifyImport execution not yet implemented");
-  }
-
-  private executeAddInclude(
-    _command: AddIncludeCommand,
-    _schemaObj: schema
-  ): void {
-    throw new Error("addInclude execution not yet implemented");
-  }
-
-  private executeRemoveInclude(
-    _command: RemoveIncludeCommand,
-    _schemaObj: schema
-  ): void {
-    throw new Error("removeInclude execution not yet implemented");
-  }
-
-  private executeModifyInclude(
-    _command: ModifyIncludeCommand,
-    _schemaObj: schema
-  ): void {
-    throw new Error("modifyInclude execution not yet implemented");
   }
 }

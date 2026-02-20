@@ -16,10 +16,12 @@ import {
   isValidXmlName,
   validateOccurrences,
 } from "./validationUtils";
+import { locateNodeById } from "../schemaNavigator";
+import { parseSchemaId } from "../../shared/idStrategy";
 
 export function validateAddElement(
   command: AddElementCommand,
-  _schemaObj: schema
+  schemaObj: schema
 ): ValidationResult {
   // Validate element name is a valid XML name
   if (!isValidXmlName(command.payload.elementName)) {
@@ -27,13 +29,18 @@ export function validateAddElement(
   }
 
   // Validate parentId is not empty
-  // TODO Phase 2: Validate that parentId exists in the schema
   if (!command.payload.parentId.trim()) {
     return { valid: false, error: "Parent ID cannot be empty" };
   }
 
+  // Validate that parentId exists in the schema
+  const location = locateNodeById(schemaObj, command.payload.parentId);
+  if (!location.found) {
+    return { valid: false, error: `Parent node not found: ${command.payload.parentId}` };
+  }
+
   // Validate elementType is not empty
-  // TODO Phase 2: Validate that elementType is a valid built-in or user-defined type
+  // TODO Phase 2+: Validate that elementType is a valid built-in or user-defined type
   if (!command.payload.elementType.trim()) {
     return { valid: false, error: "Element type is required" };
   }
@@ -47,23 +54,41 @@ export function validateAddElement(
 
 export function validateRemoveElement(
   command: RemoveElementCommand,
-  _schemaObj: schema
+  schemaObj: schema
 ): ValidationResult {
-  // In Phase 2, we would validate that elementId exists in the schema
-  // For now, just validate it's not empty
+  // Validate elementId is not empty
   if (!command.payload.elementId.trim()) {
     return { valid: false, error: "Element ID cannot be empty" };
   }
+
+  // Validate that element exists in the schema
+  const parsed = parseSchemaId(command.payload.elementId);
+  const parentId = parsed.parentId || "schema";
+  const location = locateNodeById(schemaObj, parentId);
+  
+  if (!location.found) {
+    return { valid: false, error: `Parent node not found for element: ${command.payload.elementId}` };
+  }
+
   return { valid: true };
 }
 
 export function validateModifyElement(
   command: ModifyElementCommand,
-  _schemaObj: schema
+  schemaObj: schema
 ): ValidationResult {
-  // In Phase 2, we would validate that elementId exists in the schema
+  // Validate elementId is not empty
   if (!command.payload.elementId.trim()) {
     return { valid: false, error: "Element ID cannot be empty" };
+  }
+
+  // Validate that element exists in the schema
+  const parsed = parseSchemaId(command.payload.elementId);
+  const parentId = parsed.parentId || "schema";
+  const location = locateNodeById(schemaObj, parentId);
+  
+  if (!location.found) {
+    return { valid: false, error: `Parent node not found for element: ${command.payload.elementId}` };
   }
 
   // Validate element name if provided

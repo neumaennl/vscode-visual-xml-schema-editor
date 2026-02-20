@@ -615,7 +615,6 @@ class DiagramRenderer {
 - [ ] Add find/replace functionality
 - [ ] Implement batch operations (multi-delete, bulk property changes)
 - [ ] Add validation feedback in UI with actionable messages
-- [ ] Support for schema refactoring operations
 
 **Success Criteria**: Users can perform all editing operations defined in Phase 1-4 using advanced methods (drag-and-drop, copy/paste, keyboard shortcuts, batch operations). Operations that span multiple elements (find/replace, bulk edits) work reliably. UI provides real-time validation feedback.
 

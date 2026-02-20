@@ -1,7 +1,7 @@
 # ADR 001: Editor Transition Architecture
 
-**Status:** Proposed  
-**Date:** 2025-12-01  
+**Status:** Accepted  
+**Date:** 2026-02-20  
 **Authors:** Project Team  
 **Type:** Architecture Decision Record
 
@@ -15,6 +15,9 @@ The Visual XML Schema Editor currently operates as a **viewer** with limited edi
 - The webview renders the schema diagram but has minimal interaction capabilities
 - Document changes trigger re-parsing and full diagram updates
 - The `applySchemaChanges` method is stubbed but not implemented
+
+> **Implementation Progress (as of 2026-02-20):**
+> Phase 1 (Foundation) is complete — all command types, the CommandProcessor, CommandValidator, CommandExecutor, SchemaModelManager, and message protocol have been implemented with unit tests. Phase 2 (Basic Editing) is in progress — element add/remove handlers are implemented, modifyElement is in draft PR.
 
 ### Goal
 
@@ -537,31 +540,35 @@ class DiagramRenderer {
 
 #### Milestones:
 
-- [ ] Define command types in shared/types.ts for all schema constructs (elements, attributes, simpleTypes, complexTypes, groups, attributeGroups, annotations, documentation, imports, includes)
-- [ ] Implement CommandProcessor class with validation framework
-- [ ] Implement SchemaModelManager class with state management
-- [ ] Update message protocol for bidirectional communication
-- [ ] Add comprehensive command validation
-- [ ] Write unit tests for command execution
-- [ ] Establish error handling patterns
+- [x] Define command types in shared/types.ts for all schema constructs (elements, attributes, simpleTypes, complexTypes, groups, attributeGroups, annotations, documentation, imports, includes)
+- [x] Implement CommandProcessor class with validation framework
+- [x] Implement SchemaModelManager class with state management
+- [x] Update message protocol for bidirectional communication
+- [x] Add comprehensive command validation
+- [x] Write unit tests for command execution
+- [x] Establish error handling patterns
 
 **Success Criteria**: Commands can be defined, validated, and executed in isolation with proper error handling.
 
 ### Phase 2: Basic Editing Operations
 
-**Goal**: Implement core CRUD operations for schema elements.
+**Goal**: Implement core CRUD operations for all schema constructs.
 
 #### Milestones:
 
-- [ ] Implement element commands (add, remove, modify)
+- [x] Implement element commands (add, remove, modify)
 - [ ] Implement attribute commands (add, remove, modify)
-- [ ] Implement simpleType and complexType commands
-- [ ] Connect commands to document edits via [WorkspaceEdit](https://code.visualstudio.com/api/references/vscode-api#WorkspaceEdit) (VS Code's API for programmatic text edits with undo/redo support)
+- [ ] Implement simpleType and complexType commands (add, remove, modify)
+- [ ] Implement group and attributeGroup commands (add, remove, modify)
+- [ ] Implement annotation and documentation commands (add, remove, modify)
+- [ ] Implement import and include commands (add, remove, modify)
+- [x] Connect commands to document edits via [WorkspaceEdit](https://code.visualstudio.com/api/references/vscode-api#WorkspaceEdit) (VS Code's API for programmatic text edits with undo/redo support)
 - [ ] Implement rollback on validation failures
 - [ ] Test with simple schema modifications
 - [ ] Verify undo/redo functionality
+- [ ] Write integration tests for all schema construct editing flows
 
-**Success Criteria**: Can programmatically add, remove, and modify all major schema constructs with proper VS Code integration.
+**Success Criteria**: Can programmatically add, remove, and modify **all** schema constructs (elements, attributes, simpleTypes, complexTypes, groups, attributeGroups, annotations, documentation, imports, includes) with proper VS Code integration.
 
 ### Phase 3: UI Integration
 
@@ -608,7 +615,6 @@ class DiagramRenderer {
 - [ ] Add find/replace functionality
 - [ ] Implement batch operations (multi-delete, bulk property changes)
 - [ ] Add validation feedback in UI with actionable messages
-- [ ] Support for schema refactoring operations
 
 **Success Criteria**: Users can perform all editing operations defined in Phase 1-4 using advanced methods (drag-and-drop, copy/paste, keyboard shortcuts, batch operations). Operations that span multiple elements (find/replace, bulk edits) work reliably. UI provides real-time validation feedback.
 

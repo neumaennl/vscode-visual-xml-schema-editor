@@ -40,7 +40,7 @@ export function validateAddElement(
   }
 
   // Validate elementType is not empty
-  // TODO: Validate that elementType is a valid built-in or user-defined type
+  // TODO Phase 2+: Validate that elementType is a valid built-in or user-defined type
   if (!command.payload.elementType.trim()) {
     return { valid: false, error: "Element type is required" };
   }

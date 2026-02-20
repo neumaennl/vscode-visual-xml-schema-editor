@@ -27,6 +27,7 @@ describe("Element Validators", () => {
   beforeEach(() => {
     const simpleSchemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="person" type="xs:string"/>
 </xs:schema>`;
     schemaObj = unmarshal(schema, simpleSchemaXml);
   });
@@ -126,7 +127,7 @@ describe("Element Validators", () => {
       const command: ModifyElementCommand = {
         type: "modifyElement",
         payload: {
-          elementId: "elem1",
+          elementId: "/element:person",
           elementName: "123invalid",
         },
       };
@@ -140,7 +141,7 @@ describe("Element Validators", () => {
       const command: ModifyElementCommand = {
         type: "modifyElement",
         payload: {
-          elementId: "elem1",
+          elementId: "/element:person",
           minOccurs: 1,
           maxOccurs: 10,
         },
@@ -154,7 +155,7 @@ describe("Element Validators", () => {
       const command: ModifyElementCommand = {
         type: "modifyElement",
         payload: {
-          elementId: "elem1",
+          elementId: "/element:person",
           minOccurs: 10,
           maxOccurs: 5,
         },

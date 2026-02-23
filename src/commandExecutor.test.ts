@@ -106,19 +106,22 @@ describe("CommandExecutor", () => {
       expect(elements[0].type_).toBe("int");
     });
 
-    it("should delegate addAttribute execution and throw not implemented error", () => {
+    it("should delegate addAttribute execution successfully", () => {
       const command: SchemaCommand = {
         type: "addAttribute",
         payload: {
-          parentId: "element1",
+          parentId: "schema",
           attributeName: "testAttr",
-          attributeType: "string",
+          attributeType: "xs:string",
         },
       };
 
       expect(() => {
         executor.execute(command, mockSchema);
-      }).toThrow("addAttribute execution not yet implemented");
+      }).not.toThrow();
+
+      // Verify the attribute was added
+      expect(mockSchema.attribute).toBeDefined();
     });
 
     it("should delegate addSimpleType execution and throw not implemented error", () => {

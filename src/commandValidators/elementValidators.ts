@@ -119,7 +119,7 @@ export function validateModifyElement(
 
 export function validateAddAttribute(
   command: AddAttributeCommand,
-  _schemaObj: schema
+  schemaObj: schema
 ): ValidationResult {
   if (!isValidXmlName(command.payload.attributeName)) {
     return { valid: false, error: "Attribute name must be a valid XML name" };
@@ -127,28 +127,60 @@ export function validateAddAttribute(
   if (!command.payload.parentId.trim()) {
     return { valid: false, error: "Parent ID cannot be empty" };
   }
-  // TODO Phase 2: Validate that parentId exists in the schema
+
+  const location = locateNodeById(schemaObj, command.payload.parentId);
+  if (!location.found) {
+    return { valid: false, error: `Parent node not found: ${command.payload.parentId}` };
+  }
+
   return { valid: true };
 }
 
 export function validateRemoveAttribute(
   command: RemoveAttributeCommand,
-  _schemaObj: schema
+  schemaObj: schema
 ): ValidationResult {
   if (!command.payload.attributeId.trim()) {
     return { valid: false, error: "Attribute ID cannot be empty" };
   }
-  // TODO Phase 2: Validate that attributeId exists in the schema
+
+  const parsed = parseSchemaId(command.payload.attributeId);
+  const parentId = parsed.parentId ?? "schema";
+  const location = locateNodeById(schemaObj, parentId);
+  if (!location.found) {
+    return {
+      valid: false,
+      error: `Parent node not found for attribute: ${command.payload.attributeId}`,
+    };
+  }
+
   return { valid: true };
 }
 
 export function validateModifyAttribute(
   command: ModifyAttributeCommand,
-  _schemaObj: schema
+  schemaObj: schema
 ): ValidationResult {
   if (!command.payload.attributeId.trim()) {
     return { valid: false, error: "Attribute ID cannot be empty" };
   }
-  // TODO Phase 2: Validate that attributeId exists in the schema
+
+  const parsed = parseSchemaId(command.payload.attributeId);
+  const parentId = parsed.parentId ?? "schema";
+  const location = locateNodeById(schemaObj, parentId);
+  if (!location.found) {
+    return {
+      valid: false,
+      error: `Parent node not found for attribute: ${command.payload.attributeId}`,
+    };
+  }
+
+  if (
+    command.payload.attributeName !== undefined &&
+    !isValidXmlName(command.payload.attributeName)
+  ) {
+    return { valid: false, error: "Attribute name must be a valid XML name" };
+  }
+
   return { valid: true };
 }

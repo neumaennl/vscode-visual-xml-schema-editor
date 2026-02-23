@@ -550,7 +550,7 @@ describe("Attribute Validators", () => {
       const command: ModifyAttributeCommand = {
         type: "modifyAttribute",
         payload: {
-          attributeId: "attr1",
+          attributeId: "/attribute:attr1",
           attributeName: "validName",
           attributeType: "string",
         },

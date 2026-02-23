@@ -15,6 +15,8 @@ import { topLevelAttribute } from './topLevelAttribute';
 import { notationType } from './notationType';
 @XmlRoot('schema', { namespace: 'http://www.w3.org/2001/XMLSchema', prefixes: { 'http://www.w3.org/2001/XMLSchema': 'xs', 'http://www.w3.org/2001/XMLSchema-hasFacetAndProperty': 'hfp', 'http://www.w3.org/XML/1998/namespace': 'imp1' } })
 export class schema extends openAttrs {
+  _namespacePrefixes?: Record<string, string>;
+
   @XmlAttribute('targetNamespace')
   targetNamespace?: string;
 

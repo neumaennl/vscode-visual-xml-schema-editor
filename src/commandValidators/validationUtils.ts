@@ -140,3 +140,185 @@ export function validateOccurrences(
   // Validate constraint
   return validateOccurrenceConstraint(minOccurs, maxOccurs);
 }
+
+/**
+ * List of built-in XSD type names (without namespace prefix).
+ * The actual type reference can use any prefix (xs:, xsd:, etc.) or no prefix.
+ */
+const BUILT_IN_XSD_TYPE_NAMES = new Set([
+  // String types
+  "string",
+  "normalizedString",
+  "token",
+  "language",
+  "Name",
+  "NCName",
+  "ID",
+  "IDREF",
+  "IDREFS",
+  "ENTITY",
+  "ENTITIES",
+  "NMTOKEN",
+  "NMTOKENS",
+  
+  // Numeric types
+  "decimal",
+  "integer",
+  "int",
+  "long",
+  "short",
+  "byte",
+  "nonNegativeInteger",
+  "positiveInteger",
+  "nonPositiveInteger",
+  "negativeInteger",
+  "unsignedLong",
+  "unsignedInt",
+  "unsignedShort",
+  "unsignedByte",
+  "float",
+  "double",
+  
+  // Date and time types
+  "date",
+  "time",
+  "dateTime",
+  "duration",
+  "gDay",
+  "gMonth",
+  "gMonthDay",
+  "gYear",
+  "gYearMonth",
+  
+  // Other types
+  "boolean",
+  "base64Binary",
+  "hexBinary",
+  "anyURI",
+  "QName",
+  "NOTATION",
+  "anyType",
+  "anySimpleType",
+]);
+
+/**
+ * Extracts the local name from a potentially prefixed type name.
+ * For example: "xs:string" -> "string", "string" -> "string"
+ *
+ * @param typeName - The type name (possibly with namespace prefix)
+ * @returns The local name without prefix
+ */
+function getLocalTypeName(typeName: string): string {
+  const colonIndex = typeName.indexOf(':');
+  return colonIndex >= 0 ? typeName.substring(colonIndex + 1) : typeName;
+}
+
+/**
+ * Extracts the prefix from a potentially prefixed type name.
+ * For example: "xs:string" -> "xs", "string" -> undefined
+ *
+ * @param typeName - The type name (possibly with namespace prefix)
+ * @returns The prefix without the colon, or undefined if no prefix
+ */
+function getTypePrefix(typeName: string): string | undefined {
+  const colonIndex = typeName.indexOf(':');
+  return colonIndex >= 0 ? typeName.substring(0, colonIndex) : undefined;
+}
+
+/**
+ * Checks if a type name is a built-in XSD type.
+ * Handles any namespace prefix (xs:, xsd:, etc.) or no prefix.
+ *
+ * @param typeName - The type name to check
+ * @returns true if it's a built-in XSD type
+ */
+function isBuiltInXsdType(typeName: string): boolean {
+  const localName = getLocalTypeName(typeName);
+  return BUILT_IN_XSD_TYPE_NAMES.has(localName);
+}
+
+/**
+ * Validates if a type name is a valid built-in or user-defined type.
+ *
+ * @param typeName - The type name to validate
+ * @param schemaObj - The schema object to check for user-defined types
+ * @returns Validation result
+ */
+export function validateElementType(
+  typeName: string,
+  schemaObj: { 
+    simpleType?: Array<{ name?: string }>, 
+    complexType?: Array<{ name?: string }>,
+    import_?: Array<{ namespace?: string }>,
+    include?: Array<{ schemaLocation?: string }>,
+    _namespacePrefixes?: Record<string, string>
+  }
+): ValidationResult {
+  if (!typeName || typeName.trim().length === 0) {
+    return { valid: false, error: "Element type is required" };
+  }
+
+  const trimmedType = typeName.trim();
+
+  // Check if it's a built-in XSD type (handles any prefix like xs:, xsd:, or no prefix)
+  if (isBuiltInXsdType(trimmedType)) {
+    return { valid: true };
+  }
+
+  // Extract local name (without prefix) for user-defined type comparison
+  const localTypeName = getLocalTypeName(trimmedType);
+
+  // Check if it's a user-defined simple type
+  if (schemaObj.simpleType) {
+    const simpleTypes = Array.isArray(schemaObj.simpleType) 
+      ? schemaObj.simpleType 
+      : [schemaObj.simpleType];
+    
+    if (simpleTypes.some(type => type.name === localTypeName)) {
+      return { valid: true };
+    }
+  }
+
+  // Check if it's a user-defined complex type
+  if (schemaObj.complexType) {
+    const complexTypes = Array.isArray(schemaObj.complexType)
+      ? schemaObj.complexType
+      : [schemaObj.complexType];
+    
+    if (complexTypes.some(type => type.name === localTypeName)) {
+      return { valid: true };
+    }
+  }
+
+  // If the type has a prefix, validate it against imports
+  // Note: Types from includes are in the same namespace and don't need prefixes
+  const typePrefix = getTypePrefix(trimmedType);
+  if (typePrefix) {
+    // Check if we have namespace prefix mappings
+    if (schemaObj._namespacePrefixes) {
+      // Look up the namespace URI for this prefix
+      // _namespacePrefixes structure: { prefix: namespaceUri }
+      const namespaceUri = schemaObj._namespacePrefixes[typePrefix];
+      
+      if (namespaceUri) {
+        // Check if there's an import for this namespace
+        if (schemaObj.import_) {
+          const imports = Array.isArray(schemaObj.import_) 
+            ? schemaObj.import_ 
+            : [schemaObj.import_];
+          
+          const hasMatchingImport = imports.some(imp => imp.namespace === namespaceUri);
+          if (hasMatchingImport) {
+            // Type is from a valid import with matching namespace, allow it
+            return { valid: true };
+          }
+        }
+      }
+    }
+  }
+
+  return { 
+    valid: false, 
+    error: `Invalid element type '${trimmedType}': must be a built-in XSD type, a user-defined type in the schema, or a type from a valid import with a matching namespace prefix` 
+  };
+}

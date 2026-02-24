@@ -7,14 +7,17 @@ import { BaseCommand } from "./base";
 
 /**
  * Payload for adding a new element to the schema.
+ * Either `elementName` + `elementType` (named element) or `ref` (reference) must be provided.
  */
 export interface AddElementPayload {
   /** ID of the parent node where the element should be added */
   parentId: string;
-  /** Name of the new element */
-  elementName: string;
-  /** Type of the element (e.g., 'string', 'int', or a custom type name) */
-  elementType: string;
+  /** Name of the new element. Required when not using ref. */
+  elementName?: string;
+  /** Type of the element (e.g., 'string', 'int', or a custom type name). Required when not using ref. */
+  elementType?: string;
+  /** Reference to an existing top-level element. Mutually exclusive with elementName/elementType. */
+  ref?: string;
   /** Minimum occurrences (default: 1) */
   minOccurs?: number;
   /** Maximum occurrences (default: 1, use 'unbounded' for unlimited) */
@@ -53,10 +56,15 @@ export interface RemoveElementCommand extends BaseCommand<RemoveElementPayload> 
 export interface ModifyElementPayload {
   /** ID of the element to modify */
   elementId: string;
-  /** New name for the element (optional) */
+  /** New name for the element (optional). When set, clears ref. */
   elementName?: string;
-  /** New type for the element (optional) */
+  /** New type for the element (optional). When set, clears ref. */
   elementType?: string;
+  /**
+   * New ref for the element (optional). When set, clears name and type.
+   * Mutually exclusive with elementName/elementType.
+   */
+  ref?: string;
   /** New minimum occurrences (optional) */
   minOccurs?: number;
   /** New maximum occurrences (optional) */

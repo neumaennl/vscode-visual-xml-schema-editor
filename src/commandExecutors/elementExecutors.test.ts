@@ -10,6 +10,7 @@ import {
   executeRemoveElement,
   executeModifyElement,
 } from "./elementExecutors";
+import { toArray } from "../../shared/schemaUtils";
 
 describe("Element Executors", () => {
   describe("executeAddElement", () => {
@@ -455,6 +456,244 @@ describe("Element Executors", () => {
         expect(elements[0]!.name).toBe("employee");
         expect(elements[0]!.type_).toBe("xs:int");
       });
+    });
+  });
+
+  describe("Reference element support", () => {
+    const baseXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="person" type="xs:string"/>
+  <xs:complexType name="OrderType">
+    <xs:sequence/>
+  </xs:complexType>
+</xs:schema>`;
+
+    it("should add a reference element to a sequence", () => {
+      const schemaObj = unmarshal(schema, baseXml);
+
+      const command: AddElementCommand = {
+        type: "addElement",
+        payload: {
+          parentId: "/complexType:OrderType/sequence",
+          ref: "person",
+        },
+      };
+
+      executeAddElement(command, schemaObj);
+
+      const complexTypes = Array.isArray(schemaObj.complexType)
+        ? schemaObj.complexType
+        : [schemaObj.complexType];
+      const seqElements = toArray(complexTypes[0]!.sequence!.element);
+      expect(seqElements).toHaveLength(1);
+      expect(seqElements[0].ref).toBe("person");
+      expect(seqElements[0].name).toBeUndefined();
+      expect(seqElements[0].type_).toBeUndefined();
+    });
+
+    it("should add a reference element with minOccurs/maxOccurs", () => {
+      const schemaObj = unmarshal(schema, baseXml);
+
+      const command: AddElementCommand = {
+        type: "addElement",
+        payload: {
+          parentId: "/complexType:OrderType/sequence",
+          ref: "person",
+          minOccurs: 0,
+          maxOccurs: "unbounded",
+        },
+      };
+
+      executeAddElement(command, schemaObj);
+
+      const complexTypes = Array.isArray(schemaObj.complexType)
+        ? schemaObj.complexType
+        : [schemaObj.complexType];
+      const seqElements = toArray(complexTypes[0]!.sequence!.element);
+      expect(seqElements[0].ref).toBe("person");
+      expect(seqElements[0].minOccurs).toBe(0);
+      expect(seqElements[0].maxOccurs).toBe("unbounded");
+    });
+
+    it("should reject duplicate reference in sequence", () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="person" type="xs:string"/>
+  <xs:complexType name="OrderType">
+    <xs:sequence>
+      <xs:element ref="person"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>`;
+      const schemaObj = unmarshal(schema, xml);
+
+      const command: AddElementCommand = {
+        type: "addElement",
+        payload: {
+          parentId: "/complexType:OrderType/sequence",
+          ref: "person",
+        },
+      };
+
+      expect(() => executeAddElement(command, schemaObj)).toThrow(
+        "duplicate element reference 'person'"
+      );
+    });
+
+    it("should reject adding a ref element when a named element with the same identifier exists", () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="person" type="xs:string"/>
+  <xs:complexType name="OrderType">
+    <xs:sequence>
+      <xs:element name="person" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>`;
+      const schemaObj = unmarshal(schema, xml);
+
+      const command: AddElementCommand = {
+        type: "addElement",
+        payload: {
+          parentId: "/complexType:OrderType/sequence",
+          ref: "person",
+        },
+      };
+
+      expect(() => executeAddElement(command, schemaObj)).toThrow(
+        "duplicate element reference 'person'"
+      );
+    });
+
+    it("should reject adding a named element when a ref element with the same identifier exists", () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="person" type="xs:string"/>
+  <xs:complexType name="OrderType">
+    <xs:sequence>
+      <xs:element ref="person"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>`;
+      const schemaObj = unmarshal(schema, xml);
+
+      const command: AddElementCommand = {
+        type: "addElement",
+        payload: {
+          parentId: "/complexType:OrderType/sequence",
+          elementName: "person",
+          elementType: "xs:string",
+        },
+      };
+
+      expect(() => executeAddElement(command, schemaObj)).toThrow(
+        "duplicate element name 'person'"
+      );
+    });
+
+    it("should remove a reference element by ref name", () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="person" type="xs:string"/>
+  <xs:complexType name="OrderType">
+    <xs:sequence>
+      <xs:element ref="person"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>`;
+      const schemaObj = unmarshal(schema, xml);
+
+      const command: RemoveElementCommand = {
+        type: "removeElement",
+        payload: { elementId: "/complexType:OrderType/sequence/element:person" },
+      };
+
+      executeRemoveElement(command, schemaObj);
+
+      const complexTypes = Array.isArray(schemaObj.complexType)
+        ? schemaObj.complexType
+        : [schemaObj.complexType];
+      const seqElements = toArray(complexTypes[0]!.sequence?.element);
+      expect(seqElements).toHaveLength(0);
+    });
+
+    it("should modify a named element to become a reference", () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="person" type="xs:string"/>
+  <xs:complexType name="OrderType">
+    <xs:sequence>
+      <xs:element name="item" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>`;
+      const schemaObj = unmarshal(schema, xml);
+
+      const command: ModifyElementCommand = {
+        type: "modifyElement",
+        payload: {
+          elementId: "/complexType:OrderType/sequence/element:item",
+          ref: "person",
+        },
+      };
+
+      executeModifyElement(command, schemaObj);
+
+      const complexTypes = Array.isArray(schemaObj.complexType)
+        ? schemaObj.complexType
+        : [schemaObj.complexType];
+      const seqElements = toArray(complexTypes[0]!.sequence!.element);
+      expect(seqElements[0].ref).toBe("person");
+      expect(seqElements[0].name).toBeUndefined();
+      expect(seqElements[0].type_).toBeUndefined();
+    });
+
+    it("should modify a reference element to become named", () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="person" type="xs:string"/>
+  <xs:complexType name="OrderType">
+    <xs:sequence>
+      <xs:element ref="person"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>`;
+      const schemaObj = unmarshal(schema, xml);
+
+      const command: ModifyElementCommand = {
+        type: "modifyElement",
+        payload: {
+          elementId: "/complexType:OrderType/sequence/element:person",
+          elementName: "employee",
+          elementType: "xs:string",
+        },
+      };
+
+      executeModifyElement(command, schemaObj);
+
+      const complexTypes = Array.isArray(schemaObj.complexType)
+        ? schemaObj.complexType
+        : [schemaObj.complexType];
+      const seqElements = toArray(complexTypes[0]!.sequence!.element);
+      expect(seqElements[0].name).toBe("employee");
+      expect(seqElements[0].type_).toBe("xs:string");
+      expect((seqElements[0]).ref).toBeUndefined();
+    });
+
+    it("should produce valid XML for a reference element", () => {
+      const schemaObj = unmarshal(schema, baseXml);
+
+      executeAddElement(
+        {
+          type: "addElement",
+          payload: { parentId: "/complexType:OrderType/sequence", ref: "person" },
+        },
+        schemaObj
+      );
+
+      const xml = marshal(schemaObj);
+      expect(xml).toContain('ref="person"');
+      expect(xml).not.toContain('name="person" type=');
     });
   });
 });

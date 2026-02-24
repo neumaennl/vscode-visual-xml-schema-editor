@@ -326,14 +326,15 @@ function navigateFromGroup(
 
 /**
  * Find an item by name or position in an array.
+ * Also matches items whose `ref` equals the given name, enabling navigation to reference nodes.
  */
-function findByNameOrPosition<T extends { name?: string }>(
+function findByNameOrPosition<T extends { name?: string; ref?: string }>(
   items: T[],
   name?: string,
   position?: number
 ): T | undefined {
   if (name !== undefined) {
-    return items.find((item) => item.name === name);
+    return items.find((item) => item.name === name || item.ref === name);
   } else if (position !== undefined) {
     return items[position];
   }

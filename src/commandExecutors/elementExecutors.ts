@@ -249,11 +249,13 @@ function addElementToParent(
     const allElem = element as narrowMaxMin;
     
     // Check for duplicate names and refs (cross-form: name vs ref sharing same identifier)
+    const allElemRef = (allElem as localElement).ref;
+
     if (allElem.name && elements.some(el => el.name === allElem.name || (el as localElement).ref === allElem.name)) {
       throw new Error(`Cannot add element: duplicate element name '${allElem.name}' in all group`);
     }
-    if ((allElem as localElement).ref && elements.some(el => (el as localElement).ref === (allElem as localElement).ref || el.name === (allElem as localElement).ref)) {
-      throw new Error(`Cannot add element: duplicate element reference '${(allElem as localElement).ref}' in all group`);
+    if (allElemRef && elements.some(el => (el as localElement).ref === allElemRef || el.name === allElemRef)) {
+      throw new Error(`Cannot add element: duplicate element reference '${allElemRef}' in all group`);
     }
     
     elements.push(allElem);

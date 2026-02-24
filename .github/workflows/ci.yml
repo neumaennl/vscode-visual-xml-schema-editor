@@ -61,9 +61,20 @@ jobs:
             fs.appendFileSync(out, summary);
           }
           EOF
+          
+      - name: Check if JUnit report exists
+        if: always()
+        id: junit-check
+        shell: bash
+        run: |
+          if [[ -f "test-results/jest-junit.xml" ]]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Publish JUnit test report to GitHub Checks
-        if: always()
+        if: always() && steps.junit-check.outputs.exists == 'true'
         uses: dorny/test-reporter@v2
         with:
           name: Jest

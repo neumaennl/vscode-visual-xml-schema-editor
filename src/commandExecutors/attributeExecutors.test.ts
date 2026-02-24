@@ -645,8 +645,8 @@ describe("Attribute Executors", () => {
         ? schemaObj.complexType
         : [schemaObj.complexType];
       const attrs = toArray(complexTypes[0]!.attribute);
-      expect(attrs[0]!.default_).toBe("pending");
-      expect(attrs[0]!.fixed).toBeUndefined();
+      expect(attrs[0].default_).toBe("pending");
+      expect(attrs[0].fixed).toBeUndefined();
     });
 
     it("should clear default value when setting fixed value on an attribute that already has default", () => {
@@ -672,8 +672,8 @@ describe("Attribute Executors", () => {
         ? schemaObj.complexType
         : [schemaObj.complexType];
       const attrs = toArray(complexTypes[0]!.attribute);
-      expect(attrs[0]!.fixed).toBe("active");
-      expect(attrs[0]!.default_).toBeUndefined();
+      expect(attrs[0].fixed).toBe("active");
+      expect(attrs[0].default_).toBeUndefined();
     });
   });
 
@@ -774,9 +774,9 @@ describe("Attribute Executors", () => {
         : [schemaObj.complexType];
       const attrs = toArray(complexTypes[0]!.attribute);
       expect(attrs).toHaveLength(1);
-      expect(attrs[0]!.ref).toBe("lang");
-      expect(attrs[0]!.name).toBeUndefined();
-      expect(attrs[0]!.type_).toBeUndefined();
+      expect(attrs[0].ref).toBe("lang");
+      expect(attrs[0].name).toBeUndefined();
+      expect(attrs[0].type_).toBeUndefined();
     });
 
     it("should add a required reference attribute", () => {
@@ -797,8 +797,8 @@ describe("Attribute Executors", () => {
         ? schemaObj.complexType
         : [schemaObj.complexType];
       const attrs = toArray(complexTypes[0]!.attribute);
-      expect(attrs[0]!.ref).toBe("lang");
-      expect(attrs[0]!.use).toBe("required");
+      expect(attrs[0].ref).toBe("lang");
+      expect(attrs[0].use).toBe("required");
     });
 
     it("should reject duplicate reference in complex type", () => {
@@ -912,9 +912,9 @@ describe("Attribute Executors", () => {
         ? schemaObj.complexType
         : [schemaObj.complexType];
       const attrs = toArray(complexTypes[0]!.attribute);
-      expect(attrs[0]!.ref).toBe("lang");
-      expect(attrs[0]!.name).toBeUndefined();
-      expect(attrs[0]!.type_).toBeUndefined();
+      expect(attrs[0].ref).toBe("lang");
+      expect(attrs[0].name).toBeUndefined();
+      expect(attrs[0].type_).toBeUndefined();
     });
 
     it("should modify a reference attribute to become named", () => {
@@ -942,9 +942,9 @@ describe("Attribute Executors", () => {
         ? schemaObj.complexType
         : [schemaObj.complexType];
       const attrs = toArray(complexTypes[0]!.attribute);
-      expect(attrs[0]!.name).toBe("locale");
-      expect(attrs[0]!.type_).toBe("xs:string");
-      expect(attrs[0]!.ref).toBeUndefined();
+      expect(attrs[0].name).toBe("locale");
+      expect(attrs[0].type_).toBe("xs:string");
+      expect(attrs[0].ref).toBeUndefined();
     });
 
     it("should produce valid XML for a reference attribute", () => {

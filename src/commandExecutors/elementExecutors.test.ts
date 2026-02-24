@@ -486,9 +486,9 @@ describe("Element Executors", () => {
         : [schemaObj.complexType];
       const seqElements = toArray(complexTypes[0]!.sequence!.element);
       expect(seqElements).toHaveLength(1);
-      expect(seqElements[0]!.ref).toBe("person");
-      expect(seqElements[0]!.name).toBeUndefined();
-      expect(seqElements[0]!.type_).toBeUndefined();
+      expect(seqElements[0].ref).toBe("person");
+      expect(seqElements[0].name).toBeUndefined();
+      expect(seqElements[0].type_).toBeUndefined();
     });
 
     it("should add a reference element with minOccurs/maxOccurs", () => {
@@ -510,9 +510,9 @@ describe("Element Executors", () => {
         ? schemaObj.complexType
         : [schemaObj.complexType];
       const seqElements = toArray(complexTypes[0]!.sequence!.element);
-      expect(seqElements[0]!.ref).toBe("person");
-      expect(seqElements[0]!.minOccurs).toBe(0);
-      expect(seqElements[0]!.maxOccurs).toBe("unbounded");
+      expect(seqElements[0].ref).toBe("person");
+      expect(seqElements[0].minOccurs).toBe(0);
+      expect(seqElements[0].maxOccurs).toBe("unbounded");
     });
 
     it("should reject duplicate reference in sequence", () => {
@@ -643,9 +643,9 @@ describe("Element Executors", () => {
         ? schemaObj.complexType
         : [schemaObj.complexType];
       const seqElements = toArray(complexTypes[0]!.sequence!.element);
-      expect(seqElements[0]!.ref).toBe("person");
-      expect(seqElements[0]!.name).toBeUndefined();
-      expect(seqElements[0]!.type_).toBeUndefined();
+      expect(seqElements[0].ref).toBe("person");
+      expect(seqElements[0].name).toBeUndefined();
+      expect(seqElements[0].type_).toBeUndefined();
     });
 
     it("should modify a reference element to become named", () => {
@@ -675,9 +675,9 @@ describe("Element Executors", () => {
         ? schemaObj.complexType
         : [schemaObj.complexType];
       const seqElements = toArray(complexTypes[0]!.sequence!.element);
-      expect(seqElements[0]!.name).toBe("employee");
-      expect(seqElements[0]!.type_).toBe("xs:string");
-      expect((seqElements[0]! as import("../../shared/generated/localElement").localElement).ref).toBeUndefined();
+      expect(seqElements[0].name).toBe("employee");
+      expect(seqElements[0].type_).toBe("xs:string");
+      expect((seqElements[0]).ref).toBeUndefined();
     });
 
     it("should produce valid XML for a reference element", () => {

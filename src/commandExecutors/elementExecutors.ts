@@ -234,10 +234,10 @@ function addElementToParent(
     const localElem = element as localElement;
     
     // Check for duplicate names and refs (cross-form: name vs ref sharing same identifier)
-    if (localElem.name && elements.some(el => (el as localElement).name === localElem.name || (el as localElement).ref === localElem.name)) {
+    if (localElem.name && elements.some(el => (el).name === localElem.name || (el).ref === localElem.name)) {
       throw new Error(`Cannot add element: duplicate element name '${localElem.name}' in ${parentType}`);
     }
-    if (localElem.ref && elements.some(el => (el as localElement).ref === localElem.ref || (el as localElement).name === localElem.ref)) {
+    if (localElem.ref && elements.some(el => (el).ref === localElem.ref || (el).name === localElem.ref)) {
       throw new Error(`Cannot add element: duplicate element reference '${localElem.ref}' in ${parentType}`);
     }
     

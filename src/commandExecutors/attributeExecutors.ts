@@ -401,7 +401,7 @@ function updateAttributeProperties(
   }
   // 'use' only exists on local attributes (attribute class), not on topLevelAttribute
   if (newRequired !== undefined && "use" in attr) {
-    (attr as attribute).use = newRequired ? "required" : "optional";
+    (attr).use = newRequired ? "required" : "optional";
   }
   if (newDefaultValue !== undefined) {
     attr.default_ = newDefaultValue;

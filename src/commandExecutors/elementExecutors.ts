@@ -31,7 +31,8 @@ export function executeAddElement(
   command: AddElementCommand,
   schemaObj: schema
 ): void {
-  const { parentId, elementName, elementType, minOccurs, maxOccurs, documentation } = command.payload;
+  const { parentId, elementName, elementType, ref, minOccurs, maxOccurs, documentation } =
+    command.payload;
 
   // Locate the parent node
   const location = locateNodeById(schemaObj, parentId);
@@ -43,6 +44,7 @@ export function executeAddElement(
   const newElement = createNewElement(
     elementName,
     elementType,
+    ref,
     minOccurs,
     maxOccurs,
     documentation,
@@ -93,7 +95,8 @@ export function executeModifyElement(
   command: ModifyElementCommand,
   schemaObj: schema
 ): void {
-  const { elementId, elementName, elementType, minOccurs, maxOccurs, documentation } = command.payload;
+  const { elementId, elementName, elementType, ref, minOccurs, maxOccurs, documentation } =
+    command.payload;
 
   // Parse the element ID to get information about the element
   const parsed = parseSchemaId(elementId);
@@ -114,6 +117,7 @@ export function executeModifyElement(
     parsed.position,
     elementName,
     elementType,
+    ref,
     minOccurs,
     maxOccurs,
     documentation
@@ -123,10 +127,11 @@ export function executeModifyElement(
 // ===== Helper Functions =====
 
 /**
- * Creates a new element (either top-level or local).
+ * Creates a new element (either top-level, local, or reference).
  *
- * @param name - Element name
- * @param type - Element type
+ * @param name - Element name (undefined when using ref)
+ * @param type - Element type (undefined when using ref)
+ * @param ref - Reference to a top-level element (mutually exclusive with name/type)
  * @param minOccurs - Minimum occurrences (optional)
  * @param maxOccurs - Maximum occurrences (optional)
  * @param documentation - Documentation text (optional)
@@ -135,8 +140,9 @@ export function executeModifyElement(
  * @returns New element instance
  */
 function createNewElement(
-  name: string,
-  type: string,
+  name: string | undefined,
+  type: string | undefined,
+  ref: string | undefined,
   minOccurs?: number,
   maxOccurs?: number | "unbounded",
   documentation?: string,
@@ -154,8 +160,13 @@ function createNewElement(
     element = new localElement();
   }
 
-  element.name = name;
-  element.type_ = type;
+  if (ref !== undefined) {
+    // Reference element: only set ref (and occurrences)
+    (element as localElement).ref = ref;
+  } else {
+    element.name = name;
+    element.type_ = type;
+  }
 
   // For local elements and narrowMaxMin, set minOccurs and maxOccurs
   if (!isTopLevel) {
@@ -220,24 +231,32 @@ function addElementToParent(
   ) {
     const group = parent as explicitGroup;
     const elements = toArray(group.element);
+    const localElem = element as localElement;
     
-    // Check for duplicate element names
-    if (element.name && elements.some(el => el.name === element.name)) {
-      throw new Error(`Cannot add element: duplicate element name '${element.name}' in ${parentType}`);
+    // Check for duplicate names and refs
+    if (localElem.name && elements.some(el => (el as localElement).name === localElem.name)) {
+      throw new Error(`Cannot add element: duplicate element name '${localElem.name}' in ${parentType}`);
+    }
+    if (localElem.ref && elements.some(el => (el as localElement).ref === localElem.ref)) {
+      throw new Error(`Cannot add element: duplicate element reference '${localElem.ref}' in ${parentType}`);
     }
     
-    elements.push(element as localElement);
+    elements.push(localElem);
     group.element = elements;
   } else if (parentType === "all") {
     const allGroup = parent as all;
     const elements = toArray(allGroup.element);
+    const allElem = element as narrowMaxMin;
     
-    // Check for duplicate element names
-    if (element.name && elements.some(el => el.name === element.name)) {
-      throw new Error(`Cannot add element: duplicate element name '${element.name}' in all group`);
+    // Check for duplicate names and refs
+    if (allElem.name && elements.some(el => el.name === allElem.name)) {
+      throw new Error(`Cannot add element: duplicate element name '${allElem.name}' in all group`);
+    }
+    if ((allElem as localElement).ref && elements.some(el => (el as localElement).ref === (allElem as localElement).ref)) {
+      throw new Error(`Cannot add element: duplicate element reference '${(allElem as localElement).ref}' in all group`);
     }
     
-    elements.push(element as narrowMaxMin);
+    elements.push(allElem);
     allGroup.element = elements;
   } else {
     throw new Error(`Cannot add element to parent of type: ${parentType}`);
@@ -283,16 +302,16 @@ function removeElementFromParent(
 }
 
 /**
- * Filters out an element from an array by name or position.
- * When both name and position are provided, position takes precedence.
+ * Filters out an element from an array by name/ref or position.
+ * Matches elements whose `name` OR `ref` equals the given elementName.
  *
  * @param elements - Array of elements
- * @param elementName - Name of the element to filter (optional)
+ * @param elementName - Name or ref value of the element to filter (optional)
  * @param position - Position of the element to filter (optional)
  * @returns Filtered array
  * @throws Error if element not found
  */
-function filterElement<T extends { name?: string }>(
+function filterElement<T extends { name?: string; ref?: string }>(
   elements: T[],
   elementName?: string,
   position?: number
@@ -305,8 +324,10 @@ function filterElement<T extends { name?: string }>(
     }
     return elements.filter((_, idx) => idx !== position);
   } else if (elementName !== undefined) {
-    // Filter by name
-    const filtered = elements.filter(el => el.name !== elementName);
+    // Filter by name or ref (a referenced element uses ref as its identifier)
+    const filtered = elements.filter(
+      el => el.name !== elementName && el.ref !== elementName
+    );
     if (filtered.length === elements.length) {
       throw new Error(`Element not found with name: ${elementName}`);
     }
@@ -320,10 +341,11 @@ function filterElement<T extends { name?: string }>(
  *
  * @param parent - Parent container object
  * @param parentType - Type of the parent container
- * @param targetName - Name of the element to modify (optional)
+ * @param targetName - Name or ref value of the element to modify (optional)
  * @param targetPosition - Position of the element to modify (optional)
- * @param newName - New name for the element (optional)
+ * @param newName - New name for the element (optional). When set, clears ref.
  * @param newType - New type for the element (optional)
+ * @param newRef - New ref for the element (optional). When set, clears name and type.
  * @param newMinOccurs - New minimum occurrences (optional)
  * @param newMaxOccurs - New maximum occurrences (optional)
  * @param newDocumentation - New documentation (optional)
@@ -336,6 +358,7 @@ function modifyElementInParent(
   targetPosition?: number,
   newName?: string,
   newType?: string,
+  newRef?: string,
   newMinOccurs?: number,
   newMaxOccurs?: number | "unbounded",
   newDocumentation?: string
@@ -353,6 +376,7 @@ function modifyElementInParent(
       element,
       newName,
       newType,
+      newRef,
       undefined, // top-level elements don't have occurrences
       undefined,
       newDocumentation,
@@ -374,6 +398,7 @@ function modifyElementInParent(
       element,
       newName,
       newType,
+      newRef,
       newMinOccurs,
       newMaxOccurs,
       newDocumentation,
@@ -392,6 +417,7 @@ function modifyElementInParent(
       element,
       newName,
       newType,
+      newRef,
       newMinOccurs,
       newMaxOccurs,
       newDocumentation,
@@ -403,14 +429,15 @@ function modifyElementInParent(
 }
 
 /**
- * Finds an element in an array by name or position.
+ * Finds an element in an array by name/ref or position.
+ * Matches elements whose `name` OR `ref` equals the given elementName.
  *
  * @param elements - Array of elements
- * @param elementName - Name of the element to find (optional)
+ * @param elementName - Name or ref value of the element to find (optional)
  * @param position - Position of the element to find (optional)
  * @returns Found element or undefined
  */
-function findElement<T extends { name?: string }>(
+function findElement<T extends { name?: string; ref?: string }>(
   elements: T[],
   elementName?: string,
   position?: number
@@ -419,17 +446,19 @@ function findElement<T extends { name?: string }>(
   if (position !== undefined) {
     return elements[position];
   } else if (elementName !== undefined) {
-    return elements.find(el => el.name === elementName);
+    return elements.find(el => el.name === elementName || el.ref === elementName);
   }
   return undefined;
 }
 
 /**
  * Updates element properties based on provided values.
+ * When `newRef` is set, clears `name` and `type_`. When `newName` is set, clears `ref`.
  *
  * @param element - Element to update
- * @param newName - New name (optional)
+ * @param newName - New name (optional). When set, clears ref.
  * @param newType - New type (optional)
+ * @param newRef - New ref (optional). When set, clears name and type.
  * @param newMinOccurs - New minimum occurrences (optional)
  * @param newMaxOccurs - New maximum occurrences (optional)
  * @param newDocumentation - New documentation (optional)
@@ -439,19 +468,26 @@ function updateElementProperties(
   element: topLevelElement | localElement | narrowMaxMin,
   newName?: string,
   newType?: string,
+  newRef?: string,
   newMinOccurs?: number,
   newMaxOccurs?: number | "unbounded",
   newDocumentation?: string,
   isInAllGroup: boolean = false
 ): void {
-  // Update name if provided
-  if (newName !== undefined) {
-    element.name = newName;
-  }
-
-  // Update type if provided
-  if (newType !== undefined) {
-    element.type_ = newType;
+  if (newRef !== undefined) {
+    // Switching to a reference: clear name and type
+    (element as localElement).ref = newRef;
+    element.name = undefined;
+    element.type_ = undefined;
+  } else {
+    // Update name (clearing ref when switching to named)
+    if (newName !== undefined) {
+      element.name = newName;
+      (element as localElement).ref = undefined;
+    }
+    if (newType !== undefined) {
+      element.type_ = newType;
+    }
   }
 
   // Update occurrences if provided (only for local elements and narrowMaxMin)

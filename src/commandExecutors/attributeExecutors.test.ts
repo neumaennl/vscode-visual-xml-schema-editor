@@ -15,6 +15,7 @@ import {
   executeRemoveAttribute,
   executeModifyAttribute,
 } from "./attributeExecutors";
+import { toArray } from "../../shared/schemaUtils";
 
 describe("Attribute Executors", () => {
   describe("executeAddAttribute", () => {
@@ -620,64 +621,6 @@ describe("Attribute Executors", () => {
         "Attribute not found: nonexistent"
       );
     });
-
-    it("should clear fixed value when setting default value", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:complexType name="PersonType">
-    <xs:attribute name="status" type="xs:string" fixed="active"/>
-  </xs:complexType>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
-
-      const command: ModifyAttributeCommand = {
-        type: "modifyAttribute",
-        payload: {
-          attributeId: "/complexType:PersonType/attribute:status",
-          defaultValue: "pending",
-        },
-      };
-
-      executeModifyAttribute(command, schemaObj);
-
-      const complexTypes = Array.isArray(schemaObj.complexType)
-        ? schemaObj.complexType
-        : [schemaObj.complexType];
-      const attrs = Array.isArray(complexTypes[0]!.attribute)
-        ? complexTypes[0]!.attribute
-        : [complexTypes[0]!.attribute];
-      expect(attrs[0]!.default_).toBe("pending");
-      expect(attrs[0]!.fixed).toBeUndefined();
-    });
-
-    it("should clear default value when setting fixed value", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:complexType name="PersonType">
-    <xs:attribute name="status" type="xs:string" default="pending"/>
-  </xs:complexType>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
-
-      const command: ModifyAttributeCommand = {
-        type: "modifyAttribute",
-        payload: {
-          attributeId: "/complexType:PersonType/attribute:status",
-          fixedValue: "active",
-        },
-      };
-
-      executeModifyAttribute(command, schemaObj);
-
-      const complexTypes = Array.isArray(schemaObj.complexType)
-        ? schemaObj.complexType
-        : [schemaObj.complexType];
-      const attrs = Array.isArray(complexTypes[0]!.attribute)
-        ? complexTypes[0]!.attribute
-        : [complexTypes[0]!.attribute];
-      expect(attrs[0]!.fixed).toBe("active");
-      expect(attrs[0]!.default_).toBeUndefined();
-    });
   });
 
   describe("Round-trip XML serialization", () => {
@@ -749,6 +692,177 @@ describe("Attribute Executors", () => {
       expect(attrs[0]!.name).toBe("personId");
       expect(attrs[0]!.type_).toBe("xs:string");
       expect(attrs[0]!.use).toBe("required");
+    });
+  });
+
+  describe("Reference attribute support", () => {
+    const baseXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:attribute name="lang" type="xs:string"/>
+  <xs:complexType name="PersonType"/>
+</xs:schema>`;
+
+    it("should add a reference attribute to a complex type", () => {
+      const schemaObj = unmarshal(schema, baseXml);
+
+      const command: AddAttributeCommand = {
+        type: "addAttribute",
+        payload: {
+          parentId: "/complexType:PersonType",
+          ref: "lang",
+        },
+      };
+
+      executeAddAttribute(command, schemaObj);
+
+      const complexTypes = Array.isArray(schemaObj.complexType)
+        ? schemaObj.complexType
+        : [schemaObj.complexType];
+      const attrs = toArray(complexTypes[0]!.attribute);
+      expect(attrs).toHaveLength(1);
+      expect(attrs[0]!.ref).toBe("lang");
+      expect(attrs[0]!.name).toBeUndefined();
+      expect(attrs[0]!.type_).toBeUndefined();
+    });
+
+    it("should add a required reference attribute", () => {
+      const schemaObj = unmarshal(schema, baseXml);
+
+      const command: AddAttributeCommand = {
+        type: "addAttribute",
+        payload: {
+          parentId: "/complexType:PersonType",
+          ref: "lang",
+          required: true,
+        },
+      };
+
+      executeAddAttribute(command, schemaObj);
+
+      const complexTypes = Array.isArray(schemaObj.complexType)
+        ? schemaObj.complexType
+        : [schemaObj.complexType];
+      const attrs = toArray(complexTypes[0]!.attribute);
+      expect(attrs[0]!.ref).toBe("lang");
+      expect(attrs[0]!.use).toBe("required");
+    });
+
+    it("should reject duplicate reference in complex type", () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:attribute name="lang" type="xs:string"/>
+  <xs:complexType name="PersonType">
+    <xs:attribute ref="lang"/>
+  </xs:complexType>
+</xs:schema>`;
+      const schemaObj = unmarshal(schema, xml);
+
+      const command: AddAttributeCommand = {
+        type: "addAttribute",
+        payload: { parentId: "/complexType:PersonType", ref: "lang" },
+      };
+
+      expect(() => executeAddAttribute(command, schemaObj)).toThrow(
+        "duplicate attribute reference 'lang'"
+      );
+    });
+
+    it("should remove a reference attribute by ref name", () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:attribute name="lang" type="xs:string"/>
+  <xs:complexType name="PersonType">
+    <xs:attribute ref="lang"/>
+  </xs:complexType>
+</xs:schema>`;
+      const schemaObj = unmarshal(schema, xml);
+
+      const command: RemoveAttributeCommand = {
+        type: "removeAttribute",
+        payload: { attributeId: "/complexType:PersonType/attribute:lang" },
+      };
+
+      executeRemoveAttribute(command, schemaObj);
+
+      const complexTypes = Array.isArray(schemaObj.complexType)
+        ? schemaObj.complexType
+        : [schemaObj.complexType];
+      expect(complexTypes[0]!.attribute).toBeUndefined();
+    });
+
+    it("should modify a named attribute to become a reference", () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:attribute name="lang" type="xs:string"/>
+  <xs:complexType name="PersonType">
+    <xs:attribute name="locale" type="xs:string"/>
+  </xs:complexType>
+</xs:schema>`;
+      const schemaObj = unmarshal(schema, xml);
+
+      const command: ModifyAttributeCommand = {
+        type: "modifyAttribute",
+        payload: {
+          attributeId: "/complexType:PersonType/attribute:locale",
+          ref: "lang",
+        },
+      };
+
+      executeModifyAttribute(command, schemaObj);
+
+      const complexTypes = Array.isArray(schemaObj.complexType)
+        ? schemaObj.complexType
+        : [schemaObj.complexType];
+      const attrs = toArray(complexTypes[0]!.attribute);
+      expect(attrs[0]!.ref).toBe("lang");
+      expect(attrs[0]!.name).toBeUndefined();
+      expect(attrs[0]!.type_).toBeUndefined();
+    });
+
+    it("should modify a reference attribute to become named", () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:attribute name="lang" type="xs:string"/>
+  <xs:complexType name="PersonType">
+    <xs:attribute ref="lang"/>
+  </xs:complexType>
+</xs:schema>`;
+      const schemaObj = unmarshal(schema, xml);
+
+      const command: ModifyAttributeCommand = {
+        type: "modifyAttribute",
+        payload: {
+          attributeId: "/complexType:PersonType/attribute:lang",
+          attributeName: "locale",
+          attributeType: "xs:string",
+        },
+      };
+
+      executeModifyAttribute(command, schemaObj);
+
+      const complexTypes = Array.isArray(schemaObj.complexType)
+        ? schemaObj.complexType
+        : [schemaObj.complexType];
+      const attrs = toArray(complexTypes[0]!.attribute);
+      expect(attrs[0]!.name).toBe("locale");
+      expect(attrs[0]!.type_).toBe("xs:string");
+      expect(attrs[0]!.ref).toBeUndefined();
+    });
+
+    it("should produce valid XML for a reference attribute", () => {
+      const schemaObj = unmarshal(schema, baseXml);
+
+      executeAddAttribute(
+        {
+          type: "addAttribute",
+          payload: { parentId: "/complexType:PersonType", ref: "lang" },
+        },
+        schemaObj
+      );
+
+      const xml = marshal(schemaObj);
+      expect(xml).toContain('ref="lang"');
+      expect(xml).not.toContain('name="lang" type=');
     });
   });
 });

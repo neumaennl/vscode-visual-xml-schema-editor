@@ -473,6 +473,80 @@ describe("Element Validators", () => {
       expect(result.error).toBe("minOccurs must be <= maxOccurs");
     });
   });
+
+  describe("Reference element validation", () => {
+    let seqSchema: schema;
+
+    beforeEach(() => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="person" type="xs:string"/>
+  <xs:complexType name="OrderType">
+    <xs:sequence/>
+  </xs:complexType>
+</xs:schema>`;
+      seqSchema = unmarshal(schema, xml);
+    });
+
+    test("should accept addElement with valid ref to sequence", () => {
+      const command: AddElementCommand = {
+        type: "addElement",
+        payload: { parentId: "/complexType:OrderType/sequence", ref: "person" },
+      };
+      expect(validateAddElement(command, seqSchema).valid).toBe(true);
+    });
+
+    test("should reject addElement with ref at schema level (top-level elements cannot be refs)", () => {
+      const command: AddElementCommand = {
+        type: "addElement",
+        payload: { parentId: "schema", ref: "person" },
+      };
+      const result = validateAddElement(command, seqSchema);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe("Top-level elements cannot be references");
+    });
+
+    test("should reject addElement with ref and elementName together", () => {
+      const command: AddElementCommand = {
+        type: "addElement",
+        payload: {
+          parentId: "/complexType:OrderType/sequence",
+          ref: "person",
+          elementName: "person",
+        },
+      };
+      const result = validateAddElement(command, seqSchema);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe("A reference element cannot have a name or type");
+    });
+
+    test("should reject addElement with invalid ref name", () => {
+      const command: AddElementCommand = {
+        type: "addElement",
+        payload: {
+          parentId: "/complexType:OrderType/sequence",
+          ref: "123invalid",
+        },
+      };
+      const result = validateAddElement(command, seqSchema);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe("Element ref must be a valid XML name");
+    });
+
+    test("should reject modifyElement with ref and elementName together", () => {
+      const command: ModifyElementCommand = {
+        type: "modifyElement",
+        payload: {
+          elementId: "/element:person",
+          ref: "other",
+          elementName: "person",
+        },
+      };
+      const result = validateModifyElement(command, seqSchema);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe("Cannot set both ref and name/type on an element");
+    });
+  });
 });
 
 describe("Attribute Validators", () => {
@@ -514,6 +588,25 @@ describe("Attribute Validators", () => {
       const result = validateAddAttribute(command, schemaObj);
       expect(result.valid).toBe(false);
       expect(result.error).toBe("Parent ID cannot be empty");
+    });
+
+    test("should reject addAttribute with both defaultValue and fixedValue", () => {
+      const command: AddAttributeCommand = {
+        type: "addAttribute",
+        payload: {
+          parentId: "schema",
+          attributeName: "lang",
+          attributeType: "xs:string",
+          defaultValue: "en",
+          fixedValue: "en",
+        },
+      };
+
+      const result = validateAddAttribute(command, schemaObj);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe(
+        "An attribute cannot have both a default value and a fixed value"
+      );
     });
   });
 
@@ -558,6 +651,124 @@ describe("Attribute Validators", () => {
 
       const result = validateModifyAttribute(command, schemaObj);
       expect(result.valid).toBe(true);
+    });
+
+    test("should reject modifyAttribute with both defaultValue and fixedValue", () => {
+      const command: ModifyAttributeCommand = {
+        type: "modifyAttribute",
+        payload: {
+          attributeId: "/attribute:attr1",
+          defaultValue: "en",
+          fixedValue: "en",
+        },
+      };
+
+      const result = validateModifyAttribute(command, schemaObj);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe(
+        "An attribute cannot have both a default value and a fixed value"
+      );
+    });
+  });
+
+  describe("Reference attribute validation", () => {
+    let refSchema: schema;
+
+    beforeEach(() => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:attribute name="lang" type="xs:string"/>
+  <xs:complexType name="PersonType"/>
+</xs:schema>`;
+      refSchema = unmarshal(schema, xml);
+    });
+
+    test("should accept addAttribute with valid ref to complex type", () => {
+      const command: AddAttributeCommand = {
+        type: "addAttribute",
+        payload: { parentId: "/complexType:PersonType", ref: "lang" },
+      };
+      expect(validateAddAttribute(command, refSchema).valid).toBe(true);
+    });
+
+    test("should reject addAttribute with ref at schema level", () => {
+      const command: AddAttributeCommand = {
+        type: "addAttribute",
+        payload: { parentId: "schema", ref: "lang" },
+      };
+      const result = validateAddAttribute(command, refSchema);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe("Top-level attributes cannot be references");
+    });
+
+    test("should reject addAttribute with ref and attributeName together", () => {
+      const command: AddAttributeCommand = {
+        type: "addAttribute",
+        payload: {
+          parentId: "/complexType:PersonType",
+          ref: "lang",
+          attributeName: "lang",
+        },
+      };
+      const result = validateAddAttribute(command, refSchema);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe("A reference attribute cannot have a name or type");
+    });
+
+    test("should reject addAttribute with ref and defaultValue together", () => {
+      const command: AddAttributeCommand = {
+        type: "addAttribute",
+        payload: {
+          parentId: "/complexType:PersonType",
+          ref: "lang",
+          defaultValue: "en",
+        },
+      };
+      const result = validateAddAttribute(command, refSchema);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe(
+        "A reference attribute cannot have a default or fixed value"
+      );
+    });
+
+    test("should reject addAttribute with invalid ref name", () => {
+      const command: AddAttributeCommand = {
+        type: "addAttribute",
+        payload: { parentId: "/complexType:PersonType", ref: "123invalid" },
+      };
+      const result = validateAddAttribute(command, refSchema);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe("Attribute ref must be a valid XML name");
+    });
+
+    test("should reject modifyAttribute with ref and attributeName together", () => {
+      const command: ModifyAttributeCommand = {
+        type: "modifyAttribute",
+        payload: {
+          attributeId: "/complexType:PersonType/attribute:lang",
+          ref: "lang",
+          attributeName: "other",
+        },
+      };
+      const result = validateModifyAttribute(command, refSchema);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe("Cannot set both ref and name/type on an attribute");
+    });
+
+    test("should reject modifyAttribute with ref and fixedValue together", () => {
+      const command: ModifyAttributeCommand = {
+        type: "modifyAttribute",
+        payload: {
+          attributeId: "/complexType:PersonType/attribute:lang",
+          ref: "lang",
+          fixedValue: "en",
+        },
+      };
+      const result = validateModifyAttribute(command, refSchema);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe(
+        "A reference attribute cannot have a default or fixed value"
+      );
     });
   });
 });

@@ -31,8 +31,9 @@ export function executeAddAttribute(
   command: AddAttributeCommand,
   schemaObj: schema
 ): void {
-  const { parentId, attributeName, attributeType, required, defaultValue, fixedValue, documentation } =
-    command.payload;
+  const {
+    parentId, attributeName, attributeType, ref, required, defaultValue, fixedValue, documentation,
+  } = command.payload;
 
   const location = locateNodeById(schemaObj, parentId);
   if (!location.found || !location.parent || !location.parentType) {
@@ -44,6 +45,7 @@ export function executeAddAttribute(
     location.parentType,
     attributeName,
     attributeType,
+    ref,
     required,
     defaultValue,
     fixedValue,
@@ -88,8 +90,9 @@ export function executeModifyAttribute(
   command: ModifyAttributeCommand,
   schemaObj: schema
 ): void {
-  const { attributeId, attributeName, attributeType, required, defaultValue, fixedValue, documentation } =
-    command.payload;
+  const {
+    attributeId, attributeName, attributeType, ref, required, defaultValue, fixedValue, documentation,
+  } = command.payload;
 
   const parsed = parseSchemaId(attributeId);
   const parentId = parsed.parentId ?? "schema";
@@ -106,6 +109,7 @@ export function executeModifyAttribute(
     parsed.position,
     attributeName,
     attributeType,
+    ref,
     required,
     defaultValue,
     fixedValue,
@@ -117,22 +121,25 @@ export function executeModifyAttribute(
 
 /**
  * Adds an attribute to a parent container.
+ * Supply either `name`+`type` (named attribute) or `ref` (reference attribute).
  *
  * @param parent - Parent container object
  * @param parentType - Type of the parent container
- * @param name - Attribute name
- * @param type - Attribute type
+ * @param name - Attribute name (undefined when using ref)
+ * @param type - Attribute type (undefined when using ref)
+ * @param ref - Reference to a top-level attribute (mutually exclusive with name/type)
  * @param required - Whether the attribute is required (optional, only for complex types)
- * @param defaultValue - Default value (optional)
- * @param fixedValue - Fixed value (optional)
+ * @param defaultValue - Default value (optional, not valid with ref)
+ * @param fixedValue - Fixed value (optional, not valid with ref)
  * @param documentation - Documentation text (optional)
- * @throws Error if parent type is unsupported or duplicate attribute name exists
+ * @throws Error if parent type is unsupported or duplicate attribute name/ref exists
  */
 function addAttributeToParent(
   parent: unknown,
   parentType: string,
-  name: string,
-  type: string,
+  name: string | undefined,
+  type: string | undefined,
+  ref: string | undefined,
   required?: boolean,
   defaultValue?: string,
   fixedValue?: string,
@@ -143,6 +150,9 @@ function addAttributeToParent(
     const attributes = toArray(schemaObj.attribute);
     if (attributes.some((a) => a.name === name)) {
       throw new Error(`Cannot add attribute: duplicate attribute name '${name}' in schema`);
+    }
+    if (!name) {
+      throw new Error("Attribute name is required for schema-level attributes");
     }
     const newAttr = new topLevelAttribute();
     newAttr.name = name;
@@ -161,25 +171,44 @@ function addAttributeToParent(
   } else if (parentType === "topLevelComplexType" || parentType === "localComplexType") {
     const complexType = parent as topLevelComplexType | localComplexType;
     const attributes = toArray(complexType.attribute);
-    if (attributes.some((a) => a.name === name)) {
-      throw new Error(
-        `Cannot add attribute: duplicate attribute name '${name}' in ${parentType}`
-      );
+
+    if (ref !== undefined) {
+      // Reference attribute
+      if (attributes.some((a) => a.ref === ref)) {
+        throw new Error(`Cannot add attribute: duplicate attribute reference '${ref}' in ${parentType}`);
+      }
+      const newAttr = new attribute();
+      newAttr.ref = ref;
+      if (required !== undefined) {
+        newAttr.use = required ? "required" : "optional";
+      }
+      if (documentation) {
+        newAttr.annotation = createAnnotation(documentation);
+      }
+      attributes.push(newAttr);
+    } else {
+      // Named attribute
+      if (attributes.some((a) => a.name === name)) {
+        throw new Error(
+          `Cannot add attribute: duplicate attribute name '${name}' in ${parentType}`
+        );
+      }
+      const newAttr = new attribute();
+      newAttr.name = name;
+      newAttr.type_ = type;
+      newAttr.use = required ? "required" : "optional";
+      if (defaultValue !== undefined) {
+        newAttr.default_ = defaultValue;
+      }
+      if (fixedValue !== undefined) {
+        newAttr.fixed = fixedValue;
+      }
+      if (documentation) {
+        newAttr.annotation = createAnnotation(documentation);
+      }
+      attributes.push(newAttr);
     }
-    const newAttr = new attribute();
-    newAttr.name = name;
-    newAttr.type_ = type;
-    newAttr.use = required ? "required" : "optional";
-    if (defaultValue !== undefined) {
-      newAttr.default_ = defaultValue;
-    }
-    if (fixedValue !== undefined) {
-      newAttr.fixed = fixedValue;
-    }
-    if (documentation) {
-      newAttr.annotation = createAnnotation(documentation);
-    }
-    attributes.push(newAttr);
+
     complexType.attribute = attributes;
   } else {
     throw new Error(`Cannot add attribute to parent of type: ${parentType}`);
@@ -221,10 +250,11 @@ function removeAttributeFromParent(
  *
  * @param parent - Parent container object
  * @param parentType - Type of the parent container
- * @param targetName - Name of the attribute to modify (optional)
+ * @param targetName - Name or ref value of the attribute to modify (optional)
  * @param targetPosition - Position of the attribute to modify (optional)
- * @param newName - New name (optional)
+ * @param newName - New name (optional). When set, clears ref.
  * @param newType - New type (optional)
+ * @param newRef - New ref (optional). When set, clears name and type.
  * @param newRequired - New required status (optional)
  * @param newDefaultValue - New default value (optional)
  * @param newFixedValue - New fixed value (optional)
@@ -238,6 +268,7 @@ function modifyAttributeInParent(
   targetPosition?: number,
   newName?: string,
   newType?: string,
+  newRef?: string,
   newRequired?: boolean,
   newDefaultValue?: string,
   newFixedValue?: string,
@@ -250,7 +281,7 @@ function modifyAttributeInParent(
       `Attribute not found: ${targetName ?? `at position ${targetPosition}`}`
     );
   }
-  updateAttributeProperties(attr, newName, newType, newRequired, newDefaultValue, newFixedValue, newDocumentation);
+  updateAttributeProperties(attr, newName, newType, newRef, newRequired, newDefaultValue, newFixedValue, newDocumentation);
 }
 
 /**
@@ -274,15 +305,16 @@ function getAttributesFromParent(
 }
 
 /**
- * Filters an attribute array, removing the element matching by name or position.
+ * Filters an attribute array, removing the element matching by name/ref or position.
+ * Matches attributes whose `name` OR `ref` equals the given attributeName.
  *
  * @param attributes - Array of attributes
- * @param attributeName - Name to filter (optional)
+ * @param attributeName - Name or ref value to filter (optional)
  * @param position - Position to filter (optional)
  * @returns Filtered array
  * @throws Error if attribute not found
  */
-function filterAttributes<T extends { name?: string }>(
+function filterAttributes<T extends { name?: string; ref?: string }>(
   attributes: T[],
   attributeName?: string,
   position?: number
@@ -293,7 +325,9 @@ function filterAttributes<T extends { name?: string }>(
     }
     return attributes.filter((_, idx) => idx !== position);
   } else if (attributeName !== undefined) {
-    const filtered = attributes.filter((a) => a.name !== attributeName);
+    const filtered = attributes.filter(
+      (a) => a.name !== attributeName && a.ref !== attributeName
+    );
     if (filtered.length === attributes.length) {
       throw new Error(`Attribute not found with name: ${attributeName}`);
     }
@@ -303,14 +337,15 @@ function filterAttributes<T extends { name?: string }>(
 }
 
 /**
- * Finds an attribute in an array by name or position.
+ * Finds an attribute in an array by name/ref or position.
+ * Matches attributes whose `name` OR `ref` equals the given attributeName.
  *
  * @param attributes - Array of attributes
- * @param attributeName - Name to find (optional)
+ * @param attributeName - Name or ref value to find (optional)
  * @param position - Position to find (optional)
  * @returns Found attribute or undefined
  */
-function findAttribute<T extends { name?: string }>(
+function findAttribute<T extends { name?: string; ref?: string }>(
   attributes: T[],
   attributeName?: string,
   position?: number
@@ -318,18 +353,20 @@ function findAttribute<T extends { name?: string }>(
   if (position !== undefined) {
     return attributes[position];
   } else if (attributeName !== undefined) {
-    return attributes.find((a) => a.name === attributeName);
+    return attributes.find((a) => a.name === attributeName || a.ref === attributeName);
   }
   return undefined;
 }
 
 /**
  * Updates properties on an attribute (works for both top-level and local attributes).
+ * When `newRef` is set, clears `name` and `type_`. When `newName` is set, clears `ref`.
  * The `use` property (required/optional) is only applied when the attribute supports it.
  *
  * @param attr - The attribute to update
- * @param newName - New name (optional)
+ * @param newName - New name (optional). When set, clears ref.
  * @param newType - New type (optional)
+ * @param newRef - New ref (optional). When set, clears name and type.
  * @param newRequired - New required status (optional, only for local attributes)
  * @param newDefaultValue - New default value (optional)
  * @param newFixedValue - New fixed value (optional)
@@ -339,16 +376,26 @@ function updateAttributeProperties(
   attr: topLevelAttribute | attribute,
   newName?: string,
   newType?: string,
+  newRef?: string,
   newRequired?: boolean,
   newDefaultValue?: string,
   newFixedValue?: string,
   newDocumentation?: string
 ): void {
-  if (newName !== undefined) {
-    attr.name = newName;
-  }
-  if (newType !== undefined) {
-    attr.type_ = newType;
+  if (newRef !== undefined) {
+    // Switching to a reference: clear name and type
+    (attr as attribute).ref = newRef;
+    attr.name = undefined;
+    attr.type_ = undefined;
+  } else {
+    // Update name (clearing ref when switching to named)
+    if (newName !== undefined) {
+      attr.name = newName;
+      (attr as attribute).ref = undefined;
+    }
+    if (newType !== undefined) {
+      attr.type_ = newType;
+    }
   }
   // 'use' only exists on local attributes (attribute class), not on topLevelAttribute
   if (newRequired !== undefined && "use" in attr) {

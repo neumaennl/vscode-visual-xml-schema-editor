@@ -16,8 +16,8 @@ The Visual XML Schema Editor currently operates as a **viewer** with limited edi
 - Document changes trigger re-parsing and full diagram updates
 - The `applySchemaChanges` method is stubbed but not implemented
 
-> **Implementation Progress (as of 2026-02-20):**
-> Phase 1 (Foundation) is complete — all command types, the CommandProcessor, CommandValidator, CommandExecutor, SchemaModelManager, and message protocol have been implemented with unit tests. Phase 2 (Basic Editing) is in progress — element add/remove handlers are implemented, modifyElement is in draft PR.
+> **Implementation Progress (as of 2026-02-23):**
+> Phase 1 (Foundation) is complete — all command types, the CommandProcessor, CommandValidator, CommandExecutor, SchemaModelManager, and message protocol have been implemented with unit tests. Phase 2 (Basic Editing) is in progress — element add/remove/modify handlers are implemented, and attribute add/remove/modify handlers are now implemented with full unit tests and updated validators.
 
 ### Goal
 
@@ -557,7 +557,7 @@ class DiagramRenderer {
 #### Milestones:
 
 - [x] Implement element commands (add, remove, modify)
-- [ ] Implement attribute commands (add, remove, modify)
+- [x] Implement attribute commands (add, remove, modify)
 - [ ] Implement simpleType and complexType commands (add, remove, modify)
 - [ ] Implement group and attributeGroup commands (add, remove, modify)
 - [ ] Implement annotation and documentation commands (add, remove, modify)

@@ -41,8 +41,9 @@ Commands for managing XML schema elements:
 
 - **AddElementCommand**: Create a new element
 
-  - Requires: `parentId`, `elementName`, `elementType`
+  - Requires: `parentId`, and either `elementName`+`elementType` **or** `ref`
   - Optional: `minOccurs`, `maxOccurs`, `documentation`
+  - Note: `ref` is mutually exclusive with `elementName`/`elementType`. Top-level elements (parentId="schema") cannot use `ref`.
 
 - **RemoveElementCommand**: Delete an existing element
 
@@ -51,6 +52,7 @@ Commands for managing XML schema elements:
 - **ModifyElementCommand**: Update element properties
   - Requires: `elementId`
   - Optional: Any element property to modify
+  - Note: `ref` is mutually exclusive with `elementName`/`elementType`
 
 ### 2. Attribute Commands
 
@@ -58,8 +60,9 @@ Commands for managing element attributes:
 
 - **AddAttributeCommand**: Add an attribute to an element
 
-  - Requires: `parentId`, `attributeName`, `attributeType`
+  - Requires: `parentId`, and either `attributeName`+`attributeType` **or** `ref`
   - Optional: `required`, `defaultValue`, `fixedValue`, `documentation`
+  - Note: `ref` is mutually exclusive with `attributeName`/`attributeType`/`defaultValue`/`fixedValue`. Top-level attributes (parentId="schema") cannot use `ref`. `required` (`use`) is valid with both forms.
 
 - **RemoveAttributeCommand**: Delete an attribute
 
@@ -68,6 +71,7 @@ Commands for managing element attributes:
 - **ModifyAttributeCommand**: Update attribute properties
   - Requires: `attributeId`
   - Optional: Any attribute property to modify
+  - Note: `ref` is mutually exclusive with `attributeName`/`attributeType`/`defaultValue`/`fixedValue`
 
 ### 3. Simple Type Commands
 

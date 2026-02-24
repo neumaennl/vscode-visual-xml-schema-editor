@@ -243,29 +243,34 @@ function modifyAttributeInParent(
   newFixedValue?: string,
   newDocumentation?: string
 ): void {
-  if (parentType === "schema") {
-    const schemaObj = parent as schema;
-    const attributes = toArray(schemaObj.attribute);
-    const attr = findAttribute(attributes, targetName, targetPosition);
-    if (!attr) {
-      throw new Error(
-        `Attribute not found: ${targetName ?? `at position ${targetPosition}`}`
-      );
-    }
-    updateTopLevelAttributeProperties(attr, newName, newType, newDefaultValue, newFixedValue, newDocumentation);
-  } else if (parentType === "topLevelComplexType" || parentType === "localComplexType") {
-    const complexType = parent as topLevelComplexType | localComplexType;
-    const attributes = toArray(complexType.attribute);
-    const attr = findAttribute(attributes, targetName, targetPosition);
-    if (!attr) {
-      throw new Error(
-        `Attribute not found: ${targetName ?? `at position ${targetPosition}`}`
-      );
-    }
-    updateLocalAttributeProperties(attr, newName, newType, newRequired, newDefaultValue, newFixedValue, newDocumentation);
-  } else {
-    throw new Error(`Cannot modify attribute in parent of type: ${parentType}`);
+  const attributes = getAttributesFromParent(parent, parentType);
+  const attr = findAttribute(attributes, targetName, targetPosition);
+  if (!attr) {
+    throw new Error(
+      `Attribute not found: ${targetName ?? `at position ${targetPosition}`}`
+    );
   }
+  updateAttributeProperties(attr, newName, newType, newRequired, newDefaultValue, newFixedValue, newDocumentation);
+}
+
+/**
+ * Returns the attribute array from a parent container.
+ *
+ * @param parent - Parent container object
+ * @param parentType - Type of the parent container
+ * @returns Array of attributes from the parent
+ * @throws Error if parent type is unsupported
+ */
+function getAttributesFromParent(
+  parent: unknown,
+  parentType: string
+): Array<topLevelAttribute | attribute> {
+  if (parentType === "schema") {
+    return toArray((parent as schema).attribute);
+  } else if (parentType === "topLevelComplexType" || parentType === "localComplexType") {
+    return toArray((parent as topLevelComplexType | localComplexType).attribute);
+  }
+  throw new Error(`Cannot modify attribute in parent of type: ${parentType}`);
 }
 
 /**
@@ -319,60 +324,19 @@ function findAttribute<T extends { name?: string }>(
 }
 
 /**
- * Updates properties on a top-level attribute (schema-level, no `use`).
+ * Updates properties on an attribute (works for both top-level and local attributes).
+ * The `use` property (required/optional) is only applied when the attribute supports it.
  *
  * @param attr - The attribute to update
  * @param newName - New name (optional)
  * @param newType - New type (optional)
+ * @param newRequired - New required status (optional, only for local attributes)
  * @param newDefaultValue - New default value (optional)
  * @param newFixedValue - New fixed value (optional)
  * @param newDocumentation - New documentation (optional)
  */
-function updateTopLevelAttributeProperties(
-  attr: topLevelAttribute,
-  newName?: string,
-  newType?: string,
-  newDefaultValue?: string,
-  newFixedValue?: string,
-  newDocumentation?: string
-): void {
-  if (newName !== undefined) {
-    attr.name = newName;
-  }
-  if (newType !== undefined) {
-    attr.type_ = newType;
-  }
-  if (newDefaultValue !== undefined) {
-    attr.default_ = newDefaultValue;
-    attr.fixed = undefined;
-  }
-  if (newFixedValue !== undefined) {
-    attr.fixed = newFixedValue;
-    attr.default_ = undefined;
-  }
-  if (newDocumentation !== undefined) {
-    if (!attr.annotation) {
-      attr.annotation = new annotationType();
-    }
-    const doc = new documentationType();
-    doc.value = newDocumentation;
-    attr.annotation.documentation = [doc];
-  }
-}
-
-/**
- * Updates properties on a local attribute (within a complex type, has `use`).
- *
- * @param attr - The attribute to update
- * @param newName - New name (optional)
- * @param newType - New type (optional)
- * @param newRequired - New required status (optional)
- * @param newDefaultValue - New default value (optional)
- * @param newFixedValue - New fixed value (optional)
- * @param newDocumentation - New documentation (optional)
- */
-function updateLocalAttributeProperties(
-  attr: attribute,
+function updateAttributeProperties(
+  attr: topLevelAttribute | attribute,
   newName?: string,
   newType?: string,
   newRequired?: boolean,
@@ -386,16 +350,15 @@ function updateLocalAttributeProperties(
   if (newType !== undefined) {
     attr.type_ = newType;
   }
-  if (newRequired !== undefined) {
-    attr.use = newRequired ? "required" : "optional";
+  // 'use' only exists on local attributes (attribute class), not on topLevelAttribute
+  if (newRequired !== undefined && "use" in attr) {
+    (attr as attribute).use = newRequired ? "required" : "optional";
   }
   if (newDefaultValue !== undefined) {
     attr.default_ = newDefaultValue;
-    attr.fixed = undefined;
   }
   if (newFixedValue !== undefined) {
     attr.fixed = newFixedValue;
-    attr.default_ = undefined;
   }
   if (newDocumentation !== undefined) {
     if (!attr.annotation) {

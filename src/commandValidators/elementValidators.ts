@@ -128,6 +128,16 @@ export function validateAddAttribute(
     return { valid: false, error: "Parent ID cannot be empty" };
   }
 
+  if (
+    command.payload.defaultValue !== undefined &&
+    command.payload.fixedValue !== undefined
+  ) {
+    return {
+      valid: false,
+      error: "An attribute cannot have both a default value and a fixed value",
+    };
+  }
+
   const location = locateNodeById(schemaObj, command.payload.parentId);
   if (!location.found) {
     return { valid: false, error: `Parent node not found: ${command.payload.parentId}` };
@@ -180,6 +190,16 @@ export function validateModifyAttribute(
     !isValidXmlName(command.payload.attributeName)
   ) {
     return { valid: false, error: "Attribute name must be a valid XML name" };
+  }
+
+  if (
+    command.payload.defaultValue !== undefined &&
+    command.payload.fixedValue !== undefined
+  ) {
+    return {
+      valid: false,
+      error: "An attribute cannot have both a default value and a fixed value",
+    };
   }
 
   return { valid: true };

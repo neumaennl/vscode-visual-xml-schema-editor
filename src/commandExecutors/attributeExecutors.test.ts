@@ -621,6 +621,60 @@ describe("Attribute Executors", () => {
         "Attribute not found: nonexistent"
       );
     });
+
+    it("should clear fixed value when setting default value on an attribute that already has fixed", () => {
+      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:complexType name="PersonType">
+    <xs:attribute name="status" type="xs:string" fixed="active"/>
+  </xs:complexType>
+</xs:schema>`;
+      const schemaObj = unmarshal(schema, schemaXml);
+
+      const command: ModifyAttributeCommand = {
+        type: "modifyAttribute",
+        payload: {
+          attributeId: "/complexType:PersonType/attribute:status",
+          defaultValue: "pending",
+        },
+      };
+
+      executeModifyAttribute(command, schemaObj);
+
+      const complexTypes = Array.isArray(schemaObj.complexType)
+        ? schemaObj.complexType
+        : [schemaObj.complexType];
+      const attrs = toArray(complexTypes[0]!.attribute);
+      expect(attrs[0]!.default_).toBe("pending");
+      expect(attrs[0]!.fixed).toBeUndefined();
+    });
+
+    it("should clear default value when setting fixed value on an attribute that already has default", () => {
+      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:complexType name="PersonType">
+    <xs:attribute name="status" type="xs:string" default="pending"/>
+  </xs:complexType>
+</xs:schema>`;
+      const schemaObj = unmarshal(schema, schemaXml);
+
+      const command: ModifyAttributeCommand = {
+        type: "modifyAttribute",
+        payload: {
+          attributeId: "/complexType:PersonType/attribute:status",
+          fixedValue: "active",
+        },
+      };
+
+      executeModifyAttribute(command, schemaObj);
+
+      const complexTypes = Array.isArray(schemaObj.complexType)
+        ? schemaObj.complexType
+        : [schemaObj.complexType];
+      const attrs = toArray(complexTypes[0]!.attribute);
+      expect(attrs[0]!.fixed).toBe("active");
+      expect(attrs[0]!.default_).toBeUndefined();
+    });
   });
 
   describe("Round-trip XML serialization", () => {

@@ -405,9 +405,11 @@ function updateAttributeProperties(
   }
   if (newDefaultValue !== undefined) {
     attr.default_ = newDefaultValue;
+    attr.fixed = undefined;
   }
   if (newFixedValue !== undefined) {
     attr.fixed = newFixedValue;
+    attr.default_ = undefined;
   }
   if (newDocumentation !== undefined) {
     if (!attr.annotation) {

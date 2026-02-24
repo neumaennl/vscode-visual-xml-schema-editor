@@ -19,6 +19,7 @@ import {
 } from "./validationUtils";
 import { locateNodeById } from "../schemaNavigator";
 import { parseSchemaId } from "../../shared/idStrategy";
+import { toArray } from "../../shared/schemaUtils";
 
 export function validateAddElement(
   command: AddElementCommand,
@@ -38,6 +39,11 @@ export function validateAddElement(
     }
     if (!isValidXmlName(ref)) {
       return { valid: false, error: "Element ref must be a valid XML name" };
+    }
+    // Validate that the referenced element exists as a top-level element
+    const topLevelElements = toArray(schemaObj.element);
+    if (!topLevelElements.some(el => el.name === ref)) {
+      return { valid: false, error: `Referenced element '${ref}' does not exist in schema` };
     }
   } else {
     // Named element: name and type are required
@@ -114,6 +120,11 @@ export function validateModifyElement(
     if (!isValidXmlName(ref)) {
       return { valid: false, error: "Element ref must be a valid XML name" };
     }
+    // Validate that the referenced element exists as a top-level element
+    const topLevelElements = toArray(schemaObj.element);
+    if (!topLevelElements.some(el => el.name === ref)) {
+      return { valid: false, error: `Referenced element '${ref}' does not exist in schema` };
+    }
   } else {
     // Validate element name if provided
     if (elementName !== undefined && !isValidXmlName(elementName)) {
@@ -159,6 +170,11 @@ export function validateAddAttribute(
     }
     if (!isValidXmlName(ref)) {
       return { valid: false, error: "Attribute ref must be a valid XML name" };
+    }
+    // Validate that the referenced attribute exists as a top-level attribute
+    const topLevelAttributes = toArray(schemaObj.attribute);
+    if (!topLevelAttributes.some(a => a.name === ref)) {
+      return { valid: false, error: `Referenced attribute '${ref}' does not exist in schema` };
     }
   } else {
     // Named attribute: name is required
@@ -241,6 +257,11 @@ export function validateModifyAttribute(
     }
     if (!isValidXmlName(ref)) {
       return { valid: false, error: "Attribute ref must be a valid XML name" };
+    }
+    // Validate that the referenced attribute exists as a top-level attribute
+    const topLevelAttributes = toArray(schemaObj.attribute);
+    if (!topLevelAttributes.some(a => a.name === ref)) {
+      return { valid: false, error: `Referenced attribute '${ref}' does not exist in schema` };
     }
   } else {
     if (attributeName !== undefined && !isValidXmlName(attributeName)) {

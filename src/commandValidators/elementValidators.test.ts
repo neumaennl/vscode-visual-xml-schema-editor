@@ -546,6 +546,26 @@ describe("Element Validators", () => {
       expect(result.valid).toBe(false);
       expect(result.error).toBe("Cannot set both ref and name/type on an element");
     });
+
+    test("should reject addElement with ref that does not exist in schema", () => {
+      const command: AddElementCommand = {
+        type: "addElement",
+        payload: { parentId: "/complexType:OrderType/sequence", ref: "nonexistent" },
+      };
+      const result = validateAddElement(command, seqSchema);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe("Referenced element 'nonexistent' does not exist in schema");
+    });
+
+    test("should reject modifyElement with ref that does not exist in schema", () => {
+      const command: ModifyElementCommand = {
+        type: "modifyElement",
+        payload: { elementId: "/element:person", ref: "nonexistent" },
+      };
+      const result = validateModifyElement(command, seqSchema);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe("Referenced element 'nonexistent' does not exist in schema");
+    });
   });
 });
 
@@ -769,6 +789,29 @@ describe("Attribute Validators", () => {
       expect(result.error).toBe(
         "A reference attribute cannot have a default or fixed value"
       );
+    });
+
+    test("should reject addAttribute with ref that does not exist in schema", () => {
+      const command: AddAttributeCommand = {
+        type: "addAttribute",
+        payload: { parentId: "/complexType:PersonType", ref: "nonexistent" },
+      };
+      const result = validateAddAttribute(command, refSchema);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe("Referenced attribute 'nonexistent' does not exist in schema");
+    });
+
+    test("should reject modifyAttribute with ref that does not exist in schema", () => {
+      const command: ModifyAttributeCommand = {
+        type: "modifyAttribute",
+        payload: {
+          attributeId: "/complexType:PersonType/attribute:lang",
+          ref: "nonexistent",
+        },
+      };
+      const result = validateModifyAttribute(command, refSchema);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe("Referenced attribute 'nonexistent' does not exist in schema");
     });
   });
 });

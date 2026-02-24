@@ -174,7 +174,8 @@ function addAttributeToParent(
 
     if (ref !== undefined) {
       // Reference attribute
-      if (attributes.some((a) => a.ref === ref)) {
+      // Cross-form check: also reject if a named attribute already uses the same identifier
+      if (attributes.some((a) => a.ref === ref || a.name === ref)) {
         throw new Error(`Cannot add attribute: duplicate attribute reference '${ref}' in ${parentType}`);
       }
       const newAttr = new attribute();
@@ -188,7 +189,8 @@ function addAttributeToParent(
       attributes.push(newAttr);
     } else {
       // Named attribute
-      if (attributes.some((a) => a.name === name)) {
+      // Cross-form check: also reject if a ref attribute already uses the same identifier
+      if (attributes.some((a) => a.name === name || a.ref === name)) {
         throw new Error(
           `Cannot add attribute: duplicate attribute name '${name}' in ${parentType}`
         );

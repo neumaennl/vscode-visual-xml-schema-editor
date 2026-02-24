@@ -767,6 +767,50 @@ describe("Attribute Executors", () => {
       );
     });
 
+    it("should reject adding a ref attribute when a named attribute with the same identifier exists", () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:attribute name="lang" type="xs:string"/>
+  <xs:complexType name="PersonType">
+    <xs:attribute name="lang" type="xs:string"/>
+  </xs:complexType>
+</xs:schema>`;
+      const schemaObj = unmarshal(schema, xml);
+
+      const command: AddAttributeCommand = {
+        type: "addAttribute",
+        payload: { parentId: "/complexType:PersonType", ref: "lang" },
+      };
+
+      expect(() => executeAddAttribute(command, schemaObj)).toThrow(
+        "duplicate attribute reference 'lang'"
+      );
+    });
+
+    it("should reject adding a named attribute when a ref attribute with the same identifier exists", () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:attribute name="lang" type="xs:string"/>
+  <xs:complexType name="PersonType">
+    <xs:attribute ref="lang"/>
+  </xs:complexType>
+</xs:schema>`;
+      const schemaObj = unmarshal(schema, xml);
+
+      const command: AddAttributeCommand = {
+        type: "addAttribute",
+        payload: {
+          parentId: "/complexType:PersonType",
+          attributeName: "lang",
+          attributeType: "xs:string",
+        },
+      };
+
+      expect(() => executeAddAttribute(command, schemaObj)).toThrow(
+        "duplicate attribute name 'lang'"
+      );
+    });
+
     it("should remove a reference attribute by ref name", () => {
       const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">

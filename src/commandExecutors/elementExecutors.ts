@@ -233,11 +233,11 @@ function addElementToParent(
     const elements = toArray(group.element);
     const localElem = element as localElement;
     
-    // Check for duplicate names and refs
-    if (localElem.name && elements.some(el => (el as localElement).name === localElem.name)) {
+    // Check for duplicate names and refs (cross-form: name vs ref sharing same identifier)
+    if (localElem.name && elements.some(el => (el as localElement).name === localElem.name || (el as localElement).ref === localElem.name)) {
       throw new Error(`Cannot add element: duplicate element name '${localElem.name}' in ${parentType}`);
     }
-    if (localElem.ref && elements.some(el => (el as localElement).ref === localElem.ref)) {
+    if (localElem.ref && elements.some(el => (el as localElement).ref === localElem.ref || (el as localElement).name === localElem.ref)) {
       throw new Error(`Cannot add element: duplicate element reference '${localElem.ref}' in ${parentType}`);
     }
     
@@ -248,11 +248,11 @@ function addElementToParent(
     const elements = toArray(allGroup.element);
     const allElem = element as narrowMaxMin;
     
-    // Check for duplicate names and refs
-    if (allElem.name && elements.some(el => el.name === allElem.name)) {
+    // Check for duplicate names and refs (cross-form: name vs ref sharing same identifier)
+    if (allElem.name && elements.some(el => el.name === allElem.name || (el as localElement).ref === allElem.name)) {
       throw new Error(`Cannot add element: duplicate element name '${allElem.name}' in all group`);
     }
-    if ((allElem as localElement).ref && elements.some(el => (el as localElement).ref === (allElem as localElement).ref)) {
+    if ((allElem as localElement).ref && elements.some(el => (el as localElement).ref === (allElem as localElement).ref || el.name === (allElem as localElement).ref)) {
       throw new Error(`Cannot add element: duplicate element reference '${(allElem as localElement).ref}' in all group`);
     }
     

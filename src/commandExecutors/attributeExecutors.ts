@@ -198,7 +198,9 @@ function addAttributeToParent(
       const newAttr = new attribute();
       newAttr.name = name;
       newAttr.type_ = type;
-      newAttr.use = required ? "required" : "optional";
+      if (required !== undefined) {
+        newAttr.use = required ? "required" : "optional";
+      }
       if (defaultValue !== undefined) {
         newAttr.default_ = defaultValue;
       }

@@ -45,6 +45,33 @@ describe("SimpleType Validators", () => {
       expect(result.valid).toBe(false);
       expect(result.error).toBe("Type name must be a valid XML name");
     });
+
+    test("should reject addSimpleType with missing baseType", () => {
+      const command: AddSimpleTypeCommand = {
+        type: "addSimpleType",
+        payload: {
+          typeName: "AgeType",
+          baseType: "",
+        },
+      };
+
+      const result = validateAddSimpleType(command, schemaObj);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe("Base type cannot be empty");
+    });
+
+    test("should accept addSimpleType with valid typeName and baseType", () => {
+      const command: AddSimpleTypeCommand = {
+        type: "addSimpleType",
+        payload: {
+          typeName: "AgeType",
+          baseType: "xs:integer",
+        },
+      };
+
+      const result = validateAddSimpleType(command, schemaObj);
+      expect(result.valid).toBe(true);
+    });
   });
 
   describe("validateRemoveSimpleType", () => {
@@ -60,6 +87,18 @@ describe("SimpleType Validators", () => {
       expect(result.valid).toBe(false);
       expect(result.error).toBe("Type ID cannot be empty");
     });
+
+    test("should accept removeSimpleType with valid typeId", () => {
+      const command: RemoveSimpleTypeCommand = {
+        type: "removeSimpleType",
+        payload: {
+          typeId: "/simpleType:AgeType",
+        },
+      };
+
+      const result = validateRemoveSimpleType(command, schemaObj);
+      expect(result.valid).toBe(true);
+    });
   });
 
   describe("validateModifySimpleType", () => {
@@ -74,6 +113,33 @@ describe("SimpleType Validators", () => {
       const result = validateModifySimpleType(command, schemaObj);
       expect(result.valid).toBe(false);
       expect(result.error).toBe("Type ID cannot be empty");
+    });
+
+    test("should reject modifySimpleType with invalid typeName", () => {
+      const command: ModifySimpleTypeCommand = {
+        type: "modifySimpleType",
+        payload: {
+          typeId: "/simpleType:AgeType",
+          typeName: "123-invalid",
+        },
+      };
+
+      const result = validateModifySimpleType(command, schemaObj);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe("Type name must be a valid XML name");
+    });
+
+    test("should accept modifySimpleType without typeName (name unchanged)", () => {
+      const command: ModifySimpleTypeCommand = {
+        type: "modifySimpleType",
+        payload: {
+          typeId: "/simpleType:AgeType",
+          baseType: "xs:positiveInteger",
+        },
+      };
+
+      const result = validateModifySimpleType(command, schemaObj);
+      expect(result.valid).toBe(true);
     });
   });
 });

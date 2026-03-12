@@ -37,8 +37,12 @@ export function validateAddSimpleType(
   if (!isValidXmlName(command.payload.typeName)) {
     return { valid: false, error: "Type name must be a valid XML name" };
   }
+  // Validate baseType is provided and non-empty
+  if (!command.payload.baseType.trim()) {
+    return { valid: false, error: "Base type cannot be empty" };
+  }
   // TODO Phase 2: Check if type name already exists in schema
-  // TODO Phase 2: Validate baseType exists if specified
+  // TODO Phase 2: Validate baseType exists in schema
   return { valid: true };
 }
 
@@ -60,6 +64,10 @@ export function validateModifySimpleType(
 ): ValidationResult {
   if (!command.payload.typeId.trim()) {
     return { valid: false, error: "Type ID cannot be empty" };
+  }
+  // Validate new type name if provided
+  if (command.payload.typeName !== undefined && !isValidXmlName(command.payload.typeName)) {
+    return { valid: false, error: "Type name must be a valid XML name" };
   }
   // TODO Phase 2: Validate that typeId exists in schema
   return { valid: true };

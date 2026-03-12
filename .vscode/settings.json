@@ -10,5 +10,11 @@
     "node_modules": true
   },
   "typescript.tsdk": "node_modules/typescript/lib",
-  "typescript.enablePromptUseWorkspaceTsdk": true
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "terminal.integrated.automationProfile.linux": {
+    "path": "bash",
+    "args": [
+      "-i"
+    ]
+  }
 }

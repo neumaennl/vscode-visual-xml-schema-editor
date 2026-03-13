@@ -5,6 +5,7 @@
 
 import { CommandExecutor } from "./commandExecutor";
 import { schema, SchemaCommand, topLevelElement } from "../shared/types";
+import { toArray } from "../shared/schemaUtils";
 
 describe("CommandExecutor", () => {
   let executor: CommandExecutor;
@@ -170,7 +171,7 @@ describe("CommandExecutor", () => {
       expect(mockSchema.group![0].name).toBe("testGroup");
     });
 
-    it("should delegate addAttributeGroup execution and throw not implemented error", () => {
+    it("should delegate addAttributeGroup execution and add the group to the schema", () => {
       const command: SchemaCommand = {
         type: "addAttributeGroup",
         payload: {
@@ -178,9 +179,10 @@ describe("CommandExecutor", () => {
         },
       };
 
-      expect(() => {
-        executor.execute(command, mockSchema);
-      }).toThrow("addAttributeGroup execution not yet implemented");
+      executor.execute(command, mockSchema);
+
+      expect(mockSchema.attributeGroup).toBeDefined();
+      expect(toArray(mockSchema.attributeGroup)[0].name).toBe("testAttrGroup");
     });
 
     it("should delegate addAnnotation execution and throw not implemented error", () => {

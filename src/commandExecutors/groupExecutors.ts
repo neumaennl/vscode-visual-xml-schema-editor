@@ -14,6 +14,7 @@ import {
   ModifyAttributeGroupCommand,
   ContentModel,
   namedGroup,
+  namedAttributeGroup,
   allType,
   simpleExplicitGroup,
   annotationType,
@@ -407,42 +408,85 @@ function createAnnotation(text: string): annotationType {
 /**
  * Executes an addAttributeGroup command.
  *
- * @param _command - The addAttributeGroup command to execute
- * @param _schemaObj - The schema object to modify
- * @throws Error - Not yet implemented
+ * Creates a new top-level named attribute group definition in the schema.
+ *
+ * @param command - The addAttributeGroup command to execute
+ * @param schemaObj - The schema object to modify
  */
 export function executeAddAttributeGroup(
-  _command: AddAttributeGroupCommand,
-  _schemaObj: schema
+  command: AddAttributeGroupCommand,
+  schemaObj: schema
 ): void {
-  throw new Error("addAttributeGroup execution not yet implemented");
+  const { groupName, documentation } = command.payload;
+
+  const attrGroup = new namedAttributeGroup();
+  attrGroup.name = groupName;
+  if (documentation) {
+    attrGroup.annotation = createAnnotation(documentation);
+  }
+
+  const groups = toArray(schemaObj.attributeGroup);
+  groups.push(attrGroup);
+  schemaObj.attributeGroup = groups;
 }
 
 /**
  * Executes a removeAttributeGroup command.
  *
- * @param _command - The removeAttributeGroup command to execute
- * @param _schemaObj - The schema object to modify
- * @throws Error - Not yet implemented
+ * Removes a top-level named attribute group definition identified by `groupId`.
+ *
+ * @param command - The removeAttributeGroup command to execute
+ * @param schemaObj - The schema object to modify
+ * @throws Error if the attribute group is not found
  */
 export function executeRemoveAttributeGroup(
-  _command: RemoveAttributeGroupCommand,
-  _schemaObj: schema
+  command: RemoveAttributeGroupCommand,
+  schemaObj: schema
 ): void {
-  throw new Error("removeAttributeGroup execution not yet implemented");
+  const { groupId } = command.payload;
+  const parsed = parseSchemaId(groupId);
+
+  const groups = toArray(schemaObj.attributeGroup);
+  const filtered = groups.filter((g) => g.name !== parsed.name);
+  if (filtered.length === groups.length) {
+    throw new Error(`AttributeGroup not found: ${parsed.name}`);
+  }
+  schemaObj.attributeGroup = filtered.length > 0 ? filtered : undefined;
 }
 
 /**
  * Executes a modifyAttributeGroup command.
  *
- * @param _command - The modifyAttributeGroup command to execute
- * @param _schemaObj - The schema object to modify
- * @throws Error - Not yet implemented
+ * Updates the name and/or documentation of an existing top-level attribute group.
+ *
+ * @param command - The modifyAttributeGroup command to execute
+ * @param schemaObj - The schema object to modify
+ * @throws Error if the attribute group is not found
  */
 export function executeModifyAttributeGroup(
-  _command: ModifyAttributeGroupCommand,
-  _schemaObj: schema
+  command: ModifyAttributeGroupCommand,
+  schemaObj: schema
 ): void {
-  throw new Error("modifyAttributeGroup execution not yet implemented");
+  const { groupId, groupName, documentation } = command.payload;
+  const parsed = parseSchemaId(groupId);
+
+  const attrGroup = toArray(schemaObj.attributeGroup).find(
+    (g) => g.name === parsed.name
+  );
+  if (!attrGroup) {
+    throw new Error(`AttributeGroup not found: ${parsed.name}`);
+  }
+
+  if (groupName !== undefined) {
+    attrGroup.name = groupName;
+  }
+  if (documentation !== undefined) {
+    if (!attrGroup.annotation) {
+      attrGroup.annotation = new annotationType();
+    }
+    const doc = new documentationType();
+    doc.value = documentation;
+    attrGroup.annotation.documentation = [doc];
+  }
 }
 

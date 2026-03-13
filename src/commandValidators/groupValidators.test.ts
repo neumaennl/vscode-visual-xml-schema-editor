@@ -877,12 +877,19 @@ describe("Group Validators", () => {
 
 describe("AttributeGroup Validators", () => {
   let schemaObj: schema;
+  let schemaWithAttrGroup: schema;
 
   beforeEach(() => {
-    const simpleSchemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+    const emptySchemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
 </xs:schema>`;
-    schemaObj = unmarshal(schema, simpleSchemaXml);
+    schemaObj = unmarshal(schema, emptySchemaXml);
+
+    const schemaWithGroupXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:attributeGroup name="CommonAttrs"/>
+</xs:schema>`;
+    schemaWithAttrGroup = unmarshal(schema, schemaWithGroupXml);
   });
 
   describe("validateAddAttributeGroup", () => {
@@ -898,6 +905,38 @@ describe("AttributeGroup Validators", () => {
       expect(result.valid).toBe(false);
       expect(result.error).toBe("Attribute group name must be a valid XML name");
     });
+
+    test("should reject addAttributeGroup with an invalid XML name", () => {
+      const command: AddAttributeGroupCommand = {
+        type: "addAttributeGroup",
+        payload: { groupName: "123-invalid" },
+      };
+
+      const result = validateAddAttributeGroup(command, schemaObj);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe("Attribute group name must be a valid XML name");
+    });
+
+    test("should reject addAttributeGroup when name already exists", () => {
+      const command: AddAttributeGroupCommand = {
+        type: "addAttributeGroup",
+        payload: { groupName: "CommonAttrs" },
+      };
+
+      const result = validateAddAttributeGroup(command, schemaWithAttrGroup);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe("Attribute group name already exists: CommonAttrs");
+    });
+
+    test("should accept addAttributeGroup with a valid unique name", () => {
+      const command: AddAttributeGroupCommand = {
+        type: "addAttributeGroup",
+        payload: { groupName: "NewAttrs" },
+      };
+
+      const result = validateAddAttributeGroup(command, schemaObj);
+      expect(result.valid).toBe(true);
+    });
   });
 
   describe("validateRemoveAttributeGroup", () => {
@@ -912,6 +951,46 @@ describe("AttributeGroup Validators", () => {
       const result = validateRemoveAttributeGroup(command, schemaObj);
       expect(result.valid).toBe(false);
       expect(result.error).toBe("Attribute group ID cannot be empty");
+    });
+
+    test("should reject removeAttributeGroup when group does not exist", () => {
+      const command: RemoveAttributeGroupCommand = {
+        type: "removeAttributeGroup",
+        payload: { groupId: "/attributeGroup:NonExistent" },
+      };
+
+      const result = validateRemoveAttributeGroup(command, schemaObj);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("Attribute group not found");
+    });
+
+    test("should reject removeAttributeGroup when group is referenced in a complexType", () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:attributeGroup name="CommonAttrs"/>
+  <xs:complexType name="PersonType">
+    <xs:attributeGroup ref="CommonAttrs"/>
+  </xs:complexType>
+</xs:schema>`;
+      const referenced = unmarshal(schema, xml);
+      const command: RemoveAttributeGroupCommand = {
+        type: "removeAttributeGroup",
+        payload: { groupId: "/attributeGroup:CommonAttrs" },
+      };
+
+      const result = validateRemoveAttributeGroup(command, referenced);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("still referenced");
+    });
+
+    test("should accept removeAttributeGroup when group exists and is not referenced", () => {
+      const command: RemoveAttributeGroupCommand = {
+        type: "removeAttributeGroup",
+        payload: { groupId: "/attributeGroup:CommonAttrs" },
+      };
+
+      const result = validateRemoveAttributeGroup(command, schemaWithAttrGroup);
+      expect(result.valid).toBe(true);
     });
   });
 
@@ -929,16 +1008,77 @@ describe("AttributeGroup Validators", () => {
       expect(result.error).toBe("Attribute group ID cannot be empty");
     });
 
-    test("should accept modifyAttributeGroup with valid payload", () => {
+    test("should reject modifyAttributeGroup when group does not exist", () => {
       const command: ModifyAttributeGroupCommand = {
         type: "modifyAttributeGroup",
         payload: {
-          groupId: "group1",
-          groupName: "validGroupName",
+          groupId: "/attributeGroup:NonExistent",
+          groupName: "NewName",
         },
       };
 
       const result = validateModifyAttributeGroup(command, schemaObj);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("Attribute group not found");
+    });
+
+    test("should reject modifyAttributeGroup with invalid new name", () => {
+      const command: ModifyAttributeGroupCommand = {
+        type: "modifyAttributeGroup",
+        payload: {
+          groupId: "/attributeGroup:CommonAttrs",
+          groupName: "123-invalid",
+        },
+      };
+
+      const result = validateModifyAttributeGroup(command, schemaWithAttrGroup);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe("Attribute group name must be a valid XML name");
+    });
+
+    test("should reject modifyAttributeGroup when new name already exists", () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:attributeGroup name="GroupA"/>
+  <xs:attributeGroup name="GroupB"/>
+</xs:schema>`;
+      const twoGroups = unmarshal(schema, xml);
+      const command: ModifyAttributeGroupCommand = {
+        type: "modifyAttributeGroup",
+        payload: {
+          groupId: "/attributeGroup:GroupA",
+          groupName: "GroupB",
+        },
+      };
+
+      const result = validateModifyAttributeGroup(command, twoGroups);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("Attribute group name already exists");
+    });
+
+    test("should accept modifyAttributeGroup with valid payload", () => {
+      const command: ModifyAttributeGroupCommand = {
+        type: "modifyAttributeGroup",
+        payload: {
+          groupId: "/attributeGroup:CommonAttrs",
+          groupName: "ValidNewName",
+        },
+      };
+
+      const result = validateModifyAttributeGroup(command, schemaWithAttrGroup);
+      expect(result.valid).toBe(true);
+    });
+
+    test("should accept renaming to the same name (no-op)", () => {
+      const command: ModifyAttributeGroupCommand = {
+        type: "modifyAttributeGroup",
+        payload: {
+          groupId: "/attributeGroup:CommonAttrs",
+          groupName: "CommonAttrs",
+        },
+      };
+
+      const result = validateModifyAttributeGroup(command, schemaWithAttrGroup);
       expect(result.valid).toBe(true);
     });
   });

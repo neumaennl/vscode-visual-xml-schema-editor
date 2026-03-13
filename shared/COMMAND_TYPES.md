@@ -79,16 +79,21 @@ Commands for managing simple type definitions with restriction facets:
 
 - **AddSimpleTypeCommand**: Create a simple type
 
-  - Requires: `typeName`, `baseType`
+  - Requires: `baseType`
+  - Top-level: also requires `typeName` (valid XML name); set `parentId` to "schema" or omit it
+  - Anonymous (inline inside element or attribute): set `parentId` to the parent node ID (e.g. `"/element:age"` or `"/attribute:color"`); `typeName` is ignored
   - Optional: `restrictions` (enumeration, pattern, length, etc.), `documentation`
 
 - **RemoveSimpleTypeCommand**: Delete a simple type
 
   - Requires: `typeId`
+  - Top-level: `typeId` is the type path (e.g. `/simpleType:AgeType`)
+  - Anonymous: `typeId` is the anonymous node path (e.g. `/element:age/anonymousSimpleType[0]`)
 
 - **ModifySimpleTypeCommand**: Update simple type properties
   - Requires: `typeId`
   - Optional: Any simple type property to modify
+  - Note: `typeName` cannot be set when modifying an anonymous simpleType
 
 #### Restriction Facets
 
@@ -103,20 +108,25 @@ Simple types support all standard XSD restriction facets:
 
 ### 4. Complex Type Commands
 
-Commands for managing complex type definitions:
+Commands for managing complex type definitions with content models and optional extension:
 
 - **AddComplexTypeCommand**: Create a complex type
 
-  - Requires: `typeName`, `contentModel` ("sequence" | "choice" | "all")
-  - Optional: `abstract`, `baseType`, `mixed`, `documentation`
+  - Requires: `contentModel` ("sequence" | "choice" | "all")
+  - Top-level: also requires `typeName` (valid XML name); set `parentId` to "schema" or omit it
+  - Anonymous (inline inside element): set `parentId` to the parent element ID (e.g. `"/element:person"`); `typeName` is ignored
+  - Optional: `abstract` (top-level only), `baseType` (wraps compositor in `complexContent > extension`), `mixed`, `documentation`
 
 - **RemoveComplexTypeCommand**: Delete a complex type
 
   - Requires: `typeId`
+  - Top-level: `typeId` is the type path (e.g. `/complexType:PersonType`)
+  - Anonymous: `typeId` is the anonymous node path (e.g. `/element:person/anonymousComplexType[0]`)
 
 - **ModifyComplexTypeCommand**: Update complex type properties
   - Requires: `typeId`
   - Optional: Any complex type property to modify
+  - Note: `typeName` cannot be set when modifying an anonymous complexType
 
 ### 5. Group Commands
 

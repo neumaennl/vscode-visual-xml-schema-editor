@@ -4,8 +4,9 @@
  *
  * Simple type executors support both top-level named types and anonymous types
  * embedded within elements.
- * Complex type executors support top-level named types with content models
- * (sequence, choice, all), abstract/mixed flags, base type extension, and documentation.
+ * Complex type executors support both top-level named types and anonymous types
+ * embedded within elements, with content models (sequence, choice, all),
+ * abstract/mixed flags, base type extension, and documentation.
  */
 
 import {
@@ -21,6 +22,7 @@ import {
   topLevelSimpleType,
   localSimpleType,
   topLevelComplexType,
+  localComplexType,
   complexContentType,
   extensionType,
   explicitGroup,
@@ -339,22 +341,44 @@ function createAnnotation(text: string): annotationType {
 
 /**
  * Executes an addComplexType command.
- * Creates a top-level named complexType with the specified content model.
+ * When `payload.parentId` points to an element (not schema root), creates an anonymous
+ * complexType inside that element. Otherwise creates a top-level named complexType.
  * When `baseType` is provided the content model is nested inside a
  * `complexContent > extension` wrapper.
  *
  * @param command - The addComplexType command to execute
  * @param schemaObj - The schema object to modify
+ * @throws Error if the parent element is not found (anonymous case)
  */
 export function executeAddComplexType(
   command: AddComplexTypeCommand,
   schemaObj: schema
 ): void {
-  const { typeName, contentModel, abstract: isAbstract, baseType, mixed, documentation } =
+  const { parentId, typeName, contentModel, abstract: isAbstract, baseType, mixed, documentation } =
     command.payload;
 
+  if (!isSchemaRoot(parentId)) {
+    // Anonymous complexType inside an element — isSchemaRoot guarantees parentId is a non-empty string here
+    const location = locateNodeById(schemaObj, parentId as string);
+    if (!location.found || !location.parent) {
+      throw new Error(`Parent not found: ${parentId}`);
+    }
+    const holder = location.parent as { complexType?: localComplexType };
+    const anonType = new localComplexType();
+    if (mixed !== undefined) {
+      anonType.mixed = mixed;
+    }
+    if (documentation) {
+      anonType.annotation = createAnnotation(documentation);
+    }
+    applyContentStructure(anonType, contentModel, baseType);
+    holder.complexType = anonType;
+    return;
+  }
+
+  // Top-level named complexType — typeName is a valid non-empty string here (enforced by the validator)
   const ct = new topLevelComplexType();
-  ct.name = typeName;
+  ct.name = typeName as string;
   if (isAbstract !== undefined) {
     ct.abstract = isAbstract;
   }
@@ -364,7 +388,6 @@ export function executeAddComplexType(
   if (documentation) {
     ct.annotation = createAnnotation(documentation);
   }
-
   applyContentStructure(ct, contentModel, baseType);
 
   const complexTypes = toArray(schemaObj.complexType);
@@ -374,11 +397,12 @@ export function executeAddComplexType(
 
 /**
  * Executes a removeComplexType command.
- * Removes the top-level complexType identified by `typeId` from the schema.
+ * Detects whether the typeId refers to an anonymous complexType in an element
+ * (nodeType "anonymousComplexType") or a top-level type and removes it accordingly.
  *
  * @param command - The removeComplexType command to execute
  * @param schemaObj - The schema object to modify
- * @throws Error if the complexType is not found
+ * @throws Error if the type or its parent is not found
  */
 export function executeRemoveComplexType(
   command: RemoveComplexTypeCommand,
@@ -387,6 +411,24 @@ export function executeRemoveComplexType(
   const { typeId } = command.payload;
   const parsed = parseSchemaId(typeId);
 
+  if (parsed.nodeType === SchemaNodeType.AnonymousComplexType) {
+    const parentId = parsed.parentId;
+    if (!parentId) {
+      throw new Error(`Invalid anonymous complexType ID: ${typeId}`);
+    }
+    const location = locateNodeById(schemaObj, parentId);
+    if (!location.found || !location.parent) {
+      throw new Error(`Parent not found: ${parentId}`);
+    }
+    const holder = location.parent as { complexType?: localComplexType };
+    if (!holder.complexType) {
+      throw new Error(`No anonymous complexType found in parent: ${parentId}`);
+    }
+    holder.complexType = undefined;
+    return;
+  }
+
+  // Top-level named complexType
   const complexTypes = toArray(schemaObj.complexType);
   const filtered = complexTypes.filter((ct) => ct.name !== parsed.name);
   if (filtered.length === complexTypes.length) {
@@ -397,12 +439,12 @@ export function executeRemoveComplexType(
 
 /**
  * Executes a modifyComplexType command.
- * Updates the properties of an existing top-level complexType.
- * When `contentModel` or `baseType` is provided the content structure is rebuilt.
+ * Detects whether the typeId refers to an anonymous complexType in an element
+ * or a top-level type and updates it accordingly.
  *
  * @param command - The modifyComplexType command to execute
  * @param schemaObj - The schema object to modify
- * @throws Error if the complexType is not found
+ * @throws Error if the type or its parent is not found
  */
 export function executeModifyComplexType(
   command: ModifyComplexTypeCommand,
@@ -412,6 +454,24 @@ export function executeModifyComplexType(
     command.payload;
   const parsed = parseSchemaId(typeId);
 
+  if (parsed.nodeType === SchemaNodeType.AnonymousComplexType) {
+    const parentId = parsed.parentId;
+    if (!parentId) {
+      throw new Error(`Invalid anonymous complexType ID: ${typeId}`);
+    }
+    const location = locateNodeById(schemaObj, parentId);
+    if (!location.found || !location.parent) {
+      throw new Error(`Parent not found: ${parentId}`);
+    }
+    const holder = location.parent as { complexType?: localComplexType };
+    if (!holder.complexType) {
+      throw new Error(`No anonymous complexType found in parent: ${parentId}`);
+    }
+    updateComplexTypeContents(holder.complexType, { mixed, contentModel, baseType, documentation });
+    return;
+  }
+
+  // Top-level named complexType
   const ct = toArray(schemaObj.complexType).find((t) => t.name === parsed.name);
   if (!ct) {
     throw new Error(`ComplexType not found: ${parsed.name}`);
@@ -423,6 +483,38 @@ export function executeModifyComplexType(
   if (isAbstract !== undefined) {
     ct.abstract = isAbstract;
   }
+  updateComplexTypeContents(ct, { mixed, contentModel, baseType, documentation });
+}
+
+// ===== Complex Type Helper Functions =====
+
+/** Structural type shared by topLevelComplexType and localComplexType for content operations. */
+type ComplexTypeHolder = {
+  mixed?: boolean;
+  annotation?: annotationType;
+  sequence?: explicitGroup;
+  choice?: explicitGroup;
+  all?: all;
+  complexContent?: complexContentType;
+};
+
+/**
+ * Updates the shared mutable properties of any complexType object
+ * (works for both `topLevelComplexType` and `localComplexType`).
+ *
+ * @param ct - The complexType object to update
+ * @param updates - The properties to apply
+ */
+function updateComplexTypeContents(
+  ct: ComplexTypeHolder,
+  updates: {
+    mixed?: boolean;
+    contentModel?: ContentModel;
+    baseType?: string;
+    documentation?: string;
+  }
+): void {
+  const { mixed, contentModel, baseType, documentation } = updates;
   if (mixed !== undefined) {
     ct.mixed = mixed;
   }
@@ -434,7 +526,6 @@ export function executeModifyComplexType(
     doc.value = documentation;
     ct.annotation.documentation = [doc];
   }
-
   if (contentModel !== undefined || baseType !== undefined) {
     const effectiveBase = baseType !== undefined ? baseType : getBaseType(ct);
     const effectiveModel = contentModel ?? getContentModel(ct);
@@ -444,11 +535,8 @@ export function executeModifyComplexType(
   }
 }
 
-// ===== Complex Type Helper Functions =====
-
 /**
- * Sets one of the three compositor children (sequence, choice, all) on a holder
- * object and clears the other two.
+ * Sets one of the three compositor children (sequence, choice, all) on a holder object.
  *
  * @param holder - Object that carries sequence/choice/all properties
  * @param contentModel - The content model to apply
@@ -468,15 +556,15 @@ function setContentModel(
 
 /**
  * Rebuilds the full content structure (direct compositor or complexContent wrapper)
- * on a topLevelComplexType, clearing any previously set content first.
+ * on a complexType holder, clearing any previously set content first.
  *
- * @param ct - The complexType to update
+ * @param ct - The complexType holder to update
  * @param contentModel - The content model to apply
  * @param baseType - Optional base type; when truthy wraps the compositor in
  *   a complexContent/extension element
  */
 function applyContentStructure(
-  ct: topLevelComplexType,
+  ct: ComplexTypeHolder,
   contentModel: ContentModel,
   baseType?: string
 ): void {
@@ -500,10 +588,10 @@ function applyContentStructure(
 /**
  * Returns the base type of a complexType if it uses complexContent/extension.
  *
- * @param ct - The complexType to inspect
+ * @param ct - The complexType holder to inspect
  * @returns The base type name or undefined
  */
-function getBaseType(ct: topLevelComplexType): string | undefined {
+function getBaseType(ct: ComplexTypeHolder): string | undefined {
   return ct.complexContent?.extension?.base;
 }
 
@@ -511,10 +599,10 @@ function getBaseType(ct: topLevelComplexType): string | undefined {
  * Infers the current content model of a complexType by inspecting its
  * direct compositor properties and complexContent/extension child.
  *
- * @param ct - The complexType to inspect
+ * @param ct - The complexType holder to inspect
  * @returns The current ContentModel or undefined if none is set
  */
-function getContentModel(ct: topLevelComplexType): ContentModel | undefined {
+function getContentModel(ct: ComplexTypeHolder): ContentModel | undefined {
   if (ct.sequence ?? ct.complexContent?.extension?.sequence) {
     return "sequence";
   }

@@ -144,6 +144,172 @@ describe("Group Validators", () => {
       const result = validateRemoveGroup(command, schemaWithGroup);
       expect(result.valid).toBe(true);
     });
+
+    test("should reject removeGroup when group is referenced by a complexType sequence", () => {
+      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:group name="PersonGroup">
+    <xs:sequence/>
+  </xs:group>
+  <xs:complexType name="PersonType">
+    <xs:sequence>
+      <xs:group ref="PersonGroup"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>`;
+      const schemaWithRef = unmarshal(schema, schemaXml);
+
+      const command: RemoveGroupCommand = {
+        type: "removeGroup",
+        payload: {
+          groupId: "/group:PersonGroup",
+        },
+      };
+
+      const result = validateRemoveGroup(command, schemaWithRef);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe(
+        "Group is still referenced and cannot be removed: PersonGroup"
+      );
+    });
+
+    test("should reject removeGroup when group is referenced by a complexType choice", () => {
+      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:group name="ShapeGroup">
+    <xs:choice/>
+  </xs:group>
+  <xs:complexType name="ShapeContainer">
+    <xs:choice>
+      <xs:group ref="ShapeGroup"/>
+    </xs:choice>
+  </xs:complexType>
+</xs:schema>`;
+      const schemaWithRef = unmarshal(schema, schemaXml);
+
+      const command: RemoveGroupCommand = {
+        type: "removeGroup",
+        payload: {
+          groupId: "/group:ShapeGroup",
+        },
+      };
+
+      const result = validateRemoveGroup(command, schemaWithRef);
+      expect(result.valid).toBe(false);
+    });
+
+    test("should reject removeGroup when group is referenced directly in a complexType", () => {
+      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:group name="AddressGroup">
+    <xs:sequence/>
+  </xs:group>
+  <xs:complexType name="OrderType">
+    <xs:group ref="AddressGroup"/>
+  </xs:complexType>
+</xs:schema>`;
+      const schemaWithRef = unmarshal(schema, schemaXml);
+
+      const command: RemoveGroupCommand = {
+        type: "removeGroup",
+        payload: {
+          groupId: "/group:AddressGroup",
+        },
+      };
+
+      const result = validateRemoveGroup(command, schemaWithRef);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe(
+        "Group is still referenced and cannot be removed: AddressGroup"
+      );
+    });
+
+    test("should reject removeGroup when group is referenced by an inline element complexType", () => {
+      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:group name="ContactGroup">
+    <xs:sequence/>
+  </xs:group>
+  <xs:element name="person">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:group ref="ContactGroup"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>`;
+      const schemaWithRef = unmarshal(schema, schemaXml);
+
+      const command: RemoveGroupCommand = {
+        type: "removeGroup",
+        payload: {
+          groupId: "/group:ContactGroup",
+        },
+      };
+
+      const result = validateRemoveGroup(command, schemaWithRef);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe(
+        "Group is still referenced and cannot be removed: ContactGroup"
+      );
+    });
+
+    test("should reject removeGroup when group is referenced inside another group", () => {
+      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:group name="InnerGroup">
+    <xs:sequence/>
+  </xs:group>
+  <xs:group name="OuterGroup">
+    <xs:sequence>
+      <xs:group ref="InnerGroup"/>
+    </xs:sequence>
+  </xs:group>
+</xs:schema>`;
+      const schemaWithRef = unmarshal(schema, schemaXml);
+
+      const command: RemoveGroupCommand = {
+        type: "removeGroup",
+        payload: {
+          groupId: "/group:InnerGroup",
+        },
+      };
+
+      const result = validateRemoveGroup(command, schemaWithRef);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe(
+        "Group is still referenced and cannot be removed: InnerGroup"
+      );
+    });
+
+    test("should allow removeGroup when a different group is referenced", () => {
+      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:group name="GroupA">
+    <xs:sequence/>
+  </xs:group>
+  <xs:group name="GroupB">
+    <xs:sequence/>
+  </xs:group>
+  <xs:complexType name="SomeType">
+    <xs:sequence>
+      <xs:group ref="GroupA"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>`;
+      const schemaWithRef = unmarshal(schema, schemaXml);
+
+      // GroupB is not referenced, so it can be removed
+      const command: RemoveGroupCommand = {
+        type: "removeGroup",
+        payload: {
+          groupId: "/group:GroupB",
+        },
+      };
+
+      const result = validateRemoveGroup(command, schemaWithRef);
+      expect(result.valid).toBe(true);
+    });
   });
 
   describe("validateModifyGroup", () => {

@@ -10,6 +10,7 @@ import {
   AddAttributeGroupCommand,
   RemoveAttributeGroupCommand,
   ModifyAttributeGroupCommand,
+  groupRef,
 } from "../../shared/types";
 import {
   ValidationResult,
@@ -27,6 +28,109 @@ export const VALID_GROUP_CONTENT_MODELS = [
   "choice",
   "all",
 ] as const;
+
+// ===== Group Reference Helpers =====
+
+/**
+ * Structural type for objects that can contain group references within
+ * compositors. Matches both `explicitGroup` and `simpleExplicitGroup`.
+ */
+type CompositorLike = {
+  group?: groupRef[];
+  choice?: CompositorLike[];
+  sequence?: CompositorLike[];
+};
+
+/**
+ * Structural type for objects that directly hold a group ref or compositors.
+ * Matches `topLevelComplexType`, `localComplexType`, `extensionType`,
+ * and `complexRestrictionType`.
+ */
+type ComplexTypeParticleHolder = {
+  group?: groupRef;
+  sequence?: CompositorLike;
+  choice?: CompositorLike;
+  complexContent?: {
+    extension?: { group?: groupRef; sequence?: CompositorLike; choice?: CompositorLike };
+    restriction?: { group?: groupRef; sequence?: CompositorLike; choice?: CompositorLike };
+  };
+};
+
+/**
+ * Returns true if the named group is referenced inside a compositor
+ * (sequence or choice) or any of its recursively nested compositors.
+ *
+ * @param name - Group name to look for
+ * @param compositor - The compositor to search in
+ */
+function groupRefExistsInCompositor(
+  name: string,
+  compositor: CompositorLike
+): boolean {
+  if (toArray(compositor.group).some((ref) => ref.ref === name)) return true;
+  for (const sub of toArray(compositor.choice)) {
+    if (groupRefExistsInCompositor(name, sub)) return true;
+  }
+  for (const sub of toArray(compositor.sequence)) {
+    if (groupRefExistsInCompositor(name, sub)) return true;
+  }
+  return false;
+}
+
+/**
+ * Returns true if the named group is referenced directly or inside the
+ * compositors/complexContent of a complex-type particle holder.
+ *
+ * @param name - Group name to look for
+ * @param holder - The complex type particle holder to search in
+ */
+function groupRefExistsInHolder(
+  name: string,
+  holder: ComplexTypeParticleHolder
+): boolean {
+  if (holder.group?.ref === name) return true;
+  if (holder.sequence && groupRefExistsInCompositor(name, holder.sequence)) return true;
+  if (holder.choice && groupRefExistsInCompositor(name, holder.choice)) return true;
+  const ext = holder.complexContent?.extension;
+  if (ext) {
+    if (ext.group?.ref === name) return true;
+    if (ext.sequence && groupRefExistsInCompositor(name, ext.sequence)) return true;
+    if (ext.choice && groupRefExistsInCompositor(name, ext.choice)) return true;
+  }
+  const restr = holder.complexContent?.restriction;
+  if (restr) {
+    if (restr.group?.ref === name) return true;
+    if (restr.sequence && groupRefExistsInCompositor(name, restr.sequence)) return true;
+    if (restr.choice && groupRefExistsInCompositor(name, restr.choice)) return true;
+  }
+  return false;
+}
+
+/**
+ * Returns true if any schema construct references the named group.
+ *
+ * Checks:
+ * - Top-level complexType definitions (direct or via complexContent)
+ * - Inline complexTypes on top-level element definitions
+ * - Other top-level group definitions (groups can reference groups)
+ *
+ * @param name - The group name to check references for
+ * @param schemaObj - The schema to search in
+ */
+function isGroupReferenced(name: string, schemaObj: schema): boolean {
+  for (const ct of toArray(schemaObj.complexType)) {
+    if (groupRefExistsInHolder(name, ct)) return true;
+  }
+  for (const el of toArray(schemaObj.element)) {
+    if (el.complexType && groupRefExistsInHolder(name, el.complexType)) return true;
+  }
+  for (const grp of toArray(schemaObj.group)) {
+    // namedGroup.sequence/choice are simpleExplicitGroup, which match CompositorLike
+    if (grp.sequence && groupRefExistsInCompositor(name, grp.sequence)) return true;
+    if (grp.choice && groupRefExistsInCompositor(name, grp.choice)) return true;
+  }
+  return false;
+}
 
 // ===== Group Command Validation =====
 
@@ -74,6 +178,12 @@ export function validateRemoveGroup(
     return {
       valid: false,
       error: `Group not found: ${command.payload.groupId}`,
+    };
+  }
+  if (parsed.name && isGroupReferenced(parsed.name, schemaObj)) {
+    return {
+      valid: false,
+      error: `Group is still referenced and cannot be removed: ${parsed.name}`,
     };
   }
   return { valid: true };

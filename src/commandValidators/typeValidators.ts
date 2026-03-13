@@ -177,7 +177,7 @@ export function validateModifySimpleType(
 
 export function validateAddComplexType(
   command: AddComplexTypeCommand,
-  _schemaObj: schema
+  schemaObj: schema
 ): ValidationResult {
   // Validate type name is a valid XML name
   if (!isValidXmlName(command.payload.typeName)) {
@@ -193,29 +193,51 @@ export function validateAddComplexType(
       error: `Content model must be one of: ${VALID_COMPLEX_TYPE_CONTENT_MODELS.join(", ")}`,
     };
   }
-  // TODO Phase 2: Check if type name already exists in schema
+  if (toArray(schemaObj.complexType).some((ct) => ct.name === command.payload.typeName)) {
+    return {
+      valid: false,
+      error: `Complex type '${command.payload.typeName}' already exists in schema`,
+    };
+  }
   return { valid: true };
 }
 
 export function validateRemoveComplexType(
   command: RemoveComplexTypeCommand,
-  _schemaObj: schema
+  schemaObj: schema
 ): ValidationResult {
   if (!command.payload.typeId.trim()) {
     return { valid: false, error: "Type ID cannot be empty" };
   }
-  // TODO Phase 2: Validate that typeId exists in schema
-  // TODO Phase 2: Check if type is being used by other elements/types
+  const parsed = parseSchemaId(command.payload.typeId);
+  if (!toArray(schemaObj.complexType).some((ct) => ct.name === parsed.name)) {
+    return { valid: false, error: `Complex type '${parsed.name}' not found in schema` };
+  }
   return { valid: true };
 }
 
 export function validateModifyComplexType(
   command: ModifyComplexTypeCommand,
-  _schemaObj: schema
+  schemaObj: schema
 ): ValidationResult {
   if (!command.payload.typeId.trim()) {
     return { valid: false, error: "Type ID cannot be empty" };
   }
-  // TODO Phase 2: Validate that typeId exists in schema
+  if (command.payload.typeName !== undefined && !isValidXmlName(command.payload.typeName)) {
+    return { valid: false, error: "Type name must be a valid XML name" };
+  }
+  if (
+    command.payload.contentModel !== undefined &&
+    !VALID_COMPLEX_TYPE_CONTENT_MODELS.includes(command.payload.contentModel)
+  ) {
+    return {
+      valid: false,
+      error: `Content model must be one of: ${VALID_COMPLEX_TYPE_CONTENT_MODELS.join(", ")}`,
+    };
+  }
+  const parsed = parseSchemaId(command.payload.typeId);
+  if (!toArray(schemaObj.complexType).some((ct) => ct.name === parsed.name)) {
+    return { valid: false, error: `Complex type '${parsed.name}' not found in schema` };
+  }
   return { valid: true };
 }

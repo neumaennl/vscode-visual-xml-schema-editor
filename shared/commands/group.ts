@@ -64,9 +64,70 @@ export interface ModifyGroupCommand extends BaseCommand<ModifyGroupPayload> {
   payload: ModifyGroupPayload;
 }
 
+// ===== Group Reference Commands =====
+
 /**
- * Payload for adding an attribute group definition.
+ * Payload for adding a group reference (xs:group ref="...") inside a compositor
+ * (sequence or choice) or directly on a complexType.
  */
+export interface AddGroupRefPayload {
+  /** ID of the parent compositor (sequence/choice) or complexType */
+  parentId: string;
+  /** Name of the group to reference */
+  ref: string;
+  /** Minimum occurrences (optional) */
+  minOccurs?: number;
+  /** Maximum occurrences (optional) */
+  maxOccurs?: number | "unbounded";
+}
+
+/**
+ * Command to add a group reference.
+ */
+export interface AddGroupRefCommand extends BaseCommand<AddGroupRefPayload> {
+  type: "addGroupRef";
+  payload: AddGroupRefPayload;
+}
+
+/**
+ * Payload for removing a group reference.
+ */
+export interface RemoveGroupRefPayload {
+  /** ID of the group reference to remove */
+  groupRefId: string;
+}
+
+/**
+ * Command to remove a group reference.
+ */
+export interface RemoveGroupRefCommand extends BaseCommand<RemoveGroupRefPayload> {
+  type: "removeGroupRef";
+  payload: RemoveGroupRefPayload;
+}
+
+/**
+ * Payload for modifying a group reference.
+ */
+export interface ModifyGroupRefPayload {
+  /** ID of the group reference to modify */
+  groupRefId: string;
+  /** New group name to reference (optional) */
+  ref?: string;
+  /** New minimum occurrences (optional) */
+  minOccurs?: number;
+  /** New maximum occurrences (optional) */
+  maxOccurs?: number | "unbounded";
+}
+
+/**
+ * Command to modify a group reference.
+ */
+export interface ModifyGroupRefCommand extends BaseCommand<ModifyGroupRefPayload> {
+  type: "modifyGroupRef";
+  payload: ModifyGroupRefPayload;
+}
+
+
 export interface AddAttributeGroupPayload {
   /** Name of the attribute group */
   groupName: string;

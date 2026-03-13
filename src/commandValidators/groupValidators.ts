@@ -7,6 +7,9 @@ import {
   AddGroupCommand,
   RemoveGroupCommand,
   ModifyGroupCommand,
+  AddGroupRefCommand,
+  RemoveGroupRefCommand,
+  ModifyGroupRefCommand,
   AddAttributeGroupCommand,
   RemoveAttributeGroupCommand,
   ModifyAttributeGroupCommand,
@@ -212,6 +215,66 @@ export function validateModifyGroup(
       valid: false,
       error: `Content model must be one of: ${VALID_GROUP_CONTENT_MODELS.join(", ")}`,
     };
+  }
+  return { valid: true };
+}
+
+// ===== Group Reference Command Validation =====
+
+export function validateAddGroupRef(
+  command: AddGroupRefCommand,
+  schemaObj: schema
+): ValidationResult {
+  if (!command.payload.parentId.trim()) {
+    return { valid: false, error: "Parent ID cannot be empty" };
+  }
+  if (!isValidXmlName(command.payload.ref)) {
+    return { valid: false, error: "Group ref must be a valid XML name" };
+  }
+  // Validate that the referenced group exists in the schema
+  const groupExists = toArray(schemaObj.group).some(
+    (g) => g.name === command.payload.ref
+  );
+  if (!groupExists) {
+    return {
+      valid: false,
+      error: `Referenced group does not exist: ${command.payload.ref}`,
+    };
+  }
+  return { valid: true };
+}
+
+export function validateRemoveGroupRef(
+  command: RemoveGroupRefCommand,
+  _schemaObj: schema
+): ValidationResult {
+  if (!command.payload.groupRefId.trim()) {
+    return { valid: false, error: "GroupRef ID cannot be empty" };
+  }
+  return { valid: true };
+}
+
+export function validateModifyGroupRef(
+  command: ModifyGroupRefCommand,
+  schemaObj: schema
+): ValidationResult {
+  if (!command.payload.groupRefId.trim()) {
+    return { valid: false, error: "GroupRef ID cannot be empty" };
+  }
+  if (command.payload.ref !== undefined) {
+    if (!isValidXmlName(command.payload.ref)) {
+      return { valid: false, error: "Group ref must be a valid XML name" };
+    }
+    // Validate that the new referenced group exists
+    const groupExists = toArray(schemaObj.group).some(
+      (g) => g.name === command.payload.ref
+    );
+    if (!groupExists) {
+      return {
+        valid: false,
+        error: `Referenced group does not exist: ${command.payload.ref}`,
+      };
+    }
   }
   return { valid: true };
 }

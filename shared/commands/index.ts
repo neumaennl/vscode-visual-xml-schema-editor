@@ -37,6 +37,9 @@ import {
   AddGroupCommand,
   RemoveGroupCommand,
   ModifyGroupCommand,
+  AddGroupRefCommand,
+  RemoveGroupRefCommand,
+  ModifyGroupRefCommand,
   AddAttributeGroupCommand,
   RemoveAttributeGroupCommand,
   ModifyAttributeGroupCommand,
@@ -78,6 +81,9 @@ export type SchemaCommand =
   | AddGroupCommand
   | RemoveGroupCommand
   | ModifyGroupCommand
+  | AddGroupRefCommand
+  | RemoveGroupRefCommand
+  | ModifyGroupRefCommand
   | AddAttributeGroupCommand
   | RemoveAttributeGroupCommand
   | ModifyAttributeGroupCommand

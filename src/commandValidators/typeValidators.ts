@@ -45,8 +45,8 @@ export function validateAddSimpleType(
   const { parentId, typeName, baseType } = command.payload;
 
   if (!isSchemaRoot(parentId)) {
-    // Anonymous simpleType inside an element — parentId is non-empty (isSchemaRoot returned false)
-    const location = locateNodeById(schemaObj, parentId ?? "");
+    // Anonymous simpleType inside an element — isSchemaRoot guarantees parentId is a non-empty string here
+    const location = locateNodeById(schemaObj, parentId as string);
     if (!location.found) {
       return { valid: false, error: `Parent element not found: ${parentId}` };
     }
@@ -58,6 +58,12 @@ export function validateAddSimpleType(
     }
     // parentType is confirmed to be topLevelElement or localElement by the check above
     const element = location.parent as topLevelElement | localElement;
+    if (element.type_) {
+      return {
+        valid: false,
+        error: `Element '${parentId}' already has a type attribute ('${element.type_}'); cannot add an inline simpleType`,
+      };
+    }
     if (element.simpleType) {
       return { valid: false, error: `Element '${parentId}' already has an anonymous simpleType` };
     }

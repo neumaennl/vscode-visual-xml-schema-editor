@@ -216,7 +216,7 @@ describe("SimpleType Validators", () => {
         schema,
         `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="age" type="xs:integer"/>
+  <xs:element name="age"/>
 </xs:schema>`
       );
 
@@ -264,6 +264,24 @@ describe("SimpleType Validators", () => {
         const result = validateAddSimpleType(command, schemaWithElementAndSimpleType);
         expect(result.valid).toBe(false);
         expect(result.error).toContain("already has an anonymous simpleType");
+      });
+
+      test("should reject when element already has a type attribute", () => {
+        const schemaWithTypedElement = unmarshal(
+          schema,
+          `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="age" type="xs:integer"/>
+</xs:schema>`
+        );
+        const command: AddSimpleTypeCommand = {
+          type: "addSimpleType",
+          payload: { parentId: "/element:age", baseType: "xs:integer" },
+        };
+
+        const result = validateAddSimpleType(command, schemaWithTypedElement);
+        expect(result.valid).toBe(false);
+        expect(result.error).toContain("already has a type attribute");
       });
 
       test("should reject unrecognized baseType for anonymous simpleType", () => {

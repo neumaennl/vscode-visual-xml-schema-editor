@@ -585,7 +585,7 @@ describe("SimpleType Executors", () => {
       it("should add an anonymous simpleType to a top-level element", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="age" type="xs:integer"/>
+  <xs:element name="age"/>
 </xs:schema>`;
         const schemaObj = unmarshal(schema, schemaXml);
 

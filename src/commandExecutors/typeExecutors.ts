@@ -52,8 +52,8 @@ export function executeAddSimpleType(
   const { parentId, typeName, baseType, restrictions, documentation } = command.payload;
 
   if (!isSchemaRoot(parentId)) {
-    // Anonymous simpleType inside an element — parentId is non-empty here
-    const location = locateNodeById(schemaObj, parentId ?? "");
+    // Anonymous simpleType inside an element — isSchemaRoot guarantees parentId is a non-empty string here
+    const location = locateNodeById(schemaObj, parentId as string);
     if (!location.found || !location.parent) {
       throw new Error(`Parent element not found: ${parentId}`);
     }
@@ -67,10 +67,9 @@ export function executeAddSimpleType(
     return;
   }
 
-  // Top-level named simpleType — typeName is required here (validated by validator)
-  const name = typeName ?? "";
+  // Top-level named simpleType — typeName is a valid non-empty string here (enforced by the validator)
   const simpleType = new topLevelSimpleType();
-  simpleType.name = name;
+  simpleType.name = typeName as string;
   simpleType.restriction = buildRestriction(baseType, restrictions);
   if (documentation) {
     simpleType.annotation = createAnnotation(documentation);

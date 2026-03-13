@@ -25,3 +25,17 @@ export function toArray<T>(value: T | T[] | undefined | null): T[] {
   }
   return Array.isArray(value) ? value : [value];
 }
+
+/** Accepted string values that refer to the schema root node. */
+const SCHEMA_ROOT_IDS = new Set(["schema", "/schema"]);
+
+/**
+ * Returns true when `parentId` designates the schema root rather than a
+ * specific child node.  Accepts `undefined`, `"schema"`, and `"/schema"`.
+ *
+ * @param parentId - The parent ID to test
+ * @returns true if the ID refers to the schema root
+ */
+export function isSchemaRoot(parentId: string | undefined): boolean {
+  return !parentId || SCHEMA_ROOT_IDS.has(parentId);
+}

@@ -245,6 +245,10 @@ function navigateFromElement(
     if (element.complexType) {
       return { found: true, node: element.complexType, nodeType: "localComplexType" };
     }
+  } else if (nodeType === SchemaNodeType.AnonymousSimpleType) {
+    if (element.simpleType) {
+      return { found: true, node: element.simpleType, nodeType: "localSimpleType" };
+    }
   }
 
   return { found: false };

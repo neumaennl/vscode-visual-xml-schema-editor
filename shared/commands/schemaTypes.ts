@@ -37,10 +37,17 @@ export interface RestrictionFacets {
 
 /**
  * Payload for adding a simple type definition.
+ * When `parentId` refers to an element (not schema root), an anonymous simpleType
+ * is added directly inside that element. In that case `typeName` is not needed.
  */
 export interface AddSimpleTypePayload {
-  /** Name of the simple type */
-  typeName: string;
+  /**
+   * Parent element ID for anonymous simpleTypes (e.g. "/element:age").
+   * Omit or set to "schema" to create a top-level named simpleType.
+   */
+  parentId?: string;
+  /** Name of the simple type. Required for top-level types; ignored for anonymous. */
+  typeName?: string;
   /** Base type for the restriction */
   baseType: string;
   /** Restriction facets */

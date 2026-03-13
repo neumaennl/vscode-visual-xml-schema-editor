@@ -206,6 +206,152 @@ describe("SimpleType Validators", () => {
       expect(result.valid).toBe(true);
     });
   });
+
+  describe("Anonymous SimpleType Validators", () => {
+    let schemaWithElement: schema;
+    let schemaWithElementAndSimpleType: schema;
+
+    beforeEach(() => {
+      schemaWithElement = unmarshal(
+        schema,
+        `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="age" type="xs:integer"/>
+</xs:schema>`
+      );
+
+      schemaWithElementAndSimpleType = unmarshal(
+        schema,
+        `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="age">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer"/>
+    </xs:simpleType>
+  </xs:element>
+</xs:schema>`
+      );
+    });
+
+    describe("validateAddSimpleType (anonymous)", () => {
+      test("should accept adding an anonymous simpleType to an element", () => {
+        const command: AddSimpleTypeCommand = {
+          type: "addSimpleType",
+          payload: { parentId: "/element:age", baseType: "xs:integer" },
+        };
+
+        const result = validateAddSimpleType(command, schemaWithElement);
+        expect(result.valid).toBe(true);
+      });
+
+      test("should reject when parent element not found", () => {
+        const command: AddSimpleTypeCommand = {
+          type: "addSimpleType",
+          payload: { parentId: "/element:nonExistent", baseType: "xs:integer" },
+        };
+
+        const result = validateAddSimpleType(command, schemaWithElement);
+        expect(result.valid).toBe(false);
+        expect(result.error).toContain("Parent element not found");
+      });
+
+      test("should reject when element already has an anonymous simpleType", () => {
+        const command: AddSimpleTypeCommand = {
+          type: "addSimpleType",
+          payload: { parentId: "/element:age", baseType: "xs:string" },
+        };
+
+        const result = validateAddSimpleType(command, schemaWithElementAndSimpleType);
+        expect(result.valid).toBe(false);
+        expect(result.error).toContain("already has an anonymous simpleType");
+      });
+
+      test("should reject unrecognized baseType for anonymous simpleType", () => {
+        const command: AddSimpleTypeCommand = {
+          type: "addSimpleType",
+          payload: { parentId: "/element:age", baseType: "xs:badType" },
+        };
+
+        const result = validateAddSimpleType(command, schemaWithElement);
+        expect(result.valid).toBe(false);
+        expect(result.error).toContain("is not a recognized XSD type");
+      });
+    });
+
+    describe("validateRemoveSimpleType (anonymous)", () => {
+      test("should accept removing an anonymous simpleType that exists", () => {
+        const command: RemoveSimpleTypeCommand = {
+          type: "removeSimpleType",
+          payload: { typeId: "/element:age/anonymousSimpleType[0]" },
+        };
+
+        const result = validateRemoveSimpleType(command, schemaWithElementAndSimpleType);
+        expect(result.valid).toBe(true);
+      });
+
+      test("should reject when no anonymous simpleType exists in element", () => {
+        const command: RemoveSimpleTypeCommand = {
+          type: "removeSimpleType",
+          payload: { typeId: "/element:age/anonymousSimpleType[0]" },
+        };
+
+        const result = validateRemoveSimpleType(command, schemaWithElement);
+        expect(result.valid).toBe(false);
+        expect(result.error).toContain("No anonymous simpleType found");
+      });
+
+      test("should reject when parent element not found", () => {
+        const command: RemoveSimpleTypeCommand = {
+          type: "removeSimpleType",
+          payload: { typeId: "/element:nonExistent/anonymousSimpleType[0]" },
+        };
+
+        const result = validateRemoveSimpleType(command, schemaWithElement);
+        expect(result.valid).toBe(false);
+        expect(result.error).toContain("Parent element not found");
+      });
+    });
+
+    describe("validateModifySimpleType (anonymous)", () => {
+      test("should accept modifying an anonymous simpleType that exists", () => {
+        const command: ModifySimpleTypeCommand = {
+          type: "modifySimpleType",
+          payload: {
+            typeId: "/element:age/anonymousSimpleType[0]",
+            baseType: "xs:positiveInteger",
+          },
+        };
+
+        const result = validateModifySimpleType(command, schemaWithElementAndSimpleType);
+        expect(result.valid).toBe(true);
+      });
+
+      test("should reject when no anonymous simpleType exists in element", () => {
+        const command: ModifySimpleTypeCommand = {
+          type: "modifySimpleType",
+          payload: {
+            typeId: "/element:age/anonymousSimpleType[0]",
+            baseType: "xs:string",
+          },
+        };
+
+        const result = validateModifySimpleType(command, schemaWithElement);
+        expect(result.valid).toBe(false);
+        expect(result.error).toContain("No anonymous simpleType found");
+      });
+
+      test("should reject when parent element not found", () => {
+        const command: ModifySimpleTypeCommand = {
+          type: "modifySimpleType",
+          payload: { typeId: "/element:nonExistent/anonymousSimpleType[0]" },
+        };
+
+        const result = validateModifySimpleType(command, schemaWithElement);
+        expect(result.valid).toBe(false);
+        expect(result.error).toContain("Parent element not found");
+      });
+    });
+  });
 });
 
 describe("ComplexType Validators", () => {

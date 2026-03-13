@@ -10,14 +10,17 @@ import {
   AddComplexTypeCommand,
   RemoveComplexTypeCommand,
   ModifyComplexTypeCommand,
+  topLevelElement,
+  localElement,
 } from "../../shared/types";
 import {
   ValidationResult,
   isValidXmlName,
   validateElementType,
 } from "./validationUtils";
-import { parseSchemaId } from "../../shared/idStrategy";
-import { toArray } from "../../shared/schemaUtils";
+import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy";
+import { toArray, isSchemaRoot } from "../../shared/schemaUtils";
+import { locateNodeById } from "../schemaNavigator";
 
 /**
  * Valid content models for ComplexType elements.
@@ -30,39 +33,88 @@ export const VALID_COMPLEX_TYPE_CONTENT_MODELS = [
   "all",
 ] as const;
 
+/** Element parent types that may hold anonymous simpleTypes. */
+const ELEMENT_PARENT_TYPES = ["topLevelElement", "localElement"];
+
 // ===== SimpleType Command Validation =====
 
 export function validateAddSimpleType(
   command: AddSimpleTypeCommand,
   schemaObj: schema
 ): ValidationResult {
-  // Validate type name is a valid XML name
-  if (!isValidXmlName(command.payload.typeName)) {
+  const { parentId, typeName, baseType } = command.payload;
+
+  if (!isSchemaRoot(parentId)) {
+    // Anonymous simpleType inside an element — parentId is non-empty (isSchemaRoot returned false)
+    const location = locateNodeById(schemaObj, parentId ?? "");
+    if (!location.found) {
+      return { valid: false, error: `Parent element not found: ${parentId}` };
+    }
+    if (!ELEMENT_PARENT_TYPES.includes(location.parentType ?? "")) {
+      return {
+        valid: false,
+        error: `Parent of type '${location.parentType}' cannot contain a simpleType`,
+      };
+    }
+    // parentType is confirmed to be topLevelElement or localElement by the check above
+    const element = location.parent as topLevelElement | localElement;
+    if (element.simpleType) {
+      return { valid: false, error: `Element '${parentId}' already has an anonymous simpleType` };
+    }
+    if (!baseType.trim()) {
+      return { valid: false, error: "Base type cannot be empty" };
+    }
+    const baseTypeResult = validateElementType(baseType, schemaObj);
+    if (!baseTypeResult.valid) {
+      return { valid: false, error: `Base type '${baseType}' is not a recognized XSD type` };
+    }
+    return { valid: true };
+  }
+
+  // Top-level named simpleType
+  if (!isValidXmlName(typeName ?? "")) {
     return { valid: false, error: "Type name must be a valid XML name" };
   }
-  // Validate baseType is provided and non-empty
-  if (!command.payload.baseType.trim()) {
+  if (!baseType.trim()) {
     return { valid: false, error: "Base type cannot be empty" };
   }
-  // Check if type name already exists in schema
-  if (toArray(schemaObj.simpleType).some(st => st.name === command.payload.typeName)) {
-    return { valid: false, error: `Simple type '${command.payload.typeName}' already exists in schema` };
+  if (toArray(schemaObj.simpleType).some(st => st.name === typeName)) {
+    return { valid: false, error: `Simple type '${typeName}' already exists in schema` };
   }
-  // Validate that baseType is a recognized XSD type (built-in or user-defined)
-  const baseTypeResult = validateElementType(command.payload.baseType, schemaObj);
+  const baseTypeResult = validateElementType(baseType, schemaObj);
   if (!baseTypeResult.valid) {
-    return { valid: false, error: `Base type '${command.payload.baseType}' is not a recognized XSD type` };
+    return { valid: false, error: `Base type '${baseType}' is not a recognized XSD type` };
   }
   return { valid: true };
 }
 
 export function validateRemoveSimpleType(
   command: RemoveSimpleTypeCommand,
-  _schemaObj: schema
+  schemaObj: schema
 ): ValidationResult {
   if (!command.payload.typeId.trim()) {
     return { valid: false, error: "Type ID cannot be empty" };
   }
+
+  const parsed = parseSchemaId(command.payload.typeId);
+
+  if (parsed.nodeType === SchemaNodeType.AnonymousSimpleType) {
+    if (!parsed.parentId) {
+      return { valid: false, error: `Invalid anonymous simpleType ID: ${command.payload.typeId}` };
+    }
+    const location = locateNodeById(schemaObj, parsed.parentId);
+    if (!location.found) {
+      return { valid: false, error: `Parent element not found: ${parsed.parentId}` };
+    }
+    const element = location.parent as topLevelElement | localElement;
+    if (!element.simpleType) {
+      return {
+        valid: false,
+        error: `No anonymous simpleType found in element: ${parsed.parentId}`,
+      };
+    }
+  }
+
   // TODO Phase 2: Check if type is being used by other elements/types
   return { valid: true };
 }
@@ -74,12 +126,31 @@ export function validateModifySimpleType(
   if (!command.payload.typeId.trim()) {
     return { valid: false, error: "Type ID cannot be empty" };
   }
-  // Validate new type name if provided
   if (command.payload.typeName !== undefined && !isValidXmlName(command.payload.typeName)) {
     return { valid: false, error: "Type name must be a valid XML name" };
   }
-  // Validate that typeId exists in schema
+
   const parsed = parseSchemaId(command.payload.typeId);
+
+  if (parsed.nodeType === SchemaNodeType.AnonymousSimpleType) {
+    if (!parsed.parentId) {
+      return { valid: false, error: `Invalid anonymous simpleType ID: ${command.payload.typeId}` };
+    }
+    const location = locateNodeById(schemaObj, parsed.parentId);
+    if (!location.found) {
+      return { valid: false, error: `Parent element not found: ${parsed.parentId}` };
+    }
+    const element = location.parent as topLevelElement | localElement;
+    if (!element.simpleType) {
+      return {
+        valid: false,
+        error: `No anonymous simpleType found in element: ${parsed.parentId}`,
+      };
+    }
+    return { valid: true };
+  }
+
+  // Top-level named simpleType: validate it exists in the schema
   if (!toArray(schemaObj.simpleType).some(st => st.name === parsed.name)) {
     return { valid: false, error: `Simple type '${parsed.name}' not found in schema` };
   }

@@ -2,7 +2,8 @@
  * Executors for type commands (simple and complex types).
  * Implements add, remove, and modify operations for schema types.
  *
- * Simple type executors are fully implemented.
+ * Simple type executors support both top-level named types and anonymous types
+ * embedded within elements.
  * Complex type executors are stubs for Phase 2+ implementation.
  */
 
@@ -16,6 +17,9 @@ import {
   ModifyComplexTypeCommand,
   RestrictionFacets,
   topLevelSimpleType,
+  localSimpleType,
+  topLevelElement,
+  localElement,
   restrictionType,
   facet,
   numFacet,
@@ -26,34 +30,48 @@ import {
   annotationType,
   documentationType,
 } from "../../shared/types";
-import { toArray } from "../../shared/schemaUtils";
-import { parseSchemaId } from "../../shared/idStrategy";
+import { toArray, isSchemaRoot } from "../../shared/schemaUtils";
+import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy";
+import { locateNodeById } from "../schemaNavigator";
 
 // ===== Simple Type Executors =====
 
 /**
  * Executes an addSimpleType command.
- * Creates a new top-level simple type with a restriction, optional facets, and optional documentation.
+ * When `payload.parentId` points to an element, creates an anonymous simpleType
+ * inside that element. Otherwise creates a top-level named simpleType.
  *
  * @param command - The addSimpleType command to execute
  * @param schemaObj - The schema object to modify
+ * @throws Error if the parent element is not found (anonymous case)
  */
 export function executeAddSimpleType(
   command: AddSimpleTypeCommand,
   schemaObj: schema
 ): void {
-  const { typeName, baseType, restrictions, documentation } = command.payload;
+  const { parentId, typeName, baseType, restrictions, documentation } = command.payload;
 
-  const simpleType = new topLevelSimpleType();
-  simpleType.name = typeName;
-
-  const restriction = new restrictionType();
-  restriction.base = baseType;
-  if (restrictions) {
-    applyRestrictionFacets(restriction, restrictions);
+  if (!isSchemaRoot(parentId)) {
+    // Anonymous simpleType inside an element — parentId is non-empty here
+    const location = locateNodeById(schemaObj, parentId ?? "");
+    if (!location.found || !location.parent) {
+      throw new Error(`Parent element not found: ${parentId}`);
+    }
+    const element = location.parent as topLevelElement | localElement;
+    const anonType = new localSimpleType();
+    anonType.restriction = buildRestriction(baseType, restrictions);
+    if (documentation) {
+      anonType.annotation = createAnnotation(documentation);
+    }
+    element.simpleType = anonType;
+    return;
   }
-  simpleType.restriction = restriction;
 
+  // Top-level named simpleType — typeName is required here (validated by validator)
+  const name = typeName ?? "";
+  const simpleType = new topLevelSimpleType();
+  simpleType.name = name;
+  simpleType.restriction = buildRestriction(baseType, restrictions);
   if (documentation) {
     simpleType.annotation = createAnnotation(documentation);
   }
@@ -65,11 +83,12 @@ export function executeAddSimpleType(
 
 /**
  * Executes a removeSimpleType command.
- * Removes an existing top-level simple type identified by its schema ID.
+ * Detects whether the typeId refers to an anonymous simpleType in an element
+ * (nodeType "anonymousSimpleType") or a top-level type and removes it accordingly.
  *
  * @param command - The removeSimpleType command to execute
  * @param schemaObj - The schema object to modify
- * @throws Error if the simple type is not found
+ * @throws Error if the type or its parent element is not found
  */
 export function executeRemoveSimpleType(
   command: RemoveSimpleTypeCommand,
@@ -77,25 +96,41 @@ export function executeRemoveSimpleType(
 ): void {
   const { typeId } = command.payload;
   const parsed = parseSchemaId(typeId);
-  const typeName = parsed.name;
 
-  const simpleTypes = toArray(schemaObj.simpleType);
-  const filtered = simpleTypes.filter((st) => st.name !== typeName);
-
-  if (filtered.length === simpleTypes.length) {
-    throw new Error(`SimpleType not found: ${typeName}`);
+  if (parsed.nodeType === SchemaNodeType.AnonymousSimpleType) {
+    const parentId = parsed.parentId;
+    if (!parentId) {
+      throw new Error(`Invalid anonymous simpleType ID: ${typeId}`);
+    }
+    const location = locateNodeById(schemaObj, parentId);
+    if (!location.found || !location.parent) {
+      throw new Error(`Parent element not found: ${parentId}`);
+    }
+    const element = location.parent as topLevelElement | localElement;
+    if (!element.simpleType) {
+      throw new Error(`No anonymous simpleType found in element: ${parentId}`);
+    }
+    element.simpleType = undefined;
+    return;
   }
 
+  // Top-level named simpleType
+  const simpleTypes = toArray(schemaObj.simpleType);
+  const filtered = simpleTypes.filter((st) => st.name !== parsed.name);
+  if (filtered.length === simpleTypes.length) {
+    throw new Error(`SimpleType not found: ${parsed.name}`);
+  }
   schemaObj.simpleType = filtered.length > 0 ? filtered : undefined;
 }
 
 /**
  * Executes a modifySimpleType command.
- * Updates an existing top-level simple type's name, base type, restriction facets, or documentation.
+ * Detects whether the typeId refers to an anonymous simpleType in an element
+ * or a top-level type and updates it accordingly.
  *
  * @param command - The modifySimpleType command to execute
  * @param schemaObj - The schema object to modify
- * @throws Error if the simple type is not found
+ * @throws Error if the type or its parent element is not found
  */
 export function executeModifySimpleType(
   command: ModifySimpleTypeCommand,
@@ -104,26 +139,74 @@ export function executeModifySimpleType(
   const { typeId, typeName, baseType, restrictions, documentation } = command.payload;
   const parsed = parseSchemaId(typeId);
 
-  const simpleTypes = toArray(schemaObj.simpleType);
-  const simpleType = simpleTypes.find((st) => st.name === parsed.name);
+  if (parsed.nodeType === SchemaNodeType.AnonymousSimpleType) {
+    const parentId = parsed.parentId;
+    if (!parentId) {
+      throw new Error(`Invalid anonymous simpleType ID: ${typeId}`);
+    }
+    const location = locateNodeById(schemaObj, parentId);
+    if (!location.found || !location.parent) {
+      throw new Error(`Parent element not found: ${parentId}`);
+    }
+    const element = location.parent as topLevelElement | localElement;
+    if (!element.simpleType) {
+      throw new Error(`No anonymous simpleType found in element: ${parentId}`);
+    }
+    updateTypeContents(element.simpleType, baseType, restrictions, documentation);
+    return;
+  }
 
+  // Top-level named simpleType
+  const simpleType = toArray(schemaObj.simpleType).find((st) => st.name === parsed.name);
   if (!simpleType) {
     throw new Error(`SimpleType not found: ${parsed.name}`);
   }
-
   if (typeName !== undefined) {
     simpleType.name = typeName;
   }
+  updateTypeContents(simpleType, baseType, restrictions, documentation);
+}
 
+// ===== Helper Functions =====
+
+/**
+ * Builds a new restrictionType with the given base and optional facets.
+ *
+ * @param base - The base type name
+ * @param facets - Optional restriction facets to apply
+ * @returns A new restrictionType instance
+ */
+function buildRestriction(base: string, facets?: RestrictionFacets): restrictionType {
+  const restriction = new restrictionType();
+  restriction.base = base;
+  if (facets) {
+    applyRestrictionFacets(restriction, facets);
+  }
+  return restriction;
+}
+
+/**
+ * Updates the restriction and/or annotation of any simpleType object.
+ * Works for both `topLevelSimpleType` and `localSimpleType`.
+ *
+ * @param simpleType - The simpleType object to update
+ * @param baseType - New base type (optional)
+ * @param restrictions - New restriction facets (optional)
+ * @param documentation - New documentation text (optional)
+ * @throws Error if restrictions are provided but no base type exists
+ */
+function updateTypeContents(
+  simpleType: { restriction?: restrictionType; annotation?: annotationType },
+  baseType?: string,
+  restrictions?: RestrictionFacets,
+  documentation?: string
+): void {
   if (baseType !== undefined || restrictions !== undefined) {
     if (!simpleType.restriction) {
       if (baseType === undefined) {
-        throw new Error(
-          `Cannot apply restrictions to SimpleType '${parsed.name}' without a base type`
-        );
+        throw new Error("Cannot apply restrictions without a base type");
       }
-      simpleType.restriction = new restrictionType();
-      simpleType.restriction.base = baseType;
+      simpleType.restriction = buildRestriction(baseType, restrictions);
     } else {
       if (baseType !== undefined) {
         simpleType.restriction.base = baseType;
@@ -143,8 +226,6 @@ export function executeModifySimpleType(
     simpleType.annotation.documentation = [doc];
   }
 }
-
-// ===== Helper Functions =====
 
 /**
  * Applies restriction facets to a restrictionType object.

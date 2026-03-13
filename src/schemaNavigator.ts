@@ -10,6 +10,8 @@ import {
   topLevelComplexType,
   localComplexType,
   explicitGroup,
+  topLevelAttribute,
+  attribute,
 } from "../shared/types";
 import { parseSchemaId, SchemaNodeType } from "../shared/idStrategy";
 import { toArray } from "../shared/schemaUtils";
@@ -184,6 +186,16 @@ function navigateToChild(
       position
     );
   } else if (
+    parentType === "topLevelAttribute" ||
+    parentType === "attribute"
+  ) {
+    return navigateFromAttribute(
+      parent as topLevelAttribute | attribute,
+      nodeType,
+      name,
+      position
+    );
+  } else if (
     parentType === "sequence" ||
     parentType === "choice" ||
     parentType === "all"
@@ -227,6 +239,12 @@ function navigateFromSchema(
     if (group) {
       return { found: true, node: group, nodeType: "namedGroup" };
     }
+  } else if (nodeType === SchemaNodeType.Attribute) {
+    const attrs = toArray(schemaObj.attribute);
+    const attr = findByNameOrPosition(attrs, name, position);
+    if (attr) {
+      return { found: true, node: attr, nodeType: "topLevelAttribute" };
+    }
   }
 
   return { found: false };
@@ -244,6 +262,10 @@ function navigateFromElement(
   if (nodeType === SchemaNodeType.AnonymousComplexType) {
     if (element.complexType) {
       return { found: true, node: element.complexType, nodeType: "localComplexType" };
+    }
+  } else if (nodeType === SchemaNodeType.AnonymousSimpleType) {
+    if (element.simpleType) {
+      return { found: true, node: element.simpleType, nodeType: "localSimpleType" };
     }
   }
 
@@ -298,6 +320,30 @@ function navigateFromComplexType(
       };
     } else if (nodeType === "all" as SchemaNodeType && (complexType as localComplexType).all) {
       return { found: true, node: (complexType as localComplexType).all, nodeType: "all" };
+    }
+  } else if (nodeType === SchemaNodeType.Attribute) {
+    const attrs = toArray(complexType.attribute);
+    const attr = findByNameOrPosition(attrs, name, position);
+    if (attr) {
+      return { found: true, node: attr, nodeType: "attribute" };
+    }
+  }
+
+  return { found: false };
+}
+
+/**
+ * Navigate from an attribute to a child (anonymousSimpleType).
+ */
+function navigateFromAttribute(
+  attr: topLevelAttribute | attribute,
+  nodeType: SchemaNodeType,
+  _name?: string,
+  _position?: number
+): { found: boolean; node?: unknown; nodeType?: string } {
+  if (nodeType === SchemaNodeType.AnonymousSimpleType) {
+    if (attr.simpleType) {
+      return { found: true, node: attr.simpleType, nodeType: "localSimpleType" };
     }
   }
 

@@ -2,7 +2,7 @@
  * Unit tests for schema utility functions.
  */
 
-import { toArray } from "./schemaUtils";
+import { toArray, isSchemaRoot } from "./schemaUtils";
 
 describe("schemaUtils", () => {
   describe("toArray", () => {
@@ -28,6 +28,38 @@ describe("schemaUtils", () => {
       expect(toArray(0)).toEqual([0]);
       expect(toArray(false)).toEqual([false]);
       expect(toArray("")).toEqual([""]);
+    });
+  });
+
+  describe("isSchemaRoot", () => {
+    it("should return true for undefined", () => {
+      expect(isSchemaRoot(undefined)).toBe(true);
+    });
+
+    it('should return true for "schema"', () => {
+      expect(isSchemaRoot("schema")).toBe(true);
+    });
+
+    it('should return true for "/schema"', () => {
+      expect(isSchemaRoot("/schema")).toBe(true);
+    });
+
+    it("should return false for empty string", () => {
+      expect(isSchemaRoot("")).toBe(false);
+    });
+
+    it("should return false for element IDs", () => {
+      expect(isSchemaRoot("/element:age")).toBe(false);
+      expect(isSchemaRoot("/element:person/element:name")).toBe(false);
+    });
+
+    it("should return false for attribute IDs", () => {
+      expect(isSchemaRoot("/attribute:color")).toBe(false);
+    });
+
+    it("should return false for other non-root strings", () => {
+      expect(isSchemaRoot("root")).toBe(false);
+      expect(isSchemaRoot("schemas")).toBe(false);
     });
   });
 });

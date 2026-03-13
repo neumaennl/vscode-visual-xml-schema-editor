@@ -176,7 +176,8 @@ export function executeModifySimpleType(
  */
 function buildRestriction(base: string, facets?: RestrictionFacets): restrictionType {
   const restriction = new restrictionType();
-  restriction.base = base;
+  const normalizedBase = base.trim();
+  restriction.base = normalizedBase;
   if (facets) {
     applyRestrictionFacets(restriction, facets);
   }

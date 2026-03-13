@@ -70,7 +70,13 @@ export function validateAddSimpleType(
     }
     const baseTypeResult = validateElementType(baseType, schemaObj);
     if (!baseTypeResult.valid) {
-      return { valid: false, error: `Base type '${baseType}' is not a recognized XSD type` };
+      return {
+        valid: false,
+        error:
+          baseTypeResult.error
+            ? `Base type: ${baseTypeResult.error}`
+            : `Base type '${baseType}' is not a recognized XSD type`,
+      };
     }
     return { valid: true };
   }
@@ -149,6 +155,12 @@ export function validateModifySimpleType(
       return {
         valid: false,
         error: `No anonymous simpleType found in parent: ${parsed.parentId}`,
+      };
+    }
+    if (command.payload.typeName !== undefined) {
+      return {
+        valid: false,
+        error: "Cannot provide 'typeName' when modifying an anonymous simpleType",
       };
     }
     return { valid: true };

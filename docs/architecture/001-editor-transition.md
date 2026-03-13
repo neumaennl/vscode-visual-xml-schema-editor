@@ -17,7 +17,7 @@ The Visual XML Schema Editor currently operates as a **viewer** with limited edi
 - The `applySchemaChanges` method is stubbed but not implemented
 
 > **Implementation Progress (as of 2026-03-13):**
-> Phase 1 (Foundation) is complete — all command types, the CommandProcessor, CommandValidator, CommandExecutor, SchemaModelManager, and message protocol have been implemented with unit tests. Phase 2 (Basic Editing) is in progress — element add/remove/modify handlers are implemented, attribute add/remove/modify handlers are implemented with full unit tests and updated validators, simpleType add/remove/modify handlers are implemented with support for both top-level named types and anonymous inline types within elements (including all 12 XSD restriction facets), and complexType add/remove/modify handlers are now implemented with support for top-level named types and anonymous inline types within elements (including all content models: sequence, choice, all), abstract/mixed flags, base type extension via complexContent, and documentation.
+> Phase 1 (Foundation) is complete — all command types, the CommandProcessor, CommandValidator, CommandExecutor, SchemaModelManager, and message protocol have been implemented with unit tests. Phase 2 (Basic Editing) is in progress — element add/remove/modify handlers are implemented, attribute add/remove/modify handlers are implemented with full unit tests and updated validators, simpleType add/remove/modify handlers are implemented with support for both top-level named types and anonymous inline types within elements (including all 12 XSD restriction facets), complexType add/remove/modify handlers are implemented with support for top-level named types and anonymous inline types within elements (including all content models: sequence, choice, all), abstract/mixed flags, base type extension via complexContent, and documentation, and group (named model group) add/remove/modify handlers are now implemented with support for all content models (sequence, choice, all) and documentation, with updated validators that check group name uniqueness and existence, and full unit tests.
 
 ### Goal
 
@@ -560,7 +560,8 @@ class DiagramRenderer {
 - [x] Implement attribute commands (add, remove, modify)
 - [x] Implement simpleType commands (add, remove, modify) — top-level named types and anonymous inline types within elements
 - [x] Implement complexType commands (add, remove, modify) — top-level named types and anonymous inline types within elements, all content models (sequence, choice, all), abstract/mixed flags, base type extension, and documentation
-- [ ] Implement group and attributeGroup commands (add, remove, modify)
+- [x] Implement group commands (add, remove, modify) — top-level named group definitions (sequence/choice/all) and group references (xs:group ref="...") inside compositors and complexTypes; `removeGroup` blocks removal when the group is still referenced elsewhere in the schema
+- [ ] Implement attributeGroup commands (add, remove, modify)
 - [ ] Implement annotation and documentation commands (add, remove, modify)
 - [ ] Implement import and include commands (add, remove, modify)
 - [x] Connect commands to document edits via [WorkspaceEdit](https://code.visualstudio.com/api/references/vscode-api#WorkspaceEdit) (VS Code's API for programmatic text edits with undo/redo support)

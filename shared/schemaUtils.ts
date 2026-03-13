@@ -37,5 +37,5 @@ const SCHEMA_ROOT_IDS = new Set(["schema", "/schema"]);
  * @returns true if the ID refers to the schema root
  */
 export function isSchemaRoot(parentId: string | undefined): boolean {
-  return !parentId || SCHEMA_ROOT_IDS.has(parentId);
+  return parentId === undefined || SCHEMA_ROOT_IDS.has(parentId);
 }

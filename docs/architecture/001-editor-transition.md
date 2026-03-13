@@ -559,6 +559,7 @@ class DiagramRenderer {
 - [x] Implement element commands (add, remove, modify)
 - [x] Implement attribute commands (add, remove, modify)
 - [x] Implement simpleType commands (add, remove, modify) — top-level named types and anonymous inline types within elements
+- [ ] Implement complexType commands (add, remove, modify)
 - [ ] Implement group and attributeGroup commands (add, remove, modify)
 - [ ] Implement annotation and documentation commands (add, remove, modify)
 - [ ] Implement import and include commands (add, remove, modify)

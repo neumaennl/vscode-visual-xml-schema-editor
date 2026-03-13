@@ -11,7 +11,7 @@ import { ContentModel } from "./schemaTypes";
  *
  * Two modes, mutually exclusive:
  * - **Definition** (`groupName` + `contentModel`): creates a top-level `xs:group name="..."`.
- *   `parentId` is optional (defaults to schema root).
+ *   Always created at the schema root; `parentId` must not be provided in this mode.
  * - **Reference** (`ref` + `parentId`): creates `xs:group ref="..."` inside the compositor
  *   or complexType identified by `parentId`.
  */
@@ -36,7 +36,7 @@ export interface AddGroupPayload {
   ref?: string;
   /**
    * ID of the parent compositor (sequence/choice) or complexType.
-   * Required when creating a group reference. Ignored for definitions.
+   * Required when creating a group reference. Must be omitted for definitions.
    */
   parentId?: string;
   /** Minimum occurrences. Only applicable for group references. */

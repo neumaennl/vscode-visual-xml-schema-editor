@@ -15,6 +15,7 @@ import {
 import {
   ValidationResult,
   isValidXmlName,
+  validateOccurrences,
 } from "./validationUtils";
 import { toArray } from "../../shared/schemaUtils";
 import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy";
@@ -102,6 +103,70 @@ function groupRefExistsInHolder(
 }
 
 /**
+ * Deep variant of groupRefExistsInCompositor that also inspects
+ * complexTypes nested under local elements within the compositor.
+ */
+function groupRefExistsInCompositorDeep(
+  name: string,
+  compositor: any
+): boolean {
+  // Preserve existing behavior for direct group / nested compositor refs.
+  if (groupRefExistsInCompositor(name, compositor)) return true;
+
+  // Additionally, walk local elements and inspect their inline complexTypes.
+  const elements = toArray(compositor?.element);
+  for (const el of elements) {
+    if (el?.complexType && groupRefExistsInHolderDeep(name, el.complexType)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Deep variant of groupRefExistsInHolder that also traverses compositor
+ * trees to inspect complexTypes nested under local elements.
+ */
+function groupRefExistsInHolderDeep(
+  name: string,
+  holder: ComplexTypeParticleHolder
+): boolean {
+  // First, run the existing checks.
+  if (groupRefExistsInHolder(name, holder)) return true;
+
+  // Then, drill into compositor structures to find nested local elements.
+  if (holder.sequence && groupRefExistsInCompositorDeep(name, holder.sequence)) {
+    return true;
+  }
+  if (holder.choice && groupRefExistsInCompositorDeep(name, holder.choice)) {
+    return true;
+  }
+
+  const ext = holder.complexContent?.extension;
+  if (ext) {
+    if (ext.sequence && groupRefExistsInCompositorDeep(name, ext.sequence)) {
+      return true;
+    }
+    if (ext.choice && groupRefExistsInCompositorDeep(name, ext.choice)) {
+      return true;
+    }
+  }
+
+  const restr = holder.complexContent?.restriction;
+  if (restr) {
+    if (restr.sequence && groupRefExistsInCompositorDeep(name, restr.sequence)) {
+      return true;
+    }
+    if (restr.choice && groupRefExistsInCompositorDeep(name, restr.choice)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
  * Returns true if any schema construct references the named group.
  *
  * Checks:
@@ -110,16 +175,29 @@ function groupRefExistsInHolder(
  * - Other top-level group definitions (groups can reference groups)
  */
 function isGroupReferenced(name: string, schemaObj: schema): boolean {
+  // Top-level complexType definitions.
   for (const ct of toArray(schemaObj.complexType)) {
-    if (groupRefExistsInHolder(name, ct)) return true;
+    if (groupRefExistsInHolderDeep(name, ct)) return true;
   }
+
+  // Inline complexTypes on top-level element definitions.
   for (const el of toArray(schemaObj.element)) {
-    if (el.complexType && groupRefExistsInHolder(name, el.complexType)) return true;
+    if (el.complexType && groupRefExistsInHolderDeep(name, el.complexType)) {
+      return true;
+    }
   }
+
+  // Other top-level group definitions (groups can reference groups),
+  // including nested local elements inside their particles.
   for (const grp of toArray(schemaObj.group)) {
-    if (grp.sequence && groupRefExistsInCompositor(name, grp.sequence)) return true;
-    if (grp.choice && groupRefExistsInCompositor(name, grp.choice)) return true;
+    if (grp.sequence && groupRefExistsInCompositorDeep(name, grp.sequence)) {
+      return true;
+    }
+    if (grp.choice && groupRefExistsInCompositorDeep(name, grp.choice)) {
+      return true;
+    }
   }
+
   return false;
 }
 
@@ -274,6 +352,18 @@ export function validateModifyGroup(
           valid: false,
           error: `Referenced group does not exist: ${command.payload.ref}`,
         };
+      }
+    }
+    if (
+      command.payload.minOccurs !== undefined ||
+      command.payload.maxOccurs !== undefined
+    ) {
+      const occurrenceValidation: ValidationResult = validateOccurrences(
+        command.payload.minOccurs,
+        command.payload.maxOccurs
+      );
+      if (!occurrenceValidation.valid) {
+        return occurrenceValidation;
       }
     }
     return { valid: true };

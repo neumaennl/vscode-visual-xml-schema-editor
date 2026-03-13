@@ -61,6 +61,41 @@ describe("Group Validators", () => {
       expect(result.valid).toBe(false);
       expect(result.error).toBe("Content model is required");
     });
+
+    test("should reject addGroup when group name already exists", () => {
+      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:group name="ExistingGroup">
+    <xs:sequence/>
+  </xs:group>
+</xs:schema>`;
+      const schemaWithGroup = unmarshal(schema, schemaXml);
+
+      const command: AddGroupCommand = {
+        type: "addGroup",
+        payload: {
+          groupName: "ExistingGroup",
+          contentModel: "sequence",
+        },
+      };
+
+      const result = validateAddGroup(command, schemaWithGroup);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe("Group name already exists: ExistingGroup");
+    });
+
+    test("should accept addGroup with valid new group name", () => {
+      const command: AddGroupCommand = {
+        type: "addGroup",
+        payload: {
+          groupName: "NewGroup",
+          contentModel: "sequence",
+        },
+      };
+
+      const result = validateAddGroup(command, schemaObj);
+      expect(result.valid).toBe(true);
+    });
   });
 
   describe("validateRemoveGroup", () => {
@@ -76,6 +111,39 @@ describe("Group Validators", () => {
       expect(result.valid).toBe(false);
       expect(result.error).toBe("Group ID cannot be empty");
     });
+
+    test("should reject removeGroup when group does not exist", () => {
+      const command: RemoveGroupCommand = {
+        type: "removeGroup",
+        payload: {
+          groupId: "/group:NonExistent",
+        },
+      };
+
+      const result = validateRemoveGroup(command, schemaObj);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe("Group not found: /group:NonExistent");
+    });
+
+    test("should accept removeGroup when group exists", () => {
+      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:group name="MyGroup">
+    <xs:sequence/>
+  </xs:group>
+</xs:schema>`;
+      const schemaWithGroup = unmarshal(schema, schemaXml);
+
+      const command: RemoveGroupCommand = {
+        type: "removeGroup",
+        payload: {
+          groupId: "/group:MyGroup",
+        },
+      };
+
+      const result = validateRemoveGroup(command, schemaWithGroup);
+      expect(result.valid).toBe(true);
+    });
   });
 
   describe("validateModifyGroup", () => {
@@ -90,6 +158,40 @@ describe("Group Validators", () => {
       const result = validateModifyGroup(command, schemaObj);
       expect(result.valid).toBe(false);
       expect(result.error).toBe("Group ID cannot be empty");
+    });
+
+    test("should reject modifyGroup when group does not exist", () => {
+      const command: ModifyGroupCommand = {
+        type: "modifyGroup",
+        payload: {
+          groupId: "/group:NonExistent",
+        },
+      };
+
+      const result = validateModifyGroup(command, schemaObj);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe("Group not found: /group:NonExistent");
+    });
+
+    test("should accept modifyGroup when group exists", () => {
+      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:group name="MyGroup">
+    <xs:sequence/>
+  </xs:group>
+</xs:schema>`;
+      const schemaWithGroup = unmarshal(schema, schemaXml);
+
+      const command: ModifyGroupCommand = {
+        type: "modifyGroup",
+        payload: {
+          groupId: "/group:MyGroup",
+          groupName: "UpdatedGroup",
+        },
+      };
+
+      const result = validateModifyGroup(command, schemaWithGroup);
+      expect(result.valid).toBe(true);
     });
   });
 });

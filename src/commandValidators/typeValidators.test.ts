@@ -22,13 +22,22 @@ import {
 } from "./typeValidators";
 
 describe("SimpleType Validators", () => {
-  let schemaObj: schema;
+  let emptySchemaObj: schema;
+  let schemaWithAgeType: schema;
 
   beforeEach(() => {
-    const simpleSchemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+    const emptySchemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
 </xs:schema>`;
-    schemaObj = unmarshal(schema, simpleSchemaXml);
+    emptySchemaObj = unmarshal(schema, emptySchemaXml);
+
+    const schemaWithTypeXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:simpleType name="AgeType">
+    <xs:restriction base="xs:integer"/>
+  </xs:simpleType>
+</xs:schema>`;
+    schemaWithAgeType = unmarshal(schema, schemaWithTypeXml);
   });
 
   describe("validateAddSimpleType", () => {
@@ -37,11 +46,11 @@ describe("SimpleType Validators", () => {
         type: "addSimpleType",
         payload: {
           typeName: "",
-          baseType: "string",
+          baseType: "xs:string",
         },
       };
 
-      const result = validateAddSimpleType(command, schemaObj);
+      const result = validateAddSimpleType(command, emptySchemaObj);
       expect(result.valid).toBe(false);
       expect(result.error).toBe("Type name must be a valid XML name");
     });
@@ -50,17 +59,31 @@ describe("SimpleType Validators", () => {
       const command: AddSimpleTypeCommand = {
         type: "addSimpleType",
         payload: {
-          typeName: "AgeType",
+          typeName: "NameType",
           baseType: "",
         },
       };
 
-      const result = validateAddSimpleType(command, schemaObj);
+      const result = validateAddSimpleType(command, emptySchemaObj);
       expect(result.valid).toBe(false);
       expect(result.error).toBe("Base type cannot be empty");
     });
 
-    test("should accept addSimpleType with valid typeName and baseType", () => {
+    test("should reject addSimpleType with unrecognized baseType", () => {
+      const command: AddSimpleTypeCommand = {
+        type: "addSimpleType",
+        payload: {
+          typeName: "NameType",
+          baseType: "xs:nonExistentType",
+        },
+      };
+
+      const result = validateAddSimpleType(command, emptySchemaObj);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe("Base type 'xs:nonExistentType' is not a recognized XSD type");
+    });
+
+    test("should reject addSimpleType when type name already exists in schema", () => {
       const command: AddSimpleTypeCommand = {
         type: "addSimpleType",
         payload: {
@@ -69,7 +92,34 @@ describe("SimpleType Validators", () => {
         },
       };
 
-      const result = validateAddSimpleType(command, schemaObj);
+      const result = validateAddSimpleType(command, schemaWithAgeType);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe("Simple type 'AgeType' already exists in schema");
+    });
+
+    test("should accept addSimpleType with valid typeName and built-in baseType", () => {
+      const command: AddSimpleTypeCommand = {
+        type: "addSimpleType",
+        payload: {
+          typeName: "AgeType",
+          baseType: "xs:integer",
+        },
+      };
+
+      const result = validateAddSimpleType(command, emptySchemaObj);
+      expect(result.valid).toBe(true);
+    });
+
+    test("should accept addSimpleType using a user-defined type as baseType", () => {
+      const command: AddSimpleTypeCommand = {
+        type: "addSimpleType",
+        payload: {
+          typeName: "RestrictedAgeType",
+          baseType: "AgeType",
+        },
+      };
+
+      const result = validateAddSimpleType(command, schemaWithAgeType);
       expect(result.valid).toBe(true);
     });
   });
@@ -83,7 +133,7 @@ describe("SimpleType Validators", () => {
         },
       };
 
-      const result = validateRemoveSimpleType(command, schemaObj);
+      const result = validateRemoveSimpleType(command, emptySchemaObj);
       expect(result.valid).toBe(false);
       expect(result.error).toBe("Type ID cannot be empty");
     });
@@ -96,7 +146,7 @@ describe("SimpleType Validators", () => {
         },
       };
 
-      const result = validateRemoveSimpleType(command, schemaObj);
+      const result = validateRemoveSimpleType(command, emptySchemaObj);
       expect(result.valid).toBe(true);
     });
   });
@@ -110,7 +160,7 @@ describe("SimpleType Validators", () => {
         },
       };
 
-      const result = validateModifySimpleType(command, schemaObj);
+      const result = validateModifySimpleType(command, emptySchemaObj);
       expect(result.valid).toBe(false);
       expect(result.error).toBe("Type ID cannot be empty");
     });
@@ -124,12 +174,26 @@ describe("SimpleType Validators", () => {
         },
       };
 
-      const result = validateModifySimpleType(command, schemaObj);
+      const result = validateModifySimpleType(command, schemaWithAgeType);
       expect(result.valid).toBe(false);
       expect(result.error).toBe("Type name must be a valid XML name");
     });
 
-    test("should accept modifySimpleType without typeName (name unchanged)", () => {
+    test("should reject modifySimpleType when typeId does not exist in schema", () => {
+      const command: ModifySimpleTypeCommand = {
+        type: "modifySimpleType",
+        payload: {
+          typeId: "/simpleType:NonExistent",
+          typeName: "NewName",
+        },
+      };
+
+      const result = validateModifySimpleType(command, emptySchemaObj);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe("Simple type 'NonExistent' not found in schema");
+    });
+
+    test("should accept modifySimpleType when typeId exists and no typeName provided", () => {
       const command: ModifySimpleTypeCommand = {
         type: "modifySimpleType",
         payload: {
@@ -138,7 +202,7 @@ describe("SimpleType Validators", () => {
         },
       };
 
-      const result = validateModifySimpleType(command, schemaObj);
+      const result = validateModifySimpleType(command, schemaWithAgeType);
       expect(result.valid).toBe(true);
     });
   });

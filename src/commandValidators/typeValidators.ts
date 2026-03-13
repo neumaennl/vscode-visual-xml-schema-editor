@@ -14,7 +14,10 @@ import {
 import {
   ValidationResult,
   isValidXmlName,
+  validateElementType,
 } from "./validationUtils";
+import { parseSchemaId } from "../../shared/idStrategy";
+import { toArray } from "../../shared/schemaUtils";
 
 /**
  * Valid content models for ComplexType elements.
@@ -31,7 +34,7 @@ export const VALID_COMPLEX_TYPE_CONTENT_MODELS = [
 
 export function validateAddSimpleType(
   command: AddSimpleTypeCommand,
-  _schemaObj: schema
+  schemaObj: schema
 ): ValidationResult {
   // Validate type name is a valid XML name
   if (!isValidXmlName(command.payload.typeName)) {
@@ -41,8 +44,15 @@ export function validateAddSimpleType(
   if (!command.payload.baseType.trim()) {
     return { valid: false, error: "Base type cannot be empty" };
   }
-  // TODO Phase 2: Check if type name already exists in schema
-  // TODO Phase 2: Validate baseType exists in schema
+  // Check if type name already exists in schema
+  if (toArray(schemaObj.simpleType).some(st => st.name === command.payload.typeName)) {
+    return { valid: false, error: `Simple type '${command.payload.typeName}' already exists in schema` };
+  }
+  // Validate that baseType is a recognized XSD type (built-in or user-defined)
+  const baseTypeResult = validateElementType(command.payload.baseType, schemaObj);
+  if (!baseTypeResult.valid) {
+    return { valid: false, error: `Base type '${command.payload.baseType}' is not a recognized XSD type` };
+  }
   return { valid: true };
 }
 
@@ -53,14 +63,13 @@ export function validateRemoveSimpleType(
   if (!command.payload.typeId.trim()) {
     return { valid: false, error: "Type ID cannot be empty" };
   }
-  // TODO Phase 2: Validate that typeId exists in schema
   // TODO Phase 2: Check if type is being used by other elements/types
   return { valid: true };
 }
 
 export function validateModifySimpleType(
   command: ModifySimpleTypeCommand,
-  _schemaObj: schema
+  schemaObj: schema
 ): ValidationResult {
   if (!command.payload.typeId.trim()) {
     return { valid: false, error: "Type ID cannot be empty" };
@@ -69,7 +78,11 @@ export function validateModifySimpleType(
   if (command.payload.typeName !== undefined && !isValidXmlName(command.payload.typeName)) {
     return { valid: false, error: "Type name must be a valid XML name" };
   }
-  // TODO Phase 2: Validate that typeId exists in schema
+  // Validate that typeId exists in schema
+  const parsed = parseSchemaId(command.payload.typeId);
+  if (!toArray(schemaObj.simpleType).some(st => st.name === parsed.name)) {
+    return { valid: false, error: `Simple type '${parsed.name}' not found in schema` };
+  }
   return { valid: true };
 }
 

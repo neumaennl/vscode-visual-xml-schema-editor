@@ -43,7 +43,7 @@ describe("SimpleType Executors", () => {
       expect(st.restriction!.base).toBe("xs:integer");
     });
 
-    it("should serialize to valid XSD", () => {
+    it("should produce a valid XSD simpleType element in the serialized output", () => {
       const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
 </xs:schema>`;
@@ -59,8 +59,12 @@ describe("SimpleType Executors", () => {
 
       executeAddSimpleType(command, schemaObj);
       const xml = marshal(schemaObj);
-      expect(xml).toContain('name="NameType"');
-      expect(xml).toContain('base="xs:string"');
+      const reparsed = unmarshal(schema, xml);
+      const simpleTypes = toArray(reparsed.simpleType);
+      expect(simpleTypes).toHaveLength(1);
+      expect(simpleTypes[0].name).toBe("NameType");
+      expect(simpleTypes[0].restriction).toBeDefined();
+      expect(simpleTypes[0].restriction!.base).toBe("xs:string");
     });
 
     it("should add a simple type with documentation", () => {

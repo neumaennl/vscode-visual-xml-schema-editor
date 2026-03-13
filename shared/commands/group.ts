@@ -26,7 +26,7 @@ export interface AddGroupPayload {
    * Ignored when creating a reference.
    */
   contentModel?: ContentModel;
-  /** Optional documentation. Not applicable for references. */
+  /** Optional documentation. Applies to both group definitions and group references (xs:annotation). */
   documentation?: string;
   /**
    * Name of the group to reference.
@@ -85,7 +85,7 @@ export interface ModifyGroupPayload {
   groupName?: string;
   /** New content model (optional). Not applicable for references. */
   contentModel?: ContentModel;
-  /** New documentation (optional). Not applicable for references. */
+  /** New documentation (optional). Applies to both group definitions and group references (xs:annotation). */
   documentation?: string;
   /**
    * New ref target for a group reference (optional).

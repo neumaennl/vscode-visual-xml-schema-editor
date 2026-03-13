@@ -461,6 +461,25 @@ describe("Group Executors", () => {
         expect(ct.group!.ref).toBe("PersonGroup");
       });
 
+      it("should add a group reference with documentation annotation", () => {
+        const schemaObj = unmarshal(schema, schemaWithGroupAndType);
+
+        const command: AddGroupCommand = {
+          type: "addGroup",
+          payload: {
+            ref: "PersonGroup",
+            parentId: "/complexType:PersonType/sequence",
+            documentation: "A person group ref annotation",
+          },
+        };
+
+        executeAddGroup(command, schemaObj);
+
+        const ref = toArray(toArray(schemaObj.complexType)[0].sequence!.group)[0];
+        expect(ref.annotation).toBeDefined();
+        expect(ref.annotation!.documentation![0].value).toBe("A person group ref annotation");
+      });
+
       it("should throw when parentId is not found", () => {
         const schemaObj = unmarshal(schema, schemaWithGroupAndType);
 
@@ -542,6 +561,27 @@ describe("Group Executors", () => {
 
         expect(() => executeRemoveGroup(command, schemaObj)).toThrow("GroupRef not found");
       });
+
+      it("should remove a direct group ref from a complexType", () => {
+        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:group name="PersonGroup"><xs:sequence/></xs:group>
+  <xs:complexType name="PersonType">
+    <xs:group ref="PersonGroup"/>
+  </xs:complexType>
+</xs:schema>`;
+        const schemaObj = unmarshal(schema, schemaXml);
+
+        const command: RemoveGroupCommand = {
+          type: "removeGroup",
+          payload: { groupId: "/complexType:PersonType/groupRef:PersonGroup[0]" },
+        };
+
+        executeRemoveGroup(command, schemaObj);
+
+        const ct = toArray(schemaObj.complexType)[0];
+        expect(ct.group).toBeUndefined();
+      });
     });
 
     describe("executeModifyGroup (reference mode)", () => {
@@ -617,6 +657,58 @@ describe("Group Executors", () => {
         };
 
         expect(() => executeModifyGroup(command, schemaObj)).toThrow("GroupRef not found");
+      });
+
+      it("should set documentation annotation on a group reference", () => {
+        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:group name="PersonGroup"><xs:sequence/></xs:group>
+  <xs:complexType name="PersonType">
+    <xs:sequence>
+      <xs:group ref="PersonGroup"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>`;
+        const schemaObj = unmarshal(schema, schemaXml);
+
+        const command: ModifyGroupCommand = {
+          type: "modifyGroup",
+          payload: {
+            groupId: "/complexType:PersonType/sequence[0]/groupRef:PersonGroup[0]",
+            documentation: "Updated ref annotation",
+          },
+        };
+
+        executeModifyGroup(command, schemaObj);
+
+        const ref = toArray(toArray(schemaObj.complexType)[0].sequence!.group)[0];
+        expect(ref.annotation).toBeDefined();
+        expect(ref.annotation!.documentation![0].value).toBe("Updated ref annotation");
+      });
+
+      it("should modify a direct group ref on a complexType", () => {
+        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:group name="PersonGroup"><xs:sequence/></xs:group>
+  <xs:group name="AddressGroup"><xs:sequence/></xs:group>
+  <xs:complexType name="PersonType">
+    <xs:group ref="PersonGroup"/>
+  </xs:complexType>
+</xs:schema>`;
+        const schemaObj = unmarshal(schema, schemaXml);
+
+        const command: ModifyGroupCommand = {
+          type: "modifyGroup",
+          payload: {
+            groupId: "/complexType:PersonType/groupRef:PersonGroup[0]",
+            ref: "AddressGroup",
+          },
+        };
+
+        executeModifyGroup(command, schemaObj);
+
+        const ct = toArray(schemaObj.complexType)[0];
+        expect(ct.group!.ref).toBe("AddressGroup");
       });
     });
   });

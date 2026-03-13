@@ -51,7 +51,7 @@ export function executeAddGroup(
     if (!location.found || !location.parent || !location.parentType) {
       throw new Error(`Parent node not found: ${parentId}`);
     }
-    const grpRef = buildGroupRef(ref, minOccurs, maxOccurs);
+    const grpRef = buildGroupRef(ref, minOccurs, maxOccurs, documentation);
     addGroupRefToParent(location.parent, location.parentType, grpRef);
     return;
   }
@@ -161,6 +161,14 @@ export function executeModifyGroup(
     if (maxOccurs !== undefined) {
       target.maxOccurs = maxOccurs;
     }
+    if (documentation !== undefined) {
+      if (!target.annotation) {
+        target.annotation = new annotationType();
+      }
+      const doc = new documentationType();
+      doc.value = documentation;
+      target.annotation.documentation = [doc];
+    }
     return;
   }
 
@@ -207,7 +215,8 @@ type ComplexTypeWithGroupRef = { group?: groupRef };
 function buildGroupRef(
   ref: string,
   minOccurs?: number,
-  maxOccurs?: number | "unbounded"
+  maxOccurs?: number | "unbounded",
+  documentation?: string
 ): groupRef {
   const grpRef = new groupRef();
   grpRef.ref = ref;
@@ -216,6 +225,9 @@ function buildGroupRef(
   }
   if (maxOccurs !== undefined) {
     grpRef.maxOccurs = maxOccurs;
+  }
+  if (documentation) {
+    grpRef.annotation = createAnnotation(documentation);
   }
   return grpRef;
 }

@@ -10,8 +10,6 @@ import {
   AddComplexTypeCommand,
   RemoveComplexTypeCommand,
   ModifyComplexTypeCommand,
-  topLevelElement,
-  localElement,
 } from "../../shared/types";
 import {
   ValidationResult,
@@ -33,8 +31,8 @@ export const VALID_COMPLEX_TYPE_CONTENT_MODELS = [
   "all",
 ] as const;
 
-/** Element parent types that may hold anonymous simpleTypes. */
-const ELEMENT_PARENT_TYPES = ["topLevelElement", "localElement"];
+/** Container types that may hold an anonymous simpleType inline. */
+const INLINE_SIMPLE_TYPE_PARENT_TYPES = ["topLevelElement", "localElement", "topLevelAttribute", "attribute"];
 
 // ===== SimpleType Command Validation =====
 
@@ -45,27 +43,27 @@ export function validateAddSimpleType(
   const { parentId, typeName, baseType } = command.payload;
 
   if (!isSchemaRoot(parentId)) {
-    // Anonymous simpleType inside an element — isSchemaRoot guarantees parentId is a non-empty string here
+    // Anonymous simpleType inside an element or attribute — isSchemaRoot guarantees parentId is a non-empty string here
     const location = locateNodeById(schemaObj, parentId as string);
     if (!location.found) {
-      return { valid: false, error: `Parent element not found: ${parentId}` };
+      return { valid: false, error: `Parent not found: ${parentId}` };
     }
-    if (!ELEMENT_PARENT_TYPES.includes(location.parentType ?? "")) {
+    if (!INLINE_SIMPLE_TYPE_PARENT_TYPES.includes(location.parentType ?? "")) {
       return {
         valid: false,
         error: `Parent of type '${location.parentType}' cannot contain a simpleType`,
       };
     }
-    // parentType is confirmed to be topLevelElement or localElement by the check above
-    const element = location.parent as topLevelElement | localElement;
-    if (element.type_) {
+    // parentType is confirmed to be a valid inline simpleType container by the check above
+    const holder = location.parent as { type_?: string; simpleType?: unknown };
+    if (holder.type_) {
       return {
         valid: false,
-        error: `Element '${parentId}' already has a type attribute ('${element.type_}'); cannot add an inline simpleType`,
+        error: `'${parentId}' already has a type attribute ('${holder.type_}'); cannot add an inline simpleType`,
       };
     }
-    if (element.simpleType) {
-      return { valid: false, error: `Element '${parentId}' already has an anonymous simpleType` };
+    if (holder.simpleType) {
+      return { valid: false, error: `'${parentId}' already has an anonymous simpleType` };
     }
     if (!baseType.trim()) {
       return { valid: false, error: "Base type cannot be empty" };
@@ -110,13 +108,13 @@ export function validateRemoveSimpleType(
     }
     const location = locateNodeById(schemaObj, parsed.parentId);
     if (!location.found) {
-      return { valid: false, error: `Parent element not found: ${parsed.parentId}` };
+      return { valid: false, error: `Parent not found: ${parsed.parentId}` };
     }
-    const element = location.parent as topLevelElement | localElement;
-    if (!element.simpleType) {
+    const holder = location.parent as { simpleType?: unknown };
+    if (!holder.simpleType) {
       return {
         valid: false,
-        error: `No anonymous simpleType found in element: ${parsed.parentId}`,
+        error: `No anonymous simpleType found in parent: ${parsed.parentId}`,
       };
     }
   }
@@ -144,13 +142,13 @@ export function validateModifySimpleType(
     }
     const location = locateNodeById(schemaObj, parsed.parentId);
     if (!location.found) {
-      return { valid: false, error: `Parent element not found: ${parsed.parentId}` };
+      return { valid: false, error: `Parent not found: ${parsed.parentId}` };
     }
-    const element = location.parent as topLevelElement | localElement;
-    if (!element.simpleType) {
+    const holder = location.parent as { simpleType?: unknown };
+    if (!holder.simpleType) {
       return {
         valid: false,
-        error: `No anonymous simpleType found in element: ${parsed.parentId}`,
+        error: `No anonymous simpleType found in parent: ${parsed.parentId}`,
       };
     }
     return { valid: true };

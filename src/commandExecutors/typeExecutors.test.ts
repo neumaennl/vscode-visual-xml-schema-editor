@@ -667,7 +667,7 @@ describe("SimpleType Executors", () => {
         };
 
         expect(() => executeAddSimpleType(command, schemaObj)).toThrow(
-          "Parent element not found: /element:nonExistent"
+          "Parent not found: /element:nonExistent"
         );
       });
     });
@@ -708,7 +708,7 @@ describe("SimpleType Executors", () => {
         };
 
         expect(() => executeRemoveSimpleType(command, schemaObj)).toThrow(
-          "No anonymous simpleType found in element: /element:age"
+          "No anonymous simpleType found in parent: /element:age"
         );
       });
     });
@@ -808,9 +808,208 @@ describe("SimpleType Executors", () => {
         };
 
         expect(() => executeModifySimpleType(command, schemaObj)).toThrow(
-          "No anonymous simpleType found in element: /element:age"
+          "No anonymous simpleType found in parent: /element:age"
         );
       });
+    });
+  });
+});
+
+describe("Anonymous SimpleType in Attributes", () => {
+  describe("executeAddSimpleType (anonymous inside top-level attribute)", () => {
+    it("should add an anonymous simpleType to a top-level attribute", () => {
+      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:attribute name="color"/>
+</xs:schema>`;
+      const schemaObj = unmarshal(schema, schemaXml);
+
+      executeAddSimpleType(
+        {
+          type: "addSimpleType",
+          payload: {
+            parentId: "/attribute:color",
+            baseType: "xs:string",
+            restrictions: { enumeration: ["red", "green", "blue"] },
+          },
+        },
+        schemaObj
+      );
+
+      const attr = toArray(schemaObj.attribute)[0];
+      expect(attr.simpleType).toBeDefined();
+      expect(attr.simpleType!.restriction!.base).toBe("xs:string");
+      expect(attr.simpleType!.restriction!.enumeration).toHaveLength(3);
+    });
+
+    it("should produce valid XSD when serialized and re-parsed (attribute)", () => {
+      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:attribute name="status"/>
+</xs:schema>`;
+      const schemaObj = unmarshal(schema, schemaXml);
+
+      executeAddSimpleType(
+        {
+          type: "addSimpleType",
+          payload: {
+            parentId: "/attribute:status",
+            baseType: "xs:string",
+            restrictions: { enumeration: ["active", "inactive"] },
+          },
+        },
+        schemaObj
+      );
+
+      const xml = marshal(schemaObj);
+      const reparsed = unmarshal(schema, xml);
+      const attr = toArray(reparsed.attribute)[0];
+      expect(attr.simpleType).toBeDefined();
+      expect(attr.simpleType!.restriction!.base).toBe("xs:string");
+    });
+
+    it("should throw when parent attribute is not found", () => {
+      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+</xs:schema>`;
+      const schemaObj = unmarshal(schema, schemaXml);
+
+      expect(() =>
+        executeAddSimpleType(
+          {
+            type: "addSimpleType",
+            payload: { parentId: "/attribute:nonExistent", baseType: "xs:string" },
+          },
+          schemaObj
+        )
+      ).toThrow("Parent not found: /attribute:nonExistent");
+    });
+  });
+
+  describe("executeAddSimpleType (anonymous inside attribute in complexType)", () => {
+    it("should add an anonymous simpleType to an attribute inside a complexType", () => {
+      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:complexType name="PersonType">
+    <xs:attribute name="gender"/>
+  </xs:complexType>
+</xs:schema>`;
+      const schemaObj = unmarshal(schema, schemaXml);
+
+      executeAddSimpleType(
+        {
+          type: "addSimpleType",
+          payload: {
+            parentId: "/complexType:PersonType/attribute:gender",
+            baseType: "xs:string",
+            restrictions: { enumeration: ["male", "female", "other"] },
+          },
+        },
+        schemaObj
+      );
+
+      const complexType = toArray(schemaObj.complexType)[0];
+      const attr = toArray(complexType.attribute)[0];
+      expect(attr.simpleType).toBeDefined();
+      expect(attr.simpleType!.restriction!.base).toBe("xs:string");
+      expect(attr.simpleType!.restriction!.enumeration).toHaveLength(3);
+    });
+  });
+
+  describe("executeRemoveSimpleType (anonymous inside attribute)", () => {
+    it("should remove an anonymous simpleType from a top-level attribute", () => {
+      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:attribute name="color">
+    <xs:simpleType>
+      <xs:restriction base="xs:string">
+        <xs:enumeration value="red"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:attribute>
+</xs:schema>`;
+      const schemaObj = unmarshal(schema, schemaXml);
+
+      executeRemoveSimpleType(
+        {
+          type: "removeSimpleType",
+          payload: { typeId: "/attribute:color/anonymousSimpleType[0]" },
+        },
+        schemaObj
+      );
+
+      const attr = toArray(schemaObj.attribute)[0];
+      expect(attr.simpleType).toBeUndefined();
+    });
+
+    it("should throw when the parent attribute has no anonymous simpleType", () => {
+      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:attribute name="color" type="xs:string"/>
+</xs:schema>`;
+      const schemaObj = unmarshal(schema, schemaXml);
+
+      expect(() =>
+        executeRemoveSimpleType(
+          {
+            type: "removeSimpleType",
+            payload: { typeId: "/attribute:color/anonymousSimpleType[0]" },
+          },
+          schemaObj
+        )
+      ).toThrow("No anonymous simpleType found in parent: /attribute:color");
+    });
+  });
+
+  describe("executeModifySimpleType (anonymous inside attribute)", () => {
+    it("should modify the base type of an anonymous simpleType in an attribute", () => {
+      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:attribute name="score">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer"/>
+    </xs:simpleType>
+  </xs:attribute>
+</xs:schema>`;
+      const schemaObj = unmarshal(schema, schemaXml);
+
+      executeModifySimpleType(
+        {
+          type: "modifySimpleType",
+          payload: {
+            typeId: "/attribute:score/anonymousSimpleType[0]",
+            baseType: "xs:positiveInteger",
+            restrictions: { minInclusive: "1", maxInclusive: "100" },
+          },
+        },
+        schemaObj
+      );
+
+      const attr = toArray(schemaObj.attribute)[0];
+      expect(attr.simpleType!.restriction!.base).toBe("xs:positiveInteger");
+      expect(attr.simpleType!.restriction!.minInclusive![0].value).toBe("1");
+      expect(attr.simpleType!.restriction!.maxInclusive![0].value).toBe("100");
+    });
+
+    it("should throw when the parent attribute has no anonymous simpleType", () => {
+      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:attribute name="score" type="xs:integer"/>
+</xs:schema>`;
+      const schemaObj = unmarshal(schema, schemaXml);
+
+      expect(() =>
+        executeModifySimpleType(
+          {
+            type: "modifySimpleType",
+            payload: {
+              typeId: "/attribute:score/anonymousSimpleType[0]",
+              baseType: "xs:string",
+            },
+          },
+          schemaObj
+        )
+      ).toThrow("No anonymous simpleType found in parent: /attribute:score");
     });
   });
 });

@@ -252,7 +252,7 @@ describe("SimpleType Validators", () => {
 
         const result = validateAddSimpleType(command, schemaWithElement);
         expect(result.valid).toBe(false);
-        expect(result.error).toContain("Parent element not found");
+        expect(result.error).toContain("Parent not found");
       });
 
       test("should reject when element already has an anonymous simpleType", () => {
@@ -326,7 +326,7 @@ describe("SimpleType Validators", () => {
 
         const result = validateRemoveSimpleType(command, schemaWithElement);
         expect(result.valid).toBe(false);
-        expect(result.error).toContain("Parent element not found");
+        expect(result.error).toContain("Parent not found");
       });
     });
 
@@ -366,8 +366,159 @@ describe("SimpleType Validators", () => {
 
         const result = validateModifySimpleType(command, schemaWithElement);
         expect(result.valid).toBe(false);
-        expect(result.error).toContain("Parent element not found");
+        expect(result.error).toContain("Parent not found");
       });
+    });
+  });
+});
+
+describe("Anonymous SimpleType in Attributes Validators", () => {
+  const schemaWithAttribute = unmarshal(
+    schema,
+    `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:attribute name="color"/>
+</xs:schema>`
+  );
+
+  const schemaWithTypedAttribute = unmarshal(
+    schema,
+    `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:attribute name="color" type="xs:string"/>
+</xs:schema>`
+  );
+
+  const schemaWithAttributeAndSimpleType = unmarshal(
+    schema,
+    `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:attribute name="color">
+    <xs:simpleType>
+      <xs:restriction base="xs:string">
+        <xs:enumeration value="red"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:attribute>
+</xs:schema>`
+  );
+
+  describe("validateAddSimpleType (anonymous inside attribute)", () => {
+    test("should accept adding an anonymous simpleType to a top-level attribute", () => {
+      const command: AddSimpleTypeCommand = {
+        type: "addSimpleType",
+        payload: { parentId: "/attribute:color", baseType: "xs:string" },
+      };
+
+      const result = validateAddSimpleType(command, schemaWithAttribute);
+      expect(result.valid).toBe(true);
+    });
+
+    test("should reject when parent attribute not found", () => {
+      const command: AddSimpleTypeCommand = {
+        type: "addSimpleType",
+        payload: { parentId: "/attribute:nonExistent", baseType: "xs:string" },
+      };
+
+      const result = validateAddSimpleType(command, schemaWithAttribute);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("Parent not found");
+    });
+
+    test("should reject when attribute already has a type attribute", () => {
+      const command: AddSimpleTypeCommand = {
+        type: "addSimpleType",
+        payload: { parentId: "/attribute:color", baseType: "xs:string" },
+      };
+
+      const result = validateAddSimpleType(command, schemaWithTypedAttribute);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("already has a type attribute");
+    });
+
+    test("should reject when attribute already has an anonymous simpleType", () => {
+      const command: AddSimpleTypeCommand = {
+        type: "addSimpleType",
+        payload: { parentId: "/attribute:color", baseType: "xs:string" },
+      };
+
+      const result = validateAddSimpleType(command, schemaWithAttributeAndSimpleType);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("already has an anonymous simpleType");
+    });
+  });
+
+  describe("validateRemoveSimpleType (anonymous inside attribute)", () => {
+    test("should accept removing an anonymous simpleType that exists in an attribute", () => {
+      const command: RemoveSimpleTypeCommand = {
+        type: "removeSimpleType",
+        payload: { typeId: "/attribute:color/anonymousSimpleType[0]" },
+      };
+
+      const result = validateRemoveSimpleType(command, schemaWithAttributeAndSimpleType);
+      expect(result.valid).toBe(true);
+    });
+
+    test("should reject when no anonymous simpleType exists in attribute", () => {
+      const command: RemoveSimpleTypeCommand = {
+        type: "removeSimpleType",
+        payload: { typeId: "/attribute:color/anonymousSimpleType[0]" },
+      };
+
+      const result = validateRemoveSimpleType(command, schemaWithAttribute);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("No anonymous simpleType found");
+    });
+
+    test("should reject when parent attribute not found", () => {
+      const command: RemoveSimpleTypeCommand = {
+        type: "removeSimpleType",
+        payload: { typeId: "/attribute:nonExistent/anonymousSimpleType[0]" },
+      };
+
+      const result = validateRemoveSimpleType(command, schemaWithAttribute);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("Parent not found");
+    });
+  });
+
+  describe("validateModifySimpleType (anonymous inside attribute)", () => {
+    test("should accept modifying an anonymous simpleType that exists in an attribute", () => {
+      const command: ModifySimpleTypeCommand = {
+        type: "modifySimpleType",
+        payload: {
+          typeId: "/attribute:color/anonymousSimpleType[0]",
+          baseType: "xs:token",
+        },
+      };
+
+      const result = validateModifySimpleType(command, schemaWithAttributeAndSimpleType);
+      expect(result.valid).toBe(true);
+    });
+
+    test("should reject when no anonymous simpleType exists in attribute", () => {
+      const command: ModifySimpleTypeCommand = {
+        type: "modifySimpleType",
+        payload: {
+          typeId: "/attribute:color/anonymousSimpleType[0]",
+          baseType: "xs:string",
+        },
+      };
+
+      const result = validateModifySimpleType(command, schemaWithAttribute);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("No anonymous simpleType found");
+    });
+
+    test("should reject when parent attribute not found", () => {
+      const command: ModifySimpleTypeCommand = {
+        type: "modifySimpleType",
+        payload: { typeId: "/attribute:nonExistent/anonymousSimpleType[0]" },
+      };
+
+      const result = validateModifySimpleType(command, schemaWithAttribute);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("Parent not found");
     });
   });
 });

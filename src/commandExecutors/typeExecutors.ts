@@ -18,8 +18,6 @@ import {
   RestrictionFacets,
   topLevelSimpleType,
   localSimpleType,
-  topLevelElement,
-  localElement,
   restrictionType,
   facet,
   numFacet,
@@ -38,12 +36,12 @@ import { locateNodeById } from "../schemaNavigator";
 
 /**
  * Executes an addSimpleType command.
- * When `payload.parentId` points to an element, creates an anonymous simpleType
- * inside that element. Otherwise creates a top-level named simpleType.
+ * When `payload.parentId` points to an element or attribute, creates an anonymous simpleType
+ * inside that node. Otherwise creates a top-level named simpleType.
  *
  * @param command - The addSimpleType command to execute
  * @param schemaObj - The schema object to modify
- * @throws Error if the parent element is not found (anonymous case)
+ * @throws Error if the parent element or attribute is not found (anonymous case)
  */
 export function executeAddSimpleType(
   command: AddSimpleTypeCommand,
@@ -52,18 +50,19 @@ export function executeAddSimpleType(
   const { parentId, typeName, baseType, restrictions, documentation } = command.payload;
 
   if (!isSchemaRoot(parentId)) {
-    // Anonymous simpleType inside an element — isSchemaRoot guarantees parentId is a non-empty string here
+    // Anonymous simpleType inside an element or attribute — isSchemaRoot guarantees parentId is a non-empty string here
     const location = locateNodeById(schemaObj, parentId as string);
     if (!location.found || !location.parent) {
-      throw new Error(`Parent element not found: ${parentId}`);
+      throw new Error(`Parent not found: ${parentId}`);
     }
-    const element = location.parent as topLevelElement | localElement;
+    // Both elements and attributes share the same localSimpleType inline child structure
+    const holder = location.parent as { simpleType?: localSimpleType };
     const anonType = new localSimpleType();
     anonType.restriction = buildRestriction(baseType, restrictions);
     if (documentation) {
       anonType.annotation = createAnnotation(documentation);
     }
-    element.simpleType = anonType;
+    holder.simpleType = anonType;
     return;
   }
 
@@ -82,12 +81,12 @@ export function executeAddSimpleType(
 
 /**
  * Executes a removeSimpleType command.
- * Detects whether the typeId refers to an anonymous simpleType in an element
+ * Detects whether the typeId refers to an anonymous simpleType in an element or attribute
  * (nodeType "anonymousSimpleType") or a top-level type and removes it accordingly.
  *
  * @param command - The removeSimpleType command to execute
  * @param schemaObj - The schema object to modify
- * @throws Error if the type or its parent element is not found
+ * @throws Error if the type or its parent is not found
  */
 export function executeRemoveSimpleType(
   command: RemoveSimpleTypeCommand,
@@ -103,13 +102,13 @@ export function executeRemoveSimpleType(
     }
     const location = locateNodeById(schemaObj, parentId);
     if (!location.found || !location.parent) {
-      throw new Error(`Parent element not found: ${parentId}`);
+      throw new Error(`Parent not found: ${parentId}`);
     }
-    const element = location.parent as topLevelElement | localElement;
-    if (!element.simpleType) {
-      throw new Error(`No anonymous simpleType found in element: ${parentId}`);
+    const holder = location.parent as { simpleType?: localSimpleType };
+    if (!holder.simpleType) {
+      throw new Error(`No anonymous simpleType found in parent: ${parentId}`);
     }
-    element.simpleType = undefined;
+    holder.simpleType = undefined;
     return;
   }
 
@@ -124,12 +123,12 @@ export function executeRemoveSimpleType(
 
 /**
  * Executes a modifySimpleType command.
- * Detects whether the typeId refers to an anonymous simpleType in an element
+ * Detects whether the typeId refers to an anonymous simpleType in an element or attribute
  * or a top-level type and updates it accordingly.
  *
  * @param command - The modifySimpleType command to execute
  * @param schemaObj - The schema object to modify
- * @throws Error if the type or its parent element is not found
+ * @throws Error if the type or its parent is not found
  */
 export function executeModifySimpleType(
   command: ModifySimpleTypeCommand,
@@ -145,13 +144,13 @@ export function executeModifySimpleType(
     }
     const location = locateNodeById(schemaObj, parentId);
     if (!location.found || !location.parent) {
-      throw new Error(`Parent element not found: ${parentId}`);
+      throw new Error(`Parent not found: ${parentId}`);
     }
-    const element = location.parent as topLevelElement | localElement;
-    if (!element.simpleType) {
-      throw new Error(`No anonymous simpleType found in element: ${parentId}`);
+    const holder = location.parent as { simpleType?: localSimpleType };
+    if (!holder.simpleType) {
+      throw new Error(`No anonymous simpleType found in parent: ${parentId}`);
     }
-    updateTypeContents(element.simpleType, baseType, restrictions, documentation);
+    updateTypeContents(holder.simpleType, baseType, restrictions, documentation);
     return;
   }
 

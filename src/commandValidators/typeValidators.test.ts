@@ -292,7 +292,7 @@ describe("SimpleType Validators", () => {
 
         const result = validateAddSimpleType(command, schemaWithElement);
         expect(result.valid).toBe(false);
-        expect(result.error).toContain("is not a recognized XSD type");
+        expect(result.error).toBe("Base type: Invalid element type 'xs:badType': must be a built-in XSD type, a user-defined type in the schema, or a type from a valid import with a matching namespace prefix");
       });
     });
 

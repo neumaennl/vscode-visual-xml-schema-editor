@@ -111,13 +111,20 @@ export type ContentModel = "sequence" | "choice" | "all";
 
 /**
  * Payload for adding a complex type definition.
+ * When `parentId` refers to an element (not schema root), an anonymous complexType
+ * is added directly inside that element. In that case `typeName` is not needed.
  */
 export interface AddComplexTypePayload {
-  /** Name of the complex type */
-  typeName: string;
+  /**
+   * Parent element ID for anonymous complexTypes (e.g. "/element:person").
+   * Omit or set to "schema" to create a top-level named complexType.
+   */
+  parentId?: string;
+  /** Name of the complex type. Required for top-level types; ignored for anonymous. */
+  typeName?: string;
   /** Content model (sequence, choice, all) */
   contentModel: ContentModel;
-  /** Whether the type is abstract */
+  /** Whether the type is abstract. Only applicable to top-level types. */
   abstract?: boolean;
   /** Base type for extension (optional) */
   baseType?: string;

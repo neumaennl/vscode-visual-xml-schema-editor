@@ -132,7 +132,7 @@ describe("Group Executors", () => {
       expect(toArray(schemaObj.group)[1].name).toBe("NewGroup");
     });
 
-    it("should produce valid XSD output", () => {
+    it("should produce valid XSD output (round-trip)", () => {
       const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
 </xs:schema>`;
@@ -149,8 +149,11 @@ describe("Group Executors", () => {
       executeAddGroup(command, schemaObj);
 
       const xml = marshal(schemaObj);
-      expect(xml).toContain('name="MyGroup"');
-      expect(xml).toContain("sequence");
+      const reparsed = unmarshal(schema, xml);
+      const groups = toArray(reparsed.group);
+      expect(groups).toHaveLength(1);
+      expect(groups[0].name).toBe("MyGroup");
+      expect(groups[0].sequence).toBeDefined();
     });
   });
 

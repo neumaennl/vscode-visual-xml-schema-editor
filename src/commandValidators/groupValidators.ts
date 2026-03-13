@@ -130,8 +130,15 @@ export function validateAddGroup(
   schemaObj: schema
 ): ValidationResult {
   if (command.payload.ref !== undefined) {
-    // Reference mode validation
-    if (!command.payload.parentId?.trim()) {
+    // Reference mode validation — reject definition-mode fields
+    if (command.payload.groupName !== undefined || command.payload.contentModel !== undefined) {
+      return {
+        valid: false,
+        error: "Cannot combine ref with groupName or contentModel — use ref for group references, groupName/contentModel for group definitions",
+      };
+    }
+    const parentId = command.payload.parentId;
+    if (!parentId?.trim()) {
       return { valid: false, error: "Parent ID is required for group references" };
     }
     if (!isValidXmlName(command.payload.ref)) {
@@ -146,14 +153,24 @@ export function validateAddGroup(
         error: `Referenced group does not exist: ${command.payload.ref}`,
       };
     }
-    const location = locateNodeById(schemaObj, command.payload.parentId!);
+    const location = locateNodeById(schemaObj, parentId);
     if (!location.found) {
-      return { valid: false, error: `Parent node not found: ${command.payload.parentId}` };
+      return { valid: false, error: `Parent node not found: ${parentId}` };
     }
     return { valid: true };
   }
 
-  // Definition mode validation
+  // Definition mode validation — reject reference-mode fields
+  if (
+    command.payload.parentId !== undefined ||
+    command.payload.minOccurs !== undefined ||
+    command.payload.maxOccurs !== undefined
+  ) {
+    return {
+      valid: false,
+      error: "Cannot combine groupName/contentModel with parentId, minOccurs, or maxOccurs — use ref for group references",
+    };
+  }
   if (!isValidXmlName(command.payload.groupName ?? "")) {
     return { valid: false, error: "Group name must be a valid XML name" };
   }
@@ -227,6 +244,17 @@ export function validateModifyGroup(
 
   if (parsed.nodeType === SchemaNodeType.GroupRef) {
     // Reference mode: validate the parent exists; validate new ref if provided
+    // Reject definition-mode fields
+    if (
+      command.payload.groupName !== undefined ||
+      command.payload.contentModel !== undefined ||
+      command.payload.documentation !== undefined
+    ) {
+      return {
+        valid: false,
+        error: "Cannot use groupName, contentModel, or documentation when modifying a group reference — use ref, minOccurs, or maxOccurs instead",
+      };
+    }
     if (!parsed.parentId) {
       return { valid: false, error: `Invalid groupRef ID: ${command.payload.groupId}` };
     }
@@ -252,6 +280,17 @@ export function validateModifyGroup(
   }
 
   // Definition mode: validate the definition exists
+  // Reject reference-mode fields
+  if (
+    command.payload.ref !== undefined ||
+    command.payload.minOccurs !== undefined ||
+    command.payload.maxOccurs !== undefined
+  ) {
+    return {
+      valid: false,
+      error: "Cannot use ref, minOccurs, or maxOccurs when modifying a group definition — use groupName, contentModel, or documentation instead",
+    };
+  }
   const found = toArray(schemaObj.group).some((g) => g.name === parsed.name);
   if (!found) {
     return {

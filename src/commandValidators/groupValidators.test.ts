@@ -360,6 +360,169 @@ describe("Group Validators", () => {
       expect(result.valid).toBe(true);
     });
   });
+
+  describe("validateAddGroup (reference mode)", () => {
+    let schemaWithGroup: schema;
+
+    beforeEach(() => {
+      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:group name="PersonGroup">
+    <xs:sequence/>
+  </xs:group>
+  <xs:complexType name="PersonType">
+    <xs:sequence/>
+  </xs:complexType>
+</xs:schema>`;
+      schemaWithGroup = unmarshal(schema, schemaXml);
+    });
+
+    test("should reject when ref is provided without parentId", () => {
+      const command: AddGroupCommand = {
+        type: "addGroup",
+        payload: { ref: "PersonGroup" },
+      };
+      const result = validateAddGroup(command, schemaWithGroup);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe("Parent ID is required for group references");
+    });
+
+    test("should reject when ref is not a valid XML name", () => {
+      const command: AddGroupCommand = {
+        type: "addGroup",
+        payload: { ref: "123-invalid", parentId: "/complexType:PersonType/sequence" },
+      };
+      const result = validateAddGroup(command, schemaWithGroup);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe("Group ref must be a valid XML name");
+    });
+
+    test("should reject when referenced group does not exist", () => {
+      const command: AddGroupCommand = {
+        type: "addGroup",
+        payload: { ref: "NoSuchGroup", parentId: "/complexType:PersonType/sequence" },
+      };
+      const result = validateAddGroup(command, schemaWithGroup);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe("Referenced group does not exist: NoSuchGroup");
+    });
+
+    test("should reject when parent node does not exist", () => {
+      const command: AddGroupCommand = {
+        type: "addGroup",
+        payload: { ref: "PersonGroup", parentId: "/complexType:NoSuchType/sequence" },
+      };
+      const result = validateAddGroup(command, schemaWithGroup);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("Parent node not found");
+    });
+
+    test("should accept a valid group reference", () => {
+      const command: AddGroupCommand = {
+        type: "addGroup",
+        payload: { ref: "PersonGroup", parentId: "/complexType:PersonType/sequence" },
+      };
+      const result = validateAddGroup(command, schemaWithGroup);
+      expect(result.valid).toBe(true);
+    });
+  });
+
+  describe("validateRemoveGroup (reference mode)", () => {
+    let schemaWithRef: schema;
+
+    beforeEach(() => {
+      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:group name="PersonGroup">
+    <xs:sequence/>
+  </xs:group>
+  <xs:complexType name="PersonType">
+    <xs:sequence>
+      <xs:group ref="PersonGroup"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>`;
+      schemaWithRef = unmarshal(schema, schemaXml);
+    });
+
+    test("should accept removing a group reference when parent exists", () => {
+      const command: RemoveGroupCommand = {
+        type: "removeGroup",
+        payload: { groupId: "/complexType:PersonType/sequence[0]/groupRef:PersonGroup[0]" },
+      };
+      const result = validateRemoveGroup(command, schemaWithRef);
+      expect(result.valid).toBe(true);
+    });
+
+    test("should reject when parent of group reference does not exist", () => {
+      const command: RemoveGroupCommand = {
+        type: "removeGroup",
+        payload: { groupId: "/complexType:NoSuchType/sequence[0]/groupRef:PersonGroup[0]" },
+      };
+      const result = validateRemoveGroup(command, schemaWithRef);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("Parent node not found");
+    });
+  });
+
+  describe("validateModifyGroup (reference mode)", () => {
+    let schemaWithRef: schema;
+
+    beforeEach(() => {
+      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:group name="PersonGroup">
+    <xs:sequence/>
+  </xs:group>
+  <xs:group name="AddressGroup">
+    <xs:sequence/>
+  </xs:group>
+  <xs:complexType name="PersonType">
+    <xs:sequence>
+      <xs:group ref="PersonGroup"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>`;
+      schemaWithRef = unmarshal(schema, schemaXml);
+    });
+
+    test("should accept modifying a group reference without changing the ref", () => {
+      const command: ModifyGroupCommand = {
+        type: "modifyGroup",
+        payload: {
+          groupId: "/complexType:PersonType/sequence[0]/groupRef:PersonGroup[0]",
+          minOccurs: 0,
+        },
+      };
+      const result = validateModifyGroup(command, schemaWithRef);
+      expect(result.valid).toBe(true);
+    });
+
+    test("should accept modifying a group reference to a different existing group", () => {
+      const command: ModifyGroupCommand = {
+        type: "modifyGroup",
+        payload: {
+          groupId: "/complexType:PersonType/sequence[0]/groupRef:PersonGroup[0]",
+          ref: "AddressGroup",
+        },
+      };
+      const result = validateModifyGroup(command, schemaWithRef);
+      expect(result.valid).toBe(true);
+    });
+
+    test("should reject when new ref target does not exist", () => {
+      const command: ModifyGroupCommand = {
+        type: "modifyGroup",
+        payload: {
+          groupId: "/complexType:PersonType/sequence[0]/groupRef:PersonGroup[0]",
+          ref: "NonExistentGroup",
+        },
+      };
+      const result = validateModifyGroup(command, schemaWithRef);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe("Referenced group does not exist: NonExistentGroup");
+    });
+  });
 });
 
 describe("AttributeGroup Validators", () => {

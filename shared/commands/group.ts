@@ -7,19 +7,46 @@ import { BaseCommand } from "./base";
 import { ContentModel } from "./schemaTypes";
 
 /**
- * Payload for adding a group definition.
+ * Payload for adding a group definition or a group reference.
+ *
+ * Two modes, mutually exclusive:
+ * - **Definition** (`groupName` + `contentModel`): creates a top-level `xs:group name="..."`.
+ *   `parentId` is optional (defaults to schema root).
+ * - **Reference** (`ref` + `parentId`): creates `xs:group ref="..."` inside the compositor
+ *   or complexType identified by `parentId`.
  */
 export interface AddGroupPayload {
-  /** Name of the group */
-  groupName: string;
-  /** Content model for the group */
-  contentModel: ContentModel;
-  /** Optional documentation */
+  /**
+   * Name of the group. Required when creating a definition.
+   * Ignored when creating a reference (use `ref` instead).
+   */
+  groupName?: string;
+  /**
+   * Content model for the group. Required when creating a definition.
+   * Ignored when creating a reference.
+   */
+  contentModel?: ContentModel;
+  /** Optional documentation. Not applicable for references. */
   documentation?: string;
+  /**
+   * Name of the group to reference.
+   * When provided, creates `xs:group ref="..."` inside `parentId`.
+   * Mutually exclusive with `groupName`/`contentModel`.
+   */
+  ref?: string;
+  /**
+   * ID of the parent compositor (sequence/choice) or complexType.
+   * Required when creating a group reference. Ignored for definitions.
+   */
+  parentId?: string;
+  /** Minimum occurrences. Only applicable for group references. */
+  minOccurs?: number;
+  /** Maximum occurrences. Only applicable for group references. */
+  maxOccurs?: number | "unbounded";
 }
 
 /**
- * Command to add a group definition.
+ * Command to add a group definition or a group reference.
  */
 export interface AddGroupCommand extends BaseCommand<AddGroupPayload> {
   type: "addGroup";
@@ -27,15 +54,18 @@ export interface AddGroupCommand extends BaseCommand<AddGroupPayload> {
 }
 
 /**
- * Payload for removing a group.
+ * Payload for removing a group definition or a group reference.
+ * The `groupId` field works for both:
+ * - `/group:PersonGroup` — removes the top-level named group definition.
+ * - `/complexType:X/sequence[0]/groupRef:PersonGroup[0]` — removes the group reference.
  */
 export interface RemoveGroupPayload {
-  /** ID of the group to remove */
+  /** ID of the group definition or group reference to remove */
   groupId: string;
 }
 
 /**
- * Command to remove a group.
+ * Command to remove a group definition or a group reference.
  */
 export interface RemoveGroupCommand extends BaseCommand<RemoveGroupPayload> {
   type: "removeGroup";
@@ -43,91 +73,42 @@ export interface RemoveGroupCommand extends BaseCommand<RemoveGroupPayload> {
 }
 
 /**
- * Payload for modifying a group.
+ * Payload for modifying a group definition or a group reference.
+ * The `groupId` field works for both:
+ * - `/group:PersonGroup` — modifies the top-level named group definition.
+ * - `/complexType:X/sequence[0]/groupRef:PersonGroup[0]` — modifies the group reference.
  */
 export interface ModifyGroupPayload {
-  /** ID of the group to modify */
+  /** ID of the group definition or group reference to modify */
   groupId: string;
-  /** New name for the group (optional) */
+  /** New name for the group definition (optional). Not applicable for references. */
   groupName?: string;
-  /** New content model (optional) */
+  /** New content model (optional). Not applicable for references. */
   contentModel?: ContentModel;
-  /** New documentation (optional) */
+  /** New documentation (optional). Not applicable for references. */
   documentation?: string;
+  /**
+   * New ref target for a group reference (optional).
+   * Only applicable when `groupId` points to a group reference.
+   */
+  ref?: string;
+  /** New minimum occurrences (optional). Only applicable for group references. */
+  minOccurs?: number;
+  /** New maximum occurrences (optional). Only applicable for group references. */
+  maxOccurs?: number | "unbounded";
 }
 
 /**
- * Command to modify a group.
+ * Command to modify a group definition or a group reference.
  */
 export interface ModifyGroupCommand extends BaseCommand<ModifyGroupPayload> {
   type: "modifyGroup";
   payload: ModifyGroupPayload;
 }
 
-// ===== Group Reference Commands =====
-
 /**
- * Payload for adding a group reference (xs:group ref="...") inside a compositor
- * (sequence or choice) or directly on a complexType.
+ * Payload for adding an attribute group definition.
  */
-export interface AddGroupRefPayload {
-  /** ID of the parent compositor (sequence/choice) or complexType */
-  parentId: string;
-  /** Name of the group to reference */
-  ref: string;
-  /** Minimum occurrences (optional) */
-  minOccurs?: number;
-  /** Maximum occurrences (optional) */
-  maxOccurs?: number | "unbounded";
-}
-
-/**
- * Command to add a group reference.
- */
-export interface AddGroupRefCommand extends BaseCommand<AddGroupRefPayload> {
-  type: "addGroupRef";
-  payload: AddGroupRefPayload;
-}
-
-/**
- * Payload for removing a group reference.
- */
-export interface RemoveGroupRefPayload {
-  /** ID of the group reference to remove */
-  groupRefId: string;
-}
-
-/**
- * Command to remove a group reference.
- */
-export interface RemoveGroupRefCommand extends BaseCommand<RemoveGroupRefPayload> {
-  type: "removeGroupRef";
-  payload: RemoveGroupRefPayload;
-}
-
-/**
- * Payload for modifying a group reference.
- */
-export interface ModifyGroupRefPayload {
-  /** ID of the group reference to modify */
-  groupRefId: string;
-  /** New group name to reference (optional) */
-  ref?: string;
-  /** New minimum occurrences (optional) */
-  minOccurs?: number;
-  /** New maximum occurrences (optional) */
-  maxOccurs?: number | "unbounded";
-}
-
-/**
- * Command to modify a group reference.
- */
-export interface ModifyGroupRefCommand extends BaseCommand<ModifyGroupRefPayload> {
-  type: "modifyGroupRef";
-  payload: ModifyGroupRefPayload;
-}
-
-
 export interface AddAttributeGroupPayload {
   /** Name of the attribute group */
   groupName: string;

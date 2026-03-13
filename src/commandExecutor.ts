@@ -20,9 +20,6 @@ import {
   AddGroupCommand,
   RemoveGroupCommand,
   ModifyGroupCommand,
-  AddGroupRefCommand,
-  RemoveGroupRefCommand,
-  ModifyGroupRefCommand,
   AddAttributeGroupCommand,
   RemoveAttributeGroupCommand,
   ModifyAttributeGroupCommand,
@@ -77,9 +74,6 @@ export interface ExecutorFunctions {
   executeAddGroup: ExecutorFunction<AddGroupCommand>;
   executeRemoveGroup: ExecutorFunction<RemoveGroupCommand>;
   executeModifyGroup: ExecutorFunction<ModifyGroupCommand>;
-  executeAddGroupRef: ExecutorFunction<AddGroupRefCommand>;
-  executeRemoveGroupRef: ExecutorFunction<RemoveGroupRefCommand>;
-  executeModifyGroupRef: ExecutorFunction<ModifyGroupRefCommand>;
   executeAddAttributeGroup: ExecutorFunction<AddAttributeGroupCommand>;
   executeRemoveAttributeGroup: ExecutorFunction<RemoveAttributeGroupCommand>;
   executeModifyAttributeGroup: ExecutorFunction<ModifyAttributeGroupCommand>;
@@ -127,9 +121,6 @@ export class CommandExecutor {
       executeAddGroup: groupExecutors.executeAddGroup,
       executeRemoveGroup: groupExecutors.executeRemoveGroup,
       executeModifyGroup: groupExecutors.executeModifyGroup,
-      executeAddGroupRef: groupExecutors.executeAddGroupRef,
-      executeRemoveGroupRef: groupExecutors.executeRemoveGroupRef,
-      executeModifyGroupRef: groupExecutors.executeModifyGroupRef,
       executeAddAttributeGroup: groupExecutors.executeAddAttributeGroup,
       executeRemoveAttributeGroup: groupExecutors.executeRemoveAttributeGroup,
       executeModifyAttributeGroup: groupExecutors.executeModifyAttributeGroup,
@@ -203,15 +194,6 @@ export class CommandExecutor {
         break;
       case "modifyGroup":
         this.executors.executeModifyGroup(command, schemaObj);
-        break;
-      case "addGroupRef":
-        this.executors.executeAddGroupRef(command, schemaObj);
-        break;
-      case "removeGroupRef":
-        this.executors.executeRemoveGroupRef(command, schemaObj);
-        break;
-      case "modifyGroupRef":
-        this.executors.executeModifyGroupRef(command, schemaObj);
         break;
       case "addAttributeGroup":
         this.executors.executeAddAttributeGroup(command, schemaObj);

@@ -7,9 +7,6 @@ import {
   AddGroupCommand,
   RemoveGroupCommand,
   ModifyGroupCommand,
-  AddGroupRefCommand,
-  RemoveGroupRefCommand,
-  ModifyGroupRefCommand,
   AddAttributeGroupCommand,
   RemoveAttributeGroupCommand,
   ModifyAttributeGroupCommand,
@@ -20,7 +17,8 @@ import {
   isValidXmlName,
 } from "./validationUtils";
 import { toArray } from "../../shared/schemaUtils";
-import { parseSchemaId } from "../../shared/idStrategy";
+import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy";
+import { locateNodeById } from "../schemaNavigator";
 
 /**
  * Valid content models for Group elements.
@@ -62,9 +60,6 @@ type ComplexTypeParticleHolder = {
 /**
  * Returns true if the named group is referenced inside a compositor
  * (sequence or choice) or any of its recursively nested compositors.
- *
- * @param name - Group name to look for
- * @param compositor - The compositor to search in
  */
 function groupRefExistsInCompositor(
   name: string,
@@ -83,9 +78,6 @@ function groupRefExistsInCompositor(
 /**
  * Returns true if the named group is referenced directly or inside the
  * compositors/complexContent of a complex-type particle holder.
- *
- * @param name - Group name to look for
- * @param holder - The complex type particle holder to search in
  */
 function groupRefExistsInHolder(
   name: string,
@@ -116,9 +108,6 @@ function groupRefExistsInHolder(
  * - Top-level complexType definitions (direct or via complexContent)
  * - Inline complexTypes on top-level element definitions
  * - Other top-level group definitions (groups can reference groups)
- *
- * @param name - The group name to check references for
- * @param schemaObj - The schema to search in
  */
 function isGroupReferenced(name: string, schemaObj: schema): boolean {
   for (const ct of toArray(schemaObj.complexType)) {
@@ -128,7 +117,6 @@ function isGroupReferenced(name: string, schemaObj: schema): boolean {
     if (el.complexType && groupRefExistsInHolder(name, el.complexType)) return true;
   }
   for (const grp of toArray(schemaObj.group)) {
-    // namedGroup.sequence/choice are simpleExplicitGroup, which match CompositorLike
     if (grp.sequence && groupRefExistsInCompositor(name, grp.sequence)) return true;
     if (grp.choice && groupRefExistsInCompositor(name, grp.choice)) return true;
   }
@@ -141,21 +129,43 @@ export function validateAddGroup(
   command: AddGroupCommand,
   schemaObj: schema
 ): ValidationResult {
-  // Validate group name is a valid XML name
-  if (!isValidXmlName(command.payload.groupName)) {
+  if (command.payload.ref !== undefined) {
+    // Reference mode validation
+    if (!command.payload.parentId?.trim()) {
+      return { valid: false, error: "Parent ID is required for group references" };
+    }
+    if (!isValidXmlName(command.payload.ref)) {
+      return { valid: false, error: "Group ref must be a valid XML name" };
+    }
+    const groupExists = toArray(schemaObj.group).some(
+      (g) => g.name === command.payload.ref
+    );
+    if (!groupExists) {
+      return {
+        valid: false,
+        error: `Referenced group does not exist: ${command.payload.ref}`,
+      };
+    }
+    const location = locateNodeById(schemaObj, command.payload.parentId!);
+    if (!location.found) {
+      return { valid: false, error: `Parent node not found: ${command.payload.parentId}` };
+    }
+    return { valid: true };
+  }
+
+  // Definition mode validation
+  if (!isValidXmlName(command.payload.groupName ?? "")) {
     return { valid: false, error: "Group name must be a valid XML name" };
   }
   if (!command.payload.contentModel) {
     return { valid: false, error: "Content model is required" };
   }
-  // Validate content model
   if (!VALID_GROUP_CONTENT_MODELS.includes(command.payload.contentModel)) {
     return {
       valid: false,
       error: `Content model must be one of: ${VALID_GROUP_CONTENT_MODELS.join(", ")}`,
     };
   }
-  // Check if group name already exists
   const exists = toArray(schemaObj.group).some(
     (g) => g.name === command.payload.groupName
   );
@@ -176,6 +186,20 @@ export function validateRemoveGroup(
     return { valid: false, error: "Group ID cannot be empty" };
   }
   const parsed = parseSchemaId(command.payload.groupId);
+
+  if (parsed.nodeType === SchemaNodeType.GroupRef) {
+    // Reference mode: validate the parent exists
+    if (!parsed.parentId) {
+      return { valid: false, error: `Invalid groupRef ID: ${command.payload.groupId}` };
+    }
+    const location = locateNodeById(schemaObj, parsed.parentId);
+    if (!location.found) {
+      return { valid: false, error: `Parent node not found: ${parsed.parentId}` };
+    }
+    return { valid: true };
+  }
+
+  // Definition mode: validate the definition exists and is not referenced
   const found = toArray(schemaObj.group).some((g) => g.name === parsed.name);
   if (!found) {
     return {
@@ -200,6 +224,34 @@ export function validateModifyGroup(
     return { valid: false, error: "Group ID cannot be empty" };
   }
   const parsed = parseSchemaId(command.payload.groupId);
+
+  if (parsed.nodeType === SchemaNodeType.GroupRef) {
+    // Reference mode: validate the parent exists; validate new ref if provided
+    if (!parsed.parentId) {
+      return { valid: false, error: `Invalid groupRef ID: ${command.payload.groupId}` };
+    }
+    const location = locateNodeById(schemaObj, parsed.parentId);
+    if (!location.found) {
+      return { valid: false, error: `Parent node not found: ${parsed.parentId}` };
+    }
+    if (command.payload.ref !== undefined) {
+      if (!isValidXmlName(command.payload.ref)) {
+        return { valid: false, error: "Group ref must be a valid XML name" };
+      }
+      const groupExists = toArray(schemaObj.group).some(
+        (g) => g.name === command.payload.ref
+      );
+      if (!groupExists) {
+        return {
+          valid: false,
+          error: `Referenced group does not exist: ${command.payload.ref}`,
+        };
+      }
+    }
+    return { valid: true };
+  }
+
+  // Definition mode: validate the definition exists
   const found = toArray(schemaObj.group).some((g) => g.name === parsed.name);
   if (!found) {
     return {
@@ -215,66 +267,6 @@ export function validateModifyGroup(
       valid: false,
       error: `Content model must be one of: ${VALID_GROUP_CONTENT_MODELS.join(", ")}`,
     };
-  }
-  return { valid: true };
-}
-
-// ===== Group Reference Command Validation =====
-
-export function validateAddGroupRef(
-  command: AddGroupRefCommand,
-  schemaObj: schema
-): ValidationResult {
-  if (!command.payload.parentId.trim()) {
-    return { valid: false, error: "Parent ID cannot be empty" };
-  }
-  if (!isValidXmlName(command.payload.ref)) {
-    return { valid: false, error: "Group ref must be a valid XML name" };
-  }
-  // Validate that the referenced group exists in the schema
-  const groupExists = toArray(schemaObj.group).some(
-    (g) => g.name === command.payload.ref
-  );
-  if (!groupExists) {
-    return {
-      valid: false,
-      error: `Referenced group does not exist: ${command.payload.ref}`,
-    };
-  }
-  return { valid: true };
-}
-
-export function validateRemoveGroupRef(
-  command: RemoveGroupRefCommand,
-  _schemaObj: schema
-): ValidationResult {
-  if (!command.payload.groupRefId.trim()) {
-    return { valid: false, error: "GroupRef ID cannot be empty" };
-  }
-  return { valid: true };
-}
-
-export function validateModifyGroupRef(
-  command: ModifyGroupRefCommand,
-  schemaObj: schema
-): ValidationResult {
-  if (!command.payload.groupRefId.trim()) {
-    return { valid: false, error: "GroupRef ID cannot be empty" };
-  }
-  if (command.payload.ref !== undefined) {
-    if (!isValidXmlName(command.payload.ref)) {
-      return { valid: false, error: "Group ref must be a valid XML name" };
-    }
-    // Validate that the new referenced group exists
-    const groupExists = toArray(schemaObj.group).some(
-      (g) => g.name === command.payload.ref
-    );
-    if (!groupExists) {
-      return {
-        valid: false,
-        error: `Referenced group does not exist: ${command.payload.ref}`,
-      };
-    }
   }
   return { valid: true };
 }

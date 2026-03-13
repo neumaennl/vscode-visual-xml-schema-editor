@@ -155,7 +155,7 @@ describe("CommandExecutor", () => {
       expect(mockSchema.complexType![0].name).toBe("testComplexType");
     });
 
-    it("should delegate addGroup execution and throw not implemented error", () => {
+    it("should delegate addGroup execution and add the group to the schema", () => {
       const command: SchemaCommand = {
         type: "addGroup",
         payload: {
@@ -164,9 +164,10 @@ describe("CommandExecutor", () => {
         },
       };
 
-      expect(() => {
-        executor.execute(command, mockSchema);
-      }).toThrow("addGroup execution not yet implemented");
+      executor.execute(command, mockSchema);
+
+      expect(mockSchema.group).toBeDefined();
+      expect(mockSchema.group![0].name).toBe("testGroup");
     });
 
     it("should delegate addAttributeGroup execution and throw not implemented error", () => {

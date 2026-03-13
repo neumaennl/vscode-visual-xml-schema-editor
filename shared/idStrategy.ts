@@ -25,6 +25,8 @@ export enum SchemaNodeType {
   SimpleType = "simpleType",
   /** Element group definition */
   Group = "group",
+/** Schema node type for a group reference (xs:group ref="...") */
+  GroupRef = "groupRef",
   /** Attribute group definition */
   AttributeGroup = "attributeGroup",
   /** Attribute definition */

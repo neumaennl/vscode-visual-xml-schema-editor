@@ -124,18 +124,20 @@ describe("CommandExecutor", () => {
       expect(mockSchema.attribute).toBeDefined();
     });
 
-    it("should delegate addSimpleType execution and throw not implemented error", () => {
+    it("should delegate addSimpleType execution successfully", () => {
       const command: SchemaCommand = {
         type: "addSimpleType",
         payload: {
           typeName: "testType",
-          baseType: "string",
+          baseType: "xs:string",
         },
       };
 
       expect(() => {
         executor.execute(command, mockSchema);
-      }).toThrow("addSimpleType execution not yet implemented");
+      }).not.toThrow();
+
+      expect(mockSchema.simpleType).toBeDefined();
     });
 
     it("should delegate addComplexType execution and throw not implemented error", () => {

@@ -215,6 +215,56 @@ describe("AttributeGroup Validators", () => {
         expect(result.error).toContain("still referenced");
       });
 
+      test("should reject removeAttributeGroup when group is referenced inside a nested local element's inline complexType", () => {
+        const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:attributeGroup name="CommonAttrs"/>
+  <xs:complexType name="PersonType">
+    <xs:sequence>
+      <xs:element name="address">
+        <xs:complexType>
+          <xs:attributeGroup ref="CommonAttrs"/>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>`;
+        const referenced = unmarshal(schema, xml);
+        const command: RemoveAttributeGroupCommand = {
+          type: "removeAttributeGroup",
+          payload: { groupId: "/attributeGroup:CommonAttrs" },
+        };
+
+        const result = validateRemoveAttributeGroup(command, referenced);
+        expect(result.valid).toBe(false);
+        expect(result.error).toContain("still referenced");
+      });
+
+      test("should reject removeAttributeGroup when group is referenced inside a nested choice's local element", () => {
+        const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:attributeGroup name="CommonAttrs"/>
+  <xs:complexType name="ShapeType">
+    <xs:choice>
+      <xs:element name="circle">
+        <xs:complexType>
+          <xs:attributeGroup ref="CommonAttrs"/>
+        </xs:complexType>
+      </xs:element>
+    </xs:choice>
+  </xs:complexType>
+</xs:schema>`;
+        const referenced = unmarshal(schema, xml);
+        const command: RemoveAttributeGroupCommand = {
+          type: "removeAttributeGroup",
+          payload: { groupId: "/attributeGroup:CommonAttrs" },
+        };
+
+        const result = validateRemoveAttributeGroup(command, referenced);
+        expect(result.valid).toBe(false);
+        expect(result.error).toContain("still referenced");
+      });
+
       test("should accept removeAttributeGroup when group exists and is not referenced", () => {
         const command: RemoveAttributeGroupCommand = {
           type: "removeAttributeGroup",
@@ -258,6 +308,27 @@ describe("AttributeGroup Validators", () => {
         const result = validateRemoveAttributeGroup(command, schemaObj);
         expect(result.valid).toBe(false);
         expect(result.error).toContain("Parent node not found");
+      });
+
+      test("should reject removing an attributeGroupRef when the ref does not exist on the parent", () => {
+        const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:attributeGroup name="CommonAttrs"/>
+  <xs:complexType name="PersonType">
+    <xs:attributeGroup ref="CommonAttrs"/>
+  </xs:complexType>
+</xs:schema>`;
+        const schemaWithRef = unmarshal(schema, xml);
+        const command: RemoveAttributeGroupCommand = {
+          type: "removeAttributeGroup",
+          payload: {
+            groupId: "/complexType:PersonType/attributeGroupRef:NonExistent[0]",
+          },
+        };
+
+        const result = validateRemoveAttributeGroup(command, schemaWithRef);
+        expect(result.valid).toBe(false);
+        expect(result.error).toContain("Attribute group reference not found");
       });
     });
   });
@@ -400,6 +471,21 @@ describe("AttributeGroup Validators", () => {
         const result = validateModifyAttributeGroup(command, schemaObj);
         expect(result.valid).toBe(false);
         expect(result.error).toContain("Parent node not found");
+      });
+
+      test("should reject modifying an attributeGroupRef when the ref does not exist on the parent", () => {
+        const schemaWithRef = unmarshal(schema, xmlWithRef);
+        const command: ModifyAttributeGroupCommand = {
+          type: "modifyAttributeGroup",
+          payload: {
+            groupId: "/complexType:PersonType/attributeGroupRef:NonExistent[0]",
+            ref: "AttrsB",
+          },
+        };
+
+        const result = validateModifyAttributeGroup(command, schemaWithRef);
+        expect(result.valid).toBe(false);
+        expect(result.error).toContain("Attribute group reference not found");
       });
 
       test("should reject when new ref target does not exist", () => {

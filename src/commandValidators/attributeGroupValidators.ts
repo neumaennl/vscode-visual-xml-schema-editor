@@ -19,14 +19,36 @@ import { locateNodeById } from "../schemaNavigator";
 // ===== AttributeGroup Reference Helpers =====
 
 /**
+ * Structural type for a compositor (sequence/choice/all) that may contain
+ * local elements whose inline complexTypes reference attribute groups.
+ */
+type CompositorWithElements = {
+  element?: Array<{ complexType?: AttributeGroupHolder }>;
+  choice?: CompositorWithElements[];
+  sequence?: CompositorWithElements[];
+};
+
+/**
  * Structural type for objects that can hold attribute group references.
- * Matches complexType and similar constructs.
+ * Matches complexType (top-level and local), extensionType, restrictionType,
+ * and any inline complexType within a local element.
  */
 type AttributeGroupHolder = {
   attributeGroup?: attributeGroupRef[];
+  sequence?: CompositorWithElements;
+  choice?: CompositorWithElements;
+  all?: CompositorWithElements;
   complexContent?: {
-    extension?: { attributeGroup?: attributeGroupRef[] };
-    restriction?: { attributeGroup?: attributeGroupRef[] };
+    extension?: {
+      attributeGroup?: attributeGroupRef[];
+      sequence?: CompositorWithElements;
+      choice?: CompositorWithElements;
+    };
+    restriction?: {
+      attributeGroup?: attributeGroupRef[];
+      sequence?: CompositorWithElements;
+      choice?: CompositorWithElements;
+    };
   };
   simpleContent?: {
     extension?: { attributeGroup?: attributeGroupRef[] };
@@ -35,7 +57,14 @@ type AttributeGroupHolder = {
 };
 
 /**
- * Returns true if the named attribute group is referenced within a holder.
+ * Structural type for objects that carry a direct array of attribute group refs.
+ * Used in reference-mode validators to check parent containers.
+ */
+type AttrGroupRefHolder = { attributeGroup?: attributeGroupRef[] };
+
+/**
+ * Returns true if the named attribute group is directly referenced within a holder
+ * (top-level attributeGroup array, or inside complexContent/simpleContent).
  */
 function attrGroupRefExistsInHolder(
   name: string,
@@ -62,24 +91,109 @@ function attrGroupRefExistsInHolder(
 }
 
 /**
+ * Returns true if the named attribute group is referenced within any local element's
+ * inline complexType inside a compositor (sequence/choice/all) tree.
+ * Recurses into nested compositors.
+ */
+function attrGroupRefExistsInCompositor(
+  name: string,
+  compositor: CompositorWithElements
+): boolean {
+  for (const el of toArray(compositor.element)) {
+    if (el?.complexType && attrGroupRefExistsInHolderDeep(name, el.complexType)) {
+      return true;
+    }
+  }
+  for (const sub of toArray(compositor.choice)) {
+    if (attrGroupRefExistsInCompositor(name, sub)) return true;
+  }
+  for (const sub of toArray(compositor.sequence)) {
+    if (attrGroupRefExistsInCompositor(name, sub)) return true;
+  }
+  return false;
+}
+
+/**
+ * Deep variant of attrGroupRefExistsInHolder that also checks compositor trees
+ * (sequence/choice/all and their nested local element complexTypes).
+ */
+function attrGroupRefExistsInHolderDeep(
+  name: string,
+  holder: AttributeGroupHolder
+): boolean {
+  if (attrGroupRefExistsInHolder(name, holder)) return true;
+  if (holder.sequence && attrGroupRefExistsInCompositor(name, holder.sequence)) {
+    return true;
+  }
+  if (holder.choice && attrGroupRefExistsInCompositor(name, holder.choice)) {
+    return true;
+  }
+  if (holder.all && attrGroupRefExistsInCompositor(name, holder.all)) {
+    return true;
+  }
+  const ccExt = holder.complexContent?.extension;
+  if (ccExt) {
+    if (ccExt.sequence && attrGroupRefExistsInCompositor(name, ccExt.sequence)) {
+      return true;
+    }
+    if (ccExt.choice && attrGroupRefExistsInCompositor(name, ccExt.choice)) {
+      return true;
+    }
+  }
+  const ccRestr = holder.complexContent?.restriction;
+  if (ccRestr) {
+    if (ccRestr.sequence && attrGroupRefExistsInCompositor(name, ccRestr.sequence)) {
+      return true;
+    }
+    if (ccRestr.choice && attrGroupRefExistsInCompositor(name, ccRestr.choice)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
  * Returns true if the named attribute group is referenced anywhere in the schema.
  *
  * Checks:
- * - Top-level complexType definitions
- * - Inline complexTypes on top-level elements
- * - Other attribute group definitions
+ * - Top-level complexType definitions (including their compositor trees and
+ *   inline complexTypes on nested local elements)
+ * - Inline complexTypes on top-level elements (same deep traversal)
+ * - Other attribute group definitions (direct refs only — attribute group
+ *   definitions do not carry compositor particles)
  */
 function isAttrGroupReferenced(name: string, schemaObj: schema): boolean {
   for (const ct of toArray(schemaObj.complexType)) {
-    if (attrGroupRefExistsInHolder(name, ct)) return true;
+    if (attrGroupRefExistsInHolderDeep(name, ct)) return true;
   }
   for (const el of toArray(schemaObj.element)) {
-    if (el.complexType && attrGroupRefExistsInHolder(name, el.complexType)) {
+    if (el.complexType && attrGroupRefExistsInHolderDeep(name, el.complexType)) {
       return true;
     }
   }
   for (const ag of toArray(schemaObj.attributeGroup)) {
     if (toArray(ag.attributeGroup).some((r) => r.ref === name)) return true;
+  }
+  return false;
+}
+
+/**
+ * Checks whether an attributeGroupRef identified by name and optional position
+ * actually exists in the given refs array.
+ */
+function attrGroupRefExistsInParent(
+  refs: attributeGroupRef[],
+  name: string | undefined,
+  position: number | undefined
+): boolean {
+  if (name !== undefined && position !== undefined) {
+    return refs.some((r, idx) => r.ref === name && idx === position);
+  }
+  if (name !== undefined) {
+    return refs.some((r) => r.ref === name);
+  }
+  if (position !== undefined) {
+    return position >= 0 && position < refs.length;
   }
   return false;
 }
@@ -191,7 +305,7 @@ export function validateRemoveAttributeGroup(
   const parsed = parseSchemaId(command.payload.groupId);
 
   if (parsed.nodeType === SchemaNodeType.AttributeGroupRef) {
-    // Reference mode: validate parent exists
+    // Reference mode: validate parent exists and the ref is present on it
     if (!parsed.parentId) {
       return {
         valid: false,
@@ -203,6 +317,13 @@ export function validateRemoveAttributeGroup(
       return {
         valid: false,
         error: `Parent node not found: ${parsed.parentId}`,
+      };
+    }
+    const refs = toArray((location.parent as AttrGroupRefHolder).attributeGroup);
+    if (!attrGroupRefExistsInParent(refs, parsed.name, parsed.position)) {
+      return {
+        valid: false,
+        error: `Attribute group reference not found: ${command.payload.groupId}`,
       };
     }
     return { valid: true };
@@ -269,6 +390,13 @@ export function validateModifyAttributeGroup(
       return {
         valid: false,
         error: `Parent node not found: ${parsed.parentId}`,
+      };
+    }
+    const refs = toArray((location.parent as AttrGroupRefHolder).attributeGroup);
+    if (!attrGroupRefExistsInParent(refs, parsed.name, parsed.position)) {
+      return {
+        valid: false,
+        error: `Attribute group reference not found: ${command.payload.groupId}`,
       };
     }
     if (command.payload.ref !== undefined) {

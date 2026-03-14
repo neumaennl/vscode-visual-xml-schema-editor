@@ -185,32 +185,36 @@ describe("CommandExecutor", () => {
       expect(toArray(mockSchema.attributeGroup)[0].name).toBe("testAttrGroup");
     });
 
-    it("should delegate addAnnotation execution and throw not implemented error", () => {
+    it("should delegate addAnnotation execution successfully", () => {
+      // mockSchema has no elements, so targetId "element1" won't resolve —
+      // the executor will throw a "not found" error, which proves delegation works.
       const command: SchemaCommand = {
         type: "addAnnotation",
         payload: {
-          targetId: "element1",
+          targetId: "/element:element1",
           documentation: "Test annotation",
         },
       };
 
       expect(() => {
         executor.execute(command, mockSchema);
-      }).toThrow("addAnnotation execution not yet implemented");
+      }).toThrow("not found");
     });
 
-    it("should delegate addDocumentation execution and throw not implemented error", () => {
+    it("should delegate addDocumentation execution successfully", () => {
+      // mockSchema has no elements, so targetId won't resolve —
+      // the executor will throw a "not found" error, which proves delegation works.
       const command: SchemaCommand = {
         type: "addDocumentation",
         payload: {
-          targetId: "element1",
+          targetId: "/element:element1",
           content: "Test documentation",
         },
       };
 
       expect(() => {
         executor.execute(command, mockSchema);
-      }).toThrow("addDocumentation execution not yet implemented");
+      }).toThrow("not found");
     });
 
     it("should delegate addImport execution and throw not implemented error", () => {

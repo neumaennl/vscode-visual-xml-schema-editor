@@ -1,5 +1,7 @@
 /**
  * Validators for attributeGroup commands.
+ * Handles both top-level attribute group definitions and
+ * attribute group references (xs:attributeGroup ref="...").
  */
 
 import {
@@ -11,7 +13,8 @@ import {
 } from "../../shared/types";
 import { ValidationResult, isValidXmlName } from "./validationUtils";
 import { toArray } from "../../shared/schemaUtils";
-import { parseSchemaId } from "../../shared/idStrategy";
+import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy";
+import { locateNodeById } from "../schemaNavigator";
 
 // ===== AttributeGroup Reference Helpers =====
 
@@ -86,9 +89,10 @@ function isAttrGroupReferenced(name: string, schemaObj: schema): boolean {
 /**
  * Validates an addAttributeGroup command.
  *
- * Checks:
- * - `groupName` is a valid XML name
- * - No existing attribute group with the same name
+ * Two mutually exclusive modes:
+ * - **Definition mode** (`groupName` only): validates XML name uniqueness.
+ * - **Reference mode** (`ref` + `parentId`): validates the ref name, that the referenced
+ *   group exists, and that the parent node exists.
  *
  * @param command - The addAttributeGroup command to validate
  * @param schemaObj - The schema object to validate against
@@ -98,19 +102,69 @@ export function validateAddAttributeGroup(
   command: AddAttributeGroupCommand,
   schemaObj: schema
 ): ValidationResult {
-  if (!isValidXmlName(command.payload.groupName)) {
+  const { groupName, ref, parentId } = command.payload;
+
+  if (ref !== undefined) {
+    // Reference mode — reject definition-mode fields
+    if (groupName !== undefined) {
+      return {
+        valid: false,
+        error:
+          "Cannot combine ref with groupName — use ref for references, groupName for definitions",
+      };
+    }
+    if (!parentId?.trim()) {
+      return {
+        valid: false,
+        error: "Parent ID is required for attribute group references",
+      };
+    }
+    if (!isValidXmlName(ref)) {
+      return {
+        valid: false,
+        error: "Attribute group ref must be a valid XML name",
+      };
+    }
+    const groupExists = toArray(schemaObj.attributeGroup).some(
+      (g) => g.name === ref
+    );
+    if (!groupExists) {
+      return {
+        valid: false,
+        error: `Referenced attribute group does not exist: ${ref}`,
+      };
+    }
+    const location = locateNodeById(schemaObj, parentId);
+    if (!location.found) {
+      return {
+        valid: false,
+        error: `Parent node not found: ${parentId}`,
+      };
+    }
+    return { valid: true };
+  }
+
+  // Definition mode — reject reference-mode fields
+  if (parentId !== undefined) {
+    return {
+      valid: false,
+      error:
+        "Cannot combine groupName with parentId — use ref for references, groupName for definitions",
+    };
+  }
+  if (!isValidXmlName(groupName ?? "")) {
     return {
       valid: false,
       error: "Attribute group name must be a valid XML name",
     };
   }
   const exists = toArray(schemaObj.attributeGroup).some(
-    (g) => g.name === command.payload.groupName
+    (g) => g.name === groupName
   );
   if (exists) {
     return {
       valid: false,
-      error: `Attribute group name already exists: ${command.payload.groupName}`,
+      error: `Attribute group name already exists: ${groupName}`,
     };
   }
   return { valid: true };
@@ -119,10 +173,9 @@ export function validateAddAttributeGroup(
 /**
  * Validates a removeAttributeGroup command.
  *
- * Checks:
- * - `groupId` is not empty
- * - The referenced attribute group exists
- * - The attribute group is not referenced elsewhere in the schema
+ * The `groupId` determines the mode:
+ * - **Definition** (`/attributeGroup:Name`): validates existence and no remaining references.
+ * - **Reference** (`/complexType:X/attributeGroupRef:Name[0]`): validates parent existence.
  *
  * @param command - The removeAttributeGroup command to validate
  * @param schemaObj - The schema object to validate against
@@ -136,6 +189,26 @@ export function validateRemoveAttributeGroup(
     return { valid: false, error: "Attribute group ID cannot be empty" };
   }
   const parsed = parseSchemaId(command.payload.groupId);
+
+  if (parsed.nodeType === SchemaNodeType.AttributeGroupRef) {
+    // Reference mode: validate parent exists
+    if (!parsed.parentId) {
+      return {
+        valid: false,
+        error: `Invalid attributeGroupRef ID: ${command.payload.groupId}`,
+      };
+    }
+    const location = locateNodeById(schemaObj, parsed.parentId);
+    if (!location.found) {
+      return {
+        valid: false,
+        error: `Parent node not found: ${parsed.parentId}`,
+      };
+    }
+    return { valid: true };
+  }
+
+  // Definition mode: validate existence and no references
   const found = toArray(schemaObj.attributeGroup).some(
     (g) => g.name === parsed.name
   );
@@ -157,10 +230,11 @@ export function validateRemoveAttributeGroup(
 /**
  * Validates a modifyAttributeGroup command.
  *
- * Checks:
- * - `groupId` is not empty
- * - The referenced attribute group exists
- * - If `groupName` is provided: it is a valid XML name and not already used
+ * The `groupId` determines the mode:
+ * - **Definition** (`/attributeGroup:Name`): validates existence; rejects `ref` field.
+ *   If `groupName` provided, validates XML name and uniqueness.
+ * - **Reference** (`/complexType:X/attributeGroupRef:Name[0]`): validates parent existence;
+ *   rejects `groupName` field. If `ref` provided, validates the referenced group exists.
  *
  * @param command - The modifyAttributeGroup command to validate
  * @param schemaObj - The schema object to validate against
@@ -174,6 +248,57 @@ export function validateModifyAttributeGroup(
     return { valid: false, error: "Attribute group ID cannot be empty" };
   }
   const parsed = parseSchemaId(command.payload.groupId);
+
+  if (parsed.nodeType === SchemaNodeType.AttributeGroupRef) {
+    // Reference mode: reject definition-mode fields
+    if (command.payload.groupName !== undefined) {
+      return {
+        valid: false,
+        error:
+          "Cannot use groupName when modifying an attribute group reference — use ref or documentation instead",
+      };
+    }
+    if (!parsed.parentId) {
+      return {
+        valid: false,
+        error: `Invalid attributeGroupRef ID: ${command.payload.groupId}`,
+      };
+    }
+    const location = locateNodeById(schemaObj, parsed.parentId);
+    if (!location.found) {
+      return {
+        valid: false,
+        error: `Parent node not found: ${parsed.parentId}`,
+      };
+    }
+    if (command.payload.ref !== undefined) {
+      if (!isValidXmlName(command.payload.ref)) {
+        return {
+          valid: false,
+          error: "Attribute group ref must be a valid XML name",
+        };
+      }
+      const refExists = toArray(schemaObj.attributeGroup).some(
+        (g) => g.name === command.payload.ref
+      );
+      if (!refExists) {
+        return {
+          valid: false,
+          error: `Referenced attribute group does not exist: ${command.payload.ref}`,
+        };
+      }
+    }
+    return { valid: true };
+  }
+
+  // Definition mode: reject reference-mode fields
+  if (command.payload.ref !== undefined) {
+    return {
+      valid: false,
+      error:
+        "Cannot use ref when modifying an attribute group definition — use groupName or documentation instead",
+    };
+  }
   const found = toArray(schemaObj.attributeGroup).some(
     (g) => g.name === parsed.name
   );
@@ -202,3 +327,4 @@ export function validateModifyAttributeGroup(
   }
   return { valid: true };
 }
+

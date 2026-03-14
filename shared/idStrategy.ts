@@ -29,6 +29,8 @@ export enum SchemaNodeType {
   GroupRef = "groupRef",
   /** Attribute group definition */
   AttributeGroup = "attributeGroup",
+  /** Schema node type for an attribute group reference (xs:attributeGroup ref="...") */
+  AttributeGroupRef = "attributeGroupRef",
   /** Attribute definition */
   Attribute = "attribute",
   /** Anonymous complex type within an element */

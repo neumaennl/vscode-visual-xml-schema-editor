@@ -63,6 +63,7 @@ import { ValidationResult } from "./commandValidators/validationUtils";
 import * as elementValidators from "./commandValidators/elementValidators";
 import * as typeValidators from "./commandValidators/typeValidators";
 import * as groupValidators from "./commandValidators/groupValidators";
+import * as attributeGroupValidators from "./commandValidators/attributeGroupValidators";
 import * as annotationValidators from "./commandValidators/annotationValidators";
 import * as schemaValidators from "./commandValidators/schemaValidators";
 
@@ -142,9 +143,9 @@ export class CommandValidator {
       validateAddGroup: groupValidators.validateAddGroup,
       validateRemoveGroup: groupValidators.validateRemoveGroup,
       validateModifyGroup: groupValidators.validateModifyGroup,
-      validateAddAttributeGroup: groupValidators.validateAddAttributeGroup,
-      validateRemoveAttributeGroup: groupValidators.validateRemoveAttributeGroup,
-      validateModifyAttributeGroup: groupValidators.validateModifyAttributeGroup,
+      validateAddAttributeGroup: attributeGroupValidators.validateAddAttributeGroup,
+      validateRemoveAttributeGroup: attributeGroupValidators.validateRemoveAttributeGroup,
+      validateModifyAttributeGroup: attributeGroupValidators.validateModifyAttributeGroup,
       validateAddAnnotation: annotationValidators.validateAddAnnotation,
       validateRemoveAnnotation: annotationValidators.validateRemoveAnnotation,
       validateModifyAnnotation: annotationValidators.validateModifyAnnotation,

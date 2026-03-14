@@ -462,11 +462,3 @@ export function validateModifyGroup(
   }
   return { valid: true };
 }
-
-// ===== AttributeGroup Command Validation =====
-// Delegated to attributeGroupValidators module for file-size compliance.
-export {
-  validateAddAttributeGroup,
-  validateRemoveAttributeGroup,
-  validateModifyAttributeGroup,
-} from "./attributeGroupValidators";

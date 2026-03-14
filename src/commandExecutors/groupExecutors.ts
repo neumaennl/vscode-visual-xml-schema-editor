@@ -9,12 +9,8 @@ import {
   AddGroupCommand,
   RemoveGroupCommand,
   ModifyGroupCommand,
-  AddAttributeGroupCommand,
-  RemoveAttributeGroupCommand,
-  ModifyAttributeGroupCommand,
   ContentModel,
   namedGroup,
-  namedAttributeGroup,
   allType,
   simpleExplicitGroup,
   annotationType,
@@ -401,92 +397,5 @@ function createAnnotation(text: string): annotationType {
   doc.value = text;
   annotation.documentation = [doc];
   return annotation;
-}
-
-// ===== Attribute Group Executors =====
-
-/**
- * Executes an addAttributeGroup command.
- *
- * Creates a new top-level named attribute group definition in the schema.
- *
- * @param command - The addAttributeGroup command to execute
- * @param schemaObj - The schema object to modify
- */
-export function executeAddAttributeGroup(
-  command: AddAttributeGroupCommand,
-  schemaObj: schema
-): void {
-  const { groupName, documentation } = command.payload;
-
-  const attrGroup = new namedAttributeGroup();
-  attrGroup.name = groupName;
-  if (documentation) {
-    attrGroup.annotation = createAnnotation(documentation);
-  }
-
-  const groups = toArray(schemaObj.attributeGroup);
-  groups.push(attrGroup);
-  schemaObj.attributeGroup = groups;
-}
-
-/**
- * Executes a removeAttributeGroup command.
- *
- * Removes a top-level named attribute group definition identified by `groupId`.
- *
- * @param command - The removeAttributeGroup command to execute
- * @param schemaObj - The schema object to modify
- * @throws Error if the attribute group is not found
- */
-export function executeRemoveAttributeGroup(
-  command: RemoveAttributeGroupCommand,
-  schemaObj: schema
-): void {
-  const { groupId } = command.payload;
-  const parsed = parseSchemaId(groupId);
-
-  const groups = toArray(schemaObj.attributeGroup);
-  const filtered = groups.filter((g) => g.name !== parsed.name);
-  if (filtered.length === groups.length) {
-    throw new Error(`AttributeGroup not found: ${parsed.name}`);
-  }
-  schemaObj.attributeGroup = filtered.length > 0 ? filtered : undefined;
-}
-
-/**
- * Executes a modifyAttributeGroup command.
- *
- * Updates the name and/or documentation of an existing top-level attribute group.
- *
- * @param command - The modifyAttributeGroup command to execute
- * @param schemaObj - The schema object to modify
- * @throws Error if the attribute group is not found
- */
-export function executeModifyAttributeGroup(
-  command: ModifyAttributeGroupCommand,
-  schemaObj: schema
-): void {
-  const { groupId, groupName, documentation } = command.payload;
-  const parsed = parseSchemaId(groupId);
-
-  const attrGroup = toArray(schemaObj.attributeGroup).find(
-    (g) => g.name === parsed.name
-  );
-  if (!attrGroup) {
-    throw new Error(`AttributeGroup not found: ${parsed.name}`);
-  }
-
-  if (groupName !== undefined) {
-    attrGroup.name = groupName;
-  }
-  if (documentation !== undefined) {
-    if (!attrGroup.annotation) {
-      attrGroup.annotation = new annotationType();
-    }
-    const doc = new documentationType();
-    doc.value = documentation;
-    attrGroup.annotation.documentation = [doc];
-  }
 }
 

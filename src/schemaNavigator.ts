@@ -239,6 +239,12 @@ function navigateFromSchema(
     if (group) {
       return { found: true, node: group, nodeType: "namedGroup" };
     }
+  } else if (nodeType === SchemaNodeType.AttributeGroup) {
+    const attrGroups = toArray(schemaObj.attributeGroup);
+    const attrGroup = findByNameOrPosition(attrGroups, name, position);
+    if (attrGroup) {
+      return { found: true, node: attrGroup, nodeType: "namedAttributeGroup" };
+    }
   } else if (nodeType === SchemaNodeType.Attribute) {
     const attrs = toArray(schemaObj.attribute);
     const attr = findByNameOrPosition(attrs, name, position);

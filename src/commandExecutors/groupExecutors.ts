@@ -9,9 +9,6 @@ import {
   AddGroupCommand,
   RemoveGroupCommand,
   ModifyGroupCommand,
-  AddAttributeGroupCommand,
-  RemoveAttributeGroupCommand,
-  ModifyAttributeGroupCommand,
   ContentModel,
   namedGroup,
   allType,
@@ -400,49 +397,5 @@ function createAnnotation(text: string): annotationType {
   doc.value = text;
   annotation.documentation = [doc];
   return annotation;
-}
-
-// ===== Attribute Group Executors =====
-
-/**
- * Executes an addAttributeGroup command.
- *
- * @param _command - The addAttributeGroup command to execute
- * @param _schemaObj - The schema object to modify
- * @throws Error - Not yet implemented
- */
-export function executeAddAttributeGroup(
-  _command: AddAttributeGroupCommand,
-  _schemaObj: schema
-): void {
-  throw new Error("addAttributeGroup execution not yet implemented");
-}
-
-/**
- * Executes a removeAttributeGroup command.
- *
- * @param _command - The removeAttributeGroup command to execute
- * @param _schemaObj - The schema object to modify
- * @throws Error - Not yet implemented
- */
-export function executeRemoveAttributeGroup(
-  _command: RemoveAttributeGroupCommand,
-  _schemaObj: schema
-): void {
-  throw new Error("removeAttributeGroup execution not yet implemented");
-}
-
-/**
- * Executes a modifyAttributeGroup command.
- *
- * @param _command - The modifyAttributeGroup command to execute
- * @param _schemaObj - The schema object to modify
- * @throws Error - Not yet implemented
- */
-export function executeModifyAttributeGroup(
-  _command: ModifyAttributeGroupCommand,
-  _schemaObj: schema
-): void {
-  throw new Error("modifyAttributeGroup execution not yet implemented");
 }
 

@@ -7,9 +7,6 @@ import {
   AddGroupCommand,
   RemoveGroupCommand,
   ModifyGroupCommand,
-  AddAttributeGroupCommand,
-  RemoveAttributeGroupCommand,
-  ModifyAttributeGroupCommand,
   groupRef,
 } from "../../shared/types";
 import {
@@ -463,45 +460,5 @@ export function validateModifyGroup(
       error: `Content model must be one of: ${VALID_GROUP_CONTENT_MODELS.join(", ")}`,
     };
   }
-  return { valid: true };
-}
-
-// ===== AttributeGroup Command Validation =====
-
-export function validateAddAttributeGroup(
-  command: AddAttributeGroupCommand,
-  _schemaObj: schema
-): ValidationResult {
-  // Validate group name is a valid XML name
-  if (!isValidXmlName(command.payload.groupName)) {
-    return {
-      valid: false,
-      error: "Attribute group name must be a valid XML name",
-    };
-  }
-  // TODO Phase 2: Check if attribute group name already exists
-  return { valid: true };
-}
-
-export function validateRemoveAttributeGroup(
-  command: RemoveAttributeGroupCommand,
-  _schemaObj: schema
-): ValidationResult {
-  if (!command.payload.groupId.trim()) {
-    return { valid: false, error: "Attribute group ID cannot be empty" };
-  }
-  // TODO Phase 2: Validate that groupId exists in schema
-  // TODO Phase 2: Check if attribute group is being referenced
-  return { valid: true };
-}
-
-export function validateModifyAttributeGroup(
-  command: ModifyAttributeGroupCommand,
-  _schemaObj: schema
-): ValidationResult {
-  if (!command.payload.groupId.trim()) {
-    return { valid: false, error: "Attribute group ID cannot be empty" };
-  }
-  // TODO Phase 2: Validate that groupId exists in schema
   return { valid: true };
 }

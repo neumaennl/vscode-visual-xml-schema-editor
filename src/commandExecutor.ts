@@ -42,6 +42,7 @@ import * as elementExecutors from "./commandExecutors/elementExecutors";
 import * as attributeExecutors from "./commandExecutors/attributeExecutors";
 import * as typeExecutors from "./commandExecutors/typeExecutors";
 import * as groupExecutors from "./commandExecutors/groupExecutors";
+import * as attributeGroupExecutors from "./commandExecutors/attributeGroupExecutors";
 import * as annotationExecutors from "./commandExecutors/annotationExecutors";
 import * as schemaExecutors from "./commandExecutors/schemaExecutors";
 
@@ -121,9 +122,9 @@ export class CommandExecutor {
       executeAddGroup: groupExecutors.executeAddGroup,
       executeRemoveGroup: groupExecutors.executeRemoveGroup,
       executeModifyGroup: groupExecutors.executeModifyGroup,
-      executeAddAttributeGroup: groupExecutors.executeAddAttributeGroup,
-      executeRemoveAttributeGroup: groupExecutors.executeRemoveAttributeGroup,
-      executeModifyAttributeGroup: groupExecutors.executeModifyAttributeGroup,
+      executeAddAttributeGroup: attributeGroupExecutors.executeAddAttributeGroup,
+      executeRemoveAttributeGroup: attributeGroupExecutors.executeRemoveAttributeGroup,
+      executeModifyAttributeGroup: attributeGroupExecutors.executeModifyAttributeGroup,
       executeAddAnnotation: annotationExecutors.executeAddAnnotation,
       executeRemoveAnnotation: annotationExecutors.executeRemoveAnnotation,
       executeModifyAnnotation: annotationExecutors.executeModifyAnnotation,

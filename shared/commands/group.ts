@@ -107,13 +107,33 @@ export interface ModifyGroupCommand extends BaseCommand<ModifyGroupPayload> {
 }
 
 /**
- * Payload for adding an attribute group definition.
+ * Payload for adding an attribute group definition or an attribute group reference.
+ *
+ * Two modes, mutually exclusive:
+ * - **Definition** (`groupName`): creates a top-level `xs:attributeGroup name="..."`.
+ *   Always created at the schema root; `parentId` must not be provided in this mode.
+ * - **Reference** (`ref` + `parentId`): creates `xs:attributeGroup ref="..."` inside the
+ *   complexType or namedAttributeGroup identified by `parentId`.
  */
 export interface AddAttributeGroupPayload {
-  /** Name of the attribute group */
-  groupName: string;
-  /** Optional documentation */
+  /**
+   * Name of the attribute group. Required when creating a definition.
+   * Ignored when creating a reference (use `ref` instead).
+   */
+  groupName?: string;
+  /** Optional documentation. Applies to both definitions and references (xs:annotation). */
   documentation?: string;
+  /**
+   * Name of the attribute group to reference.
+   * When provided, creates `xs:attributeGroup ref="..."` inside `parentId`.
+   * Mutually exclusive with `groupName`.
+   */
+  ref?: string;
+  /**
+   * ID of the parent complexType or namedAttributeGroup.
+   * Required when creating a reference. Must be omitted for definitions.
+   */
+  parentId?: string;
 }
 
 /**
@@ -141,15 +161,26 @@ export interface RemoveAttributeGroupCommand extends BaseCommand<RemoveAttribute
 }
 
 /**
- * Payload for modifying an attribute group.
+ * Payload for modifying an attribute group definition or an attribute group reference.
+ * The `groupId` field works for both:
+ * - `/attributeGroup:Name` — modifies the top-level named attribute group definition.
+ * - `/complexType:X/attributeGroupRef:Name[0]` — modifies the attribute group reference.
  */
 export interface ModifyAttributeGroupPayload {
-  /** ID of the attribute group to modify */
+  /** ID of the attribute group definition or reference to modify */
   groupId: string;
-  /** New name for the group (optional) */
+  /**
+   * New name for the attribute group definition (optional).
+   * Not applicable for references.
+   */
   groupName?: string;
-  /** New documentation (optional) */
+  /** New documentation (optional). Applies to both definitions and references. */
   documentation?: string;
+  /**
+   * New ref target for an attribute group reference (optional).
+   * Only applicable when `groupId` points to a reference.
+   */
+  ref?: string;
 }
 
 /**

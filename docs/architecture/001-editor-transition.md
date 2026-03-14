@@ -561,7 +561,7 @@ class DiagramRenderer {
 - [x] Implement simpleType commands (add, remove, modify) — top-level named types and anonymous inline types within elements
 - [x] Implement complexType commands (add, remove, modify) — top-level named types and anonymous inline types within elements, all content models (sequence, choice, all), abstract/mixed flags, base type extension, and documentation
 - [x] Implement group commands (add, remove, modify) — top-level named group definitions (sequence/choice/all) and group references (xs:group ref="...") inside compositors and complexTypes; `removeGroup` blocks removal when the group is still referenced elsewhere in the schema
-- [ ] Implement attributeGroup commands (add, remove, modify)
+- [x] Implement attributeGroup commands (add, remove, modify) — top-level named attribute group definitions; `removeAttributeGroup` blocks removal when the group is still referenced in complexTypes, elements, or other attribute groups
 - [ ] Implement annotation and documentation commands (add, remove, modify)
 - [ ] Implement import and include commands (add, remove, modify)
 - [x] Connect commands to document edits via [WorkspaceEdit](https://code.visualstudio.com/api/references/vscode-api#WorkspaceEdit) (VS Code's API for programmatic text edits with undo/redo support)

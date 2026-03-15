@@ -66,6 +66,12 @@ export function validateAddAnnotation(
       error: `Target node not found or does not support annotations: ${command.payload.targetId}`,
     };
   }
+  if (annotationExists(schemaObj, command.payload.targetId)) {
+    return {
+      valid: false,
+      error: `Node already has an annotation: ${command.payload.targetId}. Use modifyAnnotation to update it.`,
+    };
+  }
   return { valid: true };
 }
 

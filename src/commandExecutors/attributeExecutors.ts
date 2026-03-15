@@ -18,6 +18,7 @@ import {
 import { toArray } from "../../shared/schemaUtils";
 import { locateNodeById } from "../schemaNavigator";
 import { parseSchemaId } from "../../shared/idStrategy";
+import { createAnnotation } from "./annotationUtils";
 
 /**
  * Executes an addAttribute command.
@@ -421,18 +422,4 @@ function updateAttributeProperties(
     doc.value = newDocumentation;
     attr.annotation.documentation = [doc];
   }
-}
-
-/**
- * Creates an annotation with a single documentation entry.
- *
- * @param text - Documentation text
- * @returns New annotationType instance
- */
-function createAnnotation(text: string): annotationType {
-  const annotation = new annotationType();
-  const doc = new documentationType();
-  doc.value = text;
-  annotation.documentation = [doc];
-  return annotation;
 }

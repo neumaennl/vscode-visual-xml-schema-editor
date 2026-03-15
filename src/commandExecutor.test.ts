@@ -186,35 +186,50 @@ describe("CommandExecutor", () => {
     });
 
     it("should delegate addAnnotation execution successfully", () => {
-      // mockSchema has no elements, so targetId "element1" won't resolve —
-      // the executor will throw a "not found" error, which proves delegation works.
+      // Use a real schema instance with an element so the target ID resolves.
+      const testSchema = new schema();
+      const element = new topLevelElement();
+      element.name = "testElement";
+      testSchema.element = [element];
+
       const command: SchemaCommand = {
         type: "addAnnotation",
         payload: {
-          targetId: "/element:element1",
+          targetId: "/element:testElement",
           documentation: "Test annotation",
         },
       };
 
       expect(() => {
-        executor.execute(command, mockSchema);
-      }).toThrow("not found");
+        executor.execute(command, testSchema);
+      }).not.toThrow();
+
+      expect(toArray(testSchema.element)[0].annotation).toBeDefined();
     });
 
     it("should delegate addDocumentation execution successfully", () => {
-      // mockSchema has no elements, so targetId won't resolve —
-      // the executor will throw a "not found" error, which proves delegation works.
+      // Use a real schema instance with an element so the target ID resolves.
+      const testSchema = new schema();
+      const element = new topLevelElement();
+      element.name = "testElement";
+      testSchema.element = [element];
+
       const command: SchemaCommand = {
         type: "addDocumentation",
         payload: {
-          targetId: "/element:element1",
+          targetId: "/element:testElement",
           content: "Test documentation",
+          lang: "en",
         },
       };
 
       expect(() => {
-        executor.execute(command, mockSchema);
-      }).toThrow("not found");
+        executor.execute(command, testSchema);
+      }).not.toThrow();
+
+      const docs = toArray(toArray(testSchema.element)[0].annotation?.documentation);
+      expect(docs).toHaveLength(1);
+      expect(docs[0].value).toBe("Test documentation");
     });
 
     it("should delegate addImport execution and throw not implemented error", () => {

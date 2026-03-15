@@ -175,19 +175,16 @@ describe("executeAddAnnotation", () => {
     expect(toArray(elem.annotation?.appinfo)[0].value).toBe("info");
   });
 
-  it("replaces an existing annotation", () => {
+  it("throws when annotation already exists", () => {
     const schemaObj = unmarshal(schema, annotatedElementXml);
     const command: AddAnnotationCommand = {
       type: "addAnnotation",
       payload: { targetId: "/element:person", documentation: "New doc." },
     };
 
-    executeAddAnnotation(command, schemaObj);
-
-    const elem = toArray(schemaObj.element)[0];
-    const docs = toArray(elem.annotation?.documentation);
-    expect(docs).toHaveLength(1);
-    expect(docs[0].value).toBe("New doc.");
+    expect(() => executeAddAnnotation(command, schemaObj)).toThrow(
+      "already has an annotation"
+    );
   });
 
   it("works on a complexType target", () => {
@@ -272,7 +269,7 @@ describe("executeModifyAnnotation", () => {
     expect(toArray(elem.annotation?.documentation)[0].value).toBe("Updated.");
   });
 
-  it("adds a documentation child when annotation has none", () => {
+  it("adds a documentation child when annotation has none, preserving appinfo", () => {
     // Start with an annotation that only has appinfo
     const onlyAppinfoXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
@@ -290,11 +287,14 @@ describe("executeModifyAnnotation", () => {
 
     executeModifyAnnotation(command, schemaObj);
 
-    const docs = toArray(
-      toArray(schemaObj.element)[0].annotation?.documentation
-    );
+    const elem = toArray(schemaObj.element)[0];
+    const docs = toArray(elem.annotation?.documentation);
     expect(docs).toHaveLength(1);
     expect(docs[0].value).toBe("New doc.");
+    // Existing appinfo must be preserved
+    const infos = toArray(elem.annotation?.appinfo);
+    expect(infos).toHaveLength(1);
+    expect(infos[0].value).toBe("app");
   });
 
   it("updates appinfo text", () => {

@@ -108,13 +108,14 @@ function ensureAnnotation(node: AnnotatableNode): annotationType {
 /**
  * Executes an addAnnotation command.
  *
- * Creates (or replaces) the xs:annotation element on the target component.
+ * Creates a new xs:annotation element on the target component.
  * If `documentation` is provided a single xs:documentation child is added.
  * If `appInfo` is provided a single xs:appinfo child is added.
  *
  * @param command - The addAnnotation command to execute
  * @param schemaObj - The schema object to modify
- * @throws Error if the target node is not found or does not support annotations
+ * @throws Error if the target node is not found, does not support annotations,
+ *   or already has an annotation (use modifyAnnotation to update an existing one)
  */
 export function executeAddAnnotation(
   command: AddAnnotationCommand,
@@ -122,6 +123,12 @@ export function executeAddAnnotation(
 ): void {
   const { targetId, documentation, appInfo } = command.payload;
   const node = findAnnotatableNode(schemaObj, targetId);
+
+  if (node.annotation) {
+    throw new Error(
+      `Node already has an annotation: ${targetId}. Use modifyAnnotation to update it.`
+    );
+  }
 
   const annotation = new annotationType();
 

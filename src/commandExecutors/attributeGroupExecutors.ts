@@ -17,6 +17,7 @@ import {
 import { toArray } from "../../shared/schemaUtils";
 import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy";
 import { locateNodeById } from "../schemaNavigator";
+import { createAnnotation } from "./annotationUtils";
 
 // ===== Structural types =====
 
@@ -24,20 +25,6 @@ import { locateNodeById } from "../schemaNavigator";
 type AttrGroupRefHolder = { attributeGroup?: attributeGroupRef[] };
 
 // ===== Helper functions =====
-
-/**
- * Creates an annotation containing a single documentation entry.
- *
- * @param text - The documentation text
- * @returns A new annotationType instance with the text
- */
-function createAnnotation(text: string): annotationType {
-  const annotation = new annotationType();
-  const doc = new documentationType();
-  doc.value = text;
-  annotation.documentation = [doc];
-  return annotation;
-}
 
 /**
  * Returns true if `parentType` is a type that can hold attribute group refs directly.

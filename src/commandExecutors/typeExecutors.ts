@@ -40,6 +40,7 @@ import {
 import { toArray, isSchemaRoot } from "../../shared/schemaUtils";
 import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy";
 import { locateNodeById } from "../schemaNavigator";
+import { createAnnotation } from "./annotationUtils";
 
 // ===== Simple Type Executors =====
 
@@ -321,20 +322,6 @@ function applyRestrictionFacets(
     pt.value = facets.pattern;
     restriction.pattern = [pt];
   }
-}
-
-/**
- * Creates an annotation containing a single documentation entry.
- *
- * @param text - The documentation text
- * @returns A new annotationType instance with the text
- */
-function createAnnotation(text: string): annotationType {
-  const annotation = new annotationType();
-  const doc = new documentationType();
-  doc.value = text;
-  annotation.documentation = [doc];
-  return annotation;
 }
 
 // ===== Complex Type Executors =====

@@ -92,6 +92,18 @@ describe("Annotation Validators", () => {
       const result = validateAddAnnotation(command, schemaObj);
       expect(result.valid).toBe(true);
     });
+
+    test("should reject addAnnotation when element already has an annotation", () => {
+      const schemaObj = unmarshal(schema, annotatedElementXml);
+      const command: AddAnnotationCommand = {
+        type: "addAnnotation",
+        payload: { targetId: "/element:person", documentation: "Duplicate." },
+      };
+
+      const result = validateAddAnnotation(command, schemaObj);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("already has an annotation");
+    });
   });
 
   describe("validateRemoveAnnotation", () => {

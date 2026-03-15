@@ -277,7 +277,8 @@ export function executeModifyAnnotation(
   }
 
   const node = findAnnotatableNode(schemaObj, annotationId);
-  applyAnnotationModifications(node.annotation!, documentation, appInfo);
+  if (!node.annotation) return;
+  applyAnnotationModifications(node.annotation, documentation, appInfo);
 }
 
 // ===== Documentation Executors =====
@@ -369,9 +370,10 @@ export function executeRemoveDocumentation(
   }
 
   const node = findAnnotatableNode(schemaObj, elementId);
-  const docs = toArray(node.annotation!.documentation);
+  if (!node.annotation) return;
+  const docs = toArray(node.annotation.documentation);
   docs.splice(docIndex, 1);
-  node.annotation!.documentation = docs.length > 0 ? docs : undefined;
+  node.annotation.documentation = docs.length > 0 ? docs : undefined;
 }
 
 /**
@@ -422,9 +424,10 @@ export function executeModifyDocumentation(
   }
 
   const node = findAnnotatableNode(schemaObj, elementId);
-  const docs = toArray(node.annotation!.documentation);
+  if (!node.annotation) return;
+  const docs = toArray(node.annotation.documentation);
   applyDocModifications(docs[docIndex], content, lang);
-  node.annotation!.documentation = docs;
+  node.annotation.documentation = docs;
 }
 
 /**

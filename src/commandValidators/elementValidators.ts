@@ -128,24 +128,25 @@ export function validateAddElement(
   if (!location.found) {
     return { valid: false, error: `Parent node not found: ${parentId}` };
   }
+  const parentType = location.parentType ?? "";
 
   // Validate parent type supports elements
-  if (!VALID_ELEMENT_PARENTS.includes(location.parentType as (typeof VALID_ELEMENT_PARENTS)[number])) {
-    return { valid: false, error: `Cannot add element to parent of type: ${location.parentType}` };
+  if (!VALID_ELEMENT_PARENTS.includes(parentType as (typeof VALID_ELEMENT_PARENTS)[number])) {
+    return { valid: false, error: `Cannot add element to parent of type: ${parentType}` };
   }
 
   // Top-level elements cannot be references
-  if (ref !== undefined && location.parentType === "schema") {
+  if (ref !== undefined && parentType === "schema") {
     return { valid: false, error: "Top-level elements cannot be references" };
   }
 
   // Check for duplicate element names/refs
-  const existing = getChildElements(location.parent, location.parentType!);
+  const existing = getChildElements(location.parent, parentType);
   if (elementName && existing.some(el => el.name === elementName || el.ref === elementName)) {
-    return { valid: false, error: `Cannot add element: duplicate element name '${elementName}' in ${location.parentType === "schema" ? "schema" : location.parentType!}` };
+    return { valid: false, error: `Cannot add element: duplicate element name '${elementName}' in ${parentType === "schema" ? "schema" : parentType}` };
   }
   if (ref && existing.some(el => el.ref === ref || el.name === ref)) {
-    return { valid: false, error: `Cannot add element: duplicate element reference '${ref}' in ${location.parentType!}` };
+    return { valid: false, error: `Cannot add element: duplicate element reference '${ref}' in ${parentType}` };
   }
 
   // Validate occurrences
@@ -168,13 +169,14 @@ export function validateRemoveElement(
   if (!location.found) {
     return { valid: false, error: `Parent node not found for element: ${command.payload.elementId}` };
   }
+  const parentType = location.parentType ?? "";
 
-  if (!VALID_ELEMENT_PARENTS.includes(location.parentType as (typeof VALID_ELEMENT_PARENTS)[number])) {
-    return { valid: false, error: `Cannot remove element from parent of type: ${location.parentType}` };
+  if (!VALID_ELEMENT_PARENTS.includes(parentType as (typeof VALID_ELEMENT_PARENTS)[number])) {
+    return { valid: false, error: `Cannot remove element from parent of type: ${parentType}` };
   }
 
   // Check element exists
-  const el = findChildElement(location.parent, location.parentType!, parsed.name, parsed.position);
+  const el = findChildElement(location.parent, parentType, parsed.name, parsed.position);
   if (!el) {
     const spec = parsed.position !== undefined
       ? `at position: ${parsed.position}`
@@ -203,13 +205,14 @@ export function validateModifyElement(
   if (!location.found) {
     return { valid: false, error: `Parent node not found for element: ${elementId}` };
   }
+  const parentType = location.parentType ?? "";
 
-  if (!VALID_ELEMENT_PARENTS.includes(location.parentType as (typeof VALID_ELEMENT_PARENTS)[number])) {
-    return { valid: false, error: `Cannot modify element in parent of type: ${location.parentType}` };
+  if (!VALID_ELEMENT_PARENTS.includes(parentType as (typeof VALID_ELEMENT_PARENTS)[number])) {
+    return { valid: false, error: `Cannot modify element in parent of type: ${parentType}` };
   }
 
   // Check element exists
-  const el = findChildElement(location.parent, location.parentType!, parsed.name, parsed.position);
+  const el = findChildElement(location.parent, parentType, parsed.name, parsed.position);
   if (!el) {
     return { valid: false, error: `Element not found: ${parsed.name ?? `at position ${parsed.position}`}` };
   }
@@ -295,23 +298,24 @@ export function validateAddAttribute(
   if (!location.found) {
     return { valid: false, error: `Parent node not found: ${parentId}` };
   }
+  const parentType = location.parentType ?? "";
 
-  if (!VALID_ATTR_PARENTS.includes(location.parentType as (typeof VALID_ATTR_PARENTS)[number])) {
-    return { valid: false, error: `Cannot add attribute to parent of type: ${location.parentType}` };
+  if (!VALID_ATTR_PARENTS.includes(parentType as (typeof VALID_ATTR_PARENTS)[number])) {
+    return { valid: false, error: `Cannot add attribute to parent of type: ${parentType}` };
   }
 
   // Top-level attributes cannot be references
-  if (ref !== undefined && location.parentType === "schema") {
+  if (ref !== undefined && parentType === "schema") {
     return { valid: false, error: "Top-level attributes cannot be references" };
   }
 
   // Check for duplicate attribute names/refs
-  const existing = getChildAttributes(location.parent, location.parentType!);
+  const existing = getChildAttributes(location.parent, parentType);
   if (ref && existing.some(a => a.ref === ref || a.name === ref)) {
-    return { valid: false, error: `Cannot add attribute: duplicate attribute reference '${ref}' in ${location.parentType}` };
+    return { valid: false, error: `Cannot add attribute: duplicate attribute reference '${ref}' in ${parentType}` };
   }
   if (attributeName && existing.some(a => a.name === attributeName || a.ref === attributeName)) {
-    return { valid: false, error: `Cannot add attribute: duplicate attribute name '${attributeName}' in ${location.parentType === "schema" ? "schema" : location.parentType!}` };
+    return { valid: false, error: `Cannot add attribute: duplicate attribute name '${attributeName}' in ${parentType === "schema" ? "schema" : parentType}` };
   }
 
   return { valid: true };
@@ -334,13 +338,14 @@ export function validateRemoveAttribute(
       error: `Parent node not found for attribute: ${command.payload.attributeId}`,
     };
   }
+  const parentType = location.parentType ?? "";
 
-  if (!VALID_ATTR_PARENTS.includes(location.parentType as (typeof VALID_ATTR_PARENTS)[number])) {
-    return { valid: false, error: `Cannot remove attribute from parent of type: ${location.parentType}` };
+  if (!VALID_ATTR_PARENTS.includes(parentType as (typeof VALID_ATTR_PARENTS)[number])) {
+    return { valid: false, error: `Cannot remove attribute from parent of type: ${parentType}` };
   }
 
   // Check attribute exists
-  const attributes = getChildAttributes(location.parent, location.parentType!);
+  const attributes = getChildAttributes(location.parent, parentType);
   const attr =
     parsed.position !== undefined
       ? attributes[parsed.position]
@@ -375,13 +380,14 @@ export function validateModifyAttribute(
       error: `Parent node not found for attribute: ${attributeId}`,
     };
   }
+  const parentType = location.parentType ?? "";
 
-  if (!VALID_ATTR_PARENTS.includes(location.parentType as (typeof VALID_ATTR_PARENTS)[number])) {
-    return { valid: false, error: `Cannot modify attribute in parent of type: ${location.parentType}` };
+  if (!VALID_ATTR_PARENTS.includes(parentType as (typeof VALID_ATTR_PARENTS)[number])) {
+    return { valid: false, error: `Cannot modify attribute in parent of type: ${parentType}` };
   }
 
   // Check attribute exists
-  const attributes = getChildAttributes(location.parent, location.parentType!);
+  const attributes = getChildAttributes(location.parent, parentType);
   const attrFound =
     parsed.position !== undefined
       ? attributes[parsed.position]

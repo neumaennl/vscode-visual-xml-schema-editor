@@ -92,8 +92,7 @@ export function executeRemoveGroup(
       location.parent,
       location.parentType ?? "",
       parsed.name,
-      parsed.position,
-      groupId
+      parsed.position
     );
     return;
   }
@@ -249,8 +248,7 @@ function removeGroupRefFromParent(
   parent: unknown,
   parentType: string,
   name: string | undefined,
-  position: number | undefined,
-  _originalId: string
+  position: number | undefined
 ): void {
   if (parentType === "sequence" || parentType === "choice") {
     const compositor = parent as CompositorWithGroupRefs;

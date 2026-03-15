@@ -142,7 +142,8 @@ export function executeModifySimpleType(
     }
     const location = locateNodeById(schemaObj, parentId);
     const holder = location.parent as { simpleType?: localSimpleType };
-    updateTypeContents(holder.simpleType!, baseType, restrictions, documentation);
+    if (!holder.simpleType) return;
+    updateTypeContents(holder.simpleType, baseType, restrictions, documentation);
     return;
   }
 
@@ -417,7 +418,8 @@ export function executeModifyComplexType(
     }
     const location = locateNodeById(schemaObj, parentId);
     const holder = location.parent as { complexType?: localComplexType };
-    updateComplexTypeContents(holder.complexType!, { mixed, contentModel, baseType, documentation });
+    if (!holder.complexType) return;
+    updateComplexTypeContents(holder.complexType, { mixed, contentModel, baseType, documentation });
     return;
   }
 

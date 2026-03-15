@@ -43,19 +43,17 @@ const INLINE_COMPLEX_TYPE_PARENT_TYPES = ["topLevelElement", "localElement"];
  * @param typeId - The full ID of the anonymous type (used in error messages).
  * @param parentId - The ID of the parent container element/attribute.
  * @param schemaObj - The root schema object to search.
- * @param prop - The property name to check (e.g. `"simpleType"` or `"complexType"`).
- * @param label - Human-readable type label for error messages (e.g. `"simpleType"`).
+ * @param prop - The property name to check and use in error messages (e.g. `"simpleType"` or `"complexType"`).
  * @returns `{ success: true, location }` when valid; `{ success: false, error }` otherwise.
  */
 function validateAnonymousTypeParent(
   typeId: string,
   parentId: string | undefined,
   schemaObj: schema,
-  prop: string,
-  label: string
+  prop: string
 ): { success: false; error: ValidationResult } | { success: true; location: ReturnType<typeof locateNodeById> } {
   if (!parentId) {
-    return { success: false, error: { valid: false, error: `Invalid anonymous ${label} ID: ${typeId}` } };
+    return { success: false, error: { valid: false, error: `Invalid anonymous ${prop} ID: ${typeId}` } };
   }
   const location = locateNodeById(schemaObj, parentId);
   if (!location.found) {
@@ -67,7 +65,7 @@ function validateAnonymousTypeParent(
       success: false,
       error: {
         valid: false,
-        error: `No anonymous ${label} found in parent: ${parentId}`,
+        error: `No anonymous ${prop} found in parent: ${parentId}`,
       },
     };
   }
@@ -169,7 +167,7 @@ export function validateRemoveSimpleType(
   const parsed = parseSchemaId(command.payload.typeId);
 
   if (parsed.nodeType === SchemaNodeType.AnonymousSimpleType) {
-    const result = validateAnonymousTypeParent(command.payload.typeId, parsed.parentId, schemaObj, "simpleType", "simpleType");
+    const result = validateAnonymousTypeParent(command.payload.typeId, parsed.parentId, schemaObj, "simpleType");
     return result.success ? { valid: true } : result.error;
   }
 
@@ -195,7 +193,7 @@ export function validateModifySimpleType(
   const parsed = parseSchemaId(command.payload.typeId);
 
   if (parsed.nodeType === SchemaNodeType.AnonymousSimpleType) {
-    const result = validateAnonymousTypeParent(command.payload.typeId, parsed.parentId, schemaObj, "simpleType", "simpleType");
+    const result = validateAnonymousTypeParent(command.payload.typeId, parsed.parentId, schemaObj, "simpleType");
     if (!result.success) return result.error;
     const location = result.location;
     if (command.payload.restrictions !== undefined && command.payload.baseType === undefined) {
@@ -287,7 +285,7 @@ export function validateRemoveComplexType(
   const parsed = parseSchemaId(command.payload.typeId);
 
   if (parsed.nodeType === SchemaNodeType.AnonymousComplexType) {
-    const result = validateAnonymousTypeParent(command.payload.typeId, parsed.parentId, schemaObj, "complexType", "complexType");
+    const result = validateAnonymousTypeParent(command.payload.typeId, parsed.parentId, schemaObj, "complexType");
     return result.success ? { valid: true } : result.error;
   }
 
@@ -308,7 +306,7 @@ export function validateModifyComplexType(
   const parsed = parseSchemaId(command.payload.typeId);
 
   if (parsed.nodeType === SchemaNodeType.AnonymousComplexType) {
-    const result = validateAnonymousTypeParent(command.payload.typeId, parsed.parentId, schemaObj, "complexType", "complexType");
+    const result = validateAnonymousTypeParent(command.payload.typeId, parsed.parentId, schemaObj, "complexType");
     if (!result.success) return result.error;
     if (command.payload.typeName !== undefined) {
       return {

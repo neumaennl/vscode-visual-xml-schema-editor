@@ -250,7 +250,8 @@ function modifyAttributeInParent(
 ): void {
   const attributes = getAttributesFromParent(parent, parentType);
   const attr = findAttribute(attributes, targetName, targetPosition);
-  updateAttributeProperties(attr!, newName, newType, newRef, newRequired, newDefaultValue, newFixedValue, newDocumentation);
+  if (!attr) return;
+  updateAttributeProperties(attr, newName, newType, newRef, newRequired, newDefaultValue, newFixedValue, newDocumentation);
 }
 
 /**

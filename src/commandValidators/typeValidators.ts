@@ -126,6 +126,7 @@ export function validateRemoveSimpleType(
         error: `No anonymous simpleType found in parent: ${parsed.parentId}`,
       };
     }
+    return { valid: true };
   }
 
   // TODO Phase 2: Check if type is being used by other elements/types

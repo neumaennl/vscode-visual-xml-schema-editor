@@ -575,6 +575,7 @@ describe("Attribute Validators", () => {
   beforeEach(() => {
     const simpleSchemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:attribute name="attr1" type="xs:string"/>
 </xs:schema>`;
     schemaObj = unmarshal(schema, simpleSchemaXml);
   });
@@ -698,7 +699,9 @@ describe("Attribute Validators", () => {
       const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:attribute name="lang" type="xs:string"/>
-  <xs:complexType name="PersonType"/>
+  <xs:complexType name="PersonType">
+    <xs:attribute name="lang" type="xs:string"/>
+  </xs:complexType>
 </xs:schema>`;
       refSchema = unmarshal(schema, xml);
     });

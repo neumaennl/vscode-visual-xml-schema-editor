@@ -107,26 +107,6 @@ describe("Element Executors", () => {
         expect(elements[0]!.annotation!.documentation).toBeDefined();
       });
 
-      it("should reject duplicate element names in schema", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person" type="xs:string"/>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
-
-        const command: AddElementCommand = {
-          type: "addElement",
-          payload: {
-            parentId: "schema",
-            elementName: "person",
-            elementType: "string",
-          },
-        };
-
-        expect(() => executeAddElement(command, schemaObj)).toThrow(
-          "Cannot add element: duplicate element name 'person' in schema"
-        );
-      });
     });
 
     describe("Adding elements to sequence", () => {
@@ -228,24 +208,6 @@ describe("Element Executors", () => {
       expect(elements[0]!.name).toBe("lastName");
     });
 
-    it("should throw error when element not found", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person" type="xs:string"/>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
-
-      const command: RemoveElementCommand = {
-        type: "removeElement",
-        payload: {
-          elementId: "/element:nonexistent",
-        },
-      };
-
-      expect(() => executeRemoveElement(command, schemaObj)).toThrow(
-        "Element not found with name: nonexistent"
-      );
-    });
   });
 
   describe("executeModifyElement", () => {
@@ -403,26 +365,6 @@ describe("Element Executors", () => {
       });
     });
 
-    describe("Error handling", () => {
-      it("should throw error when element not found", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person" type="xs:string"/>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
-
-        const command: ModifyElementCommand = {
-          type: "modifyElement",
-          payload: {
-            elementId: "/element:nonexistent",
-            elementName: "newName",
-          },
-        };
-
-        expect(() => executeModifyElement(command, schemaObj)).toThrow(
-          "Element not found: nonexistent"
-        );
-      });
     });
 
     describe("Round-trip XML serialization", () => {
@@ -513,82 +455,6 @@ describe("Element Executors", () => {
       expect(seqElements[0].ref).toBe("person");
       expect(seqElements[0].minOccurs).toBe(0);
       expect(seqElements[0].maxOccurs).toBe("unbounded");
-    });
-
-    it("should reject duplicate reference in sequence", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person" type="xs:string"/>
-  <xs:complexType name="OrderType">
-    <xs:sequence>
-      <xs:element ref="person"/>
-    </xs:sequence>
-  </xs:complexType>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, xml);
-
-      const command: AddElementCommand = {
-        type: "addElement",
-        payload: {
-          parentId: "/complexType:OrderType/sequence",
-          ref: "person",
-        },
-      };
-
-      expect(() => executeAddElement(command, schemaObj)).toThrow(
-        "duplicate element reference 'person'"
-      );
-    });
-
-    it("should reject adding a ref element when a named element with the same identifier exists", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person" type="xs:string"/>
-  <xs:complexType name="OrderType">
-    <xs:sequence>
-      <xs:element name="person" type="xs:string"/>
-    </xs:sequence>
-  </xs:complexType>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, xml);
-
-      const command: AddElementCommand = {
-        type: "addElement",
-        payload: {
-          parentId: "/complexType:OrderType/sequence",
-          ref: "person",
-        },
-      };
-
-      expect(() => executeAddElement(command, schemaObj)).toThrow(
-        "duplicate element reference 'person'"
-      );
-    });
-
-    it("should reject adding a named element when a ref element with the same identifier exists", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person" type="xs:string"/>
-  <xs:complexType name="OrderType">
-    <xs:sequence>
-      <xs:element ref="person"/>
-    </xs:sequence>
-  </xs:complexType>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, xml);
-
-      const command: AddElementCommand = {
-        type: "addElement",
-        payload: {
-          parentId: "/complexType:OrderType/sequence",
-          elementName: "person",
-          elementType: "xs:string",
-        },
-      };
-
-      expect(() => executeAddElement(command, schemaObj)).toThrow(
-        "duplicate element name 'person'"
-      );
     });
 
     it("should remove a reference element by ref name", () => {

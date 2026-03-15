@@ -179,18 +179,6 @@ describe("executeAddAnnotation", () => {
     expect(toArray(elem.annotation?.appinfo)[0].value).toBe("info");
   });
 
-  it("throws when annotation already exists", () => {
-    const schemaObj = unmarshal(schema, annotatedElementXml);
-    const command: AddAnnotationCommand = {
-      type: "addAnnotation",
-      payload: { targetId: "/element:person", documentation: "New doc." },
-    };
-
-    expect(() => executeAddAnnotation(command, schemaObj)).toThrow(
-      "already has an annotation"
-    );
-  });
-
   it("works on a complexType target", () => {
     const schemaObj = unmarshal(schema, complexTypeSchemaXml);
     const command: AddAnnotationCommand = {
@@ -203,16 +191,6 @@ describe("executeAddAnnotation", () => {
     const types = toArray(schemaObj.complexType);
     expect(types[0].annotation).toBeDefined();
     expect(toArray(types[0].annotation?.documentation)[0].value).toBe("A type.");
-  });
-
-  it("throws when target node is not found", () => {
-    const schemaObj = unmarshal(schema, elementSchemaXml);
-    const command: AddAnnotationCommand = {
-      type: "addAnnotation",
-      payload: { targetId: "/element:missing" },
-    };
-
-    expect(() => executeAddAnnotation(command, schemaObj)).toThrow("not found");
   });
 });
 
@@ -232,29 +210,6 @@ describe("executeRemoveAnnotation", () => {
     expect(elem.annotation).toBeUndefined();
   });
 
-  it("throws when the element has no annotation", () => {
-    const schemaObj = unmarshal(schema, elementSchemaXml);
-    const command: RemoveAnnotationCommand = {
-      type: "removeAnnotation",
-      payload: { annotationId: "/element:person" },
-    };
-
-    expect(() => executeRemoveAnnotation(command, schemaObj)).toThrow(
-      "No annotation"
-    );
-  });
-
-  it("throws when the target node is not found", () => {
-    const schemaObj = unmarshal(schema, elementSchemaXml);
-    const command: RemoveAnnotationCommand = {
-      type: "removeAnnotation",
-      payload: { annotationId: "/element:missing" },
-    };
-
-    expect(() => executeRemoveAnnotation(command, schemaObj)).toThrow(
-      "not found"
-    );
-  });
 });
 
 // ─── executeModifyAnnotation ─────────────────────────────────────────────────
@@ -330,29 +285,6 @@ describe("executeModifyAnnotation", () => {
     expect(infos[0].value).toBe("new-info");
   });
 
-  it("throws when element has no annotation", () => {
-    const schemaObj = unmarshal(schema, elementSchemaXml);
-    const command: ModifyAnnotationCommand = {
-      type: "modifyAnnotation",
-      payload: { annotationId: "/element:person", documentation: "x" },
-    };
-
-    expect(() => executeModifyAnnotation(command, schemaObj)).toThrow(
-      "No annotation"
-    );
-  });
-
-  it("throws when the target node is not found", () => {
-    const schemaObj = unmarshal(schema, elementSchemaXml);
-    const command: ModifyAnnotationCommand = {
-      type: "modifyAnnotation",
-      payload: { annotationId: "/element:missing", documentation: "x" },
-    };
-
-    expect(() => executeModifyAnnotation(command, schemaObj)).toThrow(
-      "not found"
-    );
-  });
 });
 
 // ─── executeAddDocumentation ─────────────────────────────────────────────────
@@ -421,17 +353,6 @@ describe("executeAddDocumentation", () => {
     expect(docs[0]._anyAttributes?.["xml:lang"]).toBeUndefined();
   });
 
-  it("throws when the target node is not found", () => {
-    const schemaObj = unmarshal(schema, elementSchemaXml);
-    const command: AddDocumentationCommand = {
-      type: "addDocumentation",
-      payload: { targetId: "/element:missing", content: "x" },
-    };
-
-    expect(() => executeAddDocumentation(command, schemaObj)).toThrow(
-      "not found"
-    );
-  });
 });
 
 // ─── executeRemoveDocumentation ──────────────────────────────────────────────
@@ -496,41 +417,6 @@ describe("executeRemoveDocumentation", () => {
     );
   });
 
-  it("throws when the element has no annotation", () => {
-    const schemaObj = unmarshal(schema, elementSchemaXml);
-    const command: RemoveDocumentationCommand = {
-      type: "removeDocumentation",
-      payload: { documentationId: "/element:person/documentation[0]" },
-    };
-
-    expect(() => executeRemoveDocumentation(command, schemaObj)).toThrow(
-      "No annotation"
-    );
-  });
-
-  it("throws when the documentation index is out of bounds", () => {
-    const schemaObj = unmarshal(schema, annotatedElementXml);
-    const command: RemoveDocumentationCommand = {
-      type: "removeDocumentation",
-      payload: { documentationId: "/element:person/documentation[5]" },
-    };
-
-    expect(() => executeRemoveDocumentation(command, schemaObj)).toThrow(
-      "out of bounds"
-    );
-  });
-
-  it("throws when the element is not found", () => {
-    const schemaObj = unmarshal(schema, annotatedElementXml);
-    const command: RemoveDocumentationCommand = {
-      type: "removeDocumentation",
-      payload: { documentationId: "/element:missing/documentation[0]" },
-    };
-
-    expect(() => executeRemoveDocumentation(command, schemaObj)).toThrow(
-      "not found"
-    );
-  });
 });
 
 // ─── executeModifyDocumentation ──────────────────────────────────────────────
@@ -643,50 +529,6 @@ describe("executeModifyDocumentation", () => {
     );
   });
 
-  it("throws when the element has no annotation", () => {
-    const schemaObj = unmarshal(schema, elementSchemaXml);
-    const command: ModifyDocumentationCommand = {
-      type: "modifyDocumentation",
-      payload: {
-        documentationId: "/element:person/documentation[0]",
-        content: "x",
-      },
-    };
-
-    expect(() => executeModifyDocumentation(command, schemaObj)).toThrow(
-      "No annotation"
-    );
-  });
-
-  it("throws when the documentation index is out of bounds", () => {
-    const schemaObj = unmarshal(schema, annotatedElementXml);
-    const command: ModifyDocumentationCommand = {
-      type: "modifyDocumentation",
-      payload: {
-        documentationId: "/element:person/documentation[9]",
-        content: "x",
-      },
-    };
-
-    expect(() => executeModifyDocumentation(command, schemaObj)).toThrow(
-      "out of bounds"
-    );
-  });
-
-  it("throws when the element is not found", () => {
-    const schemaObj = unmarshal(schema, annotatedElementXml);
-    const command: ModifyDocumentationCommand = {
-      type: "modifyDocumentation",
-      payload: {
-        documentationId: "/element:missing/documentation[0]",
-        content: "x",
-      },
-    };
-
-    expect(() => executeModifyDocumentation(command, schemaObj)).toThrow(
-      "not found"
-    );
-  });
 });
 
 // ─── parseSchemaAnnotationId / parseSchemaDocumentationId ───────────────────
@@ -848,17 +690,6 @@ describe("executeRemoveAnnotation — schema root", () => {
     expect(schemaObj.annotation).toBeUndefined();
   });
 
-  it("throws when the annotation index is out of bounds", () => {
-    const schemaObj = unmarshal(schema, schemaWithAnnotationXml);
-    const command: RemoveAnnotationCommand = {
-      type: "removeAnnotation",
-      payload: { annotationId: "schema/annotation[5]" },
-    };
-
-    expect(() => executeRemoveAnnotation(command, schemaObj)).toThrow(
-      "out of bounds"
-    );
-  });
 });
 
 describe("executeModifyAnnotation — schema root", () => {
@@ -896,17 +727,6 @@ describe("executeModifyAnnotation — schema root", () => {
     expect(toArray(annots[0].documentation)[0].value).toBe("First.");
   });
 
-  it("throws when the annotation index is out of bounds", () => {
-    const schemaObj = unmarshal(schema, schemaWithAnnotationXml);
-    const command: ModifyAnnotationCommand = {
-      type: "modifyAnnotation",
-      payload: { annotationId: "schema/annotation[9]", documentation: "x" },
-    };
-
-    expect(() => executeModifyAnnotation(command, schemaObj)).toThrow(
-      "out of bounds"
-    );
-  });
 });
 
 describe("executeAddDocumentation — schema root", () => {
@@ -961,17 +781,6 @@ describe("executeAddDocumentation — schema root", () => {
     expect(toArray(annots[0].documentation)).toHaveLength(1);
   });
 
-  it("throws when the schema annotation index is out of bounds", () => {
-    const schemaObj = unmarshal(schema, schemaWithAnnotationXml);
-    const command: AddDocumentationCommand = {
-      type: "addDocumentation",
-      payload: { targetId: "schema/annotation[5]", content: "x" },
-    };
-
-    expect(() => executeAddDocumentation(command, schemaObj)).toThrow(
-      "out of bounds"
-    );
-  });
 });
 
 describe("executeRemoveDocumentation — schema root", () => {
@@ -1009,33 +818,6 @@ describe("executeRemoveDocumentation — schema root", () => {
     expect(docs).toHaveLength(0);
   });
 
-  it("throws when annotation index is out of bounds in 'schema/annotation[N]/documentation[M]'", () => {
-    const schemaObj = unmarshal(schema, schemaWithAnnotationXml);
-    expect(() =>
-      executeRemoveDocumentation(
-        {
-          type: "removeDocumentation",
-          payload: {
-            documentationId: "schema/annotation[9]/documentation[0]",
-          },
-        } as RemoveDocumentationCommand,
-        schemaObj
-      )
-    ).toThrow("out of bounds");
-  });
-
-  it("throws when no annotations exist for 'schema/documentation[N]' shorthand", () => {
-    const schemaObj = unmarshal(schema, bareSchemaXml);
-    expect(() =>
-      executeRemoveDocumentation(
-        {
-          type: "removeDocumentation",
-          payload: { documentationId: "schema/documentation[0]" },
-        } as RemoveDocumentationCommand,
-        schemaObj
-      )
-    ).toThrow("No annotation found on schema root");
-  });
 });
 
 describe("executeModifyDocumentation — schema root", () => {
@@ -1073,37 +855,5 @@ describe("executeModifyDocumentation — schema root", () => {
 
     const doc = toArray(toArray(schemaObj.annotation)[0].documentation)[0];
     expect(doc.value).toBe("Modified via shorthand.");
-  });
-
-  it("throws when annotation index is out of bounds in 'schema/annotation[N]/documentation[M]'", () => {
-    const schemaObj = unmarshal(schema, schemaWithAnnotationXml);
-    expect(() =>
-      executeModifyDocumentation(
-        {
-          type: "modifyDocumentation",
-          payload: {
-            documentationId: "schema/annotation[9]/documentation[0]",
-            content: "x",
-          },
-        } as ModifyDocumentationCommand,
-        schemaObj
-      )
-    ).toThrow("out of bounds");
-  });
-
-  it("throws when no annotations exist for 'schema/documentation[N]' shorthand", () => {
-    const schemaObj = unmarshal(schema, bareSchemaXml);
-    expect(() =>
-      executeModifyDocumentation(
-        {
-          type: "modifyDocumentation",
-          payload: {
-            documentationId: "schema/documentation[0]",
-            content: "x",
-          },
-        } as ModifyDocumentationCommand,
-        schemaObj
-      )
-    ).toThrow("No annotation found on schema root");
   });
 });

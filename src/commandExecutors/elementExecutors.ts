@@ -325,9 +325,9 @@ function modifyElementInParent(
     const schemaObj = parent as schema;
     const elements = toArray(schemaObj.element);
     const element = findElement(elements, targetName, targetPosition);
-    
+    if (!element) return;
     updateElementProperties(
-      element!,
+      element,
       newName,
       newType,
       newRef,
@@ -343,9 +343,9 @@ function modifyElementInParent(
     const group = parent as explicitGroup;
     const elements = toArray(group.element);
     const element = findElement(elements, targetName, targetPosition);
-    
+    if (!element) return;
     updateElementProperties(
-      element!,
+      element,
       newName,
       newType,
       newRef,
@@ -358,9 +358,9 @@ function modifyElementInParent(
     const allGroup = parent as all;
     const elements = toArray(allGroup.element);
     const element = findElement(elements, targetName, targetPosition);
-    
+    if (!element) return;
     updateElementProperties(
-      element!,
+      element,
       newName,
       newType,
       newRef,

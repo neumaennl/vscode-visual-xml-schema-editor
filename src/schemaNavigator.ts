@@ -14,7 +14,7 @@ import {
   attribute,
 } from "../shared/types";
 import { parseSchemaId, SchemaNodeType } from "../shared/idStrategy";
-import { toArray } from "../shared/schemaUtils";
+import { toArray, isSchemaRoot } from "../shared/schemaUtils";
 
 /**
  * Result of a node location operation.
@@ -53,7 +53,7 @@ export function locateNodeById(
   nodeId: string
 ): NodeLocation {
   // Special case: "schema" refers to the schema root
-  if (nodeId === "schema" || nodeId === "/schema") {
+  if (isSchemaRoot(nodeId)) {
     return {
       found: true,
       parent: schemaObj,

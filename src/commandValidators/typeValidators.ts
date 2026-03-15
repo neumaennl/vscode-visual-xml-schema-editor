@@ -129,6 +129,10 @@ export function validateRemoveSimpleType(
   }
 
   // TODO Phase 2: Check if type is being used by other elements/types
+  // Top-level named simpleType: check it exists
+  if (!toArray(schemaObj.simpleType).some(st => st.name === parsed.name)) {
+    return { valid: false, error: `SimpleType not found: ${parsed.name}` };
+  }
   return { valid: true };
 }
 
@@ -160,6 +164,12 @@ export function validateModifySimpleType(
         error: `No anonymous simpleType found in parent: ${parsed.parentId}`,
       };
     }
+    if (command.payload.restrictions !== undefined && command.payload.baseType === undefined) {
+      const anonSt = (location.parent as { simpleType?: { restriction?: unknown } }).simpleType;
+      if (anonSt && !(anonSt as { restriction?: unknown }).restriction) {
+        return { valid: false, error: "Cannot apply restrictions without a base type" };
+      }
+    }
     if (command.payload.typeName !== undefined) {
       return {
         valid: false,
@@ -172,6 +182,12 @@ export function validateModifySimpleType(
   // Top-level named simpleType: validate it exists in the schema
   if (!toArray(schemaObj.simpleType).some(st => st.name === parsed.name)) {
     return { valid: false, error: `Simple type '${parsed.name}' not found in schema` };
+  }
+  if (command.payload.restrictions !== undefined && command.payload.baseType === undefined) {
+    const simpleType = toArray(schemaObj.simpleType).find(st => st.name === parsed.name);
+    if (simpleType && !simpleType.restriction) {
+      return { valid: false, error: "Cannot apply restrictions without a base type" };
+    }
   }
   return { valid: true };
 }

@@ -31,7 +31,18 @@ const SCHEMA_ROOT_IDS = new Set(["schema", "/schema"]);
 
 /**
  * Returns true when `parentId` designates the schema root rather than a
- * specific child node.  Accepts `undefined`, `"schema"`, and `"/schema"`.
+ * specific child node.
+ *
+ * The three accepted values are all considered equivalent schema-root identifiers:
+ * - `undefined` — no ID provided, defaults to the schema root
+ * - `"schema"` — short-form schema root ID used by top-level navigation
+ * - `"/schema"` — slash-prefixed variant, also accepted as schema root
+ *
+ * **Annotation command ID conventions for the schema root:**
+ * Schema-root annotations use special composite IDs rather than a plain "schema" ID:
+ * - `"schema/annotation[N]"` — identifies the N-th (0-based) `xs:annotation` child on the schema
+ * - `"schema/annotation[N]/documentation[M]"` — the M-th `xs:documentation` of the N-th schema annotation
+ * - `"schema/documentation[N]"` — shorthand for the N-th doc of the first schema annotation
  *
  * @param parentId - The parent ID to test
  * @returns true if the ID refers to the schema root

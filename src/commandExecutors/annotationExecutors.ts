@@ -30,7 +30,7 @@ import {
   documentationType,
   appinfoType,
 } from "../../shared/types";
-import { toArray } from "../../shared/schemaUtils";
+import { toArray, isSchemaRoot } from "../../shared/schemaUtils";
 import { locateNodeById } from "../schemaNavigator";
 
 // ===== Structural types =====
@@ -42,10 +42,6 @@ interface AnnotatableNode {
 
 // ===== Helper functions =====
 
-/** Returns true when `nodeId` refers to the schema root. */
-function isSchemaId(nodeId: string): boolean {
-  return nodeId === "schema" || nodeId === "/schema";
-}
 
 /**
  * Parses a schema-annotation ID of the form "schema/annotation[N]".
@@ -132,16 +128,7 @@ function getOrCreateFirstSchemaAnnotation(schemaObj: schema): annotationType {
  */
 function findAnnotatableNode(schemaObj: schema, nodeId: string): AnnotatableNode {
   const location = locateNodeById(schemaObj, nodeId);
-  if (!location.found || !location.parent) {
-    throw new Error(`Node not found: ${nodeId}`);
-  }
-  const node = location.parent as Record<string, unknown>;
-  // Every annotatable schema component exposes an `annotation` property
-  // (even when it is currently undefined).
-  if (!("annotation" in node)) {
-    throw new Error(`Node does not support annotations: ${nodeId}`);
-  }
-  return node as AnnotatableNode;
+  return location.parent as AnnotatableNode;
 }
 
 /**
@@ -219,18 +206,13 @@ export function executeAddAnnotation(
     annotation.appinfo = [info];
   }
 
-  if (isSchemaId(targetId)) {
+  if (isSchemaRoot(targetId)) {
     // Schema allows multiple xs:annotation children — always append.
     schemaObj.annotation = [...toArray(schemaObj.annotation), annotation];
     return;
   }
 
   const node = findAnnotatableNode(schemaObj, targetId);
-  if (node.annotation) {
-    throw new Error(
-      `Node already has an annotation: ${targetId}. Use modifyAnnotation to update it.`
-    );
-  }
   node.annotation = annotation;
 }
 
@@ -257,20 +239,12 @@ export function executeRemoveAnnotation(
   const schemaAnnotIdx = parseSchemaAnnotationId(annotationId);
   if (schemaAnnotIdx !== null) {
     const annots = toArray(schemaObj.annotation);
-    if (schemaAnnotIdx < 0 || schemaAnnotIdx >= annots.length) {
-      throw new Error(
-        `Annotation index ${schemaAnnotIdx} out of bounds (length ${annots.length}): ${annotationId}`
-      );
-    }
     annots.splice(schemaAnnotIdx, 1);
     schemaObj.annotation = annots.length > 0 ? annots : undefined;
     return;
   }
 
   const node = findAnnotatableNode(schemaObj, annotationId);
-  if (!node.annotation) {
-    throw new Error(`No annotation found on node: ${annotationId}`);
-  }
   node.annotation = undefined;
 }
 
@@ -298,20 +272,12 @@ export function executeModifyAnnotation(
   const schemaAnnotIdx = parseSchemaAnnotationId(annotationId);
   if (schemaAnnotIdx !== null) {
     const annots = toArray(schemaObj.annotation);
-    if (schemaAnnotIdx < 0 || schemaAnnotIdx >= annots.length) {
-      throw new Error(
-        `Annotation index ${schemaAnnotIdx} out of bounds (length ${annots.length}): ${annotationId}`
-      );
-    }
     applyAnnotationModifications(annots[schemaAnnotIdx], documentation, appInfo);
     return;
   }
 
   const node = findAnnotatableNode(schemaObj, annotationId);
-  if (!node.annotation) {
-    throw new Error(`No annotation found on node: ${annotationId}`);
-  }
-  applyAnnotationModifications(node.annotation, documentation, appInfo);
+  applyAnnotationModifications(node.annotation!, documentation, appInfo);
 }
 
 // ===== Documentation Executors =====
@@ -338,7 +304,7 @@ export function executeAddDocumentation(
   const { targetId, content, lang } = command.payload;
   const doc = createDocumentation(content, lang);
 
-  if (isSchemaId(targetId)) {
+  if (isSchemaRoot(targetId)) {
     const annotation = getOrCreateFirstSchemaAnnotation(schemaObj);
     annotation.documentation = [...toArray(annotation.documentation), doc];
     return;
@@ -347,11 +313,6 @@ export function executeAddDocumentation(
   const schemaAnnotIdx = parseSchemaAnnotationId(targetId);
   if (schemaAnnotIdx !== null) {
     const annots = toArray(schemaObj.annotation);
-    if (schemaAnnotIdx >= annots.length) {
-      throw new Error(
-        `Annotation index ${schemaAnnotIdx} out of bounds (length ${annots.length}): ${targetId}`
-      );
-    }
     const annotation = annots[schemaAnnotIdx];
     annotation.documentation = [...toArray(annotation.documentation), doc];
     return;
@@ -387,18 +348,8 @@ export function executeRemoveDocumentation(
   const schemaDId = parseSchemaDocumentationId(documentationId);
   if (schemaDId) {
     const annots = toArray(schemaObj.annotation);
-    if (schemaDId.annotIndex >= annots.length) {
-      throw new Error(
-        `Annotation index ${schemaDId.annotIndex} out of bounds (length ${annots.length}): ${documentationId}`
-      );
-    }
     const annotation = annots[schemaDId.annotIndex];
     const docs = toArray(annotation.documentation);
-    if (schemaDId.docIndex < 0 || schemaDId.docIndex >= docs.length) {
-      throw new Error(
-        `Documentation index ${schemaDId.docIndex} out of bounds (length ${docs.length}): ${documentationId}`
-      );
-    }
     docs.splice(schemaDId.docIndex, 1);
     annotation.documentation = docs.length > 0 ? docs : undefined;
     return;
@@ -407,36 +358,20 @@ export function executeRemoveDocumentation(
   // "elementPath/documentation[N]" format
   const { elementId, docIndex } = parseDocumentationId(documentationId);
 
-  if (isSchemaId(elementId)) {
+  if (isSchemaRoot(elementId)) {
     // "schema/documentation[N]" shorthand — targets the first schema annotation
     const annots = toArray(schemaObj.annotation);
-    if (annots.length === 0) {
-      throw new Error(`No annotation found on schema root`);
-    }
     const annotation = annots[0];
     const docs = toArray(annotation.documentation);
-    if (docIndex < 0 || docIndex >= docs.length) {
-      throw new Error(
-        `Documentation index ${docIndex} out of bounds (length ${docs.length}): ${documentationId}`
-      );
-    }
     docs.splice(docIndex, 1);
     annotation.documentation = docs.length > 0 ? docs : undefined;
     return;
   }
 
   const node = findAnnotatableNode(schemaObj, elementId);
-  if (!node.annotation) {
-    throw new Error(`No annotation found on node: ${elementId}`);
-  }
-  const docs = toArray(node.annotation.documentation);
-  if (docIndex < 0 || docIndex >= docs.length) {
-    throw new Error(
-      `Documentation index ${docIndex} out of bounds (length ${docs.length}): ${documentationId}`
-    );
-  }
+  const docs = toArray(node.annotation!.documentation);
   docs.splice(docIndex, 1);
-  node.annotation.documentation = docs.length > 0 ? docs : undefined;
+  node.annotation!.documentation = docs.length > 0 ? docs : undefined;
 }
 
 /**
@@ -466,18 +401,8 @@ export function executeModifyDocumentation(
   const schemaDId = parseSchemaDocumentationId(documentationId);
   if (schemaDId) {
     const annots = toArray(schemaObj.annotation);
-    if (schemaDId.annotIndex >= annots.length) {
-      throw new Error(
-        `Annotation index ${schemaDId.annotIndex} out of bounds (length ${annots.length}): ${documentationId}`
-      );
-    }
     const annotation = annots[schemaDId.annotIndex];
     const docs = toArray(annotation.documentation);
-    if (schemaDId.docIndex < 0 || schemaDId.docIndex >= docs.length) {
-      throw new Error(
-        `Documentation index ${schemaDId.docIndex} out of bounds (length ${docs.length}): ${documentationId}`
-      );
-    }
     applyDocModifications(docs[schemaDId.docIndex], content, lang);
     annotation.documentation = docs;
     return;
@@ -486,36 +411,20 @@ export function executeModifyDocumentation(
   // "elementPath/documentation[N]" format
   const { elementId, docIndex } = parseDocumentationId(documentationId);
 
-  if (isSchemaId(elementId)) {
+  if (isSchemaRoot(elementId)) {
     // "schema/documentation[N]" shorthand — targets the first schema annotation
     const annots = toArray(schemaObj.annotation);
-    if (annots.length === 0) {
-      throw new Error(`No annotation found on schema root`);
-    }
     const annotation = annots[0];
     const docs = toArray(annotation.documentation);
-    if (docIndex < 0 || docIndex >= docs.length) {
-      throw new Error(
-        `Documentation index ${docIndex} out of bounds (length ${docs.length}): ${documentationId}`
-      );
-    }
     applyDocModifications(docs[docIndex], content, lang);
     annotation.documentation = docs;
     return;
   }
 
   const node = findAnnotatableNode(schemaObj, elementId);
-  if (!node.annotation) {
-    throw new Error(`No annotation found on node: ${elementId}`);
-  }
-  const docs = toArray(node.annotation.documentation);
-  if (docIndex < 0 || docIndex >= docs.length) {
-    throw new Error(
-      `Documentation index ${docIndex} out of bounds (length ${docs.length}): ${documentationId}`
-    );
-  }
+  const docs = toArray(node.annotation!.documentation);
   applyDocModifications(docs[docIndex], content, lang);
-  node.annotation.documentation = docs;
+  node.annotation!.documentation = docs;
 }
 
 /**

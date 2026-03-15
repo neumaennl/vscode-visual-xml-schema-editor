@@ -27,31 +27,13 @@ type AttrGroupRefHolder = { attributeGroup?: attributeGroupRef[] };
 // ===== Helper functions =====
 
 /**
- * Returns true if `parentType` is a type that can hold attribute group refs directly.
- */
-function isAttrGroupRefParent(parentType: string): boolean {
-  return (
-    parentType === "topLevelComplexType" ||
-    parentType === "localComplexType" ||
-    parentType === "namedAttributeGroup"
-  );
-}
-
-/**
  * Adds an attributeGroupRef to a parent node's `attributeGroup` array.
- *
- * @throws Error if the parent type does not support attribute group refs
  */
 function addAttrGroupRefToParent(
   parent: unknown,
   parentType: string,
   agRef: attributeGroupRef
 ): void {
-  if (!isAttrGroupRefParent(parentType)) {
-    throw new Error(
-      `Cannot add attribute group reference to parent type: ${parentType}`
-    );
-  }
   const holder = parent as AttrGroupRefHolder;
   const refs = toArray(holder.attributeGroup);
   refs.push(agRef);
@@ -128,15 +110,12 @@ export function executeAddAttributeGroup(
   if (ref !== undefined) {
     // Reference mode: add xs:attributeGroup ref="..." to a complexType or namedAttributeGroup
     const location = locateNodeById(schemaObj, parentId ?? "schema");
-    if (!location.found || !location.parent || !location.parentType) {
-      throw new Error(`Parent node not found: ${parentId}`);
-    }
     const agRef = new attributeGroupRef();
     agRef.ref = ref;
     if (documentation) {
       agRef.annotation = createAnnotation(documentation);
     }
-    addAttrGroupRefToParent(location.parent, location.parentType, agRef);
+    addAttrGroupRefToParent(location.parent, location.parentType ?? "", agRef);
     return;
   }
 
@@ -172,18 +151,12 @@ export function executeRemoveAttributeGroup(
   if (parsed.nodeType === SchemaNodeType.AttributeGroupRef) {
     // Reference mode: remove xs:attributeGroup ref="..." from its parent
     if (!parsed.parentId) {
-      throw new Error(`Invalid attributeGroupRef ID: ${groupId}`);
+      return;
     }
     const location = locateNodeById(schemaObj, parsed.parentId);
-    if (!location.found || !location.parent || !location.parentType) {
-      throw new Error(`Parent not found for attributeGroupRef: ${groupId}`);
-    }
     const holder = location.parent as AttrGroupRefHolder;
     const refs = toArray(holder.attributeGroup);
     const filtered = filterAttrGroupRef(refs, parsed.name, parsed.position);
-    if (filtered.length === refs.length) {
-      throw new Error(`AttributeGroupRef not found: ${groupId}`);
-    }
     holder.attributeGroup = filtered.length > 0 ? filtered : undefined;
     return;
   }
@@ -191,9 +164,6 @@ export function executeRemoveAttributeGroup(
   // Definition mode: remove top-level named attribute group
   const groups = toArray(schemaObj.attributeGroup);
   const filtered = groups.filter((g) => g.name !== parsed.name);
-  if (filtered.length === groups.length) {
-    throw new Error(`AttributeGroup not found: ${parsed.name}`);
-  }
   schemaObj.attributeGroup = filtered.length > 0 ? filtered : undefined;
 }
 
@@ -218,31 +188,27 @@ export function executeModifyAttributeGroup(
   if (parsed.nodeType === SchemaNodeType.AttributeGroupRef) {
     // Reference mode: modify xs:attributeGroup ref="..." in its parent
     if (!parsed.parentId) {
-      throw new Error(`Invalid attributeGroupRef ID: ${groupId}`);
+      return;
     }
     const location = locateNodeById(schemaObj, parsed.parentId);
-    if (!location.found || !location.parent || !location.parentType) {
-      throw new Error(`Parent not found for attributeGroupRef: ${groupId}`);
-    }
     const holder = location.parent as AttrGroupRefHolder;
     const target = findAttrGroupRef(
       toArray(holder.attributeGroup),
       parsed.name,
       parsed.position
     );
-    if (!target) {
-      throw new Error(`AttributeGroupRef not found: ${groupId}`);
-    }
-    if (ref !== undefined) {
-      target.ref = ref;
-    }
-    if (documentation !== undefined) {
-      if (!target.annotation) {
-        target.annotation = new annotationType();
+    if (target) {
+      if (ref !== undefined) {
+        target.ref = ref;
       }
-      const doc = new documentationType();
-      doc.value = documentation;
-      target.annotation.documentation = [doc];
+      if (documentation !== undefined) {
+        if (!target.annotation) {
+          target.annotation = new annotationType();
+        }
+        const doc = new documentationType();
+        doc.value = documentation;
+        target.annotation.documentation = [doc];
+      }
     }
     return;
   }
@@ -252,7 +218,7 @@ export function executeModifyAttributeGroup(
     (g) => g.name === parsed.name
   );
   if (!attrGroup) {
-    throw new Error(`AttributeGroup not found: ${parsed.name}`);
+    return;
   }
   if (groupName !== undefined) {
     attrGroup.name = groupName;

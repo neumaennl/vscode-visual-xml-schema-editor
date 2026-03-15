@@ -266,6 +266,11 @@ export function validateAddGroup(
     if (!location.found) {
       return { valid: false, error: `Parent node not found: ${parentId}` };
     }
+    // Validate that the parent type supports group refs
+    const validGroupRefParents = ["sequence", "choice", "topLevelComplexType", "localComplexType"];
+    if (!validGroupRefParents.includes(location.parentType ?? "")) {
+      return { valid: false, error: `Cannot add group ref to parent type: ${location.parentType}` };
+    }
     // When adding a group ref directly onto a complexType, reject if a particle is already set
     if (isComplexTypeParent(location.parentType ?? "") && complexTypeHasParticle(location.parent as ComplexTypeWithParticles)) {
       return {
@@ -342,6 +347,24 @@ export function validateRemoveGroup(
         };
       }
     }
+    // For sequence/choice parents, check the group ref exists
+    if (location.parentType === "sequence" || location.parentType === "choice") {
+      const compositor = location.parent as { group?: Array<{ ref?: string }> };
+      const refs = toArray(compositor.group);
+      let found: boolean;
+      if (parsed.name !== undefined && parsed.position !== undefined) {
+        found = refs.some((r, idx) => r.ref === parsed.name && idx === parsed.position);
+      } else if (parsed.name !== undefined) {
+        found = refs.some(r => r.ref === parsed.name);
+      } else if (parsed.position !== undefined) {
+        found = parsed.position >= 0 && parsed.position < refs.length;
+      } else {
+        found = false;
+      }
+      if (!found) {
+        return { valid: false, error: `GroupRef not found: ${command.payload.groupId}` };
+      }
+    }
     return { valid: true };
   }
 
@@ -401,6 +424,24 @@ export function validateModifyGroup(
           valid: false,
           error: `GroupRef name mismatch: expected '${parsed.name}' but found '${ct.group.ref}'`,
         };
+      }
+    }
+    // For sequence/choice parents, check the group ref exists
+    if (location.parentType === "sequence" || location.parentType === "choice") {
+      const compositor = location.parent as { group?: Array<{ ref?: string }> };
+      const refs = toArray(compositor.group);
+      let found: boolean;
+      if (parsed.name !== undefined && parsed.position !== undefined) {
+        found = refs.some((r, idx) => r.ref === parsed.name && idx === parsed.position);
+      } else if (parsed.name !== undefined) {
+        found = refs.some(r => r.ref === parsed.name);
+      } else if (parsed.position !== undefined) {
+        found = parsed.position >= 0 && parsed.position < refs.length;
+      } else {
+        found = false;
+      }
+      if (!found) {
+        return { valid: false, error: `GroupRef not found: ${command.payload.groupId}` };
       }
     }
     if (command.payload.ref !== undefined) {

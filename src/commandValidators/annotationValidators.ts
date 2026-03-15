@@ -24,7 +24,7 @@ import {
 } from "../../shared/types";
 import { ValidationResult } from "./validationUtils";
 import { locateNodeById } from "../schemaNavigator";
-import { toArray } from "../../shared/schemaUtils";
+import { toArray, isSchemaRoot } from "../../shared/schemaUtils";
 import {
   parseDocumentationId,
   parseSchemaAnnotationId,
@@ -33,10 +33,6 @@ import {
 
 // ===== Internal helpers =====
 
-/** Returns true when `nodeId` refers to the schema root. */
-function isSchemaId(nodeId: string): boolean {
-  return nodeId === "schema" || nodeId === "/schema";
-}
 
 /** Type guard: returns true when `node` exposes an `annotation` property. */
 function hasAnnotationProperty(
@@ -76,7 +72,7 @@ export function validateAddAnnotation(
     return { valid: false, error: "Target ID cannot be empty" };
   }
 
-  if (isSchemaId(command.payload.targetId)) {
+  if (isSchemaRoot(command.payload.targetId)) {
     // Schema root allows multiple xs:annotation children — always valid
     return { valid: true };
   }
@@ -176,7 +172,7 @@ export function validateAddDocumentation(
     return { valid: false, error: "Target ID cannot be empty" };
   }
 
-  if (isSchemaId(command.payload.targetId)) {
+  if (isSchemaRoot(command.payload.targetId)) {
     // Schema root always accepts addDocumentation (creates annotation if needed)
     return { valid: true };
   }
@@ -243,7 +239,7 @@ export function validateRemoveDocumentation(
   }
 
   // "schema/documentation[N]" shorthand — targets first schema annotation
-  if (isSchemaId(elementId)) {
+  if (isSchemaRoot(elementId)) {
     const annots = toArray(schemaObj.annotation);
     if (annots.length === 0) {
       return { valid: false, error: `No annotation found on schema root` };
@@ -321,7 +317,7 @@ export function validateModifyDocumentation(
   }
 
   // "schema/documentation[N]" shorthand — targets first schema annotation
-  if (isSchemaId(elementId)) {
+  if (isSchemaRoot(elementId)) {
     const annots = toArray(schemaObj.annotation);
     if (annots.length === 0) {
       return { valid: false, error: `No annotation found on schema root` };

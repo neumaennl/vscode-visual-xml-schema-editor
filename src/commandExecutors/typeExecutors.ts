@@ -62,9 +62,6 @@ export function executeAddSimpleType(
   if (!isSchemaRoot(parentId)) {
     // Anonymous simpleType inside an element or attribute — isSchemaRoot guarantees parentId is a non-empty string here
     const location = locateNodeById(schemaObj, parentId as string);
-    if (!location.found || !location.parent) {
-      throw new Error(`Parent not found: ${parentId}`);
-    }
     // Both elements and attributes share the same localSimpleType inline child structure
     const holder = location.parent as { simpleType?: localSimpleType };
     const anonType = new localSimpleType();
@@ -108,16 +105,10 @@ export function executeRemoveSimpleType(
   if (parsed.nodeType === SchemaNodeType.AnonymousSimpleType) {
     const parentId = parsed.parentId;
     if (!parentId) {
-      throw new Error(`Invalid anonymous simpleType ID: ${typeId}`);
+      return;
     }
     const location = locateNodeById(schemaObj, parentId);
-    if (!location.found || !location.parent) {
-      throw new Error(`Parent not found: ${parentId}`);
-    }
     const holder = location.parent as { simpleType?: localSimpleType };
-    if (!holder.simpleType) {
-      throw new Error(`No anonymous simpleType found in parent: ${parentId}`);
-    }
     holder.simpleType = undefined;
     return;
   }
@@ -125,9 +116,6 @@ export function executeRemoveSimpleType(
   // Top-level named simpleType
   const simpleTypes = toArray(schemaObj.simpleType);
   const filtered = simpleTypes.filter((st) => st.name !== parsed.name);
-  if (filtered.length === simpleTypes.length) {
-    throw new Error(`SimpleType not found: ${parsed.name}`);
-  }
   schemaObj.simpleType = filtered.length > 0 ? filtered : undefined;
 }
 
@@ -150,24 +138,18 @@ export function executeModifySimpleType(
   if (parsed.nodeType === SchemaNodeType.AnonymousSimpleType) {
     const parentId = parsed.parentId;
     if (!parentId) {
-      throw new Error(`Invalid anonymous simpleType ID: ${typeId}`);
+      return;
     }
     const location = locateNodeById(schemaObj, parentId);
-    if (!location.found || !location.parent) {
-      throw new Error(`Parent not found: ${parentId}`);
-    }
     const holder = location.parent as { simpleType?: localSimpleType };
-    if (!holder.simpleType) {
-      throw new Error(`No anonymous simpleType found in parent: ${parentId}`);
-    }
-    updateTypeContents(holder.simpleType, baseType, restrictions, documentation);
+    updateTypeContents(holder.simpleType!, baseType, restrictions, documentation);
     return;
   }
 
   // Top-level named simpleType
   const simpleType = toArray(schemaObj.simpleType).find((st) => st.name === parsed.name);
   if (!simpleType) {
-    throw new Error(`SimpleType not found: ${parsed.name}`);
+    return;
   }
   if (typeName !== undefined) {
     simpleType.name = typeName;
@@ -212,10 +194,9 @@ function updateTypeContents(
 ): void {
   if (baseType !== undefined || restrictions !== undefined) {
     if (!simpleType.restriction) {
-      if (baseType === undefined) {
-        throw new Error("Cannot apply restrictions without a base type");
+      if (baseType !== undefined) {
+        simpleType.restriction = buildRestriction(baseType, restrictions);
       }
-      simpleType.restriction = buildRestriction(baseType, restrictions);
     } else {
       if (baseType !== undefined) {
         simpleType.restriction.base = baseType;
@@ -347,9 +328,6 @@ export function executeAddComplexType(
   if (!isSchemaRoot(parentId)) {
     // Anonymous complexType inside an element — isSchemaRoot guarantees parentId is a non-empty string here
     const location = locateNodeById(schemaObj, parentId as string);
-    if (!location.found || !location.parent) {
-      throw new Error(`Parent not found: ${parentId}`);
-    }
     const holder = location.parent as { complexType?: localComplexType };
     const anonType = new localComplexType();
     if (mixed !== undefined) {
@@ -401,16 +379,10 @@ export function executeRemoveComplexType(
   if (parsed.nodeType === SchemaNodeType.AnonymousComplexType) {
     const parentId = parsed.parentId;
     if (!parentId) {
-      throw new Error(`Invalid anonymous complexType ID: ${typeId}`);
+      return;
     }
     const location = locateNodeById(schemaObj, parentId);
-    if (!location.found || !location.parent) {
-      throw new Error(`Parent not found: ${parentId}`);
-    }
     const holder = location.parent as { complexType?: localComplexType };
-    if (!holder.complexType) {
-      throw new Error(`No anonymous complexType found in parent: ${parentId}`);
-    }
     holder.complexType = undefined;
     return;
   }
@@ -418,9 +390,6 @@ export function executeRemoveComplexType(
   // Top-level named complexType
   const complexTypes = toArray(schemaObj.complexType);
   const filtered = complexTypes.filter((ct) => ct.name !== parsed.name);
-  if (filtered.length === complexTypes.length) {
-    throw new Error(`ComplexType not found: ${parsed.name}`);
-  }
   schemaObj.complexType = filtered.length > 0 ? filtered : undefined;
 }
 
@@ -444,24 +413,18 @@ export function executeModifyComplexType(
   if (parsed.nodeType === SchemaNodeType.AnonymousComplexType) {
     const parentId = parsed.parentId;
     if (!parentId) {
-      throw new Error(`Invalid anonymous complexType ID: ${typeId}`);
+      return;
     }
     const location = locateNodeById(schemaObj, parentId);
-    if (!location.found || !location.parent) {
-      throw new Error(`Parent not found: ${parentId}`);
-    }
     const holder = location.parent as { complexType?: localComplexType };
-    if (!holder.complexType) {
-      throw new Error(`No anonymous complexType found in parent: ${parentId}`);
-    }
-    updateComplexTypeContents(holder.complexType, { mixed, contentModel, baseType, documentation });
+    updateComplexTypeContents(holder.complexType!, { mixed, contentModel, baseType, documentation });
     return;
   }
 
   // Top-level named complexType
   const ct = toArray(schemaObj.complexType).find((t) => t.name === parsed.name);
   if (!ct) {
-    throw new Error(`ComplexType not found: ${parsed.name}`);
+    return;
   }
 
   if (typeName !== undefined) {

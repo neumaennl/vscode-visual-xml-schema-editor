@@ -365,8 +365,6 @@ describe("Element Executors", () => {
       });
     });
 
-    });
-
     describe("Round-trip XML serialization", () => {
       it("should produce valid XML after modifying element", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>

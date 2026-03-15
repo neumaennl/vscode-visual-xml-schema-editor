@@ -24,6 +24,70 @@ import { locateNodeById } from "../schemaNavigator";
 import { parseSchemaId } from "../../shared/idStrategy";
 import { toArray } from "../../shared/schemaUtils";
 
+/** Parent types that can contain child elements. */
+const VALID_ELEMENT_PARENTS = ["schema", "sequence", "choice", "all"] as const;
+
+/** Parent types that can contain attributes. */
+const VALID_ATTR_PARENTS = ["schema", "topLevelComplexType", "localComplexType"] as const;
+
+/**
+ * Returns the array of local elements from the given parent container.
+ * Works for schema, explicitGroup (sequence/choice), and all.
+ */
+function getChildElements(
+  parent: unknown,
+  parentType: string
+): Array<{ name?: string; ref?: string }> {
+  if (parentType === "schema") {
+    return toArray((parent as schema).element) as Array<{ name?: string; ref?: string }>;
+  }
+  if (parentType === "sequence" || parentType === "choice") {
+    return toArray((parent as explicitGroup).element) as Array<{ name?: string; ref?: string }>;
+  }
+  if (parentType === "all") {
+    return toArray((parent as all).element) as Array<{ name?: string; ref?: string }>;
+  }
+  return [];
+}
+
+/**
+ * Looks up a child element by name or position within a parent container.
+ * Returns the element, or undefined if not found.
+ */
+function findChildElement(
+  parent: unknown,
+  parentType: string,
+  name?: string,
+  position?: number
+): { name?: string; ref?: string } | undefined {
+  const elements = getChildElements(parent, parentType);
+  if (position !== undefined) {
+    return elements[position];
+  }
+  if (name !== undefined) {
+    return elements.find(
+      (el) => el.name === name || el.ref === name
+    );
+  }
+  return undefined;
+}
+
+/**
+ * Returns the array of attributes from a schema or complexType parent container.
+ */
+function getChildAttributes(
+  parent: unknown,
+  parentType: string
+): Array<{ name?: string; ref?: string }> {
+  if (parentType === "schema") {
+    return toArray((parent as schema).attribute) as Array<{ name?: string; ref?: string }>;
+  }
+  return toArray((parent as topLevelComplexType).attribute) as Array<{
+    name?: string;
+    ref?: string;
+  }>;
+}
+
 export function validateAddElement(
   command: AddElementCommand,
   schemaObj: schema
@@ -66,39 +130,22 @@ export function validateAddElement(
   }
 
   // Validate parent type supports elements
-  const validElementParents = ["schema", "sequence", "choice", "all"];
-  if (!validElementParents.includes(location.parentType ?? "")) {
+  if (!VALID_ELEMENT_PARENTS.includes(location.parentType as (typeof VALID_ELEMENT_PARENTS)[number])) {
     return { valid: false, error: `Cannot add element to parent of type: ${location.parentType}` };
-  }
-  // Check for duplicate element names/refs
-  if (location.parentType === "schema") {
-    const schemaObj2 = location.parent as import("../../shared/types").schema;
-    if (elementName && toArray(schemaObj2.element).some(el => el.name === elementName)) {
-      return { valid: false, error: `Cannot add element: duplicate element name '${elementName}' in schema` };
-    }
-  } else if (location.parentType === "sequence" || location.parentType === "choice") {
-    const group = location.parent as explicitGroup;
-    const elements = toArray(group.element);
-    if (elementName && elements.some(el => (el as any).name === elementName || (el as any).ref === elementName)) {
-      return { valid: false, error: `Cannot add element: duplicate element name '${elementName}' in ${location.parentType}` };
-    }
-    if (ref && elements.some(el => (el as any).ref === ref || (el as any).name === ref)) {
-      return { valid: false, error: `Cannot add element: duplicate element reference '${ref}' in ${location.parentType}` };
-    }
-  } else if (location.parentType === "all") {
-    const allGroup = location.parent as all;
-    const elements = toArray(allGroup.element);
-    if (elementName && elements.some(el => el.name === elementName || (el as any).ref === elementName)) {
-      return { valid: false, error: `Cannot add element: duplicate element name '${elementName}' in all group` };
-    }
-    if (ref && elements.some(el => (el as any).ref === ref || el.name === ref)) {
-      return { valid: false, error: `Cannot add element: duplicate element reference '${ref}' in all group` };
-    }
   }
 
   // Top-level elements cannot be references
   if (ref !== undefined && location.parentType === "schema") {
     return { valid: false, error: "Top-level elements cannot be references" };
+  }
+
+  // Check for duplicate element names/refs
+  const existing = getChildElements(location.parent, location.parentType!);
+  if (elementName && existing.some(el => el.name === elementName || el.ref === elementName)) {
+    return { valid: false, error: `Cannot add element: duplicate element name '${elementName}' in ${location.parentType === "schema" ? "schema" : location.parentType!}` };
+  }
+  if (ref && existing.some(el => el.ref === ref || el.name === ref)) {
+    return { valid: false, error: `Cannot add element: duplicate element reference '${ref}' in ${location.parentType!}` };
   }
 
   // Validate occurrences
@@ -114,56 +161,25 @@ export function validateRemoveElement(
     return { valid: false, error: "Element ID cannot be empty" };
   }
 
-  // Validate that element exists in the schema
   const parsed = parseSchemaId(command.payload.elementId);
   const parentId = parsed.parentId || "schema";
   const location = locateNodeById(schemaObj, parentId);
-  
+
   if (!location.found) {
     return { valid: false, error: `Parent node not found for element: ${command.payload.elementId}` };
   }
 
-  // Validate parent type supports element removal
-  const validElementParents = ["schema", "sequence", "choice", "all"];
-  if (!validElementParents.includes(location.parentType ?? "")) {
+  if (!VALID_ELEMENT_PARENTS.includes(location.parentType as (typeof VALID_ELEMENT_PARENTS)[number])) {
     return { valid: false, error: `Cannot remove element from parent of type: ${location.parentType}` };
   }
+
   // Check element exists
-  const elementName = parsed.name;
-  const position = parsed.position;
-  if (location.parentType === "schema") {
-    const elements = toArray((location.parent as schema).element);
-    if (position !== undefined) {
-      if (position < 0 || position >= elements.length) {
-        return { valid: false, error: `Element not found at position: ${position}` };
-      }
-    } else if (elementName !== undefined) {
-      if (!elements.some(el => el.name === elementName || (el as any).ref === elementName)) {
-        return { valid: false, error: `Element not found with name: ${elementName}` };
-      }
-    }
-  } else if (location.parentType === "sequence" || location.parentType === "choice") {
-    const elements = toArray((location.parent as explicitGroup).element);
-    if (position !== undefined) {
-      if (position < 0 || position >= elements.length) {
-        return { valid: false, error: `Element not found at position: ${position}` };
-      }
-    } else if (elementName !== undefined) {
-      if (!elements.some(el => (el as any).name === elementName || (el as any).ref === elementName)) {
-        return { valid: false, error: `Element not found with name: ${elementName}` };
-      }
-    }
-  } else if (location.parentType === "all") {
-    const elements = toArray((location.parent as all).element);
-    if (position !== undefined) {
-      if (position < 0 || position >= elements.length) {
-        return { valid: false, error: `Element not found at position: ${position}` };
-      }
-    } else if (elementName !== undefined) {
-      if (!elements.some(el => el.name === elementName || (el as any).ref === elementName)) {
-        return { valid: false, error: `Element not found with name: ${elementName}` };
-      }
-    }
+  const el = findChildElement(location.parent, location.parentType!, parsed.name, parsed.position);
+  if (!el) {
+    const spec = parsed.position !== undefined
+      ? `at position: ${parsed.position}`
+      : `with name: ${parsed.name}`;
+    return { valid: false, error: `Element not found ${spec}` };
   }
 
   return { valid: true };
@@ -180,7 +196,6 @@ export function validateModifyElement(
     return { valid: false, error: "Element ID cannot be empty" };
   }
 
-  // Validate that element exists in the schema
   const parsed = parseSchemaId(elementId);
   const parentId = parsed.parentId || "schema";
   const location = locateNodeById(schemaObj, parentId);
@@ -189,32 +204,14 @@ export function validateModifyElement(
     return { valid: false, error: `Parent node not found for element: ${elementId}` };
   }
 
-  // Validate parent type
-  const validElementParents = ["schema", "sequence", "choice", "all"];
-  if (!validElementParents.includes(location.parentType ?? "")) {
+  if (!VALID_ELEMENT_PARENTS.includes(location.parentType as (typeof VALID_ELEMENT_PARENTS)[number])) {
     return { valid: false, error: `Cannot modify element in parent of type: ${location.parentType}` };
   }
+
   // Check element exists
-  const elementName2 = parsed.name;
-  const position2 = parsed.position;
-  if (location.parentType === "schema") {
-    const elements = toArray((location.parent as schema).element);
-    const found = position2 !== undefined ? elements[position2] : elements.find(el => el.name === elementName2 || (el as any).ref === elementName2);
-    if (!found) {
-      return { valid: false, error: `Element not found: ${elementName2 ?? `at position ${position2}`}` };
-    }
-  } else if (location.parentType === "sequence" || location.parentType === "choice") {
-    const elements = toArray((location.parent as explicitGroup).element);
-    const found = position2 !== undefined ? elements[position2] : elements.find(el => (el as any).name === elementName2 || (el as any).ref === elementName2);
-    if (!found) {
-      return { valid: false, error: `Element not found: ${elementName2 ?? `at position ${position2}`}` };
-    }
-  } else if (location.parentType === "all") {
-    const elements = toArray((location.parent as all).element);
-    const found = position2 !== undefined ? elements[position2] : elements.find(el => el.name === elementName2 || (el as any).ref === elementName2);
-    if (!found) {
-      return { valid: false, error: `Element not found: ${elementName2 ?? `at position ${position2}`}` };
-    }
+  const el = findChildElement(location.parent, location.parentType!, parsed.name, parsed.position);
+  if (!el) {
+    return { valid: false, error: `Element not found: ${parsed.name ?? `at position ${parsed.position}`}` };
   }
 
   if (ref !== undefined) {
@@ -227,7 +224,7 @@ export function validateModifyElement(
     }
     // Validate that the referenced element exists as a top-level element
     const topLevelElements = toArray(schemaObj.element);
-    if (!topLevelElements.some(el => el.name === ref)) {
+    if (!topLevelElements.some(e => e.name === ref)) {
       return { valid: false, error: `Referenced element '${ref}' does not exist in schema` };
     }
   } else {
@@ -299,31 +296,22 @@ export function validateAddAttribute(
     return { valid: false, error: `Parent node not found: ${parentId}` };
   }
 
-  // Validate parent type supports attributes
-  const validAttrParents = ["schema", "topLevelComplexType", "localComplexType"];
-  if (!validAttrParents.includes(location.parentType ?? "")) {
+  if (!VALID_ATTR_PARENTS.includes(location.parentType as (typeof VALID_ATTR_PARENTS)[number])) {
     return { valid: false, error: `Cannot add attribute to parent of type: ${location.parentType}` };
-  }
-  // Check for duplicate attribute names/refs
-  if (location.parentType === "schema") {
-    const attributes = toArray((location.parent as schema).attribute);
-    if (attributeName && attributes.some(a => a.name === attributeName)) {
-      return { valid: false, error: `Cannot add attribute: duplicate attribute name '${attributeName}' in schema` };
-    }
-  } else {
-    const complexType = location.parent as topLevelComplexType;
-    const attributes = toArray(complexType.attribute);
-    if (ref && attributes.some(a => (a as any).ref === ref || a.name === ref)) {
-      return { valid: false, error: `Cannot add attribute: duplicate attribute reference '${ref}' in ${location.parentType}` };
-    }
-    if (attributeName && attributes.some(a => a.name === attributeName || (a as any).ref === attributeName)) {
-      return { valid: false, error: `Cannot add attribute: duplicate attribute name '${attributeName}' in ${location.parentType}` };
-    }
   }
 
   // Top-level attributes cannot be references
   if (ref !== undefined && location.parentType === "schema") {
     return { valid: false, error: "Top-level attributes cannot be references" };
+  }
+
+  // Check for duplicate attribute names/refs
+  const existing = getChildAttributes(location.parent, location.parentType!);
+  if (ref && existing.some(a => a.ref === ref || a.name === ref)) {
+    return { valid: false, error: `Cannot add attribute: duplicate attribute reference '${ref}' in ${location.parentType}` };
+  }
+  if (attributeName && existing.some(a => a.name === attributeName || a.ref === attributeName)) {
+    return { valid: false, error: `Cannot add attribute: duplicate attribute name '${attributeName}' in ${location.parentType === "schema" ? "schema" : location.parentType!}` };
   }
 
   return { valid: true };
@@ -347,25 +335,21 @@ export function validateRemoveAttribute(
     };
   }
 
-  // Validate parent type
-  const validAttrParents2 = ["schema", "topLevelComplexType", "localComplexType"];
-  if (!validAttrParents2.includes(location.parentType ?? "")) {
+  if (!VALID_ATTR_PARENTS.includes(location.parentType as (typeof VALID_ATTR_PARENTS)[number])) {
     return { valid: false, error: `Cannot remove attribute from parent of type: ${location.parentType}` };
   }
+
   // Check attribute exists
-  const attrName = parsed.name;
-  const attrPos = parsed.position;
-  const attributes = location.parentType === "schema"
-    ? toArray((location.parent as schema).attribute)
-    : toArray((location.parent as topLevelComplexType).attribute);
-  if (attrPos !== undefined) {
-    if (attrPos < 0 || attrPos >= attributes.length) {
-      return { valid: false, error: `Attribute not found at position: ${attrPos}` };
-    }
-  } else if (attrName !== undefined) {
-    if (!attributes.some(a => a.name === attrName || (a as any).ref === attrName)) {
-      return { valid: false, error: `Attribute not found with name: ${attrName}` };
-    }
+  const attributes = getChildAttributes(location.parent, location.parentType!);
+  const attr =
+    parsed.position !== undefined
+      ? attributes[parsed.position]
+      : attributes.find(a => a.name === parsed.name || a.ref === parsed.name);
+  if (!attr) {
+    const spec = parsed.position !== undefined
+      ? `at position: ${parsed.position}`
+      : `with name: ${parsed.name}`;
+    return { valid: false, error: `Attribute not found ${spec}` };
   }
 
   return { valid: true };
@@ -392,20 +376,18 @@ export function validateModifyAttribute(
     };
   }
 
-  // Validate parent type  
-  const validAttrParents3 = ["schema", "topLevelComplexType", "localComplexType"];
-  if (!validAttrParents3.includes(location.parentType ?? "")) {
+  if (!VALID_ATTR_PARENTS.includes(location.parentType as (typeof VALID_ATTR_PARENTS)[number])) {
     return { valid: false, error: `Cannot modify attribute in parent of type: ${location.parentType}` };
   }
+
   // Check attribute exists
-  const attrNameM = parsed.name;
-  const attrPosM = parsed.position;
-  const attributesM = location.parentType === "schema"
-    ? toArray((location.parent as schema).attribute)
-    : toArray((location.parent as topLevelComplexType).attribute);
-  const attrFound = attrPosM !== undefined ? attributesM[attrPosM] : attributesM.find(a => a.name === attrNameM || (a as any).ref === attrNameM);
+  const attributes = getChildAttributes(location.parent, location.parentType!);
+  const attrFound =
+    parsed.position !== undefined
+      ? attributes[parsed.position]
+      : attributes.find(a => a.name === parsed.name || a.ref === parsed.name);
   if (!attrFound) {
-    return { valid: false, error: `Attribute not found: ${attrNameM ?? `at position ${attrPosM}`}` };
+    return { valid: false, error: `Attribute not found: ${parsed.name ?? `at position ${parsed.position}`}` };
   }
 
   if (ref !== undefined) {

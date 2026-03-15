@@ -37,6 +37,63 @@ const INLINE_SIMPLE_TYPE_PARENT_TYPES = ["topLevelElement", "localElement", "top
 /** Container types that may hold an anonymous complexType inline. */
 const INLINE_COMPLEX_TYPE_PARENT_TYPES = ["topLevelElement", "localElement"];
 
+/**
+ * Validates that an anonymous type's parent exists and carries the expected property.
+ * Returns a `ValidationResult` with an error when validation fails, or `null` when the
+ * parent is valid and the anonymous type slot is occupied (exists).
+ *
+ * @param typeId - The full ID of the anonymous type (used in error messages).
+ * @param parentId - The ID of the parent container element/attribute.
+ * @param schemaObj - The root schema object to search.
+ * @param prop - The property name to check (e.g. `"simpleType"` or `"complexType"`).
+ * @param label - Human-readable type label for error messages (e.g. `"simpleType"`).
+ */
+function validateAnonymousTypeParent(
+  typeId: string,
+  parentId: string | undefined,
+  schemaObj: schema,
+  prop: string,
+  label: string
+): { error: ValidationResult; location?: never } | { error?: never; location: ReturnType<typeof locateNodeById> } {
+  if (!parentId) {
+    return { error: { valid: false, error: `Invalid anonymous ${label} ID: ${typeId}` } };
+  }
+  const location = locateNodeById(schemaObj, parentId);
+  if (!location.found) {
+    return { error: { valid: false, error: `Parent not found: ${parentId}` } };
+  }
+  const holder = location.parent as Record<string, unknown>;
+  if (!holder[prop]) {
+    return {
+      error: {
+        valid: false,
+        error: `No anonymous ${label} found in parent: ${parentId}`,
+      },
+    };
+  }
+  return { location };
+}
+
+/**
+ * Validates a content model value against the provided list of valid models.
+ * Returns a validation error if the model is missing or unsupported, otherwise null.
+ */
+function validateContentModel(
+  contentModel: string | undefined,
+  validModels: readonly string[]
+): ValidationResult | null {
+  if (!contentModel) {
+    return { valid: false, error: "Content model is required" };
+  }
+  if (!validModels.includes(contentModel)) {
+    return {
+      valid: false,
+      error: `Content model must be one of: ${validModels.join(", ")}`,
+    };
+  }
+  return null;
+}
+
 // ===== SimpleType Command Validation =====
 
 export function validateAddSimpleType(
@@ -112,21 +169,8 @@ export function validateRemoveSimpleType(
   const parsed = parseSchemaId(command.payload.typeId);
 
   if (parsed.nodeType === SchemaNodeType.AnonymousSimpleType) {
-    if (!parsed.parentId) {
-      return { valid: false, error: `Invalid anonymous simpleType ID: ${command.payload.typeId}` };
-    }
-    const location = locateNodeById(schemaObj, parsed.parentId);
-    if (!location.found) {
-      return { valid: false, error: `Parent not found: ${parsed.parentId}` };
-    }
-    const holder = location.parent as { simpleType?: unknown };
-    if (!holder.simpleType) {
-      return {
-        valid: false,
-        error: `No anonymous simpleType found in parent: ${parsed.parentId}`,
-      };
-    }
-    return { valid: true };
+    const result = validateAnonymousTypeParent(command.payload.typeId, parsed.parentId, schemaObj, "simpleType", "simpleType");
+    return result.error ?? { valid: true };
   }
 
   // TODO Phase 2: Check if type is being used by other elements/types
@@ -151,20 +195,9 @@ export function validateModifySimpleType(
   const parsed = parseSchemaId(command.payload.typeId);
 
   if (parsed.nodeType === SchemaNodeType.AnonymousSimpleType) {
-    if (!parsed.parentId) {
-      return { valid: false, error: `Invalid anonymous simpleType ID: ${command.payload.typeId}` };
-    }
-    const location = locateNodeById(schemaObj, parsed.parentId);
-    if (!location.found) {
-      return { valid: false, error: `Parent not found: ${parsed.parentId}` };
-    }
-    const holder = location.parent as { simpleType?: unknown };
-    if (!holder.simpleType) {
-      return {
-        valid: false,
-        error: `No anonymous simpleType found in parent: ${parsed.parentId}`,
-      };
-    }
+    const result = validateAnonymousTypeParent(command.payload.typeId, parsed.parentId, schemaObj, "simpleType", "simpleType");
+    if (result.error) return result.error;
+    const location = result.location!;
     if (command.payload.restrictions !== undefined && command.payload.baseType === undefined) {
       const anonSt = (location.parent as { simpleType?: { restriction?: unknown } }).simpleType;
       if (anonSt && !(anonSt as { restriction?: unknown }).restriction) {
@@ -223,15 +256,8 @@ export function validateAddComplexType(
     if (holder.complexType) {
       return { valid: false, error: `'${parentId}' already has an anonymous complexType` };
     }
-    if (!contentModel) {
-      return { valid: false, error: "Content model is required" };
-    }
-    if (!VALID_COMPLEX_TYPE_CONTENT_MODELS.includes(contentModel)) {
-      return {
-        valid: false,
-        error: `Content model must be one of: ${VALID_COMPLEX_TYPE_CONTENT_MODELS.join(", ")}`,
-      };
-    }
+    const contentModelError = validateContentModel(contentModel, VALID_COMPLEX_TYPE_CONTENT_MODELS);
+    if (contentModelError) return contentModelError;
     return { valid: true };
   }
 
@@ -239,15 +265,8 @@ export function validateAddComplexType(
   if (!isValidXmlName(typeName ?? "")) {
     return { valid: false, error: "Type name must be a valid XML name" };
   }
-  if (!contentModel) {
-    return { valid: false, error: "Content model is required" };
-  }
-  if (!VALID_COMPLEX_TYPE_CONTENT_MODELS.includes(contentModel)) {
-    return {
-      valid: false,
-      error: `Content model must be one of: ${VALID_COMPLEX_TYPE_CONTENT_MODELS.join(", ")}`,
-    };
-  }
+  const contentModelError = validateContentModel(contentModel, VALID_COMPLEX_TYPE_CONTENT_MODELS);
+  if (contentModelError) return contentModelError;
   if (toArray(schemaObj.complexType).some((ct) => ct.name === typeName)) {
     return {
       valid: false,
@@ -268,21 +287,8 @@ export function validateRemoveComplexType(
   const parsed = parseSchemaId(command.payload.typeId);
 
   if (parsed.nodeType === SchemaNodeType.AnonymousComplexType) {
-    if (!parsed.parentId) {
-      return { valid: false, error: `Invalid anonymous complexType ID: ${command.payload.typeId}` };
-    }
-    const location = locateNodeById(schemaObj, parsed.parentId);
-    if (!location.found) {
-      return { valid: false, error: `Parent not found: ${parsed.parentId}` };
-    }
-    const holder = location.parent as { complexType?: unknown };
-    if (!holder.complexType) {
-      return {
-        valid: false,
-        error: `No anonymous complexType found in parent: ${parsed.parentId}`,
-      };
-    }
-    return { valid: true };
+    const result = validateAnonymousTypeParent(command.payload.typeId, parsed.parentId, schemaObj, "complexType", "complexType");
+    return result.error ?? { valid: true };
   }
 
   if (!toArray(schemaObj.complexType).some((ct) => ct.name === parsed.name)) {
@@ -302,37 +308,17 @@ export function validateModifyComplexType(
   const parsed = parseSchemaId(command.payload.typeId);
 
   if (parsed.nodeType === SchemaNodeType.AnonymousComplexType) {
-    if (!parsed.parentId) {
-      return {
-        valid: false,
-        error: `Invalid anonymous complexType ID: ${command.payload.typeId}`,
-      };
-    }
-    const location = locateNodeById(schemaObj, parsed.parentId);
-    if (!location.found) {
-      return { valid: false, error: `Parent not found: ${parsed.parentId}` };
-    }
-    const holder = location.parent as { complexType?: unknown };
-    if (!holder.complexType) {
-      return {
-        valid: false,
-        error: `No anonymous complexType found in parent: ${parsed.parentId}`,
-      };
-    }
+    const result = validateAnonymousTypeParent(command.payload.typeId, parsed.parentId, schemaObj, "complexType", "complexType");
+    if (result.error) return result.error;
     if (command.payload.typeName !== undefined) {
       return {
         valid: false,
         error: "Cannot provide 'typeName' when modifying an anonymous complexType",
       };
     }
-    if (
-      command.payload.contentModel !== undefined &&
-      !VALID_COMPLEX_TYPE_CONTENT_MODELS.includes(command.payload.contentModel)
-    ) {
-      return {
-        valid: false,
-        error: `Content model must be one of: ${VALID_COMPLEX_TYPE_CONTENT_MODELS.join(", ")}`,
-      };
+    if (command.payload.contentModel !== undefined) {
+      const contentModelError = validateContentModel(command.payload.contentModel, VALID_COMPLEX_TYPE_CONTENT_MODELS);
+      if (contentModelError) return contentModelError;
     }
     return { valid: true };
   }
@@ -340,14 +326,9 @@ export function validateModifyComplexType(
   if (command.payload.typeName !== undefined && !isValidXmlName(command.payload.typeName)) {
     return { valid: false, error: "Type name must be a valid XML name" };
   }
-  if (
-    command.payload.contentModel !== undefined &&
-    !VALID_COMPLEX_TYPE_CONTENT_MODELS.includes(command.payload.contentModel)
-  ) {
-    return {
-      valid: false,
-      error: `Content model must be one of: ${VALID_COMPLEX_TYPE_CONTENT_MODELS.join(", ")}`,
-    };
+  if (command.payload.contentModel !== undefined) {
+    const contentModelError = validateContentModel(command.payload.contentModel, VALID_COMPLEX_TYPE_CONTENT_MODELS);
+    if (contentModelError) return contentModelError;
   }
   if (!toArray(schemaObj.complexType).some((ct) => ct.name === parsed.name)) {
     return { valid: false, error: `Complex type '${parsed.name}' not found in schema` };

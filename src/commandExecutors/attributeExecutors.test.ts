@@ -96,7 +96,6 @@ describe("Attribute Executors", () => {
       });
 
     });
-    });
 
     describe("Adding attributes to complex types", () => {
       it("should add an attribute to a top-level complex type", () => {

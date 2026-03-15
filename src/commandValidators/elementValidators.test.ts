@@ -707,11 +707,18 @@ describe("Attribute Validators", () => {
     });
 
     test("should accept addAttribute with valid ref to complex type", () => {
+      // PersonType must NOT already have a lang attribute to avoid the duplicate check
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:attribute name="lang" type="xs:string"/>
+  <xs:complexType name="PersonType"/>
+</xs:schema>`;
+      const schemaWithoutDuplicate = unmarshal(schema, xml);
       const command: AddAttributeCommand = {
         type: "addAttribute",
         payload: { parentId: "/complexType:PersonType", ref: "lang" },
       };
-      expect(validateAddAttribute(command, refSchema).valid).toBe(true);
+      expect(validateAddAttribute(command, schemaWithoutDuplicate).valid).toBe(true);
     });
 
     test("should reject addAttribute with ref at schema level", () => {

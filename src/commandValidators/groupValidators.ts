@@ -214,6 +214,27 @@ function isComplexTypeParent(parentType: string): boolean {
   return parentType === "topLevelComplexType" || parentType === "localComplexType";
 }
 
+/**
+ * Checks whether a groupRef node exists in a sequence or choice compositor parent.
+ * Used by both validateRemoveGroup and validateModifyGroup.
+ */
+function groupRefExistsInSequenceOrChoice(
+  compositor: { group?: Array<{ ref?: string }> },
+  parsed: { name?: string; position?: number }
+): boolean {
+  const refs = toArray(compositor.group);
+  if (parsed.name !== undefined && parsed.position !== undefined) {
+    return refs.some((r, idx) => r.ref === parsed.name && idx === parsed.position);
+  }
+  if (parsed.name !== undefined) {
+    return refs.some(r => r.ref === parsed.name);
+  }
+  if (parsed.position !== undefined) {
+    return parsed.position >= 0 && parsed.position < refs.length;
+  }
+  return false;
+}
+
 /** Returns true if the complexType node already carries one of the four mutually exclusive particles. */
 function complexTypeHasParticle(ct: ComplexTypeWithParticles): boolean {
   return ct.group !== undefined || ct.sequence !== undefined || ct.choice !== undefined || ct.all !== undefined;
@@ -350,18 +371,7 @@ export function validateRemoveGroup(
     // For sequence/choice parents, check the group ref exists
     if (location.parentType === "sequence" || location.parentType === "choice") {
       const compositor = location.parent as { group?: Array<{ ref?: string }> };
-      const refs = toArray(compositor.group);
-      let found: boolean;
-      if (parsed.name !== undefined && parsed.position !== undefined) {
-        found = refs.some((r, idx) => r.ref === parsed.name && idx === parsed.position);
-      } else if (parsed.name !== undefined) {
-        found = refs.some(r => r.ref === parsed.name);
-      } else if (parsed.position !== undefined) {
-        found = parsed.position >= 0 && parsed.position < refs.length;
-      } else {
-        found = false;
-      }
-      if (!found) {
+      if (!groupRefExistsInSequenceOrChoice(compositor, parsed)) {
         return { valid: false, error: `GroupRef not found: ${command.payload.groupId}` };
       }
     }
@@ -429,18 +439,7 @@ export function validateModifyGroup(
     // For sequence/choice parents, check the group ref exists
     if (location.parentType === "sequence" || location.parentType === "choice") {
       const compositor = location.parent as { group?: Array<{ ref?: string }> };
-      const refs = toArray(compositor.group);
-      let found: boolean;
-      if (parsed.name !== undefined && parsed.position !== undefined) {
-        found = refs.some((r, idx) => r.ref === parsed.name && idx === parsed.position);
-      } else if (parsed.name !== undefined) {
-        found = refs.some(r => r.ref === parsed.name);
-      } else if (parsed.position !== undefined) {
-        found = parsed.position >= 0 && parsed.position < refs.length;
-      } else {
-        found = false;
-      }
-      if (!found) {
+      if (!groupRefExistsInSequenceOrChoice(compositor, parsed)) {
         return { valid: false, error: `GroupRef not found: ${command.payload.groupId}` };
       }
     }

@@ -186,50 +186,43 @@ describe("CommandExecutor", () => {
     });
 
     it("should delegate addAnnotation execution successfully", () => {
-      // Use a real schema instance with an element so the target ID resolves.
-      const testSchema = new schema();
-      const element = new topLevelElement();
-      element.name = "testElement";
-      testSchema.element = [element];
-
+      // Add annotation to the schema root itself — it supports xs:annotation natively.
       const command: SchemaCommand = {
         type: "addAnnotation",
         payload: {
-          targetId: "/element:testElement",
-          documentation: "Test annotation",
+          targetId: "schema",
+          documentation: "Test schema annotation",
         },
       };
 
       expect(() => {
-        executor.execute(command, testSchema);
+        executor.execute(command, mockSchema);
       }).not.toThrow();
 
-      expect(toArray(testSchema.element)[0].annotation).toBeDefined();
+      expect(toArray(mockSchema.annotation)).toHaveLength(1);
+      expect(toArray(toArray(mockSchema.annotation)[0].documentation)[0].value).toBe(
+        "Test schema annotation"
+      );
     });
 
     it("should delegate addDocumentation execution successfully", () => {
-      // Use a real schema instance with an element so the target ID resolves.
-      const testSchema = new schema();
-      const element = new topLevelElement();
-      element.name = "testElement";
-      testSchema.element = [element];
-
+      // Add documentation directly to the schema root's annotation.
       const command: SchemaCommand = {
         type: "addDocumentation",
         payload: {
-          targetId: "/element:testElement",
-          content: "Test documentation",
+          targetId: "schema",
+          content: "Test schema documentation",
           lang: "en",
         },
       };
 
       expect(() => {
-        executor.execute(command, testSchema);
+        executor.execute(command, mockSchema);
       }).not.toThrow();
 
-      const docs = toArray(toArray(testSchema.element)[0].annotation?.documentation);
+      const docs = toArray(toArray(mockSchema.annotation)[0]?.documentation);
       expect(docs).toHaveLength(1);
-      expect(docs[0].value).toBe("Test documentation");
+      expect(docs[0].value).toBe("Test schema documentation");
     });
 
     it("should delegate addImport execution and throw not implemented error", () => {

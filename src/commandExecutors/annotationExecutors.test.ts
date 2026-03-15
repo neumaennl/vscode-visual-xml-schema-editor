@@ -2,10 +2,12 @@
  * Unit tests for annotation and documentation executors.
  *
  * ID Conventions used throughout these tests:
- * - annotationId / targetId: XPath-like path to the annotated schema component
+ * - annotationId / targetId for non-schema nodes: XPath-like path
  *   (e.g. "/element:person").
- * - documentationId: annotated-element path + "/documentation[N]"
- *   (e.g. "/element:person/documentation[0]").
+ * - annotationId for schema-root annotations: "schema/annotation[N]"
+ * - documentationId for non-schema nodes: "{elementPath}/documentation[N]"
+ * - documentationId for schema-root annotations:
+ *     "schema/annotation[N]/documentation[M]" or "schema/documentation[N]"
  *
  * Note on references: xs:annotation, xs:documentation, and xs:appinfo have no
  * `ref` attribute in the XSD specification. No reference support is implemented
@@ -31,6 +33,8 @@ import {
   executeRemoveDocumentation,
   executeModifyDocumentation,
   parseDocumentationId,
+  parseSchemaAnnotationId,
+  parseSchemaDocumentationId,
 } from "./annotationExecutors";
 
 // ─── Shared XML fixtures ────────────────────────────────────────────────────
@@ -682,5 +686,424 @@ describe("executeModifyDocumentation", () => {
     expect(() => executeModifyDocumentation(command, schemaObj)).toThrow(
       "not found"
     );
+  });
+});
+
+// ─── parseSchemaAnnotationId / parseSchemaDocumentationId ───────────────────
+
+describe("parseSchemaAnnotationId", () => {
+  it("parses 'schema/annotation[0]'", () => {
+    expect(parseSchemaAnnotationId("schema/annotation[0]")).toBe(0);
+  });
+
+  it("parses '/schema/annotation[2]'", () => {
+    expect(parseSchemaAnnotationId("/schema/annotation[2]")).toBe(2);
+  });
+
+  it("returns null for a non-schema path", () => {
+    expect(parseSchemaAnnotationId("/element:person")).toBeNull();
+  });
+
+  it("returns null for a plain 'schema'", () => {
+    expect(parseSchemaAnnotationId("schema")).toBeNull();
+  });
+});
+
+describe("parseSchemaDocumentationId", () => {
+  it("parses 'schema/annotation[0]/documentation[1]'", () => {
+    const result = parseSchemaDocumentationId(
+      "schema/annotation[0]/documentation[1]"
+    );
+    expect(result).toEqual({ annotIndex: 0, docIndex: 1 });
+  });
+
+  it("parses '/schema/annotation[2]/documentation[3]'", () => {
+    const result = parseSchemaDocumentationId(
+      "/schema/annotation[2]/documentation[3]"
+    );
+    expect(result).toEqual({ annotIndex: 2, docIndex: 3 });
+  });
+
+  it("returns null for a plain 'schema/documentation[0]'", () => {
+    expect(parseSchemaDocumentationId("schema/documentation[0]")).toBeNull();
+  });
+
+  it("returns null for an element path", () => {
+    expect(
+      parseSchemaDocumentationId("/element:person/documentation[0]")
+    ).toBeNull();
+  });
+});
+
+// ─── Schema-root annotation operations ──────────────────────────────────────
+
+/** Schema with NO annotations at all. */
+const bareSchemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+</xs:schema>`;
+
+/** Schema with a single annotation on the schema element. */
+const schemaWithAnnotationXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:annotation>
+    <xs:documentation>Schema description.</xs:documentation>
+  </xs:annotation>
+</xs:schema>`;
+
+/** Schema with two annotations on the schema element. */
+const schemaWithTwoAnnotationsXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:annotation>
+    <xs:documentation>First.</xs:documentation>
+  </xs:annotation>
+  <xs:annotation>
+    <xs:documentation>Second.</xs:documentation>
+  </xs:annotation>
+</xs:schema>`;
+
+describe("executeAddAnnotation — schema root", () => {
+  it("appends a new annotation to an empty schema", () => {
+    const schemaObj = unmarshal(schema, bareSchemaXml);
+    const command: AddAnnotationCommand = {
+      type: "addAnnotation",
+      payload: { targetId: "schema", documentation: "My schema." },
+    };
+
+    executeAddAnnotation(command, schemaObj);
+
+    const annots = toArray(schemaObj.annotation);
+    expect(annots).toHaveLength(1);
+    expect(toArray(annots[0].documentation)[0].value).toBe("My schema.");
+  });
+
+  it("appends a second annotation when one already exists", () => {
+    const schemaObj = unmarshal(schema, schemaWithAnnotationXml);
+    const command: AddAnnotationCommand = {
+      type: "addAnnotation",
+      payload: { targetId: "schema", documentation: "Second annotation." },
+    };
+
+    executeAddAnnotation(command, schemaObj);
+
+    const annots = toArray(schemaObj.annotation);
+    expect(annots).toHaveLength(2);
+    expect(toArray(annots[1].documentation)[0].value).toBe("Second annotation.");
+    // First annotation is preserved
+    expect(toArray(annots[0].documentation)[0].value).toBe("Schema description.");
+  });
+
+  it("adds an annotation with both documentation and appinfo", () => {
+    const schemaObj = unmarshal(schema, bareSchemaXml);
+    const command: AddAnnotationCommand = {
+      type: "addAnnotation",
+      payload: { targetId: "schema", documentation: "desc", appInfo: "info" },
+    };
+
+    executeAddAnnotation(command, schemaObj);
+
+    const annotation = toArray(schemaObj.annotation)[0];
+    expect(toArray(annotation.documentation)[0].value).toBe("desc");
+    expect(toArray(annotation.appinfo)[0].value).toBe("info");
+  });
+});
+
+describe("executeRemoveAnnotation — schema root", () => {
+  it("removes the first schema annotation by index", () => {
+    const schemaObj = unmarshal(schema, schemaWithTwoAnnotationsXml);
+    const command: RemoveAnnotationCommand = {
+      type: "removeAnnotation",
+      payload: { annotationId: "schema/annotation[0]" },
+    };
+
+    executeRemoveAnnotation(command, schemaObj);
+
+    const annots = toArray(schemaObj.annotation);
+    expect(annots).toHaveLength(1);
+    expect(toArray(annots[0].documentation)[0].value).toBe("Second.");
+  });
+
+  it("removes the second schema annotation by index", () => {
+    const schemaObj = unmarshal(schema, schemaWithTwoAnnotationsXml);
+    const command: RemoveAnnotationCommand = {
+      type: "removeAnnotation",
+      payload: { annotationId: "schema/annotation[1]" },
+    };
+
+    executeRemoveAnnotation(command, schemaObj);
+
+    const annots = toArray(schemaObj.annotation);
+    expect(annots).toHaveLength(1);
+    expect(toArray(annots[0].documentation)[0].value).toBe("First.");
+  });
+
+  it("removes the only annotation, leaving annotation as undefined", () => {
+    const schemaObj = unmarshal(schema, schemaWithAnnotationXml);
+    const command: RemoveAnnotationCommand = {
+      type: "removeAnnotation",
+      payload: { annotationId: "schema/annotation[0]" },
+    };
+
+    executeRemoveAnnotation(command, schemaObj);
+
+    expect(schemaObj.annotation).toBeUndefined();
+  });
+
+  it("throws when the annotation index is out of bounds", () => {
+    const schemaObj = unmarshal(schema, schemaWithAnnotationXml);
+    const command: RemoveAnnotationCommand = {
+      type: "removeAnnotation",
+      payload: { annotationId: "schema/annotation[5]" },
+    };
+
+    expect(() => executeRemoveAnnotation(command, schemaObj)).toThrow(
+      "out of bounds"
+    );
+  });
+});
+
+describe("executeModifyAnnotation — schema root", () => {
+  it("updates documentation on the first schema annotation", () => {
+    const schemaObj = unmarshal(schema, schemaWithAnnotationXml);
+    const command: ModifyAnnotationCommand = {
+      type: "modifyAnnotation",
+      payload: {
+        annotationId: "schema/annotation[0]",
+        documentation: "Updated.",
+      },
+    };
+
+    executeModifyAnnotation(command, schemaObj);
+
+    const annots = toArray(schemaObj.annotation);
+    expect(toArray(annots[0].documentation)[0].value).toBe("Updated.");
+  });
+
+  it("updates documentation on the second schema annotation", () => {
+    const schemaObj = unmarshal(schema, schemaWithTwoAnnotationsXml);
+    const command: ModifyAnnotationCommand = {
+      type: "modifyAnnotation",
+      payload: {
+        annotationId: "schema/annotation[1]",
+        documentation: "Second updated.",
+      },
+    };
+
+    executeModifyAnnotation(command, schemaObj);
+
+    const annots = toArray(schemaObj.annotation);
+    expect(toArray(annots[1].documentation)[0].value).toBe("Second updated.");
+    // First annotation untouched
+    expect(toArray(annots[0].documentation)[0].value).toBe("First.");
+  });
+
+  it("throws when the annotation index is out of bounds", () => {
+    const schemaObj = unmarshal(schema, schemaWithAnnotationXml);
+    const command: ModifyAnnotationCommand = {
+      type: "modifyAnnotation",
+      payload: { annotationId: "schema/annotation[9]", documentation: "x" },
+    };
+
+    expect(() => executeModifyAnnotation(command, schemaObj)).toThrow(
+      "out of bounds"
+    );
+  });
+});
+
+describe("executeAddDocumentation — schema root", () => {
+  it("creates a schema annotation and adds a documentation element (targetId: 'schema')", () => {
+    const schemaObj = unmarshal(schema, bareSchemaXml);
+    const command: AddDocumentationCommand = {
+      type: "addDocumentation",
+      payload: { targetId: "schema", content: "Schema doc." },
+    };
+
+    executeAddDocumentation(command, schemaObj);
+
+    const annots = toArray(schemaObj.annotation);
+    expect(annots).toHaveLength(1);
+    const docs = toArray(annots[0].documentation);
+    expect(docs).toHaveLength(1);
+    expect(docs[0].value).toBe("Schema doc.");
+  });
+
+  it("appends to the first existing annotation (targetId: 'schema')", () => {
+    const schemaObj = unmarshal(schema, schemaWithAnnotationXml);
+    const command: AddDocumentationCommand = {
+      type: "addDocumentation",
+      payload: { targetId: "schema", content: "Appended.", lang: "en" },
+    };
+
+    executeAddDocumentation(command, schemaObj);
+
+    const docs = toArray(toArray(schemaObj.annotation)[0].documentation);
+    expect(docs).toHaveLength(2);
+    expect(docs[1].value).toBe("Appended.");
+    expect(docs[1]._anyAttributes?.["xml:lang"]).toBe("en");
+  });
+
+  it("appends to a specific schema annotation (targetId: 'schema/annotation[N]')", () => {
+    const schemaObj = unmarshal(schema, schemaWithTwoAnnotationsXml);
+    const command: AddDocumentationCommand = {
+      type: "addDocumentation",
+      payload: {
+        targetId: "schema/annotation[1]",
+        content: "Into second annotation.",
+      },
+    };
+
+    executeAddDocumentation(command, schemaObj);
+
+    const annots = toArray(schemaObj.annotation);
+    const docs = toArray(annots[1].documentation);
+    expect(docs).toHaveLength(2);
+    expect(docs[1].value).toBe("Into second annotation.");
+    // First annotation untouched
+    expect(toArray(annots[0].documentation)).toHaveLength(1);
+  });
+
+  it("throws when the schema annotation index is out of bounds", () => {
+    const schemaObj = unmarshal(schema, schemaWithAnnotationXml);
+    const command: AddDocumentationCommand = {
+      type: "addDocumentation",
+      payload: { targetId: "schema/annotation[5]", content: "x" },
+    };
+
+    expect(() => executeAddDocumentation(command, schemaObj)).toThrow(
+      "out of bounds"
+    );
+  });
+});
+
+describe("executeRemoveDocumentation — schema root", () => {
+  it("removes a documentation element via 'schema/annotation[N]/documentation[M]'", () => {
+    const schemaObj = unmarshal(schema, schemaWithTwoAnnotationsXml);
+    // Add a second doc to annotation[0]
+    toArray(schemaObj.annotation)[0].documentation = [
+      ...toArray(toArray(schemaObj.annotation)[0].documentation),
+    ];
+    executeRemoveDocumentation(
+      {
+        type: "removeDocumentation",
+        payload: {
+          documentationId: "schema/annotation[0]/documentation[0]",
+        },
+      } as RemoveDocumentationCommand,
+      schemaObj
+    );
+
+    const docs = toArray(toArray(schemaObj.annotation)[0].documentation);
+    expect(docs).toHaveLength(0);
+  });
+
+  it("removes a documentation element via 'schema/documentation[N]' shorthand", () => {
+    const schemaObj = unmarshal(schema, schemaWithAnnotationXml);
+    executeRemoveDocumentation(
+      {
+        type: "removeDocumentation",
+        payload: { documentationId: "schema/documentation[0]" },
+      } as RemoveDocumentationCommand,
+      schemaObj
+    );
+
+    const docs = toArray(toArray(schemaObj.annotation)[0].documentation);
+    expect(docs).toHaveLength(0);
+  });
+
+  it("throws when annotation index is out of bounds in 'schema/annotation[N]/documentation[M]'", () => {
+    const schemaObj = unmarshal(schema, schemaWithAnnotationXml);
+    expect(() =>
+      executeRemoveDocumentation(
+        {
+          type: "removeDocumentation",
+          payload: {
+            documentationId: "schema/annotation[9]/documentation[0]",
+          },
+        } as RemoveDocumentationCommand,
+        schemaObj
+      )
+    ).toThrow("out of bounds");
+  });
+
+  it("throws when no annotations exist for 'schema/documentation[N]' shorthand", () => {
+    const schemaObj = unmarshal(schema, bareSchemaXml);
+    expect(() =>
+      executeRemoveDocumentation(
+        {
+          type: "removeDocumentation",
+          payload: { documentationId: "schema/documentation[0]" },
+        } as RemoveDocumentationCommand,
+        schemaObj
+      )
+    ).toThrow("No annotation found on schema root");
+  });
+});
+
+describe("executeModifyDocumentation — schema root", () => {
+  it("modifies a documentation element via 'schema/annotation[N]/documentation[M]'", () => {
+    const schemaObj = unmarshal(schema, schemaWithAnnotationXml);
+    executeModifyDocumentation(
+      {
+        type: "modifyDocumentation",
+        payload: {
+          documentationId: "schema/annotation[0]/documentation[0]",
+          content: "Modified.",
+          lang: "en",
+        },
+      } as ModifyDocumentationCommand,
+      schemaObj
+    );
+
+    const doc = toArray(toArray(schemaObj.annotation)[0].documentation)[0];
+    expect(doc.value).toBe("Modified.");
+    expect(doc._anyAttributes?.["xml:lang"]).toBe("en");
+  });
+
+  it("modifies a documentation element via 'schema/documentation[N]' shorthand", () => {
+    const schemaObj = unmarshal(schema, schemaWithAnnotationXml);
+    executeModifyDocumentation(
+      {
+        type: "modifyDocumentation",
+        payload: {
+          documentationId: "schema/documentation[0]",
+          content: "Modified via shorthand.",
+        },
+      } as ModifyDocumentationCommand,
+      schemaObj
+    );
+
+    const doc = toArray(toArray(schemaObj.annotation)[0].documentation)[0];
+    expect(doc.value).toBe("Modified via shorthand.");
+  });
+
+  it("throws when annotation index is out of bounds in 'schema/annotation[N]/documentation[M]'", () => {
+    const schemaObj = unmarshal(schema, schemaWithAnnotationXml);
+    expect(() =>
+      executeModifyDocumentation(
+        {
+          type: "modifyDocumentation",
+          payload: {
+            documentationId: "schema/annotation[9]/documentation[0]",
+            content: "x",
+          },
+        } as ModifyDocumentationCommand,
+        schemaObj
+      )
+    ).toThrow("out of bounds");
+  });
+
+  it("throws when no annotations exist for 'schema/documentation[N]' shorthand", () => {
+    const schemaObj = unmarshal(schema, bareSchemaXml);
+    expect(() =>
+      executeModifyDocumentation(
+        {
+          type: "modifyDocumentation",
+          payload: {
+            documentationId: "schema/documentation[0]",
+            content: "x",
+          },
+        } as ModifyDocumentationCommand,
+        schemaObj
+      )
+    ).toThrow("No annotation found on schema root");
   });
 });

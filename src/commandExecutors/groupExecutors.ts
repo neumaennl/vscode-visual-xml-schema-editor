@@ -250,7 +250,7 @@ function removeGroupRefFromParent(
   parentType: string,
   name: string | undefined,
   position: number | undefined,
-  originalId: string
+  _originalId: string
 ): void {
   if (parentType === "sequence" || parentType === "choice") {
     const compositor = parent as CompositorWithGroupRefs;

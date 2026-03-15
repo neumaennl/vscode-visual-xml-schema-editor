@@ -39,14 +39,13 @@ const INLINE_COMPLEX_TYPE_PARENT_TYPES = ["topLevelElement", "localElement"];
 
 /**
  * Validates that an anonymous type's parent exists and carries the expected property.
- * Returns a `ValidationResult` with an error when validation fails, or `null` when the
- * parent is valid and the anonymous type slot is occupied (exists).
  *
  * @param typeId - The full ID of the anonymous type (used in error messages).
  * @param parentId - The ID of the parent container element/attribute.
  * @param schemaObj - The root schema object to search.
  * @param prop - The property name to check (e.g. `"simpleType"` or `"complexType"`).
  * @param label - Human-readable type label for error messages (e.g. `"simpleType"`).
+ * @returns `{ success: true, location }` when valid; `{ success: false, error }` otherwise.
  */
 function validateAnonymousTypeParent(
   typeId: string,
@@ -54,24 +53,25 @@ function validateAnonymousTypeParent(
   schemaObj: schema,
   prop: string,
   label: string
-): { error: ValidationResult; location?: never } | { error?: never; location: ReturnType<typeof locateNodeById> } {
+): { success: false; error: ValidationResult } | { success: true; location: ReturnType<typeof locateNodeById> } {
   if (!parentId) {
-    return { error: { valid: false, error: `Invalid anonymous ${label} ID: ${typeId}` } };
+    return { success: false, error: { valid: false, error: `Invalid anonymous ${label} ID: ${typeId}` } };
   }
   const location = locateNodeById(schemaObj, parentId);
   if (!location.found) {
-    return { error: { valid: false, error: `Parent not found: ${parentId}` } };
+    return { success: false, error: { valid: false, error: `Parent not found: ${parentId}` } };
   }
   const holder = location.parent as Record<string, unknown>;
   if (!holder[prop]) {
     return {
+      success: false,
       error: {
         valid: false,
         error: `No anonymous ${label} found in parent: ${parentId}`,
       },
     };
   }
-  return { location };
+  return { success: true, location };
 }
 
 /**
@@ -170,7 +170,7 @@ export function validateRemoveSimpleType(
 
   if (parsed.nodeType === SchemaNodeType.AnonymousSimpleType) {
     const result = validateAnonymousTypeParent(command.payload.typeId, parsed.parentId, schemaObj, "simpleType", "simpleType");
-    return result.error ?? { valid: true };
+    return result.success ? { valid: true } : result.error;
   }
 
   // TODO Phase 2: Check if type is being used by other elements/types
@@ -196,8 +196,8 @@ export function validateModifySimpleType(
 
   if (parsed.nodeType === SchemaNodeType.AnonymousSimpleType) {
     const result = validateAnonymousTypeParent(command.payload.typeId, parsed.parentId, schemaObj, "simpleType", "simpleType");
-    if (result.error) return result.error;
-    const location = result.location!;
+    if (!result.success) return result.error;
+    const location = result.location;
     if (command.payload.restrictions !== undefined && command.payload.baseType === undefined) {
       const anonSt = (location.parent as { simpleType?: { restriction?: unknown } }).simpleType;
       if (anonSt && !(anonSt as { restriction?: unknown }).restriction) {
@@ -288,7 +288,7 @@ export function validateRemoveComplexType(
 
   if (parsed.nodeType === SchemaNodeType.AnonymousComplexType) {
     const result = validateAnonymousTypeParent(command.payload.typeId, parsed.parentId, schemaObj, "complexType", "complexType");
-    return result.error ?? { valid: true };
+    return result.success ? { valid: true } : result.error;
   }
 
   if (!toArray(schemaObj.complexType).some((ct) => ct.name === parsed.name)) {
@@ -309,7 +309,7 @@ export function validateModifyComplexType(
 
   if (parsed.nodeType === SchemaNodeType.AnonymousComplexType) {
     const result = validateAnonymousTypeParent(command.payload.typeId, parsed.parentId, schemaObj, "complexType", "complexType");
-    if (result.error) return result.error;
+    if (!result.success) return result.error;
     if (command.payload.typeName !== undefined) {
       return {
         valid: false,

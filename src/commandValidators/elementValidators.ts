@@ -224,7 +224,7 @@ export function validateModifyElement(
     }
     // Validate that the referenced element exists as a top-level element
     const topLevelElements = toArray(schemaObj.element);
-    if (!topLevelElements.some(e => e.name === ref)) {
+    if (!topLevelElements.some(el => el.name === ref)) {
       return { valid: false, error: `Referenced element '${ref}' does not exist in schema` };
     }
   } else {

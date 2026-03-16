@@ -175,7 +175,7 @@ export function validateRemoveImport(
   // Check if the import's namespace prefix is still referenced in the schema
   const parsed = parseSchemaId(command.payload.importId);
   const imports = toArray(schemaObj.import_);
-  const targetImport = imports[parsed.position!];
+  const targetImport = imports[parsed.position ?? 0];
   if (isNamespaceReferenced(targetImport.namespace, schemaObj)) {
     return {
       valid: false,
@@ -208,9 +208,10 @@ export function validateModifyImport(
     // Check that changing the namespace won't create a duplicate
     const parsed = parseSchemaId(importId);
     const imports = toArray(schemaObj.import_);
-    const currentNamespace = imports[parsed.position!].namespace;
+    const position = parsed.position ?? 0;
+    const currentNamespace = imports[position].namespace;
     if (namespace.trim() !== currentNamespace) {
-      if (imports.some((imp, i) => i !== parsed.position! && imp.namespace === namespace.trim())) {
+      if (imports.some((imp, i) => i !== position && imp.namespace === namespace.trim())) {
         return { valid: false, error: `An import for namespace '${namespace.trim()}' already exists` };
       }
     }
@@ -235,7 +236,7 @@ export function validateModifyImport(
     // Check prefix uniqueness (excluding the current import's own prefix)
     const parsed = parseSchemaId(importId);
     const imports = toArray(schemaObj.import_);
-    const currentNamespace = imports[parsed.position!].namespace;
+    const currentNamespace = imports[parsed.position ?? 0].namespace;
     if (schemaObj._namespacePrefixes) {
       const currentPrefix = Object.entries(schemaObj._namespacePrefixes).find(
         ([, ns]) => ns === currentNamespace

@@ -457,7 +457,7 @@ describe("executeModifyImport", () => {
       payload: { importId: "/import[0]", prefix: "ex" },
     }, schemaObj);
 
-    expect(schemaObj.complexType![0].sequence!.element![0].ref).toBe("ex:ExternalElement");
+    expect(schemaObj.complexType[0].sequence!.element![0].ref).toBe("ex:ExternalElement");
   });
 
   it("should rewrite complexContent extension @base when prefix is renamed", () => {
@@ -478,7 +478,7 @@ describe("executeModifyImport", () => {
       payload: { importId: "/import[0]", prefix: "external" },
     }, schemaObj);
 
-    expect(schemaObj.complexType![0].complexContent!.extension!.base).toBe("external:BaseType");
+    expect(schemaObj.complexType[0].complexContent!.extension!.base).toBe("external:BaseType");
   });
 
   it("should rewrite simpleType restriction @base when prefix is renamed", () => {
@@ -497,7 +497,7 @@ describe("executeModifyImport", () => {
       payload: { importId: "/import[0]", prefix: "p" },
     }, schemaObj);
 
-    expect(schemaObj.simpleType![0].restriction!.base).toBe("p:ExternalSimpleType");
+    expect(schemaObj.simpleType[0].restriction!.base).toBe("p:ExternalSimpleType");
   });
 
   it("should rewrite union memberTypes when prefix is renamed", () => {
@@ -516,7 +516,7 @@ describe("executeModifyImport", () => {
       payload: { importId: "/import[0]", prefix: "p" },
     }, schemaObj);
 
-    expect(schemaObj.simpleType![0].union!.memberTypes).toBe("p:TypeA xs:string p:TypeB");
+    expect(schemaObj.simpleType[0].union!.memberTypes).toBe("p:TypeA xs:string p:TypeB");
   });
 
   it("should leave QName references unchanged when prefix is NOT renamed", () => {

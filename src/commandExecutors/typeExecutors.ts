@@ -185,7 +185,6 @@ function buildRestriction(base: string, facets?: RestrictionFacets): restriction
  * @param baseType - New base type (optional)
  * @param restrictions - New restriction facets (optional)
  * @param documentation - New documentation text (optional)
- * @throws Error if restrictions are provided but no base type exists
  */
 function updateTypeContents(
   simpleType: { restriction?: restrictionType; annotation?: annotationType },

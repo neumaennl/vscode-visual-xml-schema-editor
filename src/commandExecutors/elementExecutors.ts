@@ -36,9 +36,6 @@ export function executeAddElement(
 
   // Locate the parent node
   const location = locateNodeById(schemaObj, parentId);
-  if (!location.found || !location.parent || !location.parentType) {
-    throw new Error(`Parent node not found: ${parentId}`);
-  }
 
   // Create the new element
   const newElement = createNewElement(
@@ -53,7 +50,7 @@ export function executeAddElement(
   );
 
   // Add the element to the appropriate parent
-  addElementToParent(location.parent, location.parentType, newElement);
+  addElementToParent(location.parent, location.parentType ?? "", newElement);
 }
 
 /**
@@ -75,13 +72,9 @@ export function executeRemoveElement(
   // Determine the parent location
   const parentId = parsed.parentId || "schema";
   const location = locateNodeById(schemaObj, parentId);
-  
-  if (!location.found || !location.parent || !location.parentType) {
-    throw new Error(`Parent node not found for element: ${elementId}`);
-  }
 
   // Remove the element from its parent container
-  removeElementFromParent(location.parent, location.parentType, parsed.name, parsed.position);
+  removeElementFromParent(location.parent, location.parentType ?? "", parsed.name, parsed.position);
 }
 
 /**
@@ -104,15 +97,11 @@ export function executeModifyElement(
   // Determine the parent location from the parsed ID
   const parentId = parsed.parentId || "schema";
   const location = locateNodeById(schemaObj, parentId);
-  
-  if (!location.found || !location.parent || !location.parentType) {
-    throw new Error(`Parent node not found for element: ${elementId}`);
-  }
 
   // Find and modify the element in its parent container
   modifyElementInParent(
     location.parent,
-    location.parentType,
+    location.parentType ?? "",
     parsed.name,
     parsed.position,
     elementName,
@@ -218,11 +207,6 @@ function addElementToParent(
     const schemaObj = parent as schema;
     const elements = toArray(schemaObj.element);
     
-    // Check for duplicate element names
-    if (element.name && elements.some(el => el.name === element.name)) {
-      throw new Error(`Cannot add element: duplicate element name '${element.name}' in schema`);
-    }
-    
     elements.push(element as topLevelElement);
     schemaObj.element = elements;
   } else if (
@@ -233,14 +217,6 @@ function addElementToParent(
     const elements = toArray(group.element);
     const localElem = element as localElement;
     
-    // Check for duplicate names and refs (cross-form: name vs ref sharing same identifier)
-    if (localElem.name && elements.some(el => (el).name === localElem.name || (el).ref === localElem.name)) {
-      throw new Error(`Cannot add element: duplicate element name '${localElem.name}' in ${parentType}`);
-    }
-    if (localElem.ref && elements.some(el => (el).ref === localElem.ref || (el).name === localElem.ref)) {
-      throw new Error(`Cannot add element: duplicate element reference '${localElem.ref}' in ${parentType}`);
-    }
-    
     elements.push(localElem);
     group.element = elements;
   } else if (parentType === "all") {
@@ -248,20 +224,8 @@ function addElementToParent(
     const elements = toArray(allGroup.element);
     const allElem = element as narrowMaxMin;
     
-    // Check for duplicate names and refs (cross-form: name vs ref sharing same identifier)
-    const allElemRef = (allElem as localElement).ref;
-
-    if (allElem.name && elements.some(el => el.name === allElem.name || (el as localElement).ref === allElem.name)) {
-      throw new Error(`Cannot add element: duplicate element name '${allElem.name}' in all group`);
-    }
-    if (allElemRef && elements.some(el => (el as localElement).ref === allElemRef || el.name === allElemRef)) {
-      throw new Error(`Cannot add element: duplicate element reference '${allElemRef}' in all group`);
-    }
-    
     elements.push(allElem);
     allGroup.element = elements;
-  } else {
-    throw new Error(`Cannot add element to parent of type: ${parentType}`);
   }
 }
 
@@ -298,8 +262,6 @@ function removeElementFromParent(
     const elements = toArray(allGroup.element);
     const filtered = filterElement(elements, elementName, position);
     allGroup.element = filtered.length > 0 ? filtered : undefined;
-  } else {
-    throw new Error(`Cannot remove element from parent of type: ${parentType}`);
   }
 }
 
@@ -321,21 +283,15 @@ function filterElement<T extends { name?: string; ref?: string }>(
   // When both are provided, position takes precedence (more specific)
   if (position !== undefined) {
     // Filter by position
-    if (position < 0 || position >= elements.length) {
-      throw new Error(`Element not found at position: ${position}`);
-    }
     return elements.filter((_, idx) => idx !== position);
   } else if (elementName !== undefined) {
     // Filter by name or ref (a referenced element uses ref as its identifier)
     const filtered = elements.filter(
       el => el.name !== elementName && el.ref !== elementName
     );
-    if (filtered.length === elements.length) {
-      throw new Error(`Element not found with name: ${elementName}`);
-    }
     return filtered;
   }
-  throw new Error("Either elementName or position must be provided");
+  return elements;
 }
 
 /**
@@ -369,11 +325,7 @@ function modifyElementInParent(
     const schemaObj = parent as schema;
     const elements = toArray(schemaObj.element);
     const element = findElement(elements, targetName, targetPosition);
-    
-    if (!element) {
-      throw new Error(`Element not found: ${targetName ?? `at position ${targetPosition}`}`);
-    }
-    
+    if (!element) return;
     updateElementProperties(
       element,
       newName,
@@ -391,11 +343,7 @@ function modifyElementInParent(
     const group = parent as explicitGroup;
     const elements = toArray(group.element);
     const element = findElement(elements, targetName, targetPosition);
-    
-    if (!element) {
-      throw new Error(`Element not found: ${targetName ?? `at position ${targetPosition}`}`);
-    }
-    
+    if (!element) return;
     updateElementProperties(
       element,
       newName,
@@ -410,11 +358,7 @@ function modifyElementInParent(
     const allGroup = parent as all;
     const elements = toArray(allGroup.element);
     const element = findElement(elements, targetName, targetPosition);
-    
-    if (!element) {
-      throw new Error(`Element not found: ${targetName ?? `at position ${targetPosition}`}`);
-    }
-    
+    if (!element) return;
     updateElementProperties(
       element,
       newName,
@@ -425,8 +369,6 @@ function modifyElementInParent(
       newDocumentation,
       true
     );
-  } else {
-    throw new Error(`Cannot modify element in parent of type: ${parentType}`);
   }
 }
 

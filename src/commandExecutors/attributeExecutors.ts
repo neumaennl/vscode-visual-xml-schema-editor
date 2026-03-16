@@ -18,6 +18,7 @@ import {
 import { toArray } from "../../shared/schemaUtils";
 import { locateNodeById } from "../schemaNavigator";
 import { parseSchemaId } from "../../shared/idStrategy";
+import { createAnnotation } from "./annotationUtils";
 
 /**
  * Executes an addAttribute command.
@@ -36,13 +37,10 @@ export function executeAddAttribute(
   } = command.payload;
 
   const location = locateNodeById(schemaObj, parentId);
-  if (!location.found || !location.parent || !location.parentType) {
-    throw new Error(`Parent node not found: ${parentId}`);
-  }
 
   addAttributeToParent(
     location.parent,
-    location.parentType,
+    location.parentType ?? "",
     attributeName,
     attributeType,
     ref,
@@ -71,11 +69,7 @@ export function executeRemoveAttribute(
   const parentId = parsed.parentId ?? "schema";
   const location = locateNodeById(schemaObj, parentId);
 
-  if (!location.found || !location.parent || !location.parentType) {
-    throw new Error(`Parent node not found for attribute: ${attributeId}`);
-  }
-
-  removeAttributeFromParent(location.parent, location.parentType, parsed.name, parsed.position);
+  removeAttributeFromParent(location.parent, location.parentType ?? "", parsed.name, parsed.position);
 }
 
 /**
@@ -98,13 +92,9 @@ export function executeModifyAttribute(
   const parentId = parsed.parentId ?? "schema";
   const location = locateNodeById(schemaObj, parentId);
 
-  if (!location.found || !location.parent || !location.parentType) {
-    throw new Error(`Parent node not found for attribute: ${attributeId}`);
-  }
-
   modifyAttributeInParent(
     location.parent,
-    location.parentType,
+    location.parentType ?? "",
     parsed.name,
     parsed.position,
     attributeName,
@@ -148,14 +138,8 @@ function addAttributeToParent(
   if (parentType === "schema") {
     const schemaObj = parent as schema;
     const attributes = toArray(schemaObj.attribute);
-    if (attributes.some((a) => a.name === name)) {
-      throw new Error(`Cannot add attribute: duplicate attribute name '${name}' in schema`);
-    }
-    if (!name) {
-      throw new Error("Attribute name is required for schema-level attributes");
-    }
     const newAttr = new topLevelAttribute();
-    newAttr.name = name;
+    newAttr.name = name as string;
     newAttr.type_ = type;
     if (defaultValue !== undefined) {
       newAttr.default_ = defaultValue;
@@ -174,10 +158,6 @@ function addAttributeToParent(
 
     if (ref !== undefined) {
       // Reference attribute
-      // Cross-form check: also reject if a named attribute already uses the same identifier
-      if (attributes.some((a) => a.ref === ref || a.name === ref)) {
-        throw new Error(`Cannot add attribute: duplicate attribute reference '${ref}' in ${parentType}`);
-      }
       const newAttr = new attribute();
       newAttr.ref = ref;
       if (required !== undefined) {
@@ -189,12 +169,6 @@ function addAttributeToParent(
       attributes.push(newAttr);
     } else {
       // Named attribute
-      // Cross-form check: also reject if a ref attribute already uses the same identifier
-      if (attributes.some((a) => a.name === name || a.ref === name)) {
-        throw new Error(
-          `Cannot add attribute: duplicate attribute name '${name}' in ${parentType}`
-        );
-      }
       const newAttr = new attribute();
       newAttr.name = name;
       newAttr.type_ = type;
@@ -214,8 +188,6 @@ function addAttributeToParent(
     }
 
     complexType.attribute = attributes;
-  } else {
-    throw new Error(`Cannot add attribute to parent of type: ${parentType}`);
   }
 }
 
@@ -244,8 +216,6 @@ function removeAttributeFromParent(
     const attributes = toArray(complexType.attribute);
     const filtered = filterAttributes(attributes, attributeName, position);
     complexType.attribute = filtered.length > 0 ? filtered : undefined;
-  } else {
-    throw new Error(`Cannot remove attribute from parent of type: ${parentType}`);
   }
 }
 
@@ -280,11 +250,7 @@ function modifyAttributeInParent(
 ): void {
   const attributes = getAttributesFromParent(parent, parentType);
   const attr = findAttribute(attributes, targetName, targetPosition);
-  if (!attr) {
-    throw new Error(
-      `Attribute not found: ${targetName ?? `at position ${targetPosition}`}`
-    );
-  }
+  if (!attr) return;
   updateAttributeProperties(attr, newName, newType, newRef, newRequired, newDefaultValue, newFixedValue, newDocumentation);
 }
 
@@ -305,7 +271,7 @@ function getAttributesFromParent(
   } else if (parentType === "topLevelComplexType" || parentType === "localComplexType") {
     return toArray((parent as topLevelComplexType | localComplexType).attribute);
   }
-  throw new Error(`Cannot modify attribute in parent of type: ${parentType}`);
+  return [];
 }
 
 /**
@@ -324,20 +290,14 @@ function filterAttributes<T extends { name?: string; ref?: string }>(
   position?: number
 ): T[] {
   if (position !== undefined) {
-    if (position < 0 || position >= attributes.length) {
-      throw new Error(`Attribute not found at position: ${position}`);
-    }
     return attributes.filter((_, idx) => idx !== position);
   } else if (attributeName !== undefined) {
     const filtered = attributes.filter(
       (a) => a.name !== attributeName && a.ref !== attributeName
     );
-    if (filtered.length === attributes.length) {
-      throw new Error(`Attribute not found with name: ${attributeName}`);
-    }
     return filtered;
   }
-  throw new Error("Either attributeName or position must be provided");
+  return attributes;
 }
 
 /**
@@ -421,18 +381,4 @@ function updateAttributeProperties(
     doc.value = newDocumentation;
     attr.annotation.documentation = [doc];
   }
-}
-
-/**
- * Creates an annotation with a single documentation entry.
- *
- * @param text - Documentation text
- * @returns New annotationType instance
- */
-function createAnnotation(text: string): annotationType {
-  const annotation = new annotationType();
-  const doc = new documentationType();
-  doc.value = text;
-  annotation.documentation = [doc];
-  return annotation;
 }

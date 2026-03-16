@@ -186,21 +186,6 @@ describe("AttributeGroup Executors", () => {
         expect(toArray(extGroup?.attributeGroup)[0].ref).toBe("BaseAttrs");
       });
 
-      it("should throw when parent is not found", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
-
-        const command: AddAttributeGroupCommand = {
-          type: "addAttributeGroup",
-          payload: { ref: "CommonAttrs", parentId: "/complexType:NonExistent" },
-        };
-
-        expect(() => executeAddAttributeGroup(command, schemaObj)).toThrow(
-          "Parent node not found: /complexType:NonExistent"
-        );
-      });
     });
   });
 
@@ -242,21 +227,6 @@ describe("AttributeGroup Executors", () => {
         expect(toArray(schemaObj.attributeGroup)[0].name).toBe("GroupB");
       });
 
-      it("should throw if attribute group does not exist", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
-
-        const command: RemoveAttributeGroupCommand = {
-          type: "removeAttributeGroup",
-          payload: { groupId: "/attributeGroup:NonExistent" },
-        };
-
-        expect(() => executeRemoveAttributeGroup(command, schemaObj)).toThrow(
-          "AttributeGroup not found: NonExistent"
-        );
-      });
     });
 
     describe("reference mode", () => {
@@ -328,22 +298,6 @@ describe("AttributeGroup Executors", () => {
         expect(extGroup?.attributeGroup).toBeUndefined();
       });
 
-      it("should throw when attribute group ref is not found", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:complexType name="PersonType"/>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
-
-        const command: RemoveAttributeGroupCommand = {
-          type: "removeAttributeGroup",
-          payload: { groupId: "/complexType:PersonType/attributeGroupRef:NonExistent[0]" },
-        };
-
-        expect(() => executeRemoveAttributeGroup(command, schemaObj)).toThrow(
-          "AttributeGroupRef not found"
-        );
-      });
     });
   });
 
@@ -408,25 +362,6 @@ describe("AttributeGroup Executors", () => {
         const ag = toArray(schemaObj.attributeGroup)[0];
         expect(ag.name).toBe("UpdatedGroup");
         expect(ag.annotation?.documentation?.[0].value).toBe("Updated docs");
-      });
-
-      it("should throw if attribute group does not exist", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
-
-        const command: ModifyAttributeGroupCommand = {
-          type: "modifyAttributeGroup",
-          payload: {
-            groupId: "/attributeGroup:NonExistent",
-            groupName: "NewName",
-          },
-        };
-
-        expect(() => executeModifyAttributeGroup(command, schemaObj)).toThrow(
-          "AttributeGroup not found: NonExistent"
-        );
       });
 
       it("should leave unchanged properties untouched", () => {
@@ -498,25 +433,6 @@ describe("AttributeGroup Executors", () => {
         expect(agRef.annotation?.documentation?.[0].value).toBe("Ref annotation");
       });
 
-      it("should throw when attribute group ref is not found", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:complexType name="PersonType"/>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
-
-        const command: ModifyAttributeGroupCommand = {
-          type: "modifyAttributeGroup",
-          payload: {
-            groupId: "/complexType:PersonType/attributeGroupRef:NonExistent[0]",
-            ref: "SomeAttrs",
-          },
-        };
-
-        expect(() => executeModifyAttributeGroup(command, schemaObj)).toThrow(
-          "AttributeGroupRef not found"
-        );
-      });
     });
   });
 });

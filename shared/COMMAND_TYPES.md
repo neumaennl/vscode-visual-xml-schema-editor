@@ -164,12 +164,32 @@ Commands for managing attribute groups:
 
 ### 7. Annotation Commands
 
-Commands for managing annotations:
+Commands for managing `xs:annotation` elements.
+
+**ID conventions**
+
+Non-schema components (element, complexType, attribute, group, etc.) allow **at most one** annotation.
+
+| Field | Format | Example |
+|---|---|---|
+| `targetId` | XPath-like path to the annotated component | `/element:person` |
+| `annotationId` | Same as `targetId` | `/element:person` |
+
+The schema root (`xs:schema`) allows **multiple** annotations:
+
+| Field | Format | Example |
+|---|---|---|
+| `targetId` (add) | `"schema"` | `"schema"` |
+| `annotationId` (remove/modify) | `"schema/annotation[N]"` (0-based) | `"schema/annotation[0]"` |
+
+---
 
 - **AddAnnotationCommand**: Add an annotation to a schema component
 
   - Requires: `targetId`
   - Optional: `documentation`, `appInfo`
+  - Fails if the component already has an annotation (use `modifyAnnotation` to update)
+  - For the schema root, always appends a new annotation (multiple are allowed)
 
 - **RemoveAnnotationCommand**: Delete an annotation
 
@@ -177,16 +197,41 @@ Commands for managing annotations:
 
 - **ModifyAnnotationCommand**: Update annotation content
   - Requires: `annotationId`
-  - Optional: `documentation`, `appInfo`
+  - Optional: `documentation` (replaces all `xs:documentation` children), `appInfo`
+  - When only `documentation` is provided, existing `xs:appinfo` children are preserved
 
 ### 8. Documentation Commands
 
-Commands for managing documentation elements:
+Commands for managing `xs:documentation` elements inside an `xs:annotation`.
+
+**ID conventions**
+
+For non-schema components:
+
+| Field | Format | Example |
+|---|---|---|
+| `targetId` (add) | XPath-like path to the annotated component | `/element:person` |
+| `documentationId` (remove/modify) | Component path + `/documentation[N]` (0-based) | `/element:person/documentation[0]` |
+
+For the schema root:
+
+| Field | Format | Example |
+|---|---|---|
+| `targetId` (add) | `"schema"` or `"schema/annotation[N]"` | `"schema/annotation[0]"` |
+| `documentationId` — full form | `"schema/annotation[N]/documentation[M]"` | `"schema/annotation[0]/documentation[0]"` |
+| `documentationId` — shorthand | `"schema/documentation[N]"` | `"schema/documentation[0]"` |
+
+The shorthand `"schema/documentation[N]"` always targets the **first** annotation on the schema root.
+`addDocumentation` with `targetId: "schema"` automatically creates an annotation if none exists.
+
+All indices are **zero-based**.
+
+---
 
 - **AddDocumentationCommand**: Add documentation to a component
 
   - Requires: `targetId`, `content`
-  - Optional: `lang` (language code)
+  - Optional: `lang` (BCP 47 language code, stored in `xml:lang`)
 
 - **RemoveDocumentationCommand**: Delete documentation
 
@@ -195,6 +240,7 @@ Commands for managing documentation elements:
 - **ModifyDocumentationCommand**: Update documentation
   - Requires: `documentationId`
   - Optional: `content`, `lang`
+  - Pass `lang: ""` to remove the `xml:lang` attribute
 
 ### 9. Import Commands
 

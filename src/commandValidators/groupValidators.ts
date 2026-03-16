@@ -214,6 +214,27 @@ function isComplexTypeParent(parentType: string): boolean {
   return parentType === "topLevelComplexType" || parentType === "localComplexType";
 }
 
+/**
+ * Checks whether a groupRef node exists in a sequence or choice compositor parent.
+ * Used by both validateRemoveGroup and validateModifyGroup.
+ */
+function groupRefExistsInSequenceOrChoice(
+  compositor: { group?: Array<{ ref?: string }> },
+  parsed: { name?: string; position?: number }
+): boolean {
+  const refs = toArray(compositor.group);
+  if (parsed.name !== undefined && parsed.position !== undefined) {
+    return refs.some((r, idx) => r.ref === parsed.name && idx === parsed.position);
+  }
+  if (parsed.name !== undefined) {
+    return refs.some(r => r.ref === parsed.name);
+  }
+  if (parsed.position !== undefined) {
+    return parsed.position >= 0 && parsed.position < refs.length;
+  }
+  return false;
+}
+
 /** Returns true if the complexType node already carries one of the four mutually exclusive particles. */
 function complexTypeHasParticle(ct: ComplexTypeWithParticles): boolean {
   return ct.group !== undefined || ct.sequence !== undefined || ct.choice !== undefined || ct.all !== undefined;
@@ -265,6 +286,11 @@ export function validateAddGroup(
     const location = locateNodeById(schemaObj, parentId);
     if (!location.found) {
       return { valid: false, error: `Parent node not found: ${parentId}` };
+    }
+    // Validate that the parent type supports group refs
+    const validGroupRefParents = ["sequence", "choice", "topLevelComplexType", "localComplexType"];
+    if (!validGroupRefParents.includes(location.parentType ?? "")) {
+      return { valid: false, error: `Cannot add group ref to parent type: ${location.parentType}` };
     }
     // When adding a group ref directly onto a complexType, reject if a particle is already set
     if (isComplexTypeParent(location.parentType ?? "") && complexTypeHasParticle(location.parent as ComplexTypeWithParticles)) {
@@ -342,6 +368,13 @@ export function validateRemoveGroup(
         };
       }
     }
+    // For sequence/choice parents, check the group ref exists
+    if (location.parentType === "sequence" || location.parentType === "choice") {
+      const compositor = location.parent as { group?: Array<{ ref?: string }> };
+      if (!groupRefExistsInSequenceOrChoice(compositor, parsed)) {
+        return { valid: false, error: `GroupRef not found: ${command.payload.groupId}` };
+      }
+    }
     return { valid: true };
   }
 
@@ -401,6 +434,13 @@ export function validateModifyGroup(
           valid: false,
           error: `GroupRef name mismatch: expected '${parsed.name}' but found '${ct.group.ref}'`,
         };
+      }
+    }
+    // For sequence/choice parents, check the group ref exists
+    if (location.parentType === "sequence" || location.parentType === "choice") {
+      const compositor = location.parent as { group?: Array<{ ref?: string }> };
+      if (!groupRefExistsInSequenceOrChoice(compositor, parsed)) {
+        return { valid: false, error: `GroupRef not found: ${command.payload.groupId}` };
       }
     }
     if (command.payload.ref !== undefined) {

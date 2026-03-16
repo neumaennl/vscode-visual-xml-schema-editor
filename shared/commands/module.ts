@@ -13,6 +13,15 @@ export interface AddImportPayload {
   namespace: string;
   /** Location of the schema to import */
   schemaLocation: string;
+  /**
+   * Namespace prefix to register on the schema root element
+   * (e.g. "ext" to declare `xmlns:ext="..."`).
+   * A prefix is required to reference types from the imported namespace
+   * (e.g. `type="ext:TypeName"`).
+   * If omitted, a unique prefix is auto-generated (e.g. "ns0", "ns1", …).
+   * Must be a valid XML NCName and unique within the schema when provided.
+   */
+  prefix?: string;
 }
 
 /**
@@ -49,6 +58,12 @@ export interface ModifyImportPayload {
   namespace?: string;
   /** New schema location (optional) */
   schemaLocation?: string;
+  /**
+   * New namespace prefix to register on the schema root element (optional).
+   * Replaces the existing prefix that was registered for this import's namespace.
+   * Must be a valid XML NCName and unique within the schema.
+   */
+  prefix?: string;
 }
 
 /**

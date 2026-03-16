@@ -31,7 +31,7 @@ describe("Import Validators", () => {
     schemaObj = unmarshal(schema, simpleSchemaXml);
   });
 
-  describe("validateAddImport", () => {
+describe("validateAddImport", () => {
     test("should accept addImport with both namespace and schemaLocation", () => {
       const command: AddImportCommand = {
         type: "addImport",
@@ -59,6 +59,33 @@ describe("Import Validators", () => {
       expect(result.error).toBe("Namespace cannot be empty");
     });
 
+    test("should reject addImport with invalid namespace URI", () => {
+      const command: AddImportCommand = {
+        type: "addImport",
+        payload: {
+          namespace: "not-a-uri",
+          schemaLocation: "schema.xsd",
+        },
+      };
+
+      const result = validateAddImport(command, schemaObj);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("valid absolute URI");
+    });
+
+    test("should accept addImport with urn: namespace URI", () => {
+      const command: AddImportCommand = {
+        type: "addImport",
+        payload: {
+          namespace: "urn:example:schema",
+          schemaLocation: "schema.xsd",
+        },
+      };
+
+      const result = validateAddImport(command, schemaObj);
+      expect(result.valid).toBe(true);
+    });
+
     test("should reject addImport with missing schemaLocation", () => {
       const command: AddImportCommand = {
         type: "addImport",
@@ -71,6 +98,74 @@ describe("Import Validators", () => {
       const result = validateAddImport(command, schemaObj);
       expect(result.valid).toBe(false);
       expect(result.error).toBe("Schema location cannot be empty");
+    });
+
+    test("should reject addImport with whitespace in schemaLocation", () => {
+      const command: AddImportCommand = {
+        type: "addImport",
+        payload: {
+          namespace: "http://example.com/schema",
+          schemaLocation: "my schema.xsd",
+        },
+      };
+
+      const result = validateAddImport(command, schemaObj);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("valid path or URI");
+    });
+
+    test("should reject addImport when namespace is already imported", () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:import namespace="http://example.com/existing" schemaLocation="existing.xsd"/>
+</xs:schema>`;
+      const schemaWithImport = unmarshal(schema, xml);
+      const command: AddImportCommand = {
+        type: "addImport",
+        payload: {
+          namespace: "http://example.com/existing",
+          schemaLocation: "another.xsd",
+        },
+      };
+
+      const result = validateAddImport(command, schemaWithImport);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("already exists");
+    });
+
+    test("should reject addImport with an already-used prefix", () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ext="http://example.com/existing">
+  <xs:import namespace="http://example.com/existing" schemaLocation="existing.xsd"/>
+</xs:schema>`;
+      const schemaWithPrefix = unmarshal(schema, xml);
+      const command: AddImportCommand = {
+        type: "addImport",
+        payload: {
+          namespace: "http://example.com/new",
+          schemaLocation: "new.xsd",
+          prefix: "ext",
+        },
+      };
+
+      const result = validateAddImport(command, schemaWithPrefix);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("already in use");
+    });
+
+    test("should reject addImport with an invalid XML prefix", () => {
+      const command: AddImportCommand = {
+        type: "addImport",
+        payload: {
+          namespace: "http://example.com/schema",
+          schemaLocation: "schema.xsd",
+          prefix: "123invalid",
+        },
+      };
+
+      const result = validateAddImport(command, schemaObj);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("not a valid XML name");
     });
   });
 
@@ -101,7 +196,7 @@ describe("Import Validators", () => {
       expect(result.error).toContain("Import not found");
     });
 
-    test("should accept removeImport when import exists", () => {
+    test("should accept removeImport when import exists and is not referenced", () => {
       const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:import namespace="http://example.com/ns1" schemaLocation="schema1.xsd"/>
@@ -114,6 +209,23 @@ describe("Import Validators", () => {
 
       const result = validateRemoveImport(command, schemaWithImport);
       expect(result.valid).toBe(true);
+    });
+
+    test("should reject removeImport when namespace prefix is referenced in an element type", () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ext="http://example.com/ext">
+  <xs:import namespace="http://example.com/ext" schemaLocation="ext.xsd"/>
+  <xs:element name="foo" type="ext:MyType"/>
+</xs:schema>`;
+      const schemaWithRef = unmarshal(schema, xml);
+      const command: RemoveImportCommand = {
+        type: "removeImport",
+        payload: { importId: "/import[0]" },
+      };
+
+      const result = validateRemoveImport(command, schemaWithRef);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("still referenced");
     });
   });
 
@@ -160,6 +272,56 @@ describe("Import Validators", () => {
 
       const result = validateModifyImport(command, schemaWithImport);
       expect(result.valid).toBe(true);
+    });
+
+    test("should reject modifyImport with invalid namespace URI", () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:import namespace="http://example.com/ns1" schemaLocation="schema1.xsd"/>
+</xs:schema>`;
+      const schemaWithImport = unmarshal(schema, xml);
+      const command: ModifyImportCommand = {
+        type: "modifyImport",
+        payload: { importId: "/import[0]", namespace: "not-a-uri" },
+      };
+
+      const result = validateModifyImport(command, schemaWithImport);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("valid absolute URI");
+    });
+
+    test("should reject modifyImport when changing to a duplicate namespace", () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:import namespace="http://example.com/ns1" schemaLocation="schema1.xsd"/>
+  <xs:import namespace="http://example.com/ns2" schemaLocation="schema2.xsd"/>
+</xs:schema>`;
+      const schemaWithImports = unmarshal(schema, xml);
+      const command: ModifyImportCommand = {
+        type: "modifyImport",
+        payload: { importId: "/import[0]", namespace: "http://example.com/ns2" },
+      };
+
+      const result = validateModifyImport(command, schemaWithImports);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("already exists");
+    });
+
+    test("should reject modifyImport with an already-used prefix", () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ext="http://example.com/ns1" xmlns:other="http://example.com/ns2">
+  <xs:import namespace="http://example.com/ns1" schemaLocation="schema1.xsd"/>
+  <xs:import namespace="http://example.com/ns2" schemaLocation="schema2.xsd"/>
+</xs:schema>`;
+      const schemaWithImports = unmarshal(schema, xml);
+      const command: ModifyImportCommand = {
+        type: "modifyImport",
+        payload: { importId: "/import[0]", prefix: "other" },
+      };
+
+      const result = validateModifyImport(command, schemaWithImports);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("already in use");
     });
   });
 });

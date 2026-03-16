@@ -11,7 +11,30 @@ import {
   RemoveIncludeCommand,
   ModifyIncludeCommand,
 } from "../../shared/types";
+import { toArray } from "../../shared/schemaUtils";
+import { parseSchemaId } from "../../shared/idStrategy";
 import { ValidationResult } from "./validationUtils";
+
+// ===== Helpers =====
+
+/**
+ * Parses an importId and validates it refers to an existing import entry.
+ * Returns a ValidationResult with an error if invalid, or undefined if valid.
+ */
+function validateImportId(importId: string, schemaObj: schema): ValidationResult | undefined {
+  let parsed;
+  try {
+    parsed = parseSchemaId(importId);
+  } catch {
+    return { valid: false, error: `Invalid import ID: ${importId}` };
+  }
+  const index = parsed.position;
+  const imports = toArray(schemaObj.import_);
+  if (index === undefined || index < 0 || index >= imports.length) {
+    return { valid: false, error: `Import not found: ${importId}` };
+  }
+  return undefined;
+}
 
 // ===== Import Command Validation =====
 
@@ -25,32 +48,27 @@ export function validateAddImport(
   if (!command.payload.schemaLocation.trim()) {
     return { valid: false, error: "Schema location cannot be empty" };
   }
-  // TODO Phase 2: Validate namespace URI format
-  // TODO Phase 2: Check if import already exists
-  // TODO Phase 2: Validate schemaLocation is a valid path/URI
   return { valid: true };
 }
 
 export function validateRemoveImport(
   command: RemoveImportCommand,
-  _schemaObj: schema
+  schemaObj: schema
 ): ValidationResult {
   if (!command.payload.importId.trim()) {
     return { valid: false, error: "Import ID cannot be empty" };
   }
-  // TODO Phase 2: Validate that importId exists in schema
-  return { valid: true };
+  return validateImportId(command.payload.importId, schemaObj) ?? { valid: true };
 }
 
 export function validateModifyImport(
   command: ModifyImportCommand,
-  _schemaObj: schema
+  schemaObj: schema
 ): ValidationResult {
   if (!command.payload.importId.trim()) {
     return { valid: false, error: "Import ID cannot be empty" };
   }
-  // TODO Phase 2: Validate that importId exists in schema
-  return { valid: true };
+  return validateImportId(command.payload.importId, schemaObj) ?? { valid: true };
 }
 
 // ===== Include Command Validation =====

@@ -87,6 +87,34 @@ describe("Import Validators", () => {
       expect(result.valid).toBe(false);
       expect(result.error).toBe("Import ID cannot be empty");
     });
+
+    test("should reject removeImport when import does not exist", () => {
+      const command: RemoveImportCommand = {
+        type: "removeImport",
+        payload: {
+          importId: "/import[0]",
+        },
+      };
+
+      const result = validateRemoveImport(command, schemaObj);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("Import not found");
+    });
+
+    test("should accept removeImport when import exists", () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:import namespace="http://example.com/ns1" schemaLocation="schema1.xsd"/>
+</xs:schema>`;
+      const schemaWithImport = unmarshal(schema, xml);
+      const command: RemoveImportCommand = {
+        type: "removeImport",
+        payload: { importId: "/import[0]" },
+      };
+
+      const result = validateRemoveImport(command, schemaWithImport);
+      expect(result.valid).toBe(true);
+    });
   });
 
   describe("validateModifyImport", () => {
@@ -101,6 +129,37 @@ describe("Import Validators", () => {
       const result = validateModifyImport(command, schemaObj);
       expect(result.valid).toBe(false);
       expect(result.error).toBe("Import ID cannot be empty");
+    });
+
+    test("should reject modifyImport when import does not exist", () => {
+      const command: ModifyImportCommand = {
+        type: "modifyImport",
+        payload: {
+          importId: "/import[0]",
+        },
+      };
+
+      const result = validateModifyImport(command, schemaObj);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("Import not found");
+    });
+
+    test("should accept modifyImport when import exists", () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:import namespace="http://example.com/ns1" schemaLocation="schema1.xsd"/>
+</xs:schema>`;
+      const schemaWithImport = unmarshal(schema, xml);
+      const command: ModifyImportCommand = {
+        type: "modifyImport",
+        payload: {
+          importId: "/import[0]",
+          namespace: "http://example.com/new-ns",
+        },
+      };
+
+      const result = validateModifyImport(command, schemaWithImport);
+      expect(result.valid).toBe(true);
     });
   });
 });

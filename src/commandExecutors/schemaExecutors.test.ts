@@ -16,6 +16,14 @@ import {
   AddImportCommand,
   RemoveImportCommand,
   ModifyImportCommand,
+  topLevelComplexType,
+  topLevelSimpleType,
+  restrictionType,
+  unionType,
+  explicitGroup,
+  localElement,
+  complexContentType,
+  extensionType,
 } from "../../shared/types";
 import {
   executeAddImport,
@@ -27,6 +35,20 @@ import { toArray } from "../../shared/schemaUtils";
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+/** Helper: schema with one import and the given prefix already registered. */
+function schemaWithPrefixedImport(namespace: string, schemaLocation: string, prefix: string): schema {
+  const schemaObj = unmarshal(
+    schema,
+    `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"></xs:schema>`
+  );
+  executeAddImport({
+    type: "addImport",
+    payload: { namespace, schemaLocation, prefix },
+  }, schemaObj);
+  return schemaObj;
+}
 
 function emptySchema(): schema {
   return unmarshal(
@@ -394,5 +416,126 @@ describe("executeModifyImport", () => {
 
     expect(schemaObj._namespacePrefixes?.["oldpfx"]).toBeUndefined();
     expect(schemaObj._namespacePrefixes?.["newpfx"]).toBe("http://example.com/ns");
+  });
+
+  it("should rewrite element type_ references when prefix is renamed", () => {
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ext="http://example.com/ext">
+  <xs:import namespace="http://example.com/ext" schemaLocation="ext.xsd"/>
+  <xs:element name="foo" type="ext:FooType"/>
+  <xs:element name="bar" type="xs:string"/>
+</xs:schema>`;
+    const schemaObj = unmarshal(schema, xml);
+
+    executeModifyImport({
+      type: "modifyImport",
+      payload: { importId: "/import[0]", prefix: "newext" },
+    }, schemaObj);
+
+    const elems = toArray(schemaObj.element);
+    expect(elems[0].type_).toBe("newext:FooType");
+    // unrelated element (xs: prefix) must be unchanged
+    expect(elems[1].type_).toBe("xs:string");
+  });
+
+  it("should rewrite element @ref references when prefix is renamed", () => {
+    // Build schema programmatically to avoid XML parser namespace prefix issues
+    const schemaObj = schemaWithPrefixedImport("http://example.com/ext", "ext.xsd", "ext");
+
+    // Add a complexType with a sequence containing a ref element
+    const ct = new topLevelComplexType();
+    ct.name = "MyType";
+    const seq = new explicitGroup();
+    const el = new localElement();
+    el.ref = "ext:ExternalElement";
+    seq.element = [el];
+    ct.sequence = seq;
+    schemaObj.complexType = [ct];
+
+    executeModifyImport({
+      type: "modifyImport",
+      payload: { importId: "/import[0]", prefix: "ex" },
+    }, schemaObj);
+
+    expect(schemaObj.complexType![0].sequence!.element![0].ref).toBe("ex:ExternalElement");
+  });
+
+  it("should rewrite complexContent extension @base when prefix is renamed", () => {
+    const schemaObj = schemaWithPrefixedImport("http://example.com/ext", "ext.xsd", "ext");
+
+    // Build complexType with complexContent extension referencing an external base
+    const ct = new topLevelComplexType();
+    ct.name = "Child";
+    const cc = new complexContentType();
+    const ext = new extensionType();
+    ext.base = "ext:BaseType";
+    cc.extension = ext;
+    ct.complexContent = cc;
+    schemaObj.complexType = [ct];
+
+    executeModifyImport({
+      type: "modifyImport",
+      payload: { importId: "/import[0]", prefix: "external" },
+    }, schemaObj);
+
+    expect(schemaObj.complexType![0].complexContent!.extension!.base).toBe("external:BaseType");
+  });
+
+  it("should rewrite simpleType restriction @base when prefix is renamed", () => {
+    const schemaObj = schemaWithPrefixedImport("http://example.com/ext", "ext.xsd", "ext");
+
+    // Build simpleType with a restriction referencing an external base
+    const st = new topLevelSimpleType();
+    st.name = "MyST";
+    const restr = new restrictionType();
+    restr.base = "ext:ExternalSimpleType";
+    st.restriction = restr;
+    schemaObj.simpleType = [st];
+
+    executeModifyImport({
+      type: "modifyImport",
+      payload: { importId: "/import[0]", prefix: "p" },
+    }, schemaObj);
+
+    expect(schemaObj.simpleType![0].restriction!.base).toBe("p:ExternalSimpleType");
+  });
+
+  it("should rewrite union memberTypes when prefix is renamed", () => {
+    const schemaObj = schemaWithPrefixedImport("http://example.com/ext", "ext.xsd", "ext");
+
+    // Build simpleType with union memberTypes referencing external types
+    const st = new topLevelSimpleType();
+    st.name = "UnionType";
+    const union = new unionType();
+    union.memberTypes = "ext:TypeA xs:string ext:TypeB";
+    st.union = union;
+    schemaObj.simpleType = [st];
+
+    executeModifyImport({
+      type: "modifyImport",
+      payload: { importId: "/import[0]", prefix: "p" },
+    }, schemaObj);
+
+    expect(schemaObj.simpleType![0].union!.memberTypes).toBe("p:TypeA xs:string p:TypeB");
+  });
+
+  it("should leave QName references unchanged when prefix is NOT renamed", () => {
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ext="http://example.com/old-ns">
+  <xs:import namespace="http://example.com/old-ns" schemaLocation="ext.xsd"/>
+  <xs:element name="foo" type="ext:FooType"/>
+</xs:schema>`;
+    const schemaObj = unmarshal(schema, xml);
+
+    // Change namespace URI but not the prefix
+    executeModifyImport({
+      type: "modifyImport",
+      payload: { importId: "/import[0]", namespace: "http://example.com/new-ns" },
+    }, schemaObj);
+
+    // type_ must still use "ext:" prefix
+    expect(toArray(schemaObj.element)[0].type_).toBe("ext:FooType");
+    // but the prefix now points to the new namespace
+    expect(schemaObj._namespacePrefixes?.["ext"]).toBe("http://example.com/new-ns");
   });
 });

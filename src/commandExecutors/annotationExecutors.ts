@@ -137,14 +137,15 @@ function applyAnnotationModifications(
  * the schema's annotation array. The schema may hold multiple annotations so
  * no duplicate check is performed.
  *
- * For all other annotatable components: creates a new xs:annotation element.
- * Fails if the component already has an annotation — use modifyAnnotation
- * instead.
+ * For all other annotatable components: creates a new xs:annotation element
+ * and assigns it to the component, replacing any existing annotation.
+ *
+ * This executor assumes that commands have been pre-validated. It does not
+ * perform additional runtime checks for target existence, annotatability, or
+ * duplicate annotations.
  *
  * @param command - The addAnnotation command to execute
  * @param schemaObj - The schema object to modify
- * @throws Error if the target node is not found, does not support annotations,
- *   or (for non-schema nodes) already has an annotation
  */
 export function executeAddAnnotation(
   command: AddAnnotationCommand,

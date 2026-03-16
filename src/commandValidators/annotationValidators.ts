@@ -100,6 +100,13 @@ export function validateRemoveAnnotation(
     return { valid: false, error: "Annotation ID cannot be empty" };
   }
 
+  if (isSchemaRoot(command.payload.annotationId)) {
+    return {
+      valid: false,
+      error: `Use "schema/annotation[N]" to remove a specific schema-root annotation: ${command.payload.annotationId}`,
+    };
+  }
+
   const schemaAnnotIdx = parseSchemaAnnotationId(command.payload.annotationId);
   if (schemaAnnotIdx !== null) {
     const annots = toArray(schemaObj.annotation);
@@ -133,6 +140,13 @@ export function validateModifyAnnotation(
 ): ValidationResult {
   if (!command.payload.annotationId.trim()) {
     return { valid: false, error: "Annotation ID cannot be empty" };
+  }
+
+  if (isSchemaRoot(command.payload.annotationId)) {
+    return {
+      valid: false,
+      error: `Use "schema/annotation[N]" to modify a specific schema-root annotation: ${command.payload.annotationId}`,
+    };
   }
 
   const schemaAnnotIdx = parseSchemaAnnotationId(command.payload.annotationId);

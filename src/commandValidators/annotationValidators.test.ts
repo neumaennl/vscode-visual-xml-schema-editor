@@ -432,6 +432,30 @@ describe("Schema-root Annotation Validators", () => {
       expect(result.valid).toBe(false);
       expect(result.error).toContain("out of bounds");
     });
+
+    test("rejects bare schema-root ID 'schema' (requires schema/annotation[N])", () => {
+      const schemaObj = unmarshal(schema, schemaWithAnnotationXml);
+      const command: RemoveAnnotationCommand = {
+        type: "removeAnnotation",
+        payload: { annotationId: "schema" },
+      };
+
+      const result = validateRemoveAnnotation(command, schemaObj);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("schema/annotation[N]");
+    });
+
+    test("rejects bare schema-root ID '/schema' (requires schema/annotation[N])", () => {
+      const schemaObj = unmarshal(schema, schemaWithAnnotationXml);
+      const command: RemoveAnnotationCommand = {
+        type: "removeAnnotation",
+        payload: { annotationId: "/schema" },
+      };
+
+      const result = validateRemoveAnnotation(command, schemaObj);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("schema/annotation[N]");
+    });
   });
 
   describe("validateModifyAnnotation — schema root", () => {
@@ -456,6 +480,30 @@ describe("Schema-root Annotation Validators", () => {
       const result = validateModifyAnnotation(command, schemaObj);
       expect(result.valid).toBe(false);
       expect(result.error).toContain("out of bounds");
+    });
+
+    test("rejects bare schema-root ID 'schema' (requires schema/annotation[N])", () => {
+      const schemaObj = unmarshal(schema, schemaWithAnnotationXml);
+      const command: ModifyAnnotationCommand = {
+        type: "modifyAnnotation",
+        payload: { annotationId: "schema", documentation: "Updated." },
+      };
+
+      const result = validateModifyAnnotation(command, schemaObj);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("schema/annotation[N]");
+    });
+
+    test("rejects bare schema-root ID '/schema' (requires schema/annotation[N])", () => {
+      const schemaObj = unmarshal(schema, schemaWithAnnotationXml);
+      const command: ModifyAnnotationCommand = {
+        type: "modifyAnnotation",
+        payload: { annotationId: "/schema", documentation: "Updated." },
+      };
+
+      const result = validateModifyAnnotation(command, schemaObj);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("schema/annotation[N]");
     });
   });
 

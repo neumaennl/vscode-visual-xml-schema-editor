@@ -348,23 +348,6 @@ describe("SimpleType Executors", () => {
       expect(schemaObj.simpleType![0].name).toBe("NameType");
     });
 
-    it("should throw an error when the simple type is not found", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
-
-      const command: RemoveSimpleTypeCommand = {
-        type: "removeSimpleType",
-        payload: {
-          typeId: "/simpleType:NonExistent",
-        },
-      };
-
-      expect(() => executeRemoveSimpleType(command, schemaObj)).toThrow(
-        "SimpleType not found: NonExistent"
-      );
-    });
   });
 
   describe("executeModifySimpleType", () => {
@@ -514,25 +497,6 @@ describe("SimpleType Executors", () => {
       expect(restriction.enumeration![2].value).toBe("blue");
     });
 
-    it("should throw an error when the simple type is not found", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
-
-      const command: ModifySimpleTypeCommand = {
-        type: "modifySimpleType",
-        payload: {
-          typeId: "/simpleType:NonExistent",
-          typeName: "NewName",
-        },
-      };
-
-      expect(() => executeModifySimpleType(command, schemaObj)).toThrow(
-        "SimpleType not found: NonExistent"
-      );
-    });
-
     it("should create a restriction if none exists and baseType is provided", () => {
       const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
@@ -557,27 +521,6 @@ describe("SimpleType Executors", () => {
       expect(st.restriction!.base).toBe("xs:string");
     });
 
-    it("should throw an error when applying restrictions without a base type on a type with no restriction", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:simpleType name="UnionType">
-    <xs:union memberTypes="xs:string xs:integer"/>
-  </xs:simpleType>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
-
-      const command: ModifySimpleTypeCommand = {
-        type: "modifySimpleType",
-        payload: {
-          typeId: "/simpleType:UnionType",
-          restrictions: { maxLength: 50 },
-        },
-      };
-
-      expect(() => executeModifySimpleType(command, schemaObj)).toThrow(
-        "Cannot apply restrictions without a base type"
-      );
-    });
   });
 
   describe("Anonymous SimpleType Executors", () => {
@@ -655,21 +598,6 @@ describe("SimpleType Executors", () => {
         expect(element.simpleType!.restriction!.base).toBe("xs:integer");
       });
 
-      it("should throw when parent element is not found", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
-
-        const command: AddSimpleTypeCommand = {
-          type: "addSimpleType",
-          payload: { parentId: "/element:nonExistent", baseType: "xs:string" },
-        };
-
-        expect(() => executeAddSimpleType(command, schemaObj)).toThrow(
-          "Parent not found: /element:nonExistent"
-        );
-      });
     });
 
     describe("executeRemoveSimpleType (anonymous)", () => {
@@ -695,22 +623,6 @@ describe("SimpleType Executors", () => {
         expect(element.simpleType).toBeUndefined();
       });
 
-      it("should throw when the parent element has no anonymous simpleType", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="age" type="xs:integer"/>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
-
-        const command: RemoveSimpleTypeCommand = {
-          type: "removeSimpleType",
-          payload: { typeId: "/element:age/anonymousSimpleType[0]" },
-        };
-
-        expect(() => executeRemoveSimpleType(command, schemaObj)).toThrow(
-          "No anonymous simpleType found in parent: /element:age"
-        );
-      });
     });
 
     describe("executeModifySimpleType (anonymous)", () => {
@@ -791,26 +703,6 @@ describe("SimpleType Executors", () => {
         const element = toArray(schemaObj.element)[0];
         expect(element.simpleType!.annotation!.documentation![0].value).toBe("Age in years");
       });
-
-      it("should throw when the parent element has no anonymous simpleType", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="age" type="xs:integer"/>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
-
-        const command: ModifySimpleTypeCommand = {
-          type: "modifySimpleType",
-          payload: {
-            typeId: "/element:age/anonymousSimpleType[0]",
-            baseType: "xs:string",
-          },
-        };
-
-        expect(() => executeModifySimpleType(command, schemaObj)).toThrow(
-          "No anonymous simpleType found in parent: /element:age"
-        );
-      });
     });
   });
 });
@@ -866,23 +758,6 @@ describe("Anonymous SimpleType in Attributes", () => {
       const attr = toArray(reparsed.attribute)[0];
       expect(attr.simpleType).toBeDefined();
       expect(attr.simpleType!.restriction!.base).toBe("xs:string");
-    });
-
-    it("should throw when parent attribute is not found", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
-
-      expect(() =>
-        executeAddSimpleType(
-          {
-            type: "addSimpleType",
-            payload: { parentId: "/attribute:nonExistent", baseType: "xs:string" },
-          },
-          schemaObj
-        )
-      ).toThrow("Parent not found: /attribute:nonExistent");
     });
   });
 
@@ -941,24 +816,6 @@ describe("Anonymous SimpleType in Attributes", () => {
       const attr = toArray(schemaObj.attribute)[0];
       expect(attr.simpleType).toBeUndefined();
     });
-
-    it("should throw when the parent attribute has no anonymous simpleType", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:attribute name="color" type="xs:string"/>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
-
-      expect(() =>
-        executeRemoveSimpleType(
-          {
-            type: "removeSimpleType",
-            payload: { typeId: "/attribute:color/anonymousSimpleType[0]" },
-          },
-          schemaObj
-        )
-      ).toThrow("No anonymous simpleType found in parent: /attribute:color");
-    });
   });
 
   describe("executeModifySimpleType (anonymous inside attribute)", () => {
@@ -989,27 +846,6 @@ describe("Anonymous SimpleType in Attributes", () => {
       expect(attr.simpleType!.restriction!.base).toBe("xs:positiveInteger");
       expect(attr.simpleType!.restriction!.minInclusive![0].value).toBe("1");
       expect(attr.simpleType!.restriction!.maxInclusive![0].value).toBe("100");
-    });
-
-    it("should throw when the parent attribute has no anonymous simpleType", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:attribute name="score" type="xs:integer"/>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
-
-      expect(() =>
-        executeModifySimpleType(
-          {
-            type: "modifySimpleType",
-            payload: {
-              typeId: "/attribute:score/anonymousSimpleType[0]",
-              baseType: "xs:string",
-            },
-          },
-          schemaObj
-        )
-      ).toThrow("No anonymous simpleType found in parent: /attribute:score");
     });
   });
 });

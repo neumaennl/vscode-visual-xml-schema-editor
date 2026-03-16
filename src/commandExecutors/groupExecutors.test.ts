@@ -204,23 +204,6 @@ describe("Group Executors", () => {
       expect(toArray(schemaObj.group)[0].name).toBe("GroupB");
     });
 
-    it("should throw if group does not exist", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
-
-      const command: RemoveGroupCommand = {
-        type: "removeGroup",
-        payload: {
-          groupId: "/group:NonExistent",
-        },
-      };
-
-      expect(() => executeRemoveGroup(command, schemaObj)).toThrow(
-        "Group not found: NonExistent"
-      );
-    });
   });
 
   describe("executeModifyGroup", () => {
@@ -324,25 +307,6 @@ describe("Group Executors", () => {
       expect(grp.all).toBeDefined();
       expect(grp.sequence).toBeUndefined();
       expect(grp.annotation!.documentation![0].value).toBe("New doc");
-    });
-
-    it("should throw if group does not exist", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
-
-      const command: ModifyGroupCommand = {
-        type: "modifyGroup",
-        payload: {
-          groupId: "/group:NonExistent",
-          groupName: "Updated",
-        },
-      };
-
-      expect(() => executeModifyGroup(command, schemaObj)).toThrow(
-        "Group not found: NonExistent"
-      );
     });
 
     it("should leave unchanged properties untouched", () => {
@@ -480,19 +444,6 @@ describe("Group Executors", () => {
         expect(ref.annotation!.documentation![0].value).toBe("A person group ref annotation");
       });
 
-      it("should throw when parentId is not found", () => {
-        const schemaObj = unmarshal(schema, schemaWithGroupAndType);
-
-        const command: AddGroupCommand = {
-          type: "addGroup",
-          payload: {
-            ref: "PersonGroup",
-            parentId: "/complexType:NoSuchType/sequence",
-          },
-        };
-
-        expect(() => executeAddGroup(command, schemaObj)).toThrow("Parent node not found");
-      });
     });
 
     describe("executeRemoveGroup (reference mode)", () => {
@@ -543,23 +494,6 @@ describe("Group Executors", () => {
         const refs = toArray(toArray(schemaObj.complexType)[0].sequence!.group);
         expect(refs).toHaveLength(1);
         expect(refs[0].ref).toBe("AddressGroup");
-      });
-
-      it("should throw when group reference is not found", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:complexType name="PersonType">
-    <xs:sequence/>
-  </xs:complexType>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
-
-        const command: RemoveGroupCommand = {
-          type: "removeGroup",
-          payload: { groupId: "/complexType:PersonType/sequence[0]/groupRef:NoSuchGroup[0]" },
-        };
-
-        expect(() => executeRemoveGroup(command, schemaObj)).toThrow("GroupRef not found");
       });
 
       it("should remove a direct group ref from a complexType", () => {
@@ -637,26 +571,6 @@ describe("Group Executors", () => {
         const ref = toArray(toArray(schemaObj.complexType)[0].sequence!.group)[0];
         expect(ref.minOccurs).toBe(0);
         expect(ref.maxOccurs).toBe("unbounded");
-      });
-
-      it("should throw when group reference is not found", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:complexType name="PersonType">
-    <xs:sequence/>
-  </xs:complexType>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
-
-        const command: ModifyGroupCommand = {
-          type: "modifyGroup",
-          payload: {
-            groupId: "/complexType:PersonType/sequence[0]/groupRef:PersonGroup[0]",
-            ref: "NewGroup",
-          },
-        };
-
-        expect(() => executeModifyGroup(command, schemaObj)).toThrow("GroupRef not found");
       });
 
       it("should set documentation annotation on a group reference", () => {

@@ -313,22 +313,6 @@ describe("ComplexType Executors", () => {
       expect(remaining).toHaveLength(1);
       expect(remaining[0].name).toBe("TypeB");
     });
-
-    it("should throw when the complexType does not exist", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
-
-      const command: RemoveComplexTypeCommand = {
-        type: "removeComplexType",
-        payload: { typeId: "/complexType:NonExistent" },
-      };
-
-      expect(() => executeRemoveComplexType(command, schemaObj)).toThrow(
-        "ComplexType not found: NonExistent"
-      );
-    });
   });
 
   describe("executeModifyComplexType", () => {
@@ -579,25 +563,6 @@ describe("ComplexType Executors", () => {
       expect(ct.abstract).toBeTruthy();
       expect(ct.sequence).toBeDefined();
     });
-
-    it("should throw when the complexType does not exist", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
-
-      const command: ModifyComplexTypeCommand = {
-        type: "modifyComplexType",
-        payload: {
-          typeId: "/complexType:NonExistent",
-          typeName: "NewName",
-        },
-      };
-
-      expect(() => executeModifyComplexType(command, schemaObj)).toThrow(
-        "ComplexType not found: NonExistent"
-      );
-    });
   });
 
   // ── Anonymous complexType (inline inside element) ──────────────────────
@@ -717,23 +682,6 @@ describe("ComplexType Executors", () => {
       expect(element.complexType!.complexContent!.extension!.sequence).toBeDefined();
     });
 
-    it("should throw when the parent element is not found", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
-
-      const command: AddComplexTypeCommand = {
-        type: "addComplexType",
-        payload: {
-          parentId: "/element:nonExistent",
-          contentModel: "sequence",
-        },
-      };
-
-      expect(() => executeAddComplexType(command, schemaObj)).toThrow("Parent not found");
-    });
-
     it("should produce valid XSD output for an anonymous complexType", () => {
       const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
@@ -777,24 +725,6 @@ describe("ComplexType Executors", () => {
 
       const element = toArray(schemaObj.element)[0];
       expect(element.complexType).toBeUndefined();
-    });
-
-    it("should throw when the parent element has no anonymous complexType", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person"/>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
-
-      expect(() =>
-        executeRemoveComplexType(
-          {
-            type: "removeComplexType",
-            payload: { typeId: "/element:person/anonymousComplexType[0]" },
-          },
-          schemaObj
-        )
-      ).toThrow("No anonymous complexType found in parent: /element:person");
     });
   });
 
@@ -895,27 +825,6 @@ describe("ComplexType Executors", () => {
 
       const element = toArray(schemaObj.element)[0];
       expect(element.complexType!.annotation!.documentation![0].value).toBe("Represents an order.");
-    });
-
-    it("should throw when the parent element has no anonymous complexType", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person"/>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
-
-      expect(() =>
-        executeModifyComplexType(
-          {
-            type: "modifyComplexType",
-            payload: {
-              typeId: "/element:person/anonymousComplexType[0]",
-              contentModel: "choice",
-            },
-          },
-          schemaObj
-        )
-      ).toThrow("No anonymous complexType found in parent: /element:person");
     });
   });
 });

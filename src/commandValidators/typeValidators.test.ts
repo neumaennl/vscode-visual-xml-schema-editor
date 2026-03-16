@@ -146,7 +146,7 @@ describe("SimpleType Validators", () => {
         },
       };
 
-      const result = validateRemoveSimpleType(command, emptySchemaObj);
+      const result = validateRemoveSimpleType(command, schemaWithAgeType);
       expect(result.valid).toBe(true);
     });
   });

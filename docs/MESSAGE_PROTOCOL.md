@@ -421,6 +421,48 @@ const parsed = parseSchemaId("/element:person/element:address[0]");
 // }
 ```
 
+### Schema Root
+
+The schema root is identified by three equivalent forms:
+
+| Form | Meaning |
+|---|---|
+| `undefined` (no ID) | Defaults to schema root |
+| `"schema"` | Short-form schema root |
+| `"/schema"` | Slash-prefixed variant |
+
+These are tested by the `isSchemaRoot()` helper in `shared/schemaUtils.ts` and are treated identically by all validators and executors.
+
+### Annotation and Documentation IDs
+
+Annotation and documentation commands use the following special composite IDs.
+
+#### Non-schema components (element, complexType, attribute, group, attributeGroup, simpleType)
+
+Each annotatable component may have **at most one** `xs:annotation` child.
+
+| Field | Format | Example |
+|---|---|---|
+| `targetId` (for `addAnnotation`/`addDocumentation`) | XPath-like path to the annotated component | `/element:person` |
+| `annotationId` (for `remove`/`modifyAnnotation`) | Same as `targetId` | `/element:person` |
+| `documentationId` (for documentation commands) | Component path + `/documentation[N]` | `/element:person/documentation[0]` |
+
+#### Schema root (`xs:schema`)
+
+The schema root may have **multiple** `xs:annotation` children.
+
+| Field | Format | Example |
+|---|---|---|
+| `targetId` (for `addAnnotation`) | `"schema"` | `"schema"` |
+| `targetId` (for `addDocumentation`) | `"schema"` or `"schema/annotation[N]"` | `"schema/annotation[0]"` |
+| `annotationId` (for `remove`/`modifyAnnotation`) | `"schema/annotation[N]"` | `"schema/annotation[0]"` |
+| `documentationId` (full form) | `"schema/annotation[N]/documentation[M]"` | `"schema/annotation[0]/documentation[0]"` |
+| `documentationId` (shorthand) | `"schema/documentation[N]"` | `"schema/documentation[0]"` |
+
+The shorthand `"schema/documentation[N]"` targets the first annotation on the schema root. If no annotation exists, `addDocumentation` with `targetId: "schema"` creates one automatically.
+
+All indices are **zero-based**.
+
 ### Cross-Boundary Mapping
 
 The ID strategy enables bidirectional mapping:

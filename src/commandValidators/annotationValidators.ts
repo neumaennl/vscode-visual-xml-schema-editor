@@ -29,7 +29,7 @@ import {
   parseDocumentationId,
   parseSchemaAnnotationId,
   parseSchemaDocumentationId,
-} from "../commandExecutors/annotationExecutors";
+} from "../commandUtils";
 
 // ===== Internal helpers =====
 

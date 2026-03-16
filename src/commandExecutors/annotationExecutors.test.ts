@@ -32,10 +32,12 @@ import {
   executeAddDocumentation,
   executeRemoveDocumentation,
   executeModifyDocumentation,
+} from "./annotationExecutors";
+import {
   parseDocumentationId,
   parseSchemaAnnotationId,
   parseSchemaDocumentationId,
-} from "./annotationExecutors";
+} from "../commandUtils";
 
 // ─── Shared XML fixtures ────────────────────────────────────────────────────
 
@@ -228,7 +230,22 @@ describe("executeModifyAnnotation", () => {
     expect(toArray(elem.annotation?.documentation)[0].value).toBe("Updated.");
   });
 
-  it("adds a documentation child when annotation has none, preserving appinfo", () => {
+  it("replaces all documentation children with a single new element", () => {
+    const schemaObj = unmarshal(schema, twoDocumentationXml);
+    const command: ModifyAnnotationCommand = {
+      type: "modifyAnnotation",
+      payload: { annotationId: "/element:person", documentation: "Replaced." },
+    };
+
+    executeModifyAnnotation(command, schemaObj);
+
+    const elem = toArray(schemaObj.element)[0];
+    const docs = toArray(elem.annotation?.documentation);
+    expect(docs).toHaveLength(1);
+    expect(docs[0].value).toBe("Replaced.");
+  });
+
+  it("creates a documentation child when annotation has none, preserving appinfo", () => {
     // Start with an annotation that only has appinfo
     const onlyAppinfoXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">

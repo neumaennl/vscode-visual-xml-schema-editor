@@ -32,6 +32,13 @@ import {
 } from "../../shared/types";
 import { toArray, isSchemaRoot } from "../../shared/schemaUtils";
 import { locateNodeById } from "../schemaNavigator";
+import {
+  parseDocumentationId,
+  parseSchemaAnnotationId,
+  parseSchemaDocumentationId,
+} from "../commandUtils";
+
+export { parseDocumentationId, parseSchemaAnnotationId, parseSchemaDocumentationId };
 
 // ===== Structural types =====
 
@@ -41,55 +48,6 @@ interface AnnotatableNode {
 }
 
 // ===== Helper functions =====
-
-
-/**
- * Parses a schema-annotation ID of the form "schema/annotation[N]".
- * @returns The 0-based annotation index, or null if the format does not match.
- */
-export function parseSchemaAnnotationId(id: string): number | null {
-  const match = id.match(/^(?:\/?)schema\/annotation\[(\d+)\]$/);
-  return match ? parseInt(match[1], 10) : null;
-}
-
-/**
- * Parses a schema-level documentation ID of the form
- * "schema/annotation[N]/documentation[M]".
- * @returns Annotation and documentation indices, or null if the format does not match.
- */
-export function parseSchemaDocumentationId(
-  id: string
-): { annotIndex: number; docIndex: number } | null {
-  const match = id.match(
-    /^(?:\/?)schema\/annotation\[(\d+)\]\/documentation\[(\d+)\]$/
-  );
-  return match
-    ? { annotIndex: parseInt(match[1], 10), docIndex: parseInt(match[2], 10) }
-    : null;
-}
-
-/**
- * Parses a documentationId of the form "{elementPath}/documentation[N]".
- *
- * @returns The annotated-element path and the 0-based documentation index.
- * @throws Error if the format is invalid.
- */
-export function parseDocumentationId(documentationId: string): {
-  elementId: string;
-  docIndex: number;
-} {
-  const match = documentationId.match(/^(.+)\/documentation\[(\d+)\]$/);
-  // The greedy `.+` is intentional: with the `$` anchor the engine backtracks to
-  // match the LAST `/documentation[N]` in the string, so the captured element
-  // path is everything before that final suffix (including any intermediate
-  // `/documentation[N]` segments in a hypothetical nested path).
-  if (!match) {
-    throw new Error(
-      `Invalid documentationId format — expected "{elementPath}/documentation[N]": ${documentationId}`
-    );
-  }
-  return { elementId: match[1], docIndex: parseInt(match[2], 10) };
-}
 
 /**
  * Creates a new documentationType from content and an optional language tag.
@@ -124,7 +82,9 @@ function getOrCreateFirstSchemaAnnotation(schemaObj: schema): annotationType {
 /**
  * Locates a non-schema annotatable component by its path ID.
  *
- * @throws Error if the node is not found or does not support annotations
+ * Assumes that the validator has already confirmed the node exists and
+ * supports annotations. The cast to `AnnotatableNode` is safe when the
+ * validator contract is satisfied.
  */
 function findAnnotatableNode(schemaObj: schema, nodeId: string): AnnotatableNode {
   const location = locateNodeById(schemaObj, nodeId);
@@ -143,6 +103,8 @@ function ensureAnnotation(node: AnnotatableNode): annotationType {
 
 /**
  * Shared logic for modifying documentation and appinfo on a single annotationType.
+ * When `documentation` is provided, all existing xs:documentation children are
+ * replaced with a single new element containing the supplied text.
  */
 function applyAnnotationModifications(
   annotation: annotationType,
@@ -150,13 +112,7 @@ function applyAnnotationModifications(
   appInfo?: string
 ): void {
   if (documentation !== undefined) {
-    const docs = toArray(annotation.documentation);
-    if (docs.length > 0) {
-      docs[0].value = documentation;
-      annotation.documentation = docs;
-    } else {
-      annotation.documentation = [createDocumentation(documentation)];
-    }
+    annotation.documentation = [createDocumentation(documentation)];
   }
 
   if (appInfo !== undefined) {
@@ -254,9 +210,9 @@ export function executeRemoveAnnotation(
  * For the schema root use `annotationId: "schema/annotation[N]"` to modify
  * the N-th annotation.
  *
- * When `documentation` is provided the first xs:documentation child is
- * created-or-updated. When `appInfo` is provided the first xs:appinfo child
- * is created-or-updated.
+ * When `documentation` is provided, all existing xs:documentation children
+ * are replaced with a single new element containing the supplied text.
+ * When `appInfo` is provided the first xs:appinfo child is created-or-updated.
  *
  * @param command - The modifyAnnotation command to execute
  * @param schemaObj - The schema object to modify

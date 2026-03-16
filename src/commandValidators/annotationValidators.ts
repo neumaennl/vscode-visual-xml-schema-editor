@@ -248,7 +248,7 @@ export function validateRemoveDocumentation(
   } catch (e) {
     return {
       valid: false,
-      error: `Invalid documentationId format — expected "{elementPath}/documentation[N]": ${command.payload.documentationId}${e instanceof Error ? ` (${e.message})` : ""}`,
+      error: e instanceof Error ? e.message : String(e),
     };
   }
 
@@ -326,7 +326,7 @@ export function validateModifyDocumentation(
   } catch (e) {
     return {
       valid: false,
-      error: `Invalid documentationId format — expected "{elementPath}/documentation[N]": ${command.payload.documentationId}${e instanceof Error ? ` (${e.message})` : ""}`,
+      error: e instanceof Error ? e.message : String(e),
     };
   }
 

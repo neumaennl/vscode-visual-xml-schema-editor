@@ -784,12 +784,20 @@ describe("executeAddDocumentation — schema root", () => {
 });
 
 describe("executeRemoveDocumentation — schema root", () => {
-  it("removes a documentation element via 'schema/annotation[N]/documentation[M]'", () => {
-    const schemaObj = unmarshal(schema, schemaWithTwoAnnotationsXml);
-    // Add a second doc to annotation[0]
-    toArray(schemaObj.annotation)[0].documentation = [
-      ...toArray(toArray(schemaObj.annotation)[0].documentation),
-    ];
+  it("removes a documentation element via 'schema/annotation[N]/documentation[M]' when multiple docs exist", () => {
+    const schemaObj = unmarshal(schema, schemaWithAnnotationXml);
+
+    // Add a second documentation node to the first schema annotation
+    const addCommand: AddDocumentationCommand = {
+      type: "addDocumentation",
+      payload: {
+        targetId: "schema/annotation[0]",
+        content: "Second doc.",
+      },
+    };
+    executeAddDocumentation(addCommand, schemaObj);
+
+    // Remove the first documentation entry
     executeRemoveDocumentation(
       {
         type: "removeDocumentation",
@@ -800,8 +808,10 @@ describe("executeRemoveDocumentation — schema root", () => {
       schemaObj
     );
 
-    const docs = toArray(toArray(schemaObj.annotation)[0].documentation);
-    expect(docs).toHaveLength(0);
+    const annotation = toArray(schemaObj.annotation)[0];
+    const docs = toArray(annotation.documentation);
+    expect(docs).toHaveLength(1);
+    expect(docs[0].value).toBe("Second doc.");
   });
 
   it("removes a documentation element via 'schema/documentation[N]' shorthand", () => {
@@ -814,8 +824,9 @@ describe("executeRemoveDocumentation — schema root", () => {
       schemaObj
     );
 
-    const docs = toArray(toArray(schemaObj.annotation)[0].documentation);
-    expect(docs).toHaveLength(0);
+    const annotation = toArray(schemaObj.annotation)[0];
+    // When the last documentation is removed, the property should be undefined
+    expect(annotation.documentation).toBeUndefined();
   });
 
 });

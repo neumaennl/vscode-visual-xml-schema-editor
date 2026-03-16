@@ -225,6 +225,165 @@ function rewriteComplexTypeBody(
 // ===== Public API =====
 
 /**
+ * Returns `true` if any QName-valued field in the schema uses the given
+ * prefix (i.e. starts with `prefix:`).
+ *
+ * Traversal is identical in scope to {@link rewritePrefixInSchema}: every
+ * element type/ref/substitutionGroup, attribute type/ref, simpleType
+ * restriction/@base/list/@itemType/union/@memberTypes, complexType
+ * complexContent/simpleContent extension+restriction @base, compositor
+ * group/@ref, attributeGroup/@ref, named group sequence/choice/all element
+ * types/refs, and named attributeGroup attribute types/refs and nested
+ * attributeGroup refs are all checked recursively.
+ *
+ * Used by `validateRemoveImport` to block removal when the namespace is
+ * still referenced anywhere in the schema body.
+ *
+ * @param prefix - The namespace prefix to search for (without the colon)
+ * @param schemaObj - The schema object to inspect
+ * @returns `true` if at least one QName uses `prefix:`, `false` otherwise
+ */
+export function isPrefixReferencedInSchema(
+  prefix: string,
+  schemaObj: schema
+): boolean {
+  const p = `${prefix}:`;
+
+  function qn(value: string | undefined): boolean {
+    return value !== undefined && value.startsWith(p);
+  }
+
+  function checkMemberTypes(value: string | undefined): boolean {
+    return value !== undefined && value.split(/\s+/).some((t) => t.startsWith(p));
+  }
+
+  function checkSimpleType(st: localSimpleType | topLevelSimpleType): boolean {
+    if (st.restriction) {
+      if (qn(st.restriction.base)) return true;
+      if (st.restriction.simpleType && checkSimpleType(st.restriction.simpleType)) return true;
+    }
+    if (st.list) {
+      if (qn(st.list.itemType)) return true;
+      if (st.list.simpleType && checkSimpleType(st.list.simpleType)) return true;
+    }
+    if (st.union) {
+      if (checkMemberTypes(st.union.memberTypes)) return true;
+      for (const m of toArray(st.union.simpleType)) {
+        if (checkSimpleType(m)) return true;
+      }
+    }
+    return false;
+  }
+
+  function checkElement(el: localElement | narrowMaxMin): boolean {
+    if (qn(el.type_) || qn(el.ref)) return true;
+    if (el.simpleType && checkSimpleType(el.simpleType)) return true;
+    if (el.complexType && checkComplexTypeBody(el.complexType)) return true;
+    return false;
+  }
+
+  function checkCompositor(c: explicitGroup | simpleExplicitGroup): boolean {
+    for (const el of toArray(c.element)) {
+      if (checkElement(el)) return true;
+    }
+    for (const gr of toArray(c.group)) {
+      if (qn(gr.ref)) return true;
+    }
+    for (const sub of toArray(c.choice)) {
+      if (checkCompositor(sub)) return true;
+    }
+    for (const sub of toArray(c.sequence)) {
+      if (checkCompositor(sub)) return true;
+    }
+    return false;
+  }
+
+  function checkAttributeBearer(b: AttributeBearer): boolean {
+    if (qn(b.base)) return true;
+    for (const a of toArray(b.attribute)) {
+      if (qn(a.type_) || qn(a.ref)) return true;
+    }
+    for (const ag of toArray(b.attributeGroup)) {
+      if (qn(ag.ref)) return true;
+    }
+    return false;
+  }
+
+  function checkCompositorBearer(b: CompositorBearer): boolean {
+    if (checkAttributeBearer(b)) return true;
+    if (b.group && qn(b.group.ref)) return true;
+    if (b.all) {
+      for (const el of toArray(b.all.element)) {
+        if (checkElement(el)) return true;
+      }
+    }
+    if (b.choice && checkCompositor(b.choice)) return true;
+    if (b.sequence && checkCompositor(b.sequence)) return true;
+    return false;
+  }
+
+  function checkComplexTypeBody(ct: topLevelComplexType | localComplexType): boolean {
+    if (ct.simpleContent?.restriction) {
+      if (checkAttributeBearer(ct.simpleContent.restriction)) return true;
+      if (ct.simpleContent.restriction.simpleType &&
+          checkSimpleType(ct.simpleContent.restriction.simpleType)) return true;
+    }
+    if (ct.simpleContent?.extension && checkAttributeBearer(ct.simpleContent.extension)) return true;
+    if (ct.complexContent?.restriction && checkCompositorBearer(ct.complexContent.restriction)) return true;
+    if (ct.complexContent?.extension && checkCompositorBearer(ct.complexContent.extension)) return true;
+    if (ct.group && qn(ct.group.ref)) return true;
+    if (ct.all) {
+      for (const el of toArray(ct.all.element)) {
+        if (checkElement(el)) return true;
+      }
+    }
+    if (ct.choice && checkCompositor(ct.choice)) return true;
+    if (ct.sequence && checkCompositor(ct.sequence)) return true;
+    for (const a of toArray(ct.attribute)) {
+      if (qn(a.type_) || qn(a.ref)) return true;
+    }
+    for (const ag of toArray(ct.attributeGroup)) {
+      if (qn(ag.ref)) return true;
+    }
+    return false;
+  }
+
+  for (const el of toArray(schemaObj.element)) {
+    if (qn(el.type_) || qn(el.substitutionGroup)) return true;
+    if (el.simpleType && checkSimpleType(el.simpleType)) return true;
+    if (el.complexType && checkComplexTypeBody(el.complexType)) return true;
+  }
+  for (const a of toArray(schemaObj.attribute)) {
+    if (qn(a.type_)) return true;
+    if (a.simpleType && checkSimpleType(a.simpleType)) return true;
+  }
+  for (const ct of toArray(schemaObj.complexType)) {
+    if (checkComplexTypeBody(ct)) return true;
+  }
+  for (const st of toArray(schemaObj.simpleType)) {
+    if (checkSimpleType(st)) return true;
+  }
+  for (const grp of toArray(schemaObj.group)) {
+    if (grp.all) {
+      for (const el of toArray(grp.all.element)) {
+        if (checkElement(el)) return true;
+      }
+    }
+    if (grp.choice && checkCompositor(grp.choice)) return true;
+    if (grp.sequence && checkCompositor(grp.sequence)) return true;
+  }
+  for (const ag of toArray(schemaObj.attributeGroup)) {
+    for (const a of toArray(ag.attribute)) {
+      if (qn(a.type_) || qn(a.ref)) return true;
+    }
+    for (const agr of toArray(ag.attributeGroup)) {
+      if (qn(agr.ref)) return true;
+    }
+  }
+  return false;
+}
+
+/**
  * Rewrites all QName-valued attributes in the schema that use
  * `oldPrefix:localName`, replacing them with `newPrefix:localName`.
  *

@@ -32,7 +32,7 @@ import {
   attributeGroupRef,
   attribute,
 } from "../../shared/types";
-import { rewritePrefixInSchema } from "./schemaQNameRewriter";
+import { rewritePrefixInSchema, isPrefixReferencedInSchema } from "./schemaQNameRewriter";
 import { toArray } from "../../shared/schemaUtils";
 
 // ---------------------------------------------------------------------------
@@ -471,5 +471,108 @@ describe("rewritePrefixInSchema — named attributeGroups", () => {
     rewritePrefixInSchema("ext", "p", s);
 
     expect(s.attributeGroup[0].attributeGroup![0].ref).toBe("p:InnerGroup");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// isPrefixReferencedInSchema
+// ---------------------------------------------------------------------------
+
+describe("isPrefixReferencedInSchema", () => {
+  it("returns false on an empty schema", () => {
+    expect(isPrefixReferencedInSchema("ext", emptySchema())).toBe(false);
+  });
+
+  it("returns false when a different prefix is used", () => {
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ext="http://example.com/ext">
+  <xs:element name="foo" type="ext:FooType"/>
+</xs:schema>`;
+    const s = unmarshal(schema, xml);
+    expect(isPrefixReferencedInSchema("other", s)).toBe(false);
+  });
+
+  it("returns true for top-level element @type", () => {
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ext="http://example.com/ext">
+  <xs:element name="foo" type="ext:FooType"/>
+</xs:schema>`;
+    const s = unmarshal(schema, xml);
+    expect(isPrefixReferencedInSchema("ext", s)).toBe(true);
+  });
+
+  it("returns true for element @substitutionGroup", () => {
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ext="http://example.com/ext">
+  <xs:element name="bar" substitutionGroup="ext:Head"/>
+</xs:schema>`;
+    const s = unmarshal(schema, xml);
+    expect(isPrefixReferencedInSchema("ext", s)).toBe(true);
+  });
+
+  it("returns true for simpleType restriction/@base", () => {
+    const s = emptySchema();
+    const st = new topLevelSimpleType();
+    st.name = "MyST";
+    const restr = new restrictionType();
+    restr.base = "ext:ExternalBase";
+    st.restriction = restr;
+    s.simpleType = [st];
+    expect(isPrefixReferencedInSchema("ext", s)).toBe(true);
+  });
+
+  it("returns true for a union/@memberTypes token", () => {
+    const s = emptySchema();
+    const st = new topLevelSimpleType();
+    st.name = "Union";
+    const union = new unionType();
+    union.memberTypes = "xs:string ext:Type2";
+    st.union = union;
+    s.simpleType = [st];
+    expect(isPrefixReferencedInSchema("ext", s)).toBe(true);
+    expect(isPrefixReferencedInSchema("xs", s)).toBe(true);
+    expect(isPrefixReferencedInSchema("other", s)).toBe(false);
+  });
+
+  it("returns true for complexContent extension/@base", () => {
+    const s = emptySchema();
+    const ct = new topLevelComplexType();
+    ct.name = "Child";
+    const cc = new complexContentType();
+    const ext = new extensionType();
+    ext.base = "ext:Parent";
+    cc.extension = ext;
+    ct.complexContent = cc;
+    s.complexType = [ct];
+    expect(isPrefixReferencedInSchema("ext", s)).toBe(true);
+  });
+
+  it("returns true for a deeply nested element type (sequence → choice → element)", () => {
+    const s = emptySchema();
+    const ct = new topLevelComplexType();
+    ct.name = "Nested";
+    const choice = new explicitGroup();
+    const el = new localElement();
+    el.name = "deep";
+    el.type_ = "ext:DeepType";
+    choice.element = [el];
+    const seq = new explicitGroup();
+    seq.choice = [choice];
+    ct.sequence = seq;
+    s.complexType = [ct];
+    expect(isPrefixReferencedInSchema("ext", s)).toBe(true);
+    expect(isPrefixReferencedInSchema("other", s)).toBe(false);
+  });
+
+  it("returns true for named attributeGroup attribute/@type", () => {
+    const s = emptySchema();
+    const ag = new namedAttributeGroup();
+    ag.name = "AG";
+    const attr = new attribute();
+    attr.name = "a";
+    attr.type_ = "ext:AttrType";
+    ag.attribute = [attr];
+    s.attributeGroup = [ag];
+    expect(isPrefixReferencedInSchema("ext", s)).toBe(true);
   });
 });

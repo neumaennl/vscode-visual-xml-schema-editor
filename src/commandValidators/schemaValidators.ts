@@ -15,6 +15,7 @@ import { toArray } from "../../shared/schemaUtils";
 import { parseSchemaId } from "../../shared/idStrategy";
 import { isValidXmlName } from "./validationUtils";
 import { ValidationResult } from "./validationUtils";
+import { isPrefixReferencedInSchema } from "../commandExecutors/schemaQNameRewriter";
 
 // ===== Helpers =====
 
@@ -65,50 +66,12 @@ function validateImportId(
 }
 
 /**
- * Returns true if the given namespace prefix (e.g. "ext") is used as a type
- * prefix in any element or attribute type reference in the schema.
- *
- * Checks top-level elements and attributes as well as elements and attributes
- * inside top-level complex types (direct sequence/choice/all particles only).
- *
- * **Known limitation:** Deeply nested elements (e.g. elements inside nested
- * sequences/choices, elements in complexContent extensions, or elements inside
- * named groups) are not traversed. This is a conservative check — it may
- * allow removal when references actually exist deeper in the tree.
- */
-function isPrefixReferencedInSchema(prefix: string, schemaObj: schema): boolean {
-  const prefixColon = `${prefix}:`;
-
-  function typeUsesPrefix(type_: string | undefined): boolean {
-    return type_ !== undefined && type_.startsWith(prefixColon);
-  }
-
-  for (const el of toArray(schemaObj.element)) {
-    if (typeUsesPrefix(el.type_)) return true;
-  }
-  for (const attr of toArray(schemaObj.attribute)) {
-    if (typeUsesPrefix(attr.type_)) return true;
-  }
-  for (const ct of toArray(schemaObj.complexType)) {
-    for (const el of toArray(ct.sequence?.element)) {
-      if (typeUsesPrefix(el.type_)) return true;
-    }
-    for (const el of toArray(ct.choice?.element)) {
-      if (typeUsesPrefix(el.type_)) return true;
-    }
-    for (const el of toArray(ct.all?.element)) {
-      if (typeUsesPrefix(el.type_)) return true;
-    }
-    for (const attr of toArray(ct.attribute)) {
-      if (typeUsesPrefix(attr.type_)) return true;
-    }
-  }
-  return false;
-}
-
-/**
  * Returns true if the given namespace URI has at least one prefix registered
- * in _namespacePrefixes AND that prefix is referenced in the schema.
+ * in _namespacePrefixes AND that prefix is referenced anywhere in the schema.
+ *
+ * Delegates to {@link isPrefixReferencedInSchema} for full recursive traversal
+ * of all QName-valued fields (element/@type, complexType @base, simpleType
+ * restriction/@base, union/@memberTypes, group/@ref, attributeGroup/@ref, etc.)
  */
 function isNamespaceReferenced(namespace: string | undefined, schemaObj: schema): boolean {
   if (!namespace || !schemaObj._namespacePrefixes) return false;

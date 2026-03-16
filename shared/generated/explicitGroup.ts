@@ -30,10 +30,10 @@ export class explicitGroup {
   @XmlElement('group', { type: () => groupRef, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
   group?: groupRef[];
 
-  @XmlElement('choice', { array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  @XmlElement('choice', { type: () => explicitGroup, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
   choice?: explicitGroup[];
 
-  @XmlElement('sequence', { array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
+  @XmlElement('sequence', { type: () => explicitGroup, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })
   sequence?: explicitGroup[];
 
   @XmlElement('any', { type: () => anyType, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })

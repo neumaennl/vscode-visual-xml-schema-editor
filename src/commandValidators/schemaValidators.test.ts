@@ -227,6 +227,31 @@ describe("validateAddImport", () => {
       expect(result.valid).toBe(false);
       expect(result.error).toContain("still referenced");
     });
+
+    test("should reject removeImport when prefix is referenced in a deeply nested element (sequence → choice → element)", () => {
+      // This verifies that the full recursive traversal catches references
+      // that were missed by the old shallow implementation.
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ext="http://example.com/ext">
+  <xs:import namespace="http://example.com/ext" schemaLocation="ext.xsd"/>
+  <xs:complexType name="MyType">
+    <xs:sequence>
+      <xs:choice>
+        <xs:element name="deep" type="ext:DeepType"/>
+      </xs:choice>
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>`;
+      const schemaWithDeepRef = unmarshal(schema, xml);
+      const command: RemoveImportCommand = {
+        type: "removeImport",
+        payload: { importId: "/import[0]" },
+      };
+
+      const result = validateRemoveImport(command, schemaWithDeepRef);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("still referenced");
+    });
   });
 
   describe("validateModifyImport", () => {

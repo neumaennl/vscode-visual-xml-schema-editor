@@ -40,9 +40,16 @@ function isValidSchemaLocation(value: string): boolean {
 
 /**
  * Parses an importId and validates it refers to an existing import entry.
- * Returns a ValidationResult with an error if invalid, or undefined if valid.
+ *
+ * Returns `{ valid: true, position }` with the resolved zero-based index on
+ * success, or `{ valid: false, error }` when the ID is malformed or out of
+ * range.  Callers that need the position (e.g. to look up the import entry)
+ * can use it directly without calling `parseSchemaId` a second time.
  */
-function validateImportId(importId: string, schemaObj: schema): ValidationResult | undefined {
+function validateImportId(
+  importId: string,
+  schemaObj: schema
+): { valid: false; error: string } | { valid: true; position: number } {
   let parsed;
   try {
     parsed = parseSchemaId(importId);
@@ -54,7 +61,7 @@ function validateImportId(importId: string, schemaObj: schema): ValidationResult
   if (index === undefined || index < 0 || index >= imports.length) {
     return { valid: false, error: `Import not found: ${importId}` };
   }
-  return undefined;
+  return { valid: true, position: index };
 }
 
 /**
@@ -169,13 +176,12 @@ export function validateRemoveImport(
   if (!command.payload.importId.trim()) {
     return { valid: false, error: "Import ID cannot be empty" };
   }
-  const idError = validateImportId(command.payload.importId, schemaObj);
-  if (idError) return idError;
+  const idResult = validateImportId(command.payload.importId, schemaObj);
+  if (!idResult.valid) return idResult;
 
   // Check if the import's namespace prefix is still referenced in the schema
-  const parsed = parseSchemaId(command.payload.importId);
   const imports = toArray(schemaObj.import_);
-  const targetImport = imports[parsed.position ?? 0];
+  const targetImport = imports[idResult.position];
   if (isNamespaceReferenced(targetImport.namespace, schemaObj)) {
     return {
       valid: false,
@@ -195,8 +201,11 @@ export function validateModifyImport(
   if (!importId.trim()) {
     return { valid: false, error: "Import ID cannot be empty" };
   }
-  const idError = validateImportId(importId, schemaObj);
-  if (idError) return idError;
+  const idResult = validateImportId(importId, schemaObj);
+  if (!idResult.valid) return idResult;
+
+  const imports = toArray(schemaObj.import_);
+  const position = idResult.position;
 
   if (namespace !== undefined) {
     if (!namespace.trim()) {
@@ -206,9 +215,6 @@ export function validateModifyImport(
       return { valid: false, error: "Namespace must be a valid absolute URI" };
     }
     // Check that changing the namespace won't create a duplicate
-    const parsed = parseSchemaId(importId);
-    const imports = toArray(schemaObj.import_);
-    const position = parsed.position ?? 0;
     const currentNamespace = imports[position].namespace;
     if (namespace.trim() !== currentNamespace) {
       if (imports.some((imp, i) => i !== position && imp.namespace === namespace.trim())) {
@@ -234,9 +240,7 @@ export function validateModifyImport(
       return { valid: false, error: `Prefix '${prefix.trim()}' is not a valid XML name` };
     }
     // Check prefix uniqueness (excluding the current import's own prefix)
-    const parsed = parseSchemaId(importId);
-    const imports = toArray(schemaObj.import_);
-    const currentNamespace = imports[parsed.position ?? 0].namespace;
+    const currentNamespace = imports[position].namespace;
     if (schemaObj._namespacePrefixes) {
       const currentPrefix = Object.entries(schemaObj._namespacePrefixes).find(
         ([, ns]) => ns === currentNamespace

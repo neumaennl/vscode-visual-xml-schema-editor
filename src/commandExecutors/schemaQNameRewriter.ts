@@ -161,6 +161,7 @@ function rewriteAttributeBearer(
   for (const attr of toArray(bearer.attribute)) {
     attr.type_ = rewriteQName(old, newPfx, attr.type_);
     attr.ref = rewriteQName(old, newPfx, attr.ref);
+    if (attr.simpleType) rewriteSimpleType(old, newPfx, attr.simpleType);
   }
   for (const agr of toArray(bearer.attributeGroup)) {
     agr.ref = rewriteRequiredQName(old, newPfx, agr.ref);
@@ -218,6 +219,7 @@ function rewriteComplexTypeBody(
   for (const attr of toArray(ct.attribute)) {
     attr.type_ = rewriteQName(old, newPfx, attr.type_);
     attr.ref = rewriteQName(old, newPfx, attr.ref);
+    if (attr.simpleType) rewriteSimpleType(old, newPfx, attr.simpleType);
   }
   for (const agr of toArray(ct.attributeGroup)) {
     agr.ref = rewriteRequiredQName(old, newPfx, agr.ref);
@@ -304,6 +306,7 @@ export function isPrefixReferencedInSchema(
     if (qn(b.base)) return true;
     for (const a of toArray(b.attribute)) {
       if (qn(a.type_) || qn(a.ref)) return true;
+      if (a.simpleType && checkSimpleType(a.simpleType)) return true;
     }
     for (const ag of toArray(b.attributeGroup)) {
       if (qn(ag.ref)) return true;
@@ -343,6 +346,7 @@ export function isPrefixReferencedInSchema(
     if (ct.sequence && checkCompositor(ct.sequence)) return true;
     for (const a of toArray(ct.attribute)) {
       if (qn(a.type_) || qn(a.ref)) return true;
+      if (a.simpleType && checkSimpleType(a.simpleType)) return true;
     }
     for (const ag of toArray(ct.attributeGroup)) {
       if (qn(ag.ref)) return true;
@@ -377,6 +381,7 @@ export function isPrefixReferencedInSchema(
   for (const ag of toArray(schemaObj.attributeGroup)) {
     for (const a of toArray(ag.attribute)) {
       if (qn(a.type_) || qn(a.ref)) return true;
+      if (a.simpleType && checkSimpleType(a.simpleType)) return true;
     }
     for (const agr of toArray(ag.attributeGroup)) {
       if (qn(agr.ref)) return true;
@@ -448,6 +453,7 @@ export function rewritePrefixInSchema(
     for (const attr of toArray(ag.attribute)) {
       attr.type_ = rewriteQName(oldPrefix, newPrefix, attr.type_);
       attr.ref = rewriteQName(oldPrefix, newPrefix, attr.ref);
+      if (attr.simpleType) rewriteSimpleType(oldPrefix, newPrefix, attr.simpleType);
     }
     for (const agr of toArray(ag.attributeGroup)) {
       agr.ref = rewriteRequiredQName(oldPrefix, newPrefix, agr.ref);

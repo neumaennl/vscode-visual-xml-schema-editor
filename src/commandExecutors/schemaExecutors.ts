@@ -98,7 +98,9 @@ export function executeAddImport(
   command: AddImportCommand,
   schemaObj: schema
 ): void {
-  const { namespace, schemaLocation, prefix } = command.payload;
+  const namespace = command.payload.namespace.trim();
+  const schemaLocation = command.payload.schemaLocation.trim();
+  const prefix = command.payload.prefix?.trim();
   const newImport = new importType();
   newImport.namespace = namespace;
   newImport.schemaLocation = schemaLocation;
@@ -149,10 +151,11 @@ export function executeRemoveImport(
  * Namespace prefix management:
  * - When `namespace` changes, existing prefix registrations pointing to the
  *   old namespace URI are updated to point to the new URI.
- * - When `prefix` is provided, the old prefix key for this import's namespace
- *   is removed and replaced with the new prefix. All QName references in the
- *   schema that used the old prefix (e.g. `old:MyType`) are rewritten to use
- *   the new prefix (e.g. `new:MyType`).
+ * - When `prefix` is provided without `oldPrefix`, the new prefix is registered
+ *   as an additional binding for the import's namespace (no deletion, no rewrite).
+ * - When both `prefix` and `oldPrefix` are provided, this is a rename: the named
+ *   old prefix key is removed, the new prefix is registered, and all QName
+ *   references using `oldPrefix:localName` are rewritten to `prefix:localName`.
  *
  * @param command - The modifyImport command to execute
  * @param schemaObj - The schema object to modify
@@ -161,7 +164,10 @@ export function executeModifyImport(
   command: ModifyImportCommand,
   schemaObj: schema
 ): void {
-  const { importId, namespace, schemaLocation, oldPrefix, prefix } = command.payload;
+  const { importId, oldPrefix } = command.payload;
+  const namespace = command.payload.namespace?.trim();
+  const schemaLocation = command.payload.schemaLocation?.trim();
+  const prefix = command.payload.prefix?.trim();
   const { imports, index } = resolveImport(importId, schemaObj);
   const importEntry = imports[index];
   const oldNamespace = importEntry.namespace;

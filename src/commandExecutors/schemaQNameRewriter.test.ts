@@ -13,6 +13,7 @@ import {
   topLevelComplexType,
   localComplexType,
   topLevelSimpleType,
+  localSimpleType,
   topLevelAttribute,
   namedGroup,
   namedAttributeGroup,
@@ -459,7 +460,7 @@ describe("rewritePrefixInSchema — named attributeGroups", () => {
     expect(s.attributeGroup[0].attribute![0].type_).toBe("p:AttrType");
   });
 
-  it("should rewrite attributeGroup/@ref inside a named attributeGroup", () => {
+  it("should rewrite attribute/@ref inside a named attributeGroup", () => {
     const s = emptySchema();
     const ag = new namedAttributeGroup();
     ag.name = "Outer";
@@ -471,6 +472,74 @@ describe("rewritePrefixInSchema — named attributeGroups", () => {
     rewritePrefixInSchema("ext", "p", s);
 
     expect(s.attributeGroup[0].attributeGroup![0].ref).toBe("p:InnerGroup");
+  });
+
+  it("should rewrite inline simpleType/@restriction/@base on attribute inside a named attributeGroup", () => {
+    const s = emptySchema();
+    const ag = new namedAttributeGroup();
+    ag.name = "MyAttrGroup";
+    const attr = new attribute();
+    attr.name = "a";
+    const st = new localSimpleType();
+    const restr = new restrictionType();
+    restr.base = "ext:BaseType";
+    st.restriction = restr;
+    attr.simpleType = st;
+    ag.attribute = [attr];
+    s.attributeGroup = [ag];
+
+    rewritePrefixInSchema("ext", "p", s);
+
+    expect(s.attributeGroup[0].attribute![0].simpleType!.restriction!.base).toBe("p:BaseType");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// complexType attribute with inline simpleType
+// ---------------------------------------------------------------------------
+
+describe("rewritePrefixInSchema — attribute inline simpleType", () => {
+  it("should rewrite inline simpleType/@restriction/@base on an attribute in complexType", () => {
+    const s = emptySchema();
+    const ct = new topLevelComplexType();
+    ct.name = "MyType";
+    const attr = new attribute();
+    attr.name = "a";
+    const st = new localSimpleType();
+    const restr = new restrictionType();
+    restr.base = "ext:BaseType";
+    st.restriction = restr;
+    attr.simpleType = st;
+    ct.attribute = [attr];
+    s.complexType = [ct];
+
+    rewritePrefixInSchema("ext", "p", s);
+
+    expect(s.complexType[0].attribute![0].simpleType!.restriction!.base).toBe("p:BaseType");
+  });
+
+  it("should rewrite inline simpleType on attribute inside complexContent/extension", () => {
+    const s = emptySchema();
+    const ct = new topLevelComplexType();
+    ct.name = "MyType";
+    const cc = new complexContentType();
+    const ext = new extensionType();
+    ext.base = "xs:anyType";
+    const attr = new attribute();
+    attr.name = "a";
+    const st = new localSimpleType();
+    const restr = new restrictionType();
+    restr.base = "ext:BaseType";
+    st.restriction = restr;
+    attr.simpleType = st;
+    ext.attribute = [attr];
+    cc.extension = ext;
+    ct.complexContent = cc;
+    s.complexType = [ct];
+
+    rewritePrefixInSchema("ext", "p", s);
+
+    expect(s.complexType[0].complexContent!.extension!.attribute![0].simpleType!.restriction!.base).toBe("p:BaseType");
   });
 });
 
@@ -574,5 +643,39 @@ describe("isPrefixReferencedInSchema", () => {
     ag.attribute = [attr];
     s.attributeGroup = [ag];
     expect(isPrefixReferencedInSchema("ext", s)).toBe(true);
+  });
+
+  it("returns true for inline simpleType/@restriction/@base on attribute in attributeGroup", () => {
+    const s = emptySchema();
+    const ag = new namedAttributeGroup();
+    ag.name = "AG";
+    const attr = new attribute();
+    attr.name = "a";
+    const st = new localSimpleType();
+    const restr = new restrictionType();
+    restr.base = "ext:BaseType";
+    st.restriction = restr;
+    attr.simpleType = st;
+    ag.attribute = [attr];
+    s.attributeGroup = [ag];
+    expect(isPrefixReferencedInSchema("ext", s)).toBe(true);
+    expect(isPrefixReferencedInSchema("other", s)).toBe(false);
+  });
+
+  it("returns true for inline simpleType/@restriction/@base on attribute in complexType body", () => {
+    const s = emptySchema();
+    const ct = new topLevelComplexType();
+    ct.name = "MyType";
+    const attr = new attribute();
+    attr.name = "a";
+    const st = new localSimpleType();
+    const restr = new restrictionType();
+    restr.base = "ext:BaseType";
+    st.restriction = restr;
+    attr.simpleType = st;
+    ct.attribute = [attr];
+    s.complexType = [ct];
+    expect(isPrefixReferencedInSchema("ext", s)).toBe(true);
+    expect(isPrefixReferencedInSchema("other", s)).toBe(false);
   });
 });

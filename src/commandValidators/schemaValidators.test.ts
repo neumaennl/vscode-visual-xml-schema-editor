@@ -399,6 +399,66 @@ describe("validateAddImport", () => {
       expect(result.error).toContain("not registered for namespace");
     });
 
+    test("should reject modifyImport when oldPrefix is provided without prefix", () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ext="http://example.com/ns1">
+  <xs:import namespace="http://example.com/ns1" schemaLocation="schema1.xsd"/>
+</xs:schema>`;
+      const schemaWithImport = unmarshal(schema, xml);
+      const command: ModifyImportCommand = {
+        type: "modifyImport",
+        payload: { importId: "/import[0]", oldPrefix: "ext" },
+      };
+      const result = validateModifyImport(command, schemaWithImport);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("'oldPrefix' requires 'prefix'");
+    });
+
+    test("should reject addImport with prefix containing whitespace", () => {
+      const command: AddImportCommand = {
+        type: "addImport",
+        payload: { namespace: "http://example.com/ns", schemaLocation: "schema.xsd", prefix: " ext" },
+      };
+      const result = validateAddImport(command, schemaObj);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("whitespace");
+    });
+
+    test("should reject addImport with reserved prefix 'xml'", () => {
+      const command: AddImportCommand = {
+        type: "addImport",
+        payload: { namespace: "http://example.com/ns", schemaLocation: "schema.xsd", prefix: "xml" },
+      };
+      const result = validateAddImport(command, schemaObj);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("reserved");
+    });
+
+    test("should reject addImport with reserved prefix 'xmlns'", () => {
+      const command: AddImportCommand = {
+        type: "addImport",
+        payload: { namespace: "http://example.com/ns", schemaLocation: "schema.xsd", prefix: "xmlns" },
+      };
+      const result = validateAddImport(command, schemaObj);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("reserved");
+    });
+
+    test("should reject modifyImport with reserved prefix 'xml'", () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ext="http://example.com/ns1">
+  <xs:import namespace="http://example.com/ns1" schemaLocation="schema1.xsd"/>
+</xs:schema>`;
+      const schemaWithImport = unmarshal(schema, xml);
+      const command: ModifyImportCommand = {
+        type: "modifyImport",
+        payload: { importId: "/import[0]", oldPrefix: "ext", prefix: "xml" },
+      };
+      const result = validateModifyImport(command, schemaWithImport);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("reserved");
+    });
+
     test("should reject removeImport when importId points to a non-import node type", () => {
       const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">

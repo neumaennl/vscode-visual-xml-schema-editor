@@ -123,15 +123,21 @@ export function validateAddImport(
 
   // Validate prefix, if provided
   if (prefix !== undefined) {
-    if (!prefix.trim()) {
+    if (!prefix) {
       return { valid: false, error: "Prefix cannot be empty when provided" };
     }
-    if (!isValidXmlName(prefix.trim())) {
-      return { valid: false, error: `Prefix '${prefix.trim()}' is not a valid XML name` };
+    if (prefix !== prefix.trim()) {
+      return { valid: false, error: `Prefix '${prefix}' must not contain leading or trailing whitespace` };
+    }
+    if (prefix === "xml" || prefix === "xmlns") {
+      return { valid: false, error: `Prefix '${prefix}' is reserved and cannot be used` };
+    }
+    if (!isValidXmlName(prefix)) {
+      return { valid: false, error: `Prefix '${prefix}' is not a valid XML name` };
     }
     // Check prefix uniqueness
-    if (schemaObj._namespacePrefixes && Object.prototype.hasOwnProperty.call(schemaObj._namespacePrefixes, prefix.trim())) {
-      return { valid: false, error: `Prefix '${prefix.trim()}' is already in use` };
+    if (schemaObj._namespacePrefixes && Object.prototype.hasOwnProperty.call(schemaObj._namespacePrefixes, prefix)) {
+      return { valid: false, error: `Prefix '${prefix}' is already in use` };
     }
   }
 
@@ -202,6 +208,10 @@ export function validateModifyImport(
   }
 
   if (oldPrefix !== undefined) {
+    // oldPrefix without prefix is meaningless — nothing would be renamed/deleted
+    if (prefix === undefined) {
+      return { valid: false, error: "'oldPrefix' requires 'prefix' to be provided" };
+    }
     // oldPrefix must currently be registered for this import's namespace
     const currentNamespace = imports[position].namespace;
     const registeredNs = schemaObj._namespacePrefixes?.[oldPrefix];
@@ -217,20 +227,26 @@ export function validateModifyImport(
   }
 
   if (prefix !== undefined) {
-    if (!prefix.trim()) {
+    if (!prefix) {
       return { valid: false, error: "Prefix cannot be empty when provided" };
     }
-    if (!isValidXmlName(prefix.trim())) {
-      return { valid: false, error: `Prefix '${prefix.trim()}' is not a valid XML name` };
+    if (prefix !== prefix.trim()) {
+      return { valid: false, error: `Prefix '${prefix}' must not contain leading or trailing whitespace` };
+    }
+    if (prefix === "xml" || prefix === "xmlns") {
+      return { valid: false, error: `Prefix '${prefix}' is reserved and cannot be used` };
+    }
+    if (!isValidXmlName(prefix)) {
+      return { valid: false, error: `Prefix '${prefix}' is not a valid XML name` };
     }
     // Check prefix uniqueness: the new prefix must not already be registered
     // for a *different* namespace.  It is fine (no-op) if it is already
     // registered for the same namespace that this import is being modified to.
     const targetNamespace = (namespace?.trim()) ?? imports[position].namespace;
     if (schemaObj._namespacePrefixes) {
-      const existingNs = schemaObj._namespacePrefixes[prefix.trim()];
+      const existingNs = schemaObj._namespacePrefixes[prefix];
       if (existingNs !== undefined && existingNs !== targetNamespace) {
-        return { valid: false, error: `Prefix '${prefix.trim()}' is already in use` };
+        return { valid: false, error: `Prefix '${prefix}' is already in use` };
       }
     }
   }

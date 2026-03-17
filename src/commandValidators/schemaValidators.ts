@@ -59,7 +59,10 @@ function validateImportId(
   }
   const index = parsed.position;
   if (parsed.nodeType !== SchemaNodeType.Import) {
-    return { valid: false, error: `Invalid import ID: ${importId}` };
+    return {
+      valid: false,
+      error: `'${importId}' does not refer to an import node (got '${parsed.nodeType}')`,
+    };
   }
   const imports = toArray(schemaObj.import_);
   if (index === undefined || index < 0 || index >= imports.length) {
@@ -162,7 +165,7 @@ export function validateModifyImport(
   command: ModifyImportCommand,
   schemaObj: schema
 ): ValidationResult {
-  const { importId, namespace, schemaLocation, prefix } = command.payload;
+  const { importId, namespace, schemaLocation, oldPrefix, prefix } = command.payload;
 
   if (!importId.trim()) {
     return { valid: false, error: "Import ID cannot be empty" };
@@ -195,6 +198,21 @@ export function validateModifyImport(
     }
     if (!isValidSchemaLocation(schemaLocation)) {
       return { valid: false, error: "Schema location must be a valid path or URI without whitespace" };
+    }
+  }
+
+  if (oldPrefix !== undefined) {
+    // oldPrefix must currently be registered for this import's namespace
+    const currentNamespace = imports[position].namespace;
+    const registeredNs = schemaObj._namespacePrefixes?.[oldPrefix];
+    if (registeredNs === undefined) {
+      return { valid: false, error: `Prefix '${oldPrefix}' is not registered in this schema` };
+    }
+    if (registeredNs !== currentNamespace) {
+      return {
+        valid: false,
+        error: `Prefix '${oldPrefix}' is not registered for namespace '${currentNamespace}'`,
+      };
     }
   }
 

@@ -161,7 +161,7 @@ export function executeModifyImport(
   command: ModifyImportCommand,
   schemaObj: schema
 ): void {
-  const { importId, namespace, schemaLocation, prefix } = command.payload;
+  const { importId, namespace, schemaLocation, oldPrefix, prefix } = command.payload;
   const { imports, index } = resolveImport(importId, schemaObj);
   const importEntry = imports[index];
   const oldNamespace = importEntry.namespace;
@@ -183,31 +183,24 @@ export function executeModifyImport(
   }
 
   if (prefix !== undefined) {
-    // The namespace we're renaming the prefix for: the new namespace if it was
-    // also changed in this command, otherwise the old one.
+    if (!schemaObj._namespacePrefixes) {
+      schemaObj._namespacePrefixes = {};
+    }
     const targetNamespace = namespace ?? oldNamespace;
-    if (targetNamespace) {
-      // Find the existing prefix for this namespace. If there are multiple
-      // prefixes bound to the same namespace, only rename the first one —
-      // leaving the others intact prevents silent QName corruption.
-      const prefixes = schemaObj._namespacePrefixes;
-      const existingPrefix = prefixes
-        ? Object.keys(prefixes).find((p) => prefixes[p] === targetNamespace)
-        : undefined;
-
-      // Remove only the specific prefix that is being renamed (not all
-      // prefixes for the namespace), then register the new one.
-      if (existingPrefix) {
-        delete schemaObj._namespacePrefixes![existingPrefix];
+    if (oldPrefix !== undefined) {
+      // Explicit rename: remove the named old prefix, register the new one,
+      // and rewrite all QName references from oldPrefix to prefix.
+      delete schemaObj._namespacePrefixes[oldPrefix];
+      if (targetNamespace) {
+        schemaObj._namespacePrefixes[prefix] = targetNamespace;
+        if (oldPrefix !== prefix) {
+          rewritePrefixInSchema(oldPrefix, prefix, schemaObj);
+        }
       }
-      if (!schemaObj._namespacePrefixes) {
-        schemaObj._namespacePrefixes = {};
-      }
-      schemaObj._namespacePrefixes[prefix] = targetNamespace;
-
-      // Rewrite every QName reference that used the old prefix
-      if (existingPrefix && existingPrefix !== prefix) {
-        rewritePrefixInSchema(existingPrefix, prefix, schemaObj);
+    } else {
+      // No oldPrefix: simply register prefix as an additional binding.
+      if (targetNamespace) {
+        schemaObj._namespacePrefixes[prefix] = targetNamespace;
       }
     }
   }

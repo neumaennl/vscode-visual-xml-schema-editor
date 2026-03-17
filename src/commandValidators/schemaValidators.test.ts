@@ -358,11 +358,45 @@ describe("validateAddImport", () => {
       const schemaWithImport = unmarshal(schema, xml);
       const command: ModifyImportCommand = {
         type: "modifyImport",
-        payload: { importId: "/import[0]", prefix: "ext" },
+        payload: { importId: "/import[0]", oldPrefix: "ext", prefix: "ext" },
       };
 
       const result = validateModifyImport(command, schemaWithImport);
       expect(result.valid).toBe(true);
+    });
+
+    test("should reject modifyImport when oldPrefix is not registered", () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ext="http://example.com/ns1">
+  <xs:import namespace="http://example.com/ns1" schemaLocation="schema1.xsd"/>
+</xs:schema>`;
+      const schemaWithImport = unmarshal(schema, xml);
+      const command: ModifyImportCommand = {
+        type: "modifyImport",
+        payload: { importId: "/import[0]", oldPrefix: "nonexistent", prefix: "newpfx" },
+      };
+
+      const result = validateModifyImport(command, schemaWithImport);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("not registered");
+    });
+
+    test("should reject modifyImport when oldPrefix belongs to a different namespace", () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ext="http://example.com/ns1" xmlns:other="http://example.com/ns2">
+  <xs:import namespace="http://example.com/ns1" schemaLocation="schema1.xsd"/>
+  <xs:import namespace="http://example.com/ns2" schemaLocation="schema2.xsd"/>
+</xs:schema>`;
+      const schemaWithImports = unmarshal(schema, xml);
+      // Trying to rename the "other" prefix when modifying import[0] (ns1) — mismatch
+      const command: ModifyImportCommand = {
+        type: "modifyImport",
+        payload: { importId: "/import[0]", oldPrefix: "other", prefix: "newpfx" },
+      };
+
+      const result = validateModifyImport(command, schemaWithImports);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("not registered for namespace");
     });
 
     test("should reject removeImport when importId points to a non-import node type", () => {
@@ -378,7 +412,7 @@ describe("validateAddImport", () => {
       };
       const result = validateRemoveImport(command, s);
       expect(result.valid).toBe(false);
-      expect(result.error).toContain("Invalid import ID");
+      expect(result.error).toContain("does not refer to an import node");
     });
   });
 });

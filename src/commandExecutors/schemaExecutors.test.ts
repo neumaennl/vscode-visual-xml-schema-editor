@@ -411,6 +411,7 @@ describe("executeModifyImport", () => {
       type: "modifyImport",
       payload: {
         importId: "/import[0]",
+        oldPrefix: "oldpfx",
         prefix: "newpfx",
       },
     }, schemaObj);
@@ -430,7 +431,7 @@ describe("executeModifyImport", () => {
 
     executeModifyImport({
       type: "modifyImport",
-      payload: { importId: "/import[0]", prefix: "newext" },
+      payload: { importId: "/import[0]", oldPrefix: "ext", prefix: "newext" },
     }, schemaObj);
 
     const elems = toArray(schemaObj.element);
@@ -455,7 +456,7 @@ describe("executeModifyImport", () => {
 
     executeModifyImport({
       type: "modifyImport",
-      payload: { importId: "/import[0]", prefix: "ex" },
+      payload: { importId: "/import[0]", oldPrefix: "ext", prefix: "ex" },
     }, schemaObj);
 
     expect(schemaObj.complexType[0].sequence!.element![0].ref).toBe("ex:ExternalElement");
@@ -476,7 +477,7 @@ describe("executeModifyImport", () => {
 
     executeModifyImport({
       type: "modifyImport",
-      payload: { importId: "/import[0]", prefix: "external" },
+      payload: { importId: "/import[0]", oldPrefix: "ext", prefix: "external" },
     }, schemaObj);
 
     expect(schemaObj.complexType[0].complexContent!.extension!.base).toBe("external:BaseType");
@@ -495,7 +496,7 @@ describe("executeModifyImport", () => {
 
     executeModifyImport({
       type: "modifyImport",
-      payload: { importId: "/import[0]", prefix: "p" },
+      payload: { importId: "/import[0]", oldPrefix: "ext", prefix: "p" },
     }, schemaObj);
 
     expect(schemaObj.simpleType[0].restriction!.base).toBe("p:ExternalSimpleType");
@@ -514,7 +515,7 @@ describe("executeModifyImport", () => {
 
     executeModifyImport({
       type: "modifyImport",
-      payload: { importId: "/import[0]", prefix: "p" },
+      payload: { importId: "/import[0]", oldPrefix: "ext", prefix: "p" },
     }, schemaObj);
 
     expect(schemaObj.simpleType[0].union!.memberTypes).toBe("p:TypeA xs:string p:TypeB");
@@ -541,7 +542,7 @@ describe("executeModifyImport", () => {
   });
 
   it("should rename only the specific prefix, leaving any other prefix for the same namespace intact", () => {
-    // Simulate a schema that (for whatever reason) has two prefixes bound to the same namespace
+    // Simulate a schema that has two prefixes bound to the same namespace
     const s = new schema();
     s._namespacePrefixes = {
       ext: "http://example.com/ns",
@@ -552,16 +553,16 @@ describe("executeModifyImport", () => {
     imp.schemaLocation = "ns.xsd";
     s.import_ = [imp];
 
+    // Explicitly rename "ext" → "newpfx" (oldPrefix identifies which one)
     executeModifyImport({
       type: "modifyImport",
-      payload: { importId: "/import[0]", prefix: "newpfx" },
+      payload: { importId: "/import[0]", oldPrefix: "ext", prefix: "newpfx" },
     }, s);
 
-    // The first matched prefix (ext) is renamed to newpfx
+    // "ext" is renamed to "newpfx"
     expect(s._namespacePrefixes?.["newpfx"]).toBe("http://example.com/ns");
-    // ext is gone
     expect(s._namespacePrefixes?.["ext"]).toBeUndefined();
-    // ext2 (the other prefix for the same namespace) remains untouched
+    // "ext2" (the other prefix for the same namespace) remains untouched
     expect(s._namespacePrefixes?.["ext2"]).toBe("http://example.com/ns");
   });
 });

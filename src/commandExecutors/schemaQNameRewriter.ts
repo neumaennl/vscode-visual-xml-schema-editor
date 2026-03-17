@@ -1,11 +1,13 @@
 /**
  * Utilities for inspecting and rewriting QName-valued attributes in the schema
- * tree when a namespace prefix changes.  Two functions are exported:
+ * tree when a namespace prefix changes.  Three functions are exported:
  *
  * - {@link rewritePrefixInSchema} — walks the entire schema object tree and
  *   replaces every `oldPrefix:localName` occurrence with `newPrefix:localName`.
  * - {@link isPrefixReferencedInSchema} — performs the same traversal read-only
  *   and returns `true` if any QName uses the given prefix.
+ * - {@link isAnyPrefixReferencedInSchema} — same as above but accepts a set of
+ *   prefixes and checks all of them in a single traversal.
  *
  * All helper functions are module-private.
  *
@@ -229,38 +231,21 @@ function rewriteComplexTypeBody(
 // ===== Public API =====
 
 /**
- * Returns `true` if any QName-valued field in the schema uses the given
- * prefix (i.e. starts with `prefix:`).
+ * Single-pass traversal that checks QName-valued fields using caller-supplied
+ * predicate functions.  All public reference-checking exports delegate here so
+ * that the schema is walked at most once regardless of how many prefixes are
+ * being tested.
  *
- * Traversal is identical in scope to {@link rewritePrefixInSchema}: every
- * element type/ref/substitutionGroup, attribute type/ref, simpleType
- * restriction/@base/list/@itemType/union/@memberTypes, complexType
- * complexContent/simpleContent extension+restriction @base, compositor
- * group/@ref, attributeGroup/@ref, named group sequence/choice/all element
- * types/refs, and named attributeGroup attribute types/refs and nested
- * attributeGroup refs are all checked recursively.
- *
- * Used by `validateRemoveImport` to block removal when the namespace is
- * still referenced anywhere in the schema body.
- *
- * @param prefix - The namespace prefix to search for (without the colon)
- * @param schemaObj - The schema object to inspect
- * @returns `true` if at least one QName uses `prefix:`, `false` otherwise
+ * @param qn - Returns true when a single QName value matches
+ * @param checkMemberTypes - Returns true when a space-separated memberTypes
+ *   value contains at least one matching QName
+ * @param schemaObj - The schema to inspect
  */
-export function isPrefixReferencedInSchema(
-  prefix: string,
+function isQNameMatchedInSchema(
+  qn: (value: string | undefined) => boolean,
+  checkMemberTypes: (value: string | undefined) => boolean,
   schemaObj: schema
 ): boolean {
-  const p = `${prefix}:`;
-
-  function qn(value: string | undefined): boolean {
-    return value !== undefined && value.startsWith(p);
-  }
-
-  function checkMemberTypes(value: string | undefined): boolean {
-    return value !== undefined && value.split(/\s+/).some((t) => t.startsWith(p));
-  }
-
   function checkSimpleType(st: localSimpleType | topLevelSimpleType): boolean {
     if (st.restriction) {
       if (qn(st.restriction.base)) return true;
@@ -388,6 +373,63 @@ export function isPrefixReferencedInSchema(
     }
   }
   return false;
+}
+
+/**
+ * Returns `true` if any QName-valued field in the schema uses the given
+ * prefix (i.e. starts with `prefix:`).
+ *
+ * Traversal is identical in scope to {@link rewritePrefixInSchema}: every
+ * element type/ref/substitutionGroup, attribute type/ref, simpleType
+ * restriction/@base/list/@itemType/union/@memberTypes, complexType
+ * complexContent/simpleContent extension+restriction @base, compositor
+ * group/@ref, attributeGroup/@ref, named group sequence/choice/all element
+ * types/refs, and named attributeGroup attribute types/refs and nested
+ * attributeGroup refs are all checked recursively.
+ *
+ * Used by `validateRemoveImport` to block removal when the namespace is
+ * still referenced anywhere in the schema body.
+ *
+ * @param prefix - The namespace prefix to search for (without the colon)
+ * @param schemaObj - The schema object to inspect
+ * @returns `true` if at least one QName uses `prefix:`, `false` otherwise
+ */
+export function isPrefixReferencedInSchema(
+  prefix: string,
+  schemaObj: schema
+): boolean {
+  const p = `${prefix}:`;
+  return isQNameMatchedInSchema(
+    (v) => v !== undefined && v.startsWith(p),
+    (v) => v !== undefined && v.split(/\s+/).some((t) => t.startsWith(p)),
+    schemaObj
+  );
+}
+
+/**
+ * Returns `true` if any QName-valued field in the schema uses at least one of
+ * the given prefixes.  The entire schema is traversed only once regardless of
+ * how many prefixes are in the set, which is more efficient than calling
+ * {@link isPrefixReferencedInSchema} once per prefix.
+ *
+ * @param prefixes - Set of namespace prefixes to search for (without colon)
+ * @param schemaObj - The schema object to inspect
+ * @returns `true` if at least one QName uses any of the given prefixes
+ */
+export function isAnyPrefixReferencedInSchema(
+  prefixes: ReadonlySet<string>,
+  schemaObj: schema
+): boolean {
+  if (prefixes.size === 0) return false;
+  function matchesPrefix(v: string): boolean {
+    const colon = v.indexOf(":");
+    return colon > 0 && prefixes.has(v.slice(0, colon));
+  }
+  return isQNameMatchedInSchema(
+    (v) => v !== undefined && matchesPrefix(v),
+    (v) => v !== undefined && v.split(/\s+/).some((m) => matchesPrefix(m)),
+    schemaObj
+  );
 }
 
 /**

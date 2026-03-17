@@ -13,9 +13,8 @@ import {
 } from "../../shared/types";
 import { toArray } from "../../shared/schemaUtils";
 import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy";
-import { isValidXmlName } from "./validationUtils";
-import { ValidationResult } from "./validationUtils";
-import { isPrefixReferencedInSchema } from "../commandExecutors/schemaQNameRewriter";
+import { isValidXmlName, ValidationResult } from "./validationUtils";
+import { isAnyPrefixReferencedInSchema } from "../commandExecutors/schemaQNameRewriter";
 
 // ===== Helpers =====
 
@@ -81,12 +80,12 @@ function validateImportId(
  */
 function isNamespaceReferenced(namespace: string | undefined, schemaObj: schema): boolean {
   if (!namespace || !schemaObj._namespacePrefixes) return false;
-  for (const [pfx, ns] of Object.entries(schemaObj._namespacePrefixes)) {
-    if (ns === namespace && isPrefixReferencedInSchema(pfx, schemaObj)) {
-      return true;
-    }
-  }
-  return false;
+  const prefixesForNs = new Set(
+    Object.entries(schemaObj._namespacePrefixes)
+      .filter(([, ns]) => ns === namespace)
+      .map(([pfx]) => pfx)
+  );
+  return isAnyPrefixReferencedInSchema(prefixesForNs, schemaObj);
 }
 
 // ===== Import Command Validation =====

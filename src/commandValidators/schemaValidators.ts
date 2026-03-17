@@ -74,7 +74,8 @@ function validateImportId(
  * Returns true if the given namespace URI has at least one prefix registered
  * in _namespacePrefixes AND that prefix is referenced anywhere in the schema.
  *
- * Delegates to {@link isPrefixReferencedInSchema} for full recursive traversal
+ * Collects all prefixes bound to the namespace and delegates to
+ * {@link isAnyPrefixReferencedInSchema} for a single full recursive traversal
  * of all QName-valued fields (element/@type, complexType @base, simpleType
  * restriction/@base, union/@memberTypes, group/@ref, attributeGroup/@ref, etc.)
  */

@@ -460,7 +460,7 @@ describe("rewritePrefixInSchema — named attributeGroups", () => {
     expect(s.attributeGroup[0].attribute![0].type_).toBe("p:AttrType");
   });
 
-  it("should rewrite attribute/@ref inside a named attributeGroup", () => {
+  it("should rewrite attributeGroup/@ref inside a named attributeGroup", () => {
     const s = emptySchema();
     const ag = new namedAttributeGroup();
     ag.name = "Outer";

@@ -225,7 +225,7 @@ describe("CommandExecutor", () => {
       expect(docs[0].value).toBe("Test schema documentation");
     });
 
-    it("should delegate addImport execution and throw not implemented error", () => {
+    it("should delegate addImport execution successfully", () => {
       const command: SchemaCommand = {
         type: "addImport",
         payload: {
@@ -236,7 +236,9 @@ describe("CommandExecutor", () => {
 
       expect(() => {
         executor.execute(command, mockSchema);
-      }).toThrow("addImport execution not yet implemented");
+      }).not.toThrow();
+
+      expect(toArray(mockSchema.import_)).toHaveLength(1);
     });
 
     it("should delegate addInclude execution and throw not implemented error", () => {

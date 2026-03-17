@@ -15,6 +15,7 @@ import {
   topLevelSimpleType,
   localSimpleType,
   topLevelAttribute,
+  topLevelElement,
   namedGroup,
   namedAttributeGroup,
   localElement,
@@ -33,7 +34,7 @@ import {
   attributeGroupRef,
   attribute,
 } from "../../shared/types";
-import { rewritePrefixInSchema, isPrefixReferencedInSchema } from "./schemaQNameRewriter";
+import { rewritePrefixInSchema, isPrefixReferencedInSchema, isAnyPrefixReferencedInSchema } from "./schemaQNameRewriter";
 import { toArray } from "../../shared/schemaUtils";
 
 // ---------------------------------------------------------------------------
@@ -677,5 +678,82 @@ describe("isPrefixReferencedInSchema", () => {
     s.complexType = [ct];
     expect(isPrefixReferencedInSchema("ext", s)).toBe(true);
     expect(isPrefixReferencedInSchema("other", s)).toBe(false);
+  });
+});
+
+describe("isAnyPrefixReferencedInSchema", () => {
+  it("returns false for empty prefix set", () => {
+    const s = emptySchema();
+    const el = new topLevelElement();
+    el.name = "e";
+    el.type_ = "ext:Foo";
+    s.element = [el];
+    expect(isAnyPrefixReferencedInSchema(new Set(), s)).toBe(false);
+  });
+
+  it("returns false when no matching prefix exists in schema", () => {
+    const s = emptySchema();
+    const el = new topLevelElement();
+    el.name = "e";
+    el.type_ = "ext:Foo";
+    s.element = [el];
+    expect(isAnyPrefixReferencedInSchema(new Set(["ns1", "ns2"]), s)).toBe(false);
+  });
+
+  it("returns true when a single prefix from the set is referenced", () => {
+    const s = emptySchema();
+    const el = new topLevelElement();
+    el.name = "e";
+    el.type_ = "ns1:Foo";
+    s.element = [el];
+    expect(isAnyPrefixReferencedInSchema(new Set(["ns1", "ns2"]), s)).toBe(true);
+  });
+
+  it("returns true when a different prefix from the set is referenced", () => {
+    const s = emptySchema();
+    const el = new topLevelElement();
+    el.name = "e";
+    el.type_ = "ns2:Foo";
+    s.element = [el];
+    expect(isAnyPrefixReferencedInSchema(new Set(["ns1", "ns2"]), s)).toBe(true);
+  });
+
+  it("returns true for a single-element set when prefix is referenced", () => {
+    const s = emptySchema();
+    const el = new topLevelElement();
+    el.name = "e";
+    el.type_ = "ext:Foo";
+    s.element = [el];
+    expect(isAnyPrefixReferencedInSchema(new Set(["ext"]), s)).toBe(true);
+  });
+
+  it("returns true when prefix appears in memberTypes on a simpleType", () => {
+    const s = emptySchema();
+    const st = new topLevelSimpleType();
+    st.name = "T";
+    const u = new unionType();
+    u.memberTypes = "ns1:A ns2:B";
+    st.union = u;
+    s.simpleType = [st];
+    expect(isAnyPrefixReferencedInSchema(new Set(["ns2", "ns3"]), s)).toBe(true);
+    expect(isAnyPrefixReferencedInSchema(new Set(["ns3", "ns4"]), s)).toBe(false);
+  });
+
+  it("is consistent with isPrefixReferencedInSchema for a single prefix", () => {
+    const s = emptySchema();
+    const ct = new topLevelComplexType();
+    ct.name = "CT";
+    const cc = new complexContentType();
+    const ext = new extensionType();
+    ext.base = "ext:Base";
+    cc.extension = ext;
+    ct.complexContent = cc;
+    s.complexType = [ct];
+    expect(isAnyPrefixReferencedInSchema(new Set(["ext"]), s)).toBe(
+      isPrefixReferencedInSchema("ext", s)
+    );
+    expect(isAnyPrefixReferencedInSchema(new Set(["other"]), s)).toBe(
+      isPrefixReferencedInSchema("other", s)
+    );
   });
 });

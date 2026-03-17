@@ -167,6 +167,36 @@ describe("validateAddImport", () => {
       expect(result.valid).toBe(false);
       expect(result.error).toContain("not a valid XML name");
     });
+
+    test("should reject addImport with prefix containing whitespace", () => {
+      const command: AddImportCommand = {
+        type: "addImport",
+        payload: { namespace: "http://example.com/ns", schemaLocation: "schema.xsd", prefix: " ext" },
+      };
+      const result = validateAddImport(command, schemaObj);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("whitespace");
+    });
+
+    test("should reject addImport with reserved prefix 'xml'", () => {
+      const command: AddImportCommand = {
+        type: "addImport",
+        payload: { namespace: "http://example.com/ns", schemaLocation: "schema.xsd", prefix: "xml" },
+      };
+      const result = validateAddImport(command, schemaObj);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("reserved");
+    });
+
+    test("should reject addImport with reserved prefix 'xmlns'", () => {
+      const command: AddImportCommand = {
+        type: "addImport",
+        payload: { namespace: "http://example.com/ns", schemaLocation: "schema.xsd", prefix: "xmlns" },
+      };
+      const result = validateAddImport(command, schemaObj);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("reserved");
+    });
   });
 
   describe("validateRemoveImport", () => {
@@ -251,6 +281,22 @@ describe("validateAddImport", () => {
       const result = validateRemoveImport(command, schemaWithDeepRef);
       expect(result.valid).toBe(false);
       expect(result.error).toContain("still referenced");
+    });
+
+    test("should reject removeImport when importId points to a non-import node type", () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:include schemaLocation="other.xsd"/>
+</xs:schema>`;
+      const s = unmarshal(schema, xml);
+      // /include[0] has the wrong node type — must be rejected
+      const command: RemoveImportCommand = {
+        type: "removeImport",
+        payload: { importId: "/include[0]" },
+      };
+      const result = validateRemoveImport(command, s);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("does not refer to an import node");
     });
   });
 
@@ -414,36 +460,6 @@ describe("validateAddImport", () => {
       expect(result.error).toContain("'oldPrefix' requires 'prefix'");
     });
 
-    test("should reject addImport with prefix containing whitespace", () => {
-      const command: AddImportCommand = {
-        type: "addImport",
-        payload: { namespace: "http://example.com/ns", schemaLocation: "schema.xsd", prefix: " ext" },
-      };
-      const result = validateAddImport(command, schemaObj);
-      expect(result.valid).toBe(false);
-      expect(result.error).toContain("whitespace");
-    });
-
-    test("should reject addImport with reserved prefix 'xml'", () => {
-      const command: AddImportCommand = {
-        type: "addImport",
-        payload: { namespace: "http://example.com/ns", schemaLocation: "schema.xsd", prefix: "xml" },
-      };
-      const result = validateAddImport(command, schemaObj);
-      expect(result.valid).toBe(false);
-      expect(result.error).toContain("reserved");
-    });
-
-    test("should reject addImport with reserved prefix 'xmlns'", () => {
-      const command: AddImportCommand = {
-        type: "addImport",
-        payload: { namespace: "http://example.com/ns", schemaLocation: "schema.xsd", prefix: "xmlns" },
-      };
-      const result = validateAddImport(command, schemaObj);
-      expect(result.valid).toBe(false);
-      expect(result.error).toContain("reserved");
-    });
-
     test("should reject modifyImport with reserved prefix 'xml'", () => {
       const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ext="http://example.com/ns1">
@@ -457,22 +473,6 @@ describe("validateAddImport", () => {
       const result = validateModifyImport(command, schemaWithImport);
       expect(result.valid).toBe(false);
       expect(result.error).toContain("reserved");
-    });
-
-    test("should reject removeImport when importId points to a non-import node type", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:include schemaLocation="other.xsd"/>
-</xs:schema>`;
-      const s = unmarshal(schema, xml);
-      // /include[0] has the wrong node type — must be rejected
-      const command: RemoveImportCommand = {
-        type: "removeImport",
-        payload: { importId: "/include[0]" },
-      };
-      const result = validateRemoveImport(command, s);
-      expect(result.valid).toBe(false);
-      expect(result.error).toContain("does not refer to an import node");
     });
   });
 });

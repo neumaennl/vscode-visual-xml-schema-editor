@@ -6,6 +6,10 @@
  * - Imports are addressed by position using XPath-like IDs: /import[N]
  *   where N is the zero-based index in the schema's import array.
  *
+ * Include ID Convention:
+ * - Includes are addressed by position using XPath-like IDs: /include[N]
+ *   where N is the zero-based index in the schema's include array.
+ *
  * Prefix Convention:
  * - Each import may have an associated namespace prefix registered in
  *   schema._namespacePrefixes (maps prefix → namespace URI).
@@ -20,6 +24,7 @@
 import {
   schema,
   importType,
+  includeType,
   AddImportCommand,
   RemoveImportCommand,
   ModifyImportCommand,
@@ -215,44 +220,79 @@ export function executeModifyImport(
 // ===== Include Executors =====
 
 /**
+ * Resolves an include ID (e.g. "/include[0]") to the corresponding includeType
+ * entry and its index.
+ *
+ * Assumes the command has been pre-validated (i.e. the position is in range).
+ */
+function resolveInclude(
+  includeId: string,
+  schemaObj: schema
+): { includes: includeType[]; index: number } {
+  const parsed = parseSchemaId(includeId);
+  return { includes: toArray(schemaObj.include), index: parsed.position ?? 0 };
+}
+
+/**
  * Executes an addInclude command.
  *
- * @param _command - The addInclude command to execute
- * @param _schemaObj - The schema object to modify
- * @throws Error - Not yet implemented
+ * Appends a new xs:include declaration with the given schemaLocation to the
+ * schema's include array.  xs:include is used for same-namespace schemas;
+ * it carries only a schemaLocation attribute (no namespace attribute).
+ *
+ * @param command - The addInclude command to execute
+ * @param schemaObj - The schema object to modify
  */
 export function executeAddInclude(
-  _command: AddIncludeCommand,
-  _schemaObj: schema
+  command: AddIncludeCommand,
+  schemaObj: schema
 ): void {
-  throw new Error("addInclude execution not yet implemented");
+  const schemaLocation = command.payload.schemaLocation.trim();
+  const newInclude = new includeType();
+  newInclude.schemaLocation = schemaLocation;
+  schemaObj.include = [...toArray(schemaObj.include), newInclude];
 }
 
 /**
  * Executes a removeInclude command.
  *
- * @param _command - The removeInclude command to execute
- * @param _schemaObj - The schema object to modify
- * @throws Error - Not yet implemented
+ * Removes the xs:include at the position encoded in `includeId`
+ * (e.g. "/include[0]" removes the first include).
+ *
+ * @param command - The removeInclude command to execute
+ * @param schemaObj - The schema object to modify
  */
 export function executeRemoveInclude(
-  _command: RemoveIncludeCommand,
-  _schemaObj: schema
+  command: RemoveIncludeCommand,
+  schemaObj: schema
 ): void {
-  throw new Error("removeInclude execution not yet implemented");
+  const { includeId } = command.payload;
+  const { includes, index } = resolveInclude(includeId, schemaObj);
+  includes.splice(index, 1);
+  schemaObj.include = includes.length > 0 ? includes : undefined;
 }
 
 /**
  * Executes a modifyInclude command.
  *
- * @param _command - The modifyInclude command to execute
- * @param _schemaObj - The schema object to modify
- * @throws Error - Not yet implemented
+ * Updates the schemaLocation of the xs:include at the position encoded in
+ * `includeId` (e.g. "/include[0]" targets the first include).
+ * Only properties present in the payload are changed.
+ *
+ * @param command - The modifyInclude command to execute
+ * @param schemaObj - The schema object to modify
  */
 export function executeModifyInclude(
-  _command: ModifyIncludeCommand,
-  _schemaObj: schema
+  command: ModifyIncludeCommand,
+  schemaObj: schema
 ): void {
-  throw new Error("modifyInclude execution not yet implemented");
+  const { includeId } = command.payload;
+  const schemaLocation = command.payload.schemaLocation?.trim();
+  const { includes, index } = resolveInclude(includeId, schemaObj);
+  const includeEntry = includes[index];
+
+  if (schemaLocation !== undefined) {
+    includeEntry.schemaLocation = schemaLocation;
+  }
 }
 

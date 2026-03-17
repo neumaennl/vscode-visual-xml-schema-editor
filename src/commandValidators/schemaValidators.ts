@@ -259,36 +259,94 @@ export function validateModifyImport(
 
 // ===== Include Command Validation =====
 
+/**
+ * Parses an includeId and validates it refers to an existing include entry.
+ *
+ * Returns `{ valid: true, position }` with the resolved zero-based index on
+ * success, or `{ valid: false, error }` when the ID is malformed or out of
+ * range.  Callers that need the position can use it directly without calling
+ * `parseSchemaId` a second time.
+ */
+function validateIncludeId(
+  includeId: string,
+  schemaObj: schema
+): { valid: false; error: string } | { valid: true; position: number } {
+  let parsed;
+  try {
+    parsed = parseSchemaId(includeId);
+  } catch {
+    return { valid: false, error: `Invalid include ID: ${includeId}` };
+  }
+  const index = parsed.position;
+  if (parsed.nodeType !== SchemaNodeType.Include) {
+    return {
+      valid: false,
+      error: `'${includeId}' does not refer to an include node (got '${parsed.nodeType}')`,
+    };
+  }
+  const includes = toArray(schemaObj.include);
+  if (index === undefined || index < 0 || index >= includes.length) {
+    return { valid: false, error: `Include not found: ${includeId}` };
+  }
+  return { valid: true, position: index };
+}
+
 export function validateAddInclude(
   command: AddIncludeCommand,
-  _schemaObj: schema
+  schemaObj: schema
 ): ValidationResult {
-  if (!command.payload.schemaLocation.trim()) {
+  const { schemaLocation } = command.payload;
+
+  if (!schemaLocation.trim()) {
     return { valid: false, error: "Schema location cannot be empty" };
   }
-  // TODO Phase 2: Validate schemaLocation is a valid path/URI
-  // TODO Phase 2: Check if include already exists
+
+  if (!isValidSchemaLocation(schemaLocation)) {
+    return { valid: false, error: "Schema location must be a valid path or URI without whitespace" };
+  }
+
+  // Check if an include with this schemaLocation already exists
+  const existingIncludes = toArray(schemaObj.include);
+  if (existingIncludes.some((inc) => inc.schemaLocation === schemaLocation.trim())) {
+    return { valid: false, error: `An include for schema location '${schemaLocation.trim()}' already exists` };
+  }
+
   return { valid: true };
 }
 
 export function validateRemoveInclude(
   command: RemoveIncludeCommand,
-  _schemaObj: schema
+  schemaObj: schema
 ): ValidationResult {
   if (!command.payload.includeId.trim()) {
     return { valid: false, error: "Include ID cannot be empty" };
   }
-  // TODO Phase 2: Validate that includeId exists in schema
+  const idResult = validateIncludeId(command.payload.includeId, schemaObj);
+  if (!idResult.valid) return idResult;
+
   return { valid: true };
 }
 
 export function validateModifyInclude(
   command: ModifyIncludeCommand,
-  _schemaObj: schema
+  schemaObj: schema
 ): ValidationResult {
-  if (!command.payload.includeId.trim()) {
+  const { includeId, schemaLocation } = command.payload;
+
+  if (!includeId.trim()) {
     return { valid: false, error: "Include ID cannot be empty" };
   }
-  // TODO Phase 2: Validate that includeId exists in schema
+  const idResult = validateIncludeId(includeId, schemaObj);
+  if (!idResult.valid) return idResult;
+
+  if (schemaLocation !== undefined) {
+    if (!schemaLocation.trim()) {
+      return { valid: false, error: "Schema location cannot be empty" };
+    }
+    if (!isValidSchemaLocation(schemaLocation)) {
+      return { valid: false, error: "Schema location must be a valid path or URI without whitespace" };
+    }
+  }
+
   return { valid: true };
 }

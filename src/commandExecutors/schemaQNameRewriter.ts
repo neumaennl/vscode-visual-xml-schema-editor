@@ -1,11 +1,13 @@
 /**
- * Utilities for rewriting QName-valued attributes when a namespace prefix is
- * renamed.  The single exported function, {@link rewritePrefixInSchema}, walks
- * the entire schema object tree and replaces every `oldPrefix:localName`
- * occurrence with `newPrefix:localName`.
+ * Utilities for inspecting and rewriting QName-valued attributes in the schema
+ * tree when a namespace prefix changes.  Two functions are exported:
  *
- * All helper functions are module-private; only `rewritePrefixInSchema` is
- * exported.
+ * - {@link rewritePrefixInSchema} — walks the entire schema object tree and
+ *   replaces every `oldPrefix:localName` occurrence with `newPrefix:localName`.
+ * - {@link isPrefixReferencedInSchema} — performs the same traversal read-only
+ *   and returns `true` if any QName uses the given prefix.
+ *
+ * All helper functions are module-private.
  *
  * Type aliases:
  * - {@link AttributeBearer} — union of the four generated classes that carry

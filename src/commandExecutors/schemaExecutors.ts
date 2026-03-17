@@ -187,14 +187,19 @@ export function executeModifyImport(
     // also changed in this command, otherwise the old one.
     const targetNamespace = namespace ?? oldNamespace;
     if (targetNamespace) {
-      // Capture the existing prefix before it is removed so we can rewrite
-      // all QName references in the schema body.
+      // Find the existing prefix for this namespace. If there are multiple
+      // prefixes bound to the same namespace, only rename the first one —
+      // leaving the others intact prevents silent QName corruption.
       const prefixes = schemaObj._namespacePrefixes;
       const existingPrefix = prefixes
         ? Object.keys(prefixes).find((p) => prefixes[p] === targetNamespace)
         : undefined;
 
-      removePrefixForNamespace(targetNamespace, schemaObj);
+      // Remove only the specific prefix that is being renamed (not all
+      // prefixes for the namespace), then register the new one.
+      if (existingPrefix) {
+        delete schemaObj._namespacePrefixes![existingPrefix];
+      }
       if (!schemaObj._namespacePrefixes) {
         schemaObj._namespacePrefixes = {};
       }

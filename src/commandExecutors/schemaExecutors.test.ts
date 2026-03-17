@@ -13,6 +13,7 @@
 import { unmarshal, marshal } from "@neumaennl/xmlbind-ts";
 import {
   schema,
+  importType,
   AddImportCommand,
   RemoveImportCommand,
   ModifyImportCommand,
@@ -537,5 +538,30 @@ describe("executeModifyImport", () => {
     expect(toArray(schemaObj.element)[0].type_).toBe("ext:FooType");
     // but the prefix now points to the new namespace
     expect(schemaObj._namespacePrefixes?.["ext"]).toBe("http://example.com/new-ns");
+  });
+
+  it("should rename only the specific prefix, leaving any other prefix for the same namespace intact", () => {
+    // Simulate a schema that (for whatever reason) has two prefixes bound to the same namespace
+    const s = new schema();
+    s._namespacePrefixes = {
+      ext: "http://example.com/ns",
+      ext2: "http://example.com/ns",
+    };
+    const imp = new importType();
+    imp.namespace = "http://example.com/ns";
+    imp.schemaLocation = "ns.xsd";
+    s.import_ = [imp];
+
+    executeModifyImport({
+      type: "modifyImport",
+      payload: { importId: "/import[0]", prefix: "newpfx" },
+    }, s);
+
+    // The first matched prefix (ext) is renamed to newpfx
+    expect(s._namespacePrefixes?.["newpfx"]).toBe("http://example.com/ns");
+    // ext is gone
+    expect(s._namespacePrefixes?.["ext"]).toBeUndefined();
+    // ext2 (the other prefix for the same namespace) remains untouched
+    expect(s._namespacePrefixes?.["ext2"]).toBe("http://example.com/ns");
   });
 });

@@ -12,7 +12,7 @@ import {
   ModifyIncludeCommand,
 } from "../../shared/types";
 import { toArray } from "../../shared/schemaUtils";
-import { parseSchemaId } from "../../shared/idStrategy";
+import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy";
 import { isValidXmlName } from "./validationUtils";
 import { ValidationResult } from "./validationUtils";
 import { isPrefixReferencedInSchema } from "../commandExecutors/schemaQNameRewriter";
@@ -58,6 +58,9 @@ function validateImportId(
     return { valid: false, error: `Invalid import ID: ${importId}` };
   }
   const index = parsed.position;
+  if (parsed.nodeType !== SchemaNodeType.Import) {
+    return { valid: false, error: `Invalid import ID: ${importId}` };
+  }
   const imports = toArray(schemaObj.import_);
   if (index === undefined || index < 0 || index >= imports.length) {
     return { valid: false, error: `Import not found: ${importId}` };
@@ -202,16 +205,13 @@ export function validateModifyImport(
     if (!isValidXmlName(prefix.trim())) {
       return { valid: false, error: `Prefix '${prefix.trim()}' is not a valid XML name` };
     }
-    // Check prefix uniqueness (excluding the current import's own prefix)
-    const currentNamespace = imports[position].namespace;
+    // Check prefix uniqueness: the new prefix must not already be registered
+    // for a *different* namespace.  It is fine (no-op) if it is already
+    // registered for the same namespace that this import is being modified to.
+    const targetNamespace = (namespace?.trim()) ?? imports[position].namespace;
     if (schemaObj._namespacePrefixes) {
-      const currentPrefix = Object.entries(schemaObj._namespacePrefixes).find(
-        ([, ns]) => ns === currentNamespace
-      )?.[0];
-      if (
-        prefix.trim() !== currentPrefix &&
-        Object.prototype.hasOwnProperty.call(schemaObj._namespacePrefixes, prefix.trim())
-      ) {
+      const existingNs = schemaObj._namespacePrefixes[prefix.trim()];
+      if (existingNs !== undefined && existingNs !== targetNamespace) {
         return { valid: false, error: `Prefix '${prefix.trim()}' is already in use` };
       }
     }

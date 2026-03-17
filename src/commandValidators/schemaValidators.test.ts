@@ -348,6 +348,38 @@ describe("validateAddImport", () => {
       expect(result.valid).toBe(false);
       expect(result.error).toContain("already in use");
     });
+
+    test("should accept modifyImport renaming prefix to same value (no-op)", () => {
+      // Renaming ext→ext on the same namespace should be a no-op and accepted.
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ext="http://example.com/ns1">
+  <xs:import namespace="http://example.com/ns1" schemaLocation="schema1.xsd"/>
+</xs:schema>`;
+      const schemaWithImport = unmarshal(schema, xml);
+      const command: ModifyImportCommand = {
+        type: "modifyImport",
+        payload: { importId: "/import[0]", prefix: "ext" },
+      };
+
+      const result = validateModifyImport(command, schemaWithImport);
+      expect(result.valid).toBe(true);
+    });
+
+    test("should reject removeImport when importId points to a non-import node type", () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:include schemaLocation="other.xsd"/>
+</xs:schema>`;
+      const s = unmarshal(schema, xml);
+      // /include[0] has the wrong node type — must be rejected
+      const command: RemoveImportCommand = {
+        type: "removeImport",
+        payload: { importId: "/include[0]" },
+      };
+      const result = validateRemoveImport(command, s);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("Invalid import ID");
+    });
   });
 });
 

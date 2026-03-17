@@ -133,6 +133,9 @@ function rewriteElement(
   el.ref = rewriteQName(old, newPfx, el.ref);
   if (el.simpleType) rewriteSimpleType(old, newPfx, el.simpleType);
   if (el.complexType) rewriteComplexTypeBody(old, newPfx, el.complexType);
+  for (const kr of toArray(el.keyref)) {
+    kr.refer = rewriteRequiredQName(old, newPfx, kr.refer);
+  }
 }
 
 function rewriteCompositor(
@@ -268,6 +271,9 @@ function isQNameMatchedInSchema(
     if (qn(el.type_) || qn(el.ref)) return true;
     if (el.simpleType && checkSimpleType(el.simpleType)) return true;
     if (el.complexType && checkComplexTypeBody(el.complexType)) return true;
+    for (const kr of toArray(el.keyref)) {
+      if (qn(kr.refer)) return true;
+    }
     return false;
   }
 
@@ -343,6 +349,9 @@ function isQNameMatchedInSchema(
     if (qn(el.type_) || qn(el.substitutionGroup)) return true;
     if (el.simpleType && checkSimpleType(el.simpleType)) return true;
     if (el.complexType && checkComplexTypeBody(el.complexType)) return true;
+    for (const kr of toArray(el.keyref)) {
+      if (qn(kr.refer)) return true;
+    }
   }
   for (const a of toArray(schemaObj.attribute)) {
     if (qn(a.type_)) return true;
@@ -466,6 +475,9 @@ export function rewritePrefixInSchema(
     el.substitutionGroup = rewriteQName(oldPrefix, newPrefix, el.substitutionGroup);
     if (el.simpleType) rewriteSimpleType(oldPrefix, newPrefix, el.simpleType);
     if (el.complexType) rewriteComplexTypeBody(oldPrefix, newPrefix, el.complexType);
+    for (const kr of toArray(el.keyref)) {
+      kr.refer = rewriteRequiredQName(oldPrefix, newPrefix, kr.refer);
+    }
   }
 
   for (const attr of toArray(schemaObj.attribute)) {

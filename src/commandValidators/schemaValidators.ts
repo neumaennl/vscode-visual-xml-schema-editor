@@ -134,9 +134,12 @@ export function validateAddImport(
     if (!isValidXmlName(prefix)) {
       return { valid: false, error: `Prefix '${prefix}' is not a valid XML name` };
     }
-    // Check prefix uniqueness
+    // Check prefix uniqueness: only reject when bound to a different namespace
     if (schemaObj._namespacePrefixes && Object.prototype.hasOwnProperty.call(schemaObj._namespacePrefixes, prefix)) {
-      return { valid: false, error: `Prefix '${prefix}' is already in use` };
+      const existingNs = schemaObj._namespacePrefixes[prefix];
+      if (existingNs !== namespace.trim()) {
+        return { valid: false, error: `Prefix '${prefix}' is already in use by namespace '${existingNs}'` };
+      }
     }
   }
 

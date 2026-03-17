@@ -33,6 +33,7 @@ import {
   groupRef,
   attributeGroupRef,
   attribute,
+  keyrefType,
 } from "../../shared/types";
 import { rewritePrefixInSchema, isPrefixReferencedInSchema, isAnyPrefixReferencedInSchema } from "./schemaQNameRewriter";
 import { toArray } from "../../shared/schemaUtils";
@@ -541,6 +542,103 @@ describe("rewritePrefixInSchema — attribute inline simpleType", () => {
     rewritePrefixInSchema("ext", "p", s);
 
     expect(s.complexType[0].complexContent!.extension!.attribute![0].simpleType!.restriction!.base).toBe("p:BaseType");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Identity constraints (keyref/@refer)
+// ---------------------------------------------------------------------------
+
+describe("rewritePrefixInSchema — keyref/@refer on top-level element", () => {
+  it("should rewrite keyref/@refer on a top-level element", () => {
+    const s = emptySchema();
+    const el = new topLevelElement();
+    el.name = "root";
+    const kr = new keyrefType();
+    kr.name = "ref1";
+    kr.refer = "ext:KeyName";
+    el.keyref = [kr];
+    s.element = [el];
+
+    rewritePrefixInSchema("ext", "p", s);
+
+    expect(s.element![0].keyref![0].refer).toBe("p:KeyName");
+  });
+
+  it("should leave keyref/@refer unchanged when prefix does not match", () => {
+    const s = emptySchema();
+    const el = new topLevelElement();
+    el.name = "root";
+    const kr = new keyrefType();
+    kr.name = "ref1";
+    kr.refer = "other:KeyName";
+    el.keyref = [kr];
+    s.element = [el];
+
+    rewritePrefixInSchema("ext", "p", s);
+
+    expect(s.element![0].keyref![0].refer).toBe("other:KeyName");
+  });
+});
+
+describe("rewritePrefixInSchema — keyref/@refer on local element in compositor", () => {
+  it("should rewrite keyref/@refer on a local element inside a sequence", () => {
+    const s = emptySchema();
+    const ct = new topLevelComplexType();
+    ct.name = "CT";
+    const seq = new explicitGroup();
+    const el = new localElement();
+    el.name = "child";
+    const kr = new keyrefType();
+    kr.name = "ref1";
+    kr.refer = "ext:KeyName";
+    el.keyref = [kr];
+    seq.element = [el];
+    ct.sequence = seq;
+    s.complexType = [ct];
+
+    rewritePrefixInSchema("ext", "p", s);
+
+    expect(s.complexType![0].sequence!.element![0].keyref![0].refer).toBe("p:KeyName");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// isPrefixReferencedInSchema — keyref/@refer
+// ---------------------------------------------------------------------------
+
+describe("isPrefixReferencedInSchema — keyref/@refer", () => {
+  it("returns true when prefix is used in keyref/@refer on a top-level element", () => {
+    const s = emptySchema();
+    const el = new topLevelElement();
+    el.name = "root";
+    const kr = new keyrefType();
+    kr.name = "ref1";
+    kr.refer = "ext:KeyName";
+    el.keyref = [kr];
+    s.element = [el];
+
+    expect(isPrefixReferencedInSchema("ext", s)).toBe(true);
+    expect(isPrefixReferencedInSchema("other", s)).toBe(false);
+  });
+
+  it("returns true when prefix is used in keyref/@refer on a local element in a compositor", () => {
+    const s = emptySchema();
+    const ct = new topLevelComplexType();
+    ct.name = "CT";
+    const seq = new explicitGroup();
+    const el = new localElement();
+    el.name = "child";
+    const kr = new keyrefType();
+    kr.name = "ref1";
+    kr.refer = "ext:KeyName";
+    el.keyref = [kr];
+    seq.element = [el];
+    ct.sequence = seq;
+    s.complexType = [ct];
+
+    expect(isPrefixReferencedInSchema("ext", s)).toBe(true);
+    expect(isPrefixReferencedInSchema("other", s)).toBe(false);
   });
 });
 

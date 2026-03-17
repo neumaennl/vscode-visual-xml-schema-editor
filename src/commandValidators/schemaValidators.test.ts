@@ -133,7 +133,7 @@ describe("validateAddImport", () => {
       expect(result.error).toContain("already exists");
     });
 
-    test("should reject addImport with an already-used prefix", () => {
+    test("should reject addImport with an already-used prefix bound to a different namespace", () => {
       const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ext="http://example.com/existing">
   <xs:import namespace="http://example.com/existing" schemaLocation="existing.xsd"/>
@@ -151,6 +151,24 @@ describe("validateAddImport", () => {
       const result = validateAddImport(command, schemaWithPrefix);
       expect(result.valid).toBe(false);
       expect(result.error).toContain("already in use");
+    });
+
+    test("should accept addImport when prefix is already bound to the same namespace", () => {
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ext="http://example.com/new">
+</xs:schema>`;
+      const schemaWithPrefix = unmarshal(schema, xml);
+      const command: AddImportCommand = {
+        type: "addImport",
+        payload: {
+          namespace: "http://example.com/new",
+          schemaLocation: "new.xsd",
+          prefix: "ext",
+        },
+      };
+
+      const result = validateAddImport(command, schemaWithPrefix);
+      expect(result.valid).toBe(true);
     });
 
     test("should reject addImport with an invalid XML prefix", () => {

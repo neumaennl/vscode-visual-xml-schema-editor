@@ -562,7 +562,7 @@ describe("rewritePrefixInSchema — keyref/@refer on top-level element", () => {
 
     rewritePrefixInSchema("ext", "p", s);
 
-    expect(s.element![0].keyref![0].refer).toBe("p:KeyName");
+    expect(s.element[0].keyref![0].refer).toBe("p:KeyName");
   });
 
   it("should leave keyref/@refer unchanged when prefix does not match", () => {
@@ -577,7 +577,7 @@ describe("rewritePrefixInSchema — keyref/@refer on top-level element", () => {
 
     rewritePrefixInSchema("ext", "p", s);
 
-    expect(s.element![0].keyref![0].refer).toBe("other:KeyName");
+    expect(s.element[0].keyref![0].refer).toBe("other:KeyName");
   });
 });
 
@@ -599,7 +599,7 @@ describe("rewritePrefixInSchema — keyref/@refer on local element in compositor
 
     rewritePrefixInSchema("ext", "p", s);
 
-    expect(s.complexType![0].sequence!.element![0].keyref![0].refer).toBe("p:KeyName");
+    expect(s.complexType[0].sequence!.element![0].keyref![0].refer).toBe("p:KeyName");
   });
 });
 

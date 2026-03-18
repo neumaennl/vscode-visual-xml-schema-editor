@@ -698,7 +698,7 @@ describe("CommandProcessor", () => {
       };
 
       // Manually set the isExecuting flag to simulate in-progress execution
-      (processorWithMock as unknown as { isExecuting: boolean }).isExecuting = true;
+      Object.assign(processorWithMock, { isExecuting: true });
 
       // Try to execute command while another is "in progress"
       const result = processorWithMock.execute(command, simpleSchemaXml);
@@ -708,7 +708,7 @@ describe("CommandProcessor", () => {
       expect(result.error).toContain("Another command is currently being executed");
       
       // Reset the flag
-      (processorWithMock as unknown as { isExecuting: boolean }).isExecuting = false;
+      Object.assign(processorWithMock, { isExecuting: false });
     });
 
     test("should allow execution after previous command completes", () => {
@@ -856,7 +856,7 @@ describe("CommandProcessor", () => {
       };
 
       // Simulate in-progress execution
-      (processorWithMock as unknown as { isExecuting: boolean }).isExecuting = true;
+      Object.assign(processorWithMock, { isExecuting: true });
 
       const result = processorWithMock.execute(command, simpleSchemaXml);
 
@@ -864,7 +864,7 @@ describe("CommandProcessor", () => {
       expect(result.errorKind).toBe("validation");
       expect(result.stack).toBeUndefined();
 
-      (processorWithMock as unknown as { isExecuting: boolean }).isExecuting = false;
+      Object.assign(processorWithMock, { isExecuting: false });
     });
 
     test("should set errorKind to 'runtime' and include stack when executor throws", () => {

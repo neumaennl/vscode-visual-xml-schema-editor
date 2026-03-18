@@ -22,7 +22,7 @@ describe("SchemaEditorProvider", () => {
     mockContext = {
       extensionUri: vscode.Uri.file("/extension/path"),
       subscriptions: [],
-    } as unknown as vscode.ExtensionContext;
+    } as vscode.ExtensionContext;
 
     mockWebview = {
       options: {},
@@ -30,19 +30,19 @@ describe("SchemaEditorProvider", () => {
       asWebviewUri: mockGetUri,
       postMessage: mockPostMessage,
       onDidReceiveMessage: jest.fn(),
-    } as unknown as vscode.Webview;
+    } as vscode.Webview;
 
     mockWebviewPanel = {
       webview: mockWebview,
       onDidDispose: jest.fn(),
-    } as unknown as vscode.WebviewPanel;
+    } as vscode.WebviewPanel;
 
     mockDocument = {
       uri: { toString: () => "/test/schema.xsd" } as vscode.Uri,
       getText: jest.fn(() => "<xs:schema></xs:schema>"),
       lineCount: 1,
       lineAt: jest.fn(() => ({ text: "<xs:schema></xs:schema>" })),
-    } as unknown as vscode.TextDocument;
+    } as vscode.TextDocument;
 
     provider = new SchemaEditorProvider(mockContext);
   });
@@ -114,7 +114,7 @@ describe("SchemaEditorProvider", () => {
       const emptyMockDocument = {
         uri: { toString: () => "/test/empty.xsd" } as vscode.Uri,
         getText: jest.fn(() => ""),
-      } as unknown as vscode.TextDocument;
+      } as vscode.TextDocument;
 
       expect(() => {
         provider.resolveCustomTextEditor(

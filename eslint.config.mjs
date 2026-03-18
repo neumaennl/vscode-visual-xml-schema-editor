@@ -80,6 +80,15 @@ export default [
       '@typescript-eslint/explicit-module-boundary-types': 'off',
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-non-null-assertion': 'warn',
+      // Disallow double type assertions (e.g. `x as unknown as T`).
+      // Use a typed variable annotation or restructure the code instead.
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'TSAsExpression[expression.type="TSAsExpression"]',
+          message: 'Avoid double type assertions (x as A as B). Annotate the variable type instead.',
+        },
+      ],
       // Disabled to allow console logging in VS Code extension
       'no-console': 'off',
     },

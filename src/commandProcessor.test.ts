@@ -25,11 +25,12 @@ type MockModelManager = Pick<
 >;
 
 // Test helper for invalid command that bypasses type system
-// This represents a command type that doesn't exist in the SchemaCommand union
-interface InvalidCommand {
-  type: "unknownCommand";
-  payload: Record<string, never>;
-}
+// This represents a command type that doesn't exist in the SchemaCommand union.
+// Typed as `unknown` so `as SchemaCommand` is a single narrowing assertion.
+const INVALID_COMMAND: unknown = {
+  type: "unknownCommand",
+  payload: {},
+} as const;
 
 /**
  * Asserts that a CommandExecutionResult represents a failure and narrows its
@@ -625,14 +626,7 @@ describe("CommandProcessor", () => {
 
   describe("Invalid Commands", () => {
     test("should reject command with unknown type", () => {
-      // Create an invalid command that bypasses the type system
-      // This simulates a runtime scenario where an unknown command type is received
-      const invalidCommand: InvalidCommand = {
-        type: "unknownCommand",
-        payload: {},
-      };
-
-      const result = processor.execute(invalidCommand as unknown as SchemaCommand, simpleSchemaXml);
+      const result = processor.execute(INVALID_COMMAND as SchemaCommand, simpleSchemaXml);
       expectFailure(result);
       expect(result.error).toContain("Unknown command type");
     });

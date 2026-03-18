@@ -20,31 +20,46 @@ import { SchemaModelManager } from "./schemaModelManager";
  */
 export type CommandErrorKind = "validation" | "runtime";
 
-/**
- * Result of a command execution including the updated schema and XML.
- */
-export interface CommandExecutionResult {
-  /** Whether the command was executed successfully */
-  success: boolean;
-  /** Error message if execution failed */
-  error?: string;
-  /**
-   * Classifies the failure origin when `success` is `false`.
-   * - `'validation'` – invalid input or incompatible schema state.
-   * - `'runtime'`    – unexpected exception during execution.
-   * Absent when `success` is `true`.
-   */
-  errorKind?: CommandErrorKind;
-  /**
-   * Stack trace of the thrown exception when `errorKind` is `'runtime'`.
-   * Absent for validation failures and successful results.
-   */
-  stack?: string;
-  /** Updated schema object (null if execution failed) */
-  schema: schema | null;
-  /** Serialized XML content (null if execution failed) */
-  xmlContent: string | null;
+/** Successful command execution. */
+export interface CommandExecutionSuccess {
+  success: true;
+  /** Updated schema object after applying the command. */
+  schema: schema;
+  /** Serialized XML content after applying the command. */
+  xmlContent: string;
 }
+
+/** Command was rejected by the validator (bad input or incompatible schema state). */
+export interface CommandExecutionValidationFailure {
+  success: false;
+  errorKind: "validation";
+  /** Human-readable validation error message. */
+  error: string;
+  schema: null;
+  xmlContent: null;
+}
+
+/** An unexpected exception was thrown during command execution. */
+export interface CommandExecutionRuntimeFailure {
+  success: false;
+  errorKind: "runtime";
+  /** Human-readable error message derived from the thrown exception. */
+  error: string;
+  /** Stack trace of the thrown exception. */
+  stack?: string;
+  schema: null;
+  xmlContent: null;
+}
+
+/** Union of the two failure result types. */
+export type CommandExecutionFailure =
+  | CommandExecutionValidationFailure
+  | CommandExecutionRuntimeFailure;
+
+/** Discriminated union of all possible command execution outcomes. */
+export type CommandExecutionResult =
+  | CommandExecutionSuccess
+  | CommandExecutionFailure;
 
 /**
  * CommandProcessor manages the execution of schema editing commands.
@@ -145,7 +160,7 @@ export class CommandProcessor {
       };
     } catch (error) {
       // Rollback: any error during execution returns failure with original state preserved
-      const err = error as Error;
+      const err = error instanceof Error ? error : new Error(String(error));
       return {
         success: false,
         error: `Command execution failed: ${err.message}`,

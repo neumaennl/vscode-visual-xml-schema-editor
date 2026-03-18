@@ -2,10 +2,19 @@
  * Shared validation utilities for command validators.
  */
 
-export interface ValidationResult {
-  valid: boolean;
-  error?: string;
+/** A validation check that passed. */
+export interface ValidationSuccess {
+  valid: true;
 }
+
+/** A validation check that failed, with a required error message. */
+export interface ValidationFailure {
+  valid: false;
+  error: string;
+}
+
+/** Discriminated union of all possible validation outcomes. */
+export type ValidationResult = ValidationSuccess | ValidationFailure;
 
 /**
  * Validates if a string is a valid XML name.

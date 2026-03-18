@@ -20,6 +20,7 @@ import {
   validateRemoveComplexType,
   validateModifyComplexType,
 } from "./typeValidators";
+import { expectInvalid } from "./validationTestHelpers";
 
 describe("SimpleType Validators", () => {
   let emptySchemaObj: schema;
@@ -51,7 +52,7 @@ describe("SimpleType Validators", () => {
       };
 
       const result = validateAddSimpleType(command, emptySchemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Type name must be a valid XML name");
     });
 
@@ -65,7 +66,7 @@ describe("SimpleType Validators", () => {
       };
 
       const result = validateAddSimpleType(command, emptySchemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Base type cannot be empty");
     });
 
@@ -79,7 +80,7 @@ describe("SimpleType Validators", () => {
       };
 
       const result = validateAddSimpleType(command, emptySchemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Base type 'xs:nonExistentType' is not a recognized XSD type");
     });
 
@@ -93,7 +94,7 @@ describe("SimpleType Validators", () => {
       };
 
       const result = validateAddSimpleType(command, schemaWithAgeType);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Simple type 'AgeType' already exists in schema");
     });
 
@@ -134,7 +135,7 @@ describe("SimpleType Validators", () => {
       };
 
       const result = validateRemoveSimpleType(command, emptySchemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Type ID cannot be empty");
     });
 
@@ -161,7 +162,7 @@ describe("SimpleType Validators", () => {
       };
 
       const result = validateModifySimpleType(command, emptySchemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Type ID cannot be empty");
     });
 
@@ -175,7 +176,7 @@ describe("SimpleType Validators", () => {
       };
 
       const result = validateModifySimpleType(command, schemaWithAgeType);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Type name must be a valid XML name");
     });
 
@@ -189,7 +190,7 @@ describe("SimpleType Validators", () => {
       };
 
       const result = validateModifySimpleType(command, emptySchemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Simple type 'NonExistent' not found in schema");
     });
 
@@ -251,7 +252,7 @@ describe("SimpleType Validators", () => {
         };
 
         const result = validateAddSimpleType(command, schemaWithElement);
-        expect(result.valid).toBe(false);
+        expectInvalid(result);
         expect(result.error).toContain("Parent not found");
       });
 
@@ -262,7 +263,7 @@ describe("SimpleType Validators", () => {
         };
 
         const result = validateAddSimpleType(command, schemaWithElementAndSimpleType);
-        expect(result.valid).toBe(false);
+        expectInvalid(result);
         expect(result.error).toContain("already has an anonymous simpleType");
       });
 
@@ -280,7 +281,7 @@ describe("SimpleType Validators", () => {
         };
 
         const result = validateAddSimpleType(command, schemaWithTypedElement);
-        expect(result.valid).toBe(false);
+        expectInvalid(result);
         expect(result.error).toContain("already has a type attribute");
       });
 
@@ -291,7 +292,7 @@ describe("SimpleType Validators", () => {
         };
 
         const result = validateAddSimpleType(command, schemaWithElement);
-        expect(result.valid).toBe(false);
+        expectInvalid(result);
         expect(result.error).toBe("Base type: Invalid element type 'xs:badType': must be a built-in XSD type, a user-defined type in the schema, or a type from a valid import with a matching namespace prefix");
       });
     });
@@ -314,7 +315,7 @@ describe("SimpleType Validators", () => {
         };
 
         const result = validateRemoveSimpleType(command, schemaWithElement);
-        expect(result.valid).toBe(false);
+        expectInvalid(result);
         expect(result.error).toContain("No anonymous simpleType found");
       });
 
@@ -325,7 +326,7 @@ describe("SimpleType Validators", () => {
         };
 
         const result = validateRemoveSimpleType(command, schemaWithElement);
-        expect(result.valid).toBe(false);
+        expectInvalid(result);
         expect(result.error).toContain("Parent not found");
       });
     });
@@ -354,7 +355,7 @@ describe("SimpleType Validators", () => {
         };
 
         const result = validateModifySimpleType(command, schemaWithElement);
-        expect(result.valid).toBe(false);
+        expectInvalid(result);
         expect(result.error).toContain("No anonymous simpleType found");
       });
 
@@ -365,7 +366,7 @@ describe("SimpleType Validators", () => {
         };
 
         const result = validateModifySimpleType(command, schemaWithElement);
-        expect(result.valid).toBe(false);
+        expectInvalid(result);
         expect(result.error).toContain("Parent not found");
       });
     });
@@ -421,7 +422,7 @@ describe("Anonymous SimpleType in Attributes Validators", () => {
       };
 
       const result = validateAddSimpleType(command, schemaWithAttribute);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("Parent not found");
     });
 
@@ -432,7 +433,7 @@ describe("Anonymous SimpleType in Attributes Validators", () => {
       };
 
       const result = validateAddSimpleType(command, schemaWithTypedAttribute);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("already has a type attribute");
     });
 
@@ -443,7 +444,7 @@ describe("Anonymous SimpleType in Attributes Validators", () => {
       };
 
       const result = validateAddSimpleType(command, schemaWithAttributeAndSimpleType);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("already has an anonymous simpleType");
     });
   });
@@ -466,7 +467,7 @@ describe("Anonymous SimpleType in Attributes Validators", () => {
       };
 
       const result = validateRemoveSimpleType(command, schemaWithAttribute);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("No anonymous simpleType found");
     });
 
@@ -477,7 +478,7 @@ describe("Anonymous SimpleType in Attributes Validators", () => {
       };
 
       const result = validateRemoveSimpleType(command, schemaWithAttribute);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("Parent not found");
     });
   });
@@ -506,7 +507,7 @@ describe("Anonymous SimpleType in Attributes Validators", () => {
       };
 
       const result = validateModifySimpleType(command, schemaWithAttribute);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("No anonymous simpleType found");
     });
 
@@ -517,7 +518,7 @@ describe("Anonymous SimpleType in Attributes Validators", () => {
       };
 
       const result = validateModifySimpleType(command, schemaWithAttribute);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("Parent not found");
     });
   });
@@ -572,7 +573,7 @@ describe("ComplexType Validators", () => {
         payload: { typeName: "", contentModel: "sequence" },
       };
       const result = validateAddComplexType(command, emptySchemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Type name must be a valid XML name");
     });
 
@@ -582,7 +583,7 @@ describe("ComplexType Validators", () => {
         payload: { typeName: "TestType", contentModel: undefined },
       } as unknown as AddComplexTypeCommand;
       const result = validateAddComplexType(command, emptySchemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Content model is required");
     });
 
@@ -592,7 +593,7 @@ describe("ComplexType Validators", () => {
         payload: { typeName: "PersonType", contentModel: "choice" },
       };
       const result = validateAddComplexType(command, schemaWithPersonType);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Complex type 'PersonType' already exists in schema");
     });
 
@@ -612,7 +613,7 @@ describe("ComplexType Validators", () => {
         payload: { parentId: "/element:nonExistent", contentModel: "sequence" },
       };
       const result = validateAddComplexType(command, emptySchemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("Parent not found");
     });
 
@@ -631,7 +632,7 @@ describe("ComplexType Validators", () => {
         payload: { parentId: "/element:person", contentModel: "choice" },
       };
       const result = validateAddComplexType(command, schemaWithInlineCT);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("already has an anonymous complexType");
     });
 
@@ -648,7 +649,7 @@ describe("ComplexType Validators", () => {
         payload: { parentId: "/element:person", contentModel: "sequence" },
       };
       const result = validateAddComplexType(command, schemaWithTypedEl);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("already has a type attribute");
     });
   });
@@ -660,7 +661,7 @@ describe("ComplexType Validators", () => {
         payload: { typeId: "" },
       };
       const result = validateRemoveComplexType(command, emptySchemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Type ID cannot be empty");
     });
 
@@ -679,7 +680,7 @@ describe("ComplexType Validators", () => {
         payload: { typeId: "/complexType:NonExistent" },
       };
       const result = validateRemoveComplexType(command, emptySchemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Complex type 'NonExistent' not found in schema");
     });
 
@@ -707,7 +708,7 @@ describe("ComplexType Validators", () => {
         payload: { typeId: "/element:person/anonymousComplexType[0]" },
       };
       const result = validateRemoveComplexType(command, schemaWithElement);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("No anonymous complexType found");
     });
 
@@ -717,7 +718,7 @@ describe("ComplexType Validators", () => {
         payload: { typeId: "/element:nonExistent/anonymousComplexType[0]" },
       };
       const result = validateRemoveComplexType(command, emptySchemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("Parent not found");
     });
   });
@@ -729,7 +730,7 @@ describe("ComplexType Validators", () => {
         payload: { typeId: "" },
       };
       const result = validateModifyComplexType(command, emptySchemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Type ID cannot be empty");
     });
 
@@ -748,7 +749,7 @@ describe("ComplexType Validators", () => {
         payload: { typeId: "/complexType:NonExistent" },
       };
       const result = validateModifyComplexType(command, emptySchemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Complex type 'NonExistent' not found in schema");
     });
 
@@ -758,7 +759,7 @@ describe("ComplexType Validators", () => {
         payload: { typeId: "/complexType:PersonType", typeName: "123invalid" },
       };
       const result = validateModifyComplexType(command, schemaWithPersonType);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Type name must be a valid XML name");
     });
 
@@ -768,7 +769,7 @@ describe("ComplexType Validators", () => {
         payload: { typeId: "/complexType:PersonType", contentModel: "invalid" },
       } as unknown as ModifyComplexTypeCommand;
       const result = validateModifyComplexType(command, schemaWithPersonType);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("Content model must be one of");
     });
 
@@ -799,7 +800,7 @@ describe("ComplexType Validators", () => {
         payload: { typeId: "/element:nonExistent/anonymousComplexType[0]" },
       };
       const result = validateModifyComplexType(command, emptySchemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("Parent not found");
     });
 
@@ -809,7 +810,7 @@ describe("ComplexType Validators", () => {
         payload: { typeId: "/element:person/anonymousComplexType[0]" },
       };
       const result = validateModifyComplexType(command, schemaWithElement);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("No anonymous complexType found");
     });
 
@@ -831,7 +832,7 @@ describe("ComplexType Validators", () => {
         },
       };
       const result = validateModifyComplexType(command, schemaWithInlineCT);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("Cannot provide 'typeName'");
     });
   });

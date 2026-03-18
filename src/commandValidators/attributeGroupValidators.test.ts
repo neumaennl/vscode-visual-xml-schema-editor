@@ -16,6 +16,7 @@ import {
   validateRemoveAttributeGroup,
   validateModifyAttributeGroup,
 } from "./attributeGroupValidators";
+import { expectInvalid } from "./validationTestHelpers";
 
 describe("AttributeGroup Validators", () => {
   let schemaObj: schema;
@@ -43,7 +44,7 @@ describe("AttributeGroup Validators", () => {
         };
 
         const result = validateAddAttributeGroup(command, schemaObj);
-        expect(result.valid).toBe(false);
+        expectInvalid(result);
         expect(result.error).toBe("Attribute group name must be a valid XML name");
       });
 
@@ -54,7 +55,7 @@ describe("AttributeGroup Validators", () => {
         };
 
         const result = validateAddAttributeGroup(command, schemaObj);
-        expect(result.valid).toBe(false);
+        expectInvalid(result);
         expect(result.error).toBe("Attribute group name must be a valid XML name");
       });
 
@@ -65,7 +66,7 @@ describe("AttributeGroup Validators", () => {
         };
 
         const result = validateAddAttributeGroup(command, schemaWithAttrGroup);
-        expect(result.valid).toBe(false);
+        expectInvalid(result);
         expect(result.error).toBe("Attribute group name already exists: CommonAttrs");
       });
 
@@ -86,7 +87,7 @@ describe("AttributeGroup Validators", () => {
         } as AddAttributeGroupCommand;
 
         const result = validateAddAttributeGroup(command, schemaObj);
-        expect(result.valid).toBe(false);
+        expectInvalid(result);
         expect(result.error).toContain("Cannot combine groupName with parentId");
       });
     });
@@ -116,7 +117,7 @@ describe("AttributeGroup Validators", () => {
         };
 
         const result = validateAddAttributeGroup(command, schemaWithAttrGroup);
-        expect(result.valid).toBe(false);
+        expectInvalid(result);
         expect(result.error).toContain("Parent ID is required");
       });
 
@@ -128,7 +129,7 @@ describe("AttributeGroup Validators", () => {
         };
 
         const result = validateAddAttributeGroup(command, schemaObj2);
-        expect(result.valid).toBe(false);
+        expectInvalid(result);
         expect(result.error).toBe("Attribute group ref must be a valid XML name");
       });
 
@@ -140,7 +141,7 @@ describe("AttributeGroup Validators", () => {
         };
 
         const result = validateAddAttributeGroup(command, schemaObj2);
-        expect(result.valid).toBe(false);
+        expectInvalid(result);
         expect(result.error).toContain("Referenced attribute group does not exist");
       });
 
@@ -151,7 +152,7 @@ describe("AttributeGroup Validators", () => {
         };
 
         const result = validateAddAttributeGroup(command, schemaWithAttrGroup);
-        expect(result.valid).toBe(false);
+        expectInvalid(result);
         expect(result.error).toContain("Parent node not found");
       });
 
@@ -166,7 +167,7 @@ describe("AttributeGroup Validators", () => {
         } as AddAttributeGroupCommand;
 
         const result = validateAddAttributeGroup(command, schemaObj);
-        expect(result.valid).toBe(false);
+        expectInvalid(result);
         expect(result.error).toContain("Cannot combine ref with groupName");
       });
     });
@@ -181,7 +182,7 @@ describe("AttributeGroup Validators", () => {
         };
 
         const result = validateRemoveAttributeGroup(command, schemaObj);
-        expect(result.valid).toBe(false);
+        expectInvalid(result);
         expect(result.error).toBe("Attribute group ID cannot be empty");
       });
 
@@ -192,7 +193,7 @@ describe("AttributeGroup Validators", () => {
         };
 
         const result = validateRemoveAttributeGroup(command, schemaObj);
-        expect(result.valid).toBe(false);
+        expectInvalid(result);
         expect(result.error).toContain("Attribute group not found");
       });
 
@@ -211,7 +212,7 @@ describe("AttributeGroup Validators", () => {
         };
 
         const result = validateRemoveAttributeGroup(command, referenced);
-        expect(result.valid).toBe(false);
+        expectInvalid(result);
         expect(result.error).toContain("still referenced");
       });
 
@@ -236,7 +237,7 @@ describe("AttributeGroup Validators", () => {
         };
 
         const result = validateRemoveAttributeGroup(command, referenced);
-        expect(result.valid).toBe(false);
+        expectInvalid(result);
         expect(result.error).toContain("still referenced");
       });
 
@@ -261,7 +262,7 @@ describe("AttributeGroup Validators", () => {
         };
 
         const result = validateRemoveAttributeGroup(command, referenced);
-        expect(result.valid).toBe(false);
+        expectInvalid(result);
         expect(result.error).toContain("still referenced");
       });
 
@@ -306,7 +307,7 @@ describe("AttributeGroup Validators", () => {
         };
 
         const result = validateRemoveAttributeGroup(command, schemaObj);
-        expect(result.valid).toBe(false);
+        expectInvalid(result);
         expect(result.error).toContain("Parent node not found");
       });
 
@@ -327,7 +328,7 @@ describe("AttributeGroup Validators", () => {
         };
 
         const result = validateRemoveAttributeGroup(command, schemaWithRef);
-        expect(result.valid).toBe(false);
+        expectInvalid(result);
         expect(result.error).toContain("Attribute group reference not found");
       });
     });
@@ -342,7 +343,7 @@ describe("AttributeGroup Validators", () => {
         };
 
         const result = validateModifyAttributeGroup(command, schemaObj);
-        expect(result.valid).toBe(false);
+        expectInvalid(result);
         expect(result.error).toBe("Attribute group ID cannot be empty");
       });
 
@@ -356,7 +357,7 @@ describe("AttributeGroup Validators", () => {
         };
 
         const result = validateModifyAttributeGroup(command, schemaObj);
-        expect(result.valid).toBe(false);
+        expectInvalid(result);
         expect(result.error).toContain("Attribute group not found");
       });
 
@@ -370,7 +371,7 @@ describe("AttributeGroup Validators", () => {
         };
 
         const result = validateModifyAttributeGroup(command, schemaWithAttrGroup);
-        expect(result.valid).toBe(false);
+        expectInvalid(result);
         expect(result.error).toBe("Attribute group name must be a valid XML name");
       });
 
@@ -390,7 +391,7 @@ describe("AttributeGroup Validators", () => {
         };
 
         const result = validateModifyAttributeGroup(command, twoGroups);
-        expect(result.valid).toBe(false);
+        expectInvalid(result);
         expect(result.error).toContain("Attribute group name already exists");
       });
 
@@ -430,7 +431,7 @@ describe("AttributeGroup Validators", () => {
         } as ModifyAttributeGroupCommand;
 
         const result = validateModifyAttributeGroup(command, schemaWithAttrGroup);
-        expect(result.valid).toBe(false);
+        expectInvalid(result);
         expect(result.error).toContain("Cannot use ref when modifying an attribute group definition");
       });
     });
@@ -469,7 +470,7 @@ describe("AttributeGroup Validators", () => {
         };
 
         const result = validateModifyAttributeGroup(command, schemaObj);
-        expect(result.valid).toBe(false);
+        expectInvalid(result);
         expect(result.error).toContain("Parent node not found");
       });
 
@@ -484,7 +485,7 @@ describe("AttributeGroup Validators", () => {
         };
 
         const result = validateModifyAttributeGroup(command, schemaWithRef);
-        expect(result.valid).toBe(false);
+        expectInvalid(result);
         expect(result.error).toContain("Attribute group reference not found");
       });
 
@@ -499,7 +500,7 @@ describe("AttributeGroup Validators", () => {
         };
 
         const result = validateModifyAttributeGroup(command, schemaWithRef);
-        expect(result.valid).toBe(false);
+        expectInvalid(result);
         expect(result.error).toContain("Referenced attribute group does not exist");
       });
 
@@ -514,7 +515,7 @@ describe("AttributeGroup Validators", () => {
         } as ModifyAttributeGroupCommand;
 
         const result = validateModifyAttributeGroup(command, schemaWithRef);
-        expect(result.valid).toBe(false);
+        expectInvalid(result);
         expect(result.error).toContain("Cannot use groupName when modifying an attribute group reference");
       });
     });

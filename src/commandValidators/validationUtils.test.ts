@@ -4,6 +4,7 @@ import {
   validateMaxOccurs,
   validateOccurrences,
 } from "./validationUtils";
+import { expectInvalid } from "./validationTestHelpers";
 
 describe("validationUtils", () => {
   describe("isValidXmlName", () => {
@@ -38,13 +39,13 @@ describe("validationUtils", () => {
 
     test("should reject negative minOccurs", () => {
       const result = validateMinOccurs(-1);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("minOccurs must be a non-negative integer");
     });
 
     test("should reject non-integer minOccurs", () => {
       const result = validateMinOccurs(1.5);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("minOccurs must be an integer");
     });
   });
@@ -68,7 +69,7 @@ describe("validationUtils", () => {
 
     test("should reject negative maxOccurs", () => {
       const result = validateMaxOccurs(-1);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe(
         "maxOccurs must be a non-negative integer or 'unbounded'"
       );
@@ -76,7 +77,7 @@ describe("validationUtils", () => {
 
     test("should reject non-integer maxOccurs", () => {
       const result = validateMaxOccurs(1.5);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("maxOccurs must be an integer or 'unbounded'");
     });
   });
@@ -95,13 +96,13 @@ describe("validationUtils", () => {
 
     test("should reject invalid minOccurs", () => {
       const result = validateOccurrences(-1, 10);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("minOccurs must be a non-negative integer");
     });
 
     test("should reject invalid maxOccurs", () => {
       const result = validateOccurrences(1, -1);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe(
         "maxOccurs must be a non-negative integer or 'unbounded'"
       );
@@ -109,7 +110,7 @@ describe("validationUtils", () => {
 
     test("should reject minOccurs > maxOccurs", () => {
       const result = validateOccurrences(10, 5);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("minOccurs must be <= maxOccurs");
     });
 

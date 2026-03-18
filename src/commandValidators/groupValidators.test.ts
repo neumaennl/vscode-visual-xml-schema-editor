@@ -14,6 +14,7 @@ import {
   validateRemoveGroup,
   validateModifyGroup,
 } from "./groupValidators";
+import { expectInvalid } from "./validationTestHelpers";
 
 describe("Group Validators", () => {
   let schemaObj: schema;
@@ -36,7 +37,7 @@ describe("Group Validators", () => {
       };
 
       const result = validateAddGroup(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Group name must be a valid XML name");
     });
 
@@ -51,7 +52,7 @@ describe("Group Validators", () => {
       } as unknown as AddGroupCommand;
 
       const result = validateAddGroup(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Content model is required");
     });
 
@@ -73,7 +74,7 @@ describe("Group Validators", () => {
       };
 
       const result = validateAddGroup(command, schemaWithGroup);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Group name already exists: ExistingGroup");
     });
 
@@ -101,7 +102,7 @@ describe("Group Validators", () => {
       } as unknown as AddGroupCommand;
 
       const result = validateAddGroup(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("Cannot combine ref with groupName or contentModel");
     });
 
@@ -116,7 +117,7 @@ describe("Group Validators", () => {
       } as unknown as AddGroupCommand;
 
       const result = validateAddGroup(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("Cannot combine ref with groupName or contentModel");
     });
 
@@ -131,7 +132,7 @@ describe("Group Validators", () => {
       } as unknown as AddGroupCommand;
 
       const result = validateAddGroup(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("Cannot combine groupName/contentModel with parentId");
     });
 
@@ -146,7 +147,7 @@ describe("Group Validators", () => {
       } as unknown as AddGroupCommand;
 
       const result = validateAddGroup(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("Cannot combine groupName/contentModel with parentId");
     });
   });
@@ -161,7 +162,7 @@ describe("Group Validators", () => {
       };
 
       const result = validateRemoveGroup(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Group ID cannot be empty");
     });
 
@@ -174,7 +175,7 @@ describe("Group Validators", () => {
       };
 
       const result = validateRemoveGroup(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Group not found: /group:NonExistent");
     });
 
@@ -220,7 +221,7 @@ describe("Group Validators", () => {
       };
 
       const result = validateRemoveGroup(command, schemaWithRef);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe(
         "Group is still referenced and cannot be removed: PersonGroup"
       );
@@ -271,7 +272,7 @@ describe("Group Validators", () => {
       };
 
       const result = validateRemoveGroup(command, schemaWithRef);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe(
         "Group is still referenced and cannot be removed: AddressGroup"
       );
@@ -301,7 +302,7 @@ describe("Group Validators", () => {
       };
 
       const result = validateRemoveGroup(command, schemaWithRef);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe(
         "Group is still referenced and cannot be removed: ContactGroup"
       );
@@ -329,7 +330,7 @@ describe("Group Validators", () => {
       };
 
       const result = validateRemoveGroup(command, schemaWithRef);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe(
         "Group is still referenced and cannot be removed: InnerGroup"
       );
@@ -375,7 +376,7 @@ describe("Group Validators", () => {
       };
 
       const result = validateModifyGroup(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Group ID cannot be empty");
     });
 
@@ -388,7 +389,7 @@ describe("Group Validators", () => {
       };
 
       const result = validateModifyGroup(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Group not found: /group:NonExistent");
     });
 
@@ -436,7 +437,7 @@ describe("Group Validators", () => {
         payload: { ref: "PersonGroup" },
       };
       const result = validateAddGroup(command, schemaWithGroup);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Parent ID is required for group references");
     });
 
@@ -446,7 +447,7 @@ describe("Group Validators", () => {
         payload: { ref: "123-invalid", parentId: "/complexType:PersonType/sequence" },
       };
       const result = validateAddGroup(command, schemaWithGroup);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Group ref must be a valid XML name");
     });
 
@@ -456,7 +457,7 @@ describe("Group Validators", () => {
         payload: { ref: "NoSuchGroup", parentId: "/complexType:PersonType/sequence" },
       };
       const result = validateAddGroup(command, schemaWithGroup);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Referenced group does not exist: NoSuchGroup");
     });
 
@@ -466,7 +467,7 @@ describe("Group Validators", () => {
         payload: { ref: "PersonGroup", parentId: "/complexType:NoSuchType/sequence" },
       };
       const result = validateAddGroup(command, schemaWithGroup);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("Parent node not found");
     });
 
@@ -543,7 +544,7 @@ describe("Group Validators", () => {
       };
       // schemaWithGroup has PersonType with a sequence — adding a direct group ref should be rejected
       const result = validateAddGroup(command, schemaWithGroup);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("already has a particle");
     });
 
@@ -599,7 +600,7 @@ describe("Group Validators", () => {
         payload: { groupId: "/complexType:NoSuchType/sequence[0]/groupRef:PersonGroup[0]" },
       };
       const result = validateRemoveGroup(command, schemaWithRef);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("Parent node not found");
     });
 
@@ -634,7 +635,7 @@ describe("Group Validators", () => {
         payload: { groupId: "/complexType:PersonType/groupRef:OtherGroup[0]" },
       };
       const result = validateRemoveGroup(command, schemaWithDirectRef);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("GroupRef name mismatch");
     });
 
@@ -652,7 +653,7 @@ describe("Group Validators", () => {
         payload: { groupId: "/complexType:PersonType/groupRef:PersonGroup[0]" },
       };
       const result = validateRemoveGroup(command, schemaNoDirectGroup);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("GroupRef not found");
     });
   });
@@ -711,7 +712,7 @@ describe("Group Validators", () => {
         },
       };
       const result = validateModifyGroup(command, schemaWithRef);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Referenced group does not exist: NonExistentGroup");
     });
 
@@ -724,7 +725,7 @@ describe("Group Validators", () => {
         },
       } as unknown as ModifyGroupCommand;
       const result = validateModifyGroup(command, schemaWithRef);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("Cannot use groupName or contentModel when modifying a group reference");
     });
 
@@ -737,7 +738,7 @@ describe("Group Validators", () => {
         },
       } as unknown as ModifyGroupCommand;
       const result = validateModifyGroup(command, schemaWithRef);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("Cannot use groupName or contentModel when modifying a group reference");
     });
 
@@ -810,7 +811,7 @@ describe("Group Validators", () => {
         },
       };
       const result = validateModifyGroup(command, noGroupSchema);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("GroupRef not found");
     });
 
@@ -823,7 +824,7 @@ describe("Group Validators", () => {
         },
       };
       const result = validateModifyGroup(command, schemaWithDirectRef);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("GroupRef name mismatch");
     });
   });
@@ -850,7 +851,7 @@ describe("Group Validators", () => {
         },
       } as unknown as ModifyGroupCommand;
       const result = validateModifyGroup(command, schemaWithGroup);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("Cannot use ref, minOccurs, or maxOccurs when modifying a group definition");
     });
 
@@ -863,7 +864,7 @@ describe("Group Validators", () => {
         },
       } as unknown as ModifyGroupCommand;
       const result = validateModifyGroup(command, schemaWithGroup);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("Cannot use ref, minOccurs, or maxOccurs when modifying a group definition");
     });
   });

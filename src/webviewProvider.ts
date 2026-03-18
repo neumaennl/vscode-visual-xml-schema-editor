@@ -195,7 +195,7 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
       const currentXml = document.getText();
       const result = this.commandProcessor.execute(message.data, currentXml);
 
-      if (result.success && result.xmlContent) {
+      if (result.success) {
         // Apply the changes to the document
         const edit = new vscode.WorkspaceEdit();
         // Calculate the full range of the document, handling empty documents
@@ -235,7 +235,7 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
           void this.safePostMessage(webview, {
             command: "error",
             data: {
-              message: result.error ?? "An unexpected error occurred during command execution.",
+              message: result.error,
               code: "COMMAND_EXECUTION_ERROR",
               stack: result.stack,
             },
@@ -254,7 +254,7 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
       // Send error response for unexpected errors that escaped commandProcessor.
       // Note: If this postMessage fails, it will be logged by safePostMessage
       // to avoid infinite error loops.
-      const err = error as Error;
+      const err = error instanceof Error ? error : new Error(String(error));
       void this.safePostMessage(webview, {
         command: "error",
         data: {

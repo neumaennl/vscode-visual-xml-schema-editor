@@ -7,6 +7,7 @@
 import { CommandValidator, ValidatorFunctions } from "./commandValidator";
 import { schema, SchemaCommand } from "../shared/types";
 import { ValidationResult } from "./commandValidators/validationUtils";
+import { expectInvalid } from "./commandValidators/validationTestHelpers";
 
 describe("CommandValidator", () => {
   let mockSchema: schema;
@@ -82,8 +83,9 @@ describe("CommandValidator", () => {
         mockSchema
       );
 
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("Unknown command type");
+      expectInvalid(result);
       expect(result.error).toContain("unknownCommandType");
 
       // Verify no validators were called
@@ -206,7 +208,7 @@ describe("CommandValidator", () => {
 
       const result = validator.validate(command, mockSchema);
 
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Element name cannot be empty");
       expect(mockValidators.validateAddElement).toHaveBeenCalledWith(
         command,

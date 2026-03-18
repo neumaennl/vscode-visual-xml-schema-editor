@@ -8,6 +8,7 @@ import { CommandProcessor } from "./commandProcessor";
 import type {
   CommandExecutionResult,
   CommandExecutionFailure,
+  CommandExecutionValidationFailure,
   CommandExecutionRuntimeFailure,
 } from "./commandProcessor";
 import { AddElementCommand, SchemaCommand, schema } from "../shared/types";
@@ -53,6 +54,19 @@ function expectRuntimeFailure(
   expect(result.errorKind).toBe("runtime");
   if (result.errorKind !== "runtime")
     throw new Error("Expected runtime failure");
+}
+
+/**
+ * Asserts that a CommandExecutionResult represents a validation failure and narrows
+ * its type to CommandExecutionValidationFailure.
+ */
+function expectValidationFailure(
+  result: CommandExecutionResult
+): asserts result is CommandExecutionValidationFailure {
+  expectFailure(result);
+  expect(result.errorKind).toBe("validation");
+  if (result.errorKind !== "validation")
+    throw new Error("Expected validation failure");
 }
 
 describe("CommandProcessor", () => {
@@ -840,8 +854,7 @@ describe("CommandProcessor", () => {
 
       const result = processor.execute(command, simpleSchemaXml);
 
-      expectFailure(result);
-      expect(result.errorKind).toBe("validation");
+      expectValidationFailure(result);
     });
 
     test("should set errorKind to 'validation' for unknown command type", () => {
@@ -856,8 +869,7 @@ describe("CommandProcessor", () => {
       );
 
       expect(result.success).toBe(false);
-      expectFailure(result);
-      expect(result.errorKind).toBe("validation");
+      expectValidationFailure(result);
     });
 
     test("should set errorKind to 'validation' for concurrent execution rejection", () => {
@@ -889,8 +901,7 @@ describe("CommandProcessor", () => {
 
       const result = processorWithMock.execute(command, simpleSchemaXml);
 
-      expectFailure(result);
-      expect(result.errorKind).toBe("validation");
+      expectValidationFailure(result);
 
       Object.assign(processorWithMock, { isExecuting: false });
     });

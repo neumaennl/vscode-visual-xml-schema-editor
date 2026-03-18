@@ -117,7 +117,6 @@ describe("Element Validators", () => {
       const result = validateAddElement(command, schemaObj);
       expectInvalid(result);
       expect(result.error).toContain("Invalid element type");
-      expectInvalid(result);
       expect(result.error).toContain("invalidType");
     });
 
@@ -134,7 +133,6 @@ describe("Element Validators", () => {
       const result = validateAddElement(command, schemaObj);
       expectInvalid(result);
       expect(result.error).toContain("Invalid element type");
-      expectInvalid(result);
       expect(result.error).toContain("unknown:SomeType");
     });
 
@@ -276,7 +274,6 @@ describe("Element Validators", () => {
       const result = validateAddElement(command, customSchema);
       expectInvalid(result);
       expect(result.error).toContain("Invalid element type");
-      expectInvalid(result);
       expect(result.error).toContain("wrongprefix:SomeType");
     });
 
@@ -408,7 +405,6 @@ describe("Element Validators", () => {
       const result = validateModifyElement(command, schemaObj);
       expectInvalid(result);
       expect(result.error).toContain("Invalid element type");
-      expectInvalid(result);
       expect(result.error).toContain("invalidType");
     });
 

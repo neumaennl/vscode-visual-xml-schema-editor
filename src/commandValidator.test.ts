@@ -85,7 +85,6 @@ describe("CommandValidator", () => {
 
       expectInvalid(result);
       expect(result.error).toContain("Unknown command type");
-      expectInvalid(result);
       expect(result.error).toContain("unknownCommandType");
 
       // Verify no validators were called

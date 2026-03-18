@@ -98,6 +98,19 @@ export default [
     },
     rules: {
       ...jestPlugin.configs.recommended.rules,
+      // Recognise custom assertion helpers as assertion-containing functions
+      'jest/expect-expect': [
+        'warn',
+        {
+          assertFunctionNames: [
+            'expect',
+            'expectFailure',
+            'expectValidationFailure',
+            'expectRuntimeFailure',
+            'expectInvalid',
+          ],
+        },
+      ],
       // Disabled in tests where we have more control over the test environment
       '@typescript-eslint/no-non-null-assertion': 'off',
       // Disabled to allow dynamic require() in tests for module initialization testing

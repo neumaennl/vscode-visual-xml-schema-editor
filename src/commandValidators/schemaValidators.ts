@@ -346,5 +346,22 @@ export function validateModifyInclude(
     return { valid: false, error: "Schema location must be a valid path or URI without whitespace" };
   }
 
+  // Check if another include already uses this schemaLocation
+  const trimmedLocation = schemaLocation.trim();
+  const includes = toArray(schemaObj.include);
+  const currentPosition =
+    typeof (idResult as any).position === "number" ? (idResult as any).position : -1;
+  if (
+    includes.some(
+      (inc, index) =>
+        index !== currentPosition && inc.schemaLocation === trimmedLocation
+    )
+  ) {
+    return {
+      valid: false,
+      error: `An include for schema location '${trimmedLocation}' already exists`,
+    };
+  }
+
   return { valid: true };
 }

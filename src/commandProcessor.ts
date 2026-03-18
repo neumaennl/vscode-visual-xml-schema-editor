@@ -9,6 +9,18 @@ import { CommandExecutor } from "./commandExecutor";
 import { SchemaModelManager } from "./schemaModelManager";
 
 /**
+ * Classifies the origin of a command execution failure.
+ *
+ * - `'validation'` – the command was rejected by the validator (bad input, wrong
+ *   state, etc.).  The caller should report this as a `commandResult` message so
+ *   the webview can surface actionable feedback to the user.
+ * - `'runtime'` – an unexpected exception was thrown during execution (a bug or
+ *   an unrecoverable system error).  The caller should report this as an `error`
+ *   message that includes an optional stack trace so developers can diagnose it.
+ */
+export type CommandErrorKind = "validation" | "runtime";
+
+/**
  * Result of a command execution including the updated schema and XML.
  */
 export interface CommandExecutionResult {
@@ -16,6 +28,18 @@ export interface CommandExecutionResult {
   success: boolean;
   /** Error message if execution failed */
   error?: string;
+  /**
+   * Classifies the failure origin when `success` is `false`.
+   * - `'validation'` – invalid input or incompatible schema state.
+   * - `'runtime'`    – unexpected exception during execution.
+   * Absent when `success` is `true`.
+   */
+  errorKind?: CommandErrorKind;
+  /**
+   * Stack trace of the thrown exception when `errorKind` is `'runtime'`.
+   * Absent for validation failures and successful results.
+   */
+  stack?: string;
   /** Updated schema object (null if execution failed) */
   schema: schema | null;
   /** Serialized XML content (null if execution failed) */
@@ -69,6 +93,7 @@ export class CommandProcessor {
       return {
         success: false,
         error: "Another command is currently being executed. Please wait for it to complete.",
+        errorKind: "validation",
         schema: null,
         xmlContent: null,
       };
@@ -91,6 +116,7 @@ export class CommandProcessor {
         return {
           success: false,
           error: validationResult.error,
+          errorKind: "validation",
           schema: null,
           xmlContent: null,
         };
@@ -119,9 +145,12 @@ export class CommandProcessor {
       };
     } catch (error) {
       // Rollback: any error during execution returns failure with original state preserved
+      const err = error as Error;
       return {
         success: false,
-        error: `Command execution failed: ${(error as Error).message}`,
+        error: `Command execution failed: ${err.message}`,
+        errorKind: "runtime",
+        stack: err.stack,
         schema: null,
         xmlContent: null,
       };

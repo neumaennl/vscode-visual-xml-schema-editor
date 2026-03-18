@@ -228,23 +228,39 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
           });
         }
       } else {
-        // Send error response
-        void this.safePostMessage(webview, {
-          command: "commandResult",
-          data: {
-            success: false,
-            error: result.error,
-          },
-        });
+        // Route the failure to the appropriate message type:
+        // - runtime errors  → 'error' message (unexpected exception, developer-facing)
+        // - validation errors → 'commandResult' message (bad input, user-facing)
+        if (result.errorKind === "runtime") {
+          void this.safePostMessage(webview, {
+            command: "error",
+            data: {
+              message: result.error ?? "An unexpected error occurred during command execution.",
+              code: "COMMAND_EXECUTION_ERROR",
+              stack: result.stack,
+            },
+          });
+        } else {
+          void this.safePostMessage(webview, {
+            command: "commandResult",
+            data: {
+              success: false,
+              error: result.error,
+            },
+          });
+        }
       }
     } catch (error) {
-      // Send error response for unexpected errors
+      // Send error response for unexpected errors that escaped commandProcessor.
       // Note: If this postMessage fails, it will be logged by safePostMessage
-      // to avoid infinite error loops
+      // to avoid infinite error loops.
+      const err = error as Error;
       void this.safePostMessage(webview, {
         command: "error",
         data: {
-          message: `Failed to execute command: ${(error as Error).message}`,
+          message: `Failed to execute command: ${err.message}`,
+          code: "COMMAND_EXECUTION_ERROR",
+          stack: err.stack,
         },
       });
     }

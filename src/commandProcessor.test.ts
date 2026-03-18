@@ -798,4 +798,177 @@ describe("CommandProcessor", () => {
       expect(result2.error).not.toContain("Another command is currently being executed");
     });
   });
+
+  describe("Error Kind Classification", () => {
+    test("should set errorKind to 'validation' for validation failures", () => {
+      const command: AddElementCommand = {
+        type: "addElement",
+        payload: {
+          parentId: "",
+          elementName: "test",
+          elementType: "string",
+        },
+      };
+
+      const result = processor.execute(command, simpleSchemaXml);
+
+      expect(result.success).toBe(false);
+      expect(result.errorKind).toBe("validation");
+      expect(result.stack).toBeUndefined();
+    });
+
+    test("should set errorKind to 'validation' for unknown command type", () => {
+      const invalidCommand = {
+        type: "unknownCommand",
+        payload: {},
+      };
+
+      const result = processor.execute(
+        invalidCommand as unknown as SchemaCommand,
+        simpleSchemaXml
+      );
+
+      expect(result.success).toBe(false);
+      expect(result.errorKind).toBe("validation");
+      expect(result.stack).toBeUndefined();
+    });
+
+    test("should set errorKind to 'validation' for concurrent execution rejection", () => {
+      const mockModelManager: MockModelManager = {
+        loadFromXml: jest.fn(),
+        getSchema: jest.fn().mockReturnValue(mockSchema),
+        setSchema: jest.fn(),
+        cloneSchema: jest.fn().mockReturnValue(mockSchema),
+        toXml: jest.fn().mockReturnValue(simpleSchemaXml),
+      };
+
+      const processorWithMock = new CommandProcessor(
+        undefined,
+        undefined,
+        mockModelManager as SchemaModelManager
+      );
+
+      const command: AddElementCommand = {
+        type: "addElement",
+        payload: {
+          parentId: "schema",
+          elementName: "test",
+          elementType: "string",
+        },
+      };
+
+      // Simulate in-progress execution
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+      (processorWithMock as any).isExecuting = true;
+
+      const result = processorWithMock.execute(command, simpleSchemaXml);
+
+      expect(result.success).toBe(false);
+      expect(result.errorKind).toBe("validation");
+      expect(result.stack).toBeUndefined();
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+      (processorWithMock as any).isExecuting = false;
+    });
+
+    test("should set errorKind to 'runtime' and include stack when executor throws", () => {
+      const mockExecutor: MockExecutor = {
+        execute: jest.fn(() => {
+          throw new Error("Executor crashed unexpectedly");
+        }),
+      };
+
+      const processorWithMock = new CommandProcessor(
+        undefined,
+        mockExecutor as CommandExecutor
+      );
+
+      const command: AddElementCommand = {
+        type: "addElement",
+        payload: {
+          parentId: "schema",
+          elementName: "test",
+          elementType: "string",
+        },
+      };
+
+      const result = processorWithMock.execute(command, simpleSchemaXml);
+
+      expect(result.success).toBe(false);
+      expect(result.errorKind).toBe("runtime");
+      expect(result.error).toContain("Executor crashed unexpectedly");
+      expect(typeof result.stack).toBe("string");
+    });
+
+    test("should set errorKind to 'runtime' and include stack when schema load throws", () => {
+      const mockModelManager: MockModelManager = {
+        loadFromXml: jest.fn(() => {
+          throw new Error("XML parse error");
+        }),
+        getSchema: jest.fn(),
+        setSchema: jest.fn(),
+        cloneSchema: jest.fn(),
+        toXml: jest.fn(),
+      };
+
+      const processorWithMock = new CommandProcessor(
+        undefined,
+        undefined,
+        mockModelManager as SchemaModelManager
+      );
+
+      const command: AddElementCommand = {
+        type: "addElement",
+        payload: {
+          parentId: "schema",
+          elementName: "test",
+          elementType: "string",
+        },
+      };
+
+      const result = processorWithMock.execute(command, simpleSchemaXml);
+
+      expect(result.success).toBe(false);
+      expect(result.errorKind).toBe("runtime");
+      expect(result.error).toContain("XML parse error");
+      expect(typeof result.stack).toBe("string");
+    });
+
+    test("should not set errorKind on successful execution", () => {
+      const mockModelManager: MockModelManager = {
+        loadFromXml: jest.fn(),
+        getSchema: jest.fn().mockReturnValue(mockSchema),
+        setSchema: jest.fn(),
+        cloneSchema: jest.fn().mockReturnValue(mockSchema),
+        toXml: jest.fn().mockReturnValue(simpleSchemaXml),
+      };
+
+      const mockExecutor: MockExecutor = {
+        execute: jest.fn((cmd, s) => {
+          s.version = "1.0";
+        }),
+      };
+
+      const processorWithMock = new CommandProcessor(
+        undefined,
+        mockExecutor as CommandExecutor,
+        mockModelManager as SchemaModelManager
+      );
+
+      const command: AddElementCommand = {
+        type: "addElement",
+        payload: {
+          parentId: "schema",
+          elementName: "test",
+          elementType: "string",
+        },
+      };
+
+      const result = processorWithMock.execute(command, simpleSchemaXml);
+
+      expect(result.success).toBe(true);
+      expect(result.errorKind).toBeUndefined();
+      expect(result.stack).toBeUndefined();
+    });
+  });
 });

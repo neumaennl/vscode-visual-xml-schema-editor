@@ -241,7 +241,7 @@ describe("CommandExecutor", () => {
       expect(toArray(mockSchema.import_)).toHaveLength(1);
     });
 
-    it("should delegate addInclude execution and throw not implemented error", () => {
+    it("should delegate addInclude execution successfully", () => {
       const command: SchemaCommand = {
         type: "addInclude",
         payload: {
@@ -251,7 +251,10 @@ describe("CommandExecutor", () => {
 
       expect(() => {
         executor.execute(command, mockSchema);
-      }).toThrow("addInclude execution not yet implemented");
+      }).not.toThrow();
+
+      expect(toArray(mockSchema.include)).toHaveLength(1);
+      expect(toArray(mockSchema.include)[0].schemaLocation).toBe("included.xsd");
     });
   });
 });

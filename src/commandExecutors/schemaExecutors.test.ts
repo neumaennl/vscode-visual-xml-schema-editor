@@ -17,6 +17,9 @@ import {
   AddImportCommand,
   RemoveImportCommand,
   ModifyImportCommand,
+  AddIncludeCommand,
+  RemoveIncludeCommand,
+  ModifyIncludeCommand,
   topLevelComplexType,
   topLevelSimpleType,
   restrictionType,
@@ -30,6 +33,9 @@ import {
   executeAddImport,
   executeRemoveImport,
   executeModifyImport,
+  executeAddInclude,
+  executeRemoveInclude,
+  executeModifyInclude,
 } from "./schemaExecutors";
 import { toArray } from "../../shared/schemaUtils";
 
@@ -564,5 +570,175 @@ describe("executeModifyImport", () => {
     expect(s._namespacePrefixes?.["ext"]).toBeUndefined();
     // "ext2" (the other prefix for the same namespace) remains untouched
     expect(s._namespacePrefixes?.["ext2"]).toBe("http://example.com/ns");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Include test helpers
+// ---------------------------------------------------------------------------
+
+function schemaWithIncludes(...schemaLocations: string[]): schema {
+  const includeXml = schemaLocations
+    .map((loc) => `  <xs:include schemaLocation="${loc}"/>`)
+    .join("\n");
+  return unmarshal(
+    schema,
+    `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+${includeXml}
+</xs:schema>`
+  );
+}
+
+// ---------------------------------------------------------------------------
+// executeAddInclude
+// ---------------------------------------------------------------------------
+
+describe("executeAddInclude", () => {
+  it("should add a single include to a schema with no existing includes", () => {
+    const schemaObj = emptySchema();
+    const command: AddIncludeCommand = {
+      type: "addInclude",
+      payload: { schemaLocation: "other.xsd" },
+    };
+
+    executeAddInclude(command, schemaObj);
+
+    const includes = toArray(schemaObj.include);
+    expect(includes).toHaveLength(1);
+    expect(includes[0].schemaLocation).toBe("other.xsd");
+  });
+
+  it("should append a second include without removing existing ones", () => {
+    const schemaObj = schemaWithIncludes("first.xsd");
+    const command: AddIncludeCommand = {
+      type: "addInclude",
+      payload: { schemaLocation: "second.xsd" },
+    };
+
+    executeAddInclude(command, schemaObj);
+
+    const includes = toArray(schemaObj.include);
+    expect(includes).toHaveLength(2);
+    expect(includes[0].schemaLocation).toBe("first.xsd");
+    expect(includes[1].schemaLocation).toBe("second.xsd");
+  });
+
+  it("should trim leading/trailing whitespace from schemaLocation", () => {
+    const schemaObj = emptySchema();
+    const command: AddIncludeCommand = {
+      type: "addInclude",
+      payload: { schemaLocation: "  trimmed.xsd  " },
+    };
+
+    executeAddInclude(command, schemaObj);
+
+    expect(toArray(schemaObj.include)[0].schemaLocation).toBe("trimmed.xsd");
+  });
+
+  it("should produce a schema that survives a marshal/unmarshal round-trip", () => {
+    const schemaObj = emptySchema();
+    const command: AddIncludeCommand = {
+      type: "addInclude",
+      payload: { schemaLocation: "included.xsd" },
+    };
+
+    executeAddInclude(command, schemaObj);
+
+    const xml = marshal(schemaObj);
+    const roundTripped = unmarshal(schema, xml);
+    const includes = toArray(roundTripped.include);
+    expect(includes).toHaveLength(1);
+    expect(includes[0].schemaLocation).toBe("included.xsd");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// executeRemoveInclude
+// ---------------------------------------------------------------------------
+
+describe("executeRemoveInclude", () => {
+  it("should remove the only include, leaving include undefined", () => {
+    const schemaObj = schemaWithIncludes("other.xsd");
+    const command: RemoveIncludeCommand = {
+      type: "removeInclude",
+      payload: { includeId: "/include[0]" },
+    };
+
+    executeRemoveInclude(command, schemaObj);
+
+    expect(schemaObj.include).toBeUndefined();
+  });
+
+  it("should remove the first include when multiple includes exist", () => {
+    const schemaObj = schemaWithIncludes("first.xsd", "second.xsd");
+    const command: RemoveIncludeCommand = {
+      type: "removeInclude",
+      payload: { includeId: "/include[0]" },
+    };
+
+    executeRemoveInclude(command, schemaObj);
+
+    const includes = toArray(schemaObj.include);
+    expect(includes).toHaveLength(1);
+    expect(includes[0].schemaLocation).toBe("second.xsd");
+  });
+
+  it("should remove the last include when multiple includes exist", () => {
+    const schemaObj = schemaWithIncludes("first.xsd", "second.xsd");
+    const command: RemoveIncludeCommand = {
+      type: "removeInclude",
+      payload: { includeId: "/include[1]" },
+    };
+
+    executeRemoveInclude(command, schemaObj);
+
+    const includes = toArray(schemaObj.include);
+    expect(includes).toHaveLength(1);
+    expect(includes[0].schemaLocation).toBe("first.xsd");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// executeModifyInclude
+// ---------------------------------------------------------------------------
+
+describe("executeModifyInclude", () => {
+  it("should update schemaLocation", () => {
+    const schemaObj = schemaWithIncludes("old.xsd");
+    const command: ModifyIncludeCommand = {
+      type: "modifyInclude",
+      payload: { includeId: "/include[0]", schemaLocation: "new.xsd" },
+    };
+
+    executeModifyInclude(command, schemaObj);
+
+    expect(toArray(schemaObj.include)[0].schemaLocation).toBe("new.xsd");
+  });
+
+  it("should modify only the include at the specified position", () => {
+    const schemaObj = schemaWithIncludes("first.xsd", "second.xsd");
+    const command: ModifyIncludeCommand = {
+      type: "modifyInclude",
+      payload: { includeId: "/include[1]", schemaLocation: "modified.xsd" },
+    };
+
+    executeModifyInclude(command, schemaObj);
+
+    const includes = toArray(schemaObj.include);
+    expect(includes[0].schemaLocation).toBe("first.xsd");
+    expect(includes[1].schemaLocation).toBe("modified.xsd");
+  });
+
+  it("should trim whitespace from schemaLocation when modifying", () => {
+    const schemaObj = schemaWithIncludes("old.xsd");
+    const command: ModifyIncludeCommand = {
+      type: "modifyInclude",
+      payload: { includeId: "/include[0]", schemaLocation: "  trimmed.xsd  " },
+    };
+
+    executeModifyInclude(command, schemaObj);
+
+    expect(toArray(schemaObj.include)[0].schemaLocation).toBe("trimmed.xsd");
   });
 });

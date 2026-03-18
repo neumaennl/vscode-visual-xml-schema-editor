@@ -698,8 +698,7 @@ describe("CommandProcessor", () => {
       };
 
       // Manually set the isExecuting flag to simulate in-progress execution
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-      (processorWithMock as any).isExecuting = true;
+      (processorWithMock as unknown as { isExecuting: boolean }).isExecuting = true;
 
       // Try to execute command while another is "in progress"
       const result = processorWithMock.execute(command, simpleSchemaXml);
@@ -709,8 +708,7 @@ describe("CommandProcessor", () => {
       expect(result.error).toContain("Another command is currently being executed");
       
       // Reset the flag
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-      (processorWithMock as any).isExecuting = false;
+      (processorWithMock as unknown as { isExecuting: boolean }).isExecuting = false;
     });
 
     test("should allow execution after previous command completes", () => {
@@ -858,8 +856,7 @@ describe("CommandProcessor", () => {
       };
 
       // Simulate in-progress execution
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-      (processorWithMock as any).isExecuting = true;
+      (processorWithMock as unknown as { isExecuting: boolean }).isExecuting = true;
 
       const result = processorWithMock.execute(command, simpleSchemaXml);
 
@@ -867,8 +864,7 @@ describe("CommandProcessor", () => {
       expect(result.errorKind).toBe("validation");
       expect(result.stack).toBeUndefined();
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-      (processorWithMock as any).isExecuting = false;
+      (processorWithMock as unknown as { isExecuting: boolean }).isExecuting = false;
     });
 
     test("should set errorKind to 'runtime' and include stack when executor throws", () => {

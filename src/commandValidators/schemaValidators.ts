@@ -339,13 +339,11 @@ export function validateModifyInclude(
   const idResult = validateIncludeId(includeId, schemaObj);
   if (!idResult.valid) return idResult;
 
-  if (schemaLocation !== undefined) {
-    if (!schemaLocation.trim()) {
-      return { valid: false, error: "Schema location cannot be empty" };
-    }
-    if (!isValidSchemaLocation(schemaLocation)) {
-      return { valid: false, error: "Schema location must be a valid path or URI without whitespace" };
-    }
+  if (!schemaLocation.trim()) {
+    return { valid: false, error: "Schema location cannot be empty" };
+  }
+  if (!isValidSchemaLocation(schemaLocation)) {
+    return { valid: false, error: "Schema location must be a valid path or URI without whitespace" };
   }
 
   return { valid: true };

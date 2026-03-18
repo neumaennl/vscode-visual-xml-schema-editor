@@ -122,8 +122,8 @@ export interface RemoveIncludeCommand extends BaseCommand<RemoveIncludePayload> 
 export interface ModifyIncludePayload {
   /** ID of the include to modify */
   includeId: string;
-  /** New schema location (optional) */
-  schemaLocation?: string;
+  /** New schema location */
+  schemaLocation: string;
 }
 
 /**

@@ -277,7 +277,6 @@ export function executeRemoveInclude(
  *
  * Updates the schemaLocation of the xs:include at the position encoded in
  * `includeId` (e.g. "/include[0]" targets the first include).
- * Only properties present in the payload are changed.
  *
  * @param command - The modifyInclude command to execute
  * @param schemaObj - The schema object to modify
@@ -287,12 +286,8 @@ export function executeModifyInclude(
   schemaObj: schema
 ): void {
   const { includeId } = command.payload;
-  const schemaLocation = command.payload.schemaLocation?.trim();
+  const schemaLocation = command.payload.schemaLocation.trim();
   const { includes, index } = resolveInclude(includeId, schemaObj);
-  const includeEntry = includes[index];
-
-  if (schemaLocation !== undefined) {
-    includeEntry.schemaLocation = schemaLocation;
-  }
+  includes[index].schemaLocation = schemaLocation;
 }
 

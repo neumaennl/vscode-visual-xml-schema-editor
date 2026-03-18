@@ -644,6 +644,7 @@ ${includeXml}
         type: "modifyInclude",
         payload: {
           includeId: "",
+          schemaLocation: "other.xsd",
         },
       };
 
@@ -655,7 +656,7 @@ ${includeXml}
     test("should reject modifyInclude with malformed includeId", () => {
       const command: ModifyIncludeCommand = {
         type: "modifyInclude",
-        payload: { includeId: "include1" },
+        payload: { includeId: "include1", schemaLocation: "other.xsd" },
       };
 
       const result = validateModifyInclude(command, schemaObj);
@@ -666,7 +667,7 @@ ${includeXml}
     test("should reject modifyInclude when include does not exist at position", () => {
       const command: ModifyIncludeCommand = {
         type: "modifyInclude",
-        payload: { includeId: "/include[0]" },
+        payload: { includeId: "/include[0]", schemaLocation: "other.xsd" },
       };
 
       const result = validateModifyInclude(command, schemaObj);
@@ -682,17 +683,6 @@ ${includeXml}
           includeId: "/include[0]",
           schemaLocation: "newSchema.xsd",
         },
-      };
-
-      const result = validateModifyInclude(command, schemaWithInclude);
-      expect(result.valid).toBe(true);
-    });
-
-    test("should accept modifyInclude without optional schemaLocation", () => {
-      const schemaWithInclude = schemaWithIncludes("other.xsd");
-      const command: ModifyIncludeCommand = {
-        type: "modifyInclude",
-        payload: { includeId: "/include[0]" },
       };
 
       const result = validateModifyInclude(command, schemaWithInclude);

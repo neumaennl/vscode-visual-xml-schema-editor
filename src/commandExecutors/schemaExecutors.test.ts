@@ -716,18 +716,6 @@ describe("executeModifyInclude", () => {
     expect(toArray(schemaObj.include)[0].schemaLocation).toBe("new.xsd");
   });
 
-  it("should not change any property when payload has no optional fields", () => {
-    const schemaObj = schemaWithIncludes("unchanged.xsd");
-    const command: ModifyIncludeCommand = {
-      type: "modifyInclude",
-      payload: { includeId: "/include[0]" },
-    };
-
-    executeModifyInclude(command, schemaObj);
-
-    expect(toArray(schemaObj.include)[0].schemaLocation).toBe("unchanged.xsd");
-  });
-
   it("should modify only the include at the specified position", () => {
     const schemaObj = schemaWithIncludes("first.xsd", "second.xsd");
     const command: ModifyIncludeCommand = {

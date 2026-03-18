@@ -349,8 +349,7 @@ export function validateModifyInclude(
   // Check if another include already uses this schemaLocation
   const trimmedLocation = schemaLocation.trim();
   const includes = toArray(schemaObj.include);
-  const currentPosition =
-    typeof (idResult as any).position === "number" ? (idResult as any).position : -1;
+  const currentPosition = idResult.position;
   if (
     includes.some(
       (inc, index) =>

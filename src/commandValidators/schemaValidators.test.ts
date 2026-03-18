@@ -712,5 +712,28 @@ ${includeXml}
       expect(result.valid).toBe(false);
       expect(result.error).toBe("Schema location must be a valid path or URI without whitespace");
     });
+
+    test("should reject modifyInclude when schemaLocation already exists on another include", () => {
+      const schemaWithTwoIncludes = schemaWithIncludes("first.xsd", "second.xsd");
+      const command: ModifyIncludeCommand = {
+        type: "modifyInclude",
+        payload: { includeId: "/include[0]", schemaLocation: "second.xsd" },
+      };
+
+      const result = validateModifyInclude(command, schemaWithTwoIncludes);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe("An include for schema location 'second.xsd' already exists");
+    });
+
+    test("should accept modifyInclude when schemaLocation matches the same include (no-op)", () => {
+      const schemaWithInclude = schemaWithIncludes("other.xsd");
+      const command: ModifyIncludeCommand = {
+        type: "modifyInclude",
+        payload: { includeId: "/include[0]", schemaLocation: "other.xsd" },
+      };
+
+      const result = validateModifyInclude(command, schemaWithInclude);
+      expect(result.valid).toBe(true);
+    });
   });
 });

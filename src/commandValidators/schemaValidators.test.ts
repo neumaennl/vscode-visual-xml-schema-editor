@@ -505,6 +505,19 @@ describe("Include Validators", () => {
     schemaObj = unmarshal(schema, simpleSchemaXml);
   });
 
+  function schemaWithIncludes(...schemaLocations: string[]): schema {
+    const includeXml = schemaLocations
+      .map((loc) => `  <xs:include schemaLocation="${loc}"/>`)
+      .join("\n");
+    return unmarshal(
+      schema,
+      `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+${includeXml}
+</xs:schema>`
+    );
+  }
+
   describe("validateAddInclude", () => {
     test("should reject addInclude with missing schemaLocation", () => {
       const command: AddIncludeCommand = {
@@ -517,6 +530,50 @@ describe("Include Validators", () => {
       const result = validateAddInclude(command, schemaObj);
       expect(result.valid).toBe(false);
       expect(result.error).toBe("Schema location cannot be empty");
+    });
+
+    test("should reject addInclude with whitespace-only schemaLocation", () => {
+      const command: AddIncludeCommand = {
+        type: "addInclude",
+        payload: { schemaLocation: "   " },
+      };
+
+      const result = validateAddInclude(command, schemaObj);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe("Schema location cannot be empty");
+    });
+
+    test("should reject addInclude when schemaLocation contains whitespace", () => {
+      const command: AddIncludeCommand = {
+        type: "addInclude",
+        payload: { schemaLocation: "my schema.xsd" },
+      };
+
+      const result = validateAddInclude(command, schemaObj);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe("Schema location must be a valid path or URI without whitespace");
+    });
+
+    test("should accept addInclude with valid schemaLocation", () => {
+      const command: AddIncludeCommand = {
+        type: "addInclude",
+        payload: { schemaLocation: "other.xsd" },
+      };
+
+      const result = validateAddInclude(command, schemaObj);
+      expect(result.valid).toBe(true);
+    });
+
+    test("should reject addInclude when the same schemaLocation already exists", () => {
+      const schemaWithInclude = schemaWithIncludes("other.xsd");
+      const command: AddIncludeCommand = {
+        type: "addInclude",
+        payload: { schemaLocation: "other.xsd" },
+      };
+
+      const result = validateAddInclude(command, schemaWithInclude);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe("An include for schema location 'other.xsd' already exists");
     });
   });
 
@@ -533,6 +590,52 @@ describe("Include Validators", () => {
       expect(result.valid).toBe(false);
       expect(result.error).toBe("Include ID cannot be empty");
     });
+
+    test("should reject removeInclude with malformed includeId", () => {
+      const command: RemoveIncludeCommand = {
+        type: "removeInclude",
+        payload: { includeId: "include0" },
+      };
+
+      const result = validateRemoveInclude(command, schemaObj);
+      expect(result.valid).toBe(false);
+      expect(result.error).toMatch(/Invalid include ID/);
+    });
+
+    test("should reject removeInclude when include does not exist at position", () => {
+      const command: RemoveIncludeCommand = {
+        type: "removeInclude",
+        payload: { includeId: "/include[0]" },
+      };
+
+      const result = validateRemoveInclude(command, schemaObj);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe("Include not found: /include[0]");
+    });
+
+    test("should reject removeInclude with wrong node type", () => {
+      const schemaWithInclude = schemaWithIncludes("other.xsd");
+      const command: RemoveIncludeCommand = {
+        type: "removeInclude",
+        // /import[0] has the wrong node type — must be rejected
+        payload: { includeId: "/import[0]" },
+      };
+
+      const result = validateRemoveInclude(command, schemaWithInclude);
+      expect(result.valid).toBe(false);
+      expect(result.error).toMatch(/does not refer to an include node/);
+    });
+
+    test("should accept removeInclude with valid includeId", () => {
+      const schemaWithInclude = schemaWithIncludes("other.xsd");
+      const command: RemoveIncludeCommand = {
+        type: "removeInclude",
+        payload: { includeId: "/include[0]" },
+      };
+
+      const result = validateRemoveInclude(command, schemaWithInclude);
+      expect(result.valid).toBe(true);
+    });
   });
 
   describe("validateModifyInclude", () => {
@@ -541,6 +644,7 @@ describe("Include Validators", () => {
         type: "modifyInclude",
         payload: {
           includeId: "",
+          schemaLocation: "other.xsd",
         },
       };
 
@@ -549,16 +653,86 @@ describe("Include Validators", () => {
       expect(result.error).toBe("Include ID cannot be empty");
     });
 
+    test("should reject modifyInclude with malformed includeId", () => {
+      const command: ModifyIncludeCommand = {
+        type: "modifyInclude",
+        payload: { includeId: "include1", schemaLocation: "other.xsd" },
+      };
+
+      const result = validateModifyInclude(command, schemaObj);
+      expect(result.valid).toBe(false);
+      expect(result.error).toMatch(/Invalid include ID/);
+    });
+
+    test("should reject modifyInclude when include does not exist at position", () => {
+      const command: ModifyIncludeCommand = {
+        type: "modifyInclude",
+        payload: { includeId: "/include[0]", schemaLocation: "other.xsd" },
+      };
+
+      const result = validateModifyInclude(command, schemaObj);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe("Include not found: /include[0]");
+    });
+
     test("should accept modifyInclude with valid payload", () => {
+      const schemaWithInclude = schemaWithIncludes("other.xsd");
       const command: ModifyIncludeCommand = {
         type: "modifyInclude",
         payload: {
-          includeId: "include1",
+          includeId: "/include[0]",
           schemaLocation: "newSchema.xsd",
         },
       };
 
-      const result = validateModifyInclude(command, schemaObj);
+      const result = validateModifyInclude(command, schemaWithInclude);
+      expect(result.valid).toBe(true);
+    });
+
+    test("should reject modifyInclude with empty schemaLocation", () => {
+      const schemaWithInclude = schemaWithIncludes("other.xsd");
+      const command: ModifyIncludeCommand = {
+        type: "modifyInclude",
+        payload: { includeId: "/include[0]", schemaLocation: "" },
+      };
+
+      const result = validateModifyInclude(command, schemaWithInclude);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe("Schema location cannot be empty");
+    });
+
+    test("should reject modifyInclude with schemaLocation containing whitespace", () => {
+      const schemaWithInclude = schemaWithIncludes("other.xsd");
+      const command: ModifyIncludeCommand = {
+        type: "modifyInclude",
+        payload: { includeId: "/include[0]", schemaLocation: "my schema.xsd" },
+      };
+
+      const result = validateModifyInclude(command, schemaWithInclude);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe("Schema location must be a valid path or URI without whitespace");
+    });
+
+    test("should reject modifyInclude when schemaLocation already exists on another include", () => {
+      const schemaWithTwoIncludes = schemaWithIncludes("first.xsd", "second.xsd");
+      const command: ModifyIncludeCommand = {
+        type: "modifyInclude",
+        payload: { includeId: "/include[0]", schemaLocation: "second.xsd" },
+      };
+
+      const result = validateModifyInclude(command, schemaWithTwoIncludes);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe("An include for schema location 'second.xsd' already exists");
+    });
+
+    test("should accept modifyInclude when schemaLocation matches the same include (no-op)", () => {
+      const schemaWithInclude = schemaWithIncludes("other.xsd");
+      const command: ModifyIncludeCommand = {
+        type: "modifyInclude",
+        payload: { includeId: "/include[0]", schemaLocation: "other.xsd" },
+      };
+
+      const result = validateModifyInclude(command, schemaWithInclude);
       expect(result.valid).toBe(true);
     });
   });

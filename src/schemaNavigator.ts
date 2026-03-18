@@ -66,6 +66,9 @@ export function locateNodeById(
     
     // Navigate through the path segments
     const segments = parsed.path;
+    // eslint-disable-next-line no-restricted-syntax -- `unknown` is unavoidable here:
+    // `currentNode` starts as `schema` but is repeatedly reassigned to child nodes
+    // whose types are heterogeneous and only modelled as `unknown` by the navigators.
     let currentNode: unknown = schemaObj;
     let currentType = "schema";
 

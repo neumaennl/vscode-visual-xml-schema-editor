@@ -24,13 +24,9 @@ type MockModelManager = Pick<
   "loadFromXml" | "getSchema" | "setSchema" | "cloneSchema" | "toXml"
 >;
 
-// Test helper for invalid command that bypasses type system
-// This represents a command type that doesn't exist in the SchemaCommand union.
-// Typed as `unknown` so `as SchemaCommand` is a single narrowing assertion.
-const INVALID_COMMAND: unknown = {
-  type: "unknownCommand",
-  payload: {},
-} as const;
+// eslint-disable-next-line no-restricted-syntax -- force-cast an object whose `type` is not a
+// member of SchemaCommand to test that unknown command types are rejected at runtime.
+const INVALID_COMMAND = { type: "unknownCommand", payload: {} } as unknown as SchemaCommand;
 
 /**
  * Asserts that a CommandExecutionResult represents a failure and narrows its
@@ -852,15 +848,7 @@ describe("CommandProcessor", () => {
     });
 
     test("should set errorKind to 'validation' for unknown command type", () => {
-      const invalidCommand = {
-        type: "unknownCommand",
-        payload: {},
-      };
-
-      const result = processor.execute(
-        invalidCommand as unknown as SchemaCommand,
-        simpleSchemaXml
-      );
+      const result = processor.execute(INVALID_COMMAND, simpleSchemaXml);
 
       expect(result.success).toBe(false);
       expectValidationFailure(result);

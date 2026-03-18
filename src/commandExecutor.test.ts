@@ -23,18 +23,13 @@ describe("CommandExecutor", () => {
 
   describe("execute() method", () => {
     it("should throw error for unknown command types", () => {
-      // Create an invalid command that TypeScript doesn't know about
-      interface InvalidCommand {
-        type: string;
-        payload: Record<string, unknown>;
-      }
-      const invalidCommand: InvalidCommand = {
-        type: "unknownCommandType",
-        payload: {},
-      };
-
       expect(() => {
-        executor.execute(invalidCommand as unknown as SchemaCommand, mockSchema);
+        // eslint-disable-next-line no-restricted-syntax -- force-cast a command whose `type` is not
+        // in SchemaCommand to test that the executor throws for unknown types at runtime.
+        executor.execute(
+          { type: "unknownCommandType", payload: {} } as unknown as SchemaCommand,
+          mockSchema
+        );
       }).toThrow("Unknown command type: unknownCommandType");
     });
 

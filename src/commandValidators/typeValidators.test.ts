@@ -578,10 +578,9 @@ describe("ComplexType Validators", () => {
     });
 
     test("should reject addComplexType with missing contentModel", () => {
-      const command = {
-        type: "addComplexType",
-        payload: { typeName: "TestType", contentModel: undefined },
-      } as unknown as AddComplexTypeCommand;
+      // eslint-disable-next-line no-restricted-syntax -- `contentModel` is intentionally absent to
+      // verify the validator rejects it; TypeScript requires it, so a cast is unavoidable here.
+      const command = { type: "addComplexType", payload: { typeName: "TestType" } } as unknown as AddComplexTypeCommand;
       const result = validateAddComplexType(command, emptySchemaObj);
       expectInvalid(result);
       expect(result.error).toBe("Content model is required");
@@ -764,10 +763,9 @@ describe("ComplexType Validators", () => {
     });
 
     test("should reject modifyComplexType with invalid contentModel", () => {
-      const command = {
-        type: "modifyComplexType",
-        payload: { typeId: "/complexType:PersonType", contentModel: "invalid" },
-      } as unknown as ModifyComplexTypeCommand;
+      // eslint-disable-next-line no-restricted-syntax -- `contentModel: "invalid"` is outside the
+      // allowed union; TypeScript prevents it, so a cast is needed to reach the validator.
+      const command = { type: "modifyComplexType", payload: { typeId: "/complexType:PersonType", contentModel: "invalid" } } as unknown as ModifyComplexTypeCommand;
       const result = validateModifyComplexType(command, schemaWithPersonType);
       expectInvalid(result);
       expect(result.error).toContain("Content model must be one of");

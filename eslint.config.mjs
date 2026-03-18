@@ -80,13 +80,16 @@ export default [
       '@typescript-eslint/explicit-module-boundary-types': 'off',
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-non-null-assertion': 'warn',
-      // Disallow double type assertions (e.g. `x as unknown as T`).
-      // Use a typed variable annotation or restructure the code instead.
+      // Disallow `unknown` in type assertions (`x as unknown`) and in variable-type
+      // annotations (`const x: unknown`). Both are escape hatches that bypass type
+      // safety. Function-parameter and interface-field annotations are not targeted
+      // by these selectors. If genuinely unavoidable, add eslint-disable-next-line
+      // with a justification.
       'no-restricted-syntax': [
         'error',
         {
-          selector: 'TSAsExpression[expression.type="TSAsExpression"]',
-          message: 'Avoid double type assertions (x as A as B). Annotate the variable type instead.',
+          selector: 'TSAsExpression[typeAnnotation.type="TSUnknownKeyword"], VariableDeclarator > TSTypeAnnotation > TSUnknownKeyword',
+          message: 'Avoid `unknown` in type assertions and variable-type annotations. If unavoidable, add eslint-disable-next-line with a justification.',
         },
       ],
       // Disabled to allow console logging in VS Code extension

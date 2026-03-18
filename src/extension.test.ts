@@ -19,6 +19,8 @@ describe("Extension", () => {
     // Create mock context
     mockContext = {
       subscriptions: [],
+      // eslint-disable-next-line no-restricted-syntax -- partial stub; missing VS Code fields are
+      // not exercised by these tests, so `unknown` intermediary is unavoidable here.
     } as unknown as vscode.ExtensionContext;
   });
 

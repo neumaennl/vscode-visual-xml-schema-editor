@@ -67,19 +67,10 @@ describe("CommandValidator", () => {
 
   describe("validate() method", () => {
     it("should handle unknown command types", () => {
-      // Create an invalid command that TypeScript doesn't know about
-      // This simulates runtime scenarios where command.type could be corrupted
-      interface InvalidCommand {
-        type: string;
-        payload: Record<string, unknown>;
-      }
-      const invalidCommand: InvalidCommand = {
-        type: "unknownCommandType",
-        payload: {},
-      };
-
+      // eslint-disable-next-line no-restricted-syntax -- force-cast a command whose `type` is not
+      // in SchemaCommand to test that the validator rejects unknown types at runtime.
       const result = validator.validate(
-        invalidCommand as unknown as SchemaCommand,
+        { type: "unknownCommandType", payload: {} } as unknown as SchemaCommand,
         mockSchema
       );
 

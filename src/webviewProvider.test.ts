@@ -22,7 +22,9 @@ describe("SchemaEditorProvider", () => {
     mockContext = {
       extensionUri: vscode.Uri.file("/extension/path"),
       subscriptions: [],
-    } as vscode.ExtensionContext;
+      // eslint-disable-next-line no-restricted-syntax -- partial stub; VS Code context fields not
+      // exercised by these tests are omitted, making `unknown` intermediary unavoidable.
+    } as unknown as vscode.ExtensionContext;
 
     mockWebview = {
       options: {},
@@ -30,19 +32,25 @@ describe("SchemaEditorProvider", () => {
       asWebviewUri: mockGetUri,
       postMessage: mockPostMessage,
       onDidReceiveMessage: jest.fn(),
-    } as vscode.Webview;
+      // eslint-disable-next-line no-restricted-syntax -- partial stub; `cspSource` and other
+      // read-only Webview fields are not exercised here, making `unknown` unavoidable.
+    } as unknown as vscode.Webview;
 
     mockWebviewPanel = {
       webview: mockWebview,
       onDidDispose: jest.fn(),
-    } as vscode.WebviewPanel;
+      // eslint-disable-next-line no-restricted-syntax -- partial stub; WebviewPanel fields such as
+      // `viewType` and `title` are unused in these tests, making `unknown` unavoidable.
+    } as unknown as vscode.WebviewPanel;
 
     mockDocument = {
       uri: { toString: () => "/test/schema.xsd" } as vscode.Uri,
       getText: jest.fn(() => "<xs:schema></xs:schema>"),
       lineCount: 1,
       lineAt: jest.fn(() => ({ text: "<xs:schema></xs:schema>" })),
-    } as vscode.TextDocument;
+      // eslint-disable-next-line no-restricted-syntax -- partial stub; many TextDocument fields are
+      // unused in these tests, making `unknown` unavoidable.
+    } as unknown as vscode.TextDocument;
 
     provider = new SchemaEditorProvider(mockContext);
   });
@@ -114,7 +122,9 @@ describe("SchemaEditorProvider", () => {
       const emptyMockDocument = {
         uri: { toString: () => "/test/empty.xsd" } as vscode.Uri,
         getText: jest.fn(() => ""),
-      } as vscode.TextDocument;
+        // eslint-disable-next-line no-restricted-syntax -- partial stub; many TextDocument fields
+        // are unused in this test, making `unknown` unavoidable.
+      } as unknown as vscode.TextDocument;
 
       expect(() => {
         provider.resolveCustomTextEditor(

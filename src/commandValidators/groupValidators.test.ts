@@ -42,14 +42,9 @@ describe("Group Validators", () => {
     });
 
     test("should reject addGroup with missing contentModel", () => {
-      // Using type assertion to test validation of missing content model
-      const command = {
-        type: "addGroup",
-        payload: {
-          groupName: "TestGroup",
-          contentModel: undefined,
-        },
-      } as unknown as AddGroupCommand;
+      // eslint-disable-next-line no-restricted-syntax -- `contentModel` is intentionally absent to
+      // verify the validator rejects it; TypeScript requires it, so a cast is unavoidable here.
+      const command = { type: "addGroup", payload: { groupName: "TestGroup" } } as unknown as AddGroupCommand;
 
       const result = validateAddGroup(command, schemaObj);
       expectInvalid(result);
@@ -92,14 +87,9 @@ describe("Group Validators", () => {
     });
 
     test("should reject addGroup when both ref and groupName are provided", () => {
-      const command = {
-        type: "addGroup",
-        payload: {
-          ref: "SomeGroup",
-          groupName: "AlsoAGroup",
-          parentId: "/complexType:PersonType/sequence",
-        },
-      } as unknown as AddGroupCommand;
+      // eslint-disable-next-line no-restricted-syntax -- `ref`+`groupName` is a mutually-exclusive
+      // combination the type system prevents; the cast lets the validator reject it at runtime.
+      const command = { type: "addGroup", payload: { ref: "SomeGroup", groupName: "AlsoAGroup", parentId: "/complexType:PersonType/sequence" } } as unknown as AddGroupCommand;
 
       const result = validateAddGroup(command, schemaObj);
       expectInvalid(result);
@@ -107,14 +97,9 @@ describe("Group Validators", () => {
     });
 
     test("should reject addGroup when both ref and contentModel are provided", () => {
-      const command = {
-        type: "addGroup",
-        payload: {
-          ref: "SomeGroup",
-          contentModel: "sequence",
-          parentId: "/complexType:PersonType/sequence",
-        },
-      } as unknown as AddGroupCommand;
+      // eslint-disable-next-line no-restricted-syntax -- `ref`+`contentModel` is a mutually-exclusive
+      // combination the type system prevents; the cast lets the validator reject it at runtime.
+      const command = { type: "addGroup", payload: { ref: "SomeGroup", contentModel: "sequence", parentId: "/complexType:PersonType/sequence" } } as unknown as AddGroupCommand;
 
       const result = validateAddGroup(command, schemaObj);
       expectInvalid(result);
@@ -122,14 +107,9 @@ describe("Group Validators", () => {
     });
 
     test("should reject addGroup definition when parentId is provided alongside groupName", () => {
-      const command = {
-        type: "addGroup",
-        payload: {
-          groupName: "SomeGroup",
-          contentModel: "sequence",
-          parentId: "/complexType:PersonType/sequence",
-        },
-      } as unknown as AddGroupCommand;
+      // eslint-disable-next-line no-restricted-syntax -- `groupName`+`parentId` is a mutually-exclusive
+      // combination the type system prevents; the cast lets the validator reject it at runtime.
+      const command = { type: "addGroup", payload: { groupName: "SomeGroup", contentModel: "sequence", parentId: "/complexType:PersonType/sequence" } } as unknown as AddGroupCommand;
 
       const result = validateAddGroup(command, schemaObj);
       expectInvalid(result);
@@ -137,14 +117,9 @@ describe("Group Validators", () => {
     });
 
     test("should reject addGroup definition when minOccurs is provided alongside groupName", () => {
-      const command = {
-        type: "addGroup",
-        payload: {
-          groupName: "SomeGroup",
-          contentModel: "sequence",
-          minOccurs: 0,
-        },
-      } as unknown as AddGroupCommand;
+      // eslint-disable-next-line no-restricted-syntax -- `groupName`+`minOccurs` is a mutually-exclusive
+      // combination the type system prevents; the cast lets the validator reject it at runtime.
+      const command = { type: "addGroup", payload: { groupName: "SomeGroup", contentModel: "sequence", minOccurs: 0 } } as unknown as AddGroupCommand;
 
       const result = validateAddGroup(command, schemaObj);
       expectInvalid(result);
@@ -717,26 +692,18 @@ describe("Group Validators", () => {
     });
 
     test("should reject when definition-mode fields are used with a group reference ID", () => {
-      const command = {
-        type: "modifyGroup",
-        payload: {
-          groupId: "/complexType:PersonType/sequence[0]/groupRef:PersonGroup[0]",
-          groupName: "RenamedGroup",
-        },
-      } as unknown as ModifyGroupCommand;
+      // eslint-disable-next-line no-restricted-syntax -- `groupName` is invalid for a reference ID;
+      // the type system prevents this combination, so a cast is needed to reach the validator.
+      const command = { type: "modifyGroup", payload: { groupId: "/complexType:PersonType/sequence[0]/groupRef:PersonGroup[0]", groupName: "RenamedGroup" } } as unknown as ModifyGroupCommand;
       const result = validateModifyGroup(command, schemaWithRef);
       expectInvalid(result);
       expect(result.error).toContain("Cannot use groupName or contentModel when modifying a group reference");
     });
 
     test("should reject when contentModel is used with a group reference ID", () => {
-      const command = {
-        type: "modifyGroup",
-        payload: {
-          groupId: "/complexType:PersonType/sequence[0]/groupRef:PersonGroup[0]",
-          contentModel: "choice",
-        },
-      } as unknown as ModifyGroupCommand;
+      // eslint-disable-next-line no-restricted-syntax -- `contentModel` is invalid for a reference ID;
+      // the type system prevents this combination, so a cast is needed to reach the validator.
+      const command = { type: "modifyGroup", payload: { groupId: "/complexType:PersonType/sequence[0]/groupRef:PersonGroup[0]", contentModel: "choice" } } as unknown as ModifyGroupCommand;
       const result = validateModifyGroup(command, schemaWithRef);
       expectInvalid(result);
       expect(result.error).toContain("Cannot use groupName or contentModel when modifying a group reference");
@@ -843,26 +810,18 @@ describe("Group Validators", () => {
     });
 
     test("should reject when ref is used with a definition ID", () => {
-      const command = {
-        type: "modifyGroup",
-        payload: {
-          groupId: "/group:PersonGroup",
-          ref: "OtherGroup",
-        },
-      } as unknown as ModifyGroupCommand;
+      // eslint-disable-next-line no-restricted-syntax -- `ref` is invalid for a definition ID;
+      // the type system prevents this combination, so a cast is needed to reach the validator.
+      const command = { type: "modifyGroup", payload: { groupId: "/group:PersonGroup", ref: "OtherGroup" } } as unknown as ModifyGroupCommand;
       const result = validateModifyGroup(command, schemaWithGroup);
       expectInvalid(result);
       expect(result.error).toContain("Cannot use ref, minOccurs, or maxOccurs when modifying a group definition");
     });
 
     test("should reject when minOccurs is used with a definition ID", () => {
-      const command = {
-        type: "modifyGroup",
-        payload: {
-          groupId: "/group:PersonGroup",
-          minOccurs: 0,
-        },
-      } as unknown as ModifyGroupCommand;
+      // eslint-disable-next-line no-restricted-syntax -- `minOccurs` is invalid for a definition ID;
+      // the type system prevents this combination, so a cast is needed to reach the validator.
+      const command = { type: "modifyGroup", payload: { groupId: "/group:PersonGroup", minOccurs: 0 } } as unknown as ModifyGroupCommand;
       const result = validateModifyGroup(command, schemaWithGroup);
       expectInvalid(result);
       expect(result.error).toContain("Cannot use ref, minOccurs, or maxOccurs when modifying a group definition");

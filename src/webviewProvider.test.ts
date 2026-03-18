@@ -40,6 +40,8 @@ describe("SchemaEditorProvider", () => {
     mockDocument = {
       uri: { toString: () => "/test/schema.xsd" } as vscode.Uri,
       getText: jest.fn(() => "<xs:schema></xs:schema>"),
+      lineCount: 1,
+      lineAt: jest.fn(() => ({ text: "<xs:schema></xs:schema>" })),
     } as unknown as vscode.TextDocument;
 
     provider = new SchemaEditorProvider(mockContext);
@@ -354,5 +356,39 @@ describe("SchemaEditorProvider", () => {
       expect(sentMsg.data.message).toContain("Completely unexpected failure");
       expect(sentMsg.data.code).toBe("COMMAND_EXECUTION_ERROR");
     });
+    it("should send 'error' message with code when applyEdit returns false", async () => {
+      const { CommandProcessor } = await import("./commandProcessor");
+      jest.spyOn(CommandProcessor.prototype, "execute").mockReturnValue({
+        success: true,
+        // schema/xmlContent values are irrelevant — only the applyEdit branch is under test
+        schema: {} as import("shared/generated/schema").schema,
+        xmlContent: "<xs:schema/>",
+      });
+      (vscode.workspace.applyEdit as jest.Mock).mockResolvedValue(false);
+
+      const handler = resolveAndGetHandler();
+      handler({
+        command: "executeCommand",
+        data: { type: "addElement", payload: { parentId: "schema", elementName: "x", elementType: "string" } },
+      });
+
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+      expect(mockPostMessage).toHaveBeenCalledWith(
+        expect.objectContaining({ command: "error" })
+      );
+      // Must NOT send a commandResult for an edit-application failure
+      expect(mockPostMessage).not.toHaveBeenCalledWith(
+        expect.objectContaining({ command: "commandResult" })
+      );
+
+      // Verify data fields via a typed extraction to avoid any-typed matchers
+      type ErrorMsg = { command: string; data: { message: string; code: string } };
+      type PostMsgFn = jest.MockedFunction<(msg: ErrorMsg) => Promise<boolean>>;
+      const sentMsg = (mockPostMessage as PostMsgFn).mock.calls[0][0];
+      expect(sentMsg.data.message).toBe("Failed to apply edit to the document.");
+      expect(sentMsg.data.code).toBe("COMMAND_EXECUTION_ERROR");
+    });
+
   });
 });

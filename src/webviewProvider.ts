@@ -218,12 +218,13 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
             },
           });
         } else {
-          // Send error response if edit failed
+          // applyEdit returning false is an unexpected extension-side failure,
+          // not a validation error — route it as a runtime error.
           void this.safePostMessage(webview, {
-            command: "commandResult",
+            command: "error",
             data: {
-              success: false,
-              error: "Failed to apply edit to the document.",
+              message: "Failed to apply edit to the document.",
+              code: "COMMAND_EXECUTION_ERROR",
             },
           });
         }

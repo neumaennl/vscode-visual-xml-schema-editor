@@ -38,6 +38,7 @@
     "out",
     "**/*.test.ts",
     "**/__tests__/**",
-    "**/__mocks__/**"
+    "**/__mocks__/**",
+    "**/*TestHelpers.ts"
   ]
 }

@@ -61,7 +61,7 @@ describe("Integration: Group pipeline", () => {
         payload: { groupName: "ContactGroup", contentModel: "sequence" },
       };
 
-      runCommandExpectValidationFailure(SCHEMA_WITH_GROUP, cmd, "ContactGroup");
+      runCommandExpectValidationFailure(SCHEMA_WITH_GROUP, cmd, "Group name already exists: ContactGroup");
     });
 
     it("returns validation error when group name is invalid", () => {
@@ -70,7 +70,7 @@ describe("Integration: Group pipeline", () => {
         payload: { groupName: "bad group", contentModel: "sequence" },
       };
 
-      runCommandExpectValidationFailure(MINIMAL_SCHEMA, cmd, "valid XML name");
+      runCommandExpectValidationFailure(MINIMAL_SCHEMA, cmd, "Group name must be a valid XML name");
     });
   });
 
@@ -95,7 +95,7 @@ describe("Integration: Group pipeline", () => {
         payload: { groupId: "/group:NoSuchGroup" },
       };
 
-      runCommandExpectValidationFailure(SCHEMA_WITH_GROUP, cmd, "NoSuchGroup");
+      runCommandExpectValidationFailure(SCHEMA_WITH_GROUP, cmd, "Group not found: /group:NoSuchGroup");
     });
   });
 
@@ -121,7 +121,7 @@ describe("Integration: Group pipeline", () => {
         payload: { groupId: "/group:Ghost", groupName: "Other" },
       };
 
-      runCommandExpectValidationFailure(SCHEMA_WITH_GROUP, cmd, "Ghost");
+      runCommandExpectValidationFailure(SCHEMA_WITH_GROUP, cmd, "Group not found: /group:Ghost");
     });
   });
 });
@@ -148,7 +148,7 @@ describe("Integration: AttributeGroup pipeline", () => {
         payload: { groupName: "CommonAttrs" },
       };
 
-      runCommandExpectValidationFailure(SCHEMA_WITH_ATTRIBUTEGROUP, cmd, "CommonAttrs");
+      runCommandExpectValidationFailure(SCHEMA_WITH_ATTRIBUTEGROUP, cmd, "Attribute group name already exists: CommonAttrs");
     });
 
     it("returns validation error when group name is invalid", () => {
@@ -157,11 +157,7 @@ describe("Integration: AttributeGroup pipeline", () => {
         payload: { groupName: "bad name" },
       };
 
-      runCommandExpectValidationFailure(MINIMAL_SCHEMA, cmd, "valid XML name");
-    });
-  });
-
-  // ─── removeAttributeGroup ──────────────────────────────────────────────────
+      runCommandExpectValidationFailure(MINIMAL_SCHEMA, cmd, "Attribute group name must be a valid XML name");
 
   describe("removeAttributeGroup", () => {
     it("removes an existing top-level attributeGroup", () => {
@@ -182,7 +178,7 @@ describe("Integration: AttributeGroup pipeline", () => {
         payload: { groupId: "/attributeGroup:Missing" },
       };
 
-      runCommandExpectValidationFailure(SCHEMA_WITH_ATTRIBUTEGROUP, cmd, "Missing");
+      runCommandExpectValidationFailure(SCHEMA_WITH_ATTRIBUTEGROUP, cmd, "Attribute group not found: /attributeGroup:Missing");
     });
   });
 
@@ -208,7 +204,7 @@ describe("Integration: AttributeGroup pipeline", () => {
         payload: { groupId: "/attributeGroup:NoSuch", groupName: "Other" },
       };
 
-      runCommandExpectValidationFailure(SCHEMA_WITH_ATTRIBUTEGROUP, cmd, "NoSuch");
+      runCommandExpectValidationFailure(SCHEMA_WITH_ATTRIBUTEGROUP, cmd, "Attribute group not found: /attributeGroup:NoSuch");
     });
   });
 });

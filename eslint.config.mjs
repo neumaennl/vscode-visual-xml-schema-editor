@@ -133,10 +133,6 @@ export default [
       // it correctly handles jest mock functions that don't rely on `this` binding.
       'jest/unbound-method': 'error',
       '@typescript-eslint/unbound-method': 'off',
-      // Jest's expect.objectContaining() is typed to return `any`, which causes
-      // no-unsafe-assignment to flag nested matcher usage (e.g. data: expect.objectContaining({...})).
-      // This is a safe and idiomatic Jest pattern, so the rule is disabled in test files.
-      '@typescript-eslint/no-unsafe-assignment': 'off',
     },
   },
   // Webview TypeScript files configuration (browser environment)

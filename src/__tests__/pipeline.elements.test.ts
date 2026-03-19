@@ -80,7 +80,7 @@ describe("Integration: Element pipeline", () => {
         payload: { parentId: "schema", elementName: "123invalid", elementType: "xs:string" },
       };
 
-      runCommandExpectValidationFailure(MINIMAL_SCHEMA, cmd, "valid XML name");
+      runCommandExpectValidationFailure(MINIMAL_SCHEMA, cmd, "Element name must be a valid XML name");
     });
 
     it("returns validation error for duplicate element name", () => {
@@ -89,7 +89,7 @@ describe("Integration: Element pipeline", () => {
         payload: { parentId: "schema", elementName: "person", elementType: "xs:string" },
       };
 
-      runCommandExpectValidationFailure(SCHEMA_WITH_ELEMENTS, cmd, "person");
+      runCommandExpectValidationFailure(SCHEMA_WITH_ELEMENTS, cmd, "Cannot add element: duplicate element name 'person' in schema");
     });
   });
 
@@ -115,7 +115,7 @@ describe("Integration: Element pipeline", () => {
         payload: { elementId: "/element:nonexistent" },
       };
 
-      runCommandExpectValidationFailure(SCHEMA_WITH_ELEMENTS, cmd, "nonexistent");
+      runCommandExpectValidationFailure(SCHEMA_WITH_ELEMENTS, cmd, "Element not found with name: nonexistent");
     });
   });
 
@@ -155,7 +155,7 @@ describe("Integration: Element pipeline", () => {
         payload: { elementId: "/element:missing", elementName: "other" },
       };
 
-      runCommandExpectValidationFailure(SCHEMA_WITH_ELEMENTS, cmd, "missing");
+      runCommandExpectValidationFailure(SCHEMA_WITH_ELEMENTS, cmd, "Element not found: missing");
     });
 
     it("returns validation error when new name is invalid", () => {
@@ -164,7 +164,7 @@ describe("Integration: Element pipeline", () => {
         payload: { elementId: "/element:person", elementName: "bad name" },
       };
 
-      runCommandExpectValidationFailure(SCHEMA_WITH_ELEMENTS, cmd, "valid XML name");
+      runCommandExpectValidationFailure(SCHEMA_WITH_ELEMENTS, cmd, "Element name must be a valid XML name");
     });
   });
 });

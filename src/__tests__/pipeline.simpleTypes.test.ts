@@ -88,7 +88,7 @@ describe("Integration: SimpleType pipeline", () => {
         payload: { parentId: "schema", typeName: "bad type", baseType: "xs:string" },
       };
 
-      runCommandExpectValidationFailure(MINIMAL_SCHEMA, cmd, "valid XML name");
+      runCommandExpectValidationFailure(MINIMAL_SCHEMA, cmd, "Type name must be a valid XML name");
     });
 
     it("returns validation error for duplicate type name", () => {
@@ -97,7 +97,7 @@ describe("Integration: SimpleType pipeline", () => {
         payload: { parentId: "schema", typeName: "StatusType", baseType: "xs:string" },
       };
 
-      runCommandExpectValidationFailure(SCHEMA_WITH_SIMPLETYPE, cmd, "StatusType");
+      runCommandExpectValidationFailure(SCHEMA_WITH_SIMPLETYPE, cmd, "Simple type 'StatusType' already exists in schema");
     });
   });
 
@@ -122,7 +122,7 @@ describe("Integration: SimpleType pipeline", () => {
         payload: { typeId: "/simpleType:NonExistent" },
       };
 
-      runCommandExpectValidationFailure(SCHEMA_WITH_SIMPLETYPE, cmd, "NonExistent");
+      runCommandExpectValidationFailure(SCHEMA_WITH_SIMPLETYPE, cmd, "SimpleType not found: NonExistent");
     });
   });
 
@@ -161,7 +161,7 @@ describe("Integration: SimpleType pipeline", () => {
         payload: { typeId: "/simpleType:Missing", typeName: "Other" },
       };
 
-      runCommandExpectValidationFailure(SCHEMA_WITH_SIMPLETYPE, cmd, "Missing");
+      runCommandExpectValidationFailure(SCHEMA_WITH_SIMPLETYPE, cmd, "Simple type 'Missing' not found in schema");
     });
   });
 });

@@ -51,7 +51,7 @@ describe("Integration: Annotation pipeline", () => {
       const result = runCommandExpectSuccessSchema(MINIMAL_SCHEMA, cmd);
       const annotations = toArray(result.annotation);
 
-      expect(annotations.length).toBeGreaterThan(0);
+      expect(annotations.length).toBe(1);
       const docs = toArray(annotations[0].documentation);
       expect(docs[0].value).toBe("My schema");
     });
@@ -62,7 +62,7 @@ describe("Integration: Annotation pipeline", () => {
         payload: { targetId: "/element:nonexistent", documentation: "desc" },
       };
 
-      runCommandExpectValidationFailure(SCHEMA_WITH_ELEMENTS, cmd, "nonexistent");
+      runCommandExpectValidationFailure(SCHEMA_WITH_ELEMENTS, cmd, "Target node not found or does not support annotations: /element:nonexistent");
     });
   });
 
@@ -89,7 +89,7 @@ describe("Integration: Annotation pipeline", () => {
         payload: { annotationId: "/element:person" },
       };
 
-      runCommandExpectValidationFailure(SCHEMA_WITH_ELEMENTS, cmd, "No annotation found");
+      runCommandExpectValidationFailure(SCHEMA_WITH_ELEMENTS, cmd, "No annotation found on node: /element:person");
     });
   });
 
@@ -120,7 +120,7 @@ describe("Integration: Annotation pipeline", () => {
         payload: { annotationId: "/element:noElement", documentation: "text" },
       };
 
-      runCommandExpectValidationFailure(SCHEMA_WITH_ANNOTATION, cmd, "noElement");
+      runCommandExpectValidationFailure(SCHEMA_WITH_ANNOTATION, cmd, "Target node not found or does not support annotations: /element:noElement");
     });
   });
 });
@@ -156,7 +156,7 @@ describe("Integration: Documentation pipeline", () => {
         },
       };
 
-      runCommandExpectValidationFailure(SCHEMA_WITH_ANNOTATION, cmd, "not found");
+      runCommandExpectValidationFailure(SCHEMA_WITH_ANNOTATION, cmd, "Target node not found or does not support annotations: /element:missing");
     });
   });
 
@@ -184,7 +184,7 @@ describe("Integration: Documentation pipeline", () => {
         payload: { documentationId: "/element:person/documentation[5]" },
       };
 
-      runCommandExpectValidationFailure(SCHEMA_WITH_ANNOTATION, cmd, "out of bounds");
+      runCommandExpectValidationFailure(SCHEMA_WITH_ANNOTATION, cmd, "Documentation index 5 out of bounds (length 1): /element:person/documentation[5]");
     });
   });
 
@@ -218,7 +218,7 @@ describe("Integration: Documentation pipeline", () => {
         },
       };
 
-      runCommandExpectValidationFailure(SCHEMA_WITH_ANNOTATION, cmd, "out of bounds");
+      runCommandExpectValidationFailure(SCHEMA_WITH_ANNOTATION, cmd, "Documentation index 9 out of bounds (length 1): /element:person/documentation[9]");
     });
   });
 });

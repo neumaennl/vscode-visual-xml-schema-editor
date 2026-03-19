@@ -176,6 +176,7 @@ describe("Integration: WorkspaceEdit via SchemaEditorProvider", () => {
       expect(webview.postMessage).toHaveBeenCalledWith(
         expect.objectContaining({
           command: "commandResult",
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.objectContaining() is typed as `any` in @types/jest; nested use is idiomatic Jest
           data: expect.objectContaining({ success: false }),
         })
       );
@@ -208,6 +209,7 @@ describe("Integration: WorkspaceEdit via SchemaEditorProvider", () => {
       expect(webview.postMessage).toHaveBeenCalledWith(
         expect.objectContaining({
           command: "error",
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.objectContaining() is typed as `any` in @types/jest; nested use is idiomatic Jest
           data: expect.objectContaining({ code: "COMMAND_EXECUTION_ERROR" }),
         })
       );
@@ -240,8 +242,10 @@ describe("Integration: WorkspaceEdit via SchemaEditorProvider", () => {
       expect(webview.postMessage).toHaveBeenCalledWith(
         expect.objectContaining({
           command: "error",
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.objectContaining() is typed as `any` in @types/jest; nested use is idiomatic Jest
           data: expect.objectContaining({
             code: "COMMAND_EXECUTION_ERROR",
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.stringContaining() is typed as `any` in @types/jest; nested use is idiomatic Jest
             stack: expect.stringContaining("Something went wrong internally"),
           }),
         })
@@ -268,6 +272,7 @@ describe("Integration: WorkspaceEdit via SchemaEditorProvider", () => {
       expect(webview.postMessage).toHaveBeenCalledWith(
         expect.objectContaining({
           command: "error",
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.objectContaining() is typed as `any` in @types/jest; nested use is idiomatic Jest
           data: expect.objectContaining({ code: "COMMAND_EXECUTION_ERROR" }),
         })
       );
@@ -308,6 +313,7 @@ describe("Integration: WorkspaceEdit via SchemaEditorProvider", () => {
         1,
         expect.objectContaining({
           command: "commandResult",
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.objectContaining() is typed as `any` in @types/jest; nested use is idiomatic Jest
           data: expect.objectContaining({ success: true }),
         })
       );
@@ -315,6 +321,7 @@ describe("Integration: WorkspaceEdit via SchemaEditorProvider", () => {
         2,
         expect.objectContaining({
           command: "commandResult",
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.objectContaining() is typed as `any` in @types/jest; nested use is idiomatic Jest
           data: expect.objectContaining({ success: true }),
         })
       );

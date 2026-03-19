@@ -47,7 +47,7 @@ describe("Integration: Include pipeline", () => {
         payload: { schemaLocation: "" },
       };
 
-      runCommandExpectValidationFailure(MINIMAL_SCHEMA, cmd, "cannot be empty");
+      runCommandExpectValidationFailure(MINIMAL_SCHEMA, cmd, "Schema location cannot be empty");
     });
 
     it("returns validation error for a schemaLocation with whitespace", () => {
@@ -56,7 +56,7 @@ describe("Integration: Include pipeline", () => {
         payload: { schemaLocation: "my schema.xsd" },
       };
 
-      runCommandExpectValidationFailure(MINIMAL_SCHEMA, cmd, "whitespace");
+      runCommandExpectValidationFailure(MINIMAL_SCHEMA, cmd, "Schema location must be a valid path or URI without whitespace");
     });
 
     it("returns validation error for a duplicate schemaLocation", () => {

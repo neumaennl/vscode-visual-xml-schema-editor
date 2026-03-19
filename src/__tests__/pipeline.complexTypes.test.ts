@@ -102,7 +102,7 @@ describe("Integration: ComplexType pipeline", () => {
         payload: { parentId: "schema", typeName: "123Bad", contentModel: "sequence" },
       };
 
-      runCommandExpectValidationFailure(MINIMAL_SCHEMA, cmd, "valid XML name");
+      runCommandExpectValidationFailure(MINIMAL_SCHEMA, cmd, "Type name must be a valid XML name");
     });
 
     it("returns validation error for duplicate complex type name", () => {
@@ -111,7 +111,7 @@ describe("Integration: ComplexType pipeline", () => {
         payload: { parentId: "schema", typeName: "PersonType", contentModel: "sequence" },
       };
 
-      runCommandExpectValidationFailure(SCHEMA_WITH_COMPLEXTYPE, cmd, "PersonType");
+      runCommandExpectValidationFailure(SCHEMA_WITH_COMPLEXTYPE, cmd, "Complex type 'PersonType' already exists in schema");
     });
   });
 
@@ -136,7 +136,7 @@ describe("Integration: ComplexType pipeline", () => {
         payload: { typeId: "/complexType:NoSuchType" },
       };
 
-      runCommandExpectValidationFailure(SCHEMA_WITH_COMPLEXTYPE, cmd, "NoSuchType");
+      runCommandExpectValidationFailure(SCHEMA_WITH_COMPLEXTYPE, cmd, "Complex type 'NoSuchType' not found in schema");
     });
   });
 
@@ -188,7 +188,7 @@ describe("Integration: ComplexType pipeline", () => {
         payload: { typeId: "/complexType:Ghost", typeName: "Other" },
       };
 
-      runCommandExpectValidationFailure(SCHEMA_WITH_COMPLEXTYPE, cmd, "Ghost");
+      runCommandExpectValidationFailure(SCHEMA_WITH_COMPLEXTYPE, cmd, "Complex type 'Ghost' not found in schema");
     });
   });
 });

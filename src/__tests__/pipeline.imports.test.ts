@@ -75,9 +75,13 @@ describe("Integration: Import pipeline", () => {
       const imports = toArray(result.import_);
 
       expect(imports.some((i) => i.namespace === "http://example.com/auto")).toBe(true);
-      // A prefix must have been registered for the new namespace
-      const prefixes = Object.values(result._namespacePrefixes ?? {});
-      expect(prefixes).toContain("http://example.com/auto");
+      // A prefix in the format "ns0", "ns1", ... must have been registered
+      const prefixes = result._namespacePrefixes ?? {};
+      const autoPrefix = Object.keys(prefixes).find(
+        (k) => prefixes[k] === "http://example.com/auto"
+      );
+      expect(autoPrefix).toBeDefined();
+      expect(autoPrefix).toMatch(/^ns\d+$/);
     });
 
     it("returns validation error for an invalid namespace URI", () => {
@@ -86,7 +90,7 @@ describe("Integration: Import pipeline", () => {
         payload: { namespace: "not a uri", schemaLocation: "x.xsd" },
       };
 
-      runCommandExpectValidationFailure(MINIMAL_SCHEMA, cmd, "Namespace");
+      runCommandExpectValidationFailure(MINIMAL_SCHEMA, cmd, "Namespace must be a valid absolute URI");
     });
 
     it("returns validation error for a duplicate namespace", () => {
@@ -98,7 +102,7 @@ describe("Integration: Import pipeline", () => {
         },
       };
 
-      runCommandExpectValidationFailure(SCHEMA_WITH_IMPORT, cmd, "http://example.com/ext");
+      runCommandExpectValidationFailure(SCHEMA_WITH_IMPORT, cmd, "An import for namespace 'http://example.com/ext' already exists");
     });
 
     it("returns validation error for a reserved prefix 'xml'", () => {
@@ -111,7 +115,7 @@ describe("Integration: Import pipeline", () => {
         },
       };
 
-      runCommandExpectValidationFailure(MINIMAL_SCHEMA, cmd, "xml");
+      runCommandExpectValidationFailure(MINIMAL_SCHEMA, cmd, "Prefix 'xml' is reserved and cannot be used");
     });
   });
 
@@ -149,7 +153,7 @@ describe("Integration: Import pipeline", () => {
         payload: { importId: "/import[5]" },
       };
 
-      runCommandExpectValidationFailure(SCHEMA_WITH_IMPORT, cmd, "/import[5]");
+      runCommandExpectValidationFailure(SCHEMA_WITH_IMPORT, cmd, "Import not found: /import[5]");
     });
   });
 
@@ -176,7 +180,7 @@ describe("Integration: Import pipeline", () => {
         payload: { importId: "/import[99]", schemaLocation: "x.xsd" },
       };
 
-      runCommandExpectValidationFailure(SCHEMA_WITH_IMPORT, cmd, "/import[99]");
+      runCommandExpectValidationFailure(SCHEMA_WITH_IMPORT, cmd, "Import not found: /import[99]");
     });
   });
 });

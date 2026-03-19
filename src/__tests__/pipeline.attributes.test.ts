@@ -81,7 +81,7 @@ describe("Integration: Attribute pipeline", () => {
         },
       };
 
-      runCommandExpectValidationFailure(SCHEMA_WITH_COMPLEXTYPE, cmd, "valid XML name");
+      runCommandExpectValidationFailure(SCHEMA_WITH_COMPLEXTYPE, cmd, "Attribute name must be a valid XML name");
     });
 
     it("returns validation error when parent does not exist", () => {
@@ -94,7 +94,7 @@ describe("Integration: Attribute pipeline", () => {
         },
       };
 
-      runCommandExpectValidationFailure(MINIMAL_SCHEMA, cmd, "Missing");
+      runCommandExpectValidationFailure(MINIMAL_SCHEMA, cmd, "Parent node not found: /complexType:Missing");
     });
   });
 
@@ -121,11 +121,8 @@ describe("Integration: Attribute pipeline", () => {
         payload: { attributeId: "/complexType:PersonType/attribute:id[99]" },
       };
 
-      runCommandExpectValidationFailure(SCHEMA_WITH_COMPLEXTYPE, cmd, "not found");
+      runCommandExpectValidationFailure(SCHEMA_WITH_COMPLEXTYPE, cmd, "Attribute not found at position: 99");
     });
-  });
-
-  // ─── modifyAttribute ───────────────────────────────────────────────────────
 
   describe("modifyAttribute", () => {
     it("renames an attribute", () => {
@@ -172,7 +169,7 @@ describe("Integration: Attribute pipeline", () => {
         },
       };
 
-      runCommandExpectValidationFailure(SCHEMA_WITH_COMPLEXTYPE, cmd, "not found");
+      runCommandExpectValidationFailure(SCHEMA_WITH_COMPLEXTYPE, cmd, "Attribute not found: id");
     });
   });
 });

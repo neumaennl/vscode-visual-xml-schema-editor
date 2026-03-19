@@ -67,9 +67,8 @@ describe("CommandValidator", () => {
 
   describe("validate() method", () => {
     it("should handle unknown command types", () => {
-      // eslint-disable-next-line no-restricted-syntax -- force-cast a command whose `type` is not
-      // in SchemaCommand to test that the validator rejects unknown types at runtime.
       const result = validator.validate(
+        // eslint-disable-next-line no-restricted-syntax -- `type` not in SchemaCommand union; cast needed to test unknown-type rejection at runtime
         { type: "unknownCommandType", payload: {} } as unknown as SchemaCommand,
         mockSchema
       );

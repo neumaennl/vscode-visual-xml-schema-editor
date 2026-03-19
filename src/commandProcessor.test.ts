@@ -24,8 +24,7 @@ type MockModelManager = Pick<
   "loadFromXml" | "getSchema" | "setSchema" | "cloneSchema" | "toXml"
 >;
 
-// eslint-disable-next-line no-restricted-syntax -- force-cast an object whose `type` is not a
-// member of SchemaCommand to test that unknown command types are rejected at runtime.
+// eslint-disable-next-line no-restricted-syntax -- `type` not in SchemaCommand union; cast needed to test unknown-type rejection at runtime
 const INVALID_COMMAND = { type: "unknownCommand", payload: {} } as unknown as SchemaCommand;
 
 /**
@@ -622,7 +621,7 @@ describe("CommandProcessor", () => {
 
   describe("Invalid Commands", () => {
     test("should reject command with unknown type", () => {
-      const result = processor.execute(INVALID_COMMAND as SchemaCommand, simpleSchemaXml);
+      const result = processor.execute(INVALID_COMMAND, simpleSchemaXml);
       expectFailure(result);
       expect(result.error).toContain("Unknown command type");
     });

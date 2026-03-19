@@ -24,9 +24,8 @@ describe("CommandExecutor", () => {
   describe("execute() method", () => {
     it("should throw error for unknown command types", () => {
       expect(() => {
-        // eslint-disable-next-line no-restricted-syntax -- force-cast a command whose `type` is not
-        // in SchemaCommand to test that the executor throws for unknown types at runtime.
         executor.execute(
+          // eslint-disable-next-line no-restricted-syntax -- `type` not in SchemaCommand union; cast needed to test runtime rejection
           { type: "unknownCommandType", payload: {} } as unknown as SchemaCommand,
           mockSchema
         );

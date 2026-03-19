@@ -578,8 +578,7 @@ describe("ComplexType Validators", () => {
     });
 
     test("should reject addComplexType with missing contentModel", () => {
-      // eslint-disable-next-line no-restricted-syntax -- `contentModel` is intentionally absent to
-      // verify the validator rejects it; TypeScript requires it, so a cast is unavoidable here.
+      // eslint-disable-next-line no-restricted-syntax -- `contentModel` absent intentionally; TypeScript requires it, but it is omitted to test the validator rejection
       const command = { type: "addComplexType", payload: { typeName: "TestType" } } as unknown as AddComplexTypeCommand;
       const result = validateAddComplexType(command, emptySchemaObj);
       expectInvalid(result);
@@ -763,8 +762,7 @@ describe("ComplexType Validators", () => {
     });
 
     test("should reject modifyComplexType with invalid contentModel", () => {
-      // eslint-disable-next-line no-restricted-syntax -- `contentModel: "invalid"` is outside the
-      // allowed union; TypeScript prevents it, so a cast is needed to reach the validator.
+      // eslint-disable-next-line no-restricted-syntax -- `contentModel: "invalid"` outside the ContentModel union; cast needed to test validator rejection
       const command = { type: "modifyComplexType", payload: { typeId: "/complexType:PersonType", contentModel: "invalid" } } as unknown as ModifyComplexTypeCommand;
       const result = validateModifyComplexType(command, schemaWithPersonType);
       expectInvalid(result);

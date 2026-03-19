@@ -65,7 +65,7 @@ describe("Integration: Include pipeline", () => {
         payload: { schemaLocation: "base.xsd" },
       };
 
-      runCommandExpectValidationFailure(SCHEMA_WITH_INCLUDE, cmd, "base.xsd");
+      runCommandExpectValidationFailure(SCHEMA_WITH_INCLUDE, cmd, "An include for schema location 'base.xsd' already exists");
     });
   });
 
@@ -103,7 +103,7 @@ describe("Integration: Include pipeline", () => {
         payload: { includeId: "/include[9]" },
       };
 
-      runCommandExpectValidationFailure(SCHEMA_WITH_INCLUDE, cmd, "/include[9]");
+      runCommandExpectValidationFailure(SCHEMA_WITH_INCLUDE, cmd, "Include not found: /include[9]");
     });
   });
 
@@ -129,7 +129,7 @@ describe("Integration: Include pipeline", () => {
         payload: { includeId: "/include[99]", schemaLocation: "x.xsd" },
       };
 
-      runCommandExpectValidationFailure(SCHEMA_WITH_INCLUDE, cmd, "/include[99]");
+      runCommandExpectValidationFailure(SCHEMA_WITH_INCLUDE, cmd, "Include not found: /include[99]");
     });
   });
 });

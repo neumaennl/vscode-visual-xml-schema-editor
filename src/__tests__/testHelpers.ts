@@ -142,24 +142,24 @@ export function runCommandExpectSuccessSchema(
 }
 
 /**
- * Asserts that the command fails with a validation error whose message contains
- * the given substring.
+ * Asserts that the command fails with a validation error whose message matches
+ * the given expected string exactly.
  *
  * Throws a Jest expectation error when the command succeeds or fails for a
  * different reason.
  *
  * @param xml - Current schema XML content
  * @param command - The schema editing command to execute
- * @param errorSubstring - Expected substring in the validation error message
+ * @param expectedError - Expected exact validation error message
  */
 export function runCommandExpectValidationFailure(
   xml: string,
   command: SchemaCommand,
-  errorSubstring: string
+  expectedError: string
 ): void {
   const result = runCommand(xml, command);
   expect(result.success).toBe(false);
   const failure = result as CommandExecutionValidationFailure;
   expect(failure.errorKind).toBe("validation");
-  expect(failure.error).toContain(errorSubstring);
+  expect(failure.error).toBe(expectedError);
 }

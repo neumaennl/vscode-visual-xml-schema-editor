@@ -86,4 +86,8 @@ export const WebviewPanelSerializer = {};
 
 export const CustomEditorProvider = {};
 
-export const WorkspaceEdit = jest.fn();
+export const WorkspaceEdit = jest.fn(() => ({
+  replace: jest.fn(),
+}));
+
+export const Range = jest.fn();

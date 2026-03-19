@@ -195,7 +195,7 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
       const currentXml = document.getText();
       const result = this.commandProcessor.execute(message.data, currentXml);
 
-      if (result.success && result.xmlContent) {
+      if (result.success) {
         // Apply the changes to the document
         const edit = new vscode.WorkspaceEdit();
         // Calculate the full range of the document, handling empty documents
@@ -218,33 +218,50 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
             },
           });
         } else {
-          // Send error response if edit failed
+          // applyEdit returning false is an unexpected extension-side failure,
+          // not a validation error — route it as a runtime error.
           void this.safePostMessage(webview, {
-            command: "commandResult",
+            command: "error",
             data: {
-              success: false,
-              error: "Failed to apply edit to the document.",
+              message: "Failed to apply edit to the document.",
+              code: "COMMAND_EXECUTION_ERROR",
             },
           });
         }
       } else {
-        // Send error response
-        void this.safePostMessage(webview, {
-          command: "commandResult",
-          data: {
-            success: false,
-            error: result.error,
-          },
-        });
+        // Route the failure to the appropriate message type:
+        // - runtime errors  → 'error' message (unexpected exception, developer-facing)
+        // - validation errors → 'commandResult' message (bad input, user-facing)
+        if (result.errorKind === "runtime") {
+          void this.safePostMessage(webview, {
+            command: "error",
+            data: {
+              message: result.error,
+              code: "COMMAND_EXECUTION_ERROR",
+              stack: result.stack,
+            },
+          });
+        } else {
+          void this.safePostMessage(webview, {
+            command: "commandResult",
+            data: {
+              success: false,
+              error: result.error,
+            },
+          });
+        }
       }
     } catch (error) {
-      // Send error response for unexpected errors
+      // Send error response for unexpected errors that escaped commandProcessor.
       // Note: If this postMessage fails, it will be logged by safePostMessage
-      // to avoid infinite error loops
+      // to avoid infinite error loops.
+      const err = error instanceof Error ? error : new Error(String(error));
       void this.safePostMessage(webview, {
         command: "error",
         data: {
-          message: `Failed to execute command: ${(error as Error).message}`,
+          message: `Failed to execute command: ${err.message}`,
+          code: "COMMAND_EXECUTION_ERROR",
+          stack: err.stack,
         },
       });
     }

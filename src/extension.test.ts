@@ -17,6 +17,7 @@ describe("Extension", () => {
     jest.clearAllMocks();
 
     // Create mock context
+    // eslint-disable-next-line no-restricted-syntax -- partial stub; unused VS Code context fields omitted
     mockContext = {
       subscriptions: [],
     } as unknown as vscode.ExtensionContext;

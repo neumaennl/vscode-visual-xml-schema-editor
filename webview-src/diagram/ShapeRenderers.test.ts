@@ -20,6 +20,7 @@ describe("ShapeRenderers", () => {
     mockGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
     
     // Create a minimal mock diagram with style
+    // eslint-disable-next-line no-restricted-syntax -- partial stub; unused Diagram fields omitted
     mockDiagram = {
       style: {
         lineColor: "#000000",

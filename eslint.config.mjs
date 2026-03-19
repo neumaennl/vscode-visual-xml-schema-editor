@@ -80,6 +80,18 @@ export default [
       '@typescript-eslint/explicit-module-boundary-types': 'off',
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-non-null-assertion': 'warn',
+      // Disallow `unknown` in type assertions (`x as unknown`) and in variable-type
+      // annotations (`const x: unknown`). Both are escape hatches that bypass type
+      // safety. Function-parameter and interface-field annotations are not targeted
+      // by these selectors. If genuinely unavoidable, add eslint-disable-next-line
+      // with a justification.
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'TSAsExpression[typeAnnotation.type="TSUnknownKeyword"], VariableDeclarator[id.typeAnnotation.typeAnnotation.type="TSUnknownKeyword"]',
+          message: 'Avoid `unknown` in type assertions and variable-type annotations. If unavoidable, add eslint-disable-next-line with a justification.',
+        },
+      ],
       // Disabled to allow console logging in VS Code extension
       'no-console': 'off',
     },
@@ -98,6 +110,19 @@ export default [
     },
     rules: {
       ...jestPlugin.configs.recommended.rules,
+      // Recognise custom assertion helpers as assertion-containing functions
+      'jest/expect-expect': [
+        'warn',
+        {
+          assertFunctionNames: [
+            'expect',
+            'expectFailure',
+            'expectValidationFailure',
+            'expectRuntimeFailure',
+            'expectInvalid',
+          ],
+        },
+      ],
       // Disabled in tests where we have more control over the test environment
       '@typescript-eslint/no-non-null-assertion': 'off',
       // Disabled to allow dynamic require() in tests for module initialization testing

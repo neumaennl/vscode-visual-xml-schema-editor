@@ -675,18 +675,24 @@ webview.postMessage({
 
 ### Runtime Errors
 
-**Unexpected errors during execution:**
+**Unexpected errors during execution** (bugs, unrecoverable exceptions):
 
 ```typescript
 {
   command: "error",
   data: {
-    message: "Failed to marshal schema to XML",
-    code: "MARSHAL_ERROR",
-    stack: "Error: Invalid schema structure\n  at marshal (...)"
+    message: "Command execution failed: Cannot read properties of undefined",
+    code: "COMMAND_EXECUTION_ERROR",
+    stack: "TypeError: Cannot read properties of undefined\n  at executeAddElement (...)"
   }
 }
 ```
+
+**Routing rule (implemented in `SchemaEditorProvider`):**
+- `commandResult { success: false, error }` — used when the `CommandProcessor` classifies the failure as a **validation** error (bad input, incompatible schema state, concurrent execution).  `errorKind === 'validation'` in `CommandExecutionResult`.
+- `error { message, code, stack? }` — used when the `CommandProcessor` classifies the failure as a **runtime** error (thrown exception, unexpected execution failure).  `errorKind === 'runtime'` in `CommandExecutionResult`.
+
+The error code `COMMAND_EXECUTION_ERROR` is used for all runtime failures that originate from command execution.  Errors that occur before a command is dispatched (e.g. XML parse failures returned by `SchemaModelManager`) are also classified as runtime failures and carry the same code.
 
 ### Webview-side validation
 

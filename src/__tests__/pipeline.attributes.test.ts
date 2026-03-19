@@ -123,6 +123,7 @@ describe("Integration: Attribute pipeline", () => {
 
       runCommandExpectValidationFailure(SCHEMA_WITH_COMPLEXTYPE, cmd, "Attribute not found at position: 99");
     });
+  });
 
   describe("modifyAttribute", () => {
     it("renames an attribute", () => {

@@ -158,6 +158,8 @@ describe("Integration: AttributeGroup pipeline", () => {
       };
 
       runCommandExpectValidationFailure(MINIMAL_SCHEMA, cmd, "Attribute group name must be a valid XML name");
+    });
+  });
 
   describe("removeAttributeGroup", () => {
     it("removes an existing top-level attributeGroup", () => {

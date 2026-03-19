@@ -1,8 +1,8 @@
 /**
  * Shared assertion helpers for validation tests.
  * Provides TypeScript-narrowing assertion functions for ValidationResult.
- * Uses plain throws (not Jest matchers) so this file compiles under the
- * production tsconfig without @types/jest.
+ * Uses plain throws (not Jest matchers). This file is excluded from the
+ * production build via tsconfig.json ("**/*TestHelpers.ts" in exclude).
  */
 import type { ValidationResult, ValidationFailure } from "./validationUtils";
 

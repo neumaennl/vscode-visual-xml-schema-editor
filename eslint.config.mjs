@@ -88,7 +88,7 @@ export default [
       'no-restricted-syntax': [
         'error',
         {
-          selector: 'TSAsExpression[typeAnnotation.type="TSUnknownKeyword"], VariableDeclarator > TSTypeAnnotation > TSUnknownKeyword',
+          selector: 'TSAsExpression[typeAnnotation.type="TSUnknownKeyword"], VariableDeclarator[id.typeAnnotation.typeAnnotation.type="TSUnknownKeyword"]',
           message: 'Avoid `unknown` in type assertions and variable-type annotations. If unavoidable, add eslint-disable-next-line with a justification.',
         },
       ],

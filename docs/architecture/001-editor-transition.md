@@ -566,9 +566,9 @@ class DiagramRenderer {
 - [x] Implement import and include commands (add, remove, modify) — imports with namespace/schemaLocation/prefix and namespace-prefix sync; includes with schemaLocation for same-namespace schema composition
 - [x] Connect commands to document edits via [WorkspaceEdit](https://code.visualstudio.com/api/references/vscode-api#WorkspaceEdit) (VS Code's API for programmatic text edits with undo/redo support)
 - [x] Harden command validation and error reporting — validators return a discriminated `ValidationResult` union (`{ valid: true }` | `{ valid: false, error: string }`); `CommandExecutionResult` is a discriminated union (`CommandExecutionSuccess | CommandExecutionValidationFailure | CommandExecutionRuntimeFailure`) that makes `errorKind` required on failure and restricts `stack` to the `'runtime'` variant; `SchemaEditorProvider` routes them to `commandResult` vs. `error` messages respectively
-- [ ] Test with simple schema modifications
-- [ ] Verify undo/redo functionality
-- [ ] Write integration tests for all schema construct editing flows
+- [x] Test with simple schema modifications — covered by integration tests in `src/__tests__/`
+- [x] Verify undo/redo functionality — edits applied via `WorkspaceEdit`; VS Code owns the undo/redo stack; verified in `src/__tests__/pipeline.workspaceEdit.test.ts`
+- [x] Write integration tests for all schema construct editing flows — `src/__tests__/pipeline.*.test.ts` covers all 9 Phase 2 construct groups (elements, attributes, simpleTypes, complexTypes, groups, attributeGroups, annotations+documentation, imports, includes) plus WorkspaceEdit/error-routing integration via `SchemaEditorProvider`
 
 **Success Criteria**: Can programmatically add, remove, and modify **all** schema constructs (elements, attributes, simpleTypes, complexTypes, groups, attributeGroups, annotations, documentation, imports, includes) with proper VS Code integration.
 

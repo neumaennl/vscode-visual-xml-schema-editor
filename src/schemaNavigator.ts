@@ -66,6 +66,7 @@ export function locateNodeById(
     
     // Navigate through the path segments
     const segments = parsed.path;
+    // eslint-disable-next-line no-restricted-syntax -- `currentNode` is a heterogeneous traversal variable reassigned to different child-node types; `unknown` is the correct annotation here
     let currentNode: unknown = schemaObj;
     let currentType = "schema";
 

@@ -20,6 +20,7 @@ import {
   validateRemoveInclude,
   validateModifyInclude,
 } from "./schemaValidators";
+import { expectInvalid } from "./validationTestHelpers";
 
 describe("Import Validators", () => {
   let schemaObj: schema;
@@ -55,7 +56,7 @@ describe("validateAddImport", () => {
       };
 
       const result = validateAddImport(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Namespace cannot be empty");
     });
 
@@ -69,7 +70,7 @@ describe("validateAddImport", () => {
       };
 
       const result = validateAddImport(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("valid absolute URI");
     });
 
@@ -96,7 +97,7 @@ describe("validateAddImport", () => {
       };
 
       const result = validateAddImport(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Schema location cannot be empty");
     });
 
@@ -110,7 +111,7 @@ describe("validateAddImport", () => {
       };
 
       const result = validateAddImport(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("valid path or URI");
     });
 
@@ -129,7 +130,7 @@ describe("validateAddImport", () => {
       };
 
       const result = validateAddImport(command, schemaWithImport);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("already exists");
     });
 
@@ -149,7 +150,7 @@ describe("validateAddImport", () => {
       };
 
       const result = validateAddImport(command, schemaWithPrefix);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("already in use");
     });
 
@@ -182,7 +183,7 @@ describe("validateAddImport", () => {
       };
 
       const result = validateAddImport(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("not a valid XML name");
     });
 
@@ -192,7 +193,7 @@ describe("validateAddImport", () => {
         payload: { namespace: "http://example.com/ns", schemaLocation: "schema.xsd", prefix: " ext" },
       };
       const result = validateAddImport(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("whitespace");
     });
 
@@ -202,7 +203,7 @@ describe("validateAddImport", () => {
         payload: { namespace: "http://example.com/ns", schemaLocation: "schema.xsd", prefix: "xml" },
       };
       const result = validateAddImport(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("reserved");
     });
 
@@ -212,7 +213,7 @@ describe("validateAddImport", () => {
         payload: { namespace: "http://example.com/ns", schemaLocation: "schema.xsd", prefix: "xmlns" },
       };
       const result = validateAddImport(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("reserved");
     });
   });
@@ -227,7 +228,7 @@ describe("validateAddImport", () => {
       };
 
       const result = validateRemoveImport(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Import ID cannot be empty");
     });
 
@@ -240,7 +241,7 @@ describe("validateAddImport", () => {
       };
 
       const result = validateRemoveImport(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("Import not found");
     });
 
@@ -272,7 +273,7 @@ describe("validateAddImport", () => {
       };
 
       const result = validateRemoveImport(command, schemaWithRef);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("still referenced");
     });
 
@@ -297,7 +298,7 @@ describe("validateAddImport", () => {
       };
 
       const result = validateRemoveImport(command, schemaWithDeepRef);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("still referenced");
     });
 
@@ -313,7 +314,7 @@ describe("validateAddImport", () => {
         payload: { importId: "/include[0]" },
       };
       const result = validateRemoveImport(command, s);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("does not refer to an import node");
     });
   });
@@ -328,7 +329,7 @@ describe("validateAddImport", () => {
       };
 
       const result = validateModifyImport(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Import ID cannot be empty");
     });
 
@@ -341,7 +342,7 @@ describe("validateAddImport", () => {
       };
 
       const result = validateModifyImport(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("Import not found");
     });
 
@@ -375,7 +376,7 @@ describe("validateAddImport", () => {
       };
 
       const result = validateModifyImport(command, schemaWithImport);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("valid absolute URI");
     });
 
@@ -392,7 +393,7 @@ describe("validateAddImport", () => {
       };
 
       const result = validateModifyImport(command, schemaWithImports);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("already exists");
     });
 
@@ -409,7 +410,7 @@ describe("validateAddImport", () => {
       };
 
       const result = validateModifyImport(command, schemaWithImports);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("already in use");
     });
 
@@ -441,7 +442,7 @@ describe("validateAddImport", () => {
       };
 
       const result = validateModifyImport(command, schemaWithImport);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("not registered");
     });
 
@@ -459,7 +460,7 @@ describe("validateAddImport", () => {
       };
 
       const result = validateModifyImport(command, schemaWithImports);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("not registered for namespace");
     });
 
@@ -474,7 +475,7 @@ describe("validateAddImport", () => {
         payload: { importId: "/import[0]", oldPrefix: "ext" },
       };
       const result = validateModifyImport(command, schemaWithImport);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("'oldPrefix' requires 'prefix'");
     });
 
@@ -489,7 +490,7 @@ describe("validateAddImport", () => {
         payload: { importId: "/import[0]", oldPrefix: "ext", prefix: "xml" },
       };
       const result = validateModifyImport(command, schemaWithImport);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("reserved");
     });
   });
@@ -528,7 +529,7 @@ ${includeXml}
       };
 
       const result = validateAddInclude(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Schema location cannot be empty");
     });
 
@@ -539,7 +540,7 @@ ${includeXml}
       };
 
       const result = validateAddInclude(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Schema location cannot be empty");
     });
 
@@ -550,7 +551,7 @@ ${includeXml}
       };
 
       const result = validateAddInclude(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Schema location must be a valid path or URI without whitespace");
     });
 
@@ -572,7 +573,7 @@ ${includeXml}
       };
 
       const result = validateAddInclude(command, schemaWithInclude);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("An include for schema location 'other.xsd' already exists");
     });
   });
@@ -587,7 +588,7 @@ ${includeXml}
       };
 
       const result = validateRemoveInclude(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Include ID cannot be empty");
     });
 
@@ -598,7 +599,7 @@ ${includeXml}
       };
 
       const result = validateRemoveInclude(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toMatch(/Invalid include ID/);
     });
 
@@ -609,7 +610,7 @@ ${includeXml}
       };
 
       const result = validateRemoveInclude(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Include not found: /include[0]");
     });
 
@@ -622,7 +623,7 @@ ${includeXml}
       };
 
       const result = validateRemoveInclude(command, schemaWithInclude);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toMatch(/does not refer to an include node/);
     });
 
@@ -649,7 +650,7 @@ ${includeXml}
       };
 
       const result = validateModifyInclude(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Include ID cannot be empty");
     });
 
@@ -660,7 +661,7 @@ ${includeXml}
       };
 
       const result = validateModifyInclude(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toMatch(/Invalid include ID/);
     });
 
@@ -671,7 +672,7 @@ ${includeXml}
       };
 
       const result = validateModifyInclude(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Include not found: /include[0]");
     });
 
@@ -697,7 +698,7 @@ ${includeXml}
       };
 
       const result = validateModifyInclude(command, schemaWithInclude);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Schema location cannot be empty");
     });
 
@@ -709,7 +710,7 @@ ${includeXml}
       };
 
       const result = validateModifyInclude(command, schemaWithInclude);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Schema location must be a valid path or URI without whitespace");
     });
 
@@ -721,7 +722,7 @@ ${includeXml}
       };
 
       const result = validateModifyInclude(command, schemaWithTwoIncludes);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("An include for schema location 'second.xsd' already exists");
     });
 

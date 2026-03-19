@@ -20,6 +20,7 @@ import {
   validateRemoveDocumentation,
   validateModifyDocumentation,
 } from "./annotationValidators";
+import { expectInvalid } from "./validationTestHelpers";
 
 // ─── Shared XML fixtures ────────────────────────────────────────────────────
 
@@ -66,7 +67,7 @@ describe("Annotation Validators", () => {
       };
 
       const result = validateAddAnnotation(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Target ID cannot be empty");
     });
 
@@ -78,7 +79,7 @@ describe("Annotation Validators", () => {
       };
 
       const result = validateAddAnnotation(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("not found");
     });
 
@@ -101,7 +102,7 @@ describe("Annotation Validators", () => {
       };
 
       const result = validateAddAnnotation(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("already has an annotation");
     });
   });
@@ -115,7 +116,7 @@ describe("Annotation Validators", () => {
       };
 
       const result = validateRemoveAnnotation(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Annotation ID cannot be empty");
     });
 
@@ -127,7 +128,7 @@ describe("Annotation Validators", () => {
       };
 
       const result = validateRemoveAnnotation(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("not found");
     });
 
@@ -139,7 +140,7 @@ describe("Annotation Validators", () => {
       };
 
       const result = validateRemoveAnnotation(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("No annotation");
     });
 
@@ -164,7 +165,7 @@ describe("Annotation Validators", () => {
       };
 
       const result = validateModifyAnnotation(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Annotation ID cannot be empty");
     });
 
@@ -176,7 +177,7 @@ describe("Annotation Validators", () => {
       };
 
       const result = validateModifyAnnotation(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("No annotation");
     });
 
@@ -205,7 +206,7 @@ describe("Documentation Validators", () => {
       };
 
       const result = validateAddDocumentation(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Target ID cannot be empty");
     });
 
@@ -217,7 +218,7 @@ describe("Documentation Validators", () => {
       };
 
       const result = validateAddDocumentation(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("not found");
     });
 
@@ -242,7 +243,7 @@ describe("Documentation Validators", () => {
       };
 
       const result = validateRemoveDocumentation(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Documentation ID cannot be empty");
     });
 
@@ -254,7 +255,7 @@ describe("Documentation Validators", () => {
       };
 
       const result = validateRemoveDocumentation(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("Invalid documentationId format");
     });
 
@@ -266,7 +267,7 @@ describe("Documentation Validators", () => {
       };
 
       const result = validateRemoveDocumentation(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("out of bounds");
     });
 
@@ -302,7 +303,7 @@ describe("Documentation Validators", () => {
       };
 
       const result = validateModifyDocumentation(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Documentation ID cannot be empty");
     });
 
@@ -314,7 +315,7 @@ describe("Documentation Validators", () => {
       };
 
       const result = validateModifyDocumentation(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("Invalid documentationId format");
     });
 
@@ -329,7 +330,7 @@ describe("Documentation Validators", () => {
       };
 
       const result = validateModifyDocumentation(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("out of bounds");
     });
 
@@ -429,7 +430,7 @@ describe("Schema-root Annotation Validators", () => {
       };
 
       const result = validateRemoveAnnotation(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("out of bounds");
     });
 
@@ -441,7 +442,7 @@ describe("Schema-root Annotation Validators", () => {
       };
 
       const result = validateRemoveAnnotation(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("schema/annotation[N]");
     });
 
@@ -453,7 +454,7 @@ describe("Schema-root Annotation Validators", () => {
       };
 
       const result = validateRemoveAnnotation(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("schema/annotation[N]");
     });
   });
@@ -478,7 +479,7 @@ describe("Schema-root Annotation Validators", () => {
       };
 
       const result = validateModifyAnnotation(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("out of bounds");
     });
 
@@ -490,7 +491,7 @@ describe("Schema-root Annotation Validators", () => {
       };
 
       const result = validateModifyAnnotation(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("schema/annotation[N]");
     });
 
@@ -502,7 +503,7 @@ describe("Schema-root Annotation Validators", () => {
       };
 
       const result = validateModifyAnnotation(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("schema/annotation[N]");
     });
   });
@@ -538,7 +539,7 @@ describe("Schema-root Annotation Validators", () => {
       };
 
       const result = validateAddDocumentation(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("out of bounds");
     });
   });
@@ -563,7 +564,7 @@ describe("Schema-root Annotation Validators", () => {
       };
 
       const result = validateRemoveDocumentation(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("out of bounds");
     });
 
@@ -586,7 +587,7 @@ describe("Schema-root Annotation Validators", () => {
       };
 
       const result = validateRemoveDocumentation(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("No annotation found on schema root");
     });
   });
@@ -628,7 +629,7 @@ describe("Schema-root Annotation Validators", () => {
       };
 
       const result = validateModifyDocumentation(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("No annotation found on schema root");
     });
   });

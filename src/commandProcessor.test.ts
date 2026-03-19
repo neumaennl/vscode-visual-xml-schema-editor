@@ -5,6 +5,12 @@
  */
 
 import { CommandProcessor } from "./commandProcessor";
+import type {
+  CommandExecutionResult,
+  CommandExecutionFailure,
+  CommandExecutionValidationFailure,
+  CommandExecutionRuntimeFailure,
+} from "./commandProcessor";
 import { AddElementCommand, SchemaCommand, schema } from "../shared/types";
 import type { CommandValidator } from "./commandValidator";
 import type { CommandExecutor } from "./commandExecutor";
@@ -18,11 +24,45 @@ type MockModelManager = Pick<
   "loadFromXml" | "getSchema" | "setSchema" | "cloneSchema" | "toXml"
 >;
 
-// Test helper for invalid command that bypasses type system
-// This represents a command type that doesn't exist in the SchemaCommand union
-interface InvalidCommand {
-  type: "unknownCommand";
-  payload: Record<string, never>;
+// eslint-disable-next-line no-restricted-syntax -- `type` not in SchemaCommand union; cast needed to test unknown-type rejection at runtime
+const INVALID_COMMAND = { type: "unknownCommand", payload: {} } as unknown as SchemaCommand;
+
+/**
+ * Asserts that a CommandExecutionResult represents a failure and narrows its
+ * type to CommandExecutionFailure, enabling access to `.error` and `.errorKind`.
+ */
+function expectFailure(
+  result: CommandExecutionResult
+): asserts result is CommandExecutionFailure {
+  expect(result.success).toBe(false);
+  if (result.success !== false)
+    throw new Error("Expected command execution to fail");
+}
+
+/**
+ * Asserts that a CommandExecutionResult represents a runtime failure and narrows
+ * its type to CommandExecutionRuntimeFailure, enabling access to `.stack`.
+ */
+function expectRuntimeFailure(
+  result: CommandExecutionResult
+): asserts result is CommandExecutionRuntimeFailure {
+  expectFailure(result);
+  expect(result.errorKind).toBe("runtime");
+  if (result.errorKind !== "runtime")
+    throw new Error("Expected runtime failure");
+}
+
+/**
+ * Asserts that a CommandExecutionResult represents a validation failure and narrows
+ * its type to CommandExecutionValidationFailure.
+ */
+function expectValidationFailure(
+  result: CommandExecutionResult
+): asserts result is CommandExecutionValidationFailure {
+  expectFailure(result);
+  expect(result.errorKind).toBe("validation");
+  if (result.errorKind !== "validation")
+    throw new Error("Expected validation failure");
 }
 
 describe("CommandProcessor", () => {
@@ -120,7 +160,7 @@ describe("CommandProcessor", () => {
 
       const result = processorWithMock.execute(command, simpleSchemaXml);
 
-      expect(result.success).toBe(false);
+      expectFailure(result);
       expect(result.error).toContain("Failed to load schema from XML");
       expect(mockModelManager.loadFromXml).toHaveBeenCalled();
     });
@@ -271,7 +311,7 @@ describe("CommandProcessor", () => {
 
       const result = processorWithMock.execute(command, originalXml);
 
-      expect(result.success).toBe(false);
+      expectFailure(result);
       expect(result.schema).toBeNull();
       expect(result.error).toContain("Execution failed");
 
@@ -295,7 +335,7 @@ describe("CommandProcessor", () => {
       };
 
       const result = processor.execute(command, malformedXml);
-      expect(result.success).toBe(false);
+      expectFailure(result);
       expect(result.error).toContain("Failed to load schema from XML");
     });
 
@@ -310,7 +350,7 @@ describe("CommandProcessor", () => {
       };
 
       const result = processor.execute(command, simpleSchemaXml);
-      expect(result.success).toBe(false);
+      expectFailure(result);
       expect(result.error).toBe("Parent ID cannot be empty");
     });
 
@@ -325,7 +365,7 @@ describe("CommandProcessor", () => {
       };
 
       const result = processor.execute(command, simpleSchemaXml);
-      expect(result.success).toBe(false);
+      expectFailure(result);
       // Should catch the first validation error
       expect(result.error).toBe("Element name must be a valid XML name");
     });
@@ -354,7 +394,7 @@ describe("CommandProcessor", () => {
 
       const result = processorWithMock.execute(command, simpleSchemaXml);
 
-      expect(result.success).toBe(false);
+      expectFailure(result);
       expect(result.error).toContain("Executor crashed unexpectedly");
       expect(result.schema).toBeNull();
       expect(result.xmlContent).toBeNull();
@@ -384,7 +424,7 @@ describe("CommandProcessor", () => {
 
       const result = processorWithMock.execute(command, simpleSchemaXml);
 
-      expect(result.success).toBe(false);
+      expectFailure(result);
       expect(result.error).toContain("Validator crashed");
       expect(result.schema).toBeNull();
       expect(result.xmlContent).toBeNull();
@@ -489,7 +529,7 @@ describe("CommandProcessor", () => {
 
       const result = processorWithMock.execute(command, simpleSchemaXml);
 
-      expect(result.success).toBe(false);
+      expectFailure(result);
       expect(result.error).toContain("Failed to serialize schema");
     });
   });
@@ -574,22 +614,15 @@ describe("CommandProcessor", () => {
 
       const result = processorWithMock.execute(command, simpleSchemaXml);
 
-      expect(result.success).toBe(false);
+      expectFailure(result);
       expect(result.error).toContain("Round-trip validation failed");
     });
   });
 
   describe("Invalid Commands", () => {
     test("should reject command with unknown type", () => {
-      // Create an invalid command that bypasses the type system
-      // This simulates a runtime scenario where an unknown command type is received
-      const invalidCommand: InvalidCommand = {
-        type: "unknownCommand",
-        payload: {},
-      };
-
-      const result = processor.execute(invalidCommand as unknown as SchemaCommand, simpleSchemaXml);
-      expect(result.success).toBe(false);
+      const result = processor.execute(INVALID_COMMAND, simpleSchemaXml);
+      expectFailure(result);
       expect(result.error).toContain("Unknown command type");
     });
   });
@@ -698,19 +731,17 @@ describe("CommandProcessor", () => {
       };
 
       // Manually set the isExecuting flag to simulate in-progress execution
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-      (processorWithMock as any).isExecuting = true;
+      Object.assign(processorWithMock, { isExecuting: true });
 
       // Try to execute command while another is "in progress"
       const result = processorWithMock.execute(command, simpleSchemaXml);
 
       // Should be rejected due to concurrent execution
-      expect(result.success).toBe(false);
+      expectFailure(result);
       expect(result.error).toContain("Another command is currently being executed");
       
       // Reset the flag
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-      (processorWithMock as any).isExecuting = false;
+      Object.assign(processorWithMock, { isExecuting: false });
     });
 
     test("should allow execution after previous command completes", () => {
@@ -791,11 +822,165 @@ describe("CommandProcessor", () => {
 
       // Execute second command - should be allowed since lock was released
       const result2 = processorWithMock.execute(command, simpleSchemaXml);
-      expect(result2.success).toBe(false);
+      expectFailure(result2);
       expect(result2.error).toContain("Execution failed");
 
       // Should not be the concurrency error
       expect(result2.error).not.toContain("Another command is currently being executed");
+    });
+  });
+
+  describe("Error Kind Classification", () => {
+    test("should set errorKind to 'validation' for validation failures", () => {
+      const command: AddElementCommand = {
+        type: "addElement",
+        payload: {
+          parentId: "",
+          elementName: "test",
+          elementType: "string",
+        },
+      };
+
+      const result = processor.execute(command, simpleSchemaXml);
+
+      expectValidationFailure(result);
+    });
+
+    test("should set errorKind to 'validation' for unknown command type", () => {
+      const result = processor.execute(INVALID_COMMAND, simpleSchemaXml);
+
+      expect(result.success).toBe(false);
+      expectValidationFailure(result);
+    });
+
+    test("should set errorKind to 'validation' for concurrent execution rejection", () => {
+      const mockModelManager: MockModelManager = {
+        loadFromXml: jest.fn(),
+        getSchema: jest.fn().mockReturnValue(mockSchema),
+        setSchema: jest.fn(),
+        cloneSchema: jest.fn().mockReturnValue(mockSchema),
+        toXml: jest.fn().mockReturnValue(simpleSchemaXml),
+      };
+
+      const processorWithMock = new CommandProcessor(
+        undefined,
+        undefined,
+        mockModelManager as SchemaModelManager
+      );
+
+      const command: AddElementCommand = {
+        type: "addElement",
+        payload: {
+          parentId: "schema",
+          elementName: "test",
+          elementType: "string",
+        },
+      };
+
+      // Simulate in-progress execution
+      Object.assign(processorWithMock, { isExecuting: true });
+
+      const result = processorWithMock.execute(command, simpleSchemaXml);
+
+      expectValidationFailure(result);
+
+      Object.assign(processorWithMock, { isExecuting: false });
+    });
+
+    test("should set errorKind to 'runtime' and include stack when executor throws", () => {
+      const mockExecutor: MockExecutor = {
+        execute: jest.fn(() => {
+          throw new Error("Executor crashed unexpectedly");
+        }),
+      };
+
+      const processorWithMock = new CommandProcessor(
+        undefined,
+        mockExecutor as CommandExecutor
+      );
+
+      const command: AddElementCommand = {
+        type: "addElement",
+        payload: {
+          parentId: "schema",
+          elementName: "test",
+          elementType: "string",
+        },
+      };
+
+      const result = processorWithMock.execute(command, simpleSchemaXml);
+
+      expectRuntimeFailure(result);
+      expect(result.error).toContain("Executor crashed unexpectedly");
+      expect(typeof result.stack).toBe("string");
+    });
+
+    test("should set errorKind to 'runtime' and include stack when schema load throws", () => {
+      const mockModelManager: MockModelManager = {
+        loadFromXml: jest.fn(() => {
+          throw new Error("XML parse error");
+        }),
+        getSchema: jest.fn(),
+        setSchema: jest.fn(),
+        cloneSchema: jest.fn(),
+        toXml: jest.fn(),
+      };
+
+      const processorWithMock = new CommandProcessor(
+        undefined,
+        undefined,
+        mockModelManager as SchemaModelManager
+      );
+
+      const command: AddElementCommand = {
+        type: "addElement",
+        payload: {
+          parentId: "schema",
+          elementName: "test",
+          elementType: "string",
+        },
+      };
+
+      const result = processorWithMock.execute(command, simpleSchemaXml);
+
+      expectRuntimeFailure(result);
+      expect(result.error).toContain("XML parse error");
+      expect(typeof result.stack).toBe("string");
+    });
+
+    test("should not set errorKind on successful execution", () => {
+      const mockModelManager: MockModelManager = {
+        loadFromXml: jest.fn(),
+        getSchema: jest.fn().mockReturnValue(mockSchema),
+        setSchema: jest.fn(),
+        cloneSchema: jest.fn().mockReturnValue(mockSchema),
+        toXml: jest.fn().mockReturnValue(simpleSchemaXml),
+      };
+
+      const mockExecutor: MockExecutor = {
+        execute: jest.fn((cmd, s) => {
+          s.version = "1.0";
+        }),
+      };
+
+      const processorWithMock = new CommandProcessor(
+        undefined,
+        mockExecutor as CommandExecutor,
+        mockModelManager as SchemaModelManager
+      );
+
+      const command: AddElementCommand = {
+        type: "addElement",
+        payload: {
+          parentId: "schema",
+          elementName: "test",
+          elementType: "string",
+        },
+      };
+
+      const result = processorWithMock.execute(command, simpleSchemaXml);
+
+      expect(result.success).toBe(true);
     });
   });
 });

@@ -20,6 +20,7 @@ import {
   validateRemoveAttribute,
   validateModifyAttribute,
 } from "./elementValidators";
+import { expectInvalid } from "./validationTestHelpers";
 
 describe("Element Validators", () => {
   let schemaObj: schema;
@@ -114,7 +115,7 @@ describe("Element Validators", () => {
       };
 
       const result = validateAddElement(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("Invalid element type");
       expect(result.error).toContain("invalidType");
     });
@@ -130,7 +131,7 @@ describe("Element Validators", () => {
       };
 
       const result = validateAddElement(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("Invalid element type");
       expect(result.error).toContain("unknown:SomeType");
     });
@@ -271,7 +272,7 @@ describe("Element Validators", () => {
       };
 
       const result = validateAddElement(command, customSchema);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("Invalid element type");
       expect(result.error).toContain("wrongprefix:SomeType");
     });
@@ -313,7 +314,7 @@ describe("Element Validators", () => {
       };
 
       const result = validateAddElement(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Element name must be a valid XML name");
     });
 
@@ -328,7 +329,7 @@ describe("Element Validators", () => {
       };
 
       const result = validateAddElement(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Element type is required");
     });
 
@@ -343,7 +344,7 @@ describe("Element Validators", () => {
       };
 
       const result = validateAddElement(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Parent ID cannot be empty");
     });
   });
@@ -358,7 +359,7 @@ describe("Element Validators", () => {
       };
 
       const result = validateRemoveElement(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Element ID cannot be empty");
     });
   });
@@ -374,7 +375,7 @@ describe("Element Validators", () => {
       };
 
       const result = validateModifyElement(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Element ID cannot be empty");
     });
 
@@ -388,7 +389,7 @@ describe("Element Validators", () => {
       };
 
       const result = validateModifyElement(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Element name must be a valid XML name");
     });
 
@@ -402,7 +403,7 @@ describe("Element Validators", () => {
       };
 
       const result = validateModifyElement(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("Invalid element type");
       expect(result.error).toContain("invalidType");
     });
@@ -469,7 +470,7 @@ describe("Element Validators", () => {
       };
 
       const result = validateModifyElement(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("minOccurs must be <= maxOccurs");
     });
   });
@@ -502,7 +503,7 @@ describe("Element Validators", () => {
         payload: { parentId: "schema", ref: "person" },
       };
       const result = validateAddElement(command, seqSchema);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Top-level elements cannot be references");
     });
 
@@ -516,7 +517,7 @@ describe("Element Validators", () => {
         },
       };
       const result = validateAddElement(command, seqSchema);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("A reference element cannot have a name or type");
     });
 
@@ -529,7 +530,7 @@ describe("Element Validators", () => {
         },
       };
       const result = validateAddElement(command, seqSchema);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Element ref must be a valid XML name");
     });
 
@@ -543,7 +544,7 @@ describe("Element Validators", () => {
         },
       };
       const result = validateModifyElement(command, seqSchema);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Cannot set both ref and name/type on an element");
     });
 
@@ -553,7 +554,7 @@ describe("Element Validators", () => {
         payload: { parentId: "/complexType:OrderType/sequence", ref: "nonexistent" },
       };
       const result = validateAddElement(command, seqSchema);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Referenced element 'nonexistent' does not exist in schema");
     });
 
@@ -563,7 +564,7 @@ describe("Element Validators", () => {
         payload: { elementId: "/element:person", ref: "nonexistent" },
       };
       const result = validateModifyElement(command, seqSchema);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Referenced element 'nonexistent' does not exist in schema");
     });
   });
@@ -592,7 +593,7 @@ describe("Attribute Validators", () => {
       };
 
       const result = validateAddAttribute(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Attribute name must be a valid XML name");
     });
 
@@ -607,7 +608,7 @@ describe("Attribute Validators", () => {
       };
 
       const result = validateAddAttribute(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Parent ID cannot be empty");
     });
 
@@ -624,7 +625,7 @@ describe("Attribute Validators", () => {
       };
 
       const result = validateAddAttribute(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe(
         "An attribute cannot have both a default value and a fixed value"
       );
@@ -641,7 +642,7 @@ describe("Attribute Validators", () => {
       };
 
       const result = validateRemoveAttribute(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Attribute ID cannot be empty");
     });
   });
@@ -656,7 +657,7 @@ describe("Attribute Validators", () => {
       };
 
       const result = validateModifyAttribute(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Attribute ID cannot be empty");
     });
 
@@ -685,7 +686,7 @@ describe("Attribute Validators", () => {
       };
 
       const result = validateModifyAttribute(command, schemaObj);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe(
         "An attribute cannot have both a default value and a fixed value"
       );
@@ -727,7 +728,7 @@ describe("Attribute Validators", () => {
         payload: { parentId: "schema", ref: "lang" },
       };
       const result = validateAddAttribute(command, refSchema);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Top-level attributes cannot be references");
     });
 
@@ -741,7 +742,7 @@ describe("Attribute Validators", () => {
         },
       };
       const result = validateAddAttribute(command, refSchema);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("A reference attribute cannot have a name or type");
     });
 
@@ -755,7 +756,7 @@ describe("Attribute Validators", () => {
         },
       };
       const result = validateAddAttribute(command, refSchema);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe(
         "A reference attribute cannot have a default or fixed value"
       );
@@ -767,7 +768,7 @@ describe("Attribute Validators", () => {
         payload: { parentId: "/complexType:PersonType", ref: "123invalid" },
       };
       const result = validateAddAttribute(command, refSchema);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Attribute ref must be a valid XML name");
     });
 
@@ -781,7 +782,7 @@ describe("Attribute Validators", () => {
         },
       };
       const result = validateModifyAttribute(command, refSchema);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Cannot set both ref and name/type on an attribute");
     });
 
@@ -795,7 +796,7 @@ describe("Attribute Validators", () => {
         },
       };
       const result = validateModifyAttribute(command, refSchema);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe(
         "A reference attribute cannot have a default or fixed value"
       );
@@ -807,7 +808,7 @@ describe("Attribute Validators", () => {
         payload: { parentId: "/complexType:PersonType", ref: "nonexistent" },
       };
       const result = validateAddAttribute(command, refSchema);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Referenced attribute 'nonexistent' does not exist in schema");
     });
 
@@ -820,7 +821,7 @@ describe("Attribute Validators", () => {
         },
       };
       const result = validateModifyAttribute(command, refSchema);
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Referenced attribute 'nonexistent' does not exist in schema");
     });
   });

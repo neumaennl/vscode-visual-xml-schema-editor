@@ -7,6 +7,7 @@
 import { CommandValidator, ValidatorFunctions } from "./commandValidator";
 import { schema, SchemaCommand } from "../shared/types";
 import { ValidationResult } from "./commandValidators/validationUtils";
+import { expectInvalid } from "./commandValidators/validationTestHelpers";
 
 describe("CommandValidator", () => {
   let mockSchema: schema;
@@ -66,23 +67,13 @@ describe("CommandValidator", () => {
 
   describe("validate() method", () => {
     it("should handle unknown command types", () => {
-      // Create an invalid command that TypeScript doesn't know about
-      // This simulates runtime scenarios where command.type could be corrupted
-      interface InvalidCommand {
-        type: string;
-        payload: Record<string, unknown>;
-      }
-      const invalidCommand: InvalidCommand = {
-        type: "unknownCommandType",
-        payload: {},
-      };
-
       const result = validator.validate(
-        invalidCommand as unknown as SchemaCommand,
+        // eslint-disable-next-line no-restricted-syntax -- `type` not in SchemaCommand union; cast needed to test unknown-type rejection at runtime
+        { type: "unknownCommandType", payload: {} } as unknown as SchemaCommand,
         mockSchema
       );
 
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toContain("Unknown command type");
       expect(result.error).toContain("unknownCommandType");
 
@@ -206,7 +197,7 @@ describe("CommandValidator", () => {
 
       const result = validator.validate(command, mockSchema);
 
-      expect(result.valid).toBe(false);
+      expectInvalid(result);
       expect(result.error).toBe("Element name cannot be empty");
       expect(mockValidators.validateAddElement).toHaveBeenCalledWith(
         command,

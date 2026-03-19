@@ -8,12 +8,14 @@
  * tests stay focused on behaviour rather than boilerplate.
  */
 
+import { unmarshal } from "@neumaennl/xmlbind-ts";
 import { CommandProcessor } from "../commandProcessor";
 import type {
   CommandExecutionResult,
   CommandExecutionSuccess,
   CommandExecutionValidationFailure,
 } from "../commandProcessor";
+import { schema } from "../../shared/types";
 import type { SchemaCommand } from "../../shared/types";
 
 // ─── XML Fixtures ────────────────────────────────────────────────────────────
@@ -118,6 +120,25 @@ export function runCommandExpectSuccess(xml: string, command: SchemaCommand): st
   const result = runCommand(xml, command);
   expect(result.success).toBe(true);
   return (result as CommandExecutionSuccess).xmlContent;
+}
+
+/**
+ * Asserts that the command succeeds and returns the resulting schema object,
+ * obtained by unmarshalling the XML produced by the command.
+ *
+ * Use this instead of {@link runCommandExpectSuccess} when you need to inspect
+ * schema properties rather than raw XML text.
+ *
+ * @param xml - Current schema XML content
+ * @param command - The schema editing command to execute
+ * @returns The unmarshalled schema object after the command was applied
+ */
+export function runCommandExpectSuccessSchema(
+  xml: string,
+  command: SchemaCommand
+): schema {
+  const xmlContent = runCommandExpectSuccess(xml, command);
+  return unmarshal(schema, xmlContent);
 }
 
 /**

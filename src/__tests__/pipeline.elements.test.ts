@@ -5,6 +5,8 @@
  *   CommandProcessor → CommandValidator → CommandExecutor → XML round-trip
  *
  * Verifies both success and failure (validation error) paths.
+ * Success-path assertions are made against the unmarshalled schema object
+ * so that the tests are independent of serialization formatting.
  */
 
 import type {
@@ -12,10 +14,11 @@ import type {
   RemoveElementCommand,
   ModifyElementCommand,
 } from "../../shared/types";
+import { toArray } from "../../shared/schemaUtils";
 import {
   MINIMAL_SCHEMA,
   SCHEMA_WITH_ELEMENTS,
-  runCommandExpectSuccess,
+  runCommandExpectSuccessSchema,
   runCommandExpectValidationFailure,
 } from "./testHelpers";
 
@@ -29,10 +32,12 @@ describe("Integration: Element pipeline", () => {
         payload: { parentId: "schema", elementName: "order", elementType: "xs:string" },
       };
 
-      const xml = runCommandExpectSuccess(MINIMAL_SCHEMA, cmd);
+      const result = runCommandExpectSuccessSchema(MINIMAL_SCHEMA, cmd);
+      const elements = toArray(result.element);
 
-      expect(xml).toContain('name="order"');
-      expect(xml).toContain('type="xs:string"');
+      expect(elements).toHaveLength(1);
+      expect(elements[0].name).toBe("order");
+      expect(elements[0].type_).toBe("xs:string");
     });
 
     it("adds a second top-level element without disturbing the first", () => {
@@ -41,10 +46,12 @@ describe("Integration: Element pipeline", () => {
         payload: { parentId: "schema", elementName: "product", elementType: "xs:integer" },
       };
 
-      const xml = runCommandExpectSuccess(SCHEMA_WITH_ELEMENTS, cmd);
+      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_ELEMENTS, cmd);
+      const elements = toArray(result.element);
 
-      expect(xml).toContain('name="person"');
-      expect(xml).toContain('name="product"');
+      expect(elements).toHaveLength(3);
+      expect(elements.some((e) => e.name === "person")).toBe(true);
+      expect(elements.some((e) => e.name === "product")).toBe(true);
     });
 
     it("adds a top-level element with documentation", () => {
@@ -58,9 +65,13 @@ describe("Integration: Element pipeline", () => {
         },
       };
 
-      const xml = runCommandExpectSuccess(MINIMAL_SCHEMA, cmd);
+      const result = runCommandExpectSuccessSchema(MINIMAL_SCHEMA, cmd);
+      const elements = toArray(result.element);
+      const invoice = elements.find((e) => e.name === "invoice");
 
-      expect(xml).toContain("An invoice record");
+      expect(invoice).toBeDefined();
+      const docs = toArray(invoice!.annotation?.documentation);
+      expect(docs[0].value).toBe("An invoice record");
     });
 
     it("returns validation error when element name is invalid", () => {
@@ -91,10 +102,11 @@ describe("Integration: Element pipeline", () => {
         payload: { elementId: "/element:person" },
       };
 
-      const xml = runCommandExpectSuccess(SCHEMA_WITH_ELEMENTS, cmd);
+      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_ELEMENTS, cmd);
+      const elements = toArray(result.element);
 
-      expect(xml).not.toContain('name="person"');
-      expect(xml).toContain('name="company"');
+      expect(elements.some((e) => e.name === "person")).toBe(false);
+      expect(elements.some((e) => e.name === "company")).toBe(true);
     });
 
     it("returns validation error when element ID does not exist", () => {
@@ -116,10 +128,11 @@ describe("Integration: Element pipeline", () => {
         payload: { elementId: "/element:person", elementName: "individual" },
       };
 
-      const xml = runCommandExpectSuccess(SCHEMA_WITH_ELEMENTS, cmd);
+      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_ELEMENTS, cmd);
+      const elements = toArray(result.element);
 
-      expect(xml).toContain('name="individual"');
-      expect(xml).not.toContain('name="person"');
+      expect(elements.some((e) => e.name === "individual")).toBe(true);
+      expect(elements.some((e) => e.name === "person")).toBe(false);
     });
 
     it("changes the type of an existing element", () => {
@@ -128,9 +141,12 @@ describe("Integration: Element pipeline", () => {
         payload: { elementId: "/element:person", elementType: "xs:integer" },
       };
 
-      const xml = runCommandExpectSuccess(SCHEMA_WITH_ELEMENTS, cmd);
+      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_ELEMENTS, cmd);
+      const elements = toArray(result.element);
+      const person = elements.find((e) => e.name === "person");
 
-      expect(xml).toContain('type="xs:integer"');
+      expect(person).toBeDefined();
+      expect(person!.type_).toBe("xs:integer");
     });
 
     it("returns validation error when element ID does not exist", () => {

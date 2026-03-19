@@ -2,6 +2,7 @@
  * Integration tests: complexType add / remove / modify pipeline.
  *
  * Exercises the full extension-side editing pipeline for complexType commands.
+ * Success-path assertions are made against the unmarshalled schema object.
  */
 
 import type {
@@ -9,10 +10,11 @@ import type {
   RemoveComplexTypeCommand,
   ModifyComplexTypeCommand,
 } from "../../shared/types";
+import { toArray } from "../../shared/schemaUtils";
 import {
   MINIMAL_SCHEMA,
   SCHEMA_WITH_COMPLEXTYPE,
-  runCommandExpectSuccess,
+  runCommandExpectSuccessSchema,
   runCommandExpectValidationFailure,
 } from "./testHelpers";
 
@@ -30,10 +32,14 @@ describe("Integration: ComplexType pipeline", () => {
         },
       };
 
-      const xml = runCommandExpectSuccess(MINIMAL_SCHEMA, cmd);
+      const result = runCommandExpectSuccessSchema(MINIMAL_SCHEMA, cmd);
+      const types = toArray(result.complexType);
+      const orderType = types.find((t) => t.name === "OrderType");
 
-      expect(xml).toContain('name="OrderType"');
-      expect(xml).toContain("<sequence");
+      expect(orderType).toBeDefined();
+      expect(orderType!.sequence).toBeDefined();
+      expect(orderType!.choice).toBeUndefined();
+      expect(orderType!.all).toBeUndefined();
     });
 
     it("adds a complexType with a choice content model", () => {
@@ -46,10 +52,12 @@ describe("Integration: ComplexType pipeline", () => {
         },
       };
 
-      const xml = runCommandExpectSuccess(MINIMAL_SCHEMA, cmd);
+      const result = runCommandExpectSuccessSchema(MINIMAL_SCHEMA, cmd);
+      const choiceType = toArray(result.complexType).find((t) => t.name === "ChoiceType");
 
-      expect(xml).toContain('name="ChoiceType"');
-      expect(xml).toContain("<choice");
+      expect(choiceType).toBeDefined();
+      expect(choiceType!.choice).toBeDefined();
+      expect(choiceType!.sequence).toBeUndefined();
     });
 
     it("adds a complexType with an all content model", () => {
@@ -62,10 +70,12 @@ describe("Integration: ComplexType pipeline", () => {
         },
       };
 
-      const xml = runCommandExpectSuccess(MINIMAL_SCHEMA, cmd);
+      const result = runCommandExpectSuccessSchema(MINIMAL_SCHEMA, cmd);
+      const allType = toArray(result.complexType).find((t) => t.name === "AllType");
 
-      expect(xml).toContain('name="AllType"');
-      expect(xml).toContain("<all");
+      expect(allType).toBeDefined();
+      expect(allType!.all).toBeDefined();
+      expect(allType!.sequence).toBeUndefined();
     });
 
     it("adds a complexType marked as abstract", () => {
@@ -79,9 +89,11 @@ describe("Integration: ComplexType pipeline", () => {
         },
       };
 
-      const xml = runCommandExpectSuccess(MINIMAL_SCHEMA, cmd);
+      const result = runCommandExpectSuccessSchema(MINIMAL_SCHEMA, cmd);
+      const baseType = toArray(result.complexType).find((t) => t.name === "BaseType");
 
-      expect(xml).toContain('abstract="true"');
+      expect(baseType).toBeDefined();
+      expect(String(baseType!.abstract)).toBe("true");
     });
 
     it("returns validation error when type name is invalid", () => {
@@ -112,9 +124,10 @@ describe("Integration: ComplexType pipeline", () => {
         payload: { typeId: "/complexType:PersonType" },
       };
 
-      const xml = runCommandExpectSuccess(SCHEMA_WITH_COMPLEXTYPE, cmd);
+      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_COMPLEXTYPE, cmd);
+      const types = toArray(result.complexType);
 
-      expect(xml).not.toContain('name="PersonType"');
+      expect(types.some((t) => t.name === "PersonType")).toBe(false);
     });
 
     it("returns validation error when type ID does not exist", () => {
@@ -136,10 +149,11 @@ describe("Integration: ComplexType pipeline", () => {
         payload: { typeId: "/complexType:PersonType", typeName: "IndividualType" },
       };
 
-      const xml = runCommandExpectSuccess(SCHEMA_WITH_COMPLEXTYPE, cmd);
+      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_COMPLEXTYPE, cmd);
+      const types = toArray(result.complexType);
 
-      expect(xml).toContain('name="IndividualType"');
-      expect(xml).not.toContain('name="PersonType"');
+      expect(types.some((t) => t.name === "IndividualType")).toBe(true);
+      expect(types.some((t) => t.name === "PersonType")).toBe(false);
     });
 
     it("marks a complexType as abstract", () => {
@@ -148,9 +162,11 @@ describe("Integration: ComplexType pipeline", () => {
         payload: { typeId: "/complexType:PersonType", abstract: true },
       };
 
-      const xml = runCommandExpectSuccess(SCHEMA_WITH_COMPLEXTYPE, cmd);
+      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_COMPLEXTYPE, cmd);
+      const personType = toArray(result.complexType).find((t) => t.name === "PersonType");
 
-      expect(xml).toContain('abstract="true"');
+      expect(personType).toBeDefined();
+      expect(String(personType!.abstract)).toBe("true");
     });
 
     it("enables mixed content on a complexType", () => {
@@ -159,9 +175,11 @@ describe("Integration: ComplexType pipeline", () => {
         payload: { typeId: "/complexType:PersonType", mixed: true },
       };
 
-      const xml = runCommandExpectSuccess(SCHEMA_WITH_COMPLEXTYPE, cmd);
+      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_COMPLEXTYPE, cmd);
+      const personType = toArray(result.complexType).find((t) => t.name === "PersonType");
 
-      expect(xml).toContain('mixed="true"');
+      expect(personType).toBeDefined();
+      expect(String(personType!.mixed)).toBe("true");
     });
 
     it("returns validation error when type ID does not exist", () => {

@@ -3,6 +3,7 @@
  *
  * Exercises the full extension-side editing pipeline for xs:import commands,
  * including namespace prefix handling and QName rewriting.
+ * Success-path assertions are made against the unmarshalled schema object.
  */
 
 import type {
@@ -10,10 +11,11 @@ import type {
   RemoveImportCommand,
   ModifyImportCommand,
 } from "../../shared/types";
+import { toArray } from "../../shared/schemaUtils";
 import {
   MINIMAL_SCHEMA,
   SCHEMA_WITH_IMPORT,
-  runCommandExpectSuccess,
+  runCommandExpectSuccessSchema,
   runCommandExpectValidationFailure,
 } from "./testHelpers";
 
@@ -37,10 +39,10 @@ describe("Integration: Import pipeline", () => {
         },
       };
 
-      const xml = runCommandExpectSuccess(MINIMAL_SCHEMA, cmd);
+      const result = runCommandExpectSuccessSchema(MINIMAL_SCHEMA, cmd);
+      const imports = toArray(result.import_);
 
-      expect(xml).toContain('namespace="http://example.com/ext"');
-      expect(xml).toContain('schemaLocation="ext.xsd"');
+      expect(imports.some((i) => i.namespace === "http://example.com/ext" && i.schemaLocation === "ext.xsd")).toBe(true);
     });
 
     it("adds an import with an explicit prefix", () => {
@@ -53,9 +55,11 @@ describe("Integration: Import pipeline", () => {
         },
       };
 
-      const xml = runCommandExpectSuccess(MINIMAL_SCHEMA, cmd);
+      const result = runCommandExpectSuccessSchema(MINIMAL_SCHEMA, cmd);
+      const imports = toArray(result.import_);
 
-      expect(xml).toContain('namespace="http://example.com/ext"');
+      expect(imports.some((i) => i.namespace === "http://example.com/ext")).toBe(true);
+      expect(result._namespacePrefixes?.["ext"]).toBe("http://example.com/ext");
     });
 
     it("auto-generates a prefix when none is provided", () => {
@@ -67,10 +71,13 @@ describe("Integration: Import pipeline", () => {
         },
       };
 
-      const xml = runCommandExpectSuccess(MINIMAL_SCHEMA, cmd);
+      const result = runCommandExpectSuccessSchema(MINIMAL_SCHEMA, cmd);
+      const imports = toArray(result.import_);
 
-      // Auto-generated prefix should appear in the schema namespace declarations
-      expect(xml).toContain("http://example.com/auto");
+      expect(imports.some((i) => i.namespace === "http://example.com/auto")).toBe(true);
+      // A prefix must have been registered for the new namespace
+      const prefixes = Object.values(result._namespacePrefixes ?? {});
+      expect(prefixes).toContain("http://example.com/auto");
     });
 
     it("returns validation error for an invalid namespace URI", () => {
@@ -117,9 +124,10 @@ describe("Integration: Import pipeline", () => {
         payload: { importId: "/import[0]" },
       };
 
-      const xml = runCommandExpectSuccess(SCHEMA_WITH_IMPORT, cmd);
+      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_IMPORT, cmd);
+      const imports = toArray(result.import_);
 
-      expect(xml).not.toContain('namespace="http://example.com/ext"');
+      expect(imports.some((i) => i.namespace === "http://example.com/ext")).toBe(false);
     });
 
     it("removes a specific import from a multi-import schema", () => {
@@ -128,10 +136,11 @@ describe("Integration: Import pipeline", () => {
         payload: { importId: "/import[0]" },
       };
 
-      const xml = runCommandExpectSuccess(SCHEMA_TWO_IMPORTS, cmd);
+      const result = runCommandExpectSuccessSchema(SCHEMA_TWO_IMPORTS, cmd);
+      const imports = toArray(result.import_);
 
-      expect(xml).not.toContain('namespace="http://example.com/a"');
-      expect(xml).toContain('namespace="http://example.com/b"');
+      expect(imports.some((i) => i.namespace === "http://example.com/a")).toBe(false);
+      expect(imports.some((i) => i.namespace === "http://example.com/b")).toBe(true);
     });
 
     it("returns validation error when import ID is out of range", () => {
@@ -153,9 +162,12 @@ describe("Integration: Import pipeline", () => {
         payload: { importId: "/import[0]", schemaLocation: "updated-ext.xsd" },
       };
 
-      const xml = runCommandExpectSuccess(SCHEMA_WITH_IMPORT, cmd);
+      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_IMPORT, cmd);
+      const imports = toArray(result.import_);
+      const ext = imports.find((i) => i.namespace === "http://example.com/ext");
 
-      expect(xml).toContain('schemaLocation="updated-ext.xsd"');
+      expect(ext).toBeDefined();
+      expect(ext!.schemaLocation).toBe("updated-ext.xsd");
     });
 
     it("returns validation error when import ID is out of range", () => {

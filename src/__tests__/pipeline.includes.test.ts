@@ -2,6 +2,7 @@
  * Integration tests: include add / remove / modify pipeline.
  *
  * Exercises the full extension-side editing pipeline for xs:include commands.
+ * Success-path assertions are made against the unmarshalled schema object.
  */
 
 import type {
@@ -9,10 +10,11 @@ import type {
   RemoveIncludeCommand,
   ModifyIncludeCommand,
 } from "../../shared/types";
+import { toArray } from "../../shared/schemaUtils";
 import {
   MINIMAL_SCHEMA,
   SCHEMA_WITH_INCLUDE,
-  runCommandExpectSuccess,
+  runCommandExpectSuccessSchema,
   runCommandExpectValidationFailure,
 } from "./testHelpers";
 
@@ -33,9 +35,10 @@ describe("Integration: Include pipeline", () => {
         payload: { schemaLocation: "types.xsd" },
       };
 
-      const xml = runCommandExpectSuccess(MINIMAL_SCHEMA, cmd);
+      const result = runCommandExpectSuccessSchema(MINIMAL_SCHEMA, cmd);
+      const includes = toArray(result.include);
 
-      expect(xml).toContain('schemaLocation="types.xsd"');
+      expect(includes.some((i) => i.schemaLocation === "types.xsd")).toBe(true);
     });
 
     it("returns validation error for an empty schemaLocation", () => {
@@ -75,9 +78,10 @@ describe("Integration: Include pipeline", () => {
         payload: { includeId: "/include[0]" },
       };
 
-      const xml = runCommandExpectSuccess(SCHEMA_WITH_INCLUDE, cmd);
+      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_INCLUDE, cmd);
+      const includes = toArray(result.include);
 
-      expect(xml).not.toContain('schemaLocation="base.xsd"');
+      expect(includes.some((i) => i.schemaLocation === "base.xsd")).toBe(false);
     });
 
     it("removes one include and preserves the other", () => {
@@ -86,10 +90,11 @@ describe("Integration: Include pipeline", () => {
         payload: { includeId: "/include[0]" },
       };
 
-      const xml = runCommandExpectSuccess(SCHEMA_TWO_INCLUDES, cmd);
+      const result = runCommandExpectSuccessSchema(SCHEMA_TWO_INCLUDES, cmd);
+      const includes = toArray(result.include);
 
-      expect(xml).not.toContain('schemaLocation="base.xsd"');
-      expect(xml).toContain('schemaLocation="common.xsd"');
+      expect(includes.some((i) => i.schemaLocation === "base.xsd")).toBe(false);
+      expect(includes.some((i) => i.schemaLocation === "common.xsd")).toBe(true);
     });
 
     it("returns validation error when include ID is out of range", () => {
@@ -111,10 +116,11 @@ describe("Integration: Include pipeline", () => {
         payload: { includeId: "/include[0]", schemaLocation: "updated-base.xsd" },
       };
 
-      const xml = runCommandExpectSuccess(SCHEMA_WITH_INCLUDE, cmd);
+      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_INCLUDE, cmd);
+      const includes = toArray(result.include);
 
-      expect(xml).toContain('schemaLocation="updated-base.xsd"');
-      expect(xml).not.toContain('schemaLocation="base.xsd"');
+      expect(includes.some((i) => i.schemaLocation === "updated-base.xsd")).toBe(true);
+      expect(includes.some((i) => i.schemaLocation === "base.xsd")).toBe(false);
     });
 
     it("returns validation error when include ID is out of range", () => {

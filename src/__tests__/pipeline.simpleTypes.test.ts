@@ -2,6 +2,7 @@
  * Integration tests: simpleType add / remove / modify pipeline.
  *
  * Exercises the full extension-side editing pipeline for simpleType commands.
+ * Success-path assertions are made against the unmarshalled schema object.
  */
 
 import type {
@@ -9,10 +10,11 @@ import type {
   RemoveSimpleTypeCommand,
   ModifySimpleTypeCommand,
 } from "../../shared/types";
+import { toArray } from "../../shared/schemaUtils";
 import {
   MINIMAL_SCHEMA,
   SCHEMA_WITH_SIMPLETYPE,
-  runCommandExpectSuccess,
+  runCommandExpectSuccessSchema,
   runCommandExpectValidationFailure,
 } from "./testHelpers";
 
@@ -30,10 +32,12 @@ describe("Integration: SimpleType pipeline", () => {
         },
       };
 
-      const xml = runCommandExpectSuccess(MINIMAL_SCHEMA, cmd);
+      const result = runCommandExpectSuccessSchema(MINIMAL_SCHEMA, cmd);
+      const types = toArray(result.simpleType);
+      const ageType = types.find((t) => t.name === "AgeType");
 
-      expect(xml).toContain('name="AgeType"');
-      expect(xml).toContain('base="xs:integer"');
+      expect(ageType).toBeDefined();
+      expect(ageType!.restriction?.base).toBe("xs:integer");
     });
 
     it("adds a simpleType with enumeration restrictions", () => {
@@ -47,12 +51,16 @@ describe("Integration: SimpleType pipeline", () => {
         },
       };
 
-      const xml = runCommandExpectSuccess(MINIMAL_SCHEMA, cmd);
+      const result = runCommandExpectSuccessSchema(MINIMAL_SCHEMA, cmd);
+      const types = toArray(result.simpleType);
+      const colorType = types.find((t) => t.name === "ColorType");
 
-      expect(xml).toContain('name="ColorType"');
-      expect(xml).toContain('"red"');
-      expect(xml).toContain('"green"');
-      expect(xml).toContain('"blue"');
+      expect(colorType).toBeDefined();
+      const enumerations = toArray(colorType!.restriction?.enumeration);
+      const values = enumerations.map((e) => e.value);
+      expect(values).toContain("red");
+      expect(values).toContain("green");
+      expect(values).toContain("blue");
     });
 
     it("adds a simpleType with minLength / maxLength facets", () => {
@@ -66,9 +74,12 @@ describe("Integration: SimpleType pipeline", () => {
         },
       };
 
-      const xml = runCommandExpectSuccess(MINIMAL_SCHEMA, cmd);
+      const result = runCommandExpectSuccessSchema(MINIMAL_SCHEMA, cmd);
+      const types = toArray(result.simpleType);
+      const nameType = types.find((t) => t.name === "NameType");
 
-      expect(xml).toContain('name="NameType"');
+      expect(nameType).toBeDefined();
+      expect(nameType!.restriction).toBeDefined();
     });
 
     it("returns validation error when type name is invalid", () => {
@@ -99,9 +110,10 @@ describe("Integration: SimpleType pipeline", () => {
         payload: { typeId: "/simpleType:StatusType" },
       };
 
-      const xml = runCommandExpectSuccess(SCHEMA_WITH_SIMPLETYPE, cmd);
+      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_SIMPLETYPE, cmd);
+      const types = toArray(result.simpleType);
 
-      expect(xml).not.toContain('name="StatusType"');
+      expect(types.some((t) => t.name === "StatusType")).toBe(false);
     });
 
     it("returns validation error when type ID does not exist", () => {
@@ -123,10 +135,11 @@ describe("Integration: SimpleType pipeline", () => {
         payload: { typeId: "/simpleType:StatusType", typeName: "StateType" },
       };
 
-      const xml = runCommandExpectSuccess(SCHEMA_WITH_SIMPLETYPE, cmd);
+      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_SIMPLETYPE, cmd);
+      const types = toArray(result.simpleType);
 
-      expect(xml).toContain('name="StateType"');
-      expect(xml).not.toContain('name="StatusType"');
+      expect(types.some((t) => t.name === "StateType")).toBe(true);
+      expect(types.some((t) => t.name === "StatusType")).toBe(false);
     });
 
     it("changes the base type of a simpleType", () => {
@@ -135,9 +148,11 @@ describe("Integration: SimpleType pipeline", () => {
         payload: { typeId: "/simpleType:StatusType", baseType: "xs:token" },
       };
 
-      const xml = runCommandExpectSuccess(SCHEMA_WITH_SIMPLETYPE, cmd);
+      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_SIMPLETYPE, cmd);
+      const statusType = toArray(result.simpleType).find((t) => t.name === "StatusType");
 
-      expect(xml).toContain('base="xs:token"');
+      expect(statusType).toBeDefined();
+      expect(statusType!.restriction!.base).toBe("xs:token");
     });
 
     it("returns validation error when type ID does not exist", () => {

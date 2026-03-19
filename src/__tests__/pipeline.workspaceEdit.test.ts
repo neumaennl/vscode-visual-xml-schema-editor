@@ -6,7 +6,8 @@
  *
  * Tests that:
  * - Successful commands create a WorkspaceEdit, call applyEdit, and reply with
- *   commandResult { success: true }.
+ *   commandResult { success: true }. The XML written into the edit is verified by
+ *   unmarshalling it and inspecting schema object properties.
  * - Validation failures are routed to commandResult { success: false, error }.
  * - Runtime errors (thrown by CommandProcessor) are routed to an error message
  *   with code COMMAND_EXECUTION_ERROR.
@@ -18,9 +19,12 @@
  * VS Code, not Jest.
  */
 
+import { unmarshal } from "@neumaennl/xmlbind-ts";
 import * as vscode from "vscode";
 import { SchemaEditorProvider } from "../webviewProvider";
 import { CommandProcessor } from "../commandProcessor";
+import { schema } from "../../shared/types";
+import { toArray } from "../../shared/schemaUtils";
 
 // ─── Test infrastructure ──────────────────────────────────────────────────────
 
@@ -125,13 +129,17 @@ describe("Integration: WorkspaceEdit via SchemaEditorProvider", () => {
       // WorkspaceEdit must have been created and applied
       expect(vscode.WorkspaceEdit).toHaveBeenCalled();
       const editInstance = (vscode.WorkspaceEdit as jest.Mock).mock.results[0].value as {
-        replace: jest.Mock;
+        replace: jest.Mock<void, [vscode.Uri, vscode.Range, string]>;
       };
       expect(editInstance.replace).toHaveBeenCalledWith(
         document.uri,
         expect.any(vscode.Range),
-        expect.stringContaining('name="order"')
+        expect.any(String)
       );
+      // Verify the written XML parses correctly and contains the new element
+      const writtenXml = editInstance.replace.mock.calls[0][2];
+      const parsedSchema = unmarshal(schema, writtenXml);
+      expect(toArray(parsedSchema.element).some((e) => e.name === "order")).toBe(true);
       expect(vscode.workspace.applyEdit).toHaveBeenCalled();
 
       // Webview must receive commandResult { success: true }
@@ -197,10 +205,12 @@ describe("Integration: WorkspaceEdit via SchemaEditorProvider", () => {
       expect(webview.postMessage).toHaveBeenCalledWith(
         expect.objectContaining({ command: "error" })
       );
-      type ErrorMsg = { command: string; data: { message: string; code: string } };
-      type PostMsgFn = jest.MockedFunction<(msg: ErrorMsg) => Promise<boolean>>;
-      const sentMsg = (webview.postMessage as PostMsgFn).mock.calls[0][0];
-      expect(sentMsg.data.code).toBe("COMMAND_EXECUTION_ERROR");
+      expect(webview.postMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          command: "error",
+          data: expect.objectContaining({ code: "COMMAND_EXECUTION_ERROR" }),
+        })
+      );
       expect(webview.postMessage).not.toHaveBeenCalledWith(
         expect.objectContaining({ command: "commandResult" })
       );
@@ -228,13 +238,14 @@ describe("Integration: WorkspaceEdit via SchemaEditorProvider", () => {
       await flushMicrotasks();
 
       expect(webview.postMessage).toHaveBeenCalledWith(
-        expect.objectContaining({ command: "error" })
+        expect.objectContaining({
+          command: "error",
+          data: expect.objectContaining({
+            code: "COMMAND_EXECUTION_ERROR",
+            stack: expect.stringContaining("Something went wrong internally"),
+          }),
+        })
       );
-      type ErrorMsg = { command: string; data: { message: string; code: string; stack?: string } };
-      type PostMsgFn = jest.MockedFunction<(msg: ErrorMsg) => Promise<boolean>>;
-      const sentMsg = (webview.postMessage as PostMsgFn).mock.calls[0][0];
-      expect(sentMsg.data.code).toBe("COMMAND_EXECUTION_ERROR");
-      expect(sentMsg.data.stack).toContain("Something went wrong internally");
     });
   });
 
@@ -255,12 +266,11 @@ describe("Integration: WorkspaceEdit via SchemaEditorProvider", () => {
       await flushMicrotasks();
 
       expect(webview.postMessage).toHaveBeenCalledWith(
-        expect.objectContaining({ command: "error" })
+        expect.objectContaining({
+          command: "error",
+          data: expect.objectContaining({ code: "COMMAND_EXECUTION_ERROR" }),
+        })
       );
-      type ErrorMsg = { command: string; data: { message: string; code: string } };
-      type PostMsgFn = jest.MockedFunction<(msg: ErrorMsg) => Promise<boolean>>;
-      const sentMsg = (webview.postMessage as PostMsgFn).mock.calls[0][0];
-      expect(sentMsg.data.code).toBe("COMMAND_EXECUTION_ERROR");
       expect(webview.postMessage).not.toHaveBeenCalledWith(
         expect.objectContaining({ command: "commandResult" })
       );
@@ -294,13 +304,20 @@ describe("Integration: WorkspaceEdit via SchemaEditorProvider", () => {
       // Each command must have produced a separate WorkspaceEdit call
       expect(vscode.workspace.applyEdit).toHaveBeenCalledTimes(2);
       // Both edits must have been reported as successful
-      const calls = (webview.postMessage as jest.Mock).mock.calls;
-      const successCalls = calls.filter(
-        (c) =>
-          (c[0] as { command: string; data: { success?: boolean } }).command === "commandResult" &&
-          (c[0] as { command: string; data: { success?: boolean } }).data.success === true
+      expect(webview.postMessage).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({
+          command: "commandResult",
+          data: expect.objectContaining({ success: true }),
+        })
       );
-      expect(successCalls).toHaveLength(2);
+      expect(webview.postMessage).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          command: "commandResult",
+          data: expect.objectContaining({ success: true }),
+        })
+      );
     });
   });
 });

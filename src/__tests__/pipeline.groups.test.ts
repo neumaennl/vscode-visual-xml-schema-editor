@@ -2,6 +2,7 @@
  * Integration tests: group and attributeGroup add / remove / modify pipeline.
  *
  * Covers named model groups and attribute groups, both definitions and references.
+ * Success-path assertions are made against the unmarshalled schema object.
  */
 
 import type {
@@ -12,11 +13,12 @@ import type {
   RemoveAttributeGroupCommand,
   ModifyAttributeGroupCommand,
 } from "../../shared/types";
+import { toArray } from "../../shared/schemaUtils";
 import {
   MINIMAL_SCHEMA,
   SCHEMA_WITH_GROUP,
   SCHEMA_WITH_ATTRIBUTEGROUP,
-  runCommandExpectSuccess,
+  runCommandExpectSuccessSchema,
   runCommandExpectValidationFailure,
 } from "./testHelpers";
 
@@ -30,10 +32,13 @@ describe("Integration: Group pipeline", () => {
         payload: { groupName: "AddressGroup", contentModel: "sequence" },
       };
 
-      const xml = runCommandExpectSuccess(MINIMAL_SCHEMA, cmd);
+      const result = runCommandExpectSuccessSchema(MINIMAL_SCHEMA, cmd);
+      const groups = toArray(result.group);
+      const addressGroup = groups.find((g) => g.name === "AddressGroup");
 
-      expect(xml).toContain('name="AddressGroup"');
-      expect(xml).toContain("<sequence");
+      expect(addressGroup).toBeDefined();
+      expect(addressGroup!.sequence).toBeDefined();
+      expect(addressGroup!.choice).toBeUndefined();
     });
 
     it("adds a group with a choice content model", () => {
@@ -42,9 +47,12 @@ describe("Integration: Group pipeline", () => {
         payload: { groupName: "ChoiceGroup", contentModel: "choice" },
       };
 
-      const xml = runCommandExpectSuccess(MINIMAL_SCHEMA, cmd);
+      const result = runCommandExpectSuccessSchema(MINIMAL_SCHEMA, cmd);
+      const choiceGroup = toArray(result.group).find((g) => g.name === "ChoiceGroup");
 
-      expect(xml).toContain("<choice");
+      expect(choiceGroup).toBeDefined();
+      expect(choiceGroup!.choice).toBeDefined();
+      expect(choiceGroup!.sequence).toBeUndefined();
     });
 
     it("returns validation error for duplicate group name", () => {
@@ -75,9 +83,10 @@ describe("Integration: Group pipeline", () => {
         payload: { groupId: "/group:ContactGroup" },
       };
 
-      const xml = runCommandExpectSuccess(SCHEMA_WITH_GROUP, cmd);
+      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_GROUP, cmd);
+      const groups = toArray(result.group);
 
-      expect(xml).not.toContain('name="ContactGroup"');
+      expect(groups.some((g) => g.name === "ContactGroup")).toBe(false);
     });
 
     it("returns validation error when group ID does not exist", () => {
@@ -99,10 +108,11 @@ describe("Integration: Group pipeline", () => {
         payload: { groupId: "/group:ContactGroup", groupName: "CommunicationGroup" },
       };
 
-      const xml = runCommandExpectSuccess(SCHEMA_WITH_GROUP, cmd);
+      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_GROUP, cmd);
+      const groups = toArray(result.group);
 
-      expect(xml).toContain('name="CommunicationGroup"');
-      expect(xml).not.toContain('name="ContactGroup"');
+      expect(groups.some((g) => g.name === "CommunicationGroup")).toBe(true);
+      expect(groups.some((g) => g.name === "ContactGroup")).toBe(false);
     });
 
     it("returns validation error when group ID does not exist", () => {
@@ -126,9 +136,10 @@ describe("Integration: AttributeGroup pipeline", () => {
         payload: { groupName: "AuditAttributes" },
       };
 
-      const xml = runCommandExpectSuccess(MINIMAL_SCHEMA, cmd);
+      const result = runCommandExpectSuccessSchema(MINIMAL_SCHEMA, cmd);
+      const groups = toArray(result.attributeGroup);
 
-      expect(xml).toContain('name="AuditAttributes"');
+      expect(groups.some((g) => g.name === "AuditAttributes")).toBe(true);
     });
 
     it("returns validation error for duplicate attributeGroup name", () => {
@@ -159,9 +170,10 @@ describe("Integration: AttributeGroup pipeline", () => {
         payload: { groupId: "/attributeGroup:CommonAttrs" },
       };
 
-      const xml = runCommandExpectSuccess(SCHEMA_WITH_ATTRIBUTEGROUP, cmd);
+      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_ATTRIBUTEGROUP, cmd);
+      const groups = toArray(result.attributeGroup);
 
-      expect(xml).not.toContain('name="CommonAttrs"');
+      expect(groups.some((g) => g.name === "CommonAttrs")).toBe(false);
     });
 
     it("returns validation error when group ID does not exist", () => {
@@ -183,10 +195,11 @@ describe("Integration: AttributeGroup pipeline", () => {
         payload: { groupId: "/attributeGroup:CommonAttrs", groupName: "SharedAttrs" },
       };
 
-      const xml = runCommandExpectSuccess(SCHEMA_WITH_ATTRIBUTEGROUP, cmd);
+      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_ATTRIBUTEGROUP, cmd);
+      const groups = toArray(result.attributeGroup);
 
-      expect(xml).toContain('name="SharedAttrs"');
-      expect(xml).not.toContain('name="CommonAttrs"');
+      expect(groups.some((g) => g.name === "SharedAttrs")).toBe(true);
+      expect(groups.some((g) => g.name === "CommonAttrs")).toBe(false);
     });
 
     it("returns validation error when group ID does not exist", () => {

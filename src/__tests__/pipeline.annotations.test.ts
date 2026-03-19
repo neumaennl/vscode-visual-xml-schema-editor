@@ -2,6 +2,7 @@
  * Integration tests: annotation and documentation add / remove / modify pipeline.
  *
  * Exercises the full extension-side editing pipeline for metadata commands.
+ * Success-path assertions are made against the unmarshalled schema object.
  */
 
 import type {
@@ -12,11 +13,12 @@ import type {
   RemoveDocumentationCommand,
   ModifyDocumentationCommand,
 } from "../../shared/types";
+import { toArray } from "../../shared/schemaUtils";
 import {
   MINIMAL_SCHEMA,
   SCHEMA_WITH_ELEMENTS,
   SCHEMA_WITH_ANNOTATION,
-  runCommandExpectSuccess,
+  runCommandExpectSuccessSchema,
   runCommandExpectValidationFailure,
 } from "./testHelpers";
 
@@ -30,11 +32,14 @@ describe("Integration: Annotation pipeline", () => {
         payload: { targetId: "/element:person", documentation: "A person record" },
       };
 
-      const xml = runCommandExpectSuccess(SCHEMA_WITH_ELEMENTS, cmd);
+      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_ELEMENTS, cmd);
+      const elements = toArray(result.element);
+      const person = elements.find((e) => e.name === "person");
 
-      expect(xml).toContain("A person record");
-      expect(xml).toContain("<annotation");
-      expect(xml).toContain("<documentation");
+      expect(person).toBeDefined();
+      expect(person!.annotation).toBeDefined();
+      const docs = toArray(person!.annotation!.documentation);
+      expect(docs[0].value).toBe("A person record");
     });
 
     it("adds a schema-level annotation", () => {
@@ -43,9 +48,12 @@ describe("Integration: Annotation pipeline", () => {
         payload: { targetId: "schema", documentation: "My schema" },
       };
 
-      const xml = runCommandExpectSuccess(MINIMAL_SCHEMA, cmd);
+      const result = runCommandExpectSuccessSchema(MINIMAL_SCHEMA, cmd);
+      const annotations = toArray(result.annotation);
 
-      expect(xml).toContain("My schema");
+      expect(annotations.length).toBeGreaterThan(0);
+      const docs = toArray(annotations[0].documentation);
+      expect(docs[0].value).toBe("My schema");
     });
 
     it("returns validation error when target element does not exist", () => {
@@ -67,10 +75,12 @@ describe("Integration: Annotation pipeline", () => {
         payload: { annotationId: "/element:person" },
       };
 
-      const xml = runCommandExpectSuccess(SCHEMA_WITH_ANNOTATION, cmd);
+      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_ANNOTATION, cmd);
+      const elements = toArray(result.element);
+      const person = elements.find((e) => e.name === "person");
 
-      expect(xml).not.toContain("<xs:annotation");
-      expect(xml).not.toContain("A person element");
+      expect(person).toBeDefined();
+      expect(person!.annotation).toBeUndefined();
     });
 
     it("returns validation error when the element has no annotation", () => {
@@ -95,10 +105,13 @@ describe("Integration: Annotation pipeline", () => {
         },
       };
 
-      const xml = runCommandExpectSuccess(SCHEMA_WITH_ANNOTATION, cmd);
+      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_ANNOTATION, cmd);
+      const elements = toArray(result.element);
+      const person = elements.find((e) => e.name === "person");
 
-      expect(xml).toContain("Updated description");
-      expect(xml).not.toContain("A person element");
+      expect(person).toBeDefined();
+      const docs = toArray(person!.annotation!.documentation);
+      expect(docs[0].value).toBe("Updated description");
     });
 
     it("returns validation error when element does not exist", () => {
@@ -125,9 +138,13 @@ describe("Integration: Documentation pipeline", () => {
         },
       };
 
-      const xml = runCommandExpectSuccess(SCHEMA_WITH_ANNOTATION, cmd);
+      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_ANNOTATION, cmd);
+      const elements = toArray(result.element);
+      const person = elements.find((e) => e.name === "person");
 
-      expect(xml).toContain("Additional details");
+      expect(person).toBeDefined();
+      const docs = toArray(person!.annotation!.documentation);
+      expect(docs.some((d) => d.value === "Additional details")).toBe(true);
     });
 
     it("returns validation error when target element does not exist", () => {
@@ -152,9 +169,13 @@ describe("Integration: Documentation pipeline", () => {
         payload: { documentationId: "/element:person/documentation[0]" },
       };
 
-      const xml = runCommandExpectSuccess(SCHEMA_WITH_ANNOTATION, cmd);
+      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_ANNOTATION, cmd);
+      const elements = toArray(result.element);
+      const person = elements.find((e) => e.name === "person");
 
-      expect(xml).not.toContain("A person element");
+      expect(person).toBeDefined();
+      const docs = toArray(person!.annotation?.documentation);
+      expect(docs.some((d) => d.value === "A person element")).toBe(false);
     });
 
     it("returns validation error when documentation index is out of bounds", () => {
@@ -179,10 +200,13 @@ describe("Integration: Documentation pipeline", () => {
         },
       };
 
-      const xml = runCommandExpectSuccess(SCHEMA_WITH_ANNOTATION, cmd);
+      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_ANNOTATION, cmd);
+      const elements = toArray(result.element);
+      const person = elements.find((e) => e.name === "person");
 
-      expect(xml).toContain("New documentation text");
-      expect(xml).not.toContain("A person element");
+      expect(person).toBeDefined();
+      const docs = toArray(person!.annotation!.documentation);
+      expect(docs[0].value).toBe("New documentation text");
     });
 
     it("returns validation error when documentation index is out of bounds", () => {

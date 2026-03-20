@@ -27,10 +27,10 @@ export class element extends annotated {
   @XmlAttribute('fixed')
   fixed?: string;
 
-  @XmlAttribute('nillable')
+  @XmlAttribute('nillable', { type: Boolean })
   nillable?: boolean;
 
-  @XmlAttribute('abstract')
+  @XmlAttribute('abstract', { type: Boolean })
   abstract?: boolean;
 
   @XmlAttribute('final')
@@ -48,10 +48,10 @@ export class element extends annotated {
   @XmlAttribute('ref')
   ref?: string;
 
-  @XmlAttribute('minOccurs')
+  @XmlAttribute('minOccurs', { type: Number })
   minOccurs?: number;
 
-  @XmlAttribute('maxOccurs')
+  @XmlAttribute('maxOccurs', { type: Number, allowStringFallback: true })
   maxOccurs?: allNNI;
 
   @XmlElement('simpleType', { type: () => localSimpleType, namespace: 'http://www.w3.org/2001/XMLSchema' })

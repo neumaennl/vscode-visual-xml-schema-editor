@@ -15,10 +15,10 @@ export class explicitGroup {
   @XmlAttribute('id')
   id?: string;
 
-  @XmlAttribute('minOccurs')
+  @XmlAttribute('minOccurs', { type: Number })
   minOccurs?: number;
 
-  @XmlAttribute('maxOccurs')
+  @XmlAttribute('maxOccurs', { type: Number, allowStringFallback: true })
   maxOccurs?: allNNI;
 
   @XmlElement('annotation', { type: () => annotationType, namespace: 'http://www.w3.org/2001/XMLSchema' })

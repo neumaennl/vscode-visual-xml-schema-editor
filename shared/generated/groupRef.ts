@@ -9,10 +9,10 @@ export class groupRef {
   @XmlAttribute('id')
   id?: string;
 
-  @XmlAttribute('minOccurs')
+  @XmlAttribute('minOccurs', { type: Number })
   minOccurs?: number;
 
-  @XmlAttribute('maxOccurs')
+  @XmlAttribute('maxOccurs', { type: Number, allowStringFallback: true })
   maxOccurs?: allNNI;
 
   @XmlAttribute('ref')

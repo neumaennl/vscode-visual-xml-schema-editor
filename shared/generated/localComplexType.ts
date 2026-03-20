@@ -16,7 +16,7 @@ export class localComplexType {
   @XmlAttribute('id')
   id?: string;
 
-  @XmlAttribute('mixed')
+  @XmlAttribute('mixed', { type: Boolean })
   mixed?: boolean;
 
   @XmlElement('annotation', { type: () => annotationType, namespace: 'http://www.w3.org/2001/XMLSchema' })

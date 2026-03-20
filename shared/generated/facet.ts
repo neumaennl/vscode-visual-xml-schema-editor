@@ -5,7 +5,7 @@ export class facet extends annotated {
   @XmlAttribute('value')
   value!: string;
 
-  @XmlAttribute('fixed')
+  @XmlAttribute('fixed', { type: Boolean })
   fixed?: boolean;
 
 }

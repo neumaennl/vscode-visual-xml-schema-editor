@@ -195,8 +195,8 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
     const orderIdEl = seqElements.find((e) => e.name === "orderId");
     expect(orderIdEl).toBeDefined();
     expect(orderIdEl!.type_).toBe("xs:string");
-    expect(Number(orderIdEl!.minOccurs)).toBe(1);
-    expect(Number(orderIdEl!.maxOccurs)).toBe(1);
+    expect(orderIdEl!.minOccurs).toBe(1);
+    expect(orderIdEl!.maxOccurs).toBe(1);
     expect(orderIdEl!.annotation).toBeDefined();
     const docText = toArray(orderIdEl!.annotation!.documentation)[0]?.value;
     expect(docText).toBe("Unique identifier for the order");
@@ -205,14 +205,14 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
     const qtyEl = seqElements.find((e) => e.name === "qty");
     expect(qtyEl).toBeDefined();
     expect(qtyEl!.type_).toBe("xs:integer");
-    expect(Number(qtyEl!.minOccurs)).toBe(0);
-    expect(Number(qtyEl!.maxOccurs)).toBe(1);
+    expect(qtyEl!.minOccurs).toBe(0);
+    expect(qtyEl!.maxOccurs).toBe(1);
 
     // items: no type attribute, 1..unbounded, with anonymous complexType
     const itemsEl = seqElements.find((e) => e.name === "items");
     expect(itemsEl).toBeDefined();
     expect(itemsEl!.type_).toBeUndefined();
-    expect(Number(itemsEl!.minOccurs)).toBe(1);
+    expect(itemsEl!.minOccurs).toBe(1);
     expect(itemsEl!.maxOccurs).toBe("unbounded");
     expect(itemsEl!.complexType).toBeDefined();
 
@@ -224,13 +224,13 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
     const itemEl = innerElements.find((e) => e.name === "item");
     expect(itemEl).toBeDefined();
     expect(itemEl!.type_).toBe("lengthRestricitionType");
-    expect(Number(itemEl!.minOccurs)).toBe(1);
+    expect(itemEl!.minOccurs).toBe(1);
     expect(itemEl!.maxOccurs).toBe("unbounded");
 
     // example ref element, minOccurs=0
     const exampleRef = seqElements.find((e) => e.ref === "example");
     expect(exampleRef).toBeDefined();
-    expect(Number(exampleRef!.minOccurs)).toBe(0);
+    expect(exampleRef!.minOccurs).toBe(0);
 
     // currency attribute on OrderType
     const attrs = toArray(orderType!.attribute);
@@ -376,7 +376,7 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
     expect(refEls[0].ref).toBe("example");
     expect(refEls[0].name).toBeUndefined();
     expect(refEls[0].type_).toBeUndefined();
-    expect(Number(refEls[0].minOccurs)).toBe(0);
+    expect(refEls[0].minOccurs).toBe(0);
     expect(refEls[0].maxOccurs).toBe("unbounded");
   });
 });

@@ -20,10 +20,10 @@ export class localElement {
   @XmlAttribute('ref')
   ref?: string;
 
-  @XmlAttribute('minOccurs')
+  @XmlAttribute('minOccurs', { type: Number })
   minOccurs?: number;
 
-  @XmlAttribute('maxOccurs')
+  @XmlAttribute('maxOccurs', { type: Number, allowStringFallback: true })
   maxOccurs?: allNNI;
 
   @XmlAttribute('type')
@@ -35,7 +35,7 @@ export class localElement {
   @XmlAttribute('fixed')
   fixed?: string;
 
-  @XmlAttribute('nillable')
+  @XmlAttribute('nillable', { type: Boolean })
   nillable?: boolean;
 
   @XmlAttribute('block')

@@ -17,10 +17,10 @@ export class topLevelComplexType {
   @XmlAttribute('id')
   id?: string;
 
-  @XmlAttribute('mixed')
+  @XmlAttribute('mixed', { type: Boolean })
   mixed?: boolean;
 
-  @XmlAttribute('abstract')
+  @XmlAttribute('abstract', { type: Boolean })
   abstract?: boolean;
 
   @XmlAttribute('final')

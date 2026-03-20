@@ -7,7 +7,7 @@ export class whiteSpaceType {
   @XmlAttribute('id')
   id?: string;
 
-  @XmlAttribute('fixed')
+  @XmlAttribute('fixed', { type: Boolean })
   fixed?: boolean;
 
   @XmlAttribute('value')

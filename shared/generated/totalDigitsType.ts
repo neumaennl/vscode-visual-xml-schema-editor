@@ -7,10 +7,10 @@ export class totalDigitsType {
   @XmlAttribute('id')
   id?: string;
 
-  @XmlAttribute('fixed')
+  @XmlAttribute('fixed', { type: Boolean })
   fixed?: boolean;
 
-  @XmlAttribute('value')
+  @XmlAttribute('value', { type: Number })
   value!: number;
 
   @XmlElement('annotation', { type: () => annotationType, namespace: 'http://www.w3.org/2001/XMLSchema' })

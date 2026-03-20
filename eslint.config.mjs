@@ -120,6 +120,8 @@ export default [
             'expectValidationFailure',
             'expectRuntimeFailure',
             'expectInvalid',
+            'runCommandExpectValidationFailure',
+            'runCommandExpectSuccessSchema',
           ],
         },
       ],
@@ -127,6 +129,10 @@ export default [
       '@typescript-eslint/no-non-null-assertion': 'off',
       // Disabled to allow dynamic require() in tests for module initialization testing
       '@typescript-eslint/no-require-imports': 'off',
+      // jest/unbound-method is a jest-aware replacement for @typescript-eslint/unbound-method;
+      // it correctly handles jest mock functions that don't rely on `this` binding.
+      'jest/unbound-method': 'error',
+      '@typescript-eslint/unbound-method': 'off',
     },
   },
   // Webview TypeScript files configuration (browser environment)

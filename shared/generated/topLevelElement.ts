@@ -25,10 +25,10 @@ export class topLevelElement {
   @XmlAttribute('fixed')
   fixed?: string;
 
-  @XmlAttribute('nillable')
+  @XmlAttribute('nillable', { type: Boolean })
   nillable?: boolean;
 
-  @XmlAttribute('abstract')
+  @XmlAttribute('abstract', { type: Boolean })
   abstract?: boolean;
 
   @XmlAttribute('final')

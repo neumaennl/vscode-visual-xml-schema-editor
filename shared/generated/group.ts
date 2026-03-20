@@ -18,10 +18,10 @@ export class group extends annotated {
   @XmlAttribute('ref')
   ref?: string;
 
-  @XmlAttribute('minOccurs')
+  @XmlAttribute('minOccurs', { type: Number })
   minOccurs?: number;
 
-  @XmlAttribute('maxOccurs')
+  @XmlAttribute('maxOccurs', { type: Number, allowStringFallback: true })
   maxOccurs?: allNNI;
 
   @XmlElement('element', { type: () => localElement, array: true, namespace: 'http://www.w3.org/2001/XMLSchema' })

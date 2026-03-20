@@ -113,13 +113,16 @@ export function validateAddElement(
       return { valid: false, error: `Referenced element '${ref}' does not exist in schema` };
     }
   } else {
-    // Named element: name and type are required
+    // Named element: name is required; type is optional (omit when the element will carry
+    // an inline anonymous simpleType or complexType added via a subsequent command)
     if (!isValidXmlName(elementName ?? "")) {
       return { valid: false, error: "Element name must be a valid XML name" };
     }
-    const typeValidation = validateElementType(elementType ?? "", schemaObj);
-    if (!typeValidation.valid) {
-      return typeValidation;
+    if (elementType !== undefined) {
+      const typeValidation = validateElementType(elementType, schemaObj);
+      if (!typeValidation.valid) {
+        return typeValidation;
+      }
     }
   }
 

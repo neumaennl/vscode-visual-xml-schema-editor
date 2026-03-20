@@ -32,7 +32,7 @@ export class narrowMaxMin {
   @XmlAttribute('fixed')
   fixed?: string;
 
-  @XmlAttribute('nillable')
+  @XmlAttribute('nillable', { type: Boolean })
   nillable?: boolean;
 
   @XmlAttribute('block')

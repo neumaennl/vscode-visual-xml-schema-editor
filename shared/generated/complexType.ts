@@ -24,10 +24,10 @@ export class complexType extends annotated {
    * Not allowed if simpleContent child is chosen.
    * May be overriden by setting on complexContent child.
    */
-  @XmlAttribute('mixed')
+  @XmlAttribute('mixed', { type: Boolean })
   mixed?: boolean;
 
-  @XmlAttribute('abstract')
+  @XmlAttribute('abstract', { type: Boolean })
   abstract?: boolean;
 
   @XmlAttribute('final')

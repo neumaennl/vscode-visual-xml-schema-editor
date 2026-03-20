@@ -7,14 +7,19 @@ import { BaseCommand } from "./base";
 
 /**
  * Payload for adding a new element to the schema.
- * Either `elementName` + `elementType` (named element) or `ref` (reference) must be provided.
+ * Either `elementName` + optional `elementType` (named element) or `ref` (reference) must be provided.
+ * Omit `elementType` when the element will carry an inline anonymous `simpleType` or `complexType`
+ * added via a subsequent `addSimpleType` / `addComplexType` command.
  */
 export interface AddElementPayload {
   /** ID of the parent node where the element should be added */
   parentId: string;
   /** Name of the new element. Required when not using ref. */
   elementName?: string;
-  /** Type of the element (e.g., 'string', 'int', or a custom type name). Required when not using ref. */
+  /**
+   * Type of the element (e.g., 'xs:string', 'xs:int', or a custom type name).
+   * Optional – omit when the element will carry an inline anonymous type.
+   */
   elementType?: string;
   /** Reference to an existing top-level element. Mutually exclusive with elementName/elementType. */
   ref?: string;

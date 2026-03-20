@@ -10,6 +10,8 @@
  * The starting schema for the main scenario is the project's `example.xsd`.
  */
 
+import { readFileSync } from "fs";
+import { resolve } from "path";
 import { unmarshal } from "@neumaennl/xmlbind-ts";
 import { schema } from "../../shared/types";
 import { toArray } from "../../shared/schemaUtils";
@@ -27,71 +29,8 @@ import {
 
 // ─── Fixture: project example schema ─────────────────────────────────────────
 
-/**
- * The `exampleFiles/example.xsd` content inlined as a test fixture.
- *
- * Starting state:
- *  - 1 top-level element: `example` (with inline anonymous complexType)
- *  - 2 named complexTypes: `choiceType`, `loggingType`
- *  - 1 named simpleType: `lengthRestricitionType`
- */
-const EXAMPLE_XSD = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified"
-  attributeFormDefault="unqualified">
-  <xs:element name="example">
-    <xs:annotation>
-      <xs:documentation>root element</xs:documentation>
-    </xs:annotation>
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element name="meta" type="choiceType" minOccurs="0" />
-        <xs:element name="product" type="loggingType" minOccurs="0" maxOccurs="unbounded" />
-      </xs:sequence>
-      <xs:attribute name="created" type="xs:dateTime" use="required" />
-    </xs:complexType>
-  </xs:element>
-
-  <xs:complexType name="choiceType">
-    <xs:annotation>
-      <xs:documentation>complexType showing a choice</xs:documentation>
-    </xs:annotation>
-    <xs:choice>
-      <xs:element name="either" type="lengthRestricitionType" minOccurs="1" maxOccurs="unbounded" />
-      <xs:element name="or" type="lengthRestricitionType" minOccurs="2" maxOccurs="4" />
-    </xs:choice>
-    <xs:attribute name="url" type="xs:anyURI" use="optional" />
-  </xs:complexType>
-
-  <xs:complexType name="loggingType">
-    <xs:annotation>
-      <xs:documentation>complexType decribing a log entry</xs:documentation>
-    </xs:annotation>
-    <xs:all>
-      <xs:element name="time" type="xs:dateTime" />
-      <xs:element name="message" type="xs:string"/>
-    </xs:all>
-    <xs:attribute name="logLevel" use="required">
-      <xs:simpleType>
-        <xs:restriction base="xs:string">
-          <xs:enumeration value="error" />
-          <xs:enumeration value="warning" />
-          <xs:enumeration value="info" />
-          <xs:enumeration value="debug" />
-          <xs:enumeration value="trace" />
-        </xs:restriction>
-      </xs:simpleType>
-    </xs:attribute>
-  </xs:complexType>
-
-  <xs:simpleType name="lengthRestricitionType">
-    <xs:annotation>
-      <xs:documentation>a simple string with a max length</xs:documentation>
-    </xs:annotation>
-    <xs:restriction base="xs:string">
-      <xs:maxLength value="255" />
-    </xs:restriction>
-  </xs:simpleType>
-</xs:schema>`;
+/** Read the shared example schema from disk so the test always reflects the real file. */
+const EXAMPLE_XSD = readFileSync(resolve(__dirname, "../../exampleFiles/example.xsd"), "utf-8");
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

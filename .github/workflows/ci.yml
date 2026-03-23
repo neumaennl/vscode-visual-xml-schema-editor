@@ -75,7 +75,7 @@ jobs:
 
       - name: Publish JUnit test report to GitHub Checks
         if: always() && steps.junit-check.outputs.exists == 'true'
-        uses: dorny/test-reporter@v2
+        uses: dorny/test-reporter@v3
         with:
           name: Jest
           path: test-results/jest-junit.xml

@@ -11,6 +11,7 @@ import type {
   ModifyIncludeCommand,
 } from "../../shared/types";
 import { toArray } from "../../shared/schemaUtils";
+import { describe, it, expect } from "vitest";
 import {
   MINIMAL_SCHEMA,
   SCHEMA_WITH_INCLUDE,

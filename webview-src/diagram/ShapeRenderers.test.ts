@@ -1,7 +1,9 @@
+// @vitest-environment jsdom
 /**
  * Tests for shape rendering functions
  */
 
+import { describe, it, expect, beforeEach } from "vitest";
 import {
   renderElementShape,
   renderGroupShape,

@@ -2,19 +2,20 @@
  * Unit tests for extension module.
  */
 
+import { vi, MockedFunction, describe, it, expect, beforeEach } from 'vitest';
 import * as vscode from "vscode";
 import { activate, deactivate } from "./extension";
 
 describe("Extension", () => {
   let mockContext: vscode.ExtensionContext;
   const registerCommandMock =
-    vscode.commands.registerCommand as jest.MockedFunction<
+    vscode.commands.registerCommand as MockedFunction<
       typeof vscode.commands.registerCommand
     >;
 
   beforeEach(() => {
     // Clear all mocks before each test
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Create mock context
     // eslint-disable-next-line no-restricted-syntax -- partial stub; unused VS Code context fields omitted
@@ -60,7 +61,8 @@ describe("Extension", () => {
       activate(mockContext);
 
       // Get the registered command handler
-      const commandHandler = registerCommandMock.mock.calls.find(
+      const mockCalls = registerCommandMock.mock.calls;
+      const commandHandler = mockCalls.find(
         ([command]) => command === "xmlSchemaVisualEditor.openEditor"
       )?.[1];
 
@@ -82,7 +84,8 @@ describe("Extension", () => {
     it("should show error when non-XSD file is provided", async () => {
       activate(mockContext);
 
-      const commandHandler = registerCommandMock.mock.calls.find(
+      const mockCalls = registerCommandMock.mock.calls;
+      const commandHandler = mockCalls.find(
         ([command]) => command === "xmlSchemaVisualEditor.openEditor"
       )?.[1];
 

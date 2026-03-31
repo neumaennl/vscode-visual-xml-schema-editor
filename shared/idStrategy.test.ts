@@ -2,6 +2,7 @@
  * Unit tests for ID strategy implementation.
  */
 
+import { describe, test, expect } from "vitest";
 import {
   generateSchemaId,
   parseSchemaId,

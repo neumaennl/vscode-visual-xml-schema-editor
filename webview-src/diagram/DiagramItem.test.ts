@@ -1,7 +1,9 @@
+// @vitest-environment jsdom
 /**
  * Tests for DiagramItem class
  */
 
+import { describe, it, expect } from "vitest";
 import { DiagramItem } from "./DiagramItem";
 import { Diagram } from "./Diagram";
 import { DiagramItemType } from "./DiagramTypes";

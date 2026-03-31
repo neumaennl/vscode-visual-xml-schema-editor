@@ -2,6 +2,7 @@
  * Tests for DiagramSvgRenderer class
  */
 
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { DiagramSvgRenderer } from "./DiagramSvgRenderer";
 import { Diagram } from "./Diagram";
 import { DiagramItem } from "./DiagramItem";

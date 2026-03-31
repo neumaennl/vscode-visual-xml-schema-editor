@@ -2,22 +2,21 @@
  * Unit tests for main module (webview entry point).
  */
 
+import { vi, describe, it, expect, beforeEach } from "vitest";
+
 // Mock the VS Code API before importing
-const mockPostMessage = jest.fn();
-const mockGetState = jest.fn();
-const mockSetState = jest.fn();
+const mockPostMessage = vi.fn();
+const mockGetState = vi.fn();
+const mockSetState = vi.fn();
 
 type MockVsCodeApi = {
-  postMessage: jest.Mock;
-  getState: jest.Mock;
-  setState: jest.Mock;
+  postMessage: (...args: unknown[]) => unknown;
+  getState: () => unknown;
+  setState: (state: unknown) => void;
 };
 
-const globalWithAcquire = globalThis as typeof globalThis & {
-  acquireVsCodeApi: jest.Mock<MockVsCodeApi, []>;
-};
-
-globalWithAcquire.acquireVsCodeApi = jest.fn(() => ({
+// eslint-disable-next-line no-restricted-syntax -- Vitest needs dynamic globalThis typing
+(globalThis as unknown as { acquireVsCodeApi: () => MockVsCodeApi }).acquireVsCodeApi = vi.fn(() => ({
   postMessage: mockPostMessage,
   getState: mockGetState,
   setState: mockSetState,
@@ -26,8 +25,8 @@ globalWithAcquire.acquireVsCodeApi = jest.fn(() => ({
 describe("SchemaEditorApp", () => {
   beforeEach(() => {
     // Clear mocks
-    jest.clearAllMocks();
-    jest.resetModules();
+    vi.clearAllMocks();
+    vi.resetModules();
     mockGetState.mockReturnValue(null);
 
     // Setup complete DOM structure
@@ -42,10 +41,12 @@ describe("SchemaEditorApp", () => {
     `;
   });
 
-  it("should initialize and setup message listener", () => {
-    const addEventListenerSpy = jest.spyOn(window, "addEventListener");
+  it("should initialize and setup message listener", async() => {
+    const addEventListenerSpy = vi.spyOn(window, "addEventListener");
 
-    require("./main");
+    // Reset modules to ensure clean state
+    vi.resetModules();
+    await import("./main");
 
     expect(addEventListenerSpy).toHaveBeenCalledWith(
       "message",
@@ -53,10 +54,10 @@ describe("SchemaEditorApp", () => {
     );
   });
 
-  it("should handle updateSchema message", () => {
-    const addEventListenerSpy = jest.spyOn(window, "addEventListener");
+  it("should handle updateSchema message", async() => {
+    const addEventListenerSpy = vi.spyOn(window, "addEventListener");
 
-    require("./main");
+    await import("./main");
 
     // Get the message handler
     const messageHandler = addEventListenerSpy.mock.calls.find(
@@ -77,10 +78,10 @@ describe("SchemaEditorApp", () => {
     expect(mockSetState).toHaveBeenCalled();
   });
 
-  it("should handle error message", () => {
-    const addEventListenerSpy = jest.spyOn(window, "addEventListener");
+  it("should handle error message", async() => {
+    const addEventListenerSpy = vi.spyOn(window, "addEventListener");
 
-    require("./main");
+    await import("./main");
 
     const messageHandler = addEventListenerSpy.mock.calls.find(
       (call) => call[0] === "message"
@@ -104,10 +105,10 @@ describe("SchemaEditorApp", () => {
     expect(textContentAfter).toContain("Test error");
   });
 
-  it("should setup zoom controls", () => {
-    const addEventListenerSpy = jest.spyOn(HTMLElement.prototype, "addEventListener");
+  it("should setup zoom controls", async() => {
+    const addEventListenerSpy = vi.spyOn(HTMLElement.prototype, "addEventListener");
 
-    require("./main");
+    await import("./main");
 
     expect(document.getElementById("zoomIn")).toBeTruthy();
     expect(document.getElementById("zoomOut")).toBeTruthy();
@@ -119,7 +120,7 @@ describe("SchemaEditorApp", () => {
     addEventListenerSpy.mockRestore();
   });
 
-  it("should restore state on initialization", () => {
+  it("should restore state on initialization", async() => {
     const savedState = { 
       zoom: 1.5, 
       panX: 100, 
@@ -127,7 +128,7 @@ describe("SchemaEditorApp", () => {
     };
     mockGetState.mockReturnValue(savedState);
 
-    require("./main");
+    await import("./main");
 
     expect(mockGetState).toHaveBeenCalled();
   });
@@ -135,15 +136,13 @@ describe("SchemaEditorApp", () => {
   it("should initialize with default state when no saved state", () => {
     mockGetState.mockReturnValue(null);
 
-    expect(() => {
-      require("./main");
-    }).not.toThrow();
+    return expect(import("./main")).resolves.toBeDefined();
   });
 
-  it("should handle unknown message commands", () => {
-    const addEventListenerSpy = jest.spyOn(window, "addEventListener");
+  it("should handle unknown message commands", async() => {
+    const addEventListenerSpy = vi.spyOn(window, "addEventListener");
 
-    require("./main");
+    await import("./main");
 
     const messageHandler = addEventListenerSpy.mock.calls.find(
       (call) => call[0] === "message"
@@ -158,8 +157,8 @@ describe("SchemaEditorApp", () => {
     }).not.toThrow();
   });
 
-  it("should create canvas and initialize renderer", () => {
-    require("./main");
+  it("should create canvas and initialize renderer", async() => {
+    await import("./main");
 
     const canvas = document.getElementById("schema-canvas");
     expect(canvas).toBeTruthy();

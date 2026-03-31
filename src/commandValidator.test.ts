@@ -4,6 +4,7 @@
  * No knowledge of validator implementation - proper unit testing with DI.
  */
 
+import { describe, it, expect, beforeEach, vi, Mock, MockedFunction } from "vitest";
 import { CommandValidator, ValidatorFunctions } from "./commandValidator";
 import { schema, SchemaCommand } from "../shared/types";
 import { ValidationResult } from "./commandValidators/validationUtils";
@@ -23,8 +24,9 @@ describe("CommandValidator", () => {
     } as schema;
 
     // Create mock validator functions that return success by default
-    const createMockValidator = (): jest.Mock<ValidationResult, [SchemaCommand, schema]> => {
-      return jest.fn<ValidationResult, [SchemaCommand, schema]>(() => ({
+    type MockValidatorFn = (command: SchemaCommand, schema: schema) => ValidationResult;
+    const createMockValidator = (): MockedFunction<MockValidatorFn> => {
+      return vi.fn<MockValidatorFn>(() => ({
         valid: true,
       }));
     };
@@ -190,7 +192,7 @@ describe("CommandValidator", () => {
       };
 
       // Mock validator to return failure
-      (mockValidators.validateAddElement as jest.Mock).mockReturnValueOnce({
+      (mockValidators.validateAddElement as Mock).mockReturnValueOnce({
         valid: false,
         error: "Element name cannot be empty",
       });

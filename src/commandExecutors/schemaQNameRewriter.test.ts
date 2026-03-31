@@ -7,6 +7,7 @@
  * schemaExecutors.test.ts.
  */
 
+import { describe, it, expect } from "vitest";
 import { unmarshal } from "@neumaennl/xmlbind-ts";
 import {
   schema,

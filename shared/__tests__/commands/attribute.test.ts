@@ -2,6 +2,7 @@
  * Unit tests for attribute command types.
  */
 
+import { describe, test, expect } from "vitest";
 import {
   AddAttributeCommand,
   RemoveAttributeCommand,

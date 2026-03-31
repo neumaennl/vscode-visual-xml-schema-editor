@@ -11,6 +11,7 @@ import type {
   ModifyAttributeCommand,
 } from "../../shared/types";
 import { toArray } from "../../shared/schemaUtils";
+import { describe, it, expect } from "vitest";
 import {
   SCHEMA_WITH_COMPLEXTYPE,
   MINIMAL_SCHEMA,

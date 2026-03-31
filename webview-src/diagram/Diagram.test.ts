@@ -1,7 +1,9 @@
+// @vitest-environment jsdom
 /**
  * Unit tests for Diagram class.
  */
 
+import { describe, it, expect, beforeEach } from "vitest";
 import { Diagram } from "./Diagram";
 import { DiagramItem } from "./DiagramItem";
 import { DiagramItemType } from "./DiagramTypes";

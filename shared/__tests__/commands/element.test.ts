@@ -2,6 +2,7 @@
  * Unit tests for element command types.
  */
 
+import { describe, test, expect } from "vitest";
 import {
   AddElementCommand,
   RemoveElementCommand,

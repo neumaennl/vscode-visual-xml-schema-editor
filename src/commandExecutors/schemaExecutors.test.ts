@@ -10,6 +10,7 @@
  * - If the caller omits `prefix`, a unique prefix is auto-generated (e.g. "ns0").
  */
 
+import { describe, it, expect } from "vitest";
 import { unmarshal, marshal } from "@neumaennl/xmlbind-ts";
 import {
   schema,

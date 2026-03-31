@@ -2,6 +2,7 @@
  * Tests for SVG helper functions
  */
 
+import { describe, it, expect, beforeEach } from "vitest";
 import {
   svgLine,
   svgRectangle,

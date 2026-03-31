@@ -3,6 +3,7 @@
  * Tests schema loading, marshalling/unmarshalling, and query capabilities.
  */
 
+import { describe, it, expect } from "vitest";
 import { SchemaModelManager } from "./schemaModelManager";
 import { schema } from "../shared/types";
 

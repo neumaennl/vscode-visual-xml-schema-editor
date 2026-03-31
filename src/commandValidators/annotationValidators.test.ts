@@ -2,6 +2,7 @@
  * Unit tests for annotation validators (Annotation and Documentation).
  */
 
+import { describe, test, expect } from "vitest";
 import { unmarshal } from "@neumaennl/xmlbind-ts";
 import { schema } from "../../shared/types";
 import {

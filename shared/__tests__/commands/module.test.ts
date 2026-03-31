@@ -2,6 +2,7 @@
  * Unit tests for import and include command types.
  */
 
+import { describe, test, expect } from "vitest";
 import {
   AddImportCommand,
   RemoveImportCommand,

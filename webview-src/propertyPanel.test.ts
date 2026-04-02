@@ -1,7 +1,9 @@
+// @vitest-environment jsdom
 /**
  * Unit tests for PropertyPanel class.
  */
 
+import { describe, it, expect, beforeEach } from "vitest";
 import { PropertyPanel } from "./propertyPanel";
 import { DiagramItem } from "./diagram/DiagramItem";
 import { Diagram } from "./diagram/Diagram";

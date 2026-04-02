@@ -1,7 +1,9 @@
+// @vitest-environment jsdom
 /**
  * Unit tests for TypeNodeCreators module.
  */
 
+import { describe, it, expect, beforeEach } from "vitest";
 import {
   createElementNode,
   createComplexTypeNode,

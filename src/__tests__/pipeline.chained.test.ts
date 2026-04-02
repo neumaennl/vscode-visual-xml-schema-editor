@@ -15,6 +15,7 @@ import { resolve } from "path";
 import { unmarshal } from "@neumaennl/xmlbind-ts";
 import { schema } from "../../shared/types";
 import { toArray } from "../../shared/schemaUtils";
+import { describe, it, expect } from "vitest";
 import type {
   AddComplexTypeCommand,
   AddElementCommand,

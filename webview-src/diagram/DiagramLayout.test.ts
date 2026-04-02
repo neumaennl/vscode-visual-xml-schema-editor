@@ -1,7 +1,9 @@
+// @vitest-environment jsdom
 /**
  * Tests for DiagramLayout class
  */
 
+import { describe, it, expect, beforeEach } from "vitest";
 import { DiagramLayout } from "./DiagramLayout";
 import { Diagram } from "./Diagram";
 import { DiagramItem } from "./DiagramItem";

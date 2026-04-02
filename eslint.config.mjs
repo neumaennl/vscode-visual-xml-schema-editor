@@ -1,7 +1,7 @@
 import eslint from '@eslint/js';
 import tseslint from '@typescript-eslint/eslint-plugin';
 import tsparser from '@typescript-eslint/parser';
-import jestPlugin from 'eslint-plugin-jest';
+import vitest from '@vitest/eslint-plugin'
 import globals from 'globals';
 
 export default [
@@ -29,7 +29,7 @@ export default [
       ],
     },
   },
-  // JavaScript configuration files (jest.config.mjs, etc.)
+  // JavaScript configuration files (vitest.config.mjs, etc.)
   {
     files: ['*.mjs'],
     ...eslint.configs.recommended,
@@ -38,7 +38,6 @@ export default [
       sourceType: 'module',
       globals: {
         ...globals.node,
-        ...globals.jest,
       },
     },
   },
@@ -100,19 +99,18 @@ export default [
   {
     files: ['**/*.test.ts', '**/__mocks__/**/*.ts'],
     plugins: {
-      jest: jestPlugin,
+      vitest,
     },
     languageOptions: {
       globals: {
-        ...globals.jest,
         ...globals.browser,
       },
     },
     rules: {
-      ...jestPlugin.configs.recommended.rules,
+      ...vitest.configs.recommended.rules,
       // Recognise custom assertion helpers as assertion-containing functions
-      'jest/expect-expect': [
-        'warn',
+      'vitest/expect-expect': [ 
+        'error',
         {
           assertFunctionNames: [
             'expect',
@@ -129,10 +127,6 @@ export default [
       '@typescript-eslint/no-non-null-assertion': 'off',
       // Disabled to allow dynamic require() in tests for module initialization testing
       '@typescript-eslint/no-require-imports': 'off',
-      // jest/unbound-method is a jest-aware replacement for @typescript-eslint/unbound-method;
-      // it correctly handles jest mock functions that don't rely on `this` binding.
-      'jest/unbound-method': 'error',
-      '@typescript-eslint/unbound-method': 'off',
     },
   },
   // Webview TypeScript files configuration (browser environment)

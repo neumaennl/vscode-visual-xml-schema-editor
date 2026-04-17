@@ -86,7 +86,7 @@
     "@types/vscode": "^1.116.0",
     "@typescript-eslint/eslint-plugin": "^8.58.2",
     "@typescript-eslint/parser": "^8.48.1",
-    "@vscode/vsce": "^3.8.0",
+    "@vscode/vsce": "^3.9.0",
     "concurrently": "^9.2.1",
     "copy-webpack-plugin": "^14.0.0",
     "css-loader": "^7.1.4",

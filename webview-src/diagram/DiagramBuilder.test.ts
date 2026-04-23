@@ -129,7 +129,7 @@ describe("DiagramBuilder", () => {
         sequence: {
           element: [{ name: "name", type_: "string" }],
         },
-      } as topLevelElement["complexType"];
+      };
       
       const schemaObj = createTestSchema({
         element: [element],
@@ -147,7 +147,7 @@ describe("DiagramBuilder", () => {
       // Using type assertion for nested structures from generated schema
       element.simpleType = {
         restriction: { base: "int" },
-      } as topLevelElement["simpleType"];
+      };
       
       const schemaObj = createTestSchema({
         element: [element],

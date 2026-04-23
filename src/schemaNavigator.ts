@@ -290,43 +290,43 @@ function navigateFromComplexType(
 ): { found: boolean; node?: unknown; nodeType?: string } {
   // Complex types can have sequence, choice, or all as children
   if (nodeType === SchemaNodeType.Group && name === "sequence") {
-    if ((complexType as localComplexType).sequence) {
+    if ((complexType).sequence) {
       return {
         found: true,
-        node: (complexType as localComplexType).sequence,
+        node: (complexType).sequence,
         nodeType: "sequence",
       };
     }
   } else if (nodeType === SchemaNodeType.Group && name === "choice") {
-    if ((complexType as localComplexType).choice) {
+    if ((complexType).choice) {
       return {
         found: true,
-        node: (complexType as localComplexType).choice,
+        node: (complexType).choice,
         nodeType: "choice",
       };
     }
   } else if (nodeType === SchemaNodeType.Group && name === "all") {
-    if ((complexType as localComplexType).all) {
-      return { found: true, node: (complexType as localComplexType).all, nodeType: "all" };
+    if ((complexType).all) {
+      return { found: true, node: (complexType).all, nodeType: "all" };
     }
   }
 
   // Handle direct navigation to sequence/choice/all without explicit "group:" prefix
   if (!name && !position) {
-    if (nodeType === "sequence" as SchemaNodeType && (complexType as localComplexType).sequence) {
+    if (nodeType === "sequence" as SchemaNodeType && (complexType).sequence) {
       return {
         found: true,
-        node: (complexType as localComplexType).sequence,
+        node: (complexType).sequence,
         nodeType: "sequence",
       };
-    } else if (nodeType === "choice" as SchemaNodeType && (complexType as localComplexType).choice) {
+    } else if (nodeType === "choice" as SchemaNodeType && (complexType).choice) {
       return {
         found: true,
-        node: (complexType as localComplexType).choice,
+        node: (complexType).choice,
         nodeType: "choice",
       };
-    } else if (nodeType === "all" as SchemaNodeType && (complexType as localComplexType).all) {
-      return { found: true, node: (complexType as localComplexType).all, nodeType: "all" };
+    } else if (nodeType === "all" as SchemaNodeType && (complexType).all) {
+      return { found: true, node: (complexType).all, nodeType: "all" };
     }
   } else if (nodeType === SchemaNodeType.Attribute) {
     const attrs = toArray(complexType.attribute);

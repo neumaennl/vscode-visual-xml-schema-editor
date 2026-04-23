@@ -366,7 +366,7 @@ describe("SchemaEditorProvider", () => {
       jest.spyOn(CommandProcessor.prototype, "execute").mockReturnValue({
         success: true,
         // schema/xmlContent values are irrelevant — only the applyEdit branch is under test
-        schema: {} as import("shared/generated/schema").schema,
+        schema: {},
         xmlContent: "<xs:schema/>",
       });
       (vscode.workspace.applyEdit as jest.Mock).mockResolvedValue(false);

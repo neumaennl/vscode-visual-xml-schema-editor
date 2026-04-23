@@ -39,13 +39,13 @@ function getChildElements(
   parentType: string
 ): Array<{ name?: string; ref?: string }> {
   if (parentType === "schema") {
-    return toArray((parent as schema).element) as Array<{ name?: string; ref?: string }>;
+    return toArray((parent as schema).element);
   }
   if (parentType === "sequence" || parentType === "choice") {
-    return toArray((parent as explicitGroup).element) as Array<{ name?: string; ref?: string }>;
+    return toArray((parent as explicitGroup).element);
   }
   if (parentType === "all") {
-    return toArray((parent as all).element) as Array<{ name?: string; ref?: string }>;
+    return toArray((parent as all).element);
   }
   return [];
 }
@@ -80,12 +80,9 @@ function getChildAttributes(
   parentType: string
 ): Array<{ name?: string; ref?: string }> {
   if (parentType === "schema") {
-    return toArray((parent as schema).attribute) as Array<{ name?: string; ref?: string }>;
+    return toArray((parent as schema).attribute);
   }
-  return toArray((parent as topLevelComplexType).attribute) as Array<{
-    name?: string;
-    ref?: string;
-  }>;
+  return toArray((parent as topLevelComplexType).attribute);
 }
 
 export function validateAddElement(

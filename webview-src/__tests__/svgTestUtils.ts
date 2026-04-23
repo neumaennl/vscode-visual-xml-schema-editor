@@ -32,6 +32,6 @@ export function setupGetBBoxMock(): void {
       bottom: 10,
       left: 0,
       toJSON: () => ({}),
-    } as DOMRect;
+    };
   };
 }

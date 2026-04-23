@@ -198,7 +198,7 @@ export function validateModifySimpleType(
     const location = result.location;
     if (command.payload.restrictions !== undefined && command.payload.baseType === undefined) {
       const anonSt = (location.parent as { simpleType?: { restriction?: unknown } }).simpleType;
-      if (anonSt && !(anonSt as { restriction?: unknown }).restriction) {
+      if (anonSt && !(anonSt).restriction) {
         return { valid: false, error: "Cannot apply restrictions without a base type" };
       }
     }

@@ -821,7 +821,7 @@ describe("executeRemoveDocumentation — schema root", () => {
         payload: {
           documentationId: "schema/annotation[0]/documentation[0]",
         },
-      } as RemoveDocumentationCommand,
+      },
       schemaObj
     );
 
@@ -837,7 +837,7 @@ describe("executeRemoveDocumentation — schema root", () => {
       {
         type: "removeDocumentation",
         payload: { documentationId: "schema/documentation[0]" },
-      } as RemoveDocumentationCommand,
+      },
       schemaObj
     );
 
@@ -859,7 +859,7 @@ describe("executeModifyDocumentation — schema root", () => {
           content: "Modified.",
           lang: "en",
         },
-      } as ModifyDocumentationCommand,
+      },
       schemaObj
     );
 
@@ -877,7 +877,7 @@ describe("executeModifyDocumentation — schema root", () => {
           documentationId: "schema/documentation[0]",
           content: "Modified via shorthand.",
         },
-      } as ModifyDocumentationCommand,
+      },
       schemaObj
     );
 

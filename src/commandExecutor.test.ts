@@ -56,7 +56,7 @@ describe("CommandExecutor", () => {
         {
           name: "element1",
           type_: "string",
-        } as topLevelElement,
+        },
       ];
 
       const command: SchemaCommand = {

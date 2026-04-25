@@ -2,6 +2,7 @@
  * Unit tests for DiagramBuilder class.
  */
 
+import { describe, it, expect, beforeEach } from "vitest";
 import { DiagramBuilder } from "../diagram/DiagramBuilder";
 import {
   schema,

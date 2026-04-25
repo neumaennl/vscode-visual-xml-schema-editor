@@ -14,6 +14,7 @@
  * or tested here.
  */
 
+import { describe, it, expect } from "vitest";
 import { unmarshal } from "@neumaennl/xmlbind-ts";
 import { schema } from "../../shared/types";
 import {

@@ -2,6 +2,7 @@
   "name": "xml-schema-visual-editor",
   "displayName": "XML Schema Visual Editor",
   "description": "Visual editor for XML schemas with diagram view",
+  "icon": "icon.png",
   "version": "0.0.1",
   "publisher": "neumaennl",
   "engines": {

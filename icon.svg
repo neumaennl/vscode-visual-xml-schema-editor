@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <clipPath id="round">
+      <rect width="256" height="256" rx="40"/>
+    </clipPath>
+    <clipPath id="leftTri">
+      <polygon points="0,0 256,0 0,256"/>
+    </clipPath>
+    <clipPath id="rightTri">
+      <polygon points="256,0 256,256 0,256"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#round)">
+    <rect width="256" height="256" fill="#1e1e1e"/>
+
+    <!-- LEFT: XML syntax metaphor -->
+    <g clip-path="url(#leftTri)">
+      <polyline points="46,24 26,60 46,96"
+        fill="none" stroke="#569cd6" stroke-width="14"
+        stroke-linecap="round" stroke-linejoin="round"/>
+      <polyline points="122,24 142,60 122,96"
+        fill="none" stroke="#569cd6" stroke-width="14"
+        stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="64" cy="60" r="7" fill="#9cdcfe"/>
+      <circle cx="84" cy="60" r="7" fill="#9cdcfe"/>
+      <circle cx="104" cy="60" r="7" fill="#9cdcfe"/>
+
+      <rect x="14"  y="124" width="10" height="12" fill="#569cd6"/>
+      <rect x="32" y="124" width="88" height="12" fill="#4ec9b0"/>
+
+      <rect x="14"  y="150" width="10" height="12" fill="#569cd6" opacity="0.8"/>
+      <rect x="32" y="150" width="60" height="12" fill="#dcdcaa"/>
+
+      <circle cx="20" cy="182" r="5" fill="#cccccc" opacity="0.5"/>
+      <circle cx="36" cy="182" r="5" fill="#cccccc" opacity="0.5"/>
+      <circle cx="52" cy="182" r="5" fill="#cccccc" opacity="0.5"/>
+
+      <rect x="14"  y="202" width="10" height="12" fill="#569cd6"/>
+      <rect x="32" y="202" width="72" height="12" fill="#4ec9b0"/>
+    </g>
+
+    <!-- RIGHT: Node diagram -->
+    <g clip-path="url(#rightTri)">
+
+      <!-- STEMS drawn first so nodes paint over them -->
+      <!-- root → compositor -->
+      <line x1="190" y1="100" x2="190" y2="126"
+            stroke="#555555" stroke-width="5" stroke-linecap="square"/>
+      <!-- compositor → Y split -->
+      <line x1="190" y1="162" x2="190" y2="178" stroke="#555555" stroke-width="5" stroke-linecap="square"/>
+      <line x1="136" y1="178" x2="226" y2="178" stroke="#555555" stroke-width="5" stroke-linecap="square"/>
+      <line x1="136" y1="178" x2="136" y2="194" stroke="#555555" stroke-width="5" stroke-linecap="square"/>
+      <line x1="226" y1="178" x2="226" y2="194" stroke="#555555" stroke-width="5" stroke-linecap="square"/>
+
+      <!-- ROOT: rectangle, drawn over stem -->
+      <rect x="146" y="56" width="88" height="44"
+            fill="#1e1e1e" stroke="#f14c4c" stroke-width="7"/>
+
+      <!-- COMPOSITOR: octagon, drawn over stem -->
+      <polygon points="
+        164,126  216,126
+        226,136  226,152
+        216,162  164,162
+        154,152  154,136"
+        fill="#1e1e1e" stroke="#569cd6" stroke-width="7"/>
+      <circle cx="176" cy="144" r="5.2" fill="#569cd6"/>
+      <circle cx="190" cy="144" r="5.2" fill="#569cd6"/>
+      <circle cx="204" cy="144" r="5.2" fill="#569cd6"/>
+
+      <!-- CHILD A: left-corners-clipped, drawn over stem -->
+      <polygon points="
+        92,194  170,194
+        170,234 92,234
+        80,222  80,206"
+        fill="#1e1e1e" stroke="#cccccc" stroke-width="7"/>
+
+      <!-- CHILD B: dashed rect, drawn over stem
+           Box is 80×40. Perimeter per side: top=80, right=40, bottom=80, left=40.
+           Use pathLength to control dash alignment precisely. -->
+      <path d="M200,194 h80 v40 h-80 Z"
+            fill="#1e1e1e" stroke="#cccccc" stroke-width="6"
+            stroke-dasharray="12,8"
+            stroke-dashoffset="4"
+            pathLength="240"
+            stroke-linejoin="miter"/>
+
+    </g>
+
+    <!-- Diagonal split -->
+    <line x1="4" y1="252" x2="252" y2="4"
+          stroke="#555555" stroke-width="6"/>
+
+  </g>
+</svg>

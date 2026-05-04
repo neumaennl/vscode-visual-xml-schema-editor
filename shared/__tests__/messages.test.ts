@@ -2,6 +2,7 @@
  * Unit tests for message protocol types and general command features.
  */
 
+import { describe, test, expect } from "vitest";
 import {
   ExecuteCommandMessage,
   UpdateSchemaMessage,

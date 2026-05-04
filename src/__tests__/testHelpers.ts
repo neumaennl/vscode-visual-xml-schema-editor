@@ -8,6 +8,7 @@
  * tests stay focused on behaviour rather than boilerplate.
  */
 
+import { expect } from 'vitest';
 import { unmarshal } from "@neumaennl/xmlbind-ts";
 import { CommandProcessor } from "../commandProcessor";
 import type {

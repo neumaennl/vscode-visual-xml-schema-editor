@@ -2,6 +2,7 @@
  * Unit tests for schema utility functions.
  */
 
+import { describe, it, expect } from "vitest";
 import { toArray, isSchemaRoot } from "./schemaUtils";
 
 describe("schemaUtils", () => {

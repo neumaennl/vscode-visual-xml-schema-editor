@@ -1,22 +1,24 @@
 /**
  * Mock implementation of VS Code API for testing.
- * This provides a minimal mock of the vscode module for Jest tests.
+ * This provides a minimal mock of the vscode module for Vitest tests.
  */
 
+import { vi } from 'vitest';
+
 export const Uri = {
-  file: jest.fn((path: string) => ({
+  file: vi.fn((path: string) => ({
     fsPath: path,
     scheme: 'file',
     path,
     toString: (): string => path
   })),
-  parse: jest.fn((value: string) => ({
+  parse: vi.fn((value: string) => ({
     fsPath: value,
     scheme: 'file',
     path: value,
     toString: (): string => value
   })),
-  joinPath: jest.fn((_base: unknown, ...paths: string[]) => ({
+  joinPath: vi.fn((_base: unknown, ...paths: string[]) => ({
     fsPath: paths.join("/"),
     scheme: 'file',
     path: paths.join("/"),
@@ -25,55 +27,55 @@ export const Uri = {
 };
 
 export const Disposable = {
-  from: jest.fn(() => ({
-    dispose: jest.fn()
+  from: vi.fn(() => ({
+    dispose: vi.fn()
   }))
 };
 
-export const EventEmitter = jest.fn(() => ({
-  event: jest.fn(),
-  fire: jest.fn(),
-  dispose: jest.fn()
+export const EventEmitter = vi.fn(() => ({
+  event: vi.fn(),
+  fire: vi.fn(),
+  dispose: vi.fn()
 }));
 
-export const CancellationTokenSource = jest.fn(() => ({
+export const CancellationTokenSource = vi.fn(() => ({
   token: {},
-  cancel: jest.fn(),
-  dispose: jest.fn()
+  cancel: vi.fn(),
+  dispose: vi.fn()
 }));
 
 export const workspace = {
-  openTextDocument: jest.fn(),
-  onDidChangeTextDocument: jest.fn(() => ({ dispose: jest.fn() })),
-  onDidChangeConfiguration: jest.fn(() => ({ dispose: jest.fn() })),
-  getConfiguration: jest.fn(() => ({
-    get: jest.fn((key: string, defaultValue?: unknown) => defaultValue)
+  openTextDocument: vi.fn(),
+  onDidChangeTextDocument: vi.fn(() => ({ dispose: vi.fn() })),
+  onDidChangeConfiguration: vi.fn(() => ({ dispose: vi.fn() })),
+  getConfiguration: vi.fn(() => ({
+    get: vi.fn((key: string, defaultValue?: unknown) => defaultValue)
   })),
-  getWorkspaceFolder: jest.fn(),
+  getWorkspaceFolder: vi.fn(),
   workspaceFolders: [],
   fs: {
-    readFile: jest.fn(),
-    writeFile: jest.fn()
+    readFile: vi.fn(),
+    writeFile: vi.fn()
   },
-  applyEdit: jest.fn()
+  applyEdit: vi.fn()
 };
 
 export const window = {
-  registerCustomEditorProvider: jest.fn(() => ({ dispose: jest.fn() })),
-  showErrorMessage: jest.fn(),
-  showInformationMessage: jest.fn(),
-  showWarningMessage: jest.fn(),
+  registerCustomEditorProvider: vi.fn(() => ({ dispose: vi.fn() })),
+  showErrorMessage: vi.fn(),
+  showInformationMessage: vi.fn(),
+  showWarningMessage: vi.fn(),
   activeTextEditor: undefined,
-  createWebviewPanel: jest.fn()
+  createWebviewPanel: vi.fn()
 };
 
 export const commands = {
-  registerCommand: jest.fn(() => ({ dispose: jest.fn() })),
-  executeCommand: jest.fn()
+  registerCommand: vi.fn(() => ({ dispose: vi.fn() })),
+  executeCommand: vi.fn()
 };
 
 export const languages = {
-  registerDocumentFormattingEditProvider: jest.fn(() => ({ dispose: jest.fn() }))
+  registerDocumentFormattingEditProvider: vi.fn(() => ({ dispose: vi.fn() }))
 };
 
 export const ViewColumn = {
@@ -86,8 +88,9 @@ export const WebviewPanelSerializer = {};
 
 export const CustomEditorProvider = {};
 
-export const WorkspaceEdit = jest.fn(() => ({
-  replace: jest.fn(),
-}));
+// Vitest 4 calls constructor mocks with `new`, so this must be a constructable function.
+export const WorkspaceEdit = vi.fn(function MockWorkspaceEdit(this: { replace: ReturnType<typeof vi.fn> }) {
+  this.replace = vi.fn();
+});
 
-export const Range = jest.fn();
+export const Range = vi.fn();

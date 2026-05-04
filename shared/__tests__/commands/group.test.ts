@@ -2,6 +2,7 @@
  * Unit tests for group and attribute group command types.
  */
 
+import { describe, test, expect } from "vitest";
 import {
   AddGroupCommand,
   RemoveGroupCommand,

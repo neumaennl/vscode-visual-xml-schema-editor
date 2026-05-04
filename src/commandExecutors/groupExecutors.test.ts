@@ -3,6 +3,7 @@
  * Tests the implementation of add, remove, and modify group execution logic.
  */
 
+import { describe, it, expect } from "vitest";
 import { unmarshal, marshal } from "@neumaennl/xmlbind-ts";
 import {
   schema,

@@ -49,23 +49,41 @@ const Snippet = ({ path, code, lang = "ts" }) => (
 
 const PALETTE_TS = `// webview-src/palette/PaletteView.ts
 // New module — sits next to DiagramSvgRenderer in the existing webview shell.
-// No framework added: same plain-TS + DOM style as the current PropertyPanel.
+// Plain TS + DOM, same XSS-safe style as PropertyPanel (no innerHTML, only
+// document.createElement / textContent).
 
 import { PaletteItem, paletteGroups } from "./PaletteItems";
 
-export type PaletteDropPayload = { kind: PaletteItem["kind"]; itemId: string };
+/** Payload set on dataTransfer when a palette row is dragged. */
+export interface PaletteDropPayload {
+    kind: PaletteItem["kind"];
+    itemId: string;
+}
 
+export const PALETTE_MIME = "application/x-xsd-component";
+
+/**
+ * Renders the component palette into a host element.
+ */
 export class PaletteView {
     private readonly host: HTMLElement;
 
+    /**
+     * Create a new PaletteView and mount it into the host element.
+     * @param host - The element that will own the palette DOM
+     */
     constructor(host: HTMLElement) {
         this.host = host;
         this.render();
     }
 
-    /** Re-renders on settings change (e.g. xmlSchemaVisualEditor.showType). */
+    /** Re-renders the palette. Cheap — called on settings changes. */
     public render(): void {
-        this.host.innerHTML = "";
+        // Clear via DOM methods, never innerHTML
+        while (this.host.firstChild) {
+            this.host.removeChild(this.host.firstChild);
+        }
+
         const search = document.createElement("input");
         search.type = "search";
         search.placeholder = "Search components…";
@@ -74,72 +92,125 @@ export class PaletteView {
         this.host.appendChild(search);
 
         for (const group of paletteGroups) {
-            const section = document.createElement("section");
-            section.dataset.group = group.label;
-            const h = document.createElement("h3");
-            h.textContent = group.label;
-            section.appendChild(h);
-
-            for (const item of group.items) {
-                const row = document.createElement("div");
-                row.className = "palette-row";
-                row.draggable = true;
-                row.dataset.kind = item.kind;
-                row.dataset.itemId = item.id;
-                row.textContent = item.name;
-                row.title = item.description;
-                row.addEventListener("dragstart", (e) => {
-                    const payload: PaletteDropPayload = {
-                        kind: item.kind,
-                        itemId: item.id,
-                    };
-                    e.dataTransfer?.setData(
-                        "application/x-xsd-component",
-                        JSON.stringify(payload),
-                    );
-                    e.dataTransfer!.effectAllowed = "copy";
-                });
-                section.appendChild(row);
-            }
-            this.host.appendChild(section);
+            this.host.appendChild(this.renderGroup(group));
         }
     }
 
-    private filter(q: string): void {
-        const needle = q.trim().toLowerCase();
-        for (const row of this.host.querySelectorAll<HTMLElement>(".palette-row")) {
-            row.hidden = needle.length > 0 && !row.textContent!.toLowerCase().includes(needle);
+    private renderGroup(group: typeof paletteGroups[number]): HTMLElement {
+        const section = document.createElement("section");
+        section.dataset.group = group.label;
+
+        const heading = document.createElement("h3");
+        heading.textContent = group.label;
+        section.appendChild(heading);
+
+        for (const item of group.items) {
+            section.appendChild(this.renderItem(item));
+        }
+        return section;
+    }
+
+    private renderItem(item: PaletteItem): HTMLElement {
+        const row = document.createElement("div");
+        row.className = "palette-row";
+        row.draggable = true;
+        row.dataset.kind = item.kind;
+        row.dataset.itemId = item.id;
+        row.title = item.description;
+        row.textContent = item.name;
+        row.addEventListener("dragstart", (e) => {
+            const payload: PaletteDropPayload = {
+                kind: item.kind,
+                itemId: item.id,
+            };
+            e.dataTransfer?.setData(PALETTE_MIME, JSON.stringify(payload));
+            if (e.dataTransfer) {
+                e.dataTransfer.effectAllowed = "copy";
+            }
+        });
+        return row;
+    }
+
+    private filter(query: string): void {
+        const needle = query.trim().toLowerCase();
+        const rows = this.host.querySelectorAll<HTMLElement>(".palette-row");
+        for (const row of rows) {
+            const text = row.textContent ?? "";
+            row.hidden = needle.length > 0 && !text.toLowerCase().includes(needle);
         }
     }
 }
 `;
 
 const DROP_TARGETS_TS = `// webview-src/diagram/DiagramSvgRenderer.ts (additions)
-// Wire each rendered <g data-item-id> to accept palette drops and dispatch a
-// command. The renderer already owns the SVG node lifecycle; we just add
-// listeners after each shape is appended.
+// Two small additions to the existing renderItem() pipeline:
+//   1. Stamp drop-target metadata onto the item's <g data-item-id> wrapper.
+//   2. Wire dragover / drop / contextmenu listeners that dispatch through a
+//      CommandBus. The bus then routes into src/command/commandProcessor.ts.
 
-import type { DiagramItem } from "./DiagramItem";
-import type { CommandBus } from "../command/CommandBus";
-import type { PaletteDropPayload } from "../palette/PaletteView";
+import { CommandBus } from "../command/CommandBus";
+import { PALETTE_MIME, PaletteDropPayload } from "../palette/PaletteView";
+import { DiagramItemType } from "./DiagramTypes";
 
 export class DiagramSvgRenderer {
-    constructor(private readonly bus: CommandBus /*, ... existing deps */) {}
+    // ... existing fields (svg, mainGroup, contentGroup) ...
 
-    /** Existing method, augmented with drop handlers. */
-    public attachInteractions(group: SVGGElement, item: DiagramItem): void {
+    /**
+     * Create a new DiagramSvgRenderer.
+     * @param svg - The SVG element to render into
+     * @param bus - Command bus that delivers dispatched commands to the host
+     * @param containerGroup - Optional existing container group
+     */
+    constructor(
+        svg: SVGSVGElement,
+        private readonly bus: CommandBus,
+        containerGroup?: SVGGElement,
+    ) {
+        // ... existing constructor body ...
+    }
+
+    /**
+     * Existing renderItem() now also stamps editing metadata + listeners.
+     * The two dataset attributes give Playwright tests stable selectors and
+     * let CSS theme drop-target highlights without JS.
+     */
+    private renderItem(item: DiagramItem): void {
+        const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        group.setAttribute("data-item-id", item.id);
+        group.setAttribute("class", "diagram-item");
+
+        // NEW: editing-mode metadata
+        group.setAttribute("data-kind", DiagramItemType[item.itemType]);
+        if (item.minOccurrence === 0) group.setAttribute("data-optional", "true");
+        if (item.maxOccurrence !== 1) group.setAttribute("data-repeating", "true");
+
+        // ... existing children/shape/text rendering ...
+
+        this.attachInteractions(group, item);
+        this.contentGroup.appendChild(group);
+    }
+
+    /**
+     * Wire palette-drop and right-click handlers for one diagram item.
+     * @param group - The <g> wrapper for this item
+     * @param item - The diagram item being decorated
+     */
+    private attachInteractions(group: SVGGElement, item: DiagramItem): void {
         group.addEventListener("dragover", (e) => {
-            if (e.dataTransfer?.types.includes("application/x-xsd-component")) {
-                e.preventDefault();
-                e.dataTransfer.dropEffect = "copy";
-                group.classList.add("drop-target");
-            }
+            if (!e.dataTransfer?.types.includes(PALETTE_MIME)) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "copy";
+            group.classList.add("drop-target");
         });
-        group.addEventListener("dragleave", () => group.classList.remove("drop-target"));
+
+        group.addEventListener("dragleave", () => {
+            group.classList.remove("drop-target");
+        });
+
         group.addEventListener("drop", (e) => {
             e.preventDefault();
             group.classList.remove("drop-target");
-            const raw = e.dataTransfer?.getData("application/x-xsd-component");
+            const raw = e.dataTransfer?.getData(PALETTE_MIME);
             if (!raw) return;
             const payload = JSON.parse(raw) as PaletteDropPayload;
             this.bus.dispatch({
@@ -162,12 +233,26 @@ export class DiagramSvgRenderer {
 `;
 
 const PROPERTY_PANEL_TS = `// webview-src/PropertyPanel.ts (additions)
-// Keeps your existing helpers — createRestrictionItem(), expectAdjacentText
-// test pattern, DOM-method-only rendering for XSS safety. Adds a single
-// createEditableField() helper used by every editable row.
+// Builds on the existing read-only PropertyPanel. Keeps its conventions:
+//   - DOM-only construction, never innerHTML (XSS-safe per PR #44)
+//   - createRestrictionItem() helper for facet rows
+//   - expectAdjacentText() in tests
+//
+// Two new helpers turn read-only fields editable; each commit dispatches a
+// SchemaCommand via the CommandBus rather than mutating the DOM directly.
 
 export class PropertyPanel {
-    /** Existing read-only renderer wraps each row through a tiny editable shim. */
+    constructor(
+        private readonly host: HTMLElement,
+        private readonly bus: CommandBus,
+    ) {}
+
+    /**
+     * Build an editable text/number field row.
+     * @param label - The label text shown to the left of the input
+     * @param value - The current value
+     * @param onCommit - Called with the new value when the user commits (blur/Enter)
+     */
     private createEditableField(
         label: string,
         value: string,
@@ -175,63 +260,142 @@ export class PropertyPanel {
     ): HTMLElement {
         const row = document.createElement("div");
         row.className = "prop-row";
+
         const lbl = document.createElement("label");
         lbl.textContent = label;
+
         const input = document.createElement("input");
         input.type = "text";
         input.value = value;
         input.addEventListener("change", () => onCommit(input.value));
+        input.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") input.blur();
+        });
+
         row.append(lbl, input);
         return row;
     }
 
-    /** Now editing dispatches commands instead of mutating the DOM directly. */
+    /**
+     * Render the cardinality block for an element/attribute item.
+     * Two editable fields that each emit an UpdateCardinalityCommand.
+     */
     private renderCardinality(item: DiagramItem): HTMLElement {
-        return this.createEditableField("minOccurs", String(item.minOccurs ?? 1), (v) =>
-            this.bus.dispatch({
-                type: "UpdateCardinalityCommand",
-                itemId: item.id,
-                minOccurs: Number(v),
-            }),
+        const block = document.createElement("div");
+        block.className = "prop-block";
+
+        block.appendChild(
+            this.createEditableField("minOccurs", String(item.minOccurrence), (v) =>
+                this.bus.dispatch({
+                    type: "UpdateCardinalityCommand",
+                    itemId: item.id,
+                    minOccurs: Number(v),
+                    maxOccurs: item.maxOccurrence,
+                }),
+            ),
         );
+        block.appendChild(
+            this.createEditableField(
+                "maxOccurs",
+                item.maxOccurrence === -1 ? "unbounded" : String(item.maxOccurrence),
+                (v) =>
+                    this.bus.dispatch({
+                        type: "UpdateCardinalityCommand",
+                        itemId: item.id,
+                        minOccurs: item.minOccurrence,
+                        maxOccurs: v === "unbounded" ? -1 : Number(v),
+                    }),
+            ),
+        );
+        return block;
     }
 }
 `;
 
-// ------------------ proposed files: src/ ------------------
-
 const COMMAND_TS = `// src/command/Commands.ts
-// Discriminated union, matching the existing CommandExecutionResult /
-// ValidationResult shape introduced in Phase 2.
+// Discriminated union covering every editing operation. Mirrors the
+// ValidationResult / CommandExecutionResult shape introduced in PR #148.
+
+import { SchemaKind } from "./SchemaKind";
 
 export type SchemaCommand =
     | { type: "AddChildCommand"; parentItemId: string; childKind: SchemaKind }
     | { type: "DeleteItemCommand"; itemId: string }
-    | { type: "UpdateCardinalityCommand"; itemId: string; minOccurs: number; maxOccurs?: number | "unbounded" }
+    | {
+          type: "UpdateCardinalityCommand";
+          itemId: string;
+          minOccurs: number;
+          maxOccurs: number; // -1 means unbounded
+      }
     | { type: "RenameItemCommand"; itemId: string; newName: string }
-    | { type: "ConvertCompositorCommand"; itemId: string; to: "sequence" | "choice" | "all" }
+    | {
+          type: "UpdateDocumentationCommand";
+          itemId: string;
+          documentation: string;
+      }
+    | {
+          type: "UpdateFacetCommand";
+          itemId: string;
+          facet: "maxLength" | "minLength" | "pattern" | "totalDigits" | "fractionDigits";
+          value: string | number;
+      }
+    | {
+          type: "ConvertCompositorCommand";
+          itemId: string;
+          to: "sequence" | "choice" | "all";
+      }
     | { type: "ExtractGlobalTypeCommand"; itemId: string; typeName: string }
     | { type: "InlineTypeCommand"; itemId: string }
-    | { type: "RenameAcrossSchemaCommand"; oldQName: string; newQName: string };
+    | {
+          type: "RenameAcrossSchemaCommand";
+          oldQName: string;
+          newQName: string;
+      }
+    | {
+          type: "OpenContextMenuCommand";
+          itemId: string;
+          at: { x: number; y: number };
+      };
 `;
 
 const COMMAND_PROCESSOR_TS = `// src/command/commandProcessor.ts (additions)
-// Each new command gets one validator + one handler, mirroring how
-// AddElementCommand and groupValidators are wired today.
+// Each new command gets one validator + one handler. Mirrors the dispatch
+// pattern landed in PR #148/#150 for AddElementCommand and friends.
 
+import { Schema } from "@neumaennl/xmlbind-ts/generated/schema";
+import { SchemaCommand } from "./Commands";
+import { ValidationResult, CommandExecutionResult } from "./CommandTypes";
 import { validateExtractGlobalType } from "./validators/extractGlobalTypeValidator";
 import { applyExtractGlobalType } from "./handlers/extractGlobalTypeHandler";
+import { applyRenameAcrossSchema } from "./handlers/renameAcrossSchemaHandler";
+// ... other validator/handler imports
 
 export class CommandProcessor {
+    constructor(private readonly schema: Schema) {}
+
+    /**
+     * Execute a command after validating it.
+     * Returns a CommandExecutionResult discriminated union — caller surfaces
+     * failure reasons via vscode.window.showWarningMessage.
+     */
     public execute(cmd: SchemaCommand): CommandExecutionResult {
-        const v = this.validate(cmd);
-        if (v.kind === "invalid") {
-            return { kind: "failure", reason: v.reason, command: cmd };
+        const validation = this.validate(cmd);
+        if (validation.kind === "invalid") {
+            return { kind: "failure", reason: validation.reason, command: cmd };
         }
+
         switch (cmd.type) {
             case "ExtractGlobalTypeCommand":
-                return applyExtractGlobalType(this.schema, cmd, this.xmlbind);
-            // ... other cases route to their handlers
+                return applyExtractGlobalType(this.schema, cmd);
+            case "RenameAcrossSchemaCommand":
+                return applyRenameAcrossSchema(this.schema, cmd);
+            // ... other cases route to their respective handlers
+            default:
+                return {
+                    kind: "failure",
+                    reason: \`Unhandled command: \${cmd.type}\`,
+                    command: cmd,
+                };
         }
     }
 
@@ -239,38 +403,61 @@ export class CommandProcessor {
         switch (cmd.type) {
             case "ExtractGlobalTypeCommand":
                 return validateExtractGlobalType(this.schema, cmd);
-            // ...
+            // ... one validator per command kind
+            default:
+                return { kind: "valid" };
         }
     }
 }
 `;
 
 const ROUND_TRIP_TS = `// src/command/handlers/extractGlobalTypeHandler.ts
-// Pure function — receives the in-memory xmlbind-ts schema, returns a new
-// schema. webviewProvider then re-serializes via xmlbind-ts marshal() and
-// hands the resulting string back to vscode.TextDocument as a single edit.
+// Pure function — receives the in-memory xmlbind-ts schema, mutates a clone,
+// returns a CommandExecutionResult. webviewProvider then re-marshals via
+// xmlbind-ts and applies the result as a single TextDocument edit.
 
 import { Schema, ComplexType } from "@neumaennl/xmlbind-ts/generated/schema";
+import { ExtractGlobalTypeCommand, CommandExecutionResult } from "../Commands";
+import { findItemById } from "../schemaNavigator";
 
+/**
+ * Promote an anonymous nested complexType to a top-level definition,
+ * then replace the inline definition with a type reference.
+ *
+ * @param schema - The xmlbind-ts schema being edited (mutated in place)
+ * @param cmd - The command holding the target item id and new type name
+ */
 export function applyExtractGlobalType(
     schema: Schema,
     cmd: ExtractGlobalTypeCommand,
-    _xmlbind: XmlbindAdapter,
 ): CommandExecutionResult {
-    const target = findItem(schema, cmd.itemId);
+    const target = findItemById(schema, cmd.itemId);
     if (!target?.complexType) {
-        return { kind: "failure", reason: "Target has no anonymous complexType", command: cmd };
+        return {
+            kind: "failure",
+            reason: "Target has no anonymous complexType to extract",
+            command: cmd,
+        };
     }
-    const promoted = new ComplexType({ name: cmd.typeName, ...target.complexType });
+
+    // Promote the anonymous type
+    const promoted = new ComplexType({
+        name: cmd.typeName,
+        ...target.complexType,
+    });
     schema.complexTypes.push(promoted);
+
+    // Replace the inline definition with a reference
     target.complexType = undefined;
     target.type = cmd.typeName;
+
     return { kind: "success", command: cmd };
 }
 `;
 
-const SETTINGS_TS = `// package.json contributes (additions)
-// Reuses the existing xmlSchemaVisualEditor namespace.
+const SETTINGS_TS = `// package.json — contributes.configuration (additions)
+// Stays in the existing xmlSchemaVisualEditor namespace alongside
+// showDocumentation / alwaysShowOccurrence / showType.
 {
     "configuration": {
         "title": "XML Schema Visual Editor",
@@ -279,12 +466,17 @@ const SETTINGS_TS = `// package.json contributes (additions)
                 "type": "string",
                 "enum": ["classic", "modern"],
                 "default": "classic",
-                "description": "Visual style of the schema diagram. 'classic' matches xsddiagram (current). 'modern' adds color-coded node kinds and a soft glow on selection."
+                "description": "Visual style of the schema diagram. 'classic' matches xsddiagram (current). 'modern' adds colour-coded node kinds and a soft glow on selection."
             },
             "xmlSchemaVisualEditor.editing.confirmDestructive": {
                 "type": "boolean",
                 "default": true,
-                "description": "Show a confirmation when an edit deletes nodes referenced elsewhere in the schema."
+                "description": "Show a confirmation dialog when an edit deletes nodes referenced elsewhere in the schema."
+            },
+            "xmlSchemaVisualEditor.editing.autoExtractAnonymousTypes": {
+                "type": "boolean",
+                "default": false,
+                "description": "When adding a complexType inline, prompt to extract it as a global type so it can be reused."
             }
         }
     }

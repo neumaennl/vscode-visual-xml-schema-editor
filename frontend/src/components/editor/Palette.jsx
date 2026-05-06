@@ -2,15 +2,15 @@ import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { paletteGroups } from "@/lib/sampleSchema";
 import {
-  Square,
+  Code2,
   AtSign,
   Group,
   Asterisk,
-  AlignJustify,
-  GitBranch,
-  LayoutList,
+  ListChecks,
+  Shuffle,
+  Layers3,
   Boxes,
-  Type,
+  Box,
   PlusSquare,
   MinusSquare,
   List,
@@ -24,12 +24,15 @@ import {
 } from "lucide-react";
 
 const iconMap = {
-  Square, AtSign, Group, Asterisk, AlignJustify, GitBranch, LayoutList,
-  Boxes, Type, PlusSquare, MinusSquare, List, Regex, Ruler, MoveHorizontal,
+  Code2, AtSign, Group, Asterisk,
+  ListChecks, Shuffle, Layers3,
+  Boxes, Box, PlusSquare, MinusSquare,
+  List, Regex, Ruler, MoveHorizontal,
 };
 
 const PaletteItem = ({ item }) => {
-  const Icon = iconMap[item.icon] || Square;
+  const Icon = iconMap[item.icon] || Code2;
+  const color = item.color || "var(--vsc-blue)";
   const onDragStart = (e) => {
     e.dataTransfer.setData("application/x-xsd-component", item.id);
     e.dataTransfer.effectAllowed = "copy";
@@ -43,7 +46,7 @@ const PaletteItem = ({ item }) => {
       title={item.desc}
     >
       <GripVertical size={11} className="text-[var(--vsc-text-faint)] opacity-0 transition-opacity group-hover:opacity-100" />
-      <Icon size={14} className="text-[var(--vsc-blue)]" />
+      <Icon size={14} style={{ color }} />
       <span className="font-ui">{item.name}</span>
       <span className="ml-auto truncate font-ui text-[10px] text-[var(--vsc-text-faint)]">
         {item.desc}

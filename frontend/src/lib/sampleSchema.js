@@ -119,36 +119,36 @@ export const paletteGroups = [
   {
     label: "Structure",
     items: [
-      { id: "element", name: "Element", icon: "Square", desc: "Named element declaration" },
-      { id: "attribute", name: "Attribute", icon: "AtSign", desc: "Attribute on an element" },
-      { id: "group", name: "Group", icon: "Group", desc: "Reusable model group" },
-      { id: "any", name: "Any", icon: "Asterisk", desc: "xs:any wildcard" },
+      { id: "element", name: "element", icon: "Code2", color: "#dcdcaa", desc: "Named element declaration" },
+      { id: "attribute", name: "attribute", icon: "AtSign", color: "#9cdcfe", desc: "Attribute on an element" },
+      { id: "group", name: "group", icon: "Group", color: "#c586c0", desc: "Reusable model group" },
+      { id: "any", name: "any", icon: "Asterisk", color: "#d7ba7d", desc: "xs:any wildcard" },
     ],
   },
   {
     label: "Compositors",
     items: [
-      { id: "sequence", name: "Sequence", icon: "AlignJustify", desc: "Ordered list of children" },
-      { id: "choice", name: "Choice", icon: "GitBranch", desc: "Exactly one of the children" },
-      { id: "all", name: "All", icon: "LayoutList", desc: "Each child once, any order" },
+      { id: "sequence", name: "sequence", icon: "ListChecks", color: "#79c0a4", desc: "Ordered list of children" },
+      { id: "choice", name: "choice", icon: "Shuffle", color: "#c586c0", desc: "Exactly one of the children" },
+      { id: "all", name: "all", icon: "Layers3", color: "#ce9178", desc: "Each child once, any order" },
     ],
   },
   {
     label: "Types",
     items: [
-      { id: "complexType", name: "Complex Type", icon: "Boxes", desc: "Nested structure with children" },
-      { id: "simpleType", name: "Simple Type", icon: "Type", desc: "Restriction of a primitive type" },
-      { id: "extension", name: "Extension", icon: "PlusSquare", desc: "Extend an existing type" },
-      { id: "restriction", name: "Restriction", icon: "MinusSquare", desc: "Restrict an existing type" },
+      { id: "complexType", name: "complexType", icon: "Boxes", color: "#7aa6ff", desc: "Nested structure with children" },
+      { id: "simpleType", name: "simpleType", icon: "Box", color: "#aac7ff", desc: "Restriction of a primitive type" },
+      { id: "extension", name: "extension", icon: "PlusSquare", color: "#6a9955", desc: "Extend an existing type" },
+      { id: "restriction", name: "restriction", icon: "MinusSquare", color: "#f48771", desc: "Restrict an existing type" },
     ],
   },
   {
     label: "Facets",
     items: [
-      { id: "enumeration", name: "Enumeration", icon: "List", desc: "Allowed value set" },
-      { id: "pattern", name: "Pattern", icon: "Regex", desc: "Regex pattern" },
-      { id: "length", name: "Length", icon: "Ruler", desc: "Length / min / max" },
-      { id: "range", name: "Range", icon: "MoveHorizontal", desc: "Min/max numeric value" },
+      { id: "enumeration", name: "enumeration", icon: "List", color: "#dcdcaa", desc: "Allowed value set" },
+      { id: "pattern", name: "pattern", icon: "Regex", color: "#c586c0", desc: "Regex pattern" },
+      { id: "length", name: "length", icon: "Ruler", color: "#79c0a4", desc: "Length / min / max" },
+      { id: "range", name: "range", icon: "MoveHorizontal", color: "#9cdcfe", desc: "Min/max numeric value" },
     ],
   },
 ];

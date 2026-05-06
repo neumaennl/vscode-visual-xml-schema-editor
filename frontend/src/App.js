@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Landing from "@/pages/Landing";
 import ClassicEditor from "@/pages/ClassicEditor";
 import Gallery from "@/pages/Gallery";
+import CodeMap from "@/pages/CodeMap";
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
           <Route path="/classic" element={<ClassicEditor modern={false} />} />
           <Route path="/modern" element={<ClassicEditor modern={true} />} />
           <Route path="/gallery" element={<Gallery />} />
+          <Route path="/codemap" element={<CodeMap />} />
         </Routes>
       </BrowserRouter>
     </div>

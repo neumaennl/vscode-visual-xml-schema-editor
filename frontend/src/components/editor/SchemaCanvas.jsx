@@ -122,8 +122,18 @@ const Compositor = ({ x, y, kind = "sequence", modern }) => {
   const fill = modern ? "#1a2333" : "transparent";
 
   return (
-    <g transform={`translate(${x},${y})`}>
-      <polygon points={points} fill={fill} stroke={stroke} strokeWidth="1.25" />
+    <g
+      transform={`translate(${x},${y})`}
+      className={`compositor compositor--${kind}`}
+      data-compositor={kind}
+    >
+      <polygon
+        points={points}
+        fill={fill}
+        stroke={stroke}
+        strokeWidth="1.25"
+        className="compositor-shape"
+      />
       {kind === "sequence" && (
         <g transform={`translate(${w / 2 - 12}, ${h / 2 - 1})`}>
           {[0, 8, 16].map((cx) => (
@@ -201,7 +211,16 @@ const SchemaNodeShape = ({ node, selected, onClick, modern }) => {
       onClick={onClick}
       style={{ cursor: "pointer" }}
       data-testid={`schema-node-${node.id}`}
-      className={selected ? "node-selected" : ""}
+      data-item-id={node.id}
+      data-kind={node.kind}
+      data-optional={optional ? "true" : "false"}
+      data-repeating={repeating ? "true" : "false"}
+      data-selected={selected ? "true" : "false"}
+      className={`diagram-item diagram-item--${node.kind}${
+        selected ? " diagram-item--selected node-selected" : ""
+      }${optional ? " diagram-item--optional" : ""}${
+        repeating ? " diagram-item--repeating" : ""
+      }`}
     >
       {/* Stack effect for repeating nodes */}
       {repeating && (
@@ -383,6 +402,9 @@ export default function SchemaCanvas({ modern = false, zoom = 1, onZoomChange })
             <NodeContextMenu key={n.id} node={n}>
               <g
                 transform={`translate(${n.x},${n.y})`}
+                data-item-id={n.id}
+                data-drop-target="true"
+                className="diagram-item-slot"
                 onDragOver={(e) => onDragOver(e, n.id)}
                 onDragLeave={() => setDragOver(null)}
                 onDrop={(e) => onDrop(e, n.id)}

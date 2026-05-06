@@ -12,6 +12,7 @@ import {
   Boxes,
   ListTree,
   ShieldCheck,
+  Code2,
 } from "lucide-react";
 
 const Card = ({ to, title, desc, icon: Icon, accent, badge }) => (
@@ -98,7 +99,7 @@ export default function Landing() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 px-10 py-8 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 px-10 py-8 md:grid-cols-2 xl:grid-cols-4">
           <Card
             to="/classic"
             title="Classic editor"
@@ -121,6 +122,14 @@ export default function Landing() {
             desc="Close-ups of every editing surface: palette, properties (4 tabs), context menus, dialogs, validation panel and inline editing."
             icon={Eye}
             accent="#dcdcaa"
+          />
+          <Card
+            to="/codemap"
+            title="Code map"
+            desc="Repo-aligned drop-ins for webview-src/ and src/ with class names matching DiagramSvgRenderer, PropertyPanel, commandProcessor + a command flow diagram."
+            icon={Code2}
+            accent="#6a9955"
+            badge="repo-aligned"
           />
         </div>
 

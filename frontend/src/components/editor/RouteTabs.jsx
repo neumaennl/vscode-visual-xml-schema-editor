@@ -1,12 +1,13 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Eye, Layers, Sparkles, Home } from "lucide-react";
+import { Eye, Layers, Sparkles, Home, Code2 } from "lucide-react";
 
 const tabs = [
   { to: "/", label: "Overview", icon: Home },
   { to: "/classic", label: "Classic editor", icon: Layers },
   { to: "/modern", label: "Modern variant", icon: Sparkles },
   { to: "/gallery", label: "UI spec gallery", icon: Eye },
+  { to: "/codemap", label: "Code map", icon: Code2 },
 ];
 
 export default function RouteTabs() {

@@ -47,6 +47,202 @@ const Snippet = ({ path, code, lang = "ts" }) => (
 
 // ------------------ proposed files: webview-src/ ------------------
 
+const PALETTE_ITEMS_TS = `// webview-src/palette/PaletteItems.ts
+// Static catalogue of components shown in the palette.
+// Pure data — no DOM, no imports from the diagram. Easy to unit-test.
+
+/**
+ * The XSD construct kind that a palette item creates when dropped.
+ * Mirrors the values handled by AddChildCommand in src/command/Commands.ts.
+ */
+export type SchemaKind =
+    | "element"
+    | "attribute"
+    | "group"
+    | "any"
+    | "sequence"
+    | "choice"
+    | "all"
+    | "complexType"
+    | "simpleType"
+    | "extension"
+    | "restriction"
+    | "enumeration"
+    | "pattern"
+    | "length"
+    | "range";
+
+/** One row in the palette. */
+export interface PaletteItem {
+    /** Stable id used as the test selector and the dataTransfer payload. */
+    id: string;
+    /** Human-readable label shown in the row (lower-case to match XSD spelling). */
+    name: string;
+    /** Which XSD construct will be created on drop. */
+    kind: SchemaKind;
+    /** Codicon id, e.g. "symbol-property". Resolved by the renderer. */
+    icon: string;
+    /** Optional accent colour (CSS string). Falls back to current theme. */
+    color?: string;
+    /** Tooltip / one-line description shown on hover. */
+    description: string;
+}
+
+/** A labelled set of related palette items. */
+export interface PaletteGroup {
+    label: string;
+    items: PaletteItem[];
+}
+
+/**
+ * The four sections shown in the palette today. Order is significant —
+ * Structure first because it is the most-used; Facets last because they
+ * only make sense once a simpleType exists.
+ */
+export const paletteGroups: PaletteGroup[] = [
+    {
+        label: "Structure",
+        items: [
+            {
+                id: "element",
+                name: "element",
+                kind: "element",
+                icon: "symbol-property",
+                color: "#dcdcaa",
+                description: "Named element declaration",
+            },
+            {
+                id: "attribute",
+                name: "attribute",
+                kind: "attribute",
+                icon: "symbol-key",
+                color: "#9cdcfe",
+                description: "Attribute on an element",
+            },
+            {
+                id: "group",
+                name: "group",
+                kind: "group",
+                icon: "symbol-namespace",
+                color: "#c586c0",
+                description: "Reusable model group",
+            },
+            {
+                id: "any",
+                name: "any",
+                kind: "any",
+                icon: "symbol-misc",
+                color: "#d7ba7d",
+                description: "xs:any wildcard",
+            },
+        ],
+    },
+    {
+        label: "Compositors",
+        items: [
+            {
+                id: "sequence",
+                name: "sequence",
+                kind: "sequence",
+                icon: "list-ordered",
+                color: "#79c0a4",
+                description: "Ordered list of children",
+            },
+            {
+                id: "choice",
+                name: "choice",
+                kind: "choice",
+                icon: "type-hierarchy-sub",
+                color: "#c586c0",
+                description: "Exactly one of the children",
+            },
+            {
+                id: "all",
+                name: "all",
+                kind: "all",
+                icon: "layers",
+                color: "#ce9178",
+                description: "Each child once, any order",
+            },
+        ],
+    },
+    {
+        label: "Types",
+        items: [
+            {
+                id: "complexType",
+                name: "complexType",
+                kind: "complexType",
+                icon: "symbol-class",
+                color: "#7aa6ff",
+                description: "Nested structure with children",
+            },
+            {
+                id: "simpleType",
+                name: "simpleType",
+                kind: "simpleType",
+                icon: "symbol-structure",
+                color: "#aac7ff",
+                description: "Restriction of a primitive type",
+            },
+            {
+                id: "extension",
+                name: "extension",
+                kind: "extension",
+                icon: "add",
+                color: "#6a9955",
+                description: "Extend an existing type",
+            },
+            {
+                id: "restriction",
+                name: "restriction",
+                kind: "restriction",
+                icon: "remove",
+                color: "#f48771",
+                description: "Restrict an existing type",
+            },
+        ],
+    },
+    {
+        label: "Facets",
+        items: [
+            {
+                id: "enumeration",
+                name: "enumeration",
+                kind: "enumeration",
+                icon: "list-unordered",
+                color: "#dcdcaa",
+                description: "Allowed value set",
+            },
+            {
+                id: "pattern",
+                name: "pattern",
+                kind: "pattern",
+                icon: "regex",
+                color: "#c586c0",
+                description: "Regex pattern",
+            },
+            {
+                id: "length",
+                name: "length",
+                kind: "length",
+                icon: "symbol-ruler",
+                color: "#79c0a4",
+                description: "Length / min / max",
+            },
+            {
+                id: "range",
+                name: "range",
+                kind: "range",
+                icon: "arrow-both",
+                color: "#9cdcfe",
+                description: "Min/max numeric value",
+            },
+        ],
+    },
+];
+`;
+
 const PALETTE_TS = `// webview-src/palette/PaletteView.ts
 // New module — sits next to DiagramSvgRenderer in the existing webview shell.
 // Plain TS + DOM, same XSS-safe style as PropertyPanel (no innerHTML, only

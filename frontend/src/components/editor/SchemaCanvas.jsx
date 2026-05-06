@@ -15,11 +15,11 @@ import NodeContextMenu from "./NodeContextMenu";
  */
 
 const NODE_W = 168;
-const NODE_H = 44;
-const COMP_W = 56;
-const COMP_H = 36;
-const HGAP = 88; // gap between columns
-const VGAP = 18; // vertical gap between siblings
+const NODE_H = 36;
+const COMP_W = 44;
+const COMP_H = 28;
+const HGAP = 80; // gap between columns
+const VGAP = 16; // vertical gap between siblings
 
 // ---- helpers --------------------------------------------------------------
 
@@ -48,14 +48,19 @@ function computeLayout(schema, nodeById, modern = false) {
     nodes.push({ ...n, x, y: midY - NODE_H / 2, depth });
 
     const expanded = n.expanded ?? true;
-    if (expanded && n.children?.length) {
+    const hasChildren = n.children?.length > 0;
+    const hasCompositor = hasChildren || n.kind === "complexType";
+
+    if (hasCompositor) {
       // compositor sits between this node and children
-      const compX = x + NODE_W + 30;
+      const compX = x + NODE_W + 16;
       const compNodeId = `comp-${id}`;
       nodes.push({
         id: compNodeId,
         synthetic: true,
-        compositor: n.compositor || (n.kind === "complexType" ? n.compositor || "sequence" : "sequence"),
+        compositor:
+          n.compositor ||
+          (n.kind === "complexType" ? n.compositor || "sequence" : "sequence"),
         x: compX,
         y: midY - COMP_H / 2,
         depth,
@@ -67,17 +72,22 @@ function computeLayout(schema, nodeById, modern = false) {
         to: { x: compX, y: midY },
       });
 
-      let cursor = top;
-      for (const cid of n.children) {
-        const childSpan = measureChildren(cid);
-        const childTop = cursor;
-        const childRes = layout(cid, depth + 1, childTop);
-        // edge: compositor -> child
-        links.push({
-          from: { x: compX + COMP_W, y: midY },
-          to: { x: 24 + (depth + 1) * (NODE_W + COMP_W + HGAP), y: childRes.midY },
-        });
-        cursor += childSpan * (NODE_H + VGAP);
+      if (expanded && hasChildren) {
+        let cursor = top;
+        for (const cid of n.children) {
+          const childSpan = measureChildren(cid);
+          const childTop = cursor;
+          const childRes = layout(cid, depth + 1, childTop);
+          // edge: compositor -> child
+          links.push({
+            from: { x: compX + COMP_W, y: midY },
+            to: {
+              x: 24 + (depth + 1) * (NODE_W + COMP_W + HGAP),
+              y: childRes.midY,
+            },
+          });
+          cursor += childSpan * (NODE_H + VGAP);
+        }
       }
     }
     return { height, midY };
@@ -99,93 +109,163 @@ function computeLayout(schema, nodeById, modern = false) {
 }
 
 // ---- compositor symbol ----------------------------------------------------
+// Mirrors webview-src/diagram/ShapeRenderers.ts → renderGroupShape() and
+// renderGroupTypeIndicator(). Octagon with bevel = round(h * 0.3). Single
+// shadow offset by SHADOW_OFFSET (3) when maxOccurs > 1.
 
-const Compositor = ({ x, y, kind = "sequence", modern }) => {
+const SHADOW_OFFSET = 3;
+
+const Compositor = ({ x, y, kind = "sequence", modern, repeating = false }) => {
   const w = COMP_W;
   const h = COMP_H;
-  // octagon-ish via polygon
-  const cut = 8;
-  const points = [
-    [cut, 0],
-    [w - cut, 0],
-    [w, cut],
-    [w, h - cut],
-    [w - cut, h],
-    [cut, h],
-    [0, h - cut],
-    [0, cut],
-  ]
-    .map((p) => p.join(","))
-    .join(" ");
+  const bevel = Math.round(h * 0.3);
+
+  // Octagon points (matches renderGroupShape)
+  const octPoints = (ox, oy) =>
+    [
+      [ox + bevel, oy],
+      [ox + w - bevel, oy],
+      [ox + w, oy + bevel],
+      [ox + w, oy + h - bevel],
+      [ox + w - bevel, oy + h],
+      [ox + bevel, oy + h],
+      [ox, oy + h - bevel],
+      [ox, oy + bevel],
+    ]
+      .map((p) => p.join(","))
+      .join(" ");
 
   const stroke = modern ? "#7aa6ff" : "#dcdcdc";
   const fill = modern ? "#1a2333" : "transparent";
+  const symbolStroke = modern ? "#cfe0ff" : "#dcdcdc";
+  const cx = w / 2;
+  const cy = h / 2;
 
   return (
-    <g
-      transform={`translate(${x},${y})`}
-      className={`compositor compositor--${kind}`}
-      data-compositor={kind}
-    >
+    <g transform={`translate(${x},${y})`} className={`compositor compositor--${kind}`} data-compositor={kind}>
+      {repeating && (
+        <polygon
+          points={octPoints(SHADOW_OFFSET, SHADOW_OFFSET)}
+          fill={fill}
+          stroke={stroke}
+          strokeWidth="1.25"
+          className="compositor-shadow"
+        />
+      )}
       <polygon
-        points={points}
+        points={octPoints(0, 0)}
         fill={fill}
         stroke={stroke}
         strokeWidth="1.25"
         className="compositor-shape"
       />
-      {kind === "sequence" && (
-        <g transform={`translate(${w / 2 - 12}, ${h / 2 - 1})`}>
-          {[0, 8, 16].map((cx) => (
-            <circle key={cx} cx={cx} cy={1} r="2" fill={stroke} />
-          ))}
-          <line x1="-2" y1="1" x2="20" y2="1" stroke={stroke} strokeWidth="1" />
-        </g>
-      )}
-      {kind === "choice" && (
-        <g
-          transform={`translate(${w / 2}, ${h / 2})`}
-          stroke={stroke}
-          strokeWidth="1.2"
-          fill="none"
-        >
-          <line x1="-10" y1="-7" x2="10" y2="-7" />
-          <line x1="-10" y1="0" x2="10" y2="0" />
-          <line x1="-10" y1="7" x2="10" y2="7" />
-          <path d="M -8 -7 L 6 0 L -8 7" />
-        </g>
-      )}
-      {kind === "all" && (
-        <g
-          transform={`translate(${w / 2 - 9}, ${h / 2 - 8})`}
-          stroke={stroke}
-          strokeWidth="1.2"
-          fill="none"
-        >
-          <line x1="0" y1="0" x2="18" y2="0" />
-          <line x1="0" y1="8" x2="18" y2="8" />
-          <line x1="0" y1="16" x2="18" y2="16" />
-          <text x="20" y="12" fontSize="10" fill={stroke} stroke="none">
-            ∀
-          </text>
-        </g>
-      )}
+
+      {kind === "sequence" && (() => {
+        // 3 dots in a row + horizontal line through them
+        const dotSize = 2;
+        const spacing = dotSize * 3;
+        return (
+          <g>
+            <line
+              x1={cx - spacing * 2}
+              y1={cy}
+              x2={cx + spacing * 2}
+              y2={cy}
+              stroke={symbolStroke}
+              strokeWidth="1"
+            />
+            {[-1, 0, 1].map((i) => (
+              <circle
+                key={i}
+                cx={cx + i * spacing}
+                cy={cy}
+                r={dotSize}
+                fill={symbolStroke}
+              />
+            ))}
+          </g>
+        );
+      })()}
+
+      {kind === "choice" && (() => {
+        // Choice indicator: left lines, right bracket, three vertical dots
+        const yU = cy - 4;
+        const yD = cy + 4;
+        const xL2 = cx - 4;
+        const xL1 = xL2 - 4;
+        const xL0 = xL1 - 4;
+        const xR0 = cx + 4;
+        const xR1 = xR0 + 4;
+        const xR2 = xR1 + 4;
+        const lineProps = { stroke: symbolStroke, strokeWidth: "1" };
+        return (
+          <g>
+            <line x1={xL0} y1={cy} x2={xL1} y2={cy} {...lineProps} />
+            <line x1={xL1} y1={cy} x2={xL2} y2={yU} {...lineProps} />
+            <line x1={xR0} y1={yU} x2={xR1} y2={yU} {...lineProps} />
+            <line x1={xR0} y1={cy} x2={xR2} y2={cy} {...lineProps} />
+            <line x1={xR0} y1={yD} x2={xR1} y2={yD} {...lineProps} />
+            <line x1={xR1} y1={yU} x2={xR1} y2={yD} {...lineProps} />
+            <circle cx={cx} cy={yU} r={2} fill={symbolStroke} />
+            <circle cx={cx} cy={cy} r={2} fill={symbolStroke} />
+            <circle cx={cx} cy={yD} r={2} fill={symbolStroke} />
+          </g>
+        );
+      })()}
+
+      {kind === "all" && (() => {
+        // All indicator: horizontal lines on both sides + brackets + 3 dots
+        const yU = cy - 4;
+        const yD = cy + 4;
+        const xL2 = cx - 4;
+        const xL1 = xL2 - 4;
+        const xL0 = xL1 - 4;
+        const xR0 = cx + 4;
+        const xR1 = xR0 + 4;
+        const xR2 = xR1 + 4;
+        const lineProps = { stroke: symbolStroke, strokeWidth: "1" };
+        return (
+          <g>
+            <line x1={xL2} y1={yU} x2={xL1} y2={yU} {...lineProps} />
+            <line x1={xL2} y1={cy} x2={xL0} y2={cy} {...lineProps} />
+            <line x1={xL2} y1={yD} x2={xL1} y2={yD} {...lineProps} />
+            <line x1={xL1} y1={yU} x2={xL1} y2={yD} {...lineProps} />
+            <line x1={xR0} y1={yU} x2={xR1} y2={yU} {...lineProps} />
+            <line x1={xR0} y1={cy} x2={xR2} y2={cy} {...lineProps} />
+            <line x1={xR0} y1={yD} x2={xR1} y2={yD} {...lineProps} />
+            <line x1={xR1} y1={yU} x2={xR1} y2={yD} {...lineProps} />
+            <circle cx={cx} cy={yU} r={2} fill={symbolStroke} />
+            <circle cx={cx} cy={cy} r={2} fill={symbolStroke} />
+            <circle cx={cx} cy={yD} r={2} fill={symbolStroke} />
+          </g>
+        );
+      })()}
     </g>
   );
 };
 
 // ---- node rendering -------------------------------------------------------
+// Mirrors webview-src/diagram/ShapeRenderers.ts:
+//   - renderElementShape: simple rectangle, single shadow offset by 3 if multi-occur
+//   - renderTypeShape:    hex with two LEFT chamfers (bevel = round(h * 0.2));
+//                         simpleType (isSimpleContent) fills the left bevel area
+//                         with the stroke color
+// And TextRenderers.ts:
+//   - renderText: bold, centered, font-family Arial, name + optional ": type"
+//   - renderOccurrence: at (x + w + 5, y + h - 5)
 
-const SchemaNodeShape = ({ node, selected, onClick, modern }) => {
+const SchemaNodeShape = ({ node, selected, onClick, modern, showType }) => {
   const w = NODE_W;
   const h = NODE_H;
   const optional = node.optional;
   const repeating = node.repeating;
 
   const isType = node.kind === "complexType" || node.kind === "simpleType";
+  const isSimpleContent = node.kind === "simpleType";
   const isSchema = node.kind === "schema";
 
-  // Color theming
+  // Color theming. Classic = repo defaults (white/transparent). Modern is an
+  // optional theme behind xmlSchemaVisualEditor.diagramTheme.
   const palette = modern
     ? {
         element: { fill: "#1c2733", stroke: "#5b9dff", text: "#cfe2ff" },
@@ -202,9 +282,36 @@ const SchemaNodeShape = ({ node, selected, onClick, modern }) => {
         attribute: { fill: "transparent", stroke: "#e7e7e7", text: "#f5f5f5" },
       };
   const c = palette[node.kind] || palette.element;
+  const strokeDash = optional ? "3 3" : null;
 
-  const strokeDash = optional ? "4 3" : null;
-  const labelFontWeight = isSchema ? "700" : modern ? "600" : "500";
+  // Type hex points (renderTypeShape): bevel on the LEFT side only.
+  const bevel = Math.round(h * 0.2);
+  const typePoints = (ox = 0, oy = 0) =>
+    [
+      [ox + bevel, oy],
+      [ox + w, oy],
+      [ox + w, oy + h],
+      [ox + bevel, oy + h],
+      [ox, oy + h - bevel],
+      [ox, oy + bevel],
+    ]
+      .map((p) => p.join(","))
+      .join(" ");
+
+  const bevelFillPoints = [
+    [0, bevel],
+    [bevel, 0],
+    [bevel, h],
+    [0, h - bevel],
+  ]
+    .map((p) => p.join(","))
+    .join(" ");
+
+  const labelText = (() => {
+    let t = node.name || "";
+    if (showType && node.type && !isType) t += `: ${node.type}`;
+    return t.length > 22 ? t.slice(0, 20) + "…" : t;
+  })();
 
   return (
     <g
@@ -222,38 +329,38 @@ const SchemaNodeShape = ({ node, selected, onClick, modern }) => {
         repeating ? " diagram-item--repeating" : ""
       }`}
     >
-      {/* Stack effect for repeating nodes */}
-      {repeating && (
-        <>
-          <rect
-            x="6"
-            y="6"
-            width={w}
-            height={h}
-            fill={c.fill}
-            stroke={c.stroke}
-            strokeWidth="1.25"
-          />
-          <rect
-            x="3"
-            y="3"
-            width={w}
-            height={h}
-            fill={c.fill}
-            stroke={c.stroke}
-            strokeWidth="1.25"
-          />
-        </>
-      )}
-
-      {/* Type "tag" notch shape for complexType / simpleType */}
-      {isType ? (
-        <polygon
-          points={`12,0 ${w},0 ${w},${h} 12,${h} 0,${h / 2}`}
+      {/* SHADOW (single offset, matches SHADOW_OFFSET = 3) for multi-occur */}
+      {repeating && !isType && (
+        <rect
+          x={SHADOW_OFFSET}
+          y={SHADOW_OFFSET}
+          width={w}
+          height={h}
           fill={c.fill}
           stroke={c.stroke}
+          strokeWidth="1.25"
+          className="diagram-shadow"
+        />
+      )}
+      {repeating && isType && (
+        <polygon
+          points={typePoints(SHADOW_OFFSET, SHADOW_OFFSET)}
+          fill={c.fill}
+          stroke={c.stroke}
+          strokeWidth="1.25"
+          className="diagram-shadow"
+        />
+      )}
+
+      {/* MAIN SHAPE */}
+      {isType ? (
+        <polygon
+          points={typePoints(0, 0)}
+          fill={c.fill}
+          stroke={selected ? "#3794ff" : c.stroke}
           strokeWidth={selected ? "2" : "1.25"}
           strokeDasharray={strokeDash}
+          className="diagram-shape"
         />
       ) : (
         <rect
@@ -265,11 +372,21 @@ const SchemaNodeShape = ({ node, selected, onClick, modern }) => {
           stroke={selected ? "#3794ff" : c.stroke}
           strokeWidth={selected ? "2" : "1.25"}
           strokeDasharray={strokeDash}
-          rx={modern ? 6 : 0}
+          className="diagram-shape"
         />
       )}
 
-      {/* Selection glow ring */}
+      {/* For simpleType (isSimpleContent) fill the LEFT bevel area with stroke colour */}
+      {isType && isSimpleContent && (
+        <polygon
+          points={bevelFillPoints}
+          fill={c.stroke}
+          stroke="none"
+          className="diagram-bevel-fill"
+        />
+      )}
+
+      {/* Selection halo */}
       {selected && (
         <rect
           x="-3"
@@ -280,47 +397,56 @@ const SchemaNodeShape = ({ node, selected, onClick, modern }) => {
           stroke="#3794ff"
           strokeOpacity="0.35"
           strokeWidth="2"
-          rx={modern ? 9 : 2}
         />
       )}
 
-      {/* Label */}
+      {/* LABEL — TextRenderers.renderText: bold, centered, Arial-ish */}
       <text
-        x={isType ? (w + 12) / 2 : w / 2}
-        y={h / 2 + 4}
+        x={isType ? (w + bevel) / 2 : w / 2}
+        y={h / 2}
         textAnchor="middle"
-        fontFamily='"Segoe UI", Inter, sans-serif'
-        fontSize="13"
-        fontWeight={labelFontWeight}
+        dominantBaseline="central"
+        fontFamily="Arial, sans-serif"
+        fontSize="11"
+        fontWeight="bold"
         fill={c.text}
+        className="diagram-label"
       >
-        {node.name?.length > 18 ? node.name.slice(0, 16) + "…" : node.name}
+        {labelText}
       </text>
 
-      {/* Modern: kind chip */}
+      {/* Modern only: tiny kind chip above the box for quick scanning */}
       {modern && !isSchema && (
         <text
-          x={isType ? 18 : 8}
-          y="11"
-          fontFamily='"JetBrains Mono", monospace'
-          fontSize="8"
+          x={isType ? bevel + 2 : 4}
+          y="8"
+          fontFamily="Arial, sans-serif"
+          fontSize="7"
           fill={c.stroke}
-          opacity="0.7"
+          opacity="0.8"
+          className="diagram-kind-chip"
         >
           {node.kind}
         </text>
       )}
 
-      {/* Expand/collapse handle (right edge) */}
+      {/* Expand/collapse box (just outside right edge) */}
       {node.children?.length > 0 && (
-        <g transform={`translate(${w - 4}, ${h / 2 - 6})`}>
-          <rect width="12" height="12" fill={modern ? "#0e1116" : "#141416"} stroke={c.stroke} strokeWidth="1" />
+        <g transform={`translate(${w + 2}, ${h / 2 - 5})`} className="diagram-toggle">
+          <rect
+            width="10"
+            height="10"
+            fill={modern ? "#0e1116" : "#141416"}
+            stroke={c.stroke}
+            strokeWidth="1"
+          />
           <text
-            x="6"
-            y="9"
+            x="5"
+            y="5"
             textAnchor="middle"
-            fontSize="11"
-            fontFamily='"Segoe UI", monospace'
+            dominantBaseline="central"
+            fontSize="10"
+            fontFamily="Arial, sans-serif"
             fill={c.stroke}
           >
             {(node.expanded ?? true) ? "−" : "+"}

@@ -28,17 +28,34 @@ describe("SchemaEditorApp", () => {
     // Clear mocks
     jest.clearAllMocks();
     jest.resetModules();
+    jest.useRealTimers();
     mockGetState.mockReturnValue(null);
 
     // Setup complete DOM structure
     document.body.innerHTML = `
-      <svg id="schema-canvas" width="800" height="600">
-        <g id="content"></g>
-      </svg>
-      <div id="properties-content"></div>
-      <button id="zoomIn"></button>
-      <button id="zoomOut"></button>
-      <button id="fitView"></button>
+      <div id="editor-layout">
+        <aside id="palette-panel">
+          <div id="palette-content"></div>
+        </aside>
+        <main id="main-panel">
+          <div id="notification-bar" hidden>
+            <span id="notification-message"></span>
+            <button id="notification-dismiss" type="button">✕</button>
+          </div>
+          <button id="zoomIn"></button>
+          <button id="zoomOut"></button>
+          <button id="fitView"></button>
+          <div id="canvas-container">
+            <div id="top-level-drop-target"></div>
+            <svg id="schema-canvas" width="800" height="600">
+              <g id="content"></g>
+            </svg>
+          </div>
+        </main>
+        <aside id="properties-panel">
+          <div id="properties-content"></div>
+        </aside>
+      </div>
     `;
   });
 
@@ -86,22 +103,60 @@ describe("SchemaEditorApp", () => {
       (call) => call[0] === "message"
     )?.[1] as EventListener;
 
-    // Get the canvas element
-    const canvas = document.getElementById("schema-canvas");
-    expect(canvas).toBeTruthy();
-    const textContentBefore = canvas?.textContent || "";
-
     const event = new MessageEvent("message", {
       data: { command: "error", data: { message: "Test error" } },
     });
 
     messageHandler(event);
 
-    // Verify the error is displayed in the canvas
-    // The showError method adds text to the SVG canvas
-    const textContentAfter = canvas?.textContent || "";
-    expect(textContentAfter).not.toBe(textContentBefore);
-    expect(textContentAfter).toContain("Test error");
+    // Error is now shown in the notification bar, not the canvas
+    const notificationBar = document.getElementById("notification-bar");
+    const notificationMessage = document.getElementById("notification-message");
+    expect(notificationBar?.hasAttribute("hidden")).toBe(false);
+    expect(notificationMessage?.textContent).toContain("Test error");
+  });
+
+  it("should keep an error visible until dismissed", () => {
+    jest.useFakeTimers();
+    const addEventListenerSpy = jest.spyOn(window, "addEventListener");
+
+    require("./main");
+
+    const messageHandler = addEventListenerSpy.mock.calls.find(
+      (call) => call[0] === "message"
+    )?.[1] as EventListener;
+
+    const event = new MessageEvent("message", {
+      data: { command: "error", data: { message: "Persistent error" } },
+    });
+
+    messageHandler(event);
+    jest.advanceTimersByTime(30000);
+
+    const notificationBar = document.getElementById("notification-bar");
+    const notificationMessage = document.getElementById("notification-message");
+    expect(notificationBar?.hasAttribute("hidden")).toBe(false);
+    expect(notificationMessage?.textContent).toContain("Persistent error");
+  });
+
+  it("should dismiss the notification when the dismiss button is clicked", () => {
+    const addEventListenerSpy = jest.spyOn(window, "addEventListener");
+
+    require("./main");
+
+    const messageHandler = addEventListenerSpy.mock.calls.find(
+      (call) => call[0] === "message"
+    )?.[1] as EventListener;
+
+    const event = new MessageEvent("message", {
+      data: { command: "error", data: { message: "Dismiss me" } },
+    });
+
+    messageHandler(event);
+    document.getElementById("notification-dismiss")?.click();
+
+    const notificationBar = document.getElementById("notification-bar");
+    expect(notificationBar?.hasAttribute("hidden")).toBe(true);
   });
 
   it("should setup zoom controls", () => {

@@ -33,6 +33,7 @@ export class DiagramItem {
   public isReference: boolean = false;
   public isSimpleContent: boolean = false;
   public isAbstract: boolean = false;
+  public hasAnonymousComplexType: boolean = false;
 
   // Layout properties
   public location: Point = { x: 0, y: 0 };

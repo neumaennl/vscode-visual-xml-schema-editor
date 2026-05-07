@@ -7,11 +7,15 @@ import {
   processRestriction,
   processAnonymousSimpleType,
   processComplexType,
+  processSequence,
+  processChoice,
+  processAll,
+  processAnonymousComplexType,
   extractRestrictionFacets,
 } from "../diagram/SchemaProcessors";
 import { DiagramItem } from "../diagram/DiagramItem";
 import { Diagram } from "../diagram/Diagram";
-import { DiagramItemType } from "../diagram/DiagramTypes";
+import { DiagramItemGroupType, DiagramItemType } from "../diagram/DiagramTypes";
 
 describe("SchemaProcessors", () => {
   let diagram: Diagram;
@@ -253,6 +257,125 @@ describe("SchemaProcessors", () => {
       expect(item.type).toContain("with simpleContent");
       expect(item.type).toContain("restricts string");
       expect(item.isSimpleContent).toBe(true);
+    });
+  });
+
+  describe("processSequence / processChoice / processAll — group IDs", () => {
+    it("should generate a group ID containing 'sequence' for a sequence under a named complexType", () => {
+      const ctItem = new DiagramItem(
+        "/complexType:PersonType",
+        "PersonType",
+        DiagramItemType.type,
+        diagram
+      );
+
+      processSequence(ctItem, { element: [{ name: "name", type_: "xs:string" }] });
+
+      expect(ctItem.childElements).toHaveLength(1);
+      const seq = ctItem.childElements[0];
+      expect(seq.groupType).toBe(DiagramItemGroupType.Sequence);
+      expect(seq.id).toBe("/complexType:PersonType/group:sequence[0]");
+    });
+
+    it("should generate a group ID containing 'choice' for a choice under a named complexType", () => {
+      const ctItem = new DiagramItem(
+        "/complexType:ChoiceType",
+        "ChoiceType",
+        DiagramItemType.type,
+        diagram
+      );
+
+      processChoice(ctItem, { element: [{ name: "opt", type_: "xs:string" }] });
+
+      const choice = ctItem.childElements[0];
+      expect(choice.groupType).toBe(DiagramItemGroupType.Choice);
+      expect(choice.id).toBe("/complexType:ChoiceType/group:choice[0]");
+    });
+
+    it("should generate a group ID containing 'all' for an all group under a named complexType", () => {
+      const ctItem = new DiagramItem(
+        "/complexType:AllType",
+        "AllType",
+        DiagramItemType.type,
+        diagram
+      );
+
+      processAll(ctItem, { element: [{ name: "field", type_: "xs:string" }] });
+
+      const allGroup = ctItem.childElements[0];
+      expect(allGroup.groupType).toBe(DiagramItemGroupType.All);
+      expect(allGroup.id).toBe("/complexType:AllType/group:all[0]");
+    });
+
+    it("should include anonymousComplexType in the group ID when parent is an element with anonymous CT", () => {
+      const elemItem = new DiagramItem(
+        "/element:person",
+        "person",
+        DiagramItemType.element,
+        diagram
+      );
+      // Mark as having anonymous complex type (as processAnonymousComplexType does)
+      elemItem.hasAnonymousComplexType = true;
+
+      processSequence(elemItem, { element: [{ name: "name", type_: "xs:string" }] });
+
+      const seq = elemItem.childElements[0];
+      expect(seq.id).toBe("/element:person/anonymousComplexType[0]/group:sequence[0]");
+    });
+
+    it("child element IDs inside a group should use the correct group parent", () => {
+      const ctItem = new DiagramItem(
+        "/complexType:PersonType",
+        "PersonType",
+        DiagramItemType.type,
+        diagram
+      );
+
+      processSequence(ctItem, {
+        element: [
+          { name: "first", type_: "xs:string" },
+          { name: "last", type_: "xs:string" },
+        ],
+      });
+
+      const seq = ctItem.childElements[0];
+      expect(seq.childElements[0].id).toBe(
+        "/complexType:PersonType/group:sequence[0]/element:first[0]"
+      );
+      expect(seq.childElements[1].id).toBe(
+        "/complexType:PersonType/group:sequence[0]/element:last[1]"
+      );
+    });
+
+    it("should not add an empty group to the parent", () => {
+      const ctItem = new DiagramItem(
+        "/complexType:EmptyType",
+        "EmptyType",
+        DiagramItemType.type,
+        diagram
+      );
+
+      processSequence(ctItem, { element: [] });
+
+      expect(ctItem.childElements).toHaveLength(0);
+    });
+  });
+
+  describe("processAnonymousComplexType — group IDs", () => {
+    it("should produce sequence ID with anonymousComplexType segment", () => {
+      const elemItem = new DiagramItem(
+        "/element:person",
+        "person",
+        DiagramItemType.element,
+        diagram
+      );
+
+      processAnonymousComplexType(elemItem, {
+        sequence: { element: [{ name: "name", type_: "xs:string" }] },
+      });
+
+      const seq = elemItem.childElements[0];
+      expect(seq.id).toBe("/element:person/anonymousComplexType[0]/group:sequence[0]");
     });
   });
 });

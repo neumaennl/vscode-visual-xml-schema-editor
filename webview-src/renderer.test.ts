@@ -5,6 +5,10 @@
 import { DiagramRenderer } from "./renderer";
 import { DiagramOptions } from "../shared/messages";
 import { setupGetBBoxMock } from "./__tests__/svgTestUtils";
+import {
+  setActiveDraggedPaletteSchemaConstruct,
+} from "./palette/PaletteItems";
+import { PaletteSchemaConstruct } from "./palette/PaletteSchemaConstruct";
 
 const defaultDiagramOptions: DiagramOptions = {
   showDocumentation: false,
@@ -21,6 +25,7 @@ describe("DiagramRenderer", () => {
     mockCanvas = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     const viewState = { zoom: 1, panX: 0, panY: 0 };
     renderer = new DiagramRenderer(mockCanvas, viewState);
+    setActiveDraggedPaletteSchemaConstruct(null);
   });
 
   describe("constructor", () => {
@@ -204,6 +209,172 @@ describe("DiagramRenderer", () => {
       const diagram = renderer.getCurrentDiagram();
       expect(diagram).not.toBeNull();
       expect(diagram?.showType).toBe(true);
+    });
+  });
+
+  describe("drag and drop", () => {
+    beforeEach(() => {
+      setupGetBBoxMock();
+    });
+
+    it("should invoke node drop handler with item and construct", () => {
+      const onNodeClick = jest.fn();
+      const onNodeDrop = jest.fn();
+      renderer.setDropHandler(onNodeDrop);
+
+      const mockSchema = {
+        element: [{ name: "Test", type_: "string" }],
+      };
+      renderer.renderSchema(mockSchema, defaultDiagramOptions, onNodeClick);
+
+      const itemElement = mockCanvas.querySelector(
+        "[data-item-id]"
+      ) as SVGGElement;
+      expect(itemElement).toBeTruthy();
+
+      const dropEvent = new Event("drop", { bubbles: true }) as DragEvent;
+      Object.defineProperty(dropEvent, "dataTransfer", {
+        value: {
+          getData: (_mime: string) => "element",
+        },
+      });
+
+      itemElement.dispatchEvent(dropEvent);
+
+      expect(onNodeDrop).toHaveBeenCalledWith(expect.any(Object), "element");
+    });
+
+    it("should not invoke node drop handler when drop validator rejects the target", () => {
+      const onNodeClick = jest.fn();
+      const onNodeDrop = jest.fn();
+      renderer.setDropHandler(onNodeDrop);
+      renderer.setNodeDropValidator(() => false);
+
+      const mockSchema = {
+        element: [{ name: "Test", type_: "string" }],
+      };
+      renderer.renderSchema(mockSchema, defaultDiagramOptions, onNodeClick);
+
+      const itemElement = mockCanvas.querySelector(
+        "[data-item-id]"
+      ) as SVGGElement;
+      const dropEvent = new Event("drop", { bubbles: true }) as DragEvent;
+      Object.defineProperty(dropEvent, "dataTransfer", {
+        value: {
+          getData: (_mime: string) => "attribute",
+        },
+      });
+
+      itemElement.dispatchEvent(dropEvent);
+
+      expect(onNodeDrop).not.toHaveBeenCalled();
+    });
+
+    it("should not add drag-over class when drop validator rejects the target", () => {
+      const onNodeClick = jest.fn();
+      renderer.setNodeDropValidator(() => false);
+
+      const mockSchema = {
+        element: [{ name: "Test", type_: "string" }],
+      };
+      renderer.renderSchema(mockSchema, defaultDiagramOptions, onNodeClick);
+
+      const itemElement = mockCanvas.querySelector(
+        "[data-item-id]"
+      ) as SVGGElement;
+      const itemChild = itemElement.querySelector("*") as Element;
+      const dragOverEvent = new Event("dragover", { bubbles: true }) as DragEvent;
+      Object.defineProperty(dragOverEvent, "dataTransfer", {
+        value: {
+          getData: (_mime: string) => "attribute",
+        },
+      });
+
+      itemChild.dispatchEvent(dragOverEvent);
+
+      expect(itemElement.classList.contains("drag-over")).toBe(false);
+    });
+
+    it("should add drag-over class using active dragged-construct fallback", () => {
+      const onNodeClick = jest.fn();
+      renderer.setNodeDropValidator((_node, construct) => construct === "element");
+
+      const mockSchema = {
+        element: [{ name: "Test", type_: "string" }],
+      };
+      renderer.renderSchema(mockSchema, defaultDiagramOptions, onNodeClick);
+
+      const itemElement = mockCanvas.querySelector(
+        "[data-item-id]"
+      ) as SVGGElement;
+      const itemChild = itemElement.querySelector("*") as Element;
+      const dragOverEvent = new Event("dragover", { bubbles: true }) as DragEvent;
+      Object.defineProperty(dragOverEvent, "dataTransfer", {
+        value: {
+          getData: (_mime: string) => "",
+        },
+      });
+      setActiveDraggedPaletteSchemaConstruct(PaletteSchemaConstruct.Element);
+
+      itemChild.dispatchEvent(dragOverEvent);
+
+      expect(itemElement.classList.contains("drag-over")).toBe(true);
+    });
+
+    it("should invoke top-level drop handler with construct", () => {
+      const topLevelTarget = document.createElement("div");
+      const onTopLevelDrop = jest.fn();
+      renderer.setTopLevelDropTarget(topLevelTarget, onTopLevelDrop);
+
+      const dropEvent = new Event("drop", { bubbles: true }) as DragEvent;
+      Object.defineProperty(dropEvent, "dataTransfer", {
+        value: {
+          getData: (_mime: string) => "complexType",
+        },
+      });
+
+      topLevelTarget.dispatchEvent(dropEvent);
+
+      expect(onTopLevelDrop).toHaveBeenCalledWith("complexType");
+    });
+
+    it("should keep drag-over class when pointer is still inside item group", () => {
+      const onNodeClick = jest.fn();
+      const mockSchema = {
+        element: [{ name: "Test", type_: "string" }],
+      };
+      renderer.renderSchema(mockSchema, defaultDiagramOptions, onNodeClick);
+
+      const itemElement = mockCanvas.querySelector(
+        "[data-item-id]"
+      ) as SVGGElement;
+      const itemChild = itemElement.querySelector("*") as Element;
+      itemElement.classList.add("drag-over");
+
+      const originalElementFromPoint = (
+        document as Document & {
+          elementFromPoint?: (x: number, y: number) => Element | null;
+        }
+      ).elementFromPoint;
+      (
+        document as Document & {
+          elementFromPoint?: (x: number, y: number) => Element | null;
+        }
+      ).elementFromPoint = (): Element => itemChild;
+
+      const leaveEvent = new Event("dragleave", { bubbles: true }) as DragEvent;
+      Object.defineProperty(leaveEvent, "clientX", { value: 10 });
+      Object.defineProperty(leaveEvent, "clientY", { value: 10 });
+      Object.defineProperty(leaveEvent, "relatedTarget", { value: null });
+
+      itemChild.dispatchEvent(leaveEvent);
+
+      expect(itemElement.classList.contains("drag-over")).toBe(true);
+      (
+        document as Document & {
+          elementFromPoint?: (x: number, y: number) => Element | null;
+        }
+      ).elementFromPoint = originalElementFromPoint;
     });
   });
 

@@ -17,6 +17,7 @@ import {
   topLevelComplexType,
   topLevelSimpleType,
 } from "../../shared/types";
+import { toArray } from "../../shared/schemaUtils";
 import {
   generateSchemaId,
   SchemaNodeType,
@@ -70,6 +71,14 @@ export class DiagramBuilder {
       DiagramItemType.element,
       this.diagram
     );
+    schemaNode.attributes = toArray(schemaObj.attribute)
+      .filter((attr) => !!attr.name)
+      .map((attr) => ({
+        name: String(attr.name),
+        type: attr.type_ || "inner simpleType or ref",
+        defaultValue: attr.default_,
+        fixedValue: attr.fixed,
+      }));
 
     // Process schema child elements
     processChildCollection(

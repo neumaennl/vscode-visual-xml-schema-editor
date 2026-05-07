@@ -98,6 +98,9 @@ export function processAnonymousComplexType(
     parent.type = "<anonymous complexType>";
   }
 
+  // Flag the parent element as owning an anonymous complex type
+  parent.hasAnonymousComplexType = true;
+
   // Merge documentation from the anonymous type if parent has none
   if (!parent.documentation) {
     parent.documentation = extractDocumentation(complexType.annotation) ?? "";
@@ -248,19 +251,44 @@ function processGroup(
   groupName: string,
   groupType: DiagramItemGroupType
 ): void {
-  // Groups don't have names, so we use position-based ID
-  // Create the group item first (without ID) to ensure proper position tracking
+  // Pre-calculate position so the group's final ID can be set immediately.
+  // This ensures child element IDs are also generated with the correct parent ID.
+  const position = parent.childElements.length;
+
+  // For elements that own an anonymous complexType, the group lives inside that
+  // anonymous type in the real XSD structure.  The navigator expects the ID path
+  // to include the "anonymousComplexType[0]" segment, so we derive the effective
+  // parent ID accordingly.
+  let groupParentId: string;
+  if (parent.itemType === DiagramItemType.element && parent.hasAnonymousComplexType) {
+    groupParentId = generateSchemaId({
+      nodeType: SchemaNodeType.AnonymousComplexType,
+      parentId: parent.id,
+      position: 0,
+    });
+  } else {
+    groupParentId = parent.id;
+  }
+
+  // Create the group item with its final ID upfront.
+  // Including `groupName` as the `name` lets the navigator distinguish
+  // sequence / choice / all when resolving the ID path.
   const groupItem = new DiagramItem(
-    "", // Temporary ID, will be set after determining position
+    generateSchemaId({
+      nodeType: SchemaNodeType.Group,
+      name: groupName,
+      parentId: groupParentId,
+      position,
+    }),
     groupName,
     DiagramItemType.group,
     parent.diagram
   );
   groupItem.groupType = groupType;
 
-  // Process elements within the group
+  // Process elements within the group.
   // Import and use createElementNode from TypeNodeCreators would create a circular dependency,
-  // so we create a lightweight element node inline with essential properties
+  // so we create a lightweight element node inline with essential properties.
   const elementsArray = toArray(
     groupDef.element as localElement | localElement[] | undefined
   );
@@ -289,13 +317,6 @@ function processGroup(
 
   // Only add the group if it has children
   if (groupItem.childElements.length > 0) {
-    // Calculate position right before adding to ensure uniqueness
-    const position = parent.childElements.length;
-    groupItem.id = generateSchemaId({
-      nodeType: SchemaNodeType.Group,
-      parentId: parent.id,
-      position,
-    });
     parent.addChild(groupItem);
   }
 }

@@ -69,7 +69,10 @@ describe("SchemaEditorProvider", () => {
         {} as vscode.CancellationToken
       );
 
-      expect(mockWebview.options).toEqual({ enableScripts: true });
+      expect(mockWebview.options).toMatchObject({
+        enableScripts: true,
+        localResourceRoots: expect.any(Array) as unknown[],
+      });
     });
 
     it("should set HTML content in webview", () => {

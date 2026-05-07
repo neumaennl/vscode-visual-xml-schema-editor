@@ -8,6 +8,7 @@ import {
   topLevelElement,
   topLevelComplexType,
   topLevelSimpleType,
+  topLevelAttribute,
 } from "../../shared/types";
 
 /**
@@ -171,6 +172,70 @@ describe("DiagramBuilder", () => {
 
       const schemaNode = diagram.rootElements[0];
       expect(schemaNode.name).toContain("Schema:");
+    });
+
+    it("should expose top-level attributes on schema root properties", () => {
+      const attr1 = new topLevelAttribute();
+      attr1.name = "lang";
+      attr1.type_ = "xs:string";
+
+      const attr2 = new topLevelAttribute();
+      attr2.name = "version";
+      attr2.type_ = "xs:string";
+
+      const schemaObj = createTestSchema({
+        attribute: [attr1, attr2],
+      });
+
+      const diagram = builder.buildFromSchema(schemaObj);
+
+      const schemaNode = diagram.rootElements[0];
+      expect(schemaNode.attributes).toHaveLength(2);
+      expect(schemaNode.attributes[0].name).toBe("lang");
+      expect(schemaNode.attributes[1].name).toBe("version");
+    });
+
+    it("should not render top-level attributes as separate diagram nodes", () => {
+      const attr = new topLevelAttribute();
+      attr.name = "id";
+      attr.type_ = "xs:string";
+
+      const schemaObj = createTestSchema({ attribute: [attr] });
+
+      const diagram = builder.buildFromSchema(schemaObj);
+
+      const schemaNode = diagram.rootElements[0];
+      expect(schemaNode.childElements).toHaveLength(1);
+      expect(schemaNode.childElements[0].name).toBe("No elements found");
+    });
+
+    it("should set hasAnonymousComplexType on elements with inline complex types", () => {
+      const element = new topLevelElement();
+      element.name = "Person";
+      element.complexType = {
+        sequence: {
+          element: [{ name: "name", type_: "string" }],
+        },
+      };
+
+      const schemaObj = createTestSchema({ element: [element] });
+      const diagram = builder.buildFromSchema(schemaObj);
+
+      const personNode = diagram.rootElements[0].childElements[0];
+      expect(personNode.name).toBe("Person");
+      expect(personNode.hasAnonymousComplexType).toBe(true);
+    });
+
+    it("should not set hasAnonymousComplexType on elements without inline complex type", () => {
+      const element = new topLevelElement();
+      element.name = "Person";
+      element.type_ = "xs:string";
+
+      const schemaObj = createTestSchema({ element: [element] });
+      const diagram = builder.buildFromSchema(schemaObj);
+
+      const personNode = diagram.rootElements[0].childElements[0];
+      expect(personNode.hasAnonymousComplexType).toBe(false);
     });
   });
 });

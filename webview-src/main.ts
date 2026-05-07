@@ -8,6 +8,9 @@ import {
 } from "./webviewTypes";
 import { DiagramItem } from "./diagram";
 import { ExtensionMessage, DiagramOptions } from "../shared/messages";
+import { PaletteView } from "./palette/PaletteView";
+import { DropCommandFactory } from "./drop/DropCommandFactory";
+import { isPaletteSchemaConstruct } from "./palette/PaletteSchemaConstruct";
 
 declare function acquireVsCodeApi<State>(): VSCodeAPI<State>;
 
@@ -18,6 +21,9 @@ class SchemaEditorApp {
   private currentSchema: schema | undefined;
   private viewState: ViewState;
   private diagramOptions: DiagramOptions;
+  private paletteView: PaletteView | null = null;
+  private dropCommandFactory = new DropCommandFactory();
+  private notificationBar: HTMLElement | null = null;
 
   /**
    * Create and initialize the schema editor application
@@ -41,9 +47,16 @@ class SchemaEditorApp {
       document.getElementById("properties-content") as HTMLDivElement
     );
 
+    const paletteContainer = document.getElementById("palette-content");
+    if (paletteContainer && paletteContainer instanceof HTMLDivElement) {
+      this.paletteView = new PaletteView(paletteContainer);
+      this.paletteView.render();
+    }
+
     this.setupMessageListener();
     this.setupToolbar();
     this.setupCanvasInteraction();
+    this.setupDragAndDrop();
 
     // Restore state if available
     const state = this.vscode.getState();
@@ -52,6 +65,7 @@ class SchemaEditorApp {
       this.diagramOptions = state.diagramOptions || this.diagramOptions;
       if (state.schema) {
         this.currentSchema = state.schema;
+        this.dropCommandFactory.updateNamesFromSchema(state.schema);
         this.renderSchema(state.schema);
       }
     }
@@ -69,6 +83,7 @@ class SchemaEditorApp {
         switch (message.command) {
           case "updateSchema": {
             this.currentSchema = message.data;
+            this.dropCommandFactory.updateNamesFromSchema(message.data);
             this.renderSchema(message.data);
             this.saveState();
             break;
@@ -87,6 +102,16 @@ class SchemaEditorApp {
           case "error": {
             const errorMessage = message.data.message ?? "Unknown error";
             this.showError(errorMessage);
+            break;
+          }
+
+          case "commandResult": {
+            if (message.data.success) {
+              break;
+            }
+            if (message.data.error) {
+              this.showError(message.data.error);
+            }
             break;
           }
         }
@@ -160,7 +185,11 @@ class SchemaEditorApp {
       item.showChildElements = !item.showChildElements;
 
       // Refresh the diagram (re-layout and re-render without rebuilding)
-      this.renderer.refresh();
+      try {
+        this.renderer.refresh();
+      } catch (error) {
+        this.showError(`Failed to refresh diagram: ${(error as Error).message}`);
+      }
     } else {
       // Display item properties in the property panel
       this.propertyPanel.display(item);
@@ -190,6 +219,64 @@ class SchemaEditorApp {
       this.viewState = newView;
       this.saveState();
     });
+  }
+
+  /**
+   * Set up palette-to-canvas drag and drop interactions.
+   */
+  private setupDragAndDrop(): void {
+    this.renderer.setNodeDropValidator(
+      (item, construct) =>
+        isPaletteSchemaConstruct(construct) &&
+        this.dropCommandFactory.createNodeDropCommand(item, construct) !== null
+    );
+    this.renderer.setDropHandler((item, construct) => {
+      this.handleNodeDrop(item, construct);
+    });
+
+    const topLevelTarget = document.getElementById("top-level-drop-target");
+    if (topLevelTarget) {
+      this.renderer.setTopLevelDropTarget(topLevelTarget, (construct) => {
+        this.handleTopLevelDrop(construct);
+      });
+    }
+  }
+
+  /**
+   * Handles a drop onto a specific diagram node.
+   *
+   * @param item - Drop target node
+   * @param construct - XML schema construct from palette
+   */
+  private handleNodeDrop(item: DiagramItem, construct: string): void {
+    if (!isPaletteSchemaConstruct(construct)) {
+      this.showError(`Drop of '${construct}' is not supported for '${item.name}'`);
+      return;
+    }
+    const command = this.dropCommandFactory.createNodeDropCommand(item, construct);
+    if (!command) {
+      this.showError(`Drop of '${construct}' is not supported for '${item.name}'`);
+      return;
+    }
+    this.vscode.postMessage({ command: "executeCommand", data: command });
+  }
+
+  /**
+   * Handles a drop onto the dedicated top-level target.
+   *
+   * @param construct - XML schema construct from palette
+   */
+  private handleTopLevelDrop(construct: string): void {
+    if (!isPaletteSchemaConstruct(construct)) {
+      this.showError(`Top-level drop for '${construct}' is not supported`);
+      return;
+    }
+    const command = this.dropCommandFactory.createTopLevelDropCommand(construct);
+    if (!command) {
+      this.showError(`Top-level drop for '${construct}' is not supported`);
+      return;
+    }
+    this.vscode.postMessage({ command: "executeCommand", data: command });
   }
 
   /**
@@ -300,11 +387,29 @@ class SchemaEditorApp {
   }
 
   /**
-   * Display an error message
+   * Display a non-destructive error notification bar.
+   * The bar remains visible until the user dismisses it.
    * @param message - Error message to display
    */
   private showError(message: string): void {
-    this.renderer.showError(message);
+    if (!this.notificationBar) {
+      this.notificationBar = document.getElementById("notification-bar");
+      document
+        .getElementById("notification-dismiss")
+        ?.addEventListener("click", () => this.dismissNotification());
+    }
+    const msgEl = document.getElementById("notification-message");
+    if (msgEl) {
+      msgEl.textContent = message;
+    }
+    this.notificationBar?.removeAttribute("hidden");
+  }
+
+  /**
+   * Dismiss the notification bar.
+   */
+  private dismissNotification(): void {
+    this.notificationBar?.setAttribute("hidden", "");
   }
 
   /**

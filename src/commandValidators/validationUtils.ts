@@ -324,10 +324,22 @@ export function validateElementType(
         }
       }
     }
+  } else {
+    // Unqualified type name: allow it when the schema has xs:include elements,
+    // since included schemas share the same target namespace and their types
+    // are referenced without a prefix.
+    if (schemaObj.include) {
+      const includes = Array.isArray(schemaObj.include)
+        ? schemaObj.include
+        : [schemaObj.include];
+      if (includes.length > 0 && isValidXmlName(localTypeName)) {
+        return { valid: true };
+      }
+    }
   }
 
   return { 
     valid: false, 
-    error: `Invalid element type '${trimmedType}': must be a built-in XSD type, a user-defined type in the schema, or a type from a valid import with a matching namespace prefix` 
+    error: `Invalid element type '${trimmedType}': must be a built-in XSD type, a user-defined type in the schema, a type from a valid import with a matching namespace prefix, or a type from an included schema` 
   };
 }

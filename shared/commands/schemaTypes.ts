@@ -110,6 +110,11 @@ export interface ModifySimpleTypeCommand extends BaseCommand<ModifySimpleTypePay
 export type ContentModel = "sequence" | "choice" | "all";
 
 /**
+ * Derivation mode for complex types that use a base type.
+ */
+export type ComplexTypeDerivationKind = "extension" | "restriction";
+
+/**
  * Payload for adding a complex type definition.
  * When `parentId` refers to an element (not schema root), an anonymous complexType
  * is added directly inside that element. In that case `typeName` is not needed.
@@ -128,6 +133,8 @@ export interface AddComplexTypePayload {
   abstract?: boolean;
   /** Base type for extension (optional) */
   baseType?: string;
+  /** Derivation mode used with `baseType` (defaults to extension when omitted). */
+  derivationKind?: ComplexTypeDerivationKind;
   /** Whether to allow mixed content */
   mixed?: boolean;
   /** Optional documentation */
@@ -172,6 +179,8 @@ export interface ModifyComplexTypePayload {
   abstract?: boolean;
   /** New base type (optional) */
   baseType?: string;
+  /** New derivation mode used with `baseType` (defaults to extension when omitted). */
+  derivationKind?: ComplexTypeDerivationKind;
   /** New mixed content flag (optional) */
   mixed?: boolean;
   /** New documentation (optional) */

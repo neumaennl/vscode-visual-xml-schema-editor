@@ -36,7 +36,7 @@ describe("CommandExecutor", () => {
       const command: SchemaCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "testElement",
           elementType: "string",
         },
@@ -105,7 +105,7 @@ describe("CommandExecutor", () => {
       const command: SchemaCommand = {
         type: "addAttribute",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           attributeName: "testAttr",
           attributeType: "xs:string",
         },
@@ -184,7 +184,7 @@ describe("CommandExecutor", () => {
       const command: SchemaCommand = {
         type: "addAnnotation",
         payload: {
-          targetId: "schema",
+          targetId: "/schema",
           documentation: "Test schema annotation",
         },
       };
@@ -204,7 +204,7 @@ describe("CommandExecutor", () => {
       const command: SchemaCommand = {
         type: "addDocumentation",
         payload: {
-          targetId: "schema",
+          targetId: "/schema",
           content: "Test schema documentation",
           lang: "en",
         },

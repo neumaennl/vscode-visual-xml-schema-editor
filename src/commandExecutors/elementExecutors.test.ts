@@ -24,7 +24,7 @@ describe("Element Executors", () => {
         const command: AddElementCommand = {
           type: "addElement",
           payload: {
-            parentId: "schema",
+            parentId: "/schema",
             elementName: "person",
             elementType: "string",
           },
@@ -51,7 +51,7 @@ describe("Element Executors", () => {
         const command1: AddElementCommand = {
           type: "addElement",
           payload: {
-            parentId: "schema",
+            parentId: "/schema",
             elementName: "person",
             elementType: "string",
           },
@@ -60,7 +60,7 @@ describe("Element Executors", () => {
         const command2: AddElementCommand = {
           type: "addElement",
           payload: {
-            parentId: "schema",
+            parentId: "/schema",
             elementName: "company",
             elementType: "string",
           },
@@ -88,7 +88,7 @@ describe("Element Executors", () => {
         const command: AddElementCommand = {
           type: "addElement",
           payload: {
-            parentId: "schema",
+            parentId: "/schema",
             elementName: "person",
             elementType: "string",
             documentation: "Represents a person",
@@ -143,6 +143,39 @@ describe("Element Executors", () => {
           : [personElement?.complexType?.sequence?.element];
         expect(elements).toHaveLength(2);
         expect(elements[1]!.name).toBe("name");
+      });
+
+      it("should add element to a sequence in complexContent extension using group parent ID", () => {
+        const schemaWithExtensionXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:complexType name="WorkerType">
+    <xs:complexContent>
+      <xs:extension base="PersonType">
+        <xs:sequence>
+          <xs:element name="id" type="xs:int"/>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+</xs:schema>`;
+        const schemaObj = unmarshal(schema, schemaWithExtensionXml);
+
+        const command: AddElementCommand = {
+          type: "addElement",
+          payload: {
+            parentId: "/complexType:WorkerType/group:sequence[0]",
+            elementName: "department",
+            elementType: "xs:string",
+          },
+        };
+
+        executeAddElement(command, schemaObj);
+
+        const workerType = toArray(schemaObj.complexType)[0];
+        const sequence = workerType?.complexContent?.extension?.sequence;
+        const elements = toArray(sequence?.element);
+        expect(elements).toHaveLength(2);
+        expect(elements[1]?.name).toBe("department");
       });
     });
   });
@@ -264,6 +297,89 @@ describe("Element Executors", () => {
         expect(elements).toHaveLength(1);
         expect(elements[0]!.name).toBe("person");
         expect(elements[0]!.type_).toBe("xs:int");
+      });
+
+      it("should replace an inline anonymous complexType when setting an explicit element type", () => {
+        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="person">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="id" type="xs:string"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>`;
+        const schemaObj = unmarshal(schema, schemaXml);
+
+        const command: ModifyElementCommand = {
+          type: "modifyElement",
+          payload: {
+            elementId: "/element:person",
+            elementType: "PersonType",
+          },
+        };
+
+        executeModifyElement(command, schemaObj);
+
+        const element = toArray(schemaObj.element)[0];
+        expect(element.type_).toBe("PersonType");
+        expect(element.complexType).toBeUndefined();
+      });
+
+      it("should replace an inline anonymous simpleType when setting an explicit element type", () => {
+        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="code">
+    <xs:simpleType>
+      <xs:restriction base="xs:string"/>
+    </xs:simpleType>
+  </xs:element>
+</xs:schema>`;
+        const schemaObj = unmarshal(schema, schemaXml);
+
+        const command: ModifyElementCommand = {
+          type: "modifyElement",
+          payload: {
+            elementId: "/element:code",
+            elementType: "CodeType",
+          },
+        };
+
+        executeModifyElement(command, schemaObj);
+
+        const element = toArray(schemaObj.element)[0];
+        expect(element.type_).toBe("CodeType");
+        expect(element.simpleType).toBeUndefined();
+      });
+
+      it("should rename top-level element refs and substitutionGroup references", () => {
+        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="person" type="xs:string"/>
+  <xs:element name="personChild" substitutionGroup="person"/>
+  <xs:complexType name="Wrapper">
+    <xs:sequence>
+      <xs:element ref="person"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>`;
+        const schemaObj = unmarshal(schema, schemaXml);
+
+        const command: ModifyElementCommand = {
+          type: "modifyElement",
+          payload: {
+            elementId: "/element:person",
+            elementName: "customer",
+          },
+        };
+
+        executeModifyElement(command, schemaObj);
+
+        const elements = toArray(schemaObj.element);
+        expect(elements[0].name).toBe("customer");
+        expect(elements[1].substitutionGroup).toBe("customer");
+        expect(toArray(toArray(schemaObj.complexType)[0].sequence!.element)[0].ref).toBe("customer");
       });
 
       it("should add documentation to element", () => {

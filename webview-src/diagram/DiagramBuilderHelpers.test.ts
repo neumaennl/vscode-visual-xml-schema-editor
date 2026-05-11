@@ -4,6 +4,7 @@
 
 import {
   extractDocumentation,
+  extractDocumentationAnnotations,
   extractOccurrenceConstraints,
   extractAttributes,
 } from "./DiagramBuilderHelpers";
@@ -40,6 +41,48 @@ describe("DiagramBuilderHelpers", () => {
         documentation: [],
       };
       expect(extractDocumentation(annotation)).toBe("");
+    });
+
+    it("should flatten multiple annotations with multiple documentation nodes", () => {
+      const annotations = [
+        {
+          documentation: [{ value: "First annotation" }, { value: "Second entry" }],
+        },
+        {
+          documentation: [{ value: "Third entry" }],
+        },
+      ];
+
+      expect(extractDocumentation(annotations)).toBe(
+        "First annotation\nSecond entry\nThird entry"
+      );
+    });
+
+    it("preserves annotation/documentation structure and IDs for the property panel", () => {
+      const annotations = [
+        {
+          documentation: [{ value: "First annotation" }, { value: "Second entry" }],
+        },
+        {
+          documentation: [{ value: "Third entry" }],
+        },
+      ];
+
+      expect(extractDocumentationAnnotations("/schema", annotations)).toEqual([
+        {
+          id: "/schema/annotation[0]",
+          documentationEntries: [
+            { id: "/schema/annotation[0]/documentation[0]", content: "First annotation", lang: undefined },
+            { id: "/schema/annotation[0]/documentation[1]", content: "Second entry", lang: undefined },
+          ],
+        },
+        {
+          id: "/schema/annotation[1]",
+          documentationEntries: [
+            { id: "/schema/annotation[1]/documentation[0]", content: "Third entry", lang: undefined },
+          ],
+        },
+      ]);
     });
   });
 

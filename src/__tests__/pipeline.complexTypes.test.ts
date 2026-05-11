@@ -26,7 +26,7 @@ describe("Integration: ComplexType pipeline", () => {
       const cmd: AddComplexTypeCommand = {
         type: "addComplexType",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           typeName: "OrderType",
           contentModel: "sequence",
         },
@@ -46,7 +46,7 @@ describe("Integration: ComplexType pipeline", () => {
       const cmd: AddComplexTypeCommand = {
         type: "addComplexType",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           typeName: "ChoiceType",
           contentModel: "choice",
         },
@@ -64,7 +64,7 @@ describe("Integration: ComplexType pipeline", () => {
       const cmd: AddComplexTypeCommand = {
         type: "addComplexType",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           typeName: "AllType",
           contentModel: "all",
         },
@@ -82,7 +82,7 @@ describe("Integration: ComplexType pipeline", () => {
       const cmd: AddComplexTypeCommand = {
         type: "addComplexType",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           typeName: "BaseType",
           contentModel: "sequence",
           abstract: true,
@@ -99,7 +99,7 @@ describe("Integration: ComplexType pipeline", () => {
     it("returns validation error when type name is invalid", () => {
       const cmd: AddComplexTypeCommand = {
         type: "addComplexType",
-        payload: { parentId: "schema", typeName: "123Bad", contentModel: "sequence" },
+        payload: { parentId: "/schema", typeName: "123Bad", contentModel: "sequence" },
       };
 
       runCommandExpectValidationFailure(MINIMAL_SCHEMA, cmd, "Type name must be a valid XML name");
@@ -108,7 +108,7 @@ describe("Integration: ComplexType pipeline", () => {
     it("returns validation error for duplicate complex type name", () => {
       const cmd: AddComplexTypeCommand = {
         type: "addComplexType",
-        payload: { parentId: "schema", typeName: "PersonType", contentModel: "sequence" },
+        payload: { parentId: "/schema", typeName: "PersonType", contentModel: "sequence" },
       };
 
       runCommandExpectValidationFailure(SCHEMA_WITH_COMPLEXTYPE, cmd, "Complex type 'PersonType' already exists in schema");

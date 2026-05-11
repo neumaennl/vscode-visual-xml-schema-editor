@@ -41,6 +41,29 @@ describe("DiagramBuilder", () => {
       expect(diagram.rootElements[0].name).toContain("http://example.com/ns");
     });
 
+    it("should expose schema-root documentation as structured annotation entries", () => {
+      const schemaObj = createTestSchema({
+        annotation: [
+          {
+            documentation: [{ value: "Schema doc 1" }, { value: "Schema doc 2" }],
+          },
+        ],
+      });
+
+      const diagram = builder.buildFromSchema(schemaObj);
+
+      expect(diagram.rootElements[0].documentationAnnotations).toEqual([
+        {
+          id: "/schema/annotation[0]",
+          documentationEntries: [
+            { id: "/schema/annotation[0]/documentation[0]", content: "Schema doc 1", lang: undefined },
+            { id: "/schema/annotation[0]/documentation[1]", content: "Schema doc 2", lang: undefined },
+          ],
+        },
+      ]);
+      expect(diagram.rootElements[0].documentation).toBe("Schema doc 1\nSchema doc 2");
+    });
+
     it("should process schema elements", () => {
       const element1 = new topLevelElement();
       element1.name = "Person";
@@ -60,6 +83,25 @@ describe("DiagramBuilder", () => {
       expect(schemaNode.childElements).toHaveLength(2);
       expect(schemaNode.childElements[0].name).toBe("Person");
       expect(schemaNode.childElements[1].name).toBe("Address");
+    });
+
+    it("stores the targetNamespace prefix on the diagram when available", () => {
+      const schemaObj = createTestSchema({
+        targetNamespace: "http://example.com/ns",
+        _namespacePrefixes: {
+          xs: "http://www.w3.org/2001/XMLSchema",
+          tns: "http://example.com/ns",
+        },
+      });
+
+      const diagram = builder.buildFromSchema(schemaObj);
+
+      expect(diagram.currentSchemaPrefix).toBe("tns");
+      expect(diagram.schemaTargetNamespace).toBe("http://example.com/ns");
+      expect(diagram.schemaNamespacePrefixes).toEqual({
+        xs: "http://www.w3.org/2001/XMLSchema",
+        tns: "http://example.com/ns",
+      });
     });
 
     it("should process complex types", () => {

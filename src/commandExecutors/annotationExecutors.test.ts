@@ -4,10 +4,10 @@
  * ID Conventions used throughout these tests:
  * - annotationId / targetId for non-schema nodes: XPath-like path
  *   (e.g. "/element:person").
- * - annotationId for schema-root annotations: "schema/annotation[N]"
+ * - annotationId for schema-root annotations: "/schema/annotation[N]"
  * - documentationId for non-schema nodes: "{elementPath}/documentation[N]"
  * - documentationId for schema-root annotations:
- *     "schema/annotation[N]/documentation[M]" or "schema/documentation[N]"
+ *     "/schema/annotation[N]/documentation[M]" or "/schema/documentation[N]"
  *
  * Note on references: xs:annotation, xs:documentation, and xs:appinfo have no
  * `ref` attribute in the XSD specification. No reference support is implemented
@@ -551,12 +551,16 @@ describe("executeModifyDocumentation", () => {
 // ─── parseSchemaAnnotationId / parseSchemaDocumentationId ───────────────────
 
 describe("parseSchemaAnnotationId", () => {
-  it("parses 'schema/annotation[0]'", () => {
-    expect(parseSchemaAnnotationId("schema/annotation[0]")).toBe(0);
+  it("parses '/schema/annotation[0]'", () => {
+    expect(parseSchemaAnnotationId("/schema/annotation[0]")).toBe(0);
   });
 
   it("parses '/schema/annotation[2]'", () => {
     expect(parseSchemaAnnotationId("/schema/annotation[2]")).toBe(2);
+  });
+
+  it("returns null for a non-canonical 'schema/annotation[0]' path", () => {
+    expect(parseSchemaAnnotationId("schema/annotation[0]")).toBeNull();
   });
 
   it("returns null for a non-schema path", () => {
@@ -569,9 +573,9 @@ describe("parseSchemaAnnotationId", () => {
 });
 
 describe("parseSchemaDocumentationId", () => {
-  it("parses 'schema/annotation[0]/documentation[1]'", () => {
+  it("parses '/schema/annotation[0]/documentation[1]'", () => {
     const result = parseSchemaDocumentationId(
-      "schema/annotation[0]/documentation[1]"
+      "/schema/annotation[0]/documentation[1]"
     );
     expect(result).toEqual({ annotIndex: 0, docIndex: 1 });
   });
@@ -583,8 +587,12 @@ describe("parseSchemaDocumentationId", () => {
     expect(result).toEqual({ annotIndex: 2, docIndex: 3 });
   });
 
-  it("returns null for a plain 'schema/documentation[0]'", () => {
-    expect(parseSchemaDocumentationId("schema/documentation[0]")).toBeNull();
+  it("returns null for a plain '/schema/documentation[0]'", () => {
+    expect(parseSchemaDocumentationId("/schema/documentation[0]")).toBeNull();
+  });
+
+  it("returns null for a non-canonical 'schema/annotation[0]/documentation[1]' path", () => {
+    expect(parseSchemaDocumentationId("schema/annotation[0]/documentation[1]")).toBeNull();
   });
 
   it("returns null for an element path", () => {
@@ -625,7 +633,7 @@ describe("executeAddAnnotation — schema root", () => {
     const schemaObj = unmarshal(schema, bareSchemaXml);
     const command: AddAnnotationCommand = {
       type: "addAnnotation",
-      payload: { targetId: "schema", documentation: "My schema." },
+      payload: { targetId: "/schema", documentation: "My schema." },
     };
 
     executeAddAnnotation(command, schemaObj);
@@ -639,7 +647,7 @@ describe("executeAddAnnotation — schema root", () => {
     const schemaObj = unmarshal(schema, schemaWithAnnotationXml);
     const command: AddAnnotationCommand = {
       type: "addAnnotation",
-      payload: { targetId: "schema", documentation: "Second annotation." },
+      payload: { targetId: "/schema", documentation: "Second annotation." },
     };
 
     executeAddAnnotation(command, schemaObj);
@@ -655,7 +663,7 @@ describe("executeAddAnnotation — schema root", () => {
     const schemaObj = unmarshal(schema, bareSchemaXml);
     const command: AddAnnotationCommand = {
       type: "addAnnotation",
-      payload: { targetId: "schema", documentation: "desc", appInfo: "info" },
+      payload: { targetId: "/schema", documentation: "desc", appInfo: "info" },
     };
 
     executeAddAnnotation(command, schemaObj);
@@ -671,7 +679,7 @@ describe("executeRemoveAnnotation — schema root", () => {
     const schemaObj = unmarshal(schema, schemaWithTwoAnnotationsXml);
     const command: RemoveAnnotationCommand = {
       type: "removeAnnotation",
-      payload: { annotationId: "schema/annotation[0]" },
+      payload: { annotationId: "/schema/annotation[0]" },
     };
 
     executeRemoveAnnotation(command, schemaObj);
@@ -685,7 +693,7 @@ describe("executeRemoveAnnotation — schema root", () => {
     const schemaObj = unmarshal(schema, schemaWithTwoAnnotationsXml);
     const command: RemoveAnnotationCommand = {
       type: "removeAnnotation",
-      payload: { annotationId: "schema/annotation[1]" },
+      payload: { annotationId: "/schema/annotation[1]" },
     };
 
     executeRemoveAnnotation(command, schemaObj);
@@ -699,7 +707,7 @@ describe("executeRemoveAnnotation — schema root", () => {
     const schemaObj = unmarshal(schema, schemaWithAnnotationXml);
     const command: RemoveAnnotationCommand = {
       type: "removeAnnotation",
-      payload: { annotationId: "schema/annotation[0]" },
+      payload: { annotationId: "/schema/annotation[0]" },
     };
 
     executeRemoveAnnotation(command, schemaObj);
@@ -715,7 +723,7 @@ describe("executeModifyAnnotation — schema root", () => {
     const command: ModifyAnnotationCommand = {
       type: "modifyAnnotation",
       payload: {
-        annotationId: "schema/annotation[0]",
+        annotationId: "/schema/annotation[0]",
         documentation: "Updated.",
       },
     };
@@ -731,7 +739,7 @@ describe("executeModifyAnnotation — schema root", () => {
     const command: ModifyAnnotationCommand = {
       type: "modifyAnnotation",
       payload: {
-        annotationId: "schema/annotation[1]",
+        annotationId: "/schema/annotation[1]",
         documentation: "Second updated.",
       },
     };
@@ -747,11 +755,11 @@ describe("executeModifyAnnotation — schema root", () => {
 });
 
 describe("executeAddDocumentation — schema root", () => {
-  it("creates a schema annotation and adds a documentation element (targetId: 'schema')", () => {
+  it("creates a schema annotation and adds a documentation element (targetId: '/schema')", () => {
     const schemaObj = unmarshal(schema, bareSchemaXml);
     const command: AddDocumentationCommand = {
       type: "addDocumentation",
-      payload: { targetId: "schema", content: "Schema doc." },
+      payload: { targetId: "/schema", content: "Schema doc." },
     };
 
     executeAddDocumentation(command, schemaObj);
@@ -763,11 +771,11 @@ describe("executeAddDocumentation — schema root", () => {
     expect(docs[0].value).toBe("Schema doc.");
   });
 
-  it("appends to the first existing annotation (targetId: 'schema')", () => {
+  it("appends to the first existing annotation (targetId: '/schema')", () => {
     const schemaObj = unmarshal(schema, schemaWithAnnotationXml);
     const command: AddDocumentationCommand = {
       type: "addDocumentation",
-      payload: { targetId: "schema", content: "Appended.", lang: "en" },
+      payload: { targetId: "/schema", content: "Appended.", lang: "en" },
     };
 
     executeAddDocumentation(command, schemaObj);
@@ -778,12 +786,12 @@ describe("executeAddDocumentation — schema root", () => {
     expect(docs[1]._anyAttributes?.["xml:lang"]).toBe("en");
   });
 
-  it("appends to a specific schema annotation (targetId: 'schema/annotation[N]')", () => {
+  it("appends to a specific schema annotation (targetId: '/schema/annotation[N]')", () => {
     const schemaObj = unmarshal(schema, schemaWithTwoAnnotationsXml);
     const command: AddDocumentationCommand = {
       type: "addDocumentation",
       payload: {
-        targetId: "schema/annotation[1]",
+        targetId: "/schema/annotation[1]",
         content: "Into second annotation.",
       },
     };
@@ -801,14 +809,14 @@ describe("executeAddDocumentation — schema root", () => {
 });
 
 describe("executeRemoveDocumentation — schema root", () => {
-  it("removes a documentation element via 'schema/annotation[N]/documentation[M]' when multiple docs exist", () => {
+  it("removes a documentation element via '/schema/annotation[N]/documentation[M]' when multiple docs exist", () => {
     const schemaObj = unmarshal(schema, schemaWithAnnotationXml);
 
     // Add a second documentation node to the first schema annotation
     const addCommand: AddDocumentationCommand = {
       type: "addDocumentation",
       payload: {
-        targetId: "schema/annotation[0]",
+        targetId: "/schema/annotation[0]",
         content: "Second doc.",
       },
     };
@@ -819,7 +827,7 @@ describe("executeRemoveDocumentation — schema root", () => {
       {
         type: "removeDocumentation",
         payload: {
-          documentationId: "schema/annotation[0]/documentation[0]",
+          documentationId: "/schema/annotation[0]/documentation[0]",
         },
       },
       schemaObj
@@ -831,12 +839,12 @@ describe("executeRemoveDocumentation — schema root", () => {
     expect(docs[0].value).toBe("Second doc.");
   });
 
-  it("removes a documentation element via 'schema/documentation[N]' shorthand", () => {
+  it("removes a documentation element via '/schema/documentation[N]' shorthand", () => {
     const schemaObj = unmarshal(schema, schemaWithAnnotationXml);
     executeRemoveDocumentation(
       {
         type: "removeDocumentation",
-        payload: { documentationId: "schema/documentation[0]" },
+        payload: { documentationId: "/schema/documentation[0]" },
       },
       schemaObj
     );
@@ -849,13 +857,13 @@ describe("executeRemoveDocumentation — schema root", () => {
 });
 
 describe("executeModifyDocumentation — schema root", () => {
-  it("modifies a documentation element via 'schema/annotation[N]/documentation[M]'", () => {
+  it("modifies a documentation element via '/schema/annotation[N]/documentation[M]'", () => {
     const schemaObj = unmarshal(schema, schemaWithAnnotationXml);
     executeModifyDocumentation(
       {
         type: "modifyDocumentation",
         payload: {
-          documentationId: "schema/annotation[0]/documentation[0]",
+          documentationId: "/schema/annotation[0]/documentation[0]",
           content: "Modified.",
           lang: "en",
         },
@@ -868,13 +876,13 @@ describe("executeModifyDocumentation — schema root", () => {
     expect(doc._anyAttributes?.["xml:lang"]).toBe("en");
   });
 
-  it("modifies a documentation element via 'schema/documentation[N]' shorthand", () => {
+  it("modifies a documentation element via '/schema/documentation[N]' shorthand", () => {
     const schemaObj = unmarshal(schema, schemaWithAnnotationXml);
     executeModifyDocumentation(
       {
         type: "modifyDocumentation",
         payload: {
-          documentationId: "schema/documentation[0]",
+          documentationId: "/schema/documentation[0]",
           content: "Modified via shorthand.",
         },
       },

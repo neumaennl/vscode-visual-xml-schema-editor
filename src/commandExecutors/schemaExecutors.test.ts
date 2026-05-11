@@ -20,12 +20,14 @@ import {
   AddIncludeCommand,
   RemoveIncludeCommand,
   ModifyIncludeCommand,
+  ModifySchemaNamespacesCommand,
   topLevelComplexType,
   topLevelSimpleType,
   restrictionType,
   unionType,
   explicitGroup,
   localElement,
+  topLevelElement,
   complexContentType,
   extensionType,
 } from "../../shared/types";
@@ -36,6 +38,7 @@ import {
   executeAddInclude,
   executeRemoveInclude,
   executeModifyInclude,
+  executeModifySchemaNamespaces,
 } from "./schemaExecutors";
 import { toArray } from "../../shared/schemaUtils";
 
@@ -740,5 +743,92 @@ describe("executeModifyInclude", () => {
     executeModifyInclude(command, schemaObj);
 
     expect(toArray(schemaObj.include)[0].schemaLocation).toBe("trimmed.xsd");
+  });
+});
+
+describe("executeModifySchemaNamespaces", () => {
+  it("should update targetNamespace and namespace declarations", () => {
+    const schemaObj = emptySchema();
+    schemaObj.targetNamespace = "http://example.com/old-target";
+    schemaObj._namespacePrefixes = {
+      xs: "http://www.w3.org/2001/XMLSchema",
+      tns: "http://example.com/old-target",
+    };
+
+    const command: ModifySchemaNamespacesCommand = {
+      type: "modifySchemaNamespaces",
+      payload: {
+        targetNamespace: "http://example.com/new-target",
+        namespacePrefixes: {
+          xs: "http://www.w3.org/2001/XMLSchema",
+          tns: "http://example.com/new-target",
+        },
+      },
+    };
+
+    executeModifySchemaNamespaces(command, schemaObj);
+
+    expect(schemaObj.targetNamespace).toBe("http://example.com/new-target");
+    expect(schemaObj._namespacePrefixes).toEqual({
+      xs: "http://www.w3.org/2001/XMLSchema",
+      tns: "http://example.com/new-target",
+    });
+  });
+
+  it("should rewrite QName references when a namespace prefix is renamed", () => {
+    const schemaObj = emptySchema();
+    schemaObj._namespacePrefixes = {
+      xs: "http://www.w3.org/2001/XMLSchema",
+      old: "http://example.com/ns",
+    };
+    const element = new topLevelElement();
+    element.name = "person";
+    element.type_ = "old:PersonType";
+    schemaObj.element = [element];
+
+    const command: ModifySchemaNamespacesCommand = {
+      type: "modifySchemaNamespaces",
+      payload: {
+        targetNamespace: "",
+        namespacePrefixes: {
+          xs: "http://www.w3.org/2001/XMLSchema",
+          new: "http://example.com/ns",
+        },
+        previousNamespacePrefixes: {
+          xs: "http://www.w3.org/2001/XMLSchema",
+          old: "http://example.com/ns",
+        },
+      },
+    };
+
+    executeModifySchemaNamespaces(command, schemaObj);
+
+    expect(schemaObj._namespacePrefixes).toEqual({
+      xs: "http://www.w3.org/2001/XMLSchema",
+      new: "http://example.com/ns",
+    });
+    expect(toArray(schemaObj.element)[0].type_).toBe("new:PersonType");
+  });
+
+  it("should remove targetNamespace and declarations when payload is empty", () => {
+    const schemaObj = emptySchema();
+    schemaObj.targetNamespace = "http://example.com/old-target";
+    schemaObj._namespacePrefixes = {
+      xs: "http://www.w3.org/2001/XMLSchema",
+      tns: "http://example.com/old-target",
+    };
+
+    const command: ModifySchemaNamespacesCommand = {
+      type: "modifySchemaNamespaces",
+      payload: {
+        targetNamespace: "",
+        namespacePrefixes: {},
+      },
+    };
+
+    executeModifySchemaNamespaces(command, schemaObj);
+
+    expect(schemaObj.targetNamespace).toBeUndefined();
+    expect(schemaObj._namespacePrefixes).toBeUndefined();
   });
 });

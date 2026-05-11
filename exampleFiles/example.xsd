@@ -1,61 +1,53 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified"
-	attributeFormDefault="unqualified">
-	<xs:element name="example">
-		<xs:annotation>
-			<xs:documentation>root element</xs:documentation>
-		</xs:annotation>
-		<xs:complexType>
-			<xs:sequence>
-				<xs:element name="meta" type="choiceType" minOccurs="0" />
-				<xs:element name="product" type="loggingType" minOccurs="0" maxOccurs="unbounded" />
-			</xs:sequence>
-			<xs:attribute name="created" type="xs:dateTime" use="required" />
-		</xs:complexType>
-	</xs:element>
-
-	<xs:complexType name="choiceType">
-		<xs:annotation>
-			<xs:documentation>complexType showing a choice</xs:documentation>
-		</xs:annotation>
-
-		<xs:choice>
-			<xs:element name="either" type="lengthRestricitionType" minOccurs="1" maxOccurs="unbounded" />
-			<xs:element name="or" type="lengthRestricitionType" minOccurs="2" maxOccurs="4" />
-		</xs:choice>
-		<xs:attribute name="url" type="xs:anyURI" use="optional" />
-	</xs:complexType>
-
-	<xs:complexType name="loggingType">
-		<xs:annotation>
-			<xs:documentation>complexType decribing a log entry</xs:documentation>
-		</xs:annotation>
-
-		<xs:all>
-			<xs:element name="time" type="xs:dateTime" />
-			<xs:element name="message" type="xs:string"/>
-		</xs:all>
-		<xs:attribute name="logLevel" use="required">
-			<xs:simpleType>
-				<xs:restriction base="xs:string">
-					<xs:enumeration value="error" />
-					<xs:enumeration value="warning" />
-					<xs:enumeration value="info" />
-					<xs:enumeration value="debug" />
-					<xs:enumeration value="trace" />
-				</xs:restriction>
-			</xs:simpleType>
-		</xs:attribute>
-	</xs:complexType>
-
-	<xs:simpleType name="lengthRestricitionType">
-		<xs:annotation>
-			<xs:documentation>a simple string with a max length</xs:documentation>
-		</xs:annotation>
-		<xs:restriction base="xs:string">
-			<xs:maxLength value="255" />
-		</xs:restriction>
-	</xs:simpleType>
-
-
-</xs:schema>
+<schema xmlns="http://www.w3.org/2001/XMLSchema" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tns="urn:example:schema" targetNamespace="urn:example:schema" attributeFormDefault="unqualified" elementFormDefault="qualified">
+  <element name="example">
+    <annotation>
+      <documentation>root element</documentation>
+    </annotation>
+    <complexType>
+      <sequence>
+        <element name="meta" minOccurs="0" type="tns:choiceType"/>
+        <element name="product" minOccurs="0" maxOccurs="unbounded" type="tns:loggingType"/>
+      </sequence>
+      <attribute type="xs:dateTime" use="required" name="created"/>
+    </complexType>
+  </element>
+  <complexType name="choiceType">
+    <annotation>
+      <documentation>complexType showing a choice</documentation>
+    </annotation>
+    <choice>
+      <element name="either" minOccurs="1" maxOccurs="unbounded" type="tns:lengthRestricitionType"/>
+      <element name="or" minOccurs="2" maxOccurs="4" type="tns:lengthRestricitionType"/>
+    </choice>
+    <attribute type="xs:anyURI" use="optional" name="url"/>
+  </complexType>
+  <complexType name="loggingType">
+    <annotation>
+      <documentation>complexType decribing a log entry</documentation>
+    </annotation>
+    <all>
+      <element name="time" type="xs:dateTime"/>
+      <element name="message" type="xs:string"/>
+    </all>
+    <attribute use="required" name="logLevel">
+      <simpleType>
+        <restriction base="xs:string">
+          <enumeration value="error"/>
+          <enumeration value="warning"/>
+          <enumeration value="info"/>
+          <enumeration value="debug"/>
+          <enumeration value="trace"/>
+        </restriction>
+      </simpleType>
+    </attribute>
+  </complexType>
+  <simpleType name="lengthRestricitionType">
+    <annotation>
+      <documentation>a simple string with a max length</documentation>
+    </annotation>
+    <restriction base="xs:string">
+      <maxLength value="255"/>
+    </restriction>
+  </simpleType>
+</schema>

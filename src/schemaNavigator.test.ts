@@ -10,13 +10,13 @@ import { locateNodeById } from "./schemaNavigator";
 describe("SchemaNavigator", () => {
   describe("locateNodeById", () => {
     describe("Schema root navigation", () => {
-      it("should locate schema root with 'schema' id", () => {
+      it("should locate schema root with the canonical '/schema' id", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
 </xs:schema>`;
         const schemaObj = unmarshal(schema, schemaXml);
 
-        const result = locateNodeById(schemaObj, "schema");
+        const result = locateNodeById(schemaObj, "/schema");
 
         expect(result.found).toBe(true);
         expect(result.parent).toBe(schemaObj);
@@ -133,6 +133,27 @@ describe("SchemaNavigator", () => {
 
         expect(result.found).toBe(true);
         expect(result.parentType).toBe("all");
+      });
+
+      it("should locate sequence within complexContent extension via group path", () => {
+        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:complexType name="PersonType">
+    <xs:complexContent>
+      <xs:extension base="BaseType">
+        <xs:sequence>
+          <xs:element name="name" type="xs:string"/>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+</xs:schema>`;
+        const schemaObj = unmarshal(schema, schemaXml);
+
+        const result = locateNodeById(schemaObj, "/complexType:PersonType/group:sequence[0]");
+
+        expect(result.found).toBe(true);
+        expect(result.parentType).toBe("sequence");
       });
     });
 

@@ -11,6 +11,7 @@ import {
   AddIncludeCommand,
   RemoveIncludeCommand,
   ModifyIncludeCommand,
+  ModifySchemaNamespacesCommand,
 } from "../../shared/types";
 import {
   validateAddImport,
@@ -19,6 +20,7 @@ import {
   validateAddInclude,
   validateRemoveInclude,
   validateModifyInclude,
+  validateModifySchemaNamespaces,
 } from "./schemaValidators";
 import { expectInvalid } from "./validationTestHelpers";
 
@@ -735,6 +737,72 @@ ${includeXml}
 
       const result = validateModifyInclude(command, schemaWithInclude);
       expect(result.valid).toBe(true);
+    });
+  });
+
+  describe("validateModifySchemaNamespaces", () => {
+    test("should accept valid targetNamespace and namespace declarations", () => {
+      const command: ModifySchemaNamespacesCommand = {
+        type: "modifySchemaNamespaces",
+        payload: {
+          targetNamespace: "http://example.com/new-target",
+          namespacePrefixes: {
+            xs: "http://www.w3.org/2001/XMLSchema",
+            tns: "http://example.com/new-target",
+          },
+        },
+      };
+
+      const result = validateModifySchemaNamespaces(command, schemaObj);
+      expect(result.valid).toBe(true);
+    });
+
+    test("should reject invalid targetNamespace URI", () => {
+      const command: ModifySchemaNamespacesCommand = {
+        type: "modifySchemaNamespaces",
+        payload: {
+          targetNamespace: "not-a-uri",
+          namespacePrefixes: {
+            xs: "http://www.w3.org/2001/XMLSchema",
+          },
+        },
+      };
+
+      const result = validateModifySchemaNamespaces(command, schemaObj);
+      expectInvalid(result);
+      expect(result.error).toContain("targetNamespace must be a valid absolute URI");
+    });
+
+    test("should reject reserved namespace prefixes", () => {
+      const command: ModifySchemaNamespacesCommand = {
+        type: "modifySchemaNamespaces",
+        payload: {
+          targetNamespace: "http://example.com/new-target",
+          namespacePrefixes: {
+            xmlns: "http://example.com/new-target",
+          },
+        },
+      };
+
+      const result = validateModifySchemaNamespaces(command, schemaObj);
+      expectInvalid(result);
+      expect(result.error).toContain("reserved");
+    });
+
+    test("should reject when targetNamespace is not declared in namespace prefixes", () => {
+      const command: ModifySchemaNamespacesCommand = {
+        type: "modifySchemaNamespaces",
+        payload: {
+          targetNamespace: "http://example.com/new-target",
+          namespacePrefixes: {
+            xs: "http://www.w3.org/2001/XMLSchema",
+          },
+        },
+      };
+
+      const result = validateModifySchemaNamespaces(command, schemaObj);
+      expectInvalid(result);
+      expect(result.error).toContain("must match one of the declared namespace URIs");
     });
   });
 });

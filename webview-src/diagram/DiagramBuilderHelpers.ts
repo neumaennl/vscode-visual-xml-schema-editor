@@ -4,23 +4,85 @@
  */
 
 import { DiagramItem } from "./DiagramItem";
-import type { ElementWithOccurrence, ElementWithAttributes } from "./DiagramTypes";
+import type {
+  DiagramAnnotationEntry,
+  DiagramDocumentationEntry,
+  ElementWithOccurrence,
+  ElementWithAttributes,
+} from "./DiagramTypes";
 import type { annotationType } from "../../shared/generated/annotationType";
 import { toArray } from "../../shared/schemaUtils";
+import { SCHEMA_ROOT_ID } from "../../shared/idStrategy";
+
+/**
+ * Builds the schema ID for an xs:annotation node owned by the given schema component.
+ *
+ * @param ownerId - Schema ID of the annotated component, or the schema-root ID for schema annotations
+ * @param annotationIndex - Zero-based annotation index
+ * @returns The schema ID of the annotation node
+ */
+export function buildAnnotationId(ownerId: string, annotationIndex: number): string {
+  return ownerId === SCHEMA_ROOT_ID ? `${SCHEMA_ROOT_ID}/annotation[${annotationIndex}]` : ownerId;
+}
+
+/**
+ * Builds the schema ID for an xs:documentation node within an annotation.
+ *
+ * @param annotationId - Schema ID of the owning xs:annotation node
+ * @param documentationIndex - Zero-based documentation index
+ * @returns The schema ID of the documentation node
+ */
+export function buildDocumentationId(annotationId: string, documentationIndex: number): string {
+  return `${annotationId}/documentation[${documentationIndex}]`;
+}
+
+/**
+ * Extracts xs:annotation / xs:documentation structure from an XSD annotation field.
+ * The returned entries keep their schema IDs so the property panel can edit or remove
+ * the exact annotation/documentation nodes later without flattening the structure.
+ *
+ * @param ownerId - Schema ID of the annotated component
+ * @param annotation - Annotation object(s) from the schema component
+ * @returns Structured annotation entries with nested documentation entries
+ */
+export function extractDocumentationAnnotations(
+  ownerId: string,
+  annotation?: annotationType | annotationType[]
+): DiagramAnnotationEntry[] {
+  return toArray(annotation).map((entry, annotationIndex) => {
+    const annotationId = buildAnnotationId(ownerId, annotationIndex);
+    const documentationEntries: DiagramDocumentationEntry[] = toArray(entry.documentation).map(
+      (doc, documentationIndex) => ({
+        id: buildDocumentationId(annotationId, documentationIndex),
+        content: doc.value?.toString() || "",
+        lang: doc._anyAttributes?.["xml:lang"],
+      })
+    );
+
+    return { id: annotationId, documentationEntries };
+  });
+}
 
 /**
  * Extracts documentation from an annotation object in an XSD schema.
  * Concatenates multiple documentation elements with newlines.
  * 
- * @param annotation - Annotation object from schema element
+ * @param annotation - Annotation object(s) from schema element
  * @returns Concatenated documentation string or undefined if no documentation exists
  */
-export function extractDocumentation(annotation?: annotationType): string | undefined {
-  if (!annotation?.documentation) {
+export function extractDocumentation(
+  annotation?: annotationType | annotationType[]
+): string | undefined {
+  const annotations = toArray(annotation);
+  if (annotations.length === 0) {
     return undefined;
   }
 
-  const docs = toArray(annotation.documentation);
+  const hasDocumentationField = annotations.some((entry) => entry?.documentation !== undefined);
+  const docs = annotations.flatMap((entry) => toArray(entry.documentation));
+  if (docs.length === 0) {
+    return hasDocumentationField ? "" : undefined;
+  }
   return docs.map((doc) => doc.value?.toString() || "").join("\n");
 }
 

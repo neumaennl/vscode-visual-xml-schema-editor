@@ -31,6 +31,7 @@ import {
   AddIncludeCommand,
   RemoveIncludeCommand,
   ModifyIncludeCommand,
+  ModifySchemaNamespacesCommand,
 } from "../../shared/types";
 import { toArray } from "../../shared/schemaUtils";
 import { parseSchemaId } from "../../shared/idStrategy";
@@ -291,3 +292,67 @@ export function executeModifyInclude(
   includes[index].schemaLocation = schemaLocation;
 }
 
+function normalizeNamespacePrefixes(
+  namespacePrefixes: Record<string, string>
+): Record<string, string> {
+  const normalized: Record<string, string> = {};
+  for (const [prefix, namespaceUri] of Object.entries(namespacePrefixes)) {
+    const normalizedPrefix = prefix.trim();
+    const normalizedNamespaceUri = namespaceUri.trim();
+    if (!normalizedNamespaceUri) {
+      continue;
+    }
+    normalized[normalizedPrefix] = normalizedNamespaceUri;
+  }
+  return normalized;
+}
+
+function detectPrefixRenames(
+  previousNamespacePrefixes: Record<string, string>,
+  nextNamespacePrefixes: Record<string, string>
+): Array<{ oldPrefix: string; newPrefix: string }> {
+  const removedPrefixes = Object.keys(previousNamespacePrefixes).filter(
+    (prefix) => !Object.prototype.hasOwnProperty.call(nextNamespacePrefixes, prefix)
+  );
+  const addedPrefixes = Object.keys(nextNamespacePrefixes).filter(
+    (prefix) => !Object.prototype.hasOwnProperty.call(previousNamespacePrefixes, prefix)
+  );
+  const usedAddedPrefixes = new Set<string>();
+  const renames: Array<{ oldPrefix: string; newPrefix: string }> = [];
+  for (const oldPrefix of removedPrefixes) {
+    const previousNamespaceUri = previousNamespacePrefixes[oldPrefix];
+    const candidatePrefix = addedPrefixes.find(
+      (newPrefix) =>
+        !usedAddedPrefixes.has(newPrefix) &&
+        nextNamespacePrefixes[newPrefix] === previousNamespaceUri
+    );
+    if (!candidatePrefix) {
+      continue;
+    }
+    usedAddedPrefixes.add(candidatePrefix);
+    renames.push({ oldPrefix, newPrefix: candidatePrefix });
+  }
+  return renames;
+}
+
+export function executeModifySchemaNamespaces(
+  command: ModifySchemaNamespacesCommand,
+  schemaObj: schema
+): void {
+  const normalizedNamespacePrefixes = normalizeNamespacePrefixes(command.payload.namespacePrefixes);
+  const previousNamespacePrefixes = normalizeNamespacePrefixes(
+    command.payload.previousNamespacePrefixes ?? schemaObj._namespacePrefixes ?? {}
+  );
+  const prefixRenames = detectPrefixRenames(previousNamespacePrefixes, normalizedNamespacePrefixes);
+  for (const { oldPrefix, newPrefix } of prefixRenames) {
+    if (oldPrefix && newPrefix && oldPrefix !== newPrefix) {
+      rewritePrefixInSchema(oldPrefix, newPrefix, schemaObj);
+    }
+  }
+
+  schemaObj._namespacePrefixes =
+    Object.keys(normalizedNamespacePrefixes).length > 0 ? normalizedNamespacePrefixes : undefined;
+
+  const normalizedTargetNamespace = command.payload.targetNamespace?.trim();
+  schemaObj.targetNamespace = normalizedTargetNamespace ? normalizedTargetNamespace : undefined;
+}

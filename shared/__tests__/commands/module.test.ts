@@ -9,6 +9,7 @@ import {
   AddIncludeCommand,
   RemoveIncludeCommand,
   ModifyIncludeCommand,
+  ModifySchemaNamespacesCommand,
 } from "../../commands/module";
 
 describe("Import Commands", () => {
@@ -90,5 +91,29 @@ describe("Include Commands", () => {
     };
 
     expect(command.payload.schemaLocation).toBe("updated-types.xsd");
+  });
+});
+
+describe("Schema Namespace Commands", () => {
+  test("ModifySchemaNamespacesCommand should have correct structure", () => {
+    const command: ModifySchemaNamespacesCommand = {
+      type: "modifySchemaNamespaces",
+      payload: {
+        targetNamespace: "http://example.com/new-target",
+        namespacePrefixes: {
+          xs: "http://www.w3.org/2001/XMLSchema",
+          tns: "http://example.com/new-target",
+        },
+        previousNamespacePrefixes: {
+          xs: "http://www.w3.org/2001/XMLSchema",
+          old: "http://example.com/old-target",
+        },
+      },
+    };
+
+    expect(command.type).toBe("modifySchemaNamespaces");
+    expect(command.payload.targetNamespace).toBe("http://example.com/new-target");
+    expect(command.payload.namespacePrefixes.tns).toBe("http://example.com/new-target");
+    expect(command.payload.previousNamespacePrefixes?.old).toBe("http://example.com/old-target");
   });
 });

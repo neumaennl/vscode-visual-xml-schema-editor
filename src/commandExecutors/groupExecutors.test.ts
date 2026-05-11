@@ -230,6 +230,32 @@ describe("Group Executors", () => {
       expect(grp.name).toBe("NewName");
     });
 
+    it("should rename group refs when a top-level group is renamed", () => {
+      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:group name="OldName">
+    <xs:sequence/>
+  </xs:group>
+  <xs:complexType name="Wrapper">
+    <xs:group ref="OldName"/>
+  </xs:complexType>
+</xs:schema>`;
+      const schemaObj = unmarshal(schema, schemaXml);
+
+      const command: ModifyGroupCommand = {
+        type: "modifyGroup",
+        payload: {
+          groupId: "/group:OldName",
+          groupName: "NewName",
+        },
+      };
+
+      executeModifyGroup(command, schemaObj);
+
+      expect(toArray(schemaObj.group)[0].name).toBe("NewName");
+      expect(toArray(schemaObj.complexType)[0].group!.ref).toBe("NewName");
+    });
+
     it("should change the content model of a group", () => {
       const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">

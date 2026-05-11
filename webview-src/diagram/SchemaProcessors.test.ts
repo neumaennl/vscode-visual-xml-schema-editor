@@ -347,7 +347,7 @@ describe("SchemaProcessors", () => {
       );
     });
 
-    it("should not add an empty group to the parent", () => {
+    it("should add an empty group to the parent so it can act as a drop target", () => {
       const ctItem = new DiagramItem(
         "/complexType:EmptyType",
         "EmptyType",
@@ -357,7 +357,8 @@ describe("SchemaProcessors", () => {
 
       processSequence(ctItem, { element: [] });
 
-      expect(ctItem.childElements).toHaveLength(0);
+      expect(ctItem.childElements).toHaveLength(1);
+      expect(ctItem.childElements[0].groupType).toBe(DiagramItemGroupType.Sequence);
     });
   });
 

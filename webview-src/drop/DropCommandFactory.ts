@@ -1,10 +1,8 @@
 import { schema, SchemaCommand } from "../../shared/types";
 import { toArray } from "../../shared/schemaUtils";
 import { DiagramItem, DiagramItemGroupType, DiagramItemType } from "../diagram";
-import { generateSchemaId, SchemaNodeType } from "../../shared/idStrategy";
+import { generateSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy";
 import { PaletteSchemaConstruct } from "../palette/PaletteSchemaConstruct";
-
-const SCHEMA_ROOT_ID = generateSchemaId({ nodeType: SchemaNodeType.Schema });
 
 /**
  * Creates schema commands from drag-and-drop actions.
@@ -72,6 +70,26 @@ export class DropCommandFactory {
             contentModel: "sequence",
           },
         };
+      case PaletteSchemaConstruct.Restriction:
+        return {
+          type: "addSimpleType",
+          payload: {
+            parentId: SCHEMA_ROOT_ID,
+            typeName: this.nextName("SimpleType"),
+            baseType: "xs:string",
+          },
+        };
+      case PaletteSchemaConstruct.Extension:
+        return {
+          type: "addComplexType",
+          payload: {
+            parentId: SCHEMA_ROOT_ID,
+            typeName: this.nextName("ComplexType"),
+            contentModel: "sequence",
+            baseType: "xs:anyType",
+            derivationKind: "extension",
+          },
+        };
       case PaletteSchemaConstruct.Group:
         return {
           type: "addGroup",
@@ -105,6 +123,10 @@ export class DropCommandFactory {
         return this.createSimpleTypeNodeDropCommand(item);
       case PaletteSchemaConstruct.ComplexType:
         return this.createComplexTypeNodeDropCommand(item);
+      case PaletteSchemaConstruct.Restriction:
+        return this.createRestrictionNodeDropCommand(item);
+      case PaletteSchemaConstruct.Extension:
+        return this.createExtensionNodeDropCommand(item);
       case PaletteSchemaConstruct.Group:
         return this.createGroupNodeDropCommand(item);
       default:
@@ -234,8 +256,148 @@ export class DropCommandFactory {
     return null;
   }
 
+  private createRestrictionNodeDropCommand(item: DiagramItem): SchemaCommand | null {
+    if (this.isSchemaRoot(item)) {
+      return this.createTopLevelDropCommand(PaletteSchemaConstruct.Restriction);
+    }
+    if (item.itemType === DiagramItemType.element) {
+      if (item.hasAnonymousComplexType) {
+        return {
+          type: "modifyComplexType",
+          payload: {
+            typeId: this.getAnonymousComplexTypeId(item),
+            baseType: this.getRestrictionBaseType(item),
+            derivationKind: "restriction",
+          },
+        };
+      }
+      if (item.isSimpleContent) {
+        return {
+          type: "modifySimpleType",
+          payload: {
+            typeId: this.getAnonymousSimpleTypeId(item),
+            baseType: this.getRestrictionBaseType(item),
+          },
+        };
+      }
+      return {
+        type: "addSimpleType",
+        payload: {
+          parentId: item.id,
+          baseType: this.getRestrictionBaseType(item),
+        },
+      };
+    }
+    if (this.isSimpleTypeNode(item)) {
+      return {
+        type: "modifySimpleType",
+        payload: {
+          typeId: item.id,
+          baseType: this.getRestrictionBaseType(item),
+        },
+      };
+    }
+    if (this.isComplexTypeNode(item)) {
+      return {
+        type: "modifyComplexType",
+        payload: {
+          typeId: item.id,
+          baseType: this.getRestrictionBaseType(item),
+          derivationKind: "restriction",
+        },
+      };
+    }
+    return null;
+  }
+
+  private createExtensionNodeDropCommand(item: DiagramItem): SchemaCommand | null {
+    if (this.isSchemaRoot(item)) {
+      return this.createTopLevelDropCommand(PaletteSchemaConstruct.Extension);
+    }
+    if (item.itemType === DiagramItemType.element) {
+      if (item.hasAnonymousComplexType) {
+        return {
+          type: "modifyComplexType",
+          payload: {
+            typeId: this.getAnonymousComplexTypeId(item),
+            baseType: this.getExtensionBaseType(item),
+            derivationKind: "extension",
+          },
+        };
+      }
+      return {
+        type: "addComplexType",
+        payload: {
+          parentId: item.id,
+          contentModel: "sequence",
+          baseType: this.getExtensionBaseType(item),
+          derivationKind: "extension",
+        },
+      };
+    }
+    if (this.isComplexTypeNode(item)) {
+      return {
+        type: "modifyComplexType",
+        payload: {
+          typeId: item.id,
+          baseType: this.getExtensionBaseType(item),
+          derivationKind: "extension",
+        },
+      };
+    }
+    return null;
+  }
+
   private isSchemaRoot(item: DiagramItem): boolean {
     return item.id === SCHEMA_ROOT_ID;
+  }
+
+  private isSimpleTypeNode(item: DiagramItem): boolean {
+    return item.itemType === DiagramItemType.type && item.type.startsWith("simpleType");
+  }
+
+  private isComplexTypeNode(item: DiagramItem): boolean {
+    return item.itemType === DiagramItemType.type && item.type.startsWith("complexType");
+  }
+
+  private getAnonymousSimpleTypeId(item: DiagramItem): string {
+    return generateSchemaId({
+      nodeType: SchemaNodeType.AnonymousSimpleType,
+      parentId: item.id,
+      position: 0,
+    });
+  }
+
+  private getAnonymousComplexTypeId(item: DiagramItem): string {
+    return generateSchemaId({
+      nodeType: SchemaNodeType.AnonymousComplexType,
+      parentId: item.id,
+      position: 0,
+    });
+  }
+
+  private getRestrictionBaseType(item: DiagramItem): string {
+    return this.extractDisplayedBaseType(item.type) ?? "xs:string";
+  }
+
+  private getExtensionBaseType(item: DiagramItem): string {
+    return this.extractDisplayedBaseType(item.type) ?? "xs:anyType";
+  }
+
+  private extractDisplayedBaseType(typeText: string): string | null {
+    const restricted = typeText.match(/\(restricts ([^)]+)\)/);
+    if (restricted?.[1]) {
+      return restricted[1].trim();
+    }
+    const extended = typeText.match(/\(extends ([^)]+)\)/);
+    if (extended?.[1]) {
+      return extended[1].trim();
+    }
+    const trimmed = typeText.trim();
+    if (trimmed && !trimmed.startsWith("<anonymous ")) {
+      return trimmed;
+    }
+    return null;
   }
 
   /**

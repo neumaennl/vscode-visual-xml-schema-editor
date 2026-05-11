@@ -109,7 +109,7 @@ describe("CommandProcessor", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "testElement",
           elementType: "string",
         },
@@ -152,7 +152,7 @@ describe("CommandProcessor", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "testElement",
           elementType: "string",
         },
@@ -243,7 +243,7 @@ describe("CommandProcessor", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "test",
           elementType: "string",
         },
@@ -303,7 +303,7 @@ describe("CommandProcessor", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "test",
           elementType: "string",
         },
@@ -328,7 +328,7 @@ describe("CommandProcessor", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "test",
           elementType: "string",
         },
@@ -358,7 +358,7 @@ describe("CommandProcessor", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "123invalid", // Invalid XML name (starts with digit)
           elementType: "string",
         },
@@ -386,7 +386,7 @@ describe("CommandProcessor", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "test",
           elementType: "string",
         },
@@ -416,7 +416,7 @@ describe("CommandProcessor", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "test",
           elementType: "string",
         },
@@ -455,7 +455,7 @@ describe("CommandProcessor", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "test",
           elementType: "string",
         },
@@ -521,7 +521,7 @@ describe("CommandProcessor", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "test",
           elementType: "string",
         },
@@ -559,7 +559,7 @@ describe("CommandProcessor", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "test",
           elementType: "string",
         },
@@ -606,7 +606,7 @@ describe("CommandProcessor", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "test",
           elementType: "string",
         },
@@ -658,7 +658,7 @@ describe("CommandProcessor", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "test",
           elementType: "string",
         },
@@ -686,7 +686,7 @@ describe("CommandProcessor", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "test",
           elementType: "string",
         },
@@ -724,7 +724,7 @@ describe("CommandProcessor", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "test",
           elementType: "string",
         },
@@ -768,7 +768,7 @@ describe("CommandProcessor", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "test",
           elementType: "string",
         },
@@ -810,7 +810,7 @@ describe("CommandProcessor", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "test",
           elementType: "string",
         },
@@ -871,7 +871,7 @@ describe("CommandProcessor", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "test",
           elementType: "string",
         },
@@ -902,7 +902,7 @@ describe("CommandProcessor", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "test",
           elementType: "string",
         },
@@ -935,7 +935,7 @@ describe("CommandProcessor", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "test",
           elementType: "string",
         },
@@ -972,7 +972,7 @@ describe("CommandProcessor", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "test",
           elementType: "string",
         },

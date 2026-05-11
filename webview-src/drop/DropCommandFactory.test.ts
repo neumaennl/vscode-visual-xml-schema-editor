@@ -66,6 +66,29 @@ describe("DropCommandFactory", () => {
       });
     });
 
+    it("creates restriction as a top-level simpleType command", () => {
+      const cmd = factory.createTopLevelDropCommand(PaletteSchemaConstruct.Restriction);
+      expect(cmd).not.toBeNull();
+      expect(cmd!.type).toBe("addSimpleType");
+      expect((cmd! as { payload: { parentId: string; typeName?: string; baseType: string } }).payload).toMatchObject({
+        parentId: "/schema",
+        typeName: "SimpleType1",
+        baseType: "xs:string",
+      });
+    });
+
+    it("creates extension as a top-level complexType command", () => {
+      const cmd = factory.createTopLevelDropCommand(PaletteSchemaConstruct.Extension);
+      expect(cmd).not.toBeNull();
+      expect(cmd!.type).toBe("addComplexType");
+      expect((cmd! as { payload: { parentId: string; typeName?: string; baseType: string; derivationKind: string } }).payload).toMatchObject({
+        parentId: "/schema",
+        typeName: "ComplexType1",
+        baseType: "xs:anyType",
+        derivationKind: "extension",
+      });
+    });
+
     it("creates addGroup command", () => {
       const cmd = factory.createTopLevelDropCommand(PaletteSchemaConstruct.Group);
       expect(cmd).not.toBeNull();
@@ -192,6 +215,18 @@ describe("DropCommandFactory", () => {
       expect(payload.typeName).toBeUndefined();
     });
 
+    it("uses the element itself as the replacement target when it already has an inline complexType", () => {
+      const item = makeItem("/element:person", DiagramItemType.element, {
+        hasAnonymousComplexType: true,
+      });
+      const cmd = factory.createNodeDropCommand(item, PaletteSchemaConstruct.SimpleType);
+      expect(cmd).not.toBeNull();
+      expect(cmd!.type).toBe("addSimpleType");
+      const payload = (cmd! as { payload: { parentId: string; typeName?: string } }).payload;
+      expect(payload.parentId).toBe("/element:person");
+      expect(payload.typeName).toBeUndefined();
+    });
+
     it("rejects unsupported target", () => {
       const item = makeItem("/group:G", DiagramItemType.group);
       const cmd = factory.createNodeDropCommand(item, PaletteSchemaConstruct.SimpleType);
@@ -213,6 +248,18 @@ describe("DropCommandFactory", () => {
 
     it("allows element target without typeName", () => {
       const item = makeItem("/element:person", DiagramItemType.element);
+      const cmd = factory.createNodeDropCommand(item, PaletteSchemaConstruct.ComplexType);
+      expect(cmd).not.toBeNull();
+      expect(cmd!.type).toBe("addComplexType");
+      const payload = (cmd! as { payload: { parentId: string; typeName?: string } }).payload;
+      expect(payload.parentId).toBe("/element:person");
+      expect(payload.typeName).toBeUndefined();
+    });
+
+    it("uses the element itself as the replacement target when it already has an inline simpleType", () => {
+      const item = makeItem("/element:person", DiagramItemType.element, {
+        isSimpleContent: true,
+      });
       const cmd = factory.createNodeDropCommand(item, PaletteSchemaConstruct.ComplexType);
       expect(cmd).not.toBeNull();
       expect(cmd!.type).toBe("addComplexType");
@@ -243,6 +290,100 @@ describe("DropCommandFactory", () => {
       const item = makeItem("/complexType:C", DiagramItemType.type, { type: "complexType" });
       const cmd = factory.createNodeDropCommand(item, PaletteSchemaConstruct.Group);
       expect(cmd).toBeNull();
+    });
+  });
+
+  describe("createNodeDropCommand — restriction", () => {
+    it("creates an anonymous simpleType replacement for typed elements", () => {
+      const item = makeItem("/element:code", DiagramItemType.element, { type: "CustomerCodeType" });
+      const cmd = factory.createNodeDropCommand(item, PaletteSchemaConstruct.Restriction);
+      expect(cmd).not.toBeNull();
+      expect(cmd!.type).toBe("addSimpleType");
+      expect((cmd! as { payload: { parentId: string; baseType: string } }).payload).toMatchObject({
+        parentId: "/element:code",
+        baseType: "CustomerCodeType",
+      });
+    });
+
+    it("modifies existing inline simpleType elements in place", () => {
+      const item = makeItem("/element:code", DiagramItemType.element, {
+        type: "<anonymous simpleType> (restricts xs:string)",
+        isSimpleContent: true,
+      });
+      const cmd = factory.createNodeDropCommand(item, PaletteSchemaConstruct.Restriction);
+      expect(cmd).not.toBeNull();
+      expect(cmd!.type).toBe("modifySimpleType");
+      expect((cmd! as { payload: { typeId: string; baseType: string } }).payload).toMatchObject({
+        typeId: "/element:code/anonymousSimpleType[0]",
+        baseType: "xs:string",
+      });
+    });
+
+    it("modifies existing inline complexType elements into restrictions in place", () => {
+      const item = makeItem("/element:person", DiagramItemType.element, {
+        type: "<anonymous complexType> (extends BasePersonType)",
+        hasAnonymousComplexType: true,
+      });
+      const cmd = factory.createNodeDropCommand(item, PaletteSchemaConstruct.Restriction);
+      expect(cmd).not.toBeNull();
+      expect(cmd!.type).toBe("modifyComplexType");
+      expect((cmd! as {
+        payload: { typeId: string; baseType: string; derivationKind: string };
+      }).payload).toMatchObject({
+        typeId: "/element:person/anonymousComplexType[0]",
+        baseType: "BasePersonType",
+        derivationKind: "restriction",
+      });
+    });
+
+    it("modifies named complexType nodes into restrictions in place", () => {
+      const item = makeItem("/complexType:PersonType", DiagramItemType.type, {
+        type: "complexType (extends BasePersonType)",
+      });
+      const cmd = factory.createNodeDropCommand(item, PaletteSchemaConstruct.Restriction);
+      expect(cmd).not.toBeNull();
+      expect(cmd!.type).toBe("modifyComplexType");
+      expect((cmd! as {
+        payload: { typeId: string; baseType: string; derivationKind: string };
+      }).payload).toMatchObject({
+        typeId: "/complexType:PersonType",
+        baseType: "BasePersonType",
+        derivationKind: "restriction",
+      });
+    });
+  });
+
+  describe("createNodeDropCommand — extension", () => {
+    it("creates an anonymous complexType extension for typed elements", () => {
+      const item = makeItem("/element:person", DiagramItemType.element, { type: "PersonType" });
+      const cmd = factory.createNodeDropCommand(item, PaletteSchemaConstruct.Extension);
+      expect(cmd).not.toBeNull();
+      expect(cmd!.type).toBe("addComplexType");
+      expect((cmd! as {
+        payload: { parentId: string; baseType: string; contentModel: string; derivationKind: string };
+      }).payload).toMatchObject({
+        parentId: "/element:person",
+        baseType: "PersonType",
+        contentModel: "sequence",
+        derivationKind: "extension",
+      });
+    });
+
+    it("modifies existing inline complexType elements in place", () => {
+      const item = makeItem("/element:person", DiagramItemType.element, {
+        type: "<anonymous complexType> (extends BasePersonType)",
+        hasAnonymousComplexType: true,
+      });
+      const cmd = factory.createNodeDropCommand(item, PaletteSchemaConstruct.Extension);
+      expect(cmd).not.toBeNull();
+      expect(cmd!.type).toBe("modifyComplexType");
+      expect((cmd! as {
+        payload: { typeId: string; baseType: string; derivationKind: string };
+      }).payload).toMatchObject({
+        typeId: "/element:person/anonymousComplexType[0]",
+        baseType: "BasePersonType",
+        derivationKind: "extension",
+      });
     });
   });
 

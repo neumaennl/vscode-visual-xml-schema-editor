@@ -42,6 +42,15 @@ export class DiagramRenderer {
   }
 
   /**
+   * Find a diagram item by its ID in the current diagram.
+   * @param itemId - ID of the item to find
+   * @returns The diagram item or null if not found
+   */
+  public getItemById(itemId: string | null): DiagramItem | null {
+    return this.findItemById(itemId);
+  }
+
+  /**
    * Create a new DiagramRenderer
    * @param canvas - The SVG canvas element to render into
    * @param viewState - Initial view state (zoom and pan)

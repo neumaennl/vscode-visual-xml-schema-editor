@@ -60,7 +60,7 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
     // ── Step 1: add OrderType complexType with sequence ─────────────────────
     const addOrderType: AddComplexTypeCommand = {
       type: "addComplexType",
-      payload: { parentId: "schema", typeName: "OrderType", contentModel: "sequence" },
+      payload: { parentId: "/schema", typeName: "OrderType", contentModel: "sequence" },
     };
     let xml = step(EXAMPLE_XSD, addOrderType);
 
@@ -152,7 +152,7 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
     const addOrderElement: AddElementCommand = {
       type: "addElement",
       payload: {
-        parentId: "schema",
+        parentId: "/schema",
         elementName: "order",
         elementType: "OrderType",
       },
@@ -243,7 +243,7 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
     // Build a schema that already has orderId in OrderType/sequence
     let xml = step(EXAMPLE_XSD, {
       type: "addComplexType",
-      payload: { parentId: "schema", typeName: "OrderType", contentModel: "sequence" },
+      payload: { parentId: "/schema", typeName: "OrderType", contentModel: "sequence" },
     });
     xml = step(xml, {
       type: "addElement",
@@ -269,11 +269,11 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
     );
   });
 
-  it("rejects adding an anonymous complexType to an element that already has a type attribute", () => {
-    // qty has type xs:integer – adding an anonymous complexType must be rejected
+  it("replaces an element type attribute when adding an anonymous complexType", () => {
+    // qty starts with a type attribute and is then converted to an inline complexType
     let xml = step(EXAMPLE_XSD, {
       type: "addComplexType",
-      payload: { parentId: "schema", typeName: "OrderType", contentModel: "sequence" },
+      payload: { parentId: "/schema", typeName: "OrderType", contentModel: "sequence" },
     });
     xml = step(xml, {
       type: "addElement",
@@ -284,24 +284,27 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
       },
     });
 
-    runCommandExpectValidationFailure(
-      xml,
-      {
-        type: "addComplexType",
-        payload: {
-          parentId: "/complexType:OrderType/sequence/element:qty",
-          contentModel: "sequence",
-        },
+    xml = step(xml, {
+      type: "addComplexType",
+      payload: {
+        parentId: "/complexType:OrderType/sequence/element:qty",
+        contentModel: "sequence",
       },
-      "'/complexType:OrderType/sequence/element:qty' already has a type attribute ('xs:integer'); cannot add an inline complexType"
-    );
+    });
+
+    const result = unmarshal(schema, xml);
+    const orderType = toArray(result.complexType).find((t) => t.name === "OrderType");
+    const qtyEl = toArray(orderType!.sequence!.element).find((e) => e.name === "qty");
+    expect(qtyEl).toBeDefined();
+    expect(qtyEl!.type_).toBeUndefined();
+    expect(qtyEl!.complexType?.sequence).toBeDefined();
   });
 
   it("chains addElement without type, then addSimpleType with enumeration restrictions", () => {
     // Build schema with OrderType, then add a status element with anonymous simpleType
     let xml = step(EXAMPLE_XSD, {
       type: "addComplexType",
-      payload: { parentId: "schema", typeName: "OrderType", contentModel: "sequence" },
+      payload: { parentId: "/schema", typeName: "OrderType", contentModel: "sequence" },
     });
 
     // Add status element without a type (will carry an anonymous simpleType)
@@ -350,7 +353,7 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
     // unreferenced by type_, only by ref).
     let xml = step(EXAMPLE_XSD, {
       type: "addComplexType",
-      payload: { parentId: "schema", typeName: "WrapperType", contentModel: "sequence" },
+      payload: { parentId: "/schema", typeName: "WrapperType", contentModel: "sequence" },
     });
 
     xml = step(xml, {
@@ -365,7 +368,7 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
 
     const result: schema = runCommandExpectSuccessSchema(xml, {
       type: "addElement",
-      payload: { parentId: "schema", elementName: "wrapper", elementType: "WrapperType" },
+      payload: { parentId: "/schema", elementName: "wrapper", elementType: "WrapperType" },
     });
 
     const wrapperType = toArray(result.complexType).find((t) => t.name === "WrapperType");

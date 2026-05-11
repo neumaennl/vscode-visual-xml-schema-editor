@@ -18,9 +18,10 @@ import {
   groupRef,
 } from "../../shared/types";
 import { toArray } from "../../shared/schemaUtils";
-import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy";
+import { parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy";
 import { locateNodeById } from "../schemaNavigator";
 import { createAnnotation } from "./annotationUtils";
+import { renameLocalGroupRefInSchema } from "./schemaLocalRenamer";
 
 // ===== Element Group Executors =====
 
@@ -45,7 +46,7 @@ export function executeAddGroup(
 
   if (ref !== undefined) {
     // Reference mode: add xs:group ref="..." to a compositor or complexType
-    const location = locateNodeById(schemaObj, parentId ?? "schema");
+    const location = locateNodeById(schemaObj, parentId ?? SCHEMA_ROOT_ID);
     const grpRef = buildGroupRef(ref, minOccurs, maxOccurs, documentation);
     addGroupRefToParent(location.parent, location.parentType ?? "", grpRef);
     return;
@@ -163,6 +164,7 @@ export function executeModifyGroup(
   }
 
   if (groupName !== undefined) {
+    renameLocalGroupRefInSchema(parsed.name as string, groupName, schemaObj);
     grp.name = groupName;
   }
   if (documentation !== undefined) {
@@ -358,4 +360,3 @@ function applyGroupContentModel(
     grp.all = new allType();
   }
 }
-

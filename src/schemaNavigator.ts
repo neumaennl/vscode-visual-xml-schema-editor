@@ -10,6 +10,7 @@ import {
   topLevelComplexType,
   localComplexType,
   explicitGroup,
+  all as allGroup,
   topLevelAttribute,
   attribute,
 } from "../shared/types";
@@ -41,7 +42,7 @@ export interface NodeLocation {
  * @example
  * ```typescript
  * // Find the schema root (for adding top-level elements)
- * locateNodeById(schema, "schema") // Returns { found: true, parent: schema, parentType: "schema" }
+ * locateNodeById(schema, "/schema") // Returns { found: true, parent: schema, parentType: "schema" }
  *
  * // Find a sequence within a complex type
  * locateNodeById(schema, "/complexType:PersonType/sequence[0]")
@@ -52,7 +53,7 @@ export function locateNodeById(
   schemaObj: schema,
   nodeId: string
 ): NodeLocation {
-  // Special case: "schema" refers to the schema root
+  // Special case: the canonical schema root ID refers to the schema root
   if (isSchemaRoot(nodeId)) {
     return {
       found: true,
@@ -290,43 +291,55 @@ function navigateFromComplexType(
 ): { found: boolean; node?: unknown; nodeType?: string } {
   // Complex types can have sequence, choice, or all as children
   if (nodeType === SchemaNodeType.Group && name === "sequence") {
-    if ((complexType).sequence) {
+    const sequence = resolveComplexTypeGroup(complexType, "sequence");
+    if (sequence) {
       return {
         found: true,
-        node: (complexType).sequence,
+        node: sequence,
         nodeType: "sequence",
       };
     }
   } else if (nodeType === SchemaNodeType.Group && name === "choice") {
-    if ((complexType).choice) {
+    const choice = resolveComplexTypeGroup(complexType, "choice");
+    if (choice) {
       return {
         found: true,
-        node: (complexType).choice,
+        node: choice,
         nodeType: "choice",
       };
     }
   } else if (nodeType === SchemaNodeType.Group && name === "all") {
-    if ((complexType).all) {
-      return { found: true, node: (complexType).all, nodeType: "all" };
+    const all = resolveComplexTypeGroup(complexType, "all");
+    if (all) {
+      return { found: true, node: all, nodeType: "all" };
     }
   }
 
   // Handle direct navigation to sequence/choice/all without explicit "group:" prefix
   if (!name && !position) {
-    if (nodeType === "sequence" as SchemaNodeType && (complexType).sequence) {
-      return {
-        found: true,
-        node: (complexType).sequence,
-        nodeType: "sequence",
-      };
-    } else if (nodeType === "choice" as SchemaNodeType && (complexType).choice) {
-      return {
-        found: true,
-        node: (complexType).choice,
-        nodeType: "choice",
-      };
-    } else if (nodeType === "all" as SchemaNodeType && (complexType).all) {
-      return { found: true, node: (complexType).all, nodeType: "all" };
+    if (nodeType === "sequence" as SchemaNodeType) {
+      const sequence = resolveComplexTypeGroup(complexType, "sequence");
+      if (sequence) {
+        return {
+          found: true,
+          node: sequence,
+          nodeType: "sequence",
+        };
+      }
+    } else if (nodeType === "choice" as SchemaNodeType) {
+      const choice = resolveComplexTypeGroup(complexType, "choice");
+      if (choice) {
+        return {
+          found: true,
+          node: choice,
+          nodeType: "choice",
+        };
+      }
+    } else if (nodeType === "all" as SchemaNodeType) {
+      const all = resolveComplexTypeGroup(complexType, "all");
+      if (all) {
+        return { found: true, node: all, nodeType: "all" };
+      }
     }
   } else if (nodeType === SchemaNodeType.Attribute) {
     const attrs = toArray(complexType.attribute);
@@ -337,6 +350,20 @@ function navigateFromComplexType(
   }
 
   return { found: false };
+}
+
+function resolveComplexTypeGroup(
+  complexType: topLevelComplexType | localComplexType,
+  groupKind: "sequence" | "choice" | "all"
+): explicitGroup | allGroup | undefined {
+  const direct = complexType[groupKind];
+  if (direct) {
+    return direct;
+  }
+
+  const extension = complexType.complexContent?.extension;
+  const restriction = complexType.complexContent?.restriction;
+  return extension?.[groupKind] ?? restriction?.[groupKind];
 }
 
 /**

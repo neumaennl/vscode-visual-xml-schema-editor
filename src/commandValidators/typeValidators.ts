@@ -31,6 +31,12 @@ export const VALID_COMPLEX_TYPE_CONTENT_MODELS = [
   "all",
 ] as const;
 
+/** Valid derivation kinds for complex types that use a base type. */
+export const VALID_COMPLEX_TYPE_DERIVATION_KINDS = [
+  "extension",
+  "restriction",
+] as const;
+
 /** Container types that may hold an anonymous simpleType inline. */
 const INLINE_SIMPLE_TYPE_PARENT_TYPES = ["topLevelElement", "localElement", "topLevelAttribute", "attribute"];
 
@@ -92,6 +98,21 @@ function validateContentModel(
   return null;
 }
 
+function validateDerivationKind(
+  derivationKind: string | undefined
+): ValidationResult | null {
+  if (derivationKind === undefined) {
+    return null;
+  }
+  if (!VALID_COMPLEX_TYPE_DERIVATION_KINDS.includes(derivationKind as typeof VALID_COMPLEX_TYPE_DERIVATION_KINDS[number])) {
+    return {
+      valid: false,
+      error: `Derivation kind must be one of: ${VALID_COMPLEX_TYPE_DERIVATION_KINDS.join(", ")}`,
+    };
+  }
+  return null;
+}
+
 // ===== SimpleType Command Validation =====
 
 export function validateAddSimpleType(
@@ -113,11 +134,15 @@ export function validateAddSimpleType(
       };
     }
     // parentType is confirmed to be a valid inline simpleType container by the check above
-    const holder = location.parent as { type_?: string; simpleType?: unknown };
-    if (holder.type_) {
+    const holder = location.parent as { ref?: string; type_?: string; simpleType?: unknown };
+    // In XSD, nodes with a ref attribute are references to existing declarations rather
+    // than local declarations of their own, so they cannot define an inline type here.
+    // By contrast, nodes with a type_ attribute are still local declarations and may be
+    // converted from an explicit type reference to an inline anonymous type.
+    if (holder.ref) {
       return {
         valid: false,
-        error: `'${parentId}' already has a type attribute ('${holder.type_}'); cannot add an inline simpleType`,
+        error: `'${parentId}' has a ref attribute and cannot carry an inline simpleType`,
       };
     }
     if (holder.simpleType) {
@@ -230,7 +255,7 @@ export function validateAddComplexType(
   command: AddComplexTypeCommand,
   schemaObj: schema
 ): ValidationResult {
-  const { parentId, typeName, contentModel } = command.payload;
+  const { parentId, typeName, contentModel, derivationKind } = command.payload;
 
   if (!isSchemaRoot(parentId)) {
     // Anonymous complexType inside an element — isSchemaRoot guarantees parentId is a non-empty string here
@@ -244,11 +269,15 @@ export function validateAddComplexType(
         error: `Parent of type '${location.parentType}' cannot contain a complexType`,
       };
     }
-    const holder = location.parent as { type_?: string; complexType?: unknown };
-    if (holder.type_) {
+    const holder = location.parent as { ref?: string; type_?: string; complexType?: unknown };
+    // In XSD, nodes with a ref attribute are references to existing declarations rather
+    // than local declarations of their own, so they cannot define an inline type here.
+    // By contrast, nodes with a type_ attribute are still local declarations and may be
+    // converted from an explicit type reference to an inline anonymous type.
+    if (holder.ref) {
       return {
         valid: false,
-        error: `'${parentId}' already has a type attribute ('${holder.type_}'); cannot add an inline complexType`,
+        error: `'${parentId}' has a ref attribute and cannot carry an inline complexType`,
       };
     }
     if (holder.complexType) {
@@ -256,6 +285,8 @@ export function validateAddComplexType(
     }
     const contentModelError = validateContentModel(contentModel, VALID_COMPLEX_TYPE_CONTENT_MODELS);
     if (contentModelError) return contentModelError;
+    const derivationKindError = validateDerivationKind(derivationKind);
+    if (derivationKindError) return derivationKindError;
     return { valid: true };
   }
 
@@ -265,6 +296,8 @@ export function validateAddComplexType(
   }
   const contentModelError = validateContentModel(contentModel, VALID_COMPLEX_TYPE_CONTENT_MODELS);
   if (contentModelError) return contentModelError;
+  const derivationKindError = validateDerivationKind(derivationKind);
+  if (derivationKindError) return derivationKindError;
   if (toArray(schemaObj.complexType).some((ct) => ct.name === typeName)) {
     return {
       valid: false,
@@ -318,6 +351,8 @@ export function validateModifyComplexType(
       const contentModelError = validateContentModel(command.payload.contentModel, VALID_COMPLEX_TYPE_CONTENT_MODELS);
       if (contentModelError) return contentModelError;
     }
+    const derivationKindError = validateDerivationKind(command.payload.derivationKind);
+    if (derivationKindError) return derivationKindError;
     return { valid: true };
   }
 
@@ -328,6 +363,8 @@ export function validateModifyComplexType(
     const contentModelError = validateContentModel(command.payload.contentModel, VALID_COMPLEX_TYPE_CONTENT_MODELS);
     if (contentModelError) return contentModelError;
   }
+  const derivationKindError = validateDerivationKind(command.payload.derivationKind);
+  if (derivationKindError) return derivationKindError;
   if (!toArray(schemaObj.complexType).some((ct) => ct.name === parsed.name)) {
     return { valid: false, error: `Complex type '${parsed.name}' not found in schema` };
   }

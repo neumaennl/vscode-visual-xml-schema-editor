@@ -26,7 +26,7 @@ describe("Integration: SimpleType pipeline", () => {
       const cmd: AddSimpleTypeCommand = {
         type: "addSimpleType",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           typeName: "AgeType",
           baseType: "xs:integer",
         },
@@ -44,7 +44,7 @@ describe("Integration: SimpleType pipeline", () => {
       const cmd: AddSimpleTypeCommand = {
         type: "addSimpleType",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           typeName: "ColorType",
           baseType: "xs:string",
           restrictions: { enumeration: ["red", "green", "blue"] },
@@ -67,7 +67,7 @@ describe("Integration: SimpleType pipeline", () => {
       const cmd: AddSimpleTypeCommand = {
         type: "addSimpleType",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           typeName: "NameType",
           baseType: "xs:string",
           restrictions: { minLength: 1, maxLength: 50 },
@@ -85,7 +85,7 @@ describe("Integration: SimpleType pipeline", () => {
     it("returns validation error when type name is invalid", () => {
       const cmd: AddSimpleTypeCommand = {
         type: "addSimpleType",
-        payload: { parentId: "schema", typeName: "bad type", baseType: "xs:string" },
+        payload: { parentId: "/schema", typeName: "bad type", baseType: "xs:string" },
       };
 
       runCommandExpectValidationFailure(MINIMAL_SCHEMA, cmd, "Type name must be a valid XML name");
@@ -94,7 +94,7 @@ describe("Integration: SimpleType pipeline", () => {
     it("returns validation error for duplicate type name", () => {
       const cmd: AddSimpleTypeCommand = {
         type: "addSimpleType",
-        payload: { parentId: "schema", typeName: "StatusType", baseType: "xs:string" },
+        payload: { parentId: "/schema", typeName: "StatusType", baseType: "xs:string" },
       };
 
       runCommandExpectValidationFailure(SCHEMA_WITH_SIMPLETYPE, cmd, "Simple type 'StatusType' already exists in schema");

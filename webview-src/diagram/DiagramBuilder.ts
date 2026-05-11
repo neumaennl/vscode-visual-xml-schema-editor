@@ -20,6 +20,7 @@ import {
 import { toArray } from "../../shared/schemaUtils";
 import {
   generateSchemaId,
+  SCHEMA_ROOT_ID,
   SchemaNodeType,
 } from "../../shared/idStrategy";
 import {
@@ -27,6 +28,10 @@ import {
   createComplexTypeNode,
   createSimpleTypeNode,
 } from "./TypeNodeCreators";
+import {
+  extractDocumentation,
+  extractDocumentationAnnotations,
+} from "./DiagramBuilderHelpers";
 import {
   processChildCollection,
   processAnonymousComplexType,
@@ -60,17 +65,23 @@ export class DiagramBuilder {
   public buildFromSchema(schemaObj: schema): Diagram {
     this.diagram = new Diagram();
     this.elementMap.clear();
+    this.diagram.currentSchemaPrefix = this.resolveTargetNamespacePrefix(schemaObj);
+    this.diagram.schemaTargetNamespace = schemaObj?.targetNamespace?.toString() ?? "";
+    this.diagram.schemaNamespacePrefixes = { ...(schemaObj._namespacePrefixes ?? {}) };
+    this.diagram.localSchemaTypeNames = undefined;
 
     console.log("DiagramBuilder - Building from schema:", schemaObj);
 
     // Create a root node representing the schema
     const targetNs = schemaObj?.targetNamespace?.toString() || "no namespace";
     const schemaNode = new DiagramItem(
-      generateSchemaId({ nodeType: SchemaNodeType.Schema }),
+      SCHEMA_ROOT_ID,
       `Schema: ${targetNs}`,
       DiagramItemType.element,
       this.diagram
     );
+    schemaNode.documentationAnnotations = extractDocumentationAnnotations(schemaNode.id, schemaObj.annotation);
+    schemaNode.documentation = extractDocumentation(schemaObj.annotation) ?? "";
     schemaNode.attributes = toArray(schemaObj.attribute)
       .filter((attr) => !!attr.name)
       .map((attr) => ({
@@ -117,6 +128,22 @@ export class DiagramBuilder {
 
     this.diagram.addRootElement(schemaNode);
     return this.diagram;
+  }
+
+  private resolveTargetNamespacePrefix(schemaObj: schema): string | undefined {
+    const targetNamespace = schemaObj?.targetNamespace?.toString();
+    if (!targetNamespace || !schemaObj._namespacePrefixes) {
+      return undefined;
+    }
+
+    // Generated schema bindings expose namespace declarations as `_namespacePrefixes`.
+    for (const [prefix, namespaceUri] of Object.entries(schemaObj._namespacePrefixes)) {
+      if (prefix && namespaceUri === targetNamespace) {
+        return prefix;
+      }
+    }
+
+    return undefined;
   }
 
   /**

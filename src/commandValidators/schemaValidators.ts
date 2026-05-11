@@ -10,11 +10,12 @@ import {
   AddIncludeCommand,
   RemoveIncludeCommand,
   ModifyIncludeCommand,
+  ModifySchemaNamespacesCommand,
 } from "../../shared/types";
 import { toArray } from "../../shared/schemaUtils";
 import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy";
 import { isValidXmlName, ValidationResult } from "./validationUtils";
-import { isAnyPrefixReferencedInSchema } from "../commandExecutors/schemaQNameRewriter";
+import { isAnyPrefixReferencedInSchema } from "../commandExecutors/schemaPrefixChecker";
 
 // ===== Helpers =====
 
@@ -359,6 +360,54 @@ export function validateModifyInclude(
     return {
       valid: false,
       error: `An include for schema location '${trimmedLocation}' already exists`,
+    };
+  }
+
+  return { valid: true };
+}
+
+export function validateModifySchemaNamespaces(
+  command: ModifySchemaNamespacesCommand,
+  _schemaObj: schema
+): ValidationResult {
+  const { targetNamespace, namespacePrefixes } = command.payload;
+
+  if (targetNamespace !== undefined) {
+    const trimmedTargetNamespace = targetNamespace.trim();
+    if (trimmedTargetNamespace && !isAbsoluteUri(trimmedTargetNamespace)) {
+      return { valid: false, error: "targetNamespace must be a valid absolute URI" };
+    }
+  }
+
+  for (const [prefix, namespaceUri] of Object.entries(namespacePrefixes)) {
+    if (prefix !== prefix.trim()) {
+      return {
+        valid: false,
+        error: `Prefix '${prefix}' must not contain leading or trailing whitespace`,
+      };
+    }
+    if (prefix === "xml" || prefix === "xmlns") {
+      return { valid: false, error: `Prefix '${prefix}' is reserved and cannot be used` };
+    }
+    if (prefix && !isValidXmlName(prefix)) {
+      return { valid: false, error: `Prefix '${prefix}' is not a valid XML name` };
+    }
+    if (!namespaceUri.trim()) {
+      return { valid: false, error: "Namespace URI cannot be empty" };
+    }
+    if (!isAbsoluteUri(namespaceUri.trim())) {
+      return { valid: false, error: `Namespace URI '${namespaceUri}' must be a valid absolute URI` };
+    }
+  }
+
+  const trimmedTargetNamespace = targetNamespace?.trim();
+  if (
+    trimmedTargetNamespace &&
+    !Object.values(namespacePrefixes).some((namespaceUri) => namespaceUri.trim() === trimmedTargetNamespace)
+  ) {
+    return {
+      valid: false,
+      error: "targetNamespace must match one of the declared namespace URIs",
     };
   }
 

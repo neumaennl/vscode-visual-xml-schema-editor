@@ -45,7 +45,7 @@ describe("Integration: Annotation pipeline", () => {
     it("adds a schema-level annotation", () => {
       const cmd: AddAnnotationCommand = {
         type: "addAnnotation",
-        payload: { targetId: "schema", documentation: "My schema" },
+        payload: { targetId: "/schema", documentation: "My schema" },
       };
 
       const result = runCommandExpectSuccessSchema(MINIMAL_SCHEMA, cmd);

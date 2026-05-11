@@ -1,5 +1,5 @@
 import { DiagramRenderer } from "./renderer";
-import { PropertyPanel } from "./propertyPanel";
+import { PropertyPanel } from "./propertyPanel/propertyPanel";
 import { schema } from "../shared/types";
 import {
   VSCodeAPI,
@@ -24,6 +24,7 @@ class SchemaEditorApp {
   private paletteView: PaletteView | null = null;
   private dropCommandFactory = new DropCommandFactory();
   private notificationBar: HTMLElement | null = null;
+  private selectedNodeId: string | null = null;
 
   /**
    * Create and initialize the schema editor application
@@ -44,7 +45,10 @@ class SchemaEditorApp {
 
     this.renderer = new DiagramRenderer(canvas, this.viewState);
     this.propertyPanel = new PropertyPanel(
-      document.getElementById("properties-content") as HTMLDivElement
+      document.getElementById("properties-content") as HTMLDivElement,
+      (command) => {
+        this.vscode.postMessage({ command: "executeCommand", data: command });
+      }
     );
 
     const paletteContainer = document.getElementById("palette-content");
@@ -85,6 +89,7 @@ class SchemaEditorApp {
             this.currentSchema = message.data;
             this.dropCommandFactory.updateNamesFromSchema(message.data);
             this.renderSchema(message.data);
+            this.refreshSelection();
             this.saveState();
             break;
           }
@@ -112,6 +117,7 @@ class SchemaEditorApp {
             if (message.data.error) {
               this.showError(message.data.error);
             }
+            this.refreshSelection();
             break;
           }
         }
@@ -192,8 +198,26 @@ class SchemaEditorApp {
       }
     } else {
       // Display item properties in the property panel
+      this.selectedNodeId = item.id;
+      this.renderer.selectNode(item.id);
       this.propertyPanel.display(item);
     }
+  }
+
+  private refreshSelection(): void {
+    if (!this.selectedNodeId) {
+      return;
+    }
+
+    const selectedItem = this.renderer.getItemById(this.selectedNodeId);
+    if (!selectedItem) {
+      this.selectedNodeId = null;
+      this.propertyPanel.clear();
+      return;
+    }
+
+    this.renderer.selectNode(selectedItem.id);
+    this.propertyPanel.display(selectedItem);
   }
 
   /**

@@ -36,10 +36,6 @@ describe("schemaUtils", () => {
       expect(isSchemaRoot(undefined)).toBe(true);
     });
 
-    it('should return true for "schema"', () => {
-      expect(isSchemaRoot("schema")).toBe(true);
-    });
-
     it('should return true for "/schema"', () => {
       expect(isSchemaRoot("/schema")).toBe(true);
     });
@@ -58,6 +54,7 @@ describe("schemaUtils", () => {
     });
 
     it("should return false for other non-root strings", () => {
+      expect(isSchemaRoot("schema")).toBe(false);
       expect(isSchemaRoot("root")).toBe(false);
       expect(isSchemaRoot("schemas")).toBe(false);
     });

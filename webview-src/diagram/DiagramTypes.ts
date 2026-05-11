@@ -25,6 +25,8 @@ export enum DiagramItemGroupType {
   All = "all",
 }
 
+export type DiagramComplexDerivationKind = "extension" | "restriction";
+
 export interface Point {
   x: number;
   y: number;
@@ -40,6 +42,25 @@ export interface Rectangle {
   y: number;
   width: number;
   height: number;
+}
+
+/**
+ * A single xs:documentation node shown in the diagram/property-panel layer.
+ * Keeps the schema ID so the UI can edit or remove the exact node later.
+ */
+export interface DiagramDocumentationEntry {
+  id: string;
+  content: string;
+  lang?: string;
+}
+
+/**
+ * An xs:annotation node shown in the diagram/property-panel layer.
+ * Keeps the schema ID plus all contained xs:documentation nodes.
+ */
+export interface DiagramAnnotationEntry {
+  id: string;
+  documentationEntries: DiagramDocumentationEntry[];
 }
 
 /**

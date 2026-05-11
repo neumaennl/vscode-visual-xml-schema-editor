@@ -128,7 +128,7 @@ export const paletteGroups: PaletteGroup[] = [
         icon: "diff-added",
         color: "#6a9955",
         description: "Extend an existing type",
-        enabled: false,
+        enabled: true,
       },
       {
         id: PaletteSchemaConstruct.Restriction,
@@ -136,7 +136,7 @@ export const paletteGroups: PaletteGroup[] = [
         icon: "diff-removed",
         color: "#f48771",
         description: "Restrict an existing type",
-        enabled: false,
+        enabled: true,
       },
     ],
   },

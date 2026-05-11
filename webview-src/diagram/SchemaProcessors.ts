@@ -18,6 +18,7 @@ import {
 } from "../../shared/idStrategy";
 import {
   extractDocumentation,
+  extractDocumentationAnnotations,
   extractAttributes,
   extractOccurrenceConstraints,
 } from "./DiagramBuilderHelpers";
@@ -101,8 +102,22 @@ export function processAnonymousComplexType(
   // Flag the parent element as owning an anonymous complex type
   parent.hasAnonymousComplexType = true;
 
+  // Extract mixed content flag from the anonymous complex type
+  if ((complexType as { mixed?: boolean }).mixed === true) {
+    parent.isMixed = true;
+  }
+
   // Merge documentation from the anonymous type if parent has none
   if (!parent.documentation) {
+    const anonymousComplexTypeId = generateSchemaId({
+      nodeType: SchemaNodeType.AnonymousComplexType,
+      parentId: parent.id,
+      position: 0,
+    });
+    parent.documentationAnnotations = extractDocumentationAnnotations(
+      anonymousComplexTypeId,
+      complexType.annotation
+    );
     parent.documentation = extractDocumentation(complexType.annotation) ?? "";
   }
 
@@ -126,6 +141,15 @@ export function processAnonymousSimpleType(
 
   // Merge documentation from the anonymous type if parent has none
   if (!parent.documentation) {
+    const anonymousSimpleTypeId = generateSchemaId({
+      nodeType: SchemaNodeType.AnonymousSimpleType,
+      parentId: parent.id,
+      position: 0,
+    });
+    parent.documentationAnnotations = extractDocumentationAnnotations(
+      anonymousSimpleTypeId,
+      simpleType.annotation
+    );
     parent.documentation = extractDocumentation(simpleType.annotation) ?? "";
   }
 
@@ -159,10 +183,12 @@ export function processComplexType(
     parent.type += " with complexContent";
 
     if (complexType.complexContent.extension) {
+      parent.complexDerivationKind = "extension";
       processExtension(parent, complexType.complexContent.extension);
     }
 
     if (complexType.complexContent.restriction) {
+      parent.complexDerivationKind = "restriction";
       processRestriction(parent, complexType.complexContent.restriction);
     }
   }
@@ -173,10 +199,12 @@ export function processComplexType(
     parent.type += " with simpleContent";
 
     if (complexType.simpleContent.extension) {
+      parent.complexDerivationKind = "extension";
       processExtension(parent, complexType.simpleContent.extension);
     }
 
     if (complexType.simpleContent.restriction) {
+      parent.complexDerivationKind = "restriction";
       processRestriction(parent, complexType.simpleContent.restriction);
     }
   }
@@ -307,7 +335,13 @@ function processGroup(
     if (elem.type_) {
       item.type = elem.type_;
     }
+    item.documentationAnnotations = extractDocumentationAnnotations(item.id, elem.annotation);
     item.documentation = extractDocumentation(elem.annotation) ?? "";
+
+    // Extract element-level constraints
+    item.isNillable = elem.nillable === true;
+    item.elementDefault = elem.default_?.toString();
+    item.elementFixed = elem.fixed?.toString();
 
     // Extract occurrence constraints for the element
     extractOccurrenceConstraints(item, elem);
@@ -315,10 +349,7 @@ function processGroup(
     groupItem.addChild(item);
   });
 
-  // Only add the group if it has children
-  if (groupItem.childElements.length > 0) {
-    parent.addChild(groupItem);
-  }
+  parent.addChild(groupItem);
 }
 
 /**

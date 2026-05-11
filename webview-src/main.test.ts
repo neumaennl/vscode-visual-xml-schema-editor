@@ -57,6 +57,11 @@ describe("SchemaEditorApp", () => {
         </aside>
       </div>
     `;
+
+    Object.defineProperty(SVGElement.prototype, "getBBox", {
+      configurable: true,
+      value: jest.fn(() => ({ x: 0, y: 0, width: 120, height: 24 })),
+    });
   });
 
   it("should initialize and setup message listener", () => {
@@ -219,5 +224,29 @@ describe("SchemaEditorApp", () => {
     const canvas = document.getElementById("schema-canvas");
     expect(canvas).toBeTruthy();
     expect(canvas?.tagName).toBe("svg");
+  });
+
+  it("should highlight the selected node when it is clicked", () => {
+    const addEventListenerSpy = jest.spyOn(window, "addEventListener");
+
+    require("./main");
+
+    const messageHandler = addEventListenerSpy.mock.calls.find(
+      (call) => call[0] === "message"
+    )?.[1] as EventListener;
+
+    const mockSchema = { element: [{ name: "test" }] };
+    const event = new MessageEvent("message", {
+      data: { command: "updateSchema", data: mockSchema },
+    });
+
+    messageHandler(event);
+
+    const node = document.querySelector("[data-item-id]");
+    expect(node).toBeTruthy();
+
+    node?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+
+    expect(node?.classList.contains("selected")).toBe(true);
   });
 });

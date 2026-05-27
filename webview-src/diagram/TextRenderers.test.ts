@@ -2,6 +2,7 @@
  * Tests for text rendering functions
  */
 
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import {
   renderText,
   truncateText,

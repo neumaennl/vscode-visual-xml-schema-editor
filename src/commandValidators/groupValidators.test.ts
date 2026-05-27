@@ -2,6 +2,7 @@
  * Unit tests for group validators.
  */
 
+import { describe, test, expect, beforeEach } from "vitest";
 import { unmarshal } from "@neumaennl/xmlbind-ts";
 import { schema } from "../../shared/types";
 import {

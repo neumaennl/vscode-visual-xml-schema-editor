@@ -2,6 +2,7 @@
  * Unit tests for type validators (SimpleType and ComplexType).
  */
 
+import { describe, test, expect, beforeEach } from "vitest";
 import { unmarshal } from "@neumaennl/xmlbind-ts";
 import { schema } from "../../shared/types";
 import {

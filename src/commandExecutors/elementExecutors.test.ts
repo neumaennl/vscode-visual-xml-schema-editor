@@ -3,6 +3,7 @@
  * Tests the implementation of add, remove, and modify element execution logic.
  */
 
+import { describe, it, expect } from "vitest";
 import { unmarshal, marshal } from "@neumaennl/xmlbind-ts";
 import { schema, AddElementCommand, RemoveElementCommand, ModifyElementCommand } from "../../shared/types";
 import {

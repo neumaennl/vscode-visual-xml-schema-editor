@@ -3,6 +3,7 @@
  * Tests the execute() method delegation logic and error handling.
  */
 
+import { describe, it, expect, beforeEach } from "vitest";
 import { CommandExecutor } from "./commandExecutor";
 import { schema, SchemaCommand, topLevelElement } from "../shared/types";
 import { toArray } from "../shared/schemaUtils";

@@ -103,7 +103,7 @@
     "ts-loader": "^9.5.7",
     "typescript": "^5.0.0",
     "webpack": "^5.107.2",
-    "webpack-cli": "^7.0.2"
+    "webpack-cli": "^7.0.3"
   },
   "dependencies": {
     "@neumaennl/xmlbind-ts": "^0.18.0"

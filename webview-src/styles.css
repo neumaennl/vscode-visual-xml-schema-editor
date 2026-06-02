@@ -119,6 +119,22 @@ body {
   white-space: pre-wrap;
 }
 
+.property-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.property-panel-header-type {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--vscode-descriptionForeground);
+}
+
 .property-tabs {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

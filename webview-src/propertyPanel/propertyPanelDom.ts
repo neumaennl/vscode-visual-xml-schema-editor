@@ -121,6 +121,45 @@ export function createSectionHeader(icon: string, label: string): HTMLElement {
 }
 
 /**
+ * Creates the property-panel header shown above the tabs.
+ *
+ * @param nodeTypeLabel - User-facing label of the selected node type
+ * @param onDelete - Optional callback to invoke when the delete button is clicked
+ * @returns A DOM element containing the node-type label and optional delete action
+ */
+export function createPropertyPanelHeader(
+  nodeTypeLabel: string,
+  onDelete?: () => void
+): HTMLElement {
+  const header = document.createElement("div");
+  header.className = "property-panel-header";
+
+  const label = document.createElement("span");
+  label.className = "property-panel-header-type";
+  label.textContent = nodeTypeLabel;
+  header.appendChild(label);
+
+  if (onDelete) {
+    const deleteButton = document.createElement("button");
+    deleteButton.type = "button";
+    deleteButton.className =
+      "property-docs-action property-docs-action-destructive property-docs-action-icon-only";
+    deleteButton.setAttribute("aria-label", "Delete node");
+    deleteButton.title = "Delete node";
+
+    const iconSpan = document.createElement("span");
+    iconSpan.className = "codicon codicon-trash";
+    iconSpan.setAttribute("aria-hidden", "true");
+    deleteButton.appendChild(iconSpan);
+
+    deleteButton.addEventListener("click", onDelete);
+    header.appendChild(deleteButton);
+  }
+
+  return header;
+}
+
+/**
  * Creates a labeled toggle switch row.
  *
  * @param label - Human-readable label shown beside the toggle

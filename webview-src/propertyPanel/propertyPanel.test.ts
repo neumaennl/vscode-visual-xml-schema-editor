@@ -48,6 +48,44 @@ describe("PropertyPanel", () => {
     expect(getInputByLabel(container, "Type").value).toBe("xs:string");
   });
 
+  it("renders a node-type header above the tab bar", () => {
+    expect.hasAssertions();
+    const item = new DiagramItem("/element:person", "person", DiagramItemType.element, diagram);
+
+    panel.display(item);
+
+    const header = container.firstElementChild as HTMLElement;
+    expect(header.classList.contains("property-panel-header")).toBe(true);
+    expect(header.textContent).toContain("Element");
+    expect(header.nextElementSibling?.classList.contains("property-tabs")).toBe(true);
+  });
+
+  it("dispatches removeElement when the header delete button is clicked", () => {
+    expect.hasAssertions();
+    const dispatch = jest.fn();
+    panel = new PropertyPanel(container, dispatch);
+    const item = new DiagramItem("/element:person", "person", DiagramItemType.element, diagram);
+
+    panel.display(item);
+    const deleteButton = container.querySelector("button[title='Delete node']") as HTMLButtonElement;
+    expect(deleteButton.classList.contains("property-docs-action-icon-only")).toBe(true);
+    deleteButton.click();
+
+    expect(dispatch).toHaveBeenCalledWith({
+      type: "removeElement",
+      payload: { elementId: "/element:person" },
+    });
+  });
+
+  it("does not render a header delete button for schema nodes", () => {
+    expect.hasAssertions();
+    const schemaRoot = new DiagramItem(SCHEMA_ROOT_ID, "schema", DiagramItemType.group, diagram);
+
+    panel.display(schemaRoot);
+
+    expect(container.querySelector("button[title='Delete node']")).toBeNull();
+  });
+
   it("renders attributes safely without innerHTML interpolation", () => {
     expect.hasAssertions();
     const item = new DiagramItem("test-1", "TestItem", DiagramItemType.element, diagram);

@@ -9,7 +9,9 @@ import { SchemaCommand } from "../../shared/types";
 import {
   collectLocalSchemaTypeNames,
   getNodeType,
+  getNodeTypeLabel,
   canEditCardinality,
+  createDeleteNodeCommand,
   createNameCommand,
   resolveSimpleTypeId,
   isTopLevelElement,
@@ -21,6 +23,7 @@ import {
   addPropertyWithElementToContainer,
   createAttributeList,
   createEditableField,
+  createPropertyPanelHeader,
   createSectionHeader,
   createToggleRow,
 } from "./propertyPanelDom";
@@ -77,6 +80,13 @@ export class PropertyPanel {
     }
 
     this.container.replaceChildren();
+    const deleteCommand = createDeleteNodeCommand(this.draftNode);
+    this.container.appendChild(
+      createPropertyPanelHeader(
+        getNodeTypeLabel(this.draftNode),
+        deleteCommand ? () : void => this.dispatchCommand(deleteCommand) : undefined
+      )
+    );
     this.container.appendChild(this.createTabBar());
     this.container.appendChild(this.renderTabContent(this.draftNode));
   }

@@ -166,10 +166,10 @@ export function isTopLevelElement(node: DiagramItem): boolean {
  * @returns True when minOccurs/maxOccurs may be edited
  */
 export function canEditCardinality(node: DiagramItem): boolean {
-  if (isTopLevelElement(node)) {
+  const nodeType = getNodeType(node);
+  if (nodeType === SchemaNodeType.Schema || isTopLevelElement(node)) {
     return false;
   }
-  const nodeType = getNodeType(node);
   if (nodeType === SchemaNodeType.Element || node.itemType === DiagramItemType.element) {
     return true;
   }

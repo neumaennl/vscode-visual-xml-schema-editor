@@ -9,8 +9,11 @@ import {
   localElement,
   topLevelComplexType,
   localComplexType,
+  namedGroup,
   explicitGroup,
+  simpleExplicitGroup,
   all as allGroup,
+  allType,
   topLevelAttribute,
   attribute,
 } from "../shared/types";
@@ -187,6 +190,8 @@ function navigateToChild(
       name,
       position
     );
+  } else if (parentType === "namedGroup") {
+    return navigateFromNamedGroup(parent as namedGroup, nodeType, name, position);
   } else if (
     parentType === "topLevelAttribute" ||
     parentType === "attribute"
@@ -384,20 +389,58 @@ function navigateFromAttribute(
   return { found: false };
 }
 
+function navigateFromNamedGroup(
+  group: namedGroup,
+  nodeType: SchemaNodeType,
+  name?: string,
+  _position?: number
+): { found: boolean; node?: unknown; nodeType?: string } {
+  if (nodeType === SchemaNodeType.Group && name === "sequence" && group.sequence) {
+    return { found: true, node: group.sequence, nodeType: "sequence" };
+  }
+  if (nodeType === SchemaNodeType.Group && name === "choice" && group.choice) {
+    return { found: true, node: group.choice, nodeType: "choice" };
+  }
+  if (nodeType === SchemaNodeType.Group && name === "all" && group.all) {
+    return { found: true, node: group.all, nodeType: "all" };
+  }
+
+  return { found: false };
+}
+
 /**
  * Navigate from a group (sequence/choice/all) to a child element.
  */
 function navigateFromGroup(
-  group: explicitGroup,
+  group: explicitGroup | simpleExplicitGroup | allGroup | allType,
   nodeType: SchemaNodeType,
   name?: string,
   position?: number
 ): { found: boolean; node?: unknown; nodeType?: string } {
   if (nodeType === SchemaNodeType.Element) {
-    const elements = toArray(group.element);
+    const elements = toArray(
+      group.element as
+        | Array<{ name?: string; ref?: string }>
+        | { name?: string; ref?: string }
+        | undefined
+    );
     const element = findByNameOrPosition(elements, name, position);
     if (element) {
       return { found: true, node: element, nodeType: "localElement" };
+    }
+  }
+
+  if (nodeType === SchemaNodeType.Group && name === "choice") {
+    const choice = toArray((group as { choice?: explicitGroup[] }).choice)[position ?? 0];
+    if (choice) {
+      return { found: true, node: choice, nodeType: "choice" };
+    }
+  }
+
+  if (nodeType === SchemaNodeType.Group && name === "sequence") {
+    const sequence = toArray((group as { sequence?: explicitGroup[] }).sequence)[position ?? 0];
+    if (sequence) {
+      return { found: true, node: sequence, nodeType: "sequence" };
     }
   }
 

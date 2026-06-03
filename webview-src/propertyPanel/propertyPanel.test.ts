@@ -306,6 +306,17 @@ describe("PropertyPanel", () => {
     expect(hasLabel(container, "Cardinality")).toBe(false);
   });
 
+  it("does not show cardinality fields for the actual schema root item", () => {
+    expect.hasAssertions();
+    const item = new DiagramItem(SCHEMA_ROOT_ID, "schema", DiagramItemType.element, diagram);
+
+    panel.display(item);
+
+    expect(hasLabel(container, "minOccurs")).toBe(false);
+    expect(hasLabel(container, "maxOccurs")).toBe(false);
+    expect(hasLabel(container, "Cardinality")).toBe(false);
+  });
+
   it("does not show cardinality fields for complexType nodes", () => {
     expect.hasAssertions();
     const item = new DiagramItem("/complexType:PersonType", "PersonType", DiagramItemType.type, diagram);

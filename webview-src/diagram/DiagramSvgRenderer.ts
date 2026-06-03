@@ -9,7 +9,7 @@ import {
   DiagramItemType,
   Point,
 } from "./DiagramTypes";
-import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy";
+import { isCompositorGroup } from "./groupUtils";
 import {
   svgLine,
   svgRectangle,
@@ -368,17 +368,6 @@ export class DiagramSvgRenderer {
   }
 
   private isCompositorGroup(item: DiagramItem): boolean {
-    try {
-      const parsed = parseSchemaId(item.id);
-      return (
-        parsed.nodeType === SchemaNodeType.Group &&
-        parsed.parentId !== undefined &&
-        (parsed.name === "sequence" ||
-          parsed.name === "choice" ||
-          parsed.name === "all")
-      );
-    } catch {
-      return true;
-    }
+    return isCompositorGroup(item);
   }
 }

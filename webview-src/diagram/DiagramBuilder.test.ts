@@ -9,6 +9,7 @@ import {
   topLevelComplexType,
   topLevelSimpleType,
   topLevelAttribute,
+  namedGroup,
 } from "../../shared/types";
 
 /**
@@ -162,6 +163,40 @@ describe("DiagramBuilder", () => {
 
       const schemaNode = diagram.rootElements[0];
       expect(schemaNode.childElements).toHaveLength(2);
+    });
+
+    it("should render named groups as top-level diagram nodes", () => {
+      const group = new namedGroup();
+      group.name = "PersonGroup";
+      group.sequence = { element: [{ name: "name", type_: "xs:string" }] };
+
+      const schemaObj = createTestSchema({
+        group: [group],
+      });
+
+      const diagram = builder.buildFromSchema(schemaObj);
+
+      const schemaNode = diagram.rootElements[0];
+      expect(schemaNode.childElements).toHaveLength(1);
+      expect(schemaNode.childElements[0].id).toBe("/group:PersonGroup");
+      expect(schemaNode.childElements[0].childElements[0].id).toBe("/group:PersonGroup/group:sequence[0]");
+    });
+
+    it("should render group references inside named groups", () => {
+      const group = new namedGroup();
+      group.name = "ContainerGroup";
+      group.sequence = { group: [{ ref: "SharedGroup" }] };
+
+      const schemaObj = createTestSchema({
+        group: [group],
+      });
+
+      const diagram = builder.buildFromSchema(schemaObj);
+
+      const sequence = diagram.rootElements[0].childElements[0].childElements[0];
+      expect(sequence.childElements[0].id).toBe(
+        "/group:ContainerGroup/group:sequence[0]/groupRef:SharedGroup[0]"
+      );
     });
 
     it("should process elements with inline complex types", () => {

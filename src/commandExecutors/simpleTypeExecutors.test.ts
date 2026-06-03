@@ -492,12 +492,29 @@ describe("SimpleType Executors", () => {
           expect(second.type_).toBe("xs:StatusType");
         },
       },
+      {
+        name: "targetNamespace-prefixed references",
+        source: `
+  <xs:simpleType name="StatusType"><xs:restriction base="xs:string"/></xs:simpleType>
+  <xs:element name="a" type="tns:StatusType"/>`,
+        setup: (schemaObj: schema): void => {
+          schemaObj.targetNamespace = "http://example.com/ns";
+          schemaObj._namespacePrefixes = {
+            xs: "http://www.w3.org/2001/XMLSchema",
+            tns: "http://example.com/ns",
+          };
+        },
+        assert: (schemaObj: schema): void => {
+          expect(elements(schemaObj)[0].type_).toBe("tns:StateType");
+        },
+      },
     ];
 
     it.each(renameReferenceCases)(
       "renames references in $name",
-      ({ source, oldName = "StatusType", newName = "StateType", assert }) => {
+      ({ source, oldName = "StatusType", newName = "StateType", assert, setup }) => {
         const schemaObj = schemaWith(source);
+        setup?.(schemaObj);
 
         modifySimpleType(schemaObj, { typeId: `/simpleType:${oldName}`, typeName: newName });
 

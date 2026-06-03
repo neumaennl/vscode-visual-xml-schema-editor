@@ -7,6 +7,9 @@ import type { attribute } from "../../shared/generated/attribute";
 import type { allNNI } from "../../shared/generated/types";
 import type { explicitGroup } from "../../shared/generated/explicitGroup";
 import type { all } from "../../shared/generated/all";
+import type { simpleExplicitGroup } from "../../shared/generated/simpleExplicitGroup";
+import type { allType } from "../../shared/generated/allType";
+import type { groupRef } from "../../shared/generated/groupRef";
 import type { localComplexType } from "../../shared/generated/localComplexType";
 import type { topLevelComplexType } from "../../shared/generated/topLevelComplexType";
 import type { localSimpleType } from "../../shared/generated/localSimpleType";
@@ -100,6 +103,7 @@ export type SimpleTypeLike = localSimpleType | topLevelSimpleType;
  */
 export interface ContentTypeLike extends ElementWithAttributes {
   base?: string;
+  group?: groupRef;
   sequence?: explicitGroup;
   choice?: explicitGroup;
   all?: all;
@@ -110,7 +114,7 @@ export interface ContentTypeLike extends ElementWithAttributes {
  * Represents sequence, choice, or all group structures.
  * Includes the generated schema types directly.
  */
-export type GroupDefLike = explicitGroup | all;
+export type GroupDefLike = explicitGroup | simpleExplicitGroup | all | allType;
 
 export interface DiagramStyle {
   fontFamily: string;

@@ -14,6 +14,7 @@ import {
 } from "./DiagramTypes";
 import {
   generateSchemaId,
+  parseSchemaId,
   SchemaNodeType,
 } from "../../shared/idStrategy";
 import {
@@ -26,6 +27,10 @@ import { toArray } from "../../shared/schemaUtils";
 import type { localElement } from "../../shared/generated/localElement";
 import type { explicitGroup } from "../../shared/generated/explicitGroup";
 import type { all } from "../../shared/generated/all";
+import type { simpleExplicitGroup } from "../../shared/generated/simpleExplicitGroup";
+import type { allType } from "../../shared/generated/allType";
+import type { groupRef } from "../../shared/generated/groupRef";
+import type { narrowMaxMin } from "../../shared/generated/narrowMaxMin";
 import type { restrictionType } from "../../shared/generated/restrictionType";
 import type { restrictionType_1 } from "../../shared/generated/restrictionType_1";
 
@@ -223,6 +228,10 @@ export function processComplexType(
   if (complexType.all) {
     processAll(parent, complexType.all);
   }
+
+  if (complexType.group) {
+    processGroupRef(parent, complexType.group, 0);
+  }
 }
 
 /**
@@ -234,9 +243,10 @@ export function processComplexType(
  */
 export function processSequence(
   parent: DiagramItem,
-  sequence: explicitGroup
+  sequence: explicitGroup | simpleExplicitGroup,
+  positionOverride?: number
 ): void {
-  processGroup(parent, sequence, "sequence", DiagramItemGroupType.Sequence);
+  processGroup(parent, sequence, "sequence", DiagramItemGroupType.Sequence, positionOverride);
 }
 
 /**
@@ -248,9 +258,10 @@ export function processSequence(
  */
 export function processChoice(
   parent: DiagramItem,
-  choice: explicitGroup
+  choice: explicitGroup | simpleExplicitGroup,
+  positionOverride?: number
 ): void {
-  processGroup(parent, choice, "choice", DiagramItemGroupType.Choice);
+  processGroup(parent, choice, "choice", DiagramItemGroupType.Choice, positionOverride);
 }
 
 /**
@@ -260,8 +271,8 @@ export function processChoice(
  * @param parent - Parent diagram item to add the all group to
  * @param all - All group definition from schema
  */
-export function processAll(parent: DiagramItem, all: all): void {
-  processGroup(parent, all, "all", DiagramItemGroupType.All);
+export function processAll(parent: DiagramItem, all: all | allType, positionOverride?: number): void {
+  processGroup(parent, all, "all", DiagramItemGroupType.All, positionOverride);
 }
 
 /**
@@ -277,26 +288,20 @@ function processGroup(
   parent: DiagramItem,
   groupDef: GroupDefLike,
   groupName: string,
-  groupType: DiagramItemGroupType
+  groupType: DiagramItemGroupType,
+  positionOverride?: number
 ): void {
-  // Pre-calculate position so the group's final ID can be set immediately.
-  // This ensures child element IDs are also generated with the correct parent ID.
-  const position = parent.childElements.length;
-
-  // For elements that own an anonymous complexType, the group lives inside that
-  // anonymous type in the real XSD structure.  The navigator expects the ID path
-  // to include the "anonymousComplexType[0]" segment, so we derive the effective
-  // parent ID accordingly.
-  let groupParentId: string;
-  if (parent.itemType === DiagramItemType.element && parent.hasAnonymousComplexType) {
-    groupParentId = generateSchemaId({
-      nodeType: SchemaNodeType.AnonymousComplexType,
-      parentId: parent.id,
-      position: 0,
-    });
-  } else {
-    groupParentId = parent.id;
-  }
+  const position =
+    positionOverride ??
+    parent.childElements.filter((child) => {
+      try {
+        const parsed = parseSchemaId(child.id);
+        return parsed.nodeType === SchemaNodeType.Group && parsed.name === groupName;
+      } catch {
+        return false;
+      }
+    }).length;
+  const groupParentId = resolveEffectiveGroupParentId(parent);
 
   // Create the group item with its final ID upfront.
   // Including `groupName` as the `name` lets the navigator distinguish
@@ -313,17 +318,18 @@ function processGroup(
     parent.diagram
   );
   groupItem.groupType = groupType;
-  if (groupDef.minOccurs !== undefined) {
-    const parsedMin = Number(groupDef.minOccurs);
+  const occurrenceGroupDef = groupDef as { minOccurs?: number; maxOccurs?: number | "unbounded" };
+  if (occurrenceGroupDef.minOccurs !== undefined) {
+    const parsedMin = Number(occurrenceGroupDef.minOccurs);
     if (!Number.isNaN(parsedMin)) {
       groupItem.minOccurrence = parsedMin;
     }
   }
-  if (groupDef.maxOccurs !== undefined) {
-    if (groupDef.maxOccurs === "unbounded") {
+  if (occurrenceGroupDef.maxOccurs !== undefined) {
+    if (occurrenceGroupDef.maxOccurs === "unbounded") {
       groupItem.maxOccurrence = -1;
     } else {
-      const parsedMax = Number(groupDef.maxOccurs);
+      const parsedMax = Number(occurrenceGroupDef.maxOccurs);
       if (!Number.isNaN(parsedMax)) {
         groupItem.maxOccurrence = parsedMax;
       }
@@ -334,7 +340,7 @@ function processGroup(
   // Import and use createElementNode from TypeNodeCreators would create a circular dependency,
   // so we create a lightweight element node inline with essential properties.
   const elementsArray = toArray(
-    groupDef.element as localElement | localElement[] | undefined
+    groupDef.element as (localElement | narrowMaxMin)[] | localElement | narrowMaxMin | undefined
   );
   elementsArray.forEach((elem, elemPosition) => {
     const item = new DiagramItem(
@@ -360,12 +366,78 @@ function processGroup(
     item.elementFixed = elem.fixed?.toString();
 
     // Extract occurrence constraints for the element
-    extractOccurrenceConstraints(item, elem);
+    if (typeof (elem as narrowMaxMin).minOccurs === "string") {
+      const parsedMin = Number((elem as narrowMaxMin).minOccurs);
+      if (!Number.isNaN(parsedMin)) {
+        item.minOccurrence = parsedMin;
+      }
+      const rawMax = (elem as narrowMaxMin).maxOccurs;
+      if (rawMax === "unbounded") {
+        item.maxOccurrence = -1;
+      } else if (rawMax !== undefined) {
+        const parsedMax = Number(rawMax);
+        if (!Number.isNaN(parsedMax)) {
+          item.maxOccurrence = parsedMax;
+        }
+      }
+    } else {
+      extractOccurrenceConstraints(item, elem as localElement);
+    }
 
     groupItem.addChild(item);
   });
 
+  toArray((groupDef as { group?: groupRef | groupRef[] }).group).forEach((groupRefItem, groupRefPosition) => {
+    processGroupRef(groupItem, groupRefItem, groupRefPosition);
+  });
+
+  toArray((groupDef as { choice?: explicitGroup[] }).choice).forEach((choice, choicePosition) => {
+    processChoice(groupItem, choice, choicePosition);
+  });
+
+  toArray((groupDef as { sequence?: explicitGroup[] }).sequence).forEach((sequence, sequencePosition) => {
+    processSequence(groupItem, sequence, sequencePosition);
+  });
+
   parent.addChild(groupItem);
+}
+
+function resolveEffectiveGroupParentId(parent: DiagramItem): string {
+  if (parent.itemType === DiagramItemType.element && parent.hasAnonymousComplexType) {
+    return generateSchemaId({
+      nodeType: SchemaNodeType.AnonymousComplexType,
+      parentId: parent.id,
+      position: 0,
+    });
+  }
+  return parent.id;
+}
+
+export function processGroupRef(
+  parent: DiagramItem,
+  groupReference: groupRef,
+  position: number
+): void {
+  const refName = groupReference.ref || "unnamed";
+  const groupRefItem = new DiagramItem(
+    generateSchemaId({
+      nodeType: SchemaNodeType.GroupRef,
+      name: refName,
+      parentId: resolveEffectiveGroupParentId(parent),
+      position,
+    }),
+    refName,
+    DiagramItemType.group,
+    parent.diagram
+  );
+  groupRefItem.isReference = true;
+  groupRefItem.documentationAnnotations = extractDocumentationAnnotations(
+    groupRefItem.id,
+    groupReference.annotation
+  );
+  groupRefItem.documentation = extractDocumentation(groupReference.annotation) ?? "";
+  extractOccurrenceConstraints(groupRefItem, groupReference);
+  parent.addChild(groupRefItem);
 }
 
 /**
@@ -400,6 +472,10 @@ export function processExtension(
   // Process all in extension
   if (extension.all) {
     processAll(parent, extension.all);
+  }
+
+  if (extension.group) {
+    processGroupRef(parent, extension.group, 0);
   }
 }
 
@@ -548,5 +624,9 @@ export function processRestriction(
   // Process all in restriction
   if (restriction.all) {
     processAll(parent, restriction.all);
+  }
+
+  if (restriction.group) {
+    processGroupRef(parent, restriction.group, 0);
   }
 }

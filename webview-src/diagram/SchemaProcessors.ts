@@ -313,7 +313,22 @@ function processGroup(
     parent.diagram
   );
   groupItem.groupType = groupType;
-  extractOccurrenceConstraints(groupItem, groupDef);
+  if (groupDef.minOccurs !== undefined) {
+    const parsedMin = Number(groupDef.minOccurs);
+    if (!Number.isNaN(parsedMin)) {
+      groupItem.minOccurrence = parsedMin;
+    }
+  }
+  if (groupDef.maxOccurs !== undefined) {
+    if (groupDef.maxOccurs === "unbounded") {
+      groupItem.maxOccurrence = -1;
+    } else {
+      const parsedMax = Number(groupDef.maxOccurs);
+      if (!Number.isNaN(parsedMax)) {
+        groupItem.maxOccurrence = parsedMax;
+      }
+    }
+  }
 
   // Process elements within the group.
   // Import and use createElementNode from TypeNodeCreators would create a circular dependency,

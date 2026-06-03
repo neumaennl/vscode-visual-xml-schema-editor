@@ -326,7 +326,6 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
             <button id="fitView">Fit View</button>
         </div>
         <div id="canvas-container">
-            <div id="top-level-drop-target">Drop here to add top-level nodes</div>
             <svg id="schema-canvas" width="100%" height="100%"></svg>
         </div>
       </main>

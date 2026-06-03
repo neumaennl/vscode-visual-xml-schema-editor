@@ -321,23 +321,6 @@ describe("DiagramRenderer", () => {
       expect(itemElement.classList.contains("drag-over")).toBe(true);
     });
 
-    it("should invoke top-level drop handler with construct", () => {
-      const topLevelTarget = document.createElement("div");
-      const onTopLevelDrop = jest.fn();
-      renderer.setTopLevelDropTarget(topLevelTarget, onTopLevelDrop);
-
-      const dropEvent = new Event("drop", { bubbles: true }) as DragEvent;
-      Object.defineProperty(dropEvent, "dataTransfer", {
-        value: {
-          getData: (_mime: string) => "complexType",
-        },
-      });
-
-      topLevelTarget.dispatchEvent(dropEvent);
-
-      expect(onTopLevelDrop).toHaveBeenCalledWith("complexType");
-    });
-
     it("should keep drag-over class when pointer is still inside item group", () => {
       const onNodeClick = jest.fn();
       const mockSchema = {
@@ -351,16 +334,13 @@ describe("DiagramRenderer", () => {
       const itemChild = itemElement.querySelector("*") as Element;
       itemElement.classList.add("drag-over");
 
-      const originalElementFromPoint = (
-        document as Document & {
-          elementFromPoint?: (x: number, y: number) => Element | null;
-        }
-      ).elementFromPoint;
-      (
-        document as Document & {
-          elementFromPoint?: (x: number, y: number) => Element | null;
-        }
-      ).elementFromPoint = (): Element => itemChild;
+      const documentWithElementFromPoint = document as Document & {
+        elementFromPoint?: (x: number, y: number) => Element | null;
+      };
+      const originalElementFromPoint = documentWithElementFromPoint.elementFromPoint?.bind(
+        document
+      );
+      documentWithElementFromPoint.elementFromPoint = (): Element => itemChild;
 
       const leaveEvent = new Event("dragleave", { bubbles: true }) as DragEvent;
       Object.defineProperty(leaveEvent, "clientX", { value: 10 });
@@ -370,11 +350,7 @@ describe("DiagramRenderer", () => {
       itemChild.dispatchEvent(leaveEvent);
 
       expect(itemElement.classList.contains("drag-over")).toBe(true);
-      (
-        document as Document & {
-          elementFromPoint?: (x: number, y: number) => Element | null;
-        }
-      ).elementFromPoint = originalElementFromPoint;
+      documentWithElementFromPoint.elementFromPoint = originalElementFromPoint;
     });
   });
 

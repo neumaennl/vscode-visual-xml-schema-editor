@@ -206,6 +206,29 @@ describe("SimpleType Validators", () => {
       const result = validateModifySimpleType(command, schemaWithAgeType);
       expect(result.valid).toBe(true);
     });
+
+    test("should reject stale simpleType rename replay after a successful rename", () => {
+      const renamedSchema = unmarshal(
+        schema,
+        `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:simpleType name="AgeTypeRenamed">
+    <xs:restriction base="xs:int"/>
+  </xs:simpleType>
+</xs:schema>`
+      );
+      const command: ModifySimpleTypeCommand = {
+        type: "modifySimpleType",
+        payload: {
+          typeId: "/simpleType:AgeType",
+          typeName: "AgeTypeRenamed",
+        },
+      };
+
+      const result = validateModifySimpleType(command, renamedSchema);
+      expectInvalid(result);
+      expect(result.error).toBe("Simple type 'AgeType' not found in schema");
+    });
   });
 
   describe("Anonymous SimpleType Validators", () => {
@@ -746,6 +769,29 @@ describe("ComplexType Validators", () => {
       const result = validateModifyComplexType(command, emptySchemaObj);
       expectInvalid(result);
       expect(result.error).toBe("Complex type 'NonExistent' not found in schema");
+    });
+
+    test("should reject stale complexType rename replay after a successful rename", () => {
+      const renamedSchema = unmarshal(
+        schema,
+        `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:complexType name="PersonTypeRenamed">
+    <xs:sequence/>
+  </xs:complexType>
+</xs:schema>`
+      );
+      const command: ModifyComplexTypeCommand = {
+        type: "modifyComplexType",
+        payload: {
+          typeId: "/complexType:PersonType",
+          typeName: "PersonTypeRenamed",
+        },
+      };
+
+      const result = validateModifyComplexType(command, renamedSchema);
+      expectInvalid(result);
+      expect(result.error).toBe("Complex type 'PersonType' not found in schema");
     });
 
     test("should reject modifyComplexType with invalid new typeName", () => {

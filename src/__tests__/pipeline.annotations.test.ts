@@ -18,6 +18,7 @@ import {
   MINIMAL_SCHEMA,
   SCHEMA_WITH_ELEMENTS,
   SCHEMA_WITH_ANNOTATION,
+  runCommandExpectSuccess,
   runCommandExpectSuccessSchema,
   runCommandExpectValidationFailure,
 } from "./testHelpers";
@@ -54,6 +55,40 @@ describe("Integration: Annotation pipeline", () => {
       expect(annotations.length).toBe(1);
       const docs = toArray(annotations[0].documentation);
       expect(docs[0].value).toBe("My schema");
+    });
+
+    it("inserts a schema-level annotation before top-level declarations", () => {
+      const schemaWithTopLevelDeclaration = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="person" type="xs:string"/>
+</xs:schema>`;
+      const cmd: AddAnnotationCommand = {
+        type: "addAnnotation",
+        payload: { targetId: "/schema", documentation: "Schema docs" },
+      };
+
+      const updatedXml = runCommandExpectSuccess(schemaWithTopLevelDeclaration, cmd);
+      expect(updatedXml.indexOf("<annotation>")).toBeLessThan(
+        updatedXml.indexOf("<element ")
+      );
+    });
+
+    it("inserts node annotations before compositor/content children", () => {
+      const schemaWithComplexType = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:complexType name="PersonType">
+    <xs:sequence/>
+  </xs:complexType>
+</xs:schema>`;
+      const cmd: AddAnnotationCommand = {
+        type: "addAnnotation",
+        payload: { targetId: "/complexType:PersonType", documentation: "Complex type docs" },
+      };
+
+      const updatedXml = runCommandExpectSuccess(schemaWithComplexType, cmd);
+      expect(updatedXml.indexOf("<annotation>")).toBeLessThan(
+        updatedXml.indexOf("<sequence")
+      );
     });
 
     it("returns validation error when target element does not exist", () => {

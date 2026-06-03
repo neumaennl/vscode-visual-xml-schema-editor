@@ -243,6 +243,46 @@ describe("PropertyPanel", () => {
     });
   });
 
+  it("does not dispatch a rename command when the name is unchanged", () => {
+    expect.hasAssertions();
+    const dispatch = jest.fn();
+    panel = new PropertyPanel(container, dispatch);
+    const item = new DiagramItem("/element:person", "person", DiagramItemType.element, diagram);
+
+    panel.display(item);
+    const input = getInputByLabel(container, "Name");
+    input.value = " person ";
+    input.dispatchEvent(new Event("blur"));
+
+    expect(dispatch).not.toHaveBeenCalled();
+  });
+
+  it("does not dispatch duplicate rename commands for the same node/name replay", () => {
+    expect.hasAssertions();
+    const dispatch = jest.fn();
+    panel = new PropertyPanel(container, dispatch);
+
+    const initialItem = new DiagramItem("/element:person", "person", DiagramItemType.element, diagram);
+    panel.display(initialItem);
+
+    const firstInput = getInputByLabel(container, "Name");
+    firstInput.value = "customer";
+    firstInput.dispatchEvent(new Event("blur"));
+
+    // Simulate stale re-display that still references the old node id/name.
+    const staleItem = new DiagramItem("/element:person", "person", DiagramItemType.element, diagram);
+    panel.display(staleItem);
+    const replayInput = getInputByLabel(container, "Name");
+    replayInput.value = "customer";
+    replayInput.dispatchEvent(new Event("blur"));
+
+    expect(dispatch).toHaveBeenCalledTimes(1);
+    expect(dispatch).toHaveBeenCalledWith({
+      type: "modifyElement",
+      payload: { elementId: "/element:person", elementName: "customer" },
+    });
+  });
+
   it("shows non-editable name for compositor groups", () => {
     expect.hasAssertions();
     const item = new DiagramItem(
@@ -475,6 +515,36 @@ describe("PropertyPanel", () => {
     expect(container.textContent).not.toContain("Save Documentation");
   });
 
+  it.each(["sequence", "choice", "all"] as const)(
+    "shows %s compositor documentation in the docs tab",
+    (compositor) => {
+      expect.hasAssertions();
+      const compositorId = `/complexType:PersonType/group:${compositor}[0]`;
+      const item = new DiagramItem(compositorId, compositor, DiagramItemType.group, diagram);
+      item.documentationAnnotations = [
+        {
+          id: compositorId,
+          documentationEntries: [
+            {
+              id: `${compositorId}/documentation[0]`,
+              content: "Compositor docs",
+            },
+          ],
+        },
+      ];
+
+      panel.display(item);
+      const docsTab = Array.from(container.querySelectorAll("button")).find(
+        (btn) => btn.textContent === "Docs"
+      );
+      docsTab?.click();
+
+      const textarea = container.querySelector<HTMLTextAreaElement>("textarea");
+      expect(textarea).not.toBeNull();
+      expect(textarea?.value).toBe("Compositor docs");
+    }
+  );
+
   it("adds schema-root documentation through the structured docs flow", () => {
     expect.hasAssertions();
     const dispatch = jest.fn();
@@ -632,6 +702,49 @@ describe("PropertyPanel", () => {
       payload: {
         typeId: "/simpleType:TokenType",
         baseType: "xs:token",
+      },
+    });
+  });
+
+  it("does not dispatch a second command when Base Type blur is unchanged after stale simpleType rename replay", () => {
+    expect.hasAssertions();
+    const dispatch = jest.fn();
+    panel = new PropertyPanel(container, dispatch);
+
+    const initial = new DiagramItem(
+      "/simpleType:lengthRestricitionType",
+      "lengthRestricitionType",
+      DiagramItemType.type,
+      diagram
+    );
+    initial.type = "simpleType (restricts xs:string)";
+    panel.display(initial);
+
+    const nameInput = getInputByLabel(container, "Name");
+    nameInput.value = "lengthRestrictionType";
+    nameInput.dispatchEvent(new Event("blur"));
+
+    // Simulate stale re-display that still references the old node id/name
+    // while keeping the same Base Type value.
+    const stale = new DiagramItem(
+      "/simpleType:lengthRestricitionType",
+      "lengthRestricitionType",
+      DiagramItemType.type,
+      diagram
+    );
+    stale.type = "simpleType (restricts xs:string)";
+    panel.display(stale);
+
+    const baseTypeInput = getInputByLabel(container, "Base Type");
+    baseTypeInput.value = "xs:string";
+    baseTypeInput.dispatchEvent(new Event("blur"));
+
+    expect(dispatch).toHaveBeenCalledTimes(1);
+    expect(dispatch).toHaveBeenCalledWith({
+      type: "modifySimpleType",
+      payload: {
+        typeId: "/simpleType:lengthRestricitionType",
+        typeName: "lengthRestrictionType",
       },
     });
   });

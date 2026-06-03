@@ -101,9 +101,14 @@ export function renderTypeProperty(
   if (typeCommand) {
     root.appendChild(
       createEditableField("Type", node.type, (next) => {
+        const normalizedNext = normalizeTypeReferenceForCurrentSchema(node, next);
+        const normalizedCurrent = normalizeTypeReferenceForCurrentSchema(node, node.type ?? "");
+        if (normalizedNext === normalizedCurrent) {
+          return;
+        }
         const command = createTypeCommand(node, next);
         if (command) {
-          node.type = normalizeTypeReferenceForCurrentSchema(node, next);
+          node.type = normalizedNext;
           dispatchCommand(command);
         }
       }, typeSuggestions)
@@ -162,14 +167,18 @@ function renderSimpleBaseTypeEditor(
       "Base Type",
       baseType,
       (next) => {
+        const normalizedNext = normalizeTypeReferenceForCurrentSchema(node, next);
+        const normalizedCurrent = normalizeTypeReferenceForCurrentSchema(node, baseType);
+        if (normalizedNext === normalizedCurrent) {
+          return;
+        }
         const command = createTypeCommand(node, next);
         if (!command) {
           return;
         }
-        const trimmed = normalizeTypeReferenceForCurrentSchema(node, next);
         node.type = hasInlineSimpleType
-          ? `<anonymous simpleType> (restricts ${trimmed})`
-          : `simpleType (restricts ${trimmed})`;
+          ? `<anonymous simpleType> (restricts ${normalizedNext})`
+          : `simpleType (restricts ${normalizedNext})`;
         dispatchCommand(command);
       },
       typeSuggestions
@@ -192,20 +201,22 @@ function renderInlineSimpleTypeReplacement(
       "Replacement Type",
       baseType,
       (next) => {
-        const trimmed = normalizeTypeReferenceForCurrentSchema(node, next);
-        if (!trimmed) {
+        const normalizedNext = normalizeTypeReferenceForCurrentSchema(node, next);
+        const normalizedCurrent = normalizeTypeReferenceForCurrentSchema(node, baseType);
+        if (!normalizedNext || normalizedNext === normalizedCurrent) {
           return;
         }
-        node.type = trimmed;
-        node.hasAnonymousComplexType = false;
-        node.isSimpleContent = false;
-        dispatchCommand({
+        const command: SchemaCommand = {
           type: "modifyElement",
           payload: {
             elementId: node.id,
-            elementType: trimmed,
+            elementType: normalizedNext,
           },
-        });
+        };
+        node.type = normalizedNext;
+        node.hasAnonymousComplexType = false;
+        node.isSimpleContent = false;
+        dispatchCommand(command);
       },
       typeSuggestions
     )
@@ -227,15 +238,19 @@ function renderComplexBaseTypeEditor(
       "Base Type",
       baseType ?? "",
       (next) => {
+        const normalizedNext = normalizeTypeReferenceForCurrentSchema(node, next);
+        const normalizedCurrent = normalizeTypeReferenceForCurrentSchema(node, baseType ?? "");
+        if (normalizedNext === normalizedCurrent) {
+          return;
+        }
         const command = createComplexBaseTypeCommand(node, next);
         if (!command) {
           return;
         }
-        const trimmed = normalizeTypeReferenceForCurrentSchema(node, next);
         const prefix = hasInlineComplexType ? "<anonymous complexType>" : "complexType";
         const derivationKind = node.complexDerivationKind ?? "extension";
         const relation = getDerivationRelation(derivationKind);
-        node.type = trimmed ? `${prefix} (${relation} ${trimmed})` : prefix;
+        node.type = normalizedNext ? `${prefix} (${relation} ${normalizedNext})` : prefix;
         dispatchCommand(command);
       },
       typeSuggestions
@@ -258,15 +273,16 @@ function renderComplexReplacementType(
       "Replacement Type",
       baseType ?? "",
       (next) => {
-        const trimmed = normalizeTypeReferenceForCurrentSchema(node, next);
-        if (!trimmed) {
+        const normalizedNext = normalizeTypeReferenceForCurrentSchema(node, next);
+        const normalizedCurrent = normalizeTypeReferenceForCurrentSchema(node, baseType ?? "");
+        if (!normalizedNext || normalizedNext === normalizedCurrent) {
           return;
         }
-        const command = createTypeCommand(node, trimmed);
+        const command = createTypeCommand(node, normalizedNext);
         if (!command) {
           return;
         }
-        node.type = trimmed;
+        node.type = normalizedNext;
         node.hasAnonymousComplexType = false;
         node.isSimpleContent = false;
         node.complexDerivationKind = undefined;
@@ -292,11 +308,16 @@ function renderInlineAnonymousTypeReplacement(
       "Replacement Type",
       baseType ?? "",
       (next) => {
+        const normalizedNext = normalizeTypeReferenceForCurrentSchema(node, next);
+        const normalizedCurrent = normalizeTypeReferenceForCurrentSchema(node, baseType ?? "");
+        if (normalizedNext === normalizedCurrent) {
+          return;
+        }
         const command = createTypeCommand(node, next);
         if (!command) {
           return;
         }
-        node.type = normalizeTypeReferenceForCurrentSchema(node, next);
+        node.type = normalizedNext;
         node.hasAnonymousComplexType = false;
         node.isSimpleContent = false;
         node.complexDerivationKind = undefined;

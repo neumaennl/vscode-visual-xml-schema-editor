@@ -121,24 +121,6 @@ export function getNodeTypeLabel(node: DiagramItem): string {
       return "Group";
     case SchemaNodeType.GroupRef:
       return "Group Reference";
-    case SchemaNodeType.AttributeGroup:
-      return "Attribute Group";
-    case SchemaNodeType.AttributeGroupRef:
-      return "Attribute Group Reference";
-    case SchemaNodeType.Attribute:
-      return "Attribute";
-    case SchemaNodeType.AnonymousComplexType:
-      return "Anonymous Complex Type";
-    case SchemaNodeType.AnonymousSimpleType:
-      return "Anonymous Simple Type";
-    case SchemaNodeType.Import:
-      return "Import";
-    case SchemaNodeType.Include:
-      return "Include";
-    case SchemaNodeType.Annotation:
-      return "Annotation";
-    case SchemaNodeType.Documentation:
-      return "Documentation";
     default:
       return node.itemType;
   }
@@ -194,11 +176,11 @@ export function canEditCardinality(node: DiagramItem): boolean {
  * Builds a rename command for the selected node.
  *
  * @param node - Diagram item being renamed
- * @param nextName - Proposed new name from the UI
+ * @param newName - Proposed new name from the UI
  * @returns A schema command or null when the node/name is not editable
  */
-export function createNameCommand(node: DiagramItem, nextName: string): SchemaCommand | null {
-  const name = nextName.trim();
+export function createRenameNodeComand(node: DiagramItem, newName: string): SchemaCommand | null {
+  const name = newName.trim();
   if (!name) {
     return null;
   }
@@ -238,23 +220,12 @@ export function createDeleteNodeCommand(node: DiagramItem): SchemaCommand | null
     case SchemaNodeType.Element:
       return { type: "removeElement", payload: { elementId: node.id } };
     case SchemaNodeType.SimpleType:
-    case SchemaNodeType.AnonymousSimpleType:
       return { type: "removeSimpleType", payload: { typeId: node.id } };
     case SchemaNodeType.ComplexType:
-    case SchemaNodeType.AnonymousComplexType:
       return { type: "removeComplexType", payload: { typeId: node.id } };
     case SchemaNodeType.Group:
     case SchemaNodeType.GroupRef:
       return { type: "removeGroup", payload: { groupId: node.id } };
-    case SchemaNodeType.AttributeGroup:
-    case SchemaNodeType.AttributeGroupRef:
-      return { type: "removeAttributeGroup", payload: { groupId: node.id } };
-    case SchemaNodeType.Attribute:
-      return { type: "removeAttribute", payload: { attributeId: node.id } };
-    case SchemaNodeType.Import:
-      return { type: "removeImport", payload: { importId: node.id } };
-    case SchemaNodeType.Include:
-      return { type: "removeInclude", payload: { includeId: node.id } };
     default:
       return null;
   }

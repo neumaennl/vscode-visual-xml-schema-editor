@@ -89,6 +89,7 @@ class SchemaEditorApp {
             this.currentSchema = message.data;
             this.dropCommandFactory.updateNamesFromSchema(message.data);
             this.renderSchema(message.data);
+            this.dismissNotification();
             this.refreshSelection();
             this.saveState();
             break;
@@ -112,6 +113,7 @@ class SchemaEditorApp {
 
           case "commandResult": {
             if (message.data.success) {
+              this.dismissNotification();
               break;
             }
             if (message.data.error) {
@@ -257,13 +259,6 @@ class SchemaEditorApp {
     this.renderer.setDropHandler((item, construct) => {
       this.handleNodeDrop(item, construct);
     });
-
-    const topLevelTarget = document.getElementById("top-level-drop-target");
-    if (topLevelTarget) {
-      this.renderer.setTopLevelDropTarget(topLevelTarget, (construct) => {
-        this.handleTopLevelDrop(construct);
-      });
-    }
   }
 
   /**
@@ -280,24 +275,6 @@ class SchemaEditorApp {
     const command = this.dropCommandFactory.createNodeDropCommand(item, construct);
     if (!command) {
       this.showError(`Drop of '${construct}' is not supported for '${item.name}'`);
-      return;
-    }
-    this.vscode.postMessage({ command: "executeCommand", data: command });
-  }
-
-  /**
-   * Handles a drop onto the dedicated top-level target.
-   *
-   * @param construct - XML schema construct from palette
-   */
-  private handleTopLevelDrop(construct: string): void {
-    if (!isPaletteSchemaConstruct(construct)) {
-      this.showError(`Top-level drop for '${construct}' is not supported`);
-      return;
-    }
-    const command = this.dropCommandFactory.createTopLevelDropCommand(construct);
-    if (!command) {
-      this.showError(`Top-level drop for '${construct}' is not supported`);
       return;
     }
     this.vscode.postMessage({ command: "executeCommand", data: command });

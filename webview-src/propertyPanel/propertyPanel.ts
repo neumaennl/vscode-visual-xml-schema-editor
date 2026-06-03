@@ -12,7 +12,7 @@ import {
   getNodeTypeLabel,
   canEditCardinality,
   createDeleteNodeCommand,
-  createNameCommand,
+  createRenameNodeComand,
   resolveSimpleTypeId,
   isTopLevelElement,
 } from "./propertyPanelCommands";
@@ -32,6 +32,7 @@ import { renderFacetsTab } from "./propertyPanelFacets";
 import { renderSchemaNamespaceProperties } from "./propertyPanelSchemaNamespaces";
 import { BUILTIN_TYPE_SUGGESTIONS } from "./propertyPanelTypeCatalog";
 import { renderTypeProperty } from "./propertyPanelTypes";
+import { renderElementDefaultFixedSection } from "./propertyPanelElementDefaults";
 
 type PropertyTab = "general" | "facets" | "docs" | "xml";
 type CommandDispatcher = (command: SchemaCommand) => void;
@@ -44,6 +45,7 @@ export class PropertyPanel {
   private selectedNode: DiagramItem | null = null;
   private draftNode: DiagramItem | null = null;
   private activeTab: PropertyTab = "general";
+  private pendingRename: { sourceId: string; newName: string } | null = null;
   private readonly dispatchCommand: CommandDispatcher;
 
   /**
@@ -64,6 +66,13 @@ export class PropertyPanel {
    * @param node - The diagram item whose properties to display
    */
   public display(node: DiagramItem): void {
+    if (this.pendingRename) {
+      const renameApplied = node.name.trim() === this.pendingRename.newName;
+      const selectionMoved = node.id !== this.pendingRename.sourceId;
+      if (renameApplied || selectionMoved) {
+        this.pendingRename = null;
+      }
+    }
     this.selectedNode = node;
     this.draftNode = createDraftNode(node);
     this.render();
@@ -143,13 +152,26 @@ export class PropertyPanel {
     const root = document.createElement("div");
     root.className = "property-tab-content";
 
-    const nameCommand = createNameCommand(node, node.name);
+    const nameCommand = createRenameNodeComand(node, node.name);
     if (nameCommand) {
       root.appendChild(
         createEditableField("Name", node.name, (next) => {
-          const command = createNameCommand(node, next);
+          const trimmedName = next.trim();
+          const currentName = node.name.trim();
+          if (trimmedName === currentName) {
+            return;
+          }
+          if (
+            this.pendingRename &&
+            this.pendingRename.sourceId === node.id &&
+            this.pendingRename.newName === trimmedName
+          ) {
+            return;
+          }
+          const command = createRenameNodeComand(node, next);
           if (command) {
-            node.name = next.trim();
+            node.name = trimmedName;
+            this.pendingRename = { sourceId: node.id, newName: trimmedName };
             this.dispatchCommand(command);
           }
         })
@@ -179,7 +201,7 @@ export class PropertyPanel {
     }
 
     if (getNodeType(node) === SchemaNodeType.Element) {
-      root.appendChild(this.renderDefaultFixedSection(node));
+      root.appendChild(renderElementDefaultFixedSection(node, this.dispatchCommand));
     }
 
     if (node.namespace) {
@@ -373,10 +395,7 @@ export class PropertyPanel {
       );
     }
 
-    if (
-      nodeType === SchemaNodeType.ComplexType ||
-      nodeType === SchemaNodeType.AnonymousComplexType
-    ) {
+    if (nodeType === SchemaNodeType.ComplexType) {
       section.appendChild(
         createToggleRow("Mixed content", node.isMixed, (next) => {
           node.isMixed = next;
@@ -395,69 +414,8 @@ export class PropertyPanel {
     const nodeType = getNodeType(node);
     return (
       nodeType === SchemaNodeType.Element ||
-      nodeType === SchemaNodeType.ComplexType ||
-      nodeType === SchemaNodeType.AnonymousComplexType
+      nodeType === SchemaNodeType.ComplexType
     );
-  }
-
-  private renderDefaultFixedSection(node: DiagramItem): HTMLElement {
-    const section = document.createElement("div");
-    section.className = "property-section";
-    section.appendChild(createSectionHeader("edit", "DEFAULT & FIXED"));
-
-    const row = document.createElement("div");
-    row.className = "property-row-2col";
-
-    const defaultCol = document.createElement("div");
-    defaultCol.className = "property-col";
-    const defaultLabel = document.createElement("label");
-    defaultLabel.textContent = "default";
-    const defaultInput = document.createElement("input");
-    defaultInput.type = "text";
-    defaultInput.className = "property-input";
-    defaultInput.value = node.elementDefault ?? "";
-    defaultInput.placeholder = "—";
-    defaultInput.addEventListener("blur", () => {
-      const val = defaultInput.value;
-      node.elementDefault = val || undefined;
-      this.dispatchCommand({
-        type: "modifyElement",
-        payload: { elementId: node.id, default_: val },
-      });
-    });
-    defaultInput.addEventListener("keydown", (e: KeyboardEvent) => {
-      if (e.key === "Enter") { e.preventDefault(); defaultInput.blur(); }
-    });
-    defaultCol.appendChild(defaultLabel);
-    defaultCol.appendChild(defaultInput);
-
-    const fixedCol = document.createElement("div");
-    fixedCol.className = "property-col";
-    const fixedLabel = document.createElement("label");
-    fixedLabel.textContent = "fixed";
-    const fixedInput = document.createElement("input");
-    fixedInput.type = "text";
-    fixedInput.className = "property-input";
-    fixedInput.value = node.elementFixed ?? "";
-    fixedInput.placeholder = "—";
-    fixedInput.addEventListener("blur", () => {
-      const val = fixedInput.value;
-      node.elementFixed = val || undefined;
-      this.dispatchCommand({
-        type: "modifyElement",
-        payload: { elementId: node.id, fixed: val },
-      });
-    });
-    fixedInput.addEventListener("keydown", (e: KeyboardEvent) => {
-      if (e.key === "Enter") { e.preventDefault(); fixedInput.blur(); }
-    });
-    fixedCol.appendChild(fixedLabel);
-    fixedCol.appendChild(fixedInput);
-
-    row.appendChild(defaultCol);
-    row.appendChild(fixedCol);
-    section.appendChild(row);
-    return section;
   }
 
   private renderFacetsTab(node: DiagramItem): HTMLElement {

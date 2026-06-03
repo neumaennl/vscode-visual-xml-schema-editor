@@ -401,6 +401,36 @@ describe("SchemaProcessors", () => {
         "/complexType:PersonType/group:sequence[0]/group:choice[0]"
       );
     });
+
+    it("should extract compositor documentation for property-panel docs editing", () => {
+      const ctItem = new DiagramItem(
+        "/complexType:PersonType",
+        "PersonType",
+        DiagramItemType.type,
+        diagram
+      );
+
+      processSequence(ctItem, {
+        annotation: {
+          documentation: [{ value: "Sequence docs" }],
+        },
+      });
+
+      const sequence = ctItem.childElements[0];
+      expect(sequence.documentation).toBe("Sequence docs");
+      expect(sequence.documentationAnnotations).toEqual([
+        {
+          id: "/complexType:PersonType/group:sequence[0]",
+          documentationEntries: [
+            {
+              id: "/complexType:PersonType/group:sequence[0]/documentation[0]",
+              content: "Sequence docs",
+              lang: undefined,
+            },
+          ],
+        },
+      ]);
+    });
   });
 
   describe("processAnonymousComplexType — group IDs", () => {

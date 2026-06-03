@@ -1,7 +1,7 @@
 import { schema, SchemaCommand } from "../../shared/types";
 import { toArray } from "../../shared/schemaUtils";
 import { DiagramItem, DiagramItemGroupType, DiagramItemType } from "../diagram";
-import { generateSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy";
+import { generateSchemaId, parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy";
 import { PaletteSchemaConstruct } from "../palette/PaletteSchemaConstruct";
 
 /**
@@ -129,6 +129,12 @@ export class DropCommandFactory {
         return this.createExtensionNodeDropCommand(item);
       case PaletteSchemaConstruct.Group:
         return this.createGroupNodeDropCommand(item);
+      case PaletteSchemaConstruct.Sequence:
+        return this.createCompositorNodeDropCommand(item, "sequence");
+      case PaletteSchemaConstruct.Choice:
+        return this.createCompositorNodeDropCommand(item, "choice");
+      case PaletteSchemaConstruct.All:
+        return this.createCompositorNodeDropCommand(item, "all");
       default:
         return null;
     }
@@ -256,6 +262,52 @@ export class DropCommandFactory {
     return null;
   }
 
+  private createCompositorNodeDropCommand(
+    item: DiagramItem,
+    contentModel: "sequence" | "choice" | "all"
+  ): SchemaCommand | null {
+    if (this.isComplexTypeNode(item)) {
+      return {
+        type: "modifyComplexType",
+        payload: {
+          typeId: item.id,
+          contentModel,
+        },
+      };
+    }
+
+    if (item.itemType === DiagramItemType.element) {
+      if (item.hasAnonymousComplexType) {
+        return {
+          type: "modifyComplexType",
+          payload: {
+            typeId: this.getAnonymousComplexTypeId(item),
+            contentModel,
+          },
+        };
+      }
+      return {
+        type: "addComplexType",
+        payload: {
+          parentId: item.id,
+          contentModel,
+        },
+      };
+    }
+
+    if (this.isNamedGroupDefinition(item)) {
+      return {
+        type: "modifyGroup",
+        payload: {
+          groupId: item.id,
+          contentModel,
+        },
+      };
+    }
+
+    return null;
+  }
+
   private createRestrictionNodeDropCommand(item: DiagramItem): SchemaCommand | null {
     if (this.isSchemaRoot(item)) {
       return this.createTopLevelDropCommand(PaletteSchemaConstruct.Restriction);
@@ -358,6 +410,18 @@ export class DropCommandFactory {
 
   private isComplexTypeNode(item: DiagramItem): boolean {
     return item.itemType === DiagramItemType.type && item.type.startsWith("complexType");
+  }
+
+  private isNamedGroupDefinition(item: DiagramItem): boolean {
+    if (item.itemType !== DiagramItemType.group) {
+      return false;
+    }
+    try {
+      const parsed = parseSchemaId(item.id);
+      return parsed.nodeType === SchemaNodeType.Group && parsed.parentId === undefined;
+    } catch {
+      return false;
+    }
   }
 
   private getAnonymousSimpleTypeId(item: DiagramItem): string {

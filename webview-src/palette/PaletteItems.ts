@@ -83,7 +83,7 @@ export const paletteGroups: PaletteGroup[] = [
         icon: "list-ordered",
         color: "#79c0a4",
         description: "Ordered list of children",
-        enabled: false,
+        enabled: true,
       },
       {
         id: PaletteSchemaConstruct.Choice,
@@ -91,7 +91,7 @@ export const paletteGroups: PaletteGroup[] = [
         icon: "worktree",
         color: "#c586c0",
         description: "Exactly one of the children",
-        enabled: false,
+        enabled: true,
       },
       {
         id: PaletteSchemaConstruct.All,
@@ -99,7 +99,7 @@ export const paletteGroups: PaletteGroup[] = [
         icon: "layers",
         color: "#ce9178",
         description: "Each child once, any order",
-        enabled: false,
+        enabled: true,
       },
     ],
   },

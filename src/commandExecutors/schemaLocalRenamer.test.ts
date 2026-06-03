@@ -53,6 +53,32 @@ describe("schemaLocalRenamer", () => {
       expect(elements[0].type_).toBe("RenamedType");
       expect(elements[1].type_).toBe("ext:BaseType");
     });
+
+    it("renames references that use the current schema targetNamespace prefix", () => {
+      const schemaObj = schemaWith(`
+  <xs:simpleType name="BaseType"><xs:restriction base="xs:string"/></xs:simpleType>
+  <xs:element name="status" type="tns:BaseType"/>
+  <xs:complexType name="Wrapper">
+    <xs:sequence>
+      <xs:element name="nested" type="tns:BaseType"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:simpleType name="DerivedType"><xs:restriction base="tns:BaseType"/></xs:simpleType>`);
+      schemaObj.targetNamespace = "http://example.com/ns";
+      schemaObj._namespacePrefixes = {
+        xs: "http://www.w3.org/2001/XMLSchema",
+        tns: "http://example.com/ns",
+        ext: "http://example.com/external",
+      };
+
+      renameLocalTypeInSchema("BaseType", "RenamedType", schemaObj);
+
+      expect(toArray(schemaObj.element)[0].type_).toBe("tns:RenamedType");
+      expect(toArray(toArray(schemaObj.complexType)[0].sequence!.element)[0].type_).toBe(
+        "tns:RenamedType"
+      );
+      expect(toArray(schemaObj.simpleType)[1].restriction!.base).toBe("tns:RenamedType");
+    });
   });
 
   describe("renameLocalGroupRefInSchema", () => {
@@ -66,6 +92,20 @@ describe("schemaLocalRenamer", () => {
       expect(toArray(schemaObj.complexType)[0].group!.ref).toBe("NewGroup");
       expect(toArray(toArray(schemaObj.group)[0].sequence!.group)[0].ref).toBe("NewGroup");
     });
+
+    it("renames targetNamespace-prefixed group refs", () => {
+      const schemaObj = schemaWith(`
+  <xs:complexType name="Wrapper"><xs:group ref="tns:OldGroup"/></xs:complexType>`);
+      schemaObj.targetNamespace = "http://example.com/ns";
+      schemaObj._namespacePrefixes = {
+        xs: "http://www.w3.org/2001/XMLSchema",
+        tns: "http://example.com/ns",
+      };
+
+      renameLocalGroupRefInSchema("OldGroup", "NewGroup", schemaObj);
+
+      expect(toArray(schemaObj.complexType)[0].group!.ref).toBe("tns:NewGroup");
+    });
   });
 
   describe("renameLocalAttributeGroupRefInSchema", () => {
@@ -78,6 +118,20 @@ describe("schemaLocalRenamer", () => {
 
       expect(toArray(toArray(schemaObj.complexType)[0].attributeGroup)[0].ref).toBe("NewAttrs");
       expect(toArray(toArray(schemaObj.attributeGroup)[0].attributeGroup)[0].ref).toBe("NewAttrs");
+    });
+
+    it("renames targetNamespace-prefixed attributeGroup refs", () => {
+      const schemaObj = schemaWith(`
+  <xs:complexType name="Wrapper"><xs:attributeGroup ref="tns:OldAttrs"/></xs:complexType>`);
+      schemaObj.targetNamespace = "http://example.com/ns";
+      schemaObj._namespacePrefixes = {
+        xs: "http://www.w3.org/2001/XMLSchema",
+        tns: "http://example.com/ns",
+      };
+
+      renameLocalAttributeGroupRefInSchema("OldAttrs", "NewAttrs", schemaObj);
+
+      expect(toArray(toArray(schemaObj.complexType)[0].attributeGroup)[0].ref).toBe("tns:NewAttrs");
     });
   });
 
@@ -98,6 +152,27 @@ describe("schemaLocalRenamer", () => {
       expect(toArray(schemaObj.element)[1].substitutionGroup).toBe("renamedHead");
       expect(toArray(toArray(schemaObj.complexType)[0].sequence!.element)[0].ref).toBe("renamedHead");
       expect(toArray(toArray(schemaObj.group)[0].choice!.element)[0].ref).toBe("renamedHead");
+    });
+
+    it("renames targetNamespace-prefixed element refs and substitution groups", () => {
+      const schemaObj = schemaWith(`
+  <xs:element name="head"/>
+  <xs:element name="child" substitutionGroup="tns:head"/>
+  <xs:complexType name="Wrapper">
+    <xs:sequence><xs:element ref="tns:head"/></xs:sequence>
+  </xs:complexType>`);
+      schemaObj.targetNamespace = "http://example.com/ns";
+      schemaObj._namespacePrefixes = {
+        xs: "http://www.w3.org/2001/XMLSchema",
+        tns: "http://example.com/ns",
+      };
+
+      renameLocalElementRefInSchema("head", "renamedHead", schemaObj);
+
+      expect(toArray(schemaObj.element)[1].substitutionGroup).toBe("tns:renamedHead");
+      expect(toArray(toArray(schemaObj.complexType)[0].sequence!.element)[0].ref).toBe(
+        "tns:renamedHead"
+      );
     });
   });
 });

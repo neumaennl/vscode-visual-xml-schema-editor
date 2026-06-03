@@ -174,8 +174,11 @@ export class PropertyPanel {
       root.appendChild(this.renderCardinalitySection(node));
     }
 
-    if (getNodeType(node) === SchemaNodeType.Element) {
+    if (this.canShowConstraintsSection(node)) {
       root.appendChild(this.renderConstraintsSection(node));
+    }
+
+    if (getNodeType(node) === SchemaNodeType.Element) {
       root.appendChild(this.renderDefaultFixedSection(node));
     }
 
@@ -313,49 +316,88 @@ export class PropertyPanel {
     section.className = "property-section";
     section.appendChild(createSectionHeader("lock", "CONSTRAINTS"));
 
-    // Nillable toggle (all elements)
-    section.appendChild(
-      createToggleRow("Nillable", node.isNillable, (next) => {
-        node.isNillable = next;
-        this.dispatchCommand({
-          type: "modifyElement",
-          payload: { elementId: node.id, nillable: next },
-        });
-      })
-    );
+    const nodeType = getNodeType(node);
+    if (nodeType === SchemaNodeType.Element) {
+      // Nillable toggle (all elements)
+      section.appendChild(
+        createToggleRow("Nillable", node.isNillable, (next) => {
+          node.isNillable = next;
+          this.dispatchCommand({
+            type: "modifyElement",
+            payload: { elementId: node.id, nillable: next },
+          });
+        })
+      );
 
-    // Abstract toggle (top-level elements only)
-    if (isTopLevelElement(node)) {
+      // Abstract toggle (top-level elements only)
+      if (isTopLevelElement(node)) {
+        section.appendChild(
+          createToggleRow("Abstract", node.isAbstract, (next) => {
+            node.isAbstract = next;
+            this.dispatchCommand({
+              type: "modifyElement",
+              payload: { elementId: node.id, abstract: next },
+            });
+          })
+        );
+      }
+
+      // Mixed content toggle (element with anonymous complex type)
+      if (node.hasAnonymousComplexType) {
+        const anonComplexTypeId = generateSchemaId({
+          nodeType: SchemaNodeType.AnonymousComplexType,
+          parentId: node.id,
+          position: 0,
+        });
+        section.appendChild(
+          createToggleRow("Mixed content", node.isMixed, (next) => {
+            node.isMixed = next;
+            this.dispatchCommand({
+              type: "modifyComplexType",
+              payload: { typeId: anonComplexTypeId, mixed: next },
+            });
+          })
+        );
+      }
+    }
+
+    if (nodeType === SchemaNodeType.ComplexType) {
       section.appendChild(
         createToggleRow("Abstract", node.isAbstract, (next) => {
           node.isAbstract = next;
           this.dispatchCommand({
-            type: "modifyElement",
-            payload: { elementId: node.id, abstract: next },
+            type: "modifyComplexType",
+            payload: { typeId: node.id, abstract: next },
           });
         })
       );
     }
 
-    // Mixed content toggle (element with anonymous complex type)
-    if (node.hasAnonymousComplexType) {
-      const anonComplexTypeId = generateSchemaId({
-        nodeType: SchemaNodeType.AnonymousComplexType,
-        parentId: node.id,
-        position: 0,
-      });
+    if (
+      nodeType === SchemaNodeType.ComplexType ||
+      nodeType === SchemaNodeType.AnonymousComplexType
+    ) {
       section.appendChild(
         createToggleRow("Mixed content", node.isMixed, (next) => {
           node.isMixed = next;
           this.dispatchCommand({
             type: "modifyComplexType",
-            payload: { typeId: anonComplexTypeId, mixed: next },
+            payload: { typeId: node.id, mixed: next },
           });
         })
       );
     }
 
     return section;
+  }
+
+  private canShowConstraintsSection(node: DiagramItem): boolean {
+    const nodeType = getNodeType(node);
+    return (
+      nodeType === SchemaNodeType.Element ||
+      nodeType === SchemaNodeType.ComplexType ||
+      nodeType === SchemaNodeType.AnonymousComplexType
+    );
   }
 
   private renderDefaultFixedSection(node: DiagramItem): HTMLElement {

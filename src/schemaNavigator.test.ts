@@ -356,6 +356,26 @@ describe("SchemaNavigator", () => {
         expect(result.parentType).toBe("sequence");
       });
 
+      it("should locate sequence via group:sequence[N] path under named group", () => {
+        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:group name="PersonGroup">
+    <xs:sequence>
+      <xs:element name="name" type="xs:string"/>
+    </xs:sequence>
+  </xs:group>
+</xs:schema>`;
+        const schemaObj = unmarshal(schema, schemaXml);
+
+        const result = locateNodeById(
+          schemaObj,
+          "/group:PersonGroup/group:sequence[0]"
+        );
+
+        expect(result.found).toBe(true);
+        expect(result.parentType).toBe("sequence");
+      });
+
       it("should locate choice via group:choice[N] path under named complexType", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">

@@ -360,6 +360,47 @@ describe("SchemaProcessors", () => {
       expect(ctItem.childElements).toHaveLength(1);
       expect(ctItem.childElements[0].groupType).toBe(DiagramItemGroupType.Sequence);
     });
+
+    it("should render nested group references inside sequence groups", () => {
+      const ctItem = new DiagramItem(
+        "/complexType:PersonType",
+        "PersonType",
+        DiagramItemType.type,
+        diagram
+      );
+
+      processSequence(ctItem, {
+        group: [{ ref: "SharedGroup", minOccurs: 0, maxOccurs: "unbounded" }],
+      });
+
+      const sequence = ctItem.childElements[0];
+      expect(sequence.childElements).toHaveLength(1);
+      expect(sequence.childElements[0].id).toBe(
+        "/complexType:PersonType/group:sequence[0]/groupRef:SharedGroup[0]"
+      );
+      expect(sequence.childElements[0].minOccurrence).toBe(0);
+      expect(sequence.childElements[0].maxOccurrence).toBe(-1);
+      expect(sequence.childElements[0].isReference).toBe(true);
+    });
+
+    it("should render nested compositors using schema positions", () => {
+      const ctItem = new DiagramItem(
+        "/complexType:PersonType",
+        "PersonType",
+        DiagramItemType.type,
+        diagram
+      );
+
+      processSequence(ctItem, {
+        element: [{ name: "first", type_: "xs:string" }],
+        choice: [{ element: [{ name: "second", type_: "xs:string" }] }],
+      });
+
+      const sequence = ctItem.childElements[0];
+      expect(sequence.childElements[1].id).toBe(
+        "/complexType:PersonType/group:sequence[0]/group:choice[0]"
+      );
+    });
   });
 
   describe("processAnonymousComplexType — group IDs", () => {

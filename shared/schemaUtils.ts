@@ -4,6 +4,7 @@
  */
 
 import { SCHEMA_ROOT_ID } from "./idStrategy";
+import { schema } from "./types";
 
 /**
  * Normalizes a value that may be undefined, a single item, or an array.
@@ -47,4 +48,20 @@ export function toArray<T>(value: T | T[] | undefined | null): T[] {
  */
 export function isSchemaRoot(parentId: string | undefined): boolean {
   return parentId === undefined || parentId === SCHEMA_ROOT_ID;
+}
+
+/**
+ * Returns the prefixes that map to the schema's own target namespace.
+ *
+ * @param schemaObj - Schema whose namespace declarations should be inspected
+ * @returns Non-default prefixes that resolve to targetNamespace
+ */
+export function getCurrentSchemaPrefixes(schemaObj: schema): string[] {
+  const targetNamespace = schemaObj.targetNamespace?.toString();
+  if (!targetNamespace) {
+    return [];
+  }
+  return Object.entries(schemaObj._namespacePrefixes ?? {})
+    .filter(([prefix, namespaceUri]) => prefix !== "" && namespaceUri === targetNamespace)
+    .map(([prefix]) => prefix);
 }

@@ -318,6 +318,8 @@ function processGroup(
     parent.diagram
   );
   groupItem.groupType = groupType;
+  groupItem.documentationAnnotations = extractDocumentationAnnotations(groupItem.id, groupDef.annotation);
+  groupItem.documentation = extractDocumentation(groupDef.annotation) ?? "";
   const occurrenceGroupDef = groupDef as { minOccurs?: number; maxOccurs?: number | "unbounded" };
   if (occurrenceGroupDef.minOccurs !== undefined) {
     const parsedMin = Number(occurrenceGroupDef.minOccurs);

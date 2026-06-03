@@ -32,6 +32,7 @@ import { renderFacetsTab } from "./propertyPanelFacets";
 import { renderSchemaNamespaceProperties } from "./propertyPanelSchemaNamespaces";
 import { BUILTIN_TYPE_SUGGESTIONS } from "./propertyPanelTypeCatalog";
 import { renderTypeProperty } from "./propertyPanelTypes";
+import { renderElementDefaultFixedSection } from "./propertyPanelElementDefaults";
 
 type PropertyTab = "general" | "facets" | "docs" | "xml";
 type CommandDispatcher = (command: SchemaCommand) => void;
@@ -179,7 +180,7 @@ export class PropertyPanel {
     }
 
     if (getNodeType(node) === SchemaNodeType.Element) {
-      root.appendChild(this.renderDefaultFixedSection(node));
+      root.appendChild(renderElementDefaultFixedSection(node, this.dispatchCommand));
     }
 
     if (node.namespace) {
@@ -398,66 +399,6 @@ export class PropertyPanel {
       nodeType === SchemaNodeType.ComplexType ||
       nodeType === SchemaNodeType.AnonymousComplexType
     );
-  }
-
-  private renderDefaultFixedSection(node: DiagramItem): HTMLElement {
-    const section = document.createElement("div");
-    section.className = "property-section";
-    section.appendChild(createSectionHeader("edit", "DEFAULT & FIXED"));
-
-    const row = document.createElement("div");
-    row.className = "property-row-2col";
-
-    const defaultCol = document.createElement("div");
-    defaultCol.className = "property-col";
-    const defaultLabel = document.createElement("label");
-    defaultLabel.textContent = "default";
-    const defaultInput = document.createElement("input");
-    defaultInput.type = "text";
-    defaultInput.className = "property-input";
-    defaultInput.value = node.elementDefault ?? "";
-    defaultInput.placeholder = "—";
-    defaultInput.addEventListener("blur", () => {
-      const val = defaultInput.value;
-      node.elementDefault = val || undefined;
-      this.dispatchCommand({
-        type: "modifyElement",
-        payload: { elementId: node.id, default_: val },
-      });
-    });
-    defaultInput.addEventListener("keydown", (e: KeyboardEvent) => {
-      if (e.key === "Enter") { e.preventDefault(); defaultInput.blur(); }
-    });
-    defaultCol.appendChild(defaultLabel);
-    defaultCol.appendChild(defaultInput);
-
-    const fixedCol = document.createElement("div");
-    fixedCol.className = "property-col";
-    const fixedLabel = document.createElement("label");
-    fixedLabel.textContent = "fixed";
-    const fixedInput = document.createElement("input");
-    fixedInput.type = "text";
-    fixedInput.className = "property-input";
-    fixedInput.value = node.elementFixed ?? "";
-    fixedInput.placeholder = "—";
-    fixedInput.addEventListener("blur", () => {
-      const val = fixedInput.value;
-      node.elementFixed = val || undefined;
-      this.dispatchCommand({
-        type: "modifyElement",
-        payload: { elementId: node.id, fixed: val },
-      });
-    });
-    fixedInput.addEventListener("keydown", (e: KeyboardEvent) => {
-      if (e.key === "Enter") { e.preventDefault(); fixedInput.blur(); }
-    });
-    fixedCol.appendChild(fixedLabel);
-    fixedCol.appendChild(fixedInput);
-
-    row.appendChild(defaultCol);
-    row.appendChild(fixedCol);
-    section.appendChild(row);
-    return section;
   }
 
   private renderFacetsTab(node: DiagramItem): HTMLElement {

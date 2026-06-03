@@ -22,20 +22,10 @@ import {
   groupRef,
   attributeGroupRef,
 } from "../../shared/types";
-import { toArray } from "../../shared/schemaUtils";
+import { getCurrentSchemaPrefixes, toArray } from "../../shared/schemaUtils";
 import { AttributeBearer, CompositorBearer } from "./schemaTraversalTypes";
 
 // ===== Local name renaming helpers =====
-
-function getCurrentSchemaPrefixes(schemaObj: schema): string[] {
-  const targetNamespace = schemaObj.targetNamespace?.toString();
-  if (!targetNamespace) {
-    return [];
-  }
-  return Object.entries(schemaObj._namespacePrefixes ?? {})
-    .filter(([prefix, namespaceUri]) => prefix !== "" && namespaceUri === targetNamespace)
-    .map(([prefix]) => prefix);
-}
 
 /**
  * Returns `newName` when `value` is exactly `oldName` (unqualified — no colon),
@@ -56,18 +46,6 @@ function renameSchemaScopedName(
     }
   }
   return value;
-}
-
-/**
- * Like {@link renameLocalName} but for required (non-optional) string fields.
- */
-function renameRequiredSchemaScopedName(
-  oldName: string,
-  newName: string,
-  value: string,
-  currentSchemaPrefixes: readonly string[]
-): string {
-  return renameSchemaScopedName(oldName, newName, value, currentSchemaPrefixes) ?? value;
 }
 
 /**
@@ -94,12 +72,9 @@ function renameSimpleTypeLocalNames(
   currentSchemaPrefixes: readonly string[]
 ): void {
   if (st.restriction) {
-    st.restriction.base = renameRequiredSchemaScopedName(
-      old,
-      newName,
-      st.restriction.base,
-      currentSchemaPrefixes
-    );
+    st.restriction.base =
+      renameSchemaScopedName(old, newName, st.restriction.base, currentSchemaPrefixes) ??
+      st.restriction.base;
     if (st.restriction.simpleType) {
       renameSimpleTypeLocalNames(old, newName, st.restriction.simpleType, currentSchemaPrefixes);
     }
@@ -159,7 +134,8 @@ function renameAttributeBearerLocalNames(
   bearer: AttributeBearer,
   currentSchemaPrefixes: readonly string[]
 ): void {
-  bearer.base = renameRequiredSchemaScopedName(old, newName, bearer.base, currentSchemaPrefixes);
+  bearer.base =
+    renameSchemaScopedName(old, newName, bearer.base, currentSchemaPrefixes) ?? bearer.base;
   for (const attr of toArray(bearer.attribute)) {
     attr.type_ = renameSchemaScopedName(old, newName, attr.type_, currentSchemaPrefixes);
     // attr.ref is an attribute reference, not a type reference — not touched here
@@ -318,7 +294,7 @@ export function renameLocalGroupRefInSchema(
   const currentSchemaPrefixes = getCurrentSchemaPrefixes(schemaObj);
 
   function updateGroupRef(gr: groupRef): void {
-    gr.ref = renameRequiredSchemaScopedName(oldName, newName, gr.ref, currentSchemaPrefixes);
+    gr.ref = renameSchemaScopedName(oldName, newName, gr.ref, currentSchemaPrefixes) ?? gr.ref;
   }
 
   function processCompositorGroupRefs(compositor: explicitGroup | simpleExplicitGroup): void {
@@ -378,7 +354,8 @@ export function renameLocalAttributeGroupRefInSchema(
   const currentSchemaPrefixes = getCurrentSchemaPrefixes(schemaObj);
 
   function updateAttrGroupRef(agr: attributeGroupRef): void {
-    agr.ref = renameRequiredSchemaScopedName(oldName, newName, agr.ref, currentSchemaPrefixes);
+    agr.ref =
+      renameSchemaScopedName(oldName, newName, agr.ref, currentSchemaPrefixes) ?? agr.ref;
   }
 
   function processAttrGroupRefs(holder: {

@@ -238,6 +238,12 @@ export function validateModifySimpleType(
 
   // Top-level named simpleType: validate it exists in the schema
   if (!toArray(schemaObj.simpleType).some(st => st.name === parsed.name)) {
+    const isRenameReplay =
+      command.payload.typeName !== undefined &&
+      toArray(schemaObj.simpleType).some((st) => st.name === command.payload.typeName);
+    if (isRenameReplay) {
+      return { valid: true };
+    }
     return { valid: false, error: `Simple type '${parsed.name}' not found in schema` };
   }
   if (command.payload.restrictions !== undefined && command.payload.baseType === undefined) {
@@ -366,6 +372,12 @@ export function validateModifyComplexType(
   const derivationKindError = validateDerivationKind(command.payload.derivationKind);
   if (derivationKindError) return derivationKindError;
   if (!toArray(schemaObj.complexType).some((ct) => ct.name === parsed.name)) {
+    const isRenameReplay =
+      command.payload.typeName !== undefined &&
+      toArray(schemaObj.complexType).some((ct) => ct.name === command.payload.typeName);
+    if (isRenameReplay) {
+      return { valid: true };
+    }
     return { valid: false, error: `Complex type '${parsed.name}' not found in schema` };
   }
   return { valid: true };

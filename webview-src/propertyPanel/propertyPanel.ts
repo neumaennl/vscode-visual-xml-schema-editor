@@ -374,10 +374,7 @@ export class PropertyPanel {
       );
     }
 
-    if (
-      nodeType === SchemaNodeType.ComplexType ||
-      nodeType === SchemaNodeType.AnonymousComplexType
-    ) {
+    if (nodeType === SchemaNodeType.ComplexType) {
       section.appendChild(
         createToggleRow("Mixed content", node.isMixed, (next) => {
           node.isMixed = next;
@@ -396,8 +393,7 @@ export class PropertyPanel {
     const nodeType = getNodeType(node);
     return (
       nodeType === SchemaNodeType.Element ||
-      nodeType === SchemaNodeType.ComplexType ||
-      nodeType === SchemaNodeType.AnonymousComplexType
+      nodeType === SchemaNodeType.ComplexType
     );
   }
 

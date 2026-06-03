@@ -475,6 +475,37 @@ describe("PropertyPanel", () => {
     expect(container.textContent).not.toContain("Save Documentation");
   });
 
+  it("shows compositor-group documentation in the docs tab", () => {
+    expect.hasAssertions();
+    const item = new DiagramItem(
+      "/complexType:PersonType/group:sequence[0]",
+      "sequence",
+      DiagramItemType.group,
+      diagram
+    );
+    item.documentationAnnotations = [
+      {
+        id: "/complexType:PersonType/group:sequence[0]",
+        documentationEntries: [
+          {
+            id: "/complexType:PersonType/group:sequence[0]/documentation[0]",
+            content: "Compositor docs",
+          },
+        ],
+      },
+    ];
+
+    panel.display(item);
+    const docsTab = Array.from(container.querySelectorAll("button")).find(
+      (btn) => btn.textContent === "Docs"
+    );
+    docsTab?.click();
+
+    const textarea = container.querySelector<HTMLTextAreaElement>("textarea");
+    expect(textarea).not.toBeNull();
+    expect(textarea?.value).toBe("Compositor docs");
+  });
+
   it("adds schema-root documentation through the structured docs flow", () => {
     expect.hasAssertions();
     const dispatch = jest.fn();

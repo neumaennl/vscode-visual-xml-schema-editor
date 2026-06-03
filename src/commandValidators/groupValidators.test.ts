@@ -401,6 +401,28 @@ describe("Group Validators", () => {
       expect(result.valid).toBe(true);
     });
 
+    test("should accept stale group rename replay after a successful rename", () => {
+      const renamedSchema = unmarshal(
+        schema,
+        `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:group name="UpdatedGroup">
+    <xs:sequence/>
+  </xs:group>
+</xs:schema>`
+      );
+      const command: ModifyGroupCommand = {
+        type: "modifyGroup",
+        payload: {
+          groupId: "/group:MyGroup",
+          groupName: "UpdatedGroup",
+        },
+      };
+
+      const result = validateModifyGroup(command, renamedSchema);
+      expect(result.valid).toBe(true);
+    });
+
     test("should accept occurrence updates for compositor groups", () => {
       const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">

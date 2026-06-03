@@ -524,6 +524,12 @@ export function validateModifyGroup(
   }
   const found = toArray(schemaObj.group).some((g) => g.name === parsed.name);
   if (!found) {
+    const isRenameReplay =
+      command.payload.groupName !== undefined &&
+      toArray(schemaObj.group).some((g) => g.name === command.payload.groupName);
+    if (isRenameReplay) {
+      return { valid: true };
+    }
     return {
       valid: false,
       error: `Group not found: ${command.payload.groupId}`,

@@ -459,6 +459,27 @@ describe("Element Validators", () => {
       expect(result.valid).toBe(true);
     });
 
+    test("should accept stale top-level rename replay after a successful rename", () => {
+      const renamedSchema = unmarshal(
+        schema,
+        `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="personRenamed" type="xs:string"/>
+</xs:schema>`
+      );
+
+      const command: ModifyElementCommand = {
+        type: "modifyElement",
+        payload: {
+          elementId: "/element:person",
+          elementName: "personRenamed",
+        },
+      };
+
+      const result = validateModifyElement(command, renamedSchema);
+      expect(result.valid).toBe(true);
+    });
+
     test("should reject modifyElement with minOccurs > maxOccurs", () => {
       const command: ModifyElementCommand = {
         type: "modifyElement",

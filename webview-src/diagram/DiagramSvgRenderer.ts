@@ -104,7 +104,7 @@ export class DiagramSvgRenderer {
     this.renderShape(item, group);
 
     // Render text for non-group items and named groups (skip compositor symbols only)
-    if (item.itemType !== DiagramItemType.group || !this.isCompositorGroup(item)) {
+    if (item.itemType !== DiagramItemType.group || !isCompositorGroup(item)) {
       renderText(item, group, this.svg);
     }
 
@@ -365,9 +365,5 @@ export class DiagramSvgRenderer {
       `fill:${item.diagram?.style.foregroundColor}`,
       ""
     );
-  }
-
-  private isCompositorGroup(item: DiagramItem): boolean {
-    return isCompositorGroup(item);
   }
 }

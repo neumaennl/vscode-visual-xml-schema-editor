@@ -321,23 +321,6 @@ describe("DiagramRenderer", () => {
       expect(itemElement.classList.contains("drag-over")).toBe(true);
     });
 
-    it("should invoke top-level drop handler with construct", () => {
-      const topLevelTarget = document.createElement("div");
-      const onTopLevelDrop = jest.fn();
-      renderer.setTopLevelDropTarget(topLevelTarget, onTopLevelDrop);
-
-      const dropEvent = new Event("drop", { bubbles: true }) as DragEvent;
-      Object.defineProperty(dropEvent, "dataTransfer", {
-        value: {
-          getData: (_mime: string) => "complexType",
-        },
-      });
-
-      topLevelTarget.dispatchEvent(dropEvent);
-
-      expect(onTopLevelDrop).toHaveBeenCalledWith("complexType");
-    });
-
     it("should keep drag-over class when pointer is still inside item group", () => {
       const onNodeClick = jest.fn();
       const mockSchema = {

@@ -9,6 +9,7 @@ import {
   DiagramItemType,
   Point,
 } from "./DiagramTypes";
+import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy";
 import {
   svgLine,
   svgRectangle,
@@ -102,8 +103,8 @@ export class DiagramSvgRenderer {
     // Render the main shape
     this.renderShape(item, group);
 
-    // Render text (skip for group items - they only show the symbol)
-    if (item.itemType !== DiagramItemType.group) {
+    // Render text for non-group items and named groups (skip compositor symbols only)
+    if (item.itemType !== DiagramItemType.group || !this.isCompositorGroup(item)) {
       renderText(item, group, this.svg);
     }
 
@@ -364,5 +365,20 @@ export class DiagramSvgRenderer {
       `fill:${item.diagram?.style.foregroundColor}`,
       ""
     );
+  }
+
+  private isCompositorGroup(item: DiagramItem): boolean {
+    try {
+      const parsed = parseSchemaId(item.id);
+      return (
+        parsed.nodeType === SchemaNodeType.Group &&
+        parsed.parentId !== undefined &&
+        (parsed.name === "sequence" ||
+          parsed.name === "choice" ||
+          parsed.name === "all")
+      );
+    } catch {
+      return true;
+    }
   }
 }

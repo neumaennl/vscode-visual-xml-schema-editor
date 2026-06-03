@@ -33,7 +33,7 @@ function getCurrentSchemaPrefixes(schemaObj: schema): string[] {
     return [];
   }
   return Object.entries(schemaObj._namespacePrefixes ?? {})
-    .filter(([prefix, namespaceUri]) => prefix.trim().length > 0 && namespaceUri === targetNamespace)
+    .filter(([prefix, namespaceUri]) => prefix !== "" && namespaceUri === targetNamespace)
     .map(([prefix]) => prefix);
 }
 

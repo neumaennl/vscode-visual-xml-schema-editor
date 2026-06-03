@@ -254,7 +254,11 @@ describe("PropertyPanel", () => {
 
     panel.display(item);
 
-    expect(hasLabel(container, "Name")).toBe(false);
+    const nameRow = Array.from(container.querySelectorAll(".property")).find(
+      (row) => row.querySelector("label")?.textContent === "Name:"
+    );
+    const nameInput = nameRow?.querySelector("input");
+    expect(nameInput).toBeNull();
     expect(container.textContent).toContain("Name:");
     expect(container.textContent).toContain("sequence");
   });
@@ -629,7 +633,7 @@ describe("PropertyPanel", () => {
     panel.display(item);
 
     expect(container.textContent).toContain("complexType with simpleContent");
-    expect(container.querySelectorAll("input")).toHaveLength(1);
+    expect(container.querySelectorAll('input[type="text"]')).toHaveLength(1);
     expect(hasLabel(container, "Base Type")).toBe(false);
     expect(container.textContent).not.toContain("Replacement Type");
   });

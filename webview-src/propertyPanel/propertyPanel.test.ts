@@ -77,6 +77,27 @@ describe("PropertyPanel", () => {
     });
   });
 
+  it("dispatches removeGroup when deleting a compositor group", () => {
+    expect.hasAssertions();
+    const dispatch = jest.fn();
+    panel = new PropertyPanel(container, dispatch);
+    const item = new DiagramItem(
+      "/complexType:PersonType/group:sequence[0]",
+      "sequence",
+      DiagramItemType.group,
+      diagram
+    );
+
+    panel.display(item);
+    const deleteButton = container.querySelector("button[title='Delete node']") as HTMLButtonElement;
+    deleteButton.click();
+
+    expect(dispatch).toHaveBeenCalledWith({
+      type: "removeGroup",
+      payload: { groupId: "/complexType:PersonType/group:sequence[0]" },
+    });
+  });
+
   it("does not render a header delete button for schema nodes", () => {
     expect.hasAssertions();
     const schemaRoot = new DiagramItem(SCHEMA_ROOT_ID, "schema", DiagramItemType.group, diagram);
@@ -222,6 +243,22 @@ describe("PropertyPanel", () => {
     });
   });
 
+  it("shows non-editable name for compositor groups", () => {
+    expect.hasAssertions();
+    const item = new DiagramItem(
+      "/complexType:PersonType/group:sequence[0]",
+      "sequence",
+      DiagramItemType.group,
+      diagram
+    );
+
+    panel.display(item);
+
+    expect(hasLabel(container, "Name")).toBe(false);
+    expect(container.textContent).toContain("Name:");
+    expect(container.textContent).toContain("sequence");
+  });
+
   it("dispatches modifyElement when minOccurs is changed", () => {
     expect.hasAssertions();
     const dispatch = jest.fn();
@@ -308,6 +345,40 @@ describe("PropertyPanel", () => {
     expect(dispatch).toHaveBeenCalledWith({
       type: "modifyGroup",
       payload: { groupId: "/complexType:PersonType/group:sequence[0]", minOccurs: 0, maxOccurs: 3 },
+    });
+  });
+
+  it("dispatches modifyComplexType when complexType constraints are changed", () => {
+    expect.hasAssertions();
+    const dispatch = jest.fn();
+    panel = new PropertyPanel(container, dispatch);
+    const item = new DiagramItem("/complexType:PersonType", "PersonType", DiagramItemType.type, diagram);
+    item.isAbstract = false;
+    item.isMixed = false;
+
+    panel.display(item);
+
+    const abstractRow = Array.from(container.querySelectorAll(".property-toggle-row")).find(
+      (row) => row.querySelector(".property-toggle-label")?.textContent === "Abstract"
+    );
+    const abstractInput = abstractRow?.querySelector("input") as HTMLInputElement;
+    abstractInput.checked = true;
+    abstractInput.dispatchEvent(new Event("change"));
+
+    const mixedRow = Array.from(container.querySelectorAll(".property-toggle-row")).find(
+      (row) => row.querySelector(".property-toggle-label")?.textContent === "Mixed content"
+    );
+    const mixedInput = mixedRow?.querySelector("input") as HTMLInputElement;
+    mixedInput.checked = true;
+    mixedInput.dispatchEvent(new Event("change"));
+
+    expect(dispatch).toHaveBeenNthCalledWith(1, {
+      type: "modifyComplexType",
+      payload: { typeId: "/complexType:PersonType", abstract: true },
+    });
+    expect(dispatch).toHaveBeenNthCalledWith(2, {
+      type: "modifyComplexType",
+      payload: { typeId: "/complexType:PersonType", mixed: true },
     });
   });
 

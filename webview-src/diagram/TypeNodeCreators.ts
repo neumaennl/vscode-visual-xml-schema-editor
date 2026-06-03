@@ -94,6 +94,8 @@ export function createComplexTypeNode(
   );
 
   item.type = "complexType";
+  item.isAbstract = complexType.abstract === true;
+  item.isMixed = complexType.mixed === true;
 
   // Extract documentation
   item.documentationAnnotations = extractDocumentationAnnotations(item.id, complexType.annotation);

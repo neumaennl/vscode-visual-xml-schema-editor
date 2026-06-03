@@ -313,6 +313,7 @@ function processGroup(
     parent.diagram
   );
   groupItem.groupType = groupType;
+  extractOccurrenceConstraints(groupItem, groupDef);
 
   // Process elements within the group.
   // Import and use createElementNode from TypeNodeCreators would create a circular dependency,

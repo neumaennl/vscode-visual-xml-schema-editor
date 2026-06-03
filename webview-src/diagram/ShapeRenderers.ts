@@ -6,6 +6,7 @@
 import { DiagramItem } from "./DiagramItem";
 import { DiagramItemGroupType, Point, Rectangle } from "./DiagramTypes";
 import { svgRectangle, svgPolygon, svgCircle, svgLine } from "./SvgHelpers";
+import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy";
 
 /** Offset for shadow effect on multiple occurrence shapes */
 const SHADOW_OFFSET = 3;
@@ -72,8 +73,10 @@ export function renderGroupShape(
   }
   svgPolygon(group, points, fill, stroke);
 
-  // Draw group type indicator
-  renderGroupTypeIndicator(item, rect, group);
+  // Draw group type indicator only for compositor groups (sequence/choice/all)
+  if (isCompositorGroup(item)) {
+    renderGroupTypeIndicator(item, rect, group);
+  }
 }
 
 /**
@@ -246,6 +249,21 @@ export function renderGroupTypeIndicator(
       svgCircle(group, allXMiddle, allYMiddle, allDotSize, foregroundBrush);
       svgCircle(group, allXMiddle, allYDown, allDotSize, foregroundBrush);
       break;
+    }
+  }
+
+  function isCompositorGroup(item: DiagramItem): boolean {
+    try {
+      const parsed = parseSchemaId(item.id);
+      return (
+        parsed.nodeType === SchemaNodeType.Group &&
+        parsed.parentId !== undefined &&
+        (parsed.name === "sequence" ||
+          parsed.name === "choice" ||
+          parsed.name === "all")
+      );
+    } catch {
+      return true;
     }
   }
 }

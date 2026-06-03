@@ -369,6 +369,78 @@ describe("DropCommandFactory", () => {
       });
     });
 
+    describe("createNodeDropCommand — compositors", () => {
+      it("modifies named complexType content model", () => {
+        const item = makeItem("/complexType:PersonType", DiagramItemType.type, {
+          type: "complexType",
+        });
+
+        const cmd = factory.createNodeDropCommand(item, PaletteSchemaConstruct.Choice);
+
+        expect(cmd).toEqual({
+          type: "modifyComplexType",
+          payload: {
+            typeId: "/complexType:PersonType",
+            contentModel: "choice",
+          },
+        });
+      });
+
+      it("modifies inline anonymous complexType content model", () => {
+        const item = makeItem("/element:person", DiagramItemType.element, {
+          hasAnonymousComplexType: true,
+        });
+
+        const cmd = factory.createNodeDropCommand(item, PaletteSchemaConstruct.All);
+
+        expect(cmd).toEqual({
+          type: "modifyComplexType",
+          payload: {
+            typeId: "/element:person/anonymousComplexType[0]",
+            contentModel: "all",
+          },
+        });
+      });
+
+      it("adds complexType with dropped content model for plain elements", () => {
+        const item = makeItem("/element:person", DiagramItemType.element);
+
+        const cmd = factory.createNodeDropCommand(item, PaletteSchemaConstruct.Sequence);
+
+        expect(cmd).toEqual({
+          type: "addComplexType",
+          payload: {
+            parentId: "/element:person",
+            contentModel: "sequence",
+          },
+        });
+      });
+
+      it("modifies top-level named groups", () => {
+        const item = makeItem("/group:PeopleGroup", DiagramItemType.group);
+
+        const cmd = factory.createNodeDropCommand(item, PaletteSchemaConstruct.Choice);
+
+        expect(cmd).toEqual({
+          type: "modifyGroup",
+          payload: {
+            groupId: "/group:PeopleGroup",
+            contentModel: "choice",
+          },
+        });
+      });
+
+      it("rejects compositor drop on compositor-group nodes", () => {
+        const item = makeItem("/complexType:PersonType/group:sequence[0]", DiagramItemType.group, {
+          groupType: DiagramItemGroupType.Sequence,
+        });
+
+        const cmd = factory.createNodeDropCommand(item, PaletteSchemaConstruct.All);
+
+        expect(cmd).toBeNull();
+      });
+    });
+
     it("modifies existing inline complexType elements in place", () => {
       const item = makeItem("/element:person", DiagramItemType.element, {
         type: "<anonymous complexType> (extends BasePersonType)",

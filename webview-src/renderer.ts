@@ -31,7 +31,6 @@ export class DiagramRenderer {
   private canDropOnNodeCallback:
     | ((node: DiagramItem, construct: string) => boolean)
     | null = null;
-  private onTopLevelDropCallback: ((construct: string) => void) | null = null;
 
   /**
    * Get the current diagram (exposed for testing).
@@ -206,38 +205,6 @@ export class DiagramRenderer {
     canDropOnNode: (node: DiagramItem, construct: string) => boolean
   ): void {
     this.canDropOnNodeCallback = canDropOnNode;
-  }
-
-  /**
-   * Register callback for top-level drop target operations.
-   *
-   * @param target - Top-level drop zone element
-   * @param onDrop - Callback that receives dropped XML schema construct from palette
-   */
-  public setTopLevelDropTarget(
-    target: HTMLElement,
-    onDrop: (construct: string) => void
-  ): void {
-    this.onTopLevelDropCallback = onDrop;
-
-    target.addEventListener("dragover", (event: DragEvent) => {
-      event.preventDefault();
-      target.classList.add("drag-over");
-    });
-
-    target.addEventListener("dragleave", () => {
-      target.classList.remove("drag-over");
-    });
-
-    target.addEventListener("drop", (event: DragEvent) => {
-      event.preventDefault();
-      target.classList.remove("drag-over");
-      const construct = this.getDraggedPaletteSchemaConstruct(event);
-      if (construct && this.onTopLevelDropCallback) {
-        this.onTopLevelDropCallback(construct);
-      }
-      setActiveDraggedPaletteSchemaConstruct(null);
-    });
   }
 
   /**

@@ -83,6 +83,16 @@ export function executeRemoveGroup(
   const { groupId } = command.payload;
   const parsed = parseSchemaId(groupId);
 
+  if (parsed.nodeType === SchemaNodeType.Group && parsed.parentId && parsed.name) {
+    const groupLocation = locateNodeById(schemaObj, groupId);
+    const parentLocation = locateNodeById(schemaObj, parsed.parentId);
+    if (!groupLocation.found || !parentLocation.found) {
+      return;
+    }
+    removeCompositorGroupFromParent(parentLocation.parent, parsed.name, groupLocation.parent);
+    return;
+  }
+
   if (parsed.nodeType === SchemaNodeType.GroupRef) {
     // Reference mode: remove xs:group ref="..." from its parent compositor
     if (!parsed.parentId) {
@@ -122,6 +132,31 @@ export function executeModifyGroup(
   const { groupId, groupName, contentModel, documentation, ref, minOccurs, maxOccurs } =
     command.payload;
   const parsed = parseSchemaId(groupId);
+
+  if (parsed.nodeType === SchemaNodeType.Group && parsed.parentId) {
+    const location = locateNodeById(schemaObj, groupId);
+    if (!location.found) {
+      return;
+    }
+    const compositor = location.parent as
+      | simpleExplicitGroup
+      | allType;
+    if (minOccurs !== undefined) {
+      compositor.minOccurs = minOccurs;
+    }
+    if (maxOccurs !== undefined) {
+      compositor.maxOccurs = maxOccurs;
+    }
+    if (documentation !== undefined) {
+      if (!compositor.annotation) {
+        compositor.annotation = new annotationType();
+      }
+      const doc = new documentationType();
+      doc.value = documentation;
+      compositor.annotation.documentation = [doc];
+    }
+    return;
+  }
 
   if (parsed.nodeType === SchemaNodeType.GroupRef) {
     // Reference mode: modify xs:group ref="..." in its parent compositor
@@ -300,6 +335,49 @@ function findGroupRef(
 ): groupRef | undefined {
   if (name !== undefined && position !== undefined) {
     return refs.find((r, idx) => r.ref === name && idx === position);
+  }
+
+  type ComplexTypeLike = {
+    sequence?: simpleExplicitGroup;
+    choice?: simpleExplicitGroup;
+    all?: allType;
+    complexContent?: {
+      extension?: { sequence?: simpleExplicitGroup; choice?: simpleExplicitGroup; all?: allType };
+      restriction?: { sequence?: simpleExplicitGroup; choice?: simpleExplicitGroup; all?: allType };
+    };
+  };
+
+  function removeCompositorGroupFromParent(
+    parent: unknown,
+    groupKind: string,
+    targetGroup: unknown
+  ): void {
+    const clearGroup = (holder: ComplexTypeLike): boolean => {
+      if (groupKind === "sequence" && holder.sequence === targetGroup) {
+        holder.sequence = undefined;
+        return true;
+      }
+      if (groupKind === "choice" && holder.choice === targetGroup) {
+        holder.choice = undefined;
+        return true;
+      }
+      if (groupKind === "all" && holder.all === targetGroup) {
+        holder.all = undefined;
+        return true;
+      }
+      return false;
+    };
+
+    const complexType = parent as ComplexTypeLike;
+    if (clearGroup(complexType)) {
+      return;
+    }
+    if (complexType.complexContent?.extension && clearGroup(complexType.complexContent.extension)) {
+      return;
+    }
+    if (complexType.complexContent?.restriction) {
+      clearGroup(complexType.complexContent.restriction);
+    }
   }
   if (name !== undefined) {
     return refs.find((r) => r.ref === name);

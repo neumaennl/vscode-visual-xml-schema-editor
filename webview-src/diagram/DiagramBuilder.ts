@@ -16,6 +16,7 @@ import {
   topLevelElement,
   topLevelComplexType,
   topLevelSimpleType,
+  namedGroup,
 } from "../../shared/types";
 import { toArray } from "../../shared/schemaUtils";
 import {
@@ -38,6 +39,9 @@ import {
   processAnonymousSimpleType,
   processComplexType,
   processRestriction,
+  processSequence,
+  processChoice,
+  processAll,
 } from "./SchemaProcessors";
 
 /**
@@ -108,6 +112,12 @@ export class DiagramBuilder {
       schemaNode,
       schemaObj.simpleType,
       (st) => this.createSimpleType(st)
+    );
+
+    processChildCollection(
+      schemaNode,
+      schemaObj.group,
+      (grp) => this.createNamedGroup(grp)
     );
 
     // If no children were added, add a placeholder
@@ -206,6 +216,36 @@ export class DiagramBuilder {
     // Process restriction/list/union if present to extract base type
     if (simpleType.restriction) {
       processRestriction(item, simpleType.restriction);
+    }
+
+    return item;
+  }
+
+  private createNamedGroup(group: namedGroup): DiagramItem | null {
+    if (!group.name) {
+      return null;
+    }
+
+    const item = new DiagramItem(
+      generateSchemaId({
+        nodeType: SchemaNodeType.Group,
+        name: group.name.toString(),
+      }),
+      group.name.toString(),
+      DiagramItemType.group,
+      this.diagram
+    );
+    item.documentationAnnotations = extractDocumentationAnnotations(item.id, group.annotation);
+    item.documentation = extractDocumentation(group.annotation) ?? "";
+
+    if (group.sequence) {
+      processSequence(item, group.sequence, 0);
+    }
+    if (group.choice) {
+      processChoice(item, group.choice, 0);
+    }
+    if (group.all) {
+      processAll(item, group.all, 0);
     }
 
     return item;

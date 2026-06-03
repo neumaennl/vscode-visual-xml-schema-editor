@@ -166,10 +166,10 @@ export function isTopLevelElement(node: DiagramItem): boolean {
  * @returns True when minOccurs/maxOccurs may be edited
  */
 export function canEditCardinality(node: DiagramItem): boolean {
-  if (isTopLevelElement(node)) {
+  const nodeType = getNodeType(node);
+  if (nodeType === SchemaNodeType.Schema || isTopLevelElement(node)) {
     return false;
   }
-  const nodeType = getNodeType(node);
   if (nodeType === SchemaNodeType.Element || node.itemType === DiagramItemType.element) {
     return true;
   }
@@ -210,8 +210,17 @@ export function createNameCommand(node: DiagramItem, nextName: string): SchemaCo
       return { type: "modifySimpleType", payload: { typeId: node.id, typeName: name } };
     case SchemaNodeType.ComplexType:
       return { type: "modifyComplexType", payload: { typeId: node.id, typeName: name } };
-    case SchemaNodeType.Group:
+    case SchemaNodeType.Group: {
+      try {
+        const parsed = parseSchemaId(node.id);
+        if (parsed.parentId) {
+          return null;
+        }
+      } catch {
+        return null;
+      }
       return { type: "modifyGroup", payload: { groupId: node.id, groupName: name } };
+    }
     default:
       return null;
   }

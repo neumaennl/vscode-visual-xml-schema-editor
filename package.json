@@ -85,7 +85,7 @@
     "@types/jest": "^30.0.0",
     "@types/node": "^26.1.0",
     "@types/vscode": "^1.125.0",
-    "@typescript-eslint/eslint-plugin": "^8.62.1",
+    "@typescript-eslint/eslint-plugin": "^8.63.0",
     "@typescript-eslint/parser": "^8.48.1",
     "@vscode/vsce": "^3.9.2",
     "concurrently": "^10.0.3",

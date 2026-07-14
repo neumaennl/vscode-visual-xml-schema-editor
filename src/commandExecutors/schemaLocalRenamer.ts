@@ -148,7 +148,10 @@ function renameAttributeBearerLocalNames(
     bearer.base = renamedBase;
   }
   for (const attr of toArray(bearer.attribute)) {
-    attr.type_ = renameSchemaScopedName(old, newName, attr.type_, currentSchemaPrefixes);
+    const renamedType = renameSchemaScopedName(old, newName, attr.type_, currentSchemaPrefixes);
+    if (renamedType !== undefined) {
+      attr.type_ = renamedType;
+    }
     // attr.ref is an attribute reference, not a type reference — not touched here
     if (attr.simpleType) renameSimpleTypeLocalNames(old, newName, attr.simpleType, currentSchemaPrefixes);
   }

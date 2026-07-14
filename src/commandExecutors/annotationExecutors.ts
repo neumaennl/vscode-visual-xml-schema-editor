@@ -47,6 +47,47 @@ interface AnnotatableNode {
   annotation?: annotationType;
 }
 
+interface ElementOrderHolder {
+  _elementOrder?: string[];
+}
+
+const SCHEMA_DECLARATION_ORDER_KEYS = [
+  "simpleType",
+  "complexType",
+  "group",
+  "attributeGroup",
+  "element",
+  "attribute",
+  "notation",
+] as const;
+const SCHEMA_DECLARATION_ORDER_KEY_SET = new Set<string>(SCHEMA_DECLARATION_ORDER_KEYS);
+
+function setElementOrderKeyAt(
+  holder: ElementOrderHolder,
+  key: string,
+  index: number
+): void {
+  const current = holder._elementOrder ?? [];
+  const withoutKey = current.filter((entry) => entry !== key);
+  const clampedIndex = Math.max(0, Math.min(index, withoutKey.length));
+  withoutKey.splice(clampedIndex, 0, key);
+  holder._elementOrder = withoutKey;
+}
+
+function ensureSchemaAnnotationOrder(schemaObj: schema): void {
+  const orderedSchema = schemaObj as schema & ElementOrderHolder;
+  const current = orderedSchema._elementOrder ?? [];
+  const firstDeclarationIndex = current.findIndex((entry: string) =>
+    SCHEMA_DECLARATION_ORDER_KEY_SET.has(entry)
+  );
+  const targetIndex = firstDeclarationIndex >= 0 ? firstDeclarationIndex : current.length;
+  setElementOrderKeyAt(orderedSchema, "annotation", targetIndex);
+}
+
+function ensureNodeAnnotationOrder(node: AnnotatableNode): void {
+  setElementOrderKeyAt(node as ElementOrderHolder, "annotation", 0);
+}
+
 // ===== Helper functions =====
 
 /**
@@ -72,10 +113,12 @@ function getOrCreateFirstSchemaAnnotation(schemaObj: schema): annotationType {
   const annots = toArray(schemaObj.annotation);
   if (annots.length > 0) {
     schemaObj.annotation = annots; // ensure the property is a proper array
+    ensureSchemaAnnotationOrder(schemaObj);
     return annots[0];
   }
   const annotation = new annotationType();
   schemaObj.annotation = [annotation];
+  ensureSchemaAnnotationOrder(schemaObj);
   return annotation;
 }
 
@@ -97,6 +140,7 @@ function findAnnotatableNode(schemaObj: schema, nodeId: string): AnnotatableNode
 function ensureAnnotation(node: AnnotatableNode): annotationType {
   if (!node.annotation) {
     node.annotation = new annotationType();
+    ensureNodeAnnotationOrder(node);
   }
   return node.annotation;
 }
@@ -166,11 +210,13 @@ export function executeAddAnnotation(
   if (isSchemaRoot(targetId)) {
     // Schema allows multiple xs:annotation children — always append.
     schemaObj.annotation = [...toArray(schemaObj.annotation), annotation];
+    ensureSchemaAnnotationOrder(schemaObj);
     return;
   }
 
   const node = findAnnotatableNode(schemaObj, targetId);
   node.annotation = annotation;
+  ensureNodeAnnotationOrder(node);
 }
 
 /**

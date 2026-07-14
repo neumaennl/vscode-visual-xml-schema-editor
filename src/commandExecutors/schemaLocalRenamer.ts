@@ -61,7 +61,10 @@ function renameSchemaScopedMemberTypes(
   if (!value) return value;
   return value
     .split(/\s+/)
-    .map((t) => renameSchemaScopedName(oldName, newName, t, currentSchemaPrefixes) ?? t)
+    .map((t) => {
+      const renamed = renameSchemaScopedName(oldName, newName, t, currentSchemaPrefixes);
+      return renamed === undefined ? t : renamed;
+    })
     .join(" ");
 }
 
@@ -72,9 +75,15 @@ function renameSimpleTypeLocalNames(
   currentSchemaPrefixes: readonly string[]
 ): void {
   if (st.restriction) {
-    st.restriction.base =
-      renameSchemaScopedName(old, newName, st.restriction.base, currentSchemaPrefixes) ??
-      st.restriction.base;
+    const renamedBase = renameSchemaScopedName(
+      old,
+      newName,
+      st.restriction.base,
+      currentSchemaPrefixes
+    );
+    if (renamedBase !== undefined) {
+      st.restriction.base = renamedBase;
+    }
     if (st.restriction.simpleType) {
       renameSimpleTypeLocalNames(old, newName, st.restriction.simpleType, currentSchemaPrefixes);
     }
@@ -134,8 +143,10 @@ function renameAttributeBearerLocalNames(
   bearer: AttributeBearer,
   currentSchemaPrefixes: readonly string[]
 ): void {
-  bearer.base =
-    renameSchemaScopedName(old, newName, bearer.base, currentSchemaPrefixes) ?? bearer.base;
+  const renamedBase = renameSchemaScopedName(old, newName, bearer.base, currentSchemaPrefixes);
+  if (renamedBase !== undefined) {
+    bearer.base = renamedBase;
+  }
   for (const attr of toArray(bearer.attribute)) {
     attr.type_ = renameSchemaScopedName(old, newName, attr.type_, currentSchemaPrefixes);
     // attr.ref is an attribute reference, not a type reference — not touched here
@@ -294,7 +305,10 @@ export function renameLocalGroupRefInSchema(
   const currentSchemaPrefixes = getCurrentSchemaPrefixes(schemaObj);
 
   function updateGroupRef(gr: groupRef): void {
-    gr.ref = renameSchemaScopedName(oldName, newName, gr.ref, currentSchemaPrefixes) ?? gr.ref;
+    const renamedRef = renameSchemaScopedName(oldName, newName, gr.ref, currentSchemaPrefixes);
+    if (renamedRef !== undefined) {
+      gr.ref = renamedRef;
+    }
   }
 
   function processCompositorGroupRefs(compositor: explicitGroup | simpleExplicitGroup): void {
@@ -354,8 +368,10 @@ export function renameLocalAttributeGroupRefInSchema(
   const currentSchemaPrefixes = getCurrentSchemaPrefixes(schemaObj);
 
   function updateAttrGroupRef(agr: attributeGroupRef): void {
-    agr.ref =
-      renameSchemaScopedName(oldName, newName, agr.ref, currentSchemaPrefixes) ?? agr.ref;
+    const renamedRef = renameSchemaScopedName(oldName, newName, agr.ref, currentSchemaPrefixes);
+    if (renamedRef !== undefined) {
+      agr.ref = renamedRef;
+    }
   }
 
   function processAttrGroupRefs(holder: {

@@ -207,7 +207,7 @@ describe("SimpleType Validators", () => {
       expect(result.valid).toBe(true);
     });
 
-    test("should accept stale simpleType rename replay after a successful rename", () => {
+    test("should reject stale simpleType rename replay after a successful rename", () => {
       const renamedSchema = unmarshal(
         schema,
         `<?xml version="1.0" encoding="UTF-8"?>
@@ -226,7 +226,8 @@ describe("SimpleType Validators", () => {
       };
 
       const result = validateModifySimpleType(command, renamedSchema);
-      expect(result.valid).toBe(true);
+      expectInvalid(result);
+      expect(result.error).toBe("Simple type 'AgeType' not found in schema");
     });
   });
 
@@ -770,7 +771,7 @@ describe("ComplexType Validators", () => {
       expect(result.error).toBe("Complex type 'NonExistent' not found in schema");
     });
 
-    test("should accept stale complexType rename replay after a successful rename", () => {
+    test("should reject stale complexType rename replay after a successful rename", () => {
       const renamedSchema = unmarshal(
         schema,
         `<?xml version="1.0" encoding="UTF-8"?>
@@ -789,7 +790,8 @@ describe("ComplexType Validators", () => {
       };
 
       const result = validateModifyComplexType(command, renamedSchema);
-      expect(result.valid).toBe(true);
+      expectInvalid(result);
+      expect(result.error).toBe("Complex type 'PersonType' not found in schema");
     });
 
     test("should reject modifyComplexType with invalid new typeName", () => {

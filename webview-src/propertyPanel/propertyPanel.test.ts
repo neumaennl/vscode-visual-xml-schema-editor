@@ -243,6 +243,20 @@ describe("PropertyPanel", () => {
     });
   });
 
+  it("does not dispatch a rename command when the name is unchanged", () => {
+    expect.hasAssertions();
+    const dispatch = jest.fn();
+    panel = new PropertyPanel(container, dispatch);
+    const item = new DiagramItem("/element:person", "person", DiagramItemType.element, diagram);
+
+    panel.display(item);
+    const input = getInputByLabel(container, "Name");
+    input.value = " person ";
+    input.dispatchEvent(new Event("blur"));
+
+    expect(dispatch).not.toHaveBeenCalled();
+  });
+
   it("shows non-editable name for compositor groups", () => {
     expect.hasAssertions();
     const item = new DiagramItem(
@@ -475,36 +489,35 @@ describe("PropertyPanel", () => {
     expect(container.textContent).not.toContain("Save Documentation");
   });
 
-  it("shows compositor-group documentation in the docs tab", () => {
-    expect.hasAssertions();
-    const item = new DiagramItem(
-      "/complexType:PersonType/group:sequence[0]",
-      "sequence",
-      DiagramItemType.group,
-      diagram
-    );
-    item.documentationAnnotations = [
-      {
-        id: "/complexType:PersonType/group:sequence[0]",
-        documentationEntries: [
-          {
-            id: "/complexType:PersonType/group:sequence[0]/documentation[0]",
-            content: "Compositor docs",
-          },
-        ],
-      },
-    ];
+  it.each(["sequence", "choice", "all"] as const)(
+    "shows %s compositor documentation in the docs tab",
+    (compositor) => {
+      expect.hasAssertions();
+      const compositorId = `/complexType:PersonType/group:${compositor}[0]`;
+      const item = new DiagramItem(compositorId, compositor, DiagramItemType.group, diagram);
+      item.documentationAnnotations = [
+        {
+          id: compositorId,
+          documentationEntries: [
+            {
+              id: `${compositorId}/documentation[0]`,
+              content: "Compositor docs",
+            },
+          ],
+        },
+      ];
 
-    panel.display(item);
-    const docsTab = Array.from(container.querySelectorAll("button")).find(
-      (btn) => btn.textContent === "Docs"
-    );
-    docsTab?.click();
+      panel.display(item);
+      const docsTab = Array.from(container.querySelectorAll("button")).find(
+        (btn) => btn.textContent === "Docs"
+      );
+      docsTab?.click();
 
-    const textarea = container.querySelector<HTMLTextAreaElement>("textarea");
-    expect(textarea).not.toBeNull();
-    expect(textarea?.value).toBe("Compositor docs");
-  });
+      const textarea = container.querySelector<HTMLTextAreaElement>("textarea");
+      expect(textarea).not.toBeNull();
+      expect(textarea?.value).toBe("Compositor docs");
+    }
+  );
 
   it("adds schema-root documentation through the structured docs flow", () => {
     expect.hasAssertions();

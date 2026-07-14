@@ -214,14 +214,6 @@ export function validateModifyElement(
   // Check element exists
   const el = findChildElement(location.parent, parentType, parsed.name, parsed.position);
   if (!el) {
-    const isRenameReplay =
-      !parsed.parentId &&
-      parsed.name !== undefined &&
-      elementName !== undefined &&
-      toArray(schemaObj.element).some((candidate) => candidate.name === elementName);
-    if (isRenameReplay) {
-      return { valid: true };
-    }
     return { valid: false, error: `Element not found: ${parsed.name ?? `at position ${parsed.position}`}` };
   }
 

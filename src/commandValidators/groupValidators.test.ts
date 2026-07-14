@@ -401,7 +401,7 @@ describe("Group Validators", () => {
       expect(result.valid).toBe(true);
     });
 
-    test("should accept stale group rename replay after a successful rename", () => {
+    test("should reject stale group rename replay after a successful rename", () => {
       const renamedSchema = unmarshal(
         schema,
         `<?xml version="1.0" encoding="UTF-8"?>
@@ -420,7 +420,8 @@ describe("Group Validators", () => {
       };
 
       const result = validateModifyGroup(command, renamedSchema);
-      expect(result.valid).toBe(true);
+      expectInvalid(result);
+      expect(result.error).toBe("Group not found: /group:MyGroup");
     });
 
     test("should accept occurrence updates for compositor groups", () => {

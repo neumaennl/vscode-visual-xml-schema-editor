@@ -148,9 +148,13 @@ export class PropertyPanel {
     if (nameCommand) {
       root.appendChild(
         createEditableField("Name", node.name, (next) => {
+          const trimmedName = next.trim();
+          if (trimmedName === node.name.trim()) {
+            return;
+          }
           const command = createNameCommand(node, next);
           if (command) {
-            node.name = next.trim();
+            node.name = trimmedName;
             this.dispatchCommand(command);
           }
         })

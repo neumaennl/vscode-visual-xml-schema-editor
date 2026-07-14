@@ -459,7 +459,7 @@ describe("Element Validators", () => {
       expect(result.valid).toBe(true);
     });
 
-    test("should accept stale top-level rename replay after a successful rename", () => {
+    test("should reject stale top-level rename replay after a successful rename", () => {
       const renamedSchema = unmarshal(
         schema,
         `<?xml version="1.0" encoding="UTF-8"?>
@@ -477,7 +477,8 @@ describe("Element Validators", () => {
       };
 
       const result = validateModifyElement(command, renamedSchema);
-      expect(result.valid).toBe(true);
+      expectInvalid(result);
+      expect(result.error).toBe("Element not found: person");
     });
 
     test("should reject modifyElement with minOccurs > maxOccurs", () => {

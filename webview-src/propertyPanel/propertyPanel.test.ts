@@ -257,6 +257,32 @@ describe("PropertyPanel", () => {
     expect(dispatch).not.toHaveBeenCalled();
   });
 
+  it("does not dispatch duplicate rename commands for the same node/name replay", () => {
+    expect.hasAssertions();
+    const dispatch = jest.fn();
+    panel = new PropertyPanel(container, dispatch);
+
+    const initialItem = new DiagramItem("/element:person", "person", DiagramItemType.element, diagram);
+    panel.display(initialItem);
+
+    const firstInput = getInputByLabel(container, "Name");
+    firstInput.value = "customer";
+    firstInput.dispatchEvent(new Event("blur"));
+
+    // Simulate stale re-display that still references the old node id/name.
+    const staleItem = new DiagramItem("/element:person", "person", DiagramItemType.element, diagram);
+    panel.display(staleItem);
+    const replayInput = getInputByLabel(container, "Name");
+    replayInput.value = "customer";
+    replayInput.dispatchEvent(new Event("blur"));
+
+    expect(dispatch).toHaveBeenCalledTimes(1);
+    expect(dispatch).toHaveBeenCalledWith({
+      type: "modifyElement",
+      payload: { elementId: "/element:person", elementName: "customer" },
+    });
+  });
+
   it("shows non-editable name for compositor groups", () => {
     expect.hasAssertions();
     const item = new DiagramItem(

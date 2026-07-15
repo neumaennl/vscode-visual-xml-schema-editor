@@ -176,11 +176,11 @@ export function canEditCardinality(node: DiagramItem): boolean {
  * Builds a rename command for the selected node.
  *
  * @param node - Diagram item being renamed
- * @param nextName - Proposed new name from the UI
+ * @param newName - Proposed new name from the UI
  * @returns A schema command or null when the node/name is not editable
  */
-export function createNameCommand(node: DiagramItem, nextName: string): SchemaCommand | null {
-  const name = nextName.trim();
+export function createRenameNodeComand(node: DiagramItem, newName: string): SchemaCommand | null {
+  const name = newName.trim();
   if (!name) {
     return null;
   }

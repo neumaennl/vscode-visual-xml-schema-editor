@@ -12,7 +12,7 @@ import {
   getNodeTypeLabel,
   canEditCardinality,
   createDeleteNodeCommand,
-  createNameCommand,
+  createRenameNodeComand,
   resolveSimpleTypeId,
   isTopLevelElement,
 } from "./propertyPanelCommands";
@@ -45,6 +45,7 @@ export class PropertyPanel {
   private selectedNode: DiagramItem | null = null;
   private draftNode: DiagramItem | null = null;
   private activeTab: PropertyTab = "general";
+  private pendingRename: { sourceId: string; newName: string } | null = null;
   private readonly dispatchCommand: CommandDispatcher;
 
   /**
@@ -65,6 +66,13 @@ export class PropertyPanel {
    * @param node - The diagram item whose properties to display
    */
   public display(node: DiagramItem): void {
+    if (this.pendingRename) {
+      const renameApplied = node.name.trim() === this.pendingRename.newName;
+      const selectionMoved = node.id !== this.pendingRename.sourceId;
+      if (renameApplied || selectionMoved) {
+        this.pendingRename = null;
+      }
+    }
     this.selectedNode = node;
     this.draftNode = createDraftNode(node);
     this.render();
@@ -144,7 +152,7 @@ export class PropertyPanel {
     const root = document.createElement("div");
     root.className = "property-tab-content";
 
-    const nameCommand = createNameCommand(node, node.name);
+    const nameCommand = createRenameNodeComand(node, node.name);
     if (nameCommand) {
       root.appendChild(
         createEditableField("Name", node.name, (next) => {
@@ -153,9 +161,17 @@ export class PropertyPanel {
           if (trimmedName === currentName) {
             return;
           }
-          const command = createNameCommand(node, next);
+          if (
+            this.pendingRename &&
+            this.pendingRename.sourceId === node.id &&
+            this.pendingRename.newName === trimmedName
+          ) {
+            return;
+          }
+          const command = createRenameNodeComand(node, next);
           if (command) {
             node.name = trimmedName;
+            this.pendingRename = { sourceId: node.id, newName: trimmedName };
             this.dispatchCommand(command);
           }
         })

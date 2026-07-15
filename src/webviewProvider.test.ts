@@ -399,4 +399,58 @@ describe("SchemaEditorProvider", () => {
     });
 
   });
+
+  describe("executeCommand rename replay (webview + backend path)", () => {
+    it("rejects a replayed rename command after the first rename already applied", async () => {
+      let currentXml = [
+        '<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">',
+        '  <xs:element name="person" type="xs:string"/>',
+        "</xs:schema>",
+      ].join("\n");
+
+      mockDocument.getText = jest.fn(() => currentXml);
+      (vscode.workspace.applyEdit as jest.Mock).mockImplementation(() => {
+        currentXml = currentXml.replace('name="person"', 'name="customer"');
+        return Promise.resolve(true);
+      });
+
+      provider.resolveCustomTextEditor(
+        mockDocument,
+        mockWebviewPanel,
+        {} as vscode.CancellationToken
+      );
+
+      type ListenerFn = (msg: unknown) => void;
+      type OnReceiveMock = jest.MockedFunction<(listener: ListenerFn) => vscode.Disposable>;
+      const onReceiveMock = mockWebview.onDidReceiveMessage as OnReceiveMock;
+      const handler = onReceiveMock.mock.calls[0][0];
+      jest.clearAllMocks();
+
+      const replayedRenameMessage = {
+        command: "executeCommand",
+        data: {
+          type: "modifyElement",
+          payload: { elementId: "/element:person", elementName: "customer" },
+        },
+      };
+
+      handler(replayedRenameMessage);
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+      handler(replayedRenameMessage);
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+      type CommandResultMsg = { command: string; data: { success: boolean; error?: string } };
+      type PostMsgFn = jest.MockedFunction<(msg: CommandResultMsg) => Promise<boolean>>;
+      const sentMessages = (mockPostMessage as PostMsgFn).mock.calls.map((call) => call[0]);
+
+      expect(
+        sentMessages.some((message) => message.command === "commandResult" && message.data.success)
+      ).toBe(true);
+      const replayFailureMessage = sentMessages.find(
+        (message) => message.command === "commandResult" && !message.data.success
+      );
+      expect(replayFailureMessage?.data.error).toContain("Element not found");
+    });
+  });
 });

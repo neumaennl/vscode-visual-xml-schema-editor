@@ -16,9 +16,12 @@ import {
   topLevelElement,
   topLevelComplexType,
   topLevelSimpleType,
+  namedGroup,
 } from "../../shared/types";
+import { toArray } from "../../shared/schemaUtils";
 import {
   generateSchemaId,
+  SCHEMA_ROOT_ID,
   SchemaNodeType,
 } from "../../shared/idStrategy";
 import {
@@ -27,11 +30,18 @@ import {
   createSimpleTypeNode,
 } from "./TypeNodeCreators";
 import {
+  extractDocumentation,
+  extractDocumentationAnnotations,
+} from "./DiagramBuilderHelpers";
+import {
   processChildCollection,
   processAnonymousComplexType,
   processAnonymousSimpleType,
   processComplexType,
   processRestriction,
+  processSequence,
+  processChoice,
+  processAll,
 } from "./SchemaProcessors";
 
 /**
@@ -59,17 +69,31 @@ export class DiagramBuilder {
   public buildFromSchema(schemaObj: schema): Diagram {
     this.diagram = new Diagram();
     this.elementMap.clear();
+    this.diagram.currentSchemaPrefix = this.resolveTargetNamespacePrefix(schemaObj);
+    this.diagram.schemaTargetNamespace = schemaObj?.targetNamespace?.toString() ?? "";
+    this.diagram.schemaNamespacePrefixes = { ...(schemaObj._namespacePrefixes ?? {}) };
+    this.diagram.localSchemaTypeNames = undefined;
 
     console.log("DiagramBuilder - Building from schema:", schemaObj);
 
     // Create a root node representing the schema
     const targetNs = schemaObj?.targetNamespace?.toString() || "no namespace";
     const schemaNode = new DiagramItem(
-      generateSchemaId({ nodeType: SchemaNodeType.Schema }),
+      SCHEMA_ROOT_ID,
       `Schema: ${targetNs}`,
       DiagramItemType.element,
       this.diagram
     );
+    schemaNode.documentationAnnotations = extractDocumentationAnnotations(schemaNode.id, schemaObj.annotation);
+    schemaNode.documentation = extractDocumentation(schemaObj.annotation) ?? "";
+    schemaNode.attributes = toArray(schemaObj.attribute)
+      .filter((attr) => !!attr.name)
+      .map((attr) => ({
+        name: String(attr.name),
+        type: attr.type_ || "inner simpleType or ref",
+        defaultValue: attr.default_,
+        fixedValue: attr.fixed,
+      }));
 
     // Process schema child elements
     processChildCollection(
@@ -90,6 +114,12 @@ export class DiagramBuilder {
       (st) => this.createSimpleType(st)
     );
 
+    processChildCollection(
+      schemaNode,
+      schemaObj.group,
+      (grp) => this.createNamedGroup(grp)
+    );
+
     // If no children were added, add a placeholder
     if (schemaNode.childElements.length === 0) {
       const placeholder = new DiagramItem(
@@ -108,6 +138,22 @@ export class DiagramBuilder {
 
     this.diagram.addRootElement(schemaNode);
     return this.diagram;
+  }
+
+  private resolveTargetNamespacePrefix(schemaObj: schema): string | undefined {
+    const targetNamespace = schemaObj?.targetNamespace?.toString();
+    if (!targetNamespace || !schemaObj._namespacePrefixes) {
+      return undefined;
+    }
+
+    // Generated schema bindings expose namespace declarations as `_namespacePrefixes`.
+    for (const [prefix, namespaceUri] of Object.entries(schemaObj._namespacePrefixes)) {
+      if (prefix && namespaceUri === targetNamespace) {
+        return prefix;
+      }
+    }
+
+    return undefined;
   }
 
   /**
@@ -170,6 +216,36 @@ export class DiagramBuilder {
     // Process restriction/list/union if present to extract base type
     if (simpleType.restriction) {
       processRestriction(item, simpleType.restriction);
+    }
+
+    return item;
+  }
+
+  private createNamedGroup(group: namedGroup): DiagramItem | null {
+    if (!group.name) {
+      return null;
+    }
+
+    const item = new DiagramItem(
+      generateSchemaId({
+        nodeType: SchemaNodeType.Group,
+        name: group.name.toString(),
+      }),
+      group.name.toString(),
+      DiagramItemType.group,
+      this.diagram
+    );
+    item.documentationAnnotations = extractDocumentationAnnotations(item.id, group.annotation);
+    item.documentation = extractDocumentation(group.annotation) ?? "";
+
+    if (group.sequence) {
+      processSequence(item, group.sequence, 0);
+    }
+    if (group.choice) {
+      processChoice(item, group.choice, 0);
+    }
+    if (group.all) {
+      processAll(item, group.all, 0);
     }
 
     return item;

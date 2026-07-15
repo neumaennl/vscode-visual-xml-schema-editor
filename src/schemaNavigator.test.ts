@@ -10,13 +10,13 @@ import { locateNodeById } from "./schemaNavigator";
 describe("SchemaNavigator", () => {
   describe("locateNodeById", () => {
     describe("Schema root navigation", () => {
-      it("should locate schema root with 'schema' id", () => {
+      it("should locate schema root with the canonical '/schema' id", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
 </xs:schema>`;
         const schemaObj = unmarshal(schema, schemaXml);
 
-        const result = locateNodeById(schemaObj, "schema");
+        const result = locateNodeById(schemaObj, "/schema");
 
         expect(result.found).toBe(true);
         expect(result.parent).toBe(schemaObj);
@@ -133,6 +133,27 @@ describe("SchemaNavigator", () => {
 
         expect(result.found).toBe(true);
         expect(result.parentType).toBe("all");
+      });
+
+      it("should locate sequence within complexContent extension via group path", () => {
+        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:complexType name="PersonType">
+    <xs:complexContent>
+      <xs:extension base="BaseType">
+        <xs:sequence>
+          <xs:element name="name" type="xs:string"/>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+</xs:schema>`;
+        const schemaObj = unmarshal(schema, schemaXml);
+
+        const result = locateNodeById(schemaObj, "/complexType:PersonType/group:sequence[0]");
+
+        expect(result.found).toBe(true);
+        expect(result.parentType).toBe("sequence");
       });
     });
 
@@ -313,6 +334,133 @@ describe("SchemaNavigator", () => {
         expect(result.parentType).toBe("namedGroup");
         const parentGroup = result.parent as { name: string } | undefined;
         expect(parentGroup?.name).toBe("PersonGroup");
+      });
+
+      it("should locate sequence via group:sequence[N] path under named complexType", () => {
+        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:complexType name="PersonType">
+    <xs:sequence>
+      <xs:element name="name" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>`;
+        const schemaObj = unmarshal(schema, schemaXml);
+
+        const result = locateNodeById(
+          schemaObj,
+          "/complexType:PersonType/group:sequence[0]"
+        );
+
+        expect(result.found).toBe(true);
+        expect(result.parentType).toBe("sequence");
+      });
+
+      it("should locate sequence via group:sequence[N] path under named group", () => {
+        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:group name="PersonGroup">
+    <xs:sequence>
+      <xs:element name="name" type="xs:string"/>
+    </xs:sequence>
+  </xs:group>
+</xs:schema>`;
+        const schemaObj = unmarshal(schema, schemaXml);
+
+        const result = locateNodeById(
+          schemaObj,
+          "/group:PersonGroup/group:sequence[0]"
+        );
+
+        expect(result.found).toBe(true);
+        expect(result.parentType).toBe("sequence");
+      });
+
+      it("should locate choice via group:choice[N] path under named complexType", () => {
+        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:complexType name="ChoiceType">
+    <xs:choice>
+      <xs:element name="opt" type="xs:string"/>
+    </xs:choice>
+  </xs:complexType>
+</xs:schema>`;
+        const schemaObj = unmarshal(schema, schemaXml);
+
+        const result = locateNodeById(
+          schemaObj,
+          "/complexType:ChoiceType/group:choice[0]"
+        );
+
+        expect(result.found).toBe(true);
+        expect(result.parentType).toBe("choice");
+      });
+
+      it("should locate all via group:all[N] path under named complexType", () => {
+        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:complexType name="AllType">
+    <xs:all>
+      <xs:element name="field" type="xs:string"/>
+    </xs:all>
+  </xs:complexType>
+</xs:schema>`;
+        const schemaObj = unmarshal(schema, schemaXml);
+
+        const result = locateNodeById(
+          schemaObj,
+          "/complexType:AllType/group:all[0]"
+        );
+
+        expect(result.found).toBe(true);
+        expect(result.parentType).toBe("all");
+      });
+
+      it("should locate sequence via group:sequence[N] path under anonymous complexType", () => {
+        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="person">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="name" type="xs:string"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>`;
+        const schemaObj = unmarshal(schema, schemaXml);
+
+        const result = locateNodeById(
+          schemaObj,
+          "/element:person/anonymousComplexType[0]/group:sequence[0]"
+        );
+
+        expect(result.found).toBe(true);
+        expect(result.parentType).toBe("sequence");
+      });
+
+      it("should locate element inside sequence via full group:sequence[N] path", () => {
+        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="person">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="name" type="xs:string"/>
+        <xs:element name="age" type="xs:int"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>`;
+        const schemaObj = unmarshal(schema, schemaXml);
+
+        const result = locateNodeById(
+          schemaObj,
+          "/element:person/anonymousComplexType[0]/group:sequence[0]/element:name[0]"
+        );
+
+        expect(result.found).toBe(true);
+        expect(result.parentType).toBe("localElement");
+        const elem = result.parent as { name: string } | undefined;
+        expect(elem?.name).toBe("name");
       });
     });
 

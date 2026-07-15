@@ -208,9 +208,19 @@ describe("SchemaCommand Union Type", () => {
         type: "addInclude",
         payload: { schemaLocation: "loc" },
       },
+      {
+        type: "modifySchemaNamespaces",
+        payload: {
+          targetNamespace: "http://example.com/tns",
+          namespacePrefixes: {
+            xs: "http://www.w3.org/2001/XMLSchema",
+            tns: "http://example.com/tns",
+          },
+        },
+      },
     ];
 
-    expect(commands).toHaveLength(11);
+    expect(commands).toHaveLength(12);
     commands.forEach((cmd) => {
       expect(cmd.type).toBeDefined();
       expect(cmd.payload).toBeDefined();

@@ -204,6 +204,29 @@ describe("Group Executors", () => {
       expect(toArray(schemaObj.group)[0].name).toBe("GroupB");
     });
 
+    it("should remove a compositor group from a complexType", () => {
+      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:complexType name="PersonType">
+    <xs:sequence>
+      <xs:element name="name" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>`;
+      const schemaObj = unmarshal(schema, schemaXml);
+
+      const command: RemoveGroupCommand = {
+        type: "removeGroup",
+        payload: {
+          groupId: "/complexType:PersonType/group:sequence[0]",
+        },
+      };
+
+      executeRemoveGroup(command, schemaObj);
+
+      expect(toArray(schemaObj.complexType)[0].sequence).toBeUndefined();
+    });
+
   });
 
   describe("executeModifyGroup", () => {
@@ -228,6 +251,32 @@ describe("Group Executors", () => {
 
       const grp = toArray(schemaObj.group)[0];
       expect(grp.name).toBe("NewName");
+    });
+
+    it("should rename group refs when a top-level group is renamed", () => {
+      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:group name="OldName">
+    <xs:sequence/>
+  </xs:group>
+  <xs:complexType name="Wrapper">
+    <xs:group ref="OldName"/>
+  </xs:complexType>
+</xs:schema>`;
+      const schemaObj = unmarshal(schema, schemaXml);
+
+      const command: ModifyGroupCommand = {
+        type: "modifyGroup",
+        payload: {
+          groupId: "/group:OldName",
+          groupName: "NewName",
+        },
+      };
+
+      executeModifyGroup(command, schemaObj);
+
+      expect(toArray(schemaObj.group)[0].name).toBe("NewName");
+      expect(toArray(schemaObj.complexType)[0].group!.ref).toBe("NewName");
     });
 
     it("should change the content model of a group", () => {
@@ -331,6 +380,33 @@ describe("Group Executors", () => {
       const grp = toArray(schemaObj.group)[0];
       expect(grp.name).toBe("StableGroup");
       expect(grp.sequence).toBeDefined();
+    });
+
+    it("should modify occurrence constraints on a compositor group", () => {
+      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:complexType name="PersonType">
+    <xs:sequence>
+      <xs:element name="name" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>`;
+      const schemaObj = unmarshal(schema, schemaXml);
+
+      const command: ModifyGroupCommand = {
+        type: "modifyGroup",
+        payload: {
+          groupId: "/complexType:PersonType/group:sequence[0]",
+          minOccurs: 0,
+          maxOccurs: "unbounded",
+        },
+      };
+
+      executeModifyGroup(command, schemaObj);
+
+      const sequence = toArray(schemaObj.complexType)[0].sequence;
+      expect(sequence?.minOccurs).toBe(0);
+      expect(sequence?.maxOccurs).toBe("unbounded");
     });
   });
 

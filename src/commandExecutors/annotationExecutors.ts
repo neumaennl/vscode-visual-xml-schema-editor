@@ -6,12 +6,12 @@
  * - annotationId / targetId for non-schema nodes: XPath-like path to the annotated
  *   schema component (e.g. "/element:person", "/complexType:PersonType").
  * - annotationId for the schema root (which supports multiple xs:annotation children):
- *   "schema/annotation[N]" — identifies the N-th (0-based) annotation on the schema.
+ *   "/schema/annotation[N]" — identifies the N-th (0-based) annotation on the schema.
  * - documentationId for non-schema nodes: annotated-element path + "/documentation[N]"
  *   (e.g. "/element:person/documentation[0]").
  * - documentationId for schema-root annotations:
- *   - "schema/annotation[N]/documentation[M]" — M-th doc of the N-th schema annotation.
- *   - "schema/documentation[N]" — N-th doc of the first (index-0) schema annotation.
+ *   - "/schema/annotation[N]/documentation[M]" — M-th doc of the N-th schema annotation.
+ *   - "/schema/documentation[N]" — N-th doc of the first (index-0) schema annotation.
  *
  * Note on references: xs:annotation, xs:documentation and xs:appinfo do NOT
  * support a `ref` attribute in the XSD specification. They are always inline
@@ -47,6 +47,47 @@ interface AnnotatableNode {
   annotation?: annotationType;
 }
 
+interface ElementOrderHolder {
+  _elementOrder?: string[];
+}
+
+const SCHEMA_DECLARATION_ORDER_KEYS = [
+  "simpleType",
+  "complexType",
+  "group",
+  "attributeGroup",
+  "element",
+  "attribute",
+  "notation",
+] as const;
+const SCHEMA_DECLARATION_ORDER_KEY_SET = new Set<string>(SCHEMA_DECLARATION_ORDER_KEYS);
+
+function setElementOrderKeyAt(
+  holder: ElementOrderHolder,
+  key: string,
+  index: number
+): void {
+  const current = holder._elementOrder ?? [];
+  const withoutKey = current.filter((entry) => entry !== key);
+  const clampedIndex = Math.max(0, Math.min(index, withoutKey.length));
+  withoutKey.splice(clampedIndex, 0, key);
+  holder._elementOrder = withoutKey;
+}
+
+function ensureSchemaAnnotationOrder(schemaObj: schema): void {
+  const orderedSchema = schemaObj as schema & ElementOrderHolder;
+  const current = orderedSchema._elementOrder ?? [];
+  const firstDeclarationIndex = current.findIndex((entry: string) =>
+    SCHEMA_DECLARATION_ORDER_KEY_SET.has(entry)
+  );
+  const targetIndex = firstDeclarationIndex >= 0 ? firstDeclarationIndex : current.length;
+  setElementOrderKeyAt(orderedSchema, "annotation", targetIndex);
+}
+
+function ensureNodeAnnotationOrder(node: AnnotatableNode): void {
+  setElementOrderKeyAt(node as ElementOrderHolder, "annotation", 0);
+}
+
 // ===== Helper functions =====
 
 /**
@@ -72,10 +113,12 @@ function getOrCreateFirstSchemaAnnotation(schemaObj: schema): annotationType {
   const annots = toArray(schemaObj.annotation);
   if (annots.length > 0) {
     schemaObj.annotation = annots; // ensure the property is a proper array
+    ensureSchemaAnnotationOrder(schemaObj);
     return annots[0];
   }
   const annotation = new annotationType();
   schemaObj.annotation = [annotation];
+  ensureSchemaAnnotationOrder(schemaObj);
   return annotation;
 }
 
@@ -97,6 +140,7 @@ function findAnnotatableNode(schemaObj: schema, nodeId: string): AnnotatableNode
 function ensureAnnotation(node: AnnotatableNode): annotationType {
   if (!node.annotation) {
     node.annotation = new annotationType();
+    ensureNodeAnnotationOrder(node);
   }
   return node.annotation;
 }
@@ -133,7 +177,7 @@ function applyAnnotationModifications(
 /**
  * Executes an addAnnotation command.
  *
- * For the schema root (`targetId: "schema"`): appends a new xs:annotation to
+ * For the schema root (`targetId: "/schema"`): appends a new xs:annotation to
  * the schema's annotation array. The schema may hold multiple annotations so
  * no duplicate check is performed.
  *
@@ -166,17 +210,19 @@ export function executeAddAnnotation(
   if (isSchemaRoot(targetId)) {
     // Schema allows multiple xs:annotation children — always append.
     schemaObj.annotation = [...toArray(schemaObj.annotation), annotation];
+    ensureSchemaAnnotationOrder(schemaObj);
     return;
   }
 
   const node = findAnnotatableNode(schemaObj, targetId);
   node.annotation = annotation;
+  ensureNodeAnnotationOrder(node);
 }
 
 /**
  * Executes a removeAnnotation command.
  *
- * For the schema root use `annotationId: "schema/annotation[N]"` to remove
+ * For the schema root use `annotationId: "/schema/annotation[N]"` to remove
  * the N-th annotation from the schema's annotation array.
  *
  * For all other annotatable components, `annotationId` is the node path
@@ -208,7 +254,7 @@ export function executeRemoveAnnotation(
 /**
  * Executes a modifyAnnotation command.
  *
- * For the schema root use `annotationId: "schema/annotation[N]"` to modify
+ * For the schema root use `annotationId: "/schema/annotation[N]"` to modify
  * the N-th annotation.
  *
  * When `documentation` is provided, all existing xs:documentation children
@@ -245,9 +291,9 @@ export function executeModifyAnnotation(
  *
  * Appends a new xs:documentation element (with optional xml:lang) to the
  * annotation on the target component:
- * - `targetId: "schema"` — adds to the first schema annotation (creating it
+ * - `targetId: "/schema"` — adds to the first schema annotation (creating it
  *   if the schema has none).
- * - `targetId: "schema/annotation[N]"` — adds to the N-th schema annotation.
+ * - `targetId: "/schema/annotation[N]"` — adds to the N-th schema annotation.
  * - Any other path — adds to the single annotation of that component,
  *   creating the annotation if absent.
  *
@@ -285,9 +331,9 @@ export function executeAddDocumentation(
  * Executes a removeDocumentation command.
  *
  * Accepted `documentationId` formats:
- * - `"schema/annotation[N]/documentation[M]"` — removes the M-th doc from
+ * - `"/schema/annotation[N]/documentation[M]"` — removes the M-th doc from
  *   the N-th annotation on the schema root.
- * - `"schema/documentation[N]"` — removes the N-th doc from the first schema
+ * - `"/schema/documentation[N]"` — removes the N-th doc from the first schema
  *   annotation.
  * - `"{elementPath}/documentation[N]"` — removes from the single annotation
  *   of any other schema component.
@@ -302,7 +348,7 @@ export function executeRemoveDocumentation(
 ): void {
   const { documentationId } = command.payload;
 
-  // "schema/annotation[N]/documentation[M]" format
+  // "/schema/annotation[N]/documentation[M]" format
   const schemaDId = parseSchemaDocumentationId(documentationId);
   if (schemaDId) {
     const annots = toArray(schemaObj.annotation);
@@ -317,7 +363,7 @@ export function executeRemoveDocumentation(
   const { elementId, docIndex } = parseDocumentationId(documentationId);
 
   if (isSchemaRoot(elementId)) {
-    // "schema/documentation[N]" shorthand — targets the first schema annotation
+    // "/schema/documentation[N]" shorthand — targets the first schema annotation
     const annots = toArray(schemaObj.annotation);
     const annotation = annots[0];
     const docs = toArray(annotation.documentation);
@@ -337,9 +383,9 @@ export function executeRemoveDocumentation(
  * Executes a modifyDocumentation command.
  *
  * Accepted `documentationId` formats:
- * - `"schema/annotation[N]/documentation[M]"` — updates the M-th doc of the
+ * - `"/schema/annotation[N]/documentation[M]"` — updates the M-th doc of the
  *   N-th schema annotation.
- * - `"schema/documentation[N]"` — updates the N-th doc of the first schema
+ * - `"/schema/documentation[N]"` — updates the N-th doc of the first schema
  *   annotation.
  * - `"{elementPath}/documentation[N]"` — updates the doc of any other
  *   schema component.
@@ -356,7 +402,7 @@ export function executeModifyDocumentation(
 ): void {
   const { documentationId, content, lang } = command.payload;
 
-  // "schema/annotation[N]/documentation[M]" format
+  // "/schema/annotation[N]/documentation[M]" format
   const schemaDId = parseSchemaDocumentationId(documentationId);
   if (schemaDId) {
     const annots = toArray(schemaObj.annotation);
@@ -371,7 +417,7 @@ export function executeModifyDocumentation(
   const { elementId, docIndex } = parseDocumentationId(documentationId);
 
   if (isSchemaRoot(elementId)) {
-    // "schema/documentation[N]" shorthand — targets the first schema annotation
+    // "/schema/documentation[N]" shorthand — targets the first schema annotation
     const annots = toArray(schemaObj.annotation);
     const annotation = annots[0];
     const docs = toArray(annotation.documentation);

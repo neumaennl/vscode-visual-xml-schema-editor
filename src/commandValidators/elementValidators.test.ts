@@ -38,7 +38,7 @@ describe("Element Validators", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "testElement",
           elementType: "string",
         },
@@ -52,7 +52,7 @@ describe("Element Validators", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "testElement",
           elementType: "xs:string",
         },
@@ -66,7 +66,7 @@ describe("Element Validators", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "testElement",
           elementType: "xsd:string",
         },
@@ -80,7 +80,7 @@ describe("Element Validators", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "testElement",
           elementType: "myprefix:int",
         },
@@ -94,7 +94,7 @@ describe("Element Validators", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "testElement",
           elementType: "int",
         },
@@ -108,7 +108,7 @@ describe("Element Validators", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "testElement",
           elementType: "invalidType",
         },
@@ -124,7 +124,7 @@ describe("Element Validators", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "testElement",
           elementType: "unknown:SomeType",
         },
@@ -150,7 +150,7 @@ describe("Element Validators", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "person",
           elementType: "PersonType",
         },
@@ -175,7 +175,7 @@ describe("Element Validators", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "age",
           elementType: "AgeType",
         },
@@ -200,7 +200,7 @@ describe("Element Validators", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "person",
           elementType: "tns:PersonType",
         },
@@ -221,7 +221,7 @@ describe("Element Validators", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "externalElement",
           elementType: "ext:ExternalType",
         },
@@ -244,7 +244,7 @@ describe("Element Validators", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "includedElement",
           elementType: "IncludedType",
         },
@@ -265,7 +265,7 @@ describe("Element Validators", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "testElement",
           elementType: "wrongprefix:SomeType",
         },
@@ -293,7 +293,7 @@ describe("Element Validators", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "myElement",
           elementType: "tns:MyType",
         },
@@ -307,7 +307,7 @@ describe("Element Validators", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "",
           elementType: "string",
         },
@@ -322,7 +322,7 @@ describe("Element Validators", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "test",
           elementType: "",
         },
@@ -459,6 +459,28 @@ describe("Element Validators", () => {
       expect(result.valid).toBe(true);
     });
 
+    test("should reject stale top-level rename replay after a successful rename", () => {
+      const renamedSchema = unmarshal(
+        schema,
+        `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="personRenamed" type="xs:string"/>
+</xs:schema>`
+      );
+
+      const command: ModifyElementCommand = {
+        type: "modifyElement",
+        payload: {
+          elementId: "/element:person",
+          elementName: "personRenamed",
+        },
+      };
+
+      const result = validateModifyElement(command, renamedSchema);
+      expectInvalid(result);
+      expect(result.error).toBe("Element not found: person");
+    });
+
     test("should reject modifyElement with minOccurs > maxOccurs", () => {
       const command: ModifyElementCommand = {
         type: "modifyElement",
@@ -497,10 +519,36 @@ describe("Element Validators", () => {
       expect(validateAddElement(command, seqSchema).valid).toBe(true);
     });
 
+    test("should accept addElement for sequence in complexContent extension using group path", () => {
+      const extensionSchemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="person" type="xs:string"/>
+  <xs:complexType name="WorkerType">
+    <xs:complexContent>
+      <xs:extension base="PersonType">
+        <xs:sequence/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+</xs:schema>`;
+      const extensionSchema = unmarshal(schema, extensionSchemaXml);
+
+      const command: AddElementCommand = {
+        type: "addElement",
+        payload: {
+          parentId: "/complexType:WorkerType/group:sequence[0]",
+          elementName: "department",
+          elementType: "xs:string",
+        },
+      };
+
+      expect(validateAddElement(command, extensionSchema).valid).toBe(true);
+    });
+
     test("should reject addElement with ref at schema level (top-level elements cannot be refs)", () => {
       const command: AddElementCommand = {
         type: "addElement",
-        payload: { parentId: "schema", ref: "person" },
+        payload: { parentId: "/schema", ref: "person" },
       };
       const result = validateAddElement(command, seqSchema);
       expectInvalid(result);
@@ -616,7 +664,7 @@ describe("Attribute Validators", () => {
       const command: AddAttributeCommand = {
         type: "addAttribute",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           attributeName: "lang",
           attributeType: "xs:string",
           defaultValue: "en",
@@ -725,7 +773,7 @@ describe("Attribute Validators", () => {
     test("should reject addAttribute with ref at schema level", () => {
       const command: AddAttributeCommand = {
         type: "addAttribute",
-        payload: { parentId: "schema", ref: "lang" },
+        payload: { parentId: "/schema", ref: "lang" },
       };
       const result = validateAddAttribute(command, refSchema);
       expectInvalid(result);

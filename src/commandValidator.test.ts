@@ -60,6 +60,7 @@ describe("CommandValidator", () => {
       validateAddInclude: createMockValidator(),
       validateRemoveInclude: createMockValidator(),
       validateModifyInclude: createMockValidator(),
+      validateModifySchemaNamespaces: createMockValidator(),
     };
 
     validator = new CommandValidator(mockValidators);
@@ -87,7 +88,7 @@ describe("CommandValidator", () => {
       const command: SchemaCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "testElement",
           elementType: "string",
         },
@@ -183,7 +184,7 @@ describe("CommandValidator", () => {
       const command: SchemaCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "", // Invalid: empty name
           elementType: "string",
         },
@@ -241,6 +242,28 @@ describe("CommandValidator", () => {
       );
       expect(mockValidators.validateRemoveAttributeGroup).toHaveBeenCalledTimes(1);
     });
+
+    it("should delegate modifySchemaNamespaces to validateModifySchemaNamespaces", () => {
+      const command: SchemaCommand = {
+        type: "modifySchemaNamespaces",
+        payload: {
+          targetNamespace: "http://example.com/new-target",
+          namespacePrefixes: {
+            xs: "http://www.w3.org/2001/XMLSchema",
+            tns: "http://example.com/new-target",
+          },
+        },
+      };
+
+      const result = validator.validate(command, mockSchema);
+
+      expect(result.valid).toBe(true);
+      expect(mockValidators.validateModifySchemaNamespaces).toHaveBeenCalledWith(
+        command,
+        mockSchema
+      );
+      expect(mockValidators.validateModifySchemaNamespaces).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe("default constructor behavior", () => {
@@ -249,7 +272,7 @@ describe("CommandValidator", () => {
       const command: SchemaCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "testElement",
           elementType: "string",
         },

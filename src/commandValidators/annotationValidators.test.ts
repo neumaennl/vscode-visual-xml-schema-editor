@@ -391,7 +391,7 @@ describe("Schema-root Annotation Validators", () => {
       const schemaObj = unmarshal(schema, schemaWithAnnotationXml);
       const command: AddAnnotationCommand = {
         type: "addAnnotation",
-        payload: { targetId: "schema" },
+        payload: { targetId: "/schema" },
       };
 
       const result = validateAddAnnotation(command, schemaObj);
@@ -402,7 +402,7 @@ describe("Schema-root Annotation Validators", () => {
       const schemaObj = unmarshal(schema, emptySchemaXml);
       const command: AddAnnotationCommand = {
         type: "addAnnotation",
-        payload: { targetId: "schema" },
+        payload: { targetId: "/schema" },
       };
 
       const result = validateAddAnnotation(command, schemaObj);
@@ -411,11 +411,11 @@ describe("Schema-root Annotation Validators", () => {
   });
 
   describe("validateRemoveAnnotation — schema root", () => {
-    test("accepts a valid 'schema/annotation[N]' index", () => {
+    test("accepts a valid '/schema/annotation[N]' index", () => {
       const schemaObj = unmarshal(schema, schemaWithTwoAnnotationsXml);
       const command: RemoveAnnotationCommand = {
         type: "removeAnnotation",
-        payload: { annotationId: "schema/annotation[1]" },
+        payload: { annotationId: "/schema/annotation[1]" },
       };
 
       const result = validateRemoveAnnotation(command, schemaObj);
@@ -426,7 +426,7 @@ describe("Schema-root Annotation Validators", () => {
       const schemaObj = unmarshal(schema, schemaWithAnnotationXml);
       const command: RemoveAnnotationCommand = {
         type: "removeAnnotation",
-        payload: { annotationId: "schema/annotation[5]" },
+        payload: { annotationId: "/schema/annotation[5]" },
       };
 
       const result = validateRemoveAnnotation(command, schemaObj);
@@ -434,7 +434,7 @@ describe("Schema-root Annotation Validators", () => {
       expect(result.error).toContain("out of bounds");
     });
 
-    test("rejects bare schema-root ID 'schema' (requires schema/annotation[N])", () => {
+    test("rejects the legacy bare schema-root ID 'schema'", () => {
       const schemaObj = unmarshal(schema, schemaWithAnnotationXml);
       const command: RemoveAnnotationCommand = {
         type: "removeAnnotation",
@@ -443,7 +443,7 @@ describe("Schema-root Annotation Validators", () => {
 
       const result = validateRemoveAnnotation(command, schemaObj);
       expectInvalid(result);
-      expect(result.error).toContain("schema/annotation[N]");
+      expect(result.error).toContain("Target node not found");
     });
 
     test("rejects bare schema-root ID '/schema' (requires schema/annotation[N])", () => {
@@ -455,16 +455,16 @@ describe("Schema-root Annotation Validators", () => {
 
       const result = validateRemoveAnnotation(command, schemaObj);
       expectInvalid(result);
-      expect(result.error).toContain("schema/annotation[N]");
+      expect(result.error).toContain("/schema/annotation[N]");
     });
   });
 
   describe("validateModifyAnnotation — schema root", () => {
-    test("accepts a valid 'schema/annotation[N]' index", () => {
+    test("accepts a valid '/schema/annotation[N]' index", () => {
       const schemaObj = unmarshal(schema, schemaWithAnnotationXml);
       const command: ModifyAnnotationCommand = {
         type: "modifyAnnotation",
-        payload: { annotationId: "schema/annotation[0]", documentation: "Updated." },
+        payload: { annotationId: "/schema/annotation[0]", documentation: "Updated." },
       };
 
       const result = validateModifyAnnotation(command, schemaObj);
@@ -475,7 +475,7 @@ describe("Schema-root Annotation Validators", () => {
       const schemaObj = unmarshal(schema, emptySchemaXml);
       const command: ModifyAnnotationCommand = {
         type: "modifyAnnotation",
-        payload: { annotationId: "schema/annotation[0]", documentation: "x" },
+        payload: { annotationId: "/schema/annotation[0]", documentation: "x" },
       };
 
       const result = validateModifyAnnotation(command, schemaObj);
@@ -483,7 +483,7 @@ describe("Schema-root Annotation Validators", () => {
       expect(result.error).toContain("out of bounds");
     });
 
-    test("rejects bare schema-root ID 'schema' (requires schema/annotation[N])", () => {
+    test("rejects the legacy bare schema-root ID 'schema'", () => {
       const schemaObj = unmarshal(schema, schemaWithAnnotationXml);
       const command: ModifyAnnotationCommand = {
         type: "modifyAnnotation",
@@ -492,7 +492,7 @@ describe("Schema-root Annotation Validators", () => {
 
       const result = validateModifyAnnotation(command, schemaObj);
       expectInvalid(result);
-      expect(result.error).toContain("schema/annotation[N]");
+      expect(result.error).toContain("Target node not found");
     });
 
     test("rejects bare schema-root ID '/schema' (requires schema/annotation[N])", () => {
@@ -504,7 +504,7 @@ describe("Schema-root Annotation Validators", () => {
 
       const result = validateModifyAnnotation(command, schemaObj);
       expectInvalid(result);
-      expect(result.error).toContain("schema/annotation[N]");
+      expect(result.error).toContain("/schema/annotation[N]");
     });
   });
 
@@ -513,29 +513,29 @@ describe("Schema-root Annotation Validators", () => {
       const schemaObj = unmarshal(schema, emptySchemaXml);
       const command: AddDocumentationCommand = {
         type: "addDocumentation",
-        payload: { targetId: "schema", content: "Doc." },
+        payload: { targetId: "/schema", content: "Doc." },
       };
 
       const result = validateAddDocumentation(command, schemaObj);
       expect(result.valid).toBe(true);
     });
 
-    test("accepts targetId 'schema/annotation[N]' when annotation exists", () => {
+    test("accepts targetId '/schema/annotation[N]' when annotation exists", () => {
       const schemaObj = unmarshal(schema, schemaWithTwoAnnotationsXml);
       const command: AddDocumentationCommand = {
         type: "addDocumentation",
-        payload: { targetId: "schema/annotation[1]", content: "Doc." },
+        payload: { targetId: "/schema/annotation[1]", content: "Doc." },
       };
 
       const result = validateAddDocumentation(command, schemaObj);
       expect(result.valid).toBe(true);
     });
 
-    test("rejects when 'schema/annotation[N]' index is out of bounds", () => {
+    test("rejects when '/schema/annotation[N]' index is out of bounds", () => {
       const schemaObj = unmarshal(schema, schemaWithAnnotationXml);
       const command: AddDocumentationCommand = {
         type: "addDocumentation",
-        payload: { targetId: "schema/annotation[9]", content: "Doc." },
+        payload: { targetId: "/schema/annotation[9]", content: "Doc." },
       };
 
       const result = validateAddDocumentation(command, schemaObj);
@@ -545,22 +545,22 @@ describe("Schema-root Annotation Validators", () => {
   });
 
   describe("validateRemoveDocumentation — schema root", () => {
-    test("accepts 'schema/annotation[N]/documentation[M]' with valid indices", () => {
+    test("accepts '/schema/annotation[N]/documentation[M]' with valid indices", () => {
       const schemaObj = unmarshal(schema, schemaWithAnnotationXml);
       const command: RemoveDocumentationCommand = {
         type: "removeDocumentation",
-        payload: { documentationId: "schema/annotation[0]/documentation[0]" },
+        payload: { documentationId: "/schema/annotation[0]/documentation[0]" },
       };
 
       const result = validateRemoveDocumentation(command, schemaObj);
       expect(result.valid).toBe(true);
     });
 
-    test("rejects 'schema/annotation[N]/documentation[M]' when annotation index out of bounds", () => {
+    test("rejects '/schema/annotation[N]/documentation[M]' when annotation index out of bounds", () => {
       const schemaObj = unmarshal(schema, schemaWithAnnotationXml);
       const command: RemoveDocumentationCommand = {
         type: "removeDocumentation",
-        payload: { documentationId: "schema/annotation[9]/documentation[0]" },
+        payload: { documentationId: "/schema/annotation[9]/documentation[0]" },
       };
 
       const result = validateRemoveDocumentation(command, schemaObj);
@@ -568,22 +568,22 @@ describe("Schema-root Annotation Validators", () => {
       expect(result.error).toContain("out of bounds");
     });
 
-    test("accepts 'schema/documentation[N]' shorthand when first annotation has docs", () => {
+    test("accepts '/schema/documentation[N]' shorthand when first annotation has docs", () => {
       const schemaObj = unmarshal(schema, schemaWithAnnotationXml);
       const command: RemoveDocumentationCommand = {
         type: "removeDocumentation",
-        payload: { documentationId: "schema/documentation[0]" },
+        payload: { documentationId: "/schema/documentation[0]" },
       };
 
       const result = validateRemoveDocumentation(command, schemaObj);
       expect(result.valid).toBe(true);
     });
 
-    test("rejects 'schema/documentation[N]' when schema has no annotations", () => {
+    test("rejects '/schema/documentation[N]' when schema has no annotations", () => {
       const schemaObj = unmarshal(schema, emptySchemaXml);
       const command: RemoveDocumentationCommand = {
         type: "removeDocumentation",
-        payload: { documentationId: "schema/documentation[0]" },
+        payload: { documentationId: "/schema/documentation[0]" },
       };
 
       const result = validateRemoveDocumentation(command, schemaObj);
@@ -593,12 +593,12 @@ describe("Schema-root Annotation Validators", () => {
   });
 
   describe("validateModifyDocumentation — schema root", () => {
-    test("accepts 'schema/annotation[N]/documentation[M]' with valid indices", () => {
+    test("accepts '/schema/annotation[N]/documentation[M]' with valid indices", () => {
       const schemaObj = unmarshal(schema, schemaWithAnnotationXml);
       const command: ModifyDocumentationCommand = {
         type: "modifyDocumentation",
         payload: {
-          documentationId: "schema/annotation[0]/documentation[0]",
+          documentationId: "/schema/annotation[0]/documentation[0]",
           content: "Updated.",
         },
       };
@@ -607,12 +607,12 @@ describe("Schema-root Annotation Validators", () => {
       expect(result.valid).toBe(true);
     });
 
-    test("accepts 'schema/documentation[N]' shorthand", () => {
+    test("accepts '/schema/documentation[N]' shorthand", () => {
       const schemaObj = unmarshal(schema, schemaWithAnnotationXml);
       const command: ModifyDocumentationCommand = {
         type: "modifyDocumentation",
         payload: {
-          documentationId: "schema/documentation[0]",
+          documentationId: "/schema/documentation[0]",
           content: "Updated.",
         },
       };
@@ -621,11 +621,11 @@ describe("Schema-root Annotation Validators", () => {
       expect(result.valid).toBe(true);
     });
 
-    test("rejects 'schema/documentation[N]' when schema has no annotations", () => {
+    test("rejects '/schema/documentation[N]' when schema has no annotations", () => {
       const schemaObj = unmarshal(schema, emptySchemaXml);
       const command: ModifyDocumentationCommand = {
         type: "modifyDocumentation",
-        payload: { documentationId: "schema/documentation[0]", content: "x" },
+        payload: { documentationId: "/schema/documentation[0]", content: "x" },
       };
 
       const result = validateModifyDocumentation(command, schemaObj);

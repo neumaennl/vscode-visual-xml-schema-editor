@@ -29,7 +29,7 @@ describe("Attribute Executors", () => {
         const command: AddAttributeCommand = {
           type: "addAttribute",
           payload: {
-            parentId: "schema",
+            parentId: "/schema",
             attributeName: "lang",
             attributeType: "xs:string",
           },
@@ -55,7 +55,7 @@ describe("Attribute Executors", () => {
         const command: AddAttributeCommand = {
           type: "addAttribute",
           payload: {
-            parentId: "schema",
+            parentId: "/schema",
             attributeName: "version",
             attributeType: "xs:string",
             defaultValue: "1.0",
@@ -79,7 +79,7 @@ describe("Attribute Executors", () => {
         const command: AddAttributeCommand = {
           type: "addAttribute",
           payload: {
-            parentId: "schema",
+            parentId: "/schema",
             attributeName: "lang",
             attributeType: "xs:string",
             documentation: "Language code",

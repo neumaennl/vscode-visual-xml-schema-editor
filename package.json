@@ -101,7 +101,7 @@
     "style-loader": "^4.0.0",
     "ts-jest": "^29.4.12",
     "ts-loader": "^9.6.2",
-    "typescript": "^5.0.0",
+    "typescript": "^7.0.2",
     "webpack": "^5.108.4",
     "webpack-cli": "^7.2.1"
   },

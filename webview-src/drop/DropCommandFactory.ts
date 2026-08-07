@@ -12,6 +12,18 @@ export class DropCommandFactory {
   private schemaTopLevelNames = new Set<string>();
 
   /**
+   * Checks whether dropping a construct on a node is allowed without
+   * mutating internal naming state.
+   *
+   * @param item - Drop target node
+   * @param construct - Palette schema construct
+   * @returns True when the drop is valid for the target node
+   */
+  public canDropOnNode(item: DiagramItem, construct: PaletteSchemaConstruct): boolean {
+    return this.createNodeDropCommandInternal(item, construct, false) !== null;
+  }
+
+  /**
    * Refresh the cached top-level declaration names from the latest schema.
    *
    * @param schemaObj - Current schema snapshot
@@ -33,13 +45,20 @@ export class DropCommandFactory {
    * @returns Command or null if unsupported
    */
   public createTopLevelDropCommand(construct: PaletteSchemaConstruct): SchemaCommand | null {
+    return this.createTopLevelDropCommandInternal(construct, true);
+  }
+
+  private createTopLevelDropCommandInternal(
+    construct: PaletteSchemaConstruct,
+    reserveNames: boolean
+  ): SchemaCommand | null {
     switch (construct) {
       case PaletteSchemaConstruct.Element:
         return {
           type: "addElement",
           payload: {
             parentId: SCHEMA_ROOT_ID,
-            elementName: this.nextName("Element"),
+            elementName: this.nextName("Element", reserveNames),
             elementType: "xs:string",
           },
         };
@@ -48,7 +67,7 @@ export class DropCommandFactory {
           type: "addAttribute",
           payload: {
             parentId: SCHEMA_ROOT_ID,
-            attributeName: this.nextName("Attribute"),
+            attributeName: this.nextName("Attribute", reserveNames),
             attributeType: "xs:string",
           },
         };
@@ -57,7 +76,7 @@ export class DropCommandFactory {
           type: "addSimpleType",
           payload: {
             parentId: SCHEMA_ROOT_ID,
-            typeName: this.nextName("SimpleType"),
+            typeName: this.nextName("SimpleType", reserveNames),
             baseType: "xs:string",
           },
         };
@@ -66,7 +85,7 @@ export class DropCommandFactory {
           type: "addComplexType",
           payload: {
             parentId: SCHEMA_ROOT_ID,
-            typeName: this.nextName("ComplexType"),
+            typeName: this.nextName("ComplexType", reserveNames),
             contentModel: "sequence",
           },
         };
@@ -75,7 +94,7 @@ export class DropCommandFactory {
           type: "addSimpleType",
           payload: {
             parentId: SCHEMA_ROOT_ID,
-            typeName: this.nextName("SimpleType"),
+            typeName: this.nextName("SimpleType", reserveNames),
             baseType: "xs:string",
           },
         };
@@ -84,7 +103,7 @@ export class DropCommandFactory {
           type: "addComplexType",
           payload: {
             parentId: SCHEMA_ROOT_ID,
-            typeName: this.nextName("ComplexType"),
+            typeName: this.nextName("ComplexType", reserveNames),
             contentModel: "sequence",
             baseType: "xs:anyType",
             derivationKind: "extension",
@@ -94,7 +113,7 @@ export class DropCommandFactory {
         return {
           type: "addGroup",
           payload: {
-            groupName: this.nextName("Group"),
+            groupName: this.nextName("Group", reserveNames),
             contentModel: "sequence",
           },
         };
@@ -114,21 +133,29 @@ export class DropCommandFactory {
     item: DiagramItem,
     construct: PaletteSchemaConstruct
   ): SchemaCommand | null {
+    return this.createNodeDropCommandInternal(item, construct, true);
+  }
+
+  private createNodeDropCommandInternal(
+    item: DiagramItem,
+    construct: PaletteSchemaConstruct,
+    reserveNames: boolean
+  ): SchemaCommand | null {
     switch (construct) {
       case PaletteSchemaConstruct.Element:
-        return this.createElementNodeDropCommand(item);
+        return this.createElementNodeDropCommand(item, reserveNames);
       case PaletteSchemaConstruct.Attribute:
-        return this.createAttributeNodeDropCommand(item);
+        return this.createAttributeNodeDropCommand(item, reserveNames);
       case PaletteSchemaConstruct.SimpleType:
-        return this.createSimpleTypeNodeDropCommand(item);
+        return this.createSimpleTypeNodeDropCommand(item, reserveNames);
       case PaletteSchemaConstruct.ComplexType:
-        return this.createComplexTypeNodeDropCommand(item);
+        return this.createComplexTypeNodeDropCommand(item, reserveNames);
       case PaletteSchemaConstruct.Restriction:
-        return this.createRestrictionNodeDropCommand(item);
+        return this.createRestrictionNodeDropCommand(item, reserveNames);
       case PaletteSchemaConstruct.Extension:
-        return this.createExtensionNodeDropCommand(item);
+        return this.createExtensionNodeDropCommand(item, reserveNames);
       case PaletteSchemaConstruct.Group:
-        return this.createGroupNodeDropCommand(item);
+        return this.createGroupNodeDropCommand(item, reserveNames);
       case PaletteSchemaConstruct.Sequence:
         return this.createCompositorNodeDropCommand(item, "sequence");
       case PaletteSchemaConstruct.Choice:
@@ -146,17 +173,22 @@ export class DropCommandFactory {
    * @param prefix - Name prefix
    * @returns Generated name
    */
-  private nextName(prefix: string): string {
+  private nextName(prefix: string, reserveName: boolean): string {
     let nameCounter = 1;
     while (this.schemaTopLevelNames.has(`${prefix}${nameCounter}`)) {
       nameCounter += 1;
     }
     const candidate = `${prefix}${nameCounter}`;
-    this.schemaTopLevelNames.add(candidate);
+    if (reserveName) {
+      this.schemaTopLevelNames.add(candidate);
+    }
     return candidate;
   }
 
-  private createElementNodeDropCommand(item: DiagramItem): SchemaCommand | null {
+  private createElementNodeDropCommand(
+    item: DiagramItem,
+    reserveNames: boolean
+  ): SchemaCommand | null {
     if (
       this.isSchemaRoot(item) ||
       (item.itemType === DiagramItemType.group &&
@@ -168,7 +200,7 @@ export class DropCommandFactory {
         type: "addElement",
         payload: {
           parentId: item.id,
-          elementName: this.nextName("Element"),
+          elementName: this.nextName("Element", reserveNames),
           elementType: "xs:string",
         },
       };
@@ -177,7 +209,8 @@ export class DropCommandFactory {
   }
 
   private createAttributeNodeDropCommand(
-    item: DiagramItem
+    item: DiagramItem,
+    reserveNames: boolean
   ): SchemaCommand | null {
     if (
       this.isSchemaRoot(item) ||
@@ -187,7 +220,7 @@ export class DropCommandFactory {
         type: "addAttribute",
         payload: {
           parentId: item.id,
-          attributeName: this.nextName("Attribute"),
+          attributeName: this.nextName("Attribute", reserveNames),
           attributeType: "xs:string",
         },
       };
@@ -205,7 +238,7 @@ export class DropCommandFactory {
         type: "addAttribute",
         payload: {
           parentId: anonCtId,
-          attributeName: this.nextName("Attribute"),
+          attributeName: this.nextName("Attribute", reserveNames),
           attributeType: "xs:string",
         },
       };
@@ -214,7 +247,8 @@ export class DropCommandFactory {
   }
 
   private createSimpleTypeNodeDropCommand(
-    item: DiagramItem
+    item: DiagramItem,
+    reserveNames: boolean
   ): SchemaCommand | null {
     if (this.isSchemaRoot(item) || item.itemType === DiagramItemType.element) {
       return {
@@ -222,7 +256,7 @@ export class DropCommandFactory {
         payload: {
           parentId: item.id,
           ...(this.isSchemaRoot(item)
-            ? { typeName: this.nextName("SimpleType") }
+            ? { typeName: this.nextName("SimpleType", reserveNames) }
             : {}),
           baseType: "xs:string",
         },
@@ -232,7 +266,8 @@ export class DropCommandFactory {
   }
 
   private createComplexTypeNodeDropCommand(
-    item: DiagramItem
+    item: DiagramItem,
+    reserveNames: boolean
   ): SchemaCommand | null {
     if (this.isSchemaRoot(item) || item.itemType === DiagramItemType.element) {
       return {
@@ -240,7 +275,7 @@ export class DropCommandFactory {
         payload: {
           parentId: item.id,
           ...(this.isSchemaRoot(item)
-            ? { typeName: this.nextName("ComplexType") }
+            ? { typeName: this.nextName("ComplexType", reserveNames) }
             : {}),
           contentModel: "sequence",
         },
@@ -249,12 +284,15 @@ export class DropCommandFactory {
     return null;
   }
 
-  private createGroupNodeDropCommand(item: DiagramItem): SchemaCommand | null {
+  private createGroupNodeDropCommand(
+    item: DiagramItem,
+    reserveNames: boolean
+  ): SchemaCommand | null {
     if (this.isSchemaRoot(item)) {
       return {
         type: "addGroup",
         payload: {
-          groupName: this.nextName("Group"),
+          groupName: this.nextName("Group", reserveNames),
           contentModel: "sequence",
         },
       };
@@ -308,9 +346,15 @@ export class DropCommandFactory {
     return null;
   }
 
-  private createRestrictionNodeDropCommand(item: DiagramItem): SchemaCommand | null {
+  private createRestrictionNodeDropCommand(
+    item: DiagramItem,
+    reserveNames: boolean
+  ): SchemaCommand | null {
     if (this.isSchemaRoot(item)) {
-      return this.createTopLevelDropCommand(PaletteSchemaConstruct.Restriction);
+      return this.createTopLevelDropCommandInternal(
+        PaletteSchemaConstruct.Restriction,
+        reserveNames
+      );
     }
     if (item.itemType === DiagramItemType.element) {
       if (item.hasAnonymousComplexType) {
@@ -362,9 +406,15 @@ export class DropCommandFactory {
     return null;
   }
 
-  private createExtensionNodeDropCommand(item: DiagramItem): SchemaCommand | null {
+  private createExtensionNodeDropCommand(
+    item: DiagramItem,
+    reserveNames: boolean
+  ): SchemaCommand | null {
     if (this.isSchemaRoot(item)) {
-      return this.createTopLevelDropCommand(PaletteSchemaConstruct.Extension);
+      return this.createTopLevelDropCommandInternal(
+        PaletteSchemaConstruct.Extension,
+        reserveNames
+      );
     }
     if (item.itemType === DiagramItemType.element) {
       if (item.hasAnonymousComplexType) {

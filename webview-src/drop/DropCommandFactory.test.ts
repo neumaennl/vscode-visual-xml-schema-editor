@@ -505,5 +505,48 @@ describe("DropCommandFactory", () => {
         "Element1"
       );
     });
+
+    it("does not consume generated names during canDrop validation", () => {
+      const root = makeItem("/schema", DiagramItemType.element);
+
+      // Simulate repeated dragover checks.
+      expect(factory.canDropOnNode(root, PaletteSchemaConstruct.Element)).toBe(true);
+      expect(factory.canDropOnNode(root, PaletteSchemaConstruct.Element)).toBe(true);
+      expect(factory.canDropOnNode(root, PaletteSchemaConstruct.Element)).toBe(true);
+
+      const command = factory.createTopLevelDropCommand(PaletteSchemaConstruct.Element);
+      expect((command! as { payload: { elementName: string } }).payload.elementName).toBe(
+        "Element1"
+      );
+    });
+
+    it("still increments after clashes when validation runs first", () => {
+      factory.updateNamesFromSchema({ element: [{ name: "Element1" }] });
+      const root = makeItem("/schema", DiagramItemType.element);
+
+      expect(factory.canDropOnNode(root, PaletteSchemaConstruct.Element)).toBe(true);
+      expect(factory.canDropOnNode(root, PaletteSchemaConstruct.Element)).toBe(true);
+
+      const command = factory.createTopLevelDropCommand(PaletteSchemaConstruct.Element);
+      expect((command! as { payload: { elementName: string } }).payload.elementName).toBe(
+        "Element2"
+      );
+    });
+  });
+
+  describe("canDropOnNode", () => {
+    it("matches createNodeDropCommand validity for supported drops", () => {
+      const root = makeItem("/schema", DiagramItemType.element);
+      expect(factory.canDropOnNode(root, PaletteSchemaConstruct.Group)).toBe(true);
+      expect(factory.createNodeDropCommand(root, PaletteSchemaConstruct.Group)).not.toBeNull();
+    });
+
+    it("rejects unsupported target/construct combinations", () => {
+      const simpleTypeNode = makeItem("/simpleType:S", DiagramItemType.type, {
+        type: "simpleType",
+      });
+      expect(factory.canDropOnNode(simpleTypeNode, PaletteSchemaConstruct.Attribute)).toBe(false);
+      expect(factory.createNodeDropCommand(simpleTypeNode, PaletteSchemaConstruct.Attribute)).toBeNull();
+    });
   });
 });

@@ -491,11 +491,29 @@ export class DropCommandFactory {
   }
 
   private getRestrictionBaseType(item: DiagramItem): string {
-    return this.extractDisplayedBaseType(item.type) ?? "xs:string";
+    const extracted = this.extractDisplayedBaseType(item.type);
+    if (extracted) {
+      return extracted;
+    }
+    return this.targetsComplexTypeRestriction(item) ? "xs:anyType" : "xs:string";
   }
 
   private getExtensionBaseType(item: DiagramItem): string {
     return this.extractDisplayedBaseType(item.type) ?? "xs:anyType";
+  }
+
+  private targetsComplexTypeRestriction(item: DiagramItem): boolean {
+    return this.isComplexTypeNode(item) || item.hasAnonymousComplexType;
+  }
+
+  private isPseudoTypeLabel(typeText: string): boolean {
+    return (
+      typeText === "complexType" ||
+      typeText === "simpleType" ||
+      typeText.startsWith("complexType with ") ||
+      typeText.startsWith("simpleType with ") ||
+      typeText.startsWith("<anonymous ")
+    );
   }
 
   private extractDisplayedBaseType(typeText: string): string | null {
@@ -508,7 +526,7 @@ export class DropCommandFactory {
       return extended[1].trim();
     }
     const trimmed = typeText.trim();
-    if (trimmed && !trimmed.startsWith("<anonymous ")) {
+    if (trimmed && !this.isPseudoTypeLabel(trimmed)) {
       return trimmed;
     }
     return null;

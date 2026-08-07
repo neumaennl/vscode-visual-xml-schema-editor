@@ -1107,7 +1107,12 @@ describe("PropertyPanel", () => {
     xmlTab?.click();
 
     const xmlPreview = container.querySelector("pre");
-    expect(xmlPreview?.textContent).toContain('"maxOccurs": 7');
+    const xmlHint = container.querySelector(".property-xml-hint");
+    expect(xmlHint?.textContent).toContain("Preview only");
+    expect(xmlHint?.textContent).toContain("text editor tab");
+    expect(xmlPreview?.textContent).toContain('<xs:element');
+    expect(xmlPreview?.textContent).toContain('maxOccurs="7"');
+    expect(xmlPreview?.textContent).not.toContain('"id":');
 
     const generalTab = Array.from(container.querySelectorAll("button")).find(
       (btn) => btn.textContent === "General"
@@ -1115,6 +1120,95 @@ describe("PropertyPanel", () => {
     generalTab?.click();
 
     expect(getInputByLabel(container, "maxOccurs").value).toBe("7");
+  });
+
+  it("renders unbounded in XML tab when maxOccurrence is unlimited", () => {
+    expect.hasAssertions();
+    const item = new DiagramItem("/element:root/element:item[0]", "item", DiagramItemType.element, diagram);
+    item.minOccurrence = 0;
+    item.maxOccurrence = -1;
+
+    panel.display(item);
+    const xmlTab = Array.from(container.querySelectorAll("button")).find(
+      (btn) => btn.textContent === "XML"
+    );
+    xmlTab?.click();
+
+    const xmlPreview = container.querySelector("pre");
+    expect(xmlPreview?.textContent).toContain('maxOccurs="unbounded"');
+  });
+
+  it("renders compositor nodes as XML fragments in the XML tab", () => {
+    expect.hasAssertions();
+    const sequence = new DiagramItem(
+      "/complexType:OrderType/group:sequence[0]",
+      "sequence",
+      DiagramItemType.group,
+      diagram
+    );
+    sequence.minOccurrence = 0;
+    sequence.maxOccurrence = -1;
+
+    const child = new DiagramItem(
+      "/complexType:OrderType/group:sequence[0]/element:item[0]",
+      "item",
+      DiagramItemType.element,
+      diagram
+    );
+    child.type = "xs:string";
+    sequence.addChild(child);
+
+    panel.display(sequence);
+    const xmlTab = Array.from(container.querySelectorAll("button")).find(
+      (btn) => btn.textContent === "XML"
+    );
+    xmlTab?.click();
+
+    const xmlPreview = container.querySelector("pre");
+    expect(xmlPreview?.textContent).toContain('<xs:sequence minOccurs="0" maxOccurs="unbounded">');
+    expect(xmlPreview?.textContent).toContain('<xs:element name="item" type="xs:string"/>');
+  });
+
+  it("truncates deep XML preview content with an ellipsis marker", () => {
+    expect.hasAssertions();
+    const schemaRoot = new DiagramItem(SCHEMA_ROOT_ID, "schema", DiagramItemType.group, diagram);
+
+    const complexType = new DiagramItem(
+      "/complexType:OrderType",
+      "OrderType",
+      DiagramItemType.type,
+      diagram
+    );
+    complexType.type = "complexType";
+
+    const sequence = new DiagramItem(
+      "/complexType:OrderType/group:sequence[0]",
+      "sequence",
+      DiagramItemType.group,
+      diagram
+    );
+    const deepElement = new DiagramItem(
+      "/complexType:OrderType/group:sequence[0]/element:lineItem[0]",
+      "lineItem",
+      DiagramItemType.element,
+      diagram
+    );
+    deepElement.type = "xs:string";
+
+    sequence.addChild(deepElement);
+    complexType.addChild(sequence);
+    schemaRoot.addChild(complexType);
+
+    panel.display(schemaRoot);
+    const xmlTab = Array.from(container.querySelectorAll("button")).find(
+      (btn) => btn.textContent === "XML"
+    );
+    xmlTab?.click();
+
+    const xmlPreview = container.querySelector("pre");
+    expect(xmlPreview?.textContent).toContain('<xs:complexType name="OrderType">');
+    expect(xmlPreview?.textContent).toContain('<!-- ... truncated ... -->');
+    expect(xmlPreview?.textContent).not.toContain('name="lineItem"');
   });
 
   it("only renders editable controls for existing facets", () => {

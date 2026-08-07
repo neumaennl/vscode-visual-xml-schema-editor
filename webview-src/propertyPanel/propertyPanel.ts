@@ -33,6 +33,7 @@ import { renderSchemaNamespaceProperties } from "./propertyPanelSchemaNamespaces
 import { BUILTIN_TYPE_SUGGESTIONS } from "./propertyPanelTypeCatalog";
 import { renderTypeProperty } from "./propertyPanelTypes";
 import { renderElementDefaultFixedSection } from "./propertyPanelElementDefaults";
+import { buildXmlPreview } from "./propertyPanelXmlPreview";
 
 type PropertyTab = "general" | "facets" | "docs" | "xml";
 type CommandDispatcher = (command: SchemaCommand) => void;
@@ -449,21 +450,17 @@ export class PropertyPanel {
 
   private renderXmlTab(node: DiagramItem): HTMLElement {
     const root = document.createElement("div");
-    root.className = "property-tab-content";
+    root.className = "property-tab-content property-tab-content-xml";
+
+    const hint = document.createElement("p");
+    hint.className = "property-xml-hint";
+    hint.textContent = "Preview only; it may differ from the exact schema XML. Open the schema in a text editor tab for the source of truth.";
+
     const pre = document.createElement("pre");
     pre.className = "property-xml-preview";
-    pre.textContent = JSON.stringify(
-      {
-        id: node.id,
-        name: node.name,
-        itemType: node.itemType,
-        type: node.type,
-        minOccurs: node.minOccurrence,
-        maxOccurs: node.maxOccurrence,
-      },
-      null,
-      2
-    );
+    pre.textContent = buildXmlPreview(node);
+
+    root.appendChild(hint);
     root.appendChild(pre);
     return root;
   }

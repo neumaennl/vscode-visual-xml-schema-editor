@@ -334,16 +334,13 @@ describe("DiagramRenderer", () => {
       const itemChild = itemElement.querySelector("*") as Element;
       itemElement.classList.add("drag-over");
 
-      const originalElementFromPoint = (
-        document as Document & {
-          elementFromPoint?: (x: number, y: number) => Element | null;
-        }
-      ).elementFromPoint;
-      (
-        document as Document & {
-          elementFromPoint?: (x: number, y: number) => Element | null;
-        }
-      ).elementFromPoint = (): Element => itemChild;
+      const documentWithElementFromPoint = document as Document & {
+        elementFromPoint?: (x: number, y: number) => Element | null;
+      };
+      const originalElementFromPoint = documentWithElementFromPoint.elementFromPoint?.bind(
+        document
+      );
+      documentWithElementFromPoint.elementFromPoint = (): Element => itemChild;
 
       const leaveEvent = new Event("dragleave", { bubbles: true }) as DragEvent;
       Object.defineProperty(leaveEvent, "clientX", { value: 10 });
@@ -353,11 +350,7 @@ describe("DiagramRenderer", () => {
       itemChild.dispatchEvent(leaveEvent);
 
       expect(itemElement.classList.contains("drag-over")).toBe(true);
-      (
-        document as Document & {
-          elementFromPoint?: (x: number, y: number) => Element | null;
-        }
-      ).elementFromPoint = originalElementFromPoint;
+      documentWithElementFromPoint.elementFromPoint = originalElementFromPoint;
     });
   });
 

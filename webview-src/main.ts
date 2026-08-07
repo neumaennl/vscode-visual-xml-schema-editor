@@ -254,7 +254,7 @@ class SchemaEditorApp {
     this.renderer.setNodeDropValidator(
       (item, construct) =>
         isPaletteSchemaConstruct(construct) &&
-        this.dropCommandFactory.createNodeDropCommand(item, construct) !== null
+        this.dropCommandFactory.canDropOnNode(item, construct)
     );
     this.renderer.setDropHandler((item, construct) => {
       this.handleNodeDrop(item, construct);

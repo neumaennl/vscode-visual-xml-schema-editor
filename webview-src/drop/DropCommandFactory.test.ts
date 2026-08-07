@@ -351,6 +351,22 @@ describe("DropCommandFactory", () => {
         derivationKind: "restriction",
       });
     });
+
+    it("defaults complexType restrictions to xs:anyType when no base can be inferred", () => {
+      const item = makeItem("/complexType:ChoiceType", DiagramItemType.type, {
+        type: "complexType",
+      });
+      const cmd = factory.createNodeDropCommand(item, PaletteSchemaConstruct.Restriction);
+      expect(cmd).not.toBeNull();
+      expect(cmd!.type).toBe("modifyComplexType");
+      expect((cmd! as {
+        payload: { typeId: string; baseType: string; derivationKind: string };
+      }).payload).toMatchObject({
+        typeId: "/complexType:ChoiceType",
+        baseType: "xs:anyType",
+        derivationKind: "restriction",
+      });
+    });
   });
 
   describe("createNodeDropCommand — extension", () => {
@@ -454,6 +470,22 @@ describe("DropCommandFactory", () => {
       }).payload).toMatchObject({
         typeId: "/element:person/anonymousComplexType[0]",
         baseType: "BasePersonType",
+        derivationKind: "extension",
+      });
+    });
+
+    it("defaults complexType extensions to xs:anyType when no base can be inferred", () => {
+      const item = makeItem("/complexType:ChoiceType", DiagramItemType.type, {
+        type: "complexType",
+      });
+      const cmd = factory.createNodeDropCommand(item, PaletteSchemaConstruct.Extension);
+      expect(cmd).not.toBeNull();
+      expect(cmd!.type).toBe("modifyComplexType");
+      expect((cmd! as {
+        payload: { typeId: string; baseType: string; derivationKind: string };
+      }).payload).toMatchObject({
+        typeId: "/complexType:ChoiceType",
+        baseType: "xs:anyType",
         derivationKind: "extension",
       });
     });

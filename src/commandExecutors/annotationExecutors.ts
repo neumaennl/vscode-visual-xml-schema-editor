@@ -77,10 +77,12 @@ function setElementOrderKeyAt(
 function ensureSchemaAnnotationOrder(schemaObj: schema): void {
   const orderedSchema = schemaObj as schema & ElementOrderHolder;
   const current = orderedSchema._elementOrder ?? [];
-  const firstDeclarationIndex = current.findIndex((entry: string) =>
+  const withoutAnnotation = current.filter((entry) => entry !== "annotation");
+  const firstDeclarationIndex = withoutAnnotation.findIndex((entry: string) =>
     SCHEMA_DECLARATION_ORDER_KEY_SET.has(entry)
   );
-  const targetIndex = firstDeclarationIndex >= 0 ? firstDeclarationIndex : current.length;
+  const targetIndex =
+    firstDeclarationIndex >= 0 ? firstDeclarationIndex : withoutAnnotation.length;
   setElementOrderKeyAt(orderedSchema, "annotation", targetIndex);
 }
 
@@ -244,6 +246,9 @@ export function executeRemoveAnnotation(
     const annots = toArray(schemaObj.annotation);
     annots.splice(schemaAnnotIdx, 1);
     schemaObj.annotation = annots.length > 0 ? annots : undefined;
+    if (annots.length > 0) {
+      ensureSchemaAnnotationOrder(schemaObj);
+    }
     return;
   }
 

@@ -126,6 +126,44 @@ describe("Integration: Annotation pipeline", () => {
 
       runCommandExpectValidationFailure(SCHEMA_WITH_ELEMENTS, cmd, "No annotation found on node: /element:person");
     });
+
+    it("keeps remaining schema annotations before top-level declarations after deletion", () => {
+      const schemaWithTopLevelElement = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="root" type="xs:string"/>
+</xs:schema>`;
+
+      const afterFirstDoc = runCommandExpectSuccess(schemaWithTopLevelElement, {
+        type: "addDocumentation",
+        payload: { targetId: "/schema", content: "doc A1" },
+      });
+
+      const afterSecondDoc = runCommandExpectSuccess(afterFirstDoc, {
+        type: "addDocumentation",
+        payload: { targetId: "/schema/annotation[0]", content: "doc A2" },
+      });
+
+      const afterSecondAnnotation = runCommandExpectSuccess(afterSecondDoc, {
+        type: "addAnnotation",
+        payload: { targetId: "/schema" },
+      });
+      expect(afterSecondAnnotation.indexOf("<annotation")).toBeLessThan(
+        afterSecondAnnotation.indexOf("<element ")
+      );
+
+      const afterDocOnSecondAnnotation = runCommandExpectSuccess(afterSecondAnnotation, {
+        type: "addDocumentation",
+        payload: { targetId: "/schema/annotation[1]", content: "doc B1" },
+      });
+
+      const afterRemoval = runCommandExpectSuccess(afterDocOnSecondAnnotation, {
+        type: "removeAnnotation",
+        payload: { annotationId: "/schema/annotation[0]" },
+      });
+      expect(afterRemoval.indexOf("<annotation")).toBeLessThan(
+        afterRemoval.indexOf("<element ")
+      );
+    });
   });
 
   // ─── modifyAnnotation ──────────────────────────────────────────────────────

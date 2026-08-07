@@ -17,8 +17,8 @@
       <documentation>complexType showing a choice</documentation>
     </annotation>
     <choice>
-      <element name="either" minOccurs="1" maxOccurs="unbounded" type="tns:lengthRestricitionType"/>
-      <element name="or" minOccurs="2" maxOccurs="4" type="tns:lengthRestricitionType"/>
+      <element name="either" minOccurs="1" maxOccurs="unbounded" type="tns:lengthRestrictionType"/>
+      <element name="or" minOccurs="2" maxOccurs="4" type="tns:lengthRestrictionType"/>
     </choice>
     <attribute type="xs:anyURI" use="optional" name="url"/>
   </complexType>
@@ -42,7 +42,7 @@
       </simpleType>
     </attribute>
   </complexType>
-  <simpleType name="lengthRestricitionType">
+  <simpleType name="lengthRestrictionType">
     <annotation>
       <documentation>a simple string with a max length</documentation>
     </annotation>

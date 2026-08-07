@@ -706,6 +706,49 @@ describe("PropertyPanel", () => {
     });
   });
 
+  it("does not dispatch a second command when Base Type blur is unchanged after stale simpleType rename replay", () => {
+    expect.hasAssertions();
+    const dispatch = jest.fn();
+    panel = new PropertyPanel(container, dispatch);
+
+    const initial = new DiagramItem(
+      "/simpleType:lengthRestricitionType",
+      "lengthRestricitionType",
+      DiagramItemType.type,
+      diagram
+    );
+    initial.type = "simpleType (restricts xs:string)";
+    panel.display(initial);
+
+    const nameInput = getInputByLabel(container, "Name");
+    nameInput.value = "lengthRestrictionType";
+    nameInput.dispatchEvent(new Event("blur"));
+
+    // Simulate stale re-display that still references the old node id/name
+    // while keeping the same Base Type value.
+    const stale = new DiagramItem(
+      "/simpleType:lengthRestricitionType",
+      "lengthRestricitionType",
+      DiagramItemType.type,
+      diagram
+    );
+    stale.type = "simpleType (restricts xs:string)";
+    panel.display(stale);
+
+    const baseTypeInput = getInputByLabel(container, "Base Type");
+    baseTypeInput.value = "xs:string";
+    baseTypeInput.dispatchEvent(new Event("blur"));
+
+    expect(dispatch).toHaveBeenCalledTimes(1);
+    expect(dispatch).toHaveBeenCalledWith({
+      type: "modifySimpleType",
+      payload: {
+        typeId: "/simpleType:lengthRestricitionType",
+        typeName: "lengthRestrictionType",
+      },
+    });
+  });
+
   it("keeps computed complex type summaries read-only", () => {
     expect.hasAssertions();
     const item = new DiagramItem("/complexType:PersonType", "PersonType", DiagramItemType.type, diagram);

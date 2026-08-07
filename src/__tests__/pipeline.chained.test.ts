@@ -119,7 +119,7 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
       payload: {
         parentId: "/complexType:OrderType/sequence/element:items/anonymousComplexType[0]/sequence",
         elementName: "item",
-        elementType: "lengthRestricitionType",
+        elementType: "lengthRestrictionType",
         minOccurs: 1,
         maxOccurs: "unbounded",
       },
@@ -216,14 +216,14 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
     expect(itemsEl!.maxOccurs).toBe("unbounded");
     expect(itemsEl!.complexType).toBeDefined();
 
-    // items anonymous complexType → sequence → item (lengthRestricitionType, 1..*)
+    // items anonymous complexType → sequence → item (lengthRestrictionType, 1..*)
     const itemsAnonCT = itemsEl!.complexType!;
     expect(itemsAnonCT.sequence).toBeDefined();
     const innerElements = toArray(itemsAnonCT.sequence!.element);
     expect(innerElements.length).toBe(1);
     const itemEl = innerElements.find((e) => e.name === "item");
     expect(itemEl).toBeDefined();
-    expect(itemEl!.type_).toBe("lengthRestricitionType");
+    expect(itemEl!.type_).toBe("lengthRestrictionType");
     expect(itemEl!.minOccurs).toBe(1);
     expect(itemEl!.maxOccurs).toBe("unbounded");
 

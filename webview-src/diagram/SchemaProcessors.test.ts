@@ -356,9 +356,40 @@ describe("SchemaProcessors", () => {
       );
 
       processSequence(ctItem, { element: [] });
-
       expect(ctItem.childElements).toHaveLength(1);
       expect(ctItem.childElements[0].groupType).toBe(DiagramItemGroupType.Sequence);
+    });
+
+    it("should mark local group elements with inline anonymous complexType and extension base", () => {
+      const ctItem = new DiagramItem(
+        "/complexType:ContainerType",
+        "ContainerType",
+        DiagramItemType.type,
+        diagram
+      );
+
+      processSequence(ctItem, {
+        element: [
+          {
+            name: "meta",
+            complexType: {
+              complexContent: {
+                extension: {
+                  base: "xs:anyType",
+                  sequence: {},
+                },
+              },
+            },
+          },
+        ],
+      });
+
+      const sequence = ctItem.childElements[0];
+      const meta = sequence.childElements[0];
+      expect(meta.name).toBe("meta");
+      expect(meta.hasAnonymousComplexType).toBe(true);
+      expect(meta.complexDerivationKind).toBe("extension");
+      expect(meta.type).toContain("extends xs:anyType");
     });
 
     it("should render nested group references inside sequence groups", () => {

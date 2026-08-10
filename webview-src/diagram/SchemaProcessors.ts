@@ -386,6 +386,16 @@ function processGroup(
       extractOccurrenceConstraints(item, elem as localElement);
     }
 
+    // Local elements inside groups can also carry inline anonymous types.
+    // Process them so UI state (e.g. base-type editing) matches top-level elements.
+    const localElementLike = elem as localElement;
+    if (localElementLike.complexType) {
+      processAnonymousComplexType(item, localElementLike.complexType);
+    }
+    if (localElementLike.simpleType) {
+      processAnonymousSimpleType(item, localElementLike.simpleType);
+    }
+
     groupItem.addChild(item);
   });
 

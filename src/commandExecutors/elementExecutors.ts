@@ -18,7 +18,8 @@ import {
 } from "../../shared/types";
 import { toArray } from "../../shared/schemaUtils";
 import { locateNodeById } from "../schemaNavigator";
-import { parseSchemaId } from "../../shared/idStrategy";
+import { parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy";
+import { renameLocalElementRefInSchema } from "./schemaLocalRenamer";
 
 /**
  * Executes an addElement command.
@@ -70,7 +71,7 @@ export function executeRemoveElement(
   const parsed = parseSchemaId(elementId);
   
   // Determine the parent location
-  const parentId = parsed.parentId || "schema";
+  const parentId = parsed.parentId || SCHEMA_ROOT_ID;
   const location = locateNodeById(schemaObj, parentId);
 
   // Remove the element from its parent container
@@ -88,15 +89,26 @@ export function executeModifyElement(
   command: ModifyElementCommand,
   schemaObj: schema
 ): void {
-  const { elementId, elementName, elementType, ref, minOccurs, maxOccurs, documentation } =
+  const { elementId, elementName, elementType, ref, minOccurs, maxOccurs, documentation, nillable, abstract: isAbstract, default_, fixed } =
     command.payload;
 
   // Parse the element ID to get information about the element
   const parsed = parseSchemaId(elementId);
   
   // Determine the parent location from the parsed ID
-  const parentId = parsed.parentId || "schema";
+  const parentId = parsed.parentId || SCHEMA_ROOT_ID;
   const location = locateNodeById(schemaObj, parentId);
+
+  // When a top-level element is renamed, update all element refs and
+  // substitutionGroup references pointing to the old name.
+  if (
+    elementName !== undefined &&
+    parsed.nodeType === SchemaNodeType.Element &&
+    !parsed.parentId &&
+    parsed.name
+  ) {
+    renameLocalElementRefInSchema(parsed.name, elementName, schemaObj);
+  }
 
   // Find and modify the element in its parent container
   modifyElementInParent(
@@ -109,7 +121,11 @@ export function executeModifyElement(
     ref,
     minOccurs,
     maxOccurs,
-    documentation
+    documentation,
+    nillable,
+    isAbstract,
+    default_,
+    fixed
   );
 }
 
@@ -307,6 +323,10 @@ function filterElement<T extends { name?: string; ref?: string }>(
  * @param newMinOccurs - New minimum occurrences (optional)
  * @param newMaxOccurs - New maximum occurrences (optional)
  * @param newDocumentation - New documentation (optional)
+ * @param newNillable - New nillable flag (optional)
+ * @param newAbstract - New abstract flag; only applies to top-level elements (optional)
+ * @param newDefault - New default value (optional; empty string clears it)
+ * @param newFixed - New fixed value (optional; empty string clears it)
  * @throws Error if element not found
  */
 function modifyElementInParent(
@@ -319,7 +339,11 @@ function modifyElementInParent(
   newRef?: string,
   newMinOccurs?: number,
   newMaxOccurs?: number | "unbounded",
-  newDocumentation?: string
+  newDocumentation?: string,
+  newNillable?: boolean,
+  newAbstract?: boolean,
+  newDefault?: string,
+  newFixed?: string
 ): void {
   if (parentType === "schema") {
     const schemaObj = parent as schema;
@@ -334,7 +358,11 @@ function modifyElementInParent(
       undefined, // top-level elements don't have occurrences
       undefined,
       newDocumentation,
-      false
+      false,
+      newNillable,
+      newAbstract,
+      newDefault,
+      newFixed
     );
   } else if (
     parentType === "sequence" ||
@@ -352,7 +380,11 @@ function modifyElementInParent(
       newMinOccurs,
       newMaxOccurs,
       newDocumentation,
-      false
+      false,
+      newNillable,
+      undefined, // abstract not applicable to local elements
+      newDefault,
+      newFixed
     );
   } else if (parentType === "all") {
     const allGroup = parent as all;
@@ -367,7 +399,11 @@ function modifyElementInParent(
       newMinOccurs,
       newMaxOccurs,
       newDocumentation,
-      true
+      true,
+      newNillable,
+      undefined, // abstract not applicable to local elements
+      newDefault,
+      newFixed
     );
   }
 }
@@ -407,6 +443,10 @@ function findElement<T extends { name?: string; ref?: string }>(
  * @param newMaxOccurs - New maximum occurrences (optional)
  * @param newDocumentation - New documentation (optional)
  * @param isInAllGroup - Whether this element is in an 'all' group
+ * @param newNillable - New nillable flag (optional)
+ * @param newAbstract - New abstract flag; only written to top-level elements (optional)
+ * @param newDefault - New default value (optional; empty string clears it)
+ * @param newFixed - New fixed value (optional; empty string clears it)
  */
 function updateElementProperties(
   element: topLevelElement | localElement | narrowMaxMin,
@@ -416,13 +456,19 @@ function updateElementProperties(
   newMinOccurs?: number,
   newMaxOccurs?: number | "unbounded",
   newDocumentation?: string,
-  isInAllGroup: boolean = false
+  isInAllGroup: boolean = false,
+  newNillable?: boolean,
+  newAbstract?: boolean,
+  newDefault?: string,
+  newFixed?: string
 ): void {
   if (newRef !== undefined) {
     // Switching to a reference: clear name and type
     (element as localElement).ref = newRef;
     element.name = undefined;
     element.type_ = undefined;
+    (element as localElement | topLevelElement).simpleType = undefined;
+    (element as localElement | topLevelElement).complexType = undefined;
   } else {
     // Update name (clearing ref when switching to named)
     if (newName !== undefined) {
@@ -431,6 +477,8 @@ function updateElementProperties(
     }
     if (newType !== undefined) {
       element.type_ = newType;
+      (element as localElement | topLevelElement).simpleType = undefined;
+      (element as localElement | topLevelElement).complexType = undefined;
     }
   }
 
@@ -453,6 +501,26 @@ function updateElementProperties(
         localElem.maxOccurs = newMaxOccurs;
       }
     }
+  }
+
+  // Update nillable flag
+  if (newNillable !== undefined) {
+    (element as topLevelElement | localElement).nillable = newNillable ? true : undefined;
+  }
+
+  // Update abstract flag (top-level elements only)
+  if (newAbstract !== undefined && 'abstract' in element) {
+    element.abstract = newAbstract ? true : undefined;
+  }
+
+  // Update default value
+  if (newDefault !== undefined) {
+    (element as topLevelElement | localElement).default_ = newDefault || undefined;
+  }
+
+  // Update fixed value
+  if (newFixed !== undefined) {
+    (element as topLevelElement | localElement).fixed = newFixed || undefined;
   }
 
   // Update documentation if provided

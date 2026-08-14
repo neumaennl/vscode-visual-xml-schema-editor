@@ -121,7 +121,7 @@ describe("Integration: WorkspaceEdit via SchemaEditorProvider", () => {
         command: "executeCommand",
         data: {
           type: "addElement",
-          payload: { parentId: "schema", elementName: "order", elementType: "xs:string" },
+          payload: { parentId: "/schema", elementName: "order", elementType: "xs:string" },
         },
       });
       await flushMicrotasks();
@@ -164,7 +164,7 @@ describe("Integration: WorkspaceEdit via SchemaEditorProvider", () => {
         command: "executeCommand",
         data: {
           type: "addElement",
-          payload: { parentId: "schema", elementName: "person", elementType: "xs:string" },
+          payload: { parentId: "/schema", elementName: "person", elementType: "xs:string" },
         },
       });
       await flushMicrotasks();
@@ -198,7 +198,7 @@ describe("Integration: WorkspaceEdit via SchemaEditorProvider", () => {
         command: "executeCommand",
         data: {
           type: "addElement",
-          payload: { parentId: "schema", elementName: "x", elementType: "xs:string" },
+          payload: { parentId: "/schema", elementName: "x", elementType: "xs:string" },
         },
       });
       await flushMicrotasks();
@@ -234,7 +234,7 @@ describe("Integration: WorkspaceEdit via SchemaEditorProvider", () => {
         command: "executeCommand",
         data: {
           type: "addElement",
-          payload: { parentId: "schema", elementName: "y", elementType: "xs:string" },
+          payload: { parentId: "/schema", elementName: "y", elementType: "xs:string" },
         },
       });
       await flushMicrotasks();
@@ -264,7 +264,7 @@ describe("Integration: WorkspaceEdit via SchemaEditorProvider", () => {
         command: "executeCommand",
         data: {
           type: "addElement",
-          payload: { parentId: "schema", elementName: "order", elementType: "xs:string" },
+          payload: { parentId: "/schema", elementName: "order", elementType: "xs:string" },
         },
       });
       await flushMicrotasks();
@@ -292,7 +292,7 @@ describe("Integration: WorkspaceEdit via SchemaEditorProvider", () => {
         command: "executeCommand",
         data: {
           type: "addElement",
-          payload: { parentId: "schema", elementName: "order", elementType: "xs:string" },
+          payload: { parentId: "/schema", elementName: "order", elementType: "xs:string" },
         },
       });
       await flushMicrotasks();
@@ -301,7 +301,7 @@ describe("Integration: WorkspaceEdit via SchemaEditorProvider", () => {
         command: "executeCommand",
         data: {
           type: "addElement",
-          payload: { parentId: "schema", elementName: "invoice", elementType: "xs:string" },
+          payload: { parentId: "/schema", elementName: "invoice", elementType: "xs:string" },
         },
       });
       await flushMicrotasks();

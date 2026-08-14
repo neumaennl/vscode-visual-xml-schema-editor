@@ -329,6 +329,28 @@ describe("Group Validators", () => {
       const result = validateRemoveGroup(command, schemaWithRef);
       expect(result.valid).toBe(true);
     });
+
+    test("should accept removing a compositor group", () => {
+      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:complexType name="PersonType">
+    <xs:sequence>
+      <xs:element name="name" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>`;
+      const schemaWithCompositor = unmarshal(schema, schemaXml);
+
+      const command: RemoveGroupCommand = {
+        type: "removeGroup",
+        payload: {
+          groupId: "/complexType:PersonType/group:sequence[0]",
+        },
+      };
+
+      const result = validateRemoveGroup(command, schemaWithCompositor);
+      expect(result.valid).toBe(true);
+    });
   });
 
   describe("validateModifyGroup", () => {
@@ -377,6 +399,77 @@ describe("Group Validators", () => {
 
       const result = validateModifyGroup(command, schemaWithGroup);
       expect(result.valid).toBe(true);
+    });
+
+    test("should reject stale group rename replay after a successful rename", () => {
+      const renamedSchema = unmarshal(
+        schema,
+        `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:group name="UpdatedGroup">
+    <xs:sequence/>
+  </xs:group>
+</xs:schema>`
+      );
+      const command: ModifyGroupCommand = {
+        type: "modifyGroup",
+        payload: {
+          groupId: "/group:MyGroup",
+          groupName: "UpdatedGroup",
+        },
+      };
+
+      const result = validateModifyGroup(command, renamedSchema);
+      expectInvalid(result);
+      expect(result.error).toBe("Group not found: /group:MyGroup");
+    });
+
+    test("should accept occurrence updates for compositor groups", () => {
+      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:complexType name="PersonType">
+    <xs:sequence>
+      <xs:element name="name" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>`;
+      const schemaWithCompositor = unmarshal(schema, schemaXml);
+
+      const command: ModifyGroupCommand = {
+        type: "modifyGroup",
+        payload: {
+          groupId: "/complexType:PersonType/group:sequence[0]",
+          minOccurs: 0,
+          maxOccurs: "unbounded",
+        },
+      };
+
+      const result = validateModifyGroup(command, schemaWithCompositor);
+      expect(result.valid).toBe(true);
+    });
+
+    test("should reject renaming a compositor group", () => {
+      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:complexType name="PersonType">
+    <xs:sequence>
+      <xs:element name="name" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>`;
+      const schemaWithCompositor = unmarshal(schema, schemaXml);
+
+      const command: ModifyGroupCommand = {
+        type: "modifyGroup",
+        payload: {
+          groupId: "/complexType:PersonType/group:sequence[0]",
+          groupName: "renamed",
+        },
+      };
+
+      const result = validateModifyGroup(command, schemaWithCompositor);
+      expectInvalid(result);
+      expect(result.error).toContain("Compositor groups only support");
     });
   });
 
@@ -810,4 +903,3 @@ describe("Group Validators", () => {
     });
   });
 });
-

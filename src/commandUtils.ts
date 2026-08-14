@@ -4,32 +4,32 @@
  * ID Conventions:
  * - documentationId for non-schema nodes: "{elementPath}/documentation[N]"
  *   (e.g. "/element:person/documentation[0]").
- * - annotationId for schema-root annotations: "schema/annotation[N]"
+ * - annotationId for schema-root annotations: "/schema/annotation[N]"
  *   (0-based index into the schema's xs:annotation array).
  * - documentationId for schema-root annotations:
- *   - "schema/annotation[N]/documentation[M]" — M-th doc of the N-th annotation.
- *   - "schema/documentation[N]" — N-th doc of the first annotation (shorthand).
+ *   - "/schema/annotation[N]/documentation[M]" — M-th doc of the N-th annotation.
+ *   - "/schema/documentation[N]" — N-th doc of the first annotation (shorthand).
  */
 
 /**
- * Parses a schema-annotation ID of the form "schema/annotation[N]".
+ * Parses a schema-annotation ID of the form "/schema/annotation[N]".
  * @returns The 0-based annotation index, or null if the format does not match.
  */
 export function parseSchemaAnnotationId(id: string): number | null {
-  const match = id.match(/^(?:\/?)schema\/annotation\[(\d+)\]$/);
+  const match = id.match(/^\/schema\/annotation\[(\d+)\]$/);
   return match ? parseInt(match[1], 10) : null;
 }
 
 /**
  * Parses a schema-level documentation ID of the form
- * "schema/annotation[N]/documentation[M]".
+ * "/schema/annotation[N]/documentation[M]".
  * @returns Annotation and documentation indices, or null if the format does not match.
  */
 export function parseSchemaDocumentationId(
   id: string
 ): { annotIndex: number; docIndex: number } | null {
   const match = id.match(
-    /^(?:\/?)schema\/annotation\[(\d+)\]\/documentation\[(\d+)\]$/
+    /^\/schema\/annotation\[(\d+)\]\/documentation\[(\d+)\]$/
   );
   return match
     ? { annotIndex: parseInt(match[1], 10), docIndex: parseInt(match[2], 10) }

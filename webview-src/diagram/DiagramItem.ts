@@ -6,6 +6,9 @@
 import {
   DiagramItemType,
   DiagramItemGroupType,
+  DiagramComplexDerivationKind,
+  DiagramSimpleTypeDerivationKind,
+  DiagramAnnotationEntry,
   Point,
   Size,
   Rectangle,
@@ -33,6 +36,17 @@ export class DiagramItem {
   public isReference: boolean = false;
   public isSimpleContent: boolean = false;
   public isAbstract: boolean = false;
+  public isNillable: boolean = false;
+  public isMixed: boolean = false;
+  public hasAnonymousComplexType: boolean = false;
+  public complexDerivationKind?: DiagramComplexDerivationKind;
+  public simpleTypeDerivationKind?: DiagramSimpleTypeDerivationKind;
+  public simpleTypeListItemType?: string;
+  public simpleTypeUnionMemberTypes?: string[];
+
+  // Default/fixed value constraints (element-level)
+  public elementDefault?: string;
+  public elementFixed?: string;
 
   // Layout properties
   public location: Point = { x: 0, y: 0 };
@@ -44,6 +58,7 @@ export class DiagramItem {
 
   // Documentation
   public documentation: string = "";
+  public documentationAnnotations: DiagramAnnotationEntry[] = [];
 
   // Namespace
   public namespace: string = "";

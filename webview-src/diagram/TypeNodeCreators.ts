@@ -15,7 +15,10 @@ import {
   generateSchemaId,
   SchemaNodeType,
 } from "../../shared/idStrategy";
-import { extractDocumentation } from "./DiagramBuilderHelpers";
+import {
+  extractDocumentation,
+  extractDocumentationAnnotations,
+} from "./DiagramBuilderHelpers";
 
 /**
  * Creates a diagram item node from an element definition in the schema.
@@ -49,7 +52,14 @@ export function createElementNode(
   }
 
   // Extract documentation
+  item.documentationAnnotations = extractDocumentationAnnotations(item.id, element.annotation);
   item.documentation = extractDocumentation(element.annotation) ?? "";
+
+  // Extract element-level boolean and value constraints
+  item.isNillable = element.nillable === true;
+  item.isAbstract = element.abstract === true;
+  item.elementDefault = element.default_?.toString();
+  item.elementFixed = element.fixed?.toString();
 
   // Note: topLevelElement does not have occurrence constraints (minOccurs/maxOccurs)
   // Those only exist on localElement within complex types
@@ -84,8 +94,11 @@ export function createComplexTypeNode(
   );
 
   item.type = "complexType";
+  item.isAbstract = complexType.abstract === true;
+  item.isMixed = complexType.mixed === true;
 
   // Extract documentation
+  item.documentationAnnotations = extractDocumentationAnnotations(item.id, complexType.annotation);
   item.documentation = extractDocumentation(complexType.annotation) ?? "";
 
   return item;
@@ -121,6 +134,7 @@ export function createSimpleTypeNode(
   item.isSimpleContent = true;
 
   // Extract documentation
+  item.documentationAnnotations = extractDocumentationAnnotations(item.id, simpleType.annotation);
   item.documentation = extractDocumentation(simpleType.annotation) ?? "";
 
   return item;

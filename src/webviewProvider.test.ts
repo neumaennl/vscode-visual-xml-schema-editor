@@ -69,7 +69,10 @@ describe("SchemaEditorProvider", () => {
         {} as vscode.CancellationToken
       );
 
-      expect(mockWebview.options).toEqual({ enableScripts: true });
+      expect(mockWebview.options).toMatchObject({
+        enableScripts: true,
+        localResourceRoots: expect.any(Array) as unknown[],
+      });
     });
 
     it("should set HTML content in webview", () => {
@@ -279,7 +282,7 @@ describe("SchemaEditorProvider", () => {
       const handler = resolveAndGetHandler();
       handler({
         command: "executeCommand",
-        data: { type: "addElement", payload: { parentId: "schema", elementName: "x", elementType: "string" } },
+        data: { type: "addElement", payload: { parentId: "/schema", elementName: "x", elementType: "string" } },
       });
 
       // Wait for the async handleWebviewMessage microtask
@@ -345,7 +348,7 @@ describe("SchemaEditorProvider", () => {
       const handler = resolveAndGetHandler();
       handler({
         command: "executeCommand",
-        data: { type: "addElement", payload: { parentId: "schema", elementName: "x", elementType: "string" } },
+        data: { type: "addElement", payload: { parentId: "/schema", elementName: "x", elementType: "string" } },
       });
 
       await new Promise<void>((resolve) => setTimeout(resolve, 0));
@@ -374,7 +377,7 @@ describe("SchemaEditorProvider", () => {
       const handler = resolveAndGetHandler();
       handler({
         command: "executeCommand",
-        data: { type: "addElement", payload: { parentId: "schema", elementName: "x", elementType: "string" } },
+        data: { type: "addElement", payload: { parentId: "/schema", elementName: "x", elementType: "string" } },
       });
 
       await new Promise<void>((resolve) => setTimeout(resolve, 0));

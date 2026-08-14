@@ -3,6 +3,7 @@ import {
   validateMinOccurs,
   validateMaxOccurs,
   validateOccurrences,
+  validateElementType,
 } from "./validationUtils";
 import { expectInvalid } from "./validationTestHelpers";
 
@@ -123,5 +124,44 @@ describe("validationUtils", () => {
       const result = validateOccurrences(5, 5);
       expect(result.valid).toBe(true);
     });
+  });
+});
+
+describe("validateElementType", () => {
+  const emptySchema = {};
+
+  test("should accept built-in XSD types", () => {
+    expect(validateElementType("xs:string", emptySchema).valid).toBe(true);
+    expect(validateElementType("xs:integer", emptySchema).valid).toBe(true);
+    expect(validateElementType("string", emptySchema).valid).toBe(true);
+  });
+
+  test("should accept user-defined simpleType in schema", () => {
+    const schemaObj = { simpleType: [{ name: "StatusType" }] };
+    expect(validateElementType("StatusType", schemaObj).valid).toBe(true);
+    expect(validateElementType("UnknownType", schemaObj).valid).toBe(false);
+  });
+
+  test("should accept user-defined complexType in schema", () => {
+    const schemaObj = { complexType: [{ name: "PersonType" }] };
+    expect(validateElementType("PersonType", schemaObj).valid).toBe(true);
+    expect(validateElementType("UnknownType", schemaObj).valid).toBe(false);
+  });
+
+  test("should accept unqualified type when schema has includes", () => {
+    const schemaObj = { include: [{ schemaLocation: "other.xsd" }] };
+    expect(validateElementType("IncludedType", schemaObj).valid).toBe(true);
+    expect(validateElementType("AnotherType", schemaObj).valid).toBe(true);
+  });
+
+  test("should reject unqualified unknown type when schema has no includes", () => {
+    const schemaObj = {};
+    const result = validateElementType("UnknownType", schemaObj);
+    expect(result.valid).toBe(false);
+  });
+
+  test("should reject empty type name", () => {
+    const result = validateElementType("", emptySchema);
+    expect(result.valid).toBe(false);
   });
 });

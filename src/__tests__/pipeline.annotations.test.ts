@@ -18,6 +18,7 @@ import {
   MINIMAL_SCHEMA,
   SCHEMA_WITH_ELEMENTS,
   SCHEMA_WITH_ANNOTATION,
+  runCommandExpectSuccess,
   runCommandExpectSuccessSchema,
   runCommandExpectValidationFailure,
 } from "./testHelpers";
@@ -45,7 +46,7 @@ describe("Integration: Annotation pipeline", () => {
     it("adds a schema-level annotation", () => {
       const cmd: AddAnnotationCommand = {
         type: "addAnnotation",
-        payload: { targetId: "schema", documentation: "My schema" },
+        payload: { targetId: "/schema", documentation: "My schema" },
       };
 
       const result = runCommandExpectSuccessSchema(MINIMAL_SCHEMA, cmd);
@@ -54,6 +55,40 @@ describe("Integration: Annotation pipeline", () => {
       expect(annotations.length).toBe(1);
       const docs = toArray(annotations[0].documentation);
       expect(docs[0].value).toBe("My schema");
+    });
+
+    it("inserts a schema-level annotation before top-level declarations", () => {
+      const schemaWithTopLevelDeclaration = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="person" type="xs:string"/>
+</xs:schema>`;
+      const cmd: AddAnnotationCommand = {
+        type: "addAnnotation",
+        payload: { targetId: "/schema", documentation: "Schema docs" },
+      };
+
+      const updatedXml = runCommandExpectSuccess(schemaWithTopLevelDeclaration, cmd);
+      expect(updatedXml.indexOf("<annotation>")).toBeLessThan(
+        updatedXml.indexOf("<element ")
+      );
+    });
+
+    it("inserts node annotations before compositor/content children", () => {
+      const schemaWithComplexType = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:complexType name="PersonType">
+    <xs:sequence/>
+  </xs:complexType>
+</xs:schema>`;
+      const cmd: AddAnnotationCommand = {
+        type: "addAnnotation",
+        payload: { targetId: "/complexType:PersonType", documentation: "Complex type docs" },
+      };
+
+      const updatedXml = runCommandExpectSuccess(schemaWithComplexType, cmd);
+      expect(updatedXml.indexOf("<annotation>")).toBeLessThan(
+        updatedXml.indexOf("<sequence")
+      );
     });
 
     it("returns validation error when target element does not exist", () => {
@@ -90,6 +125,44 @@ describe("Integration: Annotation pipeline", () => {
       };
 
       runCommandExpectValidationFailure(SCHEMA_WITH_ELEMENTS, cmd, "No annotation found on node: /element:person");
+    });
+
+    it("keeps remaining schema annotations before top-level declarations after deletion", () => {
+      const schemaWithTopLevelElement = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="root" type="xs:string"/>
+</xs:schema>`;
+
+      const afterFirstDoc = runCommandExpectSuccess(schemaWithTopLevelElement, {
+        type: "addDocumentation",
+        payload: { targetId: "/schema", content: "doc A1" },
+      });
+
+      const afterSecondDoc = runCommandExpectSuccess(afterFirstDoc, {
+        type: "addDocumentation",
+        payload: { targetId: "/schema/annotation[0]", content: "doc A2" },
+      });
+
+      const afterSecondAnnotation = runCommandExpectSuccess(afterSecondDoc, {
+        type: "addAnnotation",
+        payload: { targetId: "/schema" },
+      });
+      expect(afterSecondAnnotation.indexOf("<annotation")).toBeLessThan(
+        afterSecondAnnotation.indexOf("<element ")
+      );
+
+      const afterDocOnSecondAnnotation = runCommandExpectSuccess(afterSecondAnnotation, {
+        type: "addDocumentation",
+        payload: { targetId: "/schema/annotation[1]", content: "doc B1" },
+      });
+
+      const afterRemoval = runCommandExpectSuccess(afterDocOnSecondAnnotation, {
+        type: "removeAnnotation",
+        payload: { annotationId: "/schema/annotation[0]" },
+      });
+      expect(afterRemoval.indexOf("<annotation")).toBeLessThan(
+        afterRemoval.indexOf("<element ")
+      );
     });
   });
 

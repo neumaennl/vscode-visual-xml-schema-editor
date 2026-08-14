@@ -424,7 +424,13 @@ export class PropertyPanel {
   }
 
   private canShowFacetsTab(node: DiagramItem): boolean {
-    return resolveSimpleTypeId(node) !== null;
+    if (resolveSimpleTypeId(node) === null) {
+      return false;
+    }
+    if (node.simpleTypeDerivationKind === "list" || node.simpleTypeDerivationKind === "union") {
+      return false;
+    }
+    return true;
   }
 
   private getTypeSuggestions(): string[] {

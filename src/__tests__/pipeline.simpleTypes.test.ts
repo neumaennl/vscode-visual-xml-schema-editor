@@ -82,6 +82,40 @@ describe("Integration: SimpleType pipeline", () => {
       expect(nameType!.restriction).toBeDefined();
     });
 
+    it("adds a simpleType list with an item type", () => {
+      const cmd: AddSimpleTypeCommand = {
+        type: "addSimpleType",
+        payload: {
+          parentId: "/schema",
+          typeName: "TokenListType",
+          listItemType: "xs:token",
+        },
+      };
+
+      const result = runCommandExpectSuccessSchema(MINIMAL_SCHEMA, cmd);
+      const tokenListType = toArray(result.simpleType).find((t) => t.name === "TokenListType");
+
+      expect(tokenListType).toBeDefined();
+      expect(tokenListType!.list?.itemType).toBe("xs:token");
+    });
+
+    it("adds a simpleType union with member types", () => {
+      const cmd: AddSimpleTypeCommand = {
+        type: "addSimpleType",
+        payload: {
+          parentId: "/schema",
+          typeName: "TextOrNumberType",
+          unionMemberTypes: ["xs:string", "xs:integer"],
+        },
+      };
+
+      const result = runCommandExpectSuccessSchema(MINIMAL_SCHEMA, cmd);
+      const unionType = toArray(result.simpleType).find((t) => t.name === "TextOrNumberType");
+
+      expect(unionType).toBeDefined();
+      expect(unionType!.union?.memberTypes).toBe("xs:string xs:integer");
+    });
+
     it("returns validation error when type name is invalid", () => {
       const cmd: AddSimpleTypeCommand = {
         type: "addSimpleType",
@@ -153,6 +187,23 @@ describe("Integration: SimpleType pipeline", () => {
 
       expect(statusType).toBeDefined();
       expect(statusType!.restriction!.base).toBe("xs:token");
+    });
+
+    it("switches an existing simpleType from restriction to list", () => {
+      const cmd: ModifySimpleTypeCommand = {
+        type: "modifySimpleType",
+        payload: {
+          typeId: "/simpleType:StatusType",
+          listItemType: "xs:token",
+        },
+      };
+
+      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_SIMPLETYPE, cmd);
+      const statusType = toArray(result.simpleType).find((t) => t.name === "StatusType");
+
+      expect(statusType).toBeDefined();
+      expect(statusType!.list?.itemType).toBe("xs:token");
+      expect(statusType!.restriction).toBeUndefined();
     });
 
     it("returns validation error when type ID does not exist", () => {

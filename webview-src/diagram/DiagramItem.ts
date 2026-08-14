@@ -7,6 +7,7 @@ import {
   DiagramItemType,
   DiagramItemGroupType,
   DiagramComplexDerivationKind,
+  DiagramSimpleTypeDerivationKind,
   DiagramAnnotationEntry,
   Point,
   Size,
@@ -39,6 +40,9 @@ export class DiagramItem {
   public isMixed: boolean = false;
   public hasAnonymousComplexType: boolean = false;
   public complexDerivationKind?: DiagramComplexDerivationKind;
+  public simpleTypeDerivationKind?: DiagramSimpleTypeDerivationKind;
+  public simpleTypeListItemType?: string;
+  public simpleTypeUnionMemberTypes?: string[];
 
   // Default/fixed value constraints (element-level)
   public elementDefault?: string;

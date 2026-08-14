@@ -29,6 +29,7 @@ export enum DiagramItemGroupType {
 }
 
 export type DiagramComplexDerivationKind = "extension" | "restriction";
+export type DiagramSimpleTypeDerivationKind = "restriction" | "list" | "union";
 
 export interface Point {
   x: number;

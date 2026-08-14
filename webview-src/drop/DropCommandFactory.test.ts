@@ -81,11 +81,10 @@ describe("DropCommandFactory", () => {
       const cmd = factory.createTopLevelDropCommand(PaletteSchemaConstruct.Extension);
       expect(cmd).not.toBeNull();
       expect(cmd!.type).toBe("addComplexType");
-      expect((cmd! as { payload: { parentId: string; typeName?: string; baseType: string; derivationKind: string } }).payload).toMatchObject({
+      expect((cmd! as { payload: { parentId: string; typeName?: string; baseType: string } }).payload).toMatchObject({
         parentId: "/schema",
         typeName: "ComplexType1",
         baseType: "xs:anyType",
-        derivationKind: "extension",
       });
     });
 

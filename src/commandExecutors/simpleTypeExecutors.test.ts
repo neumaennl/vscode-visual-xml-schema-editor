@@ -68,6 +68,13 @@ type RestrictionAssert = (
 
 describe("SimpleType Executors", () => {
   describe("executeAddSimpleType", () => {
+    it("throws when a simpleType is added without any body details", () => {
+      const schemaObj = schemaWith();
+
+      expect(() => addSimpleType(schemaObj, { typeName: "NameType" }))
+        .toThrow("Simple type body must be specified as exactly one of restriction, list, or union");
+    });
+
     it("adds a named simpleType with base type only and serializes back to valid XSD", () => {
       const schemaObj = schemaWith();
 
@@ -189,6 +196,36 @@ describe("SimpleType Executors", () => {
 
       assert(simpleTypes(schemaObj)[0].restriction!);
     });
+
+    it("adds a named list simpleType using list itemType", () => {
+      const schemaObj = schemaWith();
+
+      addSimpleType(schemaObj, {
+        typeName: "TokenListType",
+        listItemType: "xs:token",
+      });
+
+      const added = simpleTypes(schemaObj)[0];
+      expect(added.name).toBe("TokenListType");
+      expect(added.list?.itemType).toBe("xs:token");
+      expect(added.restriction).toBeUndefined();
+      expect(added.union).toBeUndefined();
+    });
+
+    it("adds a named union simpleType using member types", () => {
+      const schemaObj = schemaWith();
+
+      addSimpleType(schemaObj, {
+        typeName: "TextOrNumberType",
+        unionMemberTypes: ["xs:string", "xs:integer"],
+      });
+
+      const added = simpleTypes(schemaObj)[0];
+      expect(added.name).toBe("TextOrNumberType");
+      expect(added.union?.memberTypes).toBe("xs:string xs:integer");
+      expect(added.restriction).toBeUndefined();
+      expect(added.list).toBeUndefined();
+    });
   });
 
   describe("executeRemoveSimpleType", () => {
@@ -287,6 +324,38 @@ describe("SimpleType Executors", () => {
 
       expect(simpleTypes(schemaObj)[0].restriction).toBeDefined();
       assert(schemaObj);
+    });
+
+    it("switches an existing restriction simpleType to list", () => {
+      const schemaObj = schemaWith(
+        `<xs:simpleType name="TokenType"><xs:restriction base="xs:string"/></xs:simpleType>`
+      );
+
+      modifySimpleType(schemaObj, {
+        typeId: "/simpleType:TokenType",
+        listItemType: "xs:token",
+      });
+
+      const simpleType = simpleTypes(schemaObj)[0];
+      expect(simpleType.list?.itemType).toBe("xs:token");
+      expect(simpleType.restriction).toBeUndefined();
+      expect(simpleType.union).toBeUndefined();
+    });
+
+    it("switches an existing list simpleType to union", () => {
+      const schemaObj = schemaWith(
+        `<xs:simpleType name="TokenType"><xs:list itemType="xs:token"/></xs:simpleType>`
+      );
+
+      modifySimpleType(schemaObj, {
+        typeId: "/simpleType:TokenType",
+        unionMemberTypes: ["xs:string", "xs:integer"],
+      });
+
+      const simpleType = simpleTypes(schemaObj)[0];
+      expect(simpleType.union?.memberTypes).toBe("xs:string xs:integer");
+      expect(simpleType.restriction).toBeUndefined();
+      expect(simpleType.list).toBeUndefined();
     });
   });
 

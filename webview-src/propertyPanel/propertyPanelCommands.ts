@@ -380,26 +380,3 @@ export function createComplexBaseTypeCommand(
   };
 }
 
-/**
- * Extracts the simple base type from the user-facing type label shown in the panel.
- *
- * @param typeText - Display text from the Type field
- * @returns The extracted base type or undefined when none can be inferred
- */
-export function extractBaseType(typeText: string): string | undefined {
-  if (!typeText) {
-    return undefined;
-  }
-  const restricted = typeText.match(/\(restricts ([^)]+)\)/);
-  if (restricted?.[1]) {
-    return restricted[1].trim();
-  }
-  const extended = typeText.match(/\(extends ([^)]+)\)/);
-  if (extended?.[1]) {
-    return extended[1].trim();
-  }
-  if (typeText.startsWith("xs:")) {
-    return typeText.trim();
-  }
-  return undefined;
-}

@@ -17,6 +17,24 @@ function getInputByLabel(container: HTMLElement, label: string): HTMLInputElemen
   return input as HTMLInputElement;
 }
 
+function getSelectByLabel(container: HTMLElement, label: string): HTMLSelectElement {
+  const labels = Array.from(container.querySelectorAll("label"));
+  const match = labels.find((candidate) => candidate.textContent === `${label}:`);
+  expect(match).toBeDefined();
+  const select = match?.parentElement?.querySelector("select");
+  expect(select).toBeInstanceOf(HTMLSelectElement);
+  return select as HTMLSelectElement;
+}
+
+function getSelectsByLabel(container: HTMLElement, label: string): HTMLSelectElement[] {
+  const labels = Array.from(container.querySelectorAll("label"));
+  const match = labels.find((candidate) => candidate.textContent === `${label}:`);
+  expect(match).toBeDefined();
+  const selects = Array.from(match?.parentElement?.querySelectorAll("select") ?? []);
+  expect(selects.length).toBeGreaterThan(0);
+  return selects;
+}
+
 function hasLabel(container: HTMLElement, label: string): boolean {
   return Array.from(container.querySelectorAll("label")).some(
     (candidate) => candidate.textContent === `${label}:`
@@ -684,6 +702,23 @@ describe("PropertyPanel", () => {
     expect(container.textContent).toContain("Facets");
   });
 
+  it("hides the Facets tab for list and union simple types", () => {
+    expect.hasAssertions();
+    const listType = new DiagramItem("/simpleType:TokenListType", "TokenListType", DiagramItemType.type, diagram);
+    listType.type = "simpleType (list of xs:token)";
+    listType.simpleTypeDerivationKind = "list";
+
+    panel.display(listType);
+    expect(container.textContent).not.toContain("Facets");
+
+    const unionType = new DiagramItem("/simpleType:TextOrNumberType", "TextOrNumberType", DiagramItemType.type, diagram);
+    unionType.type = "simpleType (union of xs:string, xs:integer)";
+    unionType.simpleTypeDerivationKind = "union";
+
+    panel.display(unionType);
+    expect(container.textContent).not.toContain("Facets");
+  });
+
   it("edits simple type base types through a dedicated Base Type field", () => {
     expect.hasAssertions();
     const dispatch = jest.fn();
@@ -702,6 +737,99 @@ describe("PropertyPanel", () => {
       payload: {
         typeId: "/simpleType:TokenType",
         baseType: "xs:token",
+      },
+    });
+  });
+
+  it("edits simpleType list item types", () => {
+    expect.hasAssertions();
+    const dispatch = jest.fn();
+    panel = new PropertyPanel(container, dispatch);
+    const item = new DiagramItem("/simpleType:TokenListType", "TokenListType", DiagramItemType.type, diagram);
+    item.type = "simpleType (list of xs:token)";
+    item.simpleTypeDerivationKind = "list";
+    item.simpleTypeListItemType = "xs:token";
+
+    panel.display(item);
+
+    const input = getInputByLabel(container, "Item Type");
+    input.value = "xs:string";
+    input.dispatchEvent(new Event("blur"));
+
+    expect(dispatch).toHaveBeenCalledWith({
+      type: "modifySimpleType",
+      payload: {
+        typeId: "/simpleType:TokenListType",
+        listItemType: "xs:string",
+      },
+    });
+  });
+
+  it("lets users switch a simpleType between restriction and list kinds", () => {
+    expect.hasAssertions();
+    const dispatch = jest.fn();
+    panel = new PropertyPanel(container, dispatch);
+    const item = new DiagramItem("/simpleType:TokenType", "TokenType", DiagramItemType.type, diagram);
+    item.type = "simpleType (restricts xs:string)";
+    item.simpleTypeDerivationKind = "restriction";
+
+    panel.display(item);
+
+    const kindSelect = getSelectByLabel(container, "Kind");
+    kindSelect.value = "list";
+    kindSelect.dispatchEvent(new Event("change"));
+
+    expect(dispatch).toHaveBeenCalledWith({
+      type: "modifySimpleType",
+      payload: {
+        typeId: "/simpleType:TokenType",
+        listItemType: "xs:string",
+      },
+    });
+  });
+
+  it("uses structured simpleType fields instead of parsing display text for list editing", () => {
+    expect.hasAssertions();
+    const item = new DiagramItem("/simpleType:TokenListType", "TokenListType", DiagramItemType.type, diagram);
+    item.type = "simpleType";
+    item.simpleTypeListItemType = "xs:token";
+
+    panel.display(item);
+
+    expect(hasLabel(container, "Item Type")).toBe(true);
+    expect(hasLabel(container, "Base Type")).toBe(false);
+  });
+
+  it("edits simpleType union member types", () => {
+    expect.hasAssertions();
+    const dispatch = jest.fn();
+    panel = new PropertyPanel(container, dispatch);
+    const item = new DiagramItem("/simpleType:TextOrNumberType", "TextOrNumberType", DiagramItemType.type, diagram);
+    item.type = "simpleType (union of xs:string, xs:integer)";
+    item.simpleTypeDerivationKind = "union";
+    item.simpleTypeUnionMemberTypes = ["xs:string", "xs:integer"];
+
+    panel.display(item);
+
+    const selects = getSelectsByLabel(container, "Member Types");
+    selects[1].value = "xs:decimal";
+    selects[1].dispatchEvent(new Event("change"));
+
+    const removeButtons = Array.from(
+      container.querySelectorAll("button[title='Remove member type']")
+    );
+    expect(removeButtons.length).toBe(2);
+    expect(removeButtons[0].classList.contains("property-docs-action-icon-only")).toBe(true);
+    const addButton = Array.from(container.querySelectorAll("button")).find(
+      (button) => button.textContent === "Add member type"
+    );
+    expect(addButton).toBeTruthy();
+
+    expect(dispatch).toHaveBeenCalledWith({
+      type: "modifySimpleType",
+      payload: {
+        typeId: "/simpleType:TextOrNumberType",
+        unionMemberTypes: ["xs:string", "xs:decimal"],
       },
     });
   });
@@ -1167,6 +1295,26 @@ describe("PropertyPanel", () => {
     const xmlPreview = container.querySelector("pre");
     expect(xmlPreview?.textContent).toContain('<xs:sequence minOccurs="0" maxOccurs="unbounded">');
     expect(xmlPreview?.textContent).toContain('<xs:element name="item" type="xs:string"/>');
+  });
+
+  it("renders simpleType nodes in the XML tab even when the parsed node type is namespaced", () => {
+    expect.hasAssertions();
+    const item = new DiagramItem(
+      "/xs:simpleType:TokenType",
+      "TokenType",
+      DiagramItemType.type,
+      diagram
+    );
+    item.type = "xs:simpleType";
+
+    panel.display(item);
+    const xmlTab = Array.from(container.querySelectorAll("button")).find(
+      (btn) => btn.textContent === "XML"
+    );
+    xmlTab?.click();
+
+    const xmlPreview = container.querySelector("pre");
+    expect(xmlPreview?.textContent).toContain('<xs:simpleType name="TokenType"');
   });
 
   it("truncates deep XML preview content with an ellipsis marker", () => {

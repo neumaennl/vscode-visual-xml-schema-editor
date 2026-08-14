@@ -50,4 +50,18 @@
       <maxLength value="255"/>
     </restriction>
   </simpleType>
+  <simpleType name="listType">
+    <list itemType="xs:string"/>
+  </simpleType>
+  <simpleType name="unionType">
+    <union memberTypes="xs:string xs:integer"/>
+  </simpleType>
+  <xs:simpleType name="enumType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="one"/>
+      <xs:enumeration value="two"/>
+      <xs:enumeration value="three"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:attribute name="test" type="xs:string" />
 </schema>

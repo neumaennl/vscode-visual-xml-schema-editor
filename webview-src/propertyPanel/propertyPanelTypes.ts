@@ -10,10 +10,10 @@ import { createEditableField } from "./propertyPanelDom";
 import {
   createComplexBaseTypeCommand,
   createTypeCommand,
-  extractBaseType,
   getNodeType,
   normalizeTypeReferenceForCurrentSchema,
 } from "./propertyPanelCommands";
+import { extractBaseType } from "./propertyPanelSimpleTypeCommands";
 import {
   getDerivationRelation,
   getReadOnlyTypeValue,
@@ -22,6 +22,13 @@ import {
   isInlineComplexTypeElement,
   isInlineSimpleTypeElement,
 } from "./propertyPanelTypeHelpers";
+import {
+  getSimpleTypeDerivationKind,
+  isSimpleTypeNode,
+  renderSimpleTypeKindSelector,
+  renderSimpleTypeListEditor,
+  renderSimpleTypeUnionEditor,
+} from "./propertyPanelSimpleTypeEditors";
 
 /**
  * Renders the type/base-type editing controls for the selected node.
@@ -47,6 +54,41 @@ export function renderTypeProperty(
   const baseType = extractBaseType(node.type);
   const hasInlineSimpleType = isInlineSimpleTypeElement(node, nodeType);
   const hasInlineComplexType = isInlineComplexTypeElement(node, nodeType);
+  const simpleTypeDerivationKind = getSimpleTypeDerivationKind(node);
+
+  if (isSimpleTypeNode(nodeType, hasInlineSimpleType)) {
+    renderSimpleTypeKindSelector(root, node, hasInlineSimpleType, dispatchCommand);
+  }
+
+  if (
+    isSimpleTypeNode(nodeType, hasInlineSimpleType) &&
+    simpleTypeDerivationKind === "list"
+  ) {
+    renderSimpleTypeListEditor(
+      root,
+      node,
+      hasInlineSimpleType,
+      typeSuggestions,
+      dispatchCommand,
+      addPropertyToContainer
+    );
+    return;
+  }
+
+  if (
+    isSimpleTypeNode(nodeType, hasInlineSimpleType) &&
+    simpleTypeDerivationKind === "union"
+  ) {
+    renderSimpleTypeUnionEditor(
+      root,
+      node,
+      hasInlineSimpleType,
+      typeSuggestions,
+      dispatchCommand,
+      addPropertyToContainer
+    );
+    return;
+  }
 
   if (shouldRenderSimpleBaseTypeEditor(nodeType, hasInlineSimpleType, baseType)) {
     renderSimpleBaseTypeEditor(

@@ -116,17 +116,7 @@ export function renderFacetsTab(
   };
 
   if (restrictions.enumeration?.length) {
-    root.appendChild(
-      createEditableField("Enumeration", restrictions.enumeration.join(", "), (next) => {
-        buildAndDispatch((draft) => {
-          const values = next
-            .split(",")
-            .map((part) => part.trim())
-            .filter((part) => part.length > 0);
-          draft.enumeration = values.length > 0 ? values : undefined;
-        });
-      })
-    );
+    renderEnumerationEditor(root, restrictions.enumeration, buildAndDispatch);
   }
 
   if (restrictions.pattern?.length) {
@@ -258,4 +248,168 @@ function appendOptionalStringFacet(
       });
     })
   );
+}
+
+/**
+ * Renders the enumeration facet as a list of removable value chips with an add control,
+ * instead of a single comma-separated textbox.
+ *
+ * @param root - Container to append the editor to
+ * @param initialValues - Current enumeration values
+ * @param buildAndDispatch - Callback used to commit a restriction-snapshot update
+ */
+function renderEnumerationEditor(
+  root: HTMLElement,
+  initialValues: string[],
+  buildAndDispatch: (updater: (next: RestrictionSnapshot) => void) => void
+): void {
+  const field = document.createElement("div");
+  field.className = "property";
+
+  const label = document.createElement("label");
+  label.textContent = "Enumeration:";
+  field.appendChild(label);
+
+  const list = document.createElement("div");
+  list.className = "property-enum-list";
+  field.appendChild(list);
+
+  let values = [...initialValues];
+  let isAdding = false;
+  let draggedIndex: number | null = null;
+
+  const commit = (): void => {
+    buildAndDispatch((draft) => {
+      draft.enumeration = values.length > 0 ? [...values] : undefined;
+    });
+  };
+
+  const moveValueTo = (sourceIndex: number, targetIndex: number): void => {
+    if (
+      sourceIndex < 0 ||
+      sourceIndex >= values.length ||
+      targetIndex < 0 ||
+      targetIndex >= values.length ||
+      sourceIndex === targetIndex
+    ) {
+      return;
+    }
+    const next = [...values];
+    const [moved] = next.splice(sourceIndex, 1);
+    next.splice(targetIndex, 0, moved);
+    values = next;
+    commit();
+    render();
+  };
+
+  const clearDragOverStyling = (): void => {
+    list.querySelectorAll(".property-enum-chip-drag-over").forEach((el) => {
+      el.classList.remove("property-enum-chip-drag-over");
+    });
+  };
+
+  const render = (): void => {
+    list.replaceChildren();
+
+    values.forEach((value, index) => {
+      const chip = document.createElement("span");
+      chip.className = "property-enum-chip";
+      chip.draggable = true;
+      chip.title = "Drag to reorder";
+
+      const valueText = document.createElement("span");
+      valueText.className = "property-enum-chip-value";
+      valueText.textContent = value;
+      chip.appendChild(valueText);
+
+      const removeButton = document.createElement("button");
+      removeButton.type = "button";
+      removeButton.className = "property-enum-chip-remove";
+      removeButton.setAttribute("aria-label", `Remove ${value}`);
+      removeButton.title = `Remove ${value}`;
+      const icon = document.createElement("span");
+      icon.className = "codicon codicon-close";
+      icon.setAttribute("aria-hidden", "true");
+      removeButton.appendChild(icon);
+      removeButton.addEventListener("click", () => {
+        values = values.filter((_, i) => i !== index);
+        commit();
+        render();
+      });
+      chip.appendChild(removeButton);
+
+      chip.addEventListener("dragstart", (event) => {
+        draggedIndex = index;
+        event.dataTransfer?.setData("text/plain", String(index));
+        if (event.dataTransfer) {
+          event.dataTransfer.effectAllowed = "move";
+        }
+        chip.classList.add("property-enum-chip-dragging");
+      });
+      chip.addEventListener("dragend", () => {
+        chip.classList.remove("property-enum-chip-dragging");
+        clearDragOverStyling();
+        draggedIndex = null;
+      });
+      chip.addEventListener("dragover", (event) => {
+        event.preventDefault();
+        if (event.dataTransfer) {
+          event.dataTransfer.dropEffect = "move";
+        }
+        chip.classList.add("property-enum-chip-drag-over");
+      });
+      chip.addEventListener("dragleave", () => {
+        chip.classList.remove("property-enum-chip-drag-over");
+      });
+      chip.addEventListener("drop", (event) => {
+        event.preventDefault();
+        chip.classList.remove("property-enum-chip-drag-over");
+        const sourceIndex = draggedIndex ?? Number(event.dataTransfer?.getData("text/plain"));
+        moveValueTo(sourceIndex, index);
+      });
+
+      list.appendChild(chip);
+    });
+
+    if (isAdding) {
+      const input = document.createElement("input");
+      input.type = "text";
+      input.className = "property-enum-add-input";
+      const finishAdding = (): void => {
+        const next = input.value.trim();
+        isAdding = false;
+        if (next && !values.includes(next)) {
+          values = [...values, next];
+          commit();
+        }
+        render();
+      };
+      input.addEventListener("blur", finishAdding);
+      input.addEventListener("keydown", (event: KeyboardEvent) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          input.blur();
+        }
+        if (event.key === "Escape") {
+          isAdding = false;
+          render();
+        }
+      });
+      list.appendChild(input);
+      input.focus();
+    } else {
+      const addButton = document.createElement("button");
+      addButton.type = "button";
+      addButton.className = "property-enum-add-button";
+      addButton.textContent = "+ value";
+      addButton.addEventListener("click", () => {
+        isAdding = true;
+        render();
+      });
+      list.appendChild(addButton);
+    }
+  };
+
+  render();
+  root.appendChild(field);
 }

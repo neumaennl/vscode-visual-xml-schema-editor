@@ -155,10 +155,81 @@ describe("PropertyPanel", () => {
     );
     facetsTab?.click();
 
-    expect(getInputByLabel(container, "Enumeration").value).toBe("A, B");
+    const enumChips = Array.from(container.querySelectorAll(".property-enum-chip")).map(
+      (chip) => chip.textContent
+    );
+    expect(enumChips).toEqual(["A", "B"]);
     expect(getInputByLabel(container, "Pattern").value).toBe("[A-Z]");
     expect(getInputByLabel(container, "Min Length").value).toBe("1");
     expect(getInputByLabel(container, "Max Length").value).toBe("5");
+  });
+
+  it("reorders enumeration values via drag and drop", () => {
+    expect.hasAssertions();
+    const dispatch = jest.fn();
+    panel = new PropertyPanel(container, dispatch);
+    const item = new DiagramItem(
+      "/simpleType:TokenType",
+      "TokenType",
+      DiagramItemType.type,
+      diagram
+    );
+    item.type = "simpleType (restricts xs:string)";
+    item.restrictions = { enumeration: ["A", "B", "C"] };
+
+    panel.display(item);
+    const facetsTab = Array.from(container.querySelectorAll("button")).find(
+      (btn) => btn.textContent === "Facets"
+    );
+    facetsTab?.click();
+
+    const chips = Array.from(container.querySelectorAll(".property-enum-chip"));
+    expect(chips.map((chip) => chip.textContent)).toEqual(["A", "B", "C"]);
+
+    const dataTransfer = {
+      data: {} as Record<string, string>,
+      effectAllowed: "",
+      dropEffect: "",
+      setData(type: string, value: string): void {
+        this.data[type] = value;
+      },
+      getData(type: string): string {
+        return this.data[type] ?? "";
+      },
+    };
+
+    const dragStart = new Event("dragstart", { bubbles: true, cancelable: true });
+    Object.defineProperty(dragStart, "dataTransfer", { value: dataTransfer });
+    chips[0].dispatchEvent(dragStart);
+
+    const drop = new Event("drop", { bubbles: true, cancelable: true });
+    Object.defineProperty(drop, "dataTransfer", { value: dataTransfer });
+    chips[2].dispatchEvent(drop);
+
+    const reorderedChips = Array.from(container.querySelectorAll(".property-enum-chip"));
+    expect(reorderedChips.map((chip) => chip.textContent)).toEqual(["B", "C", "A"]);
+
+    expect(dispatch).toHaveBeenCalledWith({
+      type: "modifySimpleType",
+      payload: {
+        typeId: "/simpleType:TokenType",
+        baseType: "xs:string",
+        restrictions: {
+          enumeration: ["B", "C", "A"],
+          pattern: undefined,
+          length: undefined,
+          minLength: undefined,
+          maxLength: undefined,
+          minInclusive: undefined,
+          maxInclusive: undefined,
+          minExclusive: undefined,
+          maxExclusive: undefined,
+          totalDigits: undefined,
+          fractionDigits: undefined,
+          whiteSpace: undefined,
+        },
+      },
+    });
   });
 
   it("shows structured docs fields in docs tab", () => {
@@ -477,9 +548,13 @@ describe("PropertyPanel", () => {
     );
     facetsTab?.click();
 
-    const input = getInputByLabel(container, "Enumeration");
-    input.value = "A, B, C";
-    input.dispatchEvent(new Event("blur"));
+    const addValueButton = Array.from(container.querySelectorAll("button")).find(
+      (btn) => btn.textContent === "+ value"
+    );
+    addValueButton?.click();
+    const addInput = container.querySelector(".property-enum-add-input") as HTMLInputElement;
+    addInput.value = "C";
+    addInput.dispatchEvent(new Event("blur"));
 
     expect(dispatch).toHaveBeenCalledWith({
       type: "modifySimpleType",

@@ -174,6 +174,87 @@ body {
   border-radius: 2px;
 }
 
+.property-enum-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.property-enum-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px 2px 8px;
+  background-color: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  border: 1px solid var(--vscode-input-border);
+  border-radius: 12px;
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 11px;
+  cursor: grab;
+}
+
+.property-enum-chip-dragging {
+  opacity: 0.5;
+}
+
+.property-enum-chip-drag-over {
+  border-color: var(--vscode-focusBorder);
+  box-shadow: inset 0 0 0 1px var(--vscode-focusBorder);
+}
+
+.property-enum-chip-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  color: var(--vscode-descriptionForeground);
+  cursor: pointer;
+}
+
+.property-enum-chip-remove:hover {
+  background-color: var(--vscode-toolbar-hoverBackground, var(--vscode-list-hoverBackground));
+  color: var(--vscode-errorForeground);
+}
+
+.property-enum-chip-remove .codicon {
+  font-size: 12px;
+}
+
+.property-enum-add-button {
+  padding: 3px 8px;
+  background: transparent;
+  color: var(--vscode-descriptionForeground);
+  border: 1px dashed var(--vscode-input-border);
+  border-radius: 12px;
+  font-size: 11px;
+  cursor: pointer;
+  font: inherit;
+}
+
+.property-enum-add-button:hover {
+  color: var(--vscode-textLink-foreground);
+  border-color: var(--vscode-textLink-foreground);
+}
+
+.property-enum-add-input {
+  width: 100px;
+  box-sizing: border-box;
+  padding: 3px 8px;
+  background-color: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  border: 1px solid var(--vscode-focusBorder);
+  border-radius: 12px;
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 11px;
+}
+
 .property-schema-namespaces {
   display: flex;
   flex-direction: column;

@@ -227,6 +227,32 @@ describe("SchemaProcessors", () => {
 
       expect(item.isSimpleContent).toBe(true);
     });
+
+    it("should extract list itemType metadata", () => {
+      const simpleType = {
+        list: { itemType: "xs:token" },
+      };
+
+      processAnonymousSimpleType(item, simpleType);
+
+      expect(item.isSimpleContent).toBe(true);
+      expect(item.simpleTypeDerivationKind).toBe("list");
+      expect(item.simpleTypeListItemType).toBe("xs:token");
+      expect(item.type).toContain("list of xs:token");
+    });
+
+    it("should extract union memberTypes metadata", () => {
+      const simpleType = {
+        union: { memberTypes: "xs:string xs:integer" },
+      };
+
+      processAnonymousSimpleType(item, simpleType);
+
+      expect(item.isSimpleContent).toBe(true);
+      expect(item.simpleTypeDerivationKind).toBe("union");
+      expect(item.simpleTypeUnionMemberTypes).toEqual(["xs:string", "xs:integer"]);
+      expect(item.type).toContain("union of xs:string, xs:integer");
+    });
   });
 
   describe("processComplexType", () => {

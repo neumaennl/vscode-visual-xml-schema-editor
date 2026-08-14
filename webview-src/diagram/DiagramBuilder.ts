@@ -39,6 +39,8 @@ import {
   processAnonymousSimpleType,
   processComplexType,
   processRestriction,
+  processList,
+  processUnion,
   processSequence,
   processChoice,
   processAll,
@@ -213,9 +215,17 @@ export class DiagramBuilder {
       return null;
     }
 
-    // Process restriction/list/union if present to extract base type
+    // Process restriction/list/union if present to extract derivation details
     if (simpleType.restriction) {
       processRestriction(item, simpleType.restriction);
+      return item;
+    }
+    if (simpleType.list) {
+      processList(item, simpleType.list);
+      return item;
+    }
+    if (simpleType.union) {
+      processUnion(item, simpleType.union);
     }
 
     return item;

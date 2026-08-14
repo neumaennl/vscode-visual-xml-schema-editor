@@ -6,7 +6,8 @@
 import { SCHEMA_ROOT_ID, parseSchemaId, SchemaNodeType } from "../../shared/idStrategy";
 import { DiagramItem } from "../diagram";
 import { DiagramItemType } from "../diagram/DiagramTypes";
-import { extractBaseType, getNodeType, isTopLevelElement } from "./propertyPanelCommands";
+import { getNodeType, isTopLevelElement } from "./propertyPanelCommands";
+import { extractBaseType } from "./propertyPanelSimpleTypeCommands";
 
 const INDENT = "  ";
 const TRUNCATION_MARKER = "<!-- ... truncated ... -->";
@@ -198,7 +199,26 @@ function renderRestrictionFacets(node: DiagramItem, level: number): string[] {
 }
 
 function renderSimpleTypeChildren(node: DiagramItem, level: number): string[] {
-  const baseType = extractBaseType(node.type);
+  const typeLabel = node.type.trim();
+  const hasDerivedSummary = !!node.simpleTypeDerivationKind || typeLabel.includes("(");
+
+  if (node.simpleTypeDerivationKind === "list") {
+    const listAttributes: XmlAttr[] = [];
+    if (node.simpleTypeListItemType) {
+      listAttributes.push(["itemType", node.simpleTypeListItemType]);
+    }
+    return [renderTag("xs:list", listAttributes, [], level)];
+  }
+
+  if (node.simpleTypeDerivationKind === "union") {
+    const unionAttributes: XmlAttr[] = [];
+    if (node.simpleTypeUnionMemberTypes?.length) {
+      unionAttributes.push(["memberTypes", node.simpleTypeUnionMemberTypes.join(" ")]);
+    }
+    return [renderTag("xs:union", unionAttributes, [], level)];
+  }
+
+  const baseType = hasDerivedSummary ? extractBaseType(node.type) : undefined;
   const facets = renderRestrictionFacets(node, level + 1);
   if (!baseType && facets.length === 0) {
     return [];
@@ -336,9 +356,29 @@ function renderGroupNode(
   return renderTag(`xs:${compositor}`, attrs, children, level);
 }
 
+function shouldRenderNamedType(node: DiagramItem, nodeType: SchemaNodeType | null, expectedNodeType: SchemaNodeType): boolean {
+  return nodeType === expectedNodeType || node.itemType === DiagramItemType.type;
+}
+
+function isSimpleTypePreviewNode(node: DiagramItem, nodeType: SchemaNodeType | null): boolean {
+  return (
+    nodeType === SchemaNodeType.SimpleType ||
+    nodeType === SchemaNodeType.AnonymousSimpleType ||
+    (node.itemType === DiagramItemType.type && node.type.includes("simpleType"))
+  );
+}
+
+function isComplexTypePreviewNode(node: DiagramItem, nodeType: SchemaNodeType | null): boolean {
+  return (
+    nodeType === SchemaNodeType.ComplexType ||
+    nodeType === SchemaNodeType.AnonymousComplexType ||
+    (node.itemType === DiagramItemType.type && node.type.includes("complexType"))
+  );
+}
+
 function renderSimpleTypeNode(node: DiagramItem, nodeType: SchemaNodeType | null, level: number): string {
   const attrs: XmlAttr[] = [];
-  if (nodeType === SchemaNodeType.SimpleType) {
+  if (shouldRenderNamedType(node, nodeType, SchemaNodeType.SimpleType)) {
     attrs.push(["name", node.name]);
   }
   const children = [...renderAnnotations(node, level + 1), ...renderSimpleTypeChildren(node, level + 1)];
@@ -353,7 +393,7 @@ function renderComplexTypeNode(
   context: XmlPreviewRenderContext
 ): string {
   const attrs: XmlAttr[] = [];
-  if (nodeType === SchemaNodeType.ComplexType) {
+  if (shouldRenderNamedType(node, nodeType, SchemaNodeType.ComplexType)) {
     attrs.push(["name", node.name]);
   }
   if (node.isAbstract) {
@@ -429,11 +469,11 @@ function renderNode(
     return renderGroupNode(node, nodeType, level, depth, context);
   }
 
-  if (nodeType === SchemaNodeType.SimpleType || nodeType === SchemaNodeType.AnonymousSimpleType) {
+  if (isSimpleTypePreviewNode(node, nodeType)) {
     return renderSimpleTypeNode(node, nodeType, level);
   }
 
-  if (nodeType === SchemaNodeType.ComplexType || nodeType === SchemaNodeType.AnonymousComplexType) {
+  if (isComplexTypePreviewNode(node, nodeType)) {
     return renderComplexTypeNode(node, nodeType, level, depth, context);
   }
 

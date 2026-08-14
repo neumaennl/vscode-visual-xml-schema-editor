@@ -11,9 +11,12 @@ import {
   RemoveSimpleTypeCommand,
   ModifySimpleTypeCommand,
   RestrictionFacets,
+  SimpleTypeDerivationKind,
   topLevelSimpleType,
   localSimpleType,
   restrictionType,
+  listType,
+  unionType,
   facet,
   numFacet,
   totalDigitsType,
@@ -42,7 +45,15 @@ export function executeAddSimpleType(
   command: AddSimpleTypeCommand,
   schemaObj: schema
 ): void {
-  const { parentId, typeName, baseType, restrictions, documentation } = command.payload;
+  const {
+    parentId,
+    typeName,
+    baseType,
+    listItemType,
+    unionMemberTypes,
+    restrictions,
+    documentation,
+  } = command.payload;
 
   if (!isSchemaRoot(parentId)) {
     // Anonymous simpleType inside an element or attribute — isSchemaRoot guarantees parentId is a non-empty string here
@@ -54,7 +65,12 @@ export function executeAddSimpleType(
       complexType?: unknown;
     };
     const anonType = new localSimpleType();
-    anonType.restriction = buildRestriction(baseType, restrictions);
+    applySimpleTypeBody(anonType, {
+      baseType,
+      listItemType,
+      unionMemberTypes,
+      restrictions,
+    });
     if (documentation) {
       anonType.annotation = createAnnotation(documentation);
     }
@@ -67,7 +83,12 @@ export function executeAddSimpleType(
   // Top-level named simpleType — typeName is a valid non-empty string here (enforced by the validator)
   const simpleType = new topLevelSimpleType();
   simpleType.name = typeName as string;
-  simpleType.restriction = buildRestriction(baseType, restrictions);
+  applySimpleTypeBody(simpleType, {
+    baseType,
+    listItemType,
+    unionMemberTypes,
+    restrictions,
+  });
   if (documentation) {
     simpleType.annotation = createAnnotation(documentation);
   }
@@ -123,7 +144,15 @@ export function executeModifySimpleType(
   command: ModifySimpleTypeCommand,
   schemaObj: schema
 ): void {
-  const { typeId, typeName, baseType, restrictions, documentation } = command.payload;
+  const {
+    typeId,
+    typeName,
+    baseType,
+    listItemType,
+    unionMemberTypes,
+    restrictions,
+    documentation,
+  } = command.payload;
   const parsed = parseSchemaId(typeId);
 
   if (parsed.nodeType === SchemaNodeType.AnonymousSimpleType) {
@@ -134,7 +163,13 @@ export function executeModifySimpleType(
     const location = locateNodeById(schemaObj, parentId);
     const holder = location.parent as { simpleType?: localSimpleType };
     if (!holder.simpleType) return;
-    updateTypeContents(holder.simpleType, baseType, restrictions, documentation);
+    updateTypeContents(holder.simpleType, {
+      baseType,
+      listItemType,
+      unionMemberTypes,
+      restrictions,
+      documentation,
+    });
     return;
   }
 
@@ -147,7 +182,13 @@ export function executeModifySimpleType(
     renameLocalTypeInSchema(parsed.name as string, typeName, schemaObj);
     simpleType.name = typeName;
   }
-  updateTypeContents(simpleType, baseType, restrictions, documentation);
+  updateTypeContents(simpleType, {
+    baseType,
+    listItemType,
+    unionMemberTypes,
+    restrictions,
+    documentation,
+  });
 }
 
 // ===== Helper Functions =====
@@ -179,25 +220,31 @@ function buildRestriction(base: string, facets?: RestrictionFacets): restriction
  * @param documentation - New documentation text (optional)
  */
 function updateTypeContents(
-  simpleType: { restriction?: restrictionType; annotation?: annotationType },
-  baseType?: string,
-  restrictions?: RestrictionFacets,
-  documentation?: string
-): void {
-  if (baseType !== undefined || restrictions !== undefined) {
-    if (!simpleType.restriction) {
-      if (baseType !== undefined) {
-        simpleType.restriction = buildRestriction(baseType, restrictions);
-      }
-    } else {
-      if (baseType !== undefined) {
-        simpleType.restriction.base = baseType;
-      }
-      if (restrictions !== undefined) {
-        applyRestrictionFacets(simpleType.restriction, restrictions);
-      }
-    }
+  simpleType: { restriction?: restrictionType; list?: listType; union?: unionType; annotation?: annotationType },
+  updates: {
+    baseType?: string;
+    listItemType?: string;
+    unionMemberTypes?: string[];
+    restrictions?: RestrictionFacets;
+    documentation?: string;
   }
+): void {
+  const {
+    baseType,
+    listItemType,
+    unionMemberTypes,
+    restrictions,
+    documentation,
+  } = updates;
+
+  const fallbackDerivationKind = simpleType.restriction ? "restriction" : simpleType.list ? "list" : simpleType.union ? "union" : undefined;
+
+  applySimpleTypeBody(simpleType, {
+    baseType,
+    listItemType,
+    unionMemberTypes,
+    restrictions,
+  }, fallbackDerivationKind);
 
   if (documentation !== undefined) {
     if (!simpleType.annotation) {
@@ -207,6 +254,113 @@ function updateTypeContents(
     doc.value = documentation;
     simpleType.annotation.documentation = [doc];
   }
+}
+
+function inferSimpleTypeDerivationKindForExecutor(updates: {
+  baseType?: string;
+  listItemType?: string;
+  unionMemberTypes?: string[];
+  restrictions?: RestrictionFacets;
+}): SimpleTypeDerivationKind | undefined {
+  const hasRestrictionBody = updates.baseType !== undefined || updates.restrictions !== undefined;
+  const hasListBody = updates.listItemType !== undefined;
+  const hasUnionBody = updates.unionMemberTypes !== undefined;
+
+  const bodyKinds = [hasRestrictionBody ? "restriction" : null, hasListBody ? "list" : null, hasUnionBody ? "union" : null].filter(Boolean) as SimpleTypeDerivationKind[];
+  return bodyKinds.length === 1 ? bodyKinds[0] : undefined;
+}
+
+function hasRestrictionFacetValues(restrictions: RestrictionFacets | undefined): boolean {
+  if (!restrictions) {
+    return false;
+  }
+  return Object.values(restrictions).some((value) => {
+    if (value === undefined || value === null) {
+      return false;
+    }
+    if (Array.isArray(value)) {
+      return value.length > 0;
+    }
+    return true;
+  });
+}
+
+function applySimpleTypeBody(
+  simpleType: { restriction?: restrictionType; list?: listType; union?: unionType },
+  updates: {
+    baseType?: string;
+    listItemType?: string;
+    unionMemberTypes?: string[];
+    restrictions?: RestrictionFacets;
+  },
+  fallbackDerivationKind?: SimpleTypeDerivationKind
+): void {
+  const { baseType, listItemType, unionMemberTypes, restrictions } = updates;
+  const inferredDerivationKind = inferSimpleTypeDerivationKindForExecutor(updates) ?? fallbackDerivationKind;
+  if (!inferredDerivationKind) {
+    throw new Error("Simple type body must be specified as exactly one of restriction, list, or union");
+  }
+
+  if (inferredDerivationKind === "list") {
+    if (baseType !== undefined || restrictions !== undefined || unionMemberTypes !== undefined) {
+      throw new Error("List simpleType payload cannot include restriction or union fields");
+    }
+    if (!listItemType || !listItemType.trim()) {
+      throw new Error("List item type is required");
+    }
+    if (!simpleType.list) {
+      simpleType.list = new listType();
+    }
+    simpleType.list.itemType = listItemType.trim();
+    simpleType.list.simpleType = undefined;
+    simpleType.restriction = undefined;
+    simpleType.union = undefined;
+    return;
+  }
+
+  if (inferredDerivationKind === "union") {
+    if (baseType !== undefined || listItemType !== undefined || restrictions !== undefined) {
+      throw new Error("Union simpleType payload cannot include restriction or list fields");
+    }
+    const normalized = (unionMemberTypes ?? [])
+      .map((memberType) => memberType.trim())
+      .filter((memberType) => memberType.length > 0);
+    if (normalized.length === 0) {
+      throw new Error("Union member types are required");
+    }
+    if (!simpleType.union) {
+      simpleType.union = new unionType();
+    }
+    simpleType.union.memberTypes = normalized.join(" ");
+    simpleType.union.simpleType = undefined;
+    simpleType.restriction = undefined;
+    simpleType.list = undefined;
+    return;
+  }
+
+  if (baseType !== undefined && !baseType.trim()) {
+    throw new Error("Base type is required");
+  }
+  if (listItemType !== undefined || unionMemberTypes !== undefined) {
+    throw new Error("Restriction simpleType payload cannot include list or union fields");
+  }
+  const resolvedBaseType = baseType?.trim() || simpleType.restriction?.base?.trim() || "";
+  if (!resolvedBaseType) {
+    throw new Error("Base type is required");
+  }
+  if (restrictions !== undefined && !hasRestrictionFacetValues(restrictions) && !simpleType.restriction) {
+    throw new Error("Restriction simpleType body must include at least one facet");
+  }
+  if (!simpleType.restriction) {
+    simpleType.restriction = buildRestriction(resolvedBaseType, restrictions);
+  } else {
+    simpleType.restriction.base = resolvedBaseType;
+    if (restrictions !== undefined) {
+      applyRestrictionFacets(simpleType.restriction, restrictions);
+    }
+  }
+  simpleType.list = undefined;
+  simpleType.union = undefined;
 }
 
 /**

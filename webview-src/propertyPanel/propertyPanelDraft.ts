@@ -58,6 +58,11 @@ export function createDraftNode(node: DiagramItem): DiagramItem {
   draft.isMixed = node.isMixed;
   draft.hasAnonymousComplexType = node.hasAnonymousComplexType;
   draft.complexDerivationKind = node.complexDerivationKind;
+  draft.simpleTypeDerivationKind = node.simpleTypeDerivationKind;
+  draft.simpleTypeListItemType = node.simpleTypeListItemType;
+  draft.simpleTypeUnionMemberTypes = node.simpleTypeUnionMemberTypes
+    ? [...node.simpleTypeUnionMemberTypes]
+    : undefined;
   draft.location = { ...node.location };
   draft.size = { ...node.size };
   draft.elementBox = { ...node.elementBox };

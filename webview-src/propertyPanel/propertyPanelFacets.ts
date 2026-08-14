@@ -6,7 +6,8 @@
 import { SchemaCommand } from "../../shared/types";
 import { DiagramItem } from "../diagram";
 import { createEditableField } from "./propertyPanelDom";
-import { extractBaseType, resolveSimpleTypeId } from "./propertyPanelCommands";
+import { resolveSimpleTypeId } from "./propertyPanelCommands";
+import { extractBaseType } from "./propertyPanelSimpleTypeCommands";
 import { hasEditableFacetValues, RestrictionSnapshot } from "./propertyPanelDraft";
 
 /** Numeric facet keys editable in the Facets tab. */

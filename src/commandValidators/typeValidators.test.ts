@@ -70,6 +70,47 @@ describe("SimpleType Validators", () => {
       expect(result.error).toBe("Base type cannot be empty");
     });
 
+    test("should reject addSimpleType restriction without any facets", () => {
+      const command: AddSimpleTypeCommand = {
+        type: "addSimpleType",
+        payload: {
+          typeName: "NameType",
+          baseType: "xs:string",
+          restrictions: {},
+        },
+      };
+
+      const result = validateAddSimpleType(command, emptySchemaObj);
+      expectInvalid(result);
+      expect(result.error).toBe("Restriction simpleType body must include at least one facet");
+    });
+
+    test("should reject addSimpleType with missing body for a restriction body", () => {
+      const command = {
+        type: "addSimpleType",
+        payload: {
+          typeName: "NameType",
+        },
+      } as AddSimpleTypeCommand;
+
+      const result = validateAddSimpleType(command, emptySchemaObj);
+      expectInvalid(result);
+      expect(result.error).toBe("Simple type body is required");
+    });
+
+    test("should reject addSimpleType with missing body for a list body", () => {
+      const command = {
+        type: "addSimpleType",
+        payload: {
+          typeName: "TokenListType",
+        },
+      } as AddSimpleTypeCommand;
+
+      const result = validateAddSimpleType(command, emptySchemaObj);
+      expectInvalid(result);
+      expect(result.error).toBe("Simple type body is required");
+    });
+
     test("should reject addSimpleType with unrecognized baseType", () => {
       const command: AddSimpleTypeCommand = {
         type: "addSimpleType",
@@ -81,7 +122,7 @@ describe("SimpleType Validators", () => {
 
       const result = validateAddSimpleType(command, emptySchemaObj);
       expectInvalid(result);
-      expect(result.error).toBe("Base type 'xs:nonExistentType' is not a recognized XSD type");
+      expect(result.error).toBe("Base type: Invalid element type 'xs:nonExistentType': must be a built-in XSD type, a user-defined type in the schema, a type from a valid import with a matching namespace prefix, or a type from an included schema");
     });
 
     test("should reject addSimpleType when type name already exists in schema", () => {
@@ -122,6 +163,60 @@ describe("SimpleType Validators", () => {
 
       const result = validateAddSimpleType(command, schemaWithAgeType);
       expect(result.valid).toBe(true);
+    });
+
+    test("should accept addSimpleType list with valid item type", () => {
+      const command: AddSimpleTypeCommand = {
+        type: "addSimpleType",
+        payload: {
+          typeName: "TokenListType",
+          listItemType: "xs:token",
+        },
+      };
+
+      const result = validateAddSimpleType(command, emptySchemaObj);
+      expect(result.valid).toBe(true);
+    });
+
+    test("should reject addSimpleType list with missing item type", () => {
+      const command: AddSimpleTypeCommand = {
+        type: "addSimpleType",
+        payload: {
+          typeName: "TokenListType",
+          listItemType: "",
+        },
+      };
+
+      const result = validateAddSimpleType(command, emptySchemaObj);
+      expectInvalid(result);
+      expect(result.error).toBe("List item type cannot be empty");
+    });
+
+    test("should accept addSimpleType union with valid member types", () => {
+      const command: AddSimpleTypeCommand = {
+        type: "addSimpleType",
+        payload: {
+          typeName: "TextOrNumberType",
+          unionMemberTypes: ["xs:string", "xs:integer"],
+        },
+      };
+
+      const result = validateAddSimpleType(command, emptySchemaObj);
+      expect(result.valid).toBe(true);
+    });
+
+    test("should reject addSimpleType union with empty member type list", () => {
+      const command: AddSimpleTypeCommand = {
+        type: "addSimpleType",
+        payload: {
+          typeName: "TextOrNumberType",
+          unionMemberTypes: [],
+        },
+      };
+
+      const result = validateAddSimpleType(command, emptySchemaObj);
+      expectInvalid(result);
+      expect(result.error).toBe("Union member types cannot be empty");
     });
   });
 

@@ -150,7 +150,25 @@ body {
   font-weight: 600;
 }
 
+.property-panel-header-metadata {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 6px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
 .property-panel-header-type {
+  flex: 0 0 auto;
+  color: var(--vscode-foreground);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.property-panel-header-id {
+  flex: 1 1 auto;
+  min-width: 0;
   overflow: hidden;
   color: var(--vscode-descriptionForeground);
   font-family: var(--vscode-editor-font-family, monospace);
@@ -308,6 +326,14 @@ body {
   color: var(--vscode-input-foreground);
   border: 1px solid var(--vscode-input-border);
   border-radius: 2px;
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.property-tab-content-docs,
+.property-tab-content-xml {
+  padding: 2px 0 8px;
 }
 
 .property-docs-section,
@@ -324,8 +350,14 @@ body {
   gap: 8px;
 }
 
+.property-docs-entry-header label {
+  color: var(--vscode-descriptionForeground);
+  font-size: 11px;
+  font-weight: 600;
+}
+
 .property-docs-section {
-  padding: 10px;
+  padding: 8px;
   border: 1px solid var(--vscode-sideBarSectionHeader-border, var(--vscode-input-border));
   border-radius: 4px;
   background: var(--vscode-editor-background);
@@ -349,6 +381,7 @@ body {
   border-radius: 4px;
   cursor: pointer;
   font: inherit;
+  font-size: 11px;
 }
 
 .property-docs-action:hover {
@@ -377,14 +410,16 @@ body {
 
 .property-xml-preview {
   margin: 0;
-  padding: 8px;
+  padding: 10px;
   border-radius: 4px;
   border: 1px solid var(--vscode-input-border);
   background-color: var(--vscode-editor-background);
-  color: var(--vscode-descriptionForeground);
+  color: var(--vscode-editor-foreground, var(--vscode-foreground));
   white-space: pre-wrap;
   word-break: break-word;
+  font-family: var(--vscode-editor-font-family, monospace);
   font-size: 11px;
+  line-height: 1.5;
   overflow: auto;
 }
 
@@ -398,7 +433,7 @@ body {
 
 .property-xml-hint {
   margin: 0;
-  font-size: 11px;
+  font-size: 10px;
   line-height: 1.35;
   color: var(--vscode-descriptionForeground);
 }

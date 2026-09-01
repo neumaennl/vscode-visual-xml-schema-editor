@@ -148,10 +148,19 @@ export function createPropertyPanelHeader(
   const title = document.createElement("span");
   title.className = "property-panel-header-title";
   title.textContent = "Properties";
+
   const type = document.createElement("span");
   type.className = "property-panel-header-type";
-  type.textContent = `${nodeTypeLabel} · ${nodeId}`;
-  heading.append(title, type);
+  type.textContent = nodeTypeLabel;
+
+  const nodeIdLabel = document.createElement("span");
+  nodeIdLabel.className = "property-panel-header-id";
+  nodeIdLabel.textContent = nodeId;
+
+  const metadata = document.createElement("div");
+  metadata.className = "property-panel-header-metadata";
+  metadata.append(type, nodeIdLabel);
+  heading.append(title, metadata);
   header.appendChild(heading);
 
   if (onDelete) {

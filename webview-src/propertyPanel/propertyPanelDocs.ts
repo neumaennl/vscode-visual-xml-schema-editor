@@ -321,7 +321,7 @@ export function createDocsTab(
   rerender: () => void
 ): HTMLElement {
   const root = document.createElement("div");
-  root.className = "property-tab-content";
+  root.className = "property-tab-content property-tab-content-docs";
 
   if (node.documentationAnnotations.length === 0) {
     const targetId = resolveDocumentationTargetId(node);

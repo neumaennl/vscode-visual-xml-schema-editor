@@ -330,7 +330,6 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
         </div>
       </main>
       <aside id="properties-panel">
-          <h3>Properties</h3>
           <div id="properties-content"></div>
       </aside>
     </div>

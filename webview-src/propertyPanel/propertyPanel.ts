@@ -93,6 +93,7 @@ export class PropertyPanel {
     this.container.appendChild(
       createPropertyPanelHeader(
         getNodeTypeLabel(this.draftNode),
+        this.draftNode.id,
         deleteCommand ? () : void => this.dispatchCommand(deleteCommand) : undefined
       )
     );

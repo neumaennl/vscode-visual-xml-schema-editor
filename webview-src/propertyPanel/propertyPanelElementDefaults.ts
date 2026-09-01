@@ -19,7 +19,7 @@ export function renderElementDefaultFixedSection(
 ): HTMLElement {
   const section = document.createElement("div");
   section.className = "property-section";
-  section.appendChild(createSectionHeader("edit", "DEFAULT & FIXED"));
+  section.appendChild(createSectionHeader("wand", "DEFAULT & FIXED"));
 
   const row = document.createElement("div");
   row.className = "property-row-2col";

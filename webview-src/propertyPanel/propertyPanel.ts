@@ -20,7 +20,6 @@ import { SchemaNodeType, generateSchemaId } from "../../shared/idStrategy";
 import { createDraftNode } from "./propertyPanelDraft";
 import {
   addPropertyToContainer,
-  addPropertyWithElementToContainer,
   createAttributeList,
   createEditableField,
   createPropertyPanelHeader,
@@ -152,6 +151,7 @@ export class PropertyPanel {
   private renderGeneralTab(node: DiagramItem): HTMLElement {
     const root = document.createElement("div");
     root.className = "property-tab-content";
+    root.appendChild(createSectionHeader("symbol-key", "IDENTITY"));
 
     const nameCommand = createRenameNodeComand(node, node.name);
     if (nameCommand) {
@@ -210,11 +210,11 @@ export class PropertyPanel {
     }
 
     if (node.attributes.length > 0) {
-      addPropertyWithElementToContainer(root, "Attributes", createAttributeList(node));
-    }
-
-    if (node.childElements.length > 0) {
-      addPropertyToContainer(root, "Children", node.childElements.length.toString());
+      const attributesSection = document.createElement("div");
+      attributesSection.className = "property-section";
+      attributesSection.appendChild(createSectionHeader("mention", "ATTRIBUTES"));
+      attributesSection.appendChild(createAttributeList(node));
+      root.appendChild(attributesSection);
     }
 
     return root;

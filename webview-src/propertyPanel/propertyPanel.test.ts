@@ -62,6 +62,7 @@ describe("PropertyPanel", () => {
     expect(container.textContent).toContain("General");
     expect(container.textContent).toContain("Docs");
     expect(container.textContent).toContain("XML");
+    expect(container.textContent).toContain("IDENTITY");
     expect(getInputByLabel(container, "Name").value).toBe("TestItem");
     expect(getInputByLabel(container, "Type").value).toBe("xs:string");
   });
@@ -134,8 +135,34 @@ describe("PropertyPanel", () => {
 
     panel.display(item);
 
+    expect(container.textContent).toContain("ATTRIBUTES");
     expect(container.textContent).toContain("<unsafe>");
     expect(container.innerHTML).not.toContain("<strong><unsafe></strong>");
+  });
+
+  it.each([
+    ["schema", SCHEMA_ROOT_ID, DiagramItemType.group],
+    ["element", "/element:person", DiagramItemType.element],
+    ["complex type", "/complexType:PersonType", DiagramItemType.type],
+  ])("renders an Attributes section for a %s with attributes", (_, id, itemType) => {
+    expect.hasAssertions();
+    const item = new DiagramItem(id, "TestItem", itemType, diagram);
+    item.attributes = [{ name: "status", type: "xs:string" }];
+
+    panel.display(item);
+
+    expect(container.textContent).toContain("ATTRIBUTES");
+    expect(container.textContent).toContain("status");
+  });
+
+  it("does not render the child count", () => {
+    expect.hasAssertions();
+    const item = new DiagramItem("/element:person", "person", DiagramItemType.element, diagram);
+    item.childElements = [new DiagramItem("/element:person/element:name", "name", DiagramItemType.element, diagram)];
+
+    panel.display(item);
+
+    expect(hasLabel(container, "Children")).toBe(false);
   });
 
   it("shows facet fields when facet tab is selected", () => {

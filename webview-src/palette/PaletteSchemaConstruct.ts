@@ -14,10 +14,18 @@ export enum PaletteSchemaConstruct {
   ComplexType = "complexType",
   Extension = "extension",
   Restriction = "restriction",
-  Enumeration = "enumeration",
-  Pattern = "pattern",
+  MinExclusive = "minExclusive",
+  MinInclusive = "minInclusive",
+  MaxExclusive = "maxExclusive",
+  MaxInclusive = "maxInclusive",
+  TotalDigits = "totalDigits",
+  FractionDigits = "fractionDigits",
   Length = "length",
-  Range = "range",
+  MinLength = "minLength",
+  MaxLength = "maxLength",
+  Enumeration = "enumeration",
+  WhiteSpace = "whiteSpace",
+  Pattern = "pattern",
 }
 
 /**

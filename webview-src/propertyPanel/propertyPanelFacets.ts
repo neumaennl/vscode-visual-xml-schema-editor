@@ -9,6 +9,11 @@ import { createEditableField } from "./propertyPanelDom";
 import { resolveSimpleTypeId } from "./propertyPanelCommands";
 import { extractBaseType } from "./propertyPanelSimpleTypeCommands";
 import { hasEditableFacetValues, RestrictionSnapshot } from "./propertyPanelDraft";
+import {
+  getFacetIconStyle,
+  type FacetIconStyle,
+} from "../palette/FacetIconStyles";
+import { PaletteSchemaConstruct } from "../palette/PaletteSchemaConstruct";
 
 /** Numeric facet keys editable in the Facets tab. */
 type NumericRestrictionKey = "length" | "minLength" | "maxLength" | "totalDigits" | "fractionDigits";
@@ -64,7 +69,7 @@ export function renderFacetsTab(
     addPropertyToContainer(
       root,
       "Facets",
-      "This type has no facets yet. To add a facet, right-click the node and choose 'Add facet…' (available in a future release)."
+      "This type has no facets yet. To add a facet, drag one from the palette onto the node (available in a future release)."
     );
     return root;
   }
@@ -126,7 +131,7 @@ export function renderFacetsTab(
           const value = next.trim();
           draft.pattern = value ? [value] : undefined;
         });
-      })
+      }, undefined, getFacetIconStyle(PaletteSchemaConstruct.Pattern))
     );
   }
 
@@ -135,63 +140,72 @@ export function renderFacetsTab(
     "Length",
     restrictions.length,
     NUMERIC_FACET_ASSIGNERS.length,
-    buildAndDispatch
+    buildAndDispatch,
+    getFacetIconStyle(PaletteSchemaConstruct.Length)
   );
   appendOptionalNumericFacet(
     root,
     "Min Length",
     restrictions.minLength,
     NUMERIC_FACET_ASSIGNERS.minLength,
-    buildAndDispatch
+    buildAndDispatch,
+    getFacetIconStyle(PaletteSchemaConstruct.MinLength)
   );
   appendOptionalNumericFacet(
     root,
     "Max Length",
     restrictions.maxLength,
     NUMERIC_FACET_ASSIGNERS.maxLength,
-    buildAndDispatch
+    buildAndDispatch,
+    getFacetIconStyle(PaletteSchemaConstruct.MaxLength)
   );
   appendOptionalStringFacet(
     root,
     "Min Inclusive",
     restrictions.minInclusive,
     STRING_FACET_ASSIGNERS.minInclusive,
-    buildAndDispatch
+    buildAndDispatch,
+    getFacetIconStyle(PaletteSchemaConstruct.MinInclusive)
   );
   appendOptionalStringFacet(
     root,
     "Max Inclusive",
     restrictions.maxInclusive,
     STRING_FACET_ASSIGNERS.maxInclusive,
-    buildAndDispatch
+    buildAndDispatch,
+    getFacetIconStyle(PaletteSchemaConstruct.MaxInclusive)
   );
   appendOptionalStringFacet(
     root,
     "Min Exclusive",
     restrictions.minExclusive,
     STRING_FACET_ASSIGNERS.minExclusive,
-    buildAndDispatch
+    buildAndDispatch,
+    getFacetIconStyle(PaletteSchemaConstruct.MinExclusive)
   );
   appendOptionalStringFacet(
     root,
     "Max Exclusive",
     restrictions.maxExclusive,
     STRING_FACET_ASSIGNERS.maxExclusive,
-    buildAndDispatch
+    buildAndDispatch,
+    getFacetIconStyle(PaletteSchemaConstruct.MaxExclusive)
   );
   appendOptionalNumericFacet(
     root,
     "Total Digits",
     restrictions.totalDigits,
     NUMERIC_FACET_ASSIGNERS.totalDigits,
-    buildAndDispatch
+    buildAndDispatch,
+    getFacetIconStyle(PaletteSchemaConstruct.TotalDigits)
   );
   appendOptionalNumericFacet(
     root,
     "Fraction Digits",
     restrictions.fractionDigits,
     NUMERIC_FACET_ASSIGNERS.fractionDigits,
-    buildAndDispatch
+    buildAndDispatch,
+    getFacetIconStyle(PaletteSchemaConstruct.FractionDigits)
   );
 
   if (restrictions.whiteSpace !== undefined) {
@@ -204,7 +218,7 @@ export function renderFacetsTab(
         buildAndDispatch((draft) => {
           draft.whiteSpace = value || undefined;
         });
-      })
+      }, undefined, getFacetIconStyle(PaletteSchemaConstruct.WhiteSpace))
     );
   }
 
@@ -216,7 +230,8 @@ function appendOptionalNumericFacet(
   label: string,
   value: number | undefined,
   assign: (draft: RestrictionSnapshot, value: number | undefined) => void,
-  buildAndDispatch: (updater: (next: RestrictionSnapshot) => void) => void
+  buildAndDispatch: (updater: (next: RestrictionSnapshot) => void) => void,
+  icon?: FacetIconStyle
 ): void {
   if (value === undefined) {
     return;
@@ -227,7 +242,7 @@ function appendOptionalNumericFacet(
         const trimmed = next.trim();
         assign(draft, trimmed ? Number(trimmed) : undefined);
       });
-    })
+    }, undefined, icon)
   );
 }
 
@@ -236,7 +251,8 @@ function appendOptionalStringFacet(
   label: string,
   value: string | undefined,
   assign: (draft: RestrictionSnapshot, value: string | undefined) => void,
-  buildAndDispatch: (updater: (next: RestrictionSnapshot) => void) => void
+  buildAndDispatch: (updater: (next: RestrictionSnapshot) => void) => void,
+  icon?: FacetIconStyle
 ): void {
   if (value === undefined) {
     return;
@@ -246,7 +262,7 @@ function appendOptionalStringFacet(
       buildAndDispatch((draft) => {
         assign(draft, next.trim() || undefined);
       });
-    })
+    }, undefined, icon)
   );
 }
 
@@ -267,7 +283,13 @@ function renderEnumerationEditor(
   field.className = "property";
 
   const label = document.createElement("label");
-  label.textContent = "Enumeration:";
+  const labelIcon = document.createElement("span");
+  const enumerationStyle = getFacetIconStyle(PaletteSchemaConstruct.Enumeration);
+  labelIcon.className = `codicon codicon-${enumerationStyle.icon} property-facet-icon`;
+  labelIcon.setAttribute("aria-hidden", "true");
+  labelIcon.style.color = enumerationStyle.color;
+  label.appendChild(labelIcon);
+  label.appendChild(document.createTextNode("Enumeration:"));
   field.appendChild(label);
 
   const list = document.createElement("div");

@@ -5,6 +5,7 @@
  */
 
 import { DiagramItem } from "../diagram";
+import type { FacetIconStyle } from "../palette/FacetIconStyles";
 
 let nextDatalistId = 0;
 
@@ -205,19 +206,32 @@ export function createToggleRow(
  * @param value - Initial field value
  * @param onCommit - Callback invoked with the committed value
  * @param suggestions - Optional suggestion values rendered through a datalist
+ * @param icon - Optional shared facet icon style shown before the label
  * @returns A DOM element containing the labeled input
  */
 export function createEditableField(
   label: string,
   value: string,
   onCommit: (next: string) => void,
-  suggestions?: string[]
+  suggestions?: string[],
+  icon?: FacetIconStyle
 ): HTMLElement {
   const propertyDiv = document.createElement("div");
   propertyDiv.className = "property";
 
   const labelEl = document.createElement("label");
-  labelEl.textContent = `${label}:`;
+  if (icon) {
+    const iconEl = document.createElement("span");
+    iconEl.className = `codicon codicon-${icon.icon} property-facet-icon`;
+    iconEl.setAttribute("aria-hidden", "true");
+    if (icon.color) {
+      iconEl.style.color = icon.color;
+    }
+    labelEl.appendChild(iconEl);
+    labelEl.appendChild(document.createTextNode(`${label}:`));
+  } else {
+    labelEl.textContent = `${label}:`;
+  }
 
   const input = document.createElement("input");
   input.type = "text";

@@ -39,4 +39,8 @@ export default {
   ],
   devtool:
     process.env.NODE_ENV === "production" ? "source-map" : "inline-source-map",
+  performance: {
+    maxAssetSize: 1024 * 1024,
+    maxEntrypointSize: 1024 * 1024,
+  },
 };

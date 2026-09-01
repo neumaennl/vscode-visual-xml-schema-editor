@@ -125,20 +125,34 @@ export function createSectionHeader(icon: string, label: string): HTMLElement {
  * Creates the property-panel header shown above the tabs.
  *
  * @param nodeTypeLabel - User-facing label of the selected node type
+ * @param nodeId - Stable identifier of the selected node
  * @param onDelete - Optional callback to invoke when the delete button is clicked
  * @returns A DOM element containing the node-type label and optional delete action
  */
 export function createPropertyPanelHeader(
   nodeTypeLabel: string,
+  nodeId: string,
   onDelete?: () => void
 ): HTMLElement {
   const header = document.createElement("div");
   header.className = "property-panel-header";
 
-  const label = document.createElement("span");
-  label.className = "property-panel-header-type";
-  label.textContent = nodeTypeLabel;
-  header.appendChild(label);
+  const typeBadge = document.createElement("span");
+  typeBadge.className = "property-panel-header-badge";
+  typeBadge.setAttribute("aria-hidden", "true");
+  typeBadge.textContent = nodeTypeLabel.charAt(0);
+  header.appendChild(typeBadge);
+
+  const heading = document.createElement("div");
+  heading.className = "property-panel-header-heading";
+  const title = document.createElement("span");
+  title.className = "property-panel-header-title";
+  title.textContent = "Properties";
+  const type = document.createElement("span");
+  type.className = "property-panel-header-type";
+  type.textContent = `${nodeTypeLabel} · ${nodeId}`;
+  heading.append(title, type);
+  header.appendChild(heading);
 
   if (onDelete) {
     const deleteButton = document.createElement("button");

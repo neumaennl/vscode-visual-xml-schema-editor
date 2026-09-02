@@ -3,6 +3,7 @@ import { toArray } from "../../shared/schemaUtils";
 import { DiagramItem, DiagramItemGroupType, DiagramItemType } from "../diagram";
 import { generateSchemaId, parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy";
 import { PaletteSchemaConstruct } from "../palette/PaletteSchemaConstruct";
+import { createFacetNodeDropCommand, getAnonymousComplexTypeId, getAnonymousSimpleTypeId, getExtensionBaseType, getRestrictionBaseType, isComplexTypeNode, isSimpleTypeNode } from "./DropCommandFactoryTypeHelpers";
 
 /**
  * Creates schema commands from drag-and-drop actions.
@@ -162,6 +163,19 @@ export class DropCommandFactory {
         return this.createCompositorNodeDropCommand(item, "choice");
       case PaletteSchemaConstruct.All:
         return this.createCompositorNodeDropCommand(item, "all");
+      case PaletteSchemaConstruct.MinExclusive:
+      case PaletteSchemaConstruct.MinInclusive:
+      case PaletteSchemaConstruct.MaxExclusive:
+      case PaletteSchemaConstruct.MaxInclusive:
+      case PaletteSchemaConstruct.TotalDigits:
+      case PaletteSchemaConstruct.FractionDigits:
+      case PaletteSchemaConstruct.Length:
+      case PaletteSchemaConstruct.MinLength:
+      case PaletteSchemaConstruct.MaxLength:
+      case PaletteSchemaConstruct.Enumeration:
+      case PaletteSchemaConstruct.WhiteSpace:
+      case PaletteSchemaConstruct.Pattern:
+        return createFacetNodeDropCommand(item, construct);
       default:
         return null;
     }
@@ -304,7 +318,7 @@ export class DropCommandFactory {
     item: DiagramItem,
     contentModel: "sequence" | "choice" | "all"
   ): SchemaCommand | null {
-    if (this.isComplexTypeNode(item)) {
+    if (isComplexTypeNode(item)) {
       return {
         type: "modifyComplexType",
         payload: {
@@ -319,7 +333,7 @@ export class DropCommandFactory {
         return {
           type: "modifyComplexType",
           payload: {
-            typeId: this.getAnonymousComplexTypeId(item),
+            typeId: getAnonymousComplexTypeId(item),
             contentModel,
           },
         };
@@ -361,8 +375,8 @@ export class DropCommandFactory {
         return {
           type: "modifyComplexType",
           payload: {
-            typeId: this.getAnonymousComplexTypeId(item),
-            baseType: this.getRestrictionBaseType(item),
+            typeId: getAnonymousComplexTypeId(item),
+            baseType: getRestrictionBaseType(item),
             derivationKind: "restriction",
           },
         };
@@ -371,8 +385,8 @@ export class DropCommandFactory {
         return {
           type: "modifySimpleType",
           payload: {
-            typeId: this.getAnonymousSimpleTypeId(item),
-            baseType: this.getRestrictionBaseType(item),
+            typeId: getAnonymousSimpleTypeId(item),
+            baseType: getRestrictionBaseType(item),
           },
         };
       }
@@ -380,25 +394,25 @@ export class DropCommandFactory {
         type: "addSimpleType",
         payload: {
           parentId: item.id,
-          baseType: this.getRestrictionBaseType(item),
+          baseType: getRestrictionBaseType(item),
         },
       };
     }
-    if (this.isSimpleTypeNode(item)) {
+    if (isSimpleTypeNode(item)) {
       return {
         type: "modifySimpleType",
         payload: {
           typeId: item.id,
-          baseType: this.getRestrictionBaseType(item),
+          baseType: getRestrictionBaseType(item),
         },
       };
     }
-    if (this.isComplexTypeNode(item)) {
+    if (isComplexTypeNode(item)) {
       return {
         type: "modifyComplexType",
         payload: {
           typeId: item.id,
-          baseType: this.getRestrictionBaseType(item),
+          baseType: getRestrictionBaseType(item),
           derivationKind: "restriction",
         },
       };
@@ -421,8 +435,8 @@ export class DropCommandFactory {
         return {
           type: "modifyComplexType",
           payload: {
-            typeId: this.getAnonymousComplexTypeId(item),
-            baseType: this.getExtensionBaseType(item),
+            typeId: getAnonymousComplexTypeId(item),
+            baseType: getExtensionBaseType(item),
             derivationKind: "extension",
           },
         };
@@ -432,17 +446,17 @@ export class DropCommandFactory {
         payload: {
           parentId: item.id,
           contentModel: "sequence",
-          baseType: this.getExtensionBaseType(item),
+          baseType: getExtensionBaseType(item),
           derivationKind: "extension",
         },
       };
     }
-    if (this.isComplexTypeNode(item)) {
+    if (isComplexTypeNode(item)) {
       return {
         type: "modifyComplexType",
         payload: {
           typeId: item.id,
-          baseType: this.getExtensionBaseType(item),
+          baseType: getExtensionBaseType(item),
           derivationKind: "extension",
         },
       };
@@ -452,14 +466,6 @@ export class DropCommandFactory {
 
   private isSchemaRoot(item: DiagramItem): boolean {
     return item.id === SCHEMA_ROOT_ID;
-  }
-
-  private isSimpleTypeNode(item: DiagramItem): boolean {
-    return item.itemType === DiagramItemType.type && item.type.startsWith("simpleType");
-  }
-
-  private isComplexTypeNode(item: DiagramItem): boolean {
-    return item.itemType === DiagramItemType.type && item.type.startsWith("complexType");
   }
 
   private isNamedGroupDefinition(item: DiagramItem): boolean {
@@ -472,64 +478,6 @@ export class DropCommandFactory {
     } catch {
       return false;
     }
-  }
-
-  private getAnonymousSimpleTypeId(item: DiagramItem): string {
-    return generateSchemaId({
-      nodeType: SchemaNodeType.AnonymousSimpleType,
-      parentId: item.id,
-      position: 0,
-    });
-  }
-
-  private getAnonymousComplexTypeId(item: DiagramItem): string {
-    return generateSchemaId({
-      nodeType: SchemaNodeType.AnonymousComplexType,
-      parentId: item.id,
-      position: 0,
-    });
-  }
-
-  private getRestrictionBaseType(item: DiagramItem): string {
-    const extracted = this.extractDisplayedBaseType(item.type);
-    if (extracted) {
-      return extracted;
-    }
-    return this.targetsComplexTypeRestriction(item) ? "xs:anyType" : "xs:string";
-  }
-
-  private getExtensionBaseType(item: DiagramItem): string {
-    return this.extractDisplayedBaseType(item.type) ?? "xs:anyType";
-  }
-
-  private targetsComplexTypeRestriction(item: DiagramItem): boolean {
-    return this.isComplexTypeNode(item) || item.hasAnonymousComplexType;
-  }
-
-  private isPseudoTypeLabel(typeText: string): boolean {
-    return (
-      typeText === "complexType" ||
-      typeText === "simpleType" ||
-      typeText.startsWith("complexType with ") ||
-      typeText.startsWith("simpleType with ") ||
-      typeText.startsWith("<anonymous ")
-    );
-  }
-
-  private extractDisplayedBaseType(typeText: string): string | null {
-    const restricted = typeText.match(/\(restricts ([^)]+)\)/);
-    if (restricted?.[1]) {
-      return restricted[1].trim();
-    }
-    const extended = typeText.match(/\(extends ([^)]+)\)/);
-    if (extended?.[1]) {
-      return extended[1].trim();
-    }
-    const trimmed = typeText.trim();
-    if (trimmed && !this.isPseudoTypeLabel(trimmed)) {
-      return trimmed;
-    }
-    return null;
   }
 
   /**

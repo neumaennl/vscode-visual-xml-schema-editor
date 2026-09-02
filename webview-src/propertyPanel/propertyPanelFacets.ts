@@ -73,7 +73,6 @@ export function renderFacetsTab(
     );
     return root;
   }
-
   const buildAndDispatch = (updater: (next: RestrictionSnapshot) => void): void => {
     const nextRestrictions: RestrictionSnapshot = {
       enumeration: restrictions.enumeration ? [...restrictions.enumeration] : undefined,
@@ -119,19 +118,29 @@ export function renderFacetsTab(
       },
     });
   };
+  const canRemoveFacet = countDefinedFacets(restrictions) > 1;
 
   if (restrictions.enumeration?.length) {
-    renderEnumerationEditor(root, restrictions.enumeration, buildAndDispatch);
+    renderEnumerationEditor(
+      root,
+      restrictions.enumeration,
+      buildAndDispatch,
+      canRemoveFacet,
+      () => buildAndDispatch((draft) => { draft.enumeration = undefined; })
+    );
   }
 
   if (restrictions.pattern?.length) {
+    const field = createEditableField("Pattern", restrictions.pattern[0] ?? "", (next) => {
+      buildAndDispatch((draft) => {
+        const value = next.trim();
+        draft.pattern = value ? [value] : undefined;
+      });
+    }, undefined, getFacetIconStyle(PaletteSchemaConstruct.Pattern));
     root.appendChild(
-      createEditableField("Pattern", restrictions.pattern[0] ?? "", (next) => {
-        buildAndDispatch((draft) => {
-          const value = next.trim();
-          draft.pattern = value ? [value] : undefined;
-        });
-      }, undefined, getFacetIconStyle(PaletteSchemaConstruct.Pattern))
+      appendFacetRemoveButton(field, "Pattern", canRemoveFacet, () => {
+        buildAndDispatch((draft) => { draft.pattern = undefined; });
+      })
     );
   }
 
@@ -141,7 +150,8 @@ export function renderFacetsTab(
     restrictions.length,
     NUMERIC_FACET_ASSIGNERS.length,
     buildAndDispatch,
-    getFacetIconStyle(PaletteSchemaConstruct.Length)
+    getFacetIconStyle(PaletteSchemaConstruct.Length),
+    canRemoveFacet
   );
   appendOptionalNumericFacet(
     root,
@@ -149,7 +159,8 @@ export function renderFacetsTab(
     restrictions.minLength,
     NUMERIC_FACET_ASSIGNERS.minLength,
     buildAndDispatch,
-    getFacetIconStyle(PaletteSchemaConstruct.MinLength)
+    getFacetIconStyle(PaletteSchemaConstruct.MinLength),
+    canRemoveFacet
   );
   appendOptionalNumericFacet(
     root,
@@ -157,7 +168,8 @@ export function renderFacetsTab(
     restrictions.maxLength,
     NUMERIC_FACET_ASSIGNERS.maxLength,
     buildAndDispatch,
-    getFacetIconStyle(PaletteSchemaConstruct.MaxLength)
+    getFacetIconStyle(PaletteSchemaConstruct.MaxLength),
+    canRemoveFacet
   );
   appendOptionalStringFacet(
     root,
@@ -165,7 +177,8 @@ export function renderFacetsTab(
     restrictions.minInclusive,
     STRING_FACET_ASSIGNERS.minInclusive,
     buildAndDispatch,
-    getFacetIconStyle(PaletteSchemaConstruct.MinInclusive)
+    getFacetIconStyle(PaletteSchemaConstruct.MinInclusive),
+    canRemoveFacet
   );
   appendOptionalStringFacet(
     root,
@@ -173,7 +186,8 @@ export function renderFacetsTab(
     restrictions.maxInclusive,
     STRING_FACET_ASSIGNERS.maxInclusive,
     buildAndDispatch,
-    getFacetIconStyle(PaletteSchemaConstruct.MaxInclusive)
+    getFacetIconStyle(PaletteSchemaConstruct.MaxInclusive),
+    canRemoveFacet
   );
   appendOptionalStringFacet(
     root,
@@ -181,7 +195,8 @@ export function renderFacetsTab(
     restrictions.minExclusive,
     STRING_FACET_ASSIGNERS.minExclusive,
     buildAndDispatch,
-    getFacetIconStyle(PaletteSchemaConstruct.MinExclusive)
+    getFacetIconStyle(PaletteSchemaConstruct.MinExclusive),
+    canRemoveFacet
   );
   appendOptionalStringFacet(
     root,
@@ -189,7 +204,8 @@ export function renderFacetsTab(
     restrictions.maxExclusive,
     STRING_FACET_ASSIGNERS.maxExclusive,
     buildAndDispatch,
-    getFacetIconStyle(PaletteSchemaConstruct.MaxExclusive)
+    getFacetIconStyle(PaletteSchemaConstruct.MaxExclusive),
+    canRemoveFacet
   );
   appendOptionalNumericFacet(
     root,
@@ -197,7 +213,8 @@ export function renderFacetsTab(
     restrictions.totalDigits,
     NUMERIC_FACET_ASSIGNERS.totalDigits,
     buildAndDispatch,
-    getFacetIconStyle(PaletteSchemaConstruct.TotalDigits)
+    getFacetIconStyle(PaletteSchemaConstruct.TotalDigits),
+    canRemoveFacet
   );
   appendOptionalNumericFacet(
     root,
@@ -205,12 +222,12 @@ export function renderFacetsTab(
     restrictions.fractionDigits,
     NUMERIC_FACET_ASSIGNERS.fractionDigits,
     buildAndDispatch,
-    getFacetIconStyle(PaletteSchemaConstruct.FractionDigits)
+    getFacetIconStyle(PaletteSchemaConstruct.FractionDigits),
+    canRemoveFacet
   );
 
   if (restrictions.whiteSpace !== undefined) {
-    root.appendChild(
-      createEditableField("White Space", restrictions.whiteSpace, (next) => {
+    const field = createEditableField("White Space", restrictions.whiteSpace, (next) => {
         const value = next.trim();
         if (value !== "" && value !== "preserve" && value !== "replace" && value !== "collapse") {
           return;
@@ -218,7 +235,11 @@ export function renderFacetsTab(
         buildAndDispatch((draft) => {
           draft.whiteSpace = value || undefined;
         });
-      }, undefined, getFacetIconStyle(PaletteSchemaConstruct.WhiteSpace))
+      }, undefined, getFacetIconStyle(PaletteSchemaConstruct.WhiteSpace));
+    root.appendChild(
+      appendFacetRemoveButton(field, "White Space", canRemoveFacet, () => {
+        buildAndDispatch((draft) => { draft.whiteSpace = undefined; });
+      })
     );
   }
 
@@ -231,18 +252,22 @@ function appendOptionalNumericFacet(
   value: number | undefined,
   assign: (draft: RestrictionSnapshot, value: number | undefined) => void,
   buildAndDispatch: (updater: (next: RestrictionSnapshot) => void) => void,
-  icon?: FacetIconStyle
+  icon: FacetIconStyle,
+  canRemove: boolean
 ): void {
   if (value === undefined) {
     return;
   }
-  root.appendChild(
-    createEditableField(label, value.toString(), (next) => {
+  const field = createEditableField(label, value.toString(), (next) => {
       buildAndDispatch((draft) => {
         const trimmed = next.trim();
         assign(draft, trimmed ? Number(trimmed) : undefined);
       });
-    }, undefined, icon)
+    }, undefined, icon);
+  root.appendChild(
+    appendFacetRemoveButton(field, label, canRemove, () => {
+      buildAndDispatch((draft) => { assign(draft, undefined); });
+    })
   );
 }
 
@@ -252,18 +277,51 @@ function appendOptionalStringFacet(
   value: string | undefined,
   assign: (draft: RestrictionSnapshot, value: string | undefined) => void,
   buildAndDispatch: (updater: (next: RestrictionSnapshot) => void) => void,
-  icon?: FacetIconStyle
+  icon: FacetIconStyle,
+  canRemove: boolean
 ): void {
   if (value === undefined) {
     return;
   }
-  root.appendChild(
-    createEditableField(label, value, (next) => {
+  const field = createEditableField(label, value, (next) => {
       buildAndDispatch((draft) => {
         assign(draft, next.trim() || undefined);
       });
-    }, undefined, icon)
+    }, undefined, icon);
+  root.appendChild(
+    appendFacetRemoveButton(field, label, canRemove, () => {
+      buildAndDispatch((draft) => { assign(draft, undefined); });
+    })
   );
+}
+
+function countDefinedFacets(restrictions: RestrictionSnapshot): number {
+  return Object.values(restrictions).filter((value) =>
+    Array.isArray(value) ? value.length > 0 : value !== undefined
+  ).length;
+}
+
+function appendFacetRemoveButton(
+  field: HTMLElement,
+  label: string,
+  canRemove: boolean,
+  onRemove: () => void
+): HTMLElement {
+  field.classList.add("property-facet");
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "property-facet-remove property-docs-action-icon-only";
+  button.disabled = !canRemove;
+  button.setAttribute("aria-label", `Remove ${label} facet`);
+  button.title = canRemove ? `Remove ${label} facet` : "A restriction requires at least one facet";
+
+  const icon = document.createElement("span");
+  icon.className = "codicon codicon-close";
+  icon.setAttribute("aria-hidden", "true");
+  button.appendChild(icon);
+  button.addEventListener("click", onRemove);
+  field.appendChild(button);
+  return field;
 }
 
 /**
@@ -277,7 +335,9 @@ function appendOptionalStringFacet(
 function renderEnumerationEditor(
   root: HTMLElement,
   initialValues: string[],
-  buildAndDispatch: (updater: (next: RestrictionSnapshot) => void) => void
+  buildAndDispatch: (updater: (next: RestrictionSnapshot) => void) => void,
+  canRemove: boolean,
+  onRemove: () => void
 ): void {
   const field = document.createElement("div");
   field.className = "property";
@@ -291,6 +351,7 @@ function renderEnumerationEditor(
   label.appendChild(labelIcon);
   label.appendChild(document.createTextNode("Enumeration:"));
   field.appendChild(label);
+  appendFacetRemoveButton(field, "Enumeration", canRemove, onRemove);
 
   const list = document.createElement("div");
   list.className = "property-enum-list";
@@ -348,7 +409,9 @@ function renderEnumerationEditor(
       removeButton.type = "button";
       removeButton.className = "property-enum-chip-remove";
       removeButton.setAttribute("aria-label", `Remove ${value}`);
-      removeButton.title = `Remove ${value}`;
+      const canRemoveValue = values.length > 1 || canRemove;
+      removeButton.disabled = !canRemoveValue;
+      removeButton.title = canRemoveValue ? `Remove ${value}` : "A restriction requires at least one facet";
       const icon = document.createElement("span");
       icon.className = "codicon codicon-close";
       icon.setAttribute("aria-hidden", "true");

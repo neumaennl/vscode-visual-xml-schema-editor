@@ -490,6 +490,49 @@ describe("DropCommandFactory", () => {
     });
   });
 
+  describe("createNodeDropCommand — facets", () => {
+    it("adds a default facet to a restriction simpleType", () => {
+      const item = makeItem("/simpleType:Status", DiagramItemType.type, {
+        type: "simpleType (restricts xs:string)",
+        simpleTypeDerivationKind: "restriction",
+        restrictions: { enumeration: ["active"] },
+      });
+
+      const command = factory.createNodeDropCommand(item, PaletteSchemaConstruct.MinLength);
+
+      expect(command).toEqual({
+        type: "modifySimpleType",
+        payload: {
+          typeId: "/simpleType:Status",
+          baseType: "xs:string",
+          restrictions: {
+            enumeration: ["active"],
+            pattern: undefined,
+            length: undefined,
+            minLength: 1,
+            maxLength: undefined,
+            minInclusive: undefined,
+            maxInclusive: undefined,
+            minExclusive: undefined,
+            maxExclusive: undefined,
+            totalDigits: undefined,
+            fractionDigits: undefined,
+            whiteSpace: undefined,
+          },
+        },
+      });
+    });
+
+    it.each(["list", "union"] as const)("rejects facet drops on %s simpleTypes", (kind) => {
+      const item = makeItem("/simpleType:Values", DiagramItemType.type, {
+        type: `simpleType (${kind})`,
+        simpleTypeDerivationKind: kind,
+      });
+
+      expect(factory.createNodeDropCommand(item, PaletteSchemaConstruct.Enumeration)).toBeNull();
+    });
+  });
+
   describe("name generation and schema updates", () => {
     it("avoids top-level name collisions from schema", () => {
       factory.updateNamesFromSchema({

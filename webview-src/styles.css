@@ -222,6 +222,35 @@ body {
   vertical-align: middle;
 }
 
+.property-facet {
+  position: relative;
+}
+
+.property-facet-remove {
+  position: absolute;
+  top: -1px;
+  right: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  color: var(--vscode-descriptionForeground);
+  cursor: pointer;
+}
+
+.property-facet-remove:hover:not(:disabled) {
+  color: var(--vscode-errorForeground);
+}
+
+.property-facet-remove:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
 .property-enum-list {
   display: flex;
   flex-wrap: wrap;

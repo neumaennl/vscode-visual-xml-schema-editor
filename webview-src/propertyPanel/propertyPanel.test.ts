@@ -606,6 +606,70 @@ describe("PropertyPanel", () => {
     });
   });
 
+  it("removes a facet while retaining another restriction facet", () => {
+    expect.hasAssertions();
+    const dispatch = jest.fn();
+    panel = new PropertyPanel(container, dispatch);
+    const item = new DiagramItem("/simpleType:TokenType", "TokenType", DiagramItemType.type, diagram);
+    item.type = "simpleType (restricts xs:string)";
+    item.restrictions = { enumeration: ["A"], pattern: ["[A-Z]"] };
+
+    panel.display(item);
+    Array.from(container.querySelectorAll("button")).find((button) => button.textContent === "Facets")?.click();
+    const removePattern = container.querySelector("button[title='Remove Pattern facet']") as HTMLButtonElement;
+    removePattern.click();
+
+    expect(dispatch).toHaveBeenCalledWith({
+      type: "modifySimpleType",
+      payload: {
+        typeId: "/simpleType:TokenType",
+        baseType: "xs:string",
+        restrictions: {
+          enumeration: ["A"],
+          pattern: undefined,
+          length: undefined,
+          minLength: undefined,
+          maxLength: undefined,
+          minInclusive: undefined,
+          maxInclusive: undefined,
+          minExclusive: undefined,
+          maxExclusive: undefined,
+          totalDigits: undefined,
+          fractionDigits: undefined,
+          whiteSpace: undefined,
+        },
+      },
+    });
+  });
+
+  it("disables removal for the final restriction facet", () => {
+    expect.hasAssertions();
+    const item = new DiagramItem("/simpleType:TokenType", "TokenType", DiagramItemType.type, diagram);
+    item.type = "simpleType (restricts xs:string)";
+    item.restrictions = { pattern: ["[A-Z]"] };
+
+    panel.display(item);
+    Array.from(container.querySelectorAll("button")).find((button) => button.textContent === "Facets")?.click();
+
+    const removePattern = container.querySelector("button[title='A restriction requires at least one facet']");
+    expect(removePattern).toBeInstanceOf(HTMLButtonElement);
+    expect((removePattern as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("disables removal of the last enumeration value when it is the only facet", () => {
+    expect.hasAssertions();
+    const item = new DiagramItem("/simpleType:TokenType", "TokenType", DiagramItemType.type, diagram);
+    item.type = "simpleType (restricts xs:string)";
+    item.restrictions = { enumeration: ["A"] };
+
+    panel.display(item);
+    Array.from(container.querySelectorAll("button")).find((button) => button.textContent === "Facets")?.click();
+
+    const removeValue = container.querySelector("button[aria-label='Remove A']") as HTMLButtonElement;
+    expect(removeValue.disabled).toBe(true);
+    expect(removeValue.title).toBe("A restriction requires at least one facet");
+  });
+
   it("dispatches documentation command from docs tab", () => {
     expect.hasAssertions();
     const dispatch = jest.fn();

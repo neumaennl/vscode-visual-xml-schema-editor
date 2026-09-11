@@ -29,7 +29,7 @@ describe("Integration: Element pipeline", () => {
     it("adds a top-level element to an empty schema", () => {
       const cmd: AddElementCommand = {
         type: "addElement",
-        payload: { parentId: "schema", elementName: "order", elementType: "xs:string" },
+        payload: { parentId: "/schema", elementName: "order", elementType: "xs:string" },
       };
 
       const result = runCommandExpectSuccessSchema(MINIMAL_SCHEMA, cmd);
@@ -43,7 +43,7 @@ describe("Integration: Element pipeline", () => {
     it("adds a second top-level element without disturbing the first", () => {
       const cmd: AddElementCommand = {
         type: "addElement",
-        payload: { parentId: "schema", elementName: "product", elementType: "xs:integer" },
+        payload: { parentId: "/schema", elementName: "product", elementType: "xs:integer" },
       };
 
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_ELEMENTS, cmd);
@@ -58,7 +58,7 @@ describe("Integration: Element pipeline", () => {
       const cmd: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "invoice",
           elementType: "xs:string",
           documentation: "An invoice record",
@@ -77,7 +77,7 @@ describe("Integration: Element pipeline", () => {
     it("returns validation error when element name is invalid", () => {
       const cmd: AddElementCommand = {
         type: "addElement",
-        payload: { parentId: "schema", elementName: "123invalid", elementType: "xs:string" },
+        payload: { parentId: "/schema", elementName: "123invalid", elementType: "xs:string" },
       };
 
       runCommandExpectValidationFailure(MINIMAL_SCHEMA, cmd, "Element name must be a valid XML name");
@@ -86,7 +86,7 @@ describe("Integration: Element pipeline", () => {
     it("returns validation error for duplicate element name", () => {
       const cmd: AddElementCommand = {
         type: "addElement",
-        payload: { parentId: "schema", elementName: "person", elementType: "xs:string" },
+        payload: { parentId: "/schema", elementName: "person", elementType: "xs:string" },
       };
 
       runCommandExpectValidationFailure(SCHEMA_WITH_ELEMENTS, cmd, "Cannot add element: duplicate element name 'person' in schema");

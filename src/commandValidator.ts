@@ -56,6 +56,7 @@ import {
   AddIncludeCommand,
   RemoveIncludeCommand,
   ModifyIncludeCommand,
+  ModifySchemaNamespacesCommand,
 } from "../shared/commands";
 import { ValidationResult } from "./commandValidators/validationUtils";
 
@@ -111,6 +112,7 @@ export interface ValidatorFunctions {
   validateAddInclude: ValidatorFunction<AddIncludeCommand>;
   validateRemoveInclude: ValidatorFunction<RemoveIncludeCommand>;
   validateModifyInclude: ValidatorFunction<ModifyIncludeCommand>;
+  validateModifySchemaNamespaces: ValidatorFunction<ModifySchemaNamespacesCommand>;
 }
 
 /**
@@ -158,6 +160,7 @@ export class CommandValidator {
       validateAddInclude: schemaValidators.validateAddInclude,
       validateRemoveInclude: schemaValidators.validateRemoveInclude,
       validateModifyInclude: schemaValidators.validateModifyInclude,
+      validateModifySchemaNamespaces: schemaValidators.validateModifySchemaNamespaces,
     };
   }
 
@@ -231,6 +234,8 @@ export class CommandValidator {
         return this.validators.validateRemoveInclude(command, schemaObj);
       case "modifyInclude":
         return this.validators.validateModifyInclude(command, schemaObj);
+      case "modifySchemaNamespaces":
+        return this.validators.validateModifySchemaNamespaces(command, schemaObj);
       default:
         return {
           valid: false,

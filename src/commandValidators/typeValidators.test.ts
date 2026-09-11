@@ -70,6 +70,47 @@ describe("SimpleType Validators", () => {
       expect(result.error).toBe("Base type cannot be empty");
     });
 
+    test("should reject addSimpleType restriction without any facets", () => {
+      const command: AddSimpleTypeCommand = {
+        type: "addSimpleType",
+        payload: {
+          typeName: "NameType",
+          baseType: "xs:string",
+          restrictions: {},
+        },
+      };
+
+      const result = validateAddSimpleType(command, emptySchemaObj);
+      expectInvalid(result);
+      expect(result.error).toBe("Restriction simpleType body must include at least one facet");
+    });
+
+    test("should reject addSimpleType with missing body for a restriction body", () => {
+      const command = {
+        type: "addSimpleType",
+        payload: {
+          typeName: "NameType",
+        },
+      } as AddSimpleTypeCommand;
+
+      const result = validateAddSimpleType(command, emptySchemaObj);
+      expectInvalid(result);
+      expect(result.error).toBe("Simple type body is required");
+    });
+
+    test("should reject addSimpleType with missing body for a list body", () => {
+      const command = {
+        type: "addSimpleType",
+        payload: {
+          typeName: "TokenListType",
+        },
+      } as AddSimpleTypeCommand;
+
+      const result = validateAddSimpleType(command, emptySchemaObj);
+      expectInvalid(result);
+      expect(result.error).toBe("Simple type body is required");
+    });
+
     test("should reject addSimpleType with unrecognized baseType", () => {
       const command: AddSimpleTypeCommand = {
         type: "addSimpleType",
@@ -81,7 +122,7 @@ describe("SimpleType Validators", () => {
 
       const result = validateAddSimpleType(command, emptySchemaObj);
       expectInvalid(result);
-      expect(result.error).toBe("Base type 'xs:nonExistentType' is not a recognized XSD type");
+      expect(result.error).toBe("Base type: Invalid element type 'xs:nonExistentType': must be a built-in XSD type, a user-defined type in the schema, a type from a valid import with a matching namespace prefix, or a type from an included schema");
     });
 
     test("should reject addSimpleType when type name already exists in schema", () => {
@@ -122,6 +163,60 @@ describe("SimpleType Validators", () => {
 
       const result = validateAddSimpleType(command, schemaWithAgeType);
       expect(result.valid).toBe(true);
+    });
+
+    test("should accept addSimpleType list with valid item type", () => {
+      const command: AddSimpleTypeCommand = {
+        type: "addSimpleType",
+        payload: {
+          typeName: "TokenListType",
+          listItemType: "xs:token",
+        },
+      };
+
+      const result = validateAddSimpleType(command, emptySchemaObj);
+      expect(result.valid).toBe(true);
+    });
+
+    test("should reject addSimpleType list with missing item type", () => {
+      const command: AddSimpleTypeCommand = {
+        type: "addSimpleType",
+        payload: {
+          typeName: "TokenListType",
+          listItemType: "",
+        },
+      };
+
+      const result = validateAddSimpleType(command, emptySchemaObj);
+      expectInvalid(result);
+      expect(result.error).toBe("List item type cannot be empty");
+    });
+
+    test("should accept addSimpleType union with valid member types", () => {
+      const command: AddSimpleTypeCommand = {
+        type: "addSimpleType",
+        payload: {
+          typeName: "TextOrNumberType",
+          unionMemberTypes: ["xs:string", "xs:integer"],
+        },
+      };
+
+      const result = validateAddSimpleType(command, emptySchemaObj);
+      expect(result.valid).toBe(true);
+    });
+
+    test("should reject addSimpleType union with empty member type list", () => {
+      const command: AddSimpleTypeCommand = {
+        type: "addSimpleType",
+        payload: {
+          typeName: "TextOrNumberType",
+          unionMemberTypes: [],
+        },
+      };
+
+      const result = validateAddSimpleType(command, emptySchemaObj);
+      expectInvalid(result);
+      expect(result.error).toBe("Union member types cannot be empty");
     });
   });
 
@@ -206,6 +301,29 @@ describe("SimpleType Validators", () => {
       const result = validateModifySimpleType(command, schemaWithAgeType);
       expect(result.valid).toBe(true);
     });
+
+    test("should reject stale simpleType rename replay after a successful rename", () => {
+      const renamedSchema = unmarshal(
+        schema,
+        `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:simpleType name="AgeTypeRenamed">
+    <xs:restriction base="xs:int"/>
+  </xs:simpleType>
+</xs:schema>`
+      );
+      const command: ModifySimpleTypeCommand = {
+        type: "modifySimpleType",
+        payload: {
+          typeId: "/simpleType:AgeType",
+          typeName: "AgeTypeRenamed",
+        },
+      };
+
+      const result = validateModifySimpleType(command, renamedSchema);
+      expectInvalid(result);
+      expect(result.error).toBe("Simple type 'AgeType' not found in schema");
+    });
   });
 
   describe("Anonymous SimpleType Validators", () => {
@@ -267,7 +385,7 @@ describe("SimpleType Validators", () => {
         expect(result.error).toContain("already has an anonymous simpleType");
       });
 
-      test("should reject when element already has a type attribute", () => {
+      test("should accept replacing an element type attribute with an anonymous simpleType", () => {
         const schemaWithTypedElement = unmarshal(
           schema,
           `<?xml version="1.0" encoding="UTF-8"?>
@@ -281,8 +399,7 @@ describe("SimpleType Validators", () => {
         };
 
         const result = validateAddSimpleType(command, schemaWithTypedElement);
-        expectInvalid(result);
-        expect(result.error).toContain("already has a type attribute");
+        expect(result.valid).toBe(true);
       });
 
       test("should reject unrecognized baseType for anonymous simpleType", () => {
@@ -293,7 +410,7 @@ describe("SimpleType Validators", () => {
 
         const result = validateAddSimpleType(command, schemaWithElement);
         expectInvalid(result);
-        expect(result.error).toBe("Base type: Invalid element type 'xs:badType': must be a built-in XSD type, a user-defined type in the schema, or a type from a valid import with a matching namespace prefix");
+        expect(result.error).toBe("Base type: Invalid element type 'xs:badType': must be a built-in XSD type, a user-defined type in the schema, a type from a valid import with a matching namespace prefix, or a type from an included schema");
       });
     });
 
@@ -426,15 +543,14 @@ describe("Anonymous SimpleType in Attributes Validators", () => {
       expect(result.error).toContain("Parent not found");
     });
 
-    test("should reject when attribute already has a type attribute", () => {
+    test("should accept replacing an attribute type attribute with an anonymous simpleType", () => {
       const command: AddSimpleTypeCommand = {
         type: "addSimpleType",
         payload: { parentId: "/attribute:color", baseType: "xs:string" },
       };
 
       const result = validateAddSimpleType(command, schemaWithTypedAttribute);
-      expectInvalid(result);
-      expect(result.error).toContain("already has a type attribute");
+      expect(result.valid).toBe(true);
     });
 
     test("should reject when attribute already has an anonymous simpleType", () => {
@@ -634,7 +750,7 @@ describe("ComplexType Validators", () => {
       expect(result.error).toContain("already has an anonymous complexType");
     });
 
-    test("should reject anonymous addComplexType when element already has a type attribute", () => {
+    test("should accept replacing an element type attribute with an anonymous complexType", () => {
       const schemaWithTypedEl = unmarshal(
         schema,
         `<?xml version="1.0" encoding="UTF-8"?>
@@ -647,8 +763,7 @@ describe("ComplexType Validators", () => {
         payload: { parentId: "/element:person", contentModel: "sequence" },
       };
       const result = validateAddComplexType(command, schemaWithTypedEl);
-      expectInvalid(result);
-      expect(result.error).toContain("already has a type attribute");
+      expect(result.valid).toBe(true);
     });
   });
 
@@ -751,6 +866,29 @@ describe("ComplexType Validators", () => {
       expect(result.error).toBe("Complex type 'NonExistent' not found in schema");
     });
 
+    test("should reject stale complexType rename replay after a successful rename", () => {
+      const renamedSchema = unmarshal(
+        schema,
+        `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:complexType name="PersonTypeRenamed">
+    <xs:sequence/>
+  </xs:complexType>
+</xs:schema>`
+      );
+      const command: ModifyComplexTypeCommand = {
+        type: "modifyComplexType",
+        payload: {
+          typeId: "/complexType:PersonType",
+          typeName: "PersonTypeRenamed",
+        },
+      };
+
+      const result = validateModifyComplexType(command, renamedSchema);
+      expectInvalid(result);
+      expect(result.error).toBe("Complex type 'PersonType' not found in schema");
+    });
+
     test("should reject modifyComplexType with invalid new typeName", () => {
       const command: ModifyComplexTypeCommand = {
         type: "modifyComplexType",
@@ -767,6 +905,30 @@ describe("ComplexType Validators", () => {
       const result = validateModifyComplexType(command, schemaWithPersonType);
       expectInvalid(result);
       expect(result.error).toContain("Content model must be one of");
+    });
+
+    test("should accept modifyComplexType with restriction derivation kind", () => {
+      const command: ModifyComplexTypeCommand = {
+        type: "modifyComplexType",
+        payload: {
+          typeId: "/complexType:PersonType",
+          baseType: "BaseType",
+          derivationKind: "restriction",
+        },
+      };
+      const result = validateModifyComplexType(command, schemaWithPersonType);
+      expect(result.valid).toBe(true);
+    });
+
+    test("should reject modifyComplexType with invalid derivation kind", () => {
+      // eslint-disable-next-line no-restricted-syntax -- `derivationKind: "invalid"` is outside the union; cast is needed to test validator rejection
+      const command = {
+        type: "modifyComplexType",
+        payload: { typeId: "/complexType:PersonType", derivationKind: "invalid" },
+      } as unknown as ModifyComplexTypeCommand;
+      const result = validateModifyComplexType(command, schemaWithPersonType);
+      expectInvalid(result);
+      expect(result.error).toContain("Derivation kind must be one of");
     });
 
     test("should accept modifyComplexType for an existing anonymous complexType", () => {

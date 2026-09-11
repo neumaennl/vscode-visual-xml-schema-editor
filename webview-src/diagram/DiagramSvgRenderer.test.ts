@@ -7,6 +7,7 @@ import { Diagram } from "./Diagram";
 import { DiagramItem } from "./DiagramItem";
 import { DiagramItemType } from "./DiagramTypes";
 import { setupGetBBoxMock } from "../__tests__/svgTestUtils";
+import { generateSchemaId, SchemaNodeType } from "../../shared/idStrategy";
 
 describe("DiagramSvgRenderer", () => {
   let svg: SVGSVGElement;
@@ -247,6 +248,44 @@ describe("DiagramSvgRenderer", () => {
 
       const texts = svg.querySelectorAll('[data-item-id="elem"] text');
       expect(texts.length).toBeGreaterThan(0);
+    });
+
+    it("should render text for top-level named groups", () => {
+      const item = new DiagramItem(
+        generateSchemaId({ nodeType: SchemaNodeType.Group, name: "PersonGroup" }),
+        "PersonGroup",
+        DiagramItemType.group,
+        diagram
+      );
+      item.elementBox = { x: 10, y: 10, width: 120, height: 40 };
+      diagram.addRootElement(item);
+
+      renderer.render(diagram);
+
+      const texts = svg.querySelectorAll(`[data-item-id="${item.id}"] text`);
+      expect(texts.length).toBeGreaterThan(0);
+      expect(texts[0].textContent).toContain("PersonGroup");
+    });
+
+    it("should not render text for compositor groups", () => {
+      const item = new DiagramItem(
+        generateSchemaId({
+          nodeType: SchemaNodeType.Group,
+          name: "sequence",
+          parentId: "/complexType:PersonType",
+          position: 0,
+        }),
+        "sequence",
+        DiagramItemType.group,
+        diagram
+      );
+      item.elementBox = { x: 10, y: 10, width: 40, height: 20 };
+      diagram.addRootElement(item);
+
+      renderer.render(diagram);
+
+      const texts = svg.querySelectorAll(`[data-item-id="${item.id}"] text`);
+      expect(texts.length).toBe(0);
     });
   });
 });

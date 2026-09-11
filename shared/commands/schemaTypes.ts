@@ -35,6 +35,9 @@ export interface RestrictionFacets {
   fractionDigits?: number;
 }
 
+/** Supported derivation kinds for simpleType bodies. */
+export type SimpleTypeDerivationKind = "restriction" | "list" | "union";
+
 /**
  * Payload for adding a simple type definition.
  * When `parentId` refers to an element (not schema root), an anonymous simpleType
@@ -48,8 +51,21 @@ export interface AddSimpleTypePayload {
   parentId?: string;
   /** Name of the simple type. Required for top-level types; ignored for anonymous. */
   typeName?: string;
-  /** Base type for the restriction */
-  baseType: string;
+  /**
+   * Base type for restriction simpleTypes.
+   * Required when the payload uses a restriction body.
+   */
+  baseType?: string;
+  /**
+   * Item type for list simpleTypes.
+   * Required when the payload uses a list body.
+   */
+  listItemType?: string;
+  /**
+   * Member types for union simpleTypes.
+   * Required when the payload uses a union body.
+   */
+  unionMemberTypes?: string[];
   /** Restriction facets */
   restrictions?: RestrictionFacets;
   /** Optional documentation */
@@ -88,8 +104,17 @@ export interface ModifySimpleTypePayload {
   typeId: string;
   /** New name for the type (optional) */
   typeName?: string;
-  /** New base type (optional) */
+  /**
+   * Body definition for this simpleType.
+   * The validator and executor infer the body kind from the fields present.
+   * Restriction bodies use baseType/restrictions, list bodies use listItemType,
+   * and union bodies use unionMemberTypes.
+   */
   baseType?: string;
+  /** New list item type (optional) */
+  listItemType?: string;
+  /** New union member types (optional) */
+  unionMemberTypes?: string[];
   /** New restrictions (optional) */
   restrictions?: RestrictionFacets;
   /** New documentation (optional) */
@@ -110,6 +135,11 @@ export interface ModifySimpleTypeCommand extends BaseCommand<ModifySimpleTypePay
 export type ContentModel = "sequence" | "choice" | "all";
 
 /**
+ * Derivation mode for complex types that use a base type.
+ */
+export type ComplexTypeDerivationKind = "extension" | "restriction";
+
+/**
  * Payload for adding a complex type definition.
  * When `parentId` refers to an element (not schema root), an anonymous complexType
  * is added directly inside that element. In that case `typeName` is not needed.
@@ -128,6 +158,8 @@ export interface AddComplexTypePayload {
   abstract?: boolean;
   /** Base type for extension (optional) */
   baseType?: string;
+  /** Derivation mode used with `baseType` (defaults to extension when omitted). */
+  derivationKind?: ComplexTypeDerivationKind;
   /** Whether to allow mixed content */
   mixed?: boolean;
   /** Optional documentation */
@@ -172,6 +204,8 @@ export interface ModifyComplexTypePayload {
   abstract?: boolean;
   /** New base type (optional) */
   baseType?: string;
+  /** New derivation mode used with `baseType` (defaults to extension when omitted). */
+  derivationKind?: ComplexTypeDerivationKind;
   /** New mixed content flag (optional) */
   mixed?: boolean;
   /** New documentation (optional) */

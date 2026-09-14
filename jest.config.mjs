@@ -19,6 +19,7 @@ export default {
   ],
   moduleNameMapper: {
     "^shared/(.*)$": "<rootDir>/shared/$1",
+    "^(\\.{1,2}/.*)\\.js$": "$1",
   },
   reporters: [
     "default",
@@ -42,7 +43,7 @@ export default {
       modulePathIgnorePatterns: ["/out/"],
       preset: "ts-jest",
       transform: {
-        "^.+\\.ts$": [
+        "^.+\\.[tj]s$": [
           "ts-jest",
           {
             tsconfig: "tsconfig.webview-test.json",
@@ -51,7 +52,9 @@ export default {
       },
       moduleNameMapper: {
         "^shared/(.*)$": "<rootDir>/shared/$1",
+        "^(\\.{1,2}/.*)\\.js$": "$1",
       },
+      transformIgnorePatterns: ["/node_modules/(?!@neumaennl/xmlbind-ts/)"],
     },
     {
       displayName: "extension",
@@ -61,7 +64,7 @@ export default {
       modulePathIgnorePatterns: ["/out/"],
       preset: "ts-jest",
       transform: {
-        "^.+\\.ts$": [
+        "^.+\\.[tj]s$": [
           "ts-jest",
           {
             tsconfig: "tsconfig.extension-test.json",
@@ -71,7 +74,9 @@ export default {
       moduleNameMapper: {
         "^shared/(.*)$": "<rootDir>/shared/$1",
         "^vscode$": "<rootDir>/src/__mocks__/vscode.ts",
+        "^(\\.{1,2}/.*)\\.js$": "$1",
       },
+      transformIgnorePatterns: ["/node_modules/(?!@neumaennl/xmlbind-ts/)"],
     },
     {
       displayName: "shared",
@@ -81,7 +86,7 @@ export default {
       modulePathIgnorePatterns: ["/out/"],
       preset: "ts-jest",
       transform: {
-        "^.+\\.ts$": [
+        "^.+\\.[tj]s$": [
           "ts-jest",
           {
             tsconfig: "tsconfig.shared-test.json",
@@ -91,6 +96,7 @@ export default {
       moduleNameMapper: {
         "^vscode$": "<rootDir>/src/__mocks__/vscode.ts",
       },
+      transformIgnorePatterns: ["/node_modules/(?!@neumaennl/xmlbind-ts/)"],
     },
   ],
 };

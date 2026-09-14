@@ -76,6 +76,14 @@ export interface ModifyElementPayload {
   maxOccurs?: number | "unbounded";
   /** New documentation (optional) */
   documentation?: string;
+  /** Whether the element is nillable (optional) */
+  nillable?: boolean;
+  /** Whether the element is abstract; only applicable to top-level elements (optional) */
+  abstract?: boolean;
+  /** New default value for the element (optional; empty string clears it) */
+  default_?: string;
+  /** New fixed value for the element (optional; empty string clears it) */
+  fixed?: string;
 }
 
 /**

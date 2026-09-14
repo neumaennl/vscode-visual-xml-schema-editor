@@ -1,18 +1,18 @@
 import { XmlRoot, XmlElement, XmlAttribute } from '@neumaennl/xmlbind-ts';
-import { annotated } from './annotated';
-import { groupRef } from './groupRef';
-import { all } from './all';
-import { explicitGroup } from './explicitGroup';
-import { localSimpleType } from './localSimpleType';
-import { facet } from './facet';
-import { totalDigitsType } from './totalDigitsType';
-import { numFacet } from './numFacet';
-import { noFixedFacet } from './noFixedFacet';
-import { whiteSpaceType } from './whiteSpaceType';
-import { patternType } from './patternType';
-import { attribute } from './attribute';
-import { attributeGroupRef } from './attributeGroupRef';
-import { wildcard } from './wildcard';
+import { annotated } from './annotated.js';
+import { groupRef } from './groupRef.js';
+import { all } from './all.js';
+import { explicitGroup } from './explicitGroup.js';
+import { localSimpleType } from './localSimpleType.js';
+import { facet } from './facet.js';
+import { totalDigitsType } from './totalDigitsType.js';
+import { numFacet } from './numFacet.js';
+import { noFixedFacet } from './noFixedFacet.js';
+import { whiteSpaceType } from './whiteSpaceType.js';
+import { patternType } from './patternType.js';
+import { attribute } from './attribute.js';
+import { attributeGroupRef } from './attributeGroupRef.js';
+import { wildcard } from './wildcard.js';
 @XmlRoot('restrictionType', { namespace: 'http://www.w3.org/2001/XMLSchema', prefixes: { 'http://www.w3.org/2001/XMLSchema': 'xs', 'http://www.w3.org/2001/XMLSchema-hasFacetAndProperty': 'hfp', 'http://www.w3.org/XML/1998/namespace': 'imp1' } })
 export class restrictionType extends annotated {
   @XmlAttribute('base')

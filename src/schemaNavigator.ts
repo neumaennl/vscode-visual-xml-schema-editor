@@ -9,7 +9,11 @@ import {
   localElement,
   topLevelComplexType,
   localComplexType,
+  namedGroup,
   explicitGroup,
+  simpleExplicitGroup,
+  all as allGroup,
+  allType,
   topLevelAttribute,
   attribute,
 } from "../shared/types";
@@ -41,7 +45,7 @@ export interface NodeLocation {
  * @example
  * ```typescript
  * // Find the schema root (for adding top-level elements)
- * locateNodeById(schema, "schema") // Returns { found: true, parent: schema, parentType: "schema" }
+ * locateNodeById(schema, "/schema") // Returns { found: true, parent: schema, parentType: "schema" }
  *
  * // Find a sequence within a complex type
  * locateNodeById(schema, "/complexType:PersonType/sequence[0]")
@@ -52,7 +56,7 @@ export function locateNodeById(
   schemaObj: schema,
   nodeId: string
 ): NodeLocation {
-  // Special case: "schema" refers to the schema root
+  // Special case: the canonical schema root ID refers to the schema root
   if (isSchemaRoot(nodeId)) {
     return {
       found: true,
@@ -186,6 +190,8 @@ function navigateToChild(
       name,
       position
     );
+  } else if (parentType === "namedGroup") {
+    return navigateFromNamedGroup(parent as namedGroup, nodeType, name, position);
   } else if (
     parentType === "topLevelAttribute" ||
     parentType === "attribute"
@@ -290,43 +296,55 @@ function navigateFromComplexType(
 ): { found: boolean; node?: unknown; nodeType?: string } {
   // Complex types can have sequence, choice, or all as children
   if (nodeType === SchemaNodeType.Group && name === "sequence") {
-    if ((complexType).sequence) {
+    const sequence = resolveComplexTypeGroup(complexType, "sequence");
+    if (sequence) {
       return {
         found: true,
-        node: (complexType).sequence,
+        node: sequence,
         nodeType: "sequence",
       };
     }
   } else if (nodeType === SchemaNodeType.Group && name === "choice") {
-    if ((complexType).choice) {
+    const choice = resolveComplexTypeGroup(complexType, "choice");
+    if (choice) {
       return {
         found: true,
-        node: (complexType).choice,
+        node: choice,
         nodeType: "choice",
       };
     }
   } else if (nodeType === SchemaNodeType.Group && name === "all") {
-    if ((complexType).all) {
-      return { found: true, node: (complexType).all, nodeType: "all" };
+    const all = resolveComplexTypeGroup(complexType, "all");
+    if (all) {
+      return { found: true, node: all, nodeType: "all" };
     }
   }
 
   // Handle direct navigation to sequence/choice/all without explicit "group:" prefix
   if (!name && !position) {
-    if (nodeType === "sequence" as SchemaNodeType && (complexType).sequence) {
-      return {
-        found: true,
-        node: (complexType).sequence,
-        nodeType: "sequence",
-      };
-    } else if (nodeType === "choice" as SchemaNodeType && (complexType).choice) {
-      return {
-        found: true,
-        node: (complexType).choice,
-        nodeType: "choice",
-      };
-    } else if (nodeType === "all" as SchemaNodeType && (complexType).all) {
-      return { found: true, node: (complexType).all, nodeType: "all" };
+    if (nodeType === "sequence" as SchemaNodeType) {
+      const sequence = resolveComplexTypeGroup(complexType, "sequence");
+      if (sequence) {
+        return {
+          found: true,
+          node: sequence,
+          nodeType: "sequence",
+        };
+      }
+    } else if (nodeType === "choice" as SchemaNodeType) {
+      const choice = resolveComplexTypeGroup(complexType, "choice");
+      if (choice) {
+        return {
+          found: true,
+          node: choice,
+          nodeType: "choice",
+        };
+      }
+    } else if (nodeType === "all" as SchemaNodeType) {
+      const all = resolveComplexTypeGroup(complexType, "all");
+      if (all) {
+        return { found: true, node: all, nodeType: "all" };
+      }
     }
   } else if (nodeType === SchemaNodeType.Attribute) {
     const attrs = toArray(complexType.attribute);
@@ -337,6 +355,20 @@ function navigateFromComplexType(
   }
 
   return { found: false };
+}
+
+function resolveComplexTypeGroup(
+  complexType: topLevelComplexType | localComplexType,
+  groupKind: "sequence" | "choice" | "all"
+): explicitGroup | allGroup | undefined {
+  const direct = complexType[groupKind];
+  if (direct) {
+    return direct;
+  }
+
+  const extension = complexType.complexContent?.extension;
+  const restriction = complexType.complexContent?.restriction;
+  return extension?.[groupKind] ?? restriction?.[groupKind];
 }
 
 /**
@@ -357,20 +389,58 @@ function navigateFromAttribute(
   return { found: false };
 }
 
+function navigateFromNamedGroup(
+  group: namedGroup,
+  nodeType: SchemaNodeType,
+  name?: string,
+  _position?: number
+): { found: boolean; node?: unknown; nodeType?: string } {
+  if (nodeType === SchemaNodeType.Group && name === "sequence" && group.sequence) {
+    return { found: true, node: group.sequence, nodeType: "sequence" };
+  }
+  if (nodeType === SchemaNodeType.Group && name === "choice" && group.choice) {
+    return { found: true, node: group.choice, nodeType: "choice" };
+  }
+  if (nodeType === SchemaNodeType.Group && name === "all" && group.all) {
+    return { found: true, node: group.all, nodeType: "all" };
+  }
+
+  return { found: false };
+}
+
 /**
  * Navigate from a group (sequence/choice/all) to a child element.
  */
 function navigateFromGroup(
-  group: explicitGroup,
+  group: explicitGroup | simpleExplicitGroup | allGroup | allType,
   nodeType: SchemaNodeType,
   name?: string,
   position?: number
 ): { found: boolean; node?: unknown; nodeType?: string } {
   if (nodeType === SchemaNodeType.Element) {
-    const elements = toArray(group.element);
+    const elements = toArray(
+      group.element as
+        | Array<{ name?: string; ref?: string }>
+        | { name?: string; ref?: string }
+        | undefined
+    );
     const element = findByNameOrPosition(elements, name, position);
     if (element) {
       return { found: true, node: element, nodeType: "localElement" };
+    }
+  }
+
+  if (nodeType === SchemaNodeType.Group && name === "choice") {
+    const choice = toArray((group as { choice?: explicitGroup[] }).choice)[position ?? 0];
+    if (choice) {
+      return { found: true, node: choice, nodeType: "choice" };
+    }
+  }
+
+  if (nodeType === SchemaNodeType.Group && name === "sequence") {
+    const sequence = toArray((group as { sequence?: explicitGroup[] }).sequence)[position ?? 0];
+    if (sequence) {
+      return { found: true, node: sequence, nodeType: "sequence" };
     }
   }
 

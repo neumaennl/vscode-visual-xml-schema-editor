@@ -56,6 +56,7 @@ import {
   AddIncludeCommand,
   RemoveIncludeCommand,
   ModifyIncludeCommand,
+  ModifySchemaNamespacesCommand,
 } from "./module";
 
 /**
@@ -92,4 +93,5 @@ export type SchemaCommand =
   | ModifyImportCommand
   | AddIncludeCommand
   | RemoveIncludeCommand
-  | ModifyIncludeCommand;
+  | ModifyIncludeCommand
+  | ModifySchemaNamespacesCommand;

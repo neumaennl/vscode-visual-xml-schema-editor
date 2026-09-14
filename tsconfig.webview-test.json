@@ -1,6 +1,7 @@
 {
   "extends": "./tsconfig.webview.json",
   "compilerOptions": {
+    "allowJs": true,
     "types": [
       "jest",
       "node"

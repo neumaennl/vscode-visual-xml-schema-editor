@@ -1,11 +1,11 @@
 import { XmlRoot, XmlElement, XmlAttribute, XmlAnyAttribute } from '@neumaennl/xmlbind-ts';
-import { annotationType } from './annotationType';
-import { groupRef } from './groupRef';
-import { all } from './all';
-import { explicitGroup } from './explicitGroup';
-import { attribute } from './attribute';
-import { attributeGroupRef } from './attributeGroupRef';
-import { wildcard } from './wildcard';
+import { annotationType } from './annotationType.js';
+import { groupRef } from './groupRef.js';
+import { all } from './all.js';
+import { explicitGroup } from './explicitGroup.js';
+import { attribute } from './attribute.js';
+import { attributeGroupRef } from './attributeGroupRef.js';
+import { wildcard } from './wildcard.js';
 /**
  * This choice is added simply to
  * make this a valid restriction per the REC

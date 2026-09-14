@@ -1,11 +1,11 @@
 import { XmlRoot, XmlElement, XmlAttribute } from '@neumaennl/xmlbind-ts';
-import type { allNNI, blockSet, derivationSet } from './types';
-import { formChoice } from './enums';
-import { annotated } from './annotated';
-import { localSimpleType } from './localSimpleType';
-import { localComplexType } from './localComplexType';
-import { keybase } from './keybase';
-import { keyrefType } from './keyrefType';
+import type { allNNI, blockSet, derivationSet } from './types.js';
+import { formChoice } from './enums.js';
+import { annotated } from './annotated.js';
+import { localSimpleType } from './localSimpleType.js';
+import { localComplexType } from './localComplexType.js';
+import { keybase } from './keybase.js';
+import { keyrefType } from './keyrefType.js';
 /**
  * The element element can be used either
  * at the top level to define an element-type binding globally,

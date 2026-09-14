@@ -1,12 +1,12 @@
 import { XmlElement, XmlAttribute } from '@neumaennl/xmlbind-ts';
-import { annotated } from './annotated';
-import { localSimpleType } from './localSimpleType';
-import { facet } from './facet';
-import { totalDigitsType } from './totalDigitsType';
-import { numFacet } from './numFacet';
-import { noFixedFacet } from './noFixedFacet';
-import { whiteSpaceType } from './whiteSpaceType';
-import { patternType } from './patternType';
+import { annotated } from './annotated.js';
+import { localSimpleType } from './localSimpleType.js';
+import { facet } from './facet.js';
+import { totalDigitsType } from './totalDigitsType.js';
+import { numFacet } from './numFacet.js';
+import { noFixedFacet } from './noFixedFacet.js';
+import { whiteSpaceType } from './whiteSpaceType.js';
+import { patternType } from './patternType.js';
 /**
  * base attribute and simpleType child are mutually
  * exclusive, but one or other is required

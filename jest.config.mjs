@@ -19,6 +19,7 @@ export default {
   ],
   moduleNameMapper: {
     "^shared/(.*)$": "<rootDir>/shared/$1",
+    "^(\\.{1,2}/.*)\\.js$": "$1",
   },
   reporters: [
     "default",
@@ -51,6 +52,7 @@ export default {
       },
       moduleNameMapper: {
         "^shared/(.*)$": "<rootDir>/shared/$1",
+        "^(\\.{1,2}/.*)\\.js$": "$1",
       },
       transformIgnorePatterns: ["/node_modules/(?!@neumaennl/xmlbind-ts/)"],
     },
@@ -72,6 +74,7 @@ export default {
       moduleNameMapper: {
         "^shared/(.*)$": "<rootDir>/shared/$1",
         "^vscode$": "<rootDir>/src/__mocks__/vscode.ts",
+        "^(\\.{1,2}/.*)\\.js$": "$1",
       },
       transformIgnorePatterns: ["/node_modules/(?!@neumaennl/xmlbind-ts/)"],
     },

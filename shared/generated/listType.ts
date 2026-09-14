@@ -1,6 +1,6 @@
 import { XmlElement, XmlAttribute } from '@neumaennl/xmlbind-ts';
-import { annotated } from './annotated';
-import { localSimpleType } from './localSimpleType';
+import { annotated } from './annotated.js';
+import { localSimpleType } from './localSimpleType.js';
 /**
  * itemType attribute and simpleType child are mutually
  * exclusive, but one or other is required

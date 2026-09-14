@@ -1,10 +1,10 @@
 import { XmlRoot, XmlElement, XmlAttribute, XmlAnyAttribute } from '@neumaennl/xmlbind-ts';
-import type { blockSet, derivationSet } from './types';
-import { annotationType } from './annotationType';
-import { localSimpleType } from './localSimpleType';
-import { localComplexType } from './localComplexType';
-import { keybase } from './keybase';
-import { keyrefType } from './keyrefType';
+import type { blockSet, derivationSet } from './types.js';
+import { annotationType } from './annotationType.js';
+import { localSimpleType } from './localSimpleType.js';
+import { localComplexType } from './localComplexType.js';
+import { keybase } from './keybase.js';
+import { keyrefType } from './keyrefType.js';
 @XmlRoot('topLevelElement', { namespace: 'http://www.w3.org/2001/XMLSchema', prefixes: { 'http://www.w3.org/2001/XMLSchema': 'xs', 'http://www.w3.org/2001/XMLSchema-hasFacetAndProperty': 'hfp', 'http://www.w3.org/XML/1998/namespace': 'imp1' } })
 export class topLevelElement {
   @XmlAnyAttribute()

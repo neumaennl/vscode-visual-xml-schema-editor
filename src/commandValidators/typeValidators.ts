@@ -10,6 +10,7 @@ import {
   AddComplexTypeCommand,
   RemoveComplexTypeCommand,
   ModifyComplexTypeCommand,
+  RestrictionFacets,
 } from "../../shared/types";
 import {
   ValidationResult,
@@ -20,6 +21,113 @@ import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy";
 import { toArray, isSchemaRoot } from "../../shared/schemaUtils";
 import { locateNodeById } from "../schemaNavigator";
 
+function hasRestrictionFacetValues(restrictions: RestrictionFacets | undefined): boolean {
+  if (!restrictions) {
+    return false;
+  }
+  return Object.values(restrictions).some((value) => {
+    if (value === undefined || value === null) {
+      return false;
+    }
+    if (Array.isArray(value)) {
+      return value.length > 0;
+    }
+    return true;
+  });
+}
+
+function getRestrictionFacetError(restrictions: RestrictionFacets | undefined): ValidationResult | null {
+  if (restrictions === undefined) {
+    return null;
+  }
+  if (!hasRestrictionFacetValues(restrictions)) {
+    return { valid: false, error: "Restriction simpleType body must include at least one facet" };
+  }
+  return null;
+}
+
+function validateSimpleTypeBody(
+  payload: {
+    baseType?: string;
+    listItemType?: string;
+    unionMemberTypes?: string[];
+    restrictions?: RestrictionFacets;
+  },
+  schemaObj: schema,
+  existingBodyKind?: "restriction" | "list" | "union"
+): ValidationResult {
+  const hasRestrictionBody = payload.baseType !== undefined || payload.restrictions !== undefined;
+  const hasListBody = payload.listItemType !== undefined;
+  const hasUnionBody = payload.unionMemberTypes !== undefined;
+  const bodyKinds = [hasRestrictionBody ? "restriction" : null, hasListBody ? "list" : null, hasUnionBody ? "union" : null].filter(Boolean) as Array<"restriction" | "list" | "union">;
+
+  if (bodyKinds.length === 0) {
+    return existingBodyKind
+      ? { valid: true }
+      : { valid: false, error: "Simple type body is required" };
+  }
+
+  if (bodyKinds.length > 1) {
+    return { valid: false, error: "Simple type body must be specified as exactly one of restriction, list, or union" };
+  }
+
+  const derivationKind = bodyKinds[0];
+  if (derivationKind === "restriction") {
+    const baseType = (payload.baseType ?? "").trim();
+    if (!baseType) {
+      return { valid: false, error: "Base type cannot be empty" };
+    }
+    const baseTypeResult = validateElementType(baseType, schemaObj);
+    if (!baseTypeResult.valid) {
+      return {
+        valid: false,
+        error: baseTypeResult.error ? `Base type: ${baseTypeResult.error}` : `Base type '${baseType}' is not a recognized XSD type`,
+      };
+    }
+    const facetError = getRestrictionFacetError(payload.restrictions);
+    if (facetError) {
+      return facetError;
+    }
+    return { valid: true };
+  }
+
+  if (derivationKind === "list") {
+    const listItemType = payload.listItemType?.trim() ?? "";
+    if (!listItemType) {
+      return { valid: false, error: "List item type cannot be empty" };
+    }
+    const listTypeResult = validateElementType(listItemType, schemaObj);
+    if (!listTypeResult.valid) {
+      return {
+        valid: false,
+        error: listTypeResult.error ? `List item type: ${listTypeResult.error}` : `List item type '${listItemType}' is not a recognized XSD type`,
+      };
+    }
+    return { valid: true };
+  }
+
+  if (!payload.unionMemberTypes || payload.unionMemberTypes.length === 0) {
+    return { valid: false, error: "Union member types cannot be empty" };
+  }
+
+  for (const memberType of payload.unionMemberTypes) {
+    const trimmed = memberType.trim();
+    if (!trimmed) {
+      return { valid: false, error: "Union member types cannot contain empty entries" };
+    }
+
+    const typeResult = validateElementType(trimmed, schemaObj);
+    if (!typeResult.valid) {
+      return {
+        valid: false,
+        error: `Union member type '${trimmed}' is not a recognized type`,
+      };
+    }
+  }
+
+  return { valid: true };
+}
+
 /**
  * Valid content models for ComplexType elements.
  * Only compositor models are supported in Phase 1 (sequence, choice, all).
@@ -29,6 +137,12 @@ export const VALID_COMPLEX_TYPE_CONTENT_MODELS = [
   "sequence",
   "choice",
   "all",
+] as const;
+
+/** Valid derivation kinds for complex types that use a base type. */
+export const VALID_COMPLEX_TYPE_DERIVATION_KINDS = [
+  "extension",
+  "restriction",
 ] as const;
 
 /** Container types that may hold an anonymous simpleType inline. */
@@ -92,13 +206,28 @@ function validateContentModel(
   return null;
 }
 
+function validateDerivationKind(
+  derivationKind: string | undefined
+): ValidationResult | null {
+  if (derivationKind === undefined) {
+    return null;
+  }
+  if (!VALID_COMPLEX_TYPE_DERIVATION_KINDS.includes(derivationKind as typeof VALID_COMPLEX_TYPE_DERIVATION_KINDS[number])) {
+    return {
+      valid: false,
+      error: `Derivation kind must be one of: ${VALID_COMPLEX_TYPE_DERIVATION_KINDS.join(", ")}`,
+    };
+  }
+  return null;
+}
+
 // ===== SimpleType Command Validation =====
 
 export function validateAddSimpleType(
   command: AddSimpleTypeCommand,
   schemaObj: schema
 ): ValidationResult {
-  const { parentId, typeName, baseType } = command.payload;
+  const { parentId, typeName } = command.payload;
 
   if (!isSchemaRoot(parentId)) {
     // Anonymous simpleType inside an element or attribute — isSchemaRoot guarantees parentId is a non-empty string here
@@ -112,29 +241,19 @@ export function validateAddSimpleType(
         error: `Parent of type '${location.parentType}' cannot contain a simpleType`,
       };
     }
-    // parentType is confirmed to be a valid inline simpleType container by the check above
-    const holder = location.parent as { type_?: string; simpleType?: unknown };
-    if (holder.type_) {
+    const holder = location.parent as { ref?: string; type_?: string; simpleType?: unknown };
+    if (holder.ref) {
       return {
         valid: false,
-        error: `'${parentId}' already has a type attribute ('${holder.type_}'); cannot add an inline simpleType`,
+        error: `'${parentId}' has a ref attribute and cannot carry an inline simpleType`,
       };
     }
     if (holder.simpleType) {
       return { valid: false, error: `'${parentId}' already has an anonymous simpleType` };
     }
-    if (!baseType.trim()) {
-      return { valid: false, error: "Base type cannot be empty" };
-    }
-    const baseTypeResult = validateElementType(baseType, schemaObj);
-    if (!baseTypeResult.valid) {
-      return {
-        valid: false,
-        error:
-          baseTypeResult.error
-            ? `Base type: ${baseTypeResult.error}`
-            : `Base type '${baseType}' is not a recognized XSD type`,
-      };
+    const bodyValidation = validateSimpleTypeBody(command.payload, schemaObj);
+    if (bodyValidation) {
+      return bodyValidation;
     }
     return { valid: true };
   }
@@ -143,15 +262,13 @@ export function validateAddSimpleType(
   if (!isValidXmlName(typeName ?? "")) {
     return { valid: false, error: "Type name must be a valid XML name" };
   }
-  if (!baseType.trim()) {
-    return { valid: false, error: "Base type cannot be empty" };
-  }
+
   if (toArray(schemaObj.simpleType).some(st => st.name === typeName)) {
     return { valid: false, error: `Simple type '${typeName}' already exists in schema` };
   }
-  const baseTypeResult = validateElementType(baseType, schemaObj);
-  if (!baseTypeResult.valid) {
-    return { valid: false, error: `Base type '${baseType}' is not a recognized XSD type` };
+  const bodyValidation = validateSimpleTypeBody(command.payload, schemaObj);
+  if (bodyValidation) {
+    return bodyValidation;
   }
   return { valid: true };
 }
@@ -196,6 +313,18 @@ export function validateModifySimpleType(
     const result = validateAnonymousTypeParent(command.payload.typeId, parsed.parentId, schemaObj, "simpleType");
     if (!result.success) return result.error;
     const location = result.location;
+    const existingSimpleType = (location.parent as { simpleType?: { restriction?: unknown; list?: unknown; union?: unknown } }).simpleType;
+    if (!existingSimpleType) {
+      return { valid: false, error: `No anonymous simpleType found in parent: ${parsed.parentId}` };
+    }
+    const bodyValidation = validateSimpleTypeBody(
+      command.payload,
+      schemaObj,
+      existingSimpleType.restriction ? "restriction" : existingSimpleType.list ? "list" : existingSimpleType.union ? "union" : undefined
+    );
+    if (bodyValidation) {
+      return bodyValidation;
+    }
     if (command.payload.restrictions !== undefined && command.payload.baseType === undefined) {
       const anonSt = (location.parent as { simpleType?: { restriction?: unknown } }).simpleType;
       if (anonSt && !(anonSt).restriction) {
@@ -211,9 +340,18 @@ export function validateModifySimpleType(
     return { valid: true };
   }
 
-  // Top-level named simpleType: validate it exists in the schema
-  if (!toArray(schemaObj.simpleType).some(st => st.name === parsed.name)) {
+  const existingSimpleType = toArray(schemaObj.simpleType).find(st => st.name === parsed.name);
+  if (!existingSimpleType) {
     return { valid: false, error: `Simple type '${parsed.name}' not found in schema` };
+  }
+
+  const bodyValidation = validateSimpleTypeBody(
+    command.payload,
+    schemaObj,
+    existingSimpleType.restriction ? "restriction" : existingSimpleType.list ? "list" : existingSimpleType.union ? "union" : undefined
+  );
+  if (bodyValidation) {
+    return bodyValidation;
   }
   if (command.payload.restrictions !== undefined && command.payload.baseType === undefined) {
     const simpleType = toArray(schemaObj.simpleType).find(st => st.name === parsed.name);
@@ -230,7 +368,7 @@ export function validateAddComplexType(
   command: AddComplexTypeCommand,
   schemaObj: schema
 ): ValidationResult {
-  const { parentId, typeName, contentModel } = command.payload;
+  const { parentId, typeName, contentModel, derivationKind } = command.payload;
 
   if (!isSchemaRoot(parentId)) {
     // Anonymous complexType inside an element — isSchemaRoot guarantees parentId is a non-empty string here
@@ -244,11 +382,15 @@ export function validateAddComplexType(
         error: `Parent of type '${location.parentType}' cannot contain a complexType`,
       };
     }
-    const holder = location.parent as { type_?: string; complexType?: unknown };
-    if (holder.type_) {
+    const holder = location.parent as { ref?: string; type_?: string; complexType?: unknown };
+    // In XSD, nodes with a ref attribute are references to existing declarations rather
+    // than local declarations of their own, so they cannot define an inline type here.
+    // By contrast, nodes with a type_ attribute are still local declarations and may be
+    // converted from an explicit type reference to an inline anonymous type.
+    if (holder.ref) {
       return {
         valid: false,
-        error: `'${parentId}' already has a type attribute ('${holder.type_}'); cannot add an inline complexType`,
+        error: `'${parentId}' has a ref attribute and cannot carry an inline complexType`,
       };
     }
     if (holder.complexType) {
@@ -256,6 +398,8 @@ export function validateAddComplexType(
     }
     const contentModelError = validateContentModel(contentModel, VALID_COMPLEX_TYPE_CONTENT_MODELS);
     if (contentModelError) return contentModelError;
+    const derivationKindError = validateDerivationKind(derivationKind);
+    if (derivationKindError) return derivationKindError;
     return { valid: true };
   }
 
@@ -265,6 +409,8 @@ export function validateAddComplexType(
   }
   const contentModelError = validateContentModel(contentModel, VALID_COMPLEX_TYPE_CONTENT_MODELS);
   if (contentModelError) return contentModelError;
+  const derivationKindError = validateDerivationKind(derivationKind);
+  if (derivationKindError) return derivationKindError;
   if (toArray(schemaObj.complexType).some((ct) => ct.name === typeName)) {
     return {
       valid: false,
@@ -318,6 +464,8 @@ export function validateModifyComplexType(
       const contentModelError = validateContentModel(command.payload.contentModel, VALID_COMPLEX_TYPE_CONTENT_MODELS);
       if (contentModelError) return contentModelError;
     }
+    const derivationKindError = validateDerivationKind(command.payload.derivationKind);
+    if (derivationKindError) return derivationKindError;
     return { valid: true };
   }
 
@@ -328,6 +476,8 @@ export function validateModifyComplexType(
     const contentModelError = validateContentModel(command.payload.contentModel, VALID_COMPLEX_TYPE_CONTENT_MODELS);
     if (contentModelError) return contentModelError;
   }
+  const derivationKindError = validateDerivationKind(command.payload.derivationKind);
+  if (derivationKindError) return derivationKindError;
   if (!toArray(schemaObj.complexType).some((ct) => ct.name === parsed.name)) {
     return { valid: false, error: `Complex type '${parsed.name}' not found in schema` };
   }

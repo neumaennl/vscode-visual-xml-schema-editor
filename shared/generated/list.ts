@@ -1,5 +1,5 @@
 import { XmlRoot } from '@neumaennl/xmlbind-ts';
-import { listType } from './listType';
+import { listType } from './listType.js';
 /**
  * itemType attribute and simpleType child are mutually
  * exclusive, but one or other is required

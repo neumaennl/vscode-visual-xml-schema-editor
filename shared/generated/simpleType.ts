@@ -1,9 +1,9 @@
 import { XmlRoot, XmlElement, XmlAttribute } from '@neumaennl/xmlbind-ts';
-import type { simpleDerivationSet } from './types';
-import { annotated } from './annotated';
-import { restrictionType } from './restrictionType';
-import { listType } from './listType';
-import { unionType } from './unionType';
+import type { simpleDerivationSet } from './types.js';
+import { annotated } from './annotated.js';
+import { restrictionType } from './restrictionType.js';
+import { listType } from './listType.js';
+import { unionType } from './unionType.js';
 /**
  * Can be restricted to required or forbidden
  */

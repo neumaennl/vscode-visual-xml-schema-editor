@@ -1,46 +1,40 @@
 /**
  * Unit tests for rewritePrefixInSchema.
  *
- * These tests call rewritePrefixInSchema directly to verify that every
- * QName-valued field in the schema tree is rewritten correctly.  Integration
- * coverage (rewriting triggered via executeModifyImport) lives in
- * schemaExecutors.test.ts.
+ * These tests call rewritePrefixInSchema directly to verify that each QName-valued
+ * field is rewritten in isolation. Integration coverage (rewriting triggered via
+ * executeModifyImport) lives in schemaExecutors.test.ts.
  */
 
 import { unmarshal } from "@neumaennl/xmlbind-ts";
 import {
-  schema,
-  topLevelComplexType,
-  localComplexType,
-  topLevelSimpleType,
-  localSimpleType,
-  topLevelAttribute,
-  topLevelElement,
-  namedGroup,
-  namedAttributeGroup,
-  localElement,
-  explicitGroup,
-  simpleExplicitGroup,
-  extensionType,
+  attribute,
+  attributeGroupRef,
+  complexContentType,
   complexRestrictionType,
+  explicitGroup,
+  extensionType,
+  groupRef,
+  keyrefType,
+  listType,
+  localComplexType,
+  localElement,
+  localSimpleType,
+  namedAttributeGroup,
+  namedGroup,
+  restrictionType,
+  schema,
+  simpleContentType,
   simpleExtensionType,
   simpleRestrictionType,
-  complexContentType,
-  simpleContentType,
-  restrictionType,
-  listType,
+  topLevelAttribute,
+  topLevelComplexType,
+  topLevelElement,
+  topLevelSimpleType,
   unionType,
-  groupRef,
-  attributeGroupRef,
-  attribute,
-  keyrefType,
 } from "../../shared/types";
-import { rewritePrefixInSchema, isPrefixReferencedInSchema, isAnyPrefixReferencedInSchema } from "./schemaQNameRewriter";
 import { toArray } from "../../shared/schemaUtils";
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
+import { rewritePrefixInSchema } from "./schemaQNameRewriter";
 
 function emptySchema(): schema {
   return unmarshal(
@@ -50,808 +44,467 @@ function emptySchema(): schema {
   );
 }
 
-// ---------------------------------------------------------------------------
-// No-op cases
-// ---------------------------------------------------------------------------
+describe("rewritePrefixInSchema", () => {
+  it("does nothing when the old prefix matches the new prefix", () => {
+    const schemaObj = emptySchema();
+    const element = new localElement();
+    element.type_ = "ext:FooType";
+    schemaObj.element = [element as never];
 
-describe("rewritePrefixInSchema — no-op cases", () => {
-  it("should do nothing when oldPrefix equals newPrefix", () => {
-    const s = emptySchema();
-    const el = new localElement();
-    el.type_ = "ext:Foo";
-    s.element = [el as never];
+    rewritePrefixInSchema("ext", "ext", schemaObj);
 
-    rewritePrefixInSchema("ext", "ext", s);
-
-    expect(toArray(s.element)[0].type_).toBe("ext:Foo");
+    expect(toArray(schemaObj.element)[0].type_).toBe("ext:FooType");
   });
 
-  it("should do nothing when schema has no content", () => {
-    const s = emptySchema();
-    // Must not throw on an empty schema
-    expect(() => rewritePrefixInSchema("old", "new", s)).not.toThrow();
+  it("does not throw on an empty schema", () => {
+    expect(() => rewritePrefixInSchema("old", "new", emptySchema())).not.toThrow();
   });
-});
 
-// ---------------------------------------------------------------------------
-// Top-level elements
-// ---------------------------------------------------------------------------
-
-describe("rewritePrefixInSchema — top-level elements", () => {
-  it("should rewrite @type on a top-level element", () => {
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+  it("rewrites top-level element @type", () => {
+    const schemaObj = unmarshal(
+      schema,
+      `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ext="http://example.com/ext">
   <xs:element name="foo" type="ext:FooType"/>
-</xs:schema>`;
-    const s = unmarshal(schema, xml);
+</xs:schema>`
+    );
 
-    rewritePrefixInSchema("ext", "p", s);
+    rewritePrefixInSchema("ext", "p", schemaObj);
 
-    expect(toArray(s.element)[0].type_).toBe("p:FooType");
+    expect(toArray(schemaObj.element)[0].type_).toBe("p:FooType");
   });
 
-  it("should rewrite @substitutionGroup on a top-level element", () => {
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+  it("rewrites top-level element @substitutionGroup", () => {
+    const schemaObj = unmarshal(
+      schema,
+      `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ext="http://example.com/ext">
   <xs:element name="foo" substitutionGroup="ext:Head"/>
-</xs:schema>`;
-    const s = unmarshal(schema, xml);
+</xs:schema>`
+    );
 
-    rewritePrefixInSchema("ext", "p", s);
+    rewritePrefixInSchema("ext", "p", schemaObj);
 
-    expect(toArray(s.element)[0].substitutionGroup).toBe("p:Head");
+    expect(toArray(schemaObj.element)[0].substitutionGroup).toBe("p:Head");
   });
 
-  it("should not rewrite @type with a different prefix", () => {
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+  it("does not rewrite element @type values with a different prefix", () => {
+    const schemaObj = unmarshal(
+      schema,
+      `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ext="http://example.com/ext">
   <xs:element name="foo" type="ext:FooType"/>
   <xs:element name="bar" type="xs:string"/>
-</xs:schema>`;
-    const s = unmarshal(schema, xml);
+</xs:schema>`
+    );
 
-    rewritePrefixInSchema("ext", "p", s);
+    rewritePrefixInSchema("ext", "p", schemaObj);
 
-    // "xs:string" must be untouched
-    expect(toArray(s.element)[1].type_).toBe("xs:string");
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Top-level attributes
-// ---------------------------------------------------------------------------
-
-describe("rewritePrefixInSchema — top-level attributes", () => {
-  it("should rewrite @type on a top-level attribute", () => {
-    const s = emptySchema();
-    const attr = new topLevelAttribute();
-    attr.name = "myAttr";
-    attr.type_ = "ext:AttrType";
-    s.attribute = [attr];
-
-    rewritePrefixInSchema("ext", "p", s);
-
-    expect(s.attribute[0].type_).toBe("p:AttrType");
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Top-level simpleTypes
-// ---------------------------------------------------------------------------
-
-describe("rewritePrefixInSchema — simpleType", () => {
-  it("should rewrite restriction/@base", () => {
-    const s = emptySchema();
-    const st = new topLevelSimpleType();
-    st.name = "MyST";
-    const restr = new restrictionType();
-    restr.base = "ext:BaseString";
-    st.restriction = restr;
-    s.simpleType = [st];
-
-    rewritePrefixInSchema("ext", "p", s);
-
-    expect(s.simpleType[0].restriction!.base).toBe("p:BaseString");
+    expect(toArray(schemaObj.element)[1].type_).toBe("xs:string");
   });
 
-  it("should rewrite list/@itemType", () => {
-    const s = emptySchema();
-    const st = new topLevelSimpleType();
-    st.name = "ListST";
+  it("rewrites top-level attribute @type", () => {
+    const schemaObj = emptySchema();
+    const topLevelAttr = new topLevelAttribute();
+    topLevelAttr.name = "myAttr";
+    topLevelAttr.type_ = "ext:AttrType";
+    schemaObj.attribute = [topLevelAttr];
+
+    rewritePrefixInSchema("ext", "p", schemaObj);
+
+    expect(toArray(schemaObj.attribute)[0].type_).toBe("p:AttrType");
+  });
+
+  it("rewrites simpleType restriction/@base", () => {
+    const schemaObj = emptySchema();
+    const simpleType = new topLevelSimpleType();
+    simpleType.name = "MyST";
+    const restriction = new restrictionType();
+    restriction.base = "ext:BaseString";
+    simpleType.restriction = restriction;
+    schemaObj.simpleType = [simpleType];
+
+    rewritePrefixInSchema("ext", "p", schemaObj);
+
+    expect(toArray(schemaObj.simpleType)[0].restriction!.base).toBe("p:BaseString");
+  });
+
+  it("rewrites simpleType list/@itemType", () => {
+    const schemaObj = emptySchema();
+    const simpleType = new topLevelSimpleType();
+    simpleType.name = "ListST";
     const list = new listType();
     list.itemType = "ext:ItemType";
-    st.list = list;
-    s.simpleType = [st];
+    simpleType.list = list;
+    schemaObj.simpleType = [simpleType];
 
-    rewritePrefixInSchema("ext", "p", s);
+    rewritePrefixInSchema("ext", "p", schemaObj);
 
-    expect(s.simpleType[0].list!.itemType).toBe("p:ItemType");
+    expect(toArray(schemaObj.simpleType)[0].list!.itemType).toBe("p:ItemType");
   });
 
-  it("should rewrite all matching tokens in union/@memberTypes", () => {
-    const s = emptySchema();
-    const st = new topLevelSimpleType();
-    st.name = "UnionST";
+  it("rewrites all matching union/@memberTypes tokens", () => {
+    const schemaObj = emptySchema();
+    const simpleType = new topLevelSimpleType();
+    simpleType.name = "UnionST";
     const union = new unionType();
     union.memberTypes = "ext:TypeA xs:string ext:TypeB";
-    st.union = union;
-    s.simpleType = [st];
+    simpleType.union = union;
+    schemaObj.simpleType = [simpleType];
 
-    rewritePrefixInSchema("ext", "p", s);
+    rewritePrefixInSchema("ext", "p", schemaObj);
 
-    expect(s.simpleType[0].union!.memberTypes).toBe("p:TypeA xs:string p:TypeB");
-  });
-});
-
-// ---------------------------------------------------------------------------
-// complexType — complexContent
-// ---------------------------------------------------------------------------
-
-describe("rewritePrefixInSchema — complexType complexContent", () => {
-  it("should rewrite complexContent extension/@base", () => {
-    const s = emptySchema();
-    const ct = new topLevelComplexType();
-    ct.name = "Child";
-    const cc = new complexContentType();
-    const ext = new extensionType();
-    ext.base = "ext:Parent";
-    cc.extension = ext;
-    ct.complexContent = cc;
-    s.complexType = [ct];
-
-    rewritePrefixInSchema("ext", "p", s);
-
-    expect(s.complexType[0].complexContent!.extension!.base).toBe("p:Parent");
+    expect(toArray(schemaObj.simpleType)[0].union!.memberTypes).toBe("p:TypeA xs:string p:TypeB");
   });
 
-  it("should rewrite complexContent restriction/@base", () => {
-    const s = emptySchema();
-    const ct = new topLevelComplexType();
-    ct.name = "Restricted";
-    const cc = new complexContentType();
-    const restr = new complexRestrictionType();
-    restr.base = "ext:Base";
-    cc.restriction = restr;
-    ct.complexContent = cc;
-    s.complexType = [ct];
+  it("rewrites complexContent extension/@base", () => {
+    const schemaObj = emptySchema();
+    const complexType = new topLevelComplexType();
+    complexType.name = "Child";
+    const complexContent = new complexContentType();
+    const extension = new extensionType();
+    extension.base = "ext:Parent";
+    complexContent.extension = extension;
+    complexType.complexContent = complexContent;
+    schemaObj.complexType = [complexType];
 
-    rewritePrefixInSchema("ext", "p", s);
+    rewritePrefixInSchema("ext", "p", schemaObj);
 
-    expect(s.complexType[0].complexContent!.restriction!.base).toBe("p:Base");
+    expect(toArray(schemaObj.complexType)[0].complexContent!.extension!.base).toBe("p:Parent");
   });
 
-  it("should rewrite sequence element @type inside complexContent extension", () => {
-    const s = emptySchema();
-    const ct = new topLevelComplexType();
-    ct.name = "Parent";
-    const cc = new complexContentType();
-    const ext = new extensionType();
-    ext.base = "xs:anyType";
-    const seq = new explicitGroup();
-    const el = new localElement();
-    el.name = "child";
-    el.type_ = "ext:ChildType";
-    seq.element = [el];
-    ext.sequence = seq;
-    cc.extension = ext;
-    ct.complexContent = cc;
-    s.complexType = [ct];
+  it("rewrites complexContent restriction/@base", () => {
+    const schemaObj = emptySchema();
+    const complexType = new topLevelComplexType();
+    complexType.name = "Restricted";
+    const complexContent = new complexContentType();
+    const restriction = new complexRestrictionType();
+    restriction.base = "ext:Base";
+    complexContent.restriction = restriction;
+    complexType.complexContent = complexContent;
+    schemaObj.complexType = [complexType];
 
-    rewritePrefixInSchema("ext", "p", s);
+    rewritePrefixInSchema("ext", "p", schemaObj);
 
-    expect(s.complexType[0].complexContent!.extension!.sequence!.element![0].type_).toBe("p:ChildType");
-  });
-});
-
-// ---------------------------------------------------------------------------
-// complexType — simpleContent
-// ---------------------------------------------------------------------------
-
-describe("rewritePrefixInSchema — complexType simpleContent", () => {
-  it("should rewrite simpleContent extension/@base", () => {
-    const s = emptySchema();
-    const ct = new topLevelComplexType();
-    ct.name = "SCExt";
-    const sc = new simpleContentType();
-    const ext = new simpleExtensionType();
-    ext.base = "ext:SimpleBase";
-    sc.extension = ext;
-    ct.simpleContent = sc;
-    s.complexType = [ct];
-
-    rewritePrefixInSchema("ext", "p", s);
-
-    expect(s.complexType[0].simpleContent!.extension!.base).toBe("p:SimpleBase");
+    expect(toArray(schemaObj.complexType)[0].complexContent!.restriction!.base).toBe("p:Base");
   });
 
-  it("should rewrite simpleContent restriction/@base", () => {
-    const s = emptySchema();
-    const ct = new topLevelComplexType();
-    ct.name = "SCRestr";
-    const sc = new simpleContentType();
-    const restr = new simpleRestrictionType();
-    restr.base = "ext:SimpleBase";
-    sc.restriction = restr;
-    ct.simpleContent = sc;
-    s.complexType = [ct];
-
-    rewritePrefixInSchema("ext", "p", s);
-
-    expect(s.complexType[0].simpleContent!.restriction!.base).toBe("p:SimpleBase");
-  });
-});
-
-// ---------------------------------------------------------------------------
-// complexType — group and attributeGroup refs
-// ---------------------------------------------------------------------------
-
-describe("rewritePrefixInSchema — complexType group/attributeGroup refs", () => {
-  it("should rewrite group/@ref in a complexType", () => {
-    const s = emptySchema();
-    const ct = new topLevelComplexType();
-    ct.name = "WithGroup";
-    const gr = new groupRef();
-    gr.ref = "ext:MyGroup";
-    ct.group = gr;
-    s.complexType = [ct];
-
-    rewritePrefixInSchema("ext", "p", s);
-
-    expect(s.complexType[0].group!.ref).toBe("p:MyGroup");
-  });
-
-  it("should rewrite attributeGroup/@ref in a complexType", () => {
-    const s = emptySchema();
-    const ct = new topLevelComplexType();
-    ct.name = "WithAttrGroup";
-    const agr = new attributeGroupRef();
-    agr.ref = "ext:MyAttrGroup";
-    ct.attributeGroup = [agr];
-    s.complexType = [ct];
-
-    rewritePrefixInSchema("ext", "p", s);
-
-    expect(s.complexType[0].attributeGroup![0].ref).toBe("p:MyAttrGroup");
-  });
-
-  it("should rewrite attribute/@type inside a complexType", () => {
-    const s = emptySchema();
-    const ct = new topLevelComplexType();
-    ct.name = "WithAttr";
-    const attr = new attribute();
-    attr.name = "a";
-    attr.type_ = "ext:AttrType";
-    ct.attribute = [attr];
-    s.complexType = [ct];
-
-    rewritePrefixInSchema("ext", "p", s);
-
-    expect(s.complexType[0].attribute![0].type_).toBe("p:AttrType");
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Deeply nested compositor traversal
-// ---------------------------------------------------------------------------
-
-describe("rewritePrefixInSchema — nested compositor traversal", () => {
-  it("should rewrite element @type nested inside sequence → choice", () => {
-    const s = emptySchema();
-    const ct = new topLevelComplexType();
-    ct.name = "Nested";
-
-    // sequence → choice → element
-    const choice = new explicitGroup();
-    const nestedEl = new localElement();
-    nestedEl.name = "deep";
-    nestedEl.type_ = "ext:DeepType";
-    choice.element = [nestedEl];
-
-    const seq = new explicitGroup();
-    seq.choice = [choice];
-    ct.sequence = seq;
-    s.complexType = [ct];
-
-    rewritePrefixInSchema("ext", "p", s);
-
-    expect(s.complexType[0].sequence!.choice![0].element![0].type_).toBe("p:DeepType");
-  });
-
-  it("should rewrite group/@ref inside a compositor", () => {
-    const s = emptySchema();
-    const ct = new topLevelComplexType();
-    ct.name = "GroupRefInSeq";
-    const seq = new explicitGroup();
-    const gr = new groupRef();
-    gr.ref = "ext:SeqGroup";
-    seq.group = [gr];
-    ct.sequence = seq;
-    s.complexType = [ct];
-
-    rewritePrefixInSchema("ext", "p", s);
-
-    expect(s.complexType[0].sequence!.group![0].ref).toBe("p:SeqGroup");
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Inline complexType on local element
-// ---------------------------------------------------------------------------
-
-describe("rewritePrefixInSchema — inline complexType on local element", () => {
-  it("should rewrite element @type inside an inline localComplexType", () => {
-    const s = emptySchema();
-    const topEl = new localElement();
-    topEl.name = "wrapper";
-
-    const inlineCt = new localComplexType();
-    const seq = new explicitGroup();
-    const inner = new localElement();
-    inner.name = "inner";
-    inner.type_ = "ext:InnerType";
-    seq.element = [inner];
-    inlineCt.sequence = seq;
-    topEl.complexType = inlineCt;
-
-    s.element = [topEl as never];
-
-    rewritePrefixInSchema("ext", "p", s);
-
-    const outerEl = toArray(s.element)[0] as localElement;
-    expect(outerEl.complexType!.sequence!.element![0].type_).toBe("p:InnerType");
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Named groups
-// ---------------------------------------------------------------------------
-
-describe("rewritePrefixInSchema — named groups", () => {
-  it("should rewrite element @type inside a named group sequence", () => {
-    const s = emptySchema();
-    const grp = new namedGroup();
-    grp.name = "MyGroup";
-    const seq = new simpleExplicitGroup();
-    const el = new localElement();
-    el.name = "child";
-    el.type_ = "ext:ChildType";
-    seq.element = [el];
-    grp.sequence = seq;
-    s.group = [grp];
-
-    rewritePrefixInSchema("ext", "p", s);
-
-    expect(s.group[0].sequence!.element![0].type_).toBe("p:ChildType");
-  });
-
-  it("should rewrite element @type inside a named group choice", () => {
-    const s = emptySchema();
-    const grp = new namedGroup();
-    grp.name = "ChoiceGroup";
-    const choice = new simpleExplicitGroup();
-    const el = new localElement();
-    el.name = "opt";
-    el.type_ = "ext:OptType";
-    choice.element = [el];
-    grp.choice = choice;
-    s.group = [grp];
-
-    rewritePrefixInSchema("ext", "p", s);
-
-    expect(s.group[0].choice!.element![0].type_).toBe("p:OptType");
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Named attributeGroups
-// ---------------------------------------------------------------------------
-
-describe("rewritePrefixInSchema — named attributeGroups", () => {
-  it("should rewrite attribute/@type inside a named attributeGroup", () => {
-    const s = emptySchema();
-    const ag = new namedAttributeGroup();
-    ag.name = "MyAttrGroup";
-    const attr = new attribute();
-    attr.name = "a";
-    attr.type_ = "ext:AttrType";
-    ag.attribute = [attr];
-    s.attributeGroup = [ag];
-
-    rewritePrefixInSchema("ext", "p", s);
-
-    expect(s.attributeGroup[0].attribute![0].type_).toBe("p:AttrType");
-  });
-
-  it("should rewrite attributeGroup/@ref inside a named attributeGroup", () => {
-    const s = emptySchema();
-    const ag = new namedAttributeGroup();
-    ag.name = "Outer";
-    const innerRef = new attributeGroupRef();
-    innerRef.ref = "ext:InnerGroup";
-    ag.attributeGroup = [innerRef];
-    s.attributeGroup = [ag];
-
-    rewritePrefixInSchema("ext", "p", s);
-
-    expect(s.attributeGroup[0].attributeGroup![0].ref).toBe("p:InnerGroup");
-  });
-
-  it("should rewrite inline simpleType/@restriction/@base on attribute inside a named attributeGroup", () => {
-    const s = emptySchema();
-    const ag = new namedAttributeGroup();
-    ag.name = "MyAttrGroup";
-    const attr = new attribute();
-    attr.name = "a";
-    const st = new localSimpleType();
-    const restr = new restrictionType();
-    restr.base = "ext:BaseType";
-    st.restriction = restr;
-    attr.simpleType = st;
-    ag.attribute = [attr];
-    s.attributeGroup = [ag];
-
-    rewritePrefixInSchema("ext", "p", s);
-
-    expect(s.attributeGroup[0].attribute![0].simpleType!.restriction!.base).toBe("p:BaseType");
-  });
-});
-
-// ---------------------------------------------------------------------------
-// complexType attribute with inline simpleType
-// ---------------------------------------------------------------------------
-
-describe("rewritePrefixInSchema — attribute inline simpleType", () => {
-  it("should rewrite inline simpleType/@restriction/@base on an attribute in complexType", () => {
-    const s = emptySchema();
-    const ct = new topLevelComplexType();
-    ct.name = "MyType";
-    const attr = new attribute();
-    attr.name = "a";
-    const st = new localSimpleType();
-    const restr = new restrictionType();
-    restr.base = "ext:BaseType";
-    st.restriction = restr;
-    attr.simpleType = st;
-    ct.attribute = [attr];
-    s.complexType = [ct];
-
-    rewritePrefixInSchema("ext", "p", s);
-
-    expect(s.complexType[0].attribute![0].simpleType!.restriction!.base).toBe("p:BaseType");
-  });
-
-  it("should rewrite inline simpleType on attribute inside complexContent/extension", () => {
-    const s = emptySchema();
-    const ct = new topLevelComplexType();
-    ct.name = "MyType";
-    const cc = new complexContentType();
-    const ext = new extensionType();
-    ext.base = "xs:anyType";
-    const attr = new attribute();
-    attr.name = "a";
-    const st = new localSimpleType();
-    const restr = new restrictionType();
-    restr.base = "ext:BaseType";
-    st.restriction = restr;
-    attr.simpleType = st;
-    ext.attribute = [attr];
-    cc.extension = ext;
-    ct.complexContent = cc;
-    s.complexType = [ct];
-
-    rewritePrefixInSchema("ext", "p", s);
-
-    expect(s.complexType[0].complexContent!.extension!.attribute![0].simpleType!.restriction!.base).toBe("p:BaseType");
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Identity constraints (keyref/@refer)
-// ---------------------------------------------------------------------------
-
-describe("rewritePrefixInSchema — keyref/@refer on top-level element", () => {
-  it("should rewrite keyref/@refer on a top-level element", () => {
-    const s = emptySchema();
-    const el = new topLevelElement();
-    el.name = "root";
-    const kr = new keyrefType();
-    kr.name = "ref1";
-    kr.refer = "ext:KeyName";
-    el.keyref = [kr];
-    s.element = [el];
-
-    rewritePrefixInSchema("ext", "p", s);
-
-    expect(s.element[0].keyref![0].refer).toBe("p:KeyName");
-  });
-
-  it("should leave keyref/@refer unchanged when prefix does not match", () => {
-    const s = emptySchema();
-    const el = new topLevelElement();
-    el.name = "root";
-    const kr = new keyrefType();
-    kr.name = "ref1";
-    kr.refer = "other:KeyName";
-    el.keyref = [kr];
-    s.element = [el];
-
-    rewritePrefixInSchema("ext", "p", s);
-
-    expect(s.element[0].keyref![0].refer).toBe("other:KeyName");
-  });
-});
-
-describe("rewritePrefixInSchema — keyref/@refer on local element in compositor", () => {
-  it("should rewrite keyref/@refer on a local element inside a sequence", () => {
-    const s = emptySchema();
-    const ct = new topLevelComplexType();
-    ct.name = "CT";
-    const seq = new explicitGroup();
-    const el = new localElement();
-    el.name = "child";
-    const kr = new keyrefType();
-    kr.name = "ref1";
-    kr.refer = "ext:KeyName";
-    el.keyref = [kr];
-    seq.element = [el];
-    ct.sequence = seq;
-    s.complexType = [ct];
-
-    rewritePrefixInSchema("ext", "p", s);
-
-    expect(s.complexType[0].sequence!.element![0].keyref![0].refer).toBe("p:KeyName");
-  });
-});
-
-// ---------------------------------------------------------------------------
-// isPrefixReferencedInSchema — keyref/@refer
-// ---------------------------------------------------------------------------
-
-describe("isPrefixReferencedInSchema — keyref/@refer", () => {
-  it("returns true when prefix is used in keyref/@refer on a top-level element", () => {
-    const s = emptySchema();
-    const el = new topLevelElement();
-    el.name = "root";
-    const kr = new keyrefType();
-    kr.name = "ref1";
-    kr.refer = "ext:KeyName";
-    el.keyref = [kr];
-    s.element = [el];
-
-    expect(isPrefixReferencedInSchema("ext", s)).toBe(true);
-    expect(isPrefixReferencedInSchema("other", s)).toBe(false);
-  });
-
-  it("returns true when prefix is used in keyref/@refer on a local element in a compositor", () => {
-    const s = emptySchema();
-    const ct = new topLevelComplexType();
-    ct.name = "CT";
-    const seq = new explicitGroup();
-    const el = new localElement();
-    el.name = "child";
-    const kr = new keyrefType();
-    kr.name = "ref1";
-    kr.refer = "ext:KeyName";
-    el.keyref = [kr];
-    seq.element = [el];
-    ct.sequence = seq;
-    s.complexType = [ct];
-
-    expect(isPrefixReferencedInSchema("ext", s)).toBe(true);
-    expect(isPrefixReferencedInSchema("other", s)).toBe(false);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// isPrefixReferencedInSchema
-// ---------------------------------------------------------------------------
-
-describe("isPrefixReferencedInSchema", () => {
-  it("returns false on an empty schema", () => {
-    expect(isPrefixReferencedInSchema("ext", emptySchema())).toBe(false);
-  });
-
-  it("returns false when a different prefix is used", () => {
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ext="http://example.com/ext">
-  <xs:element name="foo" type="ext:FooType"/>
-</xs:schema>`;
-    const s = unmarshal(schema, xml);
-    expect(isPrefixReferencedInSchema("other", s)).toBe(false);
-  });
-
-  it("returns true for top-level element @type", () => {
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ext="http://example.com/ext">
-  <xs:element name="foo" type="ext:FooType"/>
-</xs:schema>`;
-    const s = unmarshal(schema, xml);
-    expect(isPrefixReferencedInSchema("ext", s)).toBe(true);
-  });
-
-  it("returns true for element @substitutionGroup", () => {
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ext="http://example.com/ext">
-  <xs:element name="bar" substitutionGroup="ext:Head"/>
-</xs:schema>`;
-    const s = unmarshal(schema, xml);
-    expect(isPrefixReferencedInSchema("ext", s)).toBe(true);
-  });
-
-  it("returns true for simpleType restriction/@base", () => {
-    const s = emptySchema();
-    const st = new topLevelSimpleType();
-    st.name = "MyST";
-    const restr = new restrictionType();
-    restr.base = "ext:ExternalBase";
-    st.restriction = restr;
-    s.simpleType = [st];
-    expect(isPrefixReferencedInSchema("ext", s)).toBe(true);
-  });
-
-  it("returns true for a union/@memberTypes token", () => {
-    const s = emptySchema();
-    const st = new topLevelSimpleType();
-    st.name = "Union";
-    const union = new unionType();
-    union.memberTypes = "xs:string ext:Type2";
-    st.union = union;
-    s.simpleType = [st];
-    expect(isPrefixReferencedInSchema("ext", s)).toBe(true);
-    expect(isPrefixReferencedInSchema("xs", s)).toBe(true);
-    expect(isPrefixReferencedInSchema("other", s)).toBe(false);
-  });
-
-  it("returns true for complexContent extension/@base", () => {
-    const s = emptySchema();
-    const ct = new topLevelComplexType();
-    ct.name = "Child";
-    const cc = new complexContentType();
-    const ext = new extensionType();
-    ext.base = "ext:Parent";
-    cc.extension = ext;
-    ct.complexContent = cc;
-    s.complexType = [ct];
-    expect(isPrefixReferencedInSchema("ext", s)).toBe(true);
-  });
-
-  it("returns true for a deeply nested element type (sequence → choice → element)", () => {
-    const s = emptySchema();
-    const ct = new topLevelComplexType();
-    ct.name = "Nested";
-    const choice = new explicitGroup();
-    const el = new localElement();
-    el.name = "deep";
-    el.type_ = "ext:DeepType";
-    choice.element = [el];
-    const seq = new explicitGroup();
-    seq.choice = [choice];
-    ct.sequence = seq;
-    s.complexType = [ct];
-    expect(isPrefixReferencedInSchema("ext", s)).toBe(true);
-    expect(isPrefixReferencedInSchema("other", s)).toBe(false);
-  });
-
-  it("returns true for named attributeGroup attribute/@type", () => {
-    const s = emptySchema();
-    const ag = new namedAttributeGroup();
-    ag.name = "AG";
-    const attr = new attribute();
-    attr.name = "a";
-    attr.type_ = "ext:AttrType";
-    ag.attribute = [attr];
-    s.attributeGroup = [ag];
-    expect(isPrefixReferencedInSchema("ext", s)).toBe(true);
-  });
-
-  it("returns true for inline simpleType/@restriction/@base on attribute in attributeGroup", () => {
-    const s = emptySchema();
-    const ag = new namedAttributeGroup();
-    ag.name = "AG";
-    const attr = new attribute();
-    attr.name = "a";
-    const st = new localSimpleType();
-    const restr = new restrictionType();
-    restr.base = "ext:BaseType";
-    st.restriction = restr;
-    attr.simpleType = st;
-    ag.attribute = [attr];
-    s.attributeGroup = [ag];
-    expect(isPrefixReferencedInSchema("ext", s)).toBe(true);
-    expect(isPrefixReferencedInSchema("other", s)).toBe(false);
-  });
-
-  it("returns true for inline simpleType/@restriction/@base on attribute in complexType body", () => {
-    const s = emptySchema();
-    const ct = new topLevelComplexType();
-    ct.name = "MyType";
-    const attr = new attribute();
-    attr.name = "a";
-    const st = new localSimpleType();
-    const restr = new restrictionType();
-    restr.base = "ext:BaseType";
-    st.restriction = restr;
-    attr.simpleType = st;
-    ct.attribute = [attr];
-    s.complexType = [ct];
-    expect(isPrefixReferencedInSchema("ext", s)).toBe(true);
-    expect(isPrefixReferencedInSchema("other", s)).toBe(false);
-  });
-});
-
-describe("isAnyPrefixReferencedInSchema", () => {
-  it("returns false for empty prefix set", () => {
-    const s = emptySchema();
-    const el = new topLevelElement();
-    el.name = "e";
-    el.type_ = "ext:Foo";
-    s.element = [el];
-    expect(isAnyPrefixReferencedInSchema(new Set(), s)).toBe(false);
-  });
-
-  it("returns false when no matching prefix exists in schema", () => {
-    const s = emptySchema();
-    const el = new topLevelElement();
-    el.name = "e";
-    el.type_ = "ext:Foo";
-    s.element = [el];
-    expect(isAnyPrefixReferencedInSchema(new Set(["ns1", "ns2"]), s)).toBe(false);
-  });
-
-  it("returns true when a single prefix from the set is referenced", () => {
-    const s = emptySchema();
-    const el = new topLevelElement();
-    el.name = "e";
-    el.type_ = "ns1:Foo";
-    s.element = [el];
-    expect(isAnyPrefixReferencedInSchema(new Set(["ns1", "ns2"]), s)).toBe(true);
-  });
-
-  it("returns true when a different prefix from the set is referenced", () => {
-    const s = emptySchema();
-    const el = new topLevelElement();
-    el.name = "e";
-    el.type_ = "ns2:Foo";
-    s.element = [el];
-    expect(isAnyPrefixReferencedInSchema(new Set(["ns1", "ns2"]), s)).toBe(true);
-  });
-
-  it("returns true for a single-element set when prefix is referenced", () => {
-    const s = emptySchema();
-    const el = new topLevelElement();
-    el.name = "e";
-    el.type_ = "ext:Foo";
-    s.element = [el];
-    expect(isAnyPrefixReferencedInSchema(new Set(["ext"]), s)).toBe(true);
-  });
-
-  it("returns true when prefix appears in memberTypes on a simpleType", () => {
-    const s = emptySchema();
-    const st = new topLevelSimpleType();
-    st.name = "T";
-    const u = new unionType();
-    u.memberTypes = "ns1:A ns2:B";
-    st.union = u;
-    s.simpleType = [st];
-    expect(isAnyPrefixReferencedInSchema(new Set(["ns2", "ns3"]), s)).toBe(true);
-    expect(isAnyPrefixReferencedInSchema(new Set(["ns3", "ns4"]), s)).toBe(false);
-  });
-
-  it("is consistent with isPrefixReferencedInSchema for a single prefix", () => {
-    const s = emptySchema();
-    const ct = new topLevelComplexType();
-    ct.name = "CT";
-    const cc = new complexContentType();
-    const ext = new extensionType();
-    ext.base = "ext:Base";
-    cc.extension = ext;
-    ct.complexContent = cc;
-    s.complexType = [ct];
-    expect(isAnyPrefixReferencedInSchema(new Set(["ext"]), s)).toBe(
-      isPrefixReferencedInSchema("ext", s)
+  it("rewrites element @type inside a complexContent extension sequence", () => {
+    const schemaObj = emptySchema();
+    const complexType = new topLevelComplexType();
+    complexType.name = "Parent";
+    const complexContent = new complexContentType();
+    const extension = new extensionType();
+    extension.base = "xs:anyType";
+    const sequence = new explicitGroup();
+    const element = new localElement();
+    element.name = "child";
+    element.type_ = "ext:ChildType";
+    sequence.element = [element];
+    extension.sequence = sequence;
+    complexContent.extension = extension;
+    complexType.complexContent = complexContent;
+    schemaObj.complexType = [complexType];
+
+    rewritePrefixInSchema("ext", "p", schemaObj);
+
+    expect(toArray(toArray(schemaObj.complexType)[0].complexContent!.extension!.sequence!.element)[0].type_).toBe(
+      "p:ChildType"
     );
-    expect(isAnyPrefixReferencedInSchema(new Set(["other"]), s)).toBe(
-      isPrefixReferencedInSchema("other", s)
+  });
+
+  it("rewrites simpleContent extension/@base", () => {
+    const schemaObj = emptySchema();
+    const complexType = new topLevelComplexType();
+    complexType.name = "SCExt";
+    const simpleContent = new simpleContentType();
+    const extension = new simpleExtensionType();
+    extension.base = "ext:SimpleBase";
+    simpleContent.extension = extension;
+    complexType.simpleContent = simpleContent;
+    schemaObj.complexType = [complexType];
+
+    rewritePrefixInSchema("ext", "p", schemaObj);
+
+    expect(toArray(schemaObj.complexType)[0].simpleContent!.extension!.base).toBe("p:SimpleBase");
+  });
+
+  it("rewrites attribute @type inside a simpleContent extension", () => {
+    const schemaObj = emptySchema();
+    const complexType = new topLevelComplexType();
+    complexType.name = "SCExt";
+    const simpleContent = new simpleContentType();
+    const extension = new simpleExtensionType();
+    extension.base = "ext:SimpleBase";
+    const localAttr = new attribute();
+    localAttr.name = "scAttr";
+    localAttr.type_ = "ext:AttrType";
+    extension.attribute = [localAttr];
+    simpleContent.extension = extension;
+    complexType.simpleContent = simpleContent;
+    schemaObj.complexType = [complexType];
+
+    rewritePrefixInSchema("ext", "p", schemaObj);
+
+    expect(toArray(toArray(schemaObj.complexType)[0].simpleContent!.extension!.attribute)[0].type_).toBe(
+      "p:AttrType"
     );
+  });
+
+  it("rewrites simpleContent restriction/@base", () => {
+    const schemaObj = emptySchema();
+    const complexType = new topLevelComplexType();
+    complexType.name = "SCRestr";
+    const simpleContent = new simpleContentType();
+    const restriction = new simpleRestrictionType();
+    restriction.base = "ext:SimpleBase";
+    simpleContent.restriction = restriction;
+    complexType.simpleContent = simpleContent;
+    schemaObj.complexType = [complexType];
+
+    rewritePrefixInSchema("ext", "p", schemaObj);
+
+    expect(toArray(schemaObj.complexType)[0].simpleContent!.restriction!.base).toBe("p:SimpleBase");
+  });
+
+  it("rewrites top-level complexType group refs", () => {
+    const schemaObj = emptySchema();
+    const complexType = new topLevelComplexType();
+    complexType.name = "WithGroup";
+    const ref = new groupRef();
+    ref.ref = "ext:MyGroup";
+    complexType.group = ref;
+    schemaObj.complexType = [complexType];
+
+    rewritePrefixInSchema("ext", "p", schemaObj);
+
+    expect(toArray(schemaObj.complexType)[0].group!.ref).toBe("p:MyGroup");
+  });
+
+  it("rewrites top-level complexType attributeGroup refs", () => {
+    const schemaObj = emptySchema();
+    const complexType = new topLevelComplexType();
+    complexType.name = "WithAttrGroup";
+    const ref = new attributeGroupRef();
+    ref.ref = "ext:MyAttrGroup";
+    complexType.attributeGroup = [ref];
+    schemaObj.complexType = [complexType];
+
+    rewritePrefixInSchema("ext", "p", schemaObj);
+
+    expect(toArray(toArray(schemaObj.complexType)[0].attributeGroup)[0].ref).toBe("p:MyAttrGroup");
+  });
+
+  it("rewrites top-level complexType attribute @type", () => {
+    const schemaObj = emptySchema();
+    const complexType = new topLevelComplexType();
+    complexType.name = "WithAttr";
+    const localAttr = new attribute();
+    localAttr.name = "localAttr";
+    localAttr.type_ = "ext:AttrType";
+    complexType.attribute = [localAttr];
+    schemaObj.complexType = [complexType];
+
+    rewritePrefixInSchema("ext", "p", schemaObj);
+
+    expect(toArray(toArray(schemaObj.complexType)[0].attribute)[0].type_).toBe("p:AttrType");
+  });
+
+  it("rewrites inline simpleType restriction bases on complexType attributes", () => {
+    const schemaObj = emptySchema();
+    const complexType = new topLevelComplexType();
+    complexType.name = "WithInlineType";
+    const localAttr = new attribute();
+    localAttr.name = "localAttr";
+    const simpleType = new localSimpleType();
+    const restriction = new restrictionType();
+    restriction.base = "ext:BaseType";
+    simpleType.restriction = restriction;
+    localAttr.simpleType = simpleType;
+    complexType.attribute = [localAttr];
+    schemaObj.complexType = [complexType];
+
+    rewritePrefixInSchema("ext", "p", schemaObj);
+
+    expect(toArray(toArray(schemaObj.complexType)[0].attribute)[0].simpleType!.restriction!.base).toBe(
+      "p:BaseType"
+    );
+  });
+
+  it("rewrites deeply nested compositor element @type values", () => {
+    const schemaObj = emptySchema();
+    const complexType = new topLevelComplexType();
+    complexType.name = "Nested";
+    const choice = new explicitGroup();
+    const element = new localElement();
+    element.name = "deep";
+    element.type_ = "ext:DeepType";
+    choice.element = [element];
+    const sequence = new explicitGroup();
+    sequence.choice = [choice];
+    complexType.sequence = sequence;
+    schemaObj.complexType = [complexType];
+
+    rewritePrefixInSchema("ext", "p", schemaObj);
+
+    expect(toArray(toArray(toArray(schemaObj.complexType)[0].sequence!.choice)[0].element)[0].type_).toBe(
+      "p:DeepType"
+    );
+  });
+
+  it("rewrites nested group refs inside compositors", () => {
+    const schemaObj = emptySchema();
+    const complexType = new topLevelComplexType();
+    complexType.name = "Nested";
+    const sequence = new explicitGroup();
+    const ref = new groupRef();
+    ref.ref = "ext:SeqGroup";
+    sequence.group = [ref];
+    complexType.sequence = sequence;
+    schemaObj.complexType = [complexType];
+
+    rewritePrefixInSchema("ext", "p", schemaObj);
+
+    expect(toArray(toArray(schemaObj.complexType)[0].sequence!.group)[0].ref).toBe("p:SeqGroup");
+  });
+
+  it("rewrites keyref/@refer on top-level elements", () => {
+    const schemaObj = emptySchema();
+    const root = new topLevelElement();
+    root.name = "root";
+    const keyref = new keyrefType();
+    keyref.name = "ref1";
+    keyref.refer = "ext:KeyName";
+    root.keyref = [keyref];
+    schemaObj.element = [root];
+
+    rewritePrefixInSchema("ext", "p", schemaObj);
+
+    expect(toArray(schemaObj.element)[0].keyref![0].refer).toBe("p:KeyName");
+  });
+
+  it("rewrites keyref/@refer on nested elements", () => {
+    const schemaObj = emptySchema();
+    const complexType = new topLevelComplexType();
+    complexType.name = "Nested";
+    const element = new localElement();
+    element.name = "child";
+    const keyref = new keyrefType();
+    keyref.name = "ref1";
+    keyref.refer = "ext:KeyName";
+    element.keyref = [keyref];
+    const sequence = new explicitGroup();
+    sequence.element = [element];
+    complexType.sequence = sequence;
+    schemaObj.complexType = [complexType];
+
+    rewritePrefixInSchema("ext", "p", schemaObj);
+
+    expect(toArray(toArray(schemaObj.complexType)[0].sequence!.element)[0].keyref![0].refer).toBe(
+      "p:KeyName"
+    );
+  });
+
+  it("rewrites element @type values inside local complexTypes", () => {
+    const schemaObj = emptySchema();
+    const wrapper = new topLevelElement();
+    wrapper.name = "wrapper";
+    const localComplex = new localComplexType();
+    const sequence = new explicitGroup();
+    const element = new localElement();
+    element.name = "inner";
+    element.type_ = "ext:InnerType";
+    sequence.element = [element];
+    localComplex.sequence = sequence;
+    wrapper.complexType = localComplex;
+    schemaObj.element = [wrapper];
+
+    rewritePrefixInSchema("ext", "p", schemaObj);
+
+    expect(toArray(wrapper.complexType.sequence!.element)[0].type_).toBe("p:InnerType");
+  });
+
+  it("rewrites named group sequence element @type values", () => {
+    const schemaObj = emptySchema();
+    const group = new namedGroup();
+    group.name = "MyGroup";
+    const sequence = new explicitGroup();
+    const element = new localElement();
+    element.name = "child";
+    element.type_ = "ext:ChildType";
+    sequence.element = [element];
+    group.sequence = sequence;
+    schemaObj.group = [group];
+
+    rewritePrefixInSchema("ext", "p", schemaObj);
+
+    expect(toArray(toArray(schemaObj.group)[0].sequence!.element)[0].type_).toBe("p:ChildType");
+  });
+
+  it("rewrites named group choice element @type values", () => {
+    const schemaObj = emptySchema();
+    const group = new namedGroup();
+    group.name = "ChoiceGroup";
+    const choice = new explicitGroup();
+    const element = new localElement();
+    element.name = "opt";
+    element.type_ = "ext:OptType";
+    choice.element = [element];
+    group.choice = choice;
+    schemaObj.group = [group];
+
+    rewritePrefixInSchema("ext", "p", schemaObj);
+
+    expect(toArray(toArray(schemaObj.group)[0].choice!.element)[0].type_).toBe("p:OptType");
+  });
+
+  it("rewrites named attributeGroup attribute @type values", () => {
+    const schemaObj = emptySchema();
+    const attributeGroup = new namedAttributeGroup();
+    attributeGroup.name = "MyAttrGroup";
+    const localAttr = new attribute();
+    localAttr.name = "a";
+    localAttr.type_ = "ext:AttrType";
+    attributeGroup.attribute = [localAttr];
+    schemaObj.attributeGroup = [attributeGroup];
+
+    rewritePrefixInSchema("ext", "p", schemaObj);
+
+    expect(toArray(toArray(schemaObj.attributeGroup)[0].attribute)[0].type_).toBe("p:AttrType");
+  });
+
+  it("rewrites inline simpleType restriction bases in named attribute groups", () => {
+    const schemaObj = emptySchema();
+    const attributeGroup = new namedAttributeGroup();
+    attributeGroup.name = "MyAttrGroup";
+    const localAttr = new attribute();
+    localAttr.name = "a";
+    const simpleType = new localSimpleType();
+    const restriction = new restrictionType();
+    restriction.base = "ext:BaseType";
+    simpleType.restriction = restriction;
+    localAttr.simpleType = simpleType;
+    attributeGroup.attribute = [localAttr];
+    schemaObj.attributeGroup = [attributeGroup];
+
+    rewritePrefixInSchema("ext", "p", schemaObj);
+
+    expect(toArray(toArray(schemaObj.attributeGroup)[0].attribute)[0].simpleType!.restriction!.base).toBe(
+      "p:BaseType"
+    );
+  });
+
+  it("rewrites nested attributeGroup refs in named attribute groups", () => {
+    const schemaObj = emptySchema();
+    const attributeGroup = new namedAttributeGroup();
+    attributeGroup.name = "MyAttrGroup";
+    const ref = new attributeGroupRef();
+    ref.ref = "ext:InnerGroup";
+    attributeGroup.attributeGroup = [ref];
+    schemaObj.attributeGroup = [attributeGroup];
+
+    rewritePrefixInSchema("ext", "p", schemaObj);
+
+    expect(toArray(toArray(schemaObj.attributeGroup)[0].attributeGroup)[0].ref).toBe("p:InnerGroup");
   });
 });

@@ -18,9 +18,10 @@ import {
   groupRef,
 } from "../../shared/types";
 import { toArray } from "../../shared/schemaUtils";
-import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy";
+import { parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy";
 import { locateNodeById } from "../schemaNavigator";
 import { createAnnotation } from "./annotationUtils";
+import { renameLocalGroupRefInSchema } from "./schemaLocalRenamer";
 
 // ===== Element Group Executors =====
 
@@ -45,7 +46,7 @@ export function executeAddGroup(
 
   if (ref !== undefined) {
     // Reference mode: add xs:group ref="..." to a compositor or complexType
-    const location = locateNodeById(schemaObj, parentId ?? "schema");
+    const location = locateNodeById(schemaObj, parentId ?? SCHEMA_ROOT_ID);
     const grpRef = buildGroupRef(ref, minOccurs, maxOccurs, documentation);
     addGroupRefToParent(location.parent, location.parentType ?? "", grpRef);
     return;
@@ -81,6 +82,21 @@ export function executeRemoveGroup(
 ): void {
   const { groupId } = command.payload;
   const parsed = parseSchemaId(groupId);
+
+  if (parsed.nodeType === SchemaNodeType.Group && parsed.parentId && parsed.name) {
+    const groupLocation = locateNodeById(schemaObj, groupId);
+    const parentLocation = locateNodeById(schemaObj, parsed.parentId);
+    if (
+      !groupLocation.found ||
+      !parentLocation.found ||
+      !groupLocation.parent ||
+      !parentLocation.parent
+    ) {
+      return;
+    }
+    removeCompositorGroupFromParent(parentLocation.parent, parsed.name, groupLocation.parent);
+    return;
+  }
 
   if (parsed.nodeType === SchemaNodeType.GroupRef) {
     // Reference mode: remove xs:group ref="..." from its parent compositor
@@ -121,6 +137,33 @@ export function executeModifyGroup(
   const { groupId, groupName, contentModel, documentation, ref, minOccurs, maxOccurs } =
     command.payload;
   const parsed = parseSchemaId(groupId);
+
+  if (parsed.nodeType === SchemaNodeType.Group && parsed.parentId) {
+    const location = locateNodeById(schemaObj, groupId);
+    if (!location.found) {
+      return;
+    }
+    const compositor = location.parent as {
+      minOccurs?: number;
+      maxOccurs?: number | "unbounded";
+      annotation?: annotationType;
+    };
+    if (minOccurs !== undefined) {
+      compositor.minOccurs = minOccurs;
+    }
+    if (maxOccurs !== undefined) {
+      compositor.maxOccurs = maxOccurs;
+    }
+    if (documentation !== undefined) {
+      if (!compositor.annotation) {
+        compositor.annotation = new annotationType();
+      }
+      const doc = new documentationType();
+      doc.value = documentation;
+      compositor.annotation.documentation = [doc];
+    }
+    return;
+  }
 
   if (parsed.nodeType === SchemaNodeType.GroupRef) {
     // Reference mode: modify xs:group ref="..." in its parent compositor
@@ -163,6 +206,7 @@ export function executeModifyGroup(
   }
 
   if (groupName !== undefined) {
+    renameLocalGroupRefInSchema(parsed.name as string, groupName, schemaObj);
     grp.name = groupName;
   }
   if (documentation !== undefined) {
@@ -308,6 +352,49 @@ function findGroupRef(
   return undefined;
 }
 
+type ComplexTypeLike = {
+  sequence?: simpleExplicitGroup;
+  choice?: simpleExplicitGroup;
+  all?: allType;
+  complexContent?: {
+    extension?: { sequence?: simpleExplicitGroup; choice?: simpleExplicitGroup; all?: allType };
+    restriction?: { sequence?: simpleExplicitGroup; choice?: simpleExplicitGroup; all?: allType };
+  };
+};
+
+function removeCompositorGroupFromParent(
+  parent: unknown,
+  groupKind: string,
+  targetGroup: unknown
+): void {
+  const clearGroup = (holder: ComplexTypeLike): boolean => {
+    if (groupKind === "sequence" && holder.sequence === targetGroup) {
+      holder.sequence = undefined;
+      return true;
+    }
+    if (groupKind === "choice" && holder.choice === targetGroup) {
+      holder.choice = undefined;
+      return true;
+    }
+    if (groupKind === "all" && holder.all === targetGroup) {
+      holder.all = undefined;
+      return true;
+    }
+    return false;
+  };
+
+  const complexType = parent as ComplexTypeLike;
+  if (clearGroup(complexType)) {
+    return;
+  }
+  if (complexType.complexContent?.extension && clearGroup(complexType.complexContent.extension)) {
+    return;
+  }
+  if (complexType.complexContent?.restriction) {
+    clearGroup(complexType.complexContent.restriction);
+  }
+}
+
 /**
  * Returns a new array with the first matching groupRef removed.
  */
@@ -358,4 +445,3 @@ function applyGroupContentModel(
     grp.all = new allType();
   }
 }
-

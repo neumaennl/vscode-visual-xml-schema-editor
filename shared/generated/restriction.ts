@@ -1,5 +1,5 @@
 import { XmlRoot } from '@neumaennl/xmlbind-ts';
-import { restrictionType_1 } from './restrictionType_1';
+import { restrictionType_1 } from './restrictionType_1.js';
 /**
  * base attribute and simpleType child are mutually
  * exclusive, but one or other is required

@@ -1,11 +1,11 @@
 import { XmlRoot, XmlElement, XmlAttribute, XmlAnyAttribute } from '@neumaennl/xmlbind-ts';
-import type { allNNI, blockSet } from './types';
-import { formChoice } from './enums';
-import { annotationType } from './annotationType';
-import { localSimpleType } from './localSimpleType';
-import { localComplexType } from './localComplexType';
-import { keybase } from './keybase';
-import { keyrefType } from './keyrefType';
+import type { allNNI, blockSet } from './types.js';
+import { formChoice } from './enums.js';
+import { annotationType } from './annotationType.js';
+import { localSimpleType } from './localSimpleType.js';
+import { localComplexType } from './localComplexType.js';
+import { keybase } from './keybase.js';
+import { keyrefType } from './keyrefType.js';
 @XmlRoot('localElement', { namespace: 'http://www.w3.org/2001/XMLSchema', prefixes: { 'http://www.w3.org/2001/XMLSchema': 'xs', 'http://www.w3.org/2001/XMLSchema-hasFacetAndProperty': 'hfp', 'http://www.w3.org/XML/1998/namespace': 'imp1' } })
 export class localElement {
   @XmlAnyAttribute()

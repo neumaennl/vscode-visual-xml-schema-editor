@@ -51,6 +51,30 @@ describe("Simple Type Commands", () => {
     ]);
   });
 
+  test("AddSimpleTypeCommand list payload", () => {
+    const command: AddSimpleTypeCommand = {
+      type: "addSimpleType",
+      payload: {
+        typeName: "TokenListType",
+        listItemType: "xs:token",
+      },
+    };
+
+    expect(command.payload.listItemType).toBe("xs:token");
+  });
+
+  test("ModifySimpleTypeCommand union payload", () => {
+    const command: ModifySimpleTypeCommand = {
+      type: "modifySimpleType",
+      payload: {
+        typeId: "type-456",
+        unionMemberTypes: ["xs:string", "xs:integer"],
+      },
+    };
+
+    expect(command.payload.unionMemberTypes).toEqual(["xs:string", "xs:integer"]);
+  });
+
   test("RemoveSimpleTypeCommand should have correct structure", () => {
     const command: RemoveSimpleTypeCommand = {
       type: "removeSimpleType",

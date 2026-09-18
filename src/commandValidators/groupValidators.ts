@@ -346,6 +346,14 @@ export function validateRemoveGroup(
   }
   const parsed = parseSchemaId(command.payload.groupId);
 
+  if (parsed.nodeType === SchemaNodeType.Group && parsed.parentId) {
+    const location = locateNodeById(schemaObj, command.payload.groupId);
+    if (!location.found) {
+      return { valid: false, error: `Group not found: ${command.payload.groupId}` };
+    }
+    return { valid: true };
+  }
+
   if (parsed.nodeType === SchemaNodeType.GroupRef) {
     // Reference mode: validate the parent exists
     if (!parsed.parentId) {
@@ -403,6 +411,36 @@ export function validateModifyGroup(
     return { valid: false, error: "Group ID cannot be empty" };
   }
   const parsed = parseSchemaId(command.payload.groupId);
+
+  if (parsed.nodeType === SchemaNodeType.Group && parsed.parentId) {
+    if (
+      command.payload.groupName !== undefined ||
+      command.payload.contentModel !== undefined ||
+      command.payload.ref !== undefined
+    ) {
+      return {
+        valid: false,
+        error: "Compositor groups only support minOccurs, maxOccurs, or documentation updates",
+      };
+    }
+    const location = locateNodeById(schemaObj, command.payload.groupId);
+    if (!location.found) {
+      return { valid: false, error: `Group not found: ${command.payload.groupId}` };
+    }
+    if (
+      command.payload.minOccurs !== undefined ||
+      command.payload.maxOccurs !== undefined
+    ) {
+      const occurrenceValidation: ValidationResult = validateOccurrences(
+        command.payload.minOccurs,
+        command.payload.maxOccurs
+      );
+      if (!occurrenceValidation.valid) {
+        return occurrenceValidation;
+      }
+    }
+    return { valid: true };
+  }
 
   if (parsed.nodeType === SchemaNodeType.GroupRef) {
     // Reference mode: validate the parent exists; validate new ref if provided

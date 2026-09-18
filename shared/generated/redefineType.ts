@@ -1,10 +1,10 @@
 import { XmlElement, XmlAttribute } from '@neumaennl/xmlbind-ts';
-import { openAttrs } from './openAttrs';
-import { annotationType } from './annotationType';
-import { topLevelSimpleType } from './topLevelSimpleType';
-import { topLevelComplexType } from './topLevelComplexType';
-import { namedGroup } from './namedGroup';
-import { namedAttributeGroup } from './namedAttributeGroup';
+import { openAttrs } from './openAttrs.js';
+import { annotationType } from './annotationType.js';
+import { topLevelSimpleType } from './topLevelSimpleType.js';
+import { topLevelComplexType } from './topLevelComplexType.js';
+import { namedGroup } from './namedGroup.js';
+import { namedAttributeGroup } from './namedAttributeGroup.js';
 export class redefineType extends openAttrs {
   @XmlAttribute('schemaLocation')
   schemaLocation!: string;

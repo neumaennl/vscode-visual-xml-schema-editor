@@ -1,8 +1,8 @@
 import { XmlRoot, XmlElement, XmlAttribute, XmlAnyAttribute } from '@neumaennl/xmlbind-ts';
-import { annotationType } from './annotationType';
-import { restrictionType } from './restrictionType';
-import { listType } from './listType';
-import { unionType } from './unionType';
+import { annotationType } from './annotationType.js';
+import { restrictionType } from './restrictionType.js';
+import { listType } from './listType.js';
+import { unionType } from './unionType.js';
 /**
  * Forbidden when nested
  */

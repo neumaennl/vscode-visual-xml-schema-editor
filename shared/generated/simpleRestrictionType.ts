@@ -1,15 +1,15 @@
 import { XmlRoot, XmlElement, XmlAttribute, XmlAnyAttribute } from '@neumaennl/xmlbind-ts';
-import { annotationType } from './annotationType';
-import { localSimpleType } from './localSimpleType';
-import { facet } from './facet';
-import { totalDigitsType } from './totalDigitsType';
-import { numFacet } from './numFacet';
-import { noFixedFacet } from './noFixedFacet';
-import { whiteSpaceType } from './whiteSpaceType';
-import { patternType } from './patternType';
-import { attribute } from './attribute';
-import { attributeGroupRef } from './attributeGroupRef';
-import { wildcard } from './wildcard';
+import { annotationType } from './annotationType.js';
+import { localSimpleType } from './localSimpleType.js';
+import { facet } from './facet.js';
+import { totalDigitsType } from './totalDigitsType.js';
+import { numFacet } from './numFacet.js';
+import { noFixedFacet } from './noFixedFacet.js';
+import { whiteSpaceType } from './whiteSpaceType.js';
+import { patternType } from './patternType.js';
+import { attribute } from './attribute.js';
+import { attributeGroupRef } from './attributeGroupRef.js';
+import { wildcard } from './wildcard.js';
 /**
  * This choice is added simply to
  * make this a valid restriction per the REC

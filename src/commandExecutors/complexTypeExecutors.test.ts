@@ -3,828 +3,550 @@
  * Tests the implementation of add, remove, and modify complex type execution logic.
  */
 
-import { unmarshal, marshal } from "@neumaennl/xmlbind-ts";
+import { marshal, unmarshal } from "@neumaennl/xmlbind-ts";
 import {
-  schema,
   AddComplexTypeCommand,
-  RemoveComplexTypeCommand,
   ModifyComplexTypeCommand,
+  RemoveComplexTypeCommand,
+  schema,
 } from "../../shared/types";
+import { toArray } from "../../shared/schemaUtils";
 import {
   executeAddComplexType,
-  executeRemoveComplexType,
   executeModifyComplexType,
-} from "./typeExecutors";
-import { toArray } from "../../shared/schemaUtils";
+  executeRemoveComplexType,
+} from "./complexTypeExecutors";
+
+function schemaWith(body = ""): schema {
+  return unmarshal(
+    schema,
+    `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">${body}</xs:schema>`
+  );
+}
+
+function addComplexType(schemaObj: schema, payload: AddComplexTypeCommand["payload"]): void {
+  executeAddComplexType({ type: "addComplexType", payload }, schemaObj);
+}
+
+function removeComplexType(schemaObj: schema, payload: RemoveComplexTypeCommand["payload"]): void {
+  executeRemoveComplexType({ type: "removeComplexType", payload }, schemaObj);
+}
+
+function modifyComplexType(schemaObj: schema, payload: ModifyComplexTypeCommand["payload"]): void {
+  executeModifyComplexType({ type: "modifyComplexType", payload }, schemaObj);
+}
+
+function topLevelComplexTypes(schemaObj: schema): NonNullable<schema["complexType"]> {
+  return toArray(schemaObj.complexType);
+}
+
+function topLevelElements(schemaObj: schema): NonNullable<schema["element"]> {
+  return toArray(schemaObj.element);
+}
 
 describe("ComplexType Executors", () => {
   describe("executeAddComplexType", () => {
-    it("should add a complexType with a sequence content model", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+    it("adds a top-level complexType with a sequence content model", () => {
+      const schemaObj = schemaWith();
 
-      const command: AddComplexTypeCommand = {
-        type: "addComplexType",
-        payload: {
-          typeName: "PersonType",
-          contentModel: "sequence",
-        },
-      };
+      addComplexType(schemaObj, { typeName: "PersonType", contentModel: "sequence" });
 
-      executeAddComplexType(command, schemaObj);
-
-      expect(schemaObj.complexType).toHaveLength(1);
-      const ct = schemaObj.complexType![0];
-      expect(ct.name).toBe("PersonType");
-      expect(ct.sequence).toBeDefined();
-      expect(ct.choice).toBeUndefined();
-      expect(ct.all).toBeUndefined();
-      expect(ct.complexContent).toBeUndefined();
+      const complexType = topLevelComplexTypes(schemaObj)[0];
+      expect(complexType.name).toBe("PersonType");
+      expect(complexType.sequence).toBeDefined();
+      expect(complexType.choice).toBeUndefined();
+      expect(complexType.all).toBeUndefined();
+      expect(complexType.complexContent).toBeUndefined();
     });
 
-    it("should add a complexType with a choice content model", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+    it("adds a top-level complexType with a choice content model", () => {
+      const schemaObj = schemaWith();
 
-      const command: AddComplexTypeCommand = {
-        type: "addComplexType",
-        payload: {
-          typeName: "ShapeType",
-          contentModel: "choice",
-        },
-      };
+      addComplexType(schemaObj, { typeName: "ShapeType", contentModel: "choice" });
 
-      executeAddComplexType(command, schemaObj);
-
-      const ct = schemaObj.complexType![0];
-      expect(ct.choice).toBeDefined();
-      expect(ct.sequence).toBeUndefined();
-      expect(ct.all).toBeUndefined();
+      const complexType = topLevelComplexTypes(schemaObj)[0];
+      expect(complexType.choice).toBeDefined();
+      expect(complexType.sequence).toBeUndefined();
+      expect(complexType.all).toBeUndefined();
     });
 
-    it("should add a complexType with an all content model", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+    it("adds a top-level complexType with an all content model", () => {
+      const schemaObj = schemaWith();
 
-      const command: AddComplexTypeCommand = {
-        type: "addComplexType",
-        payload: {
-          typeName: "AddressType",
-          contentModel: "all",
-        },
-      };
+      addComplexType(schemaObj, { typeName: "AddressType", contentModel: "all" });
 
-      executeAddComplexType(command, schemaObj);
-
-      const ct = schemaObj.complexType![0];
-      expect(ct.all).toBeDefined();
-      expect(ct.sequence).toBeUndefined();
-      expect(ct.choice).toBeUndefined();
+      const complexType = topLevelComplexTypes(schemaObj)[0];
+      expect(complexType.all).toBeDefined();
+      expect(complexType.sequence).toBeUndefined();
+      expect(complexType.choice).toBeUndefined();
     });
 
-    it("should add a complexType with abstract=true", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+    it("sets abstract on a new complexType", () => {
+      const schemaObj = schemaWith();
 
-      const command: AddComplexTypeCommand = {
-        type: "addComplexType",
-        payload: {
-          typeName: "BaseType",
-          contentModel: "sequence",
-          abstract: true,
-        },
-      };
+      addComplexType(schemaObj, {
+        typeName: "BaseType",
+        contentModel: "sequence",
+        abstract: true,
+      });
 
-      executeAddComplexType(command, schemaObj);
-
-      const ct = schemaObj.complexType![0];
-      expect(ct.abstract).toBe(true);
+      expect(topLevelComplexTypes(schemaObj)[0].abstract).toBe(true);
     });
 
-    it("should add a complexType with mixed=true", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+    it("sets mixed on a new complexType", () => {
+      const schemaObj = schemaWith();
 
-      const command: AddComplexTypeCommand = {
-        type: "addComplexType",
-        payload: {
-          typeName: "MixedType",
-          contentModel: "sequence",
-          mixed: true,
-        },
-      };
+      addComplexType(schemaObj, {
+        typeName: "MixedType",
+        contentModel: "sequence",
+        mixed: true,
+      });
 
-      executeAddComplexType(command, schemaObj);
-
-      const ct = schemaObj.complexType![0];
-      expect(ct.mixed).toBe(true);
+      expect(topLevelComplexTypes(schemaObj)[0].mixed).toBe(true);
     });
 
-    it("should add a complexType with documentation", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+    it("adds documentation to a new complexType", () => {
+      const schemaObj = schemaWith();
 
-      const command: AddComplexTypeCommand = {
-        type: "addComplexType",
-        payload: {
-          typeName: "DocumentedType",
-          contentModel: "sequence",
-          documentation: "Describes a person.",
-        },
-      };
+      addComplexType(schemaObj, {
+        typeName: "DocumentedType",
+        contentModel: "sequence",
+        documentation: "Describes a person.",
+      });
 
-      executeAddComplexType(command, schemaObj);
-
-      const ct = schemaObj.complexType![0];
-      expect(ct.annotation).toBeDefined();
-      expect(ct.annotation!.documentation![0].value).toBe("Describes a person.");
+      expect(topLevelComplexTypes(schemaObj)[0].annotation!.documentation![0].value).toBe(
+        "Describes a person."
+      );
     });
 
-    it("should add a complexType with base type extension (complexContent)", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+    it("adds a complexType with a base type extension", () => {
+      const schemaObj = schemaWith();
 
-      const command: AddComplexTypeCommand = {
-        type: "addComplexType",
-        payload: {
-          typeName: "EmployeeType",
-          contentModel: "sequence",
-          baseType: "PersonType",
-        },
-      };
+      addComplexType(schemaObj, {
+        typeName: "EmployeeType",
+        contentModel: "sequence",
+        baseType: "PersonType",
+      });
 
-      executeAddComplexType(command, schemaObj);
-
-      const ct = schemaObj.complexType![0];
-      expect(ct.complexContent).toBeDefined();
-      expect(ct.complexContent!.extension).toBeDefined();
-      expect(ct.complexContent!.extension!.base).toBe("PersonType");
-      expect(ct.complexContent!.extension!.sequence).toBeDefined();
-      expect(ct.sequence).toBeUndefined();
+      const complexType = topLevelComplexTypes(schemaObj)[0];
+      expect(complexType.complexContent!.extension!.base).toBe("PersonType");
+      expect(complexType.complexContent!.extension!.sequence).toBeDefined();
+      expect(complexType.sequence).toBeUndefined();
     });
 
-    it("should add a complexType with base type extension using choice", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+    it("adds a base type extension using choice content", () => {
+      const schemaObj = schemaWith();
 
-      const command: AddComplexTypeCommand = {
-        type: "addComplexType",
-        payload: {
-          typeName: "DerivedType",
-          contentModel: "choice",
-          baseType: "BaseType",
-        },
-      };
+      addComplexType(schemaObj, {
+        typeName: "DerivedType",
+        contentModel: "choice",
+        baseType: "BaseType",
+      });
 
-      executeAddComplexType(command, schemaObj);
-
-      const ct = schemaObj.complexType![0];
-      expect(ct.complexContent!.extension!.choice).toBeDefined();
-      expect(ct.complexContent!.extension!.sequence).toBeUndefined();
+      const extension = topLevelComplexTypes(schemaObj)[0].complexContent!.extension!;
+      expect(extension.base).toBe("BaseType");
+      expect(extension.choice).toBeDefined();
+      expect(extension.sequence).toBeUndefined();
     });
 
-    it("should append to existing complexTypes", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:complexType name="ExistingType">
-    <xs:sequence/>
-  </xs:complexType>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+    it("appends new complex types after existing ones", () => {
+      const schemaObj = schemaWith(`
+  <xs:complexType name="ExistingType"><xs:sequence/></xs:complexType>`);
 
-      const command: AddComplexTypeCommand = {
-        type: "addComplexType",
-        payload: {
-          typeName: "NewType",
-          contentModel: "choice",
-        },
-      };
+      addComplexType(schemaObj, { typeName: "NewType", contentModel: "choice" });
 
-      executeAddComplexType(command, schemaObj);
-
-      expect(toArray(schemaObj.complexType)).toHaveLength(2);
-      expect(toArray(schemaObj.complexType)[1].name).toBe("NewType");
+      expect(topLevelComplexTypes(schemaObj)).toHaveLength(2);
+      expect(topLevelComplexTypes(schemaObj)[1].name).toBe("NewType");
     });
 
-    it("should produce valid XSD output for a sequence complexType", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+    it("round-trips a new complexType through XML", () => {
+      const schemaObj = schemaWith();
 
-      const command: AddComplexTypeCommand = {
-        type: "addComplexType",
-        payload: {
-          typeName: "PersonType",
-          contentModel: "sequence",
-        },
-      };
-
-      executeAddComplexType(command, schemaObj);
+      addComplexType(schemaObj, { typeName: "PersonType", contentModel: "sequence" });
 
       const reparsed = unmarshal(schema, marshal(schemaObj));
-      const ct = toArray(reparsed.complexType)[0];
-      expect(ct.name).toBe("PersonType");
-      expect(ct.sequence).toBeDefined();
-    });
-
-    it("should produce valid XSD output for a complexType with base type extension", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
-
-      const command: AddComplexTypeCommand = {
-        type: "addComplexType",
-        payload: {
-          typeName: "EmployeeType",
-          contentModel: "sequence",
-          baseType: "PersonType",
-        },
-      };
-
-      executeAddComplexType(command, schemaObj);
-
-      const reparsed = unmarshal(schema, marshal(schemaObj));
-      const ct = toArray(reparsed.complexType)[0];
-      expect(ct.name).toBe("EmployeeType");
-      expect(ct.complexContent).toBeDefined();
-      expect(ct.complexContent!.extension!.base).toBe("PersonType");
-      expect(ct.complexContent!.extension!.sequence).toBeDefined();
+      const complexType = topLevelComplexTypes(reparsed)[0];
+      expect(complexType.name).toBe("PersonType");
+      expect(complexType.sequence).toBeDefined();
     });
   });
 
   describe("executeRemoveComplexType", () => {
-    it("should remove a complexType by typeId", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:complexType name="PersonType">
-    <xs:sequence/>
-  </xs:complexType>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+    it("removes only the targeted top-level complexType", () => {
+      const schemaObj = schemaWith(`
+  <xs:complexType name="TypeA"><xs:sequence/></xs:complexType>
+  <xs:complexType name="TypeB"><xs:choice/></xs:complexType>`);
 
-      const command: RemoveComplexTypeCommand = {
-        type: "removeComplexType",
-        payload: { typeId: "/complexType:PersonType" },
-      };
+      removeComplexType(schemaObj, { typeId: "/complexType:TypeA" });
 
-      executeRemoveComplexType(command, schemaObj);
-
-      expect(schemaObj.complexType).toBeUndefined();
+      expect(topLevelComplexTypes(schemaObj)).toHaveLength(1);
+      expect(topLevelComplexTypes(schemaObj)[0].name).toBe("TypeB");
     });
 
-    it("should remove only the targeted complexType leaving others intact", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:complexType name="TypeA">
-    <xs:sequence/>
-  </xs:complexType>
-  <xs:complexType name="TypeB">
-    <xs:choice/>
-  </xs:complexType>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+    it("removes the last remaining top-level complexType", () => {
+      const schemaObj = schemaWith(`
+  <xs:complexType name="PersonType"><xs:sequence/></xs:complexType>`);
 
-      const command: RemoveComplexTypeCommand = {
-        type: "removeComplexType",
-        payload: { typeId: "/complexType:TypeA" },
-      };
+      removeComplexType(schemaObj, { typeId: "/complexType:PersonType" });
 
-      executeRemoveComplexType(command, schemaObj);
-
-      const remaining = toArray(schemaObj.complexType);
-      expect(remaining).toHaveLength(1);
-      expect(remaining[0].name).toBe("TypeB");
+      expect(schemaObj.complexType).toBeUndefined();
     });
   });
 
   describe("executeModifyComplexType", () => {
-    it("should rename a complexType", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:complexType name="OldName">
-    <xs:sequence/>
-  </xs:complexType>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+    it("renames a top-level complexType", () => {
+      const schemaObj = schemaWith(`
+  <xs:complexType name="RichType" abstract="true"><xs:sequence/></xs:complexType>`);
 
-      const command: ModifyComplexTypeCommand = {
-        type: "modifyComplexType",
-        payload: {
-          typeId: "/complexType:OldName",
-          typeName: "NewName",
-        },
-      };
+      modifyComplexType(schemaObj, { typeId: "/complexType:RichType", typeName: "RicherType" });
 
-      executeModifyComplexType(command, schemaObj);
-
-      const ct = toArray(schemaObj.complexType)[0];
-      expect(ct.name).toBe("NewName");
+      expect(topLevelComplexTypes(schemaObj)[0].name).toBe("RicherType");
+      expect(topLevelComplexTypes(schemaObj)[0].abstract).toBeTruthy();
     });
 
-    it("should update abstract flag", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:complexType name="BaseType">
-    <xs:sequence/>
-  </xs:complexType>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+    it("updates the abstract flag", () => {
+      const schemaObj = schemaWith(`
+  <xs:complexType name="BaseType"><xs:sequence/></xs:complexType>`);
 
-      const command: ModifyComplexTypeCommand = {
-        type: "modifyComplexType",
-        payload: {
-          typeId: "/complexType:BaseType",
-          abstract: true,
-        },
-      };
+      modifyComplexType(schemaObj, { typeId: "/complexType:BaseType", abstract: true });
 
-      executeModifyComplexType(command, schemaObj);
-
-      expect(toArray(schemaObj.complexType)[0].abstract).toBe(true);
+      expect(topLevelComplexTypes(schemaObj)[0].abstract).toBe(true);
     });
 
-    it("should update mixed flag", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:complexType name="TextType">
-    <xs:sequence/>
-  </xs:complexType>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+    it("updates the mixed flag", () => {
+      const schemaObj = schemaWith(`
+  <xs:complexType name="TextType"><xs:sequence/></xs:complexType>`);
 
-      const command: ModifyComplexTypeCommand = {
-        type: "modifyComplexType",
-        payload: {
-          typeId: "/complexType:TextType",
-          mixed: true,
-        },
-      };
+      modifyComplexType(schemaObj, { typeId: "/complexType:TextType", mixed: true });
 
-      executeModifyComplexType(command, schemaObj);
-
-      expect(toArray(schemaObj.complexType)[0].mixed).toBe(true);
+      expect(topLevelComplexTypes(schemaObj)[0].mixed).toBe(true);
     });
 
-    it("should update documentation", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:complexType name="DocType">
-    <xs:sequence/>
-  </xs:complexType>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+    it("updates documentation", () => {
+      const schemaObj = schemaWith(`
+  <xs:complexType name="DocType"><xs:sequence/></xs:complexType>`);
 
-      const command: ModifyComplexTypeCommand = {
-        type: "modifyComplexType",
-        payload: {
-          typeId: "/complexType:DocType",
-          documentation: "Updated documentation.",
-        },
-      };
+      modifyComplexType(schemaObj, {
+        typeId: "/complexType:DocType",
+        documentation: "Updated documentation.",
+      });
 
-      executeModifyComplexType(command, schemaObj);
-
-      const ct = toArray(schemaObj.complexType)[0];
-      expect(ct.annotation).toBeDefined();
-      expect(ct.annotation!.documentation![0].value).toBe("Updated documentation.");
+      expect(topLevelComplexTypes(schemaObj)[0].annotation!.documentation![0].value).toBe(
+        "Updated documentation."
+      );
     });
 
-    it("should change content model from sequence to choice", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:complexType name="FlexType">
-    <xs:sequence/>
-  </xs:complexType>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+    it("changes the content model to choice", () => {
+      const schemaObj = schemaWith(`
+  <xs:complexType name="FlexType"><xs:sequence/></xs:complexType>`);
 
-      const command: ModifyComplexTypeCommand = {
-        type: "modifyComplexType",
-        payload: {
-          typeId: "/complexType:FlexType",
-          contentModel: "choice",
-        },
-      };
+      modifyComplexType(schemaObj, { typeId: "/complexType:FlexType", contentModel: "choice" });
 
-      executeModifyComplexType(command, schemaObj);
-
-      const ct = toArray(schemaObj.complexType)[0];
-      expect(ct.choice).toBeDefined();
-      expect(ct.sequence).toBeUndefined();
-      expect(ct.all).toBeUndefined();
+      const complexType = topLevelComplexTypes(schemaObj)[0];
+      expect(complexType.choice).toBeDefined();
+      expect(complexType.sequence).toBeUndefined();
     });
 
-    it("should change content model from sequence to all", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:complexType name="AllType">
-    <xs:sequence/>
-  </xs:complexType>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+    it("changes the content model to all", () => {
+      const schemaObj = schemaWith(`
+  <xs:complexType name="AllType"><xs:sequence/></xs:complexType>`);
 
-      const command: ModifyComplexTypeCommand = {
-        type: "modifyComplexType",
-        payload: {
-          typeId: "/complexType:AllType",
-          contentModel: "all",
-        },
-      };
+      modifyComplexType(schemaObj, { typeId: "/complexType:AllType", contentModel: "all" });
 
-      executeModifyComplexType(command, schemaObj);
-
-      const ct = toArray(schemaObj.complexType)[0];
-      expect(ct.all).toBeDefined();
-      expect(ct.sequence).toBeUndefined();
+      const complexType = topLevelComplexTypes(schemaObj)[0];
+      expect(complexType.all).toBeDefined();
+      expect(complexType.sequence).toBeUndefined();
     });
 
-    it("should add a base type to a plain complexType", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    it("adds a base type to a plain complexType", () => {
+      const schemaObj = schemaWith(`
+  <xs:complexType name="EmployeeType"><xs:sequence/></xs:complexType>`);
+
+      modifyComplexType(schemaObj, { typeId: "/complexType:EmployeeType", baseType: "PersonType" });
+
+      const extension = topLevelComplexTypes(schemaObj)[0].complexContent!.extension!;
+      expect(extension.base).toBe("PersonType");
+      expect(extension.sequence).toBeDefined();
+    });
+
+    it("preserves existing compositor content when adding an extension base type", () => {
+      const schemaObj = schemaWith(`
   <xs:complexType name="EmployeeType">
-    <xs:sequence/>
-  </xs:complexType>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+    <xs:sequence><xs:element name="name" type="xs:string"/></xs:sequence>
+  </xs:complexType>`);
 
-      const command: ModifyComplexTypeCommand = {
-        type: "modifyComplexType",
-        payload: {
-          typeId: "/complexType:EmployeeType",
-          baseType: "PersonType",
-        },
-      };
+      modifyComplexType(schemaObj, {
+        typeId: "/complexType:EmployeeType",
+        baseType: "PersonType",
+        derivationKind: "extension",
+      });
 
-      executeModifyComplexType(command, schemaObj);
-
-      const ct = toArray(schemaObj.complexType)[0];
-      expect(ct.complexContent).toBeDefined();
-      expect(ct.complexContent!.extension!.base).toBe("PersonType");
-      expect(ct.complexContent!.extension!.sequence).toBeDefined();
-      expect(ct.sequence).toBeUndefined();
+      const extension = topLevelComplexTypes(schemaObj)[0].complexContent!.extension!;
+      expect(extension.base).toBe("PersonType");
+      expect(toArray(extension.sequence?.element)[0].name).toBe("name");
     });
 
-    it("should update the base type of an existing extension", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    it("switches a complexType to a restriction without dropping its existing compositor content", () => {
+      const schemaObj = schemaWith(`
   <xs:complexType name="EmployeeType">
     <xs:complexContent>
       <xs:extension base="PersonType">
-        <xs:sequence/>
+        <xs:sequence><xs:element name="name" type="xs:string"/></xs:sequence>
       </xs:extension>
     </xs:complexContent>
-  </xs:complexType>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+  </xs:complexType>`);
 
-      const command: ModifyComplexTypeCommand = {
-        type: "modifyComplexType",
-        payload: {
-          typeId: "/complexType:EmployeeType",
-          baseType: "WorkerType",
-        },
-      };
+      modifyComplexType(schemaObj, {
+        typeId: "/complexType:EmployeeType",
+        baseType: "WorkerType",
+        derivationKind: "restriction",
+      });
 
-      executeModifyComplexType(command, schemaObj);
-
-      const ct = toArray(schemaObj.complexType)[0];
-      expect(ct.complexContent!.extension!.base).toBe("WorkerType");
-      expect(ct.complexContent!.extension!.sequence).toBeDefined();
+      const restriction = topLevelComplexTypes(schemaObj)[0].complexContent!.restriction!;
+      expect(restriction.base).toBe("WorkerType");
+      expect(toArray(restriction.sequence?.element)[0].name).toBe("name");
+      expect(topLevelComplexTypes(schemaObj)[0].complexContent!.extension).toBeUndefined();
     });
 
-    it("should remove the base type when baseType is set to empty string", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    it("updates an existing extension base type", () => {
+      const schemaObj = schemaWith(`
   <xs:complexType name="EmployeeType">
-    <xs:complexContent>
-      <xs:extension base="PersonType">
-        <xs:sequence/>
-      </xs:extension>
-    </xs:complexContent>
-  </xs:complexType>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+    <xs:complexContent><xs:extension base="PersonType"><xs:sequence/></xs:extension></xs:complexContent>
+  </xs:complexType>`);
 
-      const command: ModifyComplexTypeCommand = {
-        type: "modifyComplexType",
-        payload: {
-          typeId: "/complexType:EmployeeType",
-          baseType: "",
-        },
-      };
+      modifyComplexType(schemaObj, { typeId: "/complexType:EmployeeType", baseType: "WorkerType" });
 
-      executeModifyComplexType(command, schemaObj);
-
-      const ct = toArray(schemaObj.complexType)[0];
-      expect(ct.complexContent).toBeUndefined();
-      expect(ct.sequence).toBeDefined();
+      expect(topLevelComplexTypes(schemaObj)[0].complexContent!.extension!.base).toBe("WorkerType");
     });
 
-    it("should not modify unrelated properties when only one is updated", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:complexType name="RichType" abstract="true" mixed="false">
-    <xs:sequence/>
-  </xs:complexType>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+    it("removes an existing base type when set to an empty string", () => {
+      const schemaObj = schemaWith(`
+  <xs:complexType name="EmployeeType">
+    <xs:complexContent><xs:extension base="PersonType"><xs:sequence/></xs:extension></xs:complexContent>
+  </xs:complexType>`);
 
-      const command: ModifyComplexTypeCommand = {
-        type: "modifyComplexType",
-        payload: {
-          typeId: "/complexType:RichType",
-          typeName: "RicherType",
-        },
-      };
+      modifyComplexType(schemaObj, { typeId: "/complexType:EmployeeType", baseType: "" });
 
-      executeModifyComplexType(command, schemaObj);
-
-      const ct = toArray(schemaObj.complexType)[0];
-      expect(ct.name).toBe("RicherType");
-      // abstract is stored as-is from XML deserialization (string "true"); use toBeTruthy
-      expect(ct.abstract).toBeTruthy();
-      expect(ct.sequence).toBeDefined();
+      const complexType = topLevelComplexTypes(schemaObj)[0];
+      expect(complexType.complexContent).toBeUndefined();
+      expect(complexType.sequence).toBeDefined();
     });
   });
 
-  // ── Anonymous complexType (inline inside element) ──────────────────────
+  describe("anonymous complexType executors", () => {
+    it("adds an anonymous complexType with sequence content", () => {
+      const schemaObj = schemaWith(`<xs:element name="person"/>`);
 
-  describe("executeAddComplexType (anonymous inside element)", () => {
-    it("should add an anonymous complexType with a sequence content model", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person"/>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+      addComplexType(schemaObj, {
+        parentId: "/element:person",
+        contentModel: "sequence",
+      });
 
-      const command: AddComplexTypeCommand = {
-        type: "addComplexType",
-        payload: {
-          parentId: "/element:person",
-          contentModel: "sequence",
-        },
-      };
-
-      executeAddComplexType(command, schemaObj);
-
-      const element = toArray(schemaObj.element)[0];
-      expect(element.complexType).toBeDefined();
-      expect(element.complexType!.sequence).toBeDefined();
-      expect(element.complexType!.choice).toBeUndefined();
-      expect(element.complexType!.all).toBeUndefined();
+      const complexType = topLevelElements(schemaObj)[0].complexType!;
+      expect(complexType.sequence).toBeDefined();
+      expect(complexType.choice).toBeUndefined();
     });
 
-    it("should add an anonymous complexType with choice and mixed content", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="content"/>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+    it("adds an anonymous complexType with mixed choice content", () => {
+      const schemaObj = schemaWith(`<xs:element name="content"/>`);
 
-      const command: AddComplexTypeCommand = {
-        type: "addComplexType",
-        payload: {
-          parentId: "/element:content",
-          contentModel: "choice",
-          mixed: true,
-        },
-      };
+      addComplexType(schemaObj, {
+        parentId: "/element:content",
+        contentModel: "choice",
+        mixed: true,
+      });
 
-      executeAddComplexType(command, schemaObj);
-
-      const element = toArray(schemaObj.element)[0];
-      expect(element.complexType!.choice).toBeDefined();
-      expect(element.complexType!.mixed).toBe(true);
+      const complexType = topLevelElements(schemaObj)[0].complexType!;
+      expect(complexType.choice).toBeDefined();
+      expect(complexType.mixed).toBe(true);
     });
 
-    it("should add an anonymous complexType with an all content model", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="address"/>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+    it("adds an anonymous complexType with a base type extension", () => {
+      const schemaObj = schemaWith(`<xs:element name="employee"/>`);
 
-      const command: AddComplexTypeCommand = {
-        type: "addComplexType",
-        payload: {
-          parentId: "/element:address",
-          contentModel: "all",
-        },
-      };
+      addComplexType(schemaObj, {
+        parentId: "/element:employee",
+        contentModel: "sequence",
+        baseType: "PersonType",
+      });
 
-      executeAddComplexType(command, schemaObj);
-
-      const element = toArray(schemaObj.element)[0];
-      expect(element.complexType!.all).toBeDefined();
+      const extension = topLevelElements(schemaObj)[0].complexType!.complexContent!.extension!;
+      expect(extension.base).toBe("PersonType");
+      expect(extension.sequence).toBeDefined();
     });
 
-    it("should add an anonymous complexType with documentation", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="order"/>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+    it("replaces an existing type attribute when adding an anonymous complexType", () => {
+      const schemaObj = schemaWith(`<xs:element name="person" type="xs:string"/>`);
 
-      const command: AddComplexTypeCommand = {
-        type: "addComplexType",
-        payload: {
-          parentId: "/element:order",
-          contentModel: "sequence",
-          documentation: "Represents an order.",
-        },
-      };
+      addComplexType(schemaObj, {
+        parentId: "/element:person",
+        contentModel: "sequence",
+      });
 
-      executeAddComplexType(command, schemaObj);
-
-      const element = toArray(schemaObj.element)[0];
-      expect(element.complexType!.annotation!.documentation![0].value).toBe("Represents an order.");
+      const element = topLevelElements(schemaObj)[0];
+      expect(element.type_).toBeUndefined();
+      expect(element.complexType?.sequence).toBeDefined();
     });
 
-    it("should add an anonymous complexType with base type extension", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="employee"/>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+    it("replaces an existing anonymous simpleType when adding an anonymous complexType", () => {
+      const schemaObj = schemaWith(`
+  <xs:element name="person">
+    <xs:simpleType>
+      <xs:restriction base="xs:string"/>
+    </xs:simpleType>
+  </xs:element>`);
 
-      const command: AddComplexTypeCommand = {
-        type: "addComplexType",
-        payload: {
-          parentId: "/element:employee",
-          contentModel: "sequence",
-          baseType: "PersonType",
-        },
-      };
+      addComplexType(schemaObj, {
+        parentId: "/element:person",
+        contentModel: "sequence",
+      });
 
-      executeAddComplexType(command, schemaObj);
-
-      const element = toArray(schemaObj.element)[0];
-      expect(element.complexType!.complexContent).toBeDefined();
-      expect(element.complexType!.complexContent!.extension!.base).toBe("PersonType");
-      expect(element.complexType!.complexContent!.extension!.sequence).toBeDefined();
+      const element = topLevelElements(schemaObj)[0];
+      expect(element.simpleType).toBeUndefined();
+      expect(element.complexType?.sequence).toBeDefined();
     });
 
-    it("should produce valid XSD output for an anonymous complexType", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person"/>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+    it("adds documentation to an anonymous complexType", () => {
+      const schemaObj = schemaWith(`<xs:element name="order"/>`);
 
-      executeAddComplexType(
-        {
-          type: "addComplexType",
-          payload: { parentId: "/element:person", contentModel: "sequence" },
-        },
-        schemaObj
+      addComplexType(schemaObj, {
+        parentId: "/element:order",
+        contentModel: "sequence",
+        documentation: "Represents an order.",
+      });
+
+      expect(topLevelElements(schemaObj)[0].complexType!.annotation!.documentation![0].value).toBe(
+        "Represents an order."
       );
+    });
+
+    it("round-trips an anonymous complexType through XML", () => {
+      const schemaObj = schemaWith(`<xs:element name="order"/>`);
+
+      addComplexType(schemaObj, {
+        parentId: "/element:order",
+        contentModel: "sequence",
+      });
 
       const reparsed = unmarshal(schema, marshal(schemaObj));
-      const element = toArray(reparsed.element)[0];
-      expect(element.name).toBe("person");
-      expect(element.complexType).toBeDefined();
-      expect(element.complexType!.sequence).toBeDefined();
+      expect(topLevelElements(reparsed)[0].complexType!.sequence).toBeDefined();
     });
-  });
 
-  describe("executeRemoveComplexType (anonymous inside element)", () => {
-    it("should remove an anonymous complexType from an element", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    it("removes an anonymous complexType from an element", () => {
+      const schemaObj = schemaWith(`
   <xs:element name="person">
     <xs:complexType><xs:sequence/></xs:complexType>
-  </xs:element>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+  </xs:element>`);
 
-      executeRemoveComplexType(
-        {
-          type: "removeComplexType",
-          payload: { typeId: "/element:person/anonymousComplexType[0]" },
-        },
-        schemaObj
-      );
+      removeComplexType(schemaObj, { typeId: "/element:person/anonymousComplexType[0]" });
 
-      const element = toArray(schemaObj.element)[0];
-      expect(element.complexType).toBeUndefined();
-    });
-  });
-
-  describe("executeModifyComplexType (anonymous inside element)", () => {
-    it("should update the content model of an anonymous complexType", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person">
-    <xs:complexType><xs:sequence/></xs:complexType>
-  </xs:element>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
-
-      executeModifyComplexType(
-        {
-          type: "modifyComplexType",
-          payload: {
-            typeId: "/element:person/anonymousComplexType[0]",
-            contentModel: "choice",
-          },
-        },
-        schemaObj
-      );
-
-      const element = toArray(schemaObj.element)[0];
-      expect(element.complexType!.choice).toBeDefined();
-      expect(element.complexType!.sequence).toBeUndefined();
+      expect(topLevelElements(schemaObj)[0].complexType).toBeUndefined();
     });
 
-    it("should update mixed flag of an anonymous complexType", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="text">
-    <xs:complexType><xs:sequence/></xs:complexType>
-  </xs:element>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+    it("changes the content model on an anonymous complexType", () => {
+      const schemaObj = schemaWith(`
+  <xs:element name="person"><xs:complexType><xs:sequence/></xs:complexType></xs:element>`);
 
-      executeModifyComplexType(
-        {
-          type: "modifyComplexType",
-          payload: {
-            typeId: "/element:text/anonymousComplexType[0]",
-            mixed: true,
-          },
-        },
-        schemaObj
-      );
+      modifyComplexType(schemaObj, {
+        typeId: "/element:person/anonymousComplexType[0]",
+        contentModel: "choice",
+      });
 
-      const element = toArray(schemaObj.element)[0];
-      expect(element.complexType!.mixed).toBe(true);
+      const complexType = topLevelElements(schemaObj)[0].complexType!;
+      expect(complexType.choice).toBeDefined();
+      expect(complexType.sequence).toBeUndefined();
     });
 
-    it("should add a base type to an anonymous complexType", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    it("updates the mixed flag on an anonymous complexType", () => {
+      const schemaObj = schemaWith(`
+  <xs:element name="text"><xs:complexType><xs:sequence/></xs:complexType></xs:element>`);
+
+      modifyComplexType(schemaObj, {
+        typeId: "/element:text/anonymousComplexType[0]",
+        mixed: true,
+      });
+
+      expect(topLevelElements(schemaObj)[0].complexType!.mixed).toBe(true);
+    });
+
+    it("adds a base type to an anonymous complexType", () => {
+      const schemaObj = schemaWith(`
+  <xs:element name="employee"><xs:complexType><xs:sequence/></xs:complexType></xs:element>`);
+
+      modifyComplexType(schemaObj, {
+        typeId: "/element:employee/anonymousComplexType[0]",
+        baseType: "PersonType",
+      });
+
+      const extension = topLevelElements(schemaObj)[0].complexType!.complexContent!.extension!;
+      expect(extension.base).toBe("PersonType");
+      expect(extension.sequence).toBeDefined();
+    });
+
+    it("switches an anonymous complexType to a restriction without dropping its content", () => {
+      const schemaObj = schemaWith(`
   <xs:element name="employee">
-    <xs:complexType><xs:sequence/></xs:complexType>
-  </xs:element>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+    <xs:complexType>
+      <xs:sequence><xs:element name="name" type="xs:string"/></xs:sequence>
+    </xs:complexType>
+  </xs:element>`);
 
-      executeModifyComplexType(
-        {
-          type: "modifyComplexType",
-          payload: {
-            typeId: "/element:employee/anonymousComplexType[0]",
-            baseType: "PersonType",
-          },
-        },
-        schemaObj
-      );
+      modifyComplexType(schemaObj, {
+        typeId: "/element:employee/anonymousComplexType[0]",
+        baseType: "PersonType",
+        derivationKind: "restriction",
+      });
 
-      const element = toArray(schemaObj.element)[0];
-      expect(element.complexType!.complexContent!.extension!.base).toBe("PersonType");
-      expect(element.complexType!.sequence).toBeUndefined();
+      const restriction = topLevelElements(schemaObj)[0].complexType!.complexContent!.restriction!;
+      expect(restriction.base).toBe("PersonType");
+      expect(toArray(restriction.sequence?.element)[0].name).toBe("name");
     });
 
-    it("should update documentation of an anonymous complexType", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="order">
-    <xs:complexType><xs:sequence/></xs:complexType>
-  </xs:element>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+    it("updates documentation on an anonymous complexType", () => {
+      const schemaObj = schemaWith(`
+  <xs:element name="order"><xs:complexType><xs:sequence/></xs:complexType></xs:element>`);
 
-      executeModifyComplexType(
-        {
-          type: "modifyComplexType",
-          payload: {
-            typeId: "/element:order/anonymousComplexType[0]",
-            documentation: "Represents an order.",
-          },
-        },
-        schemaObj
+      modifyComplexType(schemaObj, {
+        typeId: "/element:order/anonymousComplexType[0]",
+        documentation: "Represents an order.",
+      });
+
+      expect(topLevelElements(schemaObj)[0].complexType!.annotation!.documentation![0].value).toBe(
+        "Represents an order."
       );
+    });
+  });
 
-      const element = toArray(schemaObj.element)[0];
-      expect(element.complexType!.annotation!.documentation![0].value).toBe("Represents an order.");
+  describe("executeModifyComplexType — reference propagation", () => {
+    it("renames element/@type references when a top-level complexType is renamed", () => {
+      const schemaObj = schemaWith(`
+  <xs:complexType name="PersonType"><xs:sequence/></xs:complexType>
+  <xs:element name="person" type="PersonType"/>`);
+
+      modifyComplexType(schemaObj, {
+        typeId: "/complexType:PersonType",
+        typeName: "HumanType",
+      });
+
+      expect(topLevelComplexTypes(schemaObj)[0].name).toBe("HumanType");
+      expect(topLevelElements(schemaObj)[0].type_).toBe("HumanType");
+    });
+
+    it("renames extension/@base references when a top-level complexType is renamed", () => {
+      const schemaObj = schemaWith(`
+  <xs:complexType name="BaseType"><xs:sequence/></xs:complexType>
+  <xs:complexType name="DerivedType">
+    <xs:complexContent><xs:extension base="BaseType"><xs:sequence/></xs:extension></xs:complexContent>
+  </xs:complexType>`);
+
+      modifyComplexType(schemaObj, {
+        typeId: "/complexType:BaseType",
+        typeName: "RootType",
+      });
+
+      const derived = topLevelComplexTypes(schemaObj).find((complexType) => complexType.name === "DerivedType");
+      expect(derived!.complexContent!.extension!.base).toBe("RootType");
     });
   });
 });

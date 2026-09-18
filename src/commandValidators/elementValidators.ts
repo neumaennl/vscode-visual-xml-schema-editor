@@ -21,7 +21,7 @@ import {
   validateElementType,
 } from "./validationUtils";
 import { locateNodeById } from "../schemaNavigator";
-import { parseSchemaId } from "../../shared/idStrategy";
+import { parseSchemaId, SCHEMA_ROOT_ID } from "../../shared/idStrategy";
 import { toArray } from "../../shared/schemaUtils";
 
 /** Parent types that can contain child elements. */
@@ -163,7 +163,7 @@ export function validateRemoveElement(
   }
 
   const parsed = parseSchemaId(command.payload.elementId);
-  const parentId = parsed.parentId || "schema";
+  const parentId = parsed.parentId || SCHEMA_ROOT_ID;
   const location = locateNodeById(schemaObj, parentId);
 
   if (!location.found) {
@@ -199,7 +199,7 @@ export function validateModifyElement(
   }
 
   const parsed = parseSchemaId(elementId);
-  const parentId = parsed.parentId || "schema";
+  const parentId = parsed.parentId || SCHEMA_ROOT_ID;
   const location = locateNodeById(schemaObj, parentId);
 
   if (!location.found) {
@@ -330,7 +330,7 @@ export function validateRemoveAttribute(
   }
 
   const parsed = parseSchemaId(command.payload.attributeId);
-  const parentId = parsed.parentId ?? "schema";
+  const parentId = parsed.parentId ?? SCHEMA_ROOT_ID;
   const location = locateNodeById(schemaObj, parentId);
   if (!location.found) {
     return {
@@ -372,7 +372,7 @@ export function validateModifyAttribute(
   }
 
   const parsed = parseSchemaId(attributeId);
-  const parentId = parsed.parentId ?? "schema";
+  const parentId = parsed.parentId ?? SCHEMA_ROOT_ID;
   const location = locateNodeById(schemaObj, parentId);
   if (!location.found) {
     return {

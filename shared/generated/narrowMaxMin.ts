@@ -1,11 +1,11 @@
 import { XmlRoot, XmlElement, XmlAttribute, XmlAnyAttribute } from '@neumaennl/xmlbind-ts';
-import type { blockSet } from './types';
-import { formChoice } from './enums';
-import { annotationType } from './annotationType';
-import { localSimpleType } from './localSimpleType';
-import { localComplexType } from './localComplexType';
-import { keybase } from './keybase';
-import { keyrefType } from './keyrefType';
+import type { blockSet } from './types.js';
+import { formChoice } from './enums.js';
+import { annotationType } from './annotationType.js';
+import { localSimpleType } from './localSimpleType.js';
+import { localComplexType } from './localComplexType.js';
+import { keybase } from './keybase.js';
+import { keyrefType } from './keyrefType.js';
 /**
  * restricted max/min
  */

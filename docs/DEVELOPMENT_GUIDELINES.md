@@ -306,21 +306,27 @@ npm run generate-classes-from-schema
 
 # Package extension
 npm run package
+
+# Verify the packaged VSIX is self-contained (loads without the dev node_modules)
+npm run package:verify
 ```
+
+`engines.vscode` and `@types/vscode` must be bumped together: `vsce` refuses to package if `@types/vscode` is newer than `engines.vscode`, so Dependabot ignores minor/major `@types/vscode` updates.
 
 ### Continuous Integration
 
 The project uses GitHub Actions for continuous integration:
 
 - **Workflow**: `.github/workflows/ci.yml`
-- **Runs on**: Push to `main` and pull requests
+- **Runs on**: Pushes and pull requests to `main` and `modernization`
 - **Steps**:
   1. Install dependencies
   2. Run linting
   3. Build the project
   4. Run tests with coverage
-  5. Generate coverage report
-  6. Publish test results
+  5. Package the VSIX and verify that the packaged extension loads
+  6. Generate coverage report
+  7. Publish test results
 
 **CI Badge**: The README includes a CI status badge showing the current build status.
 

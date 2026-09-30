@@ -43,7 +43,7 @@ Changes to settings are applied immediately to all open XML Schema editors.
 
 This is currently based on the official [Custom Editor API Samples](https://github.com/microsoft/vscode-extension-samples/tree/main/custom-editor-sample) from Microsoft.
 
-- Open this example in VS Code 1.74+
+- Open this example in VS Code 1.100+
 - `npm install`
 - `npm run watch` or `npm run compile`
 - `F5` to start debugging

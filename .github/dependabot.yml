@@ -9,6 +9,11 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "daily"
+    ignore:
+      # @types/vscode must not be newer than engines.vscode in package.json
+      # (vsce refuses to package otherwise). Bump both together manually.
+      - dependency-name: "@types/vscode"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
     groups:
       eslint-dependencies:
         patterns:

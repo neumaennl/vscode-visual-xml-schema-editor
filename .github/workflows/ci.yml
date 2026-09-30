@@ -9,9 +9,9 @@ env:
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, modernization ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, modernization ]
 
 jobs:
   build:
@@ -43,6 +43,12 @@ jobs:
         run: |
           mkdir -p test-results
           npm test -- --coverage --runInBand --json --outputFile=test-results/jest-results.json --coverageReporters=json-summary
+
+      - name: Package VSIX
+        run: npm run package
+
+      - name: Verify packaged extension loads
+        run: npm run package:verify
 
       - name: Summarize coverage in job summary
         if: always()

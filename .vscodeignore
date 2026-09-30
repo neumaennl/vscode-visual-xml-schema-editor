@@ -1,19 +1,32 @@
-.vscode/**
-.vscode-test/**
+# Sources, tests and tooling (only compiled output ships)
 src/**
+shared/**
 webview-src/**
-.gitignore
-.yarnrc
-webpack.config.js
-tsconfig.json
-tsconfig.webview.json
+out/**/__tests__/**
+out/**/__mocks__/**
+out/**/*.test.js
 **/*.map
 **/*.ts
-**/*.test.ts
-**/*.test.js
-**/__tests__/**
-**/__mocks__/**
-!out/**/*.js
-!webview/**/*.js
-node_modules/**
-!node_modules/@neumaennl/xmlbind-ts/**
+
+# Repository, docs and dev configuration
+.github/**
+scripts/**
+.vscode/**
+.vscode-test/**
+docs/**
+exampleFiles/**
+schema/**
+coverage/**
+test-results/**
+.gitignore
+.npmrc
+.nvmrc
+icon.svg
+*.vsix
+eslint.config.mjs
+jest.config.mjs
+jest.setup.mjs
+webpack.config.mjs
+tsconfig*.json
+
+# node_modules is not excluded: vsce includes production dependencies only.

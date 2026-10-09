@@ -33,7 +33,7 @@ The maintainer reviews your work directly in the session.
 2. **Plan first.** Before implementing anything, present a plan and ask for approval.
 3. **Implement only after approval.** Stick to the approved plan. If the plan needs to change, stop and ask.
 4. **Ask when in doubt.** Ask questions whenever something is unclear instead of guessing.
-5. **Commit only with permission.** Do not commit, push, open or update pull requests, or change issues or project boards without explicit permission.
+5. **Commit only with permission.** Do not commit, push, open or update pull requests, or change issues or project boards without explicit permission. Moving an issue to "In Progress" when you start approved work on it, as the [development guidelines](docs/development-guidelines.md#issues) require, needs no extra permission.
 6. **One step at a time.** Never start the next step until the previous one has been approved.
 
 ## Correctness

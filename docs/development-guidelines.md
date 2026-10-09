@@ -1,11 +1,11 @@
 ---
 type: Guideline
 title: Development guidelines
-description: Rules for everyone who changes the extension - code size, code quality and ESLint, TypeScript and naming, VS Code and Node versions, TSDoc, tests, documentation and the knowledge bundle, what to check before committing, and commits.
+description: Rules for everyone who changes the extension - code size, code quality and ESLint, TypeScript and naming, VS Code and Node versions, TSDoc, tests, documentation and the knowledge bundle, issues, what to check before committing, and commits.
 tags: [guidelines, conventions, code-quality, typescript, documentation, workflow]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-09T20:13:13Z }
-verified: { by: human:neumaennl, at: 2026-10-09T20:26:25Z }
+generated: { by: human:neumaennl, at: 2026-10-09T20:43:28Z }
+verified: { by: human:neumaennl, at: 2026-10-09T20:46:59Z }
 sources:
   - id: eslint
     resource: ../eslint.config.mjs
@@ -88,6 +88,10 @@ The documentation of the extension is the knowledge bundle in `docs/`, in the Op
 - **Diagrams.** Mermaid diagrams use one arrow with a combined label for both directions, so that labels do not overlap. Check that a diagram renders with `npx -y @mermaid-js/mermaid-cli -i diagram.mmd -o diagram.png`.
 - **Architecture decisions** are recorded in `docs/architecture/`. ADR 001 is a living document: deviations from it are recorded in its section 9 with their reason.
 - **README and changelog.** `README.md` is also the page of the extension in the VS Code Marketplace. It is written for users and describes the state of the branch it is on; information for contributors goes into `CONTRIBUTING.md`. Keep both up to date, and record notable changes in a changelog (there is none yet, see [the known issue](known-issues.md#there-is-no-changelog)).
+
+# Issues
+
+- When you start working on an issue, move it to "In Progress" on the project board [Editor Refactor](https://github.com/users/neumaennl/projects/1). If you cannot change the board, comment on the issue that you are working on it.
 
 # Before committing
 

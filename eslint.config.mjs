@@ -29,9 +29,9 @@ export default [
       ],
     },
   },
-  // JavaScript configuration files (jest.config.mjs, etc.)
+  // JavaScript configuration files (jest.config.mjs, etc.) and scripts
   {
-    files: ['*.mjs'],
+    files: ['*.mjs', 'scripts/**/*.mjs'],
     ...eslint.configs.recommended,
     languageOptions: {
       ecmaVersion: 2020,

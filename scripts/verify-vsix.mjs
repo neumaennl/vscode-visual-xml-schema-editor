@@ -15,7 +15,13 @@ if (!vsix) {
 
 const dir = mkdtempSync(join(tmpdir(), "vsix-verify-"));
 try {
-  execFileSync("unzip", ["-q", resolve(vsix), "-d", dir]);
+  if (process.platform === "win32") {
+    // Windows has no unzip; its bsdtar reads zip files. The full path avoids GNU tar from Git for Windows.
+    const tar = join(process.env.SystemRoot ?? "C:\\Windows", "System32", "tar.exe");
+    execFileSync(tar, ["-xf", resolve(vsix), "-C", dir]);
+  } else {
+    execFileSync("unzip", ["-q", resolve(vsix), "-d", dir]);
+  }
   const extensionDir = join(dir, "extension");
   const require = createRequire(join(extensionDir, "package.json"));
   const { main } = require("./package.json");

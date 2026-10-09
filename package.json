@@ -91,6 +91,8 @@
     "lint:fix": "eslint . --fix",
     "package": "vsce package",
     "package:verify": "node scripts/verify-vsix.mjs",
+    "vscode:check": "node scripts/vscode-version.mjs check",
+    "vscode:update": "node scripts/vscode-version.mjs update",
     "clean": "rimraf out webview",
     "generate-classes-from-schema": "xsd2ts --force -i schema/XMLSchema.xsd -o shared/generated"
   },

@@ -10,9 +10,12 @@ updates:
     schedule:
       interval: "daily"
     ignore:
-      # @types/vscode must not be newer than engines.vscode in package.json
-      # (vsce refuses to package otherwise). Bump both together manually.
+      # @types/vscode and @types/node are derived from engines.vscode and the
+      # Node version of its Electron (vsce refuses to package with a newer
+      # @types/vscode). Raise them with `npm run vscode:update`.
       - dependency-name: "@types/vscode"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "@types/node"
         update-types: ["version-update:semver-major", "version-update:semver-minor"]
     groups:
       eslint-dependencies:

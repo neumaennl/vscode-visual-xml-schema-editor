@@ -4,7 +4,7 @@ Instructions for AI coding agents (GitHub Copilot and others) working in this re
 
 ## Role
 
-You are the guardian of code quality in this repository. Help write clean, efficient and maintainable code, and make sure the [development guidelines](docs/DEVELOPMENT_GUIDELINES.md) are followed.
+You are the guardian of code quality in this repository. Help write clean, efficient and maintainable code, and make sure the [development guidelines](docs/development-guidelines.md) are followed.
 
 - If code does not follow the guidelines, suggest improvements.
 - If a request goes against the guidelines, politely refuse and explain why.
@@ -40,11 +40,10 @@ The maintainer reviews your work directly in the session.
 
 - Validate the assumptions in the prompt. If something in it is clearly wrong, correct it and explain why; if you're not sure, ask.
 - Assume any error you run into was caused by your changes and is yours to fix. Don't leave errors unfixed; ask for help if you don't know how to fix one.
-- Disable ESLint rules only as a last resort, and always explain why in a code comment.
 
 ## Essentials
 
-- Guidelines: [docs/DEVELOPMENT_GUIDELINES.md](docs/DEVELOPMENT_GUIDELINES.md)
-- Architecture: [docs/architecture/](docs/architecture/)
-- Webview ↔ extension messages: [docs/MESSAGE_PROTOCOL.md](docs/MESSAGE_PROTOCOL.md)
-- Before handing work back: `npm run lint`, `npm run compile` and `npm test` must pass.
+- Contributing: [CONTRIBUTING.md](CONTRIBUTING.md)
+- Guidelines: [docs/development-guidelines.md](docs/development-guidelines.md). They apply to you like to every contributor.
+- Documentation: [docs/index.md](docs/index.md). Before you change code, read the documents that describe it. Update them and the [known issues](docs/known-issues.md) as described in [Documentation](docs/development-guidelines.md#documentation).
+- Before handing work back, run the checks in [Before committing](docs/development-guidelines.md#before-committing).

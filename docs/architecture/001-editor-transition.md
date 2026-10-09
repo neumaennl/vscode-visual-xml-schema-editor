@@ -1,9 +1,19 @@
+---
+type: Architecture Decision Record
+title: "ADR 001: Editor transition architecture"
+description: The decision to turn the viewer into an editor whose webview sends commands that the extension host validates, executes and writes to the XSD file, with the roadmap and the deviations of the implementation from the design.
+tags: [adr, architecture, commands, roadmap]
+status: stable
+---
+
 # ADR 001: Editor Transition Architecture
 
 **Status:** Accepted  
 **Date:** 2026-02-20  
 **Authors:** Project Team  
 **Type:** Architecture Decision Record
+
+> **Living document.** This ADR is updated as the implementation evolves. [Section 9](#9-deviations-from-this-design) records where the implementation deviates from the design and why.
 
 ## 1. Overview (Goal)
 
@@ -16,8 +26,8 @@ The Visual XML Schema Editor currently operates as a **viewer** with limited edi
 - Document changes trigger re-parsing and full diagram updates
 - The `applySchemaChanges` method is stubbed but not implemented
 
-> **Implementation Progress (as of 2026-03-18):**
-> Phase 1 (Foundation) is complete — all command types, the CommandProcessor, CommandValidator, CommandExecutor, SchemaModelManager, and message protocol have been implemented with unit tests. Phase 2 (Basic Editing) is in progress — element add/remove/modify handlers are implemented, attribute add/remove/modify handlers are implemented with full unit tests and updated validators, simpleType add/remove/modify handlers are implemented with support for both top-level named types and anonymous inline types within elements (including all 12 XSD restriction facets), complexType add/remove/modify handlers are implemented with support for top-level named types and anonymous inline types within elements (including all content models: sequence, choice, all), abstract/mixed flags, base type extension via complexContent, and documentation, and group (named model group) add/remove/modify handlers are now implemented with support for all content models (sequence, choice, all) and documentation, with updated validators that check group name uniqueness and existence, and full unit tests. Annotation and documentation add/remove/modify handlers are now fully implemented (annotationExecutors.ts) with path-based ID addressing (`targetId`/`annotationId` = XPath-like path to the annotated component; `documentationId` = `{elementPath}/documentation[N]`), support for xml:lang on documentation elements, multiple documentation and appinfo children, and updated validators with full existence checks; confirmed via XSD spec that xs:annotation/xs:documentation/xs:appinfo have no `ref` attribute and therefore no reference support is required. Import and include add/remove/modify handlers are now fully implemented (schemaExecutors.ts) — imports carry namespace + schemaLocation + optional prefix, with namespace-prefix synchronisation and QName rewriting on prefix rename; includes carry only schemaLocation (same-namespace schema composition). Both sets of commands have full validator coverage (ID format/existence checks, duplicate detection, schemaLocation format) and unit tests. Error reporting has been hardened (Phase 2 hardening): all 30 command types have validators with no thrown exceptions; `ValidationResult` and `CommandExecutionResult` are now discriminated unions — `ValidationResult` is `{ valid: true } | { valid: false, error: string }`, and `CommandExecutionResult` is `CommandExecutionSuccess | CommandExecutionValidationFailure | CommandExecutionRuntimeFailure`, making `errorKind` required on failure variants and restricting `stack` to the `'runtime'` variant only; `SchemaEditorProvider` routes validation failures to `commandResult { success:false, error }` and runtime exceptions to `error { message, code:'COMMAND_EXECUTION_ERROR', stack? }`; `MESSAGE_PROTOCOL.md` updated to document the routing rule and the `COMMAND_EXECUTION_ERROR` code.
+> **Implementation Progress (as of 2026-10-08, branch `copilot/add-editor-capabilities`):**
+> Phases 1 (Foundation) and 2 (Basic Editing) are complete: all command types are defined, validated, executed and written back to the document, with unit and integration tests. Phase 3 (UI Integration) is in progress: constructs are added by dragging items from a palette onto the diagram, and the selected node is edited and deleted in an editable property panel with the tabs General, Facets, Docs and XML. Of Phase 4, only the skipping of collapsed nodes is implemented; every schema update rebuilds the whole diagram. Phases 5 and 6 have not started. See the [roadmap](#6-implementation-roadmap) for the milestones and [section 9](#9-deviations-from-this-design) for where the implementation deviates from this design.
 
 ### Goal
 
@@ -47,6 +57,8 @@ The editor will use a **Command Pattern** architecture to manage state updates, 
 - **Reversibility**: Commands can be undone/redone by design
 - **Auditability**: Command history provides a log of all editing operations
 - **Consistency**: Centralized command execution ensures state coherence
+
+> **Deviation:** commands have no inverse and no history; undo and redo are VS Code's text undo. See [section 9](#9-deviations-from-this-design).
 
 ### Key Components
 
@@ -126,6 +138,8 @@ flowchart TD
 ### Step-by-Step Process
 
 #### 3.1 User Interaction & Action Creation (Webview)
+
+> **Deviation:** constructs are added from the palette, not with toolbar buttons. See [section 9](#9-deviations-from-this-design).
 
 ```typescript
 // User clicks "Add Element" button
@@ -327,6 +341,8 @@ This section outlines the high-level architectural changes required to transform
 
 #### Action Creators
 
+> **Deviation:** each surface builds its own commands, and input checks are split between webview and extension host. See [section 9](#9-deviations-from-this-design).
+
 **Role**: Convert user interactions into typed command messages.
 
 **Responsibilities**:
@@ -395,6 +411,8 @@ The existing diagram renderer (ported from xsddiagram) handles:
 - Expand/collapse functionality
 
 ### Integration Approach
+
+> **Deviation:** the UX concept changed most of this section: palette instead of toolbar for adding, property panel instead of inline editing, a context menu with other operations, and listeners on the canvas instead of per-item handlers. See [section 9](#9-deviations-from-this-design).
 
 #### 5.1 Make Diagram Interactive
 
@@ -576,12 +594,15 @@ class DiagramRenderer {
 
 **Goal**: Make diagram and properties panel interactive for user-driven editing.
 
+> **Deviation:** the milestones below predate the UX concept; adding is done from the palette, and the toolbar gets no editing buttons. See [section 9](#9-deviations-from-this-design).
+
 #### Milestones:
 
-- [ ] Implement SchemaActions in webview for command dispatch
+- [x] ~~Implement SchemaActions in webview for command dispatch~~ — replaced: each surface builds its own commands (section 9)
+- [x] Add a palette whose items are dragged onto diagram nodes to add constructs (replaces the toolbar editing buttons, section 9)
 - [ ] Add context menu to diagram items with relevant actions
-- [ ] Implement toolbar editing buttons
-- [ ] Make properties panel editable with inline validation
+- [x] ~~Implement toolbar editing buttons~~ — dropped: the toolbar only has actions for the whole diagram (section 9)
+- [ ] Make properties panel editable with inline validation — the panel is editable; inline validation is missing
 - [ ] Add visual feedback for operations (loading states, confirmations)
 - [ ] Implement selection manager with multi-select support
 - [ ] Add keyboard shortcuts for common operations
@@ -597,7 +618,7 @@ class DiagramRenderer {
 - [ ] Implement StateReconciler with diff computation
 - [ ] Add incremental diagram updates (avoid full re-renders)
 - [ ] Implement animation/transitions for changes
-- [ ] Add lazy rendering for collapsed nodes
+- [x] Add lazy rendering for collapsed nodes — children of collapsed nodes are neither laid out nor drawn
 - [ ] Test with medium schemas (100-300 elements) and profile performance
 - [ ] Optimize bottlenecks to achieve smooth operation
 - [ ] Test with large schemas (500+ elements) and verify acceptable performance
@@ -611,9 +632,9 @@ class DiagramRenderer {
 
 #### Milestones:
 
-- [ ] Implement drag-and-drop reordering of elements
+- [ ] Implement drag-and-drop reordering of elements — planned as reorder in the context menu (section 9)
 - [ ] Add copy/paste functionality with clipboard integration
-- [ ] Implement inline editing (double-click to rename)
+- [x] ~~Implement inline editing (double-click to rename)~~ — dropped: names are edited in the property panel (section 9)
 - [ ] Add find/replace functionality
 - [ ] Implement batch operations (multi-delete, bulk property changes)
 - [ ] Add validation feedback in UI with actionable messages
@@ -912,6 +933,25 @@ This architecture provides a solid foundation for transitioning the Visual XML S
 - **User Experience**: Responsive editing with immediate feedback
 
 The phased implementation approach allows for iterative development and testing, reducing risk while delivering value incrementally.
+
+## 9. Deviations from This Design
+
+_As of 2026-10-08._
+
+After this ADR was accepted, the interaction design was worked out in a UX concept ([#153](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/153), documented in [UX concept](../ux-concept.md)). Its core rules: new constructs are added by dragging an item from the palette onto a node, existing constructs are edited in the property panel, the toolbar only has actions for the whole diagram, and the context menu complements palette and panel but is never the main way to add or edit. Several deviations follow from these rules.
+
+| Section | This ADR | Implementation | Reason |
+|---|---|---|---|
+| 3.1, 5.3, 5.5 | Constructs are added with toolbar buttons and the context menu ("Add Child"), which act on the selected node. | Constructs are added by dragging an item from the palette onto a node in the diagram. | UX concept: each interaction has one main surface, and adding starts in the palette. |
+| 5.3 | The toolbar has Add Element, Add Attribute, Delete and the selection info. | The toolbar has zoom in, zoom out and fit view. | UX concept: the toolbar only has actions for the whole diagram; operations on single nodes belong in the palette, the property panel or the context menu. |
+| 5.1 | The context menu offers Add Child, Delete and Edit Properties. | Planned with contextual operations instead: reorder, refactor, find usages, go to definition, cut, copy, paste and regenerate sample XML. | UX concept: the context menu complements palette and panel; it may repeat add, edit and delete as shortcuts. |
+| 5.1, Phase 5 | Elements are renamed inline with a double click. | Names are edited in the property panel. | UX concept: existing constructs are edited in the property panel. |
+| 5.1, Phase 5 | Nodes are dragged to reorder or move them. | Only palette items can be dragged. Reorder, cut and paste are planned in the context menu. | UX concept. |
+| 5.1 | `DiagramItem.enableEditing()` attaches interaction handlers to each item. | `renderer.ts` has one click, one drag-over and one drop listener on the canvas; they find the item through the `data-item-id` attribute of the event target. | The SVG is recreated on every render. Listeners on the canvas are set up once and survive this, whereas handlers on each item would have to be attached again after every render. All input on nodes (clicks, expand buttons, drag and drop, and later the context menu) is handled in one place, and diagram items stay plain data for the build and the layout, without DOM or UI code. The cost is a lookup of the item by its ID for each event. |
+| 4.3 | One layer of Action Creators, pure functions used by all UI parts, builds the commands and validates the input. | Each surface builds its own commands: `DropCommandFactory` for palette drops, the property panel modules for edits. | Commands are built where the input is collected, and the two surfaces collect different input (a palette item and a drop target; a field of the selected node). `DropCommandFactory` keeps the names of the top-level components and reserves each generated name, so that several drops before the next schema update get different names. |
+| 4.3, 5.4 | The webview validates input before it creates a command. | The webview checks only what it can decide from the diagram: drop targets, and empty or unchanged input. The extension host checks every command completely. | The checks complement each other: the extension host is the gatekeeper and must not rely on the webview, and rules are not copied to the webview for their own sake (see [Architecture](../architecture.md#principles)). |
+| 5.4 | Several properties can be edited before the changes are applied (batch edits). | Each field commits on blur or Enter and sends one command; there is no save button. | UX concept. Each change is one command and one undo step. |
+| 2 | Commands are reversible, the command history makes edits auditable, and the design follows event sourcing principles. | Commands have no inverse and are not stored. Each command is applied as one `WorkspaceEdit` that replaces the document text, and undo and redo are VS Code's text undo. The document text is the state. | Risk 3 already relies on VS Code's native undo. Its undo stack covers commands and edits in the text editor alike, as the success criteria require (section 1); a command history of its own would get out of step with edits made in the text editor. |
 
 ## References
 

@@ -14,6 +14,8 @@ scripts/**
 .vscode/**
 .vscode-test/**
 docs/**
+AGENTS.md
+CONTRIBUTING.md
 exampleFiles/**
 schema/**
 coverage/**

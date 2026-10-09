@@ -1,51 +1,53 @@
-# Visual XML Schema Editor Extension for Visual Studio Code
+# XML Schema Visual Editor
 
 [![CI](https://github.com/neumaennl/vscode-visual-xml-schema-editor/actions/workflows/ci.yml/badge.svg)](https://github.com/neumaennl/vscode-visual-xml-schema-editor/actions/workflows/ci.yml)
 
-Uses VS Code's [custom editor API](https://code.visualstudio.com/api/extension-guides/custom-editors) to allow editing XML schemas in a visual manner similar to [Altova XMLSpy](https://www.altova.com/xmlspy-xml-editor).
+Shows XML Schema (`.xsd`) files in VS Code as an interactive diagram, similar to the schema view of [Altova XMLSpy](https://www.altova.com/xmlspy-xml-editor).
 
-## References
+The extension is currently a viewer. It is being developed into a full visual editor, in which you add constructs to the diagram by drag and drop and edit their properties in a side panel; every change is written back to the XSD file. See [Status](#status).
 
-- uses [Typescript class generator from XML schemas and XML (de-)serializer](https://github.com/neumaennl/xmlbind-ts)
-- ported this [free xml schema definition diagram viewer](https://github.com/dgis/xsddiagram) to generate the diagram
-- try out [Eclipse diagram editor framework for VS Code](https://eclipsesource.com/de/blogs/2021/04/16/a-diagram-editor-framework-for-vs-code/) to help editing the diagram
-- possibly use [React](https://medium.com/younited-tech-blog/reactception-extending-vs-code-extension-with-webviews-and-react-12be2a5898fd) or [Svelte](https://blog.kylekukshtel.com/game-data-editor-vscode-part-2)
+## Features
 
-## VS Code API
+- **Diagram of the schema.** Elements and types are drawn as a tree, with their content models (sequence, choice and all). Expand and collapse nodes to focus on the part you are working on.
+- **Properties of the selected node.** Click a node to see its name, type, namespace, occurrence, documentation, attributes and restrictions (facets) in the properties panel.
+- **Navigation.** Zoom with the mouse wheel or the toolbar buttons, use "Fit View" to see the whole diagram, and pan by dragging the background, with the middle mouse button or with Ctrl and the left mouse button.
+- **Always current.** The diagram follows changes that you make to the file in the text editor.
 
-### `vscode` module
+## Usage
 
-- [`window.registerCustomEditorProvider`](https://code.visualstudio.com/api/references/vscode-api#window.registerCustomEditorProvider)
-- [`CustomTextEditor`](https://code.visualstudio.com/api/references/vscode-api#CustomTextEditor)
-- [`CustomEditor`](https://code.visualstudio.com/api/references/vscode-api#CustomEditor)
+The visual editor opens next to the normal text editor; it does not replace it. To open an `.xsd` file in it:
 
-## Configuration
+- right-click the file in the Explorer and choose **Open in XML Schema Visual Editor**,
+- run **Open in XML Schema Visual Editor** from the Command Palette while the file is open in the text editor, or
+- run **View: Reopen Editor With…** and choose **XML Schema Visual Editor**.
 
-The extension provides the following settings to customize the diagram display:
+## Settings
 
-- **`xmlSchemaVisualEditor.showDocumentation`** (default: `false`)  
-  Show documentation annotations in the diagram. When enabled, documentation elements from the XSD will be displayed alongside the diagram elements.
+| Setting | Default | Effect |
+|---|---|---|
+| `xmlSchemaVisualEditor.showDocumentation` | `false` | Shows the documentation annotations of the schema in the diagram. |
+| `xmlSchemaVisualEditor.alwaysShowOccurrence` | `false` | Shows the occurrence (`minOccurs`..`maxOccurs`) of every item, including the default `1..1`. |
+| `xmlSchemaVisualEditor.showType` | `false` | Shows the type of each element in the diagram. |
 
-- **`xmlSchemaVisualEditor.alwaysShowOccurrence`** (default: `false`)  
-  Always show occurrence constraints (minOccurs/maxOccurs) in the diagram, even for default values (1..1). When disabled, default occurrence values are hidden to reduce clutter.
+Changes to the settings apply immediately to all open diagrams.
 
-- **`xmlSchemaVisualEditor.showType`** (default: `false`)  
-  Show type information for elements in the diagram. When enabled, the type of each element will be displayed in the diagram.
+## Requirements
 
-To change these settings:
-1. Open VS Code Settings (`Ctrl+,` / `Cmd+,`)
-2. Search for "XML Schema Visual Editor"
-3. Toggle the desired options
+VS Code 1.100 or later.
 
-Changes to settings are applied immediately to all open XML Schema editors.
+## Status
 
-## Running the example
+The editing features are developed on the branch [`copilot/add-editor-capabilities`](https://github.com/neumaennl/vscode-visual-xml-schema-editor/tree/copilot/add-editor-capabilities). The design and the roadmap are described in [ADR 001](docs/architecture/001-editor-transition.md). Bugs and planned work are tracked in the [issues](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues).
 
-This is currently based on the official [Custom Editor API Samples](https://github.com/microsoft/vscode-extension-samples/tree/main/custom-editor-sample) from Microsoft.
+## Contributing
 
-- Open this example in VS Code 1.100+
-- `npm install`
-- `npm run watch` or `npm run compile`
-- `F5` to start debugging
+Contributions are welcome. [CONTRIBUTING.md](CONTRIBUTING.md) explains where development happens, how to set up the repository and what a pull request needs.
 
-Open the example files from the `exampleFiles` directory.
+## Acknowledgements
+
+- The diagram is a port of [XSD Diagram](https://github.com/dgis/xsddiagram) by Régis Cosnier.
+- XSD files are read and written with [xmlbind-ts](https://github.com/neumaennl/xmlbind-ts).
+
+## License
+
+[GNU Affero General Public License v3.0](LICENSE)

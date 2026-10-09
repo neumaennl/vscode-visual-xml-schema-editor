@@ -17,18 +17,18 @@ jobs:
   build:
     name: Install, build and test
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [24.x]
     steps:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Use Node.js ${{ matrix.node-version }}
+      - name: Use Node.js from .nvmrc
         uses: actions/setup-node@v7
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version-file: .nvmrc
           cache: "npm"
+
+      - name: Check that Node and @types match the VS Code version
+        run: npm run vscode:check
 
       - name: Install dependencies
         run: npm ci

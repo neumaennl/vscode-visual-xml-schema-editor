@@ -4,10 +4,8 @@ title: Testing
 description: How the extension is tested - running the tests, the three Jest projects, mocks and helpers, conventions for tests, mocks, helper functions and helper classes, which tests to write for typical changes, coverage, CI, the planned switch to Vitest, and how the current tests compare with the testing strategy of ADR 001.
 tags: [testing, jest, mocks, coverage, ci, conventions]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-09T11:30:00Z }
-verified:
-  by: human:neumaennl
-  at: 2026-10-09T12:02:50Z
+generated: { by: human:neumaennl, at: 2026-10-09T20:13:13Z }
+verified: { by: human:neumaennl, at: 2026-10-09T20:26:25Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -61,7 +59,7 @@ This document describes how the extension is tested today and the conventions fo
 
 `npx jest` runs the tests without compiling; `npx jest --selectProjects webview` or a path such as `npx jest src/commandValidators` runs a part of them. Each run writes a JUnit report to `test-results/jest-junit.xml`. Both `coverage/` and `test-results/` are ignored by Git.[^manifest][^jest-config]
 
-Use the Node version from `.nvmrc`, which CI also uses.
+Use the Node version from `.nvmrc`, which CI also uses. It is the Node version of the extension host of the lowest supported VS Code version, so the tests run on the Node version the extension runs on (see [Build and packaging](build-and-packaging.md#vs-code-and-node-versions)).
 
 # Jest projects
 
@@ -159,7 +157,7 @@ No threshold is enforced; the goal is more than 80% for business logic. The repo
 
 # CI
 
-The workflow `ci.yml` runs on pushes and pull requests to `main` and `modernization` with Node 24. It installs the dependencies, runs ESLint and the build, and then the tests with coverage. After the tests it packages the extension and checks that the VSIX loads (see [Build and packaging](build-and-packaging.md#ci)). It writes the coverage totals to the job summary and publishes the JUnit report as the check "Jest". On `copilot/add-editor-capabilities`, the workflow runs only for `main` and has no packaging steps.[^ci]
+The workflow `ci.yml` runs on pushes and pull requests to `main` and `modernization` with the Node version from `.nvmrc`. It first checks that this version and the `@types` packages match the lowest supported VS Code version, then installs the dependencies, runs ESLint and the build, and then the tests with coverage. After the tests it packages the extension and checks that the VSIX loads (see [Build and packaging](build-and-packaging.md#ci)). It writes the coverage totals to the job summary and publishes the JUnit report as the check "Jest". On `copilot/add-editor-capabilities`, the workflow runs only for `main` and has no packaging steps.[^ci]
 
 # Planned switch to Vitest
 
@@ -168,6 +166,7 @@ Phase 3 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-vi
 - With `projects`, each project is a configuration of its own, and only the options for the whole run (coverage files, reporters) apply at the root. `setupFilesAfterEnv: ["<rootDir>/jest.setup.mjs"]` and the root's `preset`, `testEnvironment`, `roots`, `testMatch`, `testPathIgnorePatterns`, `modulePathIgnorePatterns`, `moduleFileExtensions` and `moduleNameMapper` have no effect; `jest --showConfig` lists no setup file for any project. The setup file would mock `vscode`, which the module mapping of the `extension` and `shared` projects already does. `jest.setup.mjs` and these options should not be carried over, and the options the three projects repeat should be one shared object.
 - `webview-src/webviewTypes.ts` contains only interfaces, and its imports are removed when TypeScript compiles, so no test loads it. Jest then compiles it for the coverage report with the root settings, which use `tsconfig.json` without the DOM types, so every coverage run (also in CI) prints "Failed to collect coverage from …/webviewTypes.ts" with the error TS2304 for `SVGGElement`. The numbers are not affected.
 - `src/__mocks__/vscode.ts` matches `src/**/*.ts` and is counted as source code. The coverage configuration should exclude `**/__mocks__/**` and type-only files.
+- The scripts in `scripts/` have no tests, because Jest loads ES modules (`.mjs`) only with an experimental Node flag. `scripts/lib/vscode-releases.mjs` and `scripts/lib/node-setup.mjs` export their functions so that Vitest can test them: parsing versions, choosing the `@types` versions, deriving the values from a VS Code release, and running commands with another Node version.
 
 The switch touches every test file, which makes it a good time to fix the test problems listed in [Known issues](known-issues.md#code).
 

@@ -1,11 +1,11 @@
 ---
 type: Guideline
 title: Development guidelines
-description: Rules for everyone who changes the extension - code size, code quality and ESLint, TypeScript and naming, TSDoc, tests, documentation and the knowledge bundle, what to check before committing, and commits.
+description: Rules for everyone who changes the extension - code size, code quality and ESLint, TypeScript and naming, VS Code and Node versions, TSDoc, tests, documentation and the knowledge bundle, what to check before committing, and commits.
 tags: [guidelines, conventions, code-quality, typescript, documentation, workflow]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-09T14:07:08Z }
-verified: { by: human:neumaennl, at: 2026-10-09T14:10:10Z }
+generated: { by: human:neumaennl, at: 2026-10-09T20:13:13Z }
+verified: { by: human:neumaennl, at: 2026-10-09T20:26:25Z }
 sources:
   - id: eslint
     resource: ../eslint.config.mjs
@@ -51,6 +51,11 @@ ESLint does not check the limits. Some code exceeds them, and the exemption for 
 - Define interfaces or types for all data structures. Commands and messages are discriminated unions (see [Commands](commands.md) and [Messaging](messaging.md)).
 - Names: PascalCase for classes, interfaces and types; camelCase for functions, methods and variables; UPPER_CASE for module-level constants. Names say what something is or does.
 - Length of names: clarity comes first, but keep them short. Aim for less than 15 characters; 25 to 30 is the upper limit. `createElement` is better than `createElementWithChildren`; `createElementNodeWithProcessingOfAnonymousTypes` is too long, `cen` too cryptic.
+
+# VS Code and Node versions
+
+- The lowest supported VS Code version (`engines.vscode`) decides the Node version the extension runs on. `@types/vscode`, `@types/node` and `.nvmrc` are derived from it; change all four only with `npm run vscode:update`, not by hand. How the versions are derived is described in [Build and packaging](build-and-packaging.md#vs-code-and-node-versions).[^manifest]
+- Use only the VS Code and Node APIs that these types offer. A newer API needs a higher minimum VS Code version first.
 
 # TSDoc
 

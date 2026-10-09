@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-09T12:15:00Z }
-verified: { by: human:neumaennl, at: 2026-10-09T14:03:31Z }
+generated: { by: human:neumaennl, at: 2026-10-09T20:13:13Z }
+verified: { by: human:neumaennl, at: 2026-10-09T20:26:25Z }
 ---
 
 # Purpose
@@ -174,14 +174,6 @@ Effort:
 - **Effort:** M
 - **Description:** The generated classes store the particles of a compositor in one array per kind, and the diagram builder adds them kind by kind: first the elements, then the group references, then nested `choice`s, then nested `sequence`s. A `sequence` of `a`, a `choice` and `b` is therefore shown as `a`, `b`, `choice`, which gives the wrong order for a sequence. The node IDs are not affected, because positions are counted per kind. xmlbind-ts keeps the element order for serialization (see [Persistence](persistence.md#what-serialization-changes)); the fix is to use it when the children are added (see [Diagram rendering](diagram-rendering.md#from-schema-to-diagram-items)).
 - **GitHub issue:** none
-
-## Node version does not match the VS Code version
-
-- **Location:** `package.json` (`engines.vscode`, `@types/vscode`, `@types/node`), `.nvmrc`, `.github/workflows/ci.yml`
-- **Severity:** Medium
-- **Effort:** M
-- **Description:** The extension runs in the extension host of VS Code, which uses the Node version bundled with VS Code's Electron, not the installed Node. The lowest VS Code version in `engines.vscode` therefore sets the Node version the code must run on. `engines.vscode` is `^1.100.0`; VS Code 1.100 ships Electron 34.5.1 with Node 20.19. But `@types/node` is `^26`, and `.nvmrc` and the CI matrix use Node 24. The types allow Node APIs that do not exist in the extension host, and CI does not run the tests on the Node version the extension really uses. On the editor branch the gap is larger: `engines.vscode` is `^1.74.0` (Node 16.14) while `@types/vscode` is `^1.137.0`, which `vsce` rejects when packaging. The Node version of a VS Code release can be looked up from the `electron` version in the `package.json` of its tag in `microsoft/vscode` and the Electron release list; inside VS Code, `process.versions` shows it. The fix is to derive `@types/vscode`, `@types/node`, `.nvmrc` and the CI Node version from `engines.vscode`, to let CI read `.nvmrc` (`node-version-file`), and to document the update steps, ideally as a script.
-- **GitHub issue:** [#357](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/357)
 
 ## Imports and includes cannot be edited in the editor
 

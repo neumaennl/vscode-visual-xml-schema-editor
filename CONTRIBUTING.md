@@ -14,7 +14,7 @@ The documentation in [`docs/`](docs/index.md) describes the editor branch.
 
 ## Setup
 
-1. Install the Node version in `.nvmrc`, for example with `nvm use`.
+1. Install the Node version in `.nvmrc`, for example with `nvm install`, which also switches to it. nvm-windows does not read `.nvmrc`; there, run `nvm install <version>` and `nvm use <version>` with the version from the file.
 2. Set the environment variable `NODE_AUTH_TOKEN` to a GitHub token that can read packages (a classic personal access token with the scope `read:packages`). The dependency `@neumaennl/xmlbind-ts` is published in GitHub Packages, and `npm` cannot install it without the token.
 3. Run `npm ci`.
 4. Open the folder in VS Code and press F5 (launch configuration "Run Extension"). A second VS Code window opens with the extension loaded. In it, open an `.xsd` file, for example from `exampleFiles/`, with "Open With…" → "XML Schema Visual Editor".

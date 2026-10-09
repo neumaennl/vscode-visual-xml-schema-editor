@@ -33,7 +33,7 @@ Changes to the settings apply immediately to all open diagrams.
 
 ## Requirements
 
-VS Code 1.100 or later.
+VS Code 1.125 or later.
 
 ## Status
 

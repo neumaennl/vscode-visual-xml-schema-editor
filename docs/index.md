@@ -9,7 +9,7 @@ okf_version: "0.2"
 
 # Working on the extension
 
-* [Development guidelines](development-guidelines.md) - Rules for everyone who changes the extension - code size, code quality and ESLint, TypeScript and naming, TSDoc, tests, documentation and the knowledge bundle, what to check before committing, and commits.
+* [Development guidelines](development-guidelines.md) - Rules for everyone who changes the extension - code size, code quality and ESLint, TypeScript and naming, VS Code and Node versions, TSDoc, tests, documentation and the knowledge bundle, what to check before committing, and commits.
 * [Build and packaging](build-and-packaging.md) - How the extension is built, run, linted, packaged and checked - the build outputs and tsconfig files, the npm scripts, running it in VS Code, the VSIX and its check, the generated schema classes, dependencies and the Node version, ESLint, CI, and the planned switch to Vite, NodeNext and native ESM.
 * [Testing](testing.md) - How the extension is tested - running the tests, the three Jest projects, mocks and helpers, conventions for tests, mocks, helper functions and helper classes, which tests to write for typical changes, coverage, CI, the planned switch to Vitest, and how the current tests compare with the testing strategy of ADR 001.
 

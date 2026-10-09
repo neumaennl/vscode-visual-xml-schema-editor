@@ -11,7 +11,7 @@
     "url": "https://github.com/neumaennl/vscode-visual-xml-schema-editor.git"
   },
   "engines": {
-    "vscode": "^1.100.0"
+    "vscode": "^1.125.0"
   },
   "categories": [
     "Visualization"
@@ -99,8 +99,8 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/jest": "^30.0.0",
-    "@types/node": "^26.6.4",
-    "@types/vscode": "~1.100.0",
+    "@types/node": "~24.13.0",
+    "@types/vscode": "~1.125.0",
     "@typescript-eslint/eslint-plugin": "^8.71.1",
     "@typescript-eslint/parser": "^8.48.1",
     "@vscode/vsce": "^4.0.0",

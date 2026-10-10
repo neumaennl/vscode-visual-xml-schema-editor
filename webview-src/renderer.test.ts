@@ -62,7 +62,7 @@ describe("DiagramRenderer", () => {
       const mockSchema = {
         element: [{ name: "Test", type_: "string" }],
       };
-      const onNodeClick = jest.fn();
+      const onNodeClick = vi.fn();
       
       renderer.renderSchema(mockSchema, defaultDiagramOptions, onNodeClick);
       
@@ -73,7 +73,7 @@ describe("DiagramRenderer", () => {
 
     it("should handle empty schema", () => {
       const emptySchema = {};
-      const onNodeClick = jest.fn();
+      const onNodeClick = vi.fn();
       
       expect(() => {
         renderer.renderSchema(emptySchema, defaultDiagramOptions, onNodeClick);
@@ -81,7 +81,7 @@ describe("DiagramRenderer", () => {
     });
 
     it("should handle null schema", () => {
-      const onNodeClick = jest.fn();
+      const onNodeClick = vi.fn();
       
       // Test error handling with invalid input by bypassing type checking
       // This is intentional to ensure robustness
@@ -99,7 +99,7 @@ describe("DiagramRenderer", () => {
           { name: "Address", type_: "AddressType" },
         ],
       };
-      const onNodeClick = jest.fn();
+      const onNodeClick = vi.fn();
       
       renderer.renderSchema(mockSchema, defaultDiagramOptions, onNodeClick);
       
@@ -111,7 +111,7 @@ describe("DiagramRenderer", () => {
       const mockSchema = {
         element: [{ name: "Test", type_: "string" }],
       };
-      const onNodeClick = jest.fn();
+      const onNodeClick = vi.fn();
       
       renderer.renderSchema(mockSchema, defaultDiagramOptions, onNodeClick);
       
@@ -135,7 +135,7 @@ describe("DiagramRenderer", () => {
       const mockSchema = {
         element: [{ name: "Test", type_: "string" }],
       };
-      const onNodeClick = jest.fn();
+      const onNodeClick = vi.fn();
       
       renderer.renderSchema(mockSchema, defaultDiagramOptions, onNodeClick);
       const itemsBeforeRefresh = mockCanvas.querySelectorAll(".diagram-item").length;
@@ -156,7 +156,7 @@ describe("DiagramRenderer", () => {
       const mockSchema = {
         element: [{ name: "Test", type_: "string" }],
       };
-      const onNodeClick = jest.fn();
+      const onNodeClick = vi.fn();
       const options: DiagramOptions = {
         showDocumentation: true,
         alwaysShowOccurrence: false,
@@ -174,7 +174,7 @@ describe("DiagramRenderer", () => {
       const mockSchema = {
         element: [{ name: "Test", type_: "string" }],
       };
-      const onNodeClick = jest.fn();
+      const onNodeClick = vi.fn();
       const options: DiagramOptions = {
         showDocumentation: false,
         alwaysShowOccurrence: true,
@@ -192,7 +192,7 @@ describe("DiagramRenderer", () => {
       const mockSchema = {
         element: [{ name: "Test", type_: "string" }],
       };
-      const onNodeClick = jest.fn();
+      const onNodeClick = vi.fn();
       const options: DiagramOptions = {
         showDocumentation: false,
         alwaysShowOccurrence: false,

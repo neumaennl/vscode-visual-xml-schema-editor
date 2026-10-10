@@ -4,17 +4,18 @@
 
 import * as vscode from "vscode";
 import { activate, deactivate } from "./extension";
+import type { MockedFunction } from "vitest";
 
 describe("Extension", () => {
   let mockContext: vscode.ExtensionContext;
   const registerCommandMock =
-    vscode.commands.registerCommand as jest.MockedFunction<
+    vscode.commands.registerCommand as MockedFunction<
       typeof vscode.commands.registerCommand
     >;
 
   beforeEach(() => {
     // Clear all mocks before each test
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Create mock context
     // eslint-disable-next-line no-restricted-syntax -- partial stub; unused VS Code context fields omitted

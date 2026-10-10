@@ -51,7 +51,7 @@ export default [
         ecmaVersion: 2020,
         sourceType: 'module',
         project: [
-          './tsconfig.json',
+          './tsconfig.extension.json',
           './tsconfig.webview.json',
           './tsconfig.extension-test.json',
           './tsconfig.webview-test.json',

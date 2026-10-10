@@ -23,8 +23,12 @@ export default defineConfig({
           suiteNameTemplate: "{title}",
           classnameTemplate: "{basename}",
           titleTemplate: "{title}",
+          includeConsoleOutput: false,
         },
       ],
+      // In GitHub Actions: annotations at the lines of failing tests. The job summary
+      // comes from the report step in ci.yml, so Vitest's own summary is off.
+      ...(process.env.GITHUB_ACTIONS === "true" ? [["github-actions", { jobSummary: { enabled: false } }]] : []),
     ],
     coverage: {
       provider: "v8",

@@ -10,6 +10,7 @@
 //   node scripts/vscode-version.ts check
 //     Fails if `@types/vscode`, `@types/node` or `.nvmrc` don't match `engines.vscode`.
 import { readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { createInterface, type Interface } from "node:readline/promises";
 import { pathToFileURL } from "node:url";
 import { installNode, runWith } from "./lib/node-setup.ts";
@@ -24,14 +25,17 @@ import {
   type ExpectedValues,
 } from "./lib/vscode-releases.ts";
 
+/** The terminal interface; only `question()` is used. */
+type Asker = Pick<Interface, "question">;
+
 /** The parts of `package.json` that the script reads and writes. */
-interface PackageJson {
+export interface PackageJson {
   engines: { vscode: string };
   devDependencies: Record<string, string>;
 }
 
 /** `package.json` as read from disk, with its line endings. */
-interface Manifest {
+export interface Manifest {
   pkg: PackageJson;
   crlf: boolean;
 }
@@ -52,7 +56,7 @@ const LABELS: Record<keyof ExpectedValues, string> = {
  * @param rows - The cells
  * @returns The table
  */
-function formatTable(header: string[], rows: string[][]): string {
+export function formatTable(header: string[], rows: string[][]): string {
   const widths = header.map((h, i) => Math.max(h.length, ...rows.map((r) => r[i].length)));
   const line = (cells: string[]): string => cells.map((c, i) => c.padEnd(widths[i])).join("  ").trimEnd();
   return [line(header), line(widths.map((w) => "-".repeat(w))), ...rows.map(line)].join("\n");
@@ -61,16 +65,17 @@ function formatTable(header: string[], rows: string[][]): string {
 /**
  * Reads `package.json` and `.nvmrc`.
  *
+ * @param dir - The folder that contains both files
  * @returns The manifest with its line endings, and the current values
  */
-function readCurrent(): Manifest & { actual: ExpectedValues } {
-  const text = readFileSync("package.json", "utf8");
+function readCurrent(dir: string): Manifest & { actual: ExpectedValues } {
+  const text = readFileSync(join(dir, "package.json"), "utf8");
   const pkg = JSON.parse(text) as PackageJson;
   const actual = {
     engines: pkg.engines.vscode,
     typesVscode: pkg.devDependencies["@types/vscode"],
     typesNode: pkg.devDependencies["@types/node"],
-    nvmrc: readFileSync(".nvmrc", "utf8").trim(),
+    nvmrc: readFileSync(join(dir, ".nvmrc"), "utf8").trim(),
   };
   return { pkg, crlf: text.includes("\r\n"), actual };
 }
@@ -78,10 +83,11 @@ function readCurrent(): Manifest & { actual: ExpectedValues } {
 /**
  * Checks that `@types/vscode`, `@types/node` and `.nvmrc` match `engines.vscode`.
  *
+ * @param dir - The folder with `package.json` and `.nvmrc`
  * @returns The exit code: 0 if everything matches, 1 otherwise
  */
-async function check(): Promise<number> {
-  const { actual } = readCurrent();
+export async function check(dir = "."): Promise<number> {
+  const { actual } = readCurrent(dir);
   const vscode = parseVersion(actual.engines).join(".");
   const derived = deriveVersions(vscode, { ...(await loadSharedData()), electron: await electronOf(vscode) });
   const expected = expectedValues(derived);
@@ -108,7 +114,7 @@ async function check(): Promise<number> {
  * @param rl - The terminal interface
  * @returns The chosen VS Code version
  */
-async function choose(rows: DerivedVersions[], dates: Record<string, string>, current: string, rl: Interface): Promise<string> {
+export async function choose(rows: DerivedVersions[], dates: Record<string, string>, current: string, rl: Asker): Promise<string> {
   const header = ["VS Code", "Released", "Electron", "Node", "@types/vscode", "@types/node", "Node end of life"];
   const cells = rows.map((r) => [
     r.vscode === current ? `${r.vscode} (current)` : r.vscode,
@@ -136,15 +142,16 @@ async function choose(rows: DerivedVersions[], dates: Record<string, string>, cu
  *
  * @param manifest - The parsed `package.json` and its line endings
  * @param values - The values to write
+ * @param dir - The folder with `package.json` and `.nvmrc`
  * @returns Nothing
  */
-function writeValues({ pkg, crlf }: Manifest, values: ExpectedValues): void {
+export function writeValues({ pkg, crlf }: Manifest, values: ExpectedValues, dir = "."): void {
   const eol = crlf ? "\r\n" : "\n";
   pkg.engines.vscode = values.engines;
   pkg.devDependencies["@types/vscode"] = values.typesVscode;
   pkg.devDependencies["@types/node"] = values.typesNode;
-  writeFileSync("package.json", `${JSON.stringify(pkg, null, 2)}\n`.replace(/\n/g, eol));
-  writeFileSync(".nvmrc", `${values.nvmrc}${eol}`);
+  writeFileSync(join(dir, "package.json"), `${JSON.stringify(pkg, null, 2)}\n`.replace(/\n/g, eol));
+  writeFileSync(join(dir, ".nvmrc"), `${values.nvmrc}${eol}`);
 }
 
 /**
@@ -155,7 +162,7 @@ function writeValues({ pkg, crlf }: Manifest, values: ExpectedValues): void {
  * @param version - The Node version
  * @returns Whether to run the steps
  */
-async function confirmSteps(rl: Interface, version: string): Promise<boolean> {
+async function confirmSteps(rl: Asker, version: string): Promise<boolean> {
   if (!process.stdin.isTTY) {
     return false;
   }
@@ -201,6 +208,7 @@ function printSteps(version: string): void {
  * @param dates - Release date per VS Code version
  * @param manifest - The parsed `package.json` and its line endings
  * @param requested - The new minimum VS Code version, or undefined to ask
+ * @param dir - The folder with `package.json` and `.nvmrc`
  * @returns The written values and whether to run the steps
  * @throws {Error} If the version is not a release in the table
  */
@@ -209,6 +217,7 @@ async function apply(
   dates: Record<string, string>,
   manifest: Manifest,
   requested: string | undefined,
+  dir: string,
 ): Promise<{ values: ExpectedValues; run: boolean }> {
   const current = parseVersion(manifest.pkg.engines.vscode).join(".");
   const rl = createInterface({ input: process.stdin, output: process.stdout });
@@ -219,7 +228,7 @@ async function apply(
       throw new Error(`VS Code ${vscode} is not a release x.y.0 of microsoft/vscode`);
     }
     const values = expectedValues(derived);
-    writeValues(manifest, values);
+    writeValues(manifest, values, dir);
     console.log(`Set engines.vscode ${values.engines}, @types/vscode ${values.typesVscode}, ` +
       `@types/node ${values.typesNode} and .nvmrc ${values.nvmrc}.`);
     return { values, run: await confirmSteps(rl, values.nvmrc) };
@@ -232,21 +241,22 @@ async function apply(
  * Updates the minimum VS Code version and the versions derived from it.
  *
  * @param requested - The new minimum VS Code version, or undefined to ask
+ * @param dir - The folder with `package.json` and `.nvmrc`
  * @returns The exit code
  * @throws {Error} If no version is given and there is no terminal to ask
  */
-async function update(requested: string | undefined): Promise<number> {
+export async function update(requested: string | undefined, dir = "."): Promise<number> {
   if (!requested && !process.stdin.isTTY) {
     throw new Error("Not running in a terminal: give the VS Code version, for example `update 1.125.0`.");
   }
-  const { pkg, crlf, actual } = readCurrent();
+  const { pkg, crlf, actual } = readCurrent(dir);
   const currentMinor = parseVersion(actual.engines)[1];
   const fromMinor = Math.min(currentMinor, requested ? parseVersion(requested)[1] : Infinity);
   const [shared, releases] = await Promise.all([loadSharedData(), listReleases(fromMinor)]);
   const electrons = await Promise.all(releases.map((r) => electronOf(r.version)));
   const rows = releases.map((r, i) => deriveVersions(r.version, { ...shared, electron: electrons[i] }));
   const dates = Object.fromEntries(releases.map((r) => [r.version, r.date]));
-  const { values, run } = await apply(rows, dates, { pkg, crlf }, requested);
+  const { values, run } = await apply(rows, dates, { pkg, crlf }, requested, dir);
   if (!run) {
     printSteps(values.nvmrc);
     return 0;
@@ -260,7 +270,7 @@ async function update(requested: string | undefined): Promise<number> {
  * @param args - The command line arguments after the script name
  * @returns The exit code
  */
-async function main(args: string[]): Promise<number> {
+export async function main(args: string[]): Promise<number> {
   const [command, version] = args;
   if (command === "check") {
     return check();

@@ -53,6 +53,10 @@ export default defineConfig({
         extends: true,
         test: { name: "webview", environment: "jsdom", include: ["webview-src/**/*.test.ts"] },
       },
+      {
+        extends: true,
+        test: { name: "scripts", environment: "node", include: ["scripts/**/*.test.ts"] },
+      },
     ],
   },
 });

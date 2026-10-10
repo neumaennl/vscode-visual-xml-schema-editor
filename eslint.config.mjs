@@ -29,9 +29,9 @@ export default [
       ],
     },
   },
-  // JavaScript configuration files (jest.config.mjs, etc.) and scripts
+  // JavaScript configuration files (vitest.config.mjs, etc.)
   {
-    files: ['*.mjs', 'scripts/**/*.mjs'],
+    files: ['*.mjs'],
     ...eslint.configs.recommended,
     languageOptions: {
       ecmaVersion: 2020,
@@ -56,6 +56,7 @@ export default [
           './tsconfig.extension-test.json',
           './tsconfig.webview-test.json',
           './tsconfig.shared-test.json',
+          './tsconfig.scripts.json',
         ],
       },
       globals: {

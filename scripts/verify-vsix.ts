@@ -7,6 +7,9 @@ import Module, { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
+/** Node's internal module loader, which has no type declaration. */
+type Load = (this: Module, request: string, ...rest: object[]) => object;
+
 const vsix = process.argv[2] ?? readdirSync(".").find((f) => f.endsWith(".vsix"));
 if (!vsix) {
   console.error("No .vsix found. Run `npm run package` first.");
@@ -24,23 +27,25 @@ try {
   }
   const extensionDir = join(dir, "extension");
   const require = createRequire(join(extensionDir, "package.json"));
-  const { main } = require("./package.json");
+  const { main } = require("./package.json") as { main: string };
 
-  const stub = () =>
+  const stub = (): object =>
     new Proxy(function () {}, { get: (_, key) => (key === "prototype" ? {} : stub()) });
   const vscode = stub();
-  const originalLoad = Module._load;
-  Module._load = function (request, ...rest) {
+  const loader = Module as typeof Module & { _load: Load };
+  const originalLoad = loader._load;
+  loader._load = function (request, ...rest): object {
     return request === "vscode" ? vscode : originalLoad.call(this, request, ...rest);
   };
 
-  const extension = require(join(extensionDir, main));
+  const extension = require(join(extensionDir, main)) as { activate?: object };
   if (typeof extension.activate !== "function") {
     throw new Error(`${main} does not export activate()`);
   }
   console.log(`✓ ${vsix}: ${main} loads and exports activate()`);
 } catch (error) {
-  console.error(`✗ ${vsix}: ${error.message.split("\n")[0]}`);
+  const message = error instanceof Error ? error.message : String(error);
+  console.error(`✗ ${vsix}: ${message.split("\n")[0]}`);
   process.exitCode = 1;
 } finally {
   rmSync(dir, { recursive: true, force: true });

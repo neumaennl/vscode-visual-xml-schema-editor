@@ -42,7 +42,7 @@ jobs:
       - name: Run tests (coverage + JSON; JUnit via config)
         run: |
           mkdir -p test-results
-          npm test -- --coverage --runInBand --json --outputFile=test-results/jest-results.json --coverageReporters=json-summary
+          npm test -- --coverage
 
       - name: Package VSIX
         run: npm run package
@@ -73,7 +73,7 @@ jobs:
         id: junit-check
         shell: bash
         run: |
-          if [[ -f "test-results/jest-junit.xml" ]]; then
+          if [[ -f "test-results/vitest-junit.xml" ]]; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
           else
             echo "exists=false" >> "$GITHUB_OUTPUT"
@@ -84,5 +84,5 @@ jobs:
         uses: dorny/test-reporter@v3
         with:
           name: Jest
-          path: test-results/jest-junit.xml
+          path: test-results/vitest-junit.xml
           reporter: jest-junit

@@ -23,8 +23,10 @@ export default defineConfig({
           suiteNameTemplate: "{title}",
           classnameTemplate: "{basename}",
           titleTemplate: "{title}",
+          includeConsoleOutput: false,
         },
       ],
+      ...(process.env.GITHUB_ACTIONS === "true" ? [["github-actions", { jobSummary: { enabled: false } }]] : []),
     ],
     coverage: {
       provider: "v8",

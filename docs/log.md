@@ -1,6 +1,7 @@
 # Knowledge Bundle Update Log
 
 ## 2026-10-10
+* **Update**: [Testing](testing.md) describes the tests after the switch from Jest to Vitest ([#364](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/364)): the type check (`npm run typecheck`), the four Vitest projects with their shared base, the alias of the `vscode` mock and mocked classes, the tests of the scripts and their helpers, the conventions with `vi`, coverage with v8, the report "Vitest" and the line annotations in CI, and the planned tests in the extension host. The section "Planned switch to Vitest" is gone; its notes are implemented.
 * **Create**: Added [ADR 002: Legacy TypeScript decorators](architecture/002-legacy-decorators.md) ([#365](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/365)): the generated schema classes switch from TC39 Stage 3 decorators, the TypeScript default the project used implicitly, to legacy decorators with `useDefineForClassFields`, because the proposal moved back to Stage 2.7, Oxc (Vite 8, Vitest 5) does not lower Stage 3 decorators, and TypeScript 7 has no `transpileModule`. The ADR lists the reasons, the consequences, the rejected alternatives and when to review the decision.
 * **Update**: [Schema model](schema-model.md#generated-classes) and [Build and packaging](build-and-packaging.md#build-outputs) describe the decorator settings and link [ADR 002](architecture/002-legacy-decorators.md). ADR 002 records that the editor branch's tests pass with these settings and `xmlbind-ts` 2.2.
 

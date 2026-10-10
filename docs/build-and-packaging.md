@@ -4,8 +4,8 @@ title: Build and packaging
 description: How the extension is built, run, linted, packaged and checked - the build outputs and tsconfig files, the npm scripts, running it in VS Code, the VSIX and its check, the generated schema classes, dependencies and the Node version, ESLint, CI, and the planned switch to Vite, NodeNext and native ESM.
 tags: [build, packaging, vsix, webpack, typescript, eslint, ci, dependencies]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-09T20:13:13Z }
-verified: { by: human:neumaennl, at: 2026-10-09T20:26:25Z }
+generated: { by: human:neumaennl, at: 2026-10-10T20:35:44Z }
+verified: { by: human:neumaennl, at: 2026-10-10T20:38:55Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -31,6 +31,9 @@ sources:
   - id: nvmrc
     resource: ../.nvmrc
     title: Node version for development and CI
+  - id: adr-002
+    resource: architecture/002-legacy-decorators.md
+    title: "ADR 002: Legacy TypeScript decorators"
   - id: vscode-config
     resource: ../.vscode/
     title: Launch configurations, tasks and settings for VS Code
@@ -78,8 +81,8 @@ The production build of the webview contains an inline source map (see [the know
 
 | tsconfig | Used by | Notes |
 |---|---|---|
-| `tsconfig.json` | `tsc` (extension host) | Excludes test files, `__tests__`, `__mocks__` and `*TestHelpers.ts`. The path `shared/*` points to `shared/`. |
-| `tsconfig.webview.json` | webpack | `ESNext` modules and the `DOM` library; output goes to webpack, not to disk.[^tsconfig-webview] |
+| `tsconfig.json` | `tsc` (extension host) | Excludes test files, `__tests__`, `__mocks__` and `*TestHelpers.ts`. The path `shared/*` points to `shared/`. Decorators are compiled as legacy decorators (`experimentalDecorators`) with `useDefineForClassFields` (see [ADR 002](architecture/002-legacy-decorators.md)).[^adr-002] |
+| `tsconfig.webview.json` | webpack | `ESNext` modules and the `DOM` library; output goes to webpack, not to disk. The same decorator settings as `tsconfig.json`.[^tsconfig-webview] |
 | `tsconfig.extension-test.json`, `tsconfig.webview-test.json`, `tsconfig.shared-test.json` | ts-jest and ESLint | Extend the two above with the Jest and Node types for the test files (see [Testing](testing.md#jest-projects)). |
 
 ESLint checks all five, so each TypeScript file must belong to at least one.
@@ -205,6 +208,8 @@ The [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-sc
 [^vscode-version]: Derive the Node and @types versions from the VS Code version
 
 [^nvmrc]: Node version for development and CI
+
+[^adr-002]: ADR 002: Legacy TypeScript decorators
 
 [^vscode-config]: Launch configurations, tasks and settings for VS Code
 

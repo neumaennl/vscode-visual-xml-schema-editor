@@ -6,6 +6,7 @@ okf_version: "0.2"
 
 * [Architecture](architecture.md) - How the extension host, the webview and the shared code work together to provide a visual editor for XML Schema (XSD) files, and the design decisions behind the command-based design.
 * [ADR 001: Editor transition architecture](architecture/001-editor-transition.md) - The decision to turn the viewer into an editor whose webview sends commands that the extension host validates, executes and writes to the XSD file, with the roadmap and the deviations of the implementation from the design.
+* [ADR 002: Legacy TypeScript decorators](architecture/002-legacy-decorators.md) - The decision to compile the decorators of the generated schema classes as TypeScript's legacy decorators instead of TC39 Stage 3 decorators, with the reasons, the consequences, the rejected alternatives and when to review it.
 
 # Working on the extension
 

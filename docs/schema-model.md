@@ -4,10 +4,8 @@ title: Schema model
 description: The object model of an XSD file - classes generated from the XSD meta-schema, XML binding with xmlbind-ts, and the path-based IDs that identify schema nodes.
 tags: [schema-model, data-model, xmlbind-ts, code-generation, ids, navigation]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-07T14:41:24Z }
-verified:
-  by: human:neumaennl
-  at: 2026-10-08T08:46:19Z
+generated: { by: human:neumaennl, at: 2026-10-10T20:35:44Z }
+verified: { by: human:neumaennl, at: 2026-10-10T20:38:55Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -15,6 +13,9 @@ sources:
   - id: meta-schema
     resource: ../schema/XMLSchema.xsd
     title: W3C XML Schema 1.0 meta-schema
+  - id: adr-002
+    resource: architecture/002-legacy-decorators.md
+    title: "ADR 002: Legacy TypeScript decorators"
   - id: generated-schema
     resource: ../shared/generated/schema.ts
     title: Generated root class schema
@@ -69,7 +70,7 @@ The classes in `shared/generated/` are generated from the W3C XML Schema 1.0 met
 
 The generator creates one class per type and per element declaration of the meta-schema, plus `types.ts` (type aliases for built-in types such as `blockSet`), `enums.ts` (enumerations such as `formChoice`) and the barrel `index.ts`. `shared/types.ts` re-exports all generated classes together with the command and message types, so the rest of the code imports them from there.[^shared-types]
 
-- **Decorators.** Each class carries `xmlbind-ts` decorators: `@XmlRoot` with the XSD namespace and prefixes, `@XmlElement` for child elements (with the element type and whether it is an array) and `@XmlAttribute` for attributes.[^generated-schema]
+- **Decorators.** Each class carries `xmlbind-ts` decorators: `@XmlRoot` with the XSD namespace and prefixes, `@XmlElement` for child elements (with the element type and whether it is an array) and `@XmlAttribute` for attributes. Attributes whose values are not strings pass their type explicitly (`type: Number`, `type: Boolean`). The decorators are compiled as TypeScript's legacy decorators (`experimentalDecorators`), not as TC39 Stage 3 decorators, and `useDefineForClassFields` creates every declared property on the objects, even without a value; the annotation validators rely on that. The reasons are in [ADR 002](architecture/002-legacy-decorators.md).[^generated-schema][^adr-002]
 - **Class names.** The names follow the meta-schema: the root is `schema`, and the type classes are what the code mostly works with, for example `topLevelElement`, `localElement`, `topLevelComplexType`, `localComplexType`, `topLevelSimpleType`, `namedGroup`, `explicitGroup`, `namedAttributeGroup`, `attribute`, `importType` and `includeType`. Element declarations become thin subclasses (`sequence extends explicitGroup`). Names that clash with TypeScript or with each other get a suffix: `import_`, `any_`, `anyType_1`, `restrictionType_1`.
 - **Inheritance.** Types derived by extension in the meta-schema become subclasses, for example of `annotated` (which adds `annotation` and `id`) and `openAttrs`. Types derived by restriction, which include most of the types above (`topLevelElement`, `localElement`, `topLevelComplexType`, `explicitGroup`, `namedGroup`), are standalone classes with all their properties, so they cannot be handled through a common base class.
 - **Collections.** Repeating children are optional arrays (`element?: topLevelElement[]`). Code reads them through `toArray()` from `shared/schemaUtils.ts`, which turns `undefined`, `null`, a single item or an array into an array.[^schema-utils]
@@ -181,6 +182,8 @@ These are listed in [Known issues](known-issues.md#node-ids-are-ambiguous-and-ha
 [^shared-types]: [Shared type exports](../shared/types.ts)
 
 [^generated-schema]: [Generated root class schema](../shared/generated/schema.ts)
+
+[^adr-002]: [ADR 002: Legacy TypeScript decorators](architecture/002-legacy-decorators.md)
 
 [^generated-open-attrs]: [Generated base class openAttrs](../shared/generated/openAttrs.ts)
 

@@ -18,6 +18,8 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
+    "experimentalDecorators": true,
+    "useDefineForClassFields": true,
     "moduleResolution": "node",
     "baseUrl": ".",
     "paths": {

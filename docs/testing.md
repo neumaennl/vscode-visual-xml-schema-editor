@@ -4,8 +4,8 @@ title: Testing
 description: How the extension is tested - running the tests and the type check, the four Vitest projects, mocks and helpers, conventions for tests, mocks, helper functions and helper classes, which tests to write for typical changes, coverage, CI, tests in the extension host, and how the current tests compare with the testing strategy of ADR 001.
 tags: [testing, vitest, mocks, coverage, ci, conventions]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-10T23:27:29Z }
-verified: { by: human:neumaennl, at: 2026-10-10T23:47:53Z }
+generated: { by: human:neumaennl, at: 2026-10-11T00:11:41Z }
+verified: { by: human:neumaennl, at: 2026-10-11T00:13:10Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -92,7 +92,7 @@ Use the Node version from `.nvmrc`, which CI also uses. It is the Node version o
 - **Webview API.** `main.test.ts` sets `acquireVsCodeApi` on `globalThis` before the app is loaded, with mocks for `postMessage`, `getState` and `setState`, and builds the page with `document.body.innerHTML`. Each test loads the app again with `vi.resetModules()` and `await import("./main")`.[^main-test]
 - **SVG measuring.** jsdom has no layout engine, so `setupGetBBoxMock()` in `webview-src/__tests__/svgTestUtils.ts` gives every element a `getBBox()` that assumes 6 pixels per character and a height of 10 pixels.[^svg-test-utils]
 - **Pipeline helpers.** `src/__tests__/testHelpers.ts` has small schemas as constants (`MINIMAL_SCHEMA`, `SCHEMA_WITH_ELEMENTS` and others) and runs a command through a new `CommandProcessor`: `runCommand()`, `runCommandExpectSuccess()` (returns the XML), `runCommandExpectSuccessSchema()` (returns the unmarshalled schema) and `runCommandExpectValidationFailure()`.[^test-helpers]
-- **Scripts.** The tests of the scripts send no request and install nothing. `scripts/__tests__/testHelpers.ts` replaces `fetch` with `stubFetch()`, which answers each URL with a given body, and builds GitHub releases with `release()` and `releasesPage()`. The tests mock `node:child_process`, `node:fs` and `node:readline/promises` where the script would start programs, check files or ask in the terminal, and work in a temporary folder. `scripts/__tests__/test-resources/` has three tiny VSIX files for `verify-vsix.ts`.[^scripts-test-helpers]
+- **Scripts.** The tests of the scripts send no request and install nothing. `scripts/__tests__/testHelpers.ts` replaces `fetch` with `stubFetch()`, which answers each URL with a given body, and builds GitHub releases with `release()` and `releasesPage()`. The tests of `vscode-version.ts` and `scripts/lib/node-setup.ts` mock `node:child_process`, `node:fs` and `node:readline/promises` where the script would start programs, check files or ask in the terminal, and work in a temporary folder. The tests of `verify-vsix.ts` unpack three tiny VSIX files from `scripts/__tests__/test-resources/` with the same tool as the script (`unzip`, on Windows `tar.exe`), because unpacking is what the script checks.[^scripts-test-helpers]
 
 ## The `__mocks__` folder
 
@@ -162,11 +162,11 @@ There are no helper classes in the tests today. Factory functions and plain obje
 - **A new message:** `webviewProvider.test.ts` for the extension host side and `main.test.ts` for the webview side.
 - **A new draggable construct:** placement and payload in `DropCommandFactory.test.ts`; `renderer.test.ts` only if the event handling changes (see [Drag and drop](drag-and-drop.md#adding-a-draggable-construct)).
 - **Changes to the webview UI:** a jsdom test next to the changed module that builds the needed DOM, triggers the event and checks the DOM and the posted messages. Tests that measure text call `setupGetBBoxMock()`.
-- **Changes to a script:** a test next to the script, with the network, other programs and the terminal mocked.
+- **Changes to a script:** a test next to the script, with the network, the terminal and other programs mocked, except a program that the script's own task depends on, such as `unzip` for `verify-vsix.ts`.
 
 # Coverage
 
-The coverage report (`@vitest/coverage-v8`) includes all TypeScript files in `shared/`, `src/` and `webview-src/` except type declarations, generated classes (`shared/generated/`), test files, `__tests__` folders and `__mocks__` folders. The scripts in `scripts/` are not part of it. CI writes the current totals to the job summary (see [CI](#ci)).[^vitest-config]
+The coverage report (`@vitest/coverage-v8`) includes all TypeScript files in `shared/`, `src/` and `webview-src/` except type declarations, generated classes (`shared/generated/`), test files, `__tests__` folders and `__mocks__` folders. The scripts in `scripts/` are not part of it. Files that contain only types, such as `webview-src/webviewTypes.ts`, appear with no statements and do not change the totals. CI writes the current totals to the job summary (see [CI](#ci)).[^vitest-config]
 
 No threshold is enforced; the goal is more than 80% for business logic.
 

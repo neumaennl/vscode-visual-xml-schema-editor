@@ -4,14 +4,14 @@ title: Development guidelines
 description: Rules for everyone who changes the extension - code size, code quality and ESLint, TypeScript and naming, VS Code and Node versions, TSDoc, tests, documentation and the knowledge bundle, issues, what to check before committing, and commits.
 tags: [guidelines, conventions, code-quality, typescript, documentation, workflow]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-09T20:43:28Z }
-verified: { by: human:neumaennl, at: 2026-10-09T20:46:59Z }
+generated: { by: human:neumaennl, at: 2026-10-10T23:56:42Z }
+verified: { by: human:neumaennl, at: 2026-10-11T00:00:45Z }
 sources:
   - id: eslint
     resource: ../eslint.config.mjs
     title: ESLint configuration
   - id: tsconfig
-    resource: ../tsconfig.json
+    resource: ../tsconfig.extension.json
     title: TypeScript configuration of the extension host
   - id: manifest
     resource: ../package.json
@@ -84,7 +84,7 @@ The documentation of the extension is the knowledge bundle in `docs/`, in the Op
 - **Known issues.** Record problems you find outside the current task in [Known issues](known-issues.md), sorted by severity and effort, and remove them when they are fixed. A change to the known issues is a change like any other.
 - **New documents** get front matter (`type`, `title`, a one-sentence `description`, `tags`, `status`, `generated`, `sources`), an entry in [the index](index.md) with the same description, and a log entry.
 - **Sources.** Each source has an `id`, a relative `resource` and a `title`. Important statements get a footnote `[^id]` whose text is the title of the source. Separate the footnote definitions with blank lines.
-- **Format.** Files use LF line endings. Links are relative; code and file paths are formatted as code, without line numbers. A document describes the current state and decided future work, not its own history; the history goes into the log.
+- **Format.** Files use LF line endings, which `.gitattributes` (`* text=auto`) makes Git store for every text file. Links are relative; code and file paths are formatted as code, without line numbers. A document describes the current state and decided future work, not its own history; the history goes into the log.
 - **Diagrams.** Mermaid diagrams use one arrow with a combined label for both directions, so that labels do not overlap. Check that a diagram renders with `npx -y @mermaid-js/mermaid-cli -i diagram.mmd -o diagram.png`.
 - **Architecture decisions** are recorded in `docs/architecture/`. ADR 001 is a living document: deviations from it are recorded in its section 9 with their reason.
 - **README and changelog.** `README.md` is also the page of the extension in the VS Code Marketplace. It is written for users and describes the state of the branch it is on; information for contributors goes into `CONTRIBUTING.md`. Keep both up to date, and record notable changes in a changelog (there is none yet, see [the known issue](known-issues.md#there-is-no-changelog)).
@@ -96,7 +96,7 @@ The documentation of the extension is the knowledge bundle in `docs/`, in the Op
 # Before committing
 
 1. `npm run lint` passes.
-2. `npm test` passes; it compiles the extension and the webview first (`pretest`).[^manifest]
+2. `npm test` passes; it first compiles the extension and the webview and type-checks the tests and the scripts (`pretest`).[^manifest]
 3. The changes follow these guidelines.
 4. The documentation is updated.
 5. Copilot code review has checked the changed files.

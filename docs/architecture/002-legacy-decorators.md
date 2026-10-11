@@ -4,11 +4,11 @@ title: "ADR 002: Legacy TypeScript decorators"
 description: The decision to compile the decorators of the generated schema classes as TypeScript's legacy decorators instead of TC39 Stage 3 decorators, with the reasons, the consequences, the rejected alternatives and when to review it.
 tags: [adr, architecture, decorators, typescript, build, testing]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-10T20:35:44Z }
-verified: { by: human:neumaennl, at: 2026-10-10T20:38:55Z }
+generated: { by: human:neumaennl, at: 2026-10-10T23:56:42Z }
+verified: { by: human:neumaennl, at: 2026-10-11T00:00:45Z }
 sources:
   - id: tsconfig
-    resource: ../../tsconfig.json
+    resource: ../../tsconfig.extension.json
     title: TypeScript configuration of the extension host
   - id: tsconfig-webview
     resource: ../../tsconfig.webview.json
@@ -72,7 +72,7 @@ When this ADR was written:
 
 ## Decision
 
-The generated classes use legacy decorators. `tsconfig.json` and `tsconfig.webview.json` set:[^tsconfig][^tsconfig-webview]
+The generated classes use legacy decorators. `tsconfig.extension.json` and `tsconfig.webview.json` set:[^tsconfig][^tsconfig-webview]
 
 - `experimentalDecorators: true`
 - `useDefineForClassFields: true`

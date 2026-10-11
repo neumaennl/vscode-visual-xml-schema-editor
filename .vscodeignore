@@ -26,8 +26,7 @@ test-results/**
 icon.svg
 *.vsix
 eslint.config.mjs
-jest.config.mjs
-jest.setup.mjs
+vitest.config.mjs
 webpack.config.mjs
 tsconfig*.json
 

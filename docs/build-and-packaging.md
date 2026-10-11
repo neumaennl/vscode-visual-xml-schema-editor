@@ -1,18 +1,24 @@
 ---
 type: Build Process
 title: Build and packaging
-description: How the extension is built, run, linted, packaged and checked - the build outputs and tsconfig files, the npm scripts, running it in VS Code, the VSIX and its check, the generated schema classes, dependencies and the Node version, ESLint, CI, and the planned switch to Vite, NodeNext and native ESM.
+description: How the extension is built, run, linted, packaged and checked - the build outputs and tsconfig files, the npm scripts, the scripts in TypeScript, running it in VS Code, the VSIX and its check, the generated schema classes, dependencies and the Node version, ESLint, CI, and the planned switch to Vite, NodeNext and native ESM.
 tags: [build, packaging, vsix, webpack, typescript, eslint, ci, dependencies]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-10T20:35:44Z }
-verified: { by: human:neumaennl, at: 2026-10-10T20:38:55Z }
+generated: { by: human:neumaennl, at: 2026-10-10T23:49:42Z }
+verified: { by: human:neumaennl, at: 2026-10-10T23:55:44Z }
 sources:
   - id: manifest
     resource: ../package.json
     title: Extension manifest (scripts, dependencies, engines)
   - id: tsconfig
-    resource: ../tsconfig.json
+    resource: ../tsconfig.extension.json
     title: TypeScript configuration of the extension host
+  - id: tsconfig-solution
+    resource: ../tsconfig.json
+    title: Solution tsconfig that references all TypeScript configurations
+  - id: tsconfig-scripts
+    resource: ../tsconfig.scripts.json
+    title: TypeScript configuration of the scripts
   - id: tsconfig-webview
     resource: ../tsconfig.webview.json
     title: TypeScript configuration of the webview
@@ -23,10 +29,10 @@ sources:
     resource: ../.vscodeignore
     title: Files left out of the VSIX
   - id: verify-vsix
-    resource: ../scripts/verify-vsix.mjs
+    resource: ../scripts/verify-vsix.ts
     title: Check that the packaged extension loads
   - id: vscode-version
-    resource: ../scripts/vscode-version.mjs
+    resource: ../scripts/vscode-version.ts
     title: Derive the Node and @types versions from the VS Code version
   - id: nvmrc
     resource: ../.nvmrc
@@ -72,7 +78,7 @@ The extension consists of two separately built parts (see [Architecture](archite
 
 | Part | Tool | Sources | Output |
 |---|---|---|---|
-| Extension host | `tsc` with `tsconfig.json` | `src/`, `shared/` | `out/src/`, `out/shared/` (CommonJS, ES2020, with source maps); the entry point is `out/src/extension.js` (`main` in `package.json`) |
+| Extension host | `tsc` with `tsconfig.extension.json` | `src/`, `shared/` | `out/src/`, `out/shared/` (CommonJS, ES2020, with source maps); the entry point is `out/src/extension.js` (`main` in `package.json`) |
 | Webview | webpack with `ts-loader` and `tsconfig.webview.json` | `webview-src/`, `shared/` | `webview/main.js` (one bundle, including the CSS imported by the code) and `webview/styles.css` (copied) |
 
 The extension host loads `webview/main.js`, `webview/styles.css` and `node_modules/@vscode/codicons/dist/codicon.css` into the webview through `asWebviewUri`. Both output folders are ignored by Git.[^tsconfig][^webpack]
@@ -81,17 +87,19 @@ The production build of the webview contains an inline source map (see [the know
 
 | tsconfig | Used by | Notes |
 |---|---|---|
-| `tsconfig.json` | `tsc` (extension host) | Excludes test files, `__tests__`, `__mocks__` and `*TestHelpers.ts`. The path `shared/*` points to `shared/`. Decorators are compiled as legacy decorators (`experimentalDecorators`) with `useDefineForClassFields` (see [ADR 002](architecture/002-legacy-decorators.md)).[^adr-002] |
-| `tsconfig.webview.json` | webpack | `ESNext` modules and the `DOM` library; output goes to webpack, not to disk. The same decorator settings as `tsconfig.json`.[^tsconfig-webview] |
-| `tsconfig.extension-test.json`, `tsconfig.webview-test.json`, `tsconfig.shared-test.json` | ts-jest and ESLint | Extend the two above with the Jest and Node types for the test files (see [Testing](testing.md#jest-projects)). |
+| `tsconfig.json` | VS Code | A solution file without files of its own: it lists the other six configurations as references, so VS Code type-checks each file with the configuration that includes it.[^tsconfig-solution] |
+| `tsconfig.extension.json` | `tsc` (extension host) | Excludes test files, `__tests__`, `__mocks__` and `*TestHelpers.ts`. The path `shared/*` points to `shared/`. Decorators are compiled as legacy decorators (`experimentalDecorators`) with `useDefineForClassFields` (see [ADR 002](architecture/002-legacy-decorators.md)).[^adr-002] |
+| `tsconfig.webview.json` | webpack | `ESNext` modules and the `DOM` library; output goes to webpack, not to disk. The same decorator settings as `tsconfig.extension.json`.[^tsconfig-webview] |
+| `tsconfig.extension-test.json`, `tsconfig.webview-test.json`, `tsconfig.shared-test.json` | `npm run typecheck` and ESLint | Extend the two above with the Vitest globals and the Node types for the test files (see [Testing](testing.md#vitest-projects)). |
+| `tsconfig.scripts.json` | `npm run typecheck` and ESLint | The scripts in `scripts/` and their tests (see [Scripts](#scripts)): `NodeNext` modules, no output (`noEmit`), `.ts` extensions in imports, and only syntax that Node can remove (`erasableSyntaxOnly`).[^tsconfig-scripts] |
 
-ESLint checks all five, so each TypeScript file must belong to at least one.
+ESLint uses all configurations except `tsconfig.json`, so each TypeScript file must belong to at least one of them.
 
 # npm scripts
 
 | Script | What it does |
 |---|---|
-| `npm run compile` | `compile-extension` (`tsc -p ./tsconfig.json`) and then `compile-webview` (`webpack --mode production`). |
+| `npm run compile` | `compile-extension` (`tsc -p ./tsconfig.extension.json`) and then `compile-webview` (`webpack --mode production`). |
 | `npm run watch` | Runs `watch-extension` (`tsc -watch`) and `watch-webview` (`webpack --mode development --watch`) side by side with `concurrently`. |
 | `npm run clean` | Deletes `out/` and `webview/`. |
 | `npm run lint`, `npm run lint:fix` | Runs ESLint on the repository, or fixes what it can. |
@@ -100,7 +108,17 @@ ESLint checks all five, so each TypeScript file must belong to at least one.
 | `npm run vscode:update`, `npm run vscode:check` | Change the lowest supported VS Code version and the versions derived from it, or check that they match (see [VS Code and Node versions](#vs-code-and-node-versions)). |
 | `npm run generate-classes-from-schema` | Generates the schema classes (see [Generated schema classes](#generated-schema-classes)). |
 
-The test scripts are described in [Testing](testing.md#running-the-tests).[^manifest]
+The test scripts and `npm run typecheck` are described in [Testing](testing.md#running-the-tests).[^manifest]
+
+# Scripts
+
+`scripts/` contains the scripts behind `package:verify`, `vscode:check` and `vscode:update`: `verify-vsix.ts`, `vscode-version.ts`, and their modules in `scripts/lib/`. They are TypeScript, and Node runs them directly: it removes the types before it runs a file ("type stripping", without a flag since Node 23.6 and 22.18; the scripts run on the version from `.nvmrc`). This needs no build step, but sets three rules, which `tsconfig.scripts.json` checks:[^tsconfig-scripts]
+
+- Relative imports name the file with its extension, for example `./lib/node-setup.ts`.
+- Imports of types only use `import type`.
+- Only syntax that disappears with the types is allowed; an `enum`, for example, is not.
+
+`scripts/package.json` declares the folder an ES module (`"type": "module"`). Without it, Node would first try to load the scripts as CommonJS and print a warning, and TypeScript would reject `import.meta`. The file goes away when the whole package becomes an ES module (Phase 6, see [Planned changes](#planned-changes)). The scripts have tests of their own (see [Testing](testing.md#mocks-and-helpers)).
 
 # Running in VS Code
 
@@ -117,7 +135,7 @@ What goes into the VSIX is controlled by `.vscodeignore`:[^vscodeignore]
 - `README.md` and `LICENSE` are packaged. The README is the page of the extension in the Marketplace; `vsce` turns its relative links into links to the repository given in `repository` in `package.json`.
 - `node_modules/` is not listed. `vsce` adds the production dependencies (`dependencies` in `package.json`) and their dependencies, and leaves out the development dependencies. A runtime dependency must therefore be in `dependencies`, and `node_modules/` must not be excluded in `.vscodeignore`.
 
-`npm run package:verify` runs `scripts/verify-vsix.mjs`. It unpacks the VSIX into a temporary folder outside the repository (with `unzip`, on Windows with the `tar.exe` of Windows), so that the `node_modules/` of the repository cannot hide a missing file, replaces the `vscode` module with a stub, loads the entry point and checks that it exports `activate()`. Without an argument it checks the first `.vsix` file in the current folder. It finds missing dependencies and errors at load time, but does not start VS Code.[^verify-vsix]
+`npm run package:verify` runs `scripts/verify-vsix.ts`. It unpacks the VSIX into a temporary folder outside the repository (with `unzip`, on Windows with the `tar.exe` of Windows), so that the `node_modules/` of the repository cannot hide a missing file, replaces the `vscode` module with a stub, loads the entry point and checks that it exports `activate()`. Without an argument it checks the first `.vsix` file in the current folder. It finds missing dependencies and errors at load time, but does not start VS Code.[^verify-vsix]
 
 `vsce` refuses to package when `@types/vscode` is newer than the lowest VS Code version in `engines.vscode`. Both are set together, see [VS Code and Node versions](#vs-code-and-node-versions).[^manifest]
 
@@ -166,9 +184,9 @@ The script reads the GitHub API, `raw.githubusercontent.com`, the Electron relea
 `eslint.config.mjs` is a flat configuration:[^eslint]
 
 - It ignores `out/`, `dist/`, `webview/`, `node_modules/`, type declarations and generated code.
-- `.js` and `.cjs` files are not allowed. Configuration files in the repository root and the scripts in `scripts/` are `.mjs` and are checked with the recommended JavaScript rules of ESLint.
-- TypeScript files are checked with the type information from all five tsconfig files, with the recommended rules of `typescript-eslint` including those that need type information. Return types must be declared, `any` is an error, non-null assertions are warnings, and `unknown` in type assertions and variable annotations is forbidden (`no-restricted-syntax`); an exception needs an `eslint-disable-next-line` comment with a reason.
-- Test files and mocks additionally use the recommended rules of `eslint-plugin-jest` (see [Testing](testing.md#conventions)).
+- `.js` and `.cjs` files are not allowed. The configuration files in the repository root are `.mjs` and are checked with the recommended JavaScript rules of ESLint; all other code, including the scripts in `scripts/`, is TypeScript.
+- TypeScript files are checked with the type information from the tsconfig files listed in [Build outputs](#build-outputs), with the recommended rules of `typescript-eslint` including those that need type information. Return types must be declared, `any` is an error, non-null assertions are warnings, and `unknown` in type assertions and variable annotations is forbidden (`no-restricted-syntax`); an exception needs an `eslint-disable-next-line` comment with a reason.
+- Test files and mocks additionally use the recommended rules of `@vitest/eslint-plugin` and the Vitest globals (see [Testing](testing.md#conventions)).
 
 # CI
 
@@ -178,9 +196,9 @@ The workflow `ci.yml` runs on pushes and pull requests to `main` and `modernizat
 2. `npm ci`, with `NODE_AUTH_TOKEN` for GitHub Packages.
 3. `npm run lint`.
 4. `npm run compile`.
-5. The tests with coverage, which compile again through `pretest` (see [Testing](testing.md#ci)).
+5. The tests with coverage; `pretest` compiles again and runs the type check (see [Testing](testing.md#ci)).
 6. `npm run package` and `npm run package:verify`.
-7. The coverage totals go to the job summary, and the JUnit report is published as the check "Jest".
+7. The coverage totals and, as "Vitest", the test report go to the job summary; Vitest marks the lines of failing tests.
 
 Pull requests into other branches are not checked (see [the known issue](known-issues.md#ci-compiles-twice-and-skips-pull-requests-into-other-branches)).
 
@@ -188,14 +206,18 @@ Pull requests into other branches are not checked (see [the known issue](known-i
 
 The [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340) changes the build in several phases:[^issue-340]
 
-- Phase 3 replaces Jest with Vitest (see [Testing](testing.md#planned-switch-to-vitest)).
-- Phase 4 then replaces webpack with Vite for the webview. Vitest is built on Vite, so after Phase 3 Vite is already a dependency. The switch has to check the content security policy of the webview, the loading of assets, source maps, the production build and the VSIX.
-- Phase 5 switches TypeScript to `NodeNext` modules, and Phase 6 makes the package a native ES module (`"type": "module"`).
+- Phase 4 replaces webpack with Vite for the webview. Vitest is built on Vite, so Vite is already a dependency. The switch has to check the content security policy of the webview, the loading of assets, source maps, the production build and the VSIX. The Vite configuration is written in TypeScript (`vite.config.ts`).
+- Phase 5 switches TypeScript to `NodeNext` modules, and Phase 6 makes the package a native ES module (`"type": "module"`), which makes `scripts/package.json` unnecessary.
+- The goal is a repository without JavaScript files. In Phase 6, `eslint.config.mjs` and `vitest.config.mjs` become TypeScript if ESLint can load a TypeScript configuration without an extra dependency and without an unstable flag; then the ESLint rule against `.js` and `.cjs` files also forbids `.mjs` files.
 - Phase 7 updates CI to the new tools.
 
 [^manifest]: Extension manifest (scripts, dependencies, engines)
 
 [^tsconfig]: TypeScript configuration of the extension host
+
+[^tsconfig-solution]: Solution tsconfig that references all TypeScript configurations
+
+[^tsconfig-scripts]: TypeScript configuration of the scripts
 
 [^tsconfig-webview]: TypeScript configuration of the webview
 

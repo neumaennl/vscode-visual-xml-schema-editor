@@ -110,7 +110,7 @@ export function runCommand(xml: string, command: SchemaCommand): CommandExecutio
 /**
  * Asserts that the command succeeds and returns the resulting XML.
  *
- * Throws a Jest expectation error when the command fails.
+ * Throws an expectation error when the command fails.
  *
  * @param xml - Current schema XML content
  * @param command - The schema editing command to execute
@@ -145,7 +145,7 @@ export function runCommandExpectSuccessSchema(
  * Asserts that the command fails with a validation error whose message matches
  * the given expected string exactly.
  *
- * Throws a Jest expectation error when the command succeeds or fails for a
+ * Throws an expectation error when the command succeeds or fails for a
  * different reason.
  *
  * @param xml - Current schema XML content

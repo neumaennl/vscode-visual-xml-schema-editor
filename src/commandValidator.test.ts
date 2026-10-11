@@ -8,6 +8,7 @@ import { CommandValidator, ValidatorFunctions } from "./commandValidator";
 import { schema, SchemaCommand } from "../shared/types";
 import { ValidationResult } from "./commandValidators/validationUtils";
 import { expectInvalid } from "./commandValidators/validationTestHelpers";
+import type { Mock } from "vitest";
 
 describe("CommandValidator", () => {
   let mockSchema: schema;
@@ -23,8 +24,8 @@ describe("CommandValidator", () => {
     } as schema;
 
     // Create mock validator functions that return success by default
-    const createMockValidator = (): jest.Mock<ValidationResult, [SchemaCommand, schema]> => {
-      return jest.fn<ValidationResult, [SchemaCommand, schema]>(() => ({
+    const createMockValidator = (): Mock<(command: SchemaCommand, schemaObj: schema) => ValidationResult> => {
+      return vi.fn<(command: SchemaCommand, schemaObj: schema) => ValidationResult>(() => ({
         valid: true,
       }));
     };
@@ -190,7 +191,7 @@ describe("CommandValidator", () => {
       };
 
       // Mock validator to return failure
-      (mockValidators.validateAddElement as jest.Mock).mockReturnValueOnce({
+      (mockValidators.validateAddElement as Mock).mockReturnValueOnce({
         valid: false,
         error: "Element name cannot be empty",
       });

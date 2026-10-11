@@ -9,7 +9,7 @@
       "group": "build",
       "problemMatcher": "$tsc",
       "label": "npm: compile-extension",
-      "detail": "tsc -p ./tsconfig.json"
+      "detail": "tsc -p ./tsconfig.extension.json"
     },
     {
       "type": "npm",

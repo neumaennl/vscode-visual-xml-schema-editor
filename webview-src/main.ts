@@ -1,3 +1,6 @@
+// Tells Vite to write webview/styles.css, which the HTML of the webview loads with <link>.
+// The bundle itself contains no CSS and injects none.
+import "./styles.css";
 import { DiagramRenderer } from "./renderer";
 import { PropertyPanel } from "./propertyPanel";
 import { schema } from "../shared/types";

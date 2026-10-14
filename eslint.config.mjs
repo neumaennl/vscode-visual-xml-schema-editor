@@ -29,7 +29,7 @@ export default [
       ],
     },
   },
-  // JavaScript configuration files (vitest.config.mjs, etc.)
+  // JavaScript configuration files (eslint.config.mjs)
   {
     files: ['*.mjs'],
     ...eslint.configs.recommended,
@@ -43,7 +43,7 @@ export default [
   },
   // TypeScript files configuration
   {
-    files: ['**/*.ts'],
+    files: ['**/*.ts', '*.mts'],
     languageOptions: {
       parser: tsparser,
       parserOptions: {
@@ -55,7 +55,7 @@ export default [
           './tsconfig.extension-test.json',
           './tsconfig.webview-test.json',
           './tsconfig.shared-test.json',
-          './tsconfig.scripts.json',
+          './tsconfig.nodeTools.json',
         ],
       },
       globals: {

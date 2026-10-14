@@ -26,8 +26,8 @@ test-results/**
 icon.svg
 *.vsix
 eslint.config.mjs
-vitest.config.mjs
-webpack.config.mjs
+vitest.config.mts
+vite.config.mts
 tsconfig*.json
 
 # node_modules is not excluded: vsce includes production dependencies only.

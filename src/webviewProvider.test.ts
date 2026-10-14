@@ -131,14 +131,14 @@ describe("SchemaEditorProvider", () => {
       }).not.toThrow();
     });
 
-    it("should create HTML with script tag", () => {
+    it("should create HTML that loads the webview bundle as an ES module", () => {
       provider.resolveCustomTextEditor(
         mockDocument,
         mockWebviewPanel,
         {} as vscode.CancellationToken
       );
 
-      expect(mockWebview.html).toContain("<script");
+      expect(mockWebview.html).toContain('<script type="module"');
       expect(mockWebview.html).toContain("</html>");
     });
 

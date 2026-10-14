@@ -76,7 +76,7 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
+    "vscode:prepublish": "npm run clean && npm run compile",
     "compile": "npm run compile-extension && npm run compile-webview",
     "compile-extension": "tsc -p ./tsconfig.extension.json",
     "compile-webview": "tsc --noEmit -p tsconfig.webview.json && vite build --mode production",

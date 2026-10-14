@@ -11,7 +11,7 @@
       "webview-src",
       "shared"
     ],
-    "outDir": "webview",
+    "noEmit": true,
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,

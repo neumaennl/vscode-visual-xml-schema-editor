@@ -6,6 +6,15 @@ const root = fileURLToPath(new URL(".", import.meta.url));
 /** Replaces the `vscode` module, which only exists in the extension host, with the mock. */
 const vscodeMock = { find: /^vscode$/, replacement: `${root}src/__mocks__/vscode.ts` };
 
+/**
+ * In GitHub Actions: annotations at the lines of failing tests. The job summary comes
+ * from the report step in ci.yml, so Vitest's own summary is off.
+ */
+const githubActionsReporter: ["github-actions", { jobSummary: { enabled: boolean } }] = [
+  "github-actions",
+  { jobSummary: { enabled: false } },
+];
+
 // Tests that run inside VS Code (extension-host tests) do not belong to any of these
 // projects. They will live in `test/extension-host/`, which no project includes.
 export default defineConfig({
@@ -26,9 +35,7 @@ export default defineConfig({
           includeConsoleOutput: false,
         },
       ],
-      // In GitHub Actions: annotations at the lines of failing tests. The job summary
-      // comes from the report step in ci.yml, so Vitest's own summary is off.
-      ...(process.env.GITHUB_ACTIONS === "true" ? [["github-actions", { jobSummary: { enabled: false } }]] : []),
+      ...(process.env.GITHUB_ACTIONS === "true" ? [githubActionsReporter] : []),
     ],
     coverage: {
       provider: "v8",

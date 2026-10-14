@@ -11,7 +11,7 @@ okf_version: "0.2"
 # Working on the extension
 
 * [Development guidelines](development-guidelines.md) - Rules for everyone who changes the extension - code size, code quality and ESLint, TypeScript and naming, VS Code and Node versions, TSDoc, tests, documentation and the knowledge bundle, issues, what to check before committing, and commits.
-* [Build and packaging](build-and-packaging.md) - How the extension is built, run, linted, packaged and checked - the build outputs and tsconfig files, the npm scripts, the scripts in TypeScript, running it in VS Code, the VSIX and its check, the generated schema classes, dependencies and the Node version, ESLint, CI, and the planned switch to Vite, NodeNext and native ESM.
+* [Build and packaging](build-and-packaging.md) - How the extension is built, run, linted, packaged and checked - the build outputs and tsconfig files, the npm scripts, the scripts in TypeScript, running it in VS Code, the VSIX and its check, the generated schema classes, dependencies and the Node version, ESLint, CI, and the planned switch to NodeNext and native ESM.
 * [Testing](testing.md) - How the extension is tested - running the tests and the type check, the four Vitest projects, mocks and helpers, conventions for tests, mocks, helper functions and helper classes, which tests to write for typical changes, coverage, CI, tests in the extension host, and how the current tests compare with the testing strategy of ADR 001.
 
 # User experience

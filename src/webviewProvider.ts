@@ -309,7 +309,7 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
         <h3>Properties</h3>
         <div id="properties-content"></div>
     </div>
-    <script nonce="${nonce}" src="${scriptSrc}"></script>
+    <script type="module" nonce="${nonce}" src="${scriptSrc}"></script>
 </body>
 </html>`;
   }

@@ -20,6 +20,8 @@
     "forceConsistentCasingInFileNames": true
   },
   "include": [
-    "scripts/**/*.ts"
+    "scripts/**/*.ts",
+    "vite.config.mts",
+    "vitest.config.mts"
   ]
 }

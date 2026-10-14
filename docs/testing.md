@@ -4,14 +4,14 @@ title: Testing
 description: How the extension is tested - running the tests and the type check, the four Vitest projects, mocks and helpers, conventions for tests, mocks, helper functions and helper classes, which tests to write for typical changes, coverage, CI, tests in the extension host, and how the current tests compare with the testing strategy of ADR 001.
 tags: [testing, vitest, mocks, coverage, ci, conventions]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-11T00:11:41Z }
-verified: { by: human:neumaennl, at: 2026-10-11T00:13:10Z }
+generated: { by: human:neumaennl, at: 2026-10-14T12:24:51Z }
+verified: { by: human:neumaennl, at: 2026-10-14T13:22:19Z }
 sources:
   - id: manifest
     resource: ../package.json
     title: Extension manifest (test scripts)
   - id: vitest-config
-    resource: ../vitest.config.mjs
+    resource: ../vitest.config.mts
     title: Vitest configuration
   - id: vscode-mock
     resource: ../src/__mocks__/vscode.ts
@@ -64,7 +64,7 @@ This document describes how the extension is tested today and the conventions fo
 | `npm run test:watch` | Runs Vitest in watch mode, without compiling and without the type check. |
 | `npm run test:coverage` | Runs all tests with a coverage report in `coverage/`, without compiling and without the type check. |
 
-Vitest only removes the types from the TypeScript files; it does not check them. `npm run typecheck` runs `tsc --noEmit` with the test configurations `tsconfig.extension-test.json`, `tsconfig.webview-test.json` and `tsconfig.shared-test.json`, and with `tsconfig.scripts.json`, so a type error in a test or in the code it tests fails `npm test`.[^manifest]
+Vitest only removes the types from the TypeScript files; it does not check them. `npm run typecheck` runs `tsc --noEmit` with the test configurations `tsconfig.extension-test.json`, `tsconfig.webview-test.json` and `tsconfig.shared-test.json`, and with `tsconfig.nodeTools.json` (the scripts and the configurations of Vite and Vitest), so a type error in a test or in the code it tests fails `npm test`.[^manifest]
 
 `npx vitest run` runs the tests without compiling and without the type check; `npx vitest run --project webview` or a path such as `npx vitest run src/commandValidators` runs a part of them. Each run writes a JUnit report to `test-results/vitest-junit.xml`. Both `coverage/` and `test-results/` are ignored by Git.[^vitest-config]
 
@@ -72,14 +72,14 @@ Use the Node version from `.nvmrc`, which CI also uses. It is the Node version o
 
 # Vitest projects
 
-`vitest.config.mjs` defines four projects, one for each part of the code (see [Architecture](architecture.md#components)), on top of one shared base:[^vitest-config]
+`vitest.config.mts` defines four projects, one for each part of the code (see [Architecture](architecture.md#components)), on top of one shared base:[^vitest-config]
 
 | Project | Tests | Environment | Aliases | Type-checked with |
 |---|---|---|---|---|
 | `extension` | `src/**/*.test.ts` | Node.js | `shared/…` to the `shared` folder, `vscode` to the mock | `tsconfig.extension-test.json` |
 | `shared` | `shared/**/*.test.ts` | Node.js | `shared/…`, `vscode` to the mock | `tsconfig.shared-test.json` |
 | `webview` | `webview-src/**/*.test.ts` | jsdom | `shared/…` | `tsconfig.webview-test.json` |
-| `scripts` | `scripts/**/*.test.ts` | Node.js | `shared/…` | `tsconfig.scripts.json` |
+| `scripts` | `scripts/**/*.test.ts` | Node.js | `shared/…` | `tsconfig.nodeTools.json` |
 
 - **Shared base.** The base enables the globals (`describe`, `it`, `expect`, `vi` without an import), defines the alias for `shared/…`, the reporters and the coverage. The projects only add their name, environment, test files and the `vscode` alias.
 - **Compiling.** Vitest compiles TypeScript with Vite's compiler (Oxc). It takes the decorator settings from the tsconfig, so the generated schema classes are compiled with legacy decorators as in the build (see [ADR 002](architecture/002-legacy-decorators.md)).[^adr-002]
@@ -87,7 +87,7 @@ Use the Node version from `.nvmrc`, which CI also uses. It is the Node version o
 
 # Mocks and helpers
 
-- **VS Code API.** `src/__mocks__/vscode.ts` replaces the `vscode` module in the `extension` and `shared` projects through an alias in `vitest.config.mjs`. It provides `vi.fn()` mocks for the parts the code uses: `Uri`, `workspace` (including `applyEdit` and `getConfiguration`), `window`, `commands`, `languages`, `EventEmitter`, `WorkspaceEdit`, `Range` and a few more. Classes of the API whose instances need members, such as `WorkspaceEdit`, are mocked with a class (`vi.fn(class { … })`): the code creates them with `new`, Vitest passes `new` on to the implementation, and arrow functions cannot be called with `new`.[^vscode-mock]
+- **VS Code API.** `src/__mocks__/vscode.ts` replaces the `vscode` module in the `extension` and `shared` projects through an alias in `vitest.config.mts`. It provides `vi.fn()` mocks for the parts the code uses: `Uri`, `workspace` (including `applyEdit` and `getConfiguration`), `window`, `commands`, `languages`, `EventEmitter`, `WorkspaceEdit`, `Range` and a few more. Classes of the API whose instances need members, such as `WorkspaceEdit`, are mocked with a class (`vi.fn(class { … })`): the code creates them with `new`, Vitest passes `new` on to the implementation, and arrow functions cannot be called with `new`.[^vscode-mock]
 - **VS Code objects.** Tests of `SchemaEditorProvider` build partial stubs of `ExtensionContext`, `Webview`, `WebviewPanel` and `TextDocument` with only the members the provider uses.[^workspace-edit-test]
 - **Webview API.** `main.test.ts` sets `acquireVsCodeApi` on `globalThis` before the app is loaded, with mocks for `postMessage`, `getState` and `setState`, and builds the page with `document.body.innerHTML`. Each test loads the app again with `vi.resetModules()` and `await import("./main")`.[^main-test]
 - **SVG measuring.** jsdom has no layout engine, so `setupGetBBoxMock()` in `webview-src/__tests__/svgTestUtils.ts` gives every element a `getBBox()` that assumes 6 pixels per character and a height of 10 pixels.[^svg-test-utils]

@@ -4,8 +4,8 @@ title: Architecture
 description: How the extension host, the webview and the shared code work together to provide a visual editor for XML Schema (XSD) files, and the design decisions behind the command-based design.
 tags: [architecture, extension-host, webview, shared, design-decisions]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-09T13:20:00Z }
-verified: { by: human:neumaennl, at: 2026-10-09T14:03:31Z }
+generated: { by: human:neumaennl, at: 2026-10-14T12:24:51Z }
+verified: { by: human:neumaennl, at: 2026-10-14T13:22:19Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -25,8 +25,8 @@ sources:
   - id: webview-main
     resource: ../webview-src/main.ts
     title: Webview entry point
-  - id: webpack
-    resource: ../webpack.config.mjs
+  - id: vite-config
+    resource: ../vite.config.mts
     title: Webview bundle configuration
   - id: drop-factory
     resource: ../webview-src/drop/DropCommandFactory.ts
@@ -107,7 +107,7 @@ The `shared/` code is imported by both sides and compiled into each separately. 
 | `@neumaennl/xmlbind-ts` | Extension host | `unmarshal` (XML → objects) and `marshal` (objects → XML) for the generated schema classes; the `xsd2ts` generator used to create them. |
 | `@vscode/codicons` | Webview | Icon font, loaded from `node_modules` through `webview.asWebviewUri`. |
 
-The build outputs are `out/` (extension host and shared code, compiled by `tsc`) and `webview/` (the webpack bundle `main.js` plus `styles.css`).[^webpack] See [Build and packaging](build-and-packaging.md).
+The build outputs are `out/` (extension host and shared code, compiled by `tsc`) and `webview/` (the Vite bundle `main.js`, an ES module, plus `styles.css`).[^vite-config] See [Build and packaging](build-and-packaging.md).
 
 # Source layout
 
@@ -180,7 +180,7 @@ exampleFiles/             Sample XSD files for manual testing
 
 [^command-processor]: Command processor
 
-[^webpack]: Webview bundle configuration
+[^vite-config]: Webview bundle configuration
 
 [^drop-factory]: DropCommandFactory
 

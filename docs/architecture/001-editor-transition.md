@@ -4,8 +4,8 @@ title: "ADR 001: Editor transition architecture"
 description: The decision to turn the viewer into an editor whose webview sends commands that the extension host validates, executes and writes to the XSD file, with the roadmap and the deviations of the implementation from the design.
 tags: [adr, architecture, commands, roadmap]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-10T23:56:42Z }
-verified: { by: human:neumaennl, at: 2026-10-11T00:00:45Z }
+generated: { by: human:neumaennl, at: 2026-10-14T12:24:51Z }
+verified: { by: human:neumaennl, at: 2026-10-14T13:22:19Z }
 ---
 
 # ADR 001: Editor Transition Architecture
@@ -955,7 +955,7 @@ After this ADR was accepted, the interaction design was worked out in a UX conce
 | 4.3 | One layer of Action Creators, pure functions used by all UI parts, builds the commands and validates the input. | Each surface builds its own commands: `DropCommandFactory` for palette drops, the property panel modules for edits. | Commands are built where the input is collected, and the two surfaces collect different input (a palette item and a drop target; a field of the selected node). `DropCommandFactory` keeps the names of the top-level components and reserves each generated name, so that several drops before the next schema update get different names. |
 | 4.3, 5.4 | The webview validates input before it creates a command. | The webview checks only what it can decide from the diagram: drop targets, and empty or unchanged input. The extension host checks every command completely. | The checks complement each other: the extension host is the gatekeeper and must not rely on the webview, and rules are not copied to the webview for their own sake (see [Architecture](../architecture.md#principles)). |
 | 5.4 | Several properties can be edited before the changes are applied (batch edits). | Each field commits on blur or Enter and sends one command; there is no save button. | UX concept. Each change is one command and one undo step. |
-| 6 (Testing Strategy) | Unit tests use Jest or Mocha. | The tests use Vitest; until Phase 3 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340), they used Jest. | Vitest is built on Vite, which replaces webpack for the webview in the next phase, and it supports ES modules without the workarounds Jest needed (see [Testing](../testing.md)). |
+| 6 (Testing Strategy) | Unit tests use Jest or Mocha. | The tests use Vitest; until Phase 3 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340), they used Jest. | Vitest is built on Vite, which also builds the webview since Phase 4, and it supports ES modules without the workarounds Jest needed (see [Testing](../testing.md)). |
 | 2 | Commands are reversible, the command history makes edits auditable, and the design follows event sourcing principles. | Commands have no inverse and are not stored. Each command is applied as one `WorkspaceEdit` that replaces the document text, and undo and redo are VS Code's text undo. The document text is the state. | Risk 3 already relies on VS Code's native undo. Its undo stack covers commands and edits in the text editor alike, as the success criteria require (section 1); a command history of its own would get out of step with edits made in the text editor. |
 
 ## References

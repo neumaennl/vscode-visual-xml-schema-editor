@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-10T23:56:42Z }
-verified: { by: human:neumaennl, at: 2026-10-11T00:00:45Z }
+generated: { by: human:neumaennl, at: 2026-10-14T12:24:51Z }
+verified: { by: human:neumaennl, at: 2026-10-14T13:22:19Z }
 ---
 
 # Purpose
@@ -375,22 +375,6 @@ Effort:
 - **Severity:** Low
 - **Effort:** S
 - **Description:** Some helpers exist as copies in several test files, against the conventions in [Testing](testing.md#helper-functions): `emptySchema()` is identical in three executor tests, `schemaWith(body)` is in three (once with line breaks around the body), the XML constants `schemaWithAnnotationXml` and `schemaWithTwoAnnotationsXml` are in both the annotation validator and executor tests, and the stubs of the VS Code objects for `SchemaEditorProvider` are built separately in `webviewProvider.test.ts` and `pipeline.workspaceEdit.test.ts`. The two helper modules are named `testHelpers.ts` and `svgTestUtils.ts` instead of `<topic>TestHelpers.ts`. The fix is to move the copies into helper modules and rename the two modules. This is planned for Phase 9 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340), on the editor branch, which has more of these tests. Moving the inline XML is a separate, larger task (see [Test XML is inline instead of in `test-resources`](#test-xml-is-inline-instead-of-in-test-resources)).
-- **GitHub issue:** none
-
-## The production webview bundle contains an inline source map
-
-- **Location:** `webpack.config.mjs`
-- **Severity:** Low
-- **Effort:** S
-- **Description:** `devtool` uses `source-map` only when `process.env.NODE_ENV` is `production`, and `inline-source-map` otherwise. `webpack --mode production` sets the mode but not `NODE_ENV` in the configuration file; webpack-cli sets it only with `--node-env`. So `npm run compile`, and with it the VSIX, produces a `webview/main.js` with the whole source map embedded as a data URL, which makes the bundle much larger. The fix is to use `--node-env production` in `compile-webview` or to choose `devtool` from the `mode` argument. See [Build and packaging](build-and-packaging.md#build-outputs).
-- **GitHub issue:** none
-
-## Stale build output is packaged
-
-- **Location:** `package.json` (`vscode:prepublish`), `webpack.config.mjs`
-- **Severity:** Low
-- **Effort:** S
-- **Description:** `vscode:prepublish` runs `npm run compile` but not `npm run clean`, and neither build removes old output: `tsc` only writes files and never deletes them, and the webpack configuration does not set `output.clean`. When a source file is renamed or deleted, its compiled `.js` file stays in `out/`, and any extra file from an earlier webpack build stays in `webview/`. `vsce package` then puts these files into the VSIX. `.vscodeignore` only leaves out the compiled tests and mocks. `package:verify` does not notice the extra files, because it only checks that the extension loads. This affects only VSIX files built locally: CI starts from a fresh checkout, and Jest ignores `out/` and `webview/`. The editor branch has the same problem. The fix is to run `clean` before `compile` in `vscode:prepublish`, and to set `output.clean` in the webpack configuration. See [Build and packaging](build-and-packaging.md#packaging).
 - **GitHub issue:** none
 
 ## CI compiles twice and skips pull requests into other branches

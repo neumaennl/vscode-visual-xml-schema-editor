@@ -74,6 +74,13 @@
         "kind": "build",
         "isDefault": true
       }
+    },
+    {
+      "type": "npm",
+      "script": "pretest:extension-host",
+      "problemMatcher": "$tsc",
+      "label": "npm: pretest:extension-host",
+      "detail": "Compiles the extension and the extension-host tests and assembles .vscode-test/"
     }
   ]
 }

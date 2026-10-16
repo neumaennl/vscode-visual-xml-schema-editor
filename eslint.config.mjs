@@ -11,6 +11,7 @@ export default [
       'out/',
       'dist/',
       'webview/',
+      '.vscode-test/',
       'node_modules/',
       '**/*.d.ts',
       '**/generated/**',
@@ -43,7 +44,7 @@ export default [
   },
   // TypeScript files configuration
   {
-    files: ['**/*.ts', '*.mts'],
+    files: ['**/*.ts', '**/*.mts'],
     languageOptions: {
       parser: tsparser,
       parserOptions: {
@@ -56,6 +57,7 @@ export default [
           './tsconfig.webview-test.json',
           './tsconfig.shared-test.json',
           './tsconfig.nodeTools.json',
+          './tsconfig.extension-host-test.json',
         ],
       },
       globals: {
@@ -99,6 +101,7 @@ export default [
   // Test files configuration (must come before webview config to avoid conflicts)
   {
     files: ['**/*.test.ts', '**/__mocks__/**/*.ts'],
+    ignores: ['test/extension-host/**'],
     plugins: {
       vitest,
     },
@@ -133,6 +136,16 @@ export default [
       // it correctly handles mock functions that don't rely on `this` binding.
       'vitest/unbound-method': 'error',
       '@typescript-eslint/unbound-method': 'off',
+    },
+  },
+  // Tests in the extension host: Mocha (TDD interface) and the mock webview, which runs in the browser
+  {
+    files: ['test/extension-host/**/*.ts', 'test/extension-host/**/*.mts'],
+    languageOptions: {
+      globals: {
+        ...globals.mocha,
+        ...globals.browser,
+      },
     },
   },
   // Webview TypeScript files configuration (browser environment)

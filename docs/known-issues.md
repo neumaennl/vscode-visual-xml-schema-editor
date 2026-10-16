@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-14T12:24:51Z }
-verified: { by: human:neumaennl, at: 2026-10-14T13:22:19Z }
+generated: { by: human:neumaennl, at: 2026-10-16T14:30:20Z }
+verified: { by: human:neumaennl, at: 2026-10-16T14:43:21Z }
 ---
 
 # Purpose
@@ -377,20 +377,20 @@ Effort:
 - **Description:** Some helpers exist as copies in several test files, against the conventions in [Testing](testing.md#helper-functions): `emptySchema()` is identical in three executor tests, `schemaWith(body)` is in three (once with line breaks around the body), the XML constants `schemaWithAnnotationXml` and `schemaWithTwoAnnotationsXml` are in both the annotation validator and executor tests, and the stubs of the VS Code objects for `SchemaEditorProvider` are built separately in `webviewProvider.test.ts` and `pipeline.workspaceEdit.test.ts`. The two helper modules are named `testHelpers.ts` and `svgTestUtils.ts` instead of `<topic>TestHelpers.ts`. The fix is to move the copies into helper modules and rename the two modules. This is planned for Phase 9 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340), on the editor branch, which has more of these tests. Moving the inline XML is a separate, larger task (see [Test XML is inline instead of in `test-resources`](#test-xml-is-inline-instead-of-in-test-resources)).
 - **GitHub issue:** none
 
-## CI compiles twice and skips pull requests into other branches
+## CI skips pull requests into other branches
 
 - **Location:** `.github/workflows/ci.yml`
 - **Severity:** Low
 - **Effort:** S
-- **Description:** The step "Build" runs `npm run compile`, and `npm test` compiles again through `pretest`. The workflow runs only for pushes and pull requests to `main` and `modernization`, so pull requests into feature branches such as `copilot/add-editor-capabilities` are not checked. See [Build and packaging](build-and-packaging.md#ci).
+- **Description:** The workflow runs only for pushes and pull requests to `main` and `modernization`, so pull requests into feature branches such as `copilot/add-editor-capabilities` are not checked. See [Build and packaging](build-and-packaging.md#ci).
 - **GitHub issue:** none
 
-## The launch configuration "Extension Tests" does not work
+## Mocha brings dependencies with known vulnerabilities
 
-- **Location:** `.vscode/launch.json`
+- **Location:** `package.json` (`@vscode/test-cli`)
 - **Severity:** Low
 - **Effort:** S
-- **Description:** The configuration starts VS Code with the extension tests in `out/test/suite/index`, which does not exist: there are no tests that run inside VS Code, only the Vitest tests (see [Testing](testing.md#tests-in-the-extension-host)). The configuration is left over from the extension template and can be removed, or kept until such tests exist. See [Build and packaging](build-and-packaging.md#running-in-vs-code).
+- **Description:** `@vscode/test-cli` 0.0.15 depends on Mocha 11, which brings `serialize-javascript` 6 ([GHSA-5c6j-r48x-rmvq](https://github.com/advisories/GHSA-5c6j-r48x-rmvq), high: code execution through crafted input; [GHSA-qj8w-gfj5-8c6v](https://github.com/advisories/GHSA-qj8w-gfj5-8c6v), moderate: denial of service) and `diff` 7 ([GHSA-73rr-hh4g-fpgx](https://github.com/advisories/GHSA-73rr-hh4g-fpgx), low: denial of service). `npm audit` reports them. They are development dependencies that only run the [tests in the extension host](testing.md#tests-in-the-extension-host) on this repository's own test files, and they are not part of the VSIX. `@vscode/test-cli` declares overrides for both packages itself, but npm ignores the overrides of dependencies, and its switch to Mocha 12 is merged ([microsoft/vscode-test-cli#118](https://github.com/microsoft/vscode-test-cli/pull/118)) but not released yet. The decision is to wait for that release instead of overriding the versions here. When it is out, update `@vscode/test-cli`, check `npm audit` and remove this entry.
 - **GitHub issue:** none
 
 ## Tests are exempt from the size limits

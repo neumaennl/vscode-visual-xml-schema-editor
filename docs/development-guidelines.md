@@ -4,8 +4,8 @@ title: Development guidelines
 description: Rules for everyone who changes the extension - code size, code quality and ESLint, TypeScript and naming, VS Code and Node versions, TSDoc, tests, documentation and the knowledge bundle, issues, what to check before committing, and commits.
 tags: [guidelines, conventions, code-quality, typescript, documentation, workflow]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-10T23:56:42Z }
-verified: { by: human:neumaennl, at: 2026-10-11T00:00:45Z }
+generated: { by: human:neumaennl, at: 2026-10-16T13:21:15Z }
+verified: { by: human:neumaennl, at: 2026-10-16T14:43:21Z }
 sources:
   - id: eslint
     resource: ../eslint.config.mjs
@@ -97,9 +97,10 @@ The documentation of the extension is the knowledge bundle in `docs/`, in the Op
 
 1. `npm run lint` passes.
 2. `npm test` passes; it first compiles the extension and the webview and type-checks the tests and the scripts (`pretest`).[^manifest]
-3. The changes follow these guidelines.
-4. The documentation is updated.
-5. Copilot code review has checked the changed files.
+3. After changes to activation, the registration of the custom editor or the message handling, `npm run test:extension-host` passes (see [Testing](testing.md#tests-in-the-extension-host)).
+4. The changes follow these guidelines.
+5. The documentation is updated.
+6. Copilot code review has checked the changed files.
 
 # Commits
 

@@ -1,11 +1,11 @@
 ---
 type: Build Process
 title: Build and packaging
-description: How the extension is built, run, linted, packaged and checked - the build outputs and tsconfig files, the npm scripts, the scripts in TypeScript, running it in VS Code, the VSIX and its check, the generated schema classes, dependencies and the Node version, ESLint, CI, and the planned switch to NodeNext and native ESM.
+description: How the extension is built, run, linted, packaged and checked - the build outputs and tsconfig files, the npm scripts, the scripts in TypeScript, running it in VS Code, the VSIX and its check, the generated schema classes, dependencies and the Node version, ESLint, CI, and the planned switch to native ESM.
 tags: [build, packaging, vsix, vite, typescript, eslint, ci, dependencies]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-14T12:24:51Z }
-verified: { by: human:neumaennl, at: 2026-10-14T13:22:19Z }
+generated: { by: human:neumaennl, at: 2026-10-16T11:19:14Z }
+verified: { by: human:neumaennl, at: 2026-10-16T11:31:05Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -89,9 +89,9 @@ The extension host loads `webview/main.js`, `webview/styles.css` and `node_modul
 | tsconfig | Used by | Notes |
 |---|---|---|
 | `tsconfig.json` | VS Code | A solution file without files of its own: it lists the other six configurations as references, so VS Code type-checks each file with the configuration that includes it.[^tsconfig-solution] |
-| `tsconfig.extension.json` | `tsc` (extension host) | Excludes test files, `__tests__`, `__mocks__` and `*TestHelpers.ts`. The path `shared/*` points to `shared/`. Decorators are compiled as legacy decorators (`experimentalDecorators`) with `useDefineForClassFields` (see [ADR 002](architecture/002-legacy-decorators.md)).[^adr-002] |
-| `tsconfig.webview.json` | `compile-webview` (type check only) | `ESNext` modules and the `DOM` library; no output (`noEmit`), because Vite builds the bundle. The same decorator settings as `tsconfig.extension.json`.[^tsconfig-webview] |
-| `tsconfig.extension-test.json`, `tsconfig.webview-test.json`, `tsconfig.shared-test.json` | `npm run typecheck` and ESLint | Extend the two above with the Vitest globals and the Node types for the test files (see [Testing](testing.md#vitest-projects)). |
+| `tsconfig.extension.json` | `tsc` (extension host) | Excludes test files, `__tests__`, `__mocks__` and `*TestHelpers.ts`. `module` and `moduleResolution` are `nodenext`: TypeScript resolves imports the way Node does and writes CommonJS, because `package.json` has no `"type": "module"`; relative imports therefore need no file extension until Phase 6. `types` lists `node` and `vscode`, because TypeScript 6 no longer includes all `@types` packages by default. Decorators are compiled as legacy decorators (`experimentalDecorators`) with `useDefineForClassFields` (see [ADR 002](architecture/002-legacy-decorators.md)).[^adr-002] |
+| `tsconfig.webview.json` | `compile-webview` (type check only) | `esnext` modules with `moduleResolution: bundler`, because Vite resolves the imports, and the `DOM` library; `types: ["vite/client"]` declares the import of `styles.css`, which TypeScript 6 checks by default (`noUncheckedSideEffectImports`). No output (`noEmit`), because Vite builds the bundle. The same decorator settings as `tsconfig.extension.json`.[^tsconfig-webview] |
+| `tsconfig.extension-test.json`, `tsconfig.webview-test.json`, `tsconfig.shared-test.json` | `npm run typecheck` and ESLint | Extend the two above with the Vitest globals and the Node types for the test files; the webview tests keep `vite/client` (see [Testing](testing.md#vitest-projects)). |
 | `tsconfig.nodeTools.json` | `npm run typecheck` and ESLint | TypeScript that Node runs directly, without a build: the scripts in `scripts/` and their tests (see [Scripts](#scripts)), and the configuration files `vite.config.mts` and `vitest.config.mts`. `NodeNext` modules, no output (`noEmit`), `.ts` extensions in imports, and only syntax that Node can remove (`erasableSyntaxOnly`).[^tsconfig-node-tools] |
 
 ESLint uses all configurations except `tsconfig.json`, so each TypeScript file must belong to at least one of them.
@@ -164,7 +164,7 @@ On `copilot/add-editor-capabilities`, packaging fails or produces a VSIX that do
 - The webview is still built with webpack, whose `performance` limits were raised to 1 MiB there; the size warning of the Vite build replaces them.
 - `@neumaennl/xmlbind-ts` 2.x is an ES module only, which the CommonJS extension loads with `require()`. Node supports this without a flag from version 20.19 on, which VS Code 1.100 ships; VS Code 1.74 ships Node 16.
 
-The fixes from #343 and #357 and the Vite build from #371 are applied when the editor branch and `modernization` are merged (Phase 9 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340)).[^pr-343][^issue-357][^issue-340]
+The fixes from #343 and #357, the Vite build from #371 and the module settings from #374 are applied when the editor branch and `modernization` are merged (Phase 9 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340)).[^pr-343][^issue-357][^issue-340]
 
 # Generated schema classes
 
@@ -173,6 +173,8 @@ The classes in `shared/generated/` describe XML Schema itself and are used to re
 # Dependencies and Node
 
 `@neumaennl/xmlbind-ts` is published in GitHub Packages. `.npmrc` takes all `@neumaennl` packages from `npm.pkg.github.com` and everything else from `registry.npmjs.org`, and reads the token from the environment variable `NODE_AUTH_TOKEN`. `npm install` and `npm ci` therefore need `NODE_AUTH_TOKEN` set to a GitHub token that can read packages; CI uses the workflow's `GITHUB_TOKEN`.[^npmrc-registries][^ci]
+
+The TypeScript version is 6.0, the last release on TypeScript's JavaScript codebase. TypeScript 7 is not used yet, because `typescript-eslint` supports TypeScript only below 6.1; support is expected with TypeScript 7.1. Dependabot has been told to ignore TypeScript 7.0.x.[^manifest]
 
 Dependabot opens pull requests for npm packages and GitHub Actions every day and groups the ESLint packages. It ignores minor and major updates of `@types/vscode` and `@types/node`, which follow the VS Code version (see below); patch updates within their `~` range are allowed. Dependabot reads its configuration only from the default branch `main`.[^dependabot]
 
@@ -222,7 +224,7 @@ Pull requests into other branches are not checked (see [the known issue](known-i
 
 The [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340) changes the build in several phases:[^issue-340]
 
-- Phase 5 switches TypeScript to `NodeNext` modules, and Phase 6 makes the package a native ES module (`"type": "module"`), which makes `scripts/package.json` unnecessary and lets `vite.config.mts` and `vitest.config.mts` become `.ts` files.
+- Phase 6 makes the package a native ES module (`"type": "module"`). `tsc` then writes ES modules, and relative imports need the `.js` extension, which `nodenext` then requires. `scripts/package.json` becomes unnecessary, and `vite.config.mts` and `vitest.config.mts` can become `.ts` files.
 - The goal is a repository without JavaScript files. In Phase 6, `eslint.config.mjs` becomes TypeScript if ESLint can load a TypeScript configuration without an extra dependency and without an unstable flag; then the ESLint rule against `.js` and `.cjs` files also forbids `.mjs` files.
 - Phase 7 updates CI to the new tools.
 

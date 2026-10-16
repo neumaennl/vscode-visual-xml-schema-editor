@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "target": "ES2020",
+    "rootDir": "test/extension-host",
+    "outDir": ".vscode-test/out",
+    "lib": [
+      "ES2020",
+      "DOM"
+    ],
+    "sourceMap": true,
+    "types": [
+      "mocha",
+      "node",
+      "vscode"
+    ],
+    "strict": true,
+    "noUnusedLocals": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": [
+    "test/extension-host/**/*.ts",
+    "test/extension-host/**/*.mts"
+  ]
+}

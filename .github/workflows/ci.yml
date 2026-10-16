@@ -36,17 +36,37 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Build
-        run: npm run compile
-
-      - name: Run tests (coverage; JUnit via config)
-        run: npm test -- --coverage
-
-      - name: Package VSIX
+      # The only build: `vscode:prepublish` deletes out/ and webview/ and compiles both
+      # parts. The later steps use this build instead of compiling again.
+      - name: Build and package VSIX
         run: npm run package
 
       - name: Verify packaged extension loads
         run: npm run package:verify
+
+      - name: Type check
+        run: npm run typecheck
+
+      # Vitest runs on the sources and needs no build; `npm test` would compile first.
+      - name: Run tests (coverage; JUnit via config)
+        run: npx vitest run --coverage
+
+      - name: Read the VS Code version for the extension-host tests
+        id: vscode-version
+        # The lowest supported version; `npm run vscode:check` ensures the form `^x.y.z`.
+        run: echo "version=$(node -p "require('./package.json').engines.vscode.slice(1)")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache VS Code for the extension-host tests
+        uses: actions/cache@v6
+        with:
+          path: .vscode-test/vscode-linux-x64-${{ steps.vscode-version.outputs.version }}
+          key: vscode-linux-x64-${{ steps.vscode-version.outputs.version }}
+
+      # Uses the extension from the package step; `npm run test:extension-host` would compile it again.
+      - name: Run tests in the extension host
+        run: |
+          npm run stage:extension-host
+          xvfb-run -a npx vscode-test
 
       - name: Summarize coverage in job summary
         if: always()

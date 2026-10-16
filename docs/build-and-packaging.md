@@ -4,8 +4,8 @@ title: Build and packaging
 description: How the extension is built, run, linted, packaged and checked - the build outputs and tsconfig files, the npm scripts, the scripts in TypeScript, running it in VS Code, the VSIX and its check, the generated schema classes, dependencies and the Node version, ESLint, CI, and the planned switch to native ESM.
 tags: [build, packaging, vsix, vite, typescript, eslint, ci, dependencies]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-16T11:19:14Z }
-verified: { by: human:neumaennl, at: 2026-10-16T11:31:05Z }
+generated: { by: human:neumaennl, at: 2026-10-16T14:30:20Z }
+verified: { by: human:neumaennl, at: 2026-10-16T14:43:21Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -52,6 +52,12 @@ sources:
   - id: dependabot
     resource: ../.github/dependabot.yml
     title: Dependabot configuration
+  - id: tsconfig-extension-host-test
+    resource: ../tsconfig.extension-host-test.json
+    title: TypeScript configuration of the tests in the extension host
+  - id: vscode-test-config
+    resource: ../.vscode-test.mjs
+    title: Configuration of vscode-test
   - id: eslint
     resource: ../eslint.config.mjs
     title: ESLint configuration
@@ -88,11 +94,12 @@ The extension host loads `webview/main.js`, `webview/styles.css` and `node_modul
 
 | tsconfig | Used by | Notes |
 |---|---|---|
-| `tsconfig.json` | VS Code | A solution file without files of its own: it lists the other six configurations as references, so VS Code type-checks each file with the configuration that includes it.[^tsconfig-solution] |
+| `tsconfig.json` | VS Code | A solution file without files of its own: it lists the other seven configurations as references, so VS Code type-checks each file with the configuration that includes it.[^tsconfig-solution] |
 | `tsconfig.extension.json` | `tsc` (extension host) | Excludes test files, `__tests__`, `__mocks__` and `*TestHelpers.ts`. `module` and `moduleResolution` are `nodenext`: TypeScript resolves imports the way Node does and writes CommonJS, because `package.json` has no `"type": "module"`; relative imports therefore need no file extension until Phase 6. `types` lists `node` and `vscode`, because TypeScript 6 no longer includes all `@types` packages by default. Decorators are compiled as legacy decorators (`experimentalDecorators`) with `useDefineForClassFields` (see [ADR 002](architecture/002-legacy-decorators.md)).[^adr-002] |
 | `tsconfig.webview.json` | `compile-webview` (type check only) | `esnext` modules with `moduleResolution: bundler`, because Vite resolves the imports, and the `DOM` library; `types: ["vite/client"]` declares the import of `styles.css`, which TypeScript 6 checks by default (`noUncheckedSideEffectImports`). No output (`noEmit`), because Vite builds the bundle. The same decorator settings as `tsconfig.extension.json`.[^tsconfig-webview] |
 | `tsconfig.extension-test.json`, `tsconfig.webview-test.json`, `tsconfig.shared-test.json` | `npm run typecheck` and ESLint | Extend the two above with the Vitest globals and the Node types for the test files; the webview tests keep `vite/client` (see [Testing](testing.md#vitest-projects)). |
 | `tsconfig.nodeTools.json` | `npm run typecheck` and ESLint | TypeScript that Node runs directly, without a build: the scripts in `scripts/` and their tests (see [Scripts](#scripts)), and the configuration files `vite.config.mts` and `vitest.config.mts`. `NodeNext` modules, no output (`noEmit`), `.ts` extensions in imports, and only syntax that Node can remove (`erasableSyntaxOnly`).[^tsconfig-node-tools] |
+| `tsconfig.extension-host-test.json` | `pretest:extension-host`, `npm run typecheck` and ESLint | The tests in the extension host in `test/extension-host/`, compiled to `.vscode-test/out/` with the Mocha, Node and `vscode` types and the `DOM` library for the mock webview. `nodenext` like the extension, so the tests are CommonJS; the mock is an `.mts` file, so it becomes an ES module that the webview loads with `type="module"` (see [Testing](testing.md#tests-in-the-extension-host)).[^tsconfig-extension-host-test] |
 
 ESLint uses all configurations except `tsconfig.json`, so each TypeScript file must belong to at least one of them.
 
@@ -137,7 +144,7 @@ The test scripts and `npm run typecheck` are described in [Testing](testing.md#r
 
 # Running in VS Code
 
-`.vscode/launch.json` has the configuration "Run Extension", which starts a second VS Code window (Extension Development Host) with the extension loaded from the repository and without the other installed extensions (`--disable-extensions`), so that they cannot interfere with manual tests; VS Code's built-in extensions still run. Before it starts, it runs the default build task "Watch All" from `.vscode/tasks.json`, which runs both watch scripts. VS Code recognizes from their output when a watch build is finished: the task of `watch-webview` has a problem matcher for Vite's output, which also reports build errors with file, line and column. "Build All" compiles once without watching. `.vscode/settings.json` uses the TypeScript version from `node_modules`, and `.vscode/extensions.json` recommends the ESLint extension. The second launch configuration, "Extension Tests", does not work (see [the known issue](known-issues.md#the-launch-configuration-extension-tests-does-not-work)).[^vscode-config]
+`.vscode/launch.json` has the configuration "Run Extension", which starts a second VS Code window (Extension Development Host) with the extension loaded from the repository and without the other installed extensions (`--disable-extensions`), so that they cannot interfere with manual tests; VS Code's built-in extensions still run. Before it starts, it runs the default build task "Watch All" from `.vscode/tasks.json`, which runs both watch scripts. VS Code recognizes from their output when a watch build is finished: the task of `watch-webview` has a problem matcher for Vite's output, which also reports build errors with file, line and column. "Build All" compiles once without watching. `.vscode/settings.json` uses the TypeScript version from `node_modules`, and `.vscode/extensions.json` recommends the ESLint extension and the Extension Test Runner (see [Testing](testing.md#tests-in-the-extension-host)). The second launch configuration, "Extension Tests", runs the [tests in the extension host](testing.md#tests-in-the-extension-host) in the VS Code you work in: VS Code's JavaScript debugger reads `.vscode-test.mjs` (`testConfiguration`), and the task `npm: pretest:extension-host` compiles and assembles them first.[^vscode-config][^vscode-test-config]
 
 # Packaging
 
@@ -145,7 +152,7 @@ The test scripts and `npm run typecheck` are described in [Testing](testing.md#r
 
 What goes into the VSIX is controlled by `.vscodeignore`:[^vscodeignore]
 
-- The sources (`src/`, `shared/`, `webview-src/`), all `.ts` and `.map` files, and the tests and mocks in `out/` are left out.
+- The sources (`src/`, `shared/`, `webview-src/`), all `.ts` and `.map` files, the tests and mocks in `out/`, and the tests in the extension host (`test/`, `.vscode-test/`) are left out.
 - The repository and development files are left out: `.github/`, `scripts/`, `.vscode/`, `docs/`, `exampleFiles/`, `schema/`, `coverage/`, `test-results/`, `AGENTS.md`, `CONTRIBUTING.md`, the configuration files and old VSIX files.
 - `README.md` and `LICENSE` are packaged. The README is the page of the extension in the Marketplace; `vsce` turns its relative links into links to the repository given in `repository` in `package.json`.
 - `node_modules/` is not listed. `vsce` adds the production dependencies (`dependencies` in `package.json`) and their dependencies, and leaves out the development dependencies. A runtime dependency must therefore be in `dependencies`, and `node_modules/` must not be excluded in `.vscodeignore`.
@@ -178,6 +185,8 @@ The TypeScript version is 6.0, the last release on TypeScript's JavaScript codeb
 
 Dependabot opens pull requests for npm packages and GitHub Actions every day and groups the ESLint packages. It ignores minor and major updates of `@types/vscode` and `@types/node`, which follow the VS Code version (see below); patch updates within their `~` range are allowed. Dependabot reads its configuration only from the default branch `main`.[^dependabot]
 
+`@vscode/test-cli`, which runs the tests in the extension host, still brings Mocha 11 with known vulnerabilities in two of its dependencies; they stay until a release with Mocha 12 is out (see [the known issue](known-issues.md#mocha-brings-dependencies-with-known-vulnerabilities)).
+
 ## VS Code and Node versions
 
 The extension runs in the extension host of VS Code, which uses the Node version of the Electron that VS Code ships, not the Node installed on the machine. The lowest supported VS Code version in `engines.vscode` therefore decides which Node version the extension runs on, and three other values are derived from it:[^manifest][^nvmrc][^vscode-version]
@@ -201,10 +210,10 @@ The script reads the GitHub API, `raw.githubusercontent.com`, the Electron relea
 
 `eslint.config.mjs` is a flat configuration:[^eslint]
 
-- It ignores `out/`, `dist/`, `webview/`, `node_modules/`, type declarations and generated code.
-- `.js` and `.cjs` files are not allowed. `eslint.config.mjs` is the only JavaScript file and is checked with the recommended JavaScript rules of ESLint; all other code, including the scripts in `scripts/` and the configurations of Vite and Vitest, is TypeScript.
+- It ignores `out/`, `dist/`, `webview/`, `.vscode-test/`, `node_modules/`, type declarations and generated code.
+- `.js` and `.cjs` files are not allowed. `eslint.config.mjs` and `.vscode-test.mjs` are the only JavaScript files and are checked with the recommended JavaScript rules of ESLint; `vscode-test` cannot load a TypeScript configuration. All other code, including the scripts in `scripts/` and the configurations of Vite and Vitest, is TypeScript (`.ts` or `.mts`).
 - TypeScript files are checked with the type information from the tsconfig files listed in [Build outputs](#build-outputs), with the recommended rules of `typescript-eslint` including those that need type information. Return types must be declared, `any` is an error, non-null assertions are warnings, and `unknown` in type assertions and variable annotations is forbidden (`no-restricted-syntax`); an exception needs an `eslint-disable-next-line` comment with a reason.
-- Test files and mocks additionally use the recommended rules of `@vitest/eslint-plugin` and the Vitest globals (see [Testing](testing.md#conventions)).
+- Test files and mocks additionally use the recommended rules of `@vitest/eslint-plugin` and the Vitest globals (see [Testing](testing.md#conventions)). The tests in the extension host in `test/extension-host/` use Mocha instead and get the Mocha and browser globals.
 
 # CI
 
@@ -213,19 +222,19 @@ The workflow `ci.yml` runs on pushes and pull requests to `main` and `modernizat
 1. `npm run vscode:check`, which fails if `@types/vscode`, `@types/node` and `.nvmrc` don't match `engines.vscode` (see [VS Code and Node versions](#vs-code-and-node-versions)).
 2. `npm ci`, with `NODE_AUTH_TOKEN` for GitHub Packages.
 3. `npm run lint`.
-4. `npm run compile`.
-5. The tests with coverage; `pretest` compiles again and runs the type check (see [Testing](testing.md#ci)).
-6. `npm run package` and `npm run package:verify`.
+4. `npm run package`, the only build: `vscode:prepublish` deletes `out/` and `webview/` and compiles both parts, including the type check of the webview. Then `npm run package:verify`.
+5. `npm run typecheck`, and the Vitest tests with coverage (`npx vitest run --coverage`). Vitest runs on the sources and needs no build; `npm test` is not used, because its `pretest` would compile again (see [Testing](testing.md#ci)).
+6. The [tests in the extension host](testing.md#tests-in-the-extension-host) on the build from step 4: `npm run stage:extension-host` compiles only the tests and assembles `.vscode-test/`, and `xvfb-run -a npx vscode-test` runs them, with a virtual display because the runner has none. `npm run test:extension-host` is not used, because its `pretest` would compile the extension again. `actions/cache` keeps the downloaded VS Code (`.vscode-test/vscode-linux-x64-<version>/`) under a key with the version from `engines.vscode`, so CI downloads it only when the version changes, or when GitHub has removed the cache after seven days without use.
 7. The coverage totals and, as "Vitest", the test report go to the job summary; Vitest marks the lines of failing tests.
 
-Pull requests into other branches are not checked (see [the known issue](known-issues.md#ci-compiles-twice-and-skips-pull-requests-into-other-branches)).
+Pull requests into other branches are not checked (see [the known issue](known-issues.md#ci-skips-pull-requests-into-other-branches)).
 
 # Planned changes
 
 The [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340) changes the build in several phases:[^issue-340]
 
-- Phase 6 makes the package a native ES module (`"type": "module"`). `tsc` then writes ES modules, and relative imports need the `.js` extension, which `nodenext` then requires. `scripts/package.json` becomes unnecessary, and `vite.config.mts` and `vitest.config.mts` can become `.ts` files.
-- The goal is a repository without JavaScript files. In Phase 6, `eslint.config.mjs` becomes TypeScript if ESLint can load a TypeScript configuration without an extra dependency and without an unstable flag; then the ESLint rule against `.js` and `.cjs` files also forbids `.mjs` files.
+- Phase 6 makes the package a native ES module (`"type": "module"`). `tsc` then writes ES modules, and relative imports need the `.js` extension, which `nodenext` then requires. `scripts/package.json` becomes unnecessary, and `vite.config.mts`, `vitest.config.mts` and `test/extension-host/mockWebview.mts` can become `.ts` files. The tests in the extension host check the result inside VS Code.
+- The goal is a repository without JavaScript files. In Phase 6, `eslint.config.mjs` becomes TypeScript if ESLint can load a TypeScript configuration without an extra dependency and without an unstable flag; then the ESLint rule against `.js` and `.cjs` files also forbids `.mjs` files. `.vscode-test.mjs` stays JavaScript, because `vscode-test` only loads `.js`, `.cjs` and `.mjs` configurations, and needs an exception.
 - Phase 7 updates CI to the new tools.
 
 [^manifest]: Extension manifest (scripts, dependencies, engines)
@@ -257,6 +266,10 @@ The [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-sc
 [^npmrc-registries]: npm registries
 
 [^dependabot]: Dependabot configuration
+
+[^tsconfig-extension-host-test]: TypeScript configuration of the tests in the extension host
+
+[^vscode-test-config]: Configuration of vscode-test
 
 [^eslint]: ESLint configuration
 

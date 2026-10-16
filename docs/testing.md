@@ -1,11 +1,11 @@
 ---
 type: Testing Strategy
 title: Testing
-description: How the extension is tested - running the tests and the type check, the four Vitest projects, mocks and helpers, conventions for tests, mocks, helper functions and helper classes, which tests to write for typical changes, coverage, CI, tests in the extension host, and how the current tests compare with the testing strategy of ADR 001.
+description: How the extension is tested - running the tests and the type check, the four Vitest projects, mocks and helpers, conventions for tests, mocks, helper functions and helper classes, which tests to write for typical changes, coverage, CI, the smoke tests in the extension host with a mock webview, and how the current tests compare with the testing strategy of ADR 001.
 tags: [testing, vitest, mocks, coverage, ci, conventions]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-16T11:19:14Z }
-verified: { by: human:neumaennl, at: 2026-10-16T11:31:05Z }
+generated: { by: human:neumaennl, at: 2026-10-16T14:30:20Z }
+verified: { by: human:neumaennl, at: 2026-10-16T14:43:21Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -37,6 +37,27 @@ sources:
   - id: ci
     resource: ../.github/workflows/ci.yml
     title: CI workflow
+  - id: vscode-test-config
+    resource: ../.vscode-test.mjs
+    title: Configuration of vscode-test
+  - id: stage-script
+    resource: ../scripts/stage-extension-host-test.ts
+    title: Script that assembles the extension-host tests
+  - id: smoke-test
+    resource: ../test/extension-host/smoke.test.ts
+    title: Smoke tests in the extension host
+  - id: mock-webview
+    resource: ../test/extension-host/mockWebview.mts
+    title: Mock webview for the extension-host tests
+  - id: vscode-test-cli
+    resource: https://github.com/microsoft/vscode-test-cli
+    title: "@vscode/test-cli"
+  - id: vscode-test-download
+    resource: https://github.com/microsoft/vscode-test/blob/main/lib/download.ts
+    title: "@vscode/test-electron: download of VS Code"
+  - id: issue-369
+    resource: https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/369
+    title: Smoke tests in the VS Code extension host
   - id: adr-001
     resource: architecture/001-editor-transition.md
     title: "ADR 001: Editor Transition Architecture (Testing Strategy)"
@@ -53,7 +74,7 @@ sources:
 
 # Purpose
 
-This document describes how the extension is tested today and the conventions for new tests. All tests are Vitest tests that run in Node.js; there are no tests that start VS Code yet (see [Tests in the extension host](#tests-in-the-extension-host)).
+This document describes how the extension is tested today and the conventions for new tests. Almost all tests are Vitest tests that run in Node.js with a mocked VS Code API; a small smoke suite runs inside VS Code (see [Tests in the extension host](#tests-in-the-extension-host)).
 
 # Running the tests
 
@@ -63,8 +84,9 @@ This document describes how the extension is tested today and the conventions fo
 | `npm run typecheck` | Type-checks the tests and the scripts with `tsc` (see below). |
 | `npm run test:watch` | Runs Vitest in watch mode, without compiling and without the type check. |
 | `npm run test:coverage` | Runs all tests with a coverage report in `coverage/`, without compiling and without the type check. |
+| `npm run test:extension-host` | Runs the smoke tests inside VS Code (see [Tests in the extension host](#tests-in-the-extension-host)). `npm test` does not run them. |
 
-Vitest only removes the types from the TypeScript files; it does not check them. `npm run typecheck` runs `tsc --noEmit` with the test configurations `tsconfig.extension-test.json`, `tsconfig.webview-test.json` and `tsconfig.shared-test.json`, and with `tsconfig.nodeTools.json` (the scripts and the configurations of Vite and Vitest), so a type error in a test or in the code it tests fails `npm test`.[^manifest]
+Vitest only removes the types from the TypeScript files; it does not check them. `npm run typecheck` runs `tsc --noEmit` with the test configurations `tsconfig.extension-test.json`, `tsconfig.webview-test.json` and `tsconfig.shared-test.json`, with `tsconfig.nodeTools.json` (the scripts and the configurations of Vite and Vitest), and with `tsconfig.extension-host-test.json` (the tests in the extension host), so a type error in a test or in the code it tests fails `npm test`.[^manifest]
 
 `npx vitest run` runs the tests without compiling and without the type check; `npx vitest run --project webview` or a path such as `npx vitest run src/commandValidators` runs a part of them. Each run writes a JUnit report to `test-results/vitest-junit.xml`. Both `coverage/` and `test-results/` are ignored by Git.[^vitest-config]
 
@@ -162,6 +184,7 @@ There are no helper classes in the tests today. Factory functions and plain obje
 - **A new message:** `webviewProvider.test.ts` for the extension host side and `main.test.ts` for the webview side.
 - **A new draggable construct:** placement and payload in `DropCommandFactory.test.ts`; `renderer.test.ts` only if the event handling changes (see [Drag and drop](drag-and-drop.md#adding-a-draggable-construct)).
 - **Changes to the webview UI:** a jsdom test next to the changed module that builds the needed DOM, triggers the event and checks the DOM and the posted messages. Tests that measure text call `setupGetBBoxMock()`.
+- **Changes to activation, the registration of the custom editor or the message handling:** besides the Vitest tests, run `npm run test:extension-host`; extend the smoke tests only if the change adds a path that they do not reach.
 - **Changes to a script:** a test next to the script, with the network, the terminal and other programs mocked, except a program that the script's own task depends on, such as `unzip` for `verify-vsix.ts`.
 
 # Coverage
@@ -172,7 +195,7 @@ No threshold is enforced; the goal is more than 80% for business logic.
 
 # CI
 
-The workflow `ci.yml` runs on pushes and pull requests to `main` and `modernization` with the Node version from `.nvmrc`. It first checks that this version and the `@types` packages match the lowest supported VS Code version, then installs the dependencies, runs ESLint and the build, and then the type check and the tests with coverage. After the tests it packages the extension and checks that the VSIX loads (see [Build and packaging](build-and-packaging.md#ci)).[^ci]
+The workflow `ci.yml` runs on pushes and pull requests to `main` and `modernization` with the Node version from `.nvmrc`. It first checks that this version and the `@types` packages match the lowest supported VS Code version, then installs the dependencies and runs ESLint. It builds the extension once, by packaging it, and checks that the VSIX loads. Then it runs the type check and the Vitest tests with coverage, and the [tests in the extension host](#tests-in-the-extension-host) on the packaged build, with a virtual display (`xvfb-run`) and the VS Code build from the cache. It runs the steps of `npm test` and `npm run test:extension-host` separately, because their `pretest` scripts would compile again (see [Build and packaging](build-and-packaging.md#ci)).[^ci]
 
 - **Report.** The job summary shows the coverage totals and, as "Vitest", the test report that `dorny/test-reporter` creates from the JUnit file: the tests per file, and for a failing test its message.
 - **Annotations.** In GitHub Actions, Vitest also adds its `github-actions` reporter, which marks the line of each failing test in the run and in the changed files of a pull request. Its own job summary is off, because the report step writes one.[^vitest-config]
@@ -181,7 +204,17 @@ On `copilot/add-editor-capabilities`, the workflow runs only for `main` and has 
 
 # Tests in the extension host
 
-No test runs inside VS Code yet, so undo and redo, changes from outside and the persisted webview state are not tested. Such tests will run with `@vscode/test-cli`, not with Vitest, and will live in `test/extension-host/`, which no Vitest project includes. A smoke suite is planned before Phase 6 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340), which makes the extension a native ES module.[^issue-340]
+A small smoke suite runs inside VS Code, with the real `vscode` API instead of the mock. It checks the path that the Vitest tests can only check piece by piece: VS Code loads and activates the extension, opens a schema in the custom editor, a message from the webview becomes a `WorkspaceEdit`, and VS Code's undo reverts it. Phase 6 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340), which makes the extension a native ES module, relies on it.[^issue-369]
+
+- **Runner.** `vscode-test` from `@vscode/test-cli` reads `.vscode-test.mjs`, starts VS Code with the extension and a workspace, and runs the compiled tests with Mocha (TDD interface: `suite`, `test`) in the extension host. Other extensions are disabled, and VS Code keeps its settings and extensions in `.vscode-test/`, apart from the VS Code you work in. The configuration is a JavaScript file because `vscode-test` only loads `.js`, `.cjs` and `.mjs` configurations.[^vscode-test-cli][^vscode-test-config]
+- **VS Code version and download.** The tests run on the lowest supported version from `engines.vscode`. `@vscode/test-electron` downloads it once into `.vscode-test/vscode-<platform>-<version>/` and uses the existing copy afterwards without contacting the server. After `npm run vscode:update` the next run downloads the new version; the old folder stays until you delete it.[^vscode-test-download]
+- **Mock webview.** Tests in the extension host cannot see or operate the webview. The suite therefore runs a copy of the extension whose webview bundle is replaced by `test/extension-host/mockWebview.mts`: as soon as the extension sends the parsed schema (`updateSchema`), the mock sends one fixed `executeCommand` message (`addElement`). The mock runs under the real content security policy and uses the real message passing; no test code is part of the extension.[^mock-webview]
+- **Assembling.** `pretest:extension-host` compiles the extension and runs `stage:extension-host`, which compiles the tests (with `tsconfig.extension-host-test.json` into `.vscode-test/out/`) and runs `scripts/stage-extension-host-test.ts`. The script assembles the copy of the extension in `.vscode-test/extension/` (`package.json`, a copy of `out/` and the mock as `webview/main.js`) and a workspace in `.vscode-test/workspace/` with a copy of `exampleFiles/example.xsd`, so the tests never change `exampleFiles/`. `out/` is copied, not linked: with a link the extension activated, but the edit from the mock never reached the document.[^stage-script]
+- **The tests.** `test/extension-host/smoke.test.ts` runs in order: the extension activates; `example.xsd` opens in the custom editor; the edit from the mock arrives as a change of the document; the command `undo` restores the original text. At the end the editor is reverted and closed.[^smoke-test]
+- **Not covered.** Whether the real webview bundle loads and draws the diagram, and anything the user does in the webview. End-to-end tests of the webview UI are planned on the editor branch ([#377](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/377)).
+- **Locally.** VS Code opens a window for a few seconds. On Linux without a display, run `xvfb-run -a npm run test:extension-host`. Under WSL, WSLg provides the display.
+- **Debugging.** The launch configuration "Extension Tests" runs the suite in the VS Code you work in, after the task `npm: pretest:extension-host`. The results appear in the Debug Console of the window that started it; the test window closes whether the tests pass or fail. For a quick pass or fail, `npm run test:extension-host` in a terminal is simpler. Breakpoints work in the test files. In the extension code they do not bind, because the source maps of the copied `out/` point to paths that do not exist in the copy; use "Run Extension" to debug the extension itself.
+- **Testing view.** The recommended extension "Extension Test Runner" (`ms-vscode.extension-test-runner`) finds `.vscode-test.mjs` and shows the tests in VS Code's Testing view, where they can be run and debugged one by one. It runs the compiled tests as they are, so run `npm run pretest:extension-host` after changing the extension or the tests.
 
 # Compared with ADR 001
 
@@ -190,8 +223,8 @@ ADR 001 plans six levels of testing. The current state:[^adr-001]
 | Level in the ADR | Current state |
 |---|---|
 | Unit tests (Jest or Mocha, VS Code API mocked, 80% coverage of business logic) | Done with Vitest instead of Jest or Mocha (see [ADR 001, section 9](architecture/001-editor-transition.md#9-deviations-from-this-design)) and [Coverage](#coverage). The tests for the State Reconciler and the selection manager do not exist, because these parts are not built. |
-| Integration tests (VS Code Extension Test Runner) | Done in Vitest with the mocked VS Code API instead: the pipeline tests and the message handling of `SchemaEditorProvider`. Nothing runs inside VS Code yet (see [Tests in the extension host](#tests-in-the-extension-host)). |
-| End-to-end tests (Playwright or Selenium) | None. |
+| Integration tests (VS Code Extension Test Runner) | Mostly done in Vitest with the mocked VS Code API: the pipeline tests and the message handling of `SchemaEditorProvider`. A smoke suite with `@vscode/test-cli` checks activation, the custom editor, a `WorkspaceEdit` from a webview message and undo inside VS Code, with a mock webview (see [Tests in the extension host](#tests-in-the-extension-host)). |
+| End-to-end tests (Playwright or Selenium) | None. Planned on the editor branch ([#377](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/377)). |
 | Performance tests | None. |
 | Manual tests | No defined process. |
 | Regression tests (CI on every commit) | CI runs lint, build, type check and all tests on pushes and pull requests to `main` and `modernization`. |
@@ -223,3 +256,17 @@ ADR 001 plans six levels of testing. The current state:[^adr-001]
 [^vitest-vi-mock]: Vitest: vi.mock
 
 [^issue-340]: Tech Stack Modernization
+
+[^vscode-test-config]: Configuration of vscode-test
+
+[^stage-script]: Script that assembles the extension-host tests
+
+[^smoke-test]: Smoke tests in the extension host
+
+[^mock-webview]: Mock webview for the extension-host tests
+
+[^vscode-test-cli]: @vscode/test-cli
+
+[^vscode-test-download]: @vscode/test-electron: download of VS Code
+
+[^issue-369]: Smoke tests in the VS Code extension host

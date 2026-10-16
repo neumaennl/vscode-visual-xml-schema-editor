@@ -4,6 +4,7 @@
 
 import * as vscode from "vscode";
 import { SchemaEditorProvider } from "./webviewProvider";
+import { CommandProcessor } from "./commandProcessor";
 import type { Mock, MockedFunction } from "vitest";
 
 // Mock helpers
@@ -267,7 +268,6 @@ describe("SchemaEditorProvider", () => {
     }
 
     it("should send 'error' message with code and stack for runtime errors", async () => {
-      const { CommandProcessor } = await import("./commandProcessor");
       vi.spyOn(CommandProcessor.prototype, "execute").mockReturnValue({
         success: false,
         errorKind: "runtime",
@@ -305,7 +305,6 @@ describe("SchemaEditorProvider", () => {
     });
 
     it("should send 'commandResult' with success:false for validation errors", async () => {
-      const { CommandProcessor } = await import("./commandProcessor");
       vi.spyOn(CommandProcessor.prototype, "execute").mockReturnValue({
         success: false,
         errorKind: "validation",
@@ -338,7 +337,6 @@ describe("SchemaEditorProvider", () => {
     });
 
     it("should send 'error' message with code and stack when commandProcessor throws", async () => {
-      const { CommandProcessor } = await import("./commandProcessor");
       vi.spyOn(CommandProcessor.prototype, "execute").mockImplementation(() => {
         throw new Error("Completely unexpected failure");
       });
@@ -363,7 +361,6 @@ describe("SchemaEditorProvider", () => {
       expect(sentMsg.data.code).toBe("COMMAND_EXECUTION_ERROR");
     });
     it("should send 'error' message with code when applyEdit returns false", async () => {
-      const { CommandProcessor } = await import("./commandProcessor");
       vi.spyOn(CommandProcessor.prototype, "execute").mockReturnValue({
         success: true,
         // schema/xmlContent values are irrelevant — only the applyEdit branch is under test

@@ -4,8 +4,8 @@ title: Testing
 description: How the extension is tested - running the tests and the type check, the four Vitest projects, mocks and helpers, conventions for tests, mocks, helper functions and helper classes, which tests to write for typical changes, coverage, CI, tests in the extension host, and how the current tests compare with the testing strategy of ADR 001.
 tags: [testing, vitest, mocks, coverage, ci, conventions]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-14T12:24:51Z }
-verified: { by: human:neumaennl, at: 2026-10-14T13:22:19Z }
+generated: { by: human:neumaennl, at: 2026-10-16T11:19:14Z }
+verified: { by: human:neumaennl, at: 2026-10-16T11:31:05Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -76,12 +76,12 @@ Use the Node version from `.nvmrc`, which CI also uses. It is the Node version o
 
 | Project | Tests | Environment | Aliases | Type-checked with |
 |---|---|---|---|---|
-| `extension` | `src/**/*.test.ts` | Node.js | `shared/…` to the `shared` folder, `vscode` to the mock | `tsconfig.extension-test.json` |
-| `shared` | `shared/**/*.test.ts` | Node.js | `shared/…`, `vscode` to the mock | `tsconfig.shared-test.json` |
-| `webview` | `webview-src/**/*.test.ts` | jsdom | `shared/…` | `tsconfig.webview-test.json` |
-| `scripts` | `scripts/**/*.test.ts` | Node.js | `shared/…` | `tsconfig.nodeTools.json` |
+| `extension` | `src/**/*.test.ts` | Node.js | `vscode` to the mock | `tsconfig.extension-test.json` |
+| `shared` | `shared/**/*.test.ts` | Node.js | `vscode` to the mock | `tsconfig.shared-test.json` |
+| `webview` | `webview-src/**/*.test.ts` | jsdom | none | `tsconfig.webview-test.json` |
+| `scripts` | `scripts/**/*.test.ts` | Node.js | none | `tsconfig.nodeTools.json` |
 
-- **Shared base.** The base enables the globals (`describe`, `it`, `expect`, `vi` without an import), defines the alias for `shared/…`, the reporters and the coverage. The projects only add their name, environment, test files and the `vscode` alias.
+- **Shared base.** The base enables the globals (`describe`, `it`, `expect`, `vi` without an import), defines the reporters and the coverage. The projects only add their name, environment, test files and the `vscode` alias.
 - **Compiling.** Vitest compiles TypeScript with Vite's compiler (Oxc). It takes the decorator settings from the tsconfig, so the generated schema classes are compiled with legacy decorators as in the build (see [ADR 002](architecture/002-legacy-decorators.md)).[^adr-002]
 - **tsconfig files.** The test configurations are only used for the type check, by ESLint and by VS Code. `tsconfig.json` lists them as references, so VS Code type-checks each test file with the configuration that includes it, with the Vitest globals (see [Build and packaging](build-and-packaging.md#build-outputs)).
 

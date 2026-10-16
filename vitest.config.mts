@@ -18,9 +18,6 @@ const githubActionsReporter: ["github-actions", { jobSummary: { enabled: boolean
 // Tests that run inside VS Code (extension-host tests) do not belong to any of these
 // projects. They will live in `test/extension-host/`, which no project includes.
 export default defineConfig({
-  resolve: {
-    alias: [{ find: /^shared\//, replacement: `${root}shared/` }],
-  },
   test: {
     globals: true,
     reporters: [

@@ -4,8 +4,8 @@ title: Development guidelines
 description: Rules for everyone who changes the extension - code size, code quality and ESLint, TypeScript and naming, VS Code and Node versions, TSDoc, tests, documentation and the knowledge bundle, issues, what to check before committing, and commits.
 tags: [guidelines, conventions, code-quality, typescript, documentation, workflow]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-16T13:21:15Z }
-verified: { by: human:neumaennl, at: 2026-10-16T14:43:21Z }
+generated: { by: human:neumaennl, at: 2026-10-16T14:54:15Z }
+verified: { by: human:neumaennl, at: 2026-10-19T06:07:53Z }
 sources:
   - id: eslint
     resource: ../eslint.config.mjs
@@ -44,6 +44,7 @@ ESLint does not check the limits. Some code exceeds them, and the exemption for 
 - `npm run lint` must report no errors, and as few warnings as possible. `npm run lint:fix` fixes what it can. The rules are described in [Build and packaging](build-and-packaging.md#lint).[^eslint]
 - Disable an ESLint rule only as a last resort, with an `eslint-disable-next-line` comment that gives the reason.
 - Have the changes reviewed by Copilot code review and handle its comments. If you do not follow a comment, give the reason.
+- After changes made because of review comments, request another review. Merge a pull request only when the last review has no findings, or when each remaining finding is dismissed for a good reason, given as a reply to the comment.
 
 # TypeScript
 

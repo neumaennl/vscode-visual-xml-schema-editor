@@ -2,6 +2,7 @@
 src/**
 shared/**
 webview-src/**
+test/**
 out/**/__tests__/**
 out/**/__mocks__/**
 out/**/*.test.js
@@ -26,6 +27,7 @@ test-results/**
 icon.svg
 *.vsix
 eslint.config.mjs
+.vscode-test.mjs
 vitest.config.mts
 vite.config.mts
 tsconfig*.json

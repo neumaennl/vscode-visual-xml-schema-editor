@@ -26,7 +26,6 @@ function stub(): object {
  *
  * @param vsix - The VSIX file
  * @param dir - The folder to extract into
- * @returns Nothing
  * @throws {Error} If the file cannot be extracted
  */
 function extract(vsix: string, dir: string): void {

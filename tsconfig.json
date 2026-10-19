@@ -6,6 +6,7 @@
     { "path": "./tsconfig.extension-test.json" },
     { "path": "./tsconfig.webview-test.json" },
     { "path": "./tsconfig.shared-test.json" },
-    { "path": "./tsconfig.nodeTools.json" }
+    { "path": "./tsconfig.nodeTools.json" },
+    { "path": "./tsconfig.extension-host-test.json" }
   ]
 }

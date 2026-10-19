@@ -4,8 +4,8 @@ title: Development guidelines
 description: Rules for everyone who changes the extension - code size, code quality and ESLint, TypeScript and naming, VS Code and Node versions, TSDoc, tests, documentation and the knowledge bundle, issues, what to check before committing, and commits.
 tags: [guidelines, conventions, code-quality, typescript, documentation, workflow]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-10T23:56:42Z }
-verified: { by: human:neumaennl, at: 2026-10-11T00:00:45Z }
+generated: { by: human:neumaennl, at: 2026-10-19T08:27:59Z }
+verified: { by: human:neumaennl, at: 2026-10-19T09:11:14Z }
 sources:
   - id: eslint
     resource: ../eslint.config.mjs
@@ -44,6 +44,7 @@ ESLint does not check the limits. Some code exceeds them, and the exemption for 
 - `npm run lint` must report no errors, and as few warnings as possible. `npm run lint:fix` fixes what it can. The rules are described in [Build and packaging](build-and-packaging.md#lint).[^eslint]
 - Disable an ESLint rule only as a last resort, with an `eslint-disable-next-line` comment that gives the reason.
 - Have the changes reviewed by Copilot code review and handle its comments. If you do not follow a comment, give the reason.
+- After changes made because of review comments, request another review. Merge a pull request only when the last review has no findings, or when each remaining finding is dismissed for a good reason, given as a reply to the comment.
 
 # TypeScript
 
@@ -59,7 +60,7 @@ ESLint does not check the limits. Some code exceeds them, and the exemption for 
 
 # TSDoc
 
-Every function has an up-to-date TSDoc comment: what it does, each parameter with `@param`, the return value with `@returns`, and the errors it throws with `@throws`. Complex functions also get an `@example`.
+Every function has an up-to-date TSDoc comment: what it does, each parameter with `@param`, the return value with `@returns` (functions without a return value have none), and the errors it throws with `@throws`. Complex functions also get an `@example`.
 
 ```typescript
 /**
@@ -97,9 +98,10 @@ The documentation of the extension is the knowledge bundle in `docs/`, in the Op
 
 1. `npm run lint` passes.
 2. `npm test` passes; it first compiles the extension and the webview and type-checks the tests and the scripts (`pretest`).[^manifest]
-3. The changes follow these guidelines.
-4. The documentation is updated.
-5. Copilot code review has checked the changed files.
+3. After changes to activation, the registration of the custom editor or the message handling, `npm run test:extension-host` passes (see [Testing](testing.md#tests-in-the-extension-host)).
+4. The changes follow these guidelines.
+5. The documentation is updated.
+6. Copilot code review has checked the changed files.
 
 # Commits
 

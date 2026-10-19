@@ -143,7 +143,6 @@ export async function choose(rows: DerivedVersions[], dates: Record<string, stri
  * @param manifest - The parsed `package.json` and its line endings
  * @param values - The values to write
  * @param dir - The folder with `package.json` and `.nvmrc`
- * @returns Nothing
  */
 export function writeValues({ pkg, crlf }: Manifest, values: ExpectedValues, dir = "."): void {
   const eol = crlf ? "\r\n" : "\n";
@@ -194,7 +193,6 @@ function runSteps(version: string): number {
  * Prints the steps to run after the update.
  *
  * @param version - The Node version
- * @returns Nothing
  */
 function printSteps(version: string): void {
   console.log(`Install and use Node ${version}, then run:\n${STEPS.map((s) => `  ${s}`).join("\n")}`);

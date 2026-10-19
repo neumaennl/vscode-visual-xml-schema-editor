@@ -4,8 +4,8 @@ title: Development guidelines
 description: Rules for everyone who changes the extension - code size, code quality and ESLint, TypeScript and naming, VS Code and Node versions, TSDoc, tests, documentation and the knowledge bundle, issues, what to check before committing, and commits.
 tags: [guidelines, conventions, code-quality, typescript, documentation, workflow]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-16T14:54:15Z }
-verified: { by: human:neumaennl, at: 2026-10-19T06:07:53Z }
+generated: { by: human:neumaennl, at: 2026-10-19T08:27:59Z }
+verified: { by: human:neumaennl, at: 2026-10-19T09:11:14Z }
 sources:
   - id: eslint
     resource: ../eslint.config.mjs
@@ -60,7 +60,7 @@ ESLint does not check the limits. Some code exceeds them, and the exemption for 
 
 # TSDoc
 
-Every function has an up-to-date TSDoc comment: what it does, each parameter with `@param`, the return value with `@returns`, and the errors it throws with `@throws`. Complex functions also get an `@example`.
+Every function has an up-to-date TSDoc comment: what it does, each parameter with `@param`, the return value with `@returns` (functions without a return value have none), and the errors it throws with `@throws`. Complex functions also get an `@example`.
 
 ```typescript
 /**

@@ -10,13 +10,13 @@ import {
   AddAttributeGroupCommand,
   RemoveAttributeGroupCommand,
   ModifyAttributeGroupCommand,
-} from "../../shared/types";
+} from "../../shared/types.js";
 import {
   executeAddAttributeGroup,
   executeRemoveAttributeGroup,
   executeModifyAttributeGroup,
-} from "./attributeGroupExecutors";
-import { toArray } from "../../shared/schemaUtils";
+} from "./attributeGroupExecutors.js";
+import { toArray } from "../../shared/schemaUtils.js";
 
 describe("AttributeGroup Executors", () => {
   describe("executeAddAttributeGroup", () => {

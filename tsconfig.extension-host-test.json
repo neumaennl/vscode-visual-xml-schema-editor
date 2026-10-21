@@ -21,7 +21,6 @@
     "forceConsistentCasingInFileNames": true
   },
   "include": [
-    "test/extension-host/**/*.ts",
-    "test/extension-host/**/*.mts"
+    "test/extension-host/**/*.ts"
   ]
 }

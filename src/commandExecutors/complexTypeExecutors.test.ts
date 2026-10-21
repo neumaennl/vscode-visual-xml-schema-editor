@@ -9,13 +9,13 @@ import {
   AddComplexTypeCommand,
   RemoveComplexTypeCommand,
   ModifyComplexTypeCommand,
-} from "../../shared/types";
+} from "../../shared/types.js";
 import {
   executeAddComplexType,
   executeRemoveComplexType,
   executeModifyComplexType,
-} from "./typeExecutors";
-import { toArray } from "../../shared/schemaUtils";
+} from "./typeExecutors.js";
+import { toArray } from "../../shared/schemaUtils.js";
 
 describe("ComplexType Executors", () => {
   describe("executeAddComplexType", () => {

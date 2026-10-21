@@ -44,7 +44,7 @@ export default [
   },
   // TypeScript files configuration
   {
-    files: ['**/*.ts', '**/*.mts'],
+    files: ['**/*.ts'],
     languageOptions: {
       parser: tsparser,
       parserOptions: {
@@ -140,7 +140,7 @@ export default [
   },
   // Tests in the extension host: Mocha (TDD interface) and the mock webview, which runs in the browser
   {
-    files: ['test/extension-host/**/*.ts', 'test/extension-host/**/*.mts'],
+    files: ['test/extension-host/**/*.ts'],
     languageOptions: {
       globals: {
         ...globals.mocha,

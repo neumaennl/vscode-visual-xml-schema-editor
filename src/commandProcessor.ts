@@ -3,10 +3,10 @@
  * Implements validation, execution, and rollback logic for schema transformations.
  */
 
-import { SchemaCommand, schema } from "../shared/types";
-import { CommandValidator } from "./commandValidator";
-import { CommandExecutor } from "./commandExecutor";
-import { SchemaModelManager } from "./schemaModelManager";
+import { SchemaCommand, schema } from "../shared/types.js";
+import { CommandValidator } from "./commandValidator.js";
+import { CommandExecutor } from "./commandExecutor.js";
+import { SchemaModelManager } from "./schemaModelManager.js";
 
 /**
  * Classifies the origin of a command execution failure.

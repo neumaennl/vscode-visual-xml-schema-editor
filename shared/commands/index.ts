@@ -4,27 +4,27 @@
  */
 
 // Re-export base types
-export * from "./base";
+export * from "./base.js";
 
 // Re-export all command modules
-export * from "./element";
-export * from "./attribute";
-export * from "./schemaTypes";
-export * from "./group";
-export * from "./metadata";
-export * from "./module";
+export * from "./element.js";
+export * from "./attribute.js";
+export * from "./schemaTypes.js";
+export * from "./group.js";
+export * from "./metadata.js";
+export * from "./module.js";
 
 // Import command types for union
 import {
   AddElementCommand,
   RemoveElementCommand,
   ModifyElementCommand,
-} from "./element";
+} from "./element.js";
 import {
   AddAttributeCommand,
   RemoveAttributeCommand,
   ModifyAttributeCommand,
-} from "./attribute";
+} from "./attribute.js";
 import {
   AddSimpleTypeCommand,
   RemoveSimpleTypeCommand,
@@ -32,7 +32,7 @@ import {
   AddComplexTypeCommand,
   RemoveComplexTypeCommand,
   ModifyComplexTypeCommand,
-} from "./schemaTypes";
+} from "./schemaTypes.js";
 import {
   AddGroupCommand,
   RemoveGroupCommand,
@@ -40,7 +40,7 @@ import {
   AddAttributeGroupCommand,
   RemoveAttributeGroupCommand,
   ModifyAttributeGroupCommand,
-} from "./group";
+} from "./group.js";
 import {
   AddAnnotationCommand,
   RemoveAnnotationCommand,
@@ -48,7 +48,7 @@ import {
   AddDocumentationCommand,
   RemoveDocumentationCommand,
   ModifyDocumentationCommand,
-} from "./metadata";
+} from "./metadata.js";
 import {
   AddImportCommand,
   RemoveImportCommand,
@@ -56,7 +56,7 @@ import {
   AddIncludeCommand,
   RemoveIncludeCommand,
   ModifyIncludeCommand,
-} from "./module";
+} from "./module.js";
 
 /**
  * Union type of all possible commands.

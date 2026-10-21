@@ -28,7 +28,7 @@ import {
   localElement,
   complexContentType,
   extensionType,
-} from "../../shared/types";
+} from "../../shared/types.js";
 import {
   executeAddImport,
   executeRemoveImport,
@@ -36,8 +36,8 @@ import {
   executeAddInclude,
   executeRemoveInclude,
   executeModifyInclude,
-} from "./schemaExecutors";
-import { toArray } from "../../shared/schemaUtils";
+} from "./schemaExecutors.js";
+import { toArray } from "../../shared/schemaUtils.js";
 
 // ---------------------------------------------------------------------------
 // Helpers

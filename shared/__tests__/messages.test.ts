@@ -9,13 +9,13 @@ import {
   CommandResultMessage,
   WebviewMessage,
   ExtensionMessage,
-} from "../messages";
+} from "../messages.js";
 import {
   SchemaCommand,
   CommandResponse,
   AddElementCommand,
-} from "../commands";
-import { schema } from "../types";
+} from "../commands/index.js";
+import { schema } from "../types.js";
 
 describe("Message Types", () => {
   test("ExecuteCommandMessage should have correct structure", () => {

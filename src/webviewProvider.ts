@@ -1,12 +1,12 @@
 import * as vscode from "vscode";
 import { unmarshal } from "@neumaennl/xmlbind-ts";
-import { schema } from "../shared/types";
+import { schema } from "../shared/types.js";
 import {
   ExecuteCommandMessage,
   WebviewMessage,
   DiagramOptions,
-} from "../shared/messages";
-import { CommandProcessor } from "./commandProcessor";
+} from "../shared/messages.js";
+import { CommandProcessor } from "./commandProcessor.js";
 
 /**
  * Provider for the XML Schema Visual Editor custom text editor.

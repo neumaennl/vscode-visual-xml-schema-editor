@@ -1,6 +1,6 @@
 import { XmlRoot, XmlElement, XmlAttribute } from '@neumaennl/xmlbind-ts';
-import { openAttrs } from './openAttrs';
-import { annotationType } from './annotationType';
+import { openAttrs } from './openAttrs.js';
+import { annotationType } from './annotationType.js';
 /**
  * This type is extended by all types which allow annotation
  * other than <schema> itself

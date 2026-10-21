@@ -12,9 +12,9 @@ import {
   explicitGroup,
   topLevelAttribute,
   attribute,
-} from "../shared/types";
-import { parseSchemaId, SchemaNodeType } from "../shared/idStrategy";
-import { toArray, isSchemaRoot } from "../shared/schemaUtils";
+} from "../shared/types.js";
+import { parseSchemaId, SchemaNodeType } from "../shared/idStrategy.js";
+import { toArray, isSchemaRoot } from "../shared/schemaUtils.js";
 
 /**
  * Result of a node location operation.

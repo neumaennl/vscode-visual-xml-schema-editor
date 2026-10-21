@@ -1,11 +1,11 @@
 import { XmlRoot, XmlElement, XmlAttribute } from '@neumaennl/xmlbind-ts';
-import type { allNNI } from './types';
-import { annotated } from './annotated';
-import { localElement } from './localElement';
-import { groupRef } from './groupRef';
-import { all } from './all';
-import { explicitGroup } from './explicitGroup';
-import { anyType } from './anyType';
+import type { allNNI } from './types.js';
+import { annotated } from './annotated.js';
+import { localElement } from './localElement.js';
+import { groupRef } from './groupRef.js';
+import { all } from './all.js';
+import { explicitGroup } from './explicitGroup.js';
+import { anyType } from './anyType.js';
 /**
  * group type for explicit groups, named top-level groups and
  * group references

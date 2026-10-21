@@ -1,8 +1,8 @@
 import { XmlRoot, XmlElement, XmlAttribute, XmlAnyAttribute } from '@neumaennl/xmlbind-ts';
-import type { allNNI } from './types';
-import { annotationType } from './annotationType';
-import { all } from './all';
-import { explicitGroup } from './explicitGroup';
+import type { allNNI } from './types.js';
+import { annotationType } from './annotationType.js';
+import { all } from './all.js';
+import { explicitGroup } from './explicitGroup.js';
 @XmlRoot('realGroup', { namespace: 'http://www.w3.org/2001/XMLSchema', prefixes: { 'http://www.w3.org/2001/XMLSchema': 'xs', 'http://www.w3.org/2001/XMLSchema-hasFacetAndProperty': 'hfp', 'http://www.w3.org/XML/1998/namespace': 'imp1' } })
 export class realGroup {
   @XmlAnyAttribute()

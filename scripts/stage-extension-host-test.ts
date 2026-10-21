@@ -1,7 +1,7 @@
 // Assembles what the extension-host tests (test/extension-host/) run on, inside
 // `.vscode-test/`:
 //   extension/  a copy of the built extension whose webview bundle is replaced by
-//               the mock from test/extension-host/mockWebview.mts
+//               the mock from test/extension-host/mockWebview.ts
 //   workspace/  the workspace that VS Code opens, with a copy of the example schema
 //               and settings that keep the chat view closed: its input box would
 //               otherwise take the focus at startup, and the `undo` command would
@@ -35,7 +35,7 @@ export function stage(root = "."): void {
   mkdirSync(join(extension, "webview"), { recursive: true });
   copyFileSync(join(root, "package.json"), join(extension, "package.json"));
   cpSync(join(root, "out"), join(extension, "out"), { recursive: true });
-  copyFileSync(join(testDir, "out", "mockWebview.mjs"), join(extension, "webview", "main.js"));
+  copyFileSync(join(testDir, "out", "mockWebview.js"), join(extension, "webview", "main.js"));
   writeFileSync(join(extension, "webview", "styles.css"), "");
 
   mkdirSync(join(workspace, ".vscode"), { recursive: true });

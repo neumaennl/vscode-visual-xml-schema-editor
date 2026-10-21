@@ -29,14 +29,14 @@ import {
   annotationType,
   documentationType,
   appinfoType,
-} from "../../shared/types";
-import { toArray, isSchemaRoot } from "../../shared/schemaUtils";
-import { locateNodeById } from "../schemaNavigator";
+} from "../../shared/types.js";
+import { toArray, isSchemaRoot } from "../../shared/schemaUtils.js";
+import { locateNodeById } from "../schemaNavigator.js";
 import {
   parseDocumentationId,
   parseSchemaAnnotationId,
   parseSchemaDocumentationId,
-} from "../commandUtils";
+} from "../commandUtils.js";
 
 export { parseDocumentationId, parseSchemaAnnotationId, parseSchemaDocumentationId };
 

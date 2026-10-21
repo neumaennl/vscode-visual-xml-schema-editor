@@ -3,9 +3,8 @@ type: Architecture
 title: Architecture
 description: How the extension host, the webview and the shared code work together to provide a visual editor for XML Schema (XSD) files, and the design decisions behind the command-based design.
 tags: [architecture, extension-host, webview, shared, design-decisions]
-status: stable
-generated: { by: human:neumaennl, at: 2026-10-14T12:24:51Z }
-verified: { by: human:neumaennl, at: 2026-10-14T13:22:19Z }
+status: draft
+generated: { by: human:neumaennl, at: 2026-10-21T06:50:00Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -26,7 +25,7 @@ sources:
     resource: ../webview-src/main.ts
     title: Webview entry point
   - id: vite-config
-    resource: ../vite.config.mts
+    resource: ../vite.config.ts
     title: Webview bundle configuration
   - id: drop-factory
     resource: ../webview-src/drop/DropCommandFactory.ts
@@ -107,7 +106,7 @@ The `shared/` code is imported by both sides and compiled into each separately. 
 | `@neumaennl/xmlbind-ts` | Extension host | `unmarshal` (XML → objects) and `marshal` (objects → XML) for the generated schema classes; the `xsd2ts` generator used to create them. |
 | `@vscode/codicons` | Webview | Icon font, loaded from `node_modules` through `webview.asWebviewUri`. |
 
-The build outputs are `out/` (extension host and shared code, compiled by `tsc`) and `webview/` (the Vite bundle `main.js`, an ES module, plus `styles.css`).[^vite-config] See [Build and packaging](build-and-packaging.md).
+The build outputs are `out/` (extension host and shared code, compiled by `tsc` to ES modules, because the package has `"type": "module"`; relative imports have the `.js` extension) and `webview/` (the Vite bundle `main.js`, an ES module, plus `styles.css`).[^vite-config] See [Build and packaging](build-and-packaging.md).
 
 # Source layout
 

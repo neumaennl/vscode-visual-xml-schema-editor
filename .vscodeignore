@@ -28,8 +28,8 @@ icon.svg
 *.vsix
 eslint.config.mjs
 .vscode-test.mjs
-vitest.config.mts
-vite.config.mts
+vitest.config.ts
+vite.config.ts
 tsconfig*.json
 
 # node_modules is not excluded: vsce includes production dependencies only.

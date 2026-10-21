@@ -4,10 +4,10 @@
  * No knowledge of validator implementation - proper unit testing with DI.
  */
 
-import { CommandValidator, ValidatorFunctions } from "./commandValidator";
-import { schema, SchemaCommand } from "../shared/types";
-import { ValidationResult } from "./commandValidators/validationUtils";
-import { expectInvalid } from "./commandValidators/validationTestHelpers";
+import { CommandValidator, ValidatorFunctions } from "./commandValidator.js";
+import { schema, SchemaCommand } from "../shared/types.js";
+import { ValidationResult } from "./commandValidators/validationUtils.js";
+import { expectInvalid } from "./commandValidators/validationTestHelpers.js";
 import type { Mock } from "vitest";
 
 describe("CommandValidator", () => {

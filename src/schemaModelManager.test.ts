@@ -3,8 +3,8 @@
  * Tests schema loading, marshalling/unmarshalling, and query capabilities.
  */
 
-import { SchemaModelManager } from "./schemaModelManager";
-import { schema } from "../shared/types";
+import { SchemaModelManager } from "./schemaModelManager.js";
+import { schema } from "../shared/types.js";
 
 describe("SchemaModelManager", () => {
   describe("constructor", () => {

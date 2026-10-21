@@ -3,7 +3,7 @@
  * Provides commands for adding descriptive information to schema components.
  */
 
-import { BaseCommand } from "./base";
+import { BaseCommand } from "./base.js";
 
 /**
  * Payload for adding an annotation.

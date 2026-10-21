@@ -3,7 +3,7 @@
  * Provides commands for creating, modifying, and removing XSD type definitions.
  */
 
-import { BaseCommand } from "./base";
+import { BaseCommand } from "./base.js";
 
 /**
  * Restriction facets for simple types.

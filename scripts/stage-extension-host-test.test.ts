@@ -31,7 +31,7 @@ describe("stage", () => {
     root = mkdtempSync(join(tmpdir(), "stage-test-"));
     write(join(root, "package.json"), '{"name":"ext"}');
     write(join(root, "out", "src", "extension.js"), "// extension");
-    write(join(root, ".vscode-test", "out", "mockWebview.mjs"), "// mock");
+    write(join(root, ".vscode-test", "out", "mockWebview.js"), "// mock");
     write(join(root, "exampleFiles", "example.xsd"), "<xs:schema/>");
   });
 
@@ -84,6 +84,6 @@ describe("stage", () => {
   it("fails if the tests were not compiled", () => {
     rmSync(join(root, ".vscode-test", "out"), { recursive: true });
 
-    expect(() => stage(root)).toThrow(/mockWebview\.mjs/);
+    expect(() => stage(root)).toThrow(/mockWebview\.js/);
   });
 });

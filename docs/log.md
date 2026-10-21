@@ -1,5 +1,8 @@
 # Knowledge Bundle Update Log
 
+## 2026-10-21
+* **Update**: The package is a native ES module (`"type": "module"`, [#382](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/382)). [Build and packaging](build-and-packaging.md) describes the ES module output with `.js` extensions in relative imports, the removed `scripts/package.json`, the `.ts` configuration files, `scripts/add-import-extensions.ts` for the generated classes, the changed VSIX check, and why `eslint.config.mjs` stays JavaScript for now; [Testing](testing.md#tests-in-the-extension-host) and [Architecture](architecture.md) follow.
+
 ## 2026-10-19
 * **Update**: [Development guidelines](development-guidelines.md#tsdoc): functions without a return value have no `@returns`; the three `@returns Nothing` in `scripts/` are removed.
 * **Update**: [Testing](testing.md#tests-in-the-extension-host): the suite opens the custom editor before the tests, so each test can run on its own, and the workspace of the tests keeps the chat view closed, because its input box could keep the focus and receive the `undo` (review of [#378](https://github.com/neumaennl/vscode-visual-xml-schema-editor/pull/378)).

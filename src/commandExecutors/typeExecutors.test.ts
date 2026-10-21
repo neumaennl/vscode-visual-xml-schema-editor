@@ -9,13 +9,13 @@ import {
   AddSimpleTypeCommand,
   RemoveSimpleTypeCommand,
   ModifySimpleTypeCommand,
-} from "../../shared/types";
+} from "../../shared/types.js";
 import {
   executeAddSimpleType,
   executeRemoveSimpleType,
   executeModifySimpleType,
-} from "./typeExecutors";
-import { toArray } from "../../shared/schemaUtils";
+} from "./typeExecutors.js";
+import { toArray } from "../../shared/schemaUtils.js";
 
 describe("SimpleType Executors", () => {
   describe("executeAddSimpleType", () => {

@@ -3,7 +3,7 @@
  */
 
 import * as vscode from "vscode";
-import { activate, deactivate } from "./extension";
+import { activate, deactivate } from "./extension.js";
 import type { MockedFunction } from "vitest";
 
 describe("Extension", () => {

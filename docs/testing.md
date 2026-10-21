@@ -3,15 +3,14 @@ type: Testing Strategy
 title: Testing
 description: How the extension is tested - running the tests and the type check, the four Vitest projects, mocks and helpers, conventions for tests, mocks, helper functions and helper classes, which tests to write for typical changes, coverage, CI, the smoke tests in the extension host with a mock webview, and how the current tests compare with the testing strategy of ADR 001.
 tags: [testing, vitest, mocks, coverage, ci, conventions]
-status: stable
-generated: { by: human:neumaennl, at: 2026-10-19T08:59:00Z }
-verified: { by: human:neumaennl, at: 2026-10-19T09:11:14Z }
+status: draft
+generated: { by: human:neumaennl, at: 2026-10-21T06:50:00Z }
 sources:
   - id: manifest
     resource: ../package.json
     title: Extension manifest (test scripts)
   - id: vitest-config
-    resource: ../vitest.config.mts
+    resource: ../vitest.config.ts
     title: Vitest configuration
   - id: vscode-mock
     resource: ../src/__mocks__/vscode.ts
@@ -47,7 +46,7 @@ sources:
     resource: ../test/extension-host/smoke.test.ts
     title: Smoke tests in the extension host
   - id: mock-webview
-    resource: ../test/extension-host/mockWebview.mts
+    resource: ../test/extension-host/mockWebview.ts
     title: Mock webview for the extension-host tests
   - id: vscode-test-cli
     resource: https://github.com/microsoft/vscode-test-cli
@@ -94,7 +93,7 @@ Use the Node version from `.nvmrc`, which CI also uses. It is the Node version o
 
 # Vitest projects
 
-`vitest.config.mts` defines four projects, one for each part of the code (see [Architecture](architecture.md#components)), on top of one shared base:[^vitest-config]
+`vitest.config.ts` defines four projects, one for each part of the code (see [Architecture](architecture.md#components)), on top of one shared base:[^vitest-config]
 
 | Project | Tests | Environment | Aliases | Type-checked with |
 |---|---|---|---|---|
@@ -109,7 +108,7 @@ Use the Node version from `.nvmrc`, which CI also uses. It is the Node version o
 
 # Mocks and helpers
 
-- **VS Code API.** `src/__mocks__/vscode.ts` replaces the `vscode` module in the `extension` and `shared` projects through an alias in `vitest.config.mts`. It provides `vi.fn()` mocks for the parts the code uses: `Uri`, `workspace` (including `applyEdit` and `getConfiguration`), `window`, `commands`, `languages`, `EventEmitter`, `WorkspaceEdit`, `Range` and a few more. Classes of the API whose instances need members, such as `WorkspaceEdit`, are mocked with a class (`vi.fn(class { … })`): the code creates them with `new`, Vitest passes `new` on to the implementation, and arrow functions cannot be called with `new`.[^vscode-mock]
+- **VS Code API.** `src/__mocks__/vscode.ts` replaces the `vscode` module in the `extension` and `shared` projects through an alias in `vitest.config.ts`. It provides `vi.fn()` mocks for the parts the code uses: `Uri`, `workspace` (including `applyEdit` and `getConfiguration`), `window`, `commands`, `languages`, `EventEmitter`, `WorkspaceEdit`, `Range` and a few more. Classes of the API whose instances need members, such as `WorkspaceEdit`, are mocked with a class (`vi.fn(class { … })`): the code creates them with `new`, Vitest passes `new` on to the implementation, and arrow functions cannot be called with `new`.[^vscode-mock]
 - **VS Code objects.** Tests of `SchemaEditorProvider` build partial stubs of `ExtensionContext`, `Webview`, `WebviewPanel` and `TextDocument` with only the members the provider uses.[^workspace-edit-test]
 - **Webview API.** `main.test.ts` sets `acquireVsCodeApi` on `globalThis` before the app is loaded, with mocks for `postMessage`, `getState` and `setState`, and builds the page with `document.body.innerHTML`. Each test loads the app again with `vi.resetModules()` and `await import("./main")`.[^main-test]
 - **SVG measuring.** jsdom has no layout engine, so `setupGetBBoxMock()` in `webview-src/__tests__/svgTestUtils.ts` gives every element a `getBBox()` that assumes 6 pixels per character and a height of 10 pixels.[^svg-test-utils]
@@ -204,11 +203,11 @@ On `copilot/add-editor-capabilities`, the workflow runs only for `main` and has 
 
 # Tests in the extension host
 
-A small smoke suite runs inside VS Code, with the real `vscode` API instead of the mock. It checks the path that the Vitest tests can only check piece by piece: VS Code loads and activates the extension, opens a schema in the custom editor, a message from the webview becomes a `WorkspaceEdit`, and VS Code's undo reverts it. Phase 6 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340), which makes the extension a native ES module, relies on it.[^issue-369]
+A small smoke suite runs inside VS Code, with the real `vscode` API instead of the mock. It checks the path that the Vitest tests can only check piece by piece: VS Code loads and activates the extension, opens a schema in the custom editor, a message from the webview becomes a `WorkspaceEdit`, and VS Code's undo reverts it. It checks that the extension, a native ES module, works in VS Code (Phase 6 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340)).[^issue-369]
 
 - **Runner.** `vscode-test` from `@vscode/test-cli` reads `.vscode-test.mjs`, starts VS Code with the extension and a workspace, and runs the compiled tests with Mocha (TDD interface: `suite`, `test`) in the extension host. Other extensions are disabled, and VS Code keeps its settings and extensions in `.vscode-test/`, apart from the VS Code you work in. The configuration is a JavaScript file because `vscode-test` only loads `.js`, `.cjs` and `.mjs` configurations.[^vscode-test-cli][^vscode-test-config]
 - **VS Code version and download.** The tests run on the lowest supported version from `engines.vscode`. `@vscode/test-electron` downloads it once into `.vscode-test/vscode-<platform>-<version>/` and uses the existing copy afterwards without contacting the server. After `npm run vscode:update` the next run downloads the new version; the old folder stays until you delete it.[^vscode-test-download]
-- **Mock webview.** Tests in the extension host cannot see or operate the webview. The suite therefore runs a copy of the extension whose webview bundle is replaced by `test/extension-host/mockWebview.mts`: as soon as the extension sends the parsed schema (`updateSchema`), the mock sends one fixed `executeCommand` message (`addElement`). The mock runs under the real content security policy and uses the real message passing; no test code is part of the extension.[^mock-webview]
+- **Mock webview.** Tests in the extension host cannot see or operate the webview. The suite therefore runs a copy of the extension whose webview bundle is replaced by `test/extension-host/mockWebview.ts`: as soon as the extension sends the parsed schema (`updateSchema`), the mock sends one fixed `executeCommand` message (`addElement`). The mock runs under the real content security policy and uses the real message passing; no test code is part of the extension.[^mock-webview]
 - **Assembling.** `pretest:extension-host` compiles the extension and runs `stage:extension-host`, which compiles the tests (with `tsconfig.extension-host-test.json` into `.vscode-test/out/`) and runs `scripts/stage-extension-host-test.ts`. The script assembles the copy of the extension in `.vscode-test/extension/` (`package.json`, a copy of `out/` and the mock as `webview/main.js`) and a workspace in `.vscode-test/workspace/` with a copy of `exampleFiles/example.xsd`, so the tests never change `exampleFiles/`. The workspace settings keep the secondary side bar with the chat view closed (`workbench.secondarySideBar.defaultVisibility: hidden`): otherwise the chat input box takes the focus at startup, and when the test window does not get the focus of the operating system, it keeps it, so that `undo` goes to the chat input instead of the custom editor. Focusing the custom editor explicitly before `undo` does not help, not even reopening it with the focus: as long as the window has no focus, the chat input keeps it. This was reproduced under `xvfb` with a second window that kept the focus. `out/` is copied, not linked: with a link the extension activated, but the edit from the mock never reached the document.[^stage-script]
 - **The tests.** Before the tests, `test/extension-host/smoke.test.ts` opens `example.xsd` in the custom editor and starts waiting for the edit from the mock. The tests check that the extension is active, that the custom editor is the active tab, that the edit from the mock arrives as a change of the document, and that the command `undo` restores the original text. The last two wait for the edit themselves, so each test can also run on its own, for example from the Testing view, and a missing edit fails these two tests instead of all four. At the end the editor is reverted and closed.[^smoke-test]
 - **Not covered.** Whether the real webview bundle loads and draws the diagram, and anything the user does in the webview. End-to-end tests of the webview UI are planned on the editor branch ([#377](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/377)).

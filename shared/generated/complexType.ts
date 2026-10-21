@@ -1,14 +1,14 @@
 import { XmlRoot, XmlElement, XmlAttribute } from '@neumaennl/xmlbind-ts';
-import type { derivationSet } from './types';
-import { annotated } from './annotated';
-import { simpleContentType } from './simpleContentType';
-import { complexContentType } from './complexContentType';
-import { groupRef } from './groupRef';
-import { all } from './all';
-import { explicitGroup } from './explicitGroup';
-import { attribute } from './attribute';
-import { attributeGroupRef } from './attributeGroupRef';
-import { wildcard } from './wildcard';
+import type { derivationSet } from './types.js';
+import { annotated } from './annotated.js';
+import { simpleContentType } from './simpleContentType.js';
+import { complexContentType } from './complexContentType.js';
+import { groupRef } from './groupRef.js';
+import { all } from './all.js';
+import { explicitGroup } from './explicitGroup.js';
+import { attribute } from './attribute.js';
+import { attributeGroupRef } from './attributeGroupRef.js';
+import { wildcard } from './wildcard.js';
 /**
  * Will be restricted to required or forbidden
  */

@@ -1,7 +1,7 @@
 import { XmlElement, XmlAttribute } from '@neumaennl/xmlbind-ts';
-import { annotated } from './annotated';
-import { complexRestrictionType } from './complexRestrictionType';
-import { extensionType } from './extensionType';
+import { annotated } from './annotated.js';
+import { complexRestrictionType } from './complexRestrictionType.js';
+import { extensionType } from './extensionType.js';
 /**
  * Overrides any setting on complexType parent.
  */

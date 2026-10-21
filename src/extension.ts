@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { SchemaEditorProvider } from "./webviewProvider";
+import { SchemaEditorProvider } from "./webviewProvider.js";
 
 /**
  * Activates the XML Schema Visual Editor extension.

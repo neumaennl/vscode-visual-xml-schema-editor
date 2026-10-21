@@ -9,13 +9,13 @@ import {
   AddAttributeCommand,
   RemoveAttributeCommand,
   ModifyAttributeCommand,
-} from "../../shared/types";
+} from "../../shared/types.js";
 import {
   executeAddAttribute,
   executeRemoveAttribute,
   executeModifyAttribute,
-} from "./attributeExecutors";
-import { toArray } from "../../shared/schemaUtils";
+} from "./attributeExecutors.js";
+import { toArray } from "../../shared/schemaUtils.js";
 
 describe("Attribute Executors", () => {
   describe("executeAddAttribute", () => {

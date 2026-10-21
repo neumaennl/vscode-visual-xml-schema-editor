@@ -1,8 +1,8 @@
 import { XmlRoot, XmlElement, XmlAttribute, XmlAnyAttribute } from '@neumaennl/xmlbind-ts';
-import { annotationType } from './annotationType';
-import { attribute } from './attribute';
-import { attributeGroupRef } from './attributeGroupRef';
-import { wildcard } from './wildcard';
+import { annotationType } from './annotationType.js';
+import { attribute } from './attribute.js';
+import { attributeGroupRef } from './attributeGroupRef.js';
+import { wildcard } from './wildcard.js';
 @XmlRoot('namedAttributeGroup', { namespace: 'http://www.w3.org/2001/XMLSchema', prefixes: { 'http://www.w3.org/2001/XMLSchema': 'xs', 'http://www.w3.org/2001/XMLSchema-hasFacetAndProperty': 'hfp', 'http://www.w3.org/XML/1998/namespace': 'imp1' } })
 export class namedAttributeGroup {
   @XmlAnyAttribute()

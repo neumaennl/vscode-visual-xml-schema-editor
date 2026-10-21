@@ -15,10 +15,10 @@ import {
   documentationType,
   explicitGroup,
   all,
-} from "../../shared/types";
-import { toArray } from "../../shared/schemaUtils";
-import { locateNodeById } from "../schemaNavigator";
-import { parseSchemaId } from "../../shared/idStrategy";
+} from "../../shared/types.js";
+import { toArray } from "../../shared/schemaUtils.js";
+import { locateNodeById } from "../schemaNavigator.js";
+import { parseSchemaId } from "../../shared/idStrategy.js";
 
 /**
  * Executes an addElement command.

@@ -5,18 +5,18 @@
  */
 
 import { unmarshal } from "@neumaennl/xmlbind-ts";
-import { schema } from "../../shared/types";
+import { schema } from "../../shared/types.js";
 import {
   AddAttributeGroupCommand,
   RemoveAttributeGroupCommand,
   ModifyAttributeGroupCommand,
-} from "../../shared/types";
+} from "../../shared/types.js";
 import {
   validateAddAttributeGroup,
   validateRemoveAttributeGroup,
   validateModifyAttributeGroup,
-} from "./attributeGroupValidators";
-import { expectInvalid } from "./validationTestHelpers";
+} from "./attributeGroupValidators.js";
+import { expectInvalid } from "./validationTestHelpers.js";
 
 describe("AttributeGroup Validators", () => {
   let schemaObj: schema;

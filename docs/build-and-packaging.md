@@ -4,7 +4,7 @@ title: Build and packaging
 description: How the extension is built, run, linted, packaged and checked - the build outputs and tsconfig files, the npm scripts, the scripts in TypeScript, running it in VS Code, the VSIX and its check, the generated schema classes, dependencies and the Node version, ESLint, CI, and planned changes.
 tags: [build, packaging, vsix, vite, typescript, eslint, ci, dependencies]
 status: draft
-generated: { by: human:neumaennl, at: 2026-10-23T10:30:17Z }
+generated: { by: human:neumaennl, at: 2026-10-23T10:49:36Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -216,7 +216,7 @@ The script reads the GitHub API, `raw.githubusercontent.com`, the Electron relea
 
 # CI
 
-The workflow `ci.yml` runs on pushes to `main` and `modernization` and on every pull request, whatever its target branch, on Ubuntu with the Node version from `.nvmrc`. A new push to a pull request cancels the run for the previous one; runs for pushes are kept:[^ci]
+The workflow `ci.yml` runs on pushes to `main` and `modernization` and on every pull request, whatever its target branch, on Ubuntu with the Node version from `.nvmrc`. A new push to a pull request cancels the run for the previous one; runs for pushes each have a concurrency group of their own, so none of them is cancelled or held back:[^ci]
 
 1. `npm run vscode:check`, which fails if `@types/vscode`, `@types/node` and `.nvmrc` don't match `engines.vscode` (see [VS Code and Node versions](#vs-code-and-node-versions)).
 2. `npm ci`, with `NODE_AUTH_TOKEN` for GitHub Packages.

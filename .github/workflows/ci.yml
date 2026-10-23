@@ -13,10 +13,11 @@ on:
   # All pull requests, whatever their target branch.
   pull_request:
 
-# A new push to a pull request cancels the run for the previous one; runs for pushes are kept.
+# A new push to a pull request cancels the run for the previous one. Each run for a push
+# has a group of its own, so none of them is cancelled or held back.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -102,7 +103,7 @@ jobs:
             echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Publish JUnit test report to GitHub Checks
+      - name: Publish JUnit test report to the job summary
         if: always() && steps.junit-check.outputs.exists == 'true'
         uses: dorny/test-reporter@v3
         with:
@@ -111,7 +112,7 @@ jobs:
           # Vitest writes JUnit XML in the format of jest-junit, which this parser reads.
           reporter: jest-junit
 
-      - name: Publish extension-host test report to GitHub Checks
+      - name: Publish extension-host test report to the job summary
         if: always() && hashFiles('test-results/extension-host.json') != ''
         uses: dorny/test-reporter@v3
         with:

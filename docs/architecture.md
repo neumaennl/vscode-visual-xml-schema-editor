@@ -3,8 +3,9 @@ type: Architecture
 title: Architecture
 description: How the extension host, the webview and the shared code work together to provide a visual editor for XML Schema (XSD) files, and the design decisions behind the command-based design.
 tags: [architecture, extension-host, webview, shared, design-decisions]
-status: draft
+status: stable
 generated: { by: human:neumaennl, at: 2026-10-23T08:55:48Z }
+verified: { by: human:neumaennl, at: 2026-10-23T10:12:43Z }
 sources:
   - id: manifest
     resource: ../package.json

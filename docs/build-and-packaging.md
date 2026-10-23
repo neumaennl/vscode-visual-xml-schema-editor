@@ -3,8 +3,9 @@ type: Build Process
 title: Build and packaging
 description: How the extension is built, run, linted, packaged and checked - the build outputs and tsconfig files, the npm scripts, the scripts in TypeScript, running it in VS Code, the VSIX and its check, the generated schema classes, dependencies and the Node version, ESLint, CI, and planned changes.
 tags: [build, packaging, vsix, vite, typescript, eslint, ci, dependencies]
-status: draft
-generated: { by: human:neumaennl, at: 2026-10-23T08:55:48Z }
+status: stable
+generated: { by: human:neumaennl, at: 2026-10-23T09:24:55Z }
+verified: { by: human:neumaennl, at: 2026-10-23T10:12:43Z }
 sources:
   - id: manifest
     resource: ../package.json

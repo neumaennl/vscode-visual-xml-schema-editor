@@ -1,11 +1,11 @@
 ---
 type: Build Process
 title: Build and packaging
-description: How the extension is built, run, linted, packaged and checked - the build outputs and tsconfig files, the npm scripts, the scripts in TypeScript, running it in VS Code, the VSIX and its check, the generated schema classes, dependencies and the Node version, ESLint, CI, and the planned switch to native ESM.
+description: How the extension is built, run, linted, packaged and checked - the build outputs and tsconfig files, the npm scripts, the scripts in TypeScript, running it in VS Code, the VSIX and its check, the generated schema classes, dependencies and the Node version, ESLint, CI, and planned changes.
 tags: [build, packaging, vsix, vite, typescript, eslint, ci, dependencies]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-16T14:30:20Z }
-verified: { by: human:neumaennl, at: 2026-10-16T14:43:21Z }
+generated: { by: human:neumaennl, at: 2026-10-23T09:24:55Z }
+verified: { by: human:neumaennl, at: 2026-10-23T10:12:43Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -23,7 +23,7 @@ sources:
     resource: ../tsconfig.webview.json
     title: TypeScript configuration of the webview
   - id: vite-config
-    resource: ../vite.config.mts
+    resource: ../vite.config.ts
     title: Vite configuration of the webview build
   - id: webview-provider
     resource: ../src/webviewProvider.ts
@@ -87,35 +87,35 @@ The extension consists of two separately built parts (see [Architecture](archite
 
 | Part | Tool | Sources | Output |
 |---|---|---|---|
-| Extension host | `tsc` with `tsconfig.extension.json` | `src/`, `shared/` | `out/src/`, `out/shared/` (CommonJS, ES2020, with source maps); the entry point is `out/src/extension.js` (`main` in `package.json`) |
-| Webview | Vite with `vite.config.mts`, after a type check with `tsconfig.webview.json` | `webview-src/`, `shared/` | `webview/main.js` (one ES module) and `webview/styles.css` |
+| Extension host | `tsc` with `tsconfig.extension.json` | `src/`, `shared/` | `out/src/`, `out/shared/` (ES modules, ES2020, with source maps); the entry point is `out/src/extension.js` (`main` in `package.json`) |
+| Webview | Vite with `vite.config.ts`, after a type check with `tsconfig.webview.json` | `webview-src/`, `shared/` | `webview/main.js` (one ES module) and `webview/styles.css` |
 
 The extension host loads `webview/main.js`, `webview/styles.css` and `node_modules/@vscode/codicons/dist/codicon.css` into the webview through `asWebviewUri`. Both output folders are ignored by Git.[^tsconfig][^vite-config]
 
 | tsconfig | Used by | Notes |
 |---|---|---|
 | `tsconfig.json` | VS Code | A solution file without files of its own: it lists the other seven configurations as references, so VS Code type-checks each file with the configuration that includes it.[^tsconfig-solution] |
-| `tsconfig.extension.json` | `tsc` (extension host) | Excludes test files, `__tests__`, `__mocks__` and `*TestHelpers.ts`. `module` and `moduleResolution` are `nodenext`: TypeScript resolves imports the way Node does and writes CommonJS, because `package.json` has no `"type": "module"`; relative imports therefore need no file extension until Phase 6. `types` lists `node` and `vscode`, because TypeScript 6 no longer includes all `@types` packages by default. Decorators are compiled as legacy decorators (`experimentalDecorators`) with `useDefineForClassFields` (see [ADR 002](architecture/002-legacy-decorators.md)).[^adr-002] |
+| `tsconfig.extension.json` | `tsc` (extension host) | Excludes test files, `__tests__`, `__mocks__` and `*TestHelpers.ts`. `module` and `moduleResolution` are `nodenext`: TypeScript resolves imports the way Node does and writes ES modules, because `package.json` has `"type": "module"`; relative imports therefore need the `.js` extension (also for `.ts` files and for folders, `./folder/index.js`). `types` lists `node` and `vscode`, because TypeScript 6 no longer includes all `@types` packages by default. Decorators are compiled as legacy decorators (`experimentalDecorators`) with `useDefineForClassFields` (see [ADR 002](architecture/002-legacy-decorators.md)).[^adr-002] |
 | `tsconfig.webview.json` | `compile-webview` (type check only) | `esnext` modules with `moduleResolution: bundler`, because Vite resolves the imports, and the `DOM` library; `types: ["vite/client"]` declares the import of `styles.css`, which TypeScript 6 checks by default (`noUncheckedSideEffectImports`). No output (`noEmit`), because Vite builds the bundle. The same decorator settings as `tsconfig.extension.json`.[^tsconfig-webview] |
 | `tsconfig.extension-test.json`, `tsconfig.webview-test.json`, `tsconfig.shared-test.json` | `npm run typecheck` and ESLint | Extend the two above with the Vitest globals and the Node types for the test files; the webview tests keep `vite/client` (see [Testing](testing.md#vitest-projects)). |
-| `tsconfig.nodeTools.json` | `npm run typecheck` and ESLint | TypeScript that Node runs directly, without a build: the scripts in `scripts/` and their tests (see [Scripts](#scripts)), and the configuration files `vite.config.mts` and `vitest.config.mts`. `NodeNext` modules, no output (`noEmit`), `.ts` extensions in imports, and only syntax that Node can remove (`erasableSyntaxOnly`).[^tsconfig-node-tools] |
-| `tsconfig.extension-host-test.json` | `pretest:extension-host`, `npm run typecheck` and ESLint | The tests in the extension host in `test/extension-host/`, compiled to `.vscode-test/out/` with the Mocha, Node and `vscode` types and the `DOM` library for the mock webview. `nodenext` like the extension, so the tests are CommonJS; the mock is an `.mts` file, so it becomes an ES module that the webview loads with `type="module"` (see [Testing](testing.md#tests-in-the-extension-host)).[^tsconfig-extension-host-test] |
+| `tsconfig.nodeTools.json` | `npm run typecheck` and ESLint | TypeScript that Node runs directly, without a build: the scripts in `scripts/` and their tests (see [Scripts](#scripts)), and the configuration files `vite.config.ts` and `vitest.config.ts`. `NodeNext` modules, no output (`noEmit`), `.ts` extensions in imports, and only syntax that Node can remove (`erasableSyntaxOnly`).[^tsconfig-node-tools] |
+| `tsconfig.extension-host-test.json` | `pretest:extension-host`, `npm run typecheck` and ESLint | The tests in the extension host in `test/extension-host/`, compiled to `.vscode-test/out/` with the Mocha, Node and `vscode` types and the `DOM` library for the mock webview. `nodenext` like the extension, so the tests and the mock webview (`mockWebview.ts`) are ES modules; the webview loads the mock with `type="module"` (see [Testing](testing.md#tests-in-the-extension-host)).[^tsconfig-extension-host-test] |
 
 ESLint uses all configurations except `tsconfig.json`, so each TypeScript file must belong to at least one of them.
 
 ## The webview build
 
-`vite.config.mts` builds the webview in Vite's library mode, which turns one entry file into fixed file names instead of building a web app from an `index.html`:[^vite-config]
+`vite.config.ts` builds the webview in Vite's library mode, which turns one entry file into fixed file names instead of building a web app from an `index.html`:[^vite-config]
 
 - **One ES module.** `webview-src/main.ts` becomes `webview/main.js`, an ES module without chunks and without `import` or `export` statements. The extension host loads it with `<script type="module" nonce="…">`. The content security policy of the webview (`default-src 'none'`, scripts only with the nonce, styles only from `webview.cspSource`) allows nothing else: no second file, no inline script and no `eval`.[^webview-provider]
 - **Styles.** `main.ts` imports `./styles.css` only so that Vite writes it as `webview/styles.css`, unminified; the bundle contains no CSS, and the HTML loads the file with a `<link>`.
 - **Type check.** Vite only removes the types. `compile-webview` therefore runs `tsc --noEmit -p tsconfig.webview.json` first, as `ts-loader` did with webpack. `watch-webview` does not; in VS Code, type errors show up in the Problems view while you edit.
 - **Source map.** Every build embeds its source map in `main.js`. The content security policy blocks loading a separate `.map` file, and the map makes stack traces from the installed extension, for example in bug reports, readable. It makes `main.js` several times larger.
-- **Size warning.** A small plugin in `vite.config.mts` warns when a file in `webview/` is larger than 1 MiB as written, including the source map, as webpack's `performance` hints did on the editor branch. Vite's own warning (`build.chunkSizeWarningLimit`) does not work in library mode. If the warning appears, decide whether the source map is still worth its size.
+- **Size warning.** A small plugin in `vite.config.ts` warns when a file in `webview/` is larger than 1 MiB as written, including the source map, as webpack's `performance` hints did on the editor branch. Vite's own warning (`build.chunkSizeWarningLimit`) does not work in library mode. If the warning appears, decide whether the source map is still worth its size.
 - **Output folder.** Vite empties `webview/` before every build, so no file from an earlier build is left behind.
 - **Minification.** The production build (`--mode production`) shortens names and code, but in library mode with ES modules Vite keeps line breaks and `/* @__PURE__ */` comments. The watch build (`--mode development`) is not minified.
 
-`vite.config.mts` and `vitest.config.mts` have the extension `.mts` until the package becomes an ES module in Phase 6: without `"type": "module"`, Node would treat a `.ts` file with `import` statements as CommonJS, and Vite already warns that it will load its configuration that way in a future version.
+The whole package is an ES module (`"type": "module"`), so Node and Vite load `vite.config.ts` and `vitest.config.ts` as ES modules.
 
 # npm scripts
 
@@ -140,7 +140,7 @@ The test scripts and `npm run typecheck` are described in [Testing](testing.md#r
 - Imports of types only use `import type`.
 - Only syntax that disappears with the types is allowed; an `enum`, for example, is not.
 
-`scripts/package.json` declares the folder an ES module (`"type": "module"`). Without it, Node would first try to load the scripts as CommonJS and print a warning, and TypeScript would reject `import.meta`. The file goes away when the whole package becomes an ES module (Phase 6, see [Planned changes](#planned-changes)). The scripts have tests of their own (see [Testing](testing.md#mocks-and-helpers)).
+The scripts are ES modules because the whole package is one (`"type": "module"`). The scripts have tests of their own (see [Testing](testing.md#mocks-and-helpers)).
 
 # Running in VS Code
 
@@ -157,7 +157,7 @@ What goes into the VSIX is controlled by `.vscodeignore`:[^vscodeignore]
 - `README.md` and `LICENSE` are packaged. The README is the page of the extension in the Marketplace; `vsce` turns its relative links into links to the repository given in `repository` in `package.json`.
 - `node_modules/` is not listed. `vsce` adds the production dependencies (`dependencies` in `package.json`) and their dependencies, and leaves out the development dependencies. A runtime dependency must therefore be in `dependencies`, and `node_modules/` must not be excluded in `.vscodeignore`.
 
-`npm run package:verify` runs `scripts/verify-vsix.ts`. It unpacks the VSIX into a temporary folder outside the repository (with `unzip`, on Windows with the `tar.exe` of Windows), so that the `node_modules/` of the repository cannot hide a missing file, replaces the `vscode` module with a stub, loads the entry point and checks that it exports `activate()`. Without an argument it checks the first `.vsix` file in the current folder. It finds missing dependencies and errors at load time, but does not start VS Code.[^verify-vsix]
+`npm run package:verify` runs `scripts/verify-vsix.ts`. It unpacks the VSIX into a temporary folder outside the repository (with `unzip`, on Windows with the `tar.exe` of Windows), so that the `node_modules/` of the repository cannot hide a missing file, writes a stub of the `vscode` module as a package into `node_modules/vscode/` of that folder, imports the entry point, an ES module like the extension, with `import()` and checks that it exports `activate()`. Node finds the stub through its normal package lookup in the parent folders, without module hooks; every other package must come from the VSIX. The stub is an ES module whose default export accepts any property access and call; it has no `then`, so that it is not taken for a promise. Because an ES module needs static export names, the stub has no named exports, and `vscode.window` is `undefined`: the check fails, although VS Code would load the extension, if a module uses such a value at the top level (for example `vscode.window.activeTextEditor` or `class X extends vscode.TreeItem`) or uses named imports such as `import { window } from "vscode"`. Uses inside functions are fine, because the check does not call them. Without an argument it checks the first `.vsix` file in the current folder. It finds missing dependencies and errors at load time, but does not start VS Code.[^verify-vsix]
 
 `vsce` refuses to package when `@types/vscode` is newer than the lowest VS Code version in `engines.vscode`. Both are set together, see [VS Code and Node versions](#vs-code-and-node-versions).[^manifest]
 
@@ -169,13 +169,13 @@ On `copilot/add-editor-capabilities`, packaging fails or produces a VSIX that do
 - `.vscodeignore` excludes `node_modules/**` except `@neumaennl/xmlbind-ts`. The dependencies of `xmlbind-ts` (for example `reflect-metadata` and `@xmldom/xmldom`) and `@vscode/codicons` are missing from the VSIX, so the extension cannot be loaded.
 - `package:verify` and the packaging steps in CI do not exist.
 - The webview is still built with webpack, whose `performance` limits were raised to 1 MiB there; the size warning of the Vite build replaces them.
-- `@neumaennl/xmlbind-ts` 2.x is an ES module only, which the CommonJS extension loads with `require()`. Node supports this without a flag from version 20.19 on, which VS Code 1.100 ships; VS Code 1.74 ships Node 16.
+- `@neumaennl/xmlbind-ts` 2.x is an ES module only, which the extension, itself an ES module, imports like any other module. VS Code runs ES modules in extensions from version 1.100 on, which ships Node 20.19; VS Code 1.74 ships Node 16.
 
 The fixes from #343 and #357, the Vite build from #371 and the module settings from #374 are applied when the editor branch and `modernization` are merged (Phase 9 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340)).[^pr-343][^issue-357][^issue-340]
 
 # Generated schema classes
 
-The classes in `shared/generated/` describe XML Schema itself and are used to read and write XSD files (see [Schema model](schema-model.md)). `npm run generate-classes-from-schema` creates them with `xsd2ts` from `@neumaennl/xmlbind-ts`, using `schema/XMLSchema.xsd`, after deleting the existing `.ts` files in that folder; the README there stays. They are not edited by hand; ESLint ignores them, and the coverage report leaves them out. After an update of `xmlbind-ts`, they are generated again and committed.[^manifest][^eslint]
+The classes in `shared/generated/` describe XML Schema itself and are used to read and write XSD files (see [Schema model](schema-model.md)). `npm run generate-classes-from-schema` creates them with `xsd2ts` from `@neumaennl/xmlbind-ts`, using `schema/XMLSchema.xsd`, after deleting the existing `.ts` files in that folder; the README there stays. They are not edited by hand; ESLint ignores them, and the coverage report leaves them out. `xsd2ts` writes the `.js` extension in relative imports, as ES modules require (`--no-import-extensions` would omit it). After an update of `xmlbind-ts`, they are generated again and committed.[^manifest][^eslint]
 
 # Dependencies and Node
 
@@ -211,7 +211,7 @@ The script reads the GitHub API, `raw.githubusercontent.com`, the Electron relea
 `eslint.config.mjs` is a flat configuration:[^eslint]
 
 - It ignores `out/`, `dist/`, `webview/`, `.vscode-test/`, `node_modules/`, type declarations and generated code.
-- `.js` and `.cjs` files are not allowed. `eslint.config.mjs` and `.vscode-test.mjs` are the only JavaScript files and are checked with the recommended JavaScript rules of ESLint; `vscode-test` cannot load a TypeScript configuration. All other code, including the scripts in `scripts/` and the configurations of Vite and Vitest, is TypeScript (`.ts` or `.mts`).
+- `.js` and `.cjs` files are not allowed. `eslint.config.mjs` and `.vscode-test.mjs` are the only JavaScript files and are checked with the recommended JavaScript rules of ESLint; `vscode-test` cannot load a TypeScript configuration. All other code, including the scripts in `scripts/` and the configurations of Vite and Vitest, is TypeScript (`.ts`). ESLint cannot load a TypeScript configuration without the extra dependency `jiti` (Node would need an unstable flag), so `eslint.config.mjs` stays JavaScript for now; check again when ESLint can do it. The rule therefore does not forbid `.mjs` files yet.
 - TypeScript files are checked with the type information from the tsconfig files listed in [Build outputs](#build-outputs), with the recommended rules of `typescript-eslint` including those that need type information. Return types must be declared, `any` is an error, non-null assertions are warnings, and `unknown` in type assertions and variable annotations is forbidden (`no-restricted-syntax`); an exception needs an `eslint-disable-next-line` comment with a reason.
 - Test files and mocks additionally use the recommended rules of `@vitest/eslint-plugin` and the Vitest globals (see [Testing](testing.md#conventions)). The tests in the extension host in `test/extension-host/` use Mocha instead and get the Mocha and browser globals.
 
@@ -233,8 +233,7 @@ Pull requests into other branches are not checked (see [the known issue](known-i
 
 The [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340) changes the build in several phases:[^issue-340]
 
-- Phase 6 makes the package a native ES module (`"type": "module"`). `tsc` then writes ES modules, and relative imports need the `.js` extension, which `nodenext` then requires. `scripts/package.json` becomes unnecessary, and `vite.config.mts`, `vitest.config.mts` and `test/extension-host/mockWebview.mts` can become `.ts` files. The tests in the extension host check the result inside VS Code.
-- The goal is a repository without JavaScript files. In Phase 6, `eslint.config.mjs` becomes TypeScript if ESLint can load a TypeScript configuration without an extra dependency and without an unstable flag; then the ESLint rule against `.js` and `.cjs` files also forbids `.mjs` files. `.vscode-test.mjs` stays JavaScript, because `vscode-test` only loads `.js`, `.cjs` and `.mjs` configurations, and needs an exception.
+- Convert `eslint.config.mjs` to TypeScript as soon as ESLint can load a TypeScript configuration without an extra dependency (such as `jiti`) and without an unstable flag. Then the ESLint rule against `.js` and `.cjs` files also forbids `.mjs` files, with an exception for `.vscode-test.mjs`, which stays JavaScript because `vscode-test` only loads `.js`, `.cjs` and `.mjs` configurations. The goal is a repository without JavaScript files.
 - Phase 7 updates CI to the new tools.
 
 [^manifest]: Extension manifest (scripts, dependencies, engines)

@@ -12,15 +12,15 @@ import type {
   AddDocumentationCommand,
   RemoveDocumentationCommand,
   ModifyDocumentationCommand,
-} from "../../shared/types";
-import { toArray } from "../../shared/schemaUtils";
+} from "../../shared/types.js";
+import { toArray } from "../../shared/schemaUtils.js";
 import {
   MINIMAL_SCHEMA,
   SCHEMA_WITH_ELEMENTS,
   SCHEMA_WITH_ANNOTATION,
   runCommandExpectSuccessSchema,
   runCommandExpectValidationFailure,
-} from "./testHelpers";
+} from "./testHelpers.js";
 
 describe("Integration: Annotation pipeline", () => {
   // ─── addAnnotation ─────────────────────────────────────────────────────────

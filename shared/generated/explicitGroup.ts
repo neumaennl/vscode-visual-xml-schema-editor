@@ -1,9 +1,9 @@
 import { XmlRoot, XmlElement, XmlAttribute, XmlAnyAttribute } from '@neumaennl/xmlbind-ts';
-import type { allNNI } from './types';
-import { annotationType } from './annotationType';
-import { localElement } from './localElement';
-import { groupRef } from './groupRef';
-import { anyType } from './anyType';
+import type { allNNI } from './types.js';
+import { annotationType } from './annotationType.js';
+import { localElement } from './localElement.js';
+import { groupRef } from './groupRef.js';
+import { anyType } from './anyType.js';
 /**
  * group type for the three kinds of group
  */

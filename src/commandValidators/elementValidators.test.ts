@@ -3,7 +3,7 @@
  */
 
 import { unmarshal } from "@neumaennl/xmlbind-ts";
-import { schema } from "../../shared/types";
+import { schema } from "../../shared/types.js";
 import {
   AddElementCommand,
   RemoveElementCommand,
@@ -11,7 +11,7 @@ import {
   AddAttributeCommand,
   RemoveAttributeCommand,
   ModifyAttributeCommand,
-} from "../../shared/types";
+} from "../../shared/types.js";
 import {
   validateAddElement,
   validateRemoveElement,
@@ -19,8 +19,8 @@ import {
   validateAddAttribute,
   validateRemoveAttribute,
   validateModifyAttribute,
-} from "./elementValidators";
-import { expectInvalid } from "./validationTestHelpers";
+} from "./elementValidators.js";
+import { expectInvalid } from "./validationTestHelpers.js";
 
 describe("Element Validators", () => {
   let schemaObj: schema;

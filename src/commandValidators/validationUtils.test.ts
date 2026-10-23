@@ -3,8 +3,8 @@ import {
   validateMinOccurs,
   validateMaxOccurs,
   validateOccurrences,
-} from "./validationUtils";
-import { expectInvalid } from "./validationTestHelpers";
+} from "./validationUtils.js";
+import { expectInvalid } from "./validationTestHelpers.js";
 
 describe("validationUtils", () => {
   describe("isValidXmlName", () => {

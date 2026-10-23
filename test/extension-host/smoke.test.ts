@@ -1,5 +1,5 @@
 // Smoke tests that run inside VS Code with the real `vscode` API. The webview is
-// replaced by test/extension-host/mockWebview.mts, which sends one edit command as
+// replaced by test/extension-host/mockWebview.ts, which sends one edit command as
 // soon as it receives the schema. The suite opens the editor once; each test can
 // also run on its own, for example from the Testing view.
 import * as assert from "node:assert/strict";

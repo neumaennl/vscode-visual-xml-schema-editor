@@ -3,7 +3,7 @@
  * Provides commands for adding, removing, and modifying attributes.
  */
 
-import { BaseCommand } from "./base";
+import { BaseCommand } from "./base.js";
 
 /**
  * Payload for adding a new attribute to an element.

@@ -1,7 +1,7 @@
 import { XmlElement, XmlAttribute } from '@neumaennl/xmlbind-ts';
-import { openAttrs } from './openAttrs';
-import { appinfoType } from './appinfoType';
-import { documentationType } from './documentationType';
+import { openAttrs } from './openAttrs.js';
+import { appinfoType } from './appinfoType.js';
+import { documentationType } from './documentationType.js';
 export class annotationType extends openAttrs {
   @XmlAttribute('id')
   id?: string;

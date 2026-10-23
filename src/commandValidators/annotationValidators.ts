@@ -21,15 +21,15 @@ import {
   RemoveDocumentationCommand,
   ModifyDocumentationCommand,
   annotationType,
-} from "../../shared/types";
-import { ValidationResult } from "./validationUtils";
-import { locateNodeById } from "../schemaNavigator";
-import { toArray, isSchemaRoot } from "../../shared/schemaUtils";
+} from "../../shared/types.js";
+import { ValidationResult } from "./validationUtils.js";
+import { locateNodeById } from "../schemaNavigator.js";
+import { toArray, isSchemaRoot } from "../../shared/schemaUtils.js";
 import {
   parseDocumentationId,
   parseSchemaAnnotationId,
   parseSchemaDocumentationId,
-} from "../commandUtils";
+} from "../commandUtils.js";
 
 // ===== Internal helpers =====
 

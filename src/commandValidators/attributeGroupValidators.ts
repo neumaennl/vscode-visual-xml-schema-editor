@@ -10,11 +10,11 @@ import {
   RemoveAttributeGroupCommand,
   ModifyAttributeGroupCommand,
   attributeGroupRef,
-} from "../../shared/types";
-import { ValidationResult, isValidXmlName } from "./validationUtils";
-import { toArray } from "../../shared/schemaUtils";
-import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy";
-import { locateNodeById } from "../schemaNavigator";
+} from "../../shared/types.js";
+import { ValidationResult, isValidXmlName } from "./validationUtils.js";
+import { toArray } from "../../shared/schemaUtils.js";
+import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
+import { locateNodeById } from "../schemaNavigator.js";
 
 // ===== AttributeGroup Reference Helpers =====
 

@@ -9,14 +9,14 @@
  */
 
 import { unmarshal } from "@neumaennl/xmlbind-ts";
-import { CommandProcessor } from "../commandProcessor";
+import { CommandProcessor } from "../commandProcessor.js";
 import type {
   CommandExecutionResult,
   CommandExecutionSuccess,
   CommandExecutionValidationFailure,
-} from "../commandProcessor";
-import { schema } from "../../shared/types";
-import type { SchemaCommand } from "../../shared/types";
+} from "../commandProcessor.js";
+import { schema } from "../../shared/types.js";
+import type { SchemaCommand } from "../../shared/types.js";
 
 // ─── XML Fixtures ────────────────────────────────────────────────────────────
 

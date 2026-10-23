@@ -3,18 +3,18 @@
  */
 
 import { unmarshal } from "@neumaennl/xmlbind-ts";
-import { schema } from "../../shared/types";
+import { schema } from "../../shared/types.js";
 import {
   AddGroupCommand,
   RemoveGroupCommand,
   ModifyGroupCommand,
-} from "../../shared/types";
+} from "../../shared/types.js";
 import {
   validateAddGroup,
   validateRemoveGroup,
   validateModifyGroup,
-} from "./groupValidators";
-import { expectInvalid } from "./validationTestHelpers";
+} from "./groupValidators.js";
+import { expectInvalid } from "./validationTestHelpers.js";
 
 describe("Group Validators", () => {
   let schemaObj: schema;

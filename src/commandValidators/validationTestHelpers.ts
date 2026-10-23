@@ -4,7 +4,7 @@
  * Uses plain throws (not test framework matchers). This file is excluded from the
  * production build via the TestHelpers glob in tsconfig.extension.json exclude.
  */
-import type { ValidationResult, ValidationFailure } from "./validationUtils";
+import type { ValidationResult, ValidationFailure } from "./validationUtils.js";
 
 /**
  * Asserts that a ValidationResult represents a failure and narrows its type to

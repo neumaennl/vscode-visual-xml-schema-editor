@@ -13,24 +13,24 @@
 import { readFileSync } from "fs";
 import { resolve } from "path";
 import { unmarshal } from "@neumaennl/xmlbind-ts";
-import { schema } from "../../shared/types";
-import { toArray } from "../../shared/schemaUtils";
+import { schema } from "../../shared/types.js";
+import { toArray } from "../../shared/schemaUtils.js";
 import type {
   AddComplexTypeCommand,
   AddElementCommand,
   AddAttributeCommand,
   ModifyElementCommand,
-} from "../../shared/types";
+} from "../../shared/types.js";
 import {
   runCommandExpectSuccess,
   runCommandExpectSuccessSchema,
   runCommandExpectValidationFailure,
-} from "./testHelpers";
+} from "./testHelpers.js";
 
 // ─── Fixture: project example schema ─────────────────────────────────────────
 
 /** Read the shared example schema from disk so the test always reflects the real file. */
-const EXAMPLE_XSD = readFileSync(resolve(__dirname, "../../exampleFiles/example.xsd"), "utf-8");
+const EXAMPLE_XSD = readFileSync(resolve(import.meta.dirname, "../../exampleFiles/example.xsd"), "utf-8");
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

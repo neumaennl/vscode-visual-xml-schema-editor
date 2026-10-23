@@ -1,5 +1,5 @@
 import { XmlRoot } from '@neumaennl/xmlbind-ts';
-import { unionType } from './unionType';
+import { unionType } from './unionType.js';
 /**
  * memberTypes attribute must be non-empty or there must be
  * at least one simpleType child

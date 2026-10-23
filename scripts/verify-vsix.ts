@@ -1,24 +1,43 @@
 // Verifies that the packaged VSIX is self-contained: extracts it into a temp
 // directory (outside the repo, so the dev node_modules can't mask missing files)
-// and loads the extension entry point with the `vscode` module stubbed.
+// and imports the extension entry point, an ES module, with the `vscode` module
+// stubbed. The stub is a package in the temp directory's node_modules/, where Node's
+// normal package lookup finds it; every other package must come from the VSIX.
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readdirSync, rmSync } from "node:fs";
-import Module, { createRequire } from "node:module";
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-/** Node's internal module loader, which has no type declaration. */
-type Load = (this: Module, request: string, ...rest: object[]) => object;
+/**
+ * Source of the stand-in for the `vscode` module, which only exists inside VS Code:
+ * an ES module whose default export accepts any property access and call. An ES
+ * module needs static export names, so the stub has no named exports, and
+ * `import * as vscode` yields only `default`, and `vscode.window` is `undefined`. The
+ * check therefore fails, although VS Code would load the extension, if a module
+ * uses such a value at the top level (for example `vscode.window.activeTextEditor`
+ * or `class X extends vscode.TreeItem`) or uses named imports such as
+ * `import { window } from "vscode"`. Uses inside functions are fine, because the
+ * check does not call them. The stub has no `then`, so that it is not taken for a
+ * promise; otherwise loading an extension in the tests, under Vitest, never finishes.
+ */
+const VSCODE_STUB_SOURCE = `const stub = () =>
+  new Proxy(function () {}, {
+    get: (_, key) => (key === "then" ? undefined : key === "prototype" ? {} : stub()),
+  });
+export default stub();
+`;
 
 /**
- * Creates an object that accepts any property access and call, as a stand-in for
- * the `vscode` module, which only exists inside VS Code.
+ * Writes the stand-in for the `vscode` module as a package into `node_modules/` of a folder.
  *
- * @returns The stub
+ * @param dir - The folder that contains the extracted extension
  */
-function stub(): object {
-  return new Proxy(function () {}, { get: (_, key) => (key === "prototype" ? {} : stub()) });
+function addVscodeStub(dir: string): void {
+  const stubDir = join(dir, "node_modules", "vscode");
+  mkdirSync(stubDir, { recursive: true });
+  writeFileSync(join(stubDir, "package.json"), JSON.stringify({ name: "vscode", type: "module", main: "index.js" }));
+  writeFileSync(join(stubDir, "index.js"), VSCODE_STUB_SOURCE);
 }
 
 /**
@@ -39,33 +58,26 @@ function extract(vsix: string, dir: string): void {
 }
 
 /**
- * Extracts a VSIX into a temporary folder and loads its entry point with the
- * `vscode` module stubbed.
+ * Extracts a VSIX into a temporary folder and imports its entry point, an ES module,
+ * with the `vscode` module stubbed.
  *
  * @param vsix - The VSIX file
  * @returns The entry point of the extension (`main` in its `package.json`)
  * @throws {Error} If the VSIX cannot be extracted, the entry point fails to load, or it does not export `activate()`
  */
-export function verifyVsix(vsix: string): string {
+export async function verifyVsix(vsix: string): Promise<string> {
   const dir = mkdtempSync(join(tmpdir(), "vsix-verify-"));
-  const loader = Module as typeof Module & { _load: Load };
-  const originalLoad = loader._load;
   try {
     extract(vsix, dir);
+    addVscodeStub(dir);
     const extensionDir = join(dir, "extension");
-    const require = createRequire(join(extensionDir, "package.json"));
-    const { main } = require("./package.json") as { main: string };
-    const vscode = stub();
-    loader._load = function (request, ...rest): object {
-      return request === "vscode" ? vscode : originalLoad.call(this, request, ...rest);
-    };
-    const extension = require(join(extensionDir, main)) as { activate?: object };
+    const { main } = JSON.parse(readFileSync(join(extensionDir, "package.json"), "utf8")) as { main: string };
+    const extension = (await import(pathToFileURL(join(extensionDir, main)).href)) as { activate?: object };
     if (typeof extension.activate !== "function") {
       throw new Error(`${main} does not export activate()`);
     }
     return main;
   } finally {
-    loader._load = originalLoad;
     rmSync(dir, { recursive: true, force: true });
   }
 }
@@ -77,7 +89,7 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
     process.exit(1);
   }
   try {
-    console.log(`✓ ${vsix}: ${verifyVsix(vsix)} loads and exports activate()`);
+    console.log(`✓ ${vsix}: ${await verifyVsix(vsix)} loads and exports activate()`);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error(`✗ ${vsix}: ${message.split("\n")[0]}`);

@@ -9,14 +9,14 @@ import type {
   AddIncludeCommand,
   RemoveIncludeCommand,
   ModifyIncludeCommand,
-} from "../../shared/types";
-import { toArray } from "../../shared/schemaUtils";
+} from "../../shared/types.js";
+import { toArray } from "../../shared/schemaUtils.js";
 import {
   MINIMAL_SCHEMA,
   SCHEMA_WITH_INCLUDE,
   runCommandExpectSuccessSchema,
   runCommandExpectValidationFailure,
-} from "./testHelpers";
+} from "./testHelpers.js";
 
 /** Schema that already has two includes so we can test position-based IDs. */
 const SCHEMA_TWO_INCLUDES = `<?xml version="1.0" encoding="UTF-8"?>

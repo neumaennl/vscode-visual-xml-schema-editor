@@ -1,4 +1,5 @@
 {
+  "type": "module",
   "name": "xml-schema-visual-editor",
   "displayName": "XML Schema Visual Editor",
   "description": "Visual editor for XML schemas with diagram view",
@@ -121,6 +122,6 @@
     "vitest": "^5.0.3"
   },
   "dependencies": {
-    "@neumaennl/xmlbind-ts": "^0.18.0"
+    "@neumaennl/xmlbind-ts": "^2.3.0"
   }
 }

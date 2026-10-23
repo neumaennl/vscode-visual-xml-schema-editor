@@ -1,8 +1,7 @@
 // Replaces the webview bundle in the extension-host tests (see
 // scripts/stage-extension-host-test.ts). As soon as the extension sends the parsed
 // schema, the mock answers with one edit command, like the real webview does when
-// the user edits the diagram. The webview loads it with `type="module"`; the `.mts`
-// extension makes tsc emit an ES module, although the package is still CommonJS.
+// the user edits the diagram. The webview loads it with `type="module"`.
 
 declare function acquireVsCodeApi(): { postMessage(message: object): void };
 

@@ -21,10 +21,10 @@
 
 import { unmarshal } from "@neumaennl/xmlbind-ts";
 import * as vscode from "vscode";
-import { SchemaEditorProvider } from "../webviewProvider";
-import { CommandProcessor } from "../commandProcessor";
-import { schema } from "../../shared/types";
-import { toArray } from "../../shared/schemaUtils";
+import { SchemaEditorProvider } from "../webviewProvider.js";
+import { CommandProcessor } from "../commandProcessor.js";
+import { schema } from "../../shared/types.js";
+import { toArray } from "../../shared/schemaUtils.js";
 import type { Mock, MockedFunction } from "vitest";
 
 // ─── Test infrastructure ──────────────────────────────────────────────────────

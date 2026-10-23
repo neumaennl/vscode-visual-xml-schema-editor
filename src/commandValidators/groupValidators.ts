@@ -8,15 +8,15 @@ import {
   RemoveGroupCommand,
   ModifyGroupCommand,
   groupRef,
-} from "../../shared/types";
+} from "../../shared/types.js";
 import {
   ValidationResult,
   isValidXmlName,
   validateOccurrences,
-} from "./validationUtils";
-import { toArray } from "../../shared/schemaUtils";
-import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy";
-import { locateNodeById } from "../schemaNavigator";
+} from "./validationUtils.js";
+import { toArray } from "../../shared/schemaUtils.js";
+import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
+import { locateNodeById } from "../schemaNavigator.js";
 
 /**
  * Valid content models for Group elements.

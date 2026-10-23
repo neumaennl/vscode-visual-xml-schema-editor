@@ -4,17 +4,17 @@
  * SchemaModelManager is mocked to focus on CommandProcessor logic.
  */
 
-import { CommandProcessor } from "./commandProcessor";
+import { CommandProcessor } from "./commandProcessor.js";
 import type {
   CommandExecutionResult,
   CommandExecutionFailure,
   CommandExecutionValidationFailure,
   CommandExecutionRuntimeFailure,
-} from "./commandProcessor";
-import { AddElementCommand, SchemaCommand, schema } from "../shared/types";
-import type { CommandValidator } from "./commandValidator";
-import type { CommandExecutor } from "./commandExecutor";
-import type { SchemaModelManager } from "./schemaModelManager";
+} from "./commandProcessor.js";
+import { AddElementCommand, SchemaCommand, schema } from "../shared/types.js";
+import type { CommandValidator } from "./commandValidator.js";
+import type { CommandExecutor } from "./commandExecutor.js";
+import type { SchemaModelManager } from "./schemaModelManager.js";
 
 // Type-safe mock types for testing
 type MockValidator = Pick<CommandValidator, "validate">;

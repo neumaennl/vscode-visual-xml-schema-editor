@@ -1,5 +1,5 @@
 import { XmlAttribute } from '@neumaennl/xmlbind-ts';
-import { annotated } from './annotated';
+import { annotated } from './annotated.js';
 /**
  * A subset of XPath expressions for use
  * in selectors

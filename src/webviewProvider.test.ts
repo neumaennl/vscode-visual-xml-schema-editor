@@ -3,8 +3,8 @@
  */
 
 import * as vscode from "vscode";
-import { SchemaEditorProvider } from "./webviewProvider";
-import { CommandProcessor } from "./commandProcessor";
+import { SchemaEditorProvider } from "./webviewProvider.js";
+import { CommandProcessor } from "./commandProcessor.js";
 import type { Mock, MockedFunction } from "vitest";
 
 // Mock helpers

@@ -2,7 +2,7 @@
  * Unit tests for schema utility functions.
  */
 
-import { toArray, isSchemaRoot } from "./schemaUtils";
+import { toArray, isSchemaRoot } from "./schemaUtils.js";
 
 describe("schemaUtils", () => {
   describe("toArray", () => {

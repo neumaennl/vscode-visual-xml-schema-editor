@@ -13,16 +13,16 @@ import {
   explicitGroup,
   all,
   topLevelComplexType,
-} from "../../shared/types";
+} from "../../shared/types.js";
 import {
   ValidationResult,
   isValidXmlName,
   validateOccurrences,
   validateElementType,
-} from "./validationUtils";
-import { locateNodeById } from "../schemaNavigator";
-import { parseSchemaId } from "../../shared/idStrategy";
-import { toArray } from "../../shared/schemaUtils";
+} from "./validationUtils.js";
+import { locateNodeById } from "../schemaNavigator.js";
+import { parseSchemaId } from "../../shared/idStrategy.js";
+import { toArray } from "../../shared/schemaUtils.js";
 
 /** Parent types that can contain child elements. */
 const VALID_ELEMENT_PARENTS = ["schema", "sequence", "choice", "all"] as const;

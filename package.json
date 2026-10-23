@@ -107,7 +107,7 @@
     "@types/vscode": "~1.125.0",
     "@typescript-eslint/eslint-plugin": "^8.72.0",
     "@typescript-eslint/parser": "^8.48.1",
-    "@vitest/coverage-v8": "^5.0.3",
+    "@vitest/coverage-v8": "^5.0.5",
     "@vitest/eslint-plugin": "^1.6.27",
     "@vscode/test-cli": "^0.0.15",
     "@vscode/test-electron": "^3.1.0",

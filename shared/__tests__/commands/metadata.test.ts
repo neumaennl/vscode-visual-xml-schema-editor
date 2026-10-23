@@ -9,7 +9,7 @@ import {
   AddDocumentationCommand,
   RemoveDocumentationCommand,
   ModifyDocumentationCommand,
-} from "../../commands/metadata";
+} from "../../commands/metadata.js";
 
 describe("Annotation Commands", () => {
   test("AddAnnotationCommand should have correct structure", () => {

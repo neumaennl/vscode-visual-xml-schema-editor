@@ -4,17 +4,17 @@
  * SchemaModelManager is mocked to focus on CommandProcessor logic.
  */
 
-import { CommandProcessor } from "./commandProcessor";
+import { CommandProcessor } from "./commandProcessor.js";
 import type {
   CommandExecutionResult,
   CommandExecutionFailure,
   CommandExecutionValidationFailure,
   CommandExecutionRuntimeFailure,
-} from "./commandProcessor";
-import { AddElementCommand, SchemaCommand, schema } from "../shared/types";
-import type { CommandValidator } from "./commandValidator";
-import type { CommandExecutor } from "./commandExecutor";
-import type { SchemaModelManager } from "./schemaModelManager";
+} from "./commandProcessor.js";
+import { AddElementCommand, SchemaCommand, schema } from "../shared/types.js";
+import type { CommandValidator } from "./commandValidator.js";
+import type { CommandExecutor } from "./commandExecutor.js";
+import type { SchemaModelManager } from "./schemaModelManager.js";
 
 // Type-safe mock types for testing
 type MockValidator = Pick<CommandValidator, "validate">;
@@ -85,16 +85,16 @@ describe("CommandProcessor", () => {
     test("should successfully execute command with mocked dependencies", () => {
       // Mock SchemaModelManager
       const mockModelManager: MockModelManager = {
-        loadFromXml: jest.fn(),
-        getSchema: jest.fn().mockReturnValue(mockSchema),
-        setSchema: jest.fn(),
-        cloneSchema: jest.fn().mockReturnValue(mockSchema),
-        toXml: jest.fn().mockReturnValue(simpleSchemaXml),
+        loadFromXml: vi.fn(),
+        getSchema: vi.fn().mockReturnValue(mockSchema),
+        setSchema: vi.fn(),
+        cloneSchema: vi.fn().mockReturnValue(mockSchema),
+        toXml: vi.fn().mockReturnValue(simpleSchemaXml),
       };
 
       // Mock executor that modifies the schema (executor must modify schema in-place)
       const mockExecutor: MockExecutor = {
-        execute: jest.fn((cmd, schemaObj) => {
+        execute: vi.fn<CommandExecutor["execute"]>((cmd, schemaObj) => {
           // Modify the schema object to simulate successful execution
           schemaObj.version = "1.0";
         }),
@@ -134,13 +134,13 @@ describe("CommandProcessor", () => {
     test("should handle SchemaModelManager load failure", () => {
       // Mock SchemaModelManager that throws on load
       const mockModelManager: MockModelManager = {
-        loadFromXml: jest.fn(() => {
+        loadFromXml: vi.fn(() => {
           throw new Error("Failed to load schema from XML: Invalid XML");
         }),
-        getSchema: jest.fn(),
-        setSchema: jest.fn(),
-        cloneSchema: jest.fn(),
-        toXml: jest.fn(),
+        getSchema: vi.fn(),
+        setSchema: vi.fn(),
+        cloneSchema: vi.fn(),
+        toXml: vi.fn(),
       };
 
       const processorWithMock = new CommandProcessor(
@@ -218,16 +218,16 @@ describe("CommandProcessor", () => {
 
       // Mock SchemaModelManager
       const mockModelManager: MockModelManager = {
-        loadFromXml: jest.fn(),
-        getSchema: jest.fn().mockReturnValue(mockSchema),
-        setSchema: jest.fn(),
-        cloneSchema: jest.fn().mockReturnValue(mockClonedSchema),
-        toXml: jest.fn().mockReturnValue(simpleSchemaXml),
+        loadFromXml: vi.fn(),
+        getSchema: vi.fn().mockReturnValue(mockSchema),
+        setSchema: vi.fn(),
+        cloneSchema: vi.fn().mockReturnValue(mockClonedSchema),
+        toXml: vi.fn().mockReturnValue(simpleSchemaXml),
       };
 
       // Mock executor
       const mockExecutor: MockExecutor = {
-        execute: jest.fn((command, schema) => {
+        execute: vi.fn<CommandExecutor["execute"]>((command, schema) => {
           // Verify we're working on the cloned schema
           expect(schema.version).toBe("cloned");
           schema.version = "modified";
@@ -290,7 +290,7 @@ describe("CommandProcessor", () => {
 
       // Mock executor that throws an error
       const mockExecutor: MockExecutor = {
-        execute: jest.fn(() => {
+        execute: vi.fn(() => {
           throw new Error("Execution failed");
         }),
       };
@@ -373,7 +373,7 @@ describe("CommandProcessor", () => {
     test("should handle executor exceptions gracefully", () => {
       // Mock executor that throws an exception
       const mockExecutor: MockExecutor = {
-        execute: jest.fn(() => {
+        execute: vi.fn(() => {
           throw new Error("Executor crashed unexpectedly");
         }),
       };
@@ -403,7 +403,7 @@ describe("CommandProcessor", () => {
     test("should handle validator exceptions gracefully", () => {
       // Mock validator that throws an exception
       const mockValidator: MockValidator = {
-        validate: jest.fn(() => {
+        validate: vi.fn(() => {
           throw new Error("Validator crashed");
         }),
       };
@@ -433,15 +433,15 @@ describe("CommandProcessor", () => {
     test("should have consistent result structure on success", () => {
       // Mock dependencies for successful execution
       const mockModelManager: MockModelManager = {
-        loadFromXml: jest.fn(),
-        getSchema: jest.fn().mockReturnValue(mockSchema),
-        setSchema: jest.fn(),
-        cloneSchema: jest.fn().mockReturnValue(mockSchema),
-        toXml: jest.fn().mockReturnValue(simpleSchemaXml),
+        loadFromXml: vi.fn(),
+        getSchema: vi.fn().mockReturnValue(mockSchema),
+        setSchema: vi.fn(),
+        cloneSchema: vi.fn().mockReturnValue(mockSchema),
+        toXml: vi.fn().mockReturnValue(simpleSchemaXml),
       };
 
       const mockExecutor: MockExecutor = {
-        execute: jest.fn((command, schema) => {
+        execute: vi.fn<CommandExecutor["execute"]>((command, schema) => {
           schema.version = "1.0";
         }),
       };
@@ -497,17 +497,17 @@ describe("CommandProcessor", () => {
     test("should handle SchemaModelManager toXml failure", () => {
       // Mock SchemaModelManager that fails on toXml
       const mockModelManager: MockModelManager = {
-        loadFromXml: jest.fn(),
-        getSchema: jest.fn().mockReturnValue(mockSchema),
-        setSchema: jest.fn(),
-        cloneSchema: jest.fn().mockReturnValue(mockSchema),
-        toXml: jest.fn(() => {
+        loadFromXml: vi.fn(),
+        getSchema: vi.fn().mockReturnValue(mockSchema),
+        setSchema: vi.fn(),
+        cloneSchema: vi.fn().mockReturnValue(mockSchema),
+        toXml: vi.fn(() => {
           throw new Error("Failed to serialize schema");
         }),
       };
 
       const mockExecutor: MockExecutor = {
-        execute: jest.fn((command, schema) => {
+        execute: vi.fn<CommandExecutor["execute"]>((command, schema) => {
           schema.version = "1.0";
         }),
       };
@@ -537,15 +537,15 @@ describe("CommandProcessor", () => {
   describe("Round-trip Validation", () => {
     test("should validate serialized XML can be parsed back", () => {
       const mockModelManager: MockModelManager = {
-        loadFromXml: jest.fn(),
-        getSchema: jest.fn().mockReturnValue(mockSchema),
-        setSchema: jest.fn(),
-        cloneSchema: jest.fn().mockReturnValue(mockSchema),
-        toXml: jest.fn().mockReturnValue(simpleSchemaXml),
+        loadFromXml: vi.fn(),
+        getSchema: vi.fn().mockReturnValue(mockSchema),
+        setSchema: vi.fn(),
+        cloneSchema: vi.fn().mockReturnValue(mockSchema),
+        toXml: vi.fn().mockReturnValue(simpleSchemaXml),
       };
 
       const mockExecutor: MockExecutor = {
-        execute: jest.fn((command, schema) => {
+        execute: vi.fn<CommandExecutor["execute"]>((command, schema) => {
           schema.element = schema.element || [];
         }),
       };
@@ -578,21 +578,21 @@ describe("CommandProcessor", () => {
     test("should fail if round-trip validation fails", () => {
       let loadCallCount = 0;
       const mockModelManager: MockModelManager = {
-        loadFromXml: jest.fn(() => {
+        loadFromXml: vi.fn(() => {
           loadCallCount++;
           if (loadCallCount === 2) {
             // Fail on round-trip validation
             throw new Error("Round-trip validation failed");
           }
         }),
-        getSchema: jest.fn().mockReturnValue(mockSchema),
-        setSchema: jest.fn(),
-        cloneSchema: jest.fn().mockReturnValue(mockSchema),
-        toXml: jest.fn().mockReturnValue(simpleSchemaXml),
+        getSchema: vi.fn().mockReturnValue(mockSchema),
+        setSchema: vi.fn(),
+        cloneSchema: vi.fn().mockReturnValue(mockSchema),
+        toXml: vi.fn().mockReturnValue(simpleSchemaXml),
       };
 
       const mockExecutor: MockExecutor = {
-        execute: jest.fn((command, schema) => {
+        execute: vi.fn<CommandExecutor["execute"]>((command, schema) => {
           schema.version = "1.0";
         }),
       };
@@ -631,21 +631,21 @@ describe("CommandProcessor", () => {
     test("should accept custom validator, executor, and model manager", () => {
       // Create mock validator that always returns valid
       const mockValidator: MockValidator = {
-        validate: jest.fn().mockReturnValue({ valid: true }),
+        validate: vi.fn().mockReturnValue({ valid: true }),
       };
 
       // Create mock executor
       const mockExecutor: MockExecutor = {
-        execute: jest.fn(),
+        execute: vi.fn(),
       };
 
       // Create mock model manager
       const mockModelManager: MockModelManager = {
-        loadFromXml: jest.fn(),
-        getSchema: jest.fn().mockReturnValue(mockSchema),
-        setSchema: jest.fn(),
-        cloneSchema: jest.fn().mockReturnValue(mockSchema),
-        toXml: jest.fn().mockReturnValue(simpleSchemaXml),
+        loadFromXml: vi.fn(),
+        getSchema: vi.fn().mockReturnValue(mockSchema),
+        setSchema: vi.fn(),
+        cloneSchema: vi.fn().mockReturnValue(mockSchema),
+        toXml: vi.fn().mockReturnValue(simpleSchemaXml),
       };
 
       // Create processor with mocked dependencies
@@ -704,15 +704,15 @@ describe("CommandProcessor", () => {
   describe("Concurrency Control", () => {
     test("should prevent concurrent command executions", () => {
       const mockExecutor: MockExecutor = {
-        execute: jest.fn(),
+        execute: vi.fn(),
       };
 
       const mockModelManager: MockModelManager = {
-        loadFromXml: jest.fn(),
-        getSchema: jest.fn().mockReturnValue(mockSchema),
-        setSchema: jest.fn(),
-        cloneSchema: jest.fn().mockReturnValue(mockSchema),
-        toXml: jest.fn().mockReturnValue(simpleSchemaXml),
+        loadFromXml: vi.fn(),
+        getSchema: vi.fn().mockReturnValue(mockSchema),
+        setSchema: vi.fn(),
+        cloneSchema: vi.fn().mockReturnValue(mockSchema),
+        toXml: vi.fn().mockReturnValue(simpleSchemaXml),
       };
 
       const processorWithMock = new CommandProcessor(
@@ -746,15 +746,15 @@ describe("CommandProcessor", () => {
 
     test("should allow execution after previous command completes", () => {
       const mockModelManager: MockModelManager = {
-        loadFromXml: jest.fn(),
-        getSchema: jest.fn().mockReturnValue(mockSchema),
-        setSchema: jest.fn(),
-        cloneSchema: jest.fn().mockReturnValue(mockSchema),
-        toXml: jest.fn().mockReturnValue(simpleSchemaXml),
+        loadFromXml: vi.fn(),
+        getSchema: vi.fn().mockReturnValue(mockSchema),
+        setSchema: vi.fn(),
+        cloneSchema: vi.fn().mockReturnValue(mockSchema),
+        toXml: vi.fn().mockReturnValue(simpleSchemaXml),
       };
 
       const mockExecutor: MockExecutor = {
-        execute: jest.fn((command, schema) => {
+        execute: vi.fn<CommandExecutor["execute"]>((command, schema) => {
           schema.version = "1.0";
         }),
       };
@@ -788,15 +788,15 @@ describe("CommandProcessor", () => {
 
     test("should release lock even when execution fails", () => {
       const mockModelManager: MockModelManager = {
-        loadFromXml: jest.fn(),
-        getSchema: jest.fn().mockReturnValue(mockSchema),
-        setSchema: jest.fn(),
-        cloneSchema: jest.fn().mockReturnValue(mockSchema),
-        toXml: jest.fn().mockReturnValue(simpleSchemaXml),
+        loadFromXml: vi.fn(),
+        getSchema: vi.fn().mockReturnValue(mockSchema),
+        setSchema: vi.fn(),
+        cloneSchema: vi.fn().mockReturnValue(mockSchema),
+        toXml: vi.fn().mockReturnValue(simpleSchemaXml),
       };
 
       const mockExecutor: MockExecutor = {
-        execute: jest.fn(() => {
+        execute: vi.fn(() => {
           throw new Error("Execution failed");
         }),
       };
@@ -855,11 +855,11 @@ describe("CommandProcessor", () => {
 
     test("should set errorKind to 'validation' for concurrent execution rejection", () => {
       const mockModelManager: MockModelManager = {
-        loadFromXml: jest.fn(),
-        getSchema: jest.fn().mockReturnValue(mockSchema),
-        setSchema: jest.fn(),
-        cloneSchema: jest.fn().mockReturnValue(mockSchema),
-        toXml: jest.fn().mockReturnValue(simpleSchemaXml),
+        loadFromXml: vi.fn(),
+        getSchema: vi.fn().mockReturnValue(mockSchema),
+        setSchema: vi.fn(),
+        cloneSchema: vi.fn().mockReturnValue(mockSchema),
+        toXml: vi.fn().mockReturnValue(simpleSchemaXml),
       };
 
       const processorWithMock = new CommandProcessor(
@@ -889,7 +889,7 @@ describe("CommandProcessor", () => {
 
     test("should set errorKind to 'runtime' and include stack when executor throws", () => {
       const mockExecutor: MockExecutor = {
-        execute: jest.fn(() => {
+        execute: vi.fn(() => {
           throw new Error("Executor crashed unexpectedly");
         }),
       };
@@ -917,13 +917,13 @@ describe("CommandProcessor", () => {
 
     test("should set errorKind to 'runtime' and include stack when schema load throws", () => {
       const mockModelManager: MockModelManager = {
-        loadFromXml: jest.fn(() => {
+        loadFromXml: vi.fn(() => {
           throw new Error("XML parse error");
         }),
-        getSchema: jest.fn(),
-        setSchema: jest.fn(),
-        cloneSchema: jest.fn(),
-        toXml: jest.fn(),
+        getSchema: vi.fn(),
+        setSchema: vi.fn(),
+        cloneSchema: vi.fn(),
+        toXml: vi.fn(),
       };
 
       const processorWithMock = new CommandProcessor(
@@ -950,15 +950,15 @@ describe("CommandProcessor", () => {
 
     test("should not set errorKind on successful execution", () => {
       const mockModelManager: MockModelManager = {
-        loadFromXml: jest.fn(),
-        getSchema: jest.fn().mockReturnValue(mockSchema),
-        setSchema: jest.fn(),
-        cloneSchema: jest.fn().mockReturnValue(mockSchema),
-        toXml: jest.fn().mockReturnValue(simpleSchemaXml),
+        loadFromXml: vi.fn(),
+        getSchema: vi.fn().mockReturnValue(mockSchema),
+        setSchema: vi.fn(),
+        cloneSchema: vi.fn().mockReturnValue(mockSchema),
+        toXml: vi.fn().mockReturnValue(simpleSchemaXml),
       };
 
       const mockExecutor: MockExecutor = {
-        execute: jest.fn((cmd, s) => {
+        execute: vi.fn<CommandExecutor["execute"]>((cmd, s) => {
           s.version = "1.0";
         }),
       };

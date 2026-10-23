@@ -3,11 +3,13 @@
  */
 
 import * as vscode from "vscode";
-import { SchemaEditorProvider } from "./webviewProvider";
+import { SchemaEditorProvider } from "./webviewProvider.js";
+import { CommandProcessor } from "./commandProcessor.js";
+import type { Mock, MockedFunction } from "vitest";
 
 // Mock helpers
-const mockPostMessage = jest.fn();
-const mockGetUri = jest.fn((path: vscode.Uri) => path);
+const mockPostMessage = vi.fn();
+const mockGetUri = vi.fn((path: vscode.Uri) => path);
 
 describe("SchemaEditorProvider", () => {
   let provider: SchemaEditorProvider;
@@ -17,7 +19,7 @@ describe("SchemaEditorProvider", () => {
   let mockWebview: vscode.Webview;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // eslint-disable-next-line no-restricted-syntax -- partial stub; unused VS Code context fields omitted
     mockContext = {
@@ -31,21 +33,21 @@ describe("SchemaEditorProvider", () => {
       html: "",
       asWebviewUri: mockGetUri,
       postMessage: mockPostMessage,
-      onDidReceiveMessage: jest.fn(),
+      onDidReceiveMessage: vi.fn(),
     } as unknown as vscode.Webview;
 
     // eslint-disable-next-line no-restricted-syntax -- partial stub; unused WebviewPanel fields omitted
     mockWebviewPanel = {
       webview: mockWebview,
-      onDidDispose: jest.fn(),
+      onDidDispose: vi.fn(),
     } as unknown as vscode.WebviewPanel;
 
     // eslint-disable-next-line no-restricted-syntax -- partial stub; unused TextDocument fields omitted
     mockDocument = {
       uri: { toString: () => "/test/schema.xsd" } as vscode.Uri,
-      getText: jest.fn(() => "<xs:schema></xs:schema>"),
+      getText: vi.fn(() => "<xs:schema></xs:schema>"),
       lineCount: 1,
-      lineAt: jest.fn(() => ({ text: "<xs:schema></xs:schema>" })),
+      lineAt: vi.fn(() => ({ text: "<xs:schema></xs:schema>" })),
     } as unknown as vscode.TextDocument;
 
     provider = new SchemaEditorProvider(mockContext);
@@ -118,7 +120,7 @@ describe("SchemaEditorProvider", () => {
       // eslint-disable-next-line no-restricted-syntax -- partial stub; unused TextDocument fields omitted
       const emptyMockDocument = {
         uri: { toString: () => "/test/empty.xsd" } as vscode.Uri,
-        getText: jest.fn(() => ""),
+        getText: vi.fn(() => ""),
       } as unknown as vscode.TextDocument;
 
       expect(() => {
@@ -130,14 +132,14 @@ describe("SchemaEditorProvider", () => {
       }).not.toThrow();
     });
 
-    it("should create HTML with script tag", () => {
+    it("should create HTML that loads the webview bundle as an ES module", () => {
       provider.resolveCustomTextEditor(
         mockDocument,
         mockWebviewPanel,
         {} as vscode.CancellationToken
       );
 
-      expect(mockWebview.html).toContain("<script");
+      expect(mockWebview.html).toContain('<script type="module"');
       expect(mockWebview.html).toContain("</html>");
     });
 
@@ -181,14 +183,14 @@ describe("SchemaEditorProvider", () => {
   describe("diagram options", () => {
     it("should send diagram options to webview on initialization", () => {
       const mockConfig = {
-        get: jest.fn((key: string, defaultValue: boolean) => {
+        get: vi.fn((key: string, defaultValue: boolean) => {
           if (key === "showDocumentation") return true;
           if (key === "alwaysShowOccurrence") return false;
           if (key === "showType") return true;
           return defaultValue;
         }),
       };
-      (vscode.workspace.getConfiguration as jest.Mock).mockReturnValue(mockConfig);
+      (vscode.workspace.getConfiguration as Mock).mockReturnValue(mockConfig);
 
       provider.resolveCustomTextEditor(
         mockDocument,
@@ -211,9 +213,9 @@ describe("SchemaEditorProvider", () => {
 
     it("should use default values when configuration is not set", () => {
       const mockConfig = {
-        get: jest.fn((_key: string, defaultValue: boolean) => defaultValue),
+        get: vi.fn((_key: string, defaultValue: boolean) => defaultValue),
       };
-      (vscode.workspace.getConfiguration as jest.Mock).mockReturnValue(mockConfig);
+      (vscode.workspace.getConfiguration as Mock).mockReturnValue(mockConfig);
 
       provider.resolveCustomTextEditor(
         mockDocument,
@@ -235,11 +237,11 @@ describe("SchemaEditorProvider", () => {
   });
 
   describe("executeCommand error routing", () => {
-    // Use jest.spyOn on the CommandProcessor prototype so we can control the
+    // Use vi.spyOn on the CommandProcessor prototype so we can control the
     // return value without changing the provider's constructor.
 
     afterEach(() => {
-      jest.restoreAllMocks();
+      vi.restoreAllMocks();
     });
 
     /**
@@ -254,20 +256,19 @@ describe("SchemaEditorProvider", () => {
       );
       // Type onDidReceiveMessage precisely so mock.calls is not any[][]
       type ListenerFn = (msg: unknown) => void;
-      type OnReceiveMock = jest.MockedFunction<
+      type OnReceiveMock = MockedFunction<
         (listener: ListenerFn) => vscode.Disposable
       >;
       const onReceiveMock =
         mockWebview.onDidReceiveMessage as OnReceiveMock;
       // Capture the handler before clearing mock state
       const handler = onReceiveMock.mock.calls[0][0];
-      jest.clearAllMocks(); // clear calls from resolveCustomTextEditor
+      vi.clearAllMocks(); // clear calls from resolveCustomTextEditor
       return handler;
     }
 
     it("should send 'error' message with code and stack for runtime errors", async () => {
-      const { CommandProcessor } = await import("./commandProcessor");
-      jest.spyOn(CommandProcessor.prototype, "execute").mockReturnValue({
+      vi.spyOn(CommandProcessor.prototype, "execute").mockReturnValue({
         success: false,
         errorKind: "runtime",
         error: "Command execution failed: Something exploded",
@@ -296,7 +297,7 @@ describe("SchemaEditorProvider", () => {
 
       // Verify data fields via a typed extraction to avoid any-typed matchers
       type ErrorMsg = { command: string; data: { message: string; code: string; stack?: string } };
-      type PostMsgFn = jest.MockedFunction<(msg: ErrorMsg) => Promise<boolean>>;
+      type PostMsgFn = MockedFunction<(msg: ErrorMsg) => Promise<boolean>>;
       const sentMsg = (mockPostMessage as PostMsgFn).mock.calls[0][0];
       expect(sentMsg.data.message).toContain("Something exploded");
       expect(sentMsg.data.code).toBe("COMMAND_EXECUTION_ERROR");
@@ -304,8 +305,7 @@ describe("SchemaEditorProvider", () => {
     });
 
     it("should send 'commandResult' with success:false for validation errors", async () => {
-      const { CommandProcessor } = await import("./commandProcessor");
-      jest.spyOn(CommandProcessor.prototype, "execute").mockReturnValue({
+      vi.spyOn(CommandProcessor.prototype, "execute").mockReturnValue({
         success: false,
         errorKind: "validation",
         error: "Parent element not found: /element:missing",
@@ -337,8 +337,7 @@ describe("SchemaEditorProvider", () => {
     });
 
     it("should send 'error' message with code and stack when commandProcessor throws", async () => {
-      const { CommandProcessor } = await import("./commandProcessor");
-      jest.spyOn(CommandProcessor.prototype, "execute").mockImplementation(() => {
+      vi.spyOn(CommandProcessor.prototype, "execute").mockImplementation(() => {
         throw new Error("Completely unexpected failure");
       });
 
@@ -356,20 +355,19 @@ describe("SchemaEditorProvider", () => {
 
       // Verify data fields via a typed extraction to avoid any-typed matchers
       type ErrorMsg = { command: string; data: { message: string; code: string } };
-      type PostMsgFn = jest.MockedFunction<(msg: ErrorMsg) => Promise<boolean>>;
+      type PostMsgFn = MockedFunction<(msg: ErrorMsg) => Promise<boolean>>;
       const sentMsg = (mockPostMessage as PostMsgFn).mock.calls[0][0];
       expect(sentMsg.data.message).toContain("Completely unexpected failure");
       expect(sentMsg.data.code).toBe("COMMAND_EXECUTION_ERROR");
     });
     it("should send 'error' message with code when applyEdit returns false", async () => {
-      const { CommandProcessor } = await import("./commandProcessor");
-      jest.spyOn(CommandProcessor.prototype, "execute").mockReturnValue({
+      vi.spyOn(CommandProcessor.prototype, "execute").mockReturnValue({
         success: true,
         // schema/xmlContent values are irrelevant — only the applyEdit branch is under test
         schema: {},
         xmlContent: "<xs:schema/>",
       });
-      (vscode.workspace.applyEdit as jest.Mock).mockResolvedValue(false);
+      (vscode.workspace.applyEdit as Mock).mockResolvedValue(false);
 
       const handler = resolveAndGetHandler();
       handler({
@@ -389,7 +387,7 @@ describe("SchemaEditorProvider", () => {
 
       // Verify data fields via a typed extraction to avoid any-typed matchers
       type ErrorMsg = { command: string; data: { message: string; code: string } };
-      type PostMsgFn = jest.MockedFunction<(msg: ErrorMsg) => Promise<boolean>>;
+      type PostMsgFn = MockedFunction<(msg: ErrorMsg) => Promise<boolean>>;
       const sentMsg = (mockPostMessage as PostMsgFn).mock.calls[0][0];
       expect(sentMsg.data.message).toBe("Failed to apply edit to the document.");
       expect(sentMsg.data.code).toBe("COMMAND_EXECUTION_ERROR");

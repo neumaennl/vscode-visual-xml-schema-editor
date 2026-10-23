@@ -9,7 +9,7 @@
       "group": "build",
       "problemMatcher": "$tsc",
       "label": "npm: compile-extension",
-      "detail": "tsc -p ./tsconfig.json"
+      "detail": "tsc -p ./tsconfig.extension.json"
     },
     {
       "type": "npm",
@@ -41,17 +41,25 @@
       "label": "npm: watch-webview",
       "isBackground": true,
       "problemMatcher": {
-        "owner": "custom",
-        "pattern": {
-          "regexp": "\\[tsl\\] ERROR in ((\\/[\\w-]+)+\\.ts)\\((\\d+,\\d+)\\)\\n\\s+(.*)",
-          "file": 1,
-          "location": 3,
-          "message": 4
-        },
+        "owner": "vite",
+        "fileLocation": ["relative", "${workspaceFolder}"],
+        "pattern": [
+          {
+            "regexp": "^\\[(.+?)\\] (.*)$",
+            "code": 1,
+            "message": 2
+          },
+          {
+            "regexp": "^\\s*╭─\\[ (.+):(\\d+):(\\d+) \\]$",
+            "file": 1,
+            "line": 2,
+            "column": 3
+          }
+        ],
         "background": {
           "activeOnStart": true,
-          "beginsPattern": ".*",
-          "endsPattern": "webpack \\d\\.\\d+\\.\\d compiled .*"
+          "beginsPattern": "^build started\\.\\.\\.$",
+          "endsPattern": "^(built in \\d+ms\\.|Build failed with)"
         }
       }
     },
@@ -66,6 +74,13 @@
         "kind": "build",
         "isDefault": true
       }
+    },
+    {
+      "type": "npm",
+      "script": "pretest:extension-host",
+      "problemMatcher": "$tsc",
+      "label": "npm: pretest:extension-host",
+      "detail": "Compiles the extension and the extension-host tests and assembles .vscode-test/"
     }
   ]
 }

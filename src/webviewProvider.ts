@@ -1,12 +1,12 @@
 import * as vscode from "vscode";
 import { unmarshal } from "@neumaennl/xmlbind-ts";
-import { schema } from "../shared/types";
+import { schema } from "../shared/types.js";
 import {
   ExecuteCommandMessage,
   WebviewMessage,
   DiagramOptions,
-} from "../shared/messages";
-import { CommandProcessor } from "./commandProcessor";
+} from "../shared/messages.js";
+import { CommandProcessor } from "./commandProcessor.js";
 
 /**
  * Provider for the XML Schema Visual Editor custom text editor.
@@ -309,7 +309,7 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
         <h3>Properties</h3>
         <div id="properties-content"></div>
     </div>
-    <script nonce="${nonce}" src="${scriptSrc}"></script>
+    <script type="module" nonce="${nonce}" src="${scriptSrc}"></script>
 </body>
 </html>`;
   }

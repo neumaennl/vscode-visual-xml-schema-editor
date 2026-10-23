@@ -6,7 +6,7 @@ import {
   AddElementCommand,
   RemoveElementCommand,
   ModifyElementCommand,
-} from "../../commands/element";
+} from "../../commands/element.js";
 
 describe("Element Commands", () => {
   test("AddElementCommand should have correct structure", () => {

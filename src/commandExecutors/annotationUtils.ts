@@ -3,7 +3,7 @@
  * These are used by multiple executor modules to avoid code duplication.
  */
 
-import { annotationType, documentationType } from "../../shared/types";
+import { annotationType, documentationType } from "../../shared/types.js";
 
 /**
  * Creates an annotation containing a single documentation entry.

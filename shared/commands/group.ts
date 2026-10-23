@@ -3,8 +3,8 @@
  * Provides commands for organizing schema elements into reusable groups.
  */
 
-import { BaseCommand } from "./base";
-import { ContentModel } from "./schemaTypes";
+import { BaseCommand } from "./base.js";
+import { ContentModel } from "./schemaTypes.js";
 
 /**
  * Payload for adding a group definition or a group reference.

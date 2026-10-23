@@ -1,8 +1,8 @@
 {
-  "extends": "./tsconfig.json",
+  "extends": "./tsconfig.extension.json",
   "compilerOptions": {
     "types": [
-      "jest",
+      "vitest/globals",
       "node"
     ]
   },

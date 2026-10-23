@@ -3,9 +3,9 @@
  * Tests the execute() method delegation logic and error handling.
  */
 
-import { CommandExecutor } from "./commandExecutor";
-import { schema, SchemaCommand, topLevelElement } from "../shared/types";
-import { toArray } from "../shared/schemaUtils";
+import { CommandExecutor } from "./commandExecutor.js";
+import { schema, SchemaCommand, topLevelElement } from "../shared/types.js";
+import { toArray } from "../shared/schemaUtils.js";
 
 describe("CommandExecutor", () => {
   let executor: CommandExecutor;

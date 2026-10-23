@@ -16,11 +16,11 @@ import {
   annotationType,
   documentationType,
   groupRef,
-} from "../../shared/types";
-import { toArray } from "../../shared/schemaUtils";
-import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy";
-import { locateNodeById } from "../schemaNavigator";
-import { createAnnotation } from "./annotationUtils";
+} from "../../shared/types.js";
+import { toArray } from "../../shared/schemaUtils.js";
+import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
+import { locateNodeById } from "../schemaNavigator.js";
+import { createAnnotation } from "./annotationUtils.js";
 
 // ===== Element Group Executors =====
 

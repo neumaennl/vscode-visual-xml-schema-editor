@@ -3,7 +3,7 @@
  * Provides commands for modularizing schemas across multiple files.
  */
 
-import { BaseCommand } from "./base";
+import { BaseCommand } from "./base.js";
 
 /**
  * Payload for adding an import to the schema.

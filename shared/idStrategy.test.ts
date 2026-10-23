@@ -10,7 +10,7 @@ import {
   getNodeType,
   getNodeName,
   SchemaNodeType,
-} from "./idStrategy";
+} from "./idStrategy.js";
 
 describe("generateSchemaId", () => {
   describe("Top-level nodes", () => {

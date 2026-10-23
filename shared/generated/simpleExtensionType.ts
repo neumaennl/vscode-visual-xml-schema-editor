@@ -1,8 +1,8 @@
 import { XmlRoot, XmlElement, XmlAttribute, XmlAnyAttribute } from '@neumaennl/xmlbind-ts';
-import { annotationType } from './annotationType';
-import { attribute } from './attribute';
-import { attributeGroupRef } from './attributeGroupRef';
-import { wildcard } from './wildcard';
+import { annotationType } from './annotationType.js';
+import { attribute } from './attribute.js';
+import { attributeGroupRef } from './attributeGroupRef.js';
+import { wildcard } from './wildcard.js';
 /**
  * No typeDefParticle group reference
  */

@@ -9,7 +9,7 @@ import {
   AddIncludeCommand,
   RemoveIncludeCommand,
   ModifyIncludeCommand,
-} from "../../commands/module";
+} from "../../commands/module.js";
 
 describe("Import Commands", () => {
   test("AddImportCommand should have correct structure", () => {

@@ -4,13 +4,13 @@
  */
 
 import { unmarshal, marshal } from "@neumaennl/xmlbind-ts";
-import { schema, AddElementCommand, RemoveElementCommand, ModifyElementCommand } from "../../shared/types";
+import { schema, AddElementCommand, RemoveElementCommand, ModifyElementCommand } from "../../shared/types.js";
 import {
   executeAddElement,
   executeRemoveElement,
   executeModifyElement,
-} from "./elementExecutors";
-import { toArray } from "../../shared/schemaUtils";
+} from "./elementExecutors.js";
+import { toArray } from "../../shared/schemaUtils.js";
 
 describe("Element Executors", () => {
   describe("executeAddElement", () => {

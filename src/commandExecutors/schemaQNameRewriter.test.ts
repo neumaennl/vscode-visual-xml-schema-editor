@@ -34,9 +34,9 @@ import {
   attributeGroupRef,
   attribute,
   keyrefType,
-} from "../../shared/types";
-import { rewritePrefixInSchema, isPrefixReferencedInSchema, isAnyPrefixReferencedInSchema } from "./schemaQNameRewriter";
-import { toArray } from "../../shared/schemaUtils";
+} from "../../shared/types.js";
+import { rewritePrefixInSchema, isPrefixReferencedInSchema, isAnyPrefixReferencedInSchema } from "./schemaQNameRewriter.js";
+import { toArray } from "../../shared/schemaUtils.js";
 
 // ---------------------------------------------------------------------------
 // Helpers

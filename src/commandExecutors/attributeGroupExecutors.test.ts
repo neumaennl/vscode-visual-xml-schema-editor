@@ -10,13 +10,48 @@ import {
   AddAttributeGroupCommand,
   RemoveAttributeGroupCommand,
   ModifyAttributeGroupCommand,
-} from "../../shared/types";
+} from "../../shared/types.js";
 import {
   executeAddAttributeGroup,
   executeRemoveAttributeGroup,
   executeModifyAttributeGroup,
-} from "./attributeGroupExecutors";
-import { toArray } from "../../shared/schemaUtils";
+} from "./attributeGroupExecutors.js";
+import { toArray } from "../../shared/schemaUtils.js";
+
+/**
+ * Unmarshals a schema with the attribute groups `CommonAttrs` and `OtherAttrs` and the given content.
+ *
+ * @param body - The XSD content after the two attribute group definitions
+ * @returns The schema object
+ */
+function schemaWithAttrGroups(body: string): schema {
+  return unmarshal(
+    schema,
+    `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:attributeGroup name="CommonAttrs"/>
+  <xs:attributeGroup name="OtherAttrs"/>
+  ${body}
+</xs:schema>`,
+  );
+}
+
+/** A complexType `T` with references to `CommonAttrs` and `OtherAttrs`, in this order. */
+const TWO_REFS = `<xs:complexType name="T">
+    <xs:attributeGroup ref="CommonAttrs"/>
+    <xs:attributeGroup ref="OtherAttrs"/>
+  </xs:complexType>`;
+
+/**
+ * Returns the names that the attribute group references of the complexType `T` refer to.
+ *
+ * @param schemaObj - The schema object
+ * @returns The referenced names, in document order
+ */
+function refsOfT(schemaObj: schema): (string | undefined)[] {
+  const t = toArray(schemaObj.complexType).find((ct) => ct.name === "T");
+  return toArray(t?.attributeGroup).map((r) => r.ref);
+}
 
 describe("AttributeGroup Executors", () => {
   describe("executeAddAttributeGroup", () => {
@@ -435,4 +470,98 @@ describe("AttributeGroup Executors", () => {
 
     });
   });
+  describe("identifying references", () => {
+    it("should remove a reference identified by name only", () => {
+      const schemaObj = schemaWithAttrGroups(TWO_REFS);
+      const command: RemoveAttributeGroupCommand = {
+        type: "removeAttributeGroup",
+        payload: { groupId: "/complexType:T/attributeGroupRef:OtherAttrs" },
+      };
+
+      executeRemoveAttributeGroup(command, schemaObj);
+
+      expect(refsOfT(schemaObj)).toEqual(["CommonAttrs"]);
+    });
+
+    it("should remove a reference identified by position only", () => {
+      const schemaObj = schemaWithAttrGroups(TWO_REFS);
+      const command: RemoveAttributeGroupCommand = {
+        type: "removeAttributeGroup",
+        payload: { groupId: "/complexType:T/attributeGroupRef[0]" },
+      };
+
+      executeRemoveAttributeGroup(command, schemaObj);
+
+      expect(refsOfT(schemaObj)).toEqual(["OtherAttrs"]);
+    });
+
+    it("should change a reference identified by name only", () => {
+      const schemaObj = schemaWithAttrGroups(TWO_REFS);
+      const command: ModifyAttributeGroupCommand = {
+        type: "modifyAttributeGroup",
+        payload: { groupId: "/complexType:T/attributeGroupRef:OtherAttrs", ref: "CommonAttrs" },
+      };
+
+      executeModifyAttributeGroup(command, schemaObj);
+
+      expect(refsOfT(schemaObj)).toEqual(["CommonAttrs", "CommonAttrs"]);
+    });
+
+    it("should change a reference identified by position only", () => {
+      const schemaObj = schemaWithAttrGroups(TWO_REFS);
+      const command: ModifyAttributeGroupCommand = {
+        type: "modifyAttributeGroup",
+        payload: { groupId: "/complexType:T/attributeGroupRef[0]", ref: "OtherAttrs" },
+      };
+
+      executeModifyAttributeGroup(command, schemaObj);
+
+      expect(refsOfT(schemaObj)).toEqual(["OtherAttrs", "OtherAttrs"]);
+    });
+
+  });
+
+  describe("documentation in an existing annotation", () => {
+    /** An annotation with application information and a documentation entry. */
+    const ANNOTATION = `<xs:annotation><xs:appinfo>tool data</xs:appinfo><xs:documentation>Old</xs:documentation></xs:annotation>`;
+
+    it("should replace the documentation of a definition and keep its appinfo", () => {
+      const schemaObj = unmarshal(
+        schema,
+        `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:attributeGroup name="CommonAttrs">${ANNOTATION}</xs:attributeGroup>
+</xs:schema>`,
+      );
+      const command: ModifyAttributeGroupCommand = {
+        type: "modifyAttributeGroup",
+        payload: { groupId: "/attributeGroup:CommonAttrs", documentation: "New" },
+      };
+
+      executeModifyAttributeGroup(command, schemaObj);
+
+      const annotation = schemaObj.attributeGroup![0].annotation!;
+      expect(toArray(annotation.documentation).map((d) => d.value)).toEqual(["New"]);
+      expect(toArray(annotation.appinfo)).toHaveLength(1);
+    });
+
+    it("should replace the documentation of a reference and keep its appinfo", () => {
+      const schemaObj = schemaWithAttrGroups(
+        `<xs:complexType name="T"><xs:attributeGroup ref="CommonAttrs">${ANNOTATION}</xs:attributeGroup></xs:complexType>`,
+      );
+      const command: ModifyAttributeGroupCommand = {
+        type: "modifyAttributeGroup",
+        payload: { groupId: "/complexType:T/attributeGroupRef:CommonAttrs[0]", documentation: "New" },
+      };
+
+      executeModifyAttributeGroup(command, schemaObj);
+
+      const t = toArray(schemaObj.complexType).find((ct) => ct.name === "T");
+      const annotation = toArray(t?.attributeGroup)[0].annotation!;
+      expect(toArray(annotation.documentation).map((d) => d.value)).toEqual(["New"]);
+      expect(toArray(annotation.appinfo)).toHaveLength(1);
+    });
+
+  });
+
 });

@@ -3,18 +3,143 @@
  */
 
 import { unmarshal } from "@neumaennl/xmlbind-ts";
-import { schema } from "../../shared/types";
+import { schema } from "../../shared/types.js";
 import {
   AddGroupCommand,
   RemoveGroupCommand,
   ModifyGroupCommand,
-} from "../../shared/types";
+} from "../../shared/types.js";
 import {
   validateAddGroup,
   validateRemoveGroup,
   validateModifyGroup,
-} from "./groupValidators";
-import { expectInvalid } from "./validationTestHelpers";
+} from "./groupValidators.js";
+import { expectInvalid } from "./validationTestHelpers.js";
+
+/**
+ * Unmarshals a schema with the groups `CommonGroup` and `OtherGroup` and the given content.
+ *
+ * @param body - The XSD content after the two group definitions
+ * @returns The schema object
+ */
+function schemaWithGroups(body: string): schema {
+  return unmarshal(
+    schema,
+    `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:group name="CommonGroup"><xs:sequence/></xs:group>
+  <xs:group name="OtherGroup"><xs:sequence/></xs:group>
+  ${body}
+</xs:schema>`,
+  );
+}
+
+/** A local element whose inline complexType references the group `REF`. */
+const LOCAL_ELEMENT_WITH_REF = `<xs:element name="child"><xs:complexType><xs:sequence><xs:group ref="REF"/></xs:sequence></xs:complexType></xs:element>`;
+
+/**
+ * Places where XML Schema allows a reference to a group, as schema content in which
+ * `REF` stands for the referenced group. The places that other tests in this file
+ * cover (the sequence and the choice of a complexType, a complexType itself, the
+ * inline complexType of a top-level element and the sequence of another group) are
+ * not repeated here.
+ */
+const REFERENCE_PLACES: [string, string][] = [
+  [
+    "a choice nested in the sequence of a complexType",
+    `<xs:complexType name="T"><xs:sequence><xs:choice><xs:group ref="REF"/></xs:choice></xs:sequence></xs:complexType>`,
+  ],
+  [
+    "a sequence nested in the choice of a complexType",
+    `<xs:complexType name="T"><xs:choice><xs:sequence><xs:group ref="REF"/></xs:sequence></xs:choice></xs:complexType>`,
+  ],
+  [
+    "a complexContent extension",
+    `<xs:complexType name="Base"/>
+     <xs:complexType name="Derived"><xs:complexContent><xs:extension base="Base"><xs:group ref="REF"/></xs:extension></xs:complexContent></xs:complexType>`,
+  ],
+  [
+    "the sequence of a complexContent extension",
+    `<xs:complexType name="Base"/>
+     <xs:complexType name="Derived"><xs:complexContent><xs:extension base="Base"><xs:sequence><xs:group ref="REF"/></xs:sequence></xs:extension></xs:complexContent></xs:complexType>`,
+  ],
+  [
+    "the choice of a complexContent extension",
+    `<xs:complexType name="Base"/>
+     <xs:complexType name="Derived"><xs:complexContent><xs:extension base="Base"><xs:choice><xs:group ref="REF"/></xs:choice></xs:extension></xs:complexContent></xs:complexType>`,
+  ],
+  [
+    "a complexContent restriction",
+    `<xs:complexType name="Derived"><xs:complexContent><xs:restriction base="xs:anyType"><xs:group ref="REF"/></xs:restriction></xs:complexContent></xs:complexType>`,
+  ],
+  [
+    "the sequence of a complexContent restriction",
+    `<xs:complexType name="Derived"><xs:complexContent><xs:restriction base="xs:anyType"><xs:sequence><xs:group ref="REF"/></xs:sequence></xs:restriction></xs:complexContent></xs:complexType>`,
+  ],
+  [
+    "the choice of a complexContent restriction",
+    `<xs:complexType name="Derived"><xs:complexContent><xs:restriction base="xs:anyType"><xs:choice><xs:group ref="REF"/></xs:choice></xs:restriction></xs:complexContent></xs:complexType>`,
+  ],
+  [
+    "a local element in the sequence of a complexType",
+    `<xs:complexType name="T"><xs:sequence>${LOCAL_ELEMENT_WITH_REF}</xs:sequence></xs:complexType>`,
+  ],
+  [
+    "a local element in the choice of a complexType",
+    `<xs:complexType name="T"><xs:choice>${LOCAL_ELEMENT_WITH_REF}</xs:choice></xs:complexType>`,
+  ],
+  [
+    "a local element in a choice nested in a sequence",
+    `<xs:complexType name="T"><xs:sequence><xs:choice>${LOCAL_ELEMENT_WITH_REF}</xs:choice></xs:sequence></xs:complexType>`,
+  ],
+  [
+    "a local element in the all of a complexType",
+    `<xs:complexType name="T"><xs:all>${LOCAL_ELEMENT_WITH_REF}</xs:all></xs:complexType>`,
+  ],
+  [
+    "a local element in the sequence of a complexContent extension",
+    `<xs:complexType name="Base"/>
+     <xs:complexType name="Derived"><xs:complexContent><xs:extension base="Base"><xs:sequence>${LOCAL_ELEMENT_WITH_REF}</xs:sequence></xs:extension></xs:complexContent></xs:complexType>`,
+  ],
+  [
+    "a local element in the choice of a complexContent extension",
+    `<xs:complexType name="Base"/>
+     <xs:complexType name="Derived"><xs:complexContent><xs:extension base="Base"><xs:choice>${LOCAL_ELEMENT_WITH_REF}</xs:choice></xs:extension></xs:complexContent></xs:complexType>`,
+  ],
+  [
+    "a local element in the all of a complexContent extension",
+    `<xs:complexType name="Base"/>
+     <xs:complexType name="Derived"><xs:complexContent><xs:extension base="Base"><xs:all>${LOCAL_ELEMENT_WITH_REF}</xs:all></xs:extension></xs:complexContent></xs:complexType>`,
+  ],
+  [
+    "a local element in the sequence of a complexContent restriction",
+    `<xs:complexType name="Derived"><xs:complexContent><xs:restriction base="xs:anyType"><xs:sequence>${LOCAL_ELEMENT_WITH_REF}</xs:sequence></xs:restriction></xs:complexContent></xs:complexType>`,
+  ],
+  [
+    "a local element in the choice of a complexContent restriction",
+    `<xs:complexType name="Derived"><xs:complexContent><xs:restriction base="xs:anyType"><xs:choice>${LOCAL_ELEMENT_WITH_REF}</xs:choice></xs:restriction></xs:complexContent></xs:complexType>`,
+  ],
+  [
+    "a local element in the all of a complexContent restriction",
+    `<xs:complexType name="Derived"><xs:complexContent><xs:restriction base="xs:anyType"><xs:all>${LOCAL_ELEMENT_WITH_REF}</xs:all></xs:restriction></xs:complexContent></xs:complexType>`,
+  ],
+  [
+    "a local element inside a top-level element",
+    `<xs:element name="root"><xs:complexType><xs:sequence>${LOCAL_ELEMENT_WITH_REF}</xs:sequence></xs:complexType></xs:element>`,
+  ],
+  [
+    "the choice of another group",
+    `<xs:group name="Combined"><xs:choice><xs:group ref="REF"/></xs:choice></xs:group>`,
+  ],
+  [
+    "a local element in the sequence of another group",
+    `<xs:group name="Combined"><xs:sequence>${LOCAL_ELEMENT_WITH_REF}</xs:sequence></xs:group>`,
+  ],
+  [
+    "a local element in the all of another group",
+    `<xs:group name="Combined"><xs:all>${LOCAL_ELEMENT_WITH_REF}</xs:all></xs:group>`,
+  ],
+];
 
 describe("Group Validators", () => {
   let schemaObj: schema;
@@ -809,5 +934,194 @@ describe("Group Validators", () => {
       expect(result.error).toContain("Cannot use ref, minOccurs, or maxOccurs when modifying a group definition");
     });
   });
+  describe("validateRemoveGroup (references in all places of the schema)", () => {
+    test.each(REFERENCE_PLACES)("should reject removing a group that is referenced in %s", (_, body) => {
+      const command: RemoveGroupCommand = {
+        type: "removeGroup",
+        payload: { groupId: "/group:CommonGroup" },
+      };
+
+      const result = validateRemoveGroup(command, schemaWithGroups(body.replace(/REF/g, "CommonGroup")));
+      expectInvalid(result);
+      expect(result.error).toBe("Group is still referenced and cannot be removed: CommonGroup");
+    });
+
+    test.each(REFERENCE_PLACES)("should accept removing a group when only another group is referenced in %s", (_, body) => {
+      const command: RemoveGroupCommand = {
+        type: "removeGroup",
+        payload: { groupId: "/group:CommonGroup" },
+      };
+
+      const result = validateRemoveGroup(command, schemaWithGroups(body.replace(/REF/g, "OtherGroup")));
+      expect(result.valid).toBe(true);
+    });
+  });
+
+  describe("group references in compositors", () => {
+    /** A complexType whose sequence references `CommonGroup` and `OtherGroup`, in this order. */
+    const TWO_REFS = `<xs:complexType name="T"><xs:sequence><xs:group ref="CommonGroup"/><xs:group ref="OtherGroup"/></xs:sequence></xs:complexType>`;
+
+    test("should accept removing a reference identified by name only", () => {
+      const command: RemoveGroupCommand = {
+        type: "removeGroup",
+        payload: { groupId: "/complexType:T/sequence/groupRef:OtherGroup" },
+      };
+
+      const result = validateRemoveGroup(command, schemaWithGroups(TWO_REFS));
+      expect(result.valid).toBe(true);
+    });
+
+    test("should accept removing a reference identified by position only", () => {
+      const command: RemoveGroupCommand = {
+        type: "removeGroup",
+        payload: { groupId: "/complexType:T/sequence/groupRef[1]" },
+      };
+
+      const result = validateRemoveGroup(command, schemaWithGroups(TWO_REFS));
+      expect(result.valid).toBe(true);
+    });
+
+    test("should reject removing a reference at a position after the last one", () => {
+      const command: RemoveGroupCommand = {
+        type: "removeGroup",
+        payload: { groupId: "/complexType:T/sequence/groupRef[2]" },
+      };
+
+      const result = validateRemoveGroup(command, schemaWithGroups(TWO_REFS));
+      expectInvalid(result);
+      expect(result.error).toBe("GroupRef not found: /complexType:T/sequence/groupRef[2]");
+    });
+
+    test("should reject removing a reference whose ID has neither name nor position", () => {
+      const command: RemoveGroupCommand = {
+        type: "removeGroup",
+        payload: { groupId: "/complexType:T/sequence/groupRef" },
+      };
+
+      const result = validateRemoveGroup(command, schemaWithGroups(TWO_REFS));
+      expectInvalid(result);
+      expect(result.error).toBe("GroupRef not found: /complexType:T/sequence/groupRef");
+    });
+
+    test("should reject removing a reference ID without a parent", () => {
+      const command: RemoveGroupCommand = {
+        type: "removeGroup",
+        payload: { groupId: "/groupRef:CommonGroup[0]" },
+      };
+
+      const result = validateRemoveGroup(command, schemaWithGroups(TWO_REFS));
+      expectInvalid(result);
+      expect(result.error).toBe("Invalid groupRef ID: /groupRef:CommonGroup[0]");
+    });
+
+    test("should reject modifying a reference that is not in the sequence", () => {
+      const command: ModifyGroupCommand = {
+        type: "modifyGroup",
+        payload: { groupId: "/complexType:T/sequence/groupRef:Missing[0]", ref: "OtherGroup" },
+      };
+
+      const result = validateModifyGroup(command, schemaWithGroups(TWO_REFS));
+      expectInvalid(result);
+      expect(result.error).toBe("GroupRef not found: /complexType:T/sequence/groupRef:Missing[0]");
+    });
+
+    test("should reject modifying a reference ID without a parent", () => {
+      const command: ModifyGroupCommand = {
+        type: "modifyGroup",
+        payload: { groupId: "/groupRef:CommonGroup[0]", ref: "OtherGroup" },
+      };
+
+      const result = validateModifyGroup(command, schemaWithGroups(TWO_REFS));
+      expectInvalid(result);
+      expect(result.error).toBe("Invalid groupRef ID: /groupRef:CommonGroup[0]");
+    });
+
+    test("should reject modifying a reference whose parent does not exist", () => {
+      const command: ModifyGroupCommand = {
+        type: "modifyGroup",
+        payload: { groupId: "/complexType:Missing/sequence/groupRef:CommonGroup[0]", ref: "OtherGroup" },
+      };
+
+      const result = validateModifyGroup(command, schemaWithGroups(TWO_REFS));
+      expectInvalid(result);
+      expect(result.error).toBe("Parent node not found: /complexType:Missing/sequence");
+    });
+
+    test("should reject a new ref that is not a valid XML name", () => {
+      const command: ModifyGroupCommand = {
+        type: "modifyGroup",
+        payload: { groupId: "/complexType:T/sequence/groupRef:CommonGroup[0]", ref: "123-invalid" },
+      };
+
+      const result = validateModifyGroup(command, schemaWithGroups(TWO_REFS));
+      expectInvalid(result);
+      expect(result.error).toBe("Group ref must be a valid XML name");
+    });
+  });
+
+  describe("parents and content models", () => {
+    test("should reject a group reference directly in an element", () => {
+      const command: AddGroupCommand = {
+        type: "addGroup",
+        payload: { ref: "CommonGroup", parentId: "/element:root" },
+      };
+
+      const result = validateAddGroup(command, schemaWithGroups(`<xs:element name="root" type="xs:string"/>`));
+      expectInvalid(result);
+      expect(result.error).toBe("Cannot add group ref to parent type: topLevelElement");
+    });
+
+    test("should reject a group reference in an all, which XML Schema 1.0 does not allow", () => {
+      const command: AddGroupCommand = {
+        type: "addGroup",
+        payload: { ref: "CommonGroup", parentId: "/complexType:T/all" },
+      };
+
+      const result = validateAddGroup(command, schemaWithGroups(`<xs:complexType name="T"><xs:all/></xs:complexType>`));
+      expectInvalid(result);
+      expect(result.error).toBe("Cannot add group ref to parent type: all");
+    });
+
+    test("should reject a definition without groupName and ref", () => {
+      const command: AddGroupCommand = {
+        type: "addGroup",
+        payload: { contentModel: "sequence" },
+      };
+
+      const result = validateAddGroup(command, schemaObj);
+      expectInvalid(result);
+      expect(result.error).toBe("Group name must be a valid XML name");
+    });
+
+    test("should reject a definition with a content model other than sequence, choice or all", () => {
+      // eslint-disable-next-line no-restricted-syntax -- an invalid content model, as the webview could send it, which TypeScript does not allow
+      const command = { type: "addGroup", payload: { groupName: "NewGroup", contentModel: "simpleContent" } } as unknown as AddGroupCommand;
+
+      const result = validateAddGroup(command, schemaObj);
+      expectInvalid(result);
+      expect(result.error).toBe("Content model must be one of: sequence, choice, all");
+    });
+
+    test("should reject renaming a definition to an invalid XML name", () => {
+      const command: ModifyGroupCommand = {
+        type: "modifyGroup",
+        payload: { groupId: "/group:CommonGroup", groupName: "123 bad" },
+      };
+
+      const result = validateModifyGroup(command, schemaWithGroups(""));
+      expectInvalid(result);
+      expect(result.error).toBe("Group name must be a valid XML name");
+    });
+
+    test("should reject changing a definition to a content model other than sequence, choice or all", () => {
+      // eslint-disable-next-line no-restricted-syntax -- an invalid content model, as the webview could send it, which TypeScript does not allow
+      const command = { type: "modifyGroup", payload: { groupId: "/group:CommonGroup", contentModel: "simpleContent" } } as unknown as ModifyGroupCommand;
+
+      const result = validateModifyGroup(command, schemaWithGroups(""));
+      expectInvalid(result);
+      expect(result.error).toBe("Content model must be one of: sequence, choice, all");
+    });
+  });
+
 });
 

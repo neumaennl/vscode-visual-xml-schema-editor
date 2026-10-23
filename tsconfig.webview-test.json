@@ -2,8 +2,9 @@
   "extends": "./tsconfig.webview.json",
   "compilerOptions": {
     "types": [
-      "jest",
-      "node"
+      "vitest/globals",
+      "node",
+      "vite/client"
     ]
   },
   "include": [

@@ -1,6 +1,6 @@
 import { XmlRoot, XmlElement, XmlAttribute, XmlAnyAttribute } from '@neumaennl/xmlbind-ts';
-import { annotationType } from './annotationType';
-import { narrowMaxMin } from './narrowMaxMin';
+import { annotationType } from './annotationType.js';
+import { narrowMaxMin } from './narrowMaxMin.js';
 /**
  * Only elements allowed inside
  */

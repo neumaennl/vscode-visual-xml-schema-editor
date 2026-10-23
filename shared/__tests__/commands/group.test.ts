@@ -9,7 +9,7 @@ import {
   AddAttributeGroupCommand,
   RemoveAttributeGroupCommand,
   ModifyAttributeGroupCommand,
-} from "../../commands/group";
+} from "../../commands/group.js";
 
 describe("Group Commands", () => {
   test("AddGroupCommand should have correct structure", () => {

@@ -19,7 +19,8 @@ export default defineConfig({
   mocha: {
     timeout: 20000,
     // The file for `--reporter json`, which CI uses for its job summary (see ci.yml).
-    // Mocha has only one reporter, so the default one is not set here.
+    // No reporter is set here: it would override `--reporter` from the command line,
+    // both CI's and the one the Extension Test Runner uses for the Testing view.
     reporterOptions: { output: join(root, "test-results/extension-host.json") },
   },
 });

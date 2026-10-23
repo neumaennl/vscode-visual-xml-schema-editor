@@ -34,6 +34,11 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: "npm"
+          # Writes the auth line for GitHub Packages, which reads NODE_AUTH_TOKEN, into
+          # a user npmrc. The repository's .npmrc has none, because Dependabot would
+          # send its ${NODE_AUTH_TOKEN} literally instead of its own credential.
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@neumaennl"
 
       - name: Check that Node and @types match the VS Code version
         run: npm run vscode:check

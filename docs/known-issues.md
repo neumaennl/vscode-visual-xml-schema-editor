@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-23T13:05:56Z }
-verified: { by: human:neumaennl, at: 2026-10-23T13:09:58Z }
+generated: { by: human:neumaennl, at: 2026-10-23T13:14:01Z }
+verified: { by: human:neumaennl, at: 2026-10-23T13:24:59Z }
 ---
 
 # Purpose
@@ -369,14 +369,6 @@ Effort:
 - **Description:** Some helpers exist as copies in several test files, against the conventions in [Testing](testing.md#helper-functions): `emptySchema()` is identical in three executor tests, `schemaWith(body)` is in three (once with line breaks around the body), the XML constants `schemaWithAnnotationXml` and `schemaWithTwoAnnotationsXml` are in both the annotation validator and executor tests, and the stubs of the VS Code objects for `SchemaEditorProvider` are built separately in `webviewProvider.test.ts` and `pipeline.workspaceEdit.test.ts`. The two helper modules are named `testHelpers.ts` and `svgTestUtils.ts` instead of `<topic>TestHelpers.ts`. The fix is to move the copies into helper modules and rename the two modules. This is planned for Phase 9 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340), on the editor branch, which has more of these tests. Moving the inline XML is a separate, larger task (see [Test XML is inline instead of in `test-resources`](#test-xml-is-inline-instead-of-in-test-resources)).
 - **GitHub issue:** none
 
-## CI skips pull requests into other branches
-
-- **Location:** `.github/workflows/ci.yml`
-- **Severity:** Low
-- **Effort:** S
-- **Description:** The workflow runs only for pushes and pull requests to `main` and `modernization`, so pull requests into feature branches such as `copilot/add-editor-capabilities` are not checked. See [Build and packaging](build-and-packaging.md#ci).
-- **GitHub issue:** none
-
 ## Mocha brings dependencies with known vulnerabilities
 
 - **Location:** `package.json` (`@vscode/test-cli`)
@@ -500,6 +492,14 @@ Effort:
 - **Severity:** Low
 - **Effort:** L
 - **Description:** The executors rely on the validators: `CommandProcessor` only runs an executor after the validator has accepted the command, and the executors do not repeat the validators' checks, which is intended. But when an executor cannot do what it is supposed to do, for example because the node to change does not exist, it should throw an error that says so. Instead, a missing target mostly changes nothing, so the command reports success without an effect; only some commands that address an entry by an index that is too large cause a `TypeError` such as "Cannot read properties of undefined": removing or modifying an import, modifying an include, and some annotation and documentation commands. A missing parent changes nothing for elements, attributes and group references, but causes a `TypeError` for anonymous types, attribute group references, annotations and documentation. Their TSDoc nevertheless says "@throws Error if … not found". This only shows when a validator and its executor disagree, which is then hard to notice. The fix is a meaningful error in every executor where it cannot find its target or its parent, without repeating the other checks of the validators. It is done on the editor branch, which rewrites many executors.
+- **GitHub issue:** none
+
+## The extension host is not bundled
+
+- **Location:** `tsconfig.extension.json` (build of `out/`), `package.json` (runtime dependencies)
+- **Severity:** Low
+- **Effort:** L
+- **Description:** `tsc` compiles the extension host file by file into `out/`, and `vsce` packages the runtime dependencies from `node_modules/` as they are. The VSIX therefore contains about 270 JavaScript files: about 135 from `out/`, 99 of them the generated schema classes, and about 140 from `node_modules/`, mainly `@neumaennl/xmlbind-ts` and `fast-xml-parser`, including `commander`, which `xmlbind-ts` only needs for its `xsd2ts` command line. `vsce package` warns about this in every CI run ("This extension consists of … files, out of which … are JavaScript files. For performance reasons, you should bundle your extension"). Loading many files makes the activation slower, which happens when the first schema is opened in the visual editor. The webview is already one bundle (see [Build and packaging](build-and-packaging.md#the-webview-build)). Bundling the extension host, for example with Vite, which the project already uses, would put it into one file; it also affects the source maps, `package:verify`, the staging of the tests in the extension host, the watch task and the launch configurations, and has to keep the legacy decorators and `reflect-metadata` working.
 - **GitHub issue:** none
 
 # Documentation

@@ -16,5 +16,11 @@ export default defineConfig({
   extensionDevelopmentPath: join(root, ".vscode-test/extension"),
   workspaceFolder: join(root, ".vscode-test/workspace"),
   launchArgs: ["--disable-extensions"],
-  mocha: { timeout: 20000 },
+  mocha: {
+    timeout: 20000,
+    // The file for `--reporter json`, which CI uses for its job summary (see ci.yml).
+    // No reporter is set here: it would override `--reporter` from the command line,
+    // both CI's and the one the Extension Test Runner uses for the Testing view.
+    reporterOptions: { output: join(root, "test-results/extension-host.json") },
+  },
 });

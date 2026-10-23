@@ -4,8 +4,8 @@ title: Testing
 description: How the extension is tested - running the tests and the type check, the four Vitest projects, mocks and helpers, conventions for tests, mocks, helper functions and helper classes, which tests to write for typical changes, coverage, CI, the smoke tests in the extension host with a mock webview, and how the current tests compare with the testing strategy of ADR 001.
 tags: [testing, vitest, mocks, coverage, ci, conventions]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-23T13:05:56Z }
-verified: { by: human:neumaennl, at: 2026-10-23T13:09:58Z }
+generated: { by: human:neumaennl, at: 2026-10-23T13:24:59Z }
+verified: { by: human:neumaennl, at: 2026-10-23T13:24:59Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -189,15 +189,16 @@ There are no helper classes in the tests today. Factory functions and plain obje
 
 # Coverage
 
-The coverage report (`@vitest/coverage-v8`) includes all TypeScript files in `shared/`, `src/` and `webview-src/` except type declarations, generated classes (`shared/generated/`), test files, `__tests__` folders and `__mocks__` folders. The scripts in `scripts/` are not part of it. Files that contain only types, such as `webview-src/webviewTypes.ts`, appear with no statements and do not change the totals. CI writes the current totals to the job summary (see [CI](#ci)).[^vitest-config]
+The coverage report (`@vitest/coverage-v8`) includes all TypeScript files in `shared/`, `src/` and `webview-src/` except type declarations, generated classes (`shared/generated/`), test files, and `__tests__`, `__mocks__` and `__test-utils__` folders. The scripts in `scripts/` are not part of it. Files that contain only types, such as `webview-src/webviewTypes.ts`, appear with no statements and do not change the totals. CI shows the coverage report in the job summary and on pull requests (see [CI](#ci)).[^vitest-config]
 
-No threshold is enforced; the goal is more than 80% for business logic.
+The thresholds are 80% for lines, statements, functions and branches (`coverage.thresholds` in `vitest.config.ts`). A run with coverage below one of them fails, also in CI. The editor branch raises them to 85% (Phase 9 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340)). New tests describe the intended behavior and only use input that can reach the code in real use, for example nothing that a validator would already reject before an executor runs.
 
 # CI
 
-The workflow `ci.yml` runs on pushes and pull requests to `main` and `modernization` with the Node version from `.nvmrc`. It first checks that this version and the `@types` packages match the lowest supported VS Code version, then installs the dependencies and runs ESLint. It builds the extension once, by packaging it, and checks that the VSIX loads. Then it runs the type check and the Vitest tests with coverage, and the [tests in the extension host](#tests-in-the-extension-host) on the packaged build, with a virtual display (`xvfb-run`) and the VS Code build from the cache. It runs the steps of `npm test` and `npm run test:extension-host` separately, because their `pretest` scripts would compile again (see [Build and packaging](build-and-packaging.md#ci)).[^ci]
+The workflow `ci.yml` runs on pushes to `main` and `modernization` and on every pull request, with the Node version from `.nvmrc`. It first checks that this version and the `@types` packages match the lowest supported VS Code version, then installs the dependencies and runs ESLint. It builds the extension once, by packaging it, and checks that the VSIX loads. Then it runs the type check and the Vitest tests with coverage, and the [tests in the extension host](#tests-in-the-extension-host) on the packaged build, with a virtual display (`xvfb-run`) and the VS Code build from the cache. It runs the steps of `npm test` and `npm run test:extension-host` separately, because their `pretest` scripts would compile again (see [Build and packaging](build-and-packaging.md#ci)).[^ci]
 
-- **Report.** The job summary shows the coverage totals and, as "Vitest", the test report that `dorny/test-reporter` creates from the JUnit file: the tests per file, and for a failing test its message.
+- **Report.** The job summary has two sections with a title each, "Vitest" and "Extension host", each with a test report that `dorny/test-reporter` creates (`report-title`); the coverage report follows the Vitest report. "Vitest" comes from the JUnit file, with the tests per file, and "Extension host" from the JSON file that Mocha's `json` reporter writes in CI (see [Build and packaging](build-and-packaging.md#ci)). For a failing test, both show its message. `dorny/test-reporter` writes them into the job summary of the run (`use-actions-summary`, its default since version 2), not as checks of their own.
+- **Coverage.** `davelosert/vitest-coverage-report-action` shows the totals against the thresholds, which it reads from `vitest.config.ts` (set explicitly with `vite-config-path`, because otherwise it may pick `vite.config.ts`), and the coverage of the files changed in a pull request, with their uncovered lines. On pull requests from this repository it also keeps one comment with this report up to date; pull requests from forks get none, because their workflow runs have no write access. For the files of a pull request, Vitest writes the coverage reporter `json` (`coverage/coverage-final.json`) besides `json-summary`.[^vitest-config]
 - **Annotations.** In GitHub Actions, Vitest also adds its `github-actions` reporter, which marks the line of each failing test in the run and in the changed files of a pull request. Its own job summary is off, because the report step writes one.[^vitest-config]
 
 On `copilot/add-editor-capabilities`, the workflow runs only for `main` and has no packaging steps.
@@ -227,7 +228,7 @@ ADR 001 plans six levels of testing. The current state:[^adr-001]
 | End-to-end tests (Playwright or Selenium) | None. Planned on the editor branch ([#377](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/377)). |
 | Performance tests | None. |
 | Manual tests | No defined process. |
-| Regression tests (CI on every commit) | CI runs lint, build, type check and all tests on pushes and pull requests to `main` and `modernization`. |
+| Regression tests (CI on every commit) | CI runs lint, build, type check and all tests, including the tests in the extension host, on pushes to `main` and `modernization` and on every pull request. |
 
 [^manifest]: Extension manifest (test scripts)
 

@@ -43,9 +43,12 @@ export default defineConfig({
         "**/generated/**",
         "**/__tests__/**",
         "**/__mocks__/**",
+        "**/__test-utils__/**",
         "**/*.test.ts",
       ],
-      reporter: ["text", "json-summary", "html"],
+      reporter: ["text", "json-summary", "json", "html"],
+      // A run below these values fails; the editor branch raises them to 85% (Phase 9 of #340).
+      thresholds: { lines: 80, statements: 80, functions: 80, branches: 80 },
     },
     projects: [
       {

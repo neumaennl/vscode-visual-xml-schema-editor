@@ -3,6 +3,8 @@ name: CI
 permissions:
   checks: write
   packages: read
+  # For the coverage comment on pull requests.
+  pull-requests: write
 
 env:
   NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -75,19 +77,8 @@ jobs:
           npm run stage:extension-host
           xvfb-run -a npx vscode-test --reporter json
 
-      - name: Check if JUnit report exists
-        if: always()
-        id: junit-check
-        shell: bash
-        run: |
-          if [[ -f "test-results/vitest-junit.xml" ]]; then
-            echo "exists=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "exists=false" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Publish JUnit test report to the job summary
-        if: always() && steps.junit-check.outputs.exists == 'true'
+        if: always() && hashFiles('test-results/vitest-junit.xml') != ''
         uses: dorny/test-reporter@v3
         with:
           name: Vitest
@@ -96,24 +87,17 @@ jobs:
           # Vitest writes JUnit XML in the format of jest-junit, which this parser reads.
           reporter: jest-junit
 
-      # After the Vitest report, so that the coverage appears under its title.
-      - name: Summarize coverage in job summary
-        if: always()
-        run: |
-          node <<'EOF'
-          const fs = require('fs');
-          const p = 'coverage/coverage-summary.json';
-          const out = process.env.GITHUB_STEP_SUMMARY;
-          if (!out) { console.log('GITHUB_STEP_SUMMARY not set; skipping summary'); process.exit(0); }
-          if (fs.existsSync(p)) {
-            const d = JSON.parse(fs.readFileSync(p));
-            let summary = '## Coverage\n\n| Metric | % |\n|---|---|\n';
-            for (const k in d.total) {
-              summary += `| ${k} | ${d.total[k].pct}% |\n`;
-            }
-            fs.appendFileSync(out, summary);
-          }
-          EOF
+      # After the Vitest report, so that the coverage appears under its title. On pull requests
+      # from this repository it also keeps one comment with the report up to date; pull requests
+      # from forks get no write access, so they are left out.
+      - name: Report coverage
+        if: always() && hashFiles('coverage/coverage-summary.json') != ''
+        uses: davelosert/vitest-coverage-report-action@v2
+        with:
+          # Without this, the action reads whichever config file it finds first,
+          # possibly vite.config.ts, which has no thresholds.
+          vite-config-path: vitest.config.ts
+          comment-on: ${{ github.event.pull_request.head.repo.full_name == github.repository && 'pr' || 'none' }}
 
       - name: Publish extension-host test report to the job summary
         if: always() && hashFiles('test-results/extension-host.json') != ''

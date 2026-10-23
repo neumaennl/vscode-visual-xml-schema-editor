@@ -3,8 +3,9 @@ type: Build Process
 title: Build and packaging
 description: How the extension is built, run, linted, packaged and checked - the build outputs and tsconfig files, the npm scripts, the scripts in TypeScript, running it in VS Code, the VSIX and its check, the generated schema classes, dependencies and the Node version, ESLint, CI, and planned changes.
 tags: [build, packaging, vsix, vite, typescript, eslint, ci, dependencies]
-status: draft
-generated: { by: human:neumaennl, at: 2026-10-23T11:36:43Z }
+status: stable
+generated: { by: human:neumaennl, at: 2026-10-23T13:24:59Z }
+verified: { by: human:neumaennl, at: 2026-10-23T13:24:59Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -222,9 +223,9 @@ The workflow `ci.yml` runs on pushes to `main` and `modernization` and on every 
 2. `npm ci`, with `NODE_AUTH_TOKEN` for GitHub Packages.
 3. `npm run lint`.
 4. `npm run package`, the only build: `vscode:prepublish` deletes `out/` and `webview/` and compiles both parts, including the type check of the webview. Then `npm run package:verify`.
-5. `npm run typecheck`, and the Vitest tests with coverage (`npx vitest run --coverage`). Vitest runs on the sources and needs no build; `npm test` is not used, because its `pretest` would compile again (see [Testing](testing.md#ci)).
+5. `npm run typecheck`, and the Vitest tests with coverage (`npx vitest run --coverage`), which fail if a coverage metric is below the threshold in `vitest.config.ts` (see [Testing](testing.md#coverage)). Vitest runs on the sources and needs no build; `npm test` is not used, because its `pretest` would compile again (see [Testing](testing.md#ci)).
 6. The [tests in the extension host](testing.md#tests-in-the-extension-host) on the build from step 4: `npm run stage:extension-host` compiles only the tests and assembles `.vscode-test/`, and `xvfb-run -a npx vscode-test --reporter json` runs them, with a virtual display because the runner has none. `npm run test:extension-host` is not used, because its `pretest` would compile the extension again. Mocha's `json` reporter writes `test-results/extension-host.json`, the output file set in `.vscode-test.mjs`. Mocha runs only one reporter at a time, so the test names are then missing from the log. `.vscode-test.mjs` sets no reporter itself, because one there would override `--reporter` from the command line; so `npm run test:extension-host` uses Mocha's default reporter, and the Testing view uses the Extension Test Runner's own. `actions/cache` keeps the downloaded VS Code (`.vscode-test/vscode-linux-x64-<version>/`) under a key with the version from `engines.vscode`, so CI downloads it only when the version changes, or when GitHub has removed the cache after seven days without use.
-7. The job summary gets two sections with a title each: "Vitest", with its test report and the coverage totals, and "Extension host", with its test report. Vitest marks the lines of failing tests.
+7. The job summary gets two sections with a title each: "Vitest", with its test report and the coverage report, and "Extension host", with its test report. Vitest marks the lines of failing tests. The test reports come from `dorny/test-reporter`, the coverage report from `davelosert/vitest-coverage-report-action`, which also keeps one comment with the coverage report up to date on pull requests from this repository; for that the workflow has the permission `pull-requests: write`. Pull requests from forks get no write access, so they get no comment. Each report step only runs if its input file exists (`hashFiles()`), for example not when an earlier step failed before the tests ran. The coverage report is also missing when a Vitest test fails, because Vitest then writes no coverage files.
 
 For a pull request, GitHub runs the workflow as it is in the merge of the pull request into its target branch. Pull requests into `copilot/add-editor-capabilities` are therefore only checked once that branch has this workflow, after `modernization` is merged into it (Phase 9 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340)).
 

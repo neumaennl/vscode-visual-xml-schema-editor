@@ -14,7 +14,13 @@ The documentation in [`docs/`](docs/index.md) describes the editor branch.
 ## Setup
 
 1. Install the Node version in `.nvmrc`, for example with `nvm install`, which also switches to it. nvm-windows does not read `.nvmrc`; there, run `nvm install <version>` and `nvm use <version>` with the version from the file.
-2. Set the environment variable `NODE_AUTH_TOKEN` to a GitHub token that can read packages (a classic personal access token with the scope `read:packages`). The dependency `@neumaennl/xmlbind-ts` is published in GitHub Packages, and `npm` cannot install it without the token.
+2. The dependency `@neumaennl/xmlbind-ts` is published in GitHub Packages, and `npm` cannot install it without a GitHub token that can read packages (a classic personal access token with the scope `read:packages`). Add this line once to your user `~/.npmrc` (on Windows `%USERPROFILE%\.npmrc`); it only refers to the environment variable `NODE_AUTH_TOKEN` and contains no token:
+
+   ```
+   //npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
+   ```
+
+   Then set `NODE_AUTH_TOKEN` to the token, permanently or only for the npm commands that install packages, for example `NODE_AUTH_TOKEN=<token> npm ci`. The line is not in the repository's `.npmrc`, because Dependabot would send `${NODE_AUTH_TOKEN}` literally instead of its own credential.
 3. Run `npm ci`.
 4. Open the folder in VS Code and press F5 (launch configuration "Run Extension"). A second VS Code window opens with the extension loaded. In it, open an `.xsd` file, for example from `exampleFiles/`, with "Open With…" → "XML Schema Visual Editor".
 

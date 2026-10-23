@@ -4,8 +4,8 @@ title: Build and packaging
 description: How the extension is built, run, linted, packaged and checked - the build outputs and tsconfig files, the npm scripts, the scripts in TypeScript, running it in VS Code, the VSIX and its check, the generated schema classes, dependencies and the Node version, ESLint, CI, and planned changes.
 tags: [build, packaging, vsix, vite, typescript, eslint, ci, dependencies]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-23T13:43:22Z }
-verified: { by: human:neumaennl, at: 2026-10-23T13:59:46Z }
+generated: { by: human:neumaennl, at: 2026-10-23T18:12:38Z }
+verified: { by: human:neumaennl, at: 2026-10-23T18:20:38Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -179,11 +179,11 @@ The classes in `shared/generated/` describe XML Schema itself and are used to re
 
 # Dependencies and Node
 
-`@neumaennl/xmlbind-ts` is published in GitHub Packages. `.npmrc` takes all `@neumaennl` packages from `npm.pkg.github.com` and everything else from `registry.npmjs.org`, and reads the token from the environment variable `NODE_AUTH_TOKEN`. `npm install` and `npm ci` therefore need `NODE_AUTH_TOKEN` set to a GitHub token that can read packages; CI uses the workflow's `GITHUB_TOKEN`.[^npmrc-registries][^ci]
+`@neumaennl/xmlbind-ts` is published in GitHub Packages. `.npmrc` takes all `@neumaennl` packages from `npm.pkg.github.com` and everything else from `registry.npmjs.org`. The token comes from the user's npmrc, whose line `//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}` reads it from the environment variable `NODE_AUTH_TOKEN`; `npm install` and `npm ci` therefore need that line and `NODE_AUTH_TOKEN` set to a GitHub token that can read packages (see `CONTRIBUTING.md`). In CI, `actions/setup-node` writes the line (`registry-url`, `scope`), and `NODE_AUTH_TOKEN` is the workflow's `GITHUB_TOKEN`. The line is not in the repository's `.npmrc`: Dependabot takes the token of such a line literally, sends `${NODE_AUTH_TOKEN}` and drops its own credential for GitHub Packages, which it gets because the package grants this repository read access.[^npmrc-registries][^ci]
 
 The TypeScript version is 6.0, the last release on TypeScript's JavaScript codebase. TypeScript 7 is not used yet, because `typescript-eslint` supports TypeScript only below 6.1; support is expected with TypeScript 7.1. Dependabot has been told to ignore TypeScript 7.0.x.[^manifest]
 
-Dependabot opens pull requests for npm packages and GitHub Actions every day and groups the ESLint packages. It ignores minor and major updates of `@types/vscode` and `@types/node`, which follow the VS Code version (see below); patch updates within their `~` range are allowed. Dependabot reads its configuration only from the default branch `main`.[^dependabot]
+Dependabot opens pull requests for npm packages and GitHub Actions every day and groups the ESLint packages, and `vitest` with `@vitest/coverage-*`, which requires exactly the same `vitest` version. It ignores minor and major updates of `@types/vscode` and `@types/node`, which follow the VS Code version (see below); patch updates within their `~` range are allowed. Dependabot reads its configuration only from the default branch `main`.[^dependabot]
 
 `@vscode/test-cli`, which runs the tests in the extension host, still brings Mocha 11 with known vulnerabilities in two of its dependencies; they stay until a release with Mocha 12 is out (see [the known issue](known-issues.md#mocha-brings-dependencies-with-known-vulnerabilities)).
 
@@ -220,7 +220,7 @@ The script reads the GitHub API, `raw.githubusercontent.com`, the Electron relea
 The workflow `ci.yml` runs on pushes to `main` and on every pull request, whatever its target branch, on Ubuntu with the Node version from `.nvmrc`. A new push to a pull request cancels the run for the previous one; runs for pushes each have a concurrency group of their own, so none of them is cancelled or held back:[^ci]
 
 1. `npm run vscode:check`, which fails if `@types/vscode`, `@types/node` and `.nvmrc` don't match `engines.vscode` (see [VS Code and Node versions](#vs-code-and-node-versions)).
-2. `npm ci`, with `NODE_AUTH_TOKEN` for GitHub Packages.
+2. `npm ci`, with `NODE_AUTH_TOKEN` and the auth line that `actions/setup-node` writes for GitHub Packages.
 3. `npm run lint`.
 4. `npm run package`, the only build: `vscode:prepublish` deletes `out/` and `webview/` and compiles both parts, including the type check of the webview. Then `npm run package:verify`.
 5. `npm run typecheck`, and the Vitest tests with coverage (`npx vitest run --coverage`), which fail if a coverage metric is below the threshold in `vitest.config.ts` (see [Testing](testing.md#coverage)). Vitest runs on the sources and needs no build; `npm test` is not used, because its `pretest` would compile again (see [Testing](testing.md#ci)).

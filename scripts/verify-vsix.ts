@@ -1,8 +1,8 @@
 // Verifies that the packaged VSIX is self-contained: extracts it into a temp
 // directory (outside the repo, so the dev node_modules can't mask missing files)
-// and loads the extension entry point with the `vscode` module stubbed. The stub is
-// a package in the temp directory's node_modules/, where Node's normal lookup finds
-// it for `import` and `require()` alike; every other package must come from the VSIX.
+// and imports the extension entry point, an ES module, with the `vscode` module
+// stubbed. The stub is a package in the temp directory's node_modules/, where Node's
+// normal package lookup finds it; every other package must come from the VSIX.
 import { execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -11,15 +11,21 @@ import { pathToFileURL } from "node:url";
 
 /**
  * Source of the stand-in for the `vscode` module, which only exists inside VS Code:
- * an object that accepts any property access and call. It has no `then`, so that it
- * is not taken for a promise when a module that exposes it is awaited. CommonJS, so
- * that both `require()` and `import` can load it.
+ * an ES module whose default export accepts any property access and call. An ES
+ * module needs static export names, so the stub has no named exports, and
+ * `import * as vscode` yields only `default`, and `vscode.window` is `undefined`. The
+ * check therefore fails, although VS Code would load the extension, if a module
+ * uses such a value at the top level (for example `vscode.window.activeTextEditor`
+ * or `class X extends vscode.TreeItem`) or uses named imports such as
+ * `import { window } from "vscode"`. Uses inside functions are fine, because the
+ * check does not call them. The stub has no `then`, so that it is not taken for a
+ * promise; otherwise loading an extension in the tests, under Vitest, never finishes.
  */
 const VSCODE_STUB_SOURCE = `const stub = () =>
   new Proxy(function () {}, {
     get: (_, key) => (key === "then" ? undefined : key === "prototype" ? {} : stub()),
   });
-module.exports = stub();
+export default stub();
 `;
 
 /**
@@ -30,8 +36,8 @@ module.exports = stub();
 function addVscodeStub(dir: string): void {
   const stubDir = join(dir, "node_modules", "vscode");
   mkdirSync(stubDir, { recursive: true });
-  writeFileSync(join(stubDir, "package.json"), JSON.stringify({ name: "vscode", main: "index.cjs" }));
-  writeFileSync(join(stubDir, "index.cjs"), VSCODE_STUB_SOURCE);
+  writeFileSync(join(stubDir, "package.json"), JSON.stringify({ name: "vscode", type: "module", main: "index.js" }));
+  writeFileSync(join(stubDir, "index.js"), VSCODE_STUB_SOURCE);
 }
 
 /**
@@ -52,8 +58,8 @@ function extract(vsix: string, dir: string): void {
 }
 
 /**
- * Extracts a VSIX into a temporary folder and loads its entry point (an ES module or
- * CommonJS) with the `vscode` module stubbed.
+ * Extracts a VSIX into a temporary folder and imports its entry point, an ES module,
+ * with the `vscode` module stubbed.
  *
  * @param vsix - The VSIX file
  * @returns The entry point of the extension (`main` in its `package.json`)

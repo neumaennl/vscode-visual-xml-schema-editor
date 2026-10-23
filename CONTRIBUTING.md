@@ -8,7 +8,6 @@ Contributions are welcome: bug reports, ideas and pull requests. This file expla
 |---|---|
 | `main` | The current version: a viewer that shows XML Schema files as a diagram. |
 | `copilot/add-editor-capabilities` | The editor in development: it adds a palette, drag and drop and an editable property panel. **Base your work and pull requests on this branch.** |
-| `modernization` | Updates the tech stack ([#340](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340)) and is merged into the editor branch later. No contributions are needed there. |
 
 The documentation in [`docs/`](docs/index.md) describes the editor branch.
 

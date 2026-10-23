@@ -11,7 +11,7 @@ env:
 
 on:
   push:
-    branches: [ main, modernization ]
+    branches: [ main ]
   # All pull requests, whatever their target branch.
   pull_request:
 

@@ -4,8 +4,8 @@ title: Build and packaging
 description: How the extension is built, run, linted, packaged and checked - the build outputs and tsconfig files, the npm scripts, the scripts in TypeScript, running it in VS Code, the VSIX and its check, the generated schema classes, dependencies and the Node version, ESLint, CI, and planned changes.
 tags: [build, packaging, vsix, vite, typescript, eslint, ci, dependencies]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-23T13:24:59Z }
-verified: { by: human:neumaennl, at: 2026-10-23T13:24:59Z }
+generated: { by: human:neumaennl, at: 2026-10-23T13:43:22Z }
+verified: { by: human:neumaennl, at: 2026-10-23T13:59:46Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -79,7 +79,7 @@ sources:
 
 This document describes how the extension is built, run, linted, packaged and checked: which tools produce which output, what goes into the VSIX, and what CI does. How the tests are run and written is described in [Testing](testing.md).
 
-The packaging described here is the state after [#343](https://github.com/neumaennl/vscode-visual-xml-schema-editor/pull/343) on the branch `modernization`. The branch `copilot/add-editor-capabilities` does not have it yet (see [The editor branch](#the-editor-branch)).[^pr-343]
+The packaging described here is the state after [#343](https://github.com/neumaennl/vscode-visual-xml-schema-editor/pull/343) on `main`. The branch `copilot/add-editor-capabilities` does not have it yet (see [The editor branch](#the-editor-branch)).[^pr-343]
 
 # Build outputs
 
@@ -171,7 +171,7 @@ On `copilot/add-editor-capabilities`, packaging fails or produces a VSIX that do
 - The webview is still built with webpack, whose `performance` limits were raised to 1 MiB there; the size warning of the Vite build replaces them.
 - `@neumaennl/xmlbind-ts` 2.x is an ES module only, which the extension, itself an ES module, imports like any other module. VS Code runs ES modules in extensions from version 1.100 on, which ships Node 20.19; VS Code 1.74 ships Node 16.
 
-The fixes from #343 and #357, the Vite build from #371 and the module settings from #374 are applied when the editor branch and `modernization` are merged (Phase 9 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340)).[^pr-343][^issue-357][^issue-340]
+The fixes from #343 and #357, the Vite build from #371 and the module settings from #374 are applied when `main` is merged into the editor branch (Phase 9 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340)).[^pr-343][^issue-357][^issue-340]
 
 # Generated schema classes
 
@@ -217,7 +217,7 @@ The script reads the GitHub API, `raw.githubusercontent.com`, the Electron relea
 
 # CI
 
-The workflow `ci.yml` runs on pushes to `main` and `modernization` and on every pull request, whatever its target branch, on Ubuntu with the Node version from `.nvmrc`. A new push to a pull request cancels the run for the previous one; runs for pushes each have a concurrency group of their own, so none of them is cancelled or held back:[^ci]
+The workflow `ci.yml` runs on pushes to `main` and on every pull request, whatever its target branch, on Ubuntu with the Node version from `.nvmrc`. A new push to a pull request cancels the run for the previous one; runs for pushes each have a concurrency group of their own, so none of them is cancelled or held back:[^ci]
 
 1. `npm run vscode:check`, which fails if `@types/vscode`, `@types/node` and `.nvmrc` don't match `engines.vscode` (see [VS Code and Node versions](#vs-code-and-node-versions)).
 2. `npm ci`, with `NODE_AUTH_TOKEN` for GitHub Packages.
@@ -227,14 +227,13 @@ The workflow `ci.yml` runs on pushes to `main` and `modernization` and on every 
 6. The [tests in the extension host](testing.md#tests-in-the-extension-host) on the build from step 4: `npm run stage:extension-host` compiles only the tests and assembles `.vscode-test/`, and `xvfb-run -a npx vscode-test --reporter json` runs them, with a virtual display because the runner has none. `npm run test:extension-host` is not used, because its `pretest` would compile the extension again. Mocha's `json` reporter writes `test-results/extension-host.json`, the output file set in `.vscode-test.mjs`. Mocha runs only one reporter at a time, so the test names are then missing from the log. `.vscode-test.mjs` sets no reporter itself, because one there would override `--reporter` from the command line; so `npm run test:extension-host` uses Mocha's default reporter, and the Testing view uses the Extension Test Runner's own. `actions/cache` keeps the downloaded VS Code (`.vscode-test/vscode-linux-x64-<version>/`) under a key with the version from `engines.vscode`, so CI downloads it only when the version changes, or when GitHub has removed the cache after seven days without use.
 7. The job summary gets two sections with a title each: "Vitest", with its test report and the coverage report, and "Extension host", with its test report. Vitest marks the lines of failing tests. The test reports come from `dorny/test-reporter`, the coverage report from `davelosert/vitest-coverage-report-action`, which also keeps one comment with the coverage report up to date on pull requests from this repository; for that the workflow has the permission `pull-requests: write`. Pull requests from forks get no write access, so they get no comment. Each report step only runs if its input file exists (`hashFiles()`), for example not when an earlier step failed before the tests ran. The coverage report is also missing when a Vitest test fails, because Vitest then writes no coverage files.
 
-For a pull request, GitHub runs the workflow as it is in the merge of the pull request into its target branch. Pull requests into `copilot/add-editor-capabilities` are therefore only checked once that branch has this workflow, after `modernization` is merged into it (Phase 9 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340)).
+For a pull request, GitHub runs the workflow as it is in the merge of the pull request into its target branch. Pull requests into `copilot/add-editor-capabilities` are therefore only checked once that branch has this workflow, after `main` is merged into it (Phase 9 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340)).
 
 # Planned changes
 
-The [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340) changes the build in several phases:[^issue-340]
+The [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340) plans one more change to the build:[^issue-340]
 
 - Convert `eslint.config.mjs` to TypeScript as soon as ESLint can load a TypeScript configuration without an extra dependency (such as `jiti`) and without an unstable flag. Then the ESLint rule against `.js` and `.cjs` files also forbids `.mjs` files, with an exception for `.vscode-test.mjs`, which stays JavaScript because `vscode-test` only loads `.js`, `.cjs` and `.mjs` configurations. The goal is a repository without JavaScript files.
-- Phase 7 updates CI to the new tools.
 
 [^manifest]: Extension manifest (scripts, dependencies, engines)
 

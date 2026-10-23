@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-23T13:14:01Z }
-verified: { by: human:neumaennl, at: 2026-10-23T13:24:59Z }
+generated: { by: human:neumaennl, at: 2026-10-23T13:43:22Z }
+verified: { by: human:neumaennl, at: 2026-10-23T13:59:46Z }
 ---
 
 # Purpose
@@ -483,7 +483,7 @@ Effort:
 - **Location:** `shared/schemaUtils.ts` (`toArray()`) and its callers in `shared/`, `src/` and `webview-src/`
 - **Severity:** Low
 - **Effort:** L
-- **Description:** Before version 2.3, `unmarshal` returned a single object instead of a one-item array when a repeated element occurred only once, although the generated classes declare arrays (`element?: topLevelElement[]`). The code therefore reads every repeated child through `toArray()`, about 200 times in production code. Since `xmlbind-ts` 2.3, these fields are always arrays: one item for a single occurrence, and an empty array when the element is absent ([xmlbind-ts#261](https://github.com/neumaennl/xmlbind-ts/issues/261)). `toArray()` and the `Array.isArray(x) ? x : [x]` checks in `validationUtils.ts` no longer change anything for unmarshalled data. The cleanup removes them; code that builds schema objects itself, such as the executors, then has to assign arrays as well, and the generated properties are still declared optional. It is done on the editor branch, which has more of these calls, after `modernization` is merged into it (Phase 9 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340)).
+- **Description:** Before version 2.3, `unmarshal` returned a single object instead of a one-item array when a repeated element occurred only once, although the generated classes declare arrays (`element?: topLevelElement[]`). The code therefore reads every repeated child through `toArray()`, about 200 times in production code. Since `xmlbind-ts` 2.3, these fields are always arrays: one item for a single occurrence, and an empty array when the element is absent ([xmlbind-ts#261](https://github.com/neumaennl/xmlbind-ts/issues/261)). `toArray()` and the `Array.isArray(x) ? x : [x]` checks in `validationUtils.ts` no longer change anything for unmarshalled data. The cleanup removes them; code that builds schema objects itself, such as the executors, then has to assign arrays as well, and the generated properties are still declared optional. It is done on the editor branch, which has more of these calls, after `main` is merged into it (Phase 9 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340)).
 - **GitHub issue:** none
 
 ## Executors do nothing or fail with a TypeError instead of a meaningful error

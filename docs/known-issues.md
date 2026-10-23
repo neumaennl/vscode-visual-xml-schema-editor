@@ -4,7 +4,7 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: draft
-generated: { by: human:neumaennl, at: 2026-10-23T11:36:43Z }
+generated: { by: human:neumaennl, at: 2026-10-23T13:14:01Z }
 ---
 
 # Purpose
@@ -124,12 +124,12 @@ Effort:
 - **Description:** For `xs:complexContent` and `xs:simpleContent`, an `xs:extension` is processed with its attributes and compositors, but an `xs:restriction` is passed to the simple type function `processRestriction()`, which only reads facets. A complex type that restricts another one with complex content is therefore shown without children, and the attributes of both kinds of restriction are missing in the property panel. The function also sets `simpleTypeDerivationKind` on the complex type. The fix is to process restrictions of complex content like extensions (attributes and compositors), and to read the attributes of restrictions of simple content as well (see [Diagram rendering](diagram-rendering.md#from-schema-to-diagram-items)). See also [Diagram items copy values from the schema objects](#diagram-items-copy-values-from-the-schema-objects).
 - **GitHub issue:** none
 
-## Renames do not check for duplicate names
+## Renames and new references do not check for duplicates
 
-- **Location:** `src/commandValidators/elementValidators.ts` (`validateModifyElement()`), `src/commandValidators/typeValidators.ts` (`validateModifySimpleType()`, `validateModifyComplexType()`), `src/commandValidators/groupValidators.ts` (`validateModifyGroup()`)
+- **Location:** `src/commandValidators/elementValidators.ts` (`validateModifyElement()`, `validateModifyAttribute()`), `src/commandValidators/typeValidators.ts` (`validateModifySimpleType()`, `validateModifyComplexType()`), `src/commandValidators/groupValidators.ts` (`validateModifyGroup()`)
 - **Severity:** Medium
 - **Effort:** M
-- **Description:** The `add*` validators reject a name that already exists, but the `modify*` validators of the four renames that the property panel sends (element, simple type, complex type, group) only check that the new name is a valid XML name. Renaming the top-level element `a` to `b` while `b` exists is accepted and writes a schema with two top-level elements named `b`, which is invalid XSD; the same happens for types and groups. Because node IDs resolve to the first match, the two nodes can then no longer be told apart (see [Node IDs are ambiguous](#node-ids-are-ambiguous-and-have-many-special-cases)). `validateModifyAttributeGroup()` already has the check. The fix is the same check in the four validators as in the matching `add*` validators, skipped when the name does not change.
+- **Description:** The `add*` validators reject a name or reference that already exists, but the `modify*` validators of elements, attributes, simple types, complex types and groups only check that the new name or reference is valid. Renaming the top-level element `a` to `b` while `b` exists is accepted and writes a schema with two top-level elements named `b`, which is invalid XSD; the same happens for attributes, types and groups. Likewise, changing a local element or attribute into a reference that its parent already contains (for example a second `<xs:attribute ref="lang"/>` in the same complexType) is accepted, which `validateAddElement()` and `validateAddAttribute()` reject. Because node IDs resolve to the first match, the two nodes can then no longer be told apart (see [Node IDs are ambiguous](#node-ids-are-ambiguous-and-have-many-special-cases)). `validateModifyAttributeGroup()` already has the check for names. The fix is the same check in these validators as in the matching `add*` validators, skipped when the name or reference does not change.
 - **GitHub issue:** none
 
 ## Removing a simple or complex type does not check for references
@@ -384,6 +384,14 @@ Effort:
 - **Description:** The limits of 500 lines per file and 120 lines per function in the [development guidelines](development-guidelines.md#code-size) do not apply to tests for now. Many test files are longer than 500 lines, and the `describe` callbacks that contain the tests are usually longer than 120 lines. Applying the function limit to these callbacks makes little sense, but without any limit test files can grow without bound. The rule needs to be refined, for example with a higher file limit for tests, a limit for single tests instead of `describe` callbacks, or splitting test files by topic.
 - **GitHub issue:** none
 
+## Most test files use `it()` instead of `test()`
+
+- **Location:** 46 of the 62 Vitest test files, in `src/`, `shared/`, `webview-src/` and `scripts/`
+- **Severity:** Low
+- **Effort:** S
+- **Description:** The [test conventions](testing.md#files-and-structure) ask for `test("should …")`, but most Vitest test files use `it("should …")`. Vitest treats both the same, and no file mixes them, but the two styles make the tests look inconsistent, and new tests in these files follow the deviating style. The fix is to rename `it(` and `it.each(` to `test(` and `test.each(` in these files, and then to enable the ESLint rule `vitest/consistent-test-it` with `{ fn: "test", withinDescribe: "test" }` in `eslint.config.mjs`, so that ESLint enforces the style. This is planned for Phase 9 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340), on the editor branch, which has more of these tests.
+- **GitHub issue:** none
+
 ## Documentation in the diagram is cut off and hard to read
 
 - **Location:** `webview-src/diagram/TextRenderers.ts` (`renderDocumentation()`), `webview-src/diagram/DiagramBuilderHelpers.ts` (`extractDocumentation()`), `webview-src/diagram/DiagramLayout.ts`
@@ -475,6 +483,14 @@ Effort:
 - **Severity:** Low
 - **Effort:** L
 - **Description:** Before version 2.3, `unmarshal` returned a single object instead of a one-item array when a repeated element occurred only once, although the generated classes declare arrays (`element?: topLevelElement[]`). The code therefore reads every repeated child through `toArray()`, about 200 times in production code. Since `xmlbind-ts` 2.3, these fields are always arrays: one item for a single occurrence, and an empty array when the element is absent ([xmlbind-ts#261](https://github.com/neumaennl/xmlbind-ts/issues/261)). `toArray()` and the `Array.isArray(x) ? x : [x]` checks in `validationUtils.ts` no longer change anything for unmarshalled data. The cleanup removes them; code that builds schema objects itself, such as the executors, then has to assign arrays as well, and the generated properties are still declared optional. It is done on the editor branch, which has more of these calls, after `modernization` is merged into it (Phase 9 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340)).
+- **GitHub issue:** none
+
+## Executors do nothing or fail with a TypeError instead of a meaningful error
+
+- **Location:** `src/commandExecutors/`
+- **Severity:** Low
+- **Effort:** L
+- **Description:** The executors rely on the validators: `CommandProcessor` only runs an executor after the validator has accepted the command, and the executors do not repeat the validators' checks, which is intended. But when an executor cannot do what it is supposed to do, for example because the node to change does not exist, it should throw an error that says so. Instead, a missing target mostly changes nothing, so the command reports success without an effect; only some commands that address an entry by an index that is too large cause a `TypeError` such as "Cannot read properties of undefined": removing or modifying an import, modifying an include, and some annotation and documentation commands. A missing parent changes nothing for elements, attributes and group references, but causes a `TypeError` for anonymous types, attribute group references, annotations and documentation. Their TSDoc nevertheless says "@throws Error if … not found". This only shows when a validator and its executor disagree, which is then hard to notice. The fix is a meaningful error in every executor where it cannot find its target or its parent, without repeating the other checks of the validators. It is done on the editor branch, which rewrites many executors.
 - **GitHub issue:** none
 
 ## The extension host is not bundled

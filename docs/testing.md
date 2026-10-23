@@ -4,7 +4,7 @@ title: Testing
 description: How the extension is tested - running the tests and the type check, the four Vitest projects, mocks and helpers, conventions for tests, mocks, helper functions and helper classes, which tests to write for typical changes, coverage, CI, the smoke tests in the extension host with a mock webview, and how the current tests compare with the testing strategy of ADR 001.
 tags: [testing, vitest, mocks, coverage, ci, conventions]
 status: draft
-generated: { by: human:neumaennl, at: 2026-10-23T11:36:43Z }
+generated: { by: human:neumaennl, at: 2026-10-23T13:14:01Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -152,7 +152,7 @@ Existing tests that do not follow these conventions yet are listed in [Known iss
 - A test file tests one feature, usually one module. Test cases for a feature are not spread over several files, and no two test cases test the same thing.
 - Unit tests sit next to the source file and have its name with `.test.ts`. Integration tests sit in the `__tests__` folder of the part (`shared/`, `src/`, `webview-src/`, `scripts/`), in subfolders that mirror the source folders if needed.
 - Files that several tests use sit in the `test-resources` folder in `__tests__`: larger XML snippets in `src/__tests__/test-resources` (see [Known issues](known-issues.md#test-xml-is-inline-instead-of-in-test-resources)), the VSIX files of the script tests in `scripts/__tests__/test-resources`.
-- A file has a `describe` block for the feature and nested blocks for methods or cases. Test cases use `it("should …")` and follow Arrange, Act, Assert. Some files use `test(…)` instead; a file uses one of the two, not both.
+- A file has a `describe` block for the feature and nested blocks for methods or cases. Test cases use `test("should …")` (and `test.each()`) and follow Arrange, Act, Assert, as the tests in the extension host have to, because Mocha's TDD interface has `suite()` and `test()` but no `it()`. Most Vitest test files still use `it()`, which is only another name for `test()` (see [Known issues](known-issues.md#most-test-files-use-it-instead-of-test)); new tests in them follow the file's style until it is converted, so that no file mixes the two.
 
 ## Mocks
 

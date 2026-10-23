@@ -31,10 +31,9 @@ export const VALID_GROUP_CONTENT_MODELS = [
 // ===== Group Reference Helpers =====
 
 /**
- * Structural type for objects that can contain group references within
- * compositors. Matches both `explicitGroup` and `simpleExplicitGroup`.
- * The `element` property covers local elements whose inline `complexType`
- * may also reference named groups.
+ * Structural type for a compositor (sequence, choice or all) that can contain group
+ * references, nested compositors and local elements whose inline `complexType` may
+ * also reference named groups. Matches `explicitGroup`, `simpleExplicitGroup` and `all`.
  */
 type CompositorLike = {
   group?: groupRef[];
@@ -44,161 +43,103 @@ type CompositorLike = {
 };
 
 /**
- * Structural type for objects that directly hold a group ref or compositors.
- * Matches `topLevelComplexType`, `localComplexType`, `extensionType`,
- * and `complexRestrictionType`.
+ * Structural type for objects whose content model is a sequence, choice or all:
+ * complexTypes, complexContent extensions and restrictions, and named groups.
  */
-type ComplexTypeParticleHolder = {
-  group?: groupRef;
+type ContentModelHolder = {
   sequence?: CompositorLike;
   choice?: CompositorLike;
+  all?: CompositorLike;
+};
+
+/**
+ * Structural type for objects that directly hold a group ref or compositors.
+ * Matches `topLevelComplexType` and `localComplexType`, whose complexContent
+ * extension or restriction can hold the same.
+ */
+type ComplexTypeParticleHolder = ContentModelHolder & {
+  group?: groupRef;
   complexContent?: {
-    extension?: { group?: groupRef; sequence?: CompositorLike; choice?: CompositorLike };
-    restriction?: { group?: groupRef; sequence?: CompositorLike; choice?: CompositorLike };
+    extension?: ContentModelHolder & { group?: groupRef };
+    restriction?: ContentModelHolder & { group?: groupRef };
   };
 };
 
 /**
- * Returns true if the named group is referenced inside a compositor
- * (sequence or choice) or any of its recursively nested compositors.
+ * Returns true if the named group is referenced in a compositor: directly, in a nested
+ * compositor, or in the inline complexType of a local element at any depth.
+ *
+ * @param name - The name of the group
+ * @param compositor - The compositor to search
+ * @returns Whether a reference was found
  */
-function groupRefExistsInCompositor(
-  name: string,
-  compositor: CompositorLike
-): boolean {
+function groupRefExistsInCompositor(name: string, compositor: CompositorLike): boolean {
   if (toArray(compositor.group).some((ref) => ref.ref === name)) return true;
-  for (const sub of toArray(compositor.choice)) {
-    if (groupRefExistsInCompositor(name, sub)) return true;
-  }
-  for (const sub of toArray(compositor.sequence)) {
-    if (groupRefExistsInCompositor(name, sub)) return true;
-  }
-  return false;
-}
-
-/**
- * Returns true if the named group is referenced directly or inside the
- * compositors/complexContent of a complex-type particle holder.
- */
-function groupRefExistsInHolder(
-  name: string,
-  holder: ComplexTypeParticleHolder
-): boolean {
-  if (holder.group?.ref === name) return true;
-  if (holder.sequence && groupRefExistsInCompositor(name, holder.sequence)) return true;
-  if (holder.choice && groupRefExistsInCompositor(name, holder.choice)) return true;
-  const ext = holder.complexContent?.extension;
-  if (ext) {
-    if (ext.group?.ref === name) return true;
-    if (ext.sequence && groupRefExistsInCompositor(name, ext.sequence)) return true;
-    if (ext.choice && groupRefExistsInCompositor(name, ext.choice)) return true;
-  }
-  const restr = holder.complexContent?.restriction;
-  if (restr) {
-    if (restr.group?.ref === name) return true;
-    if (restr.sequence && groupRefExistsInCompositor(name, restr.sequence)) return true;
-    if (restr.choice && groupRefExistsInCompositor(name, restr.choice)) return true;
-  }
-  return false;
-}
-
-/**
- * Deep variant of groupRefExistsInCompositor that also inspects
- * complexTypes nested under local elements within the compositor.
- */
-function groupRefExistsInCompositorDeep(
-  name: string,
-  compositor: CompositorLike
-): boolean {
-  // Preserve existing behavior for direct group / nested compositor refs.
-  if (groupRefExistsInCompositor(name, compositor)) return true;
-
-  // Additionally, walk local elements and inspect their inline complexTypes.
-  const elements = toArray(compositor.element);
-  for (const el of elements) {
-    if (el?.complexType && groupRefExistsInHolderDeep(name, el.complexType)) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-/**
- * Deep variant of groupRefExistsInHolder that also traverses compositor
- * trees to inspect complexTypes nested under local elements.
- */
-function groupRefExistsInHolderDeep(
-  name: string,
-  holder: ComplexTypeParticleHolder
-): boolean {
-  // First, run the existing checks.
-  if (groupRefExistsInHolder(name, holder)) return true;
-
-  // Then, drill into compositor structures to find nested local elements.
-  if (holder.sequence && groupRefExistsInCompositorDeep(name, holder.sequence)) {
+  if (
+    toArray(compositor.element).some(
+      (el) => el?.complexType !== undefined && groupRefExistsInHolder(name, el.complexType)
+    )
+  ) {
     return true;
   }
-  if (holder.choice && groupRefExistsInCompositorDeep(name, holder.choice)) {
-    return true;
-  }
+  return [...toArray(compositor.choice), ...toArray(compositor.sequence)].some((sub) =>
+    groupRefExistsInCompositor(name, sub)
+  );
+}
 
-  const ext = holder.complexContent?.extension;
-  if (ext) {
-    if (ext.sequence && groupRefExistsInCompositorDeep(name, ext.sequence)) {
-      return true;
-    }
-    if (ext.choice && groupRefExistsInCompositorDeep(name, ext.choice)) {
-      return true;
-    }
-  }
+/**
+ * Returns true if the named group is referenced in the sequence, choice or all of a
+ * content model.
+ *
+ * @param name - The name of the group
+ * @param holder - The object whose content model is searched
+ * @returns Whether a reference was found
+ */
+function groupRefExistsInContentModel(name: string, holder: ContentModelHolder): boolean {
+  return [holder.sequence, holder.choice, holder.all].some(
+    (compositor) => compositor !== undefined && groupRefExistsInCompositor(name, compositor)
+  );
+}
 
-  const restr = holder.complexContent?.restriction;
-  if (restr) {
-    if (restr.sequence && groupRefExistsInCompositorDeep(name, restr.sequence)) {
-      return true;
-    }
-    if (restr.choice && groupRefExistsInCompositorDeep(name, restr.choice)) {
-      return true;
-    }
-  }
-
-  return false;
+/**
+ * Returns true if the named group is referenced by a complexType: directly, in its
+ * content model, or in the same places of its complexContent extension or restriction.
+ *
+ * @param name - The name of the group
+ * @param holder - The complexType to search
+ * @returns Whether a reference was found
+ */
+function groupRefExistsInHolder(name: string, holder: ComplexTypeParticleHolder): boolean {
+  const { extension, restriction } = holder.complexContent ?? {};
+  return [holder, extension, restriction].some(
+    (part) => part !== undefined && (part.group?.ref === name || groupRefExistsInContentModel(name, part))
+  );
 }
 
 /**
  * Returns true if any schema construct references the named group.
  *
  * Checks:
- * - Top-level complexType definitions (direct or via complexContent)
+ * - Top-level complexType definitions (direct, in their content model or via complexContent)
  * - Inline complexTypes on top-level element definitions
  * - Other top-level group definitions (groups can reference groups)
+ *
+ * Inline complexTypes of local elements are searched at any depth.
+ *
+ * @param name - The name of the group
+ * @param schemaObj - The schema to search
+ * @returns Whether a reference was found
  */
 function isGroupReferenced(name: string, schemaObj: schema): boolean {
-  // Top-level complexType definitions.
-  for (const ct of toArray(schemaObj.complexType)) {
-    if (groupRefExistsInHolderDeep(name, ct)) return true;
+  if (toArray(schemaObj.complexType).some((ct) => groupRefExistsInHolder(name, ct))) return true;
+  if (
+    toArray(schemaObj.element).some(
+      (el) => el.complexType !== undefined && groupRefExistsInHolder(name, el.complexType)
+    )
+  ) {
+    return true;
   }
-
-  // Inline complexTypes on top-level element definitions.
-  for (const el of toArray(schemaObj.element)) {
-    if (el.complexType && groupRefExistsInHolderDeep(name, el.complexType)) {
-      return true;
-    }
-  }
-
-  // Other top-level group definitions (groups can reference groups),
-  // including nested local elements inside their particles.
-  for (const grp of toArray(schemaObj.group)) {
-    if (grp.sequence && groupRefExistsInCompositorDeep(name, grp.sequence)) {
-      return true;
-    }
-    if (grp.choice && groupRefExistsInCompositorDeep(name, grp.choice)) {
-      return true;
-    }
-  }
-
-  return false;
+  return toArray(schemaObj.group).some((grp) => groupRefExistsInContentModel(name, grp));
 }
 
 /** Structural type for a complexType node that can hold a direct particle. */
@@ -490,6 +431,9 @@ export function validateModifyGroup(
       valid: false,
       error: `Group not found: ${command.payload.groupId}`,
     };
+  }
+  if (command.payload.groupName !== undefined && !isValidXmlName(command.payload.groupName)) {
+    return { valid: false, error: "Group name must be a valid XML name" };
   }
   if (
     command.payload.contentModel !== undefined &&

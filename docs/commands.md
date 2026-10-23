@@ -4,8 +4,8 @@ title: Commands
 description: The edit commands - payload fields, the rules the validators enforce, what the executors change in the schema, and where the webview sends them.
 tags: [commands, payload, validation, reference]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-09T13:20:00Z }
-verified: { by: human:neumaennl, at: 2026-10-09T14:03:31Z }
+generated: { by: human:neumaennl, at: 2026-10-23T12:44:12Z }
+verified: { by: human:neumaennl, at: 2026-10-23T12:58:14Z }
 sources:
   - id: commands
     resource: ../shared/commands/index.ts
@@ -113,7 +113,7 @@ A drop on an existing type or group creates a `modify*` command instead of an `a
 | `abstract` | - | optional | Only applied to top-level elements. |
 | `default_`, `fixed` | - | optional | An empty string removes the attribute. |
 
-`removeElement` takes only `elementId`. Renaming a top-level element also renames the `ref` and `substitutionGroup` values that point to it. Renames do not check for an existing element with the new name (see [Known issues](known-issues.md#renames-do-not-check-for-duplicate-names)).[^validators][^executors]
+`removeElement` takes only `elementId`. Renaming a top-level element also renames the `ref` and `substitutionGroup` values that point to it. Renames do not check for an existing element with the new name (see [Known issues](known-issues.md#renames-and-new-references-do-not-check-for-duplicates)).[^validators][^executors]
 
 # Attributes
 

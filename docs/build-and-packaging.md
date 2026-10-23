@@ -4,7 +4,7 @@ title: Build and packaging
 description: How the extension is built, run, linted, packaged and checked - the build outputs and tsconfig files, the npm scripts, the scripts in TypeScript, running it in VS Code, the VSIX and its check, the generated schema classes, dependencies and the Node version, ESLint, CI, and the planned switch to native ESM.
 tags: [build, packaging, vsix, vite, typescript, eslint, ci, dependencies]
 status: draft
-generated: { by: human:neumaennl, at: 2026-10-21T06:50:00Z }
+generated: { by: human:neumaennl, at: 2026-10-23T08:20:00Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -174,7 +174,7 @@ The fixes from #343 and #357, the Vite build from #371 and the module settings f
 
 # Generated schema classes
 
-The classes in `shared/generated/` describe XML Schema itself and are used to read and write XSD files (see [Schema model](schema-model.md)). `npm run generate-classes-from-schema` creates them with `xsd2ts` from `@neumaennl/xmlbind-ts`, using `schema/XMLSchema.xsd`, after deleting the existing `.ts` files in that folder; the README there stays. They are not edited by hand; ESLint ignores them, and the coverage report leaves them out. `xsd2ts` writes imports without file extensions, which ES modules do not allow, so the script then runs `scripts/add-import-extensions.ts` on the folder; it adds `.js` to the relative imports. After an update of `xmlbind-ts`, they are generated again and committed.[^manifest][^eslint]
+The classes in `shared/generated/` describe XML Schema itself and are used to read and write XSD files (see [Schema model](schema-model.md)). `npm run generate-classes-from-schema` creates them with `xsd2ts` from `@neumaennl/xmlbind-ts`, using `schema/XMLSchema.xsd`, after deleting the existing `.ts` files in that folder; the README there stays. They are not edited by hand; ESLint ignores them, and the coverage report leaves them out. `xsd2ts` writes the `.js` extension in relative imports, as ES modules require (`--no-import-extensions` would omit it). After an update of `xmlbind-ts`, they are generated again and committed.[^manifest][^eslint]
 
 # Dependencies and Node
 

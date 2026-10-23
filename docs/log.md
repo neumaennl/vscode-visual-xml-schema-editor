@@ -2,6 +2,7 @@
 
 ## 2026-10-23
 * **Update**: The package is a native ES module (`"type": "module"`, [#382](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/382)). [Build and packaging](build-and-packaging.md) describes the ES module output with `.js` extensions in relative imports, the removed `scripts/package.json`, the `.ts` configuration files, why `eslint.config.mjs` stays JavaScript for now, and the VSIX check, which now writes a stub package `vscode` next to the unpacked extension instead of patching Node's module loader. `@neumaennl/xmlbind-ts` is 2.3, an ES module whose `xsd2ts` writes the `.js` extensions in the generated classes itself. [Testing](testing.md#tests-in-the-extension-host) and [Architecture](architecture.md) follow; the tests of the VSIX check cover ES modules.
+* **Update**: `xmlbind-ts` 2.3 keeps the namespace declarations and element prefixes of the source document ([xmlbind-ts#251](https://github.com/neumaennl/xmlbind-ts/issues/251)). [Persistence](persistence.md#what-serialization-changes) lists them as kept, checked by the new `pipeline.serialization.test.ts`; removed "Default namespace is replaced on serialization" from [Known issues](known-issues.md), and the limitation from Persistence and Architecture.
 
 ## 2026-10-19
 * **Update**: [Development guidelines](development-guidelines.md#tsdoc): functions without a return value have no `@returns`; the three `@returns Nothing` in `scripts/` are removed.

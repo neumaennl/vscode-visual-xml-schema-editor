@@ -4,7 +4,7 @@ title: Architecture
 description: How the extension host, the webview and the shared code work together to provide a visual editor for XML Schema (XSD) files, and the design decisions behind the command-based design.
 tags: [architecture, extension-host, webview, shared, design-decisions]
 status: draft
-generated: { by: human:neumaennl, at: 2026-10-21T06:50:00Z }
+generated: { by: human:neumaennl, at: 2026-10-23T08:55:48Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -164,7 +164,7 @@ exampleFiles/             Sample XSD files for manual testing
 
 | Risk | Mitigation in the code | Open |
 |---|---|---|
-| XML marshalling | `xmlbind-ts` marshals the schema; the result is parsed again before it is written (see [Persistence](persistence.md#command-pipeline)). | No fallback to text edits. Serialization reformats the document and replaces the default namespace (see [Persistence](persistence.md#what-serialization-changes), [Known issues](known-issues.md#every-command-reformats-the-whole-document) and [Known issues](known-issues.md#default-namespace-is-replaced-on-serialization)). |
+| XML marshalling | `xmlbind-ts` marshals the schema; the result is parsed again before it is written (see [Persistence](persistence.md#command-pipeline)). | No fallback to text edits. Serialization reformats the document (see [Persistence](persistence.md#what-serialization-changes) and [Known issues](known-issues.md#every-command-reformats-the-whole-document)). |
 | Performance with large schemas | Children of collapsed nodes are neither laid out nor drawn. | No incremental update, no virtual scrolling, no performance tests (see [Known issues](known-issues.md#diagram-is-rebuilt-in-full-on-every-change)). |
 | Undo and redo | Every command is one `WorkspaceEdit`, undone as one step. | None. |
 | State synchronization | The document is the single source of truth; the webview re-renders from every `updateSchema`. | Commands can overlap while an edit is applied, and the view state is not fully restored (see [Known issues](known-issues.md#commands-can-overlap-while-an-edit-is-applied) and [Known issues](known-issues.md#view-state-is-not-restored-after-reopening)). |

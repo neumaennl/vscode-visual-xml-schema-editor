@@ -3,9 +3,8 @@ type: Known Issues
 title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
-status: stable
-generated: { by: human:neumaennl, at: 2026-10-16T14:30:20Z }
-verified: { by: human:neumaennl, at: 2026-10-16T14:43:21Z }
+status: draft
+generated: { by: human:neumaennl, at: 2026-10-23T08:55:48Z }
 ---
 
 # Purpose
@@ -62,14 +61,6 @@ Effort:
 
   The fix is to use `isComplexTypeNode()` in the attribute drop rule, as the other rules do, and to add the attribute to the extension or restriction in the executor when the complex type has complex or simple content.
 - **GitHub issue:** none
-
-## Default namespace is replaced on serialization
-
-- **Location:** `@neumaennl/xmlbind-ts` (`marshal`), used by `src/schemaModelManager.ts`
-- **Severity:** High
-- **Effort:** L
-- **Description:** `marshal` writes all XSD elements without a prefix and declares the XML Schema namespace as the default namespace (`xs:element` becomes `element`). A default namespace declared in the file, usually the target namespace (`xmlns="urn:example"`), is dropped. Unprefixed QName values such as `type="myType"` then resolve to the XML Schema namespace instead of the target namespace, so the schema is broken after the first command. Schemas that only use prefixed QNames keep working but have every element name rewritten. The fix belongs in `xmlbind-ts`: keep the element prefixes and namespace declarations of the source document (see [Persistence](persistence.md#what-serialization-changes)).
-- **GitHub issue:** [xmlbind-ts#251](https://github.com/neumaennl/xmlbind-ts/issues/251)
 
 ## Node IDs are ambiguous and have many special cases
 

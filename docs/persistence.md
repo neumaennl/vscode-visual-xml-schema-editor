@@ -3,9 +3,8 @@ type: Process
 title: Persistence
 description: How edits reach the XSD file - the command pipeline, the document edit, what serialization changes, undo and save, and how changes from outside reach the diagram.
 tags: [persistence, command-pipeline, workspace-edit, serialization, undo, xmlbind-ts]
-status: stable
-generated: { by: human:neumaennl, at: 2026-10-02T07:31:00Z }
-verified: { by: human:neumaennl, at: 2026-10-02T07:49:43Z }
+status: draft
+generated: { by: human:neumaennl, at: 2026-10-23T08:55:48Z }
 sources:
   - id: extension
     resource: ../src/extension.ts
@@ -25,6 +24,9 @@ sources:
   - id: workspace-edit-test
     resource: ../src/__tests__/pipeline.workspaceEdit.test.ts
     title: Integration tests for the WorkspaceEdit path
+  - id: serialization-test
+    resource: ../src/__tests__/pipeline.serialization.test.ts
+    title: Integration tests for namespaces after serialization
   - id: xmlbind-ts
     resource: https://github.com/neumaennl/xmlbind-ts
     title: xmlbind-ts (marshal and unmarshal)
@@ -90,14 +92,13 @@ Kept:
 - Comments, including comments before the root element, at their position among the child elements.
 - The order of child elements.
 - The XML declaration, but only if the file had one.
-- The `xmlns:*` prefix declarations, so QName values such as `type="xs:string"` or `type="t:myType"` keep working.
+- The namespace declarations, including a default namespace, and the prefixes of the element names: a file with `xs:element` keeps `xs:element`, and one that declares the XML Schema namespace as default keeps `element`. So QName values such as `type="xs:string"`, `type="t:myType"` or an unprefixed `type="myType"` keep their meaning.[^serialization-test]
 
 Changed:
 
 - Indentation becomes two spaces.
 - Attributes are reordered, and single quotes become double quotes.
 - Empty elements written as `<a></a>` become `<a/>`.
-- Element names lose their prefix: `xs:element` becomes `element`, and the XML Schema namespace is declared as the default namespace. If the file already had a different default namespace (usually the target namespace), that declaration is dropped, and unprefixed QName values such as `type="myType"` then point to the XML Schema namespace. The schema is broken after the first command (see [Known issues](known-issues.md#default-namespace-is-replaced-on-serialization)).
 - Leading and trailing whitespace in text content such as `documentation` is trimmed. This is intended.
 
 # Undo, redo and save
@@ -129,7 +130,6 @@ Commands also carry IDs from the schema the webview last received. If the docume
 
 # Limitations
 
-- Schemas whose default namespace is not the XML Schema namespace break on the first command ([Known issues](known-issues.md#default-namespace-is-replaced-on-serialization), [xmlbind-ts#251](https://github.com/neumaennl/xmlbind-ts/issues/251)).
 - Every command reformats the whole file ([Known issues](known-issues.md#every-command-reformats-the-whole-document), [xmlbind-ts#252](https://github.com/neumaennl/xmlbind-ts/issues/252)).
 - Commands can overlap while an edit is applied ([Known issues](known-issues.md#commands-can-overlap-while-an-edit-is-applied)).
 - Every document change is parsed in full and logged ([Known issues](known-issues.md#every-document-change-is-parsed-in-full-and-logged)).
@@ -146,5 +146,7 @@ Commands also carry IDs from the schema the webview last received. If the docume
 [^webview-main]: [Webview app](../webview-src/main.ts)
 
 [^workspace-edit-test]: [Integration tests for the WorkspaceEdit path](../src/__tests__/pipeline.workspaceEdit.test.ts)
+
+[^serialization-test]: [Integration tests for namespaces after serialization](../src/__tests__/pipeline.serialization.test.ts)
 
 [^xmlbind-ts]: [xmlbind-ts](https://github.com/neumaennl/xmlbind-ts)

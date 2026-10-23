@@ -18,6 +18,112 @@ import {
 } from "./attributeGroupValidators.js";
 import { expectInvalid } from "./validationTestHelpers.js";
 
+/**
+ * Unmarshals a schema with the attribute groups `CommonAttrs` and `OtherAttrs` and the given content.
+ *
+ * @param body - The XSD content after the two attribute group definitions
+ * @returns The schema object
+ */
+function schemaWithAttrGroups(body: string): schema {
+  return unmarshal(
+    schema,
+    `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:attributeGroup name="CommonAttrs"/>
+  <xs:attributeGroup name="OtherAttrs"/>
+  ${body}
+</xs:schema>`,
+  );
+}
+
+/** An inline complexType with a reference to the attribute group `REF`, for a local element. */
+const LOCAL_ELEMENT_WITH_REF = `<xs:element name="child"><xs:complexType><xs:attributeGroup ref="REF"/></xs:complexType></xs:element>`;
+
+/**
+ * Places where XML Schema allows a reference to an attribute group, as schema content in
+ * which `REF` stands for the referenced group.
+ */
+const REFERENCE_PLACES: [string, string][] = [
+  [
+    "a complexContent extension",
+    `<xs:complexType name="Base"/>
+     <xs:complexType name="Derived"><xs:complexContent><xs:extension base="Base"><xs:attributeGroup ref="REF"/></xs:extension></xs:complexContent></xs:complexType>`,
+  ],
+  [
+    "a complexContent restriction",
+    `<xs:complexType name="Derived"><xs:complexContent><xs:restriction base="xs:anyType"><xs:attributeGroup ref="REF"/></xs:restriction></xs:complexContent></xs:complexType>`,
+  ],
+  [
+    "a simpleContent extension",
+    `<xs:complexType name="Text"><xs:simpleContent><xs:extension base="xs:string"><xs:attributeGroup ref="REF"/></xs:extension></xs:simpleContent></xs:complexType>`,
+  ],
+  [
+    "a simpleContent restriction",
+    `<xs:complexType name="Base"><xs:simpleContent><xs:extension base="xs:string"/></xs:simpleContent></xs:complexType>
+     <xs:complexType name="Text"><xs:simpleContent><xs:restriction base="Base"><xs:attributeGroup ref="REF"/></xs:restriction></xs:simpleContent></xs:complexType>`,
+  ],
+  [
+    "the inline complexType of a top-level element",
+    `<xs:element name="root"><xs:complexType><xs:attributeGroup ref="REF"/></xs:complexType></xs:element>`,
+  ],
+  [
+    "a local element inside a top-level element",
+    `<xs:element name="root"><xs:complexType><xs:sequence>${LOCAL_ELEMENT_WITH_REF}</xs:sequence></xs:complexType></xs:element>`,
+  ],
+  [
+    "a local element in a choice nested in a sequence",
+    `<xs:complexType name="T"><xs:sequence><xs:choice>${LOCAL_ELEMENT_WITH_REF}</xs:choice></xs:sequence></xs:complexType>`,
+  ],
+  [
+    "a local element in a sequence nested in a choice",
+    `<xs:complexType name="T"><xs:choice><xs:sequence>${LOCAL_ELEMENT_WITH_REF}</xs:sequence></xs:choice></xs:complexType>`,
+  ],
+  [
+    "a local element in an all",
+    `<xs:complexType name="T"><xs:all>${LOCAL_ELEMENT_WITH_REF}</xs:all></xs:complexType>`,
+  ],
+  [
+    "a local element in the sequence of a complexContent extension",
+    `<xs:complexType name="Base"/>
+     <xs:complexType name="Derived"><xs:complexContent><xs:extension base="Base"><xs:sequence>${LOCAL_ELEMENT_WITH_REF}</xs:sequence></xs:extension></xs:complexContent></xs:complexType>`,
+  ],
+  [
+    "a local element in the choice of a complexContent extension",
+    `<xs:complexType name="Base"/>
+     <xs:complexType name="Derived"><xs:complexContent><xs:extension base="Base"><xs:choice>${LOCAL_ELEMENT_WITH_REF}</xs:choice></xs:extension></xs:complexContent></xs:complexType>`,
+  ],
+  [
+    "a local element in the all of a complexContent extension",
+    `<xs:complexType name="Base"/>
+     <xs:complexType name="Derived"><xs:complexContent><xs:extension base="Base"><xs:all>${LOCAL_ELEMENT_WITH_REF}</xs:all></xs:extension></xs:complexContent></xs:complexType>`,
+  ],
+  [
+    "a local element in the sequence of a complexContent restriction",
+    `<xs:complexType name="Derived"><xs:complexContent><xs:restriction base="xs:anyType"><xs:sequence>${LOCAL_ELEMENT_WITH_REF}</xs:sequence></xs:restriction></xs:complexContent></xs:complexType>`,
+  ],
+  [
+    "a local element in the choice of a complexContent restriction",
+    `<xs:complexType name="Derived"><xs:complexContent><xs:restriction base="xs:anyType"><xs:choice>${LOCAL_ELEMENT_WITH_REF}</xs:choice></xs:restriction></xs:complexContent></xs:complexType>`,
+  ],
+  [
+    "a local element in the all of a complexContent restriction",
+    `<xs:complexType name="Derived"><xs:complexContent><xs:restriction base="xs:anyType"><xs:all>${LOCAL_ELEMENT_WITH_REF}</xs:all></xs:restriction></xs:complexContent></xs:complexType>`,
+  ],
+  [
+    "a local element whose inline complexType extends another type",
+    `<xs:complexType name="Base"/>
+     <xs:complexType name="T"><xs:sequence><xs:element name="child"><xs:complexType><xs:complexContent><xs:extension base="Base"><xs:attributeGroup ref="REF"/></xs:extension></xs:complexContent></xs:complexType></xs:element></xs:sequence></xs:complexType>`,
+  ],
+  [
+    "a local element in a named model group",
+    `<xs:group name="Content"><xs:sequence>${LOCAL_ELEMENT_WITH_REF}</xs:sequence></xs:group>`,
+  ],
+  [
+    "another attribute group",
+    `<xs:attributeGroup name="Combined"><xs:attributeGroup ref="REF"/></xs:attributeGroup>`,
+  ],
+];
+
 describe("AttributeGroup Validators", () => {
   let schemaObj: schema;
   let schemaWithAttrGroup: schema;
@@ -171,6 +277,56 @@ describe("AttributeGroup Validators", () => {
         expect(result.error).toContain("Cannot combine ref with groupName");
       });
     });
+    describe("parents of references", () => {
+      test("should reject a definition without groupName and ref", () => {
+        const command: AddAttributeGroupCommand = {
+          type: "addAttributeGroup",
+          payload: {},
+        };
+
+        const result = validateAddAttributeGroup(command, schemaObj);
+        expectInvalid(result);
+        expect(result.error).toBe("Attribute group name must be a valid XML name");
+      });
+
+      test("should accept a reference in the inline complexType of an element", () => {
+        const command: AddAttributeGroupCommand = {
+          type: "addAttributeGroup",
+          payload: { ref: "CommonAttrs", parentId: "/element:root/anonymousComplexType" },
+        };
+
+        const result = validateAddAttributeGroup(
+          command,
+          schemaWithAttrGroups(`<xs:element name="root"><xs:complexType/></xs:element>`),
+        );
+        expect(result.valid).toBe(true);
+      });
+
+      test("should accept a reference in another attribute group", () => {
+        const command: AddAttributeGroupCommand = {
+          type: "addAttributeGroup",
+          payload: { ref: "CommonAttrs", parentId: "/attributeGroup:OtherAttrs" },
+        };
+
+        const result = validateAddAttributeGroup(command, schemaWithAttrGroups(""));
+        expect(result.valid).toBe(true);
+      });
+
+      test("should reject a reference directly in an element, which cannot hold attribute groups", () => {
+        const command: AddAttributeGroupCommand = {
+          type: "addAttributeGroup",
+          payload: { ref: "CommonAttrs", parentId: "/element:root" },
+        };
+
+        const result = validateAddAttributeGroup(
+          command,
+          schemaWithAttrGroups(`<xs:element name="root" type="xs:string"/>`),
+        );
+        expectInvalid(result);
+        expect(result.error).toBe("Cannot add attribute group reference to parent type: topLevelElement");
+      });
+    });
+
   });
 
   describe("validateRemoveAttributeGroup", () => {
@@ -332,6 +488,101 @@ describe("AttributeGroup Validators", () => {
         expect(result.error).toContain("Attribute group reference not found");
       });
     });
+    describe("references in all places of the schema", () => {
+      test.each(REFERENCE_PLACES)("should reject removing a group that is referenced in %s", (_, body) => {
+        const command: RemoveAttributeGroupCommand = {
+          type: "removeAttributeGroup",
+          payload: { groupId: "/attributeGroup:CommonAttrs" },
+        };
+
+        const result = validateRemoveAttributeGroup(command, schemaWithAttrGroups(body.replace(/REF/g, "CommonAttrs")));
+        expectInvalid(result);
+        expect(result.error).toBe("Attribute group is still referenced and cannot be removed: CommonAttrs");
+      });
+
+      test.each(REFERENCE_PLACES)("should accept removing a group when only another group is referenced in %s", (_, body) => {
+        const command: RemoveAttributeGroupCommand = {
+          type: "removeAttributeGroup",
+          payload: { groupId: "/attributeGroup:CommonAttrs" },
+        };
+
+        const result = validateRemoveAttributeGroup(command, schemaWithAttrGroups(body.replace(/REF/g, "OtherAttrs")));
+        expect(result.valid).toBe(true);
+      });
+    });
+
+    describe("identifying a reference", () => {
+      /** A complexType with references to `CommonAttrs` and `OtherAttrs`, in this order. */
+      const TWO_REFS = `<xs:complexType name="PersonType">
+        <xs:attributeGroup ref="CommonAttrs"/>
+        <xs:attributeGroup ref="OtherAttrs"/>
+      </xs:complexType>`;
+
+      test("should accept a reference identified by name only", () => {
+        const command: RemoveAttributeGroupCommand = {
+          type: "removeAttributeGroup",
+          payload: { groupId: "/complexType:PersonType/attributeGroupRef:OtherAttrs" },
+        };
+
+        const result = validateRemoveAttributeGroup(command, schemaWithAttrGroups(TWO_REFS));
+        expect(result.valid).toBe(true);
+      });
+
+      test("should accept a reference identified by position only", () => {
+        const command: RemoveAttributeGroupCommand = {
+          type: "removeAttributeGroup",
+          payload: { groupId: "/complexType:PersonType/attributeGroupRef[1]" },
+        };
+
+        const result = validateRemoveAttributeGroup(command, schemaWithAttrGroups(TWO_REFS));
+        expect(result.valid).toBe(true);
+      });
+
+      test("should reject a position after the last reference", () => {
+        const command: RemoveAttributeGroupCommand = {
+          type: "removeAttributeGroup",
+          payload: { groupId: "/complexType:PersonType/attributeGroupRef[2]" },
+        };
+
+        const result = validateRemoveAttributeGroup(command, schemaWithAttrGroups(TWO_REFS));
+        expectInvalid(result);
+        expect(result.error).toBe("Attribute group reference not found: /complexType:PersonType/attributeGroupRef[2]");
+      });
+
+      test("should reject a name that is at another position than given", () => {
+        const command: RemoveAttributeGroupCommand = {
+          type: "removeAttributeGroup",
+          payload: { groupId: "/complexType:PersonType/attributeGroupRef:CommonAttrs[1]" },
+        };
+
+        const result = validateRemoveAttributeGroup(command, schemaWithAttrGroups(TWO_REFS));
+        expectInvalid(result);
+        expect(result.error).toContain("Attribute group reference not found");
+      });
+
+      test("should reject an ID with neither name nor position", () => {
+        const command: RemoveAttributeGroupCommand = {
+          type: "removeAttributeGroup",
+          payload: { groupId: "/complexType:PersonType/attributeGroupRef" },
+        };
+
+        const result = validateRemoveAttributeGroup(command, schemaWithAttrGroups(TWO_REFS));
+        expectInvalid(result);
+        expect(result.error).toContain("Attribute group reference not found");
+      });
+
+      test("should reject a reference ID without a parent", () => {
+        const command: RemoveAttributeGroupCommand = {
+          type: "removeAttributeGroup",
+          payload: { groupId: "/attributeGroupRef:CommonAttrs[0]" },
+        };
+
+        const result = validateRemoveAttributeGroup(command, schemaWithAttrGroups(TWO_REFS));
+        expectInvalid(result);
+        expect(result.error).toBe("Invalid attributeGroupRef ID: /attributeGroupRef:CommonAttrs[0]");
+      });
+    });
+
   });
 
   describe("validateModifyAttributeGroup", () => {
@@ -519,5 +770,57 @@ describe("AttributeGroup Validators", () => {
         expect(result.error).toContain("Cannot use groupName when modifying an attribute group reference");
       });
     });
+    describe("changing only the documentation", () => {
+      test("should accept a definition without a new name", () => {
+        const command: ModifyAttributeGroupCommand = {
+          type: "modifyAttributeGroup",
+          payload: { groupId: "/attributeGroup:CommonAttrs", documentation: "Shared attributes" },
+        };
+
+        const result = validateModifyAttributeGroup(command, schemaWithAttrGroups(""));
+        expect(result.valid).toBe(true);
+      });
+
+      test("should accept a reference without a new ref", () => {
+        const command: ModifyAttributeGroupCommand = {
+          type: "modifyAttributeGroup",
+          payload: { groupId: "/complexType:PersonType/attributeGroupRef:CommonAttrs[0]", documentation: "Shared attributes" },
+        };
+
+        const result = validateModifyAttributeGroup(
+          command,
+          schemaWithAttrGroups(`<xs:complexType name="PersonType"><xs:attributeGroup ref="CommonAttrs"/></xs:complexType>`),
+        );
+        expect(result.valid).toBe(true);
+      });
+    });
+
+    describe("invalid references", () => {
+      test("should reject a reference ID without a parent", () => {
+        const command: ModifyAttributeGroupCommand = {
+          type: "modifyAttributeGroup",
+          payload: { groupId: "/attributeGroupRef:CommonAttrs[0]", ref: "OtherAttrs" },
+        };
+
+        const result = validateModifyAttributeGroup(command, schemaWithAttrGroups(""));
+        expectInvalid(result);
+        expect(result.error).toBe("Invalid attributeGroupRef ID: /attributeGroupRef:CommonAttrs[0]");
+      });
+
+      test("should reject a new ref that is not a valid XML name", () => {
+        const command: ModifyAttributeGroupCommand = {
+          type: "modifyAttributeGroup",
+          payload: { groupId: "/complexType:PersonType/attributeGroupRef:CommonAttrs[0]", ref: "123-invalid" },
+        };
+
+        const result = validateModifyAttributeGroup(
+          command,
+          schemaWithAttrGroups(`<xs:complexType name="PersonType"><xs:attributeGroup ref="CommonAttrs"/></xs:complexType>`),
+        );
+        expectInvalid(result);
+        expect(result.error).toBe("Attribute group ref must be a valid XML name");
+      });
+    });
+
   });
 });

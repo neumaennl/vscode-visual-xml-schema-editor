@@ -1,41 +1,51 @@
-import { execFileSync } from "node:child_process";
-import { createRequire } from "node:module";
+import { readdirSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { verifyVsix } from "./verify-vsix.ts";
 
 const resources = join(import.meta.dirname, "__tests__", "test-resources");
 
-describe("verifyVsix", () => {
+/**
+ * Lists the temporary folders that verifyVsix() creates.
+ *
+ * @returns The names of the folders
+ */
+function tempFolders(): string[] {
+  return readdirSync(tmpdir()).filter((name) => name.startsWith("vsix-verify-"));
+}
+
+describe.each([
+  ["CommonJS", ""],
+  ["an ES module", "-esm"],
+])("verifyVsix with an extension that is %s", (_, suffix) => {
   it("should return the entry point of a VSIX that loads and exports activate()", async () => {
-    await expect(verifyVsix(join(resources, "valid.vsix"))).resolves.toBe("./out/extension.js");
-  });
-
-  // Vitest loads ES modules itself and would not apply the stand-in for `vscode`, so this runs the script in Node
-  it("should accept a VSIX that is an ES module", () => {
-    const output = execFileSync(process.execPath, [join(import.meta.dirname, "verify-vsix.ts"), join(resources, "valid-esm.vsix")], {
-      encoding: "utf8",
-    });
-
-    expect(output).toContain("./out/extension.js loads and exports activate()");
+    await expect(verifyVsix(join(resources, `valid${suffix}.vsix`))).resolves.toBe("./out/extension.js");
   });
 
   it("should throw if the entry point does not export activate()", async () => {
-    await expect(verifyVsix(join(resources, "no-activate.vsix"))).rejects.toThrow("./out/extension.js does not export activate()");
-  });
-
-  it("should throw if the entry point needs a package that is not in the VSIX", async () => {
-    await expect(verifyVsix(join(resources, "missing-dependency.vsix"))).rejects.toThrow(
-      "Cannot find module 'package-that-is-not-in-the-vsix'",
+    await expect(verifyVsix(join(resources, `no-activate${suffix}.vsix`))).rejects.toThrow(
+      "./out/extension.js does not export activate()",
     );
   });
 
+  it("should throw if the entry point needs a package that is not in the VSIX", async () => {
+    await expect(verifyVsix(join(resources, `missing-dependency${suffix}.vsix`))).rejects.toThrow(
+      /Cannot find (module|package) 'package-that-is-not-in-the-vsix'/,
+    );
+  });
+});
+
+describe("verifyVsix", () => {
   it("should throw if the file cannot be extracted", async () => {
     await expect(verifyVsix(join(resources, "does-not-exist.vsix"))).rejects.toThrow();
   });
 
-  it("should remove the stand-in for the vscode module afterwards", async () => {
-    await verifyVsix(join(resources, "valid.vsix"));
+  it("should remove its temporary folder, also after an error", async () => {
+    const before = tempFolders();
 
-    expect(() => createRequire(import.meta.url).resolve("vscode")).toThrow("Cannot find module 'vscode'");
+    await verifyVsix(join(resources, "valid-esm.vsix"));
+    await expect(verifyVsix(join(resources, "no-activate-esm.vsix"))).rejects.toThrow();
+
+    expect(tempFolders()).toEqual(before);
   });
 });

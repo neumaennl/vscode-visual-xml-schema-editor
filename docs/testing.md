@@ -4,7 +4,7 @@ title: Testing
 description: How the extension is tested - running the tests and the type check, the four Vitest projects, mocks and helpers, conventions for tests, mocks, helper functions and helper classes, which tests to write for typical changes, coverage, CI, the smoke tests in the extension host with a mock webview, and how the current tests compare with the testing strategy of ADR 001.
 tags: [testing, vitest, mocks, coverage, ci, conventions]
 status: draft
-generated: { by: human:neumaennl, at: 2026-10-21T06:50:00Z }
+generated: { by: human:neumaennl, at: 2026-10-23T08:55:48Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -113,7 +113,7 @@ Use the Node version from `.nvmrc`, which CI also uses. It is the Node version o
 - **Webview API.** `main.test.ts` sets `acquireVsCodeApi` on `globalThis` before the app is loaded, with mocks for `postMessage`, `getState` and `setState`, and builds the page with `document.body.innerHTML`. Each test loads the app again with `vi.resetModules()` and `await import("./main")`.[^main-test]
 - **SVG measuring.** jsdom has no layout engine, so `setupGetBBoxMock()` in `webview-src/__tests__/svgTestUtils.ts` gives every element a `getBBox()` that assumes 6 pixels per character and a height of 10 pixels.[^svg-test-utils]
 - **Pipeline helpers.** `src/__tests__/testHelpers.ts` has small schemas as constants (`MINIMAL_SCHEMA`, `SCHEMA_WITH_ELEMENTS` and others) and runs a command through a new `CommandProcessor`: `runCommand()`, `runCommandExpectSuccess()` (returns the XML), `runCommandExpectSuccessSchema()` (returns the unmarshalled schema) and `runCommandExpectValidationFailure()`.[^test-helpers]
-- **Scripts.** The tests of the scripts send no request and install nothing. `scripts/__tests__/testHelpers.ts` replaces `fetch` with `stubFetch()`, which answers each URL with a given body, and builds GitHub releases with `release()` and `releasesPage()`. The tests of `vscode-version.ts` and `scripts/lib/node-setup.ts` mock `node:child_process`, `node:fs` and `node:readline/promises` where the script would start programs, check files or ask in the terminal, and work in a temporary folder. The tests of `verify-vsix.ts` unpack three tiny VSIX files from `scripts/__tests__/test-resources/` with the same tool as the script (`unzip`, on Windows `tar.exe`), because unpacking is what the script checks.[^scripts-test-helpers]
+- **Scripts.** The tests of the scripts send no request and install nothing. `scripts/__tests__/testHelpers.ts` replaces `fetch` with `stubFetch()`, which answers each URL with a given body, and builds GitHub releases with `release()` and `releasesPage()`. The tests of `vscode-version.ts` and `scripts/lib/node-setup.ts` mock `node:child_process`, `node:fs` and `node:readline/promises` where the script would start programs, check files or ask in the terminal, and work in a temporary folder. The tests of `verify-vsix.ts` unpack tiny VSIX files from `scripts/__tests__/test-resources/` with the same tool as the script (`unzip`, on Windows `tar.exe`), because unpacking is what the script checks: a valid extension, one without `activate()` and one with a missing dependency, each as CommonJS and as an ES module (`-esm`).[^scripts-test-helpers]
 
 ## The `__mocks__` folder
 

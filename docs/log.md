@@ -1,10 +1,7 @@
 # Knowledge Bundle Update Log
 
 ## 2026-10-23
-* **Update**: [Build and packaging](build-and-packaging.md#generated-schema-classes): `@neumaennl/xmlbind-ts` is updated to 2.3, whose `xsd2ts` writes `.js` extensions itself; `scripts/add-import-extensions.ts` is removed.
-
-## 2026-10-21
-* **Update**: The package is a native ES module (`"type": "module"`, [#382](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/382)). [Build and packaging](build-and-packaging.md) describes the ES module output with `.js` extensions in relative imports, the removed `scripts/package.json`, the `.ts` configuration files, `scripts/add-import-extensions.ts` for the generated classes, the changed VSIX check, and why `eslint.config.mjs` stays JavaScript for now; [Testing](testing.md#tests-in-the-extension-host) and [Architecture](architecture.md) follow.
+* **Update**: The package is a native ES module (`"type": "module"`, [#382](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/382)). [Build and packaging](build-and-packaging.md) describes the ES module output with `.js` extensions in relative imports, the removed `scripts/package.json`, the `.ts` configuration files, why `eslint.config.mjs` stays JavaScript for now, and the VSIX check, which now writes a stub package `vscode` next to the unpacked extension instead of patching Node's module loader. `@neumaennl/xmlbind-ts` is 2.3, an ES module whose `xsd2ts` writes the `.js` extensions in the generated classes itself. [Testing](testing.md#tests-in-the-extension-host) and [Architecture](architecture.md) follow; the tests of the VSIX check cover ES modules.
 
 ## 2026-10-19
 * **Update**: [Development guidelines](development-guidelines.md#tsdoc): functions without a return value have no `@returns`; the three `@returns Nothing` in `scripts/` are removed.

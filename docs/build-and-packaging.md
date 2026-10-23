@@ -1,10 +1,10 @@
 ---
 type: Build Process
 title: Build and packaging
-description: How the extension is built, run, linted, packaged and checked - the build outputs and tsconfig files, the npm scripts, the scripts in TypeScript, running it in VS Code, the VSIX and its check, the generated schema classes, dependencies and the Node version, ESLint, CI, and the planned switch to native ESM.
+description: How the extension is built, run, linted, packaged and checked - the build outputs and tsconfig files, the npm scripts, the scripts in TypeScript, running it in VS Code, the VSIX and its check, the generated schema classes, dependencies and the Node version, ESLint, CI, and planned changes.
 tags: [build, packaging, vsix, vite, typescript, eslint, ci, dependencies]
 status: draft
-generated: { by: human:neumaennl, at: 2026-10-23T08:20:00Z }
+generated: { by: human:neumaennl, at: 2026-10-23T08:55:48Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -156,7 +156,7 @@ What goes into the VSIX is controlled by `.vscodeignore`:[^vscodeignore]
 - `README.md` and `LICENSE` are packaged. The README is the page of the extension in the Marketplace; `vsce` turns its relative links into links to the repository given in `repository` in `package.json`.
 - `node_modules/` is not listed. `vsce` adds the production dependencies (`dependencies` in `package.json`) and their dependencies, and leaves out the development dependencies. A runtime dependency must therefore be in `dependencies`, and `node_modules/` must not be excluded in `.vscodeignore`.
 
-`npm run package:verify` runs `scripts/verify-vsix.ts`. It unpacks the VSIX into a temporary folder outside the repository (with `unzip`, on Windows with the `tar.exe` of Windows), so that the `node_modules/` of the repository cannot hide a missing file, replaces the `vscode` module with a stub (a module hook, `module.registerHooks()`, so it works for ES modules and CommonJS), loads the entry point with `import()` and checks that it exports `activate()`. Without an argument it checks the first `.vsix` file in the current folder. It finds missing dependencies and errors at load time, but does not start VS Code.[^verify-vsix]
+`npm run package:verify` runs `scripts/verify-vsix.ts`. It unpacks the VSIX into a temporary folder outside the repository (with `unzip`, on Windows with the `tar.exe` of Windows), so that the `node_modules/` of the repository cannot hide a missing file, writes a stub of the `vscode` module as a package into `node_modules/vscode/` of that folder, loads the entry point with `import()` and checks that it exports `activate()`. Node finds the stub through its normal package lookup in the parent folders, for `import` and `require()` alike, so the check works for ES modules and CommonJS without module hooks; every other package must come from the VSIX. The stub accepts any property access and call, but has no `then`, so that it is not taken for a promise. Without an argument it checks the first `.vsix` file in the current folder. It finds missing dependencies and errors at load time, but does not start VS Code.[^verify-vsix]
 
 `vsce` refuses to package when `@types/vscode` is newer than the lowest VS Code version in `engines.vscode`. Both are set together, see [VS Code and Node versions](#vs-code-and-node-versions).[^manifest]
 

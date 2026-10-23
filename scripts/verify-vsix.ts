@@ -1,24 +1,38 @@
 // Verifies that the packaged VSIX is self-contained: extracts it into a temp
 // directory (outside the repo, so the dev node_modules can't mask missing files)
-// and loads the extension entry point with the `vscode` module stubbed.
+// and loads the extension entry point with the `vscode` module stubbed. The stub is
+// a package in the temp directory's node_modules/, where Node's normal lookup finds
+// it for `import` and `require()` alike; every other package must come from the VSIX.
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
-import Module from "node:module";
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-/** URL of the stand-in for the `vscode` module, which only exists inside VS Code. */
-const VSCODE_STUB_URL = "vscode-stub:vscode";
-
 /**
- * Source of the stand-in: an object that accepts any property access and call.
- * CommonJS, so that both `require()` and `import` can load it.
+ * Source of the stand-in for the `vscode` module, which only exists inside VS Code:
+ * an object that accepts any property access and call. It has no `then`, so that it
+ * is not taken for a promise when a module that exposes it is awaited. CommonJS, so
+ * that both `require()` and `import` can load it.
  */
-const VSCODE_STUB_SOURCE = `
-const stub = () => new Proxy(function () {}, { get: (_, key) => (key === "prototype" ? {} : stub()) });
+const VSCODE_STUB_SOURCE = `const stub = () =>
+  new Proxy(function () {}, {
+    get: (_, key) => (key === "then" ? undefined : key === "prototype" ? {} : stub()),
+  });
 module.exports = stub();
 `;
+
+/**
+ * Writes the stand-in for the `vscode` module as a package into `node_modules/` of a folder.
+ *
+ * @param dir - The folder that contains the extracted extension
+ */
+function addVscodeStub(dir: string): void {
+  const stubDir = join(dir, "node_modules", "vscode");
+  mkdirSync(stubDir, { recursive: true });
+  writeFileSync(join(stubDir, "package.json"), JSON.stringify({ name: "vscode", main: "index.cjs" }));
+  writeFileSync(join(stubDir, "index.cjs"), VSCODE_STUB_SOURCE);
+}
 
 /**
  * Extracts a VSIX into a folder, with `unzip` or, on Windows, with its `tar.exe`.
@@ -47,26 +61,17 @@ function extract(vsix: string, dir: string): void {
  */
 export async function verifyVsix(vsix: string): Promise<string> {
   const dir = mkdtempSync(join(tmpdir(), "vsix-verify-"));
-  const hooks = Module.registerHooks({
-    resolve: (specifier, context, nextResolve) =>
-      specifier === "vscode" ? { url: VSCODE_STUB_URL, format: "commonjs", shortCircuit: true } : nextResolve(specifier, context),
-    load: (url, context, nextLoad) =>
-      url === VSCODE_STUB_URL
-        ? { format: "commonjs", source: VSCODE_STUB_SOURCE, shortCircuit: true }
-        : nextLoad(url, context),
-  });
   try {
     extract(vsix, dir);
+    addVscodeStub(dir);
     const extensionDir = join(dir, "extension");
-    const manifest = JSON.parse(readFileSync(join(extensionDir, "package.json"), "utf8")) as { main: string };
-    const { main } = manifest;
+    const { main } = JSON.parse(readFileSync(join(extensionDir, "package.json"), "utf8")) as { main: string };
     const extension = (await import(pathToFileURL(join(extensionDir, main)).href)) as { activate?: object };
     if (typeof extension.activate !== "function") {
       throw new Error(`${main} does not export activate()`);
     }
     return main;
   } finally {
-    hooks.deregister();
     rmSync(dir, { recursive: true, force: true });
   }
 }

@@ -4,7 +4,7 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: draft
-generated: { by: human:neumaennl, at: 2026-10-23T08:55:48Z }
+generated: { by: human:neumaennl, at: 2026-10-23T09:04:37Z }
 ---
 
 # Purpose
@@ -424,7 +424,7 @@ Effort:
 - **Description:** `SchemaModelManager` has query methods (`findElement()`, `findComplexType()`, `findGroup()`, the `getAll*()` methods, `getTargetNamespace()`, `getImports()`, `getIncludes()`, `isLoaded()`, `clear()`), but they are only called from tests. They work on the schema stored in the manager, while validators and executors get a cloned schema object, and the webview cannot use code from `src/`. So the same lookups are written out again and again:
   - About 40 places look up a top-level component by name with `toArray(schemaObj.<kind>).some(…)` or `.find(…)`.
   - `schemaQNameRewriter.ts`, `schemaLocalRenamer.ts`, `schemaPrefixChecker.ts` and the group and attribute group validators each iterate over all top-level kinds one by one.
-  - `validationUtils.ts` repeats `Array.isArray(x) ? x : [x]` instead of using `toArray()`.
+  - `validationUtils.ts` repeats `Array.isArray(x) ? x : [x]` instead of using `toArray()`; both are obsolete since `xmlbind-ts` 2.3 (see [`toArray()` is obsolete since `xmlbind-ts` 2.3](#toarray-is-obsolete-since-xmlbind-ts-23)).
   - `DiagramBuilder` and `DropCommandFactory` collect the same lists in the webview.
 
   The fix is to replace the manager's query methods with pure functions in `shared/` that take the schema object as a parameter (for example `findTopLevel(schemaObj, kind, name)`, `getTopLevel(schemaObj, kind)` and `forEachTopLevelComponent(schemaObj, callback)`), use them everywhere, and remove the unused methods.
@@ -475,6 +475,14 @@ Effort:
 - **Severity:** Low
 - **Effort:** L
 - **Description:** The [test conventions](testing.md#files-and-structure) require larger XML snippets that several tests use to be stored in `src/__tests__/test-resources`. The folder does not exist; the snippets are inline in the test files, often repeated. They should be moved there and shared.
+- **GitHub issue:** none
+
+## `toArray()` is obsolete since `xmlbind-ts` 2.3
+
+- **Location:** `shared/schemaUtils.ts` (`toArray()`) and its callers in `shared/`, `src/` and `webview-src/`
+- **Severity:** Low
+- **Effort:** L
+- **Description:** Before version 2.3, `unmarshal` returned a single object instead of a one-item array when a repeated element occurred only once, although the generated classes declare arrays (`element?: topLevelElement[]`). The code therefore reads every repeated child through `toArray()`, about 200 times in production code. Since `xmlbind-ts` 2.3, these fields are always arrays: one item for a single occurrence, and an empty array when the element is absent ([xmlbind-ts#261](https://github.com/neumaennl/xmlbind-ts/issues/261)). `toArray()` and the `Array.isArray(x) ? x : [x]` checks in `validationUtils.ts` no longer change anything for unmarshalled data. The cleanup removes them; code that builds schema objects itself, such as the executors, then has to assign arrays as well, and the generated properties are still declared optional. It is done on the editor branch, which has more of these calls, after `modernization` is merged into it (Phase 9 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340)).
 - **GitHub issue:** none
 
 # Documentation

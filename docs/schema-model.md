@@ -3,9 +3,8 @@ type: Data Model
 title: Schema model
 description: The object model of an XSD file - classes generated from the XSD meta-schema, XML binding with xmlbind-ts, and the path-based IDs that identify schema nodes.
 tags: [schema-model, data-model, xmlbind-ts, code-generation, ids, navigation]
-status: stable
-generated: { by: human:neumaennl, at: 2026-10-10T20:35:44Z }
-verified: { by: human:neumaennl, at: 2026-10-10T20:38:55Z }
+status: draft
+generated: { by: human:neumaennl, at: 2026-10-23T09:04:37Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -73,7 +72,7 @@ The generator creates one class per type and per element declaration of the meta
 - **Decorators.** Each class carries `xmlbind-ts` decorators: `@XmlRoot` with the XSD namespace and prefixes, `@XmlElement` for child elements (with the element type and whether it is an array) and `@XmlAttribute` for attributes. Attributes whose values are not strings pass their type explicitly (`type: Number`, `type: Boolean`). The decorators are compiled as TypeScript's legacy decorators (`experimentalDecorators`), not as TC39 Stage 3 decorators, and `useDefineForClassFields` creates every declared property on the objects, even without a value; the annotation validators rely on that. The reasons are in [ADR 002](architecture/002-legacy-decorators.md).[^generated-schema][^adr-002]
 - **Class names.** The names follow the meta-schema: the root is `schema`, and the type classes are what the code mostly works with, for example `topLevelElement`, `localElement`, `topLevelComplexType`, `localComplexType`, `topLevelSimpleType`, `namedGroup`, `explicitGroup`, `namedAttributeGroup`, `attribute`, `importType` and `includeType`. Element declarations become thin subclasses (`sequence extends explicitGroup`). Names that clash with TypeScript or with each other get a suffix: `import_`, `any_`, `anyType_1`, `restrictionType_1`.
 - **Inheritance.** Types derived by extension in the meta-schema become subclasses, for example of `annotated` (which adds `annotation` and `id`) and `openAttrs`. Types derived by restriction, which include most of the types above (`topLevelElement`, `localElement`, `topLevelComplexType`, `explicitGroup`, `namedGroup`), are standalone classes with all their properties, so they cannot be handled through a common base class.
-- **Collections.** Repeating children are optional arrays (`element?: topLevelElement[]`). Code reads them through `toArray()` from `shared/schemaUtils.ts`, which turns `undefined`, `null`, a single item or an array into an array.[^schema-utils]
+- **Collections.** Repeating children are optional arrays (`element?: topLevelElement[]`). Since `xmlbind-ts` 2.3, `unmarshal` always fills them with an array, an empty one if the element is absent. Code still reads them through `toArray()` from `shared/schemaUtils.ts`, which turns `undefined`, `null`, a single item or an array into an array; this is no longer needed for unmarshalled data (see [Known issues](known-issues.md#toarray-is-obsolete-since-xmlbind-ts-23)).[^schema-utils]
 
 The classes also have properties that are not in the meta-schema and are filled by `xmlbind-ts`:[^generated-schema][^generated-open-attrs]
 

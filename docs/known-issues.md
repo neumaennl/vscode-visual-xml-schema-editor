@@ -3,9 +3,8 @@ type: Known Issues
 title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
-status: stable
-generated: { by: human:neumaennl, at: 2026-10-23T09:04:37Z }
-verified: { by: human:neumaennl, at: 2026-10-23T10:12:43Z }
+status: draft
+generated: { by: human:neumaennl, at: 2026-10-23T10:30:17Z }
 ---
 
 # Purpose
@@ -367,14 +366,6 @@ Effort:
 - **Severity:** Low
 - **Effort:** S
 - **Description:** Some helpers exist as copies in several test files, against the conventions in [Testing](testing.md#helper-functions): `emptySchema()` is identical in three executor tests, `schemaWith(body)` is in three (once with line breaks around the body), the XML constants `schemaWithAnnotationXml` and `schemaWithTwoAnnotationsXml` are in both the annotation validator and executor tests, and the stubs of the VS Code objects for `SchemaEditorProvider` are built separately in `webviewProvider.test.ts` and `pipeline.workspaceEdit.test.ts`. The two helper modules are named `testHelpers.ts` and `svgTestUtils.ts` instead of `<topic>TestHelpers.ts`. The fix is to move the copies into helper modules and rename the two modules. This is planned for Phase 9 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340), on the editor branch, which has more of these tests. Moving the inline XML is a separate, larger task (see [Test XML is inline instead of in `test-resources`](#test-xml-is-inline-instead-of-in-test-resources)).
-- **GitHub issue:** none
-
-## CI skips pull requests into other branches
-
-- **Location:** `.github/workflows/ci.yml`
-- **Severity:** Low
-- **Effort:** S
-- **Description:** The workflow runs only for pushes and pull requests to `main` and `modernization`, so pull requests into feature branches such as `copilot/add-editor-capabilities` are not checked. See [Build and packaging](build-and-packaging.md#ci).
 - **GitHub issue:** none
 
 ## Mocha brings dependencies with known vulnerabilities

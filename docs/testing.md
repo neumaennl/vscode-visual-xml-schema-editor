@@ -3,9 +3,8 @@ type: Testing Strategy
 title: Testing
 description: How the extension is tested - running the tests and the type check, the four Vitest projects, mocks and helpers, conventions for tests, mocks, helper functions and helper classes, which tests to write for typical changes, coverage, CI, the smoke tests in the extension host with a mock webview, and how the current tests compare with the testing strategy of ADR 001.
 tags: [testing, vitest, mocks, coverage, ci, conventions]
-status: stable
-generated: { by: human:neumaennl, at: 2026-10-23T09:24:55Z }
-verified: { by: human:neumaennl, at: 2026-10-23T10:12:43Z }
+status: draft
+generated: { by: human:neumaennl, at: 2026-10-23T10:30:17Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -195,9 +194,9 @@ No threshold is enforced; the goal is more than 80% for business logic.
 
 # CI
 
-The workflow `ci.yml` runs on pushes and pull requests to `main` and `modernization` with the Node version from `.nvmrc`. It first checks that this version and the `@types` packages match the lowest supported VS Code version, then installs the dependencies and runs ESLint. It builds the extension once, by packaging it, and checks that the VSIX loads. Then it runs the type check and the Vitest tests with coverage, and the [tests in the extension host](#tests-in-the-extension-host) on the packaged build, with a virtual display (`xvfb-run`) and the VS Code build from the cache. It runs the steps of `npm test` and `npm run test:extension-host` separately, because their `pretest` scripts would compile again (see [Build and packaging](build-and-packaging.md#ci)).[^ci]
+The workflow `ci.yml` runs on pushes to `main` and `modernization` and on every pull request, with the Node version from `.nvmrc`. It first checks that this version and the `@types` packages match the lowest supported VS Code version, then installs the dependencies and runs ESLint. It builds the extension once, by packaging it, and checks that the VSIX loads. Then it runs the type check and the Vitest tests with coverage, and the [tests in the extension host](#tests-in-the-extension-host) on the packaged build, with a virtual display (`xvfb-run`) and the VS Code build from the cache. It runs the steps of `npm test` and `npm run test:extension-host` separately, because their `pretest` scripts would compile again (see [Build and packaging](build-and-packaging.md#ci)).[^ci]
 
-- **Report.** The job summary shows the coverage totals and, as "Vitest", the test report that `dorny/test-reporter` creates from the JUnit file: the tests per file, and for a failing test its message.
+- **Report.** The job summary shows the coverage totals and two test reports that `dorny/test-reporter` creates: "Vitest" from the JUnit file, with the tests per file, and "Extension host" from the JSON file that Mocha writes in GitHub Actions (see [Build and packaging](build-and-packaging.md#ci)). For a failing test, both show its message. Each report is also a check of its own on a pull request.
 - **Annotations.** In GitHub Actions, Vitest also adds its `github-actions` reporter, which marks the line of each failing test in the run and in the changed files of a pull request. Its own job summary is off, because the report step writes one.[^vitest-config]
 
 On `copilot/add-editor-capabilities`, the workflow runs only for `main` and has no packaging steps.
@@ -227,7 +226,7 @@ ADR 001 plans six levels of testing. The current state:[^adr-001]
 | End-to-end tests (Playwright or Selenium) | None. Planned on the editor branch ([#377](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/377)). |
 | Performance tests | None. |
 | Manual tests | No defined process. |
-| Regression tests (CI on every commit) | CI runs lint, build, type check and all tests on pushes and pull requests to `main` and `modernization`. |
+| Regression tests (CI on every commit) | CI runs lint, build, type check and all tests, including the tests in the extension host, on pushes to `main` and `modernization` and on every pull request. |
 
 [^manifest]: Extension manifest (test scripts)
 

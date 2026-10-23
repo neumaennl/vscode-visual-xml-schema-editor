@@ -10,8 +10,13 @@ env:
 on:
   push:
     branches: [ main, modernization ]
+  # All pull requests, whatever their target branch.
   pull_request:
-    branches: [ main, modernization ]
+
+# A new push to a pull request cancels the run for the previous one; runs for pushes are kept.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   build:
@@ -105,3 +110,12 @@ jobs:
           path: test-results/vitest-junit.xml
           # Vitest writes JUnit XML in the format of jest-junit, which this parser reads.
           reporter: jest-junit
+
+      - name: Publish extension-host test report to GitHub Checks
+        if: always() && hashFiles('test-results/extension-host.json') != ''
+        uses: dorny/test-reporter@v3
+        with:
+          name: Extension host
+          path: test-results/extension-host.json
+          # Written by Mocha's json reporter, which .vscode-test.mjs selects in GitHub Actions.
+          reporter: mocha-json

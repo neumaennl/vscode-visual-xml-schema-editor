@@ -16,5 +16,12 @@ export default defineConfig({
   extensionDevelopmentPath: join(root, ".vscode-test/extension"),
   workspaceFolder: join(root, ".vscode-test/workspace"),
   launchArgs: ["--disable-extensions"],
-  mocha: { timeout: 20000 },
+  mocha: {
+    timeout: 20000,
+    // In GitHub Actions: a JSON report for the job summary (see ci.yml). Mocha has only
+    // one reporter, so the test names are then missing from the log.
+    ...(process.env.GITHUB_ACTIONS === "true"
+      ? { reporter: "json", reporterOptions: { output: join(root, "test-results/extension-host.json") } }
+      : {}),
+  },
 });

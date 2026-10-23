@@ -130,8 +130,6 @@ export default [
       ],
       // Disabled in tests where we have more control over the test environment
       '@typescript-eslint/no-non-null-assertion': 'off',
-      // Disabled to allow dynamic require() in tests for module initialization testing
-      '@typescript-eslint/no-require-imports': 'off',
       // vitest/unbound-method replaces @typescript-eslint/unbound-method in tests;
       // it correctly handles mock functions that don't rely on `this` binding.
       'vitest/unbound-method': 'error',

@@ -69,10 +69,11 @@ jobs:
           key: vscode-linux-x64-${{ steps.vscode-version.outputs.version }}
 
       # Uses the extension from the package step; `npm run test:extension-host` would compile it again.
+      # The json reporter writes test-results/extension-host.json (see .vscode-test.mjs) instead of the test names to the log.
       - name: Run tests in the extension host
         run: |
           npm run stage:extension-host
-          xvfb-run -a npx vscode-test
+          xvfb-run -a npx vscode-test --reporter json
 
       - name: Summarize coverage in job summary
         if: always()
@@ -118,5 +119,5 @@ jobs:
         with:
           name: Extension host
           path: test-results/extension-host.json
-          # Written by Mocha's json reporter, which .vscode-test.mjs selects in GitHub Actions.
+          # Written by Mocha's json reporter, which the step "Run tests in the extension host" selects.
           reporter: mocha-json

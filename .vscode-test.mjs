@@ -18,10 +18,8 @@ export default defineConfig({
   launchArgs: ["--disable-extensions"],
   mocha: {
     timeout: 20000,
-    // In GitHub Actions: a JSON report for the job summary (see ci.yml). Mocha has only
-    // one reporter, so the test names are then missing from the log.
-    ...(process.env.GITHUB_ACTIONS === "true"
-      ? { reporter: "json", reporterOptions: { output: join(root, "test-results/extension-host.json") } }
-      : {}),
+    // The file for `--reporter json`, which CI uses for its job summary (see ci.yml).
+    // Mocha has only one reporter, so the default one is not set here.
+    reporterOptions: { output: join(root, "test-results/extension-host.json") },
   },
 });

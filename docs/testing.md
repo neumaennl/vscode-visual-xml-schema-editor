@@ -4,7 +4,7 @@ title: Testing
 description: How the extension is tested - running the tests and the type check, the four Vitest projects, mocks and helpers, conventions for tests, mocks, helper functions and helper classes, which tests to write for typical changes, coverage, CI, the smoke tests in the extension host with a mock webview, and how the current tests compare with the testing strategy of ADR 001.
 tags: [testing, vitest, mocks, coverage, ci, conventions]
 status: draft
-generated: { by: human:neumaennl, at: 2026-10-23T10:49:36Z }
+generated: { by: human:neumaennl, at: 2026-10-23T11:01:28Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -196,7 +196,7 @@ No threshold is enforced; the goal is more than 80% for business logic.
 
 The workflow `ci.yml` runs on pushes to `main` and `modernization` and on every pull request, with the Node version from `.nvmrc`. It first checks that this version and the `@types` packages match the lowest supported VS Code version, then installs the dependencies and runs ESLint. It builds the extension once, by packaging it, and checks that the VSIX loads. Then it runs the type check and the Vitest tests with coverage, and the [tests in the extension host](#tests-in-the-extension-host) on the packaged build, with a virtual display (`xvfb-run`) and the VS Code build from the cache. It runs the steps of `npm test` and `npm run test:extension-host` separately, because their `pretest` scripts would compile again (see [Build and packaging](build-and-packaging.md#ci)).[^ci]
 
-- **Report.** The job summary shows the coverage totals and two test reports that `dorny/test-reporter` creates: "Vitest" from the JUnit file, with the tests per file, and "Extension host" from the JSON file that Mocha writes in GitHub Actions (see [Build and packaging](build-and-packaging.md#ci)). For a failing test, both show its message. `dorny/test-reporter` writes them into the job summary of the run (`use-actions-summary`, its default since version 2), not as checks of their own.
+- **Report.** The job summary shows the coverage totals and two test reports that `dorny/test-reporter` creates: "Vitest" from the JUnit file, with the tests per file, and "Extension host" from the JSON file that Mocha's `json` reporter writes in CI (see [Build and packaging](build-and-packaging.md#ci)). For a failing test, both show its message. `dorny/test-reporter` writes them into the job summary of the run (`use-actions-summary`, its default since version 2), not as checks of their own.
 - **Annotations.** In GitHub Actions, Vitest also adds its `github-actions` reporter, which marks the line of each failing test in the run and in the changed files of a pull request. Its own job summary is off, because the report step writes one.[^vitest-config]
 
 On `copilot/add-editor-capabilities`, the workflow runs only for `main` and has no packaging steps.

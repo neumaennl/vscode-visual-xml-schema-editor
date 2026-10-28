@@ -4,8 +4,8 @@ title: Persistence
 description: How edits reach the XSD file - the command pipeline, the document edit, what serialization changes, undo and save, and how changes from outside reach the diagram.
 tags: [persistence, command-pipeline, workspace-edit, serialization, undo, xmlbind-ts]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-23T08:59:42Z }
-verified: { by: human:neumaennl, at: 2026-10-23T10:12:43Z }
+generated: { by: human:neumaennl, at: 2026-10-28T13:57:27Z }
+verified: { by: human:neumaennl, at: 2026-10-28T14:01:23Z }
 sources:
   - id: extension
     resource: ../src/extension.ts
@@ -120,7 +120,7 @@ For each change, the provider:
 
 The XSD document is the only thing the extension writes to a file. Two other kinds of state exist, and neither is stored in the document:
 
-- **Settings.** The diagram options (`xmlSchemaVisualEditor.*`, see [Editor](editor.md#diagram)) are VS Code settings. The extension only reads them and never writes them. When they change, the provider sends `updateDiagramOptions`, and the webview re-renders with the new options; this is not a document change.[^webview-provider]
+- **Settings.** The diagram options (`visualXmlSchemaEditor.*`, see [Editor](editor.md#diagram)) are VS Code settings. The extension only reads them and never writes them. When they change, the provider sends `updateDiagramOptions`, and the webview re-renders with the new options; this is not a document change.[^webview-provider]
 - **Webview state.** The webview saves the last schema, the zoom and pan, and the diagram options with `vscode.setState()` and reads them back when it is created again.[^webview-main] VS Code keeps this state per editor, also across restarts, so the diagram can be shown before the first `updateSchema` arrives. It is only a cache: the next `updateSchema` replaces the schema. Restoring it is incomplete: the saved zoom and pan are not applied, and the expand state is not saved (see [Editor](editor.md#schemaeditorapp) and [Known issues](known-issues.md#view-state-is-not-restored-after-reopening), [#347](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/347)).
 
 # Concurrency

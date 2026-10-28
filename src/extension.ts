@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import { SchemaEditorProvider } from "./webviewProvider.js";
 
 /**
- * Activates the XML Schema Visual Editor extension.
+ * Activates the Visual XML Schema Editor extension.
  * Registers the custom editor provider and commands.
  * 
  * @param context - The extension context provided by VS Code
@@ -13,7 +13,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
   context.subscriptions.push(
     vscode.window.registerCustomEditorProvider(
-      "xmlSchemaVisualEditor.editor",
+      "visualXmlSchemaEditor.editor",
       provider,
       {
         webviewOptions: {
@@ -27,7 +27,7 @@ export function activate(context: vscode.ExtensionContext): void {
   // Register command to open schema in visual editor
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      "xmlSchemaVisualEditor.openEditor",
+      "visualXmlSchemaEditor.openEditor",
       async (uri?: vscode.Uri) => {
         // If URI is provided (from context menu), use it
         // Otherwise, try to get URI from active editor
@@ -44,7 +44,7 @@ export function activate(context: vscode.ExtensionContext): void {
           await vscode.commands.executeCommand(
             "vscode.openWith",
             fileUri,
-            "xmlSchemaVisualEditor.editor"
+            "visualXmlSchemaEditor.editor"
           );
         } else {
           await vscode.window.showErrorMessage(

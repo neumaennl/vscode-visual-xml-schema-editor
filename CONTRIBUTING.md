@@ -22,7 +22,7 @@ The documentation in [`docs/`](docs/index.md) describes the editor branch.
 
    Then set `NODE_AUTH_TOKEN` to the token, permanently or only for the npm commands that install packages, for example `NODE_AUTH_TOKEN=<token> npm ci`. The line is not in the repository's `.npmrc`, because Dependabot would send `${NODE_AUTH_TOKEN}` literally instead of its own credential.
 3. Run `npm ci`.
-4. Open the folder in VS Code and press F5 (launch configuration "Run Extension"). A second VS Code window opens with the extension loaded. In it, open an `.xsd` file, for example from `exampleFiles/`, with "Open With…" → "XML Schema Visual Editor".
+4. Open the folder in VS Code and press F5 (launch configuration "Run Extension"). A second VS Code window opens with the extension loaded. In it, open an `.xsd` file, for example from `exampleFiles/`, with "Open With…" → "Visual XML Schema Editor".
 
 [Build and packaging](docs/build-and-packaging.md) explains the build, the npm scripts and the VSIX.
 

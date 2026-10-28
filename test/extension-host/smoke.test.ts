@@ -5,8 +5,8 @@
 import * as assert from "node:assert/strict";
 import * as vscode from "vscode";
 
-const EXTENSION_ID = "neumaennl.xml-schema-visual-editor";
-const VIEW_TYPE = "xmlSchemaVisualEditor.editor";
+const EXTENSION_ID = "neumaennl.visual-xml-schema-editor";
+const VIEW_TYPE = "visualXmlSchemaEditor.editor";
 const NEW_ELEMENT_NAME = 'name="smokeTestElement"';
 const TIMEOUT_MS = 10_000;
 

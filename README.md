@@ -1,4 +1,4 @@
-# XML Schema Visual Editor
+# Visual XML Schema Editor Extension for Visual Studio Code
 
 [![CI](https://github.com/neumaennl/vscode-visual-xml-schema-editor/actions/workflows/ci.yml/badge.svg)](https://github.com/neumaennl/vscode-visual-xml-schema-editor/actions/workflows/ci.yml)
 
@@ -17,17 +17,17 @@ The extension is currently a viewer. It is being developed into a full visual ed
 
 The visual editor opens next to the normal text editor; it does not replace it. To open an `.xsd` file in it:
 
-- right-click the file in the Explorer and choose **Open in XML Schema Visual Editor**,
-- run **Open in XML Schema Visual Editor** from the Command Palette while the file is open in the text editor, or
-- run **View: Reopen Editor With…** and choose **XML Schema Visual Editor**.
+- right-click the file in the Explorer and choose **Open in Visual XML Schema Editor**,
+- run **Open in Visual XML Schema Editor** from the Command Palette while the file is open in the text editor, or
+- run **View: Reopen Editor With…** and choose **Visual XML Schema Editor**.
 
 ## Settings
 
 | Setting | Default | Effect |
 |---|---|---|
-| `xmlSchemaVisualEditor.showDocumentation` | `false` | Shows the documentation annotations of the schema in the diagram. |
-| `xmlSchemaVisualEditor.alwaysShowOccurrence` | `false` | Shows the occurrence (`minOccurs`..`maxOccurs`) of every item, including the default `1..1`. |
-| `xmlSchemaVisualEditor.showType` | `false` | Shows the type of each element in the diagram. |
+| `visualXmlSchemaEditor.showDocumentation` | `false` | Shows the documentation annotations of the schema in the diagram. |
+| `visualXmlSchemaEditor.alwaysShowOccurrence` | `false` | Shows the occurrence (`minOccurs`..`maxOccurs`) of every item, including the default `1..1`. |
+| `visualXmlSchemaEditor.showType` | `false` | Shows the type of each element in the diagram. |
 
 Changes to the settings apply immediately to all open diagrams.
 

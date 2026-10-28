@@ -4,8 +4,8 @@ title: Messaging
 description: The message protocol between the extension host and the webview - the messages in both directions and the order in which they arrive.
 tags: [messaging, protocol, postMessage, commands, webview]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-02T09:19:39Z }
-verified: { by: human:neumaennl, at: 2026-10-02T10:03:25Z }
+generated: { by: human:neumaennl, at: 2026-10-28T13:57:27Z }
+verified: { by: human:neumaennl, at: 2026-10-28T14:01:23Z }
 sources:
   - id: messages
     resource: ../shared/messages.ts
@@ -58,7 +58,7 @@ The provider sends through `safePostMessage()`, which catches and logs errors of
 | Message | Data | Sent when |
 |---|---|---|
 | `updateSchema` | `schema` - the whole parsed document | The editor opens, and after every change of the document, including changes made by commands, undo and redo, and edits outside the visual editor. |
-| `updateDiagramOptions` | `DiagramOptions` - `showDocumentation`, `alwaysShowOccurrence`, `showType` | The editor opens, and a setting in `xmlSchemaVisualEditor.*` changes. |
+| `updateDiagramOptions` | `DiagramOptions` - `showDocumentation`, `alwaysShowOccurrence`, `showType` | The editor opens, and a setting in `visualXmlSchemaEditor.*` changes. |
 | `commandResult` | `CommandResponse` - `success`, `error?`, `data?` | A command was applied to the document (`success: true`, no `data`), or its validation failed (`success: false` with `error`). |
 | `error` | `ErrorData` - `message`, `code?`, `stack?` | The document cannot be parsed (only `message`), or a command fails at runtime or cannot be applied (`code: "COMMAND_EXECUTION_ERROR"`, mostly with `stack`). |
 | `schemaModified` | `schema` | Never. The type exists, but the extension does not send it and the webview does not handle it (see [Known issues](known-issues.md#message-schemamodified-is-unused)). |

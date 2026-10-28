@@ -4,8 +4,8 @@ title: Architecture
 description: How the extension host, the webview and the shared code work together to provide a visual editor for XML Schema (XSD) files, and the design decisions behind the command-based design.
 tags: [architecture, extension-host, webview, shared, design-decisions]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-23T08:55:48Z }
-verified: { by: human:neumaennl, at: 2026-10-23T10:12:43Z }
+generated: { by: human:neumaennl, at: 2026-10-28T13:57:27Z }
+verified: { by: human:neumaennl, at: 2026-10-28T14:01:23Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -43,7 +43,7 @@ sources:
 
 The extension adds a visual editor for XML Schema (`*.xsd`) files to VS Code. It shows a schema as an interactive diagram, and lets users add constructs from a palette by drag and drop and edit their properties in a side panel. Every change is written back to the XSD text, so the file stays a normal, version-controllable XSD.
 
-The visual editor is offered as an alternative editor (priority `option`) next to the normal text editor. It opens through "Open With…", the explorer context menu or the command `xmlSchemaVisualEditor.openEditor`.[^manifest]
+The visual editor is offered as an alternative editor (priority `option`) next to the normal text editor. It opens through "Open With…", the explorer context menu or the command `visualXmlSchemaEditor.openEditor`.[^manifest]
 
 This documentation describes the editor as it is developed on the branch `copilot/add-editor-capabilities`. The version on `main` is still a viewer: it shows the diagram and the properties of the selected node, but has no palette and no editable property panel.
 

@@ -4,7 +4,8 @@ title: Editor
 description: The custom editor and the webview app - how the editor opens, the page layout, the app that wires palette, diagram and property panel together, navigation, diagram settings, the palette and the property panel tabs.
 tags: [editor, webview, palette, property-panel, navigation, ui]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-07T14:41:24Z }
+generated: { by: human:neumaennl, at: 2026-10-28T13:57:27Z }
+verified: { by: human:neumaennl, at: 2026-10-28T14:01:23Z }
 verified:
   by: human:neumaennl
   at: 2026-10-08T08:46:19Z
@@ -45,10 +46,10 @@ This document describes the parts of the editor and how they are connected. The 
 
 # Opening the editor
 
-The extension contributes the custom editor `xmlSchemaVisualEditor.editor` for `*.xsd` files with priority `option`, so the text editor stays the default.[^manifest] Users open the visual editor through:
+The extension contributes the custom editor `visualXmlSchemaEditor.editor` for `*.xsd` files with priority `option`, so the text editor stays the default.[^manifest] Users open the visual editor through:
 
-- "Open With…" → "XML Schema Visual Editor",
-- the explorer context menu entry "Open in XML Schema Visual Editor" (command `xmlSchemaVisualEditor.openEditor`), shown for `.xsd` files.
+- "Open With…" → "Visual XML Schema Editor",
+- the explorer context menu entry "Open in Visual XML Schema Editor" (command `visualXmlSchemaEditor.openEditor`), shown for `.xsd` files.
 
 `SchemaEditorProvider` implements `CustomTextEditorProvider`, so the editor works on the regular text document. Saving, undo/redo and the dirty marker are handled by VS Code. The webview is registered with `retainContextWhenHidden: true`, and one document can only be open in one visual editor at a time (`supportsMultipleEditorsPerDocument: false`).[^extension]
 
@@ -100,9 +101,9 @@ Three user settings change the diagram. All are booleans and default to `false`:
 
 | Setting | Effect |
 |---|---|
-| `xmlSchemaVisualEditor.showDocumentation` | Show documentation text below items. |
-| `xmlSchemaVisualEditor.alwaysShowOccurrence` | Show occurrence (min..max) also for the default `1..1`. |
-| `xmlSchemaVisualEditor.showType` | Show the type name in items. |
+| `visualXmlSchemaEditor.showDocumentation` | Show documentation text below items. |
+| `visualXmlSchemaEditor.alwaysShowOccurrence` | Show occurrence (min..max) also for the default `1..1`. |
+| `visualXmlSchemaEditor.showType` | Show the type name in items. |
 
 # Palette
 

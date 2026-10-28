@@ -1,5 +1,8 @@
 # Knowledge Bundle Update Log
 
+## 2026-10-28
+* **Update**: The extension is called "Visual XML Schema Editor" ([#402](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/402)): the package name is `visual-xml-schema-editor`, and the view type, the command and the settings start with `visualXmlSchemaEditor.`. [Editor](editor.md), [Architecture](architecture.md), [Messaging](messaging.md), [Persistence](persistence.md) and [Build and packaging](build-and-packaging.md) use the new names; the heading of `README.md` is again "Visual XML Schema Editor Extension for Visual Studio Code".
+
 ## 2026-10-23
 * **Update**: [Build and packaging](build-and-packaging.md#dependencies-and-node) ([#397](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/397)): the auth line for GitHub Packages moved from the repository's `.npmrc` into the user's npmrc (in CI written by `actions/setup-node`), because Dependabot sent its `${NODE_AUTH_TOKEN}` literally and could not read `@neumaennl/xmlbind-ts`; Dependabot groups `vitest` with `@vitest/coverage-*`. `CONTRIBUTING.md` describes the new setup.
 * **Update**: `modernization` is merged into `main` ([#389](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/389)). [Build and packaging](build-and-packaging.md) describes the packaging as the state on `main` and the editor branch as taking in `main` in Phase 9, CI runs on pushes to `main` only ([Build and packaging](build-and-packaging.md#ci), [Testing](testing.md#ci)), and "Planned changes" no longer lists Phase 7, which is done. [Known issues](known-issues.md#toarray-is-obsolete-since-xmlbind-ts-23) and `CONTRIBUTING.md` no longer refer to the branch `modernization`.

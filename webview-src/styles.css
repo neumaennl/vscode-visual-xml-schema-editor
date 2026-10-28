@@ -113,7 +113,7 @@ body {
   white-space: pre-wrap;
 }
 
-.property-panel-header {
+.properties-panel-header {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -121,7 +121,7 @@ body {
   border-bottom: 1px solid var(--vscode-sideBar-border, var(--vscode-input-border));
 }
 
-.property-panel-header-badge {
+.properties-panel-header-badge {
   display: grid;
   place-items: center;
   width: 28px;
@@ -136,7 +136,7 @@ body {
   font-weight: 700;
 }
 
-.property-panel-header-heading {
+.properties-panel-header-heading {
   display: flex;
   flex: 1;
   min-width: 0;
@@ -144,13 +144,13 @@ body {
   gap: 2px;
 }
 
-.property-panel-header-title {
+.properties-panel-header-title {
   color: var(--vscode-sideBarTitle-foreground, var(--vscode-foreground));
   font-size: 15px;
   font-weight: 600;
 }
 
-.property-panel-header-metadata {
+.properties-panel-header-metadata {
   display: flex;
   min-width: 0;
   align-items: baseline;
@@ -159,14 +159,14 @@ body {
   white-space: nowrap;
 }
 
-.property-panel-header-type {
+.properties-panel-header-type {
   flex: 0 0 auto;
   color: var(--vscode-foreground);
   font-size: 12px;
   font-weight: 600;
 }
 
-.property-panel-header-id {
+.properties-panel-header-id {
   flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
@@ -701,7 +701,7 @@ body {
   padding: 8px 10px 10px;
 }
 
-/* ── Property panel sections ─────────────────────── */
+/* ── Properties panel sections ─────────────────────── */
 
 .property-section {
   display: flex;

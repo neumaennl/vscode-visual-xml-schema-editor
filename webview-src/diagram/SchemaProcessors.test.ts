@@ -459,7 +459,7 @@ describe("SchemaProcessors", () => {
       );
     });
 
-    it("should extract compositor documentation for property-panel docs editing", () => {
+    it("should extract compositor documentation for properties-panel docs editing", () => {
       const ctItem = new DiagramItem(
         "/complexType:PersonType",
         "PersonType",

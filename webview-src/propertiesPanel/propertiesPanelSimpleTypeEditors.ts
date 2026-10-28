@@ -1,5 +1,5 @@
 /**
- * Property-panel helpers for rendering and editing simpleType list and union fields.
+ * Properties-panel helpers for rendering and editing simpleType list and union fields.
  * Keeps the structured editor controls out of the general type-property module.
  */
 
@@ -7,14 +7,14 @@ import { SchemaCommand } from "../../shared/types";
 import { RestrictionFacets } from "../../shared/commands/schemaTypes";
 import { SchemaNodeType } from "../../shared/idStrategy";
 import { DiagramItem } from "../diagram";
-import { createEditableField } from "./propertyPanelDom";
-import { normalizeTypeReferenceForCurrentSchema } from "./propertyPanelCommands";
+import { createEditableField } from "./propertiesPanelDom";
+import { normalizeTypeReferenceForCurrentSchema } from "./propertiesPanelCommands";
 import {
   createSimpleTypeKindCommand,
   createSimpleTypeListCommand,
   createSimpleTypeUnionCommand,
-} from "./propertyPanelSimpleTypeCommands";
-import { getReadOnlyTypeValue } from "./propertyPanelTypeHelpers";
+} from "./propertiesPanelSimpleTypeCommands";
+import { getReadOnlyTypeValue } from "./propertiesPanelTypeHelpers";
 
 /**
  * Resolves the current simpleType derivation kind from structured diagram state.
@@ -38,7 +38,7 @@ export function getSimpleTypeDerivationKind(
 }
 
 /**
- * Returns whether a node should be treated as a simpleType in the property panel.
+ * Returns whether a node should be treated as a simpleType in the properties panel.
  */
 export function isSimpleTypeNode(nodeType: SchemaNodeType | null, hasInlineSimpleType: boolean): boolean {
   return (

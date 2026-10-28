@@ -1,5 +1,5 @@
 /**
- * Shared helpers for property-panel type editing.
+ * Shared helpers for properties-panel type editing.
  * Keeps reusable type-label and hint logic separate from rendering orchestration.
  */
 

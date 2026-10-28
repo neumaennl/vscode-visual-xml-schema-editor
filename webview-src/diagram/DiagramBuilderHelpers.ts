@@ -38,7 +38,7 @@ export function buildDocumentationId(annotationId: string, documentationIndex: n
 
 /**
  * Extracts xs:annotation / xs:documentation structure from an XSD annotation field.
- * The returned entries keep their schema IDs so the property panel can edit or remove
+ * The returned entries keep their schema IDs so the properties panel can edit or remove
  * the exact annotation/documentation nodes later without flattening the structure.
  *
  * @param ownerId - Schema ID of the annotated component

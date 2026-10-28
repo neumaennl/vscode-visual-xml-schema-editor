@@ -1,5 +1,5 @@
 /**
- * DOM-construction helpers for the PropertyPanel UI.
+ * DOM-construction helpers for the PropertiesPanel UI.
  * This module centralizes small, reusable DOM fragments so the panel controller
  * can focus on state and command dispatch instead of element boilerplate.
  */
@@ -10,7 +10,7 @@ import type { FacetIconStyle } from "../palette/FacetIconStyles";
 let nextDatalistId = 0;
 
 /**
- * Appends a read-only label/value pair to the property panel.
+ * Appends a read-only label/value pair to the properties panel.
  *
  * @param container - Parent element receiving the property row
  * @param label - Human-readable property label
@@ -32,7 +32,7 @@ export function addPropertyToContainer(container: HTMLElement, label: string, va
 }
 
 /**
- * Appends a labeled custom element to the property panel.
+ * Appends a labeled custom element to the properties panel.
  *
  * @param container - Parent element receiving the property row
  * @param label - Human-readable property label
@@ -122,43 +122,43 @@ export function createSectionHeader(icon: string, label: string): HTMLElement {
 }
 
 /**
- * Creates the property-panel header shown above the tabs.
+ * Creates the properties-panel header shown above the tabs.
  *
  * @param nodeTypeLabel - User-facing label of the selected node type
  * @param nodeId - Stable identifier of the selected node
  * @param onDelete - Optional callback to invoke when the delete button is clicked
  * @returns A DOM element containing the node-type label and optional delete action
  */
-export function createPropertyPanelHeader(
+export function createPropertiesPanelHeader(
   nodeTypeLabel: string,
   nodeId: string,
   onDelete?: () => void
 ): HTMLElement {
   const header = document.createElement("div");
-  header.className = "property-panel-header";
+  header.className = "properties-panel-header";
 
   const typeBadge = document.createElement("span");
-  typeBadge.className = "property-panel-header-badge";
+  typeBadge.className = "properties-panel-header-badge";
   typeBadge.setAttribute("aria-hidden", "true");
   typeBadge.textContent = nodeTypeLabel.charAt(0);
   header.appendChild(typeBadge);
 
   const heading = document.createElement("div");
-  heading.className = "property-panel-header-heading";
+  heading.className = "properties-panel-header-heading";
   const title = document.createElement("span");
-  title.className = "property-panel-header-title";
+  title.className = "properties-panel-header-title";
   title.textContent = "Properties";
 
   const type = document.createElement("span");
-  type.className = "property-panel-header-type";
+  type.className = "properties-panel-header-type";
   type.textContent = nodeTypeLabel;
 
   const nodeIdLabel = document.createElement("span");
-  nodeIdLabel.className = "property-panel-header-id";
+  nodeIdLabel.className = "properties-panel-header-id";
   nodeIdLabel.textContent = nodeId;
 
   const metadata = document.createElement("div");
-  metadata.className = "property-panel-header-metadata";
+  metadata.className = "properties-panel-header-metadata";
   metadata.append(type, nodeIdLabel);
   heading.append(title, metadata);
   header.appendChild(heading);

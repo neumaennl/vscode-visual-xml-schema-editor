@@ -1,5 +1,5 @@
 /**
- * Schema-root namespace editing helpers for the property panel.
+ * Schema-root namespace editing helpers for the properties panel.
  */
 
 import { SchemaCommand } from "../../shared/types";
@@ -7,7 +7,7 @@ import { DiagramItem } from "../diagram";
 import {
   addPropertyWithElementToContainer,
   createEditableField,
-} from "./propertyPanelDom";
+} from "./propertiesPanelDom";
 
 type CommandDispatcher = (command: SchemaCommand) => void;
 
@@ -20,7 +20,7 @@ type NamespacePrefixes = Record<string, string>;
  * @param root - General-tab container element
  * @param node - Currently selected schema diagram item
  * @param dispatchCommand - Callback used to emit schema commands
- * @param rerender - Callback used to refresh the property panel after edits
+ * @param rerender - Callback used to refresh the properties panel after edits
  */
 export function renderSchemaNamespaceProperties(
   root: HTMLElement,

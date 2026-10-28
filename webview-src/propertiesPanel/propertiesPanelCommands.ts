@@ -1,5 +1,5 @@
 /**
- * Command-building helpers for PropertyPanel interactions.
+ * Command-building helpers for PropertiesPanel interactions.
  * This module translates edited diagram-node values into shared schema commands
  * while hiding ID-resolution details from the panel UI code.
  */
@@ -8,7 +8,7 @@ import { SchemaCommand } from "../../shared/types";
 import { SCHEMA_ROOT_ID, generateSchemaId, parseSchemaId, SchemaNodeType } from "../../shared/idStrategy";
 import { DiagramItem } from "../diagram";
 import { DiagramItemType } from "../diagram/DiagramTypes";
-import { BUILT_IN_XSD_TYPE_LOCAL_NAME_SET } from "./propertyPanelTypeCatalog";
+import { BUILT_IN_XSD_TYPE_LOCAL_NAME_SET } from "./propertiesPanelTypeCatalog";
 
 /**
  * Collects and caches top-level/local simpleType and complexType names from the active diagram.
@@ -48,7 +48,7 @@ export function collectLocalSchemaTypeNames(node: DiagramItem): ReadonlySet<stri
 }
 
 /**
- * Normalizes a type reference entered in the property panel.
+ * Normalizes a type reference entered in the properties panel.
  * For local schema types, this prefixes with the schema targetNamespace prefix when available.
  */
 export function normalizeTypeReferenceForCurrentSchema(
@@ -104,7 +104,7 @@ export function getNodeType(node: DiagramItem): SchemaNodeType | null {
  * Resolves a user-facing label for the selected node type.
  *
  * @param node - Diagram item to inspect
- * @returns A short node-type label for the property panel header
+ * @returns A short node-type label for the properties panel header
  */
 export function getNodeTypeLabel(node: DiagramItem): string {
   const nodeType = getNodeType(node);

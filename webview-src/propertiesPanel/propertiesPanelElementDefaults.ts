@@ -1,10 +1,10 @@
 /**
- * Default/fixed section rendering helpers for element nodes in the PropertyPanel.
+ * Default/fixed section rendering helpers for element nodes in the PropertiesPanel.
  */
 
 import { SchemaCommand } from "../../shared/types";
 import { DiagramItem } from "../diagram";
-import { createSectionHeader } from "./propertyPanelDom";
+import { createSectionHeader } from "./propertiesPanelDom";
 
 /**
  * Renders the DEFAULT & FIXED section for element nodes.

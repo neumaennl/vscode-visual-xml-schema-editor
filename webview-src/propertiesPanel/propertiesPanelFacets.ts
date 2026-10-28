@@ -1,14 +1,14 @@
 /**
- * Property-panel helpers for rendering and editing simple-type restriction facets.
+ * Properties-panel helpers for rendering and editing simple-type restriction facets.
  * Keeps the facet-specific UI and command-building logic separate from the main panel class.
  */
 
 import { SchemaCommand } from "../../shared/types";
 import { DiagramItem } from "../diagram";
-import { createEditableField } from "./propertyPanelDom";
-import { resolveSimpleTypeId } from "./propertyPanelCommands";
-import { extractBaseType } from "./propertyPanelSimpleTypeCommands";
-import { hasEditableFacetValues, RestrictionSnapshot } from "./propertyPanelDraft";
+import { createEditableField } from "./propertiesPanelDom";
+import { resolveSimpleTypeId } from "./propertiesPanelCommands";
+import { extractBaseType } from "./propertiesPanelSimpleTypeCommands";
+import { hasEditableFacetValues, RestrictionSnapshot } from "./propertiesPanelDraft";
 import {
   getFacetIconStyle,
   type FacetIconStyle,

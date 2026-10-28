@@ -58,7 +58,7 @@ describe("DiagramBuilderHelpers", () => {
       );
     });
 
-    it("preserves annotation/documentation structure and IDs for the property panel", () => {
+    it("preserves annotation/documentation structure and IDs for the properties panel", () => {
       const annotations = [
         {
           documentation: [{ value: "First annotation" }, { value: "Second entry" }],

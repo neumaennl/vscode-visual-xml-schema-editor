@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-28T13:23:13Z }
-verified: { by: human:neumaennl, at: 2026-10-28T13:32:15Z }
+generated: { by: human:neumaennl, at: 2026-10-28T13:38:00Z }
+verified: { by: human:neumaennl, at: 2026-10-28T13:41:58Z }
 ---
 
 # Purpose
@@ -499,7 +499,7 @@ Effort:
 - **Location:** `vitest.config.ts` (`coverage.thresholds`), code of the editor in `src/` and `webview-src/`
 - **Severity:** Low
 - **Effort:** L
-- **Description:** The editor branch had no coverage thresholds. After `main` was merged into it, branch coverage is 73.4%, below the 80% that applies to lines, statements and functions, so the threshold for branches is 70% for now (see [Testing](testing.md#coverage)). About 270 more covered branches are needed for 80%. The largest gaps are in `schemaLocalRenamer.ts` (38%), `schemaPrefixChecker.ts` (53%), `propertyPanelXmlPreview.ts` (56%), `renderer.ts` (43%), `webview-src/main.ts` (37%) and `SchemaProcessorsGroups.ts`, which no test covers. The fix is the tests that are missing, after which all four thresholds are raised to 85% (Phase 9 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340)).
+- **Description:** Much of the code of the editor has no tests for some of its branches. Branch coverage is 73.4%, below the 80% that applies to lines, statements and functions, so the threshold for branches is 70% for now (see [Testing](testing.md#coverage)). About 270 more covered branches are needed for 80%. The largest gaps are in `schemaLocalRenamer.ts` (38%), `schemaPrefixChecker.ts` (53%), `propertyPanelXmlPreview.ts` (56%), `renderer.ts` (43%), `webview-src/main.ts` (37%) and `SchemaProcessorsGroups.ts`, which no test covers. The fix is the tests that are missing, after which all four thresholds are raised to 85% (Phase 9 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340)).
 - **GitHub issue:** none
 
 ## The extension host is not bundled

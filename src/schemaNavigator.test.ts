@@ -4,8 +4,8 @@
  */
 
 import { unmarshal } from "@neumaennl/xmlbind-ts";
-import { schema } from "../shared/types";
-import { locateNodeById } from "./schemaNavigator";
+import { schema } from "../shared/types.js";
+import { locateNodeById } from "./schemaNavigator.js";
 
 describe("SchemaNavigator", () => {
   describe("locateNodeById", () => {

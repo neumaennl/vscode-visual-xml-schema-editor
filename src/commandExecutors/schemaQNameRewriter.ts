@@ -21,8 +21,8 @@ import {
   simpleExplicitGroup,
   localElement,
   narrowMaxMin,
-} from "../../shared/types";
-import { toArray } from "../../shared/schemaUtils";
+} from "../../shared/types.js";
+import { toArray } from "../../shared/schemaUtils.js";
 
 // ===== Type aliases =====
 

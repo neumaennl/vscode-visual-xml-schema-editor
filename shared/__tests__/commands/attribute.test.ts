@@ -6,7 +6,7 @@ import {
   AddAttributeCommand,
   RemoveAttributeCommand,
   ModifyAttributeCommand,
-} from "../../commands/attribute";
+} from "../../commands/attribute.js";
 
 describe("Attribute Commands", () => {
   test("AddAttributeCommand should have correct structure", () => {

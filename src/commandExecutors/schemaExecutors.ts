@@ -32,10 +32,10 @@ import {
   RemoveIncludeCommand,
   ModifyIncludeCommand,
   ModifySchemaNamespacesCommand,
-} from "../../shared/types";
-import { toArray } from "../../shared/schemaUtils";
-import { parseSchemaId } from "../../shared/idStrategy";
-import { rewritePrefixInSchema } from "./schemaQNameRewriter";
+} from "../../shared/types.js";
+import { toArray } from "../../shared/schemaUtils.js";
+import { parseSchemaId } from "../../shared/idStrategy.js";
+import { rewritePrefixInSchema } from "./schemaQNameRewriter.js";
 
 // ===== Helpers =====
 

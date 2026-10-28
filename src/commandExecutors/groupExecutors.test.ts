@@ -9,13 +9,13 @@ import {
   AddGroupCommand,
   RemoveGroupCommand,
   ModifyGroupCommand,
-} from "../../shared/types";
+} from "../../shared/types.js";
 import {
   executeAddGroup,
   executeRemoveGroup,
   executeModifyGroup,
-} from "./groupExecutors";
-import { toArray } from "../../shared/schemaUtils";
+} from "./groupExecutors.js";
+import { toArray } from "../../shared/schemaUtils.js";
 
 describe("Group Executors", () => {
   describe("executeAddGroup", () => {

@@ -1,10 +1,10 @@
 {
   "extends": "./tsconfig.webview.json",
   "compilerOptions": {
-    "allowJs": true,
     "types": [
-      "jest",
-      "node"
+      "vitest/globals",
+      "node",
+      "vite/client"
     ]
   },
   "include": [

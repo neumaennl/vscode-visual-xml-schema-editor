@@ -9,14 +9,14 @@ import type {
   AddSimpleTypeCommand,
   RemoveSimpleTypeCommand,
   ModifySimpleTypeCommand,
-} from "../../shared/types";
-import { toArray } from "../../shared/schemaUtils";
+} from "../../shared/types.js";
+import { toArray } from "../../shared/schemaUtils.js";
 import {
   MINIMAL_SCHEMA,
   SCHEMA_WITH_SIMPLETYPE,
   runCommandExpectSuccessSchema,
   runCommandExpectValidationFailure,
-} from "./testHelpers";
+} from "./testHelpers.js";
 
 describe("Integration: SimpleType pipeline", () => {
   // ─── addSimpleType ─────────────────────────────────────────────────────────

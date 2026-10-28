@@ -9,14 +9,14 @@ import type {
   AddAttributeCommand,
   RemoveAttributeCommand,
   ModifyAttributeCommand,
-} from "../../shared/types";
-import { toArray } from "../../shared/schemaUtils";
+} from "../../shared/types.js";
+import { toArray } from "../../shared/schemaUtils.js";
 import {
   SCHEMA_WITH_COMPLEXTYPE,
   MINIMAL_SCHEMA,
   runCommandExpectSuccessSchema,
   runCommandExpectValidationFailure,
-} from "./testHelpers";
+} from "./testHelpers.js";
 
 /** Schema with a complexType that has two attributes (id, status) for remove/modify tests. */
 const SCHEMA_WITH_TWO_ATTRS = `<?xml version="1.0" encoding="UTF-8"?>

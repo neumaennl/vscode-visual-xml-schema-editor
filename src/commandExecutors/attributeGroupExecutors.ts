@@ -13,12 +13,12 @@ import {
   attributeGroupRef,
   annotationType,
   documentationType,
-} from "../../shared/types";
-import { toArray } from "../../shared/schemaUtils";
-import { parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy";
-import { locateNodeById } from "../schemaNavigator";
-import { createAnnotation } from "./annotationUtils";
-import { renameLocalAttributeGroupRefInSchema } from "./schemaLocalRenamer";
+} from "../../shared/types.js";
+import { toArray } from "../../shared/schemaUtils.js";
+import { parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy.js";
+import { locateNodeById } from "../schemaNavigator.js";
+import { createAnnotation } from "./annotationUtils.js";
+import { renameLocalAttributeGroupRefInSchema } from "./schemaLocalRenamer.js";
 
 // ===== Structural types =====
 

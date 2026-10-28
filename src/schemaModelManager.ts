@@ -21,8 +21,8 @@ import {
   namedAttributeGroup,
   importType,
   includeType,
-} from "../shared/types";
-import { toArray } from "../shared/schemaUtils";
+} from "../shared/types.js";
+import { toArray } from "../shared/schemaUtils.js";
 
 /**
  * Result of a schema query operation.

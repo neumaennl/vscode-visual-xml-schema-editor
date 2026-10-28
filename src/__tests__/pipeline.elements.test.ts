@@ -13,14 +13,14 @@ import type {
   AddElementCommand,
   RemoveElementCommand,
   ModifyElementCommand,
-} from "../../shared/types";
-import { toArray } from "../../shared/schemaUtils";
+} from "../../shared/types.js";
+import { toArray } from "../../shared/schemaUtils.js";
 import {
   MINIMAL_SCHEMA,
   SCHEMA_WITH_ELEMENTS,
   runCommandExpectSuccessSchema,
   runCommandExpectValidationFailure,
-} from "./testHelpers";
+} from "./testHelpers.js";
 
 describe("Integration: Element pipeline", () => {
   // ─── addElement ────────────────────────────────────────────────────────────

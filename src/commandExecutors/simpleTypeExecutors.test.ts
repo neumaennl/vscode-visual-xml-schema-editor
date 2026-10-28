@@ -13,13 +13,13 @@ import {
   schema,
   topLevelAttribute,
   topLevelElement,
-} from "../../shared/types";
-import { toArray } from "../../shared/schemaUtils";
+} from "../../shared/types.js";
+import { toArray } from "../../shared/schemaUtils.js";
 import {
   executeAddSimpleType,
   executeModifySimpleType,
   executeRemoveSimpleType,
-} from "./simpleTypeExecutors";
+} from "./simpleTypeExecutors.js";
 
 function schemaWith(body = ""): schema {
   return unmarshal(

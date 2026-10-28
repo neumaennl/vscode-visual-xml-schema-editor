@@ -11,15 +11,15 @@ import {
   RemoveComplexTypeCommand,
   ModifyComplexTypeCommand,
   RestrictionFacets,
-} from "../../shared/types";
+} from "../../shared/types.js";
 import {
   ValidationResult,
   isValidXmlName,
   validateElementType,
-} from "./validationUtils";
-import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy";
-import { toArray, isSchemaRoot } from "../../shared/schemaUtils";
-import { locateNodeById } from "../schemaNavigator";
+} from "./validationUtils.js";
+import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
+import { toArray, isSchemaRoot } from "../../shared/schemaUtils.js";
+import { locateNodeById } from "../schemaNavigator.js";
 
 function hasRestrictionFacetValues(restrictions: RestrictionFacets | undefined): boolean {
   if (!restrictions) {

@@ -10,11 +10,11 @@ import {
   RemoveAttributeGroupCommand,
   ModifyAttributeGroupCommand,
   attributeGroupRef,
-} from "../../shared/types";
-import { ValidationResult, isValidXmlName } from "./validationUtils";
-import { toArray } from "../../shared/schemaUtils";
-import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy";
-import { locateNodeById } from "../schemaNavigator";
+} from "../../shared/types.js";
+import { ValidationResult, isValidXmlName } from "./validationUtils.js";
+import { toArray } from "../../shared/schemaUtils.js";
+import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
+import { locateNodeById } from "../schemaNavigator.js";
 
 // ===== AttributeGroup Reference Helpers =====
 
@@ -29,26 +29,25 @@ type CompositorWithElements = {
 };
 
 /**
+ * Structural type for objects whose content model is a sequence, choice or all:
+ * complexTypes, complexContent extensions and restrictions, and named model groups.
+ */
+type CompositorHolder = {
+  sequence?: CompositorWithElements;
+  choice?: CompositorWithElements;
+  all?: CompositorWithElements;
+};
+
+/**
  * Structural type for objects that can hold attribute group references.
  * Matches complexType (top-level and local), extensionType, restrictionType,
  * and any inline complexType within a local element.
  */
-type AttributeGroupHolder = {
+type AttributeGroupHolder = CompositorHolder & {
   attributeGroup?: attributeGroupRef[];
-  sequence?: CompositorWithElements;
-  choice?: CompositorWithElements;
-  all?: CompositorWithElements;
   complexContent?: {
-    extension?: {
-      attributeGroup?: attributeGroupRef[];
-      sequence?: CompositorWithElements;
-      choice?: CompositorWithElements;
-    };
-    restriction?: {
-      attributeGroup?: attributeGroupRef[];
-      sequence?: CompositorWithElements;
-      choice?: CompositorWithElements;
-    };
+    extension?: CompositorHolder & { attributeGroup?: attributeGroupRef[] };
+    restriction?: CompositorHolder & { attributeGroup?: attributeGroupRef[] };
   };
   simpleContent?: {
     extension?: { attributeGroup?: attributeGroupRef[] };
@@ -114,42 +113,38 @@ function attrGroupRefExistsInCompositor(
 }
 
 /**
+ * Returns true if the named attribute group is referenced within the sequence, choice
+ * or all of a content model, including nested compositors and local element complexTypes.
+ *
+ * @param name - The name of the attribute group
+ * @param holder - The object whose content model is searched
+ * @returns Whether a reference was found
+ */
+function attrGroupRefExistsInCompositors(name: string, holder: CompositorHolder): boolean {
+  return [holder.sequence, holder.choice, holder.all].some(
+    (compositor) => compositor !== undefined && attrGroupRefExistsInCompositor(name, compositor)
+  );
+}
+
+/**
  * Deep variant of attrGroupRefExistsInHolder that also checks compositor trees
- * (sequence/choice/all and their nested local element complexTypes).
+ * (sequence/choice/all and their nested local element complexTypes), also inside
+ * a complexContent extension or restriction.
+ *
+ * @param name - The name of the attribute group
+ * @param holder - The complexType to search
+ * @returns Whether a reference was found
  */
 function attrGroupRefExistsInHolderDeep(
   name: string,
   holder: AttributeGroupHolder
 ): boolean {
   if (attrGroupRefExistsInHolder(name, holder)) return true;
-  if (holder.sequence && attrGroupRefExistsInCompositor(name, holder.sequence)) {
-    return true;
-  }
-  if (holder.choice && attrGroupRefExistsInCompositor(name, holder.choice)) {
-    return true;
-  }
-  if (holder.all && attrGroupRefExistsInCompositor(name, holder.all)) {
-    return true;
-  }
-  const ccExt = holder.complexContent?.extension;
-  if (ccExt) {
-    if (ccExt.sequence && attrGroupRefExistsInCompositor(name, ccExt.sequence)) {
-      return true;
-    }
-    if (ccExt.choice && attrGroupRefExistsInCompositor(name, ccExt.choice)) {
-      return true;
-    }
-  }
-  const ccRestr = holder.complexContent?.restriction;
-  if (ccRestr) {
-    if (ccRestr.sequence && attrGroupRefExistsInCompositor(name, ccRestr.sequence)) {
-      return true;
-    }
-    if (ccRestr.choice && attrGroupRefExistsInCompositor(name, ccRestr.choice)) {
-      return true;
-    }
-  }
-  return false;
+  if (attrGroupRefExistsInCompositors(name, holder)) return true;
+  const { extension, restriction } = holder.complexContent ?? {};
+  return [extension, restriction].some(
+    (derivation) => derivation !== undefined && attrGroupRefExistsInCompositors(name, derivation)
+  );
 }
 
 /**
@@ -159,8 +154,13 @@ function attrGroupRefExistsInHolderDeep(
  * - Top-level complexType definitions (including their compositor trees and
  *   inline complexTypes on nested local elements)
  * - Inline complexTypes on top-level elements (same deep traversal)
+ * - Named model groups (inline complexTypes on their local elements)
  * - Other attribute group definitions (direct refs only — attribute group
  *   definitions do not carry compositor particles)
+ *
+ * @param name - The name of the attribute group
+ * @param schemaObj - The schema to search
+ * @returns Whether a reference was found
  */
 function isAttrGroupReferenced(name: string, schemaObj: schema): boolean {
   for (const ct of toArray(schemaObj.complexType)) {
@@ -170,6 +170,9 @@ function isAttrGroupReferenced(name: string, schemaObj: schema): boolean {
     if (el.complexType && attrGroupRefExistsInHolderDeep(name, el.complexType)) {
       return true;
     }
+  }
+  for (const group of toArray(schemaObj.group)) {
+    if (attrGroupRefExistsInCompositors(name, group)) return true;
   }
   for (const ag of toArray(schemaObj.attributeGroup)) {
     if (toArray(ag.attributeGroup).some((r) => r.ref === name)) return true;

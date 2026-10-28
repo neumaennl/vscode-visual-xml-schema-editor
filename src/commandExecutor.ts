@@ -3,7 +3,7 @@
  * Implements execution logic by delegating to specialized executor modules.
  */
 
-import { SchemaCommand, schema } from "../shared/types";
+import { SchemaCommand, schema } from "../shared/types.js";
 import {
   AddElementCommand,
   RemoveElementCommand,
@@ -36,16 +36,16 @@ import {
   RemoveIncludeCommand,
   ModifyIncludeCommand,
   ModifySchemaNamespacesCommand,
-} from "../shared/commands";
+} from "../shared/commands/index.js";
 
 // Import execution functions from specialized modules
-import * as elementExecutors from "./commandExecutors/elementExecutors";
-import * as attributeExecutors from "./commandExecutors/attributeExecutors";
-import * as typeExecutors from "./commandExecutors/typeExecutors";
-import * as groupExecutors from "./commandExecutors/groupExecutors";
-import * as attributeGroupExecutors from "./commandExecutors/attributeGroupExecutors";
-import * as annotationExecutors from "./commandExecutors/annotationExecutors";
-import * as schemaExecutors from "./commandExecutors/schemaExecutors";
+import * as elementExecutors from "./commandExecutors/elementExecutors.js";
+import * as attributeExecutors from "./commandExecutors/attributeExecutors.js";
+import * as typeExecutors from "./commandExecutors/typeExecutors.js";
+import * as groupExecutors from "./commandExecutors/groupExecutors.js";
+import * as attributeGroupExecutors from "./commandExecutors/attributeGroupExecutors.js";
+import * as annotationExecutors from "./commandExecutors/annotationExecutors.js";
+import * as schemaExecutors from "./commandExecutors/schemaExecutors.js";
 
 /**
  * Generic type for executor functions that execute commands.

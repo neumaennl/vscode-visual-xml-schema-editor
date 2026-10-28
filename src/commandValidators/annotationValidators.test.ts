@@ -3,7 +3,7 @@
  */
 
 import { unmarshal } from "@neumaennl/xmlbind-ts";
-import { schema } from "../../shared/types";
+import { schema } from "../../shared/types.js";
 import {
   AddAnnotationCommand,
   RemoveAnnotationCommand,
@@ -11,7 +11,7 @@ import {
   AddDocumentationCommand,
   RemoveDocumentationCommand,
   ModifyDocumentationCommand,
-} from "../../shared/types";
+} from "../../shared/types.js";
 import {
   validateAddAnnotation,
   validateRemoveAnnotation,
@@ -19,8 +19,8 @@ import {
   validateAddDocumentation,
   validateRemoveDocumentation,
   validateModifyDocumentation,
-} from "./annotationValidators";
-import { expectInvalid } from "./validationTestHelpers";
+} from "./annotationValidators.js";
+import { expectInvalid } from "./validationTestHelpers.js";
 
 // ─── Shared XML fixtures ────────────────────────────────────────────────────
 

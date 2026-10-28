@@ -3,5 +3,5 @@
  * Re-exports all simpleType and complexType executor functions.
  */
 
-export * from "./simpleTypeExecutors";
-export * from "./complexTypeExecutors";
+export * from "./simpleTypeExecutors.js";
+export * from "./complexTypeExecutors.js";

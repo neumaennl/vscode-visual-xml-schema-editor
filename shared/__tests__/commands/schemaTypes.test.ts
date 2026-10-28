@@ -9,7 +9,7 @@ import {
   AddComplexTypeCommand,
   RemoveComplexTypeCommand,
   ModifyComplexTypeCommand,
-} from "../../commands/schemaTypes";
+} from "../../commands/schemaTypes.js";
 
 describe("Simple Type Commands", () => {
   test("AddSimpleTypeCommand with restrictions", () => {

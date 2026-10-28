@@ -3,8 +3,8 @@
  * These utilities are shared between the extension and webview.
  */
 
-import { SCHEMA_ROOT_ID } from "./idStrategy";
-import { schema } from "./types";
+import { SCHEMA_ROOT_ID } from "./idStrategy.js";
+import { schema } from "./types.js";
 
 /**
  * Normalizes a value that may be undefined, a single item, or an array.

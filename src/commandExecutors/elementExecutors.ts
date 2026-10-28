@@ -15,11 +15,11 @@ import {
   documentationType,
   explicitGroup,
   all,
-} from "../../shared/types";
-import { toArray } from "../../shared/schemaUtils";
-import { locateNodeById } from "../schemaNavigator";
-import { parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy";
-import { renameLocalElementRefInSchema } from "./schemaLocalRenamer";
+} from "../../shared/types.js";
+import { toArray } from "../../shared/schemaUtils.js";
+import { locateNodeById } from "../schemaNavigator.js";
+import { parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy.js";
+import { renameLocalElementRefInSchema } from "./schemaLocalRenamer.js";
 
 /**
  * Executes an addElement command.

@@ -6,16 +6,43 @@
 import { unmarshal, marshal } from "@neumaennl/xmlbind-ts";
 import {
   schema,
+  attribute,
   AddAttributeCommand,
   RemoveAttributeCommand,
   ModifyAttributeCommand,
-} from "../../shared/types";
+} from "../../shared/types.js";
 import {
   executeAddAttribute,
   executeRemoveAttribute,
   executeModifyAttribute,
-} from "./attributeExecutors";
-import { toArray } from "../../shared/schemaUtils";
+} from "./attributeExecutors.js";
+import { toArray } from "../../shared/schemaUtils.js";
+
+/**
+ * Unmarshals a schema with the given content.
+ *
+ * @param body - The XSD content of the schema
+ * @returns The schema object
+ */
+function schemaWith(body: string): schema {
+  return unmarshal(
+    schema,
+    `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  ${body}
+</xs:schema>`,
+  );
+}
+
+/**
+ * Returns the local attributes of the complexType `T`.
+ *
+ * @param schemaObj - The schema object
+ * @returns The attributes, in document order
+ */
+function attributesOfT(schemaObj: schema): attribute[] {
+  return toArray(toArray(schemaObj.complexType).find((ct) => ct.name === "T")?.attribute);
+}
 
 describe("Attribute Executors", () => {
   describe("executeAddAttribute", () => {
@@ -781,4 +808,100 @@ describe("Attribute Executors", () => {
       expect(xml).not.toContain('name="lang" type=');
     });
   });
+  describe("values, use and documentation", () => {
+    it("should set the fixed value of a new top-level attribute", () => {
+      const schemaObj = schemaWith("");
+      const command: AddAttributeCommand = {
+        type: "addAttribute",
+        payload: { parentId: "/schema", attributeName: "version", attributeType: "xs:string", fixedValue: "1.0" },
+      };
+
+      executeAddAttribute(command, schemaObj);
+
+      expect(schemaObj.attribute![0].fixed).toBe("1.0");
+      expect(schemaObj.attribute![0].default_).toBeUndefined();
+    });
+
+    it("should set the default value of a new local attribute", () => {
+      const schemaObj = schemaWith(`<xs:complexType name="T"/>`);
+      const command: AddAttributeCommand = {
+        type: "addAttribute",
+        payload: { parentId: "/complexType:T", attributeName: "lang", attributeType: "xs:string", defaultValue: "en" },
+      };
+
+      executeAddAttribute(command, schemaObj);
+
+      expect(attributesOfT(schemaObj)[0].default_).toBe("en");
+    });
+
+    it("should mark a new local attribute as optional when it is not required", () => {
+      const schemaObj = schemaWith(`<xs:complexType name="T"/>`);
+      const command: AddAttributeCommand = {
+        type: "addAttribute",
+        payload: { parentId: "/complexType:T", attributeName: "lang", attributeType: "xs:string", required: false },
+      };
+
+      executeAddAttribute(command, schemaObj);
+
+      expect(attributesOfT(schemaObj)[0].use).toBe("optional");
+    });
+
+    it("should add documentation to a new attribute reference", () => {
+      const schemaObj = schemaWith(`<xs:attribute name="lang" type="xs:string"/><xs:complexType name="T"/>`);
+      const command: AddAttributeCommand = {
+        type: "addAttribute",
+        payload: { parentId: "/complexType:T", ref: "lang", documentation: "Language of the content" },
+      };
+
+      executeAddAttribute(command, schemaObj);
+
+      const added = attributesOfT(schemaObj)[0];
+      expect(added.ref).toBe("lang");
+      expect(toArray(added.annotation?.documentation).map((d) => d.value)).toEqual(["Language of the content"]);
+    });
+
+    it("should make a local attribute optional", () => {
+      const schemaObj = schemaWith(`<xs:complexType name="T"><xs:attribute name="lang" type="xs:string" use="required"/></xs:complexType>`);
+      const command: ModifyAttributeCommand = {
+        type: "modifyAttribute",
+        payload: { attributeId: "/complexType:T/attribute:lang", required: false },
+      };
+
+      executeModifyAttribute(command, schemaObj);
+
+      expect(attributesOfT(schemaObj)[0].use).toBe("optional");
+    });
+
+    it("should replace the documentation of an attribute and keep its appinfo", () => {
+      const schemaObj = schemaWith(
+        `<xs:complexType name="T"><xs:attribute name="lang" type="xs:string"><xs:annotation><xs:appinfo>tool data</xs:appinfo><xs:documentation>Old</xs:documentation></xs:annotation></xs:attribute></xs:complexType>`,
+      );
+      const command: ModifyAttributeCommand = {
+        type: "modifyAttribute",
+        payload: { attributeId: "/complexType:T/attribute:lang", documentation: "New" },
+      };
+
+      executeModifyAttribute(command, schemaObj);
+
+      const annotation = attributesOfT(schemaObj)[0].annotation!;
+      expect(toArray(annotation.documentation).map((d) => d.value)).toEqual(["New"]);
+      expect(toArray(annotation.appinfo)).toHaveLength(1);
+    });
+  });
+
+  describe("removing the last attribute", () => {
+    it("should leave no empty attribute list when the last top-level attribute is removed", () => {
+      const schemaObj = schemaWith(`<xs:attribute name="lang" type="xs:string"/>`);
+      const command: RemoveAttributeCommand = {
+        type: "removeAttribute",
+        payload: { attributeId: "/attribute:lang" },
+      };
+
+      executeRemoveAttribute(command, schemaObj);
+
+      expect(schemaObj.attribute).toBeUndefined();
+    });
+
+  });
+
 });

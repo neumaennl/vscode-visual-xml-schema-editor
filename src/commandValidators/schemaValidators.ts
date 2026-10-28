@@ -11,11 +11,11 @@ import {
   RemoveIncludeCommand,
   ModifyIncludeCommand,
   ModifySchemaNamespacesCommand,
-} from "../../shared/types";
-import { toArray } from "../../shared/schemaUtils";
-import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy";
-import { isValidXmlName, ValidationResult } from "./validationUtils";
-import { isAnyPrefixReferencedInSchema } from "../commandExecutors/schemaPrefixChecker";
+} from "../../shared/types.js";
+import { toArray } from "../../shared/schemaUtils.js";
+import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
+import { isValidXmlName, ValidationResult } from "./validationUtils.js";
+import { isAnyPrefixReferencedInSchema } from "../commandExecutors/schemaPrefixChecker.js";
 
 // ===== Helpers =====
 

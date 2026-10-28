@@ -15,7 +15,7 @@
  */
 
 import { unmarshal } from "@neumaennl/xmlbind-ts";
-import { schema } from "../../shared/types";
+import { schema } from "../../shared/types.js";
 import {
   AddAnnotationCommand,
   RemoveAnnotationCommand,
@@ -23,8 +23,8 @@ import {
   AddDocumentationCommand,
   RemoveDocumentationCommand,
   ModifyDocumentationCommand,
-} from "../../shared/types";
-import { toArray } from "../../shared/schemaUtils";
+} from "../../shared/types.js";
+import { toArray } from "../../shared/schemaUtils.js";
 import {
   executeAddAnnotation,
   executeRemoveAnnotation,
@@ -32,12 +32,12 @@ import {
   executeAddDocumentation,
   executeRemoveDocumentation,
   executeModifyDocumentation,
-} from "./annotationExecutors";
+} from "./annotationExecutors.js";
 import {
   parseDocumentationId,
   parseSchemaAnnotationId,
   parseSchemaDocumentationId,
-} from "../commandUtils";
+} from "../commandUtils.js";
 
 // ─── Shared XML fixtures ────────────────────────────────────────────────────
 

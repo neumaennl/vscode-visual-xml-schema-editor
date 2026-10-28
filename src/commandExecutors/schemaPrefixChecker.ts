@@ -17,9 +17,9 @@ import {
   simpleExplicitGroup,
   localElement,
   narrowMaxMin,
-} from "../../shared/types";
-import { toArray } from "../../shared/schemaUtils";
-import { AttributeBearer, CompositorBearer } from "./schemaTraversalTypes";
+} from "../../shared/types.js";
+import { toArray } from "../../shared/schemaUtils.js";
+import { AttributeBearer, CompositorBearer } from "./schemaTraversalTypes.js";
 
 // ===== Single-pass traversal =====
 

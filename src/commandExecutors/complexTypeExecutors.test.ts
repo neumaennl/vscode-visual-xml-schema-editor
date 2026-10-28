@@ -9,13 +9,13 @@ import {
   ModifyComplexTypeCommand,
   RemoveComplexTypeCommand,
   schema,
-} from "../../shared/types";
-import { toArray } from "../../shared/schemaUtils";
+} from "../../shared/types.js";
+import { toArray } from "../../shared/schemaUtils.js";
 import {
   executeAddComplexType,
   executeModifyComplexType,
   executeRemoveComplexType,
-} from "./complexTypeExecutors";
+} from "./complexTypeExecutors.js";
 
 function schemaWith(body = ""): schema {
   return unmarshal(

@@ -3,7 +3,7 @@ import {
   extensionType,
   simpleExtensionType,
   simpleRestrictionType,
-} from "../../shared/types";
+} from "../../shared/types.js";
 
 /**
  * complexContent extension or restriction — carry base plus full compositor

@@ -10,14 +10,14 @@ import type {
   AddImportCommand,
   RemoveImportCommand,
   ModifyImportCommand,
-} from "../../shared/types";
-import { toArray } from "../../shared/schemaUtils";
+} from "../../shared/types.js";
+import { toArray } from "../../shared/schemaUtils.js";
 import {
   MINIMAL_SCHEMA,
   SCHEMA_WITH_IMPORT,
   runCommandExpectSuccessSchema,
   runCommandExpectValidationFailure,
-} from "./testHelpers";
+} from "./testHelpers.js";
 
 /** Schema that already has two imports so we can test position-based IDs. */
 const SCHEMA_TWO_IMPORTS = `<?xml version="1.0" encoding="UTF-8"?>

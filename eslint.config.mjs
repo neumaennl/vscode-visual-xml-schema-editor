@@ -1,7 +1,7 @@
 import eslint from '@eslint/js';
 import tseslint from '@typescript-eslint/eslint-plugin';
 import tsparser from '@typescript-eslint/parser';
-import jestPlugin from 'eslint-plugin-jest';
+import vitest from '@vitest/eslint-plugin';
 import globals from 'globals';
 
 export default [
@@ -11,6 +11,7 @@ export default [
       'out/',
       'dist/',
       'webview/',
+      '.vscode-test/',
       'node_modules/',
       '**/*.d.ts',
       '**/generated/**',
@@ -29,7 +30,7 @@ export default [
       ],
     },
   },
-  // JavaScript configuration files (jest.config.mjs, etc.)
+  // JavaScript configuration files (eslint.config.mjs)
   {
     files: ['*.mjs'],
     ...eslint.configs.recommended,
@@ -38,7 +39,6 @@ export default [
       sourceType: 'module',
       globals: {
         ...globals.node,
-        ...globals.jest,
       },
     },
   },
@@ -51,11 +51,13 @@ export default [
         ecmaVersion: 2020,
         sourceType: 'module',
         project: [
-          './tsconfig.json',
+          './tsconfig.extension.json',
           './tsconfig.webview.json',
           './tsconfig.extension-test.json',
           './tsconfig.webview-test.json',
           './tsconfig.shared-test.json',
+          './tsconfig.nodeTools.json',
+          './tsconfig.extension-host-test.json',
         ],
       },
       globals: {
@@ -99,19 +101,20 @@ export default [
   // Test files configuration (must come before webview config to avoid conflicts)
   {
     files: ['**/*.test.ts', '**/__mocks__/**/*.ts'],
+    ignores: ['test/extension-host/**'],
     plugins: {
-      jest: jestPlugin,
+      vitest,
     },
     languageOptions: {
       globals: {
-        ...globals.jest,
+        ...globals.vitest,
         ...globals.browser,
       },
     },
     rules: {
-      ...jestPlugin.configs.recommended.rules,
+      ...vitest.configs.recommended.rules,
       // Recognise custom assertion helpers as assertion-containing functions
-      'jest/expect-expect': [
+      'vitest/expect-expect': [
         'warn',
         {
           assertFunctionNames: [
@@ -127,12 +130,20 @@ export default [
       ],
       // Disabled in tests where we have more control over the test environment
       '@typescript-eslint/no-non-null-assertion': 'off',
-      // Disabled to allow dynamic require() in tests for module initialization testing
-      '@typescript-eslint/no-require-imports': 'off',
-      // jest/unbound-method is a jest-aware replacement for @typescript-eslint/unbound-method;
-      // it correctly handles jest mock functions that don't rely on `this` binding.
-      'jest/unbound-method': 'error',
+      // vitest/unbound-method replaces @typescript-eslint/unbound-method in tests;
+      // it correctly handles mock functions that don't rely on `this` binding.
+      'vitest/unbound-method': 'error',
       '@typescript-eslint/unbound-method': 'off',
+    },
+  },
+  // Tests in the extension host: Mocha (TDD interface) and the mock webview, which runs in the browser
+  {
+    files: ['test/extension-host/**/*.ts'],
+    languageOptions: {
+      globals: {
+        ...globals.mocha,
+        ...globals.browser,
+      },
     },
   },
   // Webview TypeScript files configuration (browser environment)

@@ -25,12 +25,12 @@ import {
   patternType,
   annotationType,
   documentationType,
-} from "../../shared/types";
-import { toArray, isSchemaRoot } from "../../shared/schemaUtils";
-import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy";
-import { locateNodeById } from "../schemaNavigator";
-import { createAnnotation } from "./annotationUtils";
-import { renameLocalTypeInSchema } from "./schemaLocalRenamer";
+} from "../../shared/types.js";
+import { toArray, isSchemaRoot } from "../../shared/schemaUtils.js";
+import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
+import { locateNodeById } from "../schemaNavigator.js";
+import { createAnnotation } from "./annotationUtils.js";
+import { renameLocalTypeInSchema } from "./schemaLocalRenamer.js";
 
 /**
  * Executes an addSimpleType command.

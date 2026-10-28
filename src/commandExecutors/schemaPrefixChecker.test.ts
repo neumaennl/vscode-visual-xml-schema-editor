@@ -18,8 +18,8 @@ import {
   unionType,
   attribute,
   keyrefType,
-} from "../../shared/types";
-import { isPrefixReferencedInSchema, isAnyPrefixReferencedInSchema } from "./schemaPrefixChecker";
+} from "../../shared/types.js";
+import { isPrefixReferencedInSchema, isAnyPrefixReferencedInSchema } from "./schemaPrefixChecker.js";
 
 function emptySchema(): schema {
   return unmarshal(

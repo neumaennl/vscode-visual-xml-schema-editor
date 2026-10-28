@@ -4,13 +4,13 @@
  */
 
 // Re-export XML Schema generated classes
-export * from "./generated";
+export * from "./generated/index.js";
 
 // Re-export the main schema class for convenience
-export { schema as Schema } from "./generated";
+export { schema as Schema } from "./generated/index.js";
 
 // Re-export all command types
-export * from "./commands";
+export * from "./commands/index.js";
 
 // Re-export message protocol types
-export * from "./messages";
+export * from "./messages.js";

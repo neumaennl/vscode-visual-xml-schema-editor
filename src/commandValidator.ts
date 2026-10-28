@@ -24,7 +24,7 @@
  * - Ensure complex content model semantics (e.g., all can't contain choice)
  */
 
-import { SchemaCommand, schema } from "../shared/types";
+import { SchemaCommand, schema } from "../shared/types.js";
 import {
   AddElementCommand,
   RemoveElementCommand,
@@ -57,16 +57,16 @@ import {
   RemoveIncludeCommand,
   ModifyIncludeCommand,
   ModifySchemaNamespacesCommand,
-} from "../shared/commands";
-import { ValidationResult } from "./commandValidators/validationUtils";
+} from "../shared/commands/index.js";
+import { ValidationResult } from "./commandValidators/validationUtils.js";
 
 // Import validation functions from specialized modules for default usage
-import * as elementValidators from "./commandValidators/elementValidators";
-import * as typeValidators from "./commandValidators/typeValidators";
-import * as groupValidators from "./commandValidators/groupValidators";
-import * as attributeGroupValidators from "./commandValidators/attributeGroupValidators";
-import * as annotationValidators from "./commandValidators/annotationValidators";
-import * as schemaValidators from "./commandValidators/schemaValidators";
+import * as elementValidators from "./commandValidators/elementValidators.js";
+import * as typeValidators from "./commandValidators/typeValidators.js";
+import * as groupValidators from "./commandValidators/groupValidators.js";
+import * as attributeGroupValidators from "./commandValidators/attributeGroupValidators.js";
+import * as annotationValidators from "./commandValidators/annotationValidators.js";
+import * as schemaValidators from "./commandValidators/schemaValidators.js";
 
 /**
  * Generic type for validator functions that validate commands.

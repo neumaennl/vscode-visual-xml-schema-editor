@@ -16,15 +16,16 @@
  * Undo/redo semantics: every successful schema edit is applied via
  * WorkspaceEdit, which is VS Code's standard mechanism for undoable edits.
  * The test environment mocks applyEdit; real undo/redo therefore runs inside
- * VS Code, not Jest.
+ * VS Code, not in the tests.
  */
 
 import { unmarshal } from "@neumaennl/xmlbind-ts";
 import * as vscode from "vscode";
-import { SchemaEditorProvider } from "../webviewProvider";
-import { CommandProcessor } from "../commandProcessor";
-import { schema } from "../../shared/types";
-import { toArray } from "../../shared/schemaUtils";
+import { SchemaEditorProvider } from "../webviewProvider.js";
+import { CommandProcessor } from "../commandProcessor.js";
+import { schema } from "../../shared/types.js";
+import { toArray } from "../../shared/schemaUtils.js";
+import type { Mock, MockedFunction } from "vitest";
 
 // ─── Test infrastructure ──────────────────────────────────────────────────────
 
@@ -33,7 +34,7 @@ const SIMPLE_SCHEMA_XML = `<?xml version="1.0" encoding="UTF-8"?>
   <xs:element name="person" type="xs:string"/>
 </xs:schema>`;
 
-const mockPostMessage = jest.fn<Promise<boolean>, [unknown]>();
+const mockPostMessage = vi.fn<(message: unknown) => Promise<boolean>>();
 
 /** Builds the mocked VS Code objects required by SchemaEditorProvider. */
 function buildMocks(): {
@@ -52,15 +53,15 @@ function buildMocks(): {
   const webview = {
     options: {},
     html: "",
-    asWebviewUri: jest.fn((u: vscode.Uri) => u),
+    asWebviewUri: vi.fn((u: vscode.Uri) => u),
     postMessage: mockPostMessage,
-    onDidReceiveMessage: jest.fn(),
+    onDidReceiveMessage: vi.fn(),
   } as unknown as vscode.Webview;
 
   // eslint-disable-next-line no-restricted-syntax -- partial stub; unused WebviewPanel fields omitted
   const webviewPanel = {
     webview,
-    onDidDispose: jest.fn(),
+    onDidDispose: vi.fn(),
   } as unknown as vscode.WebviewPanel;
 
   const lines = SIMPLE_SCHEMA_XML.split("\n");
@@ -68,9 +69,9 @@ function buildMocks(): {
   // eslint-disable-next-line no-restricted-syntax -- partial stub; unused TextDocument fields omitted
   const document = {
     uri: vscode.Uri.file("/test/schema.xsd"),
-    getText: jest.fn(() => SIMPLE_SCHEMA_XML),
+    getText: vi.fn(() => SIMPLE_SCHEMA_XML),
     lineCount: SIMPLE_SCHEMA_XML.split("\n").length,
-    lineAt: jest.fn(() => ({ text: lastLineText })),
+    lineAt: vi.fn(() => ({ text: lastLineText })),
   } as unknown as vscode.TextDocument;
 
   const provider = new SchemaEditorProvider(context);
@@ -89,10 +90,10 @@ function resolveAndGetHandler(
   provider.resolveCustomTextEditor(document, webviewPanel, {} as vscode.CancellationToken);
 
   type ListenerFn = (msg: unknown) => void;
-  type OnReceiveMock = jest.MockedFunction<(listener: ListenerFn) => vscode.Disposable>;
+  type OnReceiveMock = MockedFunction<(listener: ListenerFn) => vscode.Disposable>;
   const onReceiveMock = webviewPanel.webview.onDidReceiveMessage as OnReceiveMock;
   const handler = onReceiveMock.mock.calls[0][0];
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   return handler;
 }
 
@@ -104,12 +105,12 @@ const flushMicrotasks = (): Promise<void> =>
 
 describe("Integration: WorkspaceEdit via SchemaEditorProvider", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    (vscode.workspace.applyEdit as jest.Mock).mockResolvedValue(true);
+    vi.clearAllMocks();
+    (vscode.workspace.applyEdit as Mock).mockResolvedValue(true);
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe("success path", () => {
@@ -128,8 +129,8 @@ describe("Integration: WorkspaceEdit via SchemaEditorProvider", () => {
 
       // WorkspaceEdit must have been created and applied
       expect(vscode.WorkspaceEdit).toHaveBeenCalled();
-      const editInstance = (vscode.WorkspaceEdit as jest.Mock).mock.results[0].value as {
-        replace: jest.Mock<void, [vscode.Uri, vscode.Range, string]>;
+      const editInstance = (vscode.WorkspaceEdit as Mock).mock.results[0].value as {
+        replace: Mock<(uri: vscode.Uri, range: vscode.Range, text: string) => void>;
       };
       expect(editInstance.replace).toHaveBeenCalledWith(
         document.uri,
@@ -176,7 +177,7 @@ describe("Integration: WorkspaceEdit via SchemaEditorProvider", () => {
       expect(webview.postMessage).toHaveBeenCalledWith(
         expect.objectContaining({
           command: "commandResult",
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.objectContaining() is typed as `any` in @types/jest; nested use is idiomatic Jest
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.objectContaining() returns `any`; nesting asymmetric matchers is the intended use
           data: expect.objectContaining({ success: false }),
         })
       );
@@ -189,7 +190,7 @@ describe("Integration: WorkspaceEdit via SchemaEditorProvider", () => {
   describe("runtime error path", () => {
     it("routes CommandProcessor runtime throws to error { code: COMMAND_EXECUTION_ERROR }", async () => {
       const { provider, document, webview, webviewPanel } = buildMocks();
-      jest.spyOn(CommandProcessor.prototype, "execute").mockImplementation(() => {
+      vi.spyOn(CommandProcessor.prototype, "execute").mockImplementation(() => {
         throw new Error("Unexpected failure in executor");
       });
       const handler = resolveAndGetHandler(provider, document, webviewPanel);
@@ -209,7 +210,7 @@ describe("Integration: WorkspaceEdit via SchemaEditorProvider", () => {
       expect(webview.postMessage).toHaveBeenCalledWith(
         expect.objectContaining({
           command: "error",
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.objectContaining() is typed as `any` in @types/jest; nested use is idiomatic Jest
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.objectContaining() returns `any`; nesting asymmetric matchers is the intended use
           data: expect.objectContaining({ code: "COMMAND_EXECUTION_ERROR" }),
         })
       );
@@ -220,7 +221,7 @@ describe("Integration: WorkspaceEdit via SchemaEditorProvider", () => {
 
     it("routes CommandProcessor errorKind 'runtime' to error message", async () => {
       const { provider, document, webview, webviewPanel } = buildMocks();
-      jest.spyOn(CommandProcessor.prototype, "execute").mockReturnValue({
+      vi.spyOn(CommandProcessor.prototype, "execute").mockReturnValue({
         success: false,
         errorKind: "runtime",
         error: "Something went wrong internally",
@@ -242,10 +243,10 @@ describe("Integration: WorkspaceEdit via SchemaEditorProvider", () => {
       expect(webview.postMessage).toHaveBeenCalledWith(
         expect.objectContaining({
           command: "error",
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.objectContaining() is typed as `any` in @types/jest; nested use is idiomatic Jest
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.objectContaining() returns `any`; nesting asymmetric matchers is the intended use
           data: expect.objectContaining({
             code: "COMMAND_EXECUTION_ERROR",
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.stringContaining() is typed as `any` in @types/jest; nested use is idiomatic Jest
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.stringContaining() returns `any`; nesting asymmetric matchers is the intended use
             stack: expect.stringContaining("Something went wrong internally"),
           }),
         })
@@ -255,7 +256,7 @@ describe("Integration: WorkspaceEdit via SchemaEditorProvider", () => {
 
   describe("applyEdit failure path", () => {
     it("sends error message when vscode.workspace.applyEdit returns false", async () => {
-      (vscode.workspace.applyEdit as jest.Mock).mockResolvedValue(false);
+      (vscode.workspace.applyEdit as Mock).mockResolvedValue(false);
 
       const { provider, document, webview, webviewPanel } = buildMocks();
       const handler = resolveAndGetHandler(provider, document, webviewPanel);
@@ -272,7 +273,7 @@ describe("Integration: WorkspaceEdit via SchemaEditorProvider", () => {
       expect(webview.postMessage).toHaveBeenCalledWith(
         expect.objectContaining({
           command: "error",
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.objectContaining() is typed as `any` in @types/jest; nested use is idiomatic Jest
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.objectContaining() returns `any`; nesting asymmetric matchers is the intended use
           data: expect.objectContaining({ code: "COMMAND_EXECUTION_ERROR" }),
         })
       );
@@ -313,7 +314,7 @@ describe("Integration: WorkspaceEdit via SchemaEditorProvider", () => {
         1,
         expect.objectContaining({
           command: "commandResult",
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.objectContaining() is typed as `any` in @types/jest; nested use is idiomatic Jest
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.objectContaining() returns `any`; nesting asymmetric matchers is the intended use
           data: expect.objectContaining({ success: true }),
         })
       );
@@ -321,7 +322,7 @@ describe("Integration: WorkspaceEdit via SchemaEditorProvider", () => {
         2,
         expect.objectContaining({
           command: "commandResult",
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.objectContaining() is typed as `any` in @types/jest; nested use is idiomatic Jest
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.objectContaining() returns `any`; nesting asymmetric matchers is the intended use
           data: expect.objectContaining({ success: true }),
         })
       );

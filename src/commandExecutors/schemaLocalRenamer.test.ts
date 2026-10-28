@@ -1,12 +1,12 @@
 import { unmarshal } from "@neumaennl/xmlbind-ts";
-import { schema } from "../../shared/types";
-import { toArray } from "../../shared/schemaUtils";
+import { schema } from "../../shared/types.js";
+import { toArray } from "../../shared/schemaUtils.js";
 import {
   renameLocalAttributeGroupRefInSchema,
   renameLocalElementRefInSchema,
   renameLocalGroupRefInSchema,
   renameLocalTypeInSchema,
-} from "./schemaLocalRenamer";
+} from "./schemaLocalRenamer.js";
 
 function schemaWith(body: string): schema {
   return unmarshal(

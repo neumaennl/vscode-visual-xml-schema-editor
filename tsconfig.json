@@ -1,44 +1,12 @@
 {
-  "compilerOptions": {
-    "module": "commonjs",
-    "target": "ES2020",
-    "outDir": "out",
-    "lib": [
-      "ES2020"
-    ],
-    "sourceMap": true,
-    "rootDirs": [
-      "src",
-      "shared"
-    ],
-    "strict": true,
-    "esModuleInterop": true,
-    "noUnusedLocals": true,
-    "noImplicitOverride": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
-    "moduleResolution": "node",
-    "baseUrl": ".",
-    "paths": {
-      "shared/*": [
-        "shared/*"
-      ]
-    }
-  },
-  "include": [
-    "src/**/*",
-    "shared/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    ".vscode-test",
-    "webview-src",
-    "webview",
-    "out",
-    "**/*.test.ts",
-    "**/__tests__/**",
-    "**/__mocks__/**",
-    "**/*TestHelpers.ts"
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.extension.json" },
+    { "path": "./tsconfig.webview.json" },
+    { "path": "./tsconfig.extension-test.json" },
+    { "path": "./tsconfig.webview-test.json" },
+    { "path": "./tsconfig.shared-test.json" },
+    { "path": "./tsconfig.nodeTools.json" },
+    { "path": "./tsconfig.extension-host-test.json" }
   ]
 }

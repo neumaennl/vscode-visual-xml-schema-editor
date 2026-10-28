@@ -21,9 +21,9 @@ import {
   narrowMaxMin,
   groupRef,
   attributeGroupRef,
-} from "../../shared/types";
-import { getCurrentSchemaPrefixes, toArray } from "../../shared/schemaUtils";
-import { AttributeBearer, CompositorBearer } from "./schemaTraversalTypes";
+} from "../../shared/types.js";
+import { getCurrentSchemaPrefixes, toArray } from "../../shared/schemaUtils.js";
+import { AttributeBearer, CompositorBearer } from "./schemaTraversalTypes.js";
 
 // ===== Local name renaming helpers =====
 

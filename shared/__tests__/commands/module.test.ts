@@ -10,7 +10,7 @@ import {
   RemoveIncludeCommand,
   ModifyIncludeCommand,
   ModifySchemaNamespacesCommand,
-} from "../../commands/module";
+} from "../../commands/module.js";
 
 describe("Import Commands", () => {
   test("AddImportCommand should have correct structure", () => {

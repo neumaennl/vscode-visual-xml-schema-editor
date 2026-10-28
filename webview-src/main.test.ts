@@ -2,22 +2,25 @@
  * Unit tests for main module (webview entry point).
  */
 
+import type { Mock } from "vitest";
+
+
 // Mock the VS Code API before importing
-const mockPostMessage = jest.fn();
-const mockGetState = jest.fn();
-const mockSetState = jest.fn();
+const mockPostMessage = vi.fn();
+const mockGetState = vi.fn();
+const mockSetState = vi.fn();
 
 type MockVsCodeApi = {
-  postMessage: jest.Mock;
-  getState: jest.Mock;
-  setState: jest.Mock;
+  postMessage: Mock;
+  getState: Mock;
+  setState: Mock;
 };
 
 const globalWithAcquire = globalThis as typeof globalThis & {
-  acquireVsCodeApi: jest.Mock<MockVsCodeApi, []>;
+  acquireVsCodeApi: Mock<() => MockVsCodeApi>;
 };
 
-globalWithAcquire.acquireVsCodeApi = jest.fn(() => ({
+globalWithAcquire.acquireVsCodeApi = vi.fn(() => ({
   postMessage: mockPostMessage,
   getState: mockGetState,
   setState: mockSetState,
@@ -26,9 +29,9 @@ globalWithAcquire.acquireVsCodeApi = jest.fn(() => ({
 describe("SchemaEditorApp", () => {
   beforeEach(() => {
     // Clear mocks
-    jest.clearAllMocks();
-    jest.resetModules();
-    jest.useRealTimers();
+    vi.clearAllMocks();
+    vi.resetModules();
+    vi.useRealTimers();
     mockGetState.mockReturnValue(null);
 
     // Setup complete DOM structure
@@ -60,14 +63,14 @@ describe("SchemaEditorApp", () => {
 
     Object.defineProperty(SVGElement.prototype, "getBBox", {
       configurable: true,
-      value: jest.fn(() => ({ x: 0, y: 0, width: 120, height: 24 })),
+      value: vi.fn(() => ({ x: 0, y: 0, width: 120, height: 24 })),
     });
   });
 
-  it("should initialize and setup message listener", () => {
-    const addEventListenerSpy = jest.spyOn(window, "addEventListener");
+  it("should initialize and setup message listener", async () => {
+    const addEventListenerSpy = vi.spyOn(window, "addEventListener");
 
-    require("./main");
+    await import("./main");
 
     expect(addEventListenerSpy).toHaveBeenCalledWith(
       "message",
@@ -75,10 +78,10 @@ describe("SchemaEditorApp", () => {
     );
   });
 
-  it("should handle updateSchema message", () => {
-    const addEventListenerSpy = jest.spyOn(window, "addEventListener");
+  it("should handle updateSchema message", async () => {
+    const addEventListenerSpy = vi.spyOn(window, "addEventListener");
 
-    require("./main");
+    await import("./main");
 
     // Get the message handler
     const messageHandler = addEventListenerSpy.mock.calls.find(
@@ -99,10 +102,10 @@ describe("SchemaEditorApp", () => {
     expect(mockSetState).toHaveBeenCalled();
   });
 
-  it("should handle error message", () => {
-    const addEventListenerSpy = jest.spyOn(window, "addEventListener");
+  it("should handle error message", async () => {
+    const addEventListenerSpy = vi.spyOn(window, "addEventListener");
 
-    require("./main");
+    await import("./main");
 
     const messageHandler = addEventListenerSpy.mock.calls.find(
       (call) => call[0] === "message"
@@ -121,11 +124,11 @@ describe("SchemaEditorApp", () => {
     expect(notificationMessage?.textContent).toContain("Test error");
   });
 
-  it("should keep an error visible until dismissed", () => {
-    jest.useFakeTimers();
-    const addEventListenerSpy = jest.spyOn(window, "addEventListener");
+  it("should keep an error visible until dismissed", async () => {
+    vi.useFakeTimers();
+    const addEventListenerSpy = vi.spyOn(window, "addEventListener");
 
-    require("./main");
+    await import("./main");
 
     const messageHandler = addEventListenerSpy.mock.calls.find(
       (call) => call[0] === "message"
@@ -136,7 +139,7 @@ describe("SchemaEditorApp", () => {
     });
 
     messageHandler(event);
-    jest.advanceTimersByTime(30000);
+    vi.advanceTimersByTime(30000);
 
     const notificationBar = document.getElementById("notification-bar");
     const notificationMessage = document.getElementById("notification-message");
@@ -144,10 +147,10 @@ describe("SchemaEditorApp", () => {
     expect(notificationMessage?.textContent).toContain("Persistent error");
   });
 
-  it("should dismiss the notification when the dismiss button is clicked", () => {
-    const addEventListenerSpy = jest.spyOn(window, "addEventListener");
+  it("should dismiss the notification when the dismiss button is clicked", async () => {
+    const addEventListenerSpy = vi.spyOn(window, "addEventListener");
 
-    require("./main");
+    await import("./main");
 
     const messageHandler = addEventListenerSpy.mock.calls.find(
       (call) => call[0] === "message"
@@ -164,10 +167,10 @@ describe("SchemaEditorApp", () => {
     expect(notificationBar?.hasAttribute("hidden")).toBe(true);
   });
 
-  it("should setup zoom controls", () => {
-    const addEventListenerSpy = jest.spyOn(HTMLElement.prototype, "addEventListener");
+  it("should setup zoom controls", async () => {
+    const addEventListenerSpy = vi.spyOn(HTMLElement.prototype, "addEventListener");
 
-    require("./main");
+    await import("./main");
 
     expect(document.getElementById("zoomIn")).toBeTruthy();
     expect(document.getElementById("zoomOut")).toBeTruthy();
@@ -179,7 +182,7 @@ describe("SchemaEditorApp", () => {
     addEventListenerSpy.mockRestore();
   });
 
-  it("should restore state on initialization", () => {
+  it("should restore state on initialization", async () => {
     const savedState = { 
       zoom: 1.5, 
       panX: 100, 
@@ -187,23 +190,21 @@ describe("SchemaEditorApp", () => {
     };
     mockGetState.mockReturnValue(savedState);
 
-    require("./main");
+    await import("./main");
 
     expect(mockGetState).toHaveBeenCalled();
   });
 
-  it("should initialize with default state when no saved state", () => {
+  it("should initialize with default state when no saved state", async () => {
     mockGetState.mockReturnValue(null);
 
-    expect(() => {
-      require("./main");
-    }).not.toThrow();
+    await expect(import("./main")).resolves.toBeDefined();
   });
 
-  it("should handle unknown message commands", () => {
-    const addEventListenerSpy = jest.spyOn(window, "addEventListener");
+  it("should handle unknown message commands", async () => {
+    const addEventListenerSpy = vi.spyOn(window, "addEventListener");
 
-    require("./main");
+    await import("./main");
 
     const messageHandler = addEventListenerSpy.mock.calls.find(
       (call) => call[0] === "message"
@@ -218,18 +219,18 @@ describe("SchemaEditorApp", () => {
     }).not.toThrow();
   });
 
-  it("should create canvas and initialize renderer", () => {
-    require("./main");
+  it("should create canvas and initialize renderer", async () => {
+    await import("./main");
 
     const canvas = document.getElementById("schema-canvas");
     expect(canvas).toBeTruthy();
     expect(canvas?.tagName).toBe("svg");
   });
 
-  it("should highlight the selected node when it is clicked", () => {
-    const addEventListenerSpy = jest.spyOn(window, "addEventListener");
+  it("should highlight the selected node when it is clicked", async () => {
+    const addEventListenerSpy = vi.spyOn(window, "addEventListener");
 
-    require("./main");
+    await import("./main");
 
     const messageHandler = addEventListenerSpy.mock.calls.find(
       (call) => call[0] === "message"

@@ -3,6 +3,8 @@ name: CI
 permissions:
   checks: write
   packages: read
+  # For the coverage comment on pull requests.
+  pull-requests: write
 
 env:
   NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -10,25 +12,36 @@ env:
 on:
   push:
     branches: [ main ]
+  # All pull requests, whatever their target branch.
   pull_request:
-    branches: [ main ]
+
+# A new push to a pull request cancels the run for the previous one. Each run for a push
+# has a group of its own, so none of them is cancelled or held back.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
 
 jobs:
   build:
     name: Install, build and test
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [24.x]
     steps:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Use Node.js ${{ matrix.node-version }}
+      - name: Use Node.js from .nvmrc
         uses: actions/setup-node@v7
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version-file: .nvmrc
           cache: "npm"
+          # Writes the auth line for GitHub Packages, which reads NODE_AUTH_TOKEN, into
+          # a user npmrc. The repository's .npmrc has none, because Dependabot would
+          # send its ${NODE_AUTH_TOKEN} literally instead of its own credential.
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@neumaennl"
+
+      - name: Check that Node and @types match the VS Code version
+        run: npm run vscode:check
 
       - name: Install dependencies
         run: npm ci
@@ -36,47 +49,67 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Build
-        run: npm run compile
+      # The only build: `vscode:prepublish` deletes out/ and webview/ and compiles both
+      # parts. The later steps use this build instead of compiling again.
+      - name: Build and package VSIX
+        run: npm run package
 
-      - name: Run tests (coverage + JSON; JUnit via config)
-        run: |
-          mkdir -p test-results
-          npm test -- --coverage --runInBand --json --outputFile=test-results/jest-results.json --coverageReporters=json-summary
+      - name: Verify packaged extension loads
+        run: npm run package:verify
 
-      - name: Summarize coverage in job summary
-        if: always()
-        run: |
-          node <<'EOF'
-          const fs = require('fs');
-          const p = 'coverage/coverage-summary.json';
-          const out = process.env.GITHUB_STEP_SUMMARY;
-          if (!out) { console.log('GITHUB_STEP_SUMMARY not set; skipping summary'); process.exit(0); }
-          if (fs.existsSync(p)) {
-            const d = JSON.parse(fs.readFileSync(p));
-            let summary = '## Coverage report\n\n| Metric | % |\n|---|---|\n';
-            for (const k in d.total) {
-              summary += `| ${k} | ${d.total[k].pct}% |\n`;
-            }
-            fs.appendFileSync(out, summary);
-          }
-          EOF
-          
-      - name: Check if JUnit report exists
-        if: always()
-        id: junit-check
-        shell: bash
-        run: |
-          if [[ -f "test-results/jest-junit.xml" ]]; then
-            echo "exists=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "exists=false" >> "$GITHUB_OUTPUT"
-          fi
+      - name: Type check
+        run: npm run typecheck
 
-      - name: Publish JUnit test report to GitHub Checks
-        if: always() && steps.junit-check.outputs.exists == 'true'
+      # Vitest runs on the sources and needs no build; `npm test` would compile first.
+      - name: Run tests (coverage; JUnit via config)
+        run: npx vitest run --coverage
+
+      - name: Read the VS Code version for the extension-host tests
+        id: vscode-version
+        # The lowest supported version; `npm run vscode:check` ensures the form `^x.y.z`.
+        run: echo "version=$(node -p "require('./package.json').engines.vscode.slice(1)")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache VS Code for the extension-host tests
+        uses: actions/cache@v6
+        with:
+          path: .vscode-test/vscode-linux-x64-${{ steps.vscode-version.outputs.version }}
+          key: vscode-linux-x64-${{ steps.vscode-version.outputs.version }}
+
+      # Uses the extension from the package step; `npm run test:extension-host` would compile it again.
+      # The json reporter writes test-results/extension-host.json (see .vscode-test.mjs) instead of the test names to the log.
+      - name: Run tests in the extension host
+        run: |
+          npm run stage:extension-host
+          xvfb-run -a npx vscode-test --reporter json
+
+      - name: Publish JUnit test report to the job summary
+        if: always() && hashFiles('test-results/vitest-junit.xml') != ''
         uses: dorny/test-reporter@v3
         with:
-          name: Jest
-          path: test-results/jest-junit.xml
+          name: Vitest
+          report-title: Vitest
+          path: test-results/vitest-junit.xml
+          # Vitest writes JUnit XML in the format of jest-junit, which this parser reads.
           reporter: jest-junit
+
+      # After the Vitest report, so that the coverage appears under its title. On pull requests
+      # from this repository it also keeps one comment with the report up to date; pull requests
+      # from forks get no write access, so they are left out.
+      - name: Report coverage
+        if: always() && hashFiles('coverage/coverage-summary.json') != ''
+        uses: davelosert/vitest-coverage-report-action@v2
+        with:
+          # Without this, the action reads whichever config file it finds first,
+          # possibly vite.config.ts, which has no thresholds.
+          vite-config-path: vitest.config.ts
+          comment-on: ${{ github.event.pull_request.head.repo.full_name == github.repository && 'pr' || 'none' }}
+
+      - name: Publish extension-host test report to the job summary
+        if: always() && hashFiles('test-results/extension-host.json') != ''
+        uses: dorny/test-reporter@v3
+        with:
+          name: Extension host
+          report-title: Extension host
+          path: test-results/extension-host.json
+          # Written by Mocha's json reporter, which the step "Run tests in the extension host" selects.
+          reporter: mocha-json

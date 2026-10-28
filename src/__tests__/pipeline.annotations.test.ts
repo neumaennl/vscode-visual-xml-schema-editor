@@ -12,8 +12,8 @@ import type {
   AddDocumentationCommand,
   RemoveDocumentationCommand,
   ModifyDocumentationCommand,
-} from "../../shared/types";
-import { toArray } from "../../shared/schemaUtils";
+} from "../../shared/types.js";
+import { toArray } from "../../shared/schemaUtils.js";
 import {
   MINIMAL_SCHEMA,
   SCHEMA_WITH_ELEMENTS,
@@ -21,7 +21,7 @@ import {
   runCommandExpectSuccess,
   runCommandExpectSuccessSchema,
   runCommandExpectValidationFailure,
-} from "./testHelpers";
+} from "./testHelpers.js";
 
 describe("Integration: Annotation pipeline", () => {
   // ─── addAnnotation ─────────────────────────────────────────────────────────
@@ -68,8 +68,9 @@ describe("Integration: Annotation pipeline", () => {
       };
 
       const updatedXml = runCommandExpectSuccess(schemaWithTopLevelDeclaration, cmd);
-      expect(updatedXml.indexOf("<annotation>")).toBeLessThan(
-        updatedXml.indexOf("<element ")
+      expect(updatedXml).toContain("<xs:annotation");
+      expect(updatedXml.indexOf("<xs:annotation>")).toBeLessThan(
+        updatedXml.indexOf("<xs:element ")
       );
     });
 
@@ -86,8 +87,9 @@ describe("Integration: Annotation pipeline", () => {
       };
 
       const updatedXml = runCommandExpectSuccess(schemaWithComplexType, cmd);
-      expect(updatedXml.indexOf("<annotation>")).toBeLessThan(
-        updatedXml.indexOf("<sequence")
+      expect(updatedXml).toContain("<xs:annotation");
+      expect(updatedXml.indexOf("<xs:annotation>")).toBeLessThan(
+        updatedXml.indexOf("<xs:sequence")
       );
     });
 
@@ -147,8 +149,9 @@ describe("Integration: Annotation pipeline", () => {
         type: "addAnnotation",
         payload: { targetId: "/schema" },
       });
-      expect(afterSecondAnnotation.indexOf("<annotation")).toBeLessThan(
-        afterSecondAnnotation.indexOf("<element ")
+      expect(afterSecondAnnotation).toContain("<xs:annotation");
+      expect(afterSecondAnnotation.indexOf("<xs:annotation")).toBeLessThan(
+        afterSecondAnnotation.indexOf("<xs:element ")
       );
 
       const afterDocOnSecondAnnotation = runCommandExpectSuccess(afterSecondAnnotation, {
@@ -160,8 +163,9 @@ describe("Integration: Annotation pipeline", () => {
         type: "removeAnnotation",
         payload: { annotationId: "/schema/annotation[0]" },
       });
-      expect(afterRemoval.indexOf("<annotation")).toBeLessThan(
-        afterRemoval.indexOf("<element ")
+      expect(afterRemoval).toContain("<xs:annotation");
+      expect(afterRemoval.indexOf("<xs:annotation")).toBeLessThan(
+        afterRemoval.indexOf("<xs:element ")
       );
     });
   });

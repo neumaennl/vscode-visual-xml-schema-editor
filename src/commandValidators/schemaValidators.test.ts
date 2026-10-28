@@ -3,7 +3,7 @@
  */
 
 import { unmarshal } from "@neumaennl/xmlbind-ts";
-import { schema } from "../../shared/types";
+import { schema } from "../../shared/types.js";
 import {
   AddImportCommand,
   RemoveImportCommand,
@@ -12,7 +12,7 @@ import {
   RemoveIncludeCommand,
   ModifyIncludeCommand,
   ModifySchemaNamespacesCommand,
-} from "../../shared/types";
+} from "../../shared/types.js";
 import {
   validateAddImport,
   validateRemoveImport,
@@ -21,8 +21,8 @@ import {
   validateRemoveInclude,
   validateModifyInclude,
   validateModifySchemaNamespaces,
-} from "./schemaValidators";
-import { expectInvalid } from "./validationTestHelpers";
+} from "./schemaValidators.js";
+import { expectInvalid } from "./validationTestHelpers.js";
 
 describe("Import Validators", () => {
   let schemaObj: schema;

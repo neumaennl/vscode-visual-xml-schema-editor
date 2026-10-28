@@ -3,7 +3,7 @@
  */
 
 import { unmarshal } from "@neumaennl/xmlbind-ts";
-import { schema } from "../../shared/types";
+import { schema } from "../../shared/types.js";
 import {
   AddSimpleTypeCommand,
   RemoveSimpleTypeCommand,
@@ -11,7 +11,7 @@ import {
   AddComplexTypeCommand,
   RemoveComplexTypeCommand,
   ModifyComplexTypeCommand,
-} from "../../shared/types";
+} from "../../shared/types.js";
 import {
   validateAddSimpleType,
   validateRemoveSimpleType,
@@ -19,8 +19,8 @@ import {
   validateAddComplexType,
   validateRemoveComplexType,
   validateModifyComplexType,
-} from "./typeValidators";
-import { expectInvalid } from "./validationTestHelpers";
+} from "./typeValidators.js";
+import { expectInvalid } from "./validationTestHelpers.js";
 
 describe("SimpleType Validators", () => {
   let emptySchemaObj: schema;

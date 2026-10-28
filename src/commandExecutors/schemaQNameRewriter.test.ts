@@ -32,9 +32,9 @@ import {
   topLevelElement,
   topLevelSimpleType,
   unionType,
-} from "../../shared/types";
-import { toArray } from "../../shared/schemaUtils";
-import { rewritePrefixInSchema } from "./schemaQNameRewriter";
+} from "../../shared/types.js";
+import { toArray } from "../../shared/schemaUtils.js";
+import { rewritePrefixInSchema } from "./schemaQNameRewriter.js";
 
 function emptySchema(): schema {
   return unmarshal(

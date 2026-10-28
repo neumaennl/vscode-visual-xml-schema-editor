@@ -4,8 +4,8 @@ import {
   validateMaxOccurs,
   validateOccurrences,
   validateElementType,
-} from "./validationUtils";
-import { expectInvalid } from "./validationTestHelpers";
+} from "./validationUtils.js";
+import { expectInvalid } from "./validationTestHelpers.js";
 
 describe("validationUtils", () => {
   describe("isValidXmlName", () => {

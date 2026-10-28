@@ -45,7 +45,7 @@ describe("PaletteView", () => {
       '[data-testid="palette-item-element"]'
     ) as HTMLDivElement;
 
-    const setData = jest.fn();
+    const setData = vi.fn();
     const event = new Event("dragstart", { bubbles: true }) as DragEvent;
     Object.defineProperty(event, "dataTransfer", {
       value: {

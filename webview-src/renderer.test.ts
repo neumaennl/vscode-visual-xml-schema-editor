@@ -67,7 +67,7 @@ describe("DiagramRenderer", () => {
       const mockSchema = {
         element: [{ name: "Test", type_: "string" }],
       };
-      const onNodeClick = jest.fn();
+      const onNodeClick = vi.fn();
       
       renderer.renderSchema(mockSchema, defaultDiagramOptions, onNodeClick);
       
@@ -78,7 +78,7 @@ describe("DiagramRenderer", () => {
 
     it("should handle empty schema", () => {
       const emptySchema = {};
-      const onNodeClick = jest.fn();
+      const onNodeClick = vi.fn();
       
       expect(() => {
         renderer.renderSchema(emptySchema, defaultDiagramOptions, onNodeClick);
@@ -86,7 +86,7 @@ describe("DiagramRenderer", () => {
     });
 
     it("should handle null schema", () => {
-      const onNodeClick = jest.fn();
+      const onNodeClick = vi.fn();
       
       // Test error handling with invalid input by bypassing type checking
       // This is intentional to ensure robustness
@@ -104,7 +104,7 @@ describe("DiagramRenderer", () => {
           { name: "Address", type_: "AddressType" },
         ],
       };
-      const onNodeClick = jest.fn();
+      const onNodeClick = vi.fn();
       
       renderer.renderSchema(mockSchema, defaultDiagramOptions, onNodeClick);
       
@@ -116,7 +116,7 @@ describe("DiagramRenderer", () => {
       const mockSchema = {
         element: [{ name: "Test", type_: "string" }],
       };
-      const onNodeClick = jest.fn();
+      const onNodeClick = vi.fn();
       
       renderer.renderSchema(mockSchema, defaultDiagramOptions, onNodeClick);
       
@@ -140,7 +140,7 @@ describe("DiagramRenderer", () => {
       const mockSchema = {
         element: [{ name: "Test", type_: "string" }],
       };
-      const onNodeClick = jest.fn();
+      const onNodeClick = vi.fn();
       
       renderer.renderSchema(mockSchema, defaultDiagramOptions, onNodeClick);
       const itemsBeforeRefresh = mockCanvas.querySelectorAll(".diagram-item").length;
@@ -161,7 +161,7 @@ describe("DiagramRenderer", () => {
       const mockSchema = {
         element: [{ name: "Test", type_: "string" }],
       };
-      const onNodeClick = jest.fn();
+      const onNodeClick = vi.fn();
       const options: DiagramOptions = {
         showDocumentation: true,
         alwaysShowOccurrence: false,
@@ -179,7 +179,7 @@ describe("DiagramRenderer", () => {
       const mockSchema = {
         element: [{ name: "Test", type_: "string" }],
       };
-      const onNodeClick = jest.fn();
+      const onNodeClick = vi.fn();
       const options: DiagramOptions = {
         showDocumentation: false,
         alwaysShowOccurrence: true,
@@ -197,7 +197,7 @@ describe("DiagramRenderer", () => {
       const mockSchema = {
         element: [{ name: "Test", type_: "string" }],
       };
-      const onNodeClick = jest.fn();
+      const onNodeClick = vi.fn();
       const options: DiagramOptions = {
         showDocumentation: false,
         alwaysShowOccurrence: false,
@@ -218,8 +218,8 @@ describe("DiagramRenderer", () => {
     });
 
     it("should invoke node drop handler with item and construct", () => {
-      const onNodeClick = jest.fn();
-      const onNodeDrop = jest.fn();
+      const onNodeClick = vi.fn();
+      const onNodeDrop = vi.fn();
       renderer.setDropHandler(onNodeDrop);
 
       const mockSchema = {
@@ -245,8 +245,8 @@ describe("DiagramRenderer", () => {
     });
 
     it("should not invoke node drop handler when drop validator rejects the target", () => {
-      const onNodeClick = jest.fn();
-      const onNodeDrop = jest.fn();
+      const onNodeClick = vi.fn();
+      const onNodeDrop = vi.fn();
       renderer.setDropHandler(onNodeDrop);
       renderer.setNodeDropValidator(() => false);
 
@@ -271,7 +271,7 @@ describe("DiagramRenderer", () => {
     });
 
     it("should not add drag-over class when drop validator rejects the target", () => {
-      const onNodeClick = jest.fn();
+      const onNodeClick = vi.fn();
       renderer.setNodeDropValidator(() => false);
 
       const mockSchema = {
@@ -296,7 +296,7 @@ describe("DiagramRenderer", () => {
     });
 
     it("should add drag-over class using active dragged-construct fallback", () => {
-      const onNodeClick = jest.fn();
+      const onNodeClick = vi.fn();
       renderer.setNodeDropValidator((_node, construct) => construct === "element");
 
       const mockSchema = {
@@ -322,7 +322,7 @@ describe("DiagramRenderer", () => {
     });
 
     it("should keep drag-over class when pointer is still inside item group", () => {
-      const onNodeClick = jest.fn();
+      const onNodeClick = vi.fn();
       const mockSchema = {
         element: [{ name: "Test", type_: "string" }],
       };

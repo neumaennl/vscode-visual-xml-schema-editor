@@ -14,11 +14,11 @@ import {
   localComplexType,
   annotationType,
   documentationType,
-} from "../../shared/types";
-import { toArray } from "../../shared/schemaUtils";
-import { locateNodeById } from "../schemaNavigator";
-import { parseSchemaId, SCHEMA_ROOT_ID } from "../../shared/idStrategy";
-import { createAnnotation } from "./annotationUtils";
+} from "../../shared/types.js";
+import { toArray } from "../../shared/schemaUtils.js";
+import { locateNodeById } from "../schemaNavigator.js";
+import { parseSchemaId, SCHEMA_ROOT_ID } from "../../shared/idStrategy.js";
+import { createAnnotation } from "./annotationUtils.js";
 
 /**
  * Executes an addAttribute command.

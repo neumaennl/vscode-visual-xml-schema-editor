@@ -2,7 +2,7 @@
 // The bundle itself contains no CSS and injects none.
 import "./styles.css";
 import { DiagramRenderer } from "./renderer";
-import { PropertyPanel } from "./propertyPanel/propertyPanel";
+import { PropertiesPanel } from "./propertiesPanel/propertiesPanel";
 import { schema } from "../shared/types";
 import {
   VSCodeAPI,
@@ -20,7 +20,7 @@ declare function acquireVsCodeApi<State>(): VSCodeAPI<State>;
 class SchemaEditorApp {
   private vscode: VSCodeAPI<WebviewState>;
   private renderer: DiagramRenderer;
-  private propertyPanel: PropertyPanel;
+  private propertiesPanel: PropertiesPanel;
   private currentSchema: schema | undefined;
   private viewState: ViewState;
   private diagramOptions: DiagramOptions;
@@ -47,7 +47,7 @@ class SchemaEditorApp {
     }
 
     this.renderer = new DiagramRenderer(canvas, this.viewState);
-    this.propertyPanel = new PropertyPanel(
+    this.propertiesPanel = new PropertiesPanel(
       document.getElementById("properties-content") as HTMLDivElement,
       (command) => {
         this.vscode.postMessage({ command: "executeCommand", data: command });
@@ -202,10 +202,10 @@ class SchemaEditorApp {
         this.showError(`Failed to refresh diagram: ${(error as Error).message}`);
       }
     } else {
-      // Display item properties in the property panel
+      // Display item properties in the properties panel
       this.selectedNodeId = item.id;
       this.renderer.selectNode(item.id);
-      this.propertyPanel.display(item);
+      this.propertiesPanel.display(item);
     }
   }
 
@@ -217,12 +217,12 @@ class SchemaEditorApp {
     const selectedItem = this.renderer.getItemById(this.selectedNodeId);
     if (!selectedItem) {
       this.selectedNodeId = null;
-      this.propertyPanel.clear();
+      this.propertiesPanel.clear();
       return;
     }
 
     this.renderer.selectNode(selectedItem.id);
-    this.propertyPanel.display(selectedItem);
+    this.propertiesPanel.display(selectedItem);
   }
 
   /**

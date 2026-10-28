@@ -1,13 +1,13 @@
 /**
- * XML-preview helpers for the PropertyPanel XML tab.
+ * XML-preview helpers for the PropertiesPanel XML tab.
  * Converts a selected diagram node into an XSD fragment string.
  */
 
 import { SCHEMA_ROOT_ID, parseSchemaId, SchemaNodeType } from "../../shared/idStrategy";
 import { DiagramItem } from "../diagram";
 import { DiagramItemType } from "../diagram/DiagramTypes";
-import { getNodeType, isTopLevelElement } from "./propertyPanelCommands";
-import { extractBaseType } from "./propertyPanelSimpleTypeCommands";
+import { getNodeType, isTopLevelElement } from "./propertiesPanelCommands";
+import { extractBaseType } from "./propertiesPanelSimpleTypeCommands";
 
 const INDENT = "  ";
 const TRUNCATION_MARKER = "<!-- ... truncated ... -->";

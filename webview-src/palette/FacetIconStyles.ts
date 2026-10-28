@@ -1,6 +1,6 @@
 /**
  * Single source of truth for facet icon/color styling.
- * Shared by the palette (PaletteItems.ts) and the property panel's Facets tab
+ * Shared by the palette (PaletteItems.ts) and the properties panel's Facets tab
  * so a facet always looks the same in both places.
  */
 

@@ -1,19 +1,19 @@
 /**
- * Property-panel helpers for rendering and editing type-related fields.
+ * Properties-panel helpers for rendering and editing type-related fields.
  * Keeps complex inline/replacement/base-type logic out of the main panel class.
  */
 
 import { SchemaCommand } from "../../shared/types";
 import { SchemaNodeType } from "../../shared/idStrategy";
 import { DiagramItem } from "../diagram";
-import { createEditableField } from "./propertyPanelDom";
+import { createEditableField } from "./propertiesPanelDom";
 import {
   createComplexBaseTypeCommand,
   createTypeCommand,
   getNodeType,
   normalizeTypeReferenceForCurrentSchema,
-} from "./propertyPanelCommands";
-import { extractBaseType } from "./propertyPanelSimpleTypeCommands";
+} from "./propertiesPanelCommands";
+import { extractBaseType } from "./propertiesPanelSimpleTypeCommands";
 import {
   getDerivationRelation,
   getReadOnlyTypeValue,
@@ -21,14 +21,14 @@ import {
   hasInlineAnonymousElementType,
   isInlineComplexTypeElement,
   isInlineSimpleTypeElement,
-} from "./propertyPanelTypeHelpers";
+} from "./propertiesPanelTypeHelpers";
 import {
   getSimpleTypeDerivationKind,
   isSimpleTypeNode,
   renderSimpleTypeKindSelector,
   renderSimpleTypeListEditor,
   renderSimpleTypeUnionEditor,
-} from "./propertyPanelSimpleTypeEditors";
+} from "./propertiesPanelSimpleTypeEditors";
 
 /**
  * Renders the type/base-type editing controls for the selected node.

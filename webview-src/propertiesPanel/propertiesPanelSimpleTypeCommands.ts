@@ -1,11 +1,11 @@
 /**
- * Command-building helpers for simpleType editing in the property panel.
+ * Command-building helpers for simpleType editing in the properties panel.
  */
 
 import { RestrictionFacets } from "../../shared/commands/schemaTypes";
 import { SchemaCommand } from "../../shared/types";
 import { DiagramItem } from "../diagram";
-import { normalizeTypeReferenceForCurrentSchema, resolveSimpleTypeId } from "./propertyPanelCommands";
+import { normalizeTypeReferenceForCurrentSchema, resolveSimpleTypeId } from "./propertiesPanelCommands";
 
 /**
  * Extracts the simple base type from the user-facing type label shown in the panel.

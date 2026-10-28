@@ -1,5 +1,5 @@
 /**
- * Helpers for cloning and inspecting transient PropertyPanel state.
+ * Helpers for cloning and inspecting transient PropertiesPanel state.
  * This module keeps the panel's draft node separate from the rendered diagram node.
  */
 
@@ -10,7 +10,7 @@ export type RestrictionSnapshot = NonNullable<DiagramItem["restrictions"]>;
 
 /**
  * Returns whether the given restriction object exposes at least one facet that the
- * current PropertyPanel UI knows how to edit.
+ * current PropertiesPanel UI knows how to edit.
  *
  * @param restrictions - Restriction snapshot to inspect
  * @returns True when at least one editable facet is present
@@ -33,7 +33,7 @@ export function hasEditableFacetValues(restrictions: RestrictionSnapshot): boole
 }
 
 /**
- * Creates a deep-enough clone of a diagram node for temporary PropertyPanel edits.
+ * Creates a deep-enough clone of a diagram node for temporary PropertiesPanel edits.
  * Mutable collections rendered by the panel are copied so tab switching does not
  * mutate the original selected node until commands are dispatched.
  *

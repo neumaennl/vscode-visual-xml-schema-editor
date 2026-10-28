@@ -49,7 +49,7 @@ export interface Rectangle {
 }
 
 /**
- * A single xs:documentation node shown in the diagram/property-panel layer.
+ * A single xs:documentation node shown in the diagram/properties-panel layer.
  * Keeps the schema ID so the UI can edit or remove the exact node later.
  */
 export interface DiagramDocumentationEntry {
@@ -59,7 +59,7 @@ export interface DiagramDocumentationEntry {
 }
 
 /**
- * An xs:annotation node shown in the diagram/property-panel layer.
+ * An xs:annotation node shown in the diagram/properties-panel layer.
  * Keeps the schema ID plus all contained xs:documentation nodes.
  */
 export interface DiagramAnnotationEntry {

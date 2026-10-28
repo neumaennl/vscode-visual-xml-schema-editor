@@ -45,10 +45,10 @@ Effort:
 
 ## Editing facets drops all but the first pattern
 
-- **Location:** `shared/commands/schemaTypes.ts` (`RestrictionFacets.pattern`), `src/commandExecutors/simpleTypeExecutors.ts`, `webview-src/propertyPanel/propertyPanelFacets.ts`, `webview-src/drop/DropCommandFactoryTypeHelpers.ts` (`createFacetNodeDropCommand()`)
+- **Location:** `shared/commands/schemaTypes.ts` (`RestrictionFacets.pattern`), `src/commandExecutors/simpleTypeExecutors.ts`, `webview-src/propertiesPanel/propertiesPanelFacets.ts`, `webview-src/drop/DropCommandFactoryTypeHelpers.ts` (`createFacetNodeDropCommand()`)
 - **Severity:** High
 - **Effort:** M
-- **Description:** XSD allows several `xs:pattern` facets in one restriction, and the diagram reads all of them, but `RestrictionFacets.pattern` is a single string. `modifySimpleType` replaces all facets with the ones in the payload, and the property panel sends only the first pattern (`pattern?.[0]`). Changing any facet of a type with two or more patterns therefore deletes all patterns but the first, without a warning (see [Commands](commands.md#restriction-facets)). Dropping a facet from the palette does the same, and dropping a pattern replaces the existing pattern with the default `.*` instead of adding one (see [Drag and drop](drag-and-drop.md#defaults)). The fix is to make `pattern` a `string[]` like `enumeration`, write one `xs:pattern` per value, send all patterns from the property panel and the facet drop, and append a dropped pattern. See also [Diagram items copy values from the schema objects](#diagram-items-copy-values-from-the-schema-objects).
+- **Description:** XSD allows several `xs:pattern` facets in one restriction, and the diagram reads all of them, but `RestrictionFacets.pattern` is a single string. `modifySimpleType` replaces all facets with the ones in the payload, and the properties panel sends only the first pattern (`pattern?.[0]`). Changing any facet of a type with two or more patterns therefore deletes all patterns but the first, without a warning (see [Commands](commands.md#restriction-facets)). Dropping a facet from the palette does the same, and dropping a pattern replaces the existing pattern with the default `.*` instead of adding one (see [Drag and drop](drag-and-drop.md#defaults)). The fix is to make `pattern` a `string[]` like `enumeration`, write one `xs:pattern` per value, send all patterns from the properties panel and the facet drop, and append a dropped pattern. See also [Diagram items copy values from the schema objects](#diagram-items-copy-values-from-the-schema-objects).
 - **GitHub issue:** none
 
 ## Attributes on derived complex types are rejected or misplaced
@@ -90,7 +90,7 @@ Effort:
 - **Location:** `src/commandValidators/schemaValidators.ts` (`validateModifySchemaNamespaces()`)
 - **Severity:** Medium
 - **Effort:** S
-- **Description:** `modifySchemaNamespaces` replaces the complete prefix map, so a prefix that is missing from the map is removed. The validator does not check whether QNames such as `type="tns:Address"` still use the removed prefix, and the schema is left with references that cannot be resolved. The property panel sends this command when a namespace row is deleted. `removeImport` already rejects the removal of a namespace that is still referenced (`isPrefixReferencedInSchema()`); the same check is needed for prefixes that are removed and not renamed.
+- **Description:** `modifySchemaNamespaces` replaces the complete prefix map, so a prefix that is missing from the map is removed. The validator does not check whether QNames such as `type="tns:Address"` still use the removed prefix, and the schema is left with references that cannot be resolved. The properties panel sends this command when a namespace row is deleted. `removeImport` already rejects the removal of a namespace that is still referenced (`isPrefixReferencedInSchema()`); the same check is needed for prefixes that are removed and not renamed.
 - **GitHub issue:** none
 
 ## Documentation overlaps the next item
@@ -122,7 +122,7 @@ Effort:
 - **Location:** `webview-src/diagram/SchemaProcessors.ts` (`processComplexType()`), `webview-src/diagram/SchemaProcessorsSimpleTypes.ts` (`processRestriction()`)
 - **Severity:** Medium
 - **Effort:** M
-- **Description:** For `xs:complexContent` and `xs:simpleContent`, an `xs:extension` is processed with its attributes and compositors, but an `xs:restriction` is passed to the simple type function `processRestriction()`, which only reads facets. A complex type that restricts another one with complex content is therefore shown without children, and the attributes of both kinds of restriction are missing in the property panel. The function also sets `simpleTypeDerivationKind` on the complex type. The fix is to process restrictions of complex content like extensions (attributes and compositors), and to read the attributes of restrictions of simple content as well (see [Diagram rendering](diagram-rendering.md#from-schema-to-diagram-items)). See also [Diagram items copy values from the schema objects](#diagram-items-copy-values-from-the-schema-objects).
+- **Description:** For `xs:complexContent` and `xs:simpleContent`, an `xs:extension` is processed with its attributes and compositors, but an `xs:restriction` is passed to the simple type function `processRestriction()`, which only reads facets. A complex type that restricts another one with complex content is therefore shown without children, and the attributes of both kinds of restriction are missing in the properties panel. The function also sets `simpleTypeDerivationKind` on the complex type. The fix is to process restrictions of complex content like extensions (attributes and compositors), and to read the attributes of restrictions of simple content as well (see [Diagram rendering](diagram-rendering.md#from-schema-to-diagram-items)). See also [Diagram items copy values from the schema objects](#diagram-items-copy-values-from-the-schema-objects).
 - **GitHub issue:** none
 
 ## Renames and new references do not check for duplicates
@@ -138,7 +138,7 @@ Effort:
 - **Location:** `src/commandValidators/typeValidators.ts` (`validateRemoveSimpleType()`, `validateRemoveComplexType()`), `src/commandValidators/elementValidators.ts` (`validateRemoveElement()`, `validateRemoveAttribute()`)
 - **Severity:** Medium
 - **Effort:** M
-- **Description:** Removing a top-level simple or complex type is accepted even if elements, attributes or other types still use it (`validateRemoveSimpleType()` has a `TODO Phase 2` for this). The schema is left with `type` and `base` values that point nowhere. The property panel sends these commands when a type is deleted. The same applies to top-level elements and attributes that are still referenced with `ref` or `substitutionGroup`. Groups, attribute groups and imports already reject the removal while they are referenced; types, elements and attributes need the same check (see [Commands](commands.md#conventions)).
+- **Description:** Removing a top-level simple or complex type is accepted even if elements, attributes or other types still use it (`validateRemoveSimpleType()` has a `TODO Phase 2` for this). The schema is left with `type` and `base` values that point nowhere. The properties panel sends these commands when a type is deleted. The same applies to top-level elements and attributes that are still referenced with `ref` or `substitutionGroup`. Groups, attribute groups and imports already reject the removal while they are referenced; types, elements and attributes need the same check (see [Commands](commands.md#conventions)).
 - **GitHub issue:** none
 
 ## View state is not restored after reopening
@@ -169,10 +169,10 @@ Effort:
 
 ## Imports and includes cannot be edited in the editor
 
-- **Location:** `webview-src/diagram/DiagramBuilder.ts`, `webview-src/propertyPanel/`, `webview-src/palette/`
+- **Location:** `webview-src/diagram/DiagramBuilder.ts`, `webview-src/propertiesPanel/`, `webview-src/palette/`
 - **Severity:** Medium
 - **Effort:** M
-- **Description:** `xs:import` and `xs:include` are neither shown in the diagram nor in the property panel, and the palette has no entry for them. The commands exist (`addImport`, `removeImport`, `modifyImport`, `addInclude`, `removeInclude`, `modifyInclude`, see [Commands](commands.md#imports-includes-and-namespaces)), but nothing in the webview sends them, so imports and includes can only be edited in the text editor. Other edits keep them unchanged. One option is a section in the property panel of the schema root, next to the namespace declarations.
+- **Description:** `xs:import` and `xs:include` are neither shown in the diagram nor in the properties panel, and the palette has no entry for them. The commands exist (`addImport`, `removeImport`, `modifyImport`, `addInclude`, `removeInclude`, `modifyInclude`, see [Commands](commands.md#imports-includes-and-namespaces)), but nothing in the webview sends them, so imports and includes can only be edited in the text editor. Other edits keep them unchanged. One option is a section in the properties panel of the schema root, next to the namespace declarations.
 - **GitHub issue:** [#359](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/359)
 
 ## Element references are not shown as references
@@ -193,10 +193,10 @@ Effort:
 
 ## Mixed content toggle ignores simple content, `complexContent` and the base type
 
-- **Location:** `webview-src/propertyPanel/propertyPanel.ts` (`renderConstraintsSection()`, `canShowConstraintsSection()`), `webview-src/diagram/TypeNodeCreators.ts`, `webview-src/diagram/SchemaProcessors.ts`, `src/commandExecutors/complexTypeExecutors.ts`, `src/commandValidators/`
+- **Location:** `webview-src/propertiesPanel/propertiesPanel.ts` (`renderConstraintsSection()`, `canShowConstraintsSection()`), `webview-src/diagram/TypeNodeCreators.ts`, `webview-src/diagram/SchemaProcessors.ts`, `src/commandExecutors/complexTypeExecutors.ts`, `src/commandValidators/`
 - **Severity:** Medium
 - **Effort:** M
-- **Description:** The property panel shows a "Mixed content" toggle for every complex type and for every element with an anonymous complex type. The diagram reads, and `modifyComplexType` writes, only the `mixed` attribute of `xs:complexType`. This is wrong in three cases:
+- **Description:** The properties panel shows a "Mixed content" toggle for every complex type and for every element with an anonymous complex type. The diagram reads, and `modifyComplexType` writes, only the `mixed` attribute of `xs:complexType`. This is wrong in three cases:
   - **Simple content.** With `xs:simpleContent`, `mixed="true"` has no effect, and XSD 1.0 says it should be avoided. The toggle is shown anyway.
   - **`mixed` on `xs:complexContent`.** If present, it takes precedence over the attribute on `xs:complexType`. It is neither read nor written, so the toggle can show the wrong state, and switching it changes nothing.
   - **Derivation by extension.** The content types of the base and the derived type must both be mixed or both be element-only. Switching only the derived type can make the schema invalid; no validator checks `mixed`.
@@ -206,10 +206,10 @@ Effort:
 
 ## Facets are not checked against the base type
 
-- **Location:** `src/commandValidators/typeValidators.ts` (`validateSimpleTypeBody()`), `webview-src/propertyPanel/propertyPanelFacets.ts`
+- **Location:** `src/commandValidators/typeValidators.ts` (`validateSimpleTypeBody()`), `webview-src/propertiesPanel/propertiesPanelFacets.ts`
 - **Severity:** Medium
 - **Effort:** L
-- **Description:** `addSimpleType` and `modifySimpleType` only check that a restriction has at least one facet. They do not check whether a facet applies to the base type, or whether facet values fit together. `maxLength` on `xs:integer`, `fractionDigits` on `xs:string`, `minLength` greater than `maxLength` or a `maxInclusive` that is not a valid value of the base type are accepted and written to the file, which makes the schema invalid. The property panel does not limit the facets by base type either. The fix is a table of the facets that apply to each built-in primitive type (XSD Part 2), a lookup that follows user-defined base types down to their primitive type, and checks for the value constraints between facets (see [Commands](commands.md#restriction-facets)).
+- **Description:** `addSimpleType` and `modifySimpleType` only check that a restriction has at least one facet. They do not check whether a facet applies to the base type, or whether facet values fit together. `maxLength` on `xs:integer`, `fractionDigits` on `xs:string`, `minLength` greater than `maxLength` or a `maxInclusive` that is not a valid value of the base type are accepted and written to the file, which makes the schema invalid. The properties panel does not limit the facets by base type either. The fix is a table of the facets that apply to each built-in primitive type (XSD Part 2), a lookup that follows user-defined base types down to their primitive type, and checks for the value constraints between facets (see [Commands](commands.md#restriction-facets)).
 - **GitHub issue:** none
 
 ## Every command reformats the whole document
@@ -222,12 +222,12 @@ Effort:
 
 ## Inline types have no node of their own
 
-- **Location:** `webview-src/diagram/SchemaProcessors.ts`, `webview-src/drop/` (drop rules), `webview-src/propertyPanel/` (element editors), `shared/idStrategy.ts`, `src/commandExecutors/`
+- **Location:** `webview-src/diagram/SchemaProcessors.ts`, `webview-src/drop/` (drop rules), `webview-src/propertiesPanel/` (element editors), `shared/idStrategy.ts`, `src/commandExecutors/`
 - **Severity:** Medium
 - **Effort:** L
 - **Description:** An anonymous (inline) complex or simple type is not drawn as a node; its content is merged into the element (see [Diagram rendering](diagram-rendering.md#from-schema-to-diagram-items)). In the schema model and the node IDs, however, the anonymous type has its own segment (`/element:person/anonymousComplexType[0]`, see [Schema model](schema-model.md#conventions)). So one diagram node stands for two constructs, and every part of the editor has to decide which of the two is meant:
   - The drop rules have extra cases for "element with anonymous complex type" and "element with simple content", which turn a drop on the element into a command on its type (see [Drag and drop](drag-and-drop.md)). Attributes dropped on a derived anonymous complex type end up in the wrong place (see [Attributes on derived complex types are rejected or misplaced](#attributes-on-derived-complex-types-are-rejected-or-misplaced)).
-  - The property panel of an element mixes element and type fields: Base Type, Replacement Type, `mixed` and the Facets tab belong to the type (see [UX concept](ux-concept.md)).
+  - The properties panel of an element mixes element and type fields: Base Type, Replacement Type, `mixed` and the Facets tab belong to the type (see [UX concept](ux-concept.md)).
   - Anonymous types cannot be selected or deleted on their own, and the element's documentation falls back to the type's documentation, which cannot be told apart.
 
   How Altova XMLSpy shows anonymous types is unclear: its manual says that "there is no separate symbol for local complex types", which can mean that they are merged into the element or that they use the same symbol as named complex types; this was not tried in XMLSpy. The editor does not have to follow XMLSpy here. An alternative is to draw the anonymous type as a child node of the element, so that every node is exactly one construct. This could be a diagram option. It should be decided before the [node IDs are redesigned](#node-ids-are-ambiguous-and-have-many-special-cases). It should also be planned together with [Diagram items copy values from the schema objects](#diagram-items-copy-values-from-the-schema-objects).
@@ -270,7 +270,7 @@ Effort:
 - **Location:** `src/commandValidators/typeValidators.ts` (`validateModifySimpleType()`)
 - **Severity:** Low
 - **Effort:** S
-- **Description:** The validator returns the result of `validateSimpleTypeBody()` with `if (bodyValidation) return bodyValidation;`. The result is always an object, so the function always returns there, and the checks after it never run: a `typeName` for an anonymous simple type is accepted and ignored by the executor instead of being rejected, and the message "Cannot apply restrictions without a base type" is unreachable. Because `validateSimpleTypeBody()` requires `baseType` for every restriction body, `restrictions` without `baseType` fail with "Base type cannot be empty", even if the type already is a restriction (see [Commands](commands.md#simple-types)). The property panel always sends both. `validateAddSimpleType()` uses the same pattern, but there the body check is the last one. The fix is to return only invalid results and to decide whether `restrictions` may keep the current base type.
+- **Description:** The validator returns the result of `validateSimpleTypeBody()` with `if (bodyValidation) return bodyValidation;`. The result is always an object, so the function always returns there, and the checks after it never run: a `typeName` for an anonymous simple type is accepted and ignored by the executor instead of being rejected, and the message "Cannot apply restrictions without a base type" is unreachable. Because `validateSimpleTypeBody()` requires `baseType` for every restriction body, `restrictions` without `baseType` fail with "Base type cannot be empty", even if the type already is a restriction (see [Commands](commands.md#simple-types)). The properties panel always sends both. `validateAddSimpleType()` uses the same pattern, but there the body check is the last one. The fix is to return only invalid results and to decide whether `restrictions` may keep the current base type.
 - **GitHub issue:** none
 
 ## Leftovers of the removed top-level drop target
@@ -299,7 +299,7 @@ Effort:
 
 ## Empty Facets tab says adding facets is not available yet
 
-- **Location:** `webview-src/propertyPanel/propertyPanelFacets.ts` (`renderFacetsTab()`)
+- **Location:** `webview-src/propertiesPanel/propertiesPanelFacets.ts` (`renderFacetsTab()`)
 - **Severity:** Low
 - **Effort:** S
 - **Description:** A restriction without facets shows "This type has no facets yet. To add a facet, drag one from the palette onto the node (available in a future release)." Dropping facets from the palette already works (see [UX concept](ux-concept.md#adding-editing-and-deleting)), so the part in parentheses should be removed.
@@ -307,7 +307,7 @@ Effort:
 
 ## Language of documentation entries cannot be edited
 
-- **Location:** `webview-src/propertyPanel/propertyPanelDocs.ts`
+- **Location:** `webview-src/propertiesPanel/propertiesPanelDocs.ts`
 - **Severity:** Low
 - **Effort:** S
 - **Description:** The Docs tab shows only the text of a documentation entry, not its `xml:lang` attribute, and it has no field to set or change it. Existing values are preserved because `modifyDocumentation` is sent without `lang`, but new entries always lack a language. Both commands already accept `lang`, and in `modifyDocumentation` an empty value removes the attribute (see [Commands](commands.md#annotations-and-documentation)); only the webview is missing. The fix is a language field next to each entry that sends `lang` with `addDocumentation` and `modifyDocumentation`.
@@ -342,7 +342,7 @@ Effort:
 - **Location:** `webview-src/main.ts` (`onNodeClick()`, `updateDiagramOptions` handler), `webview-src/renderer.ts` (`refresh()`)
 - **Severity:** Low
 - **Effort:** S
-- **Description:** Every render recreates the SVG of all items, which removes the `.selected` class. After `updateSchema`, the app selects the node again, but not after an expand or collapse and not after a changed diagram option. The highlight disappears while the property panel still shows the node. The fix is to apply the selection again in the renderer after each render, or to call `refreshSelection()` in these places as well (see [Diagram rendering](diagram-rendering.md#interaction)).
+- **Description:** Every render recreates the SVG of all items, which removes the `.selected` class. After `updateSchema`, the app selects the node again, but not after an expand or collapse and not after a changed diagram option. The highlight disappears while the properties panel still shows the node. The fix is to apply the selection again in the renderer after each render, or to call `refreshSelection()` in these places as well (see [Diagram rendering](diagram-rendering.md#interaction)).
 - **GitHub issue:** none
 
 ## Diagram does not follow theme changes
@@ -398,23 +398,23 @@ Effort:
 - **Location:** `webview-src/diagram/TextRenderers.ts` (`renderDocumentation()`), `webview-src/diagram/DiagramBuilderHelpers.ts` (`extractDocumentation()`), `webview-src/diagram/DiagramLayout.ts`
 - **Severity:** Low
 - **Effort:** M
-- **Description:** With `showDocumentation` (off by default), the documentation is drawn in a way that is likely to confuse (see [Diagram rendering](diagram-rendering.md#shapes-and-notation)). All `xs:documentation` entries of an item, in all languages, are joined with line breaks into one text. The renderer draws only its first three lines and cuts each after 50 characters, without wrapping and without an ellipsis, so the reader cannot tell that text is missing. Line breaks inside a documentation entry (the parser keeps them, only the outer whitespace is trimmed) count as lines, so a second language may appear as the third line without any marker, or may not appear at all. The full text cannot be seen anywhere in the diagram. Related layout problems are listed in [Documentation overlaps the next item](#documentation-overlaps-the-next-item) and [Documentation box size does not match the drawn text](#documentation-box-size-does-not-match-the-drawn-text). A better presentation needs a short design: for example, wrap the text to the box width, normalize whitespace, mark cut text with an ellipsis, show only one language, and show the full text in a tooltip or in the property panel.
+- **Description:** With `showDocumentation` (off by default), the documentation is drawn in a way that is likely to confuse (see [Diagram rendering](diagram-rendering.md#shapes-and-notation)). All `xs:documentation` entries of an item, in all languages, are joined with line breaks into one text. The renderer draws only its first three lines and cuts each after 50 characters, without wrapping and without an ellipsis, so the reader cannot tell that text is missing. Line breaks inside a documentation entry (the parser keeps them, only the outer whitespace is trimmed) count as lines, so a second language may appear as the third line without any marker, or may not appear at all. The full text cannot be seen anywhere in the diagram. Related layout problems are listed in [Documentation overlaps the next item](#documentation-overlaps-the-next-item) and [Documentation box size does not match the drawn text](#documentation-box-size-does-not-match-the-drawn-text). A better presentation needs a short design: for example, wrap the text to the box width, normalize whitespace, mark cut text with an ellipsis, show only one language, and show the full text in a tooltip or in the properties panel.
 - **GitHub issue:** none
 
-## Property panel builds commands in its event handlers
+## Properties panel builds commands in its event handlers
 
-- **Location:** `webview-src/propertyPanel/propertyPanel.ts` (`renderCardinalitySection()`, `renderConstraintsSection()`), `propertyPanelDocs.ts`, `propertyPanelElementDefaults.ts`, `propertyPanelFacets.ts`, `propertyPanelSchemaNamespaces.ts`, `propertyPanelSimpleTypeEditors.ts`, `propertyPanelTypes.ts`
+- **Location:** `webview-src/propertiesPanel/propertiesPanel.ts` (`renderCardinalitySection()`, `renderConstraintsSection()`), `propertiesPanelDocs.ts`, `propertiesPanelElementDefaults.ts`, `propertiesPanelFacets.ts`, `propertiesPanelSchemaNamespaces.ts`, `propertiesPanelSimpleTypeEditors.ts`, `propertiesPanelTypes.ts`
 - **Severity:** Low
 - **Effort:** M
-- **Description:** The property panel builds its commands in two ways. `propertyPanelCommands.ts` and `propertyPanelSimpleTypeCommands.ts` have functions that take a node and return a command, such as `createRenameNodeComand()` and `createTypeCommand()`. Twenty other commands are written out inside the event handlers that render the fields and update the draft copy: seven in `propertyPanel.ts` (cardinality, nillable, abstract, mixed), seven in `propertyPanelDocs.ts` and one or two in each of the other files listed. These can only be tested through the DOM, and changes to a command or to the values it reads (for example [#360](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/360), see [Diagram items copy values from the schema objects](#diagram-items-copy-values-from-the-schema-objects)) have to be found in all of these places. `propertyPanel.ts` has 484 lines, close to the limit of 500 in the [development guidelines](development-guidelines.md#code-size). The fix is to move the construction of these commands into functions in the command modules and to leave only the draft update and the dispatch in the handlers.
+- **Description:** The properties panel builds its commands in two ways. `propertiesPanelCommands.ts` and `propertiesPanelSimpleTypeCommands.ts` have functions that take a node and return a command, such as `createRenameNodeComand()` and `createTypeCommand()`. Twenty other commands are written out inside the event handlers that render the fields and update the draft copy: seven in `propertiesPanel.ts` (cardinality, nillable, abstract, mixed), seven in `propertiesPanelDocs.ts` and one or two in each of the other files listed. These can only be tested through the DOM, and changes to a command or to the values it reads (for example [#360](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/360), see [Diagram items copy values from the schema objects](#diagram-items-copy-values-from-the-schema-objects)) have to be found in all of these places. `propertiesPanel.ts` has 484 lines, close to the limit of 500 in the [development guidelines](development-guidelines.md#code-size). The fix is to move the construction of these commands into functions in the command modules and to leave only the draft update and the dispatch in the handlers.
 - **GitHub issue:** none
 
 ## Code exceeds the size limits
 
-- **Location:** `src/commandValidators/groupValidators.ts`, `src/commandExecutors/elementExecutors.ts`, `src/commandExecutors/schemaPrefixChecker.ts`, `webview-src/renderer.ts`, `webview-src/diagram/SchemaProcessors.ts`, `webview-src/propertyPanel/propertyPanelDocs.ts`, `propertyPanelFacets.ts`, `propertyPanelSimpleTypeEditors.ts`, `propertyPanelTypes.ts`
+- **Location:** `src/commandValidators/groupValidators.ts`, `src/commandExecutors/elementExecutors.ts`, `src/commandExecutors/schemaPrefixChecker.ts`, `webview-src/renderer.ts`, `webview-src/diagram/SchemaProcessors.ts`, `webview-src/propertiesPanel/propertiesPanelDocs.ts`, `propertiesPanelFacets.ts`, `propertiesPanelSimpleTypeEditors.ts`, `propertiesPanelTypes.ts`
 - **Severity:** Low
 - **Effort:** M
-- **Description:** Some code is longer than the [development guidelines](development-guidelines.md#code-size) allow. Counted with comments and blank lines, `elementExecutors.ts` and `renderer.ts` have slightly more than 500 lines, and eight functions have more than 120 lines: `renderFacetsTab()` and `renderEnumerationEditor()` in `propertyPanelFacets.ts` (196 and 166 lines), `isQNameMatchedInSchema()`, `renderSimpleTypeUnionEditor()`, `validateModifyGroup()`, `processGroup()`, `createAnnotationSection()` and `renderTypeProperty()` (126 to 140 lines). The limits are not checked automatically, so these were not noticed. The fix is to split the code, and to enable the ESLint rules `max-lines` and `max-lines-per-function` for everything but the tests (see [Tests are exempt from the size limits](#tests-are-exempt-from-the-size-limits)).
+- **Description:** Some code is longer than the [development guidelines](development-guidelines.md#code-size) allow. Counted with comments and blank lines, `elementExecutors.ts` and `renderer.ts` have slightly more than 500 lines, and eight functions have more than 120 lines: `renderFacetsTab()` and `renderEnumerationEditor()` in `propertiesPanelFacets.ts` (196 and 166 lines), `isQNameMatchedInSchema()`, `renderSimpleTypeUnionEditor()`, `validateModifyGroup()`, `processGroup()`, `createAnnotationSection()` and `renderTypeProperty()` (126 to 140 lines). The limits are not checked automatically, so these were not noticed. The fix is to split the code, and to enable the ESLint rules `max-lines` and `max-lines-per-function` for everything but the tests (see [Tests are exempt from the size limits](#tests-are-exempt-from-the-size-limits)).
 - **GitHub issue:** none
 
 ## Top-level lookups are duplicated instead of shared
@@ -448,18 +448,18 @@ Effort:
 
 ## Diagram items copy values from the schema objects
 
-- **Location:** `webview-src/diagram/DiagramItem.ts`, `webview-src/diagram/SchemaProcessors*.ts`, `webview-src/diagram/TypeNodeCreators.ts`, `webview-src/propertyPanel/propertyPanelDraft.ts`, `webview-src/propertyPanel/`, `webview-src/drop/`
+- **Location:** `webview-src/diagram/DiagramItem.ts`, `webview-src/diagram/SchemaProcessors*.ts`, `webview-src/diagram/TypeNodeCreators.ts`, `webview-src/propertiesPanel/propertiesPanelDraft.ts`, `webview-src/propertiesPanel/`, `webview-src/drop/`
 - **Severity:** Low
 - **Effort:** L
-- **Description:** `DiagramItem` does not reference the schema object it represents; the builder copies about 22 values into it instead (see [Diagram rendering](diagram-rendering.md#data-model)). The renderer needs only a few of them; most are read by the property panel and the drop code. Every new value has to be added to the item, to the builder and to `createDraftNode()`, which copies all fields again by hand for the property panel draft. The extraction is partly duplicated: `processGroup` builds group elements inline instead of using `createElementNode`. Values that are not copied, or copied in a reduced form, cause bugs: [Editing facets drops all but the first pattern](#editing-facets-drops-all-but-the-first-pattern), [Restricted complex content is shown without content and attributes](#restricted-complex-content-is-shown-without-content-and-attributes), [Element references are not shown as references](#element-references-are-not-shown-as-references) and [Items with maxOccurs 0 are drawn as repeated](#items-with-maxoccurs-0-are-drawn-as-repeated) come at least partly from this layer. The plan is to keep only view state on the item, add a typed reference to the schema object, and read values through one module of accessor functions. The property panel draft must then be a deep copy of the schema object: after a failed command the webview receives no new schema, so changes to the shared object would remain. The many `toArray()` calls come from xmlbind-ts, which returns a single object for a repeated element that occurs once ([neumaennl/xmlbind-ts#261](https://github.com/neumaennl/xmlbind-ts/issues/261)). This should be planned together with [inline types](#inline-types-have-no-node-of-their-own) and the [node ID redesign](#node-ids-are-ambiguous-and-have-many-special-cases), which also change the builder.
+- **Description:** `DiagramItem` does not reference the schema object it represents; the builder copies about 22 values into it instead (see [Diagram rendering](diagram-rendering.md#data-model)). The renderer needs only a few of them; most are read by the properties panel and the drop code. Every new value has to be added to the item, to the builder and to `createDraftNode()`, which copies all fields again by hand for the properties panel draft. The extraction is partly duplicated: `processGroup` builds group elements inline instead of using `createElementNode`. Values that are not copied, or copied in a reduced form, cause bugs: [Editing facets drops all but the first pattern](#editing-facets-drops-all-but-the-first-pattern), [Restricted complex content is shown without content and attributes](#restricted-complex-content-is-shown-without-content-and-attributes), [Element references are not shown as references](#element-references-are-not-shown-as-references) and [Items with maxOccurs 0 are drawn as repeated](#items-with-maxoccurs-0-are-drawn-as-repeated) come at least partly from this layer. The plan is to keep only view state on the item, add a typed reference to the schema object, and read values through one module of accessor functions. The properties panel draft must then be a deep copy of the schema object: after a failed command the webview receives no new schema, so changes to the shared object would remain. The many `toArray()` calls come from xmlbind-ts, which returns a single object for a repeated element that occurs once ([neumaennl/xmlbind-ts#261](https://github.com/neumaennl/xmlbind-ts/issues/261)). This should be planned together with [inline types](#inline-types-have-no-node-of-their-own) and the [node ID redesign](#node-ids-are-ambiguous-and-have-many-special-cases), which also change the builder.
 - **GitHub issue:** [#360](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/360)
 
 ## Identity constraints, notations and redefines cannot be shown or edited
 
-- **Location:** `shared/commands/`, `src/commandValidators/`, `src/commandExecutors/`, `webview-src/diagram/DiagramBuilder.ts`, `webview-src/propertyPanel/`
+- **Location:** `shared/commands/`, `src/commandValidators/`, `src/commandExecutors/`, `webview-src/diagram/DiagramBuilder.ts`, `webview-src/propertiesPanel/`
 - **Severity:** Low
 - **Effort:** L
-- **Description:** Identity constraints (`xs:key`, `xs:keyref`, `xs:unique` with their `selector` and `field`s), `xs:notation` and `xs:redefine` are in the schema classes, but there are no commands for them, the diagram does not show them, and the property panel has no fields for them (see [Diagram rendering](diagram-rendering.md#from-schema-to-diagram-items)). They can only be edited in the text editor; other edits keep them unchanged. Renaming or removing an element does not update the selectors, fields or `refer` values that point to it. All three are rare: in a GitHub code search (October 2026, `xs:` prefix only, approximate counts), `xs:unique` appeared in about 6% as many XSD files as `xs:complexType`, `xs:redefine`, `xs:key` and `xs:keyref` in 1 to 2%, and `xs:notation` in 0.2%. `redefine` is also deprecated in XSD 1.1. Because they are kept unchanged and are rarely used, full editing support is not planned for now; showing them read-only would be a smaller first step.
+- **Description:** Identity constraints (`xs:key`, `xs:keyref`, `xs:unique` with their `selector` and `field`s), `xs:notation` and `xs:redefine` are in the schema classes, but there are no commands for them, the diagram does not show them, and the properties panel has no fields for them (see [Diagram rendering](diagram-rendering.md#from-schema-to-diagram-items)). They can only be edited in the text editor; other edits keep them unchanged. Renaming or removing an element does not update the selectors, fields or `refer` values that point to it. All three are rare: in a GitHub code search (October 2026, `xs:` prefix only, approximate counts), `xs:unique` appeared in about 6% as many XSD files as `xs:complexType`, `xs:redefine`, `xs:key` and `xs:keyref` in 1 to 2%, and `xs:notation` in 0.2%. `redefine` is also deprecated in XSD 1.1. Because they are kept unchanged and are rarely used, full editing support is not planned for now; showing them read-only would be a smaller first step.
 - **GitHub issue:** none
 
 ## Diagram is rebuilt in full on every change
@@ -499,7 +499,7 @@ Effort:
 - **Location:** `vitest.config.ts` (`coverage.thresholds`), code of the editor in `src/` and `webview-src/`
 - **Severity:** Low
 - **Effort:** L
-- **Description:** Much of the code of the editor has no tests for some of its branches. Branch coverage is 73.4%, below the 80% that applies to lines, statements and functions, so the threshold for branches is 70% for now (see [Testing](testing.md#coverage)). About 270 more covered branches are needed for 80%. The largest gaps are in `schemaLocalRenamer.ts` (38%), `schemaPrefixChecker.ts` (53%), `propertyPanelXmlPreview.ts` (56%), `renderer.ts` (43%), `webview-src/main.ts` (37%) and `SchemaProcessorsGroups.ts`, which no test covers. The fix is the tests that are missing, after which all four thresholds are raised to 85% (Phase 9 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340)).
+- **Description:** Much of the code of the editor has no tests for some of its branches. Branch coverage is 73.4%, below the 80% that applies to lines, statements and functions, so the threshold for branches is 70% for now (see [Testing](testing.md#coverage)). About 270 more covered branches are needed for 80%. The largest gaps are in `schemaLocalRenamer.ts` (38%), `schemaPrefixChecker.ts` (53%), `propertiesPanelXmlPreview.ts` (56%), `renderer.ts` (43%), `webview-src/main.ts` (37%) and `SchemaProcessorsGroups.ts`, which no test covers. The fix is the tests that are missing, after which all four thresholds are raised to 85% (Phase 9 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340)).
 - **GitHub issue:** none
 
 ## The extension host is not bundled
@@ -534,7 +534,7 @@ Effort:
 - **GitHub issue:** [#282](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/282)
 - **Severity:** Medium
 - **Effort:** S
-- **Description:** The issue has no body. The commands `modifyAttribute` and `removeAttribute` exist with executors in `src/commandExecutors/attributeExecutors.ts`, but the webview never sends them: attributes can only be added from the palette, and the property panel lists them read-only.
+- **Description:** The issue has no body. The commands `modifyAttribute` and `removeAttribute` exist with executors in `src/commandExecutors/attributeExecutors.ts`, but the webview never sends them: attributes can only be added from the palette, and the properties panel lists them read-only.
 
 ## Phase 5 issue does not reflect palette drag and drop
 

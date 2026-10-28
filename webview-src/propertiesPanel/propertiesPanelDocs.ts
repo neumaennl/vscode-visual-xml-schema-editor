@@ -1,5 +1,5 @@
 /**
- * Docs-tab helpers for the PropertyPanel.
+ * Docs-tab helpers for the PropertiesPanel.
  * This module renders structured xs:annotation / xs:documentation data and keeps
  * the draft diagram node in sync while dispatching granular metadata commands.
  */
@@ -7,8 +7,8 @@
 import { SchemaCommand } from "../../shared/types";
 import { DiagramItem } from "../diagram";
 import { DiagramAnnotationEntry } from "../diagram/DiagramTypes";
-import { resolveDocumentationTargetId } from "./propertyPanelCommands";
-import { createEditableTextArea } from "./propertyPanelDom";
+import { resolveDocumentationTargetId } from "./propertiesPanelCommands";
+import { createEditableTextArea } from "./propertiesPanelDom";
 import { buildAnnotationId, buildDocumentationId } from "../diagram/DiagramBuilderHelpers";
 import { SCHEMA_ROOT_ID } from "../../shared/idStrategy";
 const NEW_DOCUMENTATION_TEXT = "New documentation";
@@ -78,7 +78,7 @@ function syncDocumentationText(node: DiagramItem): void {
  * Returns whether the currently edited node is the schema root, which is the
  * only case where the Docs tab should expose multiple xs:annotation nodes.
  *
- * @param node - Draft node currently shown in the PropertyPanel
+ * @param node - Draft node currently shown in the PropertiesPanel
  * @returns True when the Docs tab should manage multiple annotations
  */
 function isSchemaDocsTarget(node: DiagramItem): boolean {
@@ -176,7 +176,7 @@ function createActionButton(
  * @param annotation - Annotation entry to render
  * @param annotationIndex - Position of the annotation within the draft node
  * @param dispatchCommand - Callback used to emit schema-edit commands
- * @param rerender - Callback that re-renders the PropertyPanel after structural edits
+ * @param rerender - Callback that re-renders the PropertiesPanel after structural edits
  * @returns The rendered annotation section element
  */
 function createAnnotationSection(
@@ -310,9 +310,9 @@ function createAnnotationSection(
 /**
  * Creates the structured Docs-tab contents for a selected diagram node.
  *
- * @param node - Draft diagram node currently shown in the PropertyPanel
+ * @param node - Draft diagram node currently shown in the PropertiesPanel
  * @param dispatchCommand - Callback used to emit schema-edit commands
- * @param rerender - Callback that re-renders the PropertyPanel after structural edits
+ * @param rerender - Callback that re-renders the PropertiesPanel after structural edits
  * @returns The rendered Docs-tab container
  */
 export function createDocsTab(

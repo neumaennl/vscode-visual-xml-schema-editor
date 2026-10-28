@@ -1,5 +1,5 @@
 /**
- * Shared catalog of built-in XML Schema primitive types used by property-panel type editing.
+ * Shared catalog of built-in XML Schema primitive types used by properties-panel type editing.
  */
 /** Built-in XML Schema primitive local names without namespace prefixes. */
 export const BUILT_IN_XSD_TYPE_LOCAL_NAMES = Object.freeze([

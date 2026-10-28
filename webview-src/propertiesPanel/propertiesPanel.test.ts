@@ -1,8 +1,8 @@
 /**
- * Unit tests for PropertyPanel class.
+ * Unit tests for PropertiesPanel class.
  */
 
-import { PropertyPanel } from "./propertyPanel";
+import { PropertiesPanel } from "./propertiesPanel";
 import { DiagramItem } from "../diagram/DiagramItem";
 import { Diagram } from "../diagram/Diagram";
 import { DiagramItemType } from "../diagram/DiagramTypes";
@@ -41,14 +41,14 @@ function hasLabel(container: HTMLElement, label: string): boolean {
   );
 }
 
-describe("PropertyPanel", () => {
+describe("PropertiesPanel", () => {
   let container: HTMLDivElement;
-  let panel: PropertyPanel;
+  let panel: PropertiesPanel;
   let diagram: Diagram;
 
   beforeEach(() => {
     container = document.createElement("div");
-    panel = new PropertyPanel(container);
+    panel = new PropertiesPanel(container);
     diagram = new Diagram();
   });
 
@@ -74,7 +74,7 @@ describe("PropertyPanel", () => {
     panel.display(item);
 
     const header = container.firstElementChild as HTMLElement;
-    expect(header.classList.contains("property-panel-header")).toBe(true);
+    expect(header.classList.contains("properties-panel-header")).toBe(true);
     expect(header.textContent).toContain("Element");
     expect(header.nextElementSibling?.classList.contains("property-tabs")).toBe(true);
   });
@@ -82,7 +82,7 @@ describe("PropertyPanel", () => {
   it("dispatches removeElement when the header delete button is clicked", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
-    panel = new PropertyPanel(container, dispatch);
+    panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem("/element:person", "person", DiagramItemType.element, diagram);
 
     panel.display(item);
@@ -99,7 +99,7 @@ describe("PropertyPanel", () => {
   it("dispatches removeGroup when deleting a compositor group", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
-    panel = new PropertyPanel(container, dispatch);
+    panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem(
       "/complexType:PersonType/group:sequence[0]",
       "sequence",
@@ -194,7 +194,7 @@ describe("PropertyPanel", () => {
   it("reorders enumeration values via drag and drop", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
-    panel = new PropertyPanel(container, dispatch);
+    panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem(
       "/simpleType:TokenType",
       "TokenType",
@@ -309,7 +309,7 @@ describe("PropertyPanel", () => {
   it("preserves multi-line documentation in the docs tab", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
-    panel = new PropertyPanel(container, dispatch);
+    panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem("/element:person", "person", DiagramItemType.element, diagram);
     item.documentationAnnotations = [
       {
@@ -345,7 +345,7 @@ describe("PropertyPanel", () => {
   it("dispatches modifyElement when name is changed", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
-    panel = new PropertyPanel(container, dispatch);
+    panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem("/element:person", "person", DiagramItemType.element, diagram);
 
     panel.display(item);
@@ -362,7 +362,7 @@ describe("PropertyPanel", () => {
   it("does not dispatch a rename command when the name is unchanged", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
-    panel = new PropertyPanel(container, dispatch);
+    panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem("/element:person", "person", DiagramItemType.element, diagram);
 
     panel.display(item);
@@ -376,7 +376,7 @@ describe("PropertyPanel", () => {
   it("does not dispatch duplicate rename commands for the same node/name replay", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
-    panel = new PropertyPanel(container, dispatch);
+    panel = new PropertiesPanel(container, dispatch);
 
     const initialItem = new DiagramItem("/element:person", "person", DiagramItemType.element, diagram);
     panel.display(initialItem);
@@ -422,7 +422,7 @@ describe("PropertyPanel", () => {
   it("dispatches modifyElement when minOccurs is changed", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
-    panel = new PropertyPanel(container, dispatch);
+    panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem("/element:root/element:item[0]", "item", DiagramItemType.element, diagram);
     item.minOccurrence = 1;
     item.maxOccurrence = 3;
@@ -498,7 +498,7 @@ describe("PropertyPanel", () => {
   it("dispatches modifyGroup when group cardinality is changed", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
-    panel = new PropertyPanel(container, dispatch);
+    panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem(
       "/complexType:PersonType/group:sequence[0]",
       "sequence",
@@ -522,7 +522,7 @@ describe("PropertyPanel", () => {
   it("dispatches modifyComplexType when complexType constraints are changed", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
-    panel = new PropertyPanel(container, dispatch);
+    panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem("/complexType:PersonType", "PersonType", DiagramItemType.type, diagram);
     item.isAbstract = false;
     item.isMixed = false;
@@ -556,7 +556,7 @@ describe("PropertyPanel", () => {
   it("dispatches modifySimpleType when facets are edited", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
-    panel = new PropertyPanel(container, dispatch);
+    panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem(
       "/simpleType:TokenType",
       "TokenType",
@@ -609,7 +609,7 @@ describe("PropertyPanel", () => {
   it("removes a facet while retaining another restriction facet", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
-    panel = new PropertyPanel(container, dispatch);
+    panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem("/simpleType:TokenType", "TokenType", DiagramItemType.type, diagram);
     item.type = "simpleType (restricts xs:string)";
     item.restrictions = { enumeration: ["A"], pattern: ["[A-Z]"] };
@@ -673,7 +673,7 @@ describe("PropertyPanel", () => {
   it("dispatches documentation command from docs tab", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
-    panel = new PropertyPanel(container, dispatch);
+    panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem("/element:person", "person", DiagramItemType.element, diagram);
     item.documentationAnnotations = [
       {
@@ -732,7 +732,7 @@ describe("PropertyPanel", () => {
   it("adds schema-root documentation through the structured docs flow", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
-    panel = new PropertyPanel(container, dispatch);
+    panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem(SCHEMA_ROOT_ID, "schema", DiagramItemType.group, diagram);
 
     panel.display(item);
@@ -758,7 +758,7 @@ describe("PropertyPanel", () => {
   it("renders structured annotations and supports adding/removing documentation entries", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
-    panel = new PropertyPanel(container, dispatch);
+    panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem(SCHEMA_ROOT_ID, "schema", DiagramItemType.group, diagram);
     item.documentationAnnotations = [
       {
@@ -815,7 +815,7 @@ describe("PropertyPanel", () => {
   it("lets the schema add additional annotation sections in the docs tab", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
-    panel = new PropertyPanel(container, dispatch);
+    panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem(SCHEMA_ROOT_ID, "schema", DiagramItemType.group, diagram);
     item.documentationAnnotations = [
       {
@@ -888,7 +888,7 @@ describe("PropertyPanel", () => {
   it("edits simple type base types through a dedicated Base Type field", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
-    panel = new PropertyPanel(container, dispatch);
+    panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem("/simpleType:TokenType", "TokenType", DiagramItemType.type, diagram);
     item.type = "simpleType (restricts xs:string)";
 
@@ -910,7 +910,7 @@ describe("PropertyPanel", () => {
   it("edits simpleType list item types", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
-    panel = new PropertyPanel(container, dispatch);
+    panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem("/simpleType:TokenListType", "TokenListType", DiagramItemType.type, diagram);
     item.type = "simpleType (list of xs:token)";
     item.simpleTypeDerivationKind = "list";
@@ -934,7 +934,7 @@ describe("PropertyPanel", () => {
   it("lets users switch a simpleType between restriction and list kinds", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
-    panel = new PropertyPanel(container, dispatch);
+    panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem("/simpleType:TokenType", "TokenType", DiagramItemType.type, diagram);
     item.type = "simpleType (restricts xs:string)";
     item.simpleTypeDerivationKind = "restriction";
@@ -969,7 +969,7 @@ describe("PropertyPanel", () => {
   it("edits simpleType union member types", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
-    panel = new PropertyPanel(container, dispatch);
+    panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem("/simpleType:TextOrNumberType", "TextOrNumberType", DiagramItemType.type, diagram);
     item.type = "simpleType (union of xs:string, xs:integer)";
     item.simpleTypeDerivationKind = "union";
@@ -1003,7 +1003,7 @@ describe("PropertyPanel", () => {
   it("does not dispatch a second command when Base Type blur is unchanged after stale simpleType rename replay", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
-    panel = new PropertyPanel(container, dispatch);
+    panel = new PropertiesPanel(container, dispatch);
 
     const initial = new DiagramItem(
       "/simpleType:lengthRestricitionType",
@@ -1100,7 +1100,7 @@ describe("PropertyPanel", () => {
   it("uses targetNamespace prefix for local type references when available", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
-    panel = new PropertyPanel(container, dispatch);
+    panel = new PropertiesPanel(container, dispatch);
     diagram.currentSchemaPrefix = "tns";
     const schemaRoot = new DiagramItem(SCHEMA_ROOT_ID, "schema", DiagramItemType.group, diagram);
     const customerType = new DiagramItem(
@@ -1149,7 +1149,7 @@ describe("PropertyPanel", () => {
   it("updates the matching namespace declaration when targetNamespace changes", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
-    panel = new PropertyPanel(container, dispatch);
+    panel = new PropertiesPanel(container, dispatch);
     const schemaRoot = new DiagramItem(SCHEMA_ROOT_ID, "schema", DiagramItemType.group, diagram);
     diagram.schemaTargetNamespace = "http://example.com/original";
     diagram.schemaNamespacePrefixes = {
@@ -1183,7 +1183,7 @@ describe("PropertyPanel", () => {
   it("updates targetNamespace when the corresponding namespace declaration URI changes", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
-    panel = new PropertyPanel(container, dispatch);
+    panel = new PropertiesPanel(container, dispatch);
     const schemaRoot = new DiagramItem(SCHEMA_ROOT_ID, "schema", DiagramItemType.group, diagram);
     diagram.schemaTargetNamespace = "http://example.com/original";
     diagram.schemaNamespacePrefixes = {
@@ -1225,7 +1225,7 @@ describe("PropertyPanel", () => {
   it("lets elements with inline complex types replace them with an explicit type", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
-    panel = new PropertyPanel(container, dispatch);
+    panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem("/element:person", "person", DiagramItemType.element, diagram);
     item.type = "complexType";
     item.hasAnonymousComplexType = true;
@@ -1251,7 +1251,7 @@ describe("PropertyPanel", () => {
   it("lets elements with inline simple types replace them with an explicit type", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
-    panel = new PropertyPanel(container, dispatch);
+    panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem("/element:code", "code", DiagramItemType.element, diagram);
     item.type = "<anonymous simpleType> (restricts xs:string)";
     item.isSimpleContent = true;
@@ -1278,7 +1278,7 @@ describe("PropertyPanel", () => {
   it("edits inline simple type base types from the selected element", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
-    panel = new PropertyPanel(container, dispatch);
+    panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem("/element:code", "code", DiagramItemType.element, diagram);
     item.type = "<anonymous simpleType> (restricts xs:string)";
     item.isSimpleContent = true;
@@ -1305,7 +1305,7 @@ describe("PropertyPanel", () => {
   it("edits inline complex type extension bases from the selected element", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
-    panel = new PropertyPanel(container, dispatch);
+    panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem("/element:person", "person", DiagramItemType.element, diagram);
     item.type = "<anonymous complexType> (extends BasePersonType)";
     item.hasAnonymousComplexType = true;
@@ -1385,7 +1385,7 @@ describe("PropertyPanel", () => {
   it("keeps edited draft values visible when switching tabs", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
-    panel = new PropertyPanel(container, dispatch);
+    panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem("/element:root/element:item[0]", "item", DiagramItemType.element, diagram);
     item.minOccurrence = 1;
     item.maxOccurrence = 3;

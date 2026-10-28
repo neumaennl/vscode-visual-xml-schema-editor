@@ -4,8 +4,8 @@ title: Testing
 description: How the extension is tested - running the tests and the type check, the four Vitest projects, mocks and helpers, conventions for tests, mocks, helper functions and helper classes, which tests to write for typical changes, coverage, CI, the smoke tests in the extension host with a mock webview, and how the current tests compare with the testing strategy of ADR 001.
 tags: [testing, vitest, mocks, coverage, ci, conventions]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-28T13:23:13Z }
-verified: { by: human:neumaennl, at: 2026-10-28T13:32:15Z }
+generated: { by: human:neumaennl, at: 2026-10-28T14:47:04Z }
+verified: { by: human:neumaennl, at: 2026-10-28T15:08:21Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -141,7 +141,7 @@ The `vscode` mock is not used through this mechanism: `src/__mocks__/vscode.ts` 
 | Webview app | `webview-src/main.test.ts` | [Editor](editor.md) |
 | Diagram | `webview-src/diagram/`, `webview-src/renderer.test.ts` | [Diagram rendering](diagram-rendering.md#tests) |
 | Palette and drag and drop | `webview-src/drop/DropCommandFactory.test.ts`, `webview-src/palette/PaletteView.test.ts`, `webview-src/renderer.test.ts` | [Drag and drop](drag-and-drop.md#adding-a-draggable-construct) |
-| Property panel | `webview-src/propertyPanel/propertyPanel.test.ts` | [UX concept](ux-concept.md) |
+| Properties panel | `webview-src/propertiesPanel/propertiesPanel.test.ts` | [UX concept](ux-concept.md) |
 | Scripts | `scripts/**/*.test.ts` | [Build and packaging](build-and-packaging.md#vs-code-and-node-versions) |
 
 # Conventions

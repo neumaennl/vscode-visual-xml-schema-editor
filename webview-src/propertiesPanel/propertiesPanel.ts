@@ -1,5 +1,5 @@
 /**
- * Property panel for displaying diagram node details.
+ * Properties panel for displaying diagram node details.
  * Renders node properties such as name, type, cardinality, documentation, and attributes.
  */
 
@@ -15,32 +15,32 @@ import {
   createRenameNodeComand,
   resolveSimpleTypeId,
   isTopLevelElement,
-} from "./propertyPanelCommands";
+} from "./propertiesPanelCommands";
 import { SchemaNodeType, generateSchemaId } from "../../shared/idStrategy";
-import { createDraftNode } from "./propertyPanelDraft";
+import { createDraftNode } from "./propertiesPanelDraft";
 import {
   addPropertyToContainer,
   createAttributeList,
   createEditableField,
-  createPropertyPanelHeader,
+  createPropertiesPanelHeader,
   createSectionHeader,
   createToggleRow,
-} from "./propertyPanelDom";
-import { createDocsTab } from "./propertyPanelDocs";
-import { renderFacetsTab } from "./propertyPanelFacets";
-import { renderSchemaNamespaceProperties } from "./propertyPanelSchemaNamespaces";
-import { BUILTIN_TYPE_SUGGESTIONS } from "./propertyPanelTypeCatalog";
-import { renderTypeProperty } from "./propertyPanelTypes";
-import { renderElementDefaultFixedSection } from "./propertyPanelElementDefaults";
-import { buildXmlPreview } from "./propertyPanelXmlPreview";
+} from "./propertiesPanelDom";
+import { createDocsTab } from "./propertiesPanelDocs";
+import { renderFacetsTab } from "./propertiesPanelFacets";
+import { renderSchemaNamespaceProperties } from "./propertiesPanelSchemaNamespaces";
+import { BUILTIN_TYPE_SUGGESTIONS } from "./propertiesPanelTypeCatalog";
+import { renderTypeProperty } from "./propertiesPanelTypes";
+import { renderElementDefaultFixedSection } from "./propertiesPanelElementDefaults";
+import { buildXmlPreview } from "./propertiesPanelXmlPreview";
 
 type PropertyTab = "general" | "facets" | "docs" | "xml";
 type CommandDispatcher = (command: SchemaCommand) => void;
 
 /**
- * Manages the property panel UI that displays details about selected diagram nodes.
+ * Manages the properties panel UI that displays details about selected diagram nodes.
  */
-export class PropertyPanel {
+export class PropertiesPanel {
   private container: HTMLDivElement;
   private selectedNode: DiagramItem | null = null;
   private draftNode: DiagramItem | null = null;
@@ -49,7 +49,7 @@ export class PropertyPanel {
   private readonly dispatchCommand: CommandDispatcher;
 
   /**
-   * Creates a new PropertyPanel.
+   * Creates a new PropertiesPanel.
    *
    * @param container - The HTML div element to render the properties into
    * @param dispatchCommand - Callback used to emit schema commands
@@ -91,7 +91,7 @@ export class PropertyPanel {
     this.container.replaceChildren();
     const deleteCommand = createDeleteNodeCommand(this.draftNode);
     this.container.appendChild(
-      createPropertyPanelHeader(
+      createPropertiesPanelHeader(
         getNodeTypeLabel(this.draftNode),
         this.draftNode.id,
         deleteCommand ? () : void => this.dispatchCommand(deleteCommand) : undefined

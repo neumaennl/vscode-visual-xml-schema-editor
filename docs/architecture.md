@@ -4,8 +4,8 @@ title: Architecture
 description: How the extension host, the webview and the shared code work together to provide a visual editor for XML Schema (XSD) files, and the design decisions behind the command-based design.
 tags: [architecture, extension-host, webview, shared, design-decisions]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-28T13:57:27Z }
-verified: { by: human:neumaennl, at: 2026-10-28T14:01:23Z }
+generated: { by: human:neumaennl, at: 2026-10-28T14:47:04Z }
+verified: { by: human:neumaennl, at: 2026-10-28T15:08:21Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -31,9 +31,9 @@ sources:
   - id: drop-factory
     resource: ../webview-src/drop/DropCommandFactory.ts
     title: DropCommandFactory
-  - id: property-panel-commands
-    resource: ../webview-src/propertyPanel/propertyPanelCommands.ts
-    title: Property panel command helpers
+  - id: properties-panel-commands
+    resource: ../webview-src/propertiesPanel/propertiesPanelCommands.ts
+    title: Properties panel command helpers
   - id: adr-001
     resource: architecture/001-editor-transition.md
     title: "ADR 001: Editor Transition Architecture (design rationale and deviations)"
@@ -45,7 +45,7 @@ The extension adds a visual editor for XML Schema (`*.xsd`) files to VS Code. It
 
 The visual editor is offered as an alternative editor (priority `option`) next to the normal text editor. It opens through "Open With…", the explorer context menu or the command `visualXmlSchemaEditor.openEditor`.[^manifest]
 
-This documentation describes the editor as it is developed on the branch `copilot/add-editor-capabilities`. The version on `main` is still a viewer: it shows the diagram and the properties of the selected node, but has no palette and no editable property panel.
+This documentation describes the editor as it is developed on the branch `copilot/add-editor-capabilities`. The version on `main` is still a viewer: it shows the diagram and the properties of the selected node, but has no palette and no editable properties panel.
 
 # Components
 
@@ -54,7 +54,7 @@ The code is split into three parts that run in two separate environments:
 | Part | Folder | Runs in | Responsibility |
 |---|---|---|---|
 | Extension host | `src/` | VS Code extension host (Node.js) | Registers the custom editor, parses and serializes XSD, validates and executes edit commands, writes changes to the document. |
-| Webview | `webview-src/` | Sandboxed webview (browser) | Renders the diagram, palette and property panel; turns user interactions into commands. |
+| Webview | `webview-src/` | Sandboxed webview (browser) | Renders the diagram, palette and properties panel; turns user interactions into commands. |
 | Shared | `shared/` | Both (compiled into each side) | Schema model classes generated from the XSD meta-schema, command and message types, the ID strategy and small schema utilities. |
 
 ```mermaid
@@ -71,7 +71,7 @@ flowchart LR
     subgraph Webview
       APP[SchemaEditorApp] --> DIA[Diagram renderer]
       APP --> PAL[Palette]
-      APP --> PP[Property panel]
+      APP --> PP[Properties panel]
       APP --> DROP[DropCommandFactory]
     end
   end
@@ -85,7 +85,7 @@ The `shared/` code is imported by both sides and compiled into each separately. 
 
 1. **Open.** VS Code calls `SchemaEditorProvider.resolveCustomTextEditor`. The provider sets up the webview HTML, parses the document text into a schema object and sends it to the webview (`updateSchema`), together with the diagram settings (`updateDiagramOptions`).[^webview-provider]
 2. **Render.** The webview builds a diagram model from the schema object, lays it out and renders it as SVG. See [Diagram rendering](diagram-rendering.md).
-3. **Edit.** A user action (drop from the palette, change in the property panel) becomes a command. The webview sends it as an `executeCommand` message. See [Messaging](messaging.md).
+3. **Edit.** A user action (drop from the palette, change in the properties panel) becomes a command. The webview sends it as an `executeCommand` message. See [Messaging](messaging.md).
 4. **Execute.** The provider passes the command and the current document text to the `CommandProcessor`, which orchestrates the steps: `SchemaModelManager` parses the XML into a schema object, `CommandValidator` validates the command, `CommandExecutor` executes it on a copy of the schema, and `SchemaModelManager` serializes the result and parses it again as a check.[^command-processor] See [Persistence](persistence.md).
 5. **Write back.** On success, the provider replaces the whole document text with the new XML in one `WorkspaceEdit` and reports `commandResult`.
 6. **Refresh.** The document change fires `onDidChangeTextDocument`, and the provider parses the document again and sends a fresh `updateSchema`. The same path handles changes made in the text editor or by other tools.
@@ -128,7 +128,7 @@ webview-src/              Webview
   diagram/                Schema → diagram model → layout → SVG
   palette/                Palette of schema constructs
   drop/                   Turns drops into commands
-  propertyPanel/          Property panel tabs and editors
+  propertiesPanel/        Properties panel tabs and editors
   styles.css              Layout and theming
 shared/                   Used by both sides
   generated/              Classes generated from schema/XMLSchema.xsd (do not edit)
@@ -153,7 +153,7 @@ exampleFiles/             Sample XSD files for manual testing
 - Integration with VS Code: every command ends in one `WorkspaceEdit`, so undo, redo, the dirty marker and saving work as for any text edit (see [Persistence](persistence.md#undo-redo-and-save)).
 - Single source of truth: the document; the webview only holds derived state.
 
-**Where commands are created.** Each surface builds the commands for its own input: `DropCommandFactory` for drops from the palette,[^drop-factory] the property panel for edits.[^property-panel-commands] This follows the UX concept: adding starts in the palette, editing starts in the property panel, and the toolbar has no editing actions (see [UX concept](ux-concept.md#core-rules)).
+**Where commands are created.** Each surface builds the commands for its own input: `DropCommandFactory` for drops from the palette,[^drop-factory] the properties panel for edits.[^properties-panel-commands] This follows the UX concept: adding starts in the palette, editing starts in the properties panel, and the toolbar has no editing actions (see [UX concept](ux-concept.md#core-rules)).
 
 **Diagram updates.** Every `updateSchema` rebuilds the whole diagram; only the expand state is carried over by node ID (see [Diagram rendering](diagram-rendering.md#pipeline) and [Known issues](known-issues.md#diagram-is-rebuilt-in-full-on-every-change)). Incremental updates are planned ([#19](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/19)); they need unambiguous node IDs first ([#348](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/348)).
 
@@ -184,6 +184,6 @@ exampleFiles/             Sample XSD files for manual testing
 
 [^drop-factory]: DropCommandFactory
 
-[^property-panel-commands]: Property panel command helpers
+[^properties-panel-commands]: Properties panel command helpers
 
 [^adr-001]: ADR 001: Editor Transition Architecture (design rationale and deviations)

@@ -7,7 +7,7 @@ import { activate, deactivate } from "./extension.js";
 import type { MockedFunction } from "vitest";
 
 /**
- * Activates the extension and returns the handler of the command `xmlSchemaVisualEditor.openEditor`.
+ * Activates the extension and returns the handler of the command `visualXmlSchemaEditor.openEditor`.
  *
  * @param context - The extension context to activate with
  * @returns The command handler
@@ -16,7 +16,7 @@ import type { MockedFunction } from "vitest";
 function activateAndGetOpenEditorHandler(context: vscode.ExtensionContext): (uri?: vscode.Uri) => Promise<void> {
   activate(context);
   const registerCommandMock = vscode.commands.registerCommand as MockedFunction<typeof vscode.commands.registerCommand>;
-  const handler = registerCommandMock.mock.calls.find(([command]) => command === "xmlSchemaVisualEditor.openEditor")?.[1];
+  const handler = registerCommandMock.mock.calls.find(([command]) => command === "visualXmlSchemaEditor.openEditor")?.[1];
   if (!handler) {
     throw new Error("openEditor command handler not registered");
   }
@@ -58,7 +58,7 @@ describe("Extension", () => {
       activate(mockContext);
 
       expect(vscode.window.registerCustomEditorProvider).toHaveBeenCalledWith(
-        "xmlSchemaVisualEditor.editor",
+        "visualXmlSchemaEditor.editor",
         expect.any(Object),
         expect.objectContaining({
           webviewOptions: {
@@ -73,7 +73,7 @@ describe("Extension", () => {
       activate(mockContext);
 
       expect(vscode.commands.registerCommand).toHaveBeenCalledWith(
-        "xmlSchemaVisualEditor.openEditor",
+        "visualXmlSchemaEditor.openEditor",
         expect.any(Function)
       );
     });
@@ -91,7 +91,7 @@ describe("Extension", () => {
 
       // Get the registered command handler
       const commandHandler = registerCommandMock.mock.calls.find(
-        ([command]) => command === "xmlSchemaVisualEditor.openEditor"
+        ([command]) => command === "visualXmlSchemaEditor.openEditor"
       )?.[1];
 
       if (!commandHandler) {
@@ -105,7 +105,7 @@ describe("Extension", () => {
       expect(vscode.commands.executeCommand).toHaveBeenCalledWith(
         "vscode.openWith",
         testUri,
-        "xmlSchemaVisualEditor.editor"
+        "visualXmlSchemaEditor.editor"
       );
     });
 
@@ -113,7 +113,7 @@ describe("Extension", () => {
       activate(mockContext);
 
       const commandHandler = registerCommandMock.mock.calls.find(
-        ([command]) => command === "xmlSchemaVisualEditor.openEditor"
+        ([command]) => command === "visualXmlSchemaEditor.openEditor"
       )?.[1];
 
       if (!commandHandler) {
@@ -143,7 +143,7 @@ describe("Extension", () => {
       expect(vscode.commands.executeCommand).toHaveBeenCalledWith(
         "vscode.openWith",
         vscode.window.activeTextEditor!.document.uri,
-        "xmlSchemaVisualEditor.editor"
+        "visualXmlSchemaEditor.editor"
       );
     });
 

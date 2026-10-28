@@ -1,7 +1,7 @@
 {
   "type": "module",
-  "name": "xml-schema-visual-editor",
-  "displayName": "XML Schema Visual Editor",
+  "name": "visual-xml-schema-editor",
+  "displayName": "Visual XML Schema Editor",
   "description": "Visual editor for XML schemas with diagram view",
   "icon": "icon.png",
   "version": "0.0.1",
@@ -30,8 +30,8 @@
   "contributes": {
     "customEditors": [
       {
-        "viewType": "xmlSchemaVisualEditor.editor",
-        "displayName": "XML Schema Visual Editor",
+        "viewType": "visualXmlSchemaEditor.editor",
+        "displayName": "Visual XML Schema Editor",
         "selector": [
           {
             "filenamePattern": "*.xsd"
@@ -42,33 +42,33 @@
     ],
     "commands": [
       {
-        "command": "xmlSchemaVisualEditor.openEditor",
-        "title": "Open in XML Schema Visual Editor"
+        "command": "visualXmlSchemaEditor.openEditor",
+        "title": "Open in Visual XML Schema Editor"
       }
     ],
     "menus": {
       "explorer/context": [
         {
           "when": "resourceExtname == .xsd",
-          "command": "xmlSchemaVisualEditor.openEditor",
+          "command": "visualXmlSchemaEditor.openEditor",
           "group": "navigation"
         }
       ]
     },
     "configuration": {
-      "title": "XML Schema Visual Editor",
+      "title": "Visual XML Schema Editor",
       "properties": {
-        "xmlSchemaVisualEditor.showDocumentation": {
+        "visualXmlSchemaEditor.showDocumentation": {
           "type": "boolean",
           "default": false,
           "description": "Show documentation annotations in the diagram"
         },
-        "xmlSchemaVisualEditor.alwaysShowOccurrence": {
+        "visualXmlSchemaEditor.alwaysShowOccurrence": {
           "type": "boolean",
           "default": false,
           "description": "Always show occurrence constraints (minOccurs/maxOccurs) even for default values (1..1)"
         },
-        "xmlSchemaVisualEditor.showType": {
+        "visualXmlSchemaEditor.showType": {
           "type": "boolean",
           "default": false,
           "description": "Show type information for elements in the diagram"

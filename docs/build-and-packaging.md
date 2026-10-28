@@ -4,8 +4,8 @@ title: Build and packaging
 description: How the extension is built, run, linted, packaged and checked - the build outputs and tsconfig files, the npm scripts, the scripts in TypeScript, running it in VS Code, the VSIX and its check, the generated schema classes, dependencies and the Node version, ESLint, CI, and planned changes.
 tags: [build, packaging, vsix, vite, typescript, eslint, ci, dependencies]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-23T18:12:38Z }
-verified: { by: human:neumaennl, at: 2026-10-23T18:20:38Z }
+generated: { by: human:neumaennl, at: 2026-10-28T13:57:27Z }
+verified: { by: human:neumaennl, at: 2026-10-28T14:01:23Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -148,7 +148,7 @@ The scripts are ES modules because the whole package is one (`"type": "module"`)
 
 # Packaging
 
-`vsce package` builds `xml-schema-visual-editor-<version>.vsix` in the repository root. Before packaging it runs `vscode:prepublish`, which deletes `out/` and `webview/` (`npm run clean`) and then compiles both parts, so no file from an earlier build ends up in the VSIX.[^manifest]
+`vsce package` builds `visual-xml-schema-editor-<version>.vsix` in the repository root. Before packaging it runs `vscode:prepublish`, which deletes `out/` and `webview/` (`npm run clean`) and then compiles both parts, so no file from an earlier build ends up in the VSIX.[^manifest]
 
 What goes into the VSIX is controlled by `.vscodeignore`:[^vscodeignore]
 

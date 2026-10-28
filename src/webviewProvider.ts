@@ -9,7 +9,7 @@ import {
 import { CommandProcessor } from "./commandProcessor.js";
 
 /**
- * Provider for the XML Schema Visual Editor custom text editor.
+ * Provider for the Visual XML Schema Editor custom text editor.
  * Implements VS Code's CustomTextEditorProvider interface to provide
  * a visual editing experience for XML Schema files.
  */
@@ -82,7 +82,7 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
     // Listen for configuration changes
     const changeConfigSubscription = vscode.workspace.onDidChangeConfiguration(
       (e) => {
-        if (e.affectsConfiguration("xmlSchemaVisualEditor")) {
+        if (e.affectsConfiguration("visualXmlSchemaEditor")) {
           this.sendDiagramOptions(webviewPanel.webview);
         }
       }
@@ -108,7 +108,7 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
    * @param webview - The webview to send the diagram options to
    */
   private sendDiagramOptions(webview: vscode.Webview): void {
-    const config = vscode.workspace.getConfiguration("xmlSchemaVisualEditor");
+    const config = vscode.workspace.getConfiguration("visualXmlSchemaEditor");
     const diagramOptions: DiagramOptions = {
       showDocumentation: config.get<boolean>("showDocumentation", false),
       alwaysShowOccurrence: config.get<boolean>("alwaysShowOccurrence", false),
@@ -307,7 +307,7 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
     <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; font-src ${webview.cspSource}; script-src 'nonce-${nonce}';">
     <link href="${styleSrc}" rel="stylesheet">
     <link href="${codiconSrc}" rel="stylesheet">
-    <title>XML Schema Visual Editor</title>
+    <title>Visual XML Schema Editor</title>
 </head>
 <body>
     <div id="editor-layout">

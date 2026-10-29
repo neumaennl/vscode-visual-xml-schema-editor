@@ -35,7 +35,7 @@ The documentation in [`docs/`](docs/index.md) describes the editor branch.
 ## Pull requests
 
 - Open the pull request against `copilot/add-editor-capabilities`, and give it one purpose.
-- `npm run lint` and `npm test` must pass. CI does not run for pull requests into this branch yet, so run both locally. It will once the tech stack modernization is merged into the branch.
+- `npm run lint` and `npm test` must pass; CI checks both for every pull request.
 - Update the documentation that the change affects, as described in the [development guidelines](docs/development-guidelines.md#documentation).
 
 ## Reporting bugs

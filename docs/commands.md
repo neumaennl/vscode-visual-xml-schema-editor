@@ -4,8 +4,8 @@ title: Commands
 description: The edit commands - payload fields, the rules the validators enforce, what the executors change in the schema, and where the webview sends them.
 tags: [commands, payload, validation, reference]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-28T14:47:04Z }
-verified: { by: human:neumaennl, at: 2026-10-28T15:08:21Z }
+generated: { by: human:neumaennl, at: 2026-10-29T15:16:40Z }
+verified: { by: human:neumaennl, at: 2026-10-29T15:30:22Z }
 sources:
   - id: commands
     resource: ../shared/commands/index.ts
@@ -285,11 +285,11 @@ The element prefix `xs:` is missing in the output because serialization drops it
 | `src/commandValidators/` | One validator per command, grouped by area, and `validationUtils.ts` |
 | `src/commandExecutors/` | One executor per command, grouped by area, and the shared rename and prefix helpers (`schemaLocalRenamer.ts`, `schemaQNameRewriter.ts`, `schemaPrefixChecker.ts`) |
 
-Each command type has a string literal as `type`, so `SchemaCommand` is a discriminated union: a `switch` on `command.type` narrows the payload to the right type. The type tests in `shared/__tests__/commands/` check that the payloads accept the intended fields; the behaviour is tested next to the validators and executors.[^commands]
+Each command type has a string literal as `type`, so `SchemaCommand` is a discriminated union: a `switch` on `command.type` narrows the payload to the right type. The type tests in `shared/commands/commandTypes.test-d.ts` check the required fields, the allowed values of `maxOccurs` and that the union rejects unknown types and mismatched payloads (see [Testing](testing.md#kinds-of-tests)); the behaviour is tested next to the validators and executors.[^commands]
 
 **Adding a command** touches these places:
 
-1. Payload and command type in the matching file in `shared/commands/`, and the command in the `SchemaCommand` union in `shared/commands/index.ts`.
+1. Payload and command type in the matching file in `shared/commands/`, and the command in the `SchemaCommand` union in `shared/commands/index.ts`. Required fields and restricted values of the payload get cases in `commandTypes.test-d.ts`.
 2. A validator in `src/commandValidators/` and its case in `src/commandValidator.ts`.
 3. An executor in `src/commandExecutors/` and its case in `src/commandExecutor.ts`.
 4. The place in `webview-src/` that creates and sends the command.

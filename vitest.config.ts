@@ -44,6 +44,7 @@ export default defineConfig({
         "**/__tests__/**",
         "**/__mocks__/**",
         "**/*.test.ts",
+        "**/*.test-d.ts",
       ],
       reporter: ["text", "json-summary", "json", "html"],
       // A run below these values fails. Branches are at 70% only until the editor's code has the
@@ -59,7 +60,13 @@ export default defineConfig({
       {
         extends: true,
         resolve: { alias: [vscodeMock] },
-        test: { name: "shared", environment: "node", include: ["shared/**/*.test.ts"] },
+        test: {
+          name: "shared",
+          environment: "node",
+          include: ["shared/**/*.test.ts"],
+          // Type tests (*.test-d.ts) are not run but checked by the compiler; a type error fails them
+          typecheck: { enabled: true, include: ["shared/**/*.test-d.ts"], tsconfig: "./tsconfig.shared-test.json" },
+        },
       },
       {
         extends: true,

@@ -33,6 +33,7 @@
     "webview",
     "out",
     "**/*.test.ts",
+    "**/*.test-d.ts",
     "**/__tests__/**",
     "**/__mocks__/**"
   ]

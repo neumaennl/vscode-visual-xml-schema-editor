@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-29T12:13:32Z }
-verified: { by: human:neumaennl, at: 2026-10-29T13:13:53Z }
+generated: { by: human:neumaennl, at: 2026-10-29T15:16:40Z }
+verified: { by: human:neumaennl, at: 2026-10-29T15:30:22Z }
 ---
 
 # Purpose
@@ -351,14 +351,6 @@ Effort:
 - **Severity:** Low
 - **Effort:** S
 - **Description:** The diagram colors and font are read from VS Code's CSS variables once, when the module is loaded, and written into the SVG as inline styles. When the user switches the color theme, the rest of the webview follows, but the diagram keeps the old colors until the webview is recreated; with a switch between light and dark themes, the diagram can become hard to read. This follows from the code and was not tried in VS Code. The fix is to use the CSS variables directly in the SVG styles (`var(--vscode-editor-foreground)`), or to read them again on each render.
-- **GitHub issue:** none
-
-## Command and message type tests only check object literals
-
-- **Location:** `shared/__tests__/commands/` (six files), `shared/__tests__/messages.test.ts`
-- **Severity:** Low
-- **Effort:** S
-- **Description:** These tests build typed object literals for commands and messages and check that the fields have the values just assigned. The compiler already checks that the literals match the types, and the files contain no runtime code to test, so the tests cannot fail for a reason the build would not catch. They are also unit tests in a `__tests__` folder, which the conventions reserve for integration tests (see [Testing](testing.md#files-and-structure)). The fix is to delete them, or to replace them with type tests that the compiler checks (for example with `@ts-expect-error` for payloads that must be rejected). This is planned for Phase 9 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340), on the editor branch, which has more of these tests.
 - **GitHub issue:** none
 
 ## Mocha brings dependencies with known vulnerabilities

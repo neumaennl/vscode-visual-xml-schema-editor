@@ -4,8 +4,8 @@ title: Testing
 description: How the extension is tested - running the tests and the type check, the four Vitest projects, mocks and helpers, conventions for tests, mocks, helper functions and helper classes, which tests to write for typical changes, coverage, CI, the smoke tests in the extension host with a mock webview, and how the current tests compare with the testing strategy of ADR 001.
 tags: [testing, vitest, mocks, coverage, ci, conventions]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-29T12:13:11Z }
-verified: { by: human:neumaennl, at: 2026-10-29T13:13:53Z }
+generated: { by: human:neumaennl, at: 2026-10-29T15:16:40Z }
+verified: { by: human:neumaennl, at: 2026-10-29T15:30:22Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -111,11 +111,12 @@ Use the Node version from `.nvmrc`, which CI also uses. It is the Node version o
 | Project | Tests | Environment | Aliases | Type-checked with |
 |---|---|---|---|---|
 | `extension` | `src/**/*.test.ts` | Node.js | `vscode` to the mock | `tsconfig.extension-test.json` |
-| `shared` | `shared/**/*.test.ts` | Node.js | `vscode` to the mock | `tsconfig.shared-test.json` |
+| `shared` | `shared/**/*.test.ts`, type tests `shared/**/*.test-d.ts` | Node.js | `vscode` to the mock | `tsconfig.shared-test.json` |
 | `webview` | `webview-src/**/*.test.ts` | jsdom | none | `tsconfig.webview-test.json` |
 | `scripts` | `scripts/**/*.test.ts` | Node.js | none | `tsconfig.nodeTools.json` |
 
-- **Shared base.** The base enables the globals (`describe`, `test`, `expect`, `vi` without an import), defines the reporters and the coverage. The projects only add their name, environment, test files and the `vscode` alias.
+- **Shared base.** The base enables the globals (`describe`, `test`, `expect`, `vi` without an import), defines the reporters and the coverage. The projects only add their name, environment, test files and the `vscode` alias, and in `shared` the type checking mode for type tests.
+- **Type tests.** The `shared` project has Vitest's type checking mode on for `*.test-d.ts` files: Vitest does not run them but checks them with `tsc` and `tsconfig.shared-test.json`, and reports each `test()` whose code has a type error as failed. `npm test` therefore also fails when a type test fails.[^vitest-config]
 - **Compiling.** Vitest compiles TypeScript with Vite's compiler (Oxc). It takes the decorator settings from the tsconfig, so the generated schema classes are compiled with legacy decorators as in the build (see [ADR 002](architecture/002-legacy-decorators.md)).[^adr-002]
 - **tsconfig files.** The test configurations are only used for the type check, by ESLint and by VS Code. `tsconfig.json` lists them as references, so VS Code type-checks each test file with the configuration that includes it, with the Vitest globals (see [Build and packaging](build-and-packaging.md#build-outputs)).
 
@@ -143,11 +144,11 @@ The `vscode` mock is not used through this mechanism: `src/__mocks__/vscode.ts` 
 
 - **Unit tests** test one module and sit next to it: `src/commandProcessor.ts` is tested in `src/commandProcessor.test.ts`.
 - **Integration tests** test several modules together and sit in the `__tests__` folder of the part. The `src/__tests__/pipeline.*.test.ts` files send commands through the real `CommandProcessor`, which validates, executes and serializes them (see [Persistence](persistence.md#command-pipeline)), and check the resulting XML or schema; `pipeline.chained.test.ts` runs several commands in a row. `pipeline.workspaceEdit.test.ts` starts one step earlier: it sends an `executeCommand` message to `SchemaEditorProvider` and checks the `WorkspaceEdit`, the `applyEdit` call and the reply.[^workspace-edit-test]
-- `shared/__tests__/` contains unit tests of the command and message types (see [Known issues](known-issues.md#command-and-message-type-tests-only-check-object-literals)).
+- **Type tests** check rules of types that the compiler enforces and the code relies on, with `expectTypeOf()`, for example `expectTypeOf<Omit<P, "id">>().not.toExtend<P>()` for a required field. `shared/commands/commandTypes.test-d.ts` checks the required fields of the command payloads, the allowed values of `maxOccurs` and that `SchemaCommand` rejects an unknown `type` and a payload of another command. A type test is only written for such a rule, not for values assigned to a typed literal: the compiler already checks those, so such a test cannot fail.
 
 | Area | Tests | Details |
 |---|---|---|
-| Command and message types, IDs, schema utilities | `shared/__tests__/`, `shared/idStrategy.test.ts`, `shared/schemaUtils.test.ts` | [Commands](commands.md#files), [Schema model](schema-model.md#node-ids) |
+| Command types, IDs, schema utilities | `shared/commands/commandTypes.test-d.ts`, `shared/idStrategy.test.ts`, `shared/schemaUtils.test.ts` | [Commands](commands.md#files), [Schema model](schema-model.md#node-ids) |
 | Validators and executors | `src/commandValidators/`, `src/commandExecutors/`, `src/commandValidator.test.ts`, `src/commandExecutor.test.ts` | [Commands](commands.md) |
 | Processor, schema model, navigation | `src/commandProcessor.test.ts`, `src/schemaModelManager.test.ts`, `src/schemaNavigator.test.ts` | [Persistence](persistence.md), [Schema model](schema-model.md) |
 | Command pipeline | `src/__tests__/pipeline.*.test.ts` | [Persistence](persistence.md#command-pipeline) |
@@ -165,7 +166,7 @@ Existing tests that do not follow these conventions yet are listed in [Known iss
 ## Files and structure
 
 - A test file tests one feature, usually one module. Test cases for a feature are not spread over several files, and no two test cases test the same thing.
-- Unit tests sit next to the source file and have its name with `.test.ts`. Integration tests sit in the `__tests__` folder of the part (`shared/`, `src/`, `webview-src/`, `scripts/`), in subfolders that mirror the source folders if needed.
+- Unit tests sit next to the source file and have its name with `.test.ts`; type tests end in `.test-d.ts`. Integration tests sit in the `__tests__` folder of the part (`shared/`, `src/`, `webview-src/`, `scripts/`), in subfolders that mirror the source folders if needed.
 - Files that several tests use sit in the `test-resources` folder in `__tests__`: larger XML snippets in `src/__tests__/test-resources` (see [Known issues](known-issues.md#test-xml-is-inline-instead-of-in-test-resources)), the VSIX files of the script tests in `scripts/__tests__/test-resources`.
 - A file has a `describe` block for the feature and nested blocks for methods or cases. Test cases use `test("should …")` (and `test.each()`) and follow Arrange, Act, Assert, as the tests in the extension host have to, because Mocha's TDD interface has `suite()` and `test()` but no `it()`. ESLint enforces `test()` in the Vitest tests as well (rule `vitest/consistent-test-it`).
 
@@ -194,7 +195,7 @@ There are no helper classes in the tests today. Factory functions and plain obje
 
 # Tests for typical changes
 
-- **A new or changed command:** the command type in `shared/commands/`, validator tests in `src/commandValidators/<area>Validators.test.ts`, executor tests in `src/commandExecutors/<area>Executors.test.ts`, and a pipeline test in `src/__tests__/pipeline.<area>.test.ts` that runs the command on XML (see [Commands](commands.md#files) for the other places a new command touches).
+- **A new or changed command:** the command type in `shared/commands/` and, if its payload has required fields or restricted values, cases in `shared/commands/commandTypes.test-d.ts`; validator tests in `src/commandValidators/<area>Validators.test.ts`, executor tests in `src/commandExecutors/<area>Executors.test.ts`, and a pipeline test in `src/__tests__/pipeline.<area>.test.ts` that runs the command on XML (see [Commands](commands.md#files) for the other places a new command touches).
 - **A new message:** `webviewProvider.test.ts` for the extension host side and `main.test.ts` for the webview side.
 - **A new draggable construct:** placement and payload in `DropCommandFactory.test.ts`; `renderer.test.ts` only if the event handling changes (see [Drag and drop](drag-and-drop.md#adding-a-draggable-construct)).
 - **Changes to the webview UI:** a jsdom test next to the changed module that builds the needed DOM, triggers the event and checks the DOM and the posted messages. Tests that measure text call `setupGetBBoxMock()`.
@@ -203,7 +204,7 @@ There are no helper classes in the tests today. Factory functions and plain obje
 
 # Coverage
 
-The coverage report (`@vitest/coverage-v8`) includes all TypeScript files in `shared/`, `src/` and `webview-src/` except type declarations, generated classes (`shared/generated/`), test files, and `__tests__` and `__mocks__` folders. The scripts in `scripts/` are not part of it. Files that contain only types, such as `webview-src/webviewTypes.ts`, appear with no statements and do not change the totals. CI shows the coverage report in the job summary and on pull requests (see [CI](#ci)).[^vitest-config]
+The coverage report (`@vitest/coverage-v8`) includes all TypeScript files in `shared/`, `src/` and `webview-src/` except type declarations, generated classes (`shared/generated/`), test files (`*.test.ts`, `*.test-d.ts`), and `__tests__` and `__mocks__` folders. The scripts in `scripts/` are not part of it. Files that contain only types, such as `webview-src/webviewTypes.ts`, appear with no statements and do not change the totals. CI shows the coverage report in the job summary and on pull requests (see [CI](#ci)).[^vitest-config]
 
 The thresholds are 80% for lines, statements and functions and 70% for branches (`coverage.thresholds` in `vitest.config.ts`). A run with coverage below one of them fails, also in CI. The threshold for branches is lower only until the code of the editor has the tests it lacks (see [Known issues](known-issues.md#branch-coverage-is-below-80)); then all four are raised to 85% (Phase 9 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340)). New tests describe the intended behavior and only use input that can reach the code in real use, for example nothing that a validator would already reject before an executor runs.
 

@@ -100,7 +100,7 @@ export default [
   },
   // Test files configuration (must come before webview config to avoid conflicts)
   {
-    files: ['**/*.test.ts', '**/__mocks__/**/*.ts'],
+    files: ['**/*.test.ts', '**/*.test-d.ts', '**/__mocks__/**/*.ts'],
     ignores: ['test/extension-host/**'],
     plugins: {
       vitest,
@@ -119,6 +119,7 @@ export default [
         {
           assertFunctionNames: [
             'expect',
+            'expectTypeOf',
             'expectFailure',
             'expectValidationFailure',
             'expectRuntimeFailure',

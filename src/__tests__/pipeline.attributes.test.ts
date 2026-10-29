@@ -16,7 +16,7 @@ import {
   MINIMAL_SCHEMA,
   runCommandExpectSuccessSchema,
   runCommandExpectValidationFailure,
-} from "./testHelpers.js";
+} from "./pipelineTestHelpers.js";
 
 /** Schema with a complexType that has two attributes (id, status) for remove/modify tests. */
 const SCHEMA_WITH_TWO_ATTRS = `<?xml version="1.0" encoding="UTF-8"?>

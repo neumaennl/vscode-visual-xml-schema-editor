@@ -43,7 +43,6 @@ export default defineConfig({
         "**/generated/**",
         "**/__tests__/**",
         "**/__mocks__/**",
-        "**/__test-utils__/**",
         "**/*.test.ts",
       ],
       reporter: ["text", "json-summary", "json", "html"],

@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createInterface } from "node:readline/promises";
 import { installNode, runWith } from "./lib/node-setup.ts";
-import { release, releasesPage, stubFetch } from "./__tests__/testHelpers.ts";
+import { release, releasesPage, stubFetch } from "./__tests__/releaseTestHelpers.ts";
 import { check, choose, formatTable, main, update, writeValues } from "./vscode-version.ts";
 
 const asker = { question: vi.fn<(query: string) => Promise<string>>(), close: vi.fn() };

@@ -4,7 +4,7 @@
 
 import { DiagramRenderer } from "./renderer";
 import { DiagramOptions } from "../shared/messages";
-import { setupGetBBoxMock } from "./__tests__/svgTestUtils";
+import { setupGetBBoxMock } from "./__tests__/svgTestHelpers";
 import {
   setActiveDraggedPaletteSchemaConstruct,
 } from "./palette/PaletteItems";

@@ -8,7 +8,7 @@
  */
 
 import type { AddElementCommand } from "../../shared/types.js";
-import { runCommandExpectSuccess } from "./testHelpers.js";
+import { runCommandExpectSuccess } from "./pipelineTestHelpers.js";
 
 /** A schema whose default namespace is its target namespace, with `xs:` for XML Schema. */
 const TARGET_NAMESPACE_AS_DEFAULT = `<?xml version="1.0" encoding="UTF-8"?>

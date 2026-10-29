@@ -41,6 +41,7 @@ import {
   executeModifySchemaNamespaces,
 } from "./schemaExecutors.js";
 import { toArray } from "../../shared/schemaUtils.js";
+import { emptySchema, schemaWithIncludes } from "../__tests__/schemaTestHelpers.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -58,14 +59,6 @@ function schemaWithPrefixedImport(namespace: string, schemaLocation: string, pre
     payload: { namespace, schemaLocation, prefix },
   }, schemaObj);
   return schemaObj;
-}
-
-function emptySchema(): schema {
-  return unmarshal(
-    schema,
-    `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"></xs:schema>`
-  );
 }
 
 function schemaWithImports(
@@ -579,19 +572,6 @@ describe("executeModifyImport", () => {
 // ---------------------------------------------------------------------------
 // Include test helpers
 // ---------------------------------------------------------------------------
-
-function schemaWithIncludes(...schemaLocations: string[]): schema {
-  const includeXml = schemaLocations
-    .map((loc) => `  <xs:include schemaLocation="${loc}"/>`)
-    .join("\n");
-  return unmarshal(
-    schema,
-    `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-${includeXml}
-</xs:schema>`
-  );
-}
 
 // ---------------------------------------------------------------------------
 // executeAddInclude

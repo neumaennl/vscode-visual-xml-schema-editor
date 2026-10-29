@@ -16,7 +16,7 @@ import {
   SCHEMA_WITH_INCLUDE,
   runCommandExpectSuccessSchema,
   runCommandExpectValidationFailure,
-} from "./testHelpers.js";
+} from "./pipelineTestHelpers.js";
 
 /** Schema that already has two includes so we can test position-based IDs. */
 const SCHEMA_TWO_INCLUDES = `<?xml version="1.0" encoding="UTF-8"?>

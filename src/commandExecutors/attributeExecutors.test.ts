@@ -17,22 +17,7 @@ import {
   executeModifyAttribute,
 } from "./attributeExecutors.js";
 import { toArray } from "../../shared/schemaUtils.js";
-
-/**
- * Unmarshals a schema with the given content.
- *
- * @param body - The XSD content of the schema
- * @returns The schema object
- */
-function schemaWith(body: string): schema {
-  return unmarshal(
-    schema,
-    `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  ${body}
-</xs:schema>`,
-  );
-}
+import { schemaWith } from "../__tests__/schemaTestHelpers.js";
 
 /**
  * Returns the local attributes of the complexType `T`.

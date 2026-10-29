@@ -6,7 +6,7 @@ import { DiagramSvgRenderer } from "./DiagramSvgRenderer";
 import { Diagram } from "./Diagram";
 import { DiagramItem } from "./DiagramItem";
 import { DiagramItemType } from "./DiagramTypes";
-import { setupGetBBoxMock } from "../__tests__/svgTestUtils";
+import { setupGetBBoxMock } from "../__tests__/svgTestHelpers";
 import { generateSchemaId, SchemaNodeType } from "../../shared/idStrategy";
 
 describe("DiagramSvgRenderer", () => {

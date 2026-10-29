@@ -20,14 +20,7 @@ import {
   executeModifySimpleType,
   executeRemoveSimpleType,
 } from "./simpleTypeExecutors.js";
-
-function schemaWith(body = ""): schema {
-  return unmarshal(
-    schema,
-    `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">${body}</xs:schema>`
-  );
-}
+import { schemaWith } from "../__tests__/schemaTestHelpers.js";
 
 function addSimpleType(schemaObj: schema, payload: AddSimpleTypeCommand["payload"]): void {
   executeAddSimpleType({ type: "addSimpleType", payload }, schemaObj);

@@ -4,8 +4,8 @@ title: Build and packaging
 description: How the extension is built, run, linted, packaged and checked - the build outputs and tsconfig files, the npm scripts, the scripts in TypeScript, running it in VS Code, the VSIX and its check, the generated schema classes, dependencies and the Node version, ESLint, CI, and planned changes.
 tags: [build, packaging, vsix, vite, typescript, eslint, ci, dependencies]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-29T10:10:47Z }
-verified: { by: human:neumaennl, at: 2026-10-29T11:47:28Z }
+generated: { by: human:neumaennl, at: 2026-10-29T12:13:32Z }
+verified: { by: human:neumaennl, at: 2026-10-29T13:13:53Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -87,7 +87,7 @@ The extension host loads `webview/main.js`, `webview/styles.css` and `node_modul
 | tsconfig | Used by | Notes |
 |---|---|---|
 | `tsconfig.json` | VS Code | A solution file without files of its own: it lists the other seven configurations as references, so VS Code type-checks each file with the configuration that includes it.[^tsconfig-solution] |
-| `tsconfig.extension.json` | `tsc` (extension host) | Excludes test files, `__tests__`, `__mocks__` and `*TestHelpers.ts`. `module` and `moduleResolution` are `nodenext`: TypeScript resolves imports the way Node does and writes ES modules, because `package.json` has `"type": "module"`; relative imports therefore need the `.js` extension (also for `.ts` files and for folders, `./folder/index.js`). `types` lists `node` and `vscode`, because TypeScript 6 no longer includes all `@types` packages by default. Decorators are compiled as legacy decorators (`experimentalDecorators`) with `useDefineForClassFields` (see [ADR 002](architecture/002-legacy-decorators.md)).[^adr-002] |
+| `tsconfig.extension.json` | `tsc` (extension host) | Excludes test files, `__tests__` and `__mocks__`. `module` and `moduleResolution` are `nodenext`: TypeScript resolves imports the way Node does and writes ES modules, because `package.json` has `"type": "module"`; relative imports therefore need the `.js` extension (also for `.ts` files and for folders, `./folder/index.js`). `types` lists `node` and `vscode`, because TypeScript 6 no longer includes all `@types` packages by default. Decorators are compiled as legacy decorators (`experimentalDecorators`) with `useDefineForClassFields` (see [ADR 002](architecture/002-legacy-decorators.md)).[^adr-002] |
 | `tsconfig.webview.json` | `compile-webview` (type check only) | `esnext` modules with `moduleResolution: bundler`, because Vite resolves the imports, and the `DOM` library; `types: ["vite/client"]` declares the import of `styles.css`, which TypeScript 6 checks by default (`noUncheckedSideEffectImports`). No output (`noEmit`), because Vite builds the bundle. The same decorator settings as `tsconfig.extension.json`.[^tsconfig-webview] |
 | `tsconfig.extension-test.json`, `tsconfig.webview-test.json`, `tsconfig.shared-test.json` | `npm run typecheck` and ESLint | Extend the two above with the Vitest globals and the Node types for the test files; the webview tests keep `vite/client` (see [Testing](testing.md#vitest-projects)). |
 | `tsconfig.nodeTools.json` | `npm run typecheck` and ESLint | TypeScript that Node runs directly, without a build: the scripts in `scripts/` and their tests (see [Scripts](#scripts)), and the configuration files `vite.config.ts` and `vitest.config.ts`. `NodeNext` modules, no output (`noEmit`), `.ts` extensions in imports, and only syntax that Node can remove (`erasableSyntaxOnly`).[^tsconfig-node-tools] |

@@ -20,7 +20,7 @@ import {
   SCHEMA_WITH_ELEMENTS,
   runCommandExpectSuccessSchema,
   runCommandExpectValidationFailure,
-} from "./testHelpers.js";
+} from "./pipelineTestHelpers.js";
 
 describe("Integration: Element pipeline", () => {
   // ─── addElement ────────────────────────────────────────────────────────────

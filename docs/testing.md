@@ -4,8 +4,8 @@ title: Testing
 description: How the extension is tested - running the tests and the type check, the four Vitest projects, mocks and helpers, conventions for tests, mocks, helper functions and helper classes, which tests to write for typical changes, coverage, CI, the smoke tests in the extension host with a mock webview, and how the current tests compare with the testing strategy of ADR 001.
 tags: [testing, vitest, mocks, coverage, ci, conventions]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-29T10:10:47Z }
-verified: { by: human:neumaennl, at: 2026-10-29T11:47:28Z }
+generated: { by: human:neumaennl, at: 2026-10-29T12:13:11Z }
+verified: { by: human:neumaennl, at: 2026-10-29T13:13:53Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -16,14 +16,26 @@ sources:
   - id: vscode-mock
     resource: ../src/__mocks__/vscode.ts
     title: Mock of the VS Code API
-  - id: test-helpers
-    resource: ../src/__tests__/testHelpers.ts
+  - id: pipeline-test-helpers
+    resource: ../src/__tests__/pipelineTestHelpers.ts
     title: Schema constants and pipeline helpers
-  - id: scripts-test-helpers
-    resource: ../scripts/__tests__/testHelpers.ts
+  - id: schema-test-helpers
+    resource: ../src/__tests__/schemaTestHelpers.ts
+    title: Helpers that build schema objects
+  - id: provider-test-helpers
+    resource: ../src/__tests__/providerTestHelpers.ts
+    title: Stubs of the VS Code objects for the provider
+  - id: validation-test-helpers
+    resource: ../src/__tests__/validationTestHelpers.ts
+    title: Assertion helper for validation results
+  - id: text-test-helpers
+    resource: ../src/__tests__/textTestHelpers.ts
+    title: Assertion helpers for the order of strings in text
+  - id: release-test-helpers
+    resource: ../scripts/__tests__/releaseTestHelpers.ts
     title: Helpers for the tests of the scripts
-  - id: svg-test-utils
-    resource: ../webview-src/__tests__/svgTestUtils.ts
+  - id: svg-test-helpers
+    resource: ../webview-src/__tests__/svgTestHelpers.ts
     title: getBBox mock for jsdom
   - id: workspace-edit-test
     resource: ../src/__tests__/pipeline.workspaceEdit.test.ts
@@ -103,18 +115,20 @@ Use the Node version from `.nvmrc`, which CI also uses. It is the Node version o
 | `webview` | `webview-src/**/*.test.ts` | jsdom | none | `tsconfig.webview-test.json` |
 | `scripts` | `scripts/**/*.test.ts` | Node.js | none | `tsconfig.nodeTools.json` |
 
-- **Shared base.** The base enables the globals (`describe`, `it`, `expect`, `vi` without an import), defines the reporters and the coverage. The projects only add their name, environment, test files and the `vscode` alias.
+- **Shared base.** The base enables the globals (`describe`, `test`, `expect`, `vi` without an import), defines the reporters and the coverage. The projects only add their name, environment, test files and the `vscode` alias.
 - **Compiling.** Vitest compiles TypeScript with Vite's compiler (Oxc). It takes the decorator settings from the tsconfig, so the generated schema classes are compiled with legacy decorators as in the build (see [ADR 002](architecture/002-legacy-decorators.md)).[^adr-002]
 - **tsconfig files.** The test configurations are only used for the type check, by ESLint and by VS Code. `tsconfig.json` lists them as references, so VS Code type-checks each test file with the configuration that includes it, with the Vitest globals (see [Build and packaging](build-and-packaging.md#build-outputs)).
 
 # Mocks and helpers
 
 - **VS Code API.** `src/__mocks__/vscode.ts` replaces the `vscode` module in the `extension` and `shared` projects through an alias in `vitest.config.ts`. It provides `vi.fn()` mocks for the parts the code uses: `Uri`, `workspace` (including `applyEdit` and `getConfiguration`), `window`, `commands`, `languages`, `EventEmitter`, `WorkspaceEdit`, `Range` and a few more. Classes of the API whose instances need members, such as `WorkspaceEdit`, are mocked with a class (`vi.fn(class { … })`): the code creates them with `new`, Vitest passes `new` on to the implementation, and arrow functions cannot be called with `new`.[^vscode-mock]
-- **VS Code objects.** Tests of `SchemaEditorProvider` build partial stubs of `ExtensionContext`, `Webview`, `WebviewPanel` and `TextDocument` with only the members the provider uses.[^workspace-edit-test]
+- **VS Code objects.** `stubEditor(xml)` in `src/__tests__/providerTestHelpers.ts` creates a `SchemaEditorProvider` and partial stubs of `ExtensionContext`, `Webview`, `WebviewPanel` and a `TextDocument` with the given text, with only the members the provider uses, and returns the mocks of `postMessage` and `asWebviewUri`. `resolveAndGetHandler()` opens the editor and returns the handler that the provider registered for messages from the webview.[^provider-test-helpers]
 - **Webview API.** `main.test.ts` sets `acquireVsCodeApi` on `globalThis` before the app is loaded, with mocks for `postMessage`, `getState` and `setState`, and builds the page with `document.body.innerHTML`. Each test loads the app again with `vi.resetModules()` and `await import("./main")`.[^main-test]
-- **SVG measuring.** jsdom has no layout engine, so `setupGetBBoxMock()` in `webview-src/__tests__/svgTestUtils.ts` gives every element a `getBBox()` that assumes 6 pixels per character and a height of 10 pixels.[^svg-test-utils]
-- **Pipeline helpers.** `src/__tests__/testHelpers.ts` has small schemas as constants (`MINIMAL_SCHEMA`, `SCHEMA_WITH_ELEMENTS` and others) and runs a command through a new `CommandProcessor`: `runCommand()`, `runCommandExpectSuccess()` (returns the XML), `runCommandExpectSuccessSchema()` (returns the unmarshalled schema) and `runCommandExpectValidationFailure()`.[^test-helpers]
-- **Scripts.** The tests of the scripts send no request and install nothing. `scripts/__tests__/testHelpers.ts` replaces `fetch` with `stubFetch()`, which answers each URL with a given body, and builds GitHub releases with `release()` and `releasesPage()`. The tests of `vscode-version.ts` and `scripts/lib/node-setup.ts` mock `node:child_process`, `node:fs` and `node:readline/promises` where the script would start programs, check files or ask in the terminal, and work in a temporary folder. The tests of `verify-vsix.ts` unpack tiny VSIX files from `scripts/__tests__/test-resources/` with the same tool as the script (`unzip`, on Windows `tar.exe`), because unpacking is what the script checks: a valid extension, one without `activate()` and one with a missing dependency, all ES modules like the extension.[^scripts-test-helpers]
+- **SVG measuring.** jsdom has no layout engine, so `setupGetBBoxMock()` in `webview-src/__tests__/svgTestHelpers.ts` gives every element a `getBBox()` that assumes 6 pixels per character and a height of 10 pixels.[^svg-test-helpers]
+- **Pipeline helpers.** `src/__tests__/pipelineTestHelpers.ts` has small schemas as constants (`MINIMAL_SCHEMA`, `SCHEMA_WITH_ELEMENTS` and others) and runs a command through a new `CommandProcessor`: `runCommand()`, `runCommandExpectSuccess()` (returns the XML), `runCommandExpectSuccessSchema()` (returns the unmarshalled schema) and `runCommandExpectValidationFailure()`.[^pipeline-test-helpers]
+- **Schema objects.** `src/__tests__/schemaTestHelpers.ts` unmarshals schemas for the tests of validators and executors: `schemaWith(body)`, `emptySchema()`, `schemaWithAttrGroups(body)` and `schemaWithIncludes(...)`.[^schema-test-helpers]
+- **Assertions.** `expectInvalid()` in `src/__tests__/validationTestHelpers.ts` checks that a validation failed and narrows the result, so that the test can read `error`.[^validation-test-helpers] `src/__tests__/textTestHelpers.ts` checks the order of strings in text such as serialized XML: `expectLinesInOrder()` across lines, `expectInOrderOnLine()` within one line.[^text-test-helpers]
+- **Scripts.** The tests of the scripts send no request and install nothing. `scripts/__tests__/releaseTestHelpers.ts` replaces `fetch` with `stubFetch()`, which answers each URL with a given body, and builds GitHub releases with `release()` and `releasesPage()`. The tests of `vscode-version.ts` and `scripts/lib/node-setup.ts` mock `node:child_process`, `node:fs` and `node:readline/promises` where the script would start programs, check files or ask in the terminal, and work in a temporary folder. The tests of `verify-vsix.ts` unpack tiny VSIX files from `scripts/__tests__/test-resources/` with the same tool as the script (`unzip`, on Windows `tar.exe`), because unpacking is what the script checks: a valid extension, one without `activate()` and one with a missing dependency, all ES modules like the extension.[^release-test-helpers]
 
 ## The `__mocks__` folder
 
@@ -189,7 +203,7 @@ There are no helper classes in the tests today. Factory functions and plain obje
 
 # Coverage
 
-The coverage report (`@vitest/coverage-v8`) includes all TypeScript files in `shared/`, `src/` and `webview-src/` except type declarations, generated classes (`shared/generated/`), test files, and `__tests__`, `__mocks__` and `__test-utils__` folders. The scripts in `scripts/` are not part of it. Files that contain only types, such as `webview-src/webviewTypes.ts`, appear with no statements and do not change the totals. CI shows the coverage report in the job summary and on pull requests (see [CI](#ci)).[^vitest-config]
+The coverage report (`@vitest/coverage-v8`) includes all TypeScript files in `shared/`, `src/` and `webview-src/` except type declarations, generated classes (`shared/generated/`), test files, and `__tests__` and `__mocks__` folders. The scripts in `scripts/` are not part of it. Files that contain only types, such as `webview-src/webviewTypes.ts`, appear with no statements and do not change the totals. CI shows the coverage report in the job summary and on pull requests (see [CI](#ci)).[^vitest-config]
 
 The thresholds are 80% for lines, statements and functions and 70% for branches (`coverage.thresholds` in `vitest.config.ts`). A run with coverage below one of them fails, also in CI. The threshold for branches is lower only until the code of the editor has the tests it lacks (see [Known issues](known-issues.md#branch-coverage-is-below-80)); then all four are raised to 85% (Phase 9 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340)). New tests describe the intended behavior and only use input that can reach the code in real use, for example nothing that a validator would already reject before an executor runs.
 
@@ -234,11 +248,19 @@ ADR 001 plans six levels of testing. The current state:[^adr-001]
 
 [^vscode-mock]: Mock of the VS Code API
 
-[^test-helpers]: Schema constants and pipeline helpers
+[^pipeline-test-helpers]: Schema constants and pipeline helpers
 
-[^scripts-test-helpers]: Helpers for the tests of the scripts
+[^schema-test-helpers]: Helpers that build schema objects
 
-[^svg-test-utils]: getBBox mock for jsdom
+[^provider-test-helpers]: Stubs of the VS Code objects for the provider
+
+[^validation-test-helpers]: Assertion helper for validation results
+
+[^text-test-helpers]: Assertion helpers for the order of strings in text
+
+[^release-test-helpers]: Helpers for the tests of the scripts
+
+[^svg-test-helpers]: getBBox mock for jsdom
 
 [^workspace-edit-test]: Integration tests for the WorkspaceEdit path
 

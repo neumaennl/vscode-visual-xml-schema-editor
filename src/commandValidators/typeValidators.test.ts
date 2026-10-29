@@ -20,7 +20,7 @@ import {
   validateRemoveComplexType,
   validateModifyComplexType,
 } from "./typeValidators.js";
-import { expectInvalid } from "./validationTestHelpers.js";
+import { expectInvalid } from "../__tests__/validationTestHelpers.js";
 
 describe("SimpleType Validators", () => {
   let emptySchemaObj: schema;

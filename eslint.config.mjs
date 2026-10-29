@@ -125,6 +125,8 @@ export default [
             'expectInvalid',
             'runCommandExpectValidationFailure',
             'runCommandExpectSuccessSchema',
+            'expectLinesInOrder',
+            'expectInOrderOnLine',
           ],
         },
       ],

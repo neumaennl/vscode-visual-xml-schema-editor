@@ -21,7 +21,8 @@ import {
   runCommandExpectSuccess,
   runCommandExpectSuccessSchema,
   runCommandExpectValidationFailure,
-} from "./testHelpers.js";
+} from "./pipelineTestHelpers.js";
+import { expectLinesInOrder } from "./textTestHelpers.js";
 
 describe("Integration: Annotation pipeline", () => {
   // ─── addAnnotation ─────────────────────────────────────────────────────────
@@ -68,10 +69,7 @@ describe("Integration: Annotation pipeline", () => {
       };
 
       const updatedXml = runCommandExpectSuccess(schemaWithTopLevelDeclaration, cmd);
-      expect(updatedXml).toContain("<xs:annotation");
-      expect(updatedXml.indexOf("<xs:annotation>")).toBeLessThan(
-        updatedXml.indexOf("<xs:element ")
-      );
+      expectLinesInOrder(updatedXml, ["<xs:annotation>", "<xs:element "]);
     });
 
     test("inserts node annotations before compositor/content children", () => {
@@ -87,10 +85,7 @@ describe("Integration: Annotation pipeline", () => {
       };
 
       const updatedXml = runCommandExpectSuccess(schemaWithComplexType, cmd);
-      expect(updatedXml).toContain("<xs:annotation");
-      expect(updatedXml.indexOf("<xs:annotation>")).toBeLessThan(
-        updatedXml.indexOf("<xs:sequence")
-      );
+      expectLinesInOrder(updatedXml, ["<xs:annotation>", "<xs:sequence"]);
     });
 
     test("returns validation error when target element does not exist", () => {
@@ -149,10 +144,7 @@ describe("Integration: Annotation pipeline", () => {
         type: "addAnnotation",
         payload: { targetId: "/schema" },
       });
-      expect(afterSecondAnnotation).toContain("<xs:annotation");
-      expect(afterSecondAnnotation.indexOf("<xs:annotation")).toBeLessThan(
-        afterSecondAnnotation.indexOf("<xs:element ")
-      );
+      expectLinesInOrder(afterSecondAnnotation, ["<xs:annotation", "<xs:element "]);
 
       const afterDocOnSecondAnnotation = runCommandExpectSuccess(afterSecondAnnotation, {
         type: "addDocumentation",
@@ -163,10 +155,7 @@ describe("Integration: Annotation pipeline", () => {
         type: "removeAnnotation",
         payload: { annotationId: "/schema/annotation[0]" },
       });
-      expect(afterRemoval).toContain("<xs:annotation");
-      expect(afterRemoval.indexOf("<xs:annotation")).toBeLessThan(
-        afterRemoval.indexOf("<xs:element ")
-      );
+      expectLinesInOrder(afterRemoval, ["<xs:annotation", "<xs:element "]);
     });
   });
 

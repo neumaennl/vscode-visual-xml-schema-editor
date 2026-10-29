@@ -20,14 +20,7 @@ import {
   keyrefType,
 } from "../../shared/types.js";
 import { isPrefixReferencedInSchema, isAnyPrefixReferencedInSchema } from "./schemaPrefixChecker.js";
-
-function emptySchema(): schema {
-  return unmarshal(
-    schema,
-    `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"></xs:schema>`
-  );
-}
+import { emptySchema } from "../__tests__/schemaTestHelpers.js";
 
 // ---------------------------------------------------------------------------
 // isPrefixReferencedInSchema — keyref/@refer

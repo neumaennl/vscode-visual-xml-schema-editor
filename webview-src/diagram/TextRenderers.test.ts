@@ -11,7 +11,7 @@ import {
 import { DiagramItem } from "./DiagramItem";
 import { Diagram } from "./Diagram";
 import { DiagramItemType, Rectangle } from "./DiagramTypes";
-import { setupGetBBoxMock } from "../__tests__/svgTestUtils";
+import { setupGetBBoxMock } from "../__tests__/svgTestHelpers";
 
 describe("TextRenderers", () => {
   let mockGroup: SVGElement;

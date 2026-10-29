@@ -1,10 +1,9 @@
 /**
  * Shared assertion helpers for validation tests.
  * Provides TypeScript-narrowing assertion functions for ValidationResult.
- * Uses plain throws (not test framework matchers). This file is excluded from the
- * production build via the TestHelpers glob in tsconfig.extension.json exclude.
+ * Uses plain throws (not test framework matchers).
  */
-import type { ValidationResult, ValidationFailure } from "./validationUtils.js";
+import type { ValidationResult, ValidationFailure } from "../commandValidators/validationUtils.js";
 
 /**
  * Asserts that a ValidationResult represents a failure and narrows its type to

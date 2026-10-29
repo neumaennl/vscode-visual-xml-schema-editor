@@ -20,7 +20,7 @@ import {
   validateRemoveDocumentation,
   validateModifyDocumentation,
 } from "./annotationValidators.js";
-import { expectInvalid } from "./validationTestHelpers.js";
+import { expectInvalid } from "../__tests__/validationTestHelpers.js";
 
 // ─── Shared XML fixtures ────────────────────────────────────────────────────
 

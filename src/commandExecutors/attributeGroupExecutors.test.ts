@@ -17,24 +17,7 @@ import {
   executeModifyAttributeGroup,
 } from "./attributeGroupExecutors.js";
 import { toArray } from "../../shared/schemaUtils.js";
-
-/**
- * Unmarshals a schema with the attribute groups `CommonAttrs` and `OtherAttrs` and the given content.
- *
- * @param body - The XSD content after the two attribute group definitions
- * @returns The schema object
- */
-function schemaWithAttrGroups(body: string): schema {
-  return unmarshal(
-    schema,
-    `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:attributeGroup name="CommonAttrs"/>
-  <xs:attributeGroup name="OtherAttrs"/>
-  ${body}
-</xs:schema>`,
-  );
-}
+import { schemaWithAttrGroups } from "../__tests__/schemaTestHelpers.js";
 
 /** A complexType `T` with references to `CommonAttrs` and `OtherAttrs`, in this order. */
 const TWO_REFS = `<xs:complexType name="T">

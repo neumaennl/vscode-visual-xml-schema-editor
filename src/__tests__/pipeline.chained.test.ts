@@ -25,7 +25,7 @@ import {
   runCommandExpectSuccess,
   runCommandExpectSuccessSchema,
   runCommandExpectValidationFailure,
-} from "./testHelpers.js";
+} from "./pipelineTestHelpers.js";
 
 // ─── Fixture: project example schema ─────────────────────────────────────────
 

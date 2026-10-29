@@ -22,7 +22,8 @@ import {
   validateModifyInclude,
   validateModifySchemaNamespaces,
 } from "./schemaValidators.js";
-import { expectInvalid } from "./validationTestHelpers.js";
+import { expectInvalid } from "../__tests__/validationTestHelpers.js";
+import { schemaWithIncludes } from "../__tests__/schemaTestHelpers.js";
 
 describe("Import Validators", () => {
   let schemaObj: schema;
@@ -507,19 +508,6 @@ describe("Include Validators", () => {
 </xs:schema>`;
     schemaObj = unmarshal(schema, simpleSchemaXml);
   });
-
-  function schemaWithIncludes(...schemaLocations: string[]): schema {
-    const includeXml = schemaLocations
-      .map((loc) => `  <xs:include schemaLocation="${loc}"/>`)
-      .join("\n");
-    return unmarshal(
-      schema,
-      `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-${includeXml}
-</xs:schema>`
-    );
-  }
 
   describe("validateAddInclude", () => {
     test("should reject addInclude with missing schemaLocation", () => {

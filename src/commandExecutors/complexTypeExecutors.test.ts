@@ -16,14 +16,7 @@ import {
   executeModifyComplexType,
   executeRemoveComplexType,
 } from "./complexTypeExecutors.js";
-
-function schemaWith(body = ""): schema {
-  return unmarshal(
-    schema,
-    `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">${body}</xs:schema>`
-  );
-}
+import { schemaWith } from "../__tests__/schemaTestHelpers.js";
 
 function addComplexType(schemaObj: schema, payload: AddComplexTypeCommand["payload"]): void {
   executeAddComplexType({ type: "addComplexType", payload }, schemaObj);

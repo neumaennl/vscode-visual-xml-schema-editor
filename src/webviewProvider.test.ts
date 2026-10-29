@@ -5,93 +5,58 @@
 import * as vscode from "vscode";
 import { SchemaEditorProvider } from "./webviewProvider.js";
 import { CommandProcessor } from "./commandProcessor.js";
+import { resolveAndGetHandler, stubEditor } from "./__tests__/providerTestHelpers.js";
+import type { EditorStubs } from "./__tests__/providerTestHelpers.js";
+import { expectLinesInOrder } from "./__tests__/textTestHelpers.js";
 import type { Mock, MockedFunction } from "vitest";
 
-// Mock helpers
-const mockPostMessage = vi.fn();
-const mockGetUri = vi.fn((path: vscode.Uri) => path);
-
 describe("SchemaEditorProvider", () => {
-  let provider: SchemaEditorProvider;
-  let mockContext: vscode.ExtensionContext;
-  let mockDocument: vscode.TextDocument;
-  let mockWebviewPanel: vscode.WebviewPanel;
-  let mockWebview: vscode.Webview;
+  let editor: EditorStubs;
 
   beforeEach(() => {
     vi.clearAllMocks();
-
-    // eslint-disable-next-line no-restricted-syntax -- partial stub; unused VS Code context fields omitted
-    mockContext = {
-      extensionUri: vscode.Uri.file("/extension/path"),
-      subscriptions: [],
-    } as unknown as vscode.ExtensionContext;
-
-    // eslint-disable-next-line no-restricted-syntax -- partial stub; unused Webview fields omitted
-    mockWebview = {
-      options: {},
-      html: "",
-      asWebviewUri: mockGetUri,
-      postMessage: mockPostMessage,
-      onDidReceiveMessage: vi.fn(),
-    } as unknown as vscode.Webview;
-
-    // eslint-disable-next-line no-restricted-syntax -- partial stub; unused WebviewPanel fields omitted
-    mockWebviewPanel = {
-      webview: mockWebview,
-      onDidDispose: vi.fn(),
-    } as unknown as vscode.WebviewPanel;
-
-    // eslint-disable-next-line no-restricted-syntax -- partial stub; unused TextDocument fields omitted
-    mockDocument = {
-      uri: { toString: () => "/test/schema.xsd" } as vscode.Uri,
-      getText: vi.fn(() => "<xs:schema></xs:schema>"),
-      lineCount: 1,
-      lineAt: vi.fn(() => ({ text: "<xs:schema></xs:schema>" })),
-    } as unknown as vscode.TextDocument;
-
-    provider = new SchemaEditorProvider(mockContext);
+    editor = stubEditor("<xs:schema></xs:schema>");
   });
 
   describe("constructor", () => {
     test("should create provider instance", () => {
-      expect(provider).toBeInstanceOf(SchemaEditorProvider);
+      expect(editor.provider).toBeInstanceOf(SchemaEditorProvider);
     });
 
     test("should store context", () => {
-      expect(provider).toBeDefined();
+      expect(editor.provider).toBeDefined();
     });
   });
 
   describe("resolveCustomTextEditor", () => {
     test("should enable scripts in webview", () => {
-      provider.resolveCustomTextEditor(
-        mockDocument,
-        mockWebviewPanel,
+      editor.provider.resolveCustomTextEditor(
+        editor.document,
+        editor.webviewPanel,
         {} as vscode.CancellationToken
       );
 
-      expect(mockWebview.options).toMatchObject({
+      expect(editor.webview.options).toMatchObject({
         enableScripts: true,
         localResourceRoots: expect.any(Array) as unknown[],
       });
     });
 
     test("should set HTML content in webview", () => {
-      provider.resolveCustomTextEditor(
-        mockDocument,
-        mockWebviewPanel,
+      editor.provider.resolveCustomTextEditor(
+        editor.document,
+        editor.webviewPanel,
         {} as vscode.CancellationToken
       );
 
-      expect(mockWebview.html).toBeTruthy();
-      expect(mockWebview.html.length).toBeGreaterThan(0);
+      expect(editor.webview.html).toBeTruthy();
+      expect(editor.webview.html.length).toBeGreaterThan(0);
     });
 
     test("should register document change listener", () => {
-      provider.resolveCustomTextEditor(
-        mockDocument,
-        mockWebviewPanel,
+      editor.provider.resolveCustomTextEditor(
+        editor.document,
+        editor.webviewPanel,
         {} as vscode.CancellationToken
       );
 
@@ -99,24 +64,24 @@ describe("SchemaEditorProvider", () => {
     });
 
     test("should register message listener from webview", () => {
-      provider.resolveCustomTextEditor(
-        mockDocument,
-        mockWebviewPanel,
+      editor.provider.resolveCustomTextEditor(
+        editor.document,
+        editor.webviewPanel,
         {} as vscode.CancellationToken
       );
 
-      expect(mockWebview.onDidReceiveMessage).toHaveBeenCalled();
+      expect(editor.webview.onDidReceiveMessage).toHaveBeenCalled();
     });
 
     test("should parse and send schema to webview", () => {
-      provider.resolveCustomTextEditor(
-        mockDocument,
-        mockWebviewPanel,
+      editor.provider.resolveCustomTextEditor(
+        editor.document,
+        editor.webviewPanel,
         {} as vscode.CancellationToken
       );
 
       // Check that postMessage was called
-      expect(mockPostMessage).toHaveBeenCalled();
+      expect(editor.postMessage).toHaveBeenCalled();
     });
 
     test("should handle empty document", () => {
@@ -127,58 +92,55 @@ describe("SchemaEditorProvider", () => {
       } as unknown as vscode.TextDocument;
 
       expect(() => {
-        provider.resolveCustomTextEditor(
+        editor.provider.resolveCustomTextEditor(
           emptyMockDocument,
-          mockWebviewPanel,
+          editor.webviewPanel,
           {} as vscode.CancellationToken
         );
       }).not.toThrow();
     });
 
     test("should create HTML that loads the webview bundle as an ES module", () => {
-      provider.resolveCustomTextEditor(
-        mockDocument,
-        mockWebviewPanel,
+      editor.provider.resolveCustomTextEditor(
+        editor.document,
+        editor.webviewPanel,
         {} as vscode.CancellationToken
       );
 
-      expect(mockWebview.html).toContain('<script type="module"');
-      expect(mockWebview.html).toContain("</html>");
+      expect(editor.webview.html).toContain('<script type="module"');
+      expect(editor.webview.html).toContain("</html>");
     });
 
     test("should include webview resources in HTML", () => {
-      provider.resolveCustomTextEditor(
-        mockDocument,
-        mockWebviewPanel,
+      editor.provider.resolveCustomTextEditor(
+        editor.document,
+        editor.webviewPanel,
         {} as vscode.CancellationToken
       );
 
-      expect(mockGetUri).toHaveBeenCalled();
+      expect(editor.asWebviewUri).toHaveBeenCalled();
     });
   });
 
   describe("HTML generation", () => {
     test("should generate valid HTML structure", () => {
-      provider.resolveCustomTextEditor(
-        mockDocument,
-        mockWebviewPanel,
+      editor.provider.resolveCustomTextEditor(
+        editor.document,
+        editor.webviewPanel,
         {} as vscode.CancellationToken
       );
 
-      const html = mockWebview.html;
-      expect(html).toContain("<!DOCTYPE html>");
-      expect(html).toContain("<html");
-      expect(html).toContain("</html>");
+      expectLinesInOrder(editor.webview.html, ["<!DOCTYPE html>", "<html", "</html>"]);
     });
 
     test("should include meta tags for security", () => {
-      provider.resolveCustomTextEditor(
-        mockDocument,
-        mockWebviewPanel,
+      editor.provider.resolveCustomTextEditor(
+        editor.document,
+        editor.webviewPanel,
         {} as vscode.CancellationToken
       );
 
-      const html = mockWebview.html;
+      const html = editor.webview.html;
       expect(html).toContain('Content-Security-Policy');
     });
   });
@@ -195,14 +157,14 @@ describe("SchemaEditorProvider", () => {
       };
       (vscode.workspace.getConfiguration as Mock).mockReturnValue(mockConfig);
 
-      provider.resolveCustomTextEditor(
-        mockDocument,
-        mockWebviewPanel,
+      editor.provider.resolveCustomTextEditor(
+        editor.document,
+        editor.webviewPanel,
         {} as vscode.CancellationToken
       );
 
       // Should have called postMessage twice: once for updateSchema, once for updateDiagramOptions
-      expect(mockPostMessage).toHaveBeenCalledWith(
+      expect(editor.postMessage).toHaveBeenCalledWith(
         expect.objectContaining({
           command: "updateDiagramOptions",
           data: {
@@ -220,13 +182,13 @@ describe("SchemaEditorProvider", () => {
       };
       (vscode.workspace.getConfiguration as Mock).mockReturnValue(mockConfig);
 
-      provider.resolveCustomTextEditor(
-        mockDocument,
-        mockWebviewPanel,
+      editor.provider.resolveCustomTextEditor(
+        editor.document,
+        editor.webviewPanel,
         {} as vscode.CancellationToken
       );
 
-      expect(mockPostMessage).toHaveBeenCalledWith(
+      expect(editor.postMessage).toHaveBeenCalledWith(
         expect.objectContaining({
           command: "updateDiagramOptions",
           data: {
@@ -247,29 +209,6 @@ describe("SchemaEditorProvider", () => {
       vi.restoreAllMocks();
     });
 
-    /**
-     * Resolves the editor and returns the registered message-handler function.
-     * Uses a typed mock to avoid unsafe `any` member access on `mock.calls`.
-     */
-    function resolveAndGetHandler(): (msg: unknown) => void {
-      provider.resolveCustomTextEditor(
-        mockDocument,
-        mockWebviewPanel,
-        {} as vscode.CancellationToken
-      );
-      // Type onDidReceiveMessage precisely so mock.calls is not any[][]
-      type ListenerFn = (msg: unknown) => void;
-      type OnReceiveMock = MockedFunction<
-        (listener: ListenerFn) => vscode.Disposable
-      >;
-      const onReceiveMock =
-        mockWebview.onDidReceiveMessage as OnReceiveMock;
-      // Capture the handler before clearing mock state
-      const handler = onReceiveMock.mock.calls[0][0];
-      vi.clearAllMocks(); // clear calls from resolveCustomTextEditor
-      return handler;
-    }
-
     test("should send 'error' message with code and stack for runtime errors", async () => {
       vi.spyOn(CommandProcessor.prototype, "execute").mockReturnValue({
         success: false,
@@ -280,7 +219,7 @@ describe("SchemaEditorProvider", () => {
         xmlContent: null,
       });
 
-      const handler = resolveAndGetHandler();
+      const handler = resolveAndGetHandler(editor);
       handler({
         command: "executeCommand",
         data: { type: "addElement", payload: { parentId: "/schema", elementName: "x", elementType: "string" } },
@@ -290,18 +229,18 @@ describe("SchemaEditorProvider", () => {
       await new Promise<void>((resolve) => setTimeout(resolve, 0));
 
       // Verify correct message type was sent
-      expect(mockPostMessage).toHaveBeenCalledWith(
+      expect(editor.postMessage).toHaveBeenCalledWith(
         expect.objectContaining({ command: "error" })
       );
       // Must NOT have sent a commandResult for this runtime failure
-      expect(mockPostMessage).not.toHaveBeenCalledWith(
+      expect(editor.postMessage).not.toHaveBeenCalledWith(
         expect.objectContaining({ command: "commandResult" })
       );
 
       // Verify data fields via a typed extraction to avoid any-typed matchers
       type ErrorMsg = { command: string; data: { message: string; code: string; stack?: string } };
       type PostMsgFn = MockedFunction<(msg: ErrorMsg) => Promise<boolean>>;
-      const sentMsg = (mockPostMessage as PostMsgFn).mock.calls[0][0];
+      const sentMsg = (editor.postMessage as PostMsgFn).mock.calls[0][0];
       expect(sentMsg.data.message).toContain("Something exploded");
       expect(sentMsg.data.code).toBe("COMMAND_EXECUTION_ERROR");
       expect(sentMsg.data.stack).toContain("executeAddElement");
@@ -316,7 +255,7 @@ describe("SchemaEditorProvider", () => {
         xmlContent: null,
       });
 
-      const handler = resolveAndGetHandler();
+      const handler = resolveAndGetHandler(editor);
       handler({
         command: "executeCommand",
         data: { type: "addElement", payload: { parentId: "/element:missing", elementName: "x", elementType: "string" } },
@@ -324,7 +263,7 @@ describe("SchemaEditorProvider", () => {
 
       await new Promise<void>((resolve) => setTimeout(resolve, 0));
 
-      expect(mockPostMessage).toHaveBeenCalledWith(
+      expect(editor.postMessage).toHaveBeenCalledWith(
         expect.objectContaining({
           command: "commandResult",
           data: {
@@ -334,7 +273,7 @@ describe("SchemaEditorProvider", () => {
         })
       );
       // Must NOT have sent an error message for a validation failure
-      expect(mockPostMessage).not.toHaveBeenCalledWith(
+      expect(editor.postMessage).not.toHaveBeenCalledWith(
         expect.objectContaining({ command: "error" })
       );
     });
@@ -344,7 +283,7 @@ describe("SchemaEditorProvider", () => {
         throw new Error("Completely unexpected failure");
       });
 
-      const handler = resolveAndGetHandler();
+      const handler = resolveAndGetHandler(editor);
       handler({
         command: "executeCommand",
         data: { type: "addElement", payload: { parentId: "/schema", elementName: "x", elementType: "string" } },
@@ -352,14 +291,14 @@ describe("SchemaEditorProvider", () => {
 
       await new Promise<void>((resolve) => setTimeout(resolve, 0));
 
-      expect(mockPostMessage).toHaveBeenCalledWith(
+      expect(editor.postMessage).toHaveBeenCalledWith(
         expect.objectContaining({ command: "error" })
       );
 
       // Verify data fields via a typed extraction to avoid any-typed matchers
       type ErrorMsg = { command: string; data: { message: string; code: string } };
       type PostMsgFn = MockedFunction<(msg: ErrorMsg) => Promise<boolean>>;
-      const sentMsg = (mockPostMessage as PostMsgFn).mock.calls[0][0];
+      const sentMsg = (editor.postMessage as PostMsgFn).mock.calls[0][0];
       expect(sentMsg.data.message).toContain("Completely unexpected failure");
       expect(sentMsg.data.code).toBe("COMMAND_EXECUTION_ERROR");
     });
@@ -372,7 +311,7 @@ describe("SchemaEditorProvider", () => {
       });
       (vscode.workspace.applyEdit as Mock).mockResolvedValue(false);
 
-      const handler = resolveAndGetHandler();
+      const handler = resolveAndGetHandler(editor);
       handler({
         command: "executeCommand",
         data: { type: "addElement", payload: { parentId: "/schema", elementName: "x", elementType: "string" } },
@@ -380,18 +319,18 @@ describe("SchemaEditorProvider", () => {
 
       await new Promise<void>((resolve) => setTimeout(resolve, 0));
 
-      expect(mockPostMessage).toHaveBeenCalledWith(
+      expect(editor.postMessage).toHaveBeenCalledWith(
         expect.objectContaining({ command: "error" })
       );
       // Must NOT send a commandResult for an edit-application failure
-      expect(mockPostMessage).not.toHaveBeenCalledWith(
+      expect(editor.postMessage).not.toHaveBeenCalledWith(
         expect.objectContaining({ command: "commandResult" })
       );
 
       // Verify data fields via a typed extraction to avoid any-typed matchers
       type ErrorMsg = { command: string; data: { message: string; code: string } };
       type PostMsgFn = MockedFunction<(msg: ErrorMsg) => Promise<boolean>>;
-      const sentMsg = (mockPostMessage as PostMsgFn).mock.calls[0][0];
+      const sentMsg = (editor.postMessage as PostMsgFn).mock.calls[0][0];
       expect(sentMsg.data.message).toBe("Failed to apply edit to the document.");
       expect(sentMsg.data.code).toBe("COMMAND_EXECUTION_ERROR");
     });

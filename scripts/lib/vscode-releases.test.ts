@@ -1,4 +1,4 @@
-import { release, releasesPage, stubFetch } from "../__tests__/testHelpers.ts";
+import { release, releasesPage, stubFetch } from "../__tests__/releaseTestHelpers.ts";
 import {
   deriveVersions,
   electronOf,

@@ -7,7 +7,7 @@
 import { CommandValidator, ValidatorFunctions } from "./commandValidator.js";
 import { schema, SchemaCommand } from "../shared/types.js";
 import { ValidationResult } from "./commandValidators/validationUtils.js";
-import { expectInvalid } from "./commandValidators/validationTestHelpers.js";
+import { expectInvalid } from "./__tests__/validationTestHelpers.js";
 import type { Mock } from "vitest";
 
 describe("CommandValidator", () => {

@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-29T10:10:47Z }
-verified: { by: human:neumaennl, at: 2026-10-29T11:47:28Z }
+generated: { by: human:neumaennl, at: 2026-10-29T12:13:32Z }
+verified: { by: human:neumaennl, at: 2026-10-29T13:13:53Z }
 ---
 
 # Purpose
@@ -361,14 +361,6 @@ Effort:
 - **Description:** These tests build typed object literals for commands and messages and check that the fields have the values just assigned. The compiler already checks that the literals match the types, and the files contain no runtime code to test, so the tests cannot fail for a reason the build would not catch. They are also unit tests in a `__tests__` folder, which the conventions reserve for integration tests (see [Testing](testing.md#files-and-structure)). The fix is to delete them, or to replace them with type tests that the compiler checks (for example with `@ts-expect-error` for payloads that must be rejected). This is planned for Phase 9 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340), on the editor branch, which has more of these tests.
 - **GitHub issue:** none
 
-## Test helpers are copied between test files
-
-- **Location:** `src/commandExecutors/schemaExecutors.test.ts`, `schemaPrefixChecker.test.ts`, `schemaQNameRewriter.test.ts`, `simpleTypeExecutors.test.ts`, `complexTypeExecutors.test.ts`, `schemaLocalRenamer.test.ts`, `src/commandValidators/annotationValidators.test.ts`, `src/commandExecutors/annotationExecutors.test.ts`, `src/webviewProvider.test.ts`, `src/__tests__/pipeline.workspaceEdit.test.ts`, `src/__tests__/testHelpers.ts`, `webview-src/__tests__/svgTestUtils.ts`
-- **Severity:** Low
-- **Effort:** S
-- **Description:** Some helpers exist as copies in several test files, against the conventions in [Testing](testing.md#helper-functions): `emptySchema()` is identical in three executor tests, `schemaWith(body)` is in three (once with line breaks around the body), the XML constants `schemaWithAnnotationXml` and `schemaWithTwoAnnotationsXml` are in both the annotation validator and executor tests, and the stubs of the VS Code objects for `SchemaEditorProvider` are built separately in `webviewProvider.test.ts` and `pipeline.workspaceEdit.test.ts`. The two helper modules are named `testHelpers.ts` and `svgTestUtils.ts` instead of `<topic>TestHelpers.ts`. The fix is to move the copies into helper modules and rename the two modules. This is planned for Phase 9 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340), on the editor branch, which has more of these tests. Moving the inline XML is a separate, larger task (see [Test XML is inline instead of in `test-resources`](#test-xml-is-inline-instead-of-in-test-resources)).
-- **GitHub issue:** none
-
 ## Mocha brings dependencies with known vulnerabilities
 
 - **Location:** `package.json` (`@vscode/test-cli`)
@@ -434,8 +426,6 @@ Effort:
   - `DiagramLayout.relayoutItem()` and `DiagramItem.getTextDocumentation()` are only called from tests, `DiagramBuilder.elementMap` is only cleared, and `DiagramItem.inheritFrom` is never set.
   - `DiagramItemType.reference` is never assigned; only the layout and a test handle it, and the renderer draws no shape for it.
   - `Diagram.size` is not used, and `Diagram.scale` is always 1, so the `scale*()` helpers of `Diagram` and `DiagramItem` change nothing.
-
-  Example found in the tests: `src/__test-utils__/assertions.ts` (`expectStringsOnSameLine()`, `expectStringsOnConsecutiveLines()`) is not used by any test. `tsconfig.extension.json` does not exclude it, so it is compiled into `out/` and packaged.
 - **GitHub issue:** none
 
 ## Diagram items copy values from the schema objects
@@ -467,7 +457,7 @@ Effort:
 - **Location:** test files in `src/`, `webview-src/` and `shared/`
 - **Severity:** Low
 - **Effort:** L
-- **Description:** The [test conventions](testing.md#files-and-structure) require larger XML snippets that several tests use to be stored in `src/__tests__/test-resources`. The folder does not exist; the snippets are inline in the test files, often repeated. They should be moved there and shared.
+- **Description:** The [test conventions](testing.md#files-and-structure) require larger XML snippets that several tests use to be stored in `src/__tests__/test-resources`. The folder does not exist; the snippets are inline in the test files, often repeated. For example, the constants `schemaWithAnnotationXml`, `schemaWithTwoAnnotationsXml`, `twoDocumentationXml`, `annotatedElementXml` and `elementSchemaXml` are identical in the annotation validator and executor tests. They should be moved there and shared.
 - **GitHub issue:** none
 
 ## `toArray()` is obsolete since `xmlbind-ts` 2.3

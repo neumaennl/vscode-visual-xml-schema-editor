@@ -5,7 +5,7 @@ import {
   validateOccurrences,
   validateElementType,
 } from "./validationUtils.js";
-import { expectInvalid } from "./validationTestHelpers.js";
+import { expectInvalid } from "../__tests__/validationTestHelpers.js";
 
 describe("validationUtils", () => {
   describe("isValidXmlName", () => {

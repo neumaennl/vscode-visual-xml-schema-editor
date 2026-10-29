@@ -16,25 +16,8 @@ import {
   validateRemoveAttributeGroup,
   validateModifyAttributeGroup,
 } from "./attributeGroupValidators.js";
-import { expectInvalid } from "./validationTestHelpers.js";
-
-/**
- * Unmarshals a schema with the attribute groups `CommonAttrs` and `OtherAttrs` and the given content.
- *
- * @param body - The XSD content after the two attribute group definitions
- * @returns The schema object
- */
-function schemaWithAttrGroups(body: string): schema {
-  return unmarshal(
-    schema,
-    `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:attributeGroup name="CommonAttrs"/>
-  <xs:attributeGroup name="OtherAttrs"/>
-  ${body}
-</xs:schema>`,
-  );
-}
+import { expectInvalid } from "../__tests__/validationTestHelpers.js";
+import { schemaWithAttrGroups } from "../__tests__/schemaTestHelpers.js";
 
 /** An inline complexType with a reference to the attribute group `REF`, for a local element. */
 const LOCAL_ELEMENT_WITH_REF = `<xs:element name="child"><xs:complexType><xs:attributeGroup ref="REF"/></xs:complexType></xs:element>`;

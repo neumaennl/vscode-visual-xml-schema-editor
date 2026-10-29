@@ -20,23 +20,8 @@ import {
   validateRemoveAttribute,
   validateModifyAttribute,
 } from "./elementValidators.js";
-import { expectInvalid } from "./validationTestHelpers.js";
-
-/**
- * Unmarshals a schema with the given content.
- *
- * @param body - The XSD content of the schema
- * @returns The schema object
- */
-function schemaWith(body: string): schema {
-  return unmarshal(
-    schema,
-    `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  ${body}
-</xs:schema>`,
-  );
-}
+import { expectInvalid } from "../__tests__/validationTestHelpers.js";
+import { schemaWith } from "../__tests__/schemaTestHelpers.js";
 
 /** A top-level element `root` and a complexType `T` whose sequence holds two local elements and a reference to `root`. */
 const SEQUENCE_WITH_ELEMENTS = `<xs:element name="root" type="xs:string"/>

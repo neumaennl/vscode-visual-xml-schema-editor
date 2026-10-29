@@ -1,5 +1,3 @@
-import { unmarshal } from "@neumaennl/xmlbind-ts";
-import { schema } from "../../shared/types.js";
 import { toArray } from "../../shared/schemaUtils.js";
 import {
   renameLocalAttributeGroupRefInSchema,
@@ -7,16 +5,7 @@ import {
   renameLocalGroupRefInSchema,
   renameLocalTypeInSchema,
 } from "./schemaLocalRenamer.js";
-
-function schemaWith(body: string): schema {
-  return unmarshal(
-    schema,
-    `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-${body}
-</xs:schema>`
-  );
-}
+import { schemaWith } from "../__tests__/schemaTestHelpers.js";
 
 describe("schemaLocalRenamer", () => {
   describe("renameLocalTypeInSchema", () => {

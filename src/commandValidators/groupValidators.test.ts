@@ -14,7 +14,7 @@ import {
   validateRemoveGroup,
   validateModifyGroup,
 } from "./groupValidators.js";
-import { expectInvalid } from "./validationTestHelpers.js";
+import { expectInvalid } from "../__tests__/validationTestHelpers.js";
 
 /**
  * Unmarshals a schema with the groups `CommonGroup` and `OtherGroup` and the given content.

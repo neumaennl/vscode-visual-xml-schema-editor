@@ -1,5 +1,8 @@
 # Knowledge Bundle Update Log
 
+## 2026-10-29
+* **Update**: `main` is merged into the editor branch, which now has the modernization ([#402](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/402)). Removed the notes that it does not have it yet: in [Build and packaging](build-and-packaging.md) the sentence in the purpose, the section "The editor branch" with its sources #343 and #357, the reference to the editor branch in the size warning and the sentence about pull requests into it in CI; in [Testing](testing.md#ci) the sentence about the workflow on it; in `CONTRIBUTING.md` the sentence that CI does not check pull requests into it. [ADR 002](architecture/002-legacy-decorators.md) records that the editor branch uses the decorator settings, and [Known issues](known-issues.md#toarray-is-obsolete-since-xmlbind-ts-23) no longer waits for the merge. The notes that `main` is the viewer stay until the editor is merged into `main`.
+
 ## 2026-10-28
 * **Update**: The extension is called "Visual XML Schema Editor" ([#402](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/402)): the package name is `visual-xml-schema-editor`, and the view type, the command and the settings start with `visualXmlSchemaEditor.`. [Editor](editor.md), [Architecture](architecture.md), [Messaging](messaging.md), [Persistence](persistence.md) and [Build and packaging](build-and-packaging.md) use the new names; the heading of `README.md` is again "Visual XML Schema Editor Extension for Visual Studio Code".
 

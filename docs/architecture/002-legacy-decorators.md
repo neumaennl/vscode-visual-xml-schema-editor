@@ -4,8 +4,8 @@ title: "ADR 002: Legacy TypeScript decorators"
 description: The decision to compile the decorators of the generated schema classes as TypeScript's legacy decorators instead of TC39 Stage 3 decorators, with the reasons, the consequences, the rejected alternatives and when to review it.
 tags: [adr, architecture, decorators, typescript, build, testing]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-10T23:56:42Z }
-verified: { by: human:neumaennl, at: 2026-10-11T00:00:45Z }
+generated: { by: human:neumaennl, at: 2026-10-29T06:58:32Z }
+verified: { by: human:neumaennl, at: 2026-10-29T07:47:32Z }
 sources:
   - id: tsconfig
     resource: ../../tsconfig.extension.json
@@ -100,7 +100,7 @@ The project needs no feature that only one of the two kinds has. The deciding po
 - **Fields must exist on the objects.** `hasAnnotationProperty()` in the annotation validators decides with `"annotation" in node` whether a node supports annotations.[^annotation-validators] That only works if declared fields exist on the object even when they have no value. Stage 3 decorators made that happen as a side effect. With legacy decorators and the ES2020 target, fields without a value do not exist, and the annotation tests fail. `useDefineForClassFields: true` creates every declared field, so the behavior no longer depends on the kind of decorators. With this option, legacy decorators that put accessors on the prototype would be hidden by the fields; the decorators of `xmlbind-ts` only record metadata, so this does not apply.
 - **No type metadata.** Without `emitDecoratorMetadata`, `xmlbind-ts` does not read the TypeScript types at runtime and relies on the explicit `type` in the generated classes. Oxc would derive these types less precisely than `tsc`, so tests and build could behave differently if it were enabled.
 - **Vitest needs no plugin** for decorators: Vite reads `experimentalDecorators` from `tsconfig` and passes it to Oxc.
-- **The editor branch** takes the settings over in Phase 9. It uses `xmlbind-ts` 2.x, which detects the kind of decorators in the same way. Its tests passed with these settings and `xmlbind-ts` 2.2 when this ADR was written.
+- **The editor branch** uses the settings since `main` was merged into it in Phase 9 ([#402](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/402)), with `xmlbind-ts` 2.3, which detects the kind of decorators in the same way.
 - **A later switch back** changes only the flags. The syntax of the generated code is the same for both kinds.
 
 ## Rejected alternatives

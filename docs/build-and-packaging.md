@@ -4,8 +4,8 @@ title: Build and packaging
 description: How the extension is built, run, linted, packaged and checked - the build outputs and tsconfig files, the npm scripts, the scripts in TypeScript, running it in VS Code, the VSIX and its check, the generated schema classes, dependencies and the Node version, ESLint, CI, and planned changes.
 tags: [build, packaging, vsix, vite, typescript, eslint, ci, dependencies]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-28T13:57:27Z }
-verified: { by: human:neumaennl, at: 2026-10-28T14:01:23Z }
+generated: { by: human:neumaennl, at: 2026-10-29T06:58:32Z }
+verified: { by: human:neumaennl, at: 2026-10-29T07:47:32Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -64,22 +64,14 @@ sources:
   - id: ci
     resource: ../.github/workflows/ci.yml
     title: CI workflow
-  - id: pr-343
-    resource: https://github.com/neumaennl/vscode-visual-xml-schema-editor/pull/343
-    title: "Require VS Code 1.100 and fix VSIX packaging (#343)"
   - id: issue-340
     resource: https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340
     title: Tech Stack Modernization
-  - id: issue-357
-    resource: https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/357
-    title: Align Node version, @types and CI with the supported VS Code version (#357)
 ---
 
 # Purpose
 
 This document describes how the extension is built, run, linted, packaged and checked: which tools produce which output, what goes into the VSIX, and what CI does. How the tests are run and written is described in [Testing](testing.md).
-
-The packaging described here is the state after [#343](https://github.com/neumaennl/vscode-visual-xml-schema-editor/pull/343) on `main`. The branch `copilot/add-editor-capabilities` does not have it yet (see [The editor branch](#the-editor-branch)).[^pr-343]
 
 # Build outputs
 
@@ -111,7 +103,7 @@ ESLint uses all configurations except `tsconfig.json`, so each TypeScript file m
 - **Styles.** `main.ts` imports `./styles.css` only so that Vite writes it as `webview/styles.css`, unminified; the bundle contains no CSS, and the HTML loads the file with a `<link>`.
 - **Type check.** Vite only removes the types. `compile-webview` therefore runs `tsc --noEmit -p tsconfig.webview.json` first, as `ts-loader` did with webpack. `watch-webview` does not; in VS Code, type errors show up in the Problems view while you edit.
 - **Source map.** Every build embeds its source map in `main.js`. The content security policy blocks loading a separate `.map` file, and the map makes stack traces from the installed extension, for example in bug reports, readable. It makes `main.js` several times larger.
-- **Size warning.** A small plugin in `vite.config.ts` warns when a file in `webview/` is larger than 1 MiB as written, including the source map, as webpack's `performance` hints did on the editor branch. Vite's own warning (`build.chunkSizeWarningLimit`) does not work in library mode. If the warning appears, decide whether the source map is still worth its size.
+- **Size warning.** A small plugin in `vite.config.ts` warns when a file in `webview/` is larger than 1 MiB as written, including the source map. Vite's own warning (`build.chunkSizeWarningLimit`) does not work in library mode. If the warning appears, decide whether the source map is still worth its size.
 - **Output folder.** Vite empties `webview/` before every build, so no file from an earlier build is left behind.
 - **Minification.** The production build (`--mode production`) shortens names and code, but in library mode with ES modules Vite keeps line breaks and `/* @__PURE__ */` comments. The watch build (`--mode development`) is not minified.
 
@@ -160,18 +152,6 @@ What goes into the VSIX is controlled by `.vscodeignore`:[^vscodeignore]
 `npm run package:verify` runs `scripts/verify-vsix.ts`. It unpacks the VSIX into a temporary folder outside the repository (with `unzip`, on Windows with the `tar.exe` of Windows), so that the `node_modules/` of the repository cannot hide a missing file, writes a stub of the `vscode` module as a package into `node_modules/vscode/` of that folder, imports the entry point, an ES module like the extension, with `import()` and checks that it exports `activate()`. Node finds the stub through its normal package lookup in the parent folders, without module hooks; every other package must come from the VSIX. The stub is an ES module whose default export accepts any property access and call; it has no `then`, so that it is not taken for a promise. Because an ES module needs static export names, the stub has no named exports, and `vscode.window` is `undefined`: the check fails, although VS Code would load the extension, if a module uses such a value at the top level (for example `vscode.window.activeTextEditor` or `class X extends vscode.TreeItem`) or uses named imports such as `import { window } from "vscode"`. Uses inside functions are fine, because the check does not call them. Without an argument it checks the first `.vsix` file in the current folder. It finds missing dependencies and errors at load time, but does not start VS Code.[^verify-vsix]
 
 `vsce` refuses to package when `@types/vscode` is newer than the lowest VS Code version in `engines.vscode`. Both are set together, see [VS Code and Node versions](#vs-code-and-node-versions).[^manifest]
-
-## The editor branch
-
-On `copilot/add-editor-capabilities`, packaging fails or produces a VSIX that does not work:
-
-- `engines.vscode` is `^1.74.0` and `@types/vscode` is `^1.137.0`, so `vsce package` stops with an error. `@types/node` (`^26`) and `.nvmrc` (`24`) do not follow the Node version of VS Code 1.74 (Node 16.14) either, and `vscode:update` and `vscode:check` do not exist.
-- `.vscodeignore` excludes `node_modules/**` except `@neumaennl/xmlbind-ts`. The dependencies of `xmlbind-ts` (for example `reflect-metadata` and `@xmldom/xmldom`) and `@vscode/codicons` are missing from the VSIX, so the extension cannot be loaded.
-- `package:verify` and the packaging steps in CI do not exist.
-- The webview is still built with webpack, whose `performance` limits were raised to 1 MiB there; the size warning of the Vite build replaces them.
-- `@neumaennl/xmlbind-ts` 2.x is an ES module only, which the extension, itself an ES module, imports like any other module. VS Code runs ES modules in extensions from version 1.100 on, which ships Node 20.19; VS Code 1.74 ships Node 16.
-
-The fixes from #343 and #357, the Vite build from #371 and the module settings from #374 are applied when `main` is merged into the editor branch (Phase 9 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340)).[^pr-343][^issue-357][^issue-340]
 
 # Generated schema classes
 
@@ -227,8 +207,6 @@ The workflow `ci.yml` runs on pushes to `main` and on every pull request, whatev
 6. The [tests in the extension host](testing.md#tests-in-the-extension-host) on the build from step 4: `npm run stage:extension-host` compiles only the tests and assembles `.vscode-test/`, and `xvfb-run -a npx vscode-test --reporter json` runs them, with a virtual display because the runner has none. `npm run test:extension-host` is not used, because its `pretest` would compile the extension again. Mocha's `json` reporter writes `test-results/extension-host.json`, the output file set in `.vscode-test.mjs`. Mocha runs only one reporter at a time, so the test names are then missing from the log. `.vscode-test.mjs` sets no reporter itself, because one there would override `--reporter` from the command line; so `npm run test:extension-host` uses Mocha's default reporter, and the Testing view uses the Extension Test Runner's own. `actions/cache` keeps the downloaded VS Code (`.vscode-test/vscode-linux-x64-<version>/`) under a key with the version from `engines.vscode`, so CI downloads it only when the version changes, or when GitHub has removed the cache after seven days without use.
 7. The job summary gets two sections with a title each: "Vitest", with its test report and the coverage report, and "Extension host", with its test report. Vitest marks the lines of failing tests. The test reports come from `dorny/test-reporter`, the coverage report from `davelosert/vitest-coverage-report-action`, which also keeps one comment with the coverage report up to date on pull requests from this repository; for that the workflow has the permission `pull-requests: write`. Pull requests from forks get no write access, so they get no comment. Each report step only runs if its input file exists (`hashFiles()`), for example not when an earlier step failed before the tests ran. The coverage report is also missing when a Vitest test fails, because Vitest then writes no coverage files.
 
-For a pull request, GitHub runs the workflow as it is in the merge of the pull request into its target branch. Pull requests into `copilot/add-editor-capabilities` are therefore only checked once that branch has this workflow, after `main` is merged into it (Phase 9 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340)).
-
 # Planned changes
 
 The [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340) plans one more change to the build:[^issue-340]
@@ -272,9 +250,5 @@ The [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-sc
 [^eslint]: ESLint configuration
 
 [^ci]: CI workflow
-
-[^pr-343]: Require VS Code 1.100 and fix VSIX packaging (#343)
-
-[^issue-357]: Align Node version, @types and CI with the supported VS Code version (#357)
 
 [^issue-340]: Tech Stack Modernization

@@ -4,8 +4,8 @@ title: Testing
 description: How the extension is tested - running the tests and the type check, the four Vitest projects, mocks and helpers, conventions for tests, mocks, helper functions and helper classes, which tests to write for typical changes, coverage, CI, the smoke tests in the extension host with a mock webview, and how the current tests compare with the testing strategy of ADR 001.
 tags: [testing, vitest, mocks, coverage, ci, conventions]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-28T14:47:04Z }
-verified: { by: human:neumaennl, at: 2026-10-28T15:08:21Z }
+generated: { by: human:neumaennl, at: 2026-10-29T06:58:32Z }
+verified: { by: human:neumaennl, at: 2026-10-29T07:47:32Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -200,8 +200,6 @@ The workflow `ci.yml` runs on pushes to `main` and on every pull request, with t
 - **Report.** The job summary has two sections with a title each, "Vitest" and "Extension host", each with a test report that `dorny/test-reporter` creates (`report-title`); the coverage report follows the Vitest report. "Vitest" comes from the JUnit file, with the tests per file, and "Extension host" from the JSON file that Mocha's `json` reporter writes in CI (see [Build and packaging](build-and-packaging.md#ci)). For a failing test, both show its message. `dorny/test-reporter` writes them into the job summary of the run (`use-actions-summary`, its default since version 2), not as checks of their own.
 - **Coverage.** `davelosert/vitest-coverage-report-action` shows the totals against the thresholds, which it reads from `vitest.config.ts` (set explicitly with `vite-config-path`, because otherwise it may pick `vite.config.ts`), and the coverage of the files changed in a pull request, with their uncovered lines. On pull requests from this repository it also keeps one comment with this report up to date; pull requests from forks get none, because their workflow runs have no write access. For the files of a pull request, Vitest writes the coverage reporter `json` (`coverage/coverage-final.json`) besides `json-summary`.[^vitest-config]
 - **Annotations.** In GitHub Actions, Vitest also adds its `github-actions` reporter, which marks the line of each failing test in the run and in the changed files of a pull request. Its own job summary is off, because the report step writes one.[^vitest-config]
-
-On `copilot/add-editor-capabilities`, the workflow runs only for `main` and has no packaging steps.
 
 # Tests in the extension host
 

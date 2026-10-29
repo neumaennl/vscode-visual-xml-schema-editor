@@ -26,7 +26,7 @@ describe("Integration: Element pipeline", () => {
   // ─── addElement ────────────────────────────────────────────────────────────
 
   describe("addElement", () => {
-    it("adds a top-level element to an empty schema", () => {
+    test("adds a top-level element to an empty schema", () => {
       const cmd: AddElementCommand = {
         type: "addElement",
         payload: { parentId: "/schema", elementName: "order", elementType: "xs:string" },
@@ -40,7 +40,7 @@ describe("Integration: Element pipeline", () => {
       expect(elements[0].type_).toBe("xs:string");
     });
 
-    it("adds a second top-level element without disturbing the first", () => {
+    test("adds a second top-level element without disturbing the first", () => {
       const cmd: AddElementCommand = {
         type: "addElement",
         payload: { parentId: "/schema", elementName: "product", elementType: "xs:integer" },
@@ -54,7 +54,7 @@ describe("Integration: Element pipeline", () => {
       expect(elements.some((e) => e.name === "product")).toBe(true);
     });
 
-    it("adds a top-level element with documentation", () => {
+    test("adds a top-level element with documentation", () => {
       const cmd: AddElementCommand = {
         type: "addElement",
         payload: {
@@ -74,7 +74,7 @@ describe("Integration: Element pipeline", () => {
       expect(docs[0].value).toBe("An invoice record");
     });
 
-    it("returns validation error when element name is invalid", () => {
+    test("returns validation error when element name is invalid", () => {
       const cmd: AddElementCommand = {
         type: "addElement",
         payload: { parentId: "/schema", elementName: "123invalid", elementType: "xs:string" },
@@ -83,7 +83,7 @@ describe("Integration: Element pipeline", () => {
       runCommandExpectValidationFailure(MINIMAL_SCHEMA, cmd, "Element name must be a valid XML name");
     });
 
-    it("returns validation error for duplicate element name", () => {
+    test("returns validation error for duplicate element name", () => {
       const cmd: AddElementCommand = {
         type: "addElement",
         payload: { parentId: "/schema", elementName: "person", elementType: "xs:string" },
@@ -96,7 +96,7 @@ describe("Integration: Element pipeline", () => {
   // ─── removeElement ─────────────────────────────────────────────────────────
 
   describe("removeElement", () => {
-    it("removes an existing top-level element", () => {
+    test("removes an existing top-level element", () => {
       const cmd: RemoveElementCommand = {
         type: "removeElement",
         payload: { elementId: "/element:person" },
@@ -109,7 +109,7 @@ describe("Integration: Element pipeline", () => {
       expect(elements.some((e) => e.name === "company")).toBe(true);
     });
 
-    it("returns validation error when element ID does not exist", () => {
+    test("returns validation error when element ID does not exist", () => {
       const cmd: RemoveElementCommand = {
         type: "removeElement",
         payload: { elementId: "/element:nonexistent" },
@@ -122,7 +122,7 @@ describe("Integration: Element pipeline", () => {
   // ─── modifyElement ─────────────────────────────────────────────────────────
 
   describe("modifyElement", () => {
-    it("renames an existing top-level element", () => {
+    test("renames an existing top-level element", () => {
       const cmd: ModifyElementCommand = {
         type: "modifyElement",
         payload: { elementId: "/element:person", elementName: "individual" },
@@ -135,7 +135,7 @@ describe("Integration: Element pipeline", () => {
       expect(elements.some((e) => e.name === "person")).toBe(false);
     });
 
-    it("changes the type of an existing element", () => {
+    test("changes the type of an existing element", () => {
       const cmd: ModifyElementCommand = {
         type: "modifyElement",
         payload: { elementId: "/element:person", elementType: "xs:integer" },
@@ -149,7 +149,7 @@ describe("Integration: Element pipeline", () => {
       expect(person!.type_).toBe("xs:integer");
     });
 
-    it("returns validation error when element ID does not exist", () => {
+    test("returns validation error when element ID does not exist", () => {
       const cmd: ModifyElementCommand = {
         type: "modifyElement",
         payload: { elementId: "/element:missing", elementName: "other" },
@@ -158,7 +158,7 @@ describe("Integration: Element pipeline", () => {
       runCommandExpectValidationFailure(SCHEMA_WITH_ELEMENTS, cmd, "Element not found: missing");
     });
 
-    it("returns validation error when new name is invalid", () => {
+    test("returns validation error when new name is invalid", () => {
       const cmd: ModifyElementCommand = {
         type: "modifyElement",
         payload: { elementId: "/element:person", elementName: "bad name" },

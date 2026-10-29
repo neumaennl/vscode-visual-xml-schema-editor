@@ -68,7 +68,7 @@ describe("CommandValidator", () => {
   });
 
   describe("validate() method", () => {
-    it("should handle unknown command types", () => {
+    test("should handle unknown command types", () => {
       const result = validator.validate(
         // eslint-disable-next-line no-restricted-syntax -- `type` not in SchemaCommand union; cast needed to test unknown-type rejection at runtime
         { type: "unknownCommandType", payload: {} } as unknown as SchemaCommand,
@@ -85,7 +85,7 @@ describe("CommandValidator", () => {
       });
     });
 
-    it("should delegate addElement to validateAddElement", () => {
+    test("should delegate addElement to validateAddElement", () => {
       const command: SchemaCommand = {
         type: "addElement",
         payload: {
@@ -105,7 +105,7 @@ describe("CommandValidator", () => {
       expect(mockValidators.validateAddElement).toHaveBeenCalledTimes(1);
     });
 
-    it("should delegate addSimpleType to validateAddSimpleType", () => {
+    test("should delegate addSimpleType to validateAddSimpleType", () => {
       const command: SchemaCommand = {
         type: "addSimpleType",
         payload: {
@@ -124,7 +124,7 @@ describe("CommandValidator", () => {
       expect(mockValidators.validateAddSimpleType).toHaveBeenCalledTimes(1);
     });
 
-    it("should delegate addGroup to validateAddGroup", () => {
+    test("should delegate addGroup to validateAddGroup", () => {
       const command: SchemaCommand = {
         type: "addGroup",
         payload: {
@@ -143,7 +143,7 @@ describe("CommandValidator", () => {
       expect(mockValidators.validateAddGroup).toHaveBeenCalledTimes(1);
     });
 
-    it("should delegate addAnnotation to validateAddAnnotation", () => {
+    test("should delegate addAnnotation to validateAddAnnotation", () => {
       const command: SchemaCommand = {
         type: "addAnnotation",
         payload: {
@@ -162,7 +162,7 @@ describe("CommandValidator", () => {
       expect(mockValidators.validateAddAnnotation).toHaveBeenCalledTimes(1);
     });
 
-    it("should delegate addImport to validateAddImport", () => {
+    test("should delegate addImport to validateAddImport", () => {
       const command: SchemaCommand = {
         type: "addImport",
         payload: {
@@ -181,7 +181,7 @@ describe("CommandValidator", () => {
       expect(mockValidators.validateAddImport).toHaveBeenCalledTimes(1);
     });
 
-    it("should return validator error when validator returns invalid", () => {
+    test("should return validator error when validator returns invalid", () => {
       const command: SchemaCommand = {
         type: "addElement",
         payload: {
@@ -207,7 +207,7 @@ describe("CommandValidator", () => {
       );
     });
 
-    it("should delegate modifyComplexType to validateModifyComplexType", () => {
+    test("should delegate modifyComplexType to validateModifyComplexType", () => {
       const command: SchemaCommand = {
         type: "modifyComplexType",
         payload: {
@@ -226,7 +226,7 @@ describe("CommandValidator", () => {
       expect(mockValidators.validateModifyComplexType).toHaveBeenCalledTimes(1);
     });
 
-    it("should delegate removeAttributeGroup to validateRemoveAttributeGroup", () => {
+    test("should delegate removeAttributeGroup to validateRemoveAttributeGroup", () => {
       const command: SchemaCommand = {
         type: "removeAttributeGroup",
         payload: {
@@ -244,7 +244,7 @@ describe("CommandValidator", () => {
       expect(mockValidators.validateRemoveAttributeGroup).toHaveBeenCalledTimes(1);
     });
 
-    it("should delegate modifySchemaNamespaces to validateModifySchemaNamespaces", () => {
+    test("should delegate modifySchemaNamespaces to validateModifySchemaNamespaces", () => {
       const command: SchemaCommand = {
         type: "modifySchemaNamespaces",
         payload: {
@@ -268,7 +268,7 @@ describe("CommandValidator", () => {
   });
 
   describe("default constructor behavior", () => {
-    it("should use actual validators when no mocks are provided", () => {
+    test("should use actual validators when no mocks are provided", () => {
       const defaultValidator = new CommandValidator();
       const command: SchemaCommand = {
         type: "addElement",

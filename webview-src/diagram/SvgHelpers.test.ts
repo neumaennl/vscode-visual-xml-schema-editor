@@ -20,7 +20,7 @@ describe("SvgHelpers", () => {
   });
 
   describe("svgLine", () => {
-    it("should create a line element with correct attributes", () => {
+    test("should create a line element with correct attributes", () => {
       const style = "stroke:black;stroke-width:2";
       const x1 = 10;
       const y1 = 20;
@@ -38,7 +38,7 @@ describe("SvgHelpers", () => {
       expect(line?.getAttribute("style")).toBe(style);
     });
 
-    it("should handle negative coordinates", () => {
+    test("should handle negative coordinates", () => {
       svgLine(mockGroup, "stroke:red", -10, -20, -30, -40);
 
       const line = mockGroup.querySelector("line");
@@ -48,7 +48,7 @@ describe("SvgHelpers", () => {
       expect(line?.getAttribute("y2")).toBe("-40");
     });
 
-    it("should handle decimal coordinates", () => {
+    test("should handle decimal coordinates", () => {
       svgLine(mockGroup, "stroke:blue", 10.5, 20.75, 30.25, 40.5);
 
       const line = mockGroup.querySelector("line");
@@ -60,7 +60,7 @@ describe("SvgHelpers", () => {
   });
 
   describe("svgRectangle", () => {
-    it("should create a rectangle element with correct attributes", () => {
+    test("should create a rectangle element with correct attributes", () => {
       const rect: Rectangle = { x: 10, y: 20, width: 100, height: 50 };
       const fill = "fill:lightblue";
       const stroke = "stroke:black;stroke-width:1";
@@ -76,7 +76,7 @@ describe("SvgHelpers", () => {
       expect(rectangle?.getAttribute("style")).toBe(`${fill};${stroke}`);
     });
 
-    it("should handle zero dimensions", () => {
+    test("should handle zero dimensions", () => {
       const rect: Rectangle = { x: 0, y: 0, width: 0, height: 0 };
       svgRectangle(mockGroup, rect, "fill:none", "stroke:none");
 
@@ -85,7 +85,7 @@ describe("SvgHelpers", () => {
       expect(rectangle?.getAttribute("height")).toBe("0");
     });
 
-    it("should handle negative coordinates", () => {
+    test("should handle negative coordinates", () => {
       const rect: Rectangle = { x: -10, y: -20, width: 30, height: 40 };
       svgRectangle(mockGroup, rect, "fill:red", "stroke:blue");
 
@@ -96,7 +96,7 @@ describe("SvgHelpers", () => {
   });
 
   describe("svgPolygon", () => {
-    it("should create a polygon element with correct points", () => {
+    test("should create a polygon element with correct points", () => {
       const points: Point[] = [
         { x: 0, y: 0 },
         { x: 50, y: 0 },
@@ -114,7 +114,7 @@ describe("SvgHelpers", () => {
       expect(polygon?.getAttribute("style")).toBe(`${fill};${stroke}`);
     });
 
-    it("should handle single point", () => {
+    test("should handle single point", () => {
       const points: Point[] = [{ x: 10, y: 20 }];
       svgPolygon(mockGroup, points, "fill:blue", "stroke:red");
 
@@ -122,7 +122,7 @@ describe("SvgHelpers", () => {
       expect(polygon?.getAttribute("points")).toBe("10,20");
     });
 
-    it("should handle triangle", () => {
+    test("should handle triangle", () => {
       const points: Point[] = [
         { x: 0, y: 0 },
         { x: 50, y: 0 },
@@ -134,7 +134,7 @@ describe("SvgHelpers", () => {
       expect(polygon?.getAttribute("points")).toBe("0,0 50,0 25,43.3");
     });
 
-    it("should handle empty points array", () => {
+    test("should handle empty points array", () => {
       const points: Point[] = [];
       svgPolygon(mockGroup, points, "fill:none", "stroke:none");
 
@@ -144,7 +144,7 @@ describe("SvgHelpers", () => {
   });
 
   describe("svgCircle", () => {
-    it("should create a circle element with correct attributes", () => {
+    test("should create a circle element with correct attributes", () => {
       const cx = 50;
       const cy = 50;
       const r = 25;
@@ -160,14 +160,14 @@ describe("SvgHelpers", () => {
       expect(circle?.getAttribute("style")).toBe(fill);
     });
 
-    it("should handle zero radius", () => {
+    test("should handle zero radius", () => {
       svgCircle(mockGroup, 10, 10, 0, "fill:blue");
 
       const circle = mockGroup.querySelector("circle");
       expect(circle?.getAttribute("r")).toBe("0");
     });
 
-    it("should handle negative coordinates", () => {
+    test("should handle negative coordinates", () => {
       svgCircle(mockGroup, -10, -20, 5, "fill:green");
 
       const circle = mockGroup.querySelector("circle");
@@ -175,7 +175,7 @@ describe("SvgHelpers", () => {
       expect(circle?.getAttribute("cy")).toBe("-20");
     });
 
-    it("should handle decimal values", () => {
+    test("should handle decimal values", () => {
       svgCircle(mockGroup, 10.5, 20.75, 5.25, "fill:purple");
 
       const circle = mockGroup.querySelector("circle");
@@ -186,7 +186,7 @@ describe("SvgHelpers", () => {
   });
 
   describe("svgText", () => {
-    it("should create a text element with correct attributes", () => {
+    test("should create a text element with correct attributes", () => {
       const text = "Hello World";
       const x = 10;
       const y = 20;
@@ -202,7 +202,7 @@ describe("SvgHelpers", () => {
       expect(textElement?.getAttribute("style")).toBe(style);
     });
 
-    it("should create a text element with title for tooltip", () => {
+    test("should create a text element with title for tooltip", () => {
       const text = "Short";
       const title = "This is a longer tooltip text";
 
@@ -214,7 +214,7 @@ describe("SvgHelpers", () => {
       expect(titleElement?.textContent).toBe(title);
     });
 
-    it("should not create title element when title is not provided", () => {
+    test("should not create title element when title is not provided", () => {
       svgText(mockGroup, "Text", 0, 0, "font-size:12px");
 
       const textElement = mockGroup.querySelector("text");
@@ -222,14 +222,14 @@ describe("SvgHelpers", () => {
       expect(titleElement).toBeFalsy();
     });
 
-    it("should handle empty string text", () => {
+    test("should handle empty string text", () => {
       svgText(mockGroup, "", 10, 20, "font-size:12px");
 
       const textElement = mockGroup.querySelector("text");
       expect(textElement?.textContent).toBe("");
     });
 
-    it("should handle special characters in text", () => {
+    test("should handle special characters in text", () => {
       const specialText = "<>&\"'";
       svgText(mockGroup, specialText, 0, 0, "font-size:12px");
 
@@ -237,7 +237,7 @@ describe("SvgHelpers", () => {
       expect(textElement?.textContent).toBe(specialText);
     });
 
-    it("should handle negative coordinates", () => {
+    test("should handle negative coordinates", () => {
       svgText(mockGroup, "Text", -10, -20, "font-size:12px");
 
       const textElement = mockGroup.querySelector("text");
@@ -245,7 +245,7 @@ describe("SvgHelpers", () => {
       expect(textElement?.getAttribute("y")).toBe("-20");
     });
 
-    it("should not create title element with empty title string", () => {
+    test("should not create title element with empty title string", () => {
       svgText(mockGroup, "Text", 0, 0, "font-size:12px", "");
 
       const textElement = mockGroup.querySelector("text");
@@ -255,7 +255,7 @@ describe("SvgHelpers", () => {
   });
 
   describe("Integration tests", () => {
-    it("should allow multiple elements to be added to the same group", () => {
+    test("should allow multiple elements to be added to the same group", () => {
       svgLine(mockGroup, "stroke:black", 0, 0, 10, 10);
       svgRectangle(
         mockGroup,

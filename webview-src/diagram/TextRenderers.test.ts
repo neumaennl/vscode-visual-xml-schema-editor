@@ -49,7 +49,7 @@ describe("TextRenderers", () => {
   });
 
   describe("renderText", () => {
-    it("should render item name", () => {
+    test("should render item name", () => {
       const item = new DiagramItem("test-id", "Test", DiagramItemType.element);
       item.name = "TestElement";
       item.diagram = mockDiagram;
@@ -63,7 +63,7 @@ describe("TextRenderers", () => {
       expect(text?.textContent).toBe("TestElement");
     });
 
-    it("should render item name with type when showType is true", () => {
+    test("should render item name with type when showType is true", () => {
       const item = new DiagramItem("test-id", "Test", DiagramItemType.element);
       item.name = "TestElement";
       item.type = "string";
@@ -77,7 +77,7 @@ describe("TextRenderers", () => {
       expect(text?.textContent).toBe("TestElement: string");
     });
 
-    it("should not show type when showType is false", () => {
+    test("should not show type when showType is false", () => {
       const item = new DiagramItem("test-id", "Test", DiagramItemType.element);
       item.name = "TestElement";
       item.type = "string";
@@ -91,7 +91,7 @@ describe("TextRenderers", () => {
       expect(text?.textContent).toBe("TestElement");
     });
 
-    it("should truncate long text", () => {
+    test("should truncate long text", () => {
       const item = new DiagramItem("test-id", "Test", DiagramItemType.element);
       item.name = "ThisIsAVeryLongElementNameThatShouldBeTruncated";
       item.diagram = mockDiagram;
@@ -105,7 +105,7 @@ describe("TextRenderers", () => {
       expect(text?.textContent).not.toBe(item.name);
     });
 
-    it("should add tooltip with full text when truncated", () => {
+    test("should add tooltip with full text when truncated", () => {
       const item = new DiagramItem("test-id", "Test", DiagramItemType.element);
       item.name = "ThisIsAVeryLongElementNameThatShouldBeTruncated";
       item.diagram = mockDiagram;
@@ -120,7 +120,7 @@ describe("TextRenderers", () => {
       expect(title?.textContent).toBe(item.name);
     });
 
-    it("should not add tooltip when text is not truncated", () => {
+    test("should not add tooltip when text is not truncated", () => {
       const item = new DiagramItem("test-id", "Test", DiagramItemType.element);
       item.name = "Short";
       item.diagram = mockDiagram;
@@ -134,7 +134,7 @@ describe("TextRenderers", () => {
       expect(title).toBeFalsy();
     });
 
-    it("should center text in element box", () => {
+    test("should center text in element box", () => {
       const item = new DiagramItem("test-id", "Test", DiagramItemType.element);
       item.name = "Test";
       item.diagram = mockDiagram;
@@ -150,32 +150,32 @@ describe("TextRenderers", () => {
   });
 
   describe("truncateText", () => {
-    it("should return text as-is when it fits", () => {
+    test("should return text as-is when it fits", () => {
       const text = "Short";
       const result = truncateText(text, 1000, 10, mockSvg);
       expect(result).toBe("Short");
     });
 
-    it("should truncate text with ellipsis when too long", () => {
+    test("should truncate text with ellipsis when too long", () => {
       const text = "This is a very long text that will not fit";
       const result = truncateText(text, 50, 10, mockSvg);
       expect(result).toContain("...");
       expect(result.length).toBeLessThan(text.length);
     });
 
-    it("should handle empty text", () => {
+    test("should handle empty text", () => {
       const result = truncateText("", 100, 10, mockSvg);
       expect(result).toBe("");
     });
 
-    it("should handle very small maxWidth", () => {
+    test("should handle very small maxWidth", () => {
       const text = "Long text";
       const result = truncateText(text, 30, 10, mockSvg);
       expect(result).toContain("...");
       expect(result.length).toBeLessThan(text.length);
     });
 
-    it("should use binary search to find optimal truncation point", () => {
+    test("should use binary search to find optimal truncation point", () => {
       const text = "0123456789ABCDEFGHIJKLMNOP";
       const result = truncateText(text, 100, 10, mockSvg);
       // Result should be truncated but as long as possible
@@ -184,7 +184,7 @@ describe("TextRenderers", () => {
   });
 
   describe("renderDocumentation", () => {
-    it("should render documentation text", () => {
+    test("should render documentation text", () => {
       const item = new DiagramItem("test-id", "Test", DiagramItemType.element);
       item.documentation = "This is documentation";
       item.diagram = mockDiagram;
@@ -198,7 +198,7 @@ describe("TextRenderers", () => {
       expect(text[0].textContent).toBe("This is documentation");
     });
 
-    it("should render multiple lines of documentation", () => {
+    test("should render multiple lines of documentation", () => {
       const item = new DiagramItem("test-id", "Test", DiagramItemType.element);
       item.documentation = "Line 1\nLine 2\nLine 3";
       item.diagram = mockDiagram;
@@ -214,7 +214,7 @@ describe("TextRenderers", () => {
       expect(texts[2].textContent).toBe("Line 3");
     });
 
-    it("should limit to 3 lines of documentation", () => {
+    test("should limit to 3 lines of documentation", () => {
       const item = new DiagramItem("test-id", "Test", DiagramItemType.element);
       item.documentation = "Line 1\nLine 2\nLine 3\nLine 4\nLine 5";
       item.diagram = mockDiagram;
@@ -227,7 +227,7 @@ describe("TextRenderers", () => {
       expect(texts.length).toBe(3);
     });
 
-    it("should truncate long documentation lines", () => {
+    test("should truncate long documentation lines", () => {
       const item = new DiagramItem("test-id", "Test", DiagramItemType.element);
       const longLine = "A".repeat(100);
       item.documentation = longLine;
@@ -241,7 +241,7 @@ describe("TextRenderers", () => {
       expect(text?.textContent?.length).toBeLessThanOrEqual(50);
     });
 
-    it("should not render when documentation box has zero width", () => {
+    test("should not render when documentation box has zero width", () => {
       const item = new DiagramItem("test-id", "Test", DiagramItemType.element);
       item.documentation = "Some documentation";
       item.diagram = mockDiagram;
@@ -254,7 +254,7 @@ describe("TextRenderers", () => {
       expect(texts.length).toBe(0);
     });
 
-    it("should not render when documentation box has zero height", () => {
+    test("should not render when documentation box has zero height", () => {
       const item = new DiagramItem("test-id", "Test", DiagramItemType.element);
       item.documentation = "Some documentation";
       item.diagram = mockDiagram;
@@ -269,7 +269,7 @@ describe("TextRenderers", () => {
   });
 
   describe("renderOccurrence", () => {
-    it("should render occurrence for unbounded max", () => {
+    test("should render occurrence for unbounded max", () => {
       const item = new DiagramItem("test-id", "Test", DiagramItemType.element);
       item.minOccurrence = 0;
       item.maxOccurrence = -1; // Unbounded
@@ -284,7 +284,7 @@ describe("TextRenderers", () => {
       expect(text?.textContent).toBe("0..∞");
     });
 
-    it("should render occurrence for specific range", () => {
+    test("should render occurrence for specific range", () => {
       const item = new DiagramItem("test-id", "Test", DiagramItemType.element);
       item.minOccurrence = 1;
       item.maxOccurrence = 5;
@@ -298,7 +298,7 @@ describe("TextRenderers", () => {
       expect(text?.textContent).toBe("1..5");
     });
 
-    it("should not render occurrence for default 1..1 when alwaysShowOccurrence is false", () => {
+    test("should not render occurrence for default 1..1 when alwaysShowOccurrence is false", () => {
       const item = new DiagramItem("test-id", "Test", DiagramItemType.element);
       item.minOccurrence = 1;
       item.maxOccurrence = 1;
@@ -312,7 +312,7 @@ describe("TextRenderers", () => {
       expect(text).toBeFalsy();
     });
 
-    it("should render occurrence for default 1..1 when alwaysShowOccurrence is true", () => {
+    test("should render occurrence for default 1..1 when alwaysShowOccurrence is true", () => {
       const item = new DiagramItem("test-id", "Test", DiagramItemType.element);
       item.minOccurrence = 1;
       item.maxOccurrence = 1;
@@ -327,7 +327,7 @@ describe("TextRenderers", () => {
       expect(text?.textContent).toBe("1..1");
     });
 
-    it("should render occurrence for 0..1", () => {
+    test("should render occurrence for 0..1", () => {
       const item = new DiagramItem("test-id", "Test", DiagramItemType.element);
       item.minOccurrence = 0;
       item.maxOccurrence = 1;
@@ -341,7 +341,7 @@ describe("TextRenderers", () => {
       expect(text?.textContent).toBe("0..1");
     });
 
-    it("should position text relative to element box", () => {
+    test("should position text relative to element box", () => {
       const item = new DiagramItem("test-id", "Test", DiagramItemType.element);
       item.minOccurrence = 0;
       item.maxOccurrence = -1;

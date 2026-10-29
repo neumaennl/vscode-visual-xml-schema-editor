@@ -1,6 +1,7 @@
 # Knowledge Bundle Update Log
 
 ## 2026-10-29
+* **Update**: All Vitest tests use `test()` instead of `it()`, and ESLint enforces it with the rule `vitest/consistent-test-it` ([#402](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/402)). [Testing](testing.md#files-and-structure) and [Build and packaging](build-and-packaging.md#lint) name the rule; [Known issues](known-issues.md): removed the entry "Most test files use `it()` instead of `test()`".
 * **Update**: `main` is merged into the editor branch, which now has the modernization ([#402](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/402)). Removed the notes that it does not have it yet: in [Build and packaging](build-and-packaging.md) the sentence in the purpose, the section "The editor branch" with its sources #343 and #357, the reference to the editor branch in the size warning and the sentence about pull requests into it in CI; in [Testing](testing.md#ci) the sentence about the workflow on it; in `CONTRIBUTING.md` the sentence that CI does not check pull requests into it. [ADR 002](architecture/002-legacy-decorators.md) records that the editor branch uses the decorator settings, and [Known issues](known-issues.md#toarray-is-obsolete-since-xmlbind-ts-23) no longer waits for the merge. The notes that `main` is the viewer stay until the editor is merged into `main`.
 
 ## 2026-10-28

@@ -47,7 +47,7 @@ function attributesOfT(schemaObj: schema): attribute[] {
 describe("Attribute Executors", () => {
   describe("executeAddAttribute", () => {
     describe("Adding top-level attributes to schema", () => {
-      it("should add a top-level attribute to schema", () => {
+      test("should add a top-level attribute to schema", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
 </xs:schema>`;
@@ -73,7 +73,7 @@ describe("Attribute Executors", () => {
         expect(attributes[0]!.type_).toBe("xs:string");
       });
 
-      it("should add a top-level attribute with default and fixed values", () => {
+      test("should add a top-level attribute with default and fixed values", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
 </xs:schema>`;
@@ -97,7 +97,7 @@ describe("Attribute Executors", () => {
         expect(attributes[0]!.default_).toBe("1.0");
       });
 
-      it("should add a top-level attribute with documentation", () => {
+      test("should add a top-level attribute with documentation", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
 </xs:schema>`;
@@ -125,7 +125,7 @@ describe("Attribute Executors", () => {
     });
 
     describe("Adding attributes to complex types", () => {
-      it("should add an attribute to a top-level complex type", () => {
+      test("should add an attribute to a top-level complex type", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:complexType name="PersonType">
@@ -159,7 +159,7 @@ describe("Attribute Executors", () => {
         expect(attributeArr[0]!.use).toBe("required");
       });
 
-      it("should add an optional attribute (use=optional) to a complex type", () => {
+      test("should add an optional attribute (use=optional) to a complex type", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:complexType name="PersonType">
@@ -191,7 +191,7 @@ describe("Attribute Executors", () => {
         expect(attrs[0]!.use).toBe("optional");
       });
 
-      it("should add an attribute to an anonymous complex type", () => {
+      test("should add an attribute to an anonymous complex type", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:element name="person">
@@ -224,7 +224,7 @@ describe("Attribute Executors", () => {
         expect(attributeArr[0]!.name).toBe("status");
       });
 
-      it("should add attribute with fixed value to complex type", () => {
+      test("should add attribute with fixed value to complex type", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:complexType name="PersonType"/>
@@ -256,7 +256,7 @@ describe("Attribute Executors", () => {
   });
 
   describe("executeRemoveAttribute", () => {
-    it("should remove a top-level attribute by name", () => {
+    test("should remove a top-level attribute by name", () => {
       const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:attribute name="lang" type="xs:string"/>
@@ -280,7 +280,7 @@ describe("Attribute Executors", () => {
       expect(attributes[0]!.name).toBe("version");
     });
 
-    it("should remove an attribute from a complex type", () => {
+    test("should remove an attribute from a complex type", () => {
       const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:complexType name="PersonType">
@@ -309,7 +309,7 @@ describe("Attribute Executors", () => {
       expect(attrs[0]!.name).toBe("status");
     });
 
-    it("should remove an attribute from an anonymous complex type", () => {
+    test("should remove an attribute from an anonymous complex type", () => {
       const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:element name="person">
@@ -338,7 +338,7 @@ describe("Attribute Executors", () => {
   });
 
   describe("executeModifyAttribute", () => {
-    it("should modify attribute name", () => {
+    test("should modify attribute name", () => {
       const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:complexType name="PersonType">
@@ -367,7 +367,7 @@ describe("Attribute Executors", () => {
       expect(attrs[0]!.type_).toBe("xs:integer");
     });
 
-    it("should modify attribute type", () => {
+    test("should modify attribute type", () => {
       const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:complexType name="PersonType">
@@ -395,7 +395,7 @@ describe("Attribute Executors", () => {
       expect(attrs[0]!.type_).toBe("xs:string");
     });
 
-    it("should modify attribute required status", () => {
+    test("should modify attribute required status", () => {
       const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:complexType name="PersonType">
@@ -423,7 +423,7 @@ describe("Attribute Executors", () => {
       expect(attrs[0]!.use).toBe("required");
     });
 
-    it("should modify attribute default value", () => {
+    test("should modify attribute default value", () => {
       const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:complexType name="PersonType">
@@ -451,7 +451,7 @@ describe("Attribute Executors", () => {
       expect(attrs[0]!.default_).toBe("active");
     });
 
-    it("should modify attribute fixed value", () => {
+    test("should modify attribute fixed value", () => {
       const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:complexType name="PersonType">
@@ -479,7 +479,7 @@ describe("Attribute Executors", () => {
       expect(attrs[0]!.fixed).toBe("2.0");
     });
 
-    it("should add documentation to attribute", () => {
+    test("should add documentation to attribute", () => {
       const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:complexType name="PersonType">
@@ -508,7 +508,7 @@ describe("Attribute Executors", () => {
       expect(attrs[0]!.annotation!.documentation![0].value).toBe("Unique person identifier");
     });
 
-    it("should modify a top-level attribute name", () => {
+    test("should modify a top-level attribute name", () => {
       const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:attribute name="lang" type="xs:string"/>
@@ -531,7 +531,7 @@ describe("Attribute Executors", () => {
       expect(attributes[0]!.name).toBe("language");
     });
 
-    it("should clear fixed value when setting default value on an attribute that already has fixed", () => {
+    test("should clear fixed value when setting default value on an attribute that already has fixed", () => {
       const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:complexType name="PersonType">
@@ -558,7 +558,7 @@ describe("Attribute Executors", () => {
       expect(attrs[0].fixed).toBeUndefined();
     });
 
-    it("should clear default value when setting fixed value on an attribute that already has default", () => {
+    test("should clear default value when setting fixed value on an attribute that already has default", () => {
       const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:complexType name="PersonType">
@@ -587,7 +587,7 @@ describe("Attribute Executors", () => {
   });
 
   describe("Round-trip XML serialization", () => {
-    it("should produce valid XML after adding an attribute", () => {
+    test("should produce valid XML after adding an attribute", () => {
       const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:complexType name="PersonType">
@@ -623,7 +623,7 @@ describe("Attribute Executors", () => {
       expect(attrs[0]!.use).toBe("required");
     });
 
-    it("should produce valid XML after modifying an attribute", () => {
+    test("should produce valid XML after modifying an attribute", () => {
       const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:complexType name="PersonType">
@@ -665,7 +665,7 @@ describe("Attribute Executors", () => {
   <xs:complexType name="PersonType"/>
 </xs:schema>`;
 
-    it("should add a reference attribute to a complex type", () => {
+    test("should add a reference attribute to a complex type", () => {
       const schemaObj = unmarshal(schema, baseXml);
 
       const command: AddAttributeCommand = {
@@ -688,7 +688,7 @@ describe("Attribute Executors", () => {
       expect(attrs[0].type_).toBeUndefined();
     });
 
-    it("should add a required reference attribute", () => {
+    test("should add a required reference attribute", () => {
       const schemaObj = unmarshal(schema, baseXml);
 
       const command: AddAttributeCommand = {
@@ -710,7 +710,7 @@ describe("Attribute Executors", () => {
       expect(attrs[0].use).toBe("required");
     });
 
-    it("should remove a reference attribute by ref name", () => {
+    test("should remove a reference attribute by ref name", () => {
       const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:attribute name="lang" type="xs:string"/>
@@ -733,7 +733,7 @@ describe("Attribute Executors", () => {
       expect(complexTypes[0]!.attribute).toBeUndefined();
     });
 
-    it("should modify a named attribute to become a reference", () => {
+    test("should modify a named attribute to become a reference", () => {
       const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:attribute name="lang" type="xs:string"/>
@@ -762,7 +762,7 @@ describe("Attribute Executors", () => {
       expect(attrs[0].type_).toBeUndefined();
     });
 
-    it("should modify a reference attribute to become named", () => {
+    test("should modify a reference attribute to become named", () => {
       const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:attribute name="lang" type="xs:string"/>
@@ -792,7 +792,7 @@ describe("Attribute Executors", () => {
       expect(attrs[0].ref).toBeUndefined();
     });
 
-    it("should produce valid XML for a reference attribute", () => {
+    test("should produce valid XML for a reference attribute", () => {
       const schemaObj = unmarshal(schema, baseXml);
 
       executeAddAttribute(
@@ -809,7 +809,7 @@ describe("Attribute Executors", () => {
     });
   });
   describe("values, use and documentation", () => {
-    it("should set the fixed value of a new top-level attribute", () => {
+    test("should set the fixed value of a new top-level attribute", () => {
       const schemaObj = schemaWith("");
       const command: AddAttributeCommand = {
         type: "addAttribute",
@@ -822,7 +822,7 @@ describe("Attribute Executors", () => {
       expect(schemaObj.attribute![0].default_).toBeUndefined();
     });
 
-    it("should set the default value of a new local attribute", () => {
+    test("should set the default value of a new local attribute", () => {
       const schemaObj = schemaWith(`<xs:complexType name="T"/>`);
       const command: AddAttributeCommand = {
         type: "addAttribute",
@@ -834,7 +834,7 @@ describe("Attribute Executors", () => {
       expect(attributesOfT(schemaObj)[0].default_).toBe("en");
     });
 
-    it("should mark a new local attribute as optional when it is not required", () => {
+    test("should mark a new local attribute as optional when it is not required", () => {
       const schemaObj = schemaWith(`<xs:complexType name="T"/>`);
       const command: AddAttributeCommand = {
         type: "addAttribute",
@@ -846,7 +846,7 @@ describe("Attribute Executors", () => {
       expect(attributesOfT(schemaObj)[0].use).toBe("optional");
     });
 
-    it("should add documentation to a new attribute reference", () => {
+    test("should add documentation to a new attribute reference", () => {
       const schemaObj = schemaWith(`<xs:attribute name="lang" type="xs:string"/><xs:complexType name="T"/>`);
       const command: AddAttributeCommand = {
         type: "addAttribute",
@@ -860,7 +860,7 @@ describe("Attribute Executors", () => {
       expect(toArray(added.annotation?.documentation).map((d) => d.value)).toEqual(["Language of the content"]);
     });
 
-    it("should make a local attribute optional", () => {
+    test("should make a local attribute optional", () => {
       const schemaObj = schemaWith(`<xs:complexType name="T"><xs:attribute name="lang" type="xs:string" use="required"/></xs:complexType>`);
       const command: ModifyAttributeCommand = {
         type: "modifyAttribute",
@@ -872,7 +872,7 @@ describe("Attribute Executors", () => {
       expect(attributesOfT(schemaObj)[0].use).toBe("optional");
     });
 
-    it("should replace the documentation of an attribute and keep its appinfo", () => {
+    test("should replace the documentation of an attribute and keep its appinfo", () => {
       const schemaObj = schemaWith(
         `<xs:complexType name="T"><xs:attribute name="lang" type="xs:string"><xs:annotation><xs:appinfo>tool data</xs:appinfo><xs:documentation>Old</xs:documentation></xs:annotation></xs:attribute></xs:complexType>`,
       );
@@ -890,7 +890,7 @@ describe("Attribute Executors", () => {
   });
 
   describe("removing the last attribute", () => {
-    it("should leave no empty attribute list when the last top-level attribute is removed", () => {
+    test("should leave no empty attribute list when the last top-level attribute is removed", () => {
       const schemaObj = schemaWith(`<xs:attribute name="lang" type="xs:string"/>`);
       const command: RemoveAttributeCommand = {
         type: "removeAttribute",

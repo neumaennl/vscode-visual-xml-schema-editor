@@ -56,7 +56,7 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
    * Plus a top-level `order` element of type OrderType.
    * Finally modifies `orderId` to carry inline documentation.
    */
-  it("builds OrderType with typed elements, an anonymous inner complexType, a reference, occurrence constraints, and an attribute", () => {
+  test("builds OrderType with typed elements, an anonymous inner complexType, a reference, occurrence constraints, and an attribute", () => {
     // ── Step 1: add OrderType complexType with sequence ─────────────────────
     const addOrderType: AddComplexTypeCommand = {
       type: "addComplexType",
@@ -239,7 +239,7 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
     expect(attrs[0].type_).toBe("xs:string");
   });
 
-  it("rejects adding a duplicate element into OrderType sequence", () => {
+  test("rejects adding a duplicate element into OrderType sequence", () => {
     // Build a schema that already has orderId in OrderType/sequence
     let xml = step(EXAMPLE_XSD, {
       type: "addComplexType",
@@ -269,7 +269,7 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
     );
   });
 
-  it("replaces an element type attribute when adding an anonymous complexType", () => {
+  test("replaces an element type attribute when adding an anonymous complexType", () => {
     // qty starts with a type attribute and is then converted to an inline complexType
     let xml = step(EXAMPLE_XSD, {
       type: "addComplexType",
@@ -300,7 +300,7 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
     expect(qtyEl!.complexType?.sequence).toBeDefined();
   });
 
-  it("chains addElement without type, then addSimpleType with enumeration restrictions", () => {
+  test("chains addElement without type, then addSimpleType with enumeration restrictions", () => {
     // Build schema with OrderType, then add a status element with anonymous simpleType
     let xml = step(EXAMPLE_XSD, {
       type: "addComplexType",
@@ -347,7 +347,7 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
     expect(values).toContain("delivered");
   });
 
-  it("correctly wires an element reference to an existing element and verifies ref round-trip", () => {
+  test("correctly wires an element reference to an existing element and verifies ref round-trip", () => {
     // Start from example.xsd and add a complexType that references the existing
     // top-level "example" element via a ref (checking that the element remains
     // unreferenced by type_, only by ref).

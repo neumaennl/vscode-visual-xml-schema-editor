@@ -20,7 +20,7 @@ ${body}
 
 describe("schemaLocalRenamer", () => {
   describe("renameLocalTypeInSchema", () => {
-    it("renames unqualified type references throughout the schema", () => {
+    test("renames unqualified type references throughout the schema", () => {
       const schemaObj = schemaWith(`
   <xs:simpleType name="BaseType"><xs:restriction base="xs:string"/></xs:simpleType>
   <xs:element name="status" type="BaseType"/>
@@ -42,7 +42,7 @@ describe("schemaLocalRenamer", () => {
       expect(toArray(schemaObj.simpleType)[1].restriction!.base).toBe("RenamedType");
     });
 
-    it("leaves prefixed type references untouched", () => {
+    test("leaves prefixed type references untouched", () => {
       const schemaObj = schemaWith(`
   <xs:element name="status" type="BaseType"/>
   <xs:element name="external" type="ext:BaseType"/>`);
@@ -54,7 +54,7 @@ describe("schemaLocalRenamer", () => {
       expect(elements[1].type_).toBe("ext:BaseType");
     });
 
-    it("renames references that use the current schema targetNamespace prefix", () => {
+    test("renames references that use the current schema targetNamespace prefix", () => {
       const schemaObj = schemaWith(`
   <xs:simpleType name="BaseType"><xs:restriction base="xs:string"/></xs:simpleType>
   <xs:element name="status" type="tns:BaseType"/>
@@ -82,7 +82,7 @@ describe("schemaLocalRenamer", () => {
   });
 
   describe("renameLocalGroupRefInSchema", () => {
-    it("renames matching group refs in complex types and named groups", () => {
+    test("renames matching group refs in complex types and named groups", () => {
       const schemaObj = schemaWith(`
   <xs:complexType name="Wrapper"><xs:group ref="OldGroup"/></xs:complexType>
   <xs:group name="Container"><xs:sequence><xs:group ref="OldGroup"/></xs:sequence></xs:group>`);
@@ -93,7 +93,7 @@ describe("schemaLocalRenamer", () => {
       expect(toArray(toArray(schemaObj.group)[0].sequence!.group)[0].ref).toBe("NewGroup");
     });
 
-    it("renames targetNamespace-prefixed group refs", () => {
+    test("renames targetNamespace-prefixed group refs", () => {
       const schemaObj = schemaWith(`
   <xs:complexType name="Wrapper"><xs:group ref="tns:OldGroup"/></xs:complexType>`);
       schemaObj.targetNamespace = "http://example.com/ns";
@@ -109,7 +109,7 @@ describe("schemaLocalRenamer", () => {
   });
 
   describe("renameLocalAttributeGroupRefInSchema", () => {
-    it("renames matching attributeGroup refs across holders", () => {
+    test("renames matching attributeGroup refs across holders", () => {
       const schemaObj = schemaWith(`
   <xs:complexType name="Wrapper"><xs:attributeGroup ref="OldAttrs"/></xs:complexType>
   <xs:attributeGroup name="Shared"><xs:attributeGroup ref="OldAttrs"/></xs:attributeGroup>`);
@@ -120,7 +120,7 @@ describe("schemaLocalRenamer", () => {
       expect(toArray(toArray(schemaObj.attributeGroup)[0].attributeGroup)[0].ref).toBe("NewAttrs");
     });
 
-    it("renames targetNamespace-prefixed attributeGroup refs", () => {
+    test("renames targetNamespace-prefixed attributeGroup refs", () => {
       const schemaObj = schemaWith(`
   <xs:complexType name="Wrapper"><xs:attributeGroup ref="tns:OldAttrs"/></xs:complexType>`);
       schemaObj.targetNamespace = "http://example.com/ns";
@@ -136,7 +136,7 @@ describe("schemaLocalRenamer", () => {
   });
 
   describe("renameLocalElementRefInSchema", () => {
-    it("renames matching element refs and substitution groups", () => {
+    test("renames matching element refs and substitution groups", () => {
       const schemaObj = schemaWith(`
   <xs:element name="head"/>
   <xs:element name="child" substitutionGroup="head"/>
@@ -154,7 +154,7 @@ describe("schemaLocalRenamer", () => {
       expect(toArray(toArray(schemaObj.group)[0].choice!.element)[0].ref).toBe("renamedHead");
     });
 
-    it("renames targetNamespace-prefixed element refs and substitution groups", () => {
+    test("renames targetNamespace-prefixed element refs and substitution groups", () => {
       const schemaObj = schemaWith(`
   <xs:element name="head"/>
   <xs:element name="child" substitutionGroup="tns:head"/>

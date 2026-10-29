@@ -29,7 +29,7 @@ describe("Integration: Include pipeline", () => {
   // ─── addInclude ────────────────────────────────────────────────────────────
 
   describe("addInclude", () => {
-    it("adds an include with a schemaLocation", () => {
+    test("adds an include with a schemaLocation", () => {
       const cmd: AddIncludeCommand = {
         type: "addInclude",
         payload: { schemaLocation: "types.xsd" },
@@ -41,7 +41,7 @@ describe("Integration: Include pipeline", () => {
       expect(includes.some((i) => i.schemaLocation === "types.xsd")).toBe(true);
     });
 
-    it("returns validation error for an empty schemaLocation", () => {
+    test("returns validation error for an empty schemaLocation", () => {
       const cmd: AddIncludeCommand = {
         type: "addInclude",
         payload: { schemaLocation: "" },
@@ -50,7 +50,7 @@ describe("Integration: Include pipeline", () => {
       runCommandExpectValidationFailure(MINIMAL_SCHEMA, cmd, "Schema location cannot be empty");
     });
 
-    it("returns validation error for a schemaLocation with whitespace", () => {
+    test("returns validation error for a schemaLocation with whitespace", () => {
       const cmd: AddIncludeCommand = {
         type: "addInclude",
         payload: { schemaLocation: "my schema.xsd" },
@@ -59,7 +59,7 @@ describe("Integration: Include pipeline", () => {
       runCommandExpectValidationFailure(MINIMAL_SCHEMA, cmd, "Schema location must be a valid path or URI without whitespace");
     });
 
-    it("returns validation error for a duplicate schemaLocation", () => {
+    test("returns validation error for a duplicate schemaLocation", () => {
       const cmd: AddIncludeCommand = {
         type: "addInclude",
         payload: { schemaLocation: "base.xsd" },
@@ -72,7 +72,7 @@ describe("Integration: Include pipeline", () => {
   // ─── removeInclude ─────────────────────────────────────────────────────────
 
   describe("removeInclude", () => {
-    it("removes an include by position ID", () => {
+    test("removes an include by position ID", () => {
       const cmd: RemoveIncludeCommand = {
         type: "removeInclude",
         payload: { includeId: "/include[0]" },
@@ -84,7 +84,7 @@ describe("Integration: Include pipeline", () => {
       expect(includes.some((i) => i.schemaLocation === "base.xsd")).toBe(false);
     });
 
-    it("removes one include and preserves the other", () => {
+    test("removes one include and preserves the other", () => {
       const cmd: RemoveIncludeCommand = {
         type: "removeInclude",
         payload: { includeId: "/include[0]" },
@@ -97,7 +97,7 @@ describe("Integration: Include pipeline", () => {
       expect(includes.some((i) => i.schemaLocation === "common.xsd")).toBe(true);
     });
 
-    it("returns validation error when include ID is out of range", () => {
+    test("returns validation error when include ID is out of range", () => {
       const cmd: RemoveIncludeCommand = {
         type: "removeInclude",
         payload: { includeId: "/include[9]" },
@@ -110,7 +110,7 @@ describe("Integration: Include pipeline", () => {
   // ─── modifyInclude ─────────────────────────────────────────────────────────
 
   describe("modifyInclude", () => {
-    it("changes the schemaLocation of an existing include", () => {
+    test("changes the schemaLocation of an existing include", () => {
       const cmd: ModifyIncludeCommand = {
         type: "modifyInclude",
         payload: { includeId: "/include[0]", schemaLocation: "updated-base.xsd" },
@@ -123,7 +123,7 @@ describe("Integration: Include pipeline", () => {
       expect(includes.some((i) => i.schemaLocation === "base.xsd")).toBe(false);
     });
 
-    it("returns validation error when include ID is out of range", () => {
+    test("returns validation error when include ID is out of range", () => {
       const cmd: ModifyIncludeCommand = {
         type: "modifyInclude",
         payload: { includeId: "/include[99]", schemaLocation: "x.xsd" },

@@ -22,7 +22,7 @@ describe("Integration: SimpleType pipeline", () => {
   // ─── addSimpleType ─────────────────────────────────────────────────────────
 
   describe("addSimpleType", () => {
-    it("adds a top-level named simpleType with a base type", () => {
+    test("adds a top-level named simpleType with a base type", () => {
       const cmd: AddSimpleTypeCommand = {
         type: "addSimpleType",
         payload: {
@@ -40,7 +40,7 @@ describe("Integration: SimpleType pipeline", () => {
       expect(ageType!.restriction?.base).toBe("xs:integer");
     });
 
-    it("adds a simpleType with enumeration restrictions", () => {
+    test("adds a simpleType with enumeration restrictions", () => {
       const cmd: AddSimpleTypeCommand = {
         type: "addSimpleType",
         payload: {
@@ -63,7 +63,7 @@ describe("Integration: SimpleType pipeline", () => {
       expect(values).toContain("blue");
     });
 
-    it("adds a simpleType with minLength / maxLength facets", () => {
+    test("adds a simpleType with minLength / maxLength facets", () => {
       const cmd: AddSimpleTypeCommand = {
         type: "addSimpleType",
         payload: {
@@ -82,7 +82,7 @@ describe("Integration: SimpleType pipeline", () => {
       expect(nameType!.restriction).toBeDefined();
     });
 
-    it("adds a simpleType list with an item type", () => {
+    test("adds a simpleType list with an item type", () => {
       const cmd: AddSimpleTypeCommand = {
         type: "addSimpleType",
         payload: {
@@ -99,7 +99,7 @@ describe("Integration: SimpleType pipeline", () => {
       expect(tokenListType!.list?.itemType).toBe("xs:token");
     });
 
-    it("adds a simpleType union with member types", () => {
+    test("adds a simpleType union with member types", () => {
       const cmd: AddSimpleTypeCommand = {
         type: "addSimpleType",
         payload: {
@@ -116,7 +116,7 @@ describe("Integration: SimpleType pipeline", () => {
       expect(unionType!.union?.memberTypes).toBe("xs:string xs:integer");
     });
 
-    it("returns validation error when type name is invalid", () => {
+    test("returns validation error when type name is invalid", () => {
       const cmd: AddSimpleTypeCommand = {
         type: "addSimpleType",
         payload: { parentId: "/schema", typeName: "bad type", baseType: "xs:string" },
@@ -125,7 +125,7 @@ describe("Integration: SimpleType pipeline", () => {
       runCommandExpectValidationFailure(MINIMAL_SCHEMA, cmd, "Type name must be a valid XML name");
     });
 
-    it("returns validation error for duplicate type name", () => {
+    test("returns validation error for duplicate type name", () => {
       const cmd: AddSimpleTypeCommand = {
         type: "addSimpleType",
         payload: { parentId: "/schema", typeName: "StatusType", baseType: "xs:string" },
@@ -138,7 +138,7 @@ describe("Integration: SimpleType pipeline", () => {
   // ─── removeSimpleType ──────────────────────────────────────────────────────
 
   describe("removeSimpleType", () => {
-    it("removes an existing top-level simpleType", () => {
+    test("removes an existing top-level simpleType", () => {
       const cmd: RemoveSimpleTypeCommand = {
         type: "removeSimpleType",
         payload: { typeId: "/simpleType:StatusType" },
@@ -150,7 +150,7 @@ describe("Integration: SimpleType pipeline", () => {
       expect(types.some((t) => t.name === "StatusType")).toBe(false);
     });
 
-    it("returns validation error when type ID does not exist", () => {
+    test("returns validation error when type ID does not exist", () => {
       const cmd: RemoveSimpleTypeCommand = {
         type: "removeSimpleType",
         payload: { typeId: "/simpleType:NonExistent" },
@@ -163,7 +163,7 @@ describe("Integration: SimpleType pipeline", () => {
   // ─── modifySimpleType ──────────────────────────────────────────────────────
 
   describe("modifySimpleType", () => {
-    it("renames an existing simpleType", () => {
+    test("renames an existing simpleType", () => {
       const cmd: ModifySimpleTypeCommand = {
         type: "modifySimpleType",
         payload: { typeId: "/simpleType:StatusType", typeName: "StateType" },
@@ -176,7 +176,7 @@ describe("Integration: SimpleType pipeline", () => {
       expect(types.some((t) => t.name === "StatusType")).toBe(false);
     });
 
-    it("changes the base type of a simpleType", () => {
+    test("changes the base type of a simpleType", () => {
       const cmd: ModifySimpleTypeCommand = {
         type: "modifySimpleType",
         payload: { typeId: "/simpleType:StatusType", baseType: "xs:token" },
@@ -189,7 +189,7 @@ describe("Integration: SimpleType pipeline", () => {
       expect(statusType!.restriction!.base).toBe("xs:token");
     });
 
-    it("switches an existing simpleType from restriction to list", () => {
+    test("switches an existing simpleType from restriction to list", () => {
       const cmd: ModifySimpleTypeCommand = {
         type: "modifySimpleType",
         payload: {
@@ -206,7 +206,7 @@ describe("Integration: SimpleType pipeline", () => {
       expect(statusType!.restriction).toBeUndefined();
     });
 
-    it("returns validation error when type ID does not exist", () => {
+    test("returns validation error when type ID does not exist", () => {
       const cmd: ModifySimpleTypeCommand = {
         type: "modifySimpleType",
         payload: { typeId: "/simpleType:Missing", typeName: "Other" },

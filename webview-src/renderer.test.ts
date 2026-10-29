@@ -29,19 +29,19 @@ describe("DiagramRenderer", () => {
   });
 
   describe("constructor", () => {
-    it("should initialize renderer with canvas", () => {
+    test("should initialize renderer with canvas", () => {
       expect(renderer).toBeDefined();
       expect(renderer).toBeInstanceOf(DiagramRenderer);
     });
 
-    it("should create main group for transformations", () => {
+    test("should create main group for transformations", () => {
       const groups = mockCanvas.getElementsByTagName("g");
       expect(groups.length).toBeGreaterThan(0);
     });
   });
 
   describe("updateView", () => {
-    it("should apply transformation to main group", () => {
+    test("should apply transformation to main group", () => {
       const newViewState = { zoom: 2, panX: 10, panY: 20 };
       renderer.updateView(newViewState);
       
@@ -58,7 +58,7 @@ describe("DiagramRenderer", () => {
       setupGetBBoxMock();
     });
 
-    it("should clear previous content before rendering", () => {
+    test("should clear previous content before rendering", () => {
       // Add some initial content
       const testGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
       testGroup.setAttribute("data-test", "initial");
@@ -76,7 +76,7 @@ describe("DiagramRenderer", () => {
       expect(groups.length).toBeGreaterThan(0);
     });
 
-    it("should handle empty schema", () => {
+    test("should handle empty schema", () => {
       const emptySchema = {};
       const onNodeClick = vi.fn();
       
@@ -85,7 +85,7 @@ describe("DiagramRenderer", () => {
       }).not.toThrow();
     });
 
-    it("should handle null schema", () => {
+    test("should handle null schema", () => {
       const onNodeClick = vi.fn();
       
       // Test error handling with invalid input by bypassing type checking
@@ -97,7 +97,7 @@ describe("DiagramRenderer", () => {
       expect(mockCanvas.textContent).toContain("No schema to display");
     });
 
-    it("should render schema with elements", () => {
+    test("should render schema with elements", () => {
       const mockSchema = {
         element: [
           { name: "Person", type_: "PersonType" },
@@ -112,7 +112,7 @@ describe("DiagramRenderer", () => {
       expect(items.length).toBeGreaterThan(0);
     });
 
-    it("should store onNodeClick callback", () => {
+    test("should store onNodeClick callback", () => {
       const mockSchema = {
         element: [{ name: "Test", type_: "string" }],
       };
@@ -130,13 +130,13 @@ describe("DiagramRenderer", () => {
       setupGetBBoxMock();
     });
 
-    it("should not throw if no diagram exists", () => {
+    test("should not throw if no diagram exists", () => {
       expect(() => {
         renderer.refresh();
       }).not.toThrow();
     });
 
-    it("should re-render current diagram", () => {
+    test("should re-render current diagram", () => {
       const mockSchema = {
         element: [{ name: "Test", type_: "string" }],
       };
@@ -157,7 +157,7 @@ describe("DiagramRenderer", () => {
       setupGetBBoxMock();
     });
 
-    it("should apply showDocumentation option to diagram", () => {
+    test("should apply showDocumentation option to diagram", () => {
       const mockSchema = {
         element: [{ name: "Test", type_: "string" }],
       };
@@ -175,7 +175,7 @@ describe("DiagramRenderer", () => {
       expect(diagram?.showDocumentation).toBe(true);
     });
 
-    it("should apply alwaysShowOccurrence option to diagram", () => {
+    test("should apply alwaysShowOccurrence option to diagram", () => {
       const mockSchema = {
         element: [{ name: "Test", type_: "string" }],
       };
@@ -193,7 +193,7 @@ describe("DiagramRenderer", () => {
       expect(diagram?.alwaysShowOccurrence).toBe(true);
     });
 
-    it("should apply showType option to diagram", () => {
+    test("should apply showType option to diagram", () => {
       const mockSchema = {
         element: [{ name: "Test", type_: "string" }],
       };
@@ -217,7 +217,7 @@ describe("DiagramRenderer", () => {
       setupGetBBoxMock();
     });
 
-    it("should invoke node drop handler with item and construct", () => {
+    test("should invoke node drop handler with item and construct", () => {
       const onNodeClick = vi.fn();
       const onNodeDrop = vi.fn();
       renderer.setDropHandler(onNodeDrop);
@@ -244,7 +244,7 @@ describe("DiagramRenderer", () => {
       expect(onNodeDrop).toHaveBeenCalledWith(expect.any(Object), "element");
     });
 
-    it("should not invoke node drop handler when drop validator rejects the target", () => {
+    test("should not invoke node drop handler when drop validator rejects the target", () => {
       const onNodeClick = vi.fn();
       const onNodeDrop = vi.fn();
       renderer.setDropHandler(onNodeDrop);
@@ -270,7 +270,7 @@ describe("DiagramRenderer", () => {
       expect(onNodeDrop).not.toHaveBeenCalled();
     });
 
-    it("should not add drag-over class when drop validator rejects the target", () => {
+    test("should not add drag-over class when drop validator rejects the target", () => {
       const onNodeClick = vi.fn();
       renderer.setNodeDropValidator(() => false);
 
@@ -295,7 +295,7 @@ describe("DiagramRenderer", () => {
       expect(itemElement.classList.contains("drag-over")).toBe(false);
     });
 
-    it("should add drag-over class using active dragged-construct fallback", () => {
+    test("should add drag-over class using active dragged-construct fallback", () => {
       const onNodeClick = vi.fn();
       renderer.setNodeDropValidator((_node, construct) => construct === "element");
 
@@ -321,7 +321,7 @@ describe("DiagramRenderer", () => {
       expect(itemElement.classList.contains("drag-over")).toBe(true);
     });
 
-    it("should keep drag-over class when pointer is still inside item group", () => {
+    test("should keep drag-over class when pointer is still inside item group", () => {
       const onNodeClick = vi.fn();
       const mockSchema = {
         element: [{ name: "Test", type_: "string" }],
@@ -355,7 +355,7 @@ describe("DiagramRenderer", () => {
   });
 
   describe("showMessage", () => {
-    it("should display message in canvas", () => {
+    test("should display message in canvas", () => {
       renderer["showMessage"]("Test message");
       
       expect(mockCanvas.textContent).toContain("Test message");
@@ -363,7 +363,7 @@ describe("DiagramRenderer", () => {
   });
 
   describe("showError", () => {
-    it("should display error in canvas", () => {
+    test("should display error in canvas", () => {
       renderer["showError"]("Test error");
       
       expect(mockCanvas.textContent).toContain("Test error");

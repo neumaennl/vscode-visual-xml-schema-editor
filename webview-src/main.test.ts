@@ -67,7 +67,7 @@ describe("SchemaEditorApp", () => {
     });
   });
 
-  it("should initialize and setup message listener", async () => {
+  test("should initialize and setup message listener", async () => {
     const addEventListenerSpy = vi.spyOn(window, "addEventListener");
 
     await import("./main");
@@ -78,7 +78,7 @@ describe("SchemaEditorApp", () => {
     );
   });
 
-  it("should handle updateSchema message", async () => {
+  test("should handle updateSchema message", async () => {
     const addEventListenerSpy = vi.spyOn(window, "addEventListener");
 
     await import("./main");
@@ -102,7 +102,7 @@ describe("SchemaEditorApp", () => {
     expect(mockSetState).toHaveBeenCalled();
   });
 
-  it("should handle error message", async () => {
+  test("should handle error message", async () => {
     const addEventListenerSpy = vi.spyOn(window, "addEventListener");
 
     await import("./main");
@@ -124,7 +124,7 @@ describe("SchemaEditorApp", () => {
     expect(notificationMessage?.textContent).toContain("Test error");
   });
 
-  it("should keep an error visible until dismissed", async () => {
+  test("should keep an error visible until dismissed", async () => {
     vi.useFakeTimers();
     const addEventListenerSpy = vi.spyOn(window, "addEventListener");
 
@@ -147,7 +147,7 @@ describe("SchemaEditorApp", () => {
     expect(notificationMessage?.textContent).toContain("Persistent error");
   });
 
-  it("should dismiss the notification when the dismiss button is clicked", async () => {
+  test("should dismiss the notification when the dismiss button is clicked", async () => {
     const addEventListenerSpy = vi.spyOn(window, "addEventListener");
 
     await import("./main");
@@ -167,7 +167,7 @@ describe("SchemaEditorApp", () => {
     expect(notificationBar?.hasAttribute("hidden")).toBe(true);
   });
 
-  it("should setup zoom controls", async () => {
+  test("should setup zoom controls", async () => {
     const addEventListenerSpy = vi.spyOn(HTMLElement.prototype, "addEventListener");
 
     await import("./main");
@@ -182,7 +182,7 @@ describe("SchemaEditorApp", () => {
     addEventListenerSpy.mockRestore();
   });
 
-  it("should restore state on initialization", async () => {
+  test("should restore state on initialization", async () => {
     const savedState = { 
       zoom: 1.5, 
       panX: 100, 
@@ -195,13 +195,13 @@ describe("SchemaEditorApp", () => {
     expect(mockGetState).toHaveBeenCalled();
   });
 
-  it("should initialize with default state when no saved state", async () => {
+  test("should initialize with default state when no saved state", async () => {
     mockGetState.mockReturnValue(null);
 
     await expect(import("./main")).resolves.toBeDefined();
   });
 
-  it("should handle unknown message commands", async () => {
+  test("should handle unknown message commands", async () => {
     const addEventListenerSpy = vi.spyOn(window, "addEventListener");
 
     await import("./main");
@@ -219,7 +219,7 @@ describe("SchemaEditorApp", () => {
     }).not.toThrow();
   });
 
-  it("should create canvas and initialize renderer", async () => {
+  test("should create canvas and initialize renderer", async () => {
     await import("./main");
 
     const canvas = document.getElementById("schema-canvas");
@@ -227,7 +227,7 @@ describe("SchemaEditorApp", () => {
     expect(canvas?.tagName).toBe("svg");
   });
 
-  it("should highlight the selected node when it is clicked", async () => {
+  test("should highlight the selected node when it is clicked", async () => {
     const addEventListenerSpy = vi.spyOn(window, "addEventListener");
 
     await import("./main");

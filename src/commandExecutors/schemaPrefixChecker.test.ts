@@ -33,7 +33,7 @@ function emptySchema(): schema {
 // isPrefixReferencedInSchema — keyref/@refer
 // ---------------------------------------------------------------------------
 describe("isPrefixReferencedInSchema — keyref/@refer", () => {
-  it("returns true when prefix is used in keyref/@refer on a top-level element", () => {
+  test("returns true when prefix is used in keyref/@refer on a top-level element", () => {
     const s = emptySchema();
     const el = new topLevelElement();
     el.name = "root";
@@ -47,7 +47,7 @@ describe("isPrefixReferencedInSchema — keyref/@refer", () => {
     expect(isPrefixReferencedInSchema("other", s)).toBe(false);
   });
 
-  it("returns true when prefix is used in keyref/@refer on a local element in a compositor", () => {
+  test("returns true when prefix is used in keyref/@refer on a local element in a compositor", () => {
     const s = emptySchema();
     const ct = new topLevelComplexType();
     ct.name = "CT";
@@ -72,11 +72,11 @@ describe("isPrefixReferencedInSchema — keyref/@refer", () => {
 // ---------------------------------------------------------------------------
 
 describe("isPrefixReferencedInSchema", () => {
-  it("returns false on an empty schema", () => {
+  test("returns false on an empty schema", () => {
     expect(isPrefixReferencedInSchema("ext", emptySchema())).toBe(false);
   });
 
-  it("returns false when a different prefix is used", () => {
+  test("returns false when a different prefix is used", () => {
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ext="http://example.com/ext">
   <xs:element name="foo" type="ext:FooType"/>
@@ -85,7 +85,7 @@ describe("isPrefixReferencedInSchema", () => {
     expect(isPrefixReferencedInSchema("other", s)).toBe(false);
   });
 
-  it("returns true for top-level element @type", () => {
+  test("returns true for top-level element @type", () => {
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ext="http://example.com/ext">
   <xs:element name="foo" type="ext:FooType"/>
@@ -94,7 +94,7 @@ describe("isPrefixReferencedInSchema", () => {
     expect(isPrefixReferencedInSchema("ext", s)).toBe(true);
   });
 
-  it("returns true for element @substitutionGroup", () => {
+  test("returns true for element @substitutionGroup", () => {
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ext="http://example.com/ext">
   <xs:element name="bar" substitutionGroup="ext:Head"/>
@@ -103,7 +103,7 @@ describe("isPrefixReferencedInSchema", () => {
     expect(isPrefixReferencedInSchema("ext", s)).toBe(true);
   });
 
-  it("returns true for simpleType restriction/@base", () => {
+  test("returns true for simpleType restriction/@base", () => {
     const s = emptySchema();
     const st = new topLevelSimpleType();
     st.name = "MyST";
@@ -114,7 +114,7 @@ describe("isPrefixReferencedInSchema", () => {
     expect(isPrefixReferencedInSchema("ext", s)).toBe(true);
   });
 
-  it("returns true for a union/@memberTypes token", () => {
+  test("returns true for a union/@memberTypes token", () => {
     const s = emptySchema();
     const st = new topLevelSimpleType();
     st.name = "Union";
@@ -127,7 +127,7 @@ describe("isPrefixReferencedInSchema", () => {
     expect(isPrefixReferencedInSchema("other", s)).toBe(false);
   });
 
-  it("returns true for complexContent extension/@base", () => {
+  test("returns true for complexContent extension/@base", () => {
     const s = emptySchema();
     const ct = new topLevelComplexType();
     ct.name = "Child";
@@ -140,7 +140,7 @@ describe("isPrefixReferencedInSchema", () => {
     expect(isPrefixReferencedInSchema("ext", s)).toBe(true);
   });
 
-  it("returns true for a deeply nested element type (sequence → choice → element)", () => {
+  test("returns true for a deeply nested element type (sequence → choice → element)", () => {
     const s = emptySchema();
     const ct = new topLevelComplexType();
     ct.name = "Nested";
@@ -157,7 +157,7 @@ describe("isPrefixReferencedInSchema", () => {
     expect(isPrefixReferencedInSchema("other", s)).toBe(false);
   });
 
-  it("returns true for named attributeGroup attribute/@type", () => {
+  test("returns true for named attributeGroup attribute/@type", () => {
     const s = emptySchema();
     const ag = new namedAttributeGroup();
     ag.name = "AG";
@@ -169,7 +169,7 @@ describe("isPrefixReferencedInSchema", () => {
     expect(isPrefixReferencedInSchema("ext", s)).toBe(true);
   });
 
-  it("returns true for inline simpleType/@restriction/@base on attribute in attributeGroup", () => {
+  test("returns true for inline simpleType/@restriction/@base on attribute in attributeGroup", () => {
     const s = emptySchema();
     const ag = new namedAttributeGroup();
     ag.name = "AG";
@@ -186,7 +186,7 @@ describe("isPrefixReferencedInSchema", () => {
     expect(isPrefixReferencedInSchema("other", s)).toBe(false);
   });
 
-  it("returns true for inline simpleType/@restriction/@base on attribute in complexType body", () => {
+  test("returns true for inline simpleType/@restriction/@base on attribute in complexType body", () => {
     const s = emptySchema();
     const ct = new topLevelComplexType();
     ct.name = "MyType";
@@ -205,7 +205,7 @@ describe("isPrefixReferencedInSchema", () => {
 });
 
 describe("isAnyPrefixReferencedInSchema", () => {
-  it("returns false for empty prefix set", () => {
+  test("returns false for empty prefix set", () => {
     const s = emptySchema();
     const el = new topLevelElement();
     el.name = "e";
@@ -214,7 +214,7 @@ describe("isAnyPrefixReferencedInSchema", () => {
     expect(isAnyPrefixReferencedInSchema(new Set(), s)).toBe(false);
   });
 
-  it("returns false when no matching prefix exists in schema", () => {
+  test("returns false when no matching prefix exists in schema", () => {
     const s = emptySchema();
     const el = new topLevelElement();
     el.name = "e";
@@ -223,7 +223,7 @@ describe("isAnyPrefixReferencedInSchema", () => {
     expect(isAnyPrefixReferencedInSchema(new Set(["ns1", "ns2"]), s)).toBe(false);
   });
 
-  it("returns true when a single prefix from the set is referenced", () => {
+  test("returns true when a single prefix from the set is referenced", () => {
     const s = emptySchema();
     const el = new topLevelElement();
     el.name = "e";
@@ -232,7 +232,7 @@ describe("isAnyPrefixReferencedInSchema", () => {
     expect(isAnyPrefixReferencedInSchema(new Set(["ns1", "ns2"]), s)).toBe(true);
   });
 
-  it("returns true when a different prefix from the set is referenced", () => {
+  test("returns true when a different prefix from the set is referenced", () => {
     const s = emptySchema();
     const el = new topLevelElement();
     el.name = "e";
@@ -241,7 +241,7 @@ describe("isAnyPrefixReferencedInSchema", () => {
     expect(isAnyPrefixReferencedInSchema(new Set(["ns1", "ns2"]), s)).toBe(true);
   });
 
-  it("returns true for a single-element set when prefix is referenced", () => {
+  test("returns true for a single-element set when prefix is referenced", () => {
     const s = emptySchema();
     const el = new topLevelElement();
     el.name = "e";
@@ -250,7 +250,7 @@ describe("isAnyPrefixReferencedInSchema", () => {
     expect(isAnyPrefixReferencedInSchema(new Set(["ext"]), s)).toBe(true);
   });
 
-  it("returns true when prefix appears in memberTypes on a simpleType", () => {
+  test("returns true when prefix appears in memberTypes on a simpleType", () => {
     const s = emptySchema();
     const st = new topLevelSimpleType();
     st.name = "T";
@@ -262,7 +262,7 @@ describe("isAnyPrefixReferencedInSchema", () => {
     expect(isAnyPrefixReferencedInSchema(new Set(["ns3", "ns4"]), s)).toBe(false);
   });
 
-  it("is consistent with isPrefixReferencedInSchema for a single prefix", () => {
+  test("is consistent with isPrefixReferencedInSchema for a single prefix", () => {
     const s = emptySchema();
     const ct = new topLevelComplexType();
     ct.name = "CT";

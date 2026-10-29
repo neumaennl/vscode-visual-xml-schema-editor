@@ -26,7 +26,7 @@ describe("DropCommandFactory", () => {
   });
 
   describe("createTopLevelDropCommand", () => {
-    it("creates addElement command", () => {
+    test("creates addElement command", () => {
       const cmd = factory.createTopLevelDropCommand(PaletteSchemaConstruct.Element);
       expect(cmd).not.toBeNull();
       expect(cmd!.type).toBe("addElement");
@@ -36,7 +36,7 @@ describe("DropCommandFactory", () => {
       });
     });
 
-    it("creates addAttribute command", () => {
+    test("creates addAttribute command", () => {
       const cmd = factory.createTopLevelDropCommand(PaletteSchemaConstruct.Attribute);
       expect(cmd).not.toBeNull();
       expect(cmd!.type).toBe("addAttribute");
@@ -46,7 +46,7 @@ describe("DropCommandFactory", () => {
       });
     });
 
-    it("creates addSimpleType command", () => {
+    test("creates addSimpleType command", () => {
       const cmd = factory.createTopLevelDropCommand(PaletteSchemaConstruct.SimpleType);
       expect(cmd).not.toBeNull();
       expect(cmd!.type).toBe("addSimpleType");
@@ -56,7 +56,7 @@ describe("DropCommandFactory", () => {
       });
     });
 
-    it("creates addComplexType command", () => {
+    test("creates addComplexType command", () => {
       const cmd = factory.createTopLevelDropCommand(PaletteSchemaConstruct.ComplexType);
       expect(cmd).not.toBeNull();
       expect(cmd!.type).toBe("addComplexType");
@@ -66,7 +66,7 @@ describe("DropCommandFactory", () => {
       });
     });
 
-    it("creates restriction as a top-level simpleType command", () => {
+    test("creates restriction as a top-level simpleType command", () => {
       const cmd = factory.createTopLevelDropCommand(PaletteSchemaConstruct.Restriction);
       expect(cmd).not.toBeNull();
       expect(cmd!.type).toBe("addSimpleType");
@@ -77,7 +77,7 @@ describe("DropCommandFactory", () => {
       });
     });
 
-    it("creates extension as a top-level complexType command", () => {
+    test("creates extension as a top-level complexType command", () => {
       const cmd = factory.createTopLevelDropCommand(PaletteSchemaConstruct.Extension);
       expect(cmd).not.toBeNull();
       expect(cmd!.type).toBe("addComplexType");
@@ -88,7 +88,7 @@ describe("DropCommandFactory", () => {
       });
     });
 
-    it("creates addGroup command", () => {
+    test("creates addGroup command", () => {
       const cmd = factory.createTopLevelDropCommand(PaletteSchemaConstruct.Group);
       expect(cmd).not.toBeNull();
       expect(cmd!.type).toBe("addGroup");
@@ -97,14 +97,14 @@ describe("DropCommandFactory", () => {
       );
     });
 
-    it("returns null for unsupported top-level construct", () => {
+    test("returns null for unsupported top-level construct", () => {
       const cmd = factory.createTopLevelDropCommand(PaletteSchemaConstruct.Any);
       expect(cmd).toBeNull();
     });
   });
 
   describe("createNodeDropCommand — element", () => {
-    it("allows schema root", () => {
+    test("allows schema root", () => {
       const item = makeItem("/schema", DiagramItemType.element);
       const cmd = factory.createNodeDropCommand(item, PaletteSchemaConstruct.Element);
       expect(cmd).not.toBeNull();
@@ -112,7 +112,7 @@ describe("DropCommandFactory", () => {
       expect((cmd! as { payload: { parentId: string } }).payload.parentId).toBe("/schema");
     });
 
-    it("allows sequence/choice/all groups", () => {
+    test("allows sequence/choice/all groups", () => {
       const sequence = makeItem("/e/g[0]", DiagramItemType.group, {
         groupType: DiagramItemGroupType.Sequence,
       });
@@ -128,7 +128,7 @@ describe("DropCommandFactory", () => {
       expect(factory.createNodeDropCommand(all, PaletteSchemaConstruct.Element)).not.toBeNull();
     });
 
-    it("rejects unsupported target", () => {
+    test("rejects unsupported target", () => {
       const item = makeItem("/simpleType:S", DiagramItemType.type, { type: "simpleType" });
       const cmd = factory.createNodeDropCommand(item, PaletteSchemaConstruct.Element);
       expect(cmd).toBeNull();
@@ -136,7 +136,7 @@ describe("DropCommandFactory", () => {
   });
 
   describe("createNodeDropCommand — attribute", () => {
-    it("should produce addAttribute command when target is the schema root", () => {
+    test("should produce addAttribute command when target is the schema root", () => {
       const item = makeItem("/schema", DiagramItemType.element);
       const cmd = factory.createNodeDropCommand(item, PaletteSchemaConstruct.Attribute);
 
@@ -145,7 +145,7 @@ describe("DropCommandFactory", () => {
       expect((cmd! as { payload: { parentId: string } }).payload.parentId).toBe("/schema");
     });
 
-    it("should produce addAttribute command when target is a named complexType node", () => {
+    test("should produce addAttribute command when target is a named complexType node", () => {
       const item = makeItem(
         "/complexType:PersonType",
         DiagramItemType.type,
@@ -160,7 +160,7 @@ describe("DropCommandFactory", () => {
       );
     });
 
-    it("should produce addAttribute targeting the anonymousComplexType when element has one", () => {
+    test("should produce addAttribute targeting the anonymousComplexType when element has one", () => {
       const item = makeItem("/element:person", DiagramItemType.element, {
         hasAnonymousComplexType: true,
       });
@@ -173,7 +173,7 @@ describe("DropCommandFactory", () => {
       ).toBe("/element:person/anonymousComplexType[0]");
     });
 
-    it("should return null when target is a plain element without anonymous complexType", () => {
+    test("should return null when target is a plain element without anonymous complexType", () => {
       const item = makeItem("/element:person", DiagramItemType.element, {
         hasAnonymousComplexType: false,
       });
@@ -182,7 +182,7 @@ describe("DropCommandFactory", () => {
       expect(cmd).toBeNull();
     });
 
-    it("should return null when target is a sequence group", () => {
+    test("should return null when target is a sequence group", () => {
       const item = makeItem("/element:person/group[0]", DiagramItemType.group, {
         groupType: DiagramItemGroupType.Sequence,
       });
@@ -193,7 +193,7 @@ describe("DropCommandFactory", () => {
   });
 
   describe("createNodeDropCommand — simpleType", () => {
-    it("allows schema root and sets generated typeName", () => {
+    test("allows schema root and sets generated typeName", () => {
       const item = makeItem("/schema", DiagramItemType.element);
       const cmd = factory.createNodeDropCommand(item, PaletteSchemaConstruct.SimpleType);
       expect(cmd).not.toBeNull();
@@ -204,7 +204,7 @@ describe("DropCommandFactory", () => {
       });
     });
 
-    it("allows element target without typeName", () => {
+    test("allows element target without typeName", () => {
       const item = makeItem("/element:person", DiagramItemType.element);
       const cmd = factory.createNodeDropCommand(item, PaletteSchemaConstruct.SimpleType);
       expect(cmd).not.toBeNull();
@@ -214,7 +214,7 @@ describe("DropCommandFactory", () => {
       expect(payload.typeName).toBeUndefined();
     });
 
-    it("uses the element itself as the replacement target when it already has an inline complexType", () => {
+    test("uses the element itself as the replacement target when it already has an inline complexType", () => {
       const item = makeItem("/element:person", DiagramItemType.element, {
         hasAnonymousComplexType: true,
       });
@@ -226,7 +226,7 @@ describe("DropCommandFactory", () => {
       expect(payload.typeName).toBeUndefined();
     });
 
-    it("rejects unsupported target", () => {
+    test("rejects unsupported target", () => {
       const item = makeItem("/group:G", DiagramItemType.group);
       const cmd = factory.createNodeDropCommand(item, PaletteSchemaConstruct.SimpleType);
       expect(cmd).toBeNull();
@@ -234,7 +234,7 @@ describe("DropCommandFactory", () => {
   });
 
   describe("createNodeDropCommand — complexType", () => {
-    it("allows schema root and sets generated typeName", () => {
+    test("allows schema root and sets generated typeName", () => {
       const item = makeItem("/schema", DiagramItemType.element);
       const cmd = factory.createNodeDropCommand(item, PaletteSchemaConstruct.ComplexType);
       expect(cmd).not.toBeNull();
@@ -245,7 +245,7 @@ describe("DropCommandFactory", () => {
       });
     });
 
-    it("allows element target without typeName", () => {
+    test("allows element target without typeName", () => {
       const item = makeItem("/element:person", DiagramItemType.element);
       const cmd = factory.createNodeDropCommand(item, PaletteSchemaConstruct.ComplexType);
       expect(cmd).not.toBeNull();
@@ -255,7 +255,7 @@ describe("DropCommandFactory", () => {
       expect(payload.typeName).toBeUndefined();
     });
 
-    it("uses the element itself as the replacement target when it already has an inline simpleType", () => {
+    test("uses the element itself as the replacement target when it already has an inline simpleType", () => {
       const item = makeItem("/element:person", DiagramItemType.element, {
         isSimpleContent: true,
       });
@@ -267,7 +267,7 @@ describe("DropCommandFactory", () => {
       expect(payload.typeName).toBeUndefined();
     });
 
-    it("rejects unsupported target", () => {
+    test("rejects unsupported target", () => {
       const item = makeItem("/group:G", DiagramItemType.group);
       const cmd = factory.createNodeDropCommand(item, PaletteSchemaConstruct.ComplexType);
       expect(cmd).toBeNull();
@@ -275,7 +275,7 @@ describe("DropCommandFactory", () => {
   });
 
   describe("createNodeDropCommand — group", () => {
-    it("allows schema root", () => {
+    test("allows schema root", () => {
       const item = makeItem("/schema", DiagramItemType.element);
       const cmd = factory.createNodeDropCommand(item, PaletteSchemaConstruct.Group);
       expect(cmd).not.toBeNull();
@@ -285,7 +285,7 @@ describe("DropCommandFactory", () => {
       );
     });
 
-    it("rejects non-root target", () => {
+    test("rejects non-root target", () => {
       const item = makeItem("/complexType:C", DiagramItemType.type, { type: "complexType" });
       const cmd = factory.createNodeDropCommand(item, PaletteSchemaConstruct.Group);
       expect(cmd).toBeNull();
@@ -293,7 +293,7 @@ describe("DropCommandFactory", () => {
   });
 
   describe("createNodeDropCommand — restriction", () => {
-    it("creates an anonymous simpleType replacement for typed elements", () => {
+    test("creates an anonymous simpleType replacement for typed elements", () => {
       const item = makeItem("/element:code", DiagramItemType.element, { type: "CustomerCodeType" });
       const cmd = factory.createNodeDropCommand(item, PaletteSchemaConstruct.Restriction);
       expect(cmd).not.toBeNull();
@@ -304,7 +304,7 @@ describe("DropCommandFactory", () => {
       });
     });
 
-    it("modifies existing inline simpleType elements in place", () => {
+    test("modifies existing inline simpleType elements in place", () => {
       const item = makeItem("/element:code", DiagramItemType.element, {
         type: "<anonymous simpleType> (restricts xs:string)",
         isSimpleContent: true,
@@ -318,7 +318,7 @@ describe("DropCommandFactory", () => {
       });
     });
 
-    it("modifies existing inline complexType elements into restrictions in place", () => {
+    test("modifies existing inline complexType elements into restrictions in place", () => {
       const item = makeItem("/element:person", DiagramItemType.element, {
         type: "<anonymous complexType> (extends BasePersonType)",
         hasAnonymousComplexType: true,
@@ -335,7 +335,7 @@ describe("DropCommandFactory", () => {
       });
     });
 
-    it("modifies named complexType nodes into restrictions in place", () => {
+    test("modifies named complexType nodes into restrictions in place", () => {
       const item = makeItem("/complexType:PersonType", DiagramItemType.type, {
         type: "complexType (extends BasePersonType)",
       });
@@ -351,7 +351,7 @@ describe("DropCommandFactory", () => {
       });
     });
 
-    it("defaults complexType restrictions to xs:anyType when no base can be inferred", () => {
+    test("defaults complexType restrictions to xs:anyType when no base can be inferred", () => {
       const item = makeItem("/complexType:ChoiceType", DiagramItemType.type, {
         type: "complexType",
       });
@@ -369,7 +369,7 @@ describe("DropCommandFactory", () => {
   });
 
   describe("createNodeDropCommand — extension", () => {
-    it("creates an anonymous complexType extension for typed elements", () => {
+    test("creates an anonymous complexType extension for typed elements", () => {
       const item = makeItem("/element:person", DiagramItemType.element, { type: "PersonType" });
       const cmd = factory.createNodeDropCommand(item, PaletteSchemaConstruct.Extension);
       expect(cmd).not.toBeNull();
@@ -385,7 +385,7 @@ describe("DropCommandFactory", () => {
     });
 
     describe("createNodeDropCommand — compositors", () => {
-      it("modifies named complexType content model", () => {
+      test("modifies named complexType content model", () => {
         const item = makeItem("/complexType:PersonType", DiagramItemType.type, {
           type: "complexType",
         });
@@ -401,7 +401,7 @@ describe("DropCommandFactory", () => {
         });
       });
 
-      it("modifies inline anonymous complexType content model", () => {
+      test("modifies inline anonymous complexType content model", () => {
         const item = makeItem("/element:person", DiagramItemType.element, {
           hasAnonymousComplexType: true,
         });
@@ -417,7 +417,7 @@ describe("DropCommandFactory", () => {
         });
       });
 
-      it("adds complexType with dropped content model for plain elements", () => {
+      test("adds complexType with dropped content model for plain elements", () => {
         const item = makeItem("/element:person", DiagramItemType.element);
 
         const cmd = factory.createNodeDropCommand(item, PaletteSchemaConstruct.Sequence);
@@ -431,7 +431,7 @@ describe("DropCommandFactory", () => {
         });
       });
 
-      it("modifies top-level named groups", () => {
+      test("modifies top-level named groups", () => {
         const item = makeItem("/group:PeopleGroup", DiagramItemType.group);
 
         const cmd = factory.createNodeDropCommand(item, PaletteSchemaConstruct.Choice);
@@ -445,7 +445,7 @@ describe("DropCommandFactory", () => {
         });
       });
 
-      it("rejects compositor drop on compositor-group nodes", () => {
+      test("rejects compositor drop on compositor-group nodes", () => {
         const item = makeItem("/complexType:PersonType/group:sequence[0]", DiagramItemType.group, {
           groupType: DiagramItemGroupType.Sequence,
         });
@@ -456,7 +456,7 @@ describe("DropCommandFactory", () => {
       });
     });
 
-    it("modifies existing inline complexType elements in place", () => {
+    test("modifies existing inline complexType elements in place", () => {
       const item = makeItem("/element:person", DiagramItemType.element, {
         type: "<anonymous complexType> (extends BasePersonType)",
         hasAnonymousComplexType: true,
@@ -473,7 +473,7 @@ describe("DropCommandFactory", () => {
       });
     });
 
-    it("defaults complexType extensions to xs:anyType when no base can be inferred", () => {
+    test("defaults complexType extensions to xs:anyType when no base can be inferred", () => {
       const item = makeItem("/complexType:ChoiceType", DiagramItemType.type, {
         type: "complexType",
       });
@@ -491,7 +491,7 @@ describe("DropCommandFactory", () => {
   });
 
   describe("createNodeDropCommand — facets", () => {
-    it("adds a default facet to a restriction simpleType", () => {
+    test("adds a default facet to a restriction simpleType", () => {
       const item = makeItem("/simpleType:Status", DiagramItemType.type, {
         type: "simpleType (restricts xs:string)",
         simpleTypeDerivationKind: "restriction",
@@ -523,7 +523,7 @@ describe("DropCommandFactory", () => {
       });
     });
 
-    it.each(["list", "union"] as const)("rejects facet drops on %s simpleTypes", (kind) => {
+    test.each(["list", "union"] as const)("rejects facet drops on %s simpleTypes", (kind) => {
       const item = makeItem("/simpleType:Values", DiagramItemType.type, {
         type: `simpleType (${kind})`,
         simpleTypeDerivationKind: kind,
@@ -534,7 +534,7 @@ describe("DropCommandFactory", () => {
   });
 
   describe("name generation and schema updates", () => {
-    it("avoids top-level name collisions from schema", () => {
+    test("avoids top-level name collisions from schema", () => {
       factory.updateNamesFromSchema({
         element: [{ name: "Element1" }, { name: "Element2" }],
         attribute: [{ name: "Attribute1" }],
@@ -566,7 +566,7 @@ describe("DropCommandFactory", () => {
       );
     });
 
-    it("resets cached names on updateSchema", () => {
+    test("resets cached names on updateSchema", () => {
       factory.updateNamesFromSchema({ element: [{ name: "Element1" }] });
       const first = factory.createTopLevelDropCommand(PaletteSchemaConstruct.Element);
       expect((first! as { payload: { elementName: string } }).payload.elementName).toBe(
@@ -580,7 +580,7 @@ describe("DropCommandFactory", () => {
       );
     });
 
-    it("does not consume generated names during canDrop validation", () => {
+    test("does not consume generated names during canDrop validation", () => {
       const root = makeItem("/schema", DiagramItemType.element);
 
       // Simulate repeated dragover checks.
@@ -594,7 +594,7 @@ describe("DropCommandFactory", () => {
       );
     });
 
-    it("still increments after clashes when validation runs first", () => {
+    test("still increments after clashes when validation runs first", () => {
       factory.updateNamesFromSchema({ element: [{ name: "Element1" }] });
       const root = makeItem("/schema", DiagramItemType.element);
 
@@ -609,13 +609,13 @@ describe("DropCommandFactory", () => {
   });
 
   describe("canDropOnNode", () => {
-    it("matches createNodeDropCommand validity for supported drops", () => {
+    test("matches createNodeDropCommand validity for supported drops", () => {
       const root = makeItem("/schema", DiagramItemType.element);
       expect(factory.canDropOnNode(root, PaletteSchemaConstruct.Group)).toBe(true);
       expect(factory.createNodeDropCommand(root, PaletteSchemaConstruct.Group)).not.toBeNull();
     });
 
-    it("rejects unsupported target/construct combinations", () => {
+    test("rejects unsupported target/construct combinations", () => {
       const simpleTypeNode = makeItem("/simpleType:S", DiagramItemType.type, {
         type: "simpleType",
       });

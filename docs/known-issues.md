@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-29T06:58:32Z }
-verified: { by: human:neumaennl, at: 2026-10-29T07:47:32Z }
+generated: { by: human:neumaennl, at: 2026-10-29T10:10:47Z }
+verified: { by: human:neumaennl, at: 2026-10-29T11:47:28Z }
 ---
 
 # Purpose
@@ -383,14 +383,6 @@ Effort:
 - **Severity:** Low
 - **Effort:** S
 - **Description:** The limits of 500 lines per file and 120 lines per function in the [development guidelines](development-guidelines.md#code-size) do not apply to tests for now. Many test files are longer than 500 lines, and the `describe` callbacks that contain the tests are usually longer than 120 lines. Applying the function limit to these callbacks makes little sense, but without any limit test files can grow without bound. The rule needs to be refined, for example with a higher file limit for tests, a limit for single tests instead of `describe` callbacks, or splitting test files by topic.
-- **GitHub issue:** none
-
-## Most test files use `it()` instead of `test()`
-
-- **Location:** 50 of the 66 Vitest test files, in `src/`, `shared/`, `webview-src/` and `scripts/`
-- **Severity:** Low
-- **Effort:** S
-- **Description:** The [test conventions](testing.md#files-and-structure) ask for `test("should …")`, but most Vitest test files use `it("should …")`. Vitest treats both the same, and no file mixes them, but the two styles make the tests look inconsistent, and new tests in these files follow the deviating style. The fix is to rename `it(` and `it.each(` to `test(` and `test.each(` in these files, and then to enable the ESLint rule `vitest/consistent-test-it` with `{ fn: "test", withinDescribe: "test" }` in `eslint.config.mjs`, so that ESLint enforces the style. This is planned for Phase 9 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340), on the editor branch, which has more of these tests.
 - **GitHub issue:** none
 
 ## Documentation in the diagram is cut off and hard to read

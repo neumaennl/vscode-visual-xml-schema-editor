@@ -52,7 +52,7 @@ describe("PropertiesPanel", () => {
     diagram = new Diagram();
   });
 
-  it("renders tabs and general values for selected node", () => {
+  test("renders tabs and general values for selected node", () => {
     expect.hasAssertions();
     const item = new DiagramItem("test-1", "TestItem", DiagramItemType.element, diagram);
     item.type = "xs:string";
@@ -67,7 +67,7 @@ describe("PropertiesPanel", () => {
     expect(getInputByLabel(container, "Type").value).toBe("xs:string");
   });
 
-  it("renders a node-type header above the tab bar", () => {
+  test("renders a node-type header above the tab bar", () => {
     expect.hasAssertions();
     const item = new DiagramItem("/element:person", "person", DiagramItemType.element, diagram);
 
@@ -79,7 +79,7 @@ describe("PropertiesPanel", () => {
     expect(header.nextElementSibling?.classList.contains("property-tabs")).toBe(true);
   });
 
-  it("dispatches removeElement when the header delete button is clicked", () => {
+  test("dispatches removeElement when the header delete button is clicked", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
@@ -96,7 +96,7 @@ describe("PropertiesPanel", () => {
     });
   });
 
-  it("dispatches removeGroup when deleting a compositor group", () => {
+  test("dispatches removeGroup when deleting a compositor group", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
@@ -117,7 +117,7 @@ describe("PropertiesPanel", () => {
     });
   });
 
-  it("does not render a header delete button for schema nodes", () => {
+  test("does not render a header delete button for schema nodes", () => {
     expect.hasAssertions();
     const schemaRoot = new DiagramItem(SCHEMA_ROOT_ID, "schema", DiagramItemType.group, diagram);
 
@@ -126,7 +126,7 @@ describe("PropertiesPanel", () => {
     expect(container.querySelector("button[title='Delete node']")).toBeNull();
   });
 
-  it("renders attributes safely without innerHTML interpolation", () => {
+  test("renders attributes safely without innerHTML interpolation", () => {
     expect.hasAssertions();
     const item = new DiagramItem("test-1", "TestItem", DiagramItemType.element, diagram);
     item.attributes = [
@@ -140,7 +140,7 @@ describe("PropertiesPanel", () => {
     expect(container.innerHTML).not.toContain("<strong><unsafe></strong>");
   });
 
-  it.each([
+  test.each([
     ["schema", SCHEMA_ROOT_ID, DiagramItemType.group],
     ["element", "/element:person", DiagramItemType.element],
     ["complex type", "/complexType:PersonType", DiagramItemType.type],
@@ -155,7 +155,7 @@ describe("PropertiesPanel", () => {
     expect(container.textContent).toContain("status");
   });
 
-  it("does not render the child count", () => {
+  test("does not render the child count", () => {
     expect.hasAssertions();
     const item = new DiagramItem("/element:person", "person", DiagramItemType.element, diagram);
     item.childElements = [new DiagramItem("/element:person/element:name", "name", DiagramItemType.element, diagram)];
@@ -165,7 +165,7 @@ describe("PropertiesPanel", () => {
     expect(hasLabel(container, "Children")).toBe(false);
   });
 
-  it("shows facet fields when facet tab is selected", () => {
+  test("shows facet fields when facet tab is selected", () => {
     expect.hasAssertions();
     const item = new DiagramItem("test-1", "TokenType", DiagramItemType.type, diagram);
     item.type = "xs:string";
@@ -191,7 +191,7 @@ describe("PropertiesPanel", () => {
     expect(getInputByLabel(container, "Max Length").value).toBe("5");
   });
 
-  it("reorders enumeration values via drag and drop", () => {
+  test("reorders enumeration values via drag and drop", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
@@ -259,7 +259,7 @@ describe("PropertiesPanel", () => {
     });
   });
 
-  it("shows structured docs fields in docs tab", () => {
+  test("shows structured docs fields in docs tab", () => {
     expect.hasAssertions();
     const item = new DiagramItem("test-1", "TestItem", DiagramItemType.element, diagram);
     item.documentationAnnotations = [
@@ -280,7 +280,7 @@ describe("PropertiesPanel", () => {
     expect((textarea as HTMLTextAreaElement).value).toBe("Doc text");
   });
 
-  it("renders annotation delete as an icon-only button next to the annotation label", () => {
+  test("renders annotation delete as an icon-only button next to the annotation label", () => {
     expect.hasAssertions();
     const item = new DiagramItem(SCHEMA_ROOT_ID, "schema", DiagramItemType.group, diagram);
     item.documentationAnnotations = [
@@ -306,7 +306,7 @@ describe("PropertiesPanel", () => {
     expect(deleteButton.textContent?.trim()).toBe("");
   });
 
-  it("preserves multi-line documentation in the docs tab", () => {
+  test("preserves multi-line documentation in the docs tab", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
@@ -342,7 +342,7 @@ describe("PropertiesPanel", () => {
     });
   });
 
-  it("dispatches modifyElement when name is changed", () => {
+  test("dispatches modifyElement when name is changed", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
@@ -359,7 +359,7 @@ describe("PropertiesPanel", () => {
     });
   });
 
-  it("does not dispatch a rename command when the name is unchanged", () => {
+  test("does not dispatch a rename command when the name is unchanged", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
@@ -373,7 +373,7 @@ describe("PropertiesPanel", () => {
     expect(dispatch).not.toHaveBeenCalled();
   });
 
-  it("does not dispatch duplicate rename commands for the same node/name replay", () => {
+  test("does not dispatch duplicate rename commands for the same node/name replay", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
@@ -399,7 +399,7 @@ describe("PropertiesPanel", () => {
     });
   });
 
-  it("shows non-editable name for compositor groups", () => {
+  test("shows non-editable name for compositor groups", () => {
     expect.hasAssertions();
     const item = new DiagramItem(
       "/complexType:PersonType/group:sequence[0]",
@@ -419,7 +419,7 @@ describe("PropertiesPanel", () => {
     expect(container.textContent).toContain("sequence");
   });
 
-  it("dispatches modifyElement when minOccurs is changed", () => {
+  test("dispatches modifyElement when minOccurs is changed", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
@@ -438,7 +438,7 @@ describe("PropertiesPanel", () => {
     });
   });
 
-  it("does not show occurrence fields for top-level elements", () => {
+  test("does not show occurrence fields for top-level elements", () => {
     expect.hasAssertions();
     const item = new DiagramItem("/element:item", "item", DiagramItemType.element, diagram);
     item.minOccurrence = 0;
@@ -451,7 +451,7 @@ describe("PropertiesPanel", () => {
     expect(hasLabel(container, "Cardinality")).toBe(false);
   });
 
-  it("does not show cardinality fields for schema nodes", () => {
+  test("does not show cardinality fields for schema nodes", () => {
     expect.hasAssertions();
     const item = new DiagramItem(SCHEMA_ROOT_ID, "schema", DiagramItemType.group, diagram);
 
@@ -462,7 +462,7 @@ describe("PropertiesPanel", () => {
     expect(hasLabel(container, "Cardinality")).toBe(false);
   });
 
-  it("does not show cardinality fields for the actual schema root item", () => {
+  test("does not show cardinality fields for the actual schema root item", () => {
     expect.hasAssertions();
     const item = new DiagramItem(SCHEMA_ROOT_ID, "schema", DiagramItemType.element, diagram);
 
@@ -473,7 +473,7 @@ describe("PropertiesPanel", () => {
     expect(hasLabel(container, "Cardinality")).toBe(false);
   });
 
-  it("does not show cardinality fields for complexType nodes", () => {
+  test("does not show cardinality fields for complexType nodes", () => {
     expect.hasAssertions();
     const item = new DiagramItem("/complexType:PersonType", "PersonType", DiagramItemType.type, diagram);
 
@@ -484,7 +484,7 @@ describe("PropertiesPanel", () => {
     expect(hasLabel(container, "Cardinality")).toBe(false);
   });
 
-  it("does not show cardinality fields for simpleType nodes", () => {
+  test("does not show cardinality fields for simpleType nodes", () => {
     expect.hasAssertions();
     const item = new DiagramItem("/simpleType:CodeType", "CodeType", DiagramItemType.type, diagram);
 
@@ -495,7 +495,7 @@ describe("PropertiesPanel", () => {
     expect(hasLabel(container, "Cardinality")).toBe(false);
   });
 
-  it("dispatches modifyGroup when group cardinality is changed", () => {
+  test("dispatches modifyGroup when group cardinality is changed", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
@@ -519,7 +519,7 @@ describe("PropertiesPanel", () => {
     });
   });
 
-  it("dispatches modifyComplexType when complexType constraints are changed", () => {
+  test("dispatches modifyComplexType when complexType constraints are changed", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
@@ -553,7 +553,7 @@ describe("PropertiesPanel", () => {
     });
   });
 
-  it("dispatches modifySimpleType when facets are edited", () => {
+  test("dispatches modifySimpleType when facets are edited", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
@@ -606,7 +606,7 @@ describe("PropertiesPanel", () => {
     });
   });
 
-  it("removes a facet while retaining another restriction facet", () => {
+  test("removes a facet while retaining another restriction facet", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
@@ -642,7 +642,7 @@ describe("PropertiesPanel", () => {
     });
   });
 
-  it("disables removal for the final restriction facet", () => {
+  test("disables removal for the final restriction facet", () => {
     expect.hasAssertions();
     const item = new DiagramItem("/simpleType:TokenType", "TokenType", DiagramItemType.type, diagram);
     item.type = "simpleType (restricts xs:string)";
@@ -656,7 +656,7 @@ describe("PropertiesPanel", () => {
     expect((removePattern as HTMLButtonElement).disabled).toBe(true);
   });
 
-  it("disables removal of the last enumeration value when it is the only facet", () => {
+  test("disables removal of the last enumeration value when it is the only facet", () => {
     expect.hasAssertions();
     const item = new DiagramItem("/simpleType:TokenType", "TokenType", DiagramItemType.type, diagram);
     item.type = "simpleType (restricts xs:string)";
@@ -670,7 +670,7 @@ describe("PropertiesPanel", () => {
     expect(removeValue.title).toBe("A restriction requires at least one facet");
   });
 
-  it("dispatches documentation command from docs tab", () => {
+  test("dispatches documentation command from docs tab", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
@@ -699,7 +699,7 @@ describe("PropertiesPanel", () => {
     expect(container.textContent).not.toContain("Save Documentation");
   });
 
-  it.each(["sequence", "choice", "all"] as const)(
+  test.each(["sequence", "choice", "all"] as const)(
     "shows %s compositor documentation in the docs tab",
     (compositor) => {
       expect.hasAssertions();
@@ -729,7 +729,7 @@ describe("PropertiesPanel", () => {
     }
   );
 
-  it("adds schema-root documentation through the structured docs flow", () => {
+  test("adds schema-root documentation through the structured docs flow", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
@@ -755,7 +755,7 @@ describe("PropertiesPanel", () => {
     expect(textarea?.value).toBe("New documentation");
   });
 
-  it("renders structured annotations and supports adding/removing documentation entries", () => {
+  test("renders structured annotations and supports adding/removing documentation entries", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
@@ -812,7 +812,7 @@ describe("PropertiesPanel", () => {
     });
   });
 
-  it("lets the schema add additional annotation sections in the docs tab", () => {
+  test("lets the schema add additional annotation sections in the docs tab", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
@@ -844,7 +844,7 @@ describe("PropertiesPanel", () => {
     expect(container.textContent).toContain("Annotation 2");
   });
 
-  it("shows the Facets tab for simple type nodes and elements with inline simple types", () => {
+  test("shows the Facets tab for simple type nodes and elements with inline simple types", () => {
     expect.hasAssertions();
     const element = new DiagramItem("/element:person", "person", DiagramItemType.element, diagram);
     element.type = "xs:string";
@@ -868,7 +868,7 @@ describe("PropertiesPanel", () => {
     expect(container.textContent).toContain("Facets");
   });
 
-  it("hides the Facets tab for list and union simple types", () => {
+  test("hides the Facets tab for list and union simple types", () => {
     expect.hasAssertions();
     const listType = new DiagramItem("/simpleType:TokenListType", "TokenListType", DiagramItemType.type, diagram);
     listType.type = "simpleType (list of xs:token)";
@@ -885,7 +885,7 @@ describe("PropertiesPanel", () => {
     expect(container.textContent).not.toContain("Facets");
   });
 
-  it("edits simple type base types through a dedicated Base Type field", () => {
+  test("edits simple type base types through a dedicated Base Type field", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
@@ -907,7 +907,7 @@ describe("PropertiesPanel", () => {
     });
   });
 
-  it("edits simpleType list item types", () => {
+  test("edits simpleType list item types", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
@@ -931,7 +931,7 @@ describe("PropertiesPanel", () => {
     });
   });
 
-  it("lets users switch a simpleType between restriction and list kinds", () => {
+  test("lets users switch a simpleType between restriction and list kinds", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
@@ -954,7 +954,7 @@ describe("PropertiesPanel", () => {
     });
   });
 
-  it("uses structured simpleType fields instead of parsing display text for list editing", () => {
+  test("uses structured simpleType fields instead of parsing display text for list editing", () => {
     expect.hasAssertions();
     const item = new DiagramItem("/simpleType:TokenListType", "TokenListType", DiagramItemType.type, diagram);
     item.type = "simpleType";
@@ -966,7 +966,7 @@ describe("PropertiesPanel", () => {
     expect(hasLabel(container, "Base Type")).toBe(false);
   });
 
-  it("edits simpleType union member types", () => {
+  test("edits simpleType union member types", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
@@ -1000,7 +1000,7 @@ describe("PropertiesPanel", () => {
     });
   });
 
-  it("does not dispatch a second command when Base Type blur is unchanged after stale simpleType rename replay", () => {
+  test("does not dispatch a second command when Base Type blur is unchanged after stale simpleType rename replay", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
@@ -1043,7 +1043,7 @@ describe("PropertiesPanel", () => {
     });
   });
 
-  it("keeps computed complex type summaries read-only", () => {
+  test("keeps computed complex type summaries read-only", () => {
     expect.hasAssertions();
     const item = new DiagramItem("/complexType:PersonType", "PersonType", DiagramItemType.type, diagram);
     item.type = "complexType with simpleContent";
@@ -1056,7 +1056,7 @@ describe("PropertiesPanel", () => {
     expect(container.textContent).not.toContain("Replacement Type");
   });
 
-  it("keeps non-resolved simple type labels read-only", () => {
+  test("keeps non-resolved simple type labels read-only", () => {
     expect.hasAssertions();
     const item = new DiagramItem("/simpleType:TokenType", "TokenType", DiagramItemType.type, diagram);
     item.type = "simpleType";
@@ -1067,7 +1067,7 @@ describe("PropertiesPanel", () => {
     expect(container.querySelectorAll("input")).toHaveLength(1);
   });
 
-  it("offers known schema types as suggestions while keeping type inputs free-form", () => {
+  test("offers known schema types as suggestions while keeping type inputs free-form", () => {
     expect.hasAssertions();
     const schemaRoot = new DiagramItem(SCHEMA_ROOT_ID, "schema", DiagramItemType.group, diagram);
     diagram.currentSchemaPrefix = "tns";
@@ -1097,7 +1097,7 @@ describe("PropertiesPanel", () => {
     expect(options).toContain("tns:CustomerType");
   });
 
-  it("uses targetNamespace prefix for local type references when available", () => {
+  test("uses targetNamespace prefix for local type references when available", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
@@ -1131,7 +1131,7 @@ describe("PropertiesPanel", () => {
     });
   });
 
-  it("shows editable targetNamespace and namespace declarations for the schema node", () => {
+  test("shows editable targetNamespace and namespace declarations for the schema node", () => {
     expect.hasAssertions();
     const schemaRoot = new DiagramItem(SCHEMA_ROOT_ID, "schema", DiagramItemType.group, diagram);
     diagram.schemaTargetNamespace = "http://example.com/original";
@@ -1146,7 +1146,7 @@ describe("PropertiesPanel", () => {
     expect(container.querySelectorAll(".property-namespace-row").length).toBe(2);
   });
 
-  it("updates the matching namespace declaration when targetNamespace changes", () => {
+  test("updates the matching namespace declaration when targetNamespace changes", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
@@ -1180,7 +1180,7 @@ describe("PropertiesPanel", () => {
     });
   });
 
-  it("updates targetNamespace when the corresponding namespace declaration URI changes", () => {
+  test("updates targetNamespace when the corresponding namespace declaration URI changes", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
@@ -1222,7 +1222,7 @@ describe("PropertiesPanel", () => {
     });
   });
 
-  it("lets elements with inline complex types replace them with an explicit type", () => {
+  test("lets elements with inline complex types replace them with an explicit type", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
@@ -1248,7 +1248,7 @@ describe("PropertiesPanel", () => {
     });
   });
 
-  it("lets elements with inline simple types replace them with an explicit type", () => {
+  test("lets elements with inline simple types replace them with an explicit type", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
@@ -1275,7 +1275,7 @@ describe("PropertiesPanel", () => {
     });
   });
 
-  it("edits inline simple type base types from the selected element", () => {
+  test("edits inline simple type base types from the selected element", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
@@ -1302,7 +1302,7 @@ describe("PropertiesPanel", () => {
     });
   });
 
-  it("edits inline complex type extension bases from the selected element", () => {
+  test("edits inline complex type extension bases from the selected element", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
@@ -1330,7 +1330,7 @@ describe("PropertiesPanel", () => {
     });
   });
 
-  it("limits non-schema docs editing to a single annotation section", () => {
+  test("limits non-schema docs editing to a single annotation section", () => {
     expect.hasAssertions();
     const item = new DiagramItem("/element:person", "person", DiagramItemType.element, diagram);
     item.documentationAnnotations = [
@@ -1357,7 +1357,7 @@ describe("PropertiesPanel", () => {
     expect(container.textContent).not.toContain("Add annotation");
   });
 
-  it("renders documentation delete as an icon-only button next to the label with a tooltip", () => {
+  test("renders documentation delete as an icon-only button next to the label with a tooltip", () => {
     expect.hasAssertions();
     const item = new DiagramItem("/element:person", "person", DiagramItemType.element, diagram);
     item.documentationAnnotations = [
@@ -1382,7 +1382,7 @@ describe("PropertiesPanel", () => {
     expect(deleteButton.textContent?.trim()).toBe("");
   });
 
-  it("keeps edited draft values visible when switching tabs", () => {
+  test("keeps edited draft values visible when switching tabs", () => {
     expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
@@ -1416,7 +1416,7 @@ describe("PropertiesPanel", () => {
     expect(getInputByLabel(container, "maxOccurs").value).toBe("7");
   });
 
-  it("renders unbounded in XML tab when maxOccurrence is unlimited", () => {
+  test("renders unbounded in XML tab when maxOccurrence is unlimited", () => {
     expect.hasAssertions();
     const item = new DiagramItem("/element:root/element:item[0]", "item", DiagramItemType.element, diagram);
     item.minOccurrence = 0;
@@ -1432,7 +1432,7 @@ describe("PropertiesPanel", () => {
     expect(xmlPreview?.textContent).toContain('maxOccurs="unbounded"');
   });
 
-  it("renders compositor nodes as XML fragments in the XML tab", () => {
+  test("renders compositor nodes as XML fragments in the XML tab", () => {
     expect.hasAssertions();
     const sequence = new DiagramItem(
       "/complexType:OrderType/group:sequence[0]",
@@ -1463,7 +1463,7 @@ describe("PropertiesPanel", () => {
     expect(xmlPreview?.textContent).toContain('<xs:element name="item" type="xs:string"/>');
   });
 
-  it("renders simpleType nodes in the XML tab even when the parsed node type is namespaced", () => {
+  test("renders simpleType nodes in the XML tab even when the parsed node type is namespaced", () => {
     expect.hasAssertions();
     const item = new DiagramItem(
       "/xs:simpleType:TokenType",
@@ -1483,7 +1483,7 @@ describe("PropertiesPanel", () => {
     expect(xmlPreview?.textContent).toContain('<xs:simpleType name="TokenType"');
   });
 
-  it("truncates deep XML preview content with an ellipsis marker", () => {
+  test("truncates deep XML preview content with an ellipsis marker", () => {
     expect.hasAssertions();
     const schemaRoot = new DiagramItem(SCHEMA_ROOT_ID, "schema", DiagramItemType.group, diagram);
 
@@ -1525,7 +1525,7 @@ describe("PropertiesPanel", () => {
     expect(xmlPreview?.textContent).not.toContain('name="lineItem"');
   });
 
-  it("only renders editable controls for existing facets", () => {
+  test("only renders editable controls for existing facets", () => {
     expect.hasAssertions();
     const item = new DiagramItem("/simpleType:TokenType", "TokenType", DiagramItemType.type, diagram);
     item.type = "simpleType (restricts xs:string)";
@@ -1546,7 +1546,7 @@ describe("PropertiesPanel", () => {
     expect(hasLabel(container, "Enumeration")).toBe(false);
   });
 
-  it("shows a palette hint when no facets exist yet", () => {
+  test("shows a palette hint when no facets exist yet", () => {
     expect.hasAssertions();
     const item = new DiagramItem("/simpleType:TokenType", "TokenType", DiagramItemType.type, diagram);
     item.type = "simpleType (restricts xs:string)";
@@ -1561,7 +1561,7 @@ describe("PropertiesPanel", () => {
     expect(container.textContent).toContain("This type has no facets yet");
   });
 
-  it("clear removes all rendered content", () => {
+  test("clear removes all rendered content", () => {
     expect.hasAssertions();
     const item = new DiagramItem("test-1", "TestItem", DiagramItemType.element, diagram);
     panel.display(item);

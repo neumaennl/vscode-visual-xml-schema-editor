@@ -19,7 +19,7 @@ import { toArray } from "../../shared/schemaUtils.js";
 
 describe("Group Executors", () => {
   describe("executeAddGroup", () => {
-    it("should add a group with a sequence content model", () => {
+    test("should add a group with a sequence content model", () => {
       const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
 </xs:schema>`;
@@ -43,7 +43,7 @@ describe("Group Executors", () => {
       expect(grp.all).toBeUndefined();
     });
 
-    it("should add a group with a choice content model", () => {
+    test("should add a group with a choice content model", () => {
       const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
 </xs:schema>`;
@@ -65,7 +65,7 @@ describe("Group Executors", () => {
       expect(grp.all).toBeUndefined();
     });
 
-    it("should add a group with an all content model", () => {
+    test("should add a group with an all content model", () => {
       const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
 </xs:schema>`;
@@ -87,7 +87,7 @@ describe("Group Executors", () => {
       expect(grp.choice).toBeUndefined();
     });
 
-    it("should add a group with documentation", () => {
+    test("should add a group with documentation", () => {
       const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
 </xs:schema>`;
@@ -109,7 +109,7 @@ describe("Group Executors", () => {
       expect(grp.annotation!.documentation![0].value).toBe("A documented group");
     });
 
-    it("should append to existing groups", () => {
+    test("should append to existing groups", () => {
       const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:group name="ExistingGroup">
@@ -132,7 +132,7 @@ describe("Group Executors", () => {
       expect(toArray(schemaObj.group)[1].name).toBe("NewGroup");
     });
 
-    it("should produce valid XSD output (round-trip)", () => {
+    test("should produce valid XSD output (round-trip)", () => {
       const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
 </xs:schema>`;
@@ -158,7 +158,7 @@ describe("Group Executors", () => {
   });
 
   describe("executeRemoveGroup", () => {
-    it("should remove a group by ID", () => {
+    test("should remove a group by ID", () => {
       const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:group name="PersonGroup">
@@ -179,7 +179,7 @@ describe("Group Executors", () => {
       expect(schemaObj.group).toBeUndefined();
     });
 
-    it("should remove one group while leaving others intact", () => {
+    test("should remove one group while leaving others intact", () => {
       const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:group name="GroupA">
@@ -204,7 +204,7 @@ describe("Group Executors", () => {
       expect(toArray(schemaObj.group)[0].name).toBe("GroupB");
     });
 
-    it("should remove a compositor group from a complexType", () => {
+    test("should remove a compositor group from a complexType", () => {
       const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:complexType name="PersonType">
@@ -230,7 +230,7 @@ describe("Group Executors", () => {
   });
 
   describe("executeModifyGroup", () => {
-    it("should rename a group", () => {
+    test("should rename a group", () => {
       const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:group name="OldName">
@@ -253,7 +253,7 @@ describe("Group Executors", () => {
       expect(grp.name).toBe("NewName");
     });
 
-    it("should rename group refs when a top-level group is renamed", () => {
+    test("should rename group refs when a top-level group is renamed", () => {
       const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:group name="OldName">
@@ -279,7 +279,7 @@ describe("Group Executors", () => {
       expect(toArray(schemaObj.complexType)[0].group!.ref).toBe("NewName");
     });
 
-    it("should change the content model of a group", () => {
+    test("should change the content model of a group", () => {
       const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:group name="MyGroup">
@@ -304,7 +304,7 @@ describe("Group Executors", () => {
       expect(grp.all).toBeUndefined();
     });
 
-    it("should update the documentation of a group", () => {
+    test("should update the documentation of a group", () => {
       const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:group name="DocGroup">
@@ -330,7 +330,7 @@ describe("Group Executors", () => {
       );
     });
 
-    it("should update name, content model, and documentation together", () => {
+    test("should update name, content model, and documentation together", () => {
       const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:group name="OriginalGroup">
@@ -358,7 +358,7 @@ describe("Group Executors", () => {
       expect(grp.annotation!.documentation![0].value).toBe("New doc");
     });
 
-    it("should leave unchanged properties untouched", () => {
+    test("should leave unchanged properties untouched", () => {
       const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:group name="StableGroup">
@@ -382,7 +382,7 @@ describe("Group Executors", () => {
       expect(grp.sequence).toBeDefined();
     });
 
-    it("should modify occurrence constraints on a compositor group", () => {
+    test("should modify occurrence constraints on a compositor group", () => {
       const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:complexType name="PersonType">
@@ -425,7 +425,7 @@ describe("Group Executors", () => {
 </xs:schema>`;
 
     describe("executeAddGroup (reference mode)", () => {
-      it("should add a group reference to a sequence", () => {
+      test("should add a group reference to a sequence", () => {
         const schemaObj = unmarshal(schema, schemaWithGroupAndType);
 
         const command: AddGroupCommand = {
@@ -444,7 +444,7 @@ describe("Group Executors", () => {
         expect(refs[0].ref).toBe("PersonGroup");
       });
 
-      it("should add a group reference with minOccurs and maxOccurs", () => {
+      test("should add a group reference with minOccurs and maxOccurs", () => {
         const schemaObj = unmarshal(schema, schemaWithGroupAndType);
 
         const command: AddGroupCommand = {
@@ -465,7 +465,7 @@ describe("Group Executors", () => {
         expect(ref.maxOccurs).toBe("unbounded");
       });
 
-      it("should add multiple group references to the same sequence", () => {
+      test("should add multiple group references to the same sequence", () => {
         const schemaObj = unmarshal(schema, schemaWithGroupAndType);
 
         executeAddGroup(
@@ -483,7 +483,7 @@ describe("Group Executors", () => {
         expect(refs[1].ref).toBe("AddressGroup");
       });
 
-      it("should add a direct group reference on a complexType", () => {
+      test("should add a direct group reference on a complexType", () => {
         const schemaObj = unmarshal(schema, schemaWithGroupAndType);
 
         const command: AddGroupCommand = {
@@ -501,7 +501,7 @@ describe("Group Executors", () => {
         expect(ct.group!.ref).toBe("PersonGroup");
       });
 
-      it("should add a group reference with documentation annotation", () => {
+      test("should add a group reference with documentation annotation", () => {
         const schemaObj = unmarshal(schema, schemaWithGroupAndType);
 
         const command: AddGroupCommand = {
@@ -523,7 +523,7 @@ describe("Group Executors", () => {
     });
 
     describe("executeRemoveGroup (reference mode)", () => {
-      it("should remove a group reference from a sequence", () => {
+      test("should remove a group reference from a sequence", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:group name="PersonGroup"><xs:sequence/></xs:group>
@@ -546,7 +546,7 @@ describe("Group Executors", () => {
         expect(refs).toHaveLength(0);
       });
 
-      it("should remove only the matching group reference, leaving others intact", () => {
+      test("should remove only the matching group reference, leaving others intact", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:group name="PersonGroup"><xs:sequence/></xs:group>
@@ -572,7 +572,7 @@ describe("Group Executors", () => {
         expect(refs[0].ref).toBe("AddressGroup");
       });
 
-      it("should remove a direct group ref from a complexType", () => {
+      test("should remove a direct group ref from a complexType", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:group name="PersonGroup"><xs:sequence/></xs:group>
@@ -595,7 +595,7 @@ describe("Group Executors", () => {
     });
 
     describe("executeModifyGroup (reference mode)", () => {
-      it("should change the ref target of a group reference", () => {
+      test("should change the ref target of a group reference", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:group name="PersonGroup"><xs:sequence/></xs:group>
@@ -621,7 +621,7 @@ describe("Group Executors", () => {
         expect(refs[0].ref).toBe("AddressGroup");
       });
 
-      it("should update minOccurs and maxOccurs on a group reference", () => {
+      test("should update minOccurs and maxOccurs on a group reference", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:group name="PersonGroup"><xs:sequence/></xs:group>
@@ -649,7 +649,7 @@ describe("Group Executors", () => {
         expect(ref.maxOccurs).toBe("unbounded");
       });
 
-      it("should set documentation annotation on a group reference", () => {
+      test("should set documentation annotation on a group reference", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:group name="PersonGroup"><xs:sequence/></xs:group>
@@ -676,7 +676,7 @@ describe("Group Executors", () => {
         expect(ref.annotation!.documentation![0].value).toBe("Updated ref annotation");
       });
 
-      it("should modify a direct group ref on a complexType", () => {
+      test("should modify a direct group ref on a complexType", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:group name="PersonGroup"><xs:sequence/></xs:group>

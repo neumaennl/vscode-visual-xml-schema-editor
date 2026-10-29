@@ -114,7 +114,7 @@ describe("Integration: WorkspaceEdit via SchemaEditorProvider", () => {
   });
 
   describe("success path", () => {
-    it("creates a WorkspaceEdit and replies with commandResult { success: true }", async () => {
+    test("creates a WorkspaceEdit and replies with commandResult { success: true }", async () => {
       const { provider, document, webview, webviewPanel } = buildMocks();
       const handler = resolveAndGetHandler(provider, document, webviewPanel);
 
@@ -157,7 +157,7 @@ describe("Integration: WorkspaceEdit via SchemaEditorProvider", () => {
   });
 
   describe("validation failure path", () => {
-    it("routes validation errors to commandResult { success: false }", async () => {
+    test("routes validation errors to commandResult { success: false }", async () => {
       const { provider, document, webview, webviewPanel } = buildMocks();
       const handler = resolveAndGetHandler(provider, document, webviewPanel);
 
@@ -188,7 +188,7 @@ describe("Integration: WorkspaceEdit via SchemaEditorProvider", () => {
   });
 
   describe("runtime error path", () => {
-    it("routes CommandProcessor runtime throws to error { code: COMMAND_EXECUTION_ERROR }", async () => {
+    test("routes CommandProcessor runtime throws to error { code: COMMAND_EXECUTION_ERROR }", async () => {
       const { provider, document, webview, webviewPanel } = buildMocks();
       vi.spyOn(CommandProcessor.prototype, "execute").mockImplementation(() => {
         throw new Error("Unexpected failure in executor");
@@ -219,7 +219,7 @@ describe("Integration: WorkspaceEdit via SchemaEditorProvider", () => {
       );
     });
 
-    it("routes CommandProcessor errorKind 'runtime' to error message", async () => {
+    test("routes CommandProcessor errorKind 'runtime' to error message", async () => {
       const { provider, document, webview, webviewPanel } = buildMocks();
       vi.spyOn(CommandProcessor.prototype, "execute").mockReturnValue({
         success: false,
@@ -255,7 +255,7 @@ describe("Integration: WorkspaceEdit via SchemaEditorProvider", () => {
   });
 
   describe("applyEdit failure path", () => {
-    it("sends error message when vscode.workspace.applyEdit returns false", async () => {
+    test("sends error message when vscode.workspace.applyEdit returns false", async () => {
       (vscode.workspace.applyEdit as Mock).mockResolvedValue(false);
 
       const { provider, document, webview, webviewPanel } = buildMocks();
@@ -284,7 +284,7 @@ describe("Integration: WorkspaceEdit via SchemaEditorProvider", () => {
   });
 
   describe("undo/redo semantics", () => {
-    it("applies edits via WorkspaceEdit (VS Code owns undo/redo stack)", async () => {
+    test("applies edits via WorkspaceEdit (VS Code owns undo/redo stack)", async () => {
       const { provider, document, webview, webviewPanel } = buildMocks();
       const handler = resolveAndGetHandler(provider, document, webviewPanel);
 

@@ -15,7 +15,7 @@ import { toArray } from "../../shared/schemaUtils.js";
 describe("Element Executors", () => {
   describe("executeAddElement", () => {
     describe("Adding top-level elements", () => {
-      it("should add a simple top-level element to schema", () => {
+      test("should add a simple top-level element to schema", () => {
         const simpleSchemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
 </xs:schema>`;
@@ -42,7 +42,7 @@ describe("Element Executors", () => {
         expect(elements[0]!.type_).toBe("string");
       });
 
-      it("should add multiple top-level elements to schema", () => {
+      test("should add multiple top-level elements to schema", () => {
         const simpleSchemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
 </xs:schema>`;
@@ -79,7 +79,7 @@ describe("Element Executors", () => {
         expect(elements[1]!.name).toBe("company");
       });
 
-      it("should add top-level element with documentation", () => {
+      test("should add top-level element with documentation", () => {
         const simpleSchemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
 </xs:schema>`;
@@ -110,7 +110,7 @@ describe("Element Executors", () => {
     });
 
     describe("Adding elements to sequence", () => {
-      it("should add element to a sequence in a complex type", () => {
+      test("should add element to a sequence in a complex type", () => {
         const schemaWithSequenceXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:element name="person">
@@ -145,7 +145,7 @@ describe("Element Executors", () => {
         expect(elements[1]!.name).toBe("name");
       });
 
-      it("should add element to a sequence in complexContent extension using group parent ID", () => {
+      test("should add element to a sequence in complexContent extension using group parent ID", () => {
         const schemaWithExtensionXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:complexType name="WorkerType">
@@ -181,7 +181,7 @@ describe("Element Executors", () => {
   });
 
   describe("executeRemoveElement", () => {
-    it("should remove top-level element by name", () => {
+    test("should remove top-level element by name", () => {
       const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:element name="person" type="xs:string"/>
@@ -206,7 +206,7 @@ describe("Element Executors", () => {
       expect(elements[0]!.name).toBe("company");
     });
 
-    it("should remove element from sequence", () => {
+    test("should remove element from sequence", () => {
       const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:element name="person">
@@ -245,7 +245,7 @@ describe("Element Executors", () => {
 
   describe("executeModifyElement", () => {
     describe("Modifying top-level elements", () => {
-      it("should modify element name", () => {
+      test("should modify element name", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:element name="person" type="xs:string"/>
@@ -272,7 +272,7 @@ describe("Element Executors", () => {
         expect(elements[0]!.type_).toBe("xs:string");
       });
 
-      it("should modify element type", () => {
+      test("should modify element type", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:element name="person" type="xs:string"/>
@@ -299,7 +299,7 @@ describe("Element Executors", () => {
         expect(elements[0]!.type_).toBe("xs:int");
       });
 
-      it("should replace an inline anonymous complexType when setting an explicit element type", () => {
+      test("should replace an inline anonymous complexType when setting an explicit element type", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:element name="person">
@@ -327,7 +327,7 @@ describe("Element Executors", () => {
         expect(element.complexType).toBeUndefined();
       });
 
-      it("should replace an inline anonymous simpleType when setting an explicit element type", () => {
+      test("should replace an inline anonymous simpleType when setting an explicit element type", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:element name="code">
@@ -353,7 +353,7 @@ describe("Element Executors", () => {
         expect(element.simpleType).toBeUndefined();
       });
 
-      it("should rename top-level element refs and substitutionGroup references", () => {
+      test("should rename top-level element refs and substitutionGroup references", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:element name="person" type="xs:string"/>
@@ -382,7 +382,7 @@ describe("Element Executors", () => {
         expect(toArray(toArray(schemaObj.complexType)[0].sequence!.element)[0].ref).toBe("customer");
       });
 
-      it("should add documentation to element", () => {
+      test("should add documentation to element", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:element name="person" type="xs:string"/>
@@ -410,7 +410,7 @@ describe("Element Executors", () => {
     });
 
     describe("Modifying local elements", () => {
-      it("should modify element in sequence", () => {
+      test("should modify element in sequence", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:element name="person">
@@ -444,7 +444,7 @@ describe("Element Executors", () => {
         expect(elements[0]!.name).toBe("givenName");
       });
 
-      it("should modify minOccurs and maxOccurs", () => {
+      test("should modify minOccurs and maxOccurs", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:element name="person">
@@ -482,7 +482,7 @@ describe("Element Executors", () => {
     });
 
     describe("Round-trip XML serialization", () => {
-      it("should produce valid XML after modifying element", () => {
+      test("should produce valid XML after modifying element", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:element name="person" type="xs:string"/>
@@ -524,7 +524,7 @@ describe("Element Executors", () => {
   </xs:complexType>
 </xs:schema>`;
 
-    it("should add a reference element to a sequence", () => {
+    test("should add a reference element to a sequence", () => {
       const schemaObj = unmarshal(schema, baseXml);
 
       const command: AddElementCommand = {
@@ -547,7 +547,7 @@ describe("Element Executors", () => {
       expect(seqElements[0].type_).toBeUndefined();
     });
 
-    it("should add a reference element with minOccurs/maxOccurs", () => {
+    test("should add a reference element with minOccurs/maxOccurs", () => {
       const schemaObj = unmarshal(schema, baseXml);
 
       const command: AddElementCommand = {
@@ -571,7 +571,7 @@ describe("Element Executors", () => {
       expect(seqElements[0].maxOccurs).toBe("unbounded");
     });
 
-    it("should remove a reference element by ref name", () => {
+    test("should remove a reference element by ref name", () => {
       const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:element name="person" type="xs:string"/>
@@ -597,7 +597,7 @@ describe("Element Executors", () => {
       expect(seqElements).toHaveLength(0);
     });
 
-    it("should modify a named element to become a reference", () => {
+    test("should modify a named element to become a reference", () => {
       const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:element name="person" type="xs:string"/>
@@ -628,7 +628,7 @@ describe("Element Executors", () => {
       expect(seqElements[0].type_).toBeUndefined();
     });
 
-    it("should modify a reference element to become named", () => {
+    test("should modify a reference element to become named", () => {
       const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:element name="person" type="xs:string"/>
@@ -660,7 +660,7 @@ describe("Element Executors", () => {
       expect((seqElements[0]).ref).toBeUndefined();
     });
 
-    it("should produce valid XML for a reference element", () => {
+    test("should produce valid XML for a reference element", () => {
       const schemaObj = unmarshal(schema, baseXml);
 
       executeAddElement(

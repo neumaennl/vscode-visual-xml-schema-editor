@@ -54,17 +54,17 @@ describe("SchemaEditorProvider", () => {
   });
 
   describe("constructor", () => {
-    it("should create provider instance", () => {
+    test("should create provider instance", () => {
       expect(provider).toBeInstanceOf(SchemaEditorProvider);
     });
 
-    it("should store context", () => {
+    test("should store context", () => {
       expect(provider).toBeDefined();
     });
   });
 
   describe("resolveCustomTextEditor", () => {
-    it("should enable scripts in webview", () => {
+    test("should enable scripts in webview", () => {
       provider.resolveCustomTextEditor(
         mockDocument,
         mockWebviewPanel,
@@ -77,7 +77,7 @@ describe("SchemaEditorProvider", () => {
       });
     });
 
-    it("should set HTML content in webview", () => {
+    test("should set HTML content in webview", () => {
       provider.resolveCustomTextEditor(
         mockDocument,
         mockWebviewPanel,
@@ -88,7 +88,7 @@ describe("SchemaEditorProvider", () => {
       expect(mockWebview.html.length).toBeGreaterThan(0);
     });
 
-    it("should register document change listener", () => {
+    test("should register document change listener", () => {
       provider.resolveCustomTextEditor(
         mockDocument,
         mockWebviewPanel,
@@ -98,7 +98,7 @@ describe("SchemaEditorProvider", () => {
       expect(vscode.workspace.onDidChangeTextDocument).toHaveBeenCalled();
     });
 
-    it("should register message listener from webview", () => {
+    test("should register message listener from webview", () => {
       provider.resolveCustomTextEditor(
         mockDocument,
         mockWebviewPanel,
@@ -108,7 +108,7 @@ describe("SchemaEditorProvider", () => {
       expect(mockWebview.onDidReceiveMessage).toHaveBeenCalled();
     });
 
-    it("should parse and send schema to webview", () => {
+    test("should parse and send schema to webview", () => {
       provider.resolveCustomTextEditor(
         mockDocument,
         mockWebviewPanel,
@@ -119,7 +119,7 @@ describe("SchemaEditorProvider", () => {
       expect(mockPostMessage).toHaveBeenCalled();
     });
 
-    it("should handle empty document", () => {
+    test("should handle empty document", () => {
       // eslint-disable-next-line no-restricted-syntax -- partial stub; unused TextDocument fields omitted
       const emptyMockDocument = {
         uri: { toString: () => "/test/empty.xsd" } as vscode.Uri,
@@ -135,7 +135,7 @@ describe("SchemaEditorProvider", () => {
       }).not.toThrow();
     });
 
-    it("should create HTML that loads the webview bundle as an ES module", () => {
+    test("should create HTML that loads the webview bundle as an ES module", () => {
       provider.resolveCustomTextEditor(
         mockDocument,
         mockWebviewPanel,
@@ -146,7 +146,7 @@ describe("SchemaEditorProvider", () => {
       expect(mockWebview.html).toContain("</html>");
     });
 
-    it("should include webview resources in HTML", () => {
+    test("should include webview resources in HTML", () => {
       provider.resolveCustomTextEditor(
         mockDocument,
         mockWebviewPanel,
@@ -158,7 +158,7 @@ describe("SchemaEditorProvider", () => {
   });
 
   describe("HTML generation", () => {
-    it("should generate valid HTML structure", () => {
+    test("should generate valid HTML structure", () => {
       provider.resolveCustomTextEditor(
         mockDocument,
         mockWebviewPanel,
@@ -171,7 +171,7 @@ describe("SchemaEditorProvider", () => {
       expect(html).toContain("</html>");
     });
 
-    it("should include meta tags for security", () => {
+    test("should include meta tags for security", () => {
       provider.resolveCustomTextEditor(
         mockDocument,
         mockWebviewPanel,
@@ -184,7 +184,7 @@ describe("SchemaEditorProvider", () => {
   });
 
   describe("diagram options", () => {
-    it("should send diagram options to webview on initialization", () => {
+    test("should send diagram options to webview on initialization", () => {
       const mockConfig = {
         get: vi.fn((key: string, defaultValue: boolean) => {
           if (key === "showDocumentation") return true;
@@ -214,7 +214,7 @@ describe("SchemaEditorProvider", () => {
       );
     });
 
-    it("should use default values when configuration is not set", () => {
+    test("should use default values when configuration is not set", () => {
       const mockConfig = {
         get: vi.fn((_key: string, defaultValue: boolean) => defaultValue),
       };
@@ -270,7 +270,7 @@ describe("SchemaEditorProvider", () => {
       return handler;
     }
 
-    it("should send 'error' message with code and stack for runtime errors", async () => {
+    test("should send 'error' message with code and stack for runtime errors", async () => {
       vi.spyOn(CommandProcessor.prototype, "execute").mockReturnValue({
         success: false,
         errorKind: "runtime",
@@ -307,7 +307,7 @@ describe("SchemaEditorProvider", () => {
       expect(sentMsg.data.stack).toContain("executeAddElement");
     });
 
-    it("should send 'commandResult' with success:false for validation errors", async () => {
+    test("should send 'commandResult' with success:false for validation errors", async () => {
       vi.spyOn(CommandProcessor.prototype, "execute").mockReturnValue({
         success: false,
         errorKind: "validation",
@@ -339,7 +339,7 @@ describe("SchemaEditorProvider", () => {
       );
     });
 
-    it("should send 'error' message with code and stack when commandProcessor throws", async () => {
+    test("should send 'error' message with code and stack when commandProcessor throws", async () => {
       vi.spyOn(CommandProcessor.prototype, "execute").mockImplementation(() => {
         throw new Error("Completely unexpected failure");
       });
@@ -363,7 +363,7 @@ describe("SchemaEditorProvider", () => {
       expect(sentMsg.data.message).toContain("Completely unexpected failure");
       expect(sentMsg.data.code).toBe("COMMAND_EXECUTION_ERROR");
     });
-    it("should send 'error' message with code when applyEdit returns false", async () => {
+    test("should send 'error' message with code when applyEdit returns false", async () => {
       vi.spyOn(CommandProcessor.prototype, "execute").mockReturnValue({
         success: true,
         // schema/xmlContent values are irrelevant — only the applyEdit branch is under test

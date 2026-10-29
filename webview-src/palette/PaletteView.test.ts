@@ -15,7 +15,7 @@ describe("PaletteView", () => {
     setActiveDraggedPaletteSchemaConstruct(null);
   });
 
-  it("renders grouped items", () => {
+  test("renders grouped items", () => {
     const view = new PaletteView(container, paletteGroups);
     view.render();
 
@@ -25,7 +25,7 @@ describe("PaletteView", () => {
     expect(container.querySelector('[data-testid="palette-item-simpleType"]')).toBeTruthy();
   });
 
-  it("filters items by search", () => {
+  test("filters items by search", () => {
     const view = new PaletteView(container, paletteGroups);
     view.render();
 
@@ -37,7 +37,7 @@ describe("PaletteView", () => {
     expect(container.querySelector('[data-testid="palette-item-element"]')).toBeFalsy();
   });
 
-  it("sets drag payload on dragstart", () => {
+  test("sets drag payload on dragstart", () => {
     const view = new PaletteView(container, paletteGroups);
     view.render();
 
@@ -60,7 +60,7 @@ describe("PaletteView", () => {
     expect(getActiveDraggedPaletteSchemaConstruct()).toBe(PaletteSchemaConstruct.Element);
   });
 
-  it("clears active dragged construct on dragend", () => {
+  test("clears active dragged construct on dragend", () => {
     const view = new PaletteView(container, paletteGroups);
     view.render();
 

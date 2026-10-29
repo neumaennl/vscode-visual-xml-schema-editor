@@ -10,7 +10,7 @@ import { locateNodeById } from "./schemaNavigator.js";
 describe("SchemaNavigator", () => {
   describe("locateNodeById", () => {
     describe("Schema root navigation", () => {
-      it("should locate schema root with the canonical '/schema' id", () => {
+      test("should locate schema root with the canonical '/schema' id", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
 </xs:schema>`;
@@ -23,7 +23,7 @@ describe("SchemaNavigator", () => {
         expect(result.parentType).toBe("schema");
       });
 
-      it("should locate schema root with '/schema' id", () => {
+      test("should locate schema root with '/schema' id", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
 </xs:schema>`;
@@ -38,7 +38,7 @@ describe("SchemaNavigator", () => {
     });
 
     describe("Top-level element navigation", () => {
-      it("should locate top-level element by name", () => {
+      test("should locate top-level element by name", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:element name="person" type="xs:string"/>
@@ -53,7 +53,7 @@ describe("SchemaNavigator", () => {
         expect(parentElement?.name).toBe("person");
       });
 
-      it("should return not found for non-existent element", () => {
+      test("should return not found for non-existent element", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
 </xs:schema>`;
@@ -67,7 +67,7 @@ describe("SchemaNavigator", () => {
     });
 
     describe("Complex type navigation", () => {
-      it("should locate top-level complex type by name", () => {
+      test("should locate top-level complex type by name", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:complexType name="PersonType">
@@ -84,7 +84,7 @@ describe("SchemaNavigator", () => {
         expect(parentType?.name).toBe("PersonType");
       });
 
-      it("should locate sequence within complex type", () => {
+      test("should locate sequence within complex type", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:complexType name="PersonType">
@@ -101,7 +101,7 @@ describe("SchemaNavigator", () => {
         expect(result.parentType).toBe("sequence");
       });
 
-      it("should locate choice within complex type", () => {
+      test("should locate choice within complex type", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:complexType name="ChoiceType">
@@ -118,7 +118,7 @@ describe("SchemaNavigator", () => {
         expect(result.parentType).toBe("choice");
       });
 
-      it("should locate all group within complex type", () => {
+      test("should locate all group within complex type", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:complexType name="AllType">
@@ -135,7 +135,7 @@ describe("SchemaNavigator", () => {
         expect(result.parentType).toBe("all");
       });
 
-      it("should locate sequence within complexContent extension via group path", () => {
+      test("should locate sequence within complexContent extension via group path", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:complexType name="PersonType">
@@ -158,7 +158,7 @@ describe("SchemaNavigator", () => {
     });
 
     describe("Anonymous complex type navigation", () => {
-      it("should locate anonymous complex type within element", () => {
+      test("should locate anonymous complex type within element", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:element name="person">
@@ -178,7 +178,7 @@ describe("SchemaNavigator", () => {
         expect(result.parentType).toBe("localComplexType");
       });
 
-      it("should locate sequence within anonymous complex type", () => {
+      test("should locate sequence within anonymous complex type", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:element name="person">
@@ -200,7 +200,7 @@ describe("SchemaNavigator", () => {
         expect(result.parentType).toBe("sequence");
       });
 
-      it("should locate choice within anonymous complex type", () => {
+      test("should locate choice within anonymous complex type", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:element name="payment">
@@ -222,7 +222,7 @@ describe("SchemaNavigator", () => {
         expect(result.parentType).toBe("choice");
       });
 
-      it("should locate all group within anonymous complex type", () => {
+      test("should locate all group within anonymous complex type", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:element name="config">
@@ -246,7 +246,7 @@ describe("SchemaNavigator", () => {
     });
 
     describe("Nested element navigation", () => {
-      it("should locate element within sequence by name", () => {
+      test("should locate element within sequence by name", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:element name="person">
@@ -271,7 +271,7 @@ describe("SchemaNavigator", () => {
         expect(parentElement?.name).toBe("name");
       });
 
-      it("should locate element within sequence by position", () => {
+      test("should locate element within sequence by position", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:element name="person">
@@ -298,7 +298,7 @@ describe("SchemaNavigator", () => {
     });
 
     describe("Simple type navigation", () => {
-      it("should locate top-level simple type by name", () => {
+      test("should locate top-level simple type by name", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:simpleType name="StringType">
@@ -317,7 +317,7 @@ describe("SchemaNavigator", () => {
     });
 
     describe("Group navigation", () => {
-      it("should locate named group by name", () => {
+      test("should locate named group by name", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:group name="PersonGroup">
@@ -336,7 +336,7 @@ describe("SchemaNavigator", () => {
         expect(parentGroup?.name).toBe("PersonGroup");
       });
 
-      it("should locate sequence via group:sequence[N] path under named complexType", () => {
+      test("should locate sequence via group:sequence[N] path under named complexType", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:complexType name="PersonType">
@@ -356,7 +356,7 @@ describe("SchemaNavigator", () => {
         expect(result.parentType).toBe("sequence");
       });
 
-      it("should locate sequence via group:sequence[N] path under named group", () => {
+      test("should locate sequence via group:sequence[N] path under named group", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:group name="PersonGroup">
@@ -376,7 +376,7 @@ describe("SchemaNavigator", () => {
         expect(result.parentType).toBe("sequence");
       });
 
-      it("should locate choice via group:choice[N] path under named complexType", () => {
+      test("should locate choice via group:choice[N] path under named complexType", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:complexType name="ChoiceType">
@@ -396,7 +396,7 @@ describe("SchemaNavigator", () => {
         expect(result.parentType).toBe("choice");
       });
 
-      it("should locate all via group:all[N] path under named complexType", () => {
+      test("should locate all via group:all[N] path under named complexType", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:complexType name="AllType">
@@ -416,7 +416,7 @@ describe("SchemaNavigator", () => {
         expect(result.parentType).toBe("all");
       });
 
-      it("should locate sequence via group:sequence[N] path under anonymous complexType", () => {
+      test("should locate sequence via group:sequence[N] path under anonymous complexType", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:element name="person">
@@ -438,7 +438,7 @@ describe("SchemaNavigator", () => {
         expect(result.parentType).toBe("sequence");
       });
 
-      it("should locate element inside sequence via full group:sequence[N] path", () => {
+      test("should locate element inside sequence via full group:sequence[N] path", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:element name="person">
@@ -465,7 +465,7 @@ describe("SchemaNavigator", () => {
     });
 
     describe("Error handling", () => {
-      it("should return not found for invalid ID format", () => {
+      test("should return not found for invalid ID format", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
 </xs:schema>`;
@@ -477,7 +477,7 @@ describe("SchemaNavigator", () => {
         expect(result.error).toBeDefined();
       });
 
-      it("should return not found for missing intermediate node", () => {
+      test("should return not found for missing intermediate node", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:element name="person" type="xs:string"/>
@@ -493,7 +493,7 @@ describe("SchemaNavigator", () => {
         expect(result.error).toContain("not found");
       });
 
-      it("should return not found for non-existent sequence", () => {
+      test("should return not found for non-existent sequence", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:complexType name="PersonType">
@@ -509,7 +509,7 @@ describe("SchemaNavigator", () => {
     });
 
     describe("Position-based navigation", () => {
-      it("should locate element by position when multiple elements exist", () => {
+      test("should locate element by position when multiple elements exist", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:element name="person" type="xs:string"/>
@@ -525,7 +525,7 @@ describe("SchemaNavigator", () => {
         expect(parentElement?.name).toBe("company");
       });
 
-      it("should locate complex type by position", () => {
+      test("should locate complex type by position", () => {
         const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:complexType name="Type1">

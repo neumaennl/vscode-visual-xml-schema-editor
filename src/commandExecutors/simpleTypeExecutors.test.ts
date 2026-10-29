@@ -68,14 +68,14 @@ type RestrictionAssert = (
 
 describe("SimpleType Executors", () => {
   describe("executeAddSimpleType", () => {
-    it("throws when a simpleType is added without any body details", () => {
+    test("throws when a simpleType is added without any body details", () => {
       const schemaObj = schemaWith();
 
       expect(() => addSimpleType(schemaObj, { typeName: "NameType" }))
         .toThrow("Simple type body must be specified as exactly one of restriction, list, or union");
     });
 
-    it("adds a named simpleType with base type only and serializes back to valid XSD", () => {
+    test("adds a named simpleType with base type only and serializes back to valid XSD", () => {
       const schemaObj = schemaWith();
 
       addSimpleType(schemaObj, { typeName: "NameType", baseType: "xs:string" });
@@ -89,7 +89,7 @@ describe("SimpleType Executors", () => {
       expect(simpleTypes(reparsed)[0].restriction!.base).toBe("xs:string");
     });
 
-    it("adds documentation and appends after existing top-level simple types", () => {
+    test("adds documentation and appends after existing top-level simple types", () => {
       const schemaObj = schemaWith(`
   <xs:simpleType name="ExistingType">
     <xs:restriction base="xs:string"/>
@@ -188,7 +188,7 @@ describe("SimpleType Executors", () => {
       },
     ];
 
-    it.each(addFacetCases)("applies $name", ({ typeName, baseType, restrictions, assert }) => {
+    test.each(addFacetCases)("applies $name", ({ typeName, baseType, restrictions, assert }) => {
       expect.hasAssertions();
       const schemaObj = schemaWith();
 
@@ -197,7 +197,7 @@ describe("SimpleType Executors", () => {
       assert(simpleTypes(schemaObj)[0].restriction!);
     });
 
-    it("adds a named list simpleType using list itemType", () => {
+    test("adds a named list simpleType using list itemType", () => {
       const schemaObj = schemaWith();
 
       addSimpleType(schemaObj, {
@@ -212,7 +212,7 @@ describe("SimpleType Executors", () => {
       expect(added.union).toBeUndefined();
     });
 
-    it("adds a named union simpleType using member types", () => {
+    test("adds a named union simpleType using member types", () => {
       const schemaObj = schemaWith();
 
       addSimpleType(schemaObj, {
@@ -229,7 +229,7 @@ describe("SimpleType Executors", () => {
   });
 
   describe("executeRemoveSimpleType", () => {
-    it("removes a targeted top-level simpleType and leaves others intact", () => {
+    test("removes a targeted top-level simpleType and leaves others intact", () => {
       const schemaObj = schemaWith(`
   <xs:simpleType name="AgeType"><xs:restriction base="xs:integer"/></xs:simpleType>
   <xs:simpleType name="NameType"><xs:restriction base="xs:string"/></xs:simpleType>`);
@@ -240,7 +240,7 @@ describe("SimpleType Executors", () => {
       expect(simpleTypes(schemaObj)[0].name).toBe("NameType");
     });
 
-    it("removes the last remaining top-level simpleType", () => {
+    test("removes the last remaining top-level simpleType", () => {
       const schemaObj = schemaWith(`
   <xs:simpleType name="AgeType"><xs:restriction base="xs:integer"/></xs:simpleType>`);
 
@@ -251,7 +251,7 @@ describe("SimpleType Executors", () => {
   });
 
   describe("executeModifySimpleType", () => {
-    it("renames a top-level simpleType", () => {
+    test("renames a top-level simpleType", () => {
       const schemaObj = schemaWith(`
   <xs:simpleType name="AgeType"><xs:restriction base="xs:integer"/></xs:simpleType>`);
 
@@ -260,7 +260,7 @@ describe("SimpleType Executors", () => {
       expect(simpleTypes(schemaObj)[0].name).toBe("PersonAgeType");
     });
 
-    it("updates the base type and documentation", () => {
+    test("updates the base type and documentation", () => {
       const schemaObj = schemaWith(`
   <xs:simpleType name="AgeType"><xs:restriction base="xs:integer"/></xs:simpleType>`);
 
@@ -316,7 +316,7 @@ describe("SimpleType Executors", () => {
       },
     ];
 
-    it.each(modifySimpleTypeFacetCases)("$name", ({ source, payload, assert }) => {
+    test.each(modifySimpleTypeFacetCases)("$name", ({ source, payload, assert }) => {
       const schemaObj = schemaWith(source);
       const typeName = simpleTypes(schemaObj)[0].name;
 
@@ -326,7 +326,7 @@ describe("SimpleType Executors", () => {
       assert(schemaObj);
     });
 
-    it("switches an existing restriction simpleType to list", () => {
+    test("switches an existing restriction simpleType to list", () => {
       const schemaObj = schemaWith(
         `<xs:simpleType name="TokenType"><xs:restriction base="xs:string"/></xs:simpleType>`
       );
@@ -342,7 +342,7 @@ describe("SimpleType Executors", () => {
       expect(simpleType.union).toBeUndefined();
     });
 
-    it("switches an existing list simpleType to union", () => {
+    test("switches an existing list simpleType to union", () => {
       const schemaObj = schemaWith(
         `<xs:simpleType name="TokenType"><xs:list itemType="xs:token"/></xs:simpleType>`
       );
@@ -382,7 +382,7 @@ describe("SimpleType Executors", () => {
       },
     ];
 
-    it.each(inlineCases)("adds an anonymous simpleType inside $label", ({ source, parentId, getSimpleType }) => {
+    test.each(inlineCases)("adds an anonymous simpleType inside $label", ({ source, parentId, getSimpleType }) => {
       const schemaObj = schemaWith(source);
 
       addSimpleType(schemaObj, {
@@ -396,7 +396,7 @@ describe("SimpleType Executors", () => {
       expect(simpleType.restriction!.enumeration).toHaveLength(3);
     });
 
-    it("adds documentation to an anonymous simpleType on an element and keeps serialization valid", () => {
+    test("adds documentation to an anonymous simpleType on an element and keeps serialization valid", () => {
       const schemaObj = schemaWith(`<xs:element name="age"/>`);
 
       addSimpleType(schemaObj, {
@@ -414,7 +414,7 @@ describe("SimpleType Executors", () => {
       expect(elements(reparsed)[0].simpleType!.restriction!.base).toBe("xs:integer");
     });
 
-    it("replaces an existing type attribute when adding an anonymous simpleType", () => {
+    test("replaces an existing type attribute when adding an anonymous simpleType", () => {
       const schemaObj = schemaWith(`<xs:element name="status" type="xs:string"/>`);
 
       addSimpleType(schemaObj, {
@@ -427,7 +427,7 @@ describe("SimpleType Executors", () => {
       expect(element.simpleType?.restriction?.base).toBe("xs:token");
     });
 
-    it("replaces an existing anonymous complexType when adding an anonymous simpleType", () => {
+    test("replaces an existing anonymous complexType when adding an anonymous simpleType", () => {
       const schemaObj = schemaWith(`
   <xs:element name="status">
     <xs:complexType>
@@ -460,7 +460,7 @@ describe("SimpleType Executors", () => {
       },
     ];
 
-    it.each(removeAnonymousSimpleTypeCases)(
+    test.each(removeAnonymousSimpleTypeCases)(
       "removes an anonymous simpleType from a $label",
       ({ source, typeId, getHolder }) => {
         const schemaObj = schemaWith(source);
@@ -486,7 +486,7 @@ describe("SimpleType Executors", () => {
       },
     ];
 
-    it.each(updateAnonymousSimpleTypeCases)(
+    test.each(updateAnonymousSimpleTypeCases)(
       "updates base type and facets for an anonymous simpleType on a $label",
       ({ source, typeId, getSimpleType }) => {
         const schemaObj = schemaWith(source);
@@ -504,7 +504,7 @@ describe("SimpleType Executors", () => {
       }
     );
 
-    it("adds documentation to an anonymous simpleType on an element", () => {
+    test("adds documentation to an anonymous simpleType on an element", () => {
       const schemaObj = schemaWith(`
   <xs:element name="age">
     <xs:simpleType><xs:restriction base="xs:integer"/></xs:simpleType>
@@ -579,7 +579,7 @@ describe("SimpleType Executors", () => {
       },
     ];
 
-    it.each(renameReferenceCases)(
+    test.each(renameReferenceCases)(
       "renames references in $name",
       ({ source, oldName = "StatusType", newName = "StateType", assert, setup }) => {
         const schemaObj = schemaWith(source);

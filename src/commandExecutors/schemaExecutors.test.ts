@@ -95,7 +95,7 @@ ${importXml}
 // ---------------------------------------------------------------------------
 
 describe("executeAddImport", () => {
-  it("should add a single import to a schema with no existing imports", () => {
+  test("should add a single import to a schema with no existing imports", () => {
     const schemaObj = emptySchema();
     const command: AddImportCommand = {
       type: "addImport",
@@ -113,7 +113,7 @@ describe("executeAddImport", () => {
     expect(imports[0].schemaLocation).toBe("schema1.xsd");
   });
 
-  it("should append a second import without removing existing ones", () => {
+  test("should append a second import without removing existing ones", () => {
     const schemaObj = schemaWithImports({
       namespace: "http://example.com/ns1",
       schemaLocation: "schema1.xsd",
@@ -134,7 +134,7 @@ describe("executeAddImport", () => {
     expect(imports[1].namespace).toBe("http://example.com/ns2");
   });
 
-  it("should produce a schema that survives a marshal/unmarshal round-trip", () => {
+  test("should produce a schema that survives a marshal/unmarshal round-trip", () => {
     const schemaObj = emptySchema();
     const command: AddImportCommand = {
       type: "addImport",
@@ -158,7 +158,7 @@ describe("executeAddImport", () => {
     expect(roundTripped._namespacePrefixes?.["ext"]).toBe("http://example.com/types");
   });
 
-  it("should register the explicit prefix in _namespacePrefixes", () => {
+  test("should register the explicit prefix in _namespacePrefixes", () => {
     const schemaObj = emptySchema();
     const command: AddImportCommand = {
       type: "addImport",
@@ -174,7 +174,7 @@ describe("executeAddImport", () => {
     expect(schemaObj._namespacePrefixes?.["ext"]).toBe("http://example.com/ns");
   });
 
-  it("should auto-generate a prefix when none is provided", () => {
+  test("should auto-generate a prefix when none is provided", () => {
     const schemaObj = emptySchema();
     const command: AddImportCommand = {
       type: "addImport",
@@ -195,7 +195,7 @@ describe("executeAddImport", () => {
     expect(entry![0]).toMatch(/^ns\d+$/);
   });
 
-  it("should auto-generate distinct prefixes for multiple imports", () => {
+  test("should auto-generate distinct prefixes for multiple imports", () => {
     const schemaObj = emptySchema();
 
     executeAddImport({
@@ -223,7 +223,7 @@ describe("executeAddImport", () => {
 // ---------------------------------------------------------------------------
 
 describe("executeRemoveImport", () => {
-  it("should remove the only import, leaving import_ undefined", () => {
+  test("should remove the only import, leaving import_ undefined", () => {
     const schemaObj = schemaWithImports({
       namespace: "http://example.com/ns1",
       schemaLocation: "schema1.xsd",
@@ -238,7 +238,7 @@ describe("executeRemoveImport", () => {
     expect(schemaObj.import_).toBeUndefined();
   });
 
-  it("should remove the first import when multiple imports exist", () => {
+  test("should remove the first import when multiple imports exist", () => {
     const schemaObj = schemaWithImports(
       { namespace: "http://example.com/ns1", schemaLocation: "schema1.xsd" },
       { namespace: "http://example.com/ns2", schemaLocation: "schema2.xsd" }
@@ -255,7 +255,7 @@ describe("executeRemoveImport", () => {
     expect(imports[0].namespace).toBe("http://example.com/ns2");
   });
 
-  it("should remove the last import when multiple imports exist", () => {
+  test("should remove the last import when multiple imports exist", () => {
     const schemaObj = schemaWithImports(
       { namespace: "http://example.com/ns1", schemaLocation: "schema1.xsd" },
       { namespace: "http://example.com/ns2", schemaLocation: "schema2.xsd" }
@@ -272,7 +272,7 @@ describe("executeRemoveImport", () => {
     expect(imports[0].namespace).toBe("http://example.com/ns1");
   });
 
-  it("should remove the namespace prefix registration when removing an import", () => {
+  test("should remove the namespace prefix registration when removing an import", () => {
     const schemaObj = schemaWithImports({
       namespace: "http://example.com/ns1",
       schemaLocation: "schema1.xsd",
@@ -293,7 +293,7 @@ describe("executeRemoveImport", () => {
 // ---------------------------------------------------------------------------
 
 describe("executeModifyImport", () => {
-  it("should update namespace only", () => {
+  test("should update namespace only", () => {
     const schemaObj = schemaWithImports({
       namespace: "http://example.com/old-ns",
       schemaLocation: "schema.xsd",
@@ -313,7 +313,7 @@ describe("executeModifyImport", () => {
     expect(imports[0].schemaLocation).toBe("schema.xsd");
   });
 
-  it("should update schemaLocation only", () => {
+  test("should update schemaLocation only", () => {
     const schemaObj = schemaWithImports({
       namespace: "http://example.com/ns",
       schemaLocation: "old-schema.xsd",
@@ -333,7 +333,7 @@ describe("executeModifyImport", () => {
     expect(imports[0].schemaLocation).toBe("new-schema.xsd");
   });
 
-  it("should update both namespace and schemaLocation", () => {
+  test("should update both namespace and schemaLocation", () => {
     const schemaObj = schemaWithImports({
       namespace: "http://example.com/old-ns",
       schemaLocation: "old-schema.xsd",
@@ -354,7 +354,7 @@ describe("executeModifyImport", () => {
     expect(imports[0].schemaLocation).toBe("new-schema.xsd");
   });
 
-  it("should modify only the import at the specified position", () => {
+  test("should modify only the import at the specified position", () => {
     const schemaObj = schemaWithImports(
       { namespace: "http://example.com/ns1", schemaLocation: "schema1.xsd" },
       { namespace: "http://example.com/ns2", schemaLocation: "schema2.xsd" }
@@ -374,7 +374,7 @@ describe("executeModifyImport", () => {
     expect(imports[1].namespace).toBe("http://example.com/modified");
   });
 
-  it("should not change any property when payload has no optional fields", () => {
+  test("should not change any property when payload has no optional fields", () => {
     const schemaObj = schemaWithImports({
       namespace: "http://example.com/ns",
       schemaLocation: "schema.xsd",
@@ -391,7 +391,7 @@ describe("executeModifyImport", () => {
     expect(imports[0].schemaLocation).toBe("schema.xsd");
   });
 
-  it("should update _namespacePrefixes entry when namespace changes", () => {
+  test("should update _namespacePrefixes entry when namespace changes", () => {
     const schemaObj = schemaWithImports({
       namespace: "http://example.com/old-ns",
       schemaLocation: "schema.xsd",
@@ -409,7 +409,7 @@ describe("executeModifyImport", () => {
     expect(schemaObj._namespacePrefixes?.["ext"]).toBe("http://example.com/new-ns");
   });
 
-  it("should rename the prefix in _namespacePrefixes when prefix changes", () => {
+  test("should rename the prefix in _namespacePrefixes when prefix changes", () => {
     const schemaObj = schemaWithImports({
       namespace: "http://example.com/ns",
       schemaLocation: "schema.xsd",
@@ -429,7 +429,7 @@ describe("executeModifyImport", () => {
     expect(schemaObj._namespacePrefixes?.["newpfx"]).toBe("http://example.com/ns");
   });
 
-  it("should rewrite element type_ references when prefix is renamed", () => {
+  test("should rewrite element type_ references when prefix is renamed", () => {
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ext="http://example.com/ext">
   <xs:import namespace="http://example.com/ext" schemaLocation="ext.xsd"/>
@@ -449,7 +449,7 @@ describe("executeModifyImport", () => {
     expect(elems[1].type_).toBe("xs:string");
   });
 
-  it("should rewrite element @ref references when prefix is renamed", () => {
+  test("should rewrite element @ref references when prefix is renamed", () => {
     // Build schema programmatically to avoid XML parser namespace prefix issues
     const schemaObj = schemaWithPrefixedImport("http://example.com/ext", "ext.xsd", "ext");
 
@@ -471,7 +471,7 @@ describe("executeModifyImport", () => {
     expect(schemaObj.complexType[0].sequence!.element![0].ref).toBe("ex:ExternalElement");
   });
 
-  it("should rewrite complexContent extension @base when prefix is renamed", () => {
+  test("should rewrite complexContent extension @base when prefix is renamed", () => {
     const schemaObj = schemaWithPrefixedImport("http://example.com/ext", "ext.xsd", "ext");
 
     // Build complexType with complexContent extension referencing an external base
@@ -492,7 +492,7 @@ describe("executeModifyImport", () => {
     expect(schemaObj.complexType[0].complexContent!.extension!.base).toBe("external:BaseType");
   });
 
-  it("should rewrite simpleType restriction @base when prefix is renamed", () => {
+  test("should rewrite simpleType restriction @base when prefix is renamed", () => {
     const schemaObj = schemaWithPrefixedImport("http://example.com/ext", "ext.xsd", "ext");
 
     // Build simpleType with a restriction referencing an external base
@@ -511,7 +511,7 @@ describe("executeModifyImport", () => {
     expect(schemaObj.simpleType[0].restriction!.base).toBe("p:ExternalSimpleType");
   });
 
-  it("should rewrite union memberTypes when prefix is renamed", () => {
+  test("should rewrite union memberTypes when prefix is renamed", () => {
     const schemaObj = schemaWithPrefixedImport("http://example.com/ext", "ext.xsd", "ext");
 
     // Build simpleType with union memberTypes referencing external types
@@ -530,7 +530,7 @@ describe("executeModifyImport", () => {
     expect(schemaObj.simpleType[0].union!.memberTypes).toBe("p:TypeA xs:string p:TypeB");
   });
 
-  it("should leave QName references unchanged when prefix is NOT renamed", () => {
+  test("should leave QName references unchanged when prefix is NOT renamed", () => {
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ext="http://example.com/old-ns">
   <xs:import namespace="http://example.com/old-ns" schemaLocation="ext.xsd"/>
@@ -550,7 +550,7 @@ describe("executeModifyImport", () => {
     expect(schemaObj._namespacePrefixes?.["ext"]).toBe("http://example.com/new-ns");
   });
 
-  it("should rename only the specific prefix, leaving any other prefix for the same namespace intact", () => {
+  test("should rename only the specific prefix, leaving any other prefix for the same namespace intact", () => {
     // Simulate a schema that has two prefixes bound to the same namespace
     const s = new schema();
     s._namespacePrefixes = {
@@ -598,7 +598,7 @@ ${includeXml}
 // ---------------------------------------------------------------------------
 
 describe("executeAddInclude", () => {
-  it("should add a single include to a schema with no existing includes", () => {
+  test("should add a single include to a schema with no existing includes", () => {
     const schemaObj = emptySchema();
     const command: AddIncludeCommand = {
       type: "addInclude",
@@ -612,7 +612,7 @@ describe("executeAddInclude", () => {
     expect(includes[0].schemaLocation).toBe("other.xsd");
   });
 
-  it("should append a second include without removing existing ones", () => {
+  test("should append a second include without removing existing ones", () => {
     const schemaObj = schemaWithIncludes("first.xsd");
     const command: AddIncludeCommand = {
       type: "addInclude",
@@ -627,7 +627,7 @@ describe("executeAddInclude", () => {
     expect(includes[1].schemaLocation).toBe("second.xsd");
   });
 
-  it("should trim leading/trailing whitespace from schemaLocation", () => {
+  test("should trim leading/trailing whitespace from schemaLocation", () => {
     const schemaObj = emptySchema();
     const command: AddIncludeCommand = {
       type: "addInclude",
@@ -639,7 +639,7 @@ describe("executeAddInclude", () => {
     expect(toArray(schemaObj.include)[0].schemaLocation).toBe("trimmed.xsd");
   });
 
-  it("should produce a schema that survives a marshal/unmarshal round-trip", () => {
+  test("should produce a schema that survives a marshal/unmarshal round-trip", () => {
     const schemaObj = emptySchema();
     const command: AddIncludeCommand = {
       type: "addInclude",
@@ -661,7 +661,7 @@ describe("executeAddInclude", () => {
 // ---------------------------------------------------------------------------
 
 describe("executeRemoveInclude", () => {
-  it("should remove the only include, leaving include undefined", () => {
+  test("should remove the only include, leaving include undefined", () => {
     const schemaObj = schemaWithIncludes("other.xsd");
     const command: RemoveIncludeCommand = {
       type: "removeInclude",
@@ -673,7 +673,7 @@ describe("executeRemoveInclude", () => {
     expect(schemaObj.include).toBeUndefined();
   });
 
-  it("should remove the first include when multiple includes exist", () => {
+  test("should remove the first include when multiple includes exist", () => {
     const schemaObj = schemaWithIncludes("first.xsd", "second.xsd");
     const command: RemoveIncludeCommand = {
       type: "removeInclude",
@@ -687,7 +687,7 @@ describe("executeRemoveInclude", () => {
     expect(includes[0].schemaLocation).toBe("second.xsd");
   });
 
-  it("should remove the last include when multiple includes exist", () => {
+  test("should remove the last include when multiple includes exist", () => {
     const schemaObj = schemaWithIncludes("first.xsd", "second.xsd");
     const command: RemoveIncludeCommand = {
       type: "removeInclude",
@@ -707,7 +707,7 @@ describe("executeRemoveInclude", () => {
 // ---------------------------------------------------------------------------
 
 describe("executeModifyInclude", () => {
-  it("should update schemaLocation", () => {
+  test("should update schemaLocation", () => {
     const schemaObj = schemaWithIncludes("old.xsd");
     const command: ModifyIncludeCommand = {
       type: "modifyInclude",
@@ -719,7 +719,7 @@ describe("executeModifyInclude", () => {
     expect(toArray(schemaObj.include)[0].schemaLocation).toBe("new.xsd");
   });
 
-  it("should modify only the include at the specified position", () => {
+  test("should modify only the include at the specified position", () => {
     const schemaObj = schemaWithIncludes("first.xsd", "second.xsd");
     const command: ModifyIncludeCommand = {
       type: "modifyInclude",
@@ -733,7 +733,7 @@ describe("executeModifyInclude", () => {
     expect(includes[1].schemaLocation).toBe("modified.xsd");
   });
 
-  it("should trim whitespace from schemaLocation when modifying", () => {
+  test("should trim whitespace from schemaLocation when modifying", () => {
     const schemaObj = schemaWithIncludes("old.xsd");
     const command: ModifyIncludeCommand = {
       type: "modifyInclude",
@@ -747,7 +747,7 @@ describe("executeModifyInclude", () => {
 });
 
 describe("executeModifySchemaNamespaces", () => {
-  it("should update targetNamespace and namespace declarations", () => {
+  test("should update targetNamespace and namespace declarations", () => {
     const schemaObj = emptySchema();
     schemaObj.targetNamespace = "http://example.com/old-target";
     schemaObj._namespacePrefixes = {
@@ -775,7 +775,7 @@ describe("executeModifySchemaNamespaces", () => {
     });
   });
 
-  it("should rewrite QName references when a namespace prefix is renamed", () => {
+  test("should rewrite QName references when a namespace prefix is renamed", () => {
     const schemaObj = emptySchema();
     schemaObj._namespacePrefixes = {
       xs: "http://www.w3.org/2001/XMLSchema",
@@ -810,7 +810,7 @@ describe("executeModifySchemaNamespaces", () => {
     expect(toArray(schemaObj.element)[0].type_).toBe("new:PersonType");
   });
 
-  it("should remove targetNamespace and declarations when payload is empty", () => {
+  test("should remove targetNamespace and declarations when payload is empty", () => {
     const schemaObj = emptySchema();
     schemaObj.targetNamespace = "http://example.com/old-target";
     schemaObj._namespacePrefixes = {

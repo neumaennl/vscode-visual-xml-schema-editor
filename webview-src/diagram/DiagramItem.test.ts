@@ -8,7 +8,7 @@ import { DiagramItemType } from "./DiagramTypes";
 
 describe("DiagramItem", () => {
   describe("constructor", () => {
-    it("should create a DiagramItem with required parameters", () => {
+    test("should create a DiagramItem with required parameters", () => {
       const item = new DiagramItem("id1", "TestElement", DiagramItemType.element);
       expect(item.id).toBe("id1");
       expect(item.name).toBe("TestElement");
@@ -16,7 +16,7 @@ describe("DiagramItem", () => {
       expect(item.diagram).toBeNull();
     });
 
-    it("should accept diagram parameter", () => {
+    test("should accept diagram parameter", () => {
       const diagram = new Diagram();
       const item = new DiagramItem("id1", "TestElement", DiagramItemType.element, diagram);
       expect(item.diagram).toBe(diagram);
@@ -24,7 +24,7 @@ describe("DiagramItem", () => {
   });
 
   describe("addChild", () => {
-    it("should add child element and set parent reference", () => {
+    test("should add child element and set parent reference", () => {
       const parent = new DiagramItem("parent", "Parent", DiagramItemType.element);
       const child = new DiagramItem("child", "Child", DiagramItemType.element);
 
@@ -35,7 +35,7 @@ describe("DiagramItem", () => {
       expect(child.parent).toBe(parent);
     });
 
-    it("should add multiple children", () => {
+    test("should add multiple children", () => {
       const parent = new DiagramItem("parent", "Parent", DiagramItemType.element);
       const child1 = new DiagramItem("child1", "Child1", DiagramItemType.element);
       const child2 = new DiagramItem("child2", "Child2", DiagramItemType.element);
@@ -50,7 +50,7 @@ describe("DiagramItem", () => {
   });
 
   describe("getTextDocumentation", () => {
-    it("should return documentation text", () => {
+    test("should return documentation text", () => {
       const item = new DiagramItem("id1", "Test", DiagramItemType.element);
       item.documentation = "Test documentation";
 
@@ -59,12 +59,12 @@ describe("DiagramItem", () => {
   });
 
   describe("scaleInt", () => {
-    it("should return unscaled value when no diagram", () => {
+    test("should return unscaled value when no diagram", () => {
       const item = new DiagramItem("id1", "Test", DiagramItemType.element);
       expect(item.scaleInt(100)).toBe(100);
     });
 
-    it("should scale value by diagram scale", () => {
+    test("should scale value by diagram scale", () => {
       const diagram = new Diagram();
       diagram.scale = 2.0;
       const item = new DiagramItem("id1", "Test", DiagramItemType.element, diagram);
@@ -72,7 +72,7 @@ describe("DiagramItem", () => {
       expect(item.scaleInt(100)).toBe(200);
     });
 
-    it("should round scaled value", () => {
+    test("should round scaled value", () => {
       const diagram = new Diagram();
       diagram.scale = 1.5;
       const item = new DiagramItem("id1", "Test", DiagramItemType.element, diagram);
@@ -82,7 +82,7 @@ describe("DiagramItem", () => {
   });
 
   describe("scalePoint", () => {
-    it("should return unscaled point when no diagram", () => {
+    test("should return unscaled point when no diagram", () => {
       const item = new DiagramItem("id1", "Test", DiagramItemType.element);
       const point = { x: 10, y: 20 };
       const result = item.scalePoint(point);
@@ -90,7 +90,7 @@ describe("DiagramItem", () => {
       expect(result).toEqual(point);
     });
 
-    it("should scale point by diagram scale", () => {
+    test("should scale point by diagram scale", () => {
       const diagram = new Diagram();
       diagram.scale = 2.0;
       const item = new DiagramItem("id1", "Test", DiagramItemType.element, diagram);
@@ -102,7 +102,7 @@ describe("DiagramItem", () => {
       expect(result.y).toBe(40);
     });
 
-    it("should round scaled coordinates", () => {
+    test("should round scaled coordinates", () => {
       const diagram = new Diagram();
       diagram.scale = 1.5;
       const item = new DiagramItem("id1", "Test", DiagramItemType.element, diagram);
@@ -116,7 +116,7 @@ describe("DiagramItem", () => {
   });
 
   describe("scaleSize", () => {
-    it("should return unscaled size when no diagram", () => {
+    test("should return unscaled size when no diagram", () => {
       const item = new DiagramItem("id1", "Test", DiagramItemType.element);
       const size = { width: 100, height: 50 };
       const result = item.scaleSize(size);
@@ -124,7 +124,7 @@ describe("DiagramItem", () => {
       expect(result).toEqual(size);
     });
 
-    it("should scale size by diagram scale", () => {
+    test("should scale size by diagram scale", () => {
       const diagram = new Diagram();
       diagram.scale = 2.0;
       const item = new DiagramItem("id1", "Test", DiagramItemType.element, diagram);
@@ -138,7 +138,7 @@ describe("DiagramItem", () => {
   });
 
   describe("scaleRectangle", () => {
-    it("should return unscaled rectangle when no diagram", () => {
+    test("should return unscaled rectangle when no diagram", () => {
       const item = new DiagramItem("id1", "Test", DiagramItemType.element);
       const rect = { x: 10, y: 20, width: 100, height: 50 };
       const result = item.scaleRectangle(rect);
@@ -146,7 +146,7 @@ describe("DiagramItem", () => {
       expect(result).toEqual(rect);
     });
 
-    it("should scale rectangle by diagram scale", () => {
+    test("should scale rectangle by diagram scale", () => {
       const diagram = new Diagram();
       diagram.scale = 2.0;
       const item = new DiagramItem("id1", "Test", DiagramItemType.element, diagram);
@@ -162,7 +162,7 @@ describe("DiagramItem", () => {
   });
 
   describe("calculateBoundingBox", () => {
-    it("should return item bounds when no children", () => {
+    test("should return item bounds when no children", () => {
       const item = new DiagramItem("id1", "Test", DiagramItemType.element);
       item.location = { x: 10, y: 20 };
       item.size = { width: 100, height: 50 };
@@ -175,7 +175,7 @@ describe("DiagramItem", () => {
       expect(bounds.height).toBe(50);
     });
 
-    it("should include child bounds when showChildElements is true", () => {
+    test("should include child bounds when showChildElements is true", () => {
       const parent = new DiagramItem("parent", "Parent", DiagramItemType.element);
       parent.location = { x: 0, y: 0 };
       parent.size = { width: 100, height: 100 };
@@ -195,7 +195,7 @@ describe("DiagramItem", () => {
       expect(bounds.height).toBe(150); // 50 + 100
     });
 
-    it("should not include child bounds when showChildElements is false", () => {
+    test("should not include child bounds when showChildElements is false", () => {
       const parent = new DiagramItem("parent", "Parent", DiagramItemType.element);
       parent.location = { x: 0, y: 0 };
       parent.size = { width: 100, height: 100 };
@@ -215,7 +215,7 @@ describe("DiagramItem", () => {
       expect(bounds.height).toBe(100);
     });
 
-    it("should handle nested children", () => {
+    test("should handle nested children", () => {
       const grandparent = new DiagramItem("gp", "GrandParent", DiagramItemType.element);
       grandparent.location = { x: 0, y: 0 };
       grandparent.size = { width: 50, height: 50 };

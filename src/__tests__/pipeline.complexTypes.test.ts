@@ -22,7 +22,7 @@ describe("Integration: ComplexType pipeline", () => {
   // ─── addComplexType ────────────────────────────────────────────────────────
 
   describe("addComplexType", () => {
-    it("adds a top-level named complexType with a sequence content model", () => {
+    test("adds a top-level named complexType with a sequence content model", () => {
       const cmd: AddComplexTypeCommand = {
         type: "addComplexType",
         payload: {
@@ -42,7 +42,7 @@ describe("Integration: ComplexType pipeline", () => {
       expect(orderType!.all).toBeUndefined();
     });
 
-    it("adds a complexType with a choice content model", () => {
+    test("adds a complexType with a choice content model", () => {
       const cmd: AddComplexTypeCommand = {
         type: "addComplexType",
         payload: {
@@ -60,7 +60,7 @@ describe("Integration: ComplexType pipeline", () => {
       expect(choiceType!.sequence).toBeUndefined();
     });
 
-    it("adds a complexType with an all content model", () => {
+    test("adds a complexType with an all content model", () => {
       const cmd: AddComplexTypeCommand = {
         type: "addComplexType",
         payload: {
@@ -78,7 +78,7 @@ describe("Integration: ComplexType pipeline", () => {
       expect(allType!.sequence).toBeUndefined();
     });
 
-    it("adds a complexType marked as abstract", () => {
+    test("adds a complexType marked as abstract", () => {
       const cmd: AddComplexTypeCommand = {
         type: "addComplexType",
         payload: {
@@ -96,7 +96,7 @@ describe("Integration: ComplexType pipeline", () => {
       expect(String(baseType!.abstract)).toBe("true");
     });
 
-    it("returns validation error when type name is invalid", () => {
+    test("returns validation error when type name is invalid", () => {
       const cmd: AddComplexTypeCommand = {
         type: "addComplexType",
         payload: { parentId: "/schema", typeName: "123Bad", contentModel: "sequence" },
@@ -105,7 +105,7 @@ describe("Integration: ComplexType pipeline", () => {
       runCommandExpectValidationFailure(MINIMAL_SCHEMA, cmd, "Type name must be a valid XML name");
     });
 
-    it("returns validation error for duplicate complex type name", () => {
+    test("returns validation error for duplicate complex type name", () => {
       const cmd: AddComplexTypeCommand = {
         type: "addComplexType",
         payload: { parentId: "/schema", typeName: "PersonType", contentModel: "sequence" },
@@ -118,7 +118,7 @@ describe("Integration: ComplexType pipeline", () => {
   // ─── removeComplexType ─────────────────────────────────────────────────────
 
   describe("removeComplexType", () => {
-    it("removes an existing top-level complexType", () => {
+    test("removes an existing top-level complexType", () => {
       const cmd: RemoveComplexTypeCommand = {
         type: "removeComplexType",
         payload: { typeId: "/complexType:PersonType" },
@@ -130,7 +130,7 @@ describe("Integration: ComplexType pipeline", () => {
       expect(types.some((t) => t.name === "PersonType")).toBe(false);
     });
 
-    it("returns validation error when type ID does not exist", () => {
+    test("returns validation error when type ID does not exist", () => {
       const cmd: RemoveComplexTypeCommand = {
         type: "removeComplexType",
         payload: { typeId: "/complexType:NoSuchType" },
@@ -143,7 +143,7 @@ describe("Integration: ComplexType pipeline", () => {
   // ─── modifyComplexType ─────────────────────────────────────────────────────
 
   describe("modifyComplexType", () => {
-    it("renames an existing complexType", () => {
+    test("renames an existing complexType", () => {
       const cmd: ModifyComplexTypeCommand = {
         type: "modifyComplexType",
         payload: { typeId: "/complexType:PersonType", typeName: "IndividualType" },
@@ -156,7 +156,7 @@ describe("Integration: ComplexType pipeline", () => {
       expect(types.some((t) => t.name === "PersonType")).toBe(false);
     });
 
-    it("marks a complexType as abstract", () => {
+    test("marks a complexType as abstract", () => {
       const cmd: ModifyComplexTypeCommand = {
         type: "modifyComplexType",
         payload: { typeId: "/complexType:PersonType", abstract: true },
@@ -169,7 +169,7 @@ describe("Integration: ComplexType pipeline", () => {
       expect(String(personType!.abstract)).toBe("true");
     });
 
-    it("enables mixed content on a complexType", () => {
+    test("enables mixed content on a complexType", () => {
       const cmd: ModifyComplexTypeCommand = {
         type: "modifyComplexType",
         payload: { typeId: "/complexType:PersonType", mixed: true },
@@ -182,7 +182,7 @@ describe("Integration: ComplexType pipeline", () => {
       expect(String(personType!.mixed)).toBe("true");
     });
 
-    it("returns validation error when type ID does not exist", () => {
+    test("returns validation error when type ID does not exist", () => {
       const cmd: ModifyComplexTypeCommand = {
         type: "modifyComplexType",
         payload: { typeId: "/complexType:Ghost", typeName: "Other" },

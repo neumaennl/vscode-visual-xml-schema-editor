@@ -10,7 +10,7 @@ import {
 } from "./palette/PaletteItems";
 import { PaletteSchemaConstruct } from "./palette/PaletteSchemaConstruct";
 
-const defaultDiagramOptions: DiagramOptions = {
+const DEFAULT_DIAGRAM_OPTIONS: DiagramOptions = {
   showDocumentation: false,
   alwaysShowOccurrence: false,
   showType: false,
@@ -69,7 +69,7 @@ describe("DiagramRenderer", () => {
       };
       const onNodeClick = vi.fn();
       
-      renderer.renderSchema(mockSchema, defaultDiagramOptions, onNodeClick);
+      renderer.renderSchema(mockSchema, DEFAULT_DIAGRAM_OPTIONS, onNodeClick);
       
       // Verify diagram was created (main group should exist)
       const groups = mockCanvas.getElementsByTagName("g");
@@ -81,7 +81,7 @@ describe("DiagramRenderer", () => {
       const onNodeClick = vi.fn();
       
       expect(() => {
-        renderer.renderSchema(emptySchema, defaultDiagramOptions, onNodeClick);
+        renderer.renderSchema(emptySchema, DEFAULT_DIAGRAM_OPTIONS, onNodeClick);
       }).not.toThrow();
     });
 
@@ -91,7 +91,7 @@ describe("DiagramRenderer", () => {
       // Test error handling with invalid input by bypassing type checking
       // This is intentional to ensure robustness
       type RenderSchemaFn = (schema: unknown, options: DiagramOptions, callback: typeof onNodeClick) => void;
-      (renderer.renderSchema as RenderSchemaFn)(null, defaultDiagramOptions, onNodeClick);
+      (renderer.renderSchema as RenderSchemaFn)(null, DEFAULT_DIAGRAM_OPTIONS, onNodeClick);
       
       // Should show message instead of throwing
       expect(mockCanvas.textContent).toContain("No schema to display");
@@ -106,7 +106,7 @@ describe("DiagramRenderer", () => {
       };
       const onNodeClick = vi.fn();
       
-      renderer.renderSchema(mockSchema, defaultDiagramOptions, onNodeClick);
+      renderer.renderSchema(mockSchema, DEFAULT_DIAGRAM_OPTIONS, onNodeClick);
       
       const items = mockCanvas.querySelectorAll(".diagram-item");
       expect(items.length).toBeGreaterThan(0);
@@ -118,7 +118,7 @@ describe("DiagramRenderer", () => {
       };
       const onNodeClick = vi.fn();
       
-      renderer.renderSchema(mockSchema, defaultDiagramOptions, onNodeClick);
+      renderer.renderSchema(mockSchema, DEFAULT_DIAGRAM_OPTIONS, onNodeClick);
       
       // Callback should be stored for click handling
       expect(onNodeClick).toBeDefined();
@@ -142,7 +142,7 @@ describe("DiagramRenderer", () => {
       };
       const onNodeClick = vi.fn();
       
-      renderer.renderSchema(mockSchema, defaultDiagramOptions, onNodeClick);
+      renderer.renderSchema(mockSchema, DEFAULT_DIAGRAM_OPTIONS, onNodeClick);
       const itemsBeforeRefresh = mockCanvas.querySelectorAll(".diagram-item").length;
       
       renderer.refresh();
@@ -225,7 +225,7 @@ describe("DiagramRenderer", () => {
       const mockSchema = {
         element: [{ name: "Test", type_: "string" }],
       };
-      renderer.renderSchema(mockSchema, defaultDiagramOptions, onNodeClick);
+      renderer.renderSchema(mockSchema, DEFAULT_DIAGRAM_OPTIONS, onNodeClick);
 
       const itemElement = mockCanvas.querySelector(
         "[data-item-id]"
@@ -253,7 +253,7 @@ describe("DiagramRenderer", () => {
       const mockSchema = {
         element: [{ name: "Test", type_: "string" }],
       };
-      renderer.renderSchema(mockSchema, defaultDiagramOptions, onNodeClick);
+      renderer.renderSchema(mockSchema, DEFAULT_DIAGRAM_OPTIONS, onNodeClick);
 
       const itemElement = mockCanvas.querySelector(
         "[data-item-id]"
@@ -277,7 +277,7 @@ describe("DiagramRenderer", () => {
       const mockSchema = {
         element: [{ name: "Test", type_: "string" }],
       };
-      renderer.renderSchema(mockSchema, defaultDiagramOptions, onNodeClick);
+      renderer.renderSchema(mockSchema, DEFAULT_DIAGRAM_OPTIONS, onNodeClick);
 
       const itemElement = mockCanvas.querySelector(
         "[data-item-id]"
@@ -302,7 +302,7 @@ describe("DiagramRenderer", () => {
       const mockSchema = {
         element: [{ name: "Test", type_: "string" }],
       };
-      renderer.renderSchema(mockSchema, defaultDiagramOptions, onNodeClick);
+      renderer.renderSchema(mockSchema, DEFAULT_DIAGRAM_OPTIONS, onNodeClick);
 
       const itemElement = mockCanvas.querySelector(
         "[data-item-id]"
@@ -326,7 +326,7 @@ describe("DiagramRenderer", () => {
       const mockSchema = {
         element: [{ name: "Test", type_: "string" }],
       };
-      renderer.renderSchema(mockSchema, defaultDiagramOptions, onNodeClick);
+      renderer.renderSchema(mockSchema, DEFAULT_DIAGRAM_OPTIONS, onNodeClick);
 
       const itemElement = mockCanvas.querySelector(
         "[data-item-id]"

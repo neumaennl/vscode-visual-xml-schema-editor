@@ -17,7 +17,7 @@ const PACKAGE_JSON = {
   devDependencies: { "@types/node": "~24.13.0", "@types/vscode": "~1.125.0" },
 };
 
-const realIsTTY = Object.getOwnPropertyDescriptor(process.stdin, "isTTY") ?? { value: undefined, configurable: true };
+const ORIGINAL_IS_TTY = Object.getOwnPropertyDescriptor(process.stdin, "isTTY") ?? { value: undefined, configurable: true };
 
 let dir: string;
 
@@ -79,7 +79,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  Object.defineProperty(process.stdin, "isTTY", realIsTTY);
+  Object.defineProperty(process.stdin, "isTTY", ORIGINAL_IS_TTY);
   rmSync(dir, { recursive: true, force: true });
   vi.unstubAllGlobals();
   vi.unstubAllEnvs();

@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-29T15:16:40Z }
-verified: { by: human:neumaennl, at: 2026-10-29T15:30:22Z }
+generated: { by: human:neumaennl, at: 2026-10-30T07:52:10Z }
+verified: { by: human:neumaennl, at: 2026-10-30T12:13:56Z }
 ---
 
 # Purpose
@@ -442,14 +442,6 @@ Effort:
 - **Severity:** Low
 - **Effort:** L
 - **Description:** Every change redraws the whole diagram. Each `updateSchema` builds all diagram items from the schema object again, calculates the layout of every item and replaces all SVG content, even if the edit changed a single attribute. Changing a diagram option does the same, although the options are only applied after the build and would need only a new layout. Expanding or collapsing a node calls `refresh()`, which keeps the items but calculates the layout of all items and redraws the whole SVG. `DiagramLayout.relayoutItem()` was written to recalculate the layout of one item and its ancestors, but it is never called (see [Duplicated and dead code](#duplicated-and-dead-code)). For large schemas this probably makes editing slow; this was not measured. Smaller improvements are to use `refresh()` for option changes and `relayoutItem()` for expanding and collapsing; real incremental updates would need the [ambiguous node IDs](#node-ids-are-ambiguous-and-have-many-special-cases) fixed first, so that items can be matched across builds (see [Diagram rendering](diagram-rendering.md#pipeline)).
-- **GitHub issue:** none
-
-## Test XML is inline instead of in `test-resources`
-
-- **Location:** test files in `src/`, `webview-src/` and `shared/`
-- **Severity:** Low
-- **Effort:** L
-- **Description:** The [test conventions](testing.md#files-and-structure) require larger XML snippets that several tests use to be stored in `src/__tests__/test-resources`. The folder does not exist; the snippets are inline in the test files, often repeated. For example, the constants `schemaWithAnnotationXml`, `schemaWithTwoAnnotationsXml`, `twoDocumentationXml`, `annotatedElementXml` and `elementSchemaXml` are identical in the annotation validator and executor tests. They should be moved there and shared.
 - **GitHub issue:** none
 
 ## `toArray()` is obsolete since `xmlbind-ts` 2.3

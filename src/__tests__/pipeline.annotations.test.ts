@@ -15,7 +15,6 @@ import type {
 } from "../../shared/types.js";
 import { toArray } from "../../shared/schemaUtils.js";
 import {
-  MINIMAL_SCHEMA,
   SCHEMA_WITH_ELEMENTS,
   SCHEMA_WITH_ANNOTATION,
   runCommandExpectSuccess,
@@ -23,6 +22,7 @@ import {
   runCommandExpectValidationFailure,
 } from "./pipelineTestHelpers.js";
 import { expectLinesInOrder } from "./textTestHelpers.js";
+import { emptySchemaXml, schemaXmlWith } from "./schemaTestHelpers.js";
 
 describe("Integration: Annotation pipeline", () => {
   // ─── addAnnotation ─────────────────────────────────────────────────────────
@@ -50,7 +50,7 @@ describe("Integration: Annotation pipeline", () => {
         payload: { targetId: "/schema", documentation: "My schema" },
       };
 
-      const result = runCommandExpectSuccessSchema(MINIMAL_SCHEMA, cmd);
+      const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
       const annotations = toArray(result.annotation);
 
       expect(annotations.length).toBe(1);
@@ -59,10 +59,7 @@ describe("Integration: Annotation pipeline", () => {
     });
 
     test("inserts a schema-level annotation before top-level declarations", () => {
-      const schemaWithTopLevelDeclaration = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person" type="xs:string"/>
-</xs:schema>`;
+      const schemaWithTopLevelDeclaration = schemaXmlWith(`<xs:element name="person" type="xs:string"/>`);
       const cmd: AddAnnotationCommand = {
         type: "addAnnotation",
         payload: { targetId: "/schema", documentation: "Schema docs" },
@@ -73,12 +70,9 @@ describe("Integration: Annotation pipeline", () => {
     });
 
     test("inserts node annotations before compositor/content children", () => {
-      const schemaWithComplexType = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:complexType name="PersonType">
-    <xs:sequence/>
-  </xs:complexType>
-</xs:schema>`;
+      const schemaWithComplexType = schemaXmlWith(`<xs:complexType name="PersonType">
+  <xs:sequence/>
+</xs:complexType>`);
       const cmd: AddAnnotationCommand = {
         type: "addAnnotation",
         payload: { targetId: "/complexType:PersonType", documentation: "Complex type docs" },
@@ -125,10 +119,7 @@ describe("Integration: Annotation pipeline", () => {
     });
 
     test("keeps remaining schema annotations before top-level declarations after deletion", () => {
-      const schemaWithTopLevelElement = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="root" type="xs:string"/>
-</xs:schema>`;
+      const schemaWithTopLevelElement = schemaXmlWith(`<xs:element name="root" type="xs:string"/>`);
 
       const afterFirstDoc = runCommandExpectSuccess(schemaWithTopLevelElement, {
         type: "addDocumentation",

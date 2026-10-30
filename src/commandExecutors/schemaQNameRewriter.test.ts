@@ -6,7 +6,6 @@
  * executeModifyImport) lives in schemaExecutors.test.ts.
  */
 
-import { unmarshal } from "@neumaennl/xmlbind-ts";
 import {
   attribute,
   attributeGroupRef,
@@ -23,7 +22,6 @@ import {
   namedAttributeGroup,
   namedGroup,
   restrictionType,
-  schema,
   simpleContentType,
   simpleExtensionType,
   simpleRestrictionType,
@@ -35,7 +33,13 @@ import {
 } from "../../shared/types.js";
 import { toArray } from "../../shared/schemaUtils.js";
 import { rewritePrefixInSchema } from "./schemaQNameRewriter.js";
-import { emptySchema } from "../__tests__/schemaTestHelpers.js";
+import { emptySchema, schemaWith } from "../__tests__/schemaTestHelpers.js";
+
+/** The prefix `ext` for the namespace `http://example.com/ext`. */
+const EXT_PREFIX = { ext: "http://example.com/ext" };
+
+/** A top-level element `foo` whose type has the prefix `ext`. */
+const ELEMENT_OF_EXT_TYPE = `<xs:element name="foo" type="ext:FooType"/>`;
 
 describe("rewritePrefixInSchema", () => {
   test("does nothing when the old prefix matches the new prefix", () => {
@@ -54,13 +58,7 @@ describe("rewritePrefixInSchema", () => {
   });
 
   test("rewrites top-level element @type", () => {
-    const schemaObj = unmarshal(
-      schema,
-      `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ext="http://example.com/ext">
-  <xs:element name="foo" type="ext:FooType"/>
-</xs:schema>`
-    );
+    const schemaObj = schemaWith(ELEMENT_OF_EXT_TYPE, EXT_PREFIX);
 
     rewritePrefixInSchema("ext", "p", schemaObj);
 
@@ -68,13 +66,7 @@ describe("rewritePrefixInSchema", () => {
   });
 
   test("rewrites top-level element @substitutionGroup", () => {
-    const schemaObj = unmarshal(
-      schema,
-      `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ext="http://example.com/ext">
-  <xs:element name="foo" substitutionGroup="ext:Head"/>
-</xs:schema>`
-    );
+    const schemaObj = schemaWith(`<xs:element name="foo" substitutionGroup="ext:Head"/>`, EXT_PREFIX);
 
     rewritePrefixInSchema("ext", "p", schemaObj);
 
@@ -82,14 +74,8 @@ describe("rewritePrefixInSchema", () => {
   });
 
   test("does not rewrite element @type values with a different prefix", () => {
-    const schemaObj = unmarshal(
-      schema,
-      `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ext="http://example.com/ext">
-  <xs:element name="foo" type="ext:FooType"/>
-  <xs:element name="bar" type="xs:string"/>
-</xs:schema>`
-    );
+    const schemaObj = schemaWith(`${ELEMENT_OF_EXT_TYPE}
+<xs:element name="bar" type="xs:string"/>`, EXT_PREFIX);
 
     rewritePrefixInSchema("ext", "p", schemaObj);
 

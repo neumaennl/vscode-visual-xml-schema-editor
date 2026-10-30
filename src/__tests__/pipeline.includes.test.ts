@@ -12,18 +12,15 @@ import type {
 } from "../../shared/types.js";
 import { toArray } from "../../shared/schemaUtils.js";
 import {
-  MINIMAL_SCHEMA,
   SCHEMA_WITH_INCLUDE,
   runCommandExpectSuccessSchema,
   runCommandExpectValidationFailure,
 } from "./pipelineTestHelpers.js";
+import { emptySchemaXml, schemaXmlWith } from "./schemaTestHelpers.js";
 
 /** Schema that already has two includes so we can test position-based IDs. */
-const SCHEMA_TWO_INCLUDES = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:include schemaLocation="base.xsd"/>
-  <xs:include schemaLocation="common.xsd"/>
-</xs:schema>`;
+const SCHEMA_TWO_INCLUDES = schemaXmlWith(`<xs:include schemaLocation="base.xsd"/>
+<xs:include schemaLocation="common.xsd"/>`);
 
 describe("Integration: Include pipeline", () => {
   // ─── addInclude ────────────────────────────────────────────────────────────
@@ -35,7 +32,7 @@ describe("Integration: Include pipeline", () => {
         payload: { schemaLocation: "types.xsd" },
       };
 
-      const result = runCommandExpectSuccessSchema(MINIMAL_SCHEMA, cmd);
+      const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
       const includes = toArray(result.include);
 
       expect(includes.some((i) => i.schemaLocation === "types.xsd")).toBe(true);
@@ -47,7 +44,7 @@ describe("Integration: Include pipeline", () => {
         payload: { schemaLocation: "" },
       };
 
-      runCommandExpectValidationFailure(MINIMAL_SCHEMA, cmd, "Schema location cannot be empty");
+      runCommandExpectValidationFailure(emptySchemaXml(), cmd, "Schema location cannot be empty");
     });
 
     test("returns validation error for a schemaLocation with whitespace", () => {
@@ -56,7 +53,7 @@ describe("Integration: Include pipeline", () => {
         payload: { schemaLocation: "my schema.xsd" },
       };
 
-      runCommandExpectValidationFailure(MINIMAL_SCHEMA, cmd, "Schema location must be a valid path or URI without whitespace");
+      runCommandExpectValidationFailure(emptySchemaXml(), cmd, "Schema location must be a valid path or URI without whitespace");
     });
 
     test("returns validation error for a duplicate schemaLocation", () => {

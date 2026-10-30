@@ -12,11 +12,11 @@ import type {
 } from "../../shared/types.js";
 import { toArray } from "../../shared/schemaUtils.js";
 import {
-  MINIMAL_SCHEMA,
   SCHEMA_WITH_SIMPLETYPE,
   runCommandExpectSuccessSchema,
   runCommandExpectValidationFailure,
 } from "./pipelineTestHelpers.js";
+import { emptySchemaXml } from "./schemaTestHelpers.js";
 
 describe("Integration: SimpleType pipeline", () => {
   // ─── addSimpleType ─────────────────────────────────────────────────────────
@@ -32,7 +32,7 @@ describe("Integration: SimpleType pipeline", () => {
         },
       };
 
-      const result = runCommandExpectSuccessSchema(MINIMAL_SCHEMA, cmd);
+      const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
       const types = toArray(result.simpleType);
       const ageType = types.find((t) => t.name === "AgeType");
 
@@ -51,7 +51,7 @@ describe("Integration: SimpleType pipeline", () => {
         },
       };
 
-      const result = runCommandExpectSuccessSchema(MINIMAL_SCHEMA, cmd);
+      const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
       const types = toArray(result.simpleType);
       const colorType = types.find((t) => t.name === "ColorType");
 
@@ -74,7 +74,7 @@ describe("Integration: SimpleType pipeline", () => {
         },
       };
 
-      const result = runCommandExpectSuccessSchema(MINIMAL_SCHEMA, cmd);
+      const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
       const types = toArray(result.simpleType);
       const nameType = types.find((t) => t.name === "NameType");
 
@@ -92,7 +92,7 @@ describe("Integration: SimpleType pipeline", () => {
         },
       };
 
-      const result = runCommandExpectSuccessSchema(MINIMAL_SCHEMA, cmd);
+      const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
       const tokenListType = toArray(result.simpleType).find((t) => t.name === "TokenListType");
 
       expect(tokenListType).toBeDefined();
@@ -109,7 +109,7 @@ describe("Integration: SimpleType pipeline", () => {
         },
       };
 
-      const result = runCommandExpectSuccessSchema(MINIMAL_SCHEMA, cmd);
+      const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
       const unionType = toArray(result.simpleType).find((t) => t.name === "TextOrNumberType");
 
       expect(unionType).toBeDefined();
@@ -122,7 +122,7 @@ describe("Integration: SimpleType pipeline", () => {
         payload: { parentId: "/schema", typeName: "bad type", baseType: "xs:string" },
       };
 
-      runCommandExpectValidationFailure(MINIMAL_SCHEMA, cmd, "Type name must be a valid XML name");
+      runCommandExpectValidationFailure(emptySchemaXml(), cmd, "Type name must be a valid XML name");
     });
 
     test("returns validation error for duplicate type name", () => {

@@ -16,11 +16,11 @@ import type {
 } from "../../shared/types.js";
 import { toArray } from "../../shared/schemaUtils.js";
 import {
-  MINIMAL_SCHEMA,
   SCHEMA_WITH_ELEMENTS,
   runCommandExpectSuccessSchema,
   runCommandExpectValidationFailure,
 } from "./pipelineTestHelpers.js";
+import { emptySchemaXml } from "./schemaTestHelpers.js";
 
 describe("Integration: Element pipeline", () => {
   // ─── addElement ────────────────────────────────────────────────────────────
@@ -32,7 +32,7 @@ describe("Integration: Element pipeline", () => {
         payload: { parentId: "/schema", elementName: "order", elementType: "xs:string" },
       };
 
-      const result = runCommandExpectSuccessSchema(MINIMAL_SCHEMA, cmd);
+      const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
       const elements = toArray(result.element);
 
       expect(elements).toHaveLength(1);
@@ -65,7 +65,7 @@ describe("Integration: Element pipeline", () => {
         },
       };
 
-      const result = runCommandExpectSuccessSchema(MINIMAL_SCHEMA, cmd);
+      const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
       const elements = toArray(result.element);
       const invoice = elements.find((e) => e.name === "invoice");
 
@@ -80,7 +80,7 @@ describe("Integration: Element pipeline", () => {
         payload: { parentId: "/schema", elementName: "123invalid", elementType: "xs:string" },
       };
 
-      runCommandExpectValidationFailure(MINIMAL_SCHEMA, cmd, "Element name must be a valid XML name");
+      runCommandExpectValidationFailure(emptySchemaXml(), cmd, "Element name must be a valid XML name");
     });
 
     test("returns validation error for duplicate element name", () => {

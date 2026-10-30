@@ -3,18 +3,30 @@
  * Tests the node location and navigation logic.
  */
 
-import { unmarshal } from "@neumaennl/xmlbind-ts";
-import { schema } from "../shared/types.js";
 import { locateNodeById } from "./schemaNavigator.js";
+import { emptySchema, readTestSchema, schemaWith } from "./__tests__/schemaTestHelpers.js";
+
+/** The file with an element `person` with the local elements `name` and `age`. */
+const PERSON_NAME_AND_AGE_XSD = "person-element-with-name-and-age.xsd";
+
+/** The file with an element `person` with the local element `name`. */
+const PERSON_WITH_NAME_XSD = "person-element-with-name.xsd";
+
+/** The file with a complexType `PersonType` with the local element `name`. */
+const PERSON_TYPE_WITH_NAME_XSD = "person-type-with-name-element.xsd";
+
+/** A group `PersonGroup` with the element `name` in its sequence. */
+const PERSON_GROUP_WITH_NAME_ELEMENT = `<xs:group name="PersonGroup">
+  <xs:sequence>
+    <xs:element name="name" type="xs:string"/>
+  </xs:sequence>
+</xs:group>`;
 
 describe("SchemaNavigator", () => {
   describe("locateNodeById", () => {
     describe("Schema root navigation", () => {
       test("should locate schema root with the canonical '/schema' id", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+        const schemaObj = emptySchema();
 
         const result = locateNodeById(schemaObj, "/schema");
 
@@ -24,10 +36,7 @@ describe("SchemaNavigator", () => {
       });
 
       test("should locate schema root with '/schema' id", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+        const schemaObj = emptySchema();
 
         const result = locateNodeById(schemaObj, "/schema");
 
@@ -39,11 +48,7 @@ describe("SchemaNavigator", () => {
 
     describe("Top-level element navigation", () => {
       test("should locate top-level element by name", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person" type="xs:string"/>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+        const schemaObj = schemaWith(`<xs:element name="person" type="xs:string"/>`);
 
         const result = locateNodeById(schemaObj, "/element:person");
 
@@ -54,10 +59,7 @@ describe("SchemaNavigator", () => {
       });
 
       test("should return not found for non-existent element", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+        const schemaObj = emptySchema();
 
         const result = locateNodeById(schemaObj, "/element:nonexistent");
 
@@ -68,13 +70,9 @@ describe("SchemaNavigator", () => {
 
     describe("Complex type navigation", () => {
       test("should locate top-level complex type by name", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:complexType name="PersonType">
-    <xs:sequence/>
-  </xs:complexType>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+        const schemaObj = schemaWith(`<xs:complexType name="PersonType">
+  <xs:sequence/>
+</xs:complexType>`);
 
         const result = locateNodeById(schemaObj, "/complexType:PersonType");
 
@@ -85,15 +83,7 @@ describe("SchemaNavigator", () => {
       });
 
       test("should locate sequence within complex type", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:complexType name="PersonType">
-    <xs:sequence>
-      <xs:element name="name" type="xs:string"/>
-    </xs:sequence>
-  </xs:complexType>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+        const schemaObj = readTestSchema(PERSON_TYPE_WITH_NAME_XSD);
 
         const result = locateNodeById(schemaObj, "/complexType:PersonType/sequence");
 
@@ -102,15 +92,11 @@ describe("SchemaNavigator", () => {
       });
 
       test("should locate choice within complex type", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:complexType name="ChoiceType">
-    <xs:choice>
-      <xs:element name="option1" type="xs:string"/>
-    </xs:choice>
-  </xs:complexType>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+        const schemaObj = schemaWith(`<xs:complexType name="ChoiceType">
+  <xs:choice>
+    <xs:element name="option1" type="xs:string"/>
+  </xs:choice>
+</xs:complexType>`);
 
         const result = locateNodeById(schemaObj, "/complexType:ChoiceType/choice");
 
@@ -119,15 +105,11 @@ describe("SchemaNavigator", () => {
       });
 
       test("should locate all group within complex type", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:complexType name="AllType">
-    <xs:all>
-      <xs:element name="field1" type="xs:string"/>
-    </xs:all>
-  </xs:complexType>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+        const schemaObj = schemaWith(`<xs:complexType name="AllType">
+  <xs:all>
+    <xs:element name="field1" type="xs:string"/>
+  </xs:all>
+</xs:complexType>`);
 
         const result = locateNodeById(schemaObj, "/complexType:AllType/all");
 
@@ -136,19 +118,7 @@ describe("SchemaNavigator", () => {
       });
 
       test("should locate sequence within complexContent extension via group path", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:complexType name="PersonType">
-    <xs:complexContent>
-      <xs:extension base="BaseType">
-        <xs:sequence>
-          <xs:element name="name" type="xs:string"/>
-        </xs:sequence>
-      </xs:extension>
-    </xs:complexContent>
-  </xs:complexType>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+        const schemaObj = readTestSchema("person-type-extends-base-type.xsd");
 
         const result = locateNodeById(schemaObj, "/complexType:PersonType/group:sequence[0]");
 
@@ -159,15 +129,11 @@ describe("SchemaNavigator", () => {
 
     describe("Anonymous complex type navigation", () => {
       test("should locate anonymous complex type within element", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person">
-    <xs:complexType>
-      <xs:sequence/>
-    </xs:complexType>
-  </xs:element>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+        const schemaObj = schemaWith(`<xs:element name="person">
+  <xs:complexType>
+    <xs:sequence/>
+  </xs:complexType>
+</xs:element>`);
 
         const result = locateNodeById(
           schemaObj,
@@ -179,17 +145,7 @@ describe("SchemaNavigator", () => {
       });
 
       test("should locate sequence within anonymous complex type", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element name="name" type="xs:string"/>
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+        const schemaObj = readTestSchema(PERSON_WITH_NAME_XSD);
 
         const result = locateNodeById(
           schemaObj,
@@ -201,17 +157,13 @@ describe("SchemaNavigator", () => {
       });
 
       test("should locate choice within anonymous complex type", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="payment">
-    <xs:complexType>
-      <xs:choice>
-        <xs:element name="creditCard" type="xs:string"/>
-      </xs:choice>
-    </xs:complexType>
-  </xs:element>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+        const schemaObj = schemaWith(`<xs:element name="payment">
+  <xs:complexType>
+    <xs:choice>
+      <xs:element name="creditCard" type="xs:string"/>
+    </xs:choice>
+  </xs:complexType>
+</xs:element>`);
 
         const result = locateNodeById(
           schemaObj,
@@ -223,17 +175,13 @@ describe("SchemaNavigator", () => {
       });
 
       test("should locate all group within anonymous complex type", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="config">
-    <xs:complexType>
-      <xs:all>
-        <xs:element name="timeout" type="xs:int"/>
-      </xs:all>
-    </xs:complexType>
-  </xs:element>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+        const schemaObj = schemaWith(`<xs:element name="config">
+  <xs:complexType>
+    <xs:all>
+      <xs:element name="timeout" type="xs:int"/>
+    </xs:all>
+  </xs:complexType>
+</xs:element>`);
 
         const result = locateNodeById(
           schemaObj,
@@ -247,18 +195,7 @@ describe("SchemaNavigator", () => {
 
     describe("Nested element navigation", () => {
       test("should locate element within sequence by name", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element name="name" type="xs:string"/>
-        <xs:element name="age" type="xs:int"/>
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+        const schemaObj = readTestSchema(PERSON_NAME_AND_AGE_XSD);
 
         const result = locateNodeById(
           schemaObj,
@@ -272,18 +209,7 @@ describe("SchemaNavigator", () => {
       });
 
       test("should locate element within sequence by position", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element name="name" type="xs:string"/>
-        <xs:element name="age" type="xs:int"/>
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+        const schemaObj = readTestSchema(PERSON_NAME_AND_AGE_XSD);
 
         const result = locateNodeById(
           schemaObj,
@@ -299,13 +225,9 @@ describe("SchemaNavigator", () => {
 
     describe("Simple type navigation", () => {
       test("should locate top-level simple type by name", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:simpleType name="StringType">
-    <xs:restriction base="xs:string"/>
-  </xs:simpleType>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+        const schemaObj = schemaWith(`<xs:simpleType name="StringType">
+  <xs:restriction base="xs:string"/>
+</xs:simpleType>`);
 
         const result = locateNodeById(schemaObj, "/simpleType:StringType");
 
@@ -318,15 +240,7 @@ describe("SchemaNavigator", () => {
 
     describe("Group navigation", () => {
       test("should locate named group by name", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:group name="PersonGroup">
-    <xs:sequence>
-      <xs:element name="name" type="xs:string"/>
-    </xs:sequence>
-  </xs:group>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+        const schemaObj = schemaWith(PERSON_GROUP_WITH_NAME_ELEMENT);
 
         const result = locateNodeById(schemaObj, "/group:PersonGroup");
 
@@ -337,15 +251,7 @@ describe("SchemaNavigator", () => {
       });
 
       test("should locate sequence via group:sequence[N] path under named complexType", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:complexType name="PersonType">
-    <xs:sequence>
-      <xs:element name="name" type="xs:string"/>
-    </xs:sequence>
-  </xs:complexType>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+        const schemaObj = readTestSchema(PERSON_TYPE_WITH_NAME_XSD);
 
         const result = locateNodeById(
           schemaObj,
@@ -357,15 +263,7 @@ describe("SchemaNavigator", () => {
       });
 
       test("should locate sequence via group:sequence[N] path under named group", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:group name="PersonGroup">
-    <xs:sequence>
-      <xs:element name="name" type="xs:string"/>
-    </xs:sequence>
-  </xs:group>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+        const schemaObj = schemaWith(PERSON_GROUP_WITH_NAME_ELEMENT);
 
         const result = locateNodeById(
           schemaObj,
@@ -377,15 +275,11 @@ describe("SchemaNavigator", () => {
       });
 
       test("should locate choice via group:choice[N] path under named complexType", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:complexType name="ChoiceType">
-    <xs:choice>
-      <xs:element name="opt" type="xs:string"/>
-    </xs:choice>
-  </xs:complexType>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+        const schemaObj = schemaWith(`<xs:complexType name="ChoiceType">
+  <xs:choice>
+    <xs:element name="opt" type="xs:string"/>
+  </xs:choice>
+</xs:complexType>`);
 
         const result = locateNodeById(
           schemaObj,
@@ -397,15 +291,11 @@ describe("SchemaNavigator", () => {
       });
 
       test("should locate all via group:all[N] path under named complexType", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:complexType name="AllType">
-    <xs:all>
-      <xs:element name="field" type="xs:string"/>
-    </xs:all>
-  </xs:complexType>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+        const schemaObj = schemaWith(`<xs:complexType name="AllType">
+  <xs:all>
+    <xs:element name="field" type="xs:string"/>
+  </xs:all>
+</xs:complexType>`);
 
         const result = locateNodeById(
           schemaObj,
@@ -417,17 +307,7 @@ describe("SchemaNavigator", () => {
       });
 
       test("should locate sequence via group:sequence[N] path under anonymous complexType", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element name="name" type="xs:string"/>
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+        const schemaObj = readTestSchema(PERSON_WITH_NAME_XSD);
 
         const result = locateNodeById(
           schemaObj,
@@ -439,18 +319,7 @@ describe("SchemaNavigator", () => {
       });
 
       test("should locate element inside sequence via full group:sequence[N] path", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element name="name" type="xs:string"/>
-        <xs:element name="age" type="xs:int"/>
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+        const schemaObj = readTestSchema(PERSON_NAME_AND_AGE_XSD);
 
         const result = locateNodeById(
           schemaObj,
@@ -466,10 +335,7 @@ describe("SchemaNavigator", () => {
 
     describe("Error handling", () => {
       test("should return not found for invalid ID format", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+        const schemaObj = emptySchema();
 
         const result = locateNodeById(schemaObj, "invalid-id");
 
@@ -478,11 +344,7 @@ describe("SchemaNavigator", () => {
       });
 
       test("should return not found for missing intermediate node", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person" type="xs:string"/>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+        const schemaObj = schemaWith(`<xs:element name="person" type="xs:string"/>`);
 
         const result = locateNodeById(
           schemaObj,
@@ -494,13 +356,9 @@ describe("SchemaNavigator", () => {
       });
 
       test("should return not found for non-existent sequence", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:complexType name="PersonType">
-    <xs:choice/>
-  </xs:complexType>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+        const schemaObj = schemaWith(`<xs:complexType name="PersonType">
+  <xs:choice/>
+</xs:complexType>`);
 
         const result = locateNodeById(schemaObj, "/complexType:PersonType/sequence");
 
@@ -510,12 +368,8 @@ describe("SchemaNavigator", () => {
 
     describe("Position-based navigation", () => {
       test("should locate element by position when multiple elements exist", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person" type="xs:string"/>
-  <xs:element name="company" type="xs:string"/>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+        const schemaObj = schemaWith(`<xs:element name="person" type="xs:string"/>
+<xs:element name="company" type="xs:string"/>`);
 
         const result = locateNodeById(schemaObj, "/element[1]");
 
@@ -526,16 +380,12 @@ describe("SchemaNavigator", () => {
       });
 
       test("should locate complex type by position", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:complexType name="Type1">
-    <xs:sequence/>
-  </xs:complexType>
-  <xs:complexType name="Type2">
-    <xs:sequence/>
-  </xs:complexType>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+        const schemaObj = schemaWith(`<xs:complexType name="Type1">
+  <xs:sequence/>
+</xs:complexType>
+<xs:complexType name="Type2">
+  <xs:sequence/>
+</xs:complexType>`);
 
         const result = locateNodeById(schemaObj, "/complexType[0]");
 

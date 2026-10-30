@@ -5,6 +5,14 @@
 
 import { SchemaModelManager } from "./schemaModelManager.js";
 import { schema } from "../shared/types.js";
+import { emptySchemaXml, readTestXml, schemaXmlWith } from "./__tests__/schemaTestHelpers.js";
+
+/** A schema with a target namespace and the element `root`. */
+const SCHEMA_WITH_TARGET_NAMESPACE = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="http://example.com/test">
+  <xs:element name="root" type="xs:string"/>
+</xs:schema>`;
 
 describe("SchemaModelManager", () => {
   describe("constructor", () => {
@@ -28,11 +36,7 @@ describe("SchemaModelManager", () => {
   describe("loadFromXml", () => {
     test("should load schema from valid XML", () => {
       const manager = new SchemaModelManager();
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
-           targetNamespace="http://example.com/test">
-  <xs:element name="root" type="xs:string"/>
-</xs:schema>`;
+      const xml = SCHEMA_WITH_TARGET_NAMESPACE;
 
       manager.loadFromXml(xml);
 
@@ -98,11 +102,7 @@ describe("SchemaModelManager", () => {
 
   describe("toXml", () => {
     test("should marshal schema to XML", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
-           targetNamespace="http://example.com/test">
-  <xs:element name="root" type="xs:string"/>
-</xs:schema>`;
+      const xml = SCHEMA_WITH_TARGET_NAMESPACE;
 
       const manager = new SchemaModelManager();
       manager.loadFromXml(xml);
@@ -146,11 +146,7 @@ describe("SchemaModelManager", () => {
 
   describe("cloneSchema", () => {
     test("should create a deep copy of the schema", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
-           targetNamespace="http://example.com/test">
-  <xs:element name="root" type="xs:string"/>
-</xs:schema>`;
+      const xml = SCHEMA_WITH_TARGET_NAMESPACE;
 
       const manager = new SchemaModelManager();
       manager.loadFromXml(xml);
@@ -176,11 +172,7 @@ describe("SchemaModelManager", () => {
     });
 
     test("should create independent copies", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
-           targetNamespace="http://example.com/test">
-  <xs:element name="root" type="xs:string"/>
-</xs:schema>`;
+      const xml = SCHEMA_WITH_TARGET_NAMESPACE;
 
       const manager = new SchemaModelManager();
       manager.loadFromXml(xml);
@@ -231,11 +223,8 @@ describe("SchemaModelManager", () => {
 
   describe("findElement", () => {
     test("should find element by name", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="root" type="xs:string"/>
-  <xs:element name="item" type="xs:int"/>
-</xs:schema>`;
+      const xml = schemaXmlWith(`<xs:element name="root" type="xs:string"/>
+<xs:element name="item" type="xs:int"/>`);
 
       const manager = new SchemaModelManager();
       manager.loadFromXml(xml);
@@ -246,10 +235,7 @@ describe("SchemaModelManager", () => {
     });
 
     test("should return not found for non-existent element", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="root" type="xs:string"/>
-</xs:schema>`;
+      const xml = schemaXmlWith(`<xs:element name="root" type="xs:string"/>`);
 
       const manager = new SchemaModelManager();
       manager.loadFromXml(xml);
@@ -260,12 +246,9 @@ describe("SchemaModelManager", () => {
     });
 
     test("should return not found when no elements exist", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
 
       const manager = new SchemaModelManager();
-      manager.loadFromXml(xml);
+      manager.loadFromXml(emptySchemaXml());
 
       const result = manager.findElement("root");
       expect(result.found).toBe(false);
@@ -274,14 +257,11 @@ describe("SchemaModelManager", () => {
 
   describe("findSimpleType", () => {
     test("should find simple type by name", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:simpleType name="MyString">
-    <xs:restriction base="xs:string">
-      <xs:maxLength value="100"/>
-    </xs:restriction>
-  </xs:simpleType>
-</xs:schema>`;
+      const xml = schemaXmlWith(`<xs:simpleType name="MyString">
+  <xs:restriction base="xs:string">
+    <xs:maxLength value="100"/>
+  </xs:restriction>
+</xs:simpleType>`);
 
       const manager = new SchemaModelManager();
       manager.loadFromXml(xml);
@@ -292,12 +272,9 @@ describe("SchemaModelManager", () => {
     });
 
     test("should return not found for non-existent simple type", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
 
       const manager = new SchemaModelManager();
-      manager.loadFromXml(xml);
+      manager.loadFromXml(emptySchemaXml());
 
       const result = manager.findSimpleType("MyString");
       expect(result.found).toBe(false);
@@ -306,14 +283,11 @@ describe("SchemaModelManager", () => {
 
   describe("findComplexType", () => {
     test("should find complex type by name", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:complexType name="MyType">
-    <xs:sequence>
-      <xs:element name="child" type="xs:string"/>
-    </xs:sequence>
-  </xs:complexType>
-</xs:schema>`;
+      const xml = schemaXmlWith(`<xs:complexType name="MyType">
+  <xs:sequence>
+    <xs:element name="child" type="xs:string"/>
+  </xs:sequence>
+</xs:complexType>`);
 
       const manager = new SchemaModelManager();
       manager.loadFromXml(xml);
@@ -324,12 +298,9 @@ describe("SchemaModelManager", () => {
     });
 
     test("should return not found for non-existent complex type", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
 
       const manager = new SchemaModelManager();
-      manager.loadFromXml(xml);
+      manager.loadFromXml(emptySchemaXml());
 
       const result = manager.findComplexType("MyType");
       expect(result.found).toBe(false);
@@ -338,14 +309,11 @@ describe("SchemaModelManager", () => {
 
   describe("findGroup", () => {
     test("should find group by name", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:group name="MyGroup">
-    <xs:sequence>
-      <xs:element name="item" type="xs:string"/>
-    </xs:sequence>
-  </xs:group>
-</xs:schema>`;
+      const xml = schemaXmlWith(`<xs:group name="MyGroup">
+  <xs:sequence>
+    <xs:element name="item" type="xs:string"/>
+  </xs:sequence>
+</xs:group>`);
 
       const manager = new SchemaModelManager();
       manager.loadFromXml(xml);
@@ -356,12 +324,9 @@ describe("SchemaModelManager", () => {
     });
 
     test("should return not found for non-existent group", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
 
       const manager = new SchemaModelManager();
-      manager.loadFromXml(xml);
+      manager.loadFromXml(emptySchemaXml());
 
       const result = manager.findGroup("MyGroup");
       expect(result.found).toBe(false);
@@ -370,12 +335,9 @@ describe("SchemaModelManager", () => {
 
   describe("findAttributeGroup", () => {
     test("should find attribute group by name", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:attributeGroup name="MyAttrGroup">
-    <xs:attribute name="id" type="xs:string"/>
-  </xs:attributeGroup>
-</xs:schema>`;
+      const xml = schemaXmlWith(`<xs:attributeGroup name="MyAttrGroup">
+  <xs:attribute name="id" type="xs:string"/>
+</xs:attributeGroup>`);
 
       const manager = new SchemaModelManager();
       manager.loadFromXml(xml);
@@ -386,12 +348,9 @@ describe("SchemaModelManager", () => {
     });
 
     test("should return not found for non-existent attribute group", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
 
       const manager = new SchemaModelManager();
-      manager.loadFromXml(xml);
+      manager.loadFromXml(emptySchemaXml());
 
       const result = manager.findAttributeGroup("MyAttrGroup");
       expect(result.found).toBe(false);
@@ -400,12 +359,9 @@ describe("SchemaModelManager", () => {
 
   describe("getAllElements", () => {
     test("should return all top-level elements", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="root" type="xs:string"/>
-  <xs:element name="item" type="xs:int"/>
-  <xs:element name="data" type="xs:boolean"/>
-</xs:schema>`;
+      const xml = schemaXmlWith(`<xs:element name="root" type="xs:string"/>
+<xs:element name="item" type="xs:int"/>
+<xs:element name="data" type="xs:boolean"/>`);
 
       const manager = new SchemaModelManager();
       manager.loadFromXml(xml);
@@ -416,12 +372,9 @@ describe("SchemaModelManager", () => {
     });
 
     test("should return empty array when no elements exist", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
 
       const manager = new SchemaModelManager();
-      manager.loadFromXml(xml);
+      manager.loadFromXml(emptySchemaXml());
 
       const elements = manager.getAllElements();
       expect(elements).toEqual([]);
@@ -430,15 +383,12 @@ describe("SchemaModelManager", () => {
 
   describe("getAllSimpleTypes", () => {
     test("should return all simple types", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:simpleType name="Type1">
-    <xs:restriction base="xs:string"/>
-  </xs:simpleType>
-  <xs:simpleType name="Type2">
-    <xs:restriction base="xs:int"/>
-  </xs:simpleType>
-</xs:schema>`;
+      const xml = schemaXmlWith(`<xs:simpleType name="Type1">
+  <xs:restriction base="xs:string"/>
+</xs:simpleType>
+<xs:simpleType name="Type2">
+  <xs:restriction base="xs:int"/>
+</xs:simpleType>`);
 
       const manager = new SchemaModelManager();
       manager.loadFromXml(xml);
@@ -449,12 +399,9 @@ describe("SchemaModelManager", () => {
     });
 
     test("should return empty array when no simple types exist", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
 
       const manager = new SchemaModelManager();
-      manager.loadFromXml(xml);
+      manager.loadFromXml(emptySchemaXml());
 
       const types = manager.getAllSimpleTypes();
       expect(types).toEqual([]);
@@ -463,19 +410,7 @@ describe("SchemaModelManager", () => {
 
   describe("getAllComplexTypes", () => {
     test("should return all complex types", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:complexType name="Type1">
-    <xs:sequence>
-      <xs:element name="a" type="xs:string"/>
-    </xs:sequence>
-  </xs:complexType>
-  <xs:complexType name="Type2">
-    <xs:sequence>
-      <xs:element name="b" type="xs:int"/>
-    </xs:sequence>
-  </xs:complexType>
-</xs:schema>`;
+      const xml = readTestXml("two-complex-types-with-sequences.xsd");
 
       const manager = new SchemaModelManager();
       manager.loadFromXml(xml);
@@ -486,12 +421,9 @@ describe("SchemaModelManager", () => {
     });
 
     test("should return empty array when no complex types exist", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
 
       const manager = new SchemaModelManager();
-      manager.loadFromXml(xml);
+      manager.loadFromXml(emptySchemaXml());
 
       const types = manager.getAllComplexTypes();
       expect(types).toEqual([]);
@@ -500,19 +432,7 @@ describe("SchemaModelManager", () => {
 
   describe("getAllGroups", () => {
     test("should return all groups", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:group name="Group1">
-    <xs:sequence>
-      <xs:element name="a" type="xs:string"/>
-    </xs:sequence>
-  </xs:group>
-  <xs:group name="Group2">
-    <xs:sequence>
-      <xs:element name="b" type="xs:string"/>
-    </xs:sequence>
-  </xs:group>
-</xs:schema>`;
+      const xml = readTestXml("two-groups-with-sequences.xsd");
 
       const manager = new SchemaModelManager();
       manager.loadFromXml(xml);
@@ -523,12 +443,9 @@ describe("SchemaModelManager", () => {
     });
 
     test("should return empty array when no groups exist", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
 
       const manager = new SchemaModelManager();
-      manager.loadFromXml(xml);
+      manager.loadFromXml(emptySchemaXml());
 
       const groups = manager.getAllGroups();
       expect(groups).toEqual([]);
@@ -537,15 +454,12 @@ describe("SchemaModelManager", () => {
 
   describe("getAllAttributeGroups", () => {
     test("should return all attribute groups", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:attributeGroup name="AttrGroup1">
-    <xs:attribute name="id" type="xs:string"/>
-  </xs:attributeGroup>
-  <xs:attributeGroup name="AttrGroup2">
-    <xs:attribute name="name" type="xs:string"/>
-  </xs:attributeGroup>
-</xs:schema>`;
+      const xml = schemaXmlWith(`<xs:attributeGroup name="AttrGroup1">
+  <xs:attribute name="id" type="xs:string"/>
+</xs:attributeGroup>
+<xs:attributeGroup name="AttrGroup2">
+  <xs:attribute name="name" type="xs:string"/>
+</xs:attributeGroup>`);
 
       const manager = new SchemaModelManager();
       manager.loadFromXml(xml);
@@ -559,12 +473,9 @@ describe("SchemaModelManager", () => {
     });
 
     test("should return empty array when no attribute groups exist", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
 
       const manager = new SchemaModelManager();
-      manager.loadFromXml(xml);
+      manager.loadFromXml(emptySchemaXml());
 
       const attrGroups = manager.getAllAttributeGroups();
       expect(attrGroups).toEqual([]);
@@ -585,12 +496,9 @@ describe("SchemaModelManager", () => {
     });
 
     test("should return undefined when no target namespace", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
 
       const manager = new SchemaModelManager();
-      manager.loadFromXml(xml);
+      manager.loadFromXml(emptySchemaXml());
 
       expect(manager.getTargetNamespace()).toBeUndefined();
     });
@@ -598,11 +506,8 @@ describe("SchemaModelManager", () => {
 
   describe("getImports", () => {
     test("should return all imports", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:import namespace="http://example.com/ns1" schemaLocation="schema1.xsd"/>
-  <xs:import namespace="http://example.com/ns2" schemaLocation="schema2.xsd"/>
-</xs:schema>`;
+      const xml = schemaXmlWith(`<xs:import namespace="http://example.com/ns1" schemaLocation="schema1.xsd"/>
+<xs:import namespace="http://example.com/ns2" schemaLocation="schema2.xsd"/>`);
 
       const manager = new SchemaModelManager();
       manager.loadFromXml(xml);
@@ -616,12 +521,9 @@ describe("SchemaModelManager", () => {
     });
 
     test("should return empty array when no imports exist", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
 
       const manager = new SchemaModelManager();
-      manager.loadFromXml(xml);
+      manager.loadFromXml(emptySchemaXml());
 
       const imports = manager.getImports();
       expect(imports).toEqual([]);
@@ -630,11 +532,8 @@ describe("SchemaModelManager", () => {
 
   describe("getIncludes", () => {
     test("should return all includes", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:include schemaLocation="common.xsd"/>
-  <xs:include schemaLocation="types.xsd"/>
-</xs:schema>`;
+      const xml = schemaXmlWith(`<xs:include schemaLocation="common.xsd"/>
+<xs:include schemaLocation="types.xsd"/>`);
 
       const manager = new SchemaModelManager();
       manager.loadFromXml(xml);
@@ -646,12 +545,9 @@ describe("SchemaModelManager", () => {
     });
 
     test("should return empty array when no includes exist", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
 
       const manager = new SchemaModelManager();
-      manager.loadFromXml(xml);
+      manager.loadFromXml(emptySchemaXml());
 
       const includes = manager.getIncludes();
       expect(includes).toEqual([]);

@@ -12,11 +12,11 @@ import type {
 } from "../../shared/types.js";
 import { toArray } from "../../shared/schemaUtils.js";
 import {
-  MINIMAL_SCHEMA,
   SCHEMA_WITH_COMPLEXTYPE,
   runCommandExpectSuccessSchema,
   runCommandExpectValidationFailure,
 } from "./pipelineTestHelpers.js";
+import { emptySchemaXml } from "./schemaTestHelpers.js";
 
 describe("Integration: ComplexType pipeline", () => {
   // ─── addComplexType ────────────────────────────────────────────────────────
@@ -32,7 +32,7 @@ describe("Integration: ComplexType pipeline", () => {
         },
       };
 
-      const result = runCommandExpectSuccessSchema(MINIMAL_SCHEMA, cmd);
+      const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
       const types = toArray(result.complexType);
       const orderType = types.find((t) => t.name === "OrderType");
 
@@ -52,7 +52,7 @@ describe("Integration: ComplexType pipeline", () => {
         },
       };
 
-      const result = runCommandExpectSuccessSchema(MINIMAL_SCHEMA, cmd);
+      const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
       const choiceType = toArray(result.complexType).find((t) => t.name === "ChoiceType");
 
       expect(choiceType).toBeDefined();
@@ -70,7 +70,7 @@ describe("Integration: ComplexType pipeline", () => {
         },
       };
 
-      const result = runCommandExpectSuccessSchema(MINIMAL_SCHEMA, cmd);
+      const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
       const allType = toArray(result.complexType).find((t) => t.name === "AllType");
 
       expect(allType).toBeDefined();
@@ -89,7 +89,7 @@ describe("Integration: ComplexType pipeline", () => {
         },
       };
 
-      const result = runCommandExpectSuccessSchema(MINIMAL_SCHEMA, cmd);
+      const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
       const baseType = toArray(result.complexType).find((t) => t.name === "BaseType");
 
       expect(baseType).toBeDefined();
@@ -102,7 +102,7 @@ describe("Integration: ComplexType pipeline", () => {
         payload: { parentId: "/schema", typeName: "123Bad", contentModel: "sequence" },
       };
 
-      runCommandExpectValidationFailure(MINIMAL_SCHEMA, cmd, "Type name must be a valid XML name");
+      runCommandExpectValidationFailure(emptySchemaXml(), cmd, "Type name must be a valid XML name");
     });
 
     test("returns validation error for duplicate complex type name", () => {

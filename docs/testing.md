@@ -4,8 +4,8 @@ title: Testing
 description: How the extension is tested - running the tests and the type check, the four Vitest projects, mocks and helpers, conventions for tests, mocks, helper functions and helper classes, which tests to write for typical changes, coverage, CI, the smoke tests in the extension host with a mock webview, and how the current tests compare with the testing strategy of ADR 001.
 tags: [testing, vitest, mocks, coverage, ci, conventions]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-29T15:16:40Z }
-verified: { by: human:neumaennl, at: 2026-10-29T15:30:22Z }
+generated: { by: human:neumaennl, at: 2026-10-30T11:52:32Z }
+verified: { by: human:neumaennl, at: 2026-10-30T12:13:56Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -126,8 +126,8 @@ Use the Node version from `.nvmrc`, which CI also uses. It is the Node version o
 - **VS Code objects.** `stubEditor(xml)` in `src/__tests__/providerTestHelpers.ts` creates a `SchemaEditorProvider` and partial stubs of `ExtensionContext`, `Webview`, `WebviewPanel` and a `TextDocument` with the given text, with only the members the provider uses, and returns the mocks of `postMessage` and `asWebviewUri`. `resolveAndGetHandler()` opens the editor and returns the handler that the provider registered for messages from the webview.[^provider-test-helpers]
 - **Webview API.** `main.test.ts` sets `acquireVsCodeApi` on `globalThis` before the app is loaded, with mocks for `postMessage`, `getState` and `setState`, and builds the page with `document.body.innerHTML`. Each test loads the app again with `vi.resetModules()` and `await import("./main")`.[^main-test]
 - **SVG measuring.** jsdom has no layout engine, so `setupGetBBoxMock()` in `webview-src/__tests__/svgTestHelpers.ts` gives every element a `getBBox()` that assumes 6 pixels per character and a height of 10 pixels.[^svg-test-helpers]
-- **Pipeline helpers.** `src/__tests__/pipelineTestHelpers.ts` has small schemas as constants (`MINIMAL_SCHEMA`, `SCHEMA_WITH_ELEMENTS` and others) and runs a command through a new `CommandProcessor`: `runCommand()`, `runCommandExpectSuccess()` (returns the XML), `runCommandExpectSuccessSchema()` (returns the unmarshalled schema) and `runCommandExpectValidationFailure()`.[^pipeline-test-helpers]
-- **Schema objects.** `src/__tests__/schemaTestHelpers.ts` unmarshals schemas for the tests of validators and executors: `schemaWith(body)`, `emptySchema()`, `schemaWithAttrGroups(body)` and `schemaWithIncludes(...)`.[^schema-test-helpers]
+- **Pipeline helpers.** `src/__tests__/pipelineTestHelpers.ts` has small schemas as constants (`SCHEMA_WITH_ELEMENTS` and others, built with `schemaXmlWith()`) and runs a command through a new `CommandProcessor`: `runCommand()`, `runCommandExpectSuccess()` (returns the XML), `runCommandExpectSuccessSchema()` (returns the unmarshalled schema) and `runCommandExpectValidationFailure()`.[^pipeline-test-helpers]
+- **Schema XML and objects.** `src/__tests__/schemaTestHelpers.ts` builds the XML of a schema with `schemaXmlWith(body, namespaces)` (the XML declaration, the `xs` namespace, further namespace declarations by prefix if given, and the given content) and of a schema without content with `emptySchemaXml()`, and reads XML files from `src/__tests__/test-resources` with `readTestXml(name)`. For the tests of validators and executors it unmarshals schemas: `schemaWith(body, namespaces)`, `emptySchema()`, `readTestSchema(name)` (a file from `test-resources`), `schemaWithAttrGroups(body)` and `schemaWithIncludes(...)`. A test that only needs the schema object uses these instead of unmarshalling XML itself.[^schema-test-helpers]
 - **Assertions.** `expectInvalid()` in `src/__tests__/validationTestHelpers.ts` checks that a validation failed and narrows the result, so that the test can read `error`.[^validation-test-helpers] `src/__tests__/textTestHelpers.ts` checks the order of strings in text such as serialized XML: `expectLinesInOrder()` across lines, `expectInOrderOnLine()` within one line.[^text-test-helpers]
 - **Scripts.** The tests of the scripts send no request and install nothing. `scripts/__tests__/releaseTestHelpers.ts` replaces `fetch` with `stubFetch()`, which answers each URL with a given body, and builds GitHub releases with `release()` and `releasesPage()`. The tests of `vscode-version.ts` and `scripts/lib/node-setup.ts` mock `node:child_process`, `node:fs` and `node:readline/promises` where the script would start programs, check files or ask in the terminal, and work in a temporary folder. The tests of `verify-vsix.ts` unpack tiny VSIX files from `scripts/__tests__/test-resources/` with the same tool as the script (`unzip`, on Windows `tar.exe`), because unpacking is what the script checks: a valid extension, one without `activate()` and one with a missing dependency, all ES modules like the extension.[^release-test-helpers]
 
@@ -167,7 +167,14 @@ Existing tests that do not follow these conventions yet are listed in [Known iss
 
 - A test file tests one feature, usually one module. Test cases for a feature are not spread over several files, and no two test cases test the same thing.
 - Unit tests sit next to the source file and have its name with `.test.ts`; type tests end in `.test-d.ts`. Integration tests sit in the `__tests__` folder of the part (`shared/`, `src/`, `webview-src/`, `scripts/`), in subfolders that mirror the source folders if needed.
-- Files that several tests use sit in the `test-resources` folder in `__tests__`: larger XML snippets in `src/__tests__/test-resources` (see [Known issues](known-issues.md#test-xml-is-inline-instead-of-in-test-resources)), the VSIX files of the script tests in `scripts/__tests__/test-resources`.
+- Files that tests read sit in the `test-resources` folder in `__tests__`: XML in `src/__tests__/test-resources`, the VSIX files of the script tests in `scripts/__tests__/test-resources`.
+- Test XML is placed by its size and its use:
+  - **More than 10 lines**, or **used in several test files** with more than 3 lines of content: a file in `src/__tests__/test-resources`, named after its content (for example `person-type-with-name-element.xsd`) and read with `readTestXml()`, or with `readTestSchema()` if the test needs the schema object.
+  - **Used in several test files** with at most 3 lines of content: inline with `schemaXmlWith(body)` or `schemaWith(body)`, so that the input stays visible in the test.
+  - **Used several times in one file:** a constant at the top of the file, after the imports. If the tests only unmarshal it, the constant holds the content of the schema, which they pass to `schemaWith()`. The same applies to the name of a file in `test-resources` and to namespace declarations.
+  - **Otherwise** inline in the test.
+  - XML in a test or a constant is built with `schemaXmlWith()` or `schemaWith()`, which also declare further namespaces. Only a schema that they cannot express, for example one with a `targetNamespace` or a default namespace, is written out in full.
+  - A schema without content is always `emptySchemaXml()` or `emptySchema()`, not a variable or constant with another name.
 - A file has a `describe` block for the feature and nested blocks for methods or cases. Test cases use `test("should …")` (and `test.each()`) and follow Arrange, Act, Assert, as the tests in the extension host have to, because Mocha's TDD interface has `suite()` and `test()` but no `it()`. ESLint enforces `test()` in the Vitest tests as well (rule `vitest/consistent-test-it`).
 
 ## Mocks

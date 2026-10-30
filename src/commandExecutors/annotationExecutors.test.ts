@@ -14,8 +14,6 @@
  * or tested here.
  */
 
-import { unmarshal } from "@neumaennl/xmlbind-ts";
-import { schema } from "../../shared/types.js";
 import {
   AddAnnotationCommand,
   RemoveAnnotationCommand,
@@ -38,52 +36,21 @@ import {
   parseSchemaAnnotationId,
   parseSchemaDocumentationId,
 } from "../commandUtils.js";
+import { emptySchema, readTestSchema, schemaWith } from "../__tests__/schemaTestHelpers.js";
 
 // ─── Shared XML fixtures ────────────────────────────────────────────────────
 
-/** Schema with a bare element — no annotation. */
-const elementSchemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person" type="xs:string"/>
-</xs:schema>`;
+/** The file with an element `person` with an annotation that has one documentation. */
+const DOCUMENTED_PERSON_XSD = "person-element-with-documentation.xsd";
 
-/** Schema with a complexType. */
-const complexTypeSchemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:complexType name="PersonType"/>
-</xs:schema>`;
+/** The file with a schema with two annotations. */
+const TWO_ANNOTATIONS_XSD = "schema-with-two-annotations.xsd";
 
-/** Schema with an annotated element and one documentation child. */
-const annotatedElementXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person" type="xs:string">
-    <xs:annotation>
-      <xs:documentation>A person.</xs:documentation>
-    </xs:annotation>
-  </xs:element>
-</xs:schema>`;
+/** The file with an element `person` with an annotation that has two documentations. */
+const TWO_DOCUMENTATIONS_XSD = "person-element-with-two-documentations.xsd";
 
-/** Schema with an annotated element and two documentation children. */
-const twoDocumentationXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person" type="xs:string">
-    <xs:annotation>
-      <xs:documentation xml:lang="en">English</xs:documentation>
-      <xs:documentation xml:lang="de">Deutsch</xs:documentation>
-    </xs:annotation>
-  </xs:element>
-</xs:schema>`;
-
-/** Schema with an annotated element that also has an appinfo child. */
-const annotatedWithAppinfoXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person" type="xs:string">
-    <xs:annotation>
-      <xs:documentation>A person.</xs:documentation>
-      <xs:appinfo>app-specific</xs:appinfo>
-    </xs:annotation>
-  </xs:element>
-</xs:schema>`;
+/** A bare element — no annotation. */
+const PERSON_ELEMENT = `<xs:element name="person" type="xs:string"/>`;
 
 // ─── parseDocumentationId ────────────────────────────────────────────────────
 
@@ -119,7 +86,7 @@ describe("parseDocumentationId", () => {
 
 describe("executeAddAnnotation", () => {
   test("creates an annotation with no children when no optional fields are given", () => {
-    const schemaObj = unmarshal(schema, elementSchemaXml);
+    const schemaObj = schemaWith(PERSON_ELEMENT);
     const command: AddAnnotationCommand = {
       type: "addAnnotation",
       payload: { targetId: "/element:person" },
@@ -134,7 +101,7 @@ describe("executeAddAnnotation", () => {
   });
 
   test("creates an annotation with a documentation child", () => {
-    const schemaObj = unmarshal(schema, elementSchemaXml);
+    const schemaObj = schemaWith(PERSON_ELEMENT);
     const command: AddAnnotationCommand = {
       type: "addAnnotation",
       payload: { targetId: "/element:person", documentation: "A person." },
@@ -149,7 +116,7 @@ describe("executeAddAnnotation", () => {
   });
 
   test("creates an annotation with an appinfo child", () => {
-    const schemaObj = unmarshal(schema, elementSchemaXml);
+    const schemaObj = schemaWith(PERSON_ELEMENT);
     const command: AddAnnotationCommand = {
       type: "addAnnotation",
       payload: { targetId: "/element:person", appInfo: "app-info" },
@@ -164,7 +131,7 @@ describe("executeAddAnnotation", () => {
   });
 
   test("creates an annotation with both documentation and appinfo children", () => {
-    const schemaObj = unmarshal(schema, elementSchemaXml);
+    const schemaObj = schemaWith(PERSON_ELEMENT);
     const command: AddAnnotationCommand = {
       type: "addAnnotation",
       payload: {
@@ -182,7 +149,7 @@ describe("executeAddAnnotation", () => {
   });
 
   test("works on a complexType target", () => {
-    const schemaObj = unmarshal(schema, complexTypeSchemaXml);
+    const schemaObj = schemaWith(`<xs:complexType name="PersonType"/>`);
     const command: AddAnnotationCommand = {
       type: "addAnnotation",
       payload: { targetId: "/complexType:PersonType", documentation: "A type." },
@@ -200,7 +167,7 @@ describe("executeAddAnnotation", () => {
 
 describe("executeRemoveAnnotation", () => {
   test("removes an existing annotation", () => {
-    const schemaObj = unmarshal(schema, annotatedElementXml);
+    const schemaObj = readTestSchema(DOCUMENTED_PERSON_XSD);
     const command: RemoveAnnotationCommand = {
       type: "removeAnnotation",
       payload: { annotationId: "/element:person" },
@@ -218,7 +185,7 @@ describe("executeRemoveAnnotation", () => {
 
 describe("executeModifyAnnotation", () => {
   test("updates documentation text of an existing annotation", () => {
-    const schemaObj = unmarshal(schema, annotatedElementXml);
+    const schemaObj = readTestSchema(DOCUMENTED_PERSON_XSD);
     const command: ModifyAnnotationCommand = {
       type: "modifyAnnotation",
       payload: { annotationId: "/element:person", documentation: "Updated." },
@@ -231,7 +198,7 @@ describe("executeModifyAnnotation", () => {
   });
 
   test("replaces all documentation children with a single new element", () => {
-    const schemaObj = unmarshal(schema, twoDocumentationXml);
+    const schemaObj = readTestSchema(TWO_DOCUMENTATIONS_XSD);
     const command: ModifyAnnotationCommand = {
       type: "modifyAnnotation",
       payload: { annotationId: "/element:person", documentation: "Replaced." },
@@ -247,15 +214,11 @@ describe("executeModifyAnnotation", () => {
 
   test("creates a documentation child when annotation has none, preserving appinfo", () => {
     // Start with an annotation that only has appinfo
-    const onlyAppinfoXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person" type="xs:string">
-    <xs:annotation>
-      <xs:appinfo>app</xs:appinfo>
-    </xs:annotation>
-  </xs:element>
-</xs:schema>`;
-    const schemaObj = unmarshal(schema, onlyAppinfoXml);
+    const schemaObj = schemaWith(`<xs:element name="person" type="xs:string">
+  <xs:annotation>
+    <xs:appinfo>app</xs:appinfo>
+  </xs:annotation>
+</xs:element>`);
     const command: ModifyAnnotationCommand = {
       type: "modifyAnnotation",
       payload: { annotationId: "/element:person", documentation: "New doc." },
@@ -274,7 +237,12 @@ describe("executeModifyAnnotation", () => {
   });
 
   test("updates appinfo text", () => {
-    const schemaObj = unmarshal(schema, annotatedWithAppinfoXml);
+    const schemaObj = schemaWith(`<xs:element name="person" type="xs:string">
+  <xs:annotation>
+    <xs:documentation>A person.</xs:documentation>
+    <xs:appinfo>app-specific</xs:appinfo>
+  </xs:annotation>
+</xs:element>`);
     const command: ModifyAnnotationCommand = {
       type: "modifyAnnotation",
       payload: { annotationId: "/element:person", appInfo: "new-app-info" },
@@ -287,7 +255,7 @@ describe("executeModifyAnnotation", () => {
   });
 
   test("adds an appinfo child when annotation has none", () => {
-    const schemaObj = unmarshal(schema, annotatedElementXml);
+    const schemaObj = readTestSchema(DOCUMENTED_PERSON_XSD);
     const command: ModifyAnnotationCommand = {
       type: "modifyAnnotation",
       payload: { annotationId: "/element:person", appInfo: "new-info" },
@@ -308,7 +276,7 @@ describe("executeModifyAnnotation", () => {
 
 describe("executeAddDocumentation", () => {
   test("creates an annotation and appends a documentation element", () => {
-    const schemaObj = unmarshal(schema, elementSchemaXml);
+    const schemaObj = schemaWith(PERSON_ELEMENT);
     const command: AddDocumentationCommand = {
       type: "addDocumentation",
       payload: { targetId: "/element:person", content: "A person." },
@@ -324,7 +292,7 @@ describe("executeAddDocumentation", () => {
   });
 
   test("appends a second documentation element to an existing annotation", () => {
-    const schemaObj = unmarshal(schema, annotatedElementXml);
+    const schemaObj = readTestSchema(DOCUMENTED_PERSON_XSD);
     const command: AddDocumentationCommand = {
       type: "addDocumentation",
       payload: { targetId: "/element:person", content: "Second.", lang: "en" },
@@ -341,7 +309,7 @@ describe("executeAddDocumentation", () => {
   });
 
   test("stores the xml:lang attribute in _anyAttributes", () => {
-    const schemaObj = unmarshal(schema, elementSchemaXml);
+    const schemaObj = schemaWith(PERSON_ELEMENT);
     const command: AddDocumentationCommand = {
       type: "addDocumentation",
       payload: { targetId: "/element:person", content: "Hallo.", lang: "de" },
@@ -356,7 +324,7 @@ describe("executeAddDocumentation", () => {
   });
 
   test("does not add a lang attribute when lang is not supplied", () => {
-    const schemaObj = unmarshal(schema, elementSchemaXml);
+    const schemaObj = schemaWith(PERSON_ELEMENT);
     const command: AddDocumentationCommand = {
       type: "addDocumentation",
       payload: { targetId: "/element:person", content: "No lang." },
@@ -376,7 +344,7 @@ describe("executeAddDocumentation", () => {
 
 describe("executeRemoveDocumentation", () => {
   test("removes the only documentation element and clears the documentation array", () => {
-    const schemaObj = unmarshal(schema, annotatedElementXml);
+    const schemaObj = readTestSchema(DOCUMENTED_PERSON_XSD);
     const command: RemoveDocumentationCommand = {
       type: "removeDocumentation",
       payload: { documentationId: "/element:person/documentation[0]" },
@@ -391,7 +359,7 @@ describe("executeRemoveDocumentation", () => {
   });
 
   test("removes the first of two documentation elements leaving the second", () => {
-    const schemaObj = unmarshal(schema, twoDocumentationXml);
+    const schemaObj = readTestSchema(TWO_DOCUMENTATIONS_XSD);
     const command: RemoveDocumentationCommand = {
       type: "removeDocumentation",
       payload: { documentationId: "/element:person/documentation[0]" },
@@ -407,7 +375,7 @@ describe("executeRemoveDocumentation", () => {
   });
 
   test("removes the second of two documentation elements leaving the first", () => {
-    const schemaObj = unmarshal(schema, twoDocumentationXml);
+    const schemaObj = readTestSchema(TWO_DOCUMENTATIONS_XSD);
     const command: RemoveDocumentationCommand = {
       type: "removeDocumentation",
       payload: { documentationId: "/element:person/documentation[1]" },
@@ -423,7 +391,7 @@ describe("executeRemoveDocumentation", () => {
   });
 
   test("throws for an invalid documentationId format", () => {
-    const schemaObj = unmarshal(schema, annotatedElementXml);
+    const schemaObj = readTestSchema(DOCUMENTED_PERSON_XSD);
     const command: RemoveDocumentationCommand = {
       type: "removeDocumentation",
       payload: { documentationId: "/element:person" },
@@ -440,7 +408,7 @@ describe("executeRemoveDocumentation", () => {
 
 describe("executeModifyDocumentation", () => {
   test("updates the content of an existing documentation element", () => {
-    const schemaObj = unmarshal(schema, annotatedElementXml);
+    const schemaObj = readTestSchema(DOCUMENTED_PERSON_XSD);
     const command: ModifyDocumentationCommand = {
       type: "modifyDocumentation",
       payload: {
@@ -458,7 +426,7 @@ describe("executeModifyDocumentation", () => {
   });
 
   test("sets the xml:lang attribute", () => {
-    const schemaObj = unmarshal(schema, annotatedElementXml);
+    const schemaObj = readTestSchema(DOCUMENTED_PERSON_XSD);
     const command: ModifyDocumentationCommand = {
       type: "modifyDocumentation",
       payload: {
@@ -476,7 +444,7 @@ describe("executeModifyDocumentation", () => {
   });
 
   test("removes the xml:lang attribute when lang is set to empty string", () => {
-    const schemaObj = unmarshal(schema, twoDocumentationXml);
+    const schemaObj = readTestSchema(TWO_DOCUMENTATIONS_XSD);
     const command: ModifyDocumentationCommand = {
       type: "modifyDocumentation",
       payload: {
@@ -496,7 +464,7 @@ describe("executeModifyDocumentation", () => {
   });
 
   test("updates content and lang simultaneously", () => {
-    const schemaObj = unmarshal(schema, annotatedElementXml);
+    const schemaObj = readTestSchema(DOCUMENTED_PERSON_XSD);
     const command: ModifyDocumentationCommand = {
       type: "modifyDocumentation",
       payload: {
@@ -516,7 +484,7 @@ describe("executeModifyDocumentation", () => {
   });
 
   test("modifies the second of two documentation elements leaving the first unchanged", () => {
-    const schemaObj = unmarshal(schema, twoDocumentationXml);
+    const schemaObj = readTestSchema(TWO_DOCUMENTATIONS_XSD);
     const command: ModifyDocumentationCommand = {
       type: "modifyDocumentation",
       payload: {
@@ -535,7 +503,7 @@ describe("executeModifyDocumentation", () => {
   });
 
   test("throws for an invalid documentationId format", () => {
-    const schemaObj = unmarshal(schema, annotatedElementXml);
+    const schemaObj = readTestSchema(DOCUMENTED_PERSON_XSD);
     const command: ModifyDocumentationCommand = {
       type: "modifyDocumentation",
       payload: { documentationId: "doc-123", content: "x" },
@@ -604,33 +572,14 @@ describe("parseSchemaDocumentationId", () => {
 
 // ─── Schema-root annotation operations ──────────────────────────────────────
 
-/** Schema with NO annotations at all. */
-const bareSchemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
-
-/** Schema with a single annotation on the schema element. */
-const schemaWithAnnotationXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:annotation>
-    <xs:documentation>Schema description.</xs:documentation>
-  </xs:annotation>
-</xs:schema>`;
-
-/** Schema with two annotations on the schema element. */
-const schemaWithTwoAnnotationsXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:annotation>
-    <xs:documentation>First.</xs:documentation>
-  </xs:annotation>
-  <xs:annotation>
-    <xs:documentation>Second.</xs:documentation>
-  </xs:annotation>
-</xs:schema>`;
+/** A single annotation on the schema element. */
+const SCHEMA_ANNOTATION = `<xs:annotation>
+  <xs:documentation>Schema description.</xs:documentation>
+</xs:annotation>`;
 
 describe("executeAddAnnotation — schema root", () => {
   test("appends a new annotation to an empty schema", () => {
-    const schemaObj = unmarshal(schema, bareSchemaXml);
+    const schemaObj = emptySchema();
     const command: AddAnnotationCommand = {
       type: "addAnnotation",
       payload: { targetId: "/schema", documentation: "My schema." },
@@ -644,7 +593,7 @@ describe("executeAddAnnotation — schema root", () => {
   });
 
   test("appends a second annotation when one already exists", () => {
-    const schemaObj = unmarshal(schema, schemaWithAnnotationXml);
+    const schemaObj = schemaWith(SCHEMA_ANNOTATION);
     const command: AddAnnotationCommand = {
       type: "addAnnotation",
       payload: { targetId: "/schema", documentation: "Second annotation." },
@@ -660,7 +609,7 @@ describe("executeAddAnnotation — schema root", () => {
   });
 
   test("adds an annotation with both documentation and appinfo", () => {
-    const schemaObj = unmarshal(schema, bareSchemaXml);
+    const schemaObj = emptySchema();
     const command: AddAnnotationCommand = {
       type: "addAnnotation",
       payload: { targetId: "/schema", documentation: "desc", appInfo: "info" },
@@ -676,7 +625,7 @@ describe("executeAddAnnotation — schema root", () => {
 
 describe("executeRemoveAnnotation — schema root", () => {
   test("removes the first schema annotation by index", () => {
-    const schemaObj = unmarshal(schema, schemaWithTwoAnnotationsXml);
+    const schemaObj = readTestSchema(TWO_ANNOTATIONS_XSD);
     const command: RemoveAnnotationCommand = {
       type: "removeAnnotation",
       payload: { annotationId: "/schema/annotation[0]" },
@@ -690,7 +639,7 @@ describe("executeRemoveAnnotation — schema root", () => {
   });
 
   test("removes the second schema annotation by index", () => {
-    const schemaObj = unmarshal(schema, schemaWithTwoAnnotationsXml);
+    const schemaObj = readTestSchema(TWO_ANNOTATIONS_XSD);
     const command: RemoveAnnotationCommand = {
       type: "removeAnnotation",
       payload: { annotationId: "/schema/annotation[1]" },
@@ -704,7 +653,7 @@ describe("executeRemoveAnnotation — schema root", () => {
   });
 
   test("removes the only annotation, leaving annotation as undefined", () => {
-    const schemaObj = unmarshal(schema, schemaWithAnnotationXml);
+    const schemaObj = schemaWith(SCHEMA_ANNOTATION);
     const command: RemoveAnnotationCommand = {
       type: "removeAnnotation",
       payload: { annotationId: "/schema/annotation[0]" },
@@ -719,7 +668,7 @@ describe("executeRemoveAnnotation — schema root", () => {
 
 describe("executeModifyAnnotation — schema root", () => {
   test("updates documentation on the first schema annotation", () => {
-    const schemaObj = unmarshal(schema, schemaWithAnnotationXml);
+    const schemaObj = schemaWith(SCHEMA_ANNOTATION);
     const command: ModifyAnnotationCommand = {
       type: "modifyAnnotation",
       payload: {
@@ -735,7 +684,7 @@ describe("executeModifyAnnotation — schema root", () => {
   });
 
   test("updates documentation on the second schema annotation", () => {
-    const schemaObj = unmarshal(schema, schemaWithTwoAnnotationsXml);
+    const schemaObj = readTestSchema(TWO_ANNOTATIONS_XSD);
     const command: ModifyAnnotationCommand = {
       type: "modifyAnnotation",
       payload: {
@@ -756,7 +705,7 @@ describe("executeModifyAnnotation — schema root", () => {
 
 describe("executeAddDocumentation — schema root", () => {
   test("creates a schema annotation and adds a documentation element (targetId: '/schema')", () => {
-    const schemaObj = unmarshal(schema, bareSchemaXml);
+    const schemaObj = emptySchema();
     const command: AddDocumentationCommand = {
       type: "addDocumentation",
       payload: { targetId: "/schema", content: "Schema doc." },
@@ -772,7 +721,7 @@ describe("executeAddDocumentation — schema root", () => {
   });
 
   test("appends to the first existing annotation (targetId: '/schema')", () => {
-    const schemaObj = unmarshal(schema, schemaWithAnnotationXml);
+    const schemaObj = schemaWith(SCHEMA_ANNOTATION);
     const command: AddDocumentationCommand = {
       type: "addDocumentation",
       payload: { targetId: "/schema", content: "Appended.", lang: "en" },
@@ -787,7 +736,7 @@ describe("executeAddDocumentation — schema root", () => {
   });
 
   test("appends to a specific schema annotation (targetId: '/schema/annotation[N]')", () => {
-    const schemaObj = unmarshal(schema, schemaWithTwoAnnotationsXml);
+    const schemaObj = readTestSchema(TWO_ANNOTATIONS_XSD);
     const command: AddDocumentationCommand = {
       type: "addDocumentation",
       payload: {
@@ -810,7 +759,7 @@ describe("executeAddDocumentation — schema root", () => {
 
 describe("executeRemoveDocumentation — schema root", () => {
   test("removes a documentation element via '/schema/annotation[N]/documentation[M]' when multiple docs exist", () => {
-    const schemaObj = unmarshal(schema, schemaWithAnnotationXml);
+    const schemaObj = schemaWith(SCHEMA_ANNOTATION);
 
     // Add a second documentation node to the first schema annotation
     const addCommand: AddDocumentationCommand = {
@@ -840,7 +789,7 @@ describe("executeRemoveDocumentation — schema root", () => {
   });
 
   test("removes a documentation element via '/schema/documentation[N]' shorthand", () => {
-    const schemaObj = unmarshal(schema, schemaWithAnnotationXml);
+    const schemaObj = schemaWith(SCHEMA_ANNOTATION);
     executeRemoveDocumentation(
       {
         type: "removeDocumentation",
@@ -858,7 +807,7 @@ describe("executeRemoveDocumentation — schema root", () => {
 
 describe("executeModifyDocumentation — schema root", () => {
   test("modifies a documentation element via '/schema/annotation[N]/documentation[M]'", () => {
-    const schemaObj = unmarshal(schema, schemaWithAnnotationXml);
+    const schemaObj = schemaWith(SCHEMA_ANNOTATION);
     executeModifyDocumentation(
       {
         type: "modifyDocumentation",
@@ -877,7 +826,7 @@ describe("executeModifyDocumentation — schema root", () => {
   });
 
   test("modifies a documentation element via '/schema/documentation[N]' shorthand", () => {
-    const schemaObj = unmarshal(schema, schemaWithAnnotationXml);
+    const schemaObj = schemaWith(SCHEMA_ANNOTATION);
     executeModifyDocumentation(
       {
         type: "modifyDocumentation",

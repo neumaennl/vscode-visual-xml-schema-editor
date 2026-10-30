@@ -26,13 +26,11 @@ import { schema } from "../../shared/types.js";
 import { toArray } from "../../shared/schemaUtils.js";
 import { resolveAndGetHandler, stubEditor } from "./providerTestHelpers.js";
 import type { Mock } from "vitest";
+import { schemaXmlWith } from "./schemaTestHelpers.js";
 
 // ─── Test infrastructure ──────────────────────────────────────────────────────
 
-const SIMPLE_SCHEMA_XML = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person" type="xs:string"/>
-</xs:schema>`;
+const SIMPLE_SCHEMA_XML = schemaXmlWith(`<xs:element name="person" type="xs:string"/>`);
 
 /** Waits for all pending microtasks to flush. */
 const flushMicrotasks = (): Promise<void> =>

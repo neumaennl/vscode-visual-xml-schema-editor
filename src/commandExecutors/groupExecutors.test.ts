@@ -16,14 +16,26 @@ import {
   executeModifyGroup,
 } from "./groupExecutors.js";
 import { toArray } from "../../shared/schemaUtils.js";
+import { emptySchema, readTestSchema, schemaWith } from "../__tests__/schemaTestHelpers.js";
+
+/** The file with a complexType `PersonType` with the local element `name`. */
+const PERSON_TYPE_WITH_NAME_XSD = "person-type-with-name-element.xsd";
+
+/** The file with two groups and an empty complexType `PersonType`. */
+const TWO_GROUPS_AND_PERSON_XSD = "two-groups-and-empty-person-type.xsd";
+
+/** A group `PersonGroup` and a complexType `PersonType` that references it in its sequence. */
+const PERSON_TYPE_WITH_GROUP_REF = `<xs:group name="PersonGroup"><xs:sequence/></xs:group>
+<xs:complexType name="PersonType">
+  <xs:sequence>
+    <xs:group ref="PersonGroup"/>
+  </xs:sequence>
+</xs:complexType>`;
 
 describe("Group Executors", () => {
   describe("executeAddGroup", () => {
     test("should add a group with a sequence content model", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+      const schemaObj = emptySchema();
 
       const command: AddGroupCommand = {
         type: "addGroup",
@@ -44,10 +56,7 @@ describe("Group Executors", () => {
     });
 
     test("should add a group with a choice content model", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+      const schemaObj = emptySchema();
 
       const command: AddGroupCommand = {
         type: "addGroup",
@@ -66,10 +75,7 @@ describe("Group Executors", () => {
     });
 
     test("should add a group with an all content model", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+      const schemaObj = emptySchema();
 
       const command: AddGroupCommand = {
         type: "addGroup",
@@ -88,10 +94,7 @@ describe("Group Executors", () => {
     });
 
     test("should add a group with documentation", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+      const schemaObj = emptySchema();
 
       const command: AddGroupCommand = {
         type: "addGroup",
@@ -110,13 +113,9 @@ describe("Group Executors", () => {
     });
 
     test("should append to existing groups", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:group name="ExistingGroup">
-    <xs:sequence/>
-  </xs:group>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+      const schemaObj = schemaWith(`<xs:group name="ExistingGroup">
+  <xs:sequence/>
+</xs:group>`);
 
       const command: AddGroupCommand = {
         type: "addGroup",
@@ -133,10 +132,7 @@ describe("Group Executors", () => {
     });
 
     test("should produce valid XSD output (round-trip)", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+      const schemaObj = emptySchema();
 
       const command: AddGroupCommand = {
         type: "addGroup",
@@ -159,13 +155,9 @@ describe("Group Executors", () => {
 
   describe("executeRemoveGroup", () => {
     test("should remove a group by ID", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:group name="PersonGroup">
-    <xs:sequence/>
-  </xs:group>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+      const schemaObj = schemaWith(`<xs:group name="PersonGroup">
+  <xs:sequence/>
+</xs:group>`);
 
       const command: RemoveGroupCommand = {
         type: "removeGroup",
@@ -180,16 +172,12 @@ describe("Group Executors", () => {
     });
 
     test("should remove one group while leaving others intact", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:group name="GroupA">
-    <xs:sequence/>
-  </xs:group>
-  <xs:group name="GroupB">
-    <xs:choice/>
-  </xs:group>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+      const schemaObj = schemaWith(`<xs:group name="GroupA">
+  <xs:sequence/>
+</xs:group>
+<xs:group name="GroupB">
+  <xs:choice/>
+</xs:group>`);
 
       const command: RemoveGroupCommand = {
         type: "removeGroup",
@@ -205,15 +193,7 @@ describe("Group Executors", () => {
     });
 
     test("should remove a compositor group from a complexType", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:complexType name="PersonType">
-    <xs:sequence>
-      <xs:element name="name" type="xs:string"/>
-    </xs:sequence>
-  </xs:complexType>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+      const schemaObj = readTestSchema(PERSON_TYPE_WITH_NAME_XSD);
 
       const command: RemoveGroupCommand = {
         type: "removeGroup",
@@ -231,13 +211,9 @@ describe("Group Executors", () => {
 
   describe("executeModifyGroup", () => {
     test("should rename a group", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:group name="OldName">
-    <xs:sequence/>
-  </xs:group>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+      const schemaObj = schemaWith(`<xs:group name="OldName">
+  <xs:sequence/>
+</xs:group>`);
 
       const command: ModifyGroupCommand = {
         type: "modifyGroup",
@@ -254,16 +230,12 @@ describe("Group Executors", () => {
     });
 
     test("should rename group refs when a top-level group is renamed", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:group name="OldName">
-    <xs:sequence/>
-  </xs:group>
-  <xs:complexType name="Wrapper">
-    <xs:group ref="OldName"/>
-  </xs:complexType>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+      const schemaObj = schemaWith(`<xs:group name="OldName">
+  <xs:sequence/>
+</xs:group>
+<xs:complexType name="Wrapper">
+  <xs:group ref="OldName"/>
+</xs:complexType>`);
 
       const command: ModifyGroupCommand = {
         type: "modifyGroup",
@@ -280,13 +252,9 @@ describe("Group Executors", () => {
     });
 
     test("should change the content model of a group", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:group name="MyGroup">
-    <xs:sequence/>
-  </xs:group>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+      const schemaObj = schemaWith(`<xs:group name="MyGroup">
+  <xs:sequence/>
+</xs:group>`);
 
       const command: ModifyGroupCommand = {
         type: "modifyGroup",
@@ -305,13 +273,9 @@ describe("Group Executors", () => {
     });
 
     test("should update the documentation of a group", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:group name="DocGroup">
-    <xs:sequence/>
-  </xs:group>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+      const schemaObj = schemaWith(`<xs:group name="DocGroup">
+  <xs:sequence/>
+</xs:group>`);
 
       const command: ModifyGroupCommand = {
         type: "modifyGroup",
@@ -331,13 +295,9 @@ describe("Group Executors", () => {
     });
 
     test("should update name, content model, and documentation together", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:group name="OriginalGroup">
-    <xs:sequence/>
-  </xs:group>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+      const schemaObj = schemaWith(`<xs:group name="OriginalGroup">
+  <xs:sequence/>
+</xs:group>`);
 
       const command: ModifyGroupCommand = {
         type: "modifyGroup",
@@ -359,13 +319,9 @@ describe("Group Executors", () => {
     });
 
     test("should leave unchanged properties untouched", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:group name="StableGroup">
-    <xs:sequence/>
-  </xs:group>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+      const schemaObj = schemaWith(`<xs:group name="StableGroup">
+  <xs:sequence/>
+</xs:group>`);
 
       const command: ModifyGroupCommand = {
         type: "modifyGroup",
@@ -383,15 +339,7 @@ describe("Group Executors", () => {
     });
 
     test("should modify occurrence constraints on a compositor group", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:complexType name="PersonType">
-    <xs:sequence>
-      <xs:element name="name" type="xs:string"/>
-    </xs:sequence>
-  </xs:complexType>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+      const schemaObj = readTestSchema(PERSON_TYPE_WITH_NAME_XSD);
 
       const command: ModifyGroupCommand = {
         type: "modifyGroup",
@@ -411,22 +359,9 @@ describe("Group Executors", () => {
   });
 
   describe("Group References (via addGroup/removeGroup/modifyGroup)", () => {
-    const schemaWithGroupAndType = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:group name="PersonGroup">
-    <xs:sequence/>
-  </xs:group>
-  <xs:group name="AddressGroup">
-    <xs:sequence/>
-  </xs:group>
-  <xs:complexType name="PersonType">
-    <xs:sequence/>
-  </xs:complexType>
-</xs:schema>`;
-
     describe("executeAddGroup (reference mode)", () => {
       test("should add a group reference to a sequence", () => {
-        const schemaObj = unmarshal(schema, schemaWithGroupAndType);
+        const schemaObj = readTestSchema(TWO_GROUPS_AND_PERSON_XSD);
 
         const command: AddGroupCommand = {
           type: "addGroup",
@@ -445,7 +380,7 @@ describe("Group Executors", () => {
       });
 
       test("should add a group reference with minOccurs and maxOccurs", () => {
-        const schemaObj = unmarshal(schema, schemaWithGroupAndType);
+        const schemaObj = readTestSchema(TWO_GROUPS_AND_PERSON_XSD);
 
         const command: AddGroupCommand = {
           type: "addGroup",
@@ -466,7 +401,7 @@ describe("Group Executors", () => {
       });
 
       test("should add multiple group references to the same sequence", () => {
-        const schemaObj = unmarshal(schema, schemaWithGroupAndType);
+        const schemaObj = readTestSchema(TWO_GROUPS_AND_PERSON_XSD);
 
         executeAddGroup(
           { type: "addGroup", payload: { ref: "PersonGroup", parentId: "/complexType:PersonType/sequence" } },
@@ -484,7 +419,7 @@ describe("Group Executors", () => {
       });
 
       test("should add a direct group reference on a complexType", () => {
-        const schemaObj = unmarshal(schema, schemaWithGroupAndType);
+        const schemaObj = readTestSchema(TWO_GROUPS_AND_PERSON_XSD);
 
         const command: AddGroupCommand = {
           type: "addGroup",
@@ -502,7 +437,7 @@ describe("Group Executors", () => {
       });
 
       test("should add a group reference with documentation annotation", () => {
-        const schemaObj = unmarshal(schema, schemaWithGroupAndType);
+        const schemaObj = readTestSchema(TWO_GROUPS_AND_PERSON_XSD);
 
         const command: AddGroupCommand = {
           type: "addGroup",
@@ -524,16 +459,7 @@ describe("Group Executors", () => {
 
     describe("executeRemoveGroup (reference mode)", () => {
       test("should remove a group reference from a sequence", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:group name="PersonGroup"><xs:sequence/></xs:group>
-  <xs:complexType name="PersonType">
-    <xs:sequence>
-      <xs:group ref="PersonGroup"/>
-    </xs:sequence>
-  </xs:complexType>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+        const schemaObj = schemaWith(PERSON_TYPE_WITH_GROUP_REF);
 
         const command: RemoveGroupCommand = {
           type: "removeGroup",
@@ -547,18 +473,7 @@ describe("Group Executors", () => {
       });
 
       test("should remove only the matching group reference, leaving others intact", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:group name="PersonGroup"><xs:sequence/></xs:group>
-  <xs:group name="AddressGroup"><xs:sequence/></xs:group>
-  <xs:complexType name="PersonType">
-    <xs:sequence>
-      <xs:group ref="PersonGroup"/>
-      <xs:group ref="AddressGroup"/>
-    </xs:sequence>
-  </xs:complexType>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+        const schemaObj = readTestSchema("person-type-with-two-group-refs-in-sequence.xsd");
 
         const command: RemoveGroupCommand = {
           type: "removeGroup",
@@ -573,14 +488,7 @@ describe("Group Executors", () => {
       });
 
       test("should remove a direct group ref from a complexType", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:group name="PersonGroup"><xs:sequence/></xs:group>
-  <xs:complexType name="PersonType">
-    <xs:group ref="PersonGroup"/>
-  </xs:complexType>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+        const schemaObj = readTestSchema("person-type-with-group-ref.xsd");
 
         const command: RemoveGroupCommand = {
           type: "removeGroup",
@@ -596,16 +504,7 @@ describe("Group Executors", () => {
 
     describe("executeModifyGroup (reference mode)", () => {
       test("should change the ref target of a group reference", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:group name="PersonGroup"><xs:sequence/></xs:group>
-  <xs:complexType name="PersonType">
-    <xs:sequence>
-      <xs:group ref="PersonGroup"/>
-    </xs:sequence>
-  </xs:complexType>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+        const schemaObj = schemaWith(PERSON_TYPE_WITH_GROUP_REF);
 
         const command: ModifyGroupCommand = {
           type: "modifyGroup",
@@ -622,16 +521,7 @@ describe("Group Executors", () => {
       });
 
       test("should update minOccurs and maxOccurs on a group reference", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:group name="PersonGroup"><xs:sequence/></xs:group>
-  <xs:complexType name="PersonType">
-    <xs:sequence>
-      <xs:group ref="PersonGroup"/>
-    </xs:sequence>
-  </xs:complexType>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+        const schemaObj = schemaWith(PERSON_TYPE_WITH_GROUP_REF);
 
         const command: ModifyGroupCommand = {
           type: "modifyGroup",
@@ -650,16 +540,7 @@ describe("Group Executors", () => {
       });
 
       test("should set documentation annotation on a group reference", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:group name="PersonGroup"><xs:sequence/></xs:group>
-  <xs:complexType name="PersonType">
-    <xs:sequence>
-      <xs:group ref="PersonGroup"/>
-    </xs:sequence>
-  </xs:complexType>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+        const schemaObj = schemaWith(PERSON_TYPE_WITH_GROUP_REF);
 
         const command: ModifyGroupCommand = {
           type: "modifyGroup",
@@ -677,15 +558,7 @@ describe("Group Executors", () => {
       });
 
       test("should modify a direct group ref on a complexType", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:group name="PersonGroup"><xs:sequence/></xs:group>
-  <xs:group name="AddressGroup"><xs:sequence/></xs:group>
-  <xs:complexType name="PersonType">
-    <xs:group ref="PersonGroup"/>
-  </xs:complexType>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+        const schemaObj = readTestSchema("person-type-with-one-of-two-groups.xsd");
 
         const command: ModifyGroupCommand = {
           type: "modifyGroup",

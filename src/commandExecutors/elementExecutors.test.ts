@@ -11,15 +11,24 @@ import {
   executeModifyElement,
 } from "./elementExecutors.js";
 import { toArray } from "../../shared/schemaUtils.js";
+import { emptySchema, readTestSchema, schemaWith } from "../__tests__/schemaTestHelpers.js";
+
+/** The file with an element `person` and a complexType `OrderType`. */
+const PERSON_AND_ORDER_TYPE_XSD = "person-element-and-order-type.xsd";
+
+/** A top-level element `person` and a complexType `OrderType` that references it. */
+const ORDER_TYPE_WITH_PERSON_REF = `<xs:element name="person" type="xs:string"/>
+<xs:complexType name="OrderType">
+  <xs:sequence>
+    <xs:element ref="person"/>
+  </xs:sequence>
+</xs:complexType>`;
 
 describe("Element Executors", () => {
   describe("executeAddElement", () => {
     describe("Adding top-level elements", () => {
       test("should add a simple top-level element to schema", () => {
-        const simpleSchemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, simpleSchemaXml);
+        const schemaObj = emptySchema();
 
         const command: AddElementCommand = {
           type: "addElement",
@@ -43,10 +52,7 @@ describe("Element Executors", () => {
       });
 
       test("should add multiple top-level elements to schema", () => {
-        const simpleSchemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, simpleSchemaXml);
+        const schemaObj = emptySchema();
 
         const command1: AddElementCommand = {
           type: "addElement",
@@ -80,10 +86,7 @@ describe("Element Executors", () => {
       });
 
       test("should add top-level element with documentation", () => {
-        const simpleSchemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, simpleSchemaXml);
+        const schemaObj = emptySchema();
 
         const command: AddElementCommand = {
           type: "addElement",
@@ -111,17 +114,13 @@ describe("Element Executors", () => {
 
     describe("Adding elements to sequence", () => {
       test("should add element to a sequence in a complex type", () => {
-        const schemaWithSequenceXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element name="id" type="xs:int"/>
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaWithSequenceXml);
+        const schemaObj = schemaWith(`<xs:element name="person">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element name="id" type="xs:int"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:element>`);
 
         const command: AddElementCommand = {
           type: "addElement",
@@ -146,19 +145,7 @@ describe("Element Executors", () => {
       });
 
       test("should add element to a sequence in complexContent extension using group parent ID", () => {
-        const schemaWithExtensionXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:complexType name="WorkerType">
-    <xs:complexContent>
-      <xs:extension base="PersonType">
-        <xs:sequence>
-          <xs:element name="id" type="xs:int"/>
-        </xs:sequence>
-      </xs:extension>
-    </xs:complexContent>
-  </xs:complexType>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaWithExtensionXml);
+        const schemaObj = readTestSchema("worker-type-extends-person-type.xsd");
 
         const command: AddElementCommand = {
           type: "addElement",
@@ -182,12 +169,8 @@ describe("Element Executors", () => {
 
   describe("executeRemoveElement", () => {
     test("should remove top-level element by name", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person" type="xs:string"/>
-  <xs:element name="company" type="xs:string"/>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+      const schemaObj = schemaWith(`<xs:element name="person" type="xs:string"/>
+<xs:element name="company" type="xs:string"/>`);
 
       const command: RemoveElementCommand = {
         type: "removeElement",
@@ -207,18 +190,7 @@ describe("Element Executors", () => {
     });
 
     test("should remove element from sequence", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element name="firstName" type="xs:string"/>
-        <xs:element name="lastName" type="xs:string"/>
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, schemaXml);
+      const schemaObj = readTestSchema("person-element-with-first-and-last-name.xsd");
 
       const command: RemoveElementCommand = {
         type: "removeElement",
@@ -246,11 +218,7 @@ describe("Element Executors", () => {
   describe("executeModifyElement", () => {
     describe("Modifying top-level elements", () => {
       test("should modify element name", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person" type="xs:string"/>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+        const schemaObj = schemaWith(`<xs:element name="person" type="xs:string"/>`);
 
         const command: ModifyElementCommand = {
           type: "modifyElement",
@@ -273,11 +241,7 @@ describe("Element Executors", () => {
       });
 
       test("should modify element type", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person" type="xs:string"/>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+        const schemaObj = schemaWith(`<xs:element name="person" type="xs:string"/>`);
 
         const command: ModifyElementCommand = {
           type: "modifyElement",
@@ -300,17 +264,13 @@ describe("Element Executors", () => {
       });
 
       test("should replace an inline anonymous complexType when setting an explicit element type", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element name="id" type="xs:string"/>
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+        const schemaObj = schemaWith(`<xs:element name="person">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element name="id" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:element>`);
 
         const command: ModifyElementCommand = {
           type: "modifyElement",
@@ -328,15 +288,11 @@ describe("Element Executors", () => {
       });
 
       test("should replace an inline anonymous simpleType when setting an explicit element type", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="code">
-    <xs:simpleType>
-      <xs:restriction base="xs:string"/>
-    </xs:simpleType>
-  </xs:element>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+        const schemaObj = schemaWith(`<xs:element name="code">
+  <xs:simpleType>
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+</xs:element>`);
 
         const command: ModifyElementCommand = {
           type: "modifyElement",
@@ -354,17 +310,13 @@ describe("Element Executors", () => {
       });
 
       test("should rename top-level element refs and substitutionGroup references", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person" type="xs:string"/>
-  <xs:element name="personChild" substitutionGroup="person"/>
-  <xs:complexType name="Wrapper">
-    <xs:sequence>
-      <xs:element ref="person"/>
-    </xs:sequence>
-  </xs:complexType>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+        const schemaObj = schemaWith(`<xs:element name="person" type="xs:string"/>
+<xs:element name="personChild" substitutionGroup="person"/>
+<xs:complexType name="Wrapper">
+  <xs:sequence>
+    <xs:element ref="person"/>
+  </xs:sequence>
+</xs:complexType>`);
 
         const command: ModifyElementCommand = {
           type: "modifyElement",
@@ -383,11 +335,7 @@ describe("Element Executors", () => {
       });
 
       test("should add documentation to element", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person" type="xs:string"/>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+        const schemaObj = schemaWith(`<xs:element name="person" type="xs:string"/>`);
 
         const command: ModifyElementCommand = {
           type: "modifyElement",
@@ -411,17 +359,13 @@ describe("Element Executors", () => {
 
     describe("Modifying local elements", () => {
       test("should modify element in sequence", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element name="firstName" type="xs:string"/>
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+        const schemaObj = schemaWith(`<xs:element name="person">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element name="firstName" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:element>`);
 
         const command: ModifyElementCommand = {
           type: "modifyElement",
@@ -445,17 +389,13 @@ describe("Element Executors", () => {
       });
 
       test("should modify minOccurs and maxOccurs", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element name="phone" type="xs:string" minOccurs="1" maxOccurs="1"/>
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+        const schemaObj = schemaWith(`<xs:element name="person">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element name="phone" type="xs:string" minOccurs="1" maxOccurs="1"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:element>`);
 
         const command: ModifyElementCommand = {
           type: "modifyElement",
@@ -483,11 +423,7 @@ describe("Element Executors", () => {
 
     describe("Round-trip XML serialization", () => {
       test("should produce valid XML after modifying element", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person" type="xs:string"/>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+        const schemaObj = schemaWith(`<xs:element name="person" type="xs:string"/>`);
 
         const command: ModifyElementCommand = {
           type: "modifyElement",
@@ -516,16 +452,8 @@ describe("Element Executors", () => {
   });
 
   describe("Reference element support", () => {
-    const baseXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person" type="xs:string"/>
-  <xs:complexType name="OrderType">
-    <xs:sequence/>
-  </xs:complexType>
-</xs:schema>`;
-
     test("should add a reference element to a sequence", () => {
-      const schemaObj = unmarshal(schema, baseXml);
+      const schemaObj = readTestSchema(PERSON_AND_ORDER_TYPE_XSD);
 
       const command: AddElementCommand = {
         type: "addElement",
@@ -548,7 +476,7 @@ describe("Element Executors", () => {
     });
 
     test("should add a reference element with minOccurs/maxOccurs", () => {
-      const schemaObj = unmarshal(schema, baseXml);
+      const schemaObj = readTestSchema(PERSON_AND_ORDER_TYPE_XSD);
 
       const command: AddElementCommand = {
         type: "addElement",
@@ -572,16 +500,7 @@ describe("Element Executors", () => {
     });
 
     test("should remove a reference element by ref name", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person" type="xs:string"/>
-  <xs:complexType name="OrderType">
-    <xs:sequence>
-      <xs:element ref="person"/>
-    </xs:sequence>
-  </xs:complexType>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, xml);
+      const schemaObj = schemaWith(ORDER_TYPE_WITH_PERSON_REF);
 
       const command: RemoveElementCommand = {
         type: "removeElement",
@@ -598,16 +517,12 @@ describe("Element Executors", () => {
     });
 
     test("should modify a named element to become a reference", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person" type="xs:string"/>
-  <xs:complexType name="OrderType">
-    <xs:sequence>
-      <xs:element name="item" type="xs:string"/>
-    </xs:sequence>
-  </xs:complexType>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, xml);
+      const schemaObj = schemaWith(`<xs:element name="person" type="xs:string"/>
+<xs:complexType name="OrderType">
+  <xs:sequence>
+    <xs:element name="item" type="xs:string"/>
+  </xs:sequence>
+</xs:complexType>`);
 
       const command: ModifyElementCommand = {
         type: "modifyElement",
@@ -629,16 +544,7 @@ describe("Element Executors", () => {
     });
 
     test("should modify a reference element to become named", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person" type="xs:string"/>
-  <xs:complexType name="OrderType">
-    <xs:sequence>
-      <xs:element ref="person"/>
-    </xs:sequence>
-  </xs:complexType>
-</xs:schema>`;
-      const schemaObj = unmarshal(schema, xml);
+      const schemaObj = schemaWith(ORDER_TYPE_WITH_PERSON_REF);
 
       const command: ModifyElementCommand = {
         type: "modifyElement",
@@ -661,7 +567,7 @@ describe("Element Executors", () => {
     });
 
     test("should produce valid XML for a reference element", () => {
-      const schemaObj = unmarshal(schema, baseXml);
+      const schemaObj = readTestSchema(PERSON_AND_ORDER_TYPE_XSD);
 
       executeAddElement(
         {

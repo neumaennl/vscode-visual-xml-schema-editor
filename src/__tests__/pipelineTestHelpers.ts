@@ -17,82 +17,54 @@ import type {
 } from "../commandProcessor.js";
 import { schema } from "../../shared/types.js";
 import type { SchemaCommand } from "../../shared/types.js";
+import { schemaXmlWith } from "./schemaTestHelpers.js";
 
 // ─── XML Fixtures ────────────────────────────────────────────────────────────
 
-/** Minimal empty schema – used as the starting point for "add" tests. */
-export const MINIMAL_SCHEMA = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
-
 /** Schema that contains two top-level elements. */
-export const SCHEMA_WITH_ELEMENTS = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person" type="xs:string"/>
-  <xs:element name="company" type="xs:string"/>
-</xs:schema>`;
+export const SCHEMA_WITH_ELEMENTS = schemaXmlWith(`<xs:element name="person" type="xs:string"/>
+<xs:element name="company" type="xs:string"/>`);
 
 /** Schema that contains a top-level complexType with a sequence and an attribute. */
-export const SCHEMA_WITH_COMPLEXTYPE = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:complexType name="PersonType">
-    <xs:sequence>
-      <xs:element name="name" type="xs:string"/>
-    </xs:sequence>
-    <xs:attribute name="id" type="xs:string"/>
-  </xs:complexType>
-</xs:schema>`;
+export const SCHEMA_WITH_COMPLEXTYPE = schemaXmlWith(`<xs:complexType name="PersonType">
+  <xs:sequence>
+    <xs:element name="name" type="xs:string"/>
+  </xs:sequence>
+  <xs:attribute name="id" type="xs:string"/>
+</xs:complexType>`);
 
 /** Schema that contains a top-level simpleType with an enumeration restriction. */
-export const SCHEMA_WITH_SIMPLETYPE = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:simpleType name="StatusType">
-    <xs:restriction base="xs:string">
-      <xs:enumeration value="active"/>
-      <xs:enumeration value="inactive"/>
-    </xs:restriction>
-  </xs:simpleType>
-</xs:schema>`;
+export const SCHEMA_WITH_SIMPLETYPE = schemaXmlWith(`<xs:simpleType name="StatusType">
+  <xs:restriction base="xs:string">
+    <xs:enumeration value="active"/>
+    <xs:enumeration value="inactive"/>
+  </xs:restriction>
+</xs:simpleType>`);
 
 /** Schema that contains a top-level named group. */
-export const SCHEMA_WITH_GROUP = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:group name="ContactGroup">
-    <xs:sequence>
-      <xs:element name="phone" type="xs:string"/>
-    </xs:sequence>
-  </xs:group>
-</xs:schema>`;
+export const SCHEMA_WITH_GROUP = schemaXmlWith(`<xs:group name="ContactGroup">
+  <xs:sequence>
+    <xs:element name="phone" type="xs:string"/>
+  </xs:sequence>
+</xs:group>`);
 
 /** Schema that contains a top-level named attributeGroup. */
-export const SCHEMA_WITH_ATTRIBUTEGROUP = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:attributeGroup name="CommonAttrs">
-    <xs:attribute name="id" type="xs:string"/>
-  </xs:attributeGroup>
-</xs:schema>`;
+export const SCHEMA_WITH_ATTRIBUTEGROUP = schemaXmlWith(`<xs:attributeGroup name="CommonAttrs">
+  <xs:attribute name="id" type="xs:string"/>
+</xs:attributeGroup>`);
 
 /** Schema that has an element with an annotation/documentation child. */
-export const SCHEMA_WITH_ANNOTATION = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person" type="xs:string">
-    <xs:annotation>
-      <xs:documentation>A person element</xs:documentation>
-    </xs:annotation>
-  </xs:element>
-</xs:schema>`;
+export const SCHEMA_WITH_ANNOTATION = schemaXmlWith(`<xs:element name="person" type="xs:string">
+  <xs:annotation>
+    <xs:documentation>A person element</xs:documentation>
+  </xs:annotation>
+</xs:element>`);
 
-/** Schema that declares one import with an explicit prefix. */
-export const SCHEMA_WITH_IMPORT = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:import namespace="http://example.com/ext" schemaLocation="ext.xsd"/>
-</xs:schema>`;
+/** Schema that declares one import. */
+export const SCHEMA_WITH_IMPORT = schemaXmlWith(`<xs:import namespace="http://example.com/ext" schemaLocation="ext.xsd"/>`);
 
 /** Schema that declares one include. */
-export const SCHEMA_WITH_INCLUDE = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:include schemaLocation="base.xsd"/>
-</xs:schema>`;
+export const SCHEMA_WITH_INCLUDE = schemaXmlWith(`<xs:include schemaLocation="base.xsd"/>`);
 
 // ─── Pipeline Helpers ─────────────────────────────────────────────────────────
 

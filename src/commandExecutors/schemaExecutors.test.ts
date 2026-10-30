@@ -41,7 +41,7 @@ import {
   executeModifySchemaNamespaces,
 } from "./schemaExecutors.js";
 import { toArray } from "../../shared/schemaUtils.js";
-import { emptySchema, schemaWithIncludes } from "../__tests__/schemaTestHelpers.js";
+import { emptySchema, schemaWith, schemaWithIncludes } from "../__tests__/schemaTestHelpers.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -49,11 +49,7 @@ import { emptySchema, schemaWithIncludes } from "../__tests__/schemaTestHelpers.
 
 /** Helper: schema with one import and the given prefix already registered. */
 function schemaWithPrefixedImport(namespace: string, schemaLocation: string, prefix: string): schema {
-  const schemaObj = unmarshal(
-    schema,
-    `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"></xs:schema>`
-  );
+  const schemaObj = emptySchema();
   executeAddImport({
     type: "addImport",
     payload: { namespace, schemaLocation, prefix },
@@ -64,23 +60,11 @@ function schemaWithPrefixedImport(namespace: string, schemaLocation: string, pre
 function schemaWithImports(
   ...imports: Array<{ namespace: string; schemaLocation: string; prefix?: string }>
 ): schema {
-  const nsParts = imports
-    .filter((i) => i.prefix)
-    .map((i) => `xmlns:${i.prefix}="${i.namespace}"`)
-    .join(" ");
+  const prefixes = Object.fromEntries(imports.flatMap((i) => (i.prefix ? [[i.prefix, i.namespace]] : [])));
   const importXml = imports
-    .map(
-      (i) =>
-        `  <xs:import namespace="${i.namespace}" schemaLocation="${i.schemaLocation}"/>`
-    )
+    .map((i) => `<xs:import namespace="${i.namespace}" schemaLocation="${i.schemaLocation}"/>`)
     .join("\n");
-  return unmarshal(
-    schema,
-    `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"${nsParts ? " " + nsParts : ""}>
-${importXml}
-</xs:schema>`
-  );
+  return schemaWith(importXml, prefixes);
 }
 
 // ---------------------------------------------------------------------------
@@ -423,13 +407,10 @@ describe("executeModifyImport", () => {
   });
 
   test("should rewrite element type_ references when prefix is renamed", () => {
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ext="http://example.com/ext">
-  <xs:import namespace="http://example.com/ext" schemaLocation="ext.xsd"/>
-  <xs:element name="foo" type="ext:FooType"/>
-  <xs:element name="bar" type="xs:string"/>
-</xs:schema>`;
-    const schemaObj = unmarshal(schema, xml);
+    const prefixes = { ext: "http://example.com/ext" };
+    const schemaObj = schemaWith(`<xs:import namespace="http://example.com/ext" schemaLocation="ext.xsd"/>
+<xs:element name="foo" type="ext:FooType"/>
+<xs:element name="bar" type="xs:string"/>`, prefixes);
 
     executeModifyImport({
       type: "modifyImport",
@@ -524,12 +505,9 @@ describe("executeModifyImport", () => {
   });
 
   test("should leave QName references unchanged when prefix is NOT renamed", () => {
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ext="http://example.com/old-ns">
-  <xs:import namespace="http://example.com/old-ns" schemaLocation="ext.xsd"/>
-  <xs:element name="foo" type="ext:FooType"/>
-</xs:schema>`;
-    const schemaObj = unmarshal(schema, xml);
+    const prefixes = { ext: "http://example.com/old-ns" };
+    const schemaObj = schemaWith(`<xs:import namespace="http://example.com/old-ns" schemaLocation="ext.xsd"/>
+<xs:element name="foo" type="ext:FooType"/>`, prefixes);
 
     // Change namespace URI but not the prefix
     executeModifyImport({

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:group name="GroupA">
+    <xs:sequence/>
+  </xs:group>
+  <xs:group name="GroupB">
+    <xs:sequence/>
+  </xs:group>
+  <xs:complexType name="SomeType">
+    <xs:sequence>
+      <xs:group ref="GroupA"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>

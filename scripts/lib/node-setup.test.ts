@@ -17,7 +17,7 @@ function exited(status: number, stdout = ""): ReturnType<typeof spawnSync> {
   return { status, stdout } as ReturnType<typeof spawnSync>;
 }
 
-const realPlatform = Object.getOwnPropertyDescriptor(process, "platform") ?? { value: process.platform, configurable: true };
+const ORIGINAL_PLATFORM = Object.getOwnPropertyDescriptor(process, "platform") ?? { value: process.platform, configurable: true };
 
 /**
  * Makes `process.platform` return another platform until the end of the test.
@@ -25,7 +25,7 @@ const realPlatform = Object.getOwnPropertyDescriptor(process, "platform") ?? { v
  * @param platform - The platform, for example `win32`
  */
 function stubPlatform(platform: NodeJS.Platform): void {
-  Object.defineProperty(process, "platform", { ...realPlatform, value: platform });
+  Object.defineProperty(process, "platform", { ...ORIGINAL_PLATFORM, value: platform });
 }
 
 beforeEach(() => {
@@ -37,7 +37,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  Object.defineProperty(process, "platform", realPlatform);
+  Object.defineProperty(process, "platform", ORIGINAL_PLATFORM);
   vi.unstubAllEnvs();
   vi.restoreAllMocks();
 });

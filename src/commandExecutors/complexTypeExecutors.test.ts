@@ -16,7 +16,15 @@ import {
   executeModifyComplexType,
   executeRemoveComplexType,
 } from "./complexTypeExecutors.js";
-import { schemaWith } from "../__tests__/schemaTestHelpers.js";
+import { emptySchema, schemaWith } from "../__tests__/schemaTestHelpers.js";
+
+/** A complexType `EmployeeType` that extends `PersonType`. */
+const EMPLOYEE_TYPE = `<xs:complexType name="EmployeeType">
+  <xs:complexContent><xs:extension base="PersonType"><xs:sequence/></xs:extension></xs:complexContent>
+</xs:complexType>`;
+
+/** A top-level element `order` without a type. */
+const ORDER_ELEMENT = `<xs:element name="order"/>`;
 
 function addComplexType(schemaObj: schema, payload: AddComplexTypeCommand["payload"]): void {
   executeAddComplexType({ type: "addComplexType", payload }, schemaObj);
@@ -41,7 +49,7 @@ function topLevelElements(schemaObj: schema): NonNullable<schema["element"]> {
 describe("ComplexType Executors", () => {
   describe("executeAddComplexType", () => {
     test("adds a top-level complexType with a sequence content model", () => {
-      const schemaObj = schemaWith();
+      const schemaObj = emptySchema();
 
       addComplexType(schemaObj, { typeName: "PersonType", contentModel: "sequence" });
 
@@ -54,7 +62,7 @@ describe("ComplexType Executors", () => {
     });
 
     test("adds a top-level complexType with a choice content model", () => {
-      const schemaObj = schemaWith();
+      const schemaObj = emptySchema();
 
       addComplexType(schemaObj, { typeName: "ShapeType", contentModel: "choice" });
 
@@ -65,7 +73,7 @@ describe("ComplexType Executors", () => {
     });
 
     test("adds a top-level complexType with an all content model", () => {
-      const schemaObj = schemaWith();
+      const schemaObj = emptySchema();
 
       addComplexType(schemaObj, { typeName: "AddressType", contentModel: "all" });
 
@@ -76,7 +84,7 @@ describe("ComplexType Executors", () => {
     });
 
     test("sets abstract on a new complexType", () => {
-      const schemaObj = schemaWith();
+      const schemaObj = emptySchema();
 
       addComplexType(schemaObj, {
         typeName: "BaseType",
@@ -88,7 +96,7 @@ describe("ComplexType Executors", () => {
     });
 
     test("sets mixed on a new complexType", () => {
-      const schemaObj = schemaWith();
+      const schemaObj = emptySchema();
 
       addComplexType(schemaObj, {
         typeName: "MixedType",
@@ -100,7 +108,7 @@ describe("ComplexType Executors", () => {
     });
 
     test("adds documentation to a new complexType", () => {
-      const schemaObj = schemaWith();
+      const schemaObj = emptySchema();
 
       addComplexType(schemaObj, {
         typeName: "DocumentedType",
@@ -114,7 +122,7 @@ describe("ComplexType Executors", () => {
     });
 
     test("adds a complexType with a base type extension", () => {
-      const schemaObj = schemaWith();
+      const schemaObj = emptySchema();
 
       addComplexType(schemaObj, {
         typeName: "EmployeeType",
@@ -129,7 +137,7 @@ describe("ComplexType Executors", () => {
     });
 
     test("adds a base type extension using choice content", () => {
-      const schemaObj = schemaWith();
+      const schemaObj = emptySchema();
 
       addComplexType(schemaObj, {
         typeName: "DerivedType",
@@ -154,7 +162,7 @@ describe("ComplexType Executors", () => {
     });
 
     test("round-trips a new complexType through XML", () => {
-      const schemaObj = schemaWith();
+      const schemaObj = emptySchema();
 
       addComplexType(schemaObj, { typeName: "PersonType", contentModel: "sequence" });
 
@@ -303,10 +311,7 @@ describe("ComplexType Executors", () => {
     });
 
     test("updates an existing extension base type", () => {
-      const schemaObj = schemaWith(`
-  <xs:complexType name="EmployeeType">
-    <xs:complexContent><xs:extension base="PersonType"><xs:sequence/></xs:extension></xs:complexContent>
-  </xs:complexType>`);
+      const schemaObj = schemaWith(EMPLOYEE_TYPE);
 
       modifyComplexType(schemaObj, { typeId: "/complexType:EmployeeType", baseType: "WorkerType" });
 
@@ -314,10 +319,7 @@ describe("ComplexType Executors", () => {
     });
 
     test("removes an existing base type when set to an empty string", () => {
-      const schemaObj = schemaWith(`
-  <xs:complexType name="EmployeeType">
-    <xs:complexContent><xs:extension base="PersonType"><xs:sequence/></xs:extension></xs:complexContent>
-  </xs:complexType>`);
+      const schemaObj = schemaWith(EMPLOYEE_TYPE);
 
       modifyComplexType(schemaObj, { typeId: "/complexType:EmployeeType", baseType: "" });
 
@@ -401,7 +403,7 @@ describe("ComplexType Executors", () => {
     });
 
     test("adds documentation to an anonymous complexType", () => {
-      const schemaObj = schemaWith(`<xs:element name="order"/>`);
+      const schemaObj = schemaWith(ORDER_ELEMENT);
 
       addComplexType(schemaObj, {
         parentId: "/element:order",
@@ -415,7 +417,7 @@ describe("ComplexType Executors", () => {
     });
 
     test("round-trips an anonymous complexType through XML", () => {
-      const schemaObj = schemaWith(`<xs:element name="order"/>`);
+      const schemaObj = schemaWith(ORDER_ELEMENT);
 
       addComplexType(schemaObj, {
         parentId: "/element:order",

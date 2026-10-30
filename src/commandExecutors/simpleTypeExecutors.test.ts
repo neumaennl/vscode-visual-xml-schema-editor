@@ -20,7 +20,16 @@ import {
   executeModifySimpleType,
   executeRemoveSimpleType,
 } from "./simpleTypeExecutors.js";
-import { schemaWith } from "../__tests__/schemaTestHelpers.js";
+import { emptySchema, schemaWith } from "../__tests__/schemaTestHelpers.js";
+
+/** A simpleType `AgeType` that restricts `xs:integer`. */
+const AGE_TYPE = `<xs:simpleType name="AgeType"><xs:restriction base="xs:integer"/></xs:simpleType>`;
+
+/** A simpleType `AgeType` that restricts `xs:integer` to values from 0. */
+const AGE_TYPE_WITH_MIN = `<xs:simpleType name="AgeType"><xs:restriction base="xs:integer"><xs:minInclusive value="0"/></xs:restriction></xs:simpleType>`;
+
+/** A top-level element `age` without a type. */
+const AGE_ELEMENT = `<xs:element name="age"/>`;
 
 function addSimpleType(schemaObj: schema, payload: AddSimpleTypeCommand["payload"]): void {
   executeAddSimpleType({ type: "addSimpleType", payload }, schemaObj);
@@ -62,14 +71,14 @@ type RestrictionAssert = (
 describe("SimpleType Executors", () => {
   describe("executeAddSimpleType", () => {
     test("throws when a simpleType is added without any body details", () => {
-      const schemaObj = schemaWith();
+      const schemaObj = emptySchema();
 
       expect(() => addSimpleType(schemaObj, { typeName: "NameType" }))
         .toThrow("Simple type body must be specified as exactly one of restriction, list, or union");
     });
 
     test("adds a named simpleType with base type only and serializes back to valid XSD", () => {
-      const schemaObj = schemaWith();
+      const schemaObj = emptySchema();
 
       addSimpleType(schemaObj, { typeName: "NameType", baseType: "xs:string" });
 
@@ -183,7 +192,7 @@ describe("SimpleType Executors", () => {
 
     test.each(addFacetCases)("applies $name", ({ typeName, baseType, restrictions, assert }) => {
       expect.hasAssertions();
-      const schemaObj = schemaWith();
+      const schemaObj = emptySchema();
 
       addSimpleType(schemaObj, { typeName, baseType, restrictions });
 
@@ -191,7 +200,7 @@ describe("SimpleType Executors", () => {
     });
 
     test("adds a named list simpleType using list itemType", () => {
-      const schemaObj = schemaWith();
+      const schemaObj = emptySchema();
 
       addSimpleType(schemaObj, {
         typeName: "TokenListType",
@@ -206,7 +215,7 @@ describe("SimpleType Executors", () => {
     });
 
     test("adds a named union simpleType using member types", () => {
-      const schemaObj = schemaWith();
+      const schemaObj = emptySchema();
 
       addSimpleType(schemaObj, {
         typeName: "TextOrNumberType",
@@ -234,8 +243,7 @@ describe("SimpleType Executors", () => {
     });
 
     test("removes the last remaining top-level simpleType", () => {
-      const schemaObj = schemaWith(`
-  <xs:simpleType name="AgeType"><xs:restriction base="xs:integer"/></xs:simpleType>`);
+      const schemaObj = schemaWith(AGE_TYPE);
 
       removeSimpleType(schemaObj, { typeId: "/simpleType:AgeType" });
 
@@ -245,8 +253,7 @@ describe("SimpleType Executors", () => {
 
   describe("executeModifySimpleType", () => {
     test("renames a top-level simpleType", () => {
-      const schemaObj = schemaWith(`
-  <xs:simpleType name="AgeType"><xs:restriction base="xs:integer"/></xs:simpleType>`);
+      const schemaObj = schemaWith(AGE_TYPE);
 
       modifySimpleType(schemaObj, { typeId: "/simpleType:AgeType", typeName: "PersonAgeType" });
 
@@ -254,8 +261,7 @@ describe("SimpleType Executors", () => {
     });
 
     test("updates the base type and documentation", () => {
-      const schemaObj = schemaWith(`
-  <xs:simpleType name="AgeType"><xs:restriction base="xs:integer"/></xs:simpleType>`);
+      const schemaObj = schemaWith(AGE_TYPE);
 
       modifySimpleType(schemaObj, {
         typeId: "/simpleType:AgeType",
@@ -271,7 +277,7 @@ describe("SimpleType Executors", () => {
     const modifySimpleTypeFacetCases = [
       {
         name: "replaces scalar facets",
-        source: `<xs:simpleType name="AgeType"><xs:restriction base="xs:integer"><xs:minInclusive value="0"/></xs:restriction></xs:simpleType>`,
+        source: AGE_TYPE_WITH_MIN,
         payload: { restrictions: { minInclusive: "0", maxInclusive: "150" } },
         assert: (schemaObj: schema): void => {
           const restriction = simpleTypes(schemaObj)[0].restriction!;
@@ -281,7 +287,7 @@ describe("SimpleType Executors", () => {
       },
       {
         name: "clears existing facets when given an empty restrictions object",
-        source: `<xs:simpleType name="AgeType"><xs:restriction base="xs:integer"><xs:minInclusive value="0"/></xs:restriction></xs:simpleType>`,
+        source: AGE_TYPE_WITH_MIN,
         payload: { restrictions: {} },
         assert: (schemaObj: schema): void => {
           expect(simpleTypes(schemaObj)[0].restriction!.minInclusive).toBeUndefined();
@@ -356,7 +362,7 @@ describe("SimpleType Executors", () => {
     const inlineCases = [
       {
         label: "top-level element",
-        source: `<xs:element name="age"/>`,
+        source: AGE_ELEMENT,
         parentId: "/element:age",
         getSimpleType: (schemaObj: schema): localSimpleType => elements(schemaObj)[0].simpleType!,
       },
@@ -390,7 +396,7 @@ describe("SimpleType Executors", () => {
     });
 
     test("adds documentation to an anonymous simpleType on an element and keeps serialization valid", () => {
-      const schemaObj = schemaWith(`<xs:element name="age"/>`);
+      const schemaObj = schemaWith(AGE_ELEMENT);
 
       addSimpleType(schemaObj, {
         parentId: "/element:age",

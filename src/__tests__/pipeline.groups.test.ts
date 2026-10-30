@@ -15,12 +15,12 @@ import type {
 } from "../../shared/types.js";
 import { toArray } from "../../shared/schemaUtils.js";
 import {
-  MINIMAL_SCHEMA,
   SCHEMA_WITH_GROUP,
   SCHEMA_WITH_ATTRIBUTEGROUP,
   runCommandExpectSuccessSchema,
   runCommandExpectValidationFailure,
 } from "./pipelineTestHelpers.js";
+import { emptySchemaXml } from "./schemaTestHelpers.js";
 
 describe("Integration: Group pipeline", () => {
   // ─── addGroup ──────────────────────────────────────────────────────────────
@@ -32,7 +32,7 @@ describe("Integration: Group pipeline", () => {
         payload: { groupName: "AddressGroup", contentModel: "sequence" },
       };
 
-      const result = runCommandExpectSuccessSchema(MINIMAL_SCHEMA, cmd);
+      const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
       const groups = toArray(result.group);
       const addressGroup = groups.find((g) => g.name === "AddressGroup");
 
@@ -47,7 +47,7 @@ describe("Integration: Group pipeline", () => {
         payload: { groupName: "ChoiceGroup", contentModel: "choice" },
       };
 
-      const result = runCommandExpectSuccessSchema(MINIMAL_SCHEMA, cmd);
+      const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
       const choiceGroup = toArray(result.group).find((g) => g.name === "ChoiceGroup");
 
       expect(choiceGroup).toBeDefined();
@@ -70,7 +70,7 @@ describe("Integration: Group pipeline", () => {
         payload: { groupName: "bad group", contentModel: "sequence" },
       };
 
-      runCommandExpectValidationFailure(MINIMAL_SCHEMA, cmd, "Group name must be a valid XML name");
+      runCommandExpectValidationFailure(emptySchemaXml(), cmd, "Group name must be a valid XML name");
     });
   });
 
@@ -136,7 +136,7 @@ describe("Integration: AttributeGroup pipeline", () => {
         payload: { groupName: "AuditAttributes" },
       };
 
-      const result = runCommandExpectSuccessSchema(MINIMAL_SCHEMA, cmd);
+      const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
       const groups = toArray(result.attributeGroup);
 
       expect(groups.some((g) => g.name === "AuditAttributes")).toBe(true);
@@ -157,7 +157,7 @@ describe("Integration: AttributeGroup pipeline", () => {
         payload: { groupName: "bad name" },
       };
 
-      runCommandExpectValidationFailure(MINIMAL_SCHEMA, cmd, "Attribute group name must be a valid XML name");
+      runCommandExpectValidationFailure(emptySchemaXml(), cmd, "Attribute group name must be a valid XML name");
     });
   });
 

@@ -13,22 +13,19 @@ import type {
 import { toArray } from "../../shared/schemaUtils.js";
 import {
   SCHEMA_WITH_COMPLEXTYPE,
-  MINIMAL_SCHEMA,
   runCommandExpectSuccessSchema,
   runCommandExpectValidationFailure,
 } from "./pipelineTestHelpers.js";
+import { emptySchemaXml, schemaXmlWith } from "./schemaTestHelpers.js";
 
 /** Schema with a complexType that has two attributes (id, status) for remove/modify tests. */
-const SCHEMA_WITH_TWO_ATTRS = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:complexType name="PersonType">
-    <xs:sequence>
-      <xs:element name="name" type="xs:string"/>
-    </xs:sequence>
-    <xs:attribute name="id" type="xs:string"/>
-    <xs:attribute name="status" type="xs:string"/>
-  </xs:complexType>
-</xs:schema>`;
+const SCHEMA_WITH_TWO_ATTRS = schemaXmlWith(`<xs:complexType name="PersonType">
+  <xs:sequence>
+    <xs:element name="name" type="xs:string"/>
+  </xs:sequence>
+  <xs:attribute name="id" type="xs:string"/>
+  <xs:attribute name="status" type="xs:string"/>
+</xs:complexType>`);
 
 describe("Integration: Attribute pipeline", () => {
   // ─── addAttribute ──────────────────────────────────────────────────────────
@@ -94,7 +91,7 @@ describe("Integration: Attribute pipeline", () => {
         },
       };
 
-      runCommandExpectValidationFailure(MINIMAL_SCHEMA, cmd, "Parent node not found: /complexType:Missing");
+      runCommandExpectValidationFailure(emptySchemaXml(), cmd, "Parent node not found: /complexType:Missing");
     });
   });
 

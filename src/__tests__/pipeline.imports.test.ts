@@ -13,18 +13,15 @@ import type {
 } from "../../shared/types.js";
 import { toArray } from "../../shared/schemaUtils.js";
 import {
-  MINIMAL_SCHEMA,
   SCHEMA_WITH_IMPORT,
   runCommandExpectSuccessSchema,
   runCommandExpectValidationFailure,
 } from "./pipelineTestHelpers.js";
+import { emptySchemaXml, schemaXmlWith } from "./schemaTestHelpers.js";
 
 /** Schema that already has two imports so we can test position-based IDs. */
-const SCHEMA_TWO_IMPORTS = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:import namespace="http://example.com/a" schemaLocation="a.xsd"/>
-  <xs:import namespace="http://example.com/b" schemaLocation="b.xsd"/>
-</xs:schema>`;
+const SCHEMA_TWO_IMPORTS = schemaXmlWith(`<xs:import namespace="http://example.com/a" schemaLocation="a.xsd"/>
+<xs:import namespace="http://example.com/b" schemaLocation="b.xsd"/>`);
 
 describe("Integration: Import pipeline", () => {
   // ─── addImport ─────────────────────────────────────────────────────────────
@@ -39,7 +36,7 @@ describe("Integration: Import pipeline", () => {
         },
       };
 
-      const result = runCommandExpectSuccessSchema(MINIMAL_SCHEMA, cmd);
+      const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
       const imports = toArray(result.import_);
 
       expect(imports.some((i) => i.namespace === "http://example.com/ext" && i.schemaLocation === "ext.xsd")).toBe(true);
@@ -55,7 +52,7 @@ describe("Integration: Import pipeline", () => {
         },
       };
 
-      const result = runCommandExpectSuccessSchema(MINIMAL_SCHEMA, cmd);
+      const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
       const imports = toArray(result.import_);
 
       expect(imports.some((i) => i.namespace === "http://example.com/ext")).toBe(true);
@@ -71,7 +68,7 @@ describe("Integration: Import pipeline", () => {
         },
       };
 
-      const result = runCommandExpectSuccessSchema(MINIMAL_SCHEMA, cmd);
+      const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
       const imports = toArray(result.import_);
 
       expect(imports.some((i) => i.namespace === "http://example.com/auto")).toBe(true);
@@ -90,7 +87,7 @@ describe("Integration: Import pipeline", () => {
         payload: { namespace: "not a uri", schemaLocation: "x.xsd" },
       };
 
-      runCommandExpectValidationFailure(MINIMAL_SCHEMA, cmd, "Namespace must be a valid absolute URI");
+      runCommandExpectValidationFailure(emptySchemaXml(), cmd, "Namespace must be a valid absolute URI");
     });
 
     test("returns validation error for a duplicate namespace", () => {
@@ -115,7 +112,7 @@ describe("Integration: Import pipeline", () => {
         },
       };
 
-      runCommandExpectValidationFailure(MINIMAL_SCHEMA, cmd, "Prefix 'xml' is reserved and cannot be used");
+      runCommandExpectValidationFailure(emptySchemaXml(), cmd, "Prefix 'xml' is reserved and cannot be used");
     });
   });
 

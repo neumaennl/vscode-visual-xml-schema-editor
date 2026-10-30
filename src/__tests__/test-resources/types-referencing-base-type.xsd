@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:simpleType name="BaseType"><xs:restriction base="xs:string"/></xs:simpleType>
+  <xs:element name="status" type="BaseType"/>
+  <xs:attribute name="code" type="BaseType"/>
+  <xs:complexType name="Wrapper">
+    <xs:sequence>
+      <xs:element name="nested" type="BaseType"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:simpleType name="DerivedType">
+    <xs:restriction base="BaseType"/>
+  </xs:simpleType>
+</xs:schema>

@@ -2,9 +2,7 @@
  * Unit tests for schema prefix reference checks.
  */
 
-import { unmarshal } from "@neumaennl/xmlbind-ts";
 import {
-  schema,
   topLevelComplexType,
   topLevelSimpleType,
   localSimpleType,
@@ -20,7 +18,13 @@ import {
   keyrefType,
 } from "../../shared/types.js";
 import { isPrefixReferencedInSchema, isAnyPrefixReferencedInSchema } from "./schemaPrefixChecker.js";
-import { emptySchema } from "../__tests__/schemaTestHelpers.js";
+import { emptySchema, schemaWith } from "../__tests__/schemaTestHelpers.js";
+
+/** The prefix `ext` for the namespace `http://example.com/ext`. */
+const EXT_PREFIX = { ext: "http://example.com/ext" };
+
+/** A top-level element `foo` whose type has the prefix `ext`. */
+const ELEMENT_OF_EXT_TYPE = `<xs:element name="foo" type="ext:FooType"/>`;
 
 // ---------------------------------------------------------------------------
 // isPrefixReferencedInSchema — keyref/@refer
@@ -70,29 +74,17 @@ describe("isPrefixReferencedInSchema", () => {
   });
 
   test("returns false when a different prefix is used", () => {
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ext="http://example.com/ext">
-  <xs:element name="foo" type="ext:FooType"/>
-</xs:schema>`;
-    const s = unmarshal(schema, xml);
+    const s = schemaWith(ELEMENT_OF_EXT_TYPE, EXT_PREFIX);
     expect(isPrefixReferencedInSchema("other", s)).toBe(false);
   });
 
   test("returns true for top-level element @type", () => {
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ext="http://example.com/ext">
-  <xs:element name="foo" type="ext:FooType"/>
-</xs:schema>`;
-    const s = unmarshal(schema, xml);
+    const s = schemaWith(ELEMENT_OF_EXT_TYPE, EXT_PREFIX);
     expect(isPrefixReferencedInSchema("ext", s)).toBe(true);
   });
 
   test("returns true for element @substitutionGroup", () => {
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ext="http://example.com/ext">
-  <xs:element name="bar" substitutionGroup="ext:Head"/>
-</xs:schema>`;
-    const s = unmarshal(schema, xml);
+    const s = schemaWith(`<xs:element name="bar" substitutionGroup="ext:Head"/>`, EXT_PREFIX);
     expect(isPrefixReferencedInSchema("ext", s)).toBe(true);
   });
 

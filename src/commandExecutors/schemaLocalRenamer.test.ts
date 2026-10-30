@@ -5,23 +5,12 @@ import {
   renameLocalGroupRefInSchema,
   renameLocalTypeInSchema,
 } from "./schemaLocalRenamer.js";
-import { schemaWith } from "../__tests__/schemaTestHelpers.js";
+import { readTestSchema, schemaWith } from "../__tests__/schemaTestHelpers.js";
 
 describe("schemaLocalRenamer", () => {
   describe("renameLocalTypeInSchema", () => {
     test("renames unqualified type references throughout the schema", () => {
-      const schemaObj = schemaWith(`
-  <xs:simpleType name="BaseType"><xs:restriction base="xs:string"/></xs:simpleType>
-  <xs:element name="status" type="BaseType"/>
-  <xs:attribute name="code" type="BaseType"/>
-  <xs:complexType name="Wrapper">
-    <xs:sequence>
-      <xs:element name="nested" type="BaseType"/>
-    </xs:sequence>
-  </xs:complexType>
-  <xs:simpleType name="DerivedType">
-    <xs:restriction base="BaseType"/>
-  </xs:simpleType>`);
+      const schemaObj = readTestSchema("types-referencing-base-type.xsd");
 
       renameLocalTypeInSchema("BaseType", "RenamedType", schemaObj);
 

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ext="http://example.com/ext">
+  <xs:import namespace="http://example.com/ext" schemaLocation="ext.xsd"/>
+  <xs:complexType name="MyType">
+    <xs:sequence>
+      <xs:choice>
+        <xs:element name="deep" type="ext:DeepType"/>
+      </xs:choice>
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>

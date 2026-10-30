@@ -15,9 +15,10 @@ import {
   documentationType,
 } from "../../shared/types.js";
 import { toArray } from "../../shared/schemaUtils.js";
-import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
+import { parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy.js";
 import { locateNodeById } from "../schemaNavigator.js";
 import { createAnnotation } from "./annotationUtils.js";
+import { renameLocalAttributeGroupRefInSchema } from "./schemaLocalRenamer.js";
 
 // ===== Structural types =====
 
@@ -109,7 +110,7 @@ export function executeAddAttributeGroup(
 
   if (ref !== undefined) {
     // Reference mode: add xs:attributeGroup ref="..." to a complexType or namedAttributeGroup
-    const location = locateNodeById(schemaObj, parentId ?? "schema");
+    const location = locateNodeById(schemaObj, parentId ?? SCHEMA_ROOT_ID);
     const agRef = new attributeGroupRef();
     agRef.ref = ref;
     if (documentation) {
@@ -221,6 +222,7 @@ export function executeModifyAttributeGroup(
     return;
   }
   if (groupName !== undefined) {
+    renameLocalAttributeGroupRefInSchema(parsed.name as string, groupName, schemaObj);
     attrGroup.name = groupName;
   }
   if (documentation !== undefined) {

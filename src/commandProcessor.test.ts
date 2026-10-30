@@ -11,10 +11,11 @@ import type {
   CommandExecutionValidationFailure,
   CommandExecutionRuntimeFailure,
 } from "./commandProcessor.js";
-import { AddElementCommand, SchemaCommand, schema } from "../shared/types.js";
+import { AddElementCommand, SchemaCommand, schema, topLevelElement } from "../shared/types.js";
 import type { CommandValidator } from "./commandValidator.js";
 import type { CommandExecutor } from "./commandExecutor.js";
-import type { SchemaModelManager } from "./schemaModelManager.js";
+import { SchemaModelManager } from "./schemaModelManager.js";
+import { emptySchemaXml, schemaXmlWith } from "./__tests__/schemaTestHelpers.js";
 
 // Type-safe mock types for testing
 type MockValidator = Pick<CommandValidator, "validate">;
@@ -26,6 +27,19 @@ type MockModelManager = Pick<
 
 // eslint-disable-next-line no-restricted-syntax -- `type` not in SchemaCommand union; cast needed to test unknown-type rejection at runtime
 const INVALID_COMMAND = { type: "unknownCommand", payload: {} } as unknown as SchemaCommand;
+
+/** A top-level element `person`. */
+const PERSON_ELEMENT = `<xs:element name="person" type="xs:string"/>`;
+
+/**
+ * Returns the names of the top-level elements of the schema that the model manager holds.
+ *
+ * @param modelManager - The model manager
+ * @returns The element names, in document order
+ */
+function topLevelElementNames(modelManager: SchemaModelManager): string[] {
+  return (modelManager.getSchema()?.element ?? []).map((element) => element.name);
+}
 
 /**
  * Asserts that a CommandExecutionResult represents a failure and narrows its
@@ -67,16 +81,10 @@ function expectValidationFailure(
 
 describe("CommandProcessor", () => {
   let processor: CommandProcessor;
-  let simpleSchemaXml: string;
   let mockSchema: schema;
 
   beforeEach(() => {
     processor = new CommandProcessor();
-    // Minimal valid XSD schema
-    simpleSchemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
-    
     // Create a mock schema object
     mockSchema = new schema();
   });
@@ -89,7 +97,7 @@ describe("CommandProcessor", () => {
         getSchema: vi.fn().mockReturnValue(mockSchema),
         setSchema: vi.fn(),
         cloneSchema: vi.fn().mockReturnValue(mockSchema),
-        toXml: vi.fn().mockReturnValue(simpleSchemaXml),
+        toXml: vi.fn().mockReturnValue(emptySchemaXml()),
       };
 
       // Mock executor that modifies the schema (executor must modify schema in-place)
@@ -109,16 +117,16 @@ describe("CommandProcessor", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "testElement",
           elementType: "string",
         },
       };
 
-      const result = processorWithMock.execute(command, simpleSchemaXml);
+      const result = processorWithMock.execute(command, emptySchemaXml());
 
       // Verify mocks were called in correct order
-      expect(mockModelManager.loadFromXml).toHaveBeenCalledWith(simpleSchemaXml);
+      expect(mockModelManager.loadFromXml).toHaveBeenCalledWith(emptySchemaXml());
       expect(mockModelManager.getSchema).toHaveBeenCalled();
       expect(mockModelManager.cloneSchema).toHaveBeenCalled();
       expect(mockExecutor.execute).toHaveBeenCalled();
@@ -152,13 +160,13 @@ describe("CommandProcessor", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "testElement",
           elementType: "string",
         },
       };
 
-      const result = processorWithMock.execute(command, simpleSchemaXml);
+      const result = processorWithMock.execute(command, emptySchemaXml());
 
       expectFailure(result);
       expect(result.error).toContain("Failed to load schema from XML");
@@ -175,7 +183,7 @@ describe("CommandProcessor", () => {
             elementType: "string",
           },
         },
-        simpleSchemaXml
+        emptySchemaXml()
       );
 
       expect(result.success).toBe(false);
@@ -186,10 +194,8 @@ describe("CommandProcessor", () => {
 
   describe("Transactional Behavior", () => {
     test("should preserve original schema on validation failure", () => {
-      // Store the original XML
-      const originalXml = simpleSchemaXml;
-      const xmlBefore = originalXml;
-
+      const modelManager = new SchemaModelManager();
+      const processorWithManager = new CommandProcessor(undefined, undefined, modelManager);
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
@@ -199,17 +205,12 @@ describe("CommandProcessor", () => {
         },
       };
 
-      const result = processor.execute(command, originalXml);
+      const result = processorWithManager.execute(command, schemaXmlWith(PERSON_ELEMENT));
 
-      // Verify the command failed
-      expect(result.success).toBe(false);
+      expectValidationFailure(result);
       expect(result.schema).toBeNull();
       expect(result.xmlContent).toBeNull();
-
-      // Verify the original XML remains exactly unchanged
-      const xmlAfter = originalXml;
-      expect(xmlAfter).toBe(xmlBefore);
-      expect(xmlAfter).toEqual(simpleSchemaXml);
+      expect(topLevelElementNames(modelManager)).toEqual(["person"]);
     });
 
     test("should clone schema before executing commands", () => {
@@ -222,7 +223,7 @@ describe("CommandProcessor", () => {
         getSchema: vi.fn().mockReturnValue(mockSchema),
         setSchema: vi.fn(),
         cloneSchema: vi.fn().mockReturnValue(mockClonedSchema),
-        toXml: vi.fn().mockReturnValue(simpleSchemaXml),
+        toXml: vi.fn().mockReturnValue(emptySchemaXml()),
       };
 
       // Mock executor
@@ -243,13 +244,13 @@ describe("CommandProcessor", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "test",
           elementType: "string",
         },
       };
 
-      const result = processorWithMock.execute(command, simpleSchemaXml);
+      const result = processorWithMock.execute(command, emptySchemaXml());
 
       expect(result.success).toBe(true);
       expect(mockModelManager.cloneSchema).toHaveBeenCalled();
@@ -257,10 +258,8 @@ describe("CommandProcessor", () => {
     });
 
     test("should preserve original schema on execution failure", () => {
-      // Store the original XML
-      const originalXml = simpleSchemaXml;
-      const xmlBefore = originalXml;
-
+      const modelManager = new SchemaModelManager();
+      const processorWithManager = new CommandProcessor(undefined, undefined, modelManager);
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
@@ -270,55 +269,49 @@ describe("CommandProcessor", () => {
         },
       };
 
-      const result = processor.execute(command, originalXml);
+      const result = processorWithManager.execute(command, schemaXmlWith(PERSON_ELEMENT));
 
-      // Execution will fail because parent node doesn't exist
-      expect(result.success).toBe(false);
+      // The parent node doesn't exist
+      expectFailure(result);
       expect(result.schema).toBeNull();
       expect(result.xmlContent).toBeNull();
-
-      // Verify the original XML string remains exactly unchanged
-      const xmlAfter = originalXml;
-      expect(xmlAfter).toBe(xmlBefore);
-      expect(xmlAfter).toEqual(simpleSchemaXml);
+      expect(topLevelElementNames(modelManager)).toEqual(["person"]);
     });
 
     test("should preserve original schema when command fails", () => {
-      // Store the original XML
-      const originalXml = simpleSchemaXml;
-      const xmlBefore = originalXml;
-
-      // Mock executor that throws an error
+      const modelManager = new SchemaModelManager();
+      // Mock executor that changes the working copy and then throws an error
       const mockExecutor: MockExecutor = {
-        execute: vi.fn(() => {
+        execute: vi.fn<CommandExecutor["execute"]>((_command, workingSchema) => {
+          const added = new topLevelElement();
+          added.name = "added";
+          workingSchema.element = [...(workingSchema.element ?? []), added];
           throw new Error("Execution failed");
         }),
       };
 
       const processorWithMock = new CommandProcessor(
         undefined,
-        mockExecutor as CommandExecutor
+        mockExecutor as CommandExecutor,
+        modelManager
       );
 
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "test",
           elementType: "string",
         },
       };
 
-      const result = processorWithMock.execute(command, originalXml);
+      const result = processorWithMock.execute(command, schemaXmlWith(PERSON_ELEMENT));
 
       expectFailure(result);
       expect(result.schema).toBeNull();
       expect(result.error).toContain("Execution failed");
-
-      // Verify the original XML string remains exactly unchanged
-      const xmlAfter = originalXml;
-      expect(xmlAfter).toBe(xmlBefore);
-      expect(xmlAfter).toEqual(simpleSchemaXml);
+      expect(mockExecutor.execute).toHaveBeenCalled();
+      expect(topLevelElementNames(modelManager)).toEqual(["person"]);
     });
   });
 
@@ -328,7 +321,7 @@ describe("CommandProcessor", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "test",
           elementType: "string",
         },
@@ -349,7 +342,7 @@ describe("CommandProcessor", () => {
         },
       };
 
-      const result = processor.execute(command, simpleSchemaXml);
+      const result = processor.execute(command, emptySchemaXml());
       expectFailure(result);
       expect(result.error).toBe("Parent ID cannot be empty");
     });
@@ -358,13 +351,13 @@ describe("CommandProcessor", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "123invalid", // Invalid XML name (starts with digit)
           elementType: "string",
         },
       };
 
-      const result = processor.execute(command, simpleSchemaXml);
+      const result = processor.execute(command, emptySchemaXml());
       expectFailure(result);
       // Should catch the first validation error
       expect(result.error).toBe("Element name must be a valid XML name");
@@ -386,13 +379,13 @@ describe("CommandProcessor", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "test",
           elementType: "string",
         },
       };
 
-      const result = processorWithMock.execute(command, simpleSchemaXml);
+      const result = processorWithMock.execute(command, emptySchemaXml());
 
       expectFailure(result);
       expect(result.error).toContain("Executor crashed unexpectedly");
@@ -416,13 +409,13 @@ describe("CommandProcessor", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "test",
           elementType: "string",
         },
       };
 
-      const result = processorWithMock.execute(command, simpleSchemaXml);
+      const result = processorWithMock.execute(command, emptySchemaXml());
 
       expectFailure(result);
       expect(result.error).toContain("Validator crashed");
@@ -437,7 +430,7 @@ describe("CommandProcessor", () => {
         getSchema: vi.fn().mockReturnValue(mockSchema),
         setSchema: vi.fn(),
         cloneSchema: vi.fn().mockReturnValue(mockSchema),
-        toXml: vi.fn().mockReturnValue(simpleSchemaXml),
+        toXml: vi.fn().mockReturnValue(emptySchemaXml()),
       };
 
       const mockExecutor: MockExecutor = {
@@ -455,13 +448,13 @@ describe("CommandProcessor", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "test",
           elementType: "string",
         },
       };
 
-      const result = processorWithMock.execute(command, simpleSchemaXml);
+      const result = processorWithMock.execute(command, emptySchemaXml());
 
       // Verify result structure on success
       expect(result).toHaveProperty("success");
@@ -482,7 +475,7 @@ describe("CommandProcessor", () => {
         },
       };
 
-      const result = processor.execute(command, simpleSchemaXml);
+      const result = processor.execute(command, emptySchemaXml());
 
       // Verify result structure on failure
       expect(result).toHaveProperty("success");
@@ -521,13 +514,13 @@ describe("CommandProcessor", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "test",
           elementType: "string",
         },
       };
 
-      const result = processorWithMock.execute(command, simpleSchemaXml);
+      const result = processorWithMock.execute(command, emptySchemaXml());
 
       expectFailure(result);
       expect(result.error).toContain("Failed to serialize schema");
@@ -541,7 +534,7 @@ describe("CommandProcessor", () => {
         getSchema: vi.fn().mockReturnValue(mockSchema),
         setSchema: vi.fn(),
         cloneSchema: vi.fn().mockReturnValue(mockSchema),
-        toXml: vi.fn().mockReturnValue(simpleSchemaXml),
+        toXml: vi.fn().mockReturnValue(emptySchemaXml()),
       };
 
       const mockExecutor: MockExecutor = {
@@ -559,13 +552,13 @@ describe("CommandProcessor", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "test",
           elementType: "string",
         },
       };
 
-      const result = processorWithMock.execute(command, simpleSchemaXml);
+      const result = processorWithMock.execute(command, emptySchemaXml());
 
       // Should succeed with mock
       expect(result.success).toBe(true);
@@ -588,7 +581,7 @@ describe("CommandProcessor", () => {
         getSchema: vi.fn().mockReturnValue(mockSchema),
         setSchema: vi.fn(),
         cloneSchema: vi.fn().mockReturnValue(mockSchema),
-        toXml: vi.fn().mockReturnValue(simpleSchemaXml),
+        toXml: vi.fn().mockReturnValue(emptySchemaXml()),
       };
 
       const mockExecutor: MockExecutor = {
@@ -606,13 +599,13 @@ describe("CommandProcessor", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "test",
           elementType: "string",
         },
       };
 
-      const result = processorWithMock.execute(command, simpleSchemaXml);
+      const result = processorWithMock.execute(command, emptySchemaXml());
 
       expectFailure(result);
       expect(result.error).toContain("Round-trip validation failed");
@@ -621,7 +614,7 @@ describe("CommandProcessor", () => {
 
   describe("Invalid Commands", () => {
     test("should reject command with unknown type", () => {
-      const result = processor.execute(INVALID_COMMAND, simpleSchemaXml);
+      const result = processor.execute(INVALID_COMMAND, emptySchemaXml());
       expectFailure(result);
       expect(result.error).toContain("Unknown command type");
     });
@@ -645,7 +638,7 @@ describe("CommandProcessor", () => {
         getSchema: vi.fn().mockReturnValue(mockSchema),
         setSchema: vi.fn(),
         cloneSchema: vi.fn().mockReturnValue(mockSchema),
-        toXml: vi.fn().mockReturnValue(simpleSchemaXml),
+        toXml: vi.fn().mockReturnValue(emptySchemaXml()),
       };
 
       // Create processor with mocked dependencies
@@ -658,13 +651,13 @@ describe("CommandProcessor", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "test",
           elementType: "string",
         },
       };
 
-      const result = customProcessor.execute(command, simpleSchemaXml);
+      const result = customProcessor.execute(command, emptySchemaXml());
 
       // Verify mocks were called
       expect(mockValidator.validate).toHaveBeenCalled();
@@ -686,13 +679,13 @@ describe("CommandProcessor", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "test",
           elementType: "string",
         },
       };
 
-      const result = defaultProcessor.execute(command, simpleSchemaXml);
+      const result = defaultProcessor.execute(command, emptySchemaXml());
 
       // Should use default validator and executor successfully
       expect(result.success).toBe(true);
@@ -712,7 +705,7 @@ describe("CommandProcessor", () => {
         getSchema: vi.fn().mockReturnValue(mockSchema),
         setSchema: vi.fn(),
         cloneSchema: vi.fn().mockReturnValue(mockSchema),
-        toXml: vi.fn().mockReturnValue(simpleSchemaXml),
+        toXml: vi.fn().mockReturnValue(emptySchemaXml()),
       };
 
       const processorWithMock = new CommandProcessor(
@@ -724,7 +717,7 @@ describe("CommandProcessor", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "test",
           elementType: "string",
         },
@@ -734,7 +727,7 @@ describe("CommandProcessor", () => {
       Object.assign(processorWithMock, { isExecuting: true });
 
       // Try to execute command while another is "in progress"
-      const result = processorWithMock.execute(command, simpleSchemaXml);
+      const result = processorWithMock.execute(command, emptySchemaXml());
 
       // Should be rejected due to concurrent execution
       expectFailure(result);
@@ -750,7 +743,7 @@ describe("CommandProcessor", () => {
         getSchema: vi.fn().mockReturnValue(mockSchema),
         setSchema: vi.fn(),
         cloneSchema: vi.fn().mockReturnValue(mockSchema),
-        toXml: vi.fn().mockReturnValue(simpleSchemaXml),
+        toXml: vi.fn().mockReturnValue(emptySchemaXml()),
       };
 
       const mockExecutor: MockExecutor = {
@@ -768,18 +761,18 @@ describe("CommandProcessor", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "test",
           elementType: "string",
         },
       };
 
       // Execute first command
-      const result1 = processorWithMock.execute(command, simpleSchemaXml);
+      const result1 = processorWithMock.execute(command, emptySchemaXml());
       expect(result1.success).toBe(true);
 
       // Execute second command after first completes
-      const result2 = processorWithMock.execute(command, simpleSchemaXml);
+      const result2 = processorWithMock.execute(command, emptySchemaXml());
       expect(result2.success).toBe(true);
 
       // Both should have executed successfully
@@ -792,7 +785,7 @@ describe("CommandProcessor", () => {
         getSchema: vi.fn().mockReturnValue(mockSchema),
         setSchema: vi.fn(),
         cloneSchema: vi.fn().mockReturnValue(mockSchema),
-        toXml: vi.fn().mockReturnValue(simpleSchemaXml),
+        toXml: vi.fn().mockReturnValue(emptySchemaXml()),
       };
 
       const mockExecutor: MockExecutor = {
@@ -810,18 +803,18 @@ describe("CommandProcessor", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "test",
           elementType: "string",
         },
       };
 
       // Execute first command that will fail
-      const result1 = processorWithMock.execute(command, simpleSchemaXml);
+      const result1 = processorWithMock.execute(command, emptySchemaXml());
       expect(result1.success).toBe(false);
 
       // Execute second command - should be allowed since lock was released
-      const result2 = processorWithMock.execute(command, simpleSchemaXml);
+      const result2 = processorWithMock.execute(command, emptySchemaXml());
       expectFailure(result2);
       expect(result2.error).toContain("Execution failed");
 
@@ -841,13 +834,13 @@ describe("CommandProcessor", () => {
         },
       };
 
-      const result = processor.execute(command, simpleSchemaXml);
+      const result = processor.execute(command, emptySchemaXml());
 
       expectValidationFailure(result);
     });
 
     test("should set errorKind to 'validation' for unknown command type", () => {
-      const result = processor.execute(INVALID_COMMAND, simpleSchemaXml);
+      const result = processor.execute(INVALID_COMMAND, emptySchemaXml());
 
       expect(result.success).toBe(false);
       expectValidationFailure(result);
@@ -859,7 +852,7 @@ describe("CommandProcessor", () => {
         getSchema: vi.fn().mockReturnValue(mockSchema),
         setSchema: vi.fn(),
         cloneSchema: vi.fn().mockReturnValue(mockSchema),
-        toXml: vi.fn().mockReturnValue(simpleSchemaXml),
+        toXml: vi.fn().mockReturnValue(emptySchemaXml()),
       };
 
       const processorWithMock = new CommandProcessor(
@@ -871,7 +864,7 @@ describe("CommandProcessor", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "test",
           elementType: "string",
         },
@@ -880,7 +873,7 @@ describe("CommandProcessor", () => {
       // Simulate in-progress execution
       Object.assign(processorWithMock, { isExecuting: true });
 
-      const result = processorWithMock.execute(command, simpleSchemaXml);
+      const result = processorWithMock.execute(command, emptySchemaXml());
 
       expectValidationFailure(result);
 
@@ -902,13 +895,13 @@ describe("CommandProcessor", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "test",
           elementType: "string",
         },
       };
 
-      const result = processorWithMock.execute(command, simpleSchemaXml);
+      const result = processorWithMock.execute(command, emptySchemaXml());
 
       expectRuntimeFailure(result);
       expect(result.error).toContain("Executor crashed unexpectedly");
@@ -935,13 +928,13 @@ describe("CommandProcessor", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "test",
           elementType: "string",
         },
       };
 
-      const result = processorWithMock.execute(command, simpleSchemaXml);
+      const result = processorWithMock.execute(command, emptySchemaXml());
 
       expectRuntimeFailure(result);
       expect(result.error).toContain("XML parse error");
@@ -954,7 +947,7 @@ describe("CommandProcessor", () => {
         getSchema: vi.fn().mockReturnValue(mockSchema),
         setSchema: vi.fn(),
         cloneSchema: vi.fn().mockReturnValue(mockSchema),
-        toXml: vi.fn().mockReturnValue(simpleSchemaXml),
+        toXml: vi.fn().mockReturnValue(emptySchemaXml()),
       };
 
       const mockExecutor: MockExecutor = {
@@ -972,13 +965,13 @@ describe("CommandProcessor", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "test",
           elementType: "string",
         },
       };
 
-      const result = processorWithMock.execute(command, simpleSchemaXml);
+      const result = processorWithMock.execute(command, emptySchemaXml());
 
       expect(result.success).toBe(true);
     });

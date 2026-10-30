@@ -16,8 +16,8 @@ okf_version: "0.2"
 
 # User experience
 
-* [UX concept](ux-concept.md) - The interaction model of the editor - which surface adds, edits and deletes what, how facets work, and how the property panel behaves - with a list of what the current editor does not implement yet.
-* [Editor](editor.md) - The custom editor and the webview app - how the editor opens, the page layout, the app that wires palette, diagram and property panel together, navigation, diagram settings, the palette and the property panel tabs.
+* [UX concept](ux-concept.md) - The interaction model of the editor - which surface adds, edits and deletes what, how facets work, and how the properties panel behaves - with a list of what the current editor does not implement yet.
+* [Editor](editor.md) - The custom editor and the webview app - how the editor opens, the page layout, the app that wires palette, diagram and properties panel together, navigation, diagram settings, the palette and the properties panel tabs.
 
 # Schema and edits
 

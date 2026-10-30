@@ -2,16 +2,15 @@
 
 [![CI](https://github.com/neumaennl/vscode-visual-xml-schema-editor/actions/workflows/ci.yml/badge.svg)](https://github.com/neumaennl/vscode-visual-xml-schema-editor/actions/workflows/ci.yml)
 
-Shows XML Schema (`.xsd`) files in VS Code as an interactive diagram, similar to the schema view of [Altova XMLSpy](https://www.altova.com/xmlspy-xml-editor).
-
-The extension is currently a viewer. It is being developed into a full visual editor, in which you add constructs to the diagram by drag and drop and edit their properties in a side panel; every change is written back to the XSD file. See [Status](#status).
+Edits XML Schema (`.xsd`) files in VS Code as an interactive diagram, similar to the schema view of [Altova XMLSpy](https://www.altova.com/xmlspy-xml-editor). Add constructs by dragging them from the palette onto the diagram, edit them in the properties panel, and every change is written to the XSD file.
 
 ## Features
 
-- **Diagram of the schema.** Elements and types are drawn as a tree, with their content models (sequence, choice and all). Expand and collapse nodes to focus on the part you are working on.
-- **Properties of the selected node.** Click a node to see its name, type, namespace, occurrence, documentation, attributes and restrictions (facets) in the properties panel.
+- **Diagram of the schema.** Elements, groups and types are drawn as a tree, with their content models (sequence, choice and all). Expand and collapse nodes to focus on the part you are working on.
+- **Adding by drag and drop.** The palette on the left lists elements, attributes, groups, compositors, simple and complex types, extensions, restrictions and facets. Drag an item onto a node in the diagram to add it there; the diagram only accepts drops where the construct is allowed.
+- **Editing in the properties panel.** Click a node to select it. The panel on the right shows it in four tabs: **General** (name, type, cardinality, default and fixed values, namespace declarations, attributes), **Facets** (the restrictions of a simple type), **Docs** (its documentation) and **XML** (a read-only preview of its XML). Nodes that can be deleted have a delete button in the panel header.
+- **Changes go to the file.** Every edit changes the XSD file as one step, so you save it, undo and redo it as in the text editor. The diagram also follows changes that you make to the file in the text editor. If an edit is not possible, a message above the diagram says why.
 - **Navigation.** Zoom with the mouse wheel or the toolbar buttons, use "Fit View" to see the whole diagram, and pan by dragging the background, with the middle mouse button or with Ctrl and the left mouse button.
-- **Always current.** The diagram follows changes that you make to the file in the text editor.
 
 ## Usage
 
@@ -37,7 +36,7 @@ VS Code 1.125 or later.
 
 ## Status
 
-The editing features are developed on the branch [`copilot/add-editor-capabilities`](https://github.com/neumaennl/vscode-visual-xml-schema-editor/tree/copilot/add-editor-capabilities). The design and the roadmap are described in [ADR 001](docs/architecture/001-editor-transition.md). Bugs and planned work are tracked in the [issues](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues).
+The editor is in development and not published yet. Some constructs cannot be added or edited yet, for example attribute groups, the properties of attributes, imports and includes; there is no context menu and there are no keyboard shortcuts. Every edit formats the whole file anew, so the original indentation and attribute order are lost. The [known issues](docs/known-issues.md) list these limitations and the known bugs, and the [issues](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues) track the planned work.
 
 ## Contributing
 

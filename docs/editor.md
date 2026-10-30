@@ -1,11 +1,11 @@
 ---
 type: Component
 title: Editor
-description: The custom editor and the webview app - how the editor opens, the page layout, the app that wires palette, diagram and property panel together, navigation, diagram settings, the palette and the property panel tabs.
-tags: [editor, webview, palette, property-panel, navigation, ui]
+description: The custom editor and the webview app - how the editor opens, the page layout, the app that wires palette, diagram and properties panel together, navigation, diagram settings, the palette and the properties panel tabs.
+tags: [editor, webview, palette, properties-panel, navigation, ui]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-28T13:57:27Z }
-verified: { by: human:neumaennl, at: 2026-10-28T14:01:23Z }
+generated: { by: human:neumaennl, at: 2026-10-28T14:47:04Z }
+verified: { by: human:neumaennl, at: 2026-10-28T15:08:21Z }
 verified:
   by: human:neumaennl
   at: 2026-10-08T08:46:19Z
@@ -25,14 +25,14 @@ sources:
   - id: palette-items
     resource: ../webview-src/palette/PaletteItems.ts
     title: Palette item definitions
-  - id: property-panel
-    resource: ../webview-src/propertyPanel/propertyPanel.ts
-    title: PropertyPanel
+  - id: properties-panel
+    resource: ../webview-src/propertiesPanel/propertiesPanel.ts
+    title: PropertiesPanel
 ---
 
 # Purpose
 
-The editor is what the user sees and works with: a webview with a palette on the left, the schema diagram in the middle and a property panel on the right. It shows the schema and turns user actions into commands. It never changes the schema itself. See [Architecture](architecture.md) for how it fits into the extension.
+The editor is what the user sees and works with: a webview with a palette on the left, the schema diagram in the middle and a properties panel on the right. It shows the schema and turns user actions into commands. It never changes the schema itself. See [Architecture](architecture.md) for how it fits into the extension.
 
 This document describes the parts of the editor and how they are connected. The details are in other documents:
 
@@ -69,7 +69,7 @@ The styles use VS Code theme CSS variables, so the editor follows the active col
 
 # SchemaEditorApp
 
-`SchemaEditorApp` in `webview-src/main.ts` is the webview's entry point. It creates the renderer, the palette and the property panel, and wires them together.[^webview-main]
+`SchemaEditorApp` in `webview-src/main.ts` is the webview's entry point. It creates the renderer, the palette and the properties panel, and wires them together.[^webview-main]
 
 **Messages from the extension**
 
@@ -95,7 +95,7 @@ Zoom and pan are handled by the app, which passes the view state to the renderer
 
 # Diagram
 
-The diagram shows the schema as a tree of nodes. Clicking a node selects it and shows it in the property panel; clicking its expand button shows or hides its children. How it is built and drawn is described in [Diagram rendering](diagram-rendering.md).
+The diagram shows the schema as a tree of nodes. Clicking a node selects it and shows it in the properties panel; clicking its expand button shows or hides its children. How it is built and drawn is described in [Diagram rendering](diagram-rendering.md).
 
 Three user settings change the diagram. All are booleans and default to `false`:[^manifest]
 
@@ -118,9 +118,9 @@ The palette lists the constructs that can be added, in four groups, each with a 
 
 Items are added by dragging them onto a node in the diagram. Which construct can be dropped where, and which command a drop creates, is described in [Drag and drop](drag-and-drop.md).
 
-# Property panel
+# Properties panel
 
-`PropertyPanel` shows the selected node and is the place where existing constructs are edited.[^property-panel] Its header shows the node type, the node ID and, if the node can be deleted, a delete button.
+`PropertiesPanel` shows the selected node and is the place where existing constructs are edited.[^properties-panel] Its header shows the node type, the node ID and, if the node can be deleted, a delete button.
 
 | Tab | Shown for | Content |
 |---|---|---|
@@ -129,7 +129,7 @@ Items are added by dragging them onto a node in the diagram. Which construct can
 | Docs | All nodes (not editable for every node) | `xs:documentation` entries of the node's annotations |
 | XML | All nodes | Read-only XML preview of the node |
 
-Which fields are editable, the draft copy and the type suggestions are described in [UX concept](ux-concept.md#property-panel).
+Which fields are editable, the draft copy and the type suggestions are described in [UX concept](ux-concept.md#properties-panel).
 
 [^manifest]: Extension manifest
 
@@ -141,4 +141,4 @@ Which fields are editable, the draft copy and the type suggestions are described
 
 [^palette-items]: Palette item definitions
 
-[^property-panel]: PropertyPanel
+[^properties-panel]: PropertiesPanel

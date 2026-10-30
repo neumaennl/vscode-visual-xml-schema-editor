@@ -4,8 +4,8 @@
  * ID conventions supported:
  * - For non-schema annotatable nodes: nodeId (e.g. "/element:person")
  * - For schema-root annotations (multiple allowed):
- *   annotationId = "schema/annotation[N]"
- *   documentationId = "schema/annotation[N]/documentation[M]" or "schema/documentation[N]"
+ *   annotationId = "/schema/annotation[N]"
+ *   documentationId = "/schema/annotation[N]/documentation[M]" or "/schema/documentation[N]"
  *
  * Note on references: xs:annotation, xs:documentation, and xs:appinfo do NOT
  * support a `ref` attribute in the XSD specification. They are always inline
@@ -103,7 +103,7 @@ export function validateRemoveAnnotation(
   if (isSchemaRoot(command.payload.annotationId)) {
     return {
       valid: false,
-      error: `Use "schema/annotation[N]" to remove a specific schema-root annotation: ${command.payload.annotationId}`,
+      error: `Use "/schema/annotation[N]" to remove a specific schema-root annotation: ${command.payload.annotationId}`,
     };
   }
 
@@ -145,7 +145,7 @@ export function validateModifyAnnotation(
   if (isSchemaRoot(command.payload.annotationId)) {
     return {
       valid: false,
-      error: `Use "schema/annotation[N]" to modify a specific schema-root annotation: ${command.payload.annotationId}`,
+      error: `Use "/schema/annotation[N]" to modify a specific schema-root annotation: ${command.payload.annotationId}`,
     };
   }
 
@@ -220,7 +220,7 @@ export function validateRemoveDocumentation(
     return { valid: false, error: "Documentation ID cannot be empty" };
   }
 
-  // "schema/annotation[N]/documentation[M]" format
+  // "/schema/annotation[N]/documentation[M]" format
   const schemaDId = parseSchemaDocumentationId(command.payload.documentationId);
   if (schemaDId) {
     const annots = toArray(schemaObj.annotation);
@@ -252,7 +252,7 @@ export function validateRemoveDocumentation(
     };
   }
 
-  // "schema/documentation[N]" shorthand — targets first schema annotation
+  // "/schema/documentation[N]" shorthand — targets first schema annotation
   if (isSchemaRoot(elementId)) {
     const annots = toArray(schemaObj.annotation);
     if (annots.length === 0) {
@@ -298,7 +298,7 @@ export function validateModifyDocumentation(
     return { valid: false, error: "Documentation ID cannot be empty" };
   }
 
-  // "schema/annotation[N]/documentation[M]" format
+  // "/schema/annotation[N]/documentation[M]" format
   const schemaDId = parseSchemaDocumentationId(command.payload.documentationId);
   if (schemaDId) {
     const annots = toArray(schemaObj.annotation);
@@ -330,7 +330,7 @@ export function validateModifyDocumentation(
     };
   }
 
-  // "schema/documentation[N]" shorthand — targets first schema annotation
+  // "/schema/documentation[N]" shorthand — targets first schema annotation
   if (isSchemaRoot(elementId)) {
     const annots = toArray(schemaObj.annotation);
     if (annots.length === 0) {

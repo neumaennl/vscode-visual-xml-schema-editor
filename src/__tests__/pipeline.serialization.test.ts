@@ -8,7 +8,7 @@
  */
 
 import type { AddElementCommand } from "../../shared/types.js";
-import { runCommandExpectSuccess } from "./testHelpers.js";
+import { runCommandExpectSuccess } from "./pipelineTestHelpers.js";
 
 /** A schema whose default namespace is its target namespace, with `xs:` for XML Schema. */
 const TARGET_NAMESPACE_AS_DEFAULT = `<?xml version="1.0" encoding="UTF-8"?>
@@ -31,11 +31,11 @@ const XML_SCHEMA_AS_DEFAULT = `<?xml version="1.0" encoding="UTF-8"?>
  * @returns The command
  */
 function addElementOfType(elementType: string): AddElementCommand {
-  return { type: "addElement", payload: { parentId: "schema", elementName: "added", elementType } };
+  return { type: "addElement", payload: { parentId: "/schema", elementName: "added", elementType } };
 }
 
 describe("Integration: namespaces after serialization", () => {
-  it("should keep a target namespace that is the default namespace, and the xs: prefixes", () => {
+  test("should keep a target namespace that is the default namespace, and the xs: prefixes", () => {
     const xml = runCommandExpectSuccess(TARGET_NAMESPACE_AS_DEFAULT, addElementOfType("myType"));
 
     expect(xml).toContain(
@@ -46,7 +46,7 @@ describe("Integration: namespaces after serialization", () => {
     expect(xml).not.toMatch(/<\/?(schema|element|simpleType|restriction)\b/);
   });
 
-  it("should keep unprefixed element names when the XML Schema namespace is the default namespace", () => {
+  test("should keep unprefixed element names when the XML Schema namespace is the default namespace", () => {
     const xml = runCommandExpectSuccess(XML_SCHEMA_AS_DEFAULT, addElementOfType("t:myType"));
 
     expect(xml).toContain(

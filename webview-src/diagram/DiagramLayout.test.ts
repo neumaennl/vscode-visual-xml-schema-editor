@@ -17,7 +17,7 @@ describe("DiagramLayout", () => {
   });
 
   describe("layout", () => {
-    it("should layout diagram with single root element", () => {
+    test("should layout diagram with single root element", () => {
       const root = new DiagramItem("root", "Root", DiagramItemType.element, diagram);
       diagram.addRootElement(root);
 
@@ -29,7 +29,7 @@ describe("DiagramLayout", () => {
       expect(root.elementBox).toBeDefined();
     });
 
-    it("should layout multiple root elements vertically", () => {
+    test("should layout multiple root elements vertically", () => {
       const root1 = new DiagramItem("root1", "Root1", DiagramItemType.element, diagram);
       const root2 = new DiagramItem("root2", "Root2", DiagramItemType.element, diagram);
       diagram.addRootElement(root1);
@@ -41,7 +41,7 @@ describe("DiagramLayout", () => {
       expect(root2.location.y).toBeGreaterThan(root1.location.y);
     });
 
-    it("should calculate overall bounding box", () => {
+    test("should calculate overall bounding box", () => {
       const root = new DiagramItem("root", "Root", DiagramItemType.element, diagram);
       diagram.addRootElement(root);
 
@@ -53,7 +53,7 @@ describe("DiagramLayout", () => {
   });
 
   describe("item sizing", () => {
-    it("should size element items correctly", () => {
+    test("should size element items correctly", () => {
       const item = new DiagramItem("elem", "Element", DiagramItemType.element, diagram);
       diagram.addRootElement(item);
 
@@ -63,7 +63,7 @@ describe("DiagramLayout", () => {
       expect(item.size.height).toBe(40); // ELEMENT_HEIGHT
     });
 
-    it("should size type items correctly", () => {
+    test("should size type items correctly", () => {
       const item = new DiagramItem("type", "Type", DiagramItemType.type, diagram);
       diagram.addRootElement(item);
 
@@ -73,7 +73,7 @@ describe("DiagramLayout", () => {
       expect(item.size.height).toBe(40);
     });
 
-    it("should size group items correctly", () => {
+    test("should size group items correctly", () => {
       const item = new DiagramItem("group", "Group", DiagramItemType.group, diagram);
       diagram.addRootElement(item);
 
@@ -83,7 +83,7 @@ describe("DiagramLayout", () => {
       expect(item.size.height).toBe(20); // GROUP_HEIGHT
     });
 
-    it("should size reference items correctly", () => {
+    test("should size reference items correctly", () => {
       const item = new DiagramItem("ref", "Reference", DiagramItemType.reference, diagram);
       diagram.addRootElement(item);
 
@@ -95,7 +95,7 @@ describe("DiagramLayout", () => {
   });
 
   describe("expand button", () => {
-    it("should add expand button when item has children", () => {
+    test("should add expand button when item has children", () => {
       const parent = new DiagramItem("parent", "Parent", DiagramItemType.element, diagram);
       const child = new DiagramItem("child", "Child", DiagramItemType.element, diagram);
       parent.addChild(child);
@@ -108,7 +108,7 @@ describe("DiagramLayout", () => {
       expect(parent.childExpandButtonBox?.height).toBe(12);
     });
 
-    it("should not add expand button when item has no children", () => {
+    test("should not add expand button when item has no children", () => {
       const item = new DiagramItem("item", "Item", DiagramItemType.element, diagram);
       diagram.addRootElement(item);
 
@@ -121,7 +121,7 @@ describe("DiagramLayout", () => {
   });
 
   describe("children layout", () => {
-    it("should layout children when expanded", () => {
+    test("should layout children when expanded", () => {
       const parent = new DiagramItem("parent", "Parent", DiagramItemType.element, diagram);
       const child = new DiagramItem("child", "Child", DiagramItemType.element, diagram);
       parent.addChild(child);
@@ -134,7 +134,7 @@ describe("DiagramLayout", () => {
       expect(child.size.width).toBeGreaterThan(0);
     });
 
-    it("should not layout children when collapsed", () => {
+    test("should not layout children when collapsed", () => {
       const parent = new DiagramItem("parent", "Parent", DiagramItemType.element, diagram);
       const child = new DiagramItem("child", "Child", DiagramItemType.element, diagram);
       parent.addChild(child);
@@ -147,7 +147,7 @@ describe("DiagramLayout", () => {
       expect(child.location).toEqual({ x: 0, y: 0 });
     });
 
-    it("should layout multiple children vertically", () => {
+    test("should layout multiple children vertically", () => {
       const parent = new DiagramItem("parent", "Parent", DiagramItemType.element, diagram);
       const child1 = new DiagramItem("child1", "Child1", DiagramItemType.element, diagram);
       const child2 = new DiagramItem("child2", "Child2", DiagramItemType.element, diagram);
@@ -163,7 +163,7 @@ describe("DiagramLayout", () => {
   });
 
   describe("documentation box", () => {
-    it("should add documentation box when showDocumentation is true", () => {
+    test("should add documentation box when showDocumentation is true", () => {
       diagram.showDocumentation = true;
       const item = new DiagramItem("item", "Item", DiagramItemType.element, diagram);
       item.documentation = "Test documentation";
@@ -175,7 +175,7 @@ describe("DiagramLayout", () => {
       expect(item.documentationBox?.width).toBeGreaterThan(0);
     });
 
-    it("should not add documentation box when showDocumentation is false", () => {
+    test("should not add documentation box when showDocumentation is false", () => {
       diagram.showDocumentation = false;
       const item = new DiagramItem("item", "Item", DiagramItemType.element, diagram);
       item.documentation = "Test documentation";
@@ -188,7 +188,7 @@ describe("DiagramLayout", () => {
       expect(item.documentationBox.height).toBe(0);
     });
 
-    it("should not add documentation box when documentation is empty", () => {
+    test("should not add documentation box when documentation is empty", () => {
       diagram.showDocumentation = true;
       const item = new DiagramItem("item", "Item", DiagramItemType.element, diagram);
       item.documentation = "";
@@ -203,7 +203,7 @@ describe("DiagramLayout", () => {
   });
 
   describe("bounding box calculation", () => {
-    it("should calculate bounding box for item", () => {
+    test("should calculate bounding box for item", () => {
       const item = new DiagramItem("item", "Item", DiagramItemType.element, diagram);
       diagram.addRootElement(item);
 
@@ -214,7 +214,7 @@ describe("DiagramLayout", () => {
       expect(item.boundingBox.height).toBeGreaterThan(0);
     });
 
-    it("should include children in bounding box when expanded", () => {
+    test("should include children in bounding box when expanded", () => {
       const parent = new DiagramItem("parent", "Parent", DiagramItemType.element, diagram);
       const child = new DiagramItem("child", "Child", DiagramItemType.element, diagram);
       parent.addChild(child);

@@ -17,7 +17,7 @@ import {
 } from "../../shared/types.js";
 import { toArray } from "../../shared/schemaUtils.js";
 import { locateNodeById } from "../schemaNavigator.js";
-import { parseSchemaId } from "../../shared/idStrategy.js";
+import { parseSchemaId, SCHEMA_ROOT_ID } from "../../shared/idStrategy.js";
 import { createAnnotation } from "./annotationUtils.js";
 
 /**
@@ -66,7 +66,7 @@ export function executeRemoveAttribute(
   const { attributeId } = command.payload;
 
   const parsed = parseSchemaId(attributeId);
-  const parentId = parsed.parentId ?? "schema";
+  const parentId = parsed.parentId ?? SCHEMA_ROOT_ID;
   const location = locateNodeById(schemaObj, parentId);
 
   removeAttributeFromParent(location.parent, location.parentType ?? "", parsed.name, parsed.position);
@@ -89,7 +89,7 @@ export function executeModifyAttribute(
   } = command.payload;
 
   const parsed = parseSchemaId(attributeId);
-  const parentId = parsed.parentId ?? "schema";
+  const parentId = parsed.parentId ?? SCHEMA_ROOT_ID;
   const location = locateNodeById(schemaObj, parentId);
 
   modifyAttributeInParent(

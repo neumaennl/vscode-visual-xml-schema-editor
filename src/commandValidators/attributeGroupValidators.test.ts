@@ -4,7 +4,6 @@
  * definitions and attribute group references.
  */
 
-import { unmarshal } from "@neumaennl/xmlbind-ts";
 import { schema } from "../../shared/types.js";
 import {
   AddAttributeGroupCommand,
@@ -16,28 +15,30 @@ import {
   validateRemoveAttributeGroup,
   validateModifyAttributeGroup,
 } from "./attributeGroupValidators.js";
-import { expectInvalid } from "./validationTestHelpers.js";
+import { expectInvalid } from "../__tests__/validationTestHelpers.js";
+import { emptySchema, readTestSchema, schemaWith, schemaWithAttrGroups } from "../__tests__/schemaTestHelpers.js";
 
-/**
- * Unmarshals a schema with the attribute groups `CommonAttrs` and `OtherAttrs` and the given content.
- *
- * @param body - The XSD content after the two attribute group definitions
- * @returns The schema object
- */
-function schemaWithAttrGroups(body: string): schema {
-  return unmarshal(
-    schema,
-    `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:attributeGroup name="CommonAttrs"/>
-  <xs:attributeGroup name="OtherAttrs"/>
-  ${body}
-</xs:schema>`,
-  );
-}
+/** The file with a complexType `PersonType` that references the attribute group `CommonAttrs`. */
+const PERSON_TYPE_WITH_REF_XSD = "person-type-with-attribute-group-ref.xsd";
+
+/** The file with two attribute groups and a complexType `PersonType` that references one of them. */
+const ONE_OF_TWO_GROUPS_XSD = "person-type-with-one-of-two-attribute-groups.xsd";
+
+/** The attribute group `CommonAttrs` and an empty complexType `PersonType`. */
+const COMMON_ATTRS_AND_PERSON_TYPE = `<xs:attributeGroup name="CommonAttrs"/>
+<xs:complexType name="PersonType"/>`;
+
+/** A complexType `PersonType` that references the attribute group `CommonAttrs`. */
+const PERSON_TYPE_WITH_COMMON_ATTRS_REF = `<xs:complexType name="PersonType"><xs:attributeGroup ref="CommonAttrs"/></xs:complexType>`;
 
 /** An inline complexType with a reference to the attribute group `REF`, for a local element. */
 const LOCAL_ELEMENT_WITH_REF = `<xs:element name="child"><xs:complexType><xs:attributeGroup ref="REF"/></xs:complexType></xs:element>`;
+
+/** A complexType with references to `CommonAttrs` and `OtherAttrs`, in this order. */
+const TWO_REFS = `<xs:complexType name="PersonType">
+  <xs:attributeGroup ref="CommonAttrs"/>
+  <xs:attributeGroup ref="OtherAttrs"/>
+</xs:complexType>`;
 
 /**
  * Places where XML Schema allows a reference to an attribute group, as schema content in
@@ -129,16 +130,9 @@ describe("AttributeGroup Validators", () => {
   let schemaWithAttrGroup: schema;
 
   beforeEach(() => {
-    const emptySchemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
-    schemaObj = unmarshal(schema, emptySchemaXml);
+    schemaObj = emptySchema();
 
-    const schemaWithGroupXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:attributeGroup name="CommonAttrs"/>
-</xs:schema>`;
-    schemaWithAttrGroup = unmarshal(schema, schemaWithGroupXml);
+    schemaWithAttrGroup = schemaWith(`<xs:attributeGroup name="CommonAttrs"/>`);
   });
 
   describe("validateAddAttributeGroup", () => {
@@ -199,14 +193,8 @@ describe("AttributeGroup Validators", () => {
     });
 
     describe("reference mode", () => {
-      const schemaWithComplexType = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:attributeGroup name="CommonAttrs"/>
-  <xs:complexType name="PersonType"/>
-</xs:schema>`;
-
       test("should accept adding a ref to a valid complexType parent", () => {
-        const schemaObj2 = unmarshal(schema, schemaWithComplexType);
+        const schemaObj2 = schemaWith(COMMON_ATTRS_AND_PERSON_TYPE);
         const command: AddAttributeGroupCommand = {
           type: "addAttributeGroup",
           payload: { ref: "CommonAttrs", parentId: "/complexType:PersonType" },
@@ -228,7 +216,7 @@ describe("AttributeGroup Validators", () => {
       });
 
       test("should reject when ref is an invalid XML name", () => {
-        const schemaObj2 = unmarshal(schema, schemaWithComplexType);
+        const schemaObj2 = schemaWith(COMMON_ATTRS_AND_PERSON_TYPE);
         const command: AddAttributeGroupCommand = {
           type: "addAttributeGroup",
           payload: { ref: "123-invalid", parentId: "/complexType:PersonType" },
@@ -240,7 +228,7 @@ describe("AttributeGroup Validators", () => {
       });
 
       test("should reject when the referenced group does not exist", () => {
-        const schemaObj2 = unmarshal(schema, schemaWithComplexType);
+        const schemaObj2 = schemaWith(COMMON_ATTRS_AND_PERSON_TYPE);
         const command: AddAttributeGroupCommand = {
           type: "addAttributeGroup",
           payload: { ref: "NonExistent", parentId: "/complexType:PersonType" },
@@ -354,14 +342,7 @@ describe("AttributeGroup Validators", () => {
       });
 
       test("should reject removeAttributeGroup when group is referenced in a complexType", () => {
-        const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:attributeGroup name="CommonAttrs"/>
-  <xs:complexType name="PersonType">
-    <xs:attributeGroup ref="CommonAttrs"/>
-  </xs:complexType>
-</xs:schema>`;
-        const referenced = unmarshal(schema, xml);
+        const referenced = readTestSchema(PERSON_TYPE_WITH_REF_XSD);
         const command: RemoveAttributeGroupCommand = {
           type: "removeAttributeGroup",
           payload: { groupId: "/attributeGroup:CommonAttrs" },
@@ -373,20 +354,7 @@ describe("AttributeGroup Validators", () => {
       });
 
       test("should reject removeAttributeGroup when group is referenced inside a nested local element's inline complexType", () => {
-        const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:attributeGroup name="CommonAttrs"/>
-  <xs:complexType name="PersonType">
-    <xs:sequence>
-      <xs:element name="address">
-        <xs:complexType>
-          <xs:attributeGroup ref="CommonAttrs"/>
-        </xs:complexType>
-      </xs:element>
-    </xs:sequence>
-  </xs:complexType>
-</xs:schema>`;
-        const referenced = unmarshal(schema, xml);
+        const referenced = readTestSchema("attribute-group-ref-in-local-element-in-sequence.xsd");
         const command: RemoveAttributeGroupCommand = {
           type: "removeAttributeGroup",
           payload: { groupId: "/attributeGroup:CommonAttrs" },
@@ -398,20 +366,7 @@ describe("AttributeGroup Validators", () => {
       });
 
       test("should reject removeAttributeGroup when group is referenced inside a nested choice's local element", () => {
-        const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:attributeGroup name="CommonAttrs"/>
-  <xs:complexType name="ShapeType">
-    <xs:choice>
-      <xs:element name="circle">
-        <xs:complexType>
-          <xs:attributeGroup ref="CommonAttrs"/>
-        </xs:complexType>
-      </xs:element>
-    </xs:choice>
-  </xs:complexType>
-</xs:schema>`;
-        const referenced = unmarshal(schema, xml);
+        const referenced = readTestSchema("attribute-group-ref-in-local-element-in-choice.xsd");
         const command: RemoveAttributeGroupCommand = {
           type: "removeAttributeGroup",
           payload: { groupId: "/attributeGroup:CommonAttrs" },
@@ -435,14 +390,7 @@ describe("AttributeGroup Validators", () => {
 
     describe("reference mode", () => {
       test("should accept removing an attributeGroupRef when parent exists", () => {
-        const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:attributeGroup name="CommonAttrs"/>
-  <xs:complexType name="PersonType">
-    <xs:attributeGroup ref="CommonAttrs"/>
-  </xs:complexType>
-</xs:schema>`;
-        const schemaWithRef = unmarshal(schema, xml);
+        const schemaWithRef = readTestSchema(PERSON_TYPE_WITH_REF_XSD);
         const command: RemoveAttributeGroupCommand = {
           type: "removeAttributeGroup",
           payload: {
@@ -468,14 +416,7 @@ describe("AttributeGroup Validators", () => {
       });
 
       test("should reject removing an attributeGroupRef when the ref does not exist on the parent", () => {
-        const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:attributeGroup name="CommonAttrs"/>
-  <xs:complexType name="PersonType">
-    <xs:attributeGroup ref="CommonAttrs"/>
-  </xs:complexType>
-</xs:schema>`;
-        const schemaWithRef = unmarshal(schema, xml);
+        const schemaWithRef = readTestSchema(PERSON_TYPE_WITH_REF_XSD);
         const command: RemoveAttributeGroupCommand = {
           type: "removeAttributeGroup",
           payload: {
@@ -512,12 +453,6 @@ describe("AttributeGroup Validators", () => {
     });
 
     describe("identifying a reference", () => {
-      /** A complexType with references to `CommonAttrs` and `OtherAttrs`, in this order. */
-      const TWO_REFS = `<xs:complexType name="PersonType">
-        <xs:attributeGroup ref="CommonAttrs"/>
-        <xs:attributeGroup ref="OtherAttrs"/>
-      </xs:complexType>`;
-
       test("should accept a reference identified by name only", () => {
         const command: RemoveAttributeGroupCommand = {
           type: "removeAttributeGroup",
@@ -627,12 +562,8 @@ describe("AttributeGroup Validators", () => {
       });
 
       test("should reject modifyAttributeGroup when new name already exists", () => {
-        const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:attributeGroup name="GroupA"/>
-  <xs:attributeGroup name="GroupB"/>
-</xs:schema>`;
-        const twoGroups = unmarshal(schema, xml);
+        const twoGroups = schemaWith(`<xs:attributeGroup name="GroupA"/>
+<xs:attributeGroup name="GroupB"/>`);
         const command: ModifyAttributeGroupCommand = {
           type: "modifyAttributeGroup",
           payload: {
@@ -688,17 +619,8 @@ describe("AttributeGroup Validators", () => {
     });
 
     describe("reference mode", () => {
-      const xmlWithRef = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:attributeGroup name="AttrsA"/>
-  <xs:attributeGroup name="AttrsB"/>
-  <xs:complexType name="PersonType">
-    <xs:attributeGroup ref="AttrsA"/>
-  </xs:complexType>
-</xs:schema>`;
-
       test("should accept modifying the ref target of an attributeGroupRef", () => {
-        const schemaWithRef = unmarshal(schema, xmlWithRef);
+        const schemaWithRef = readTestSchema(ONE_OF_TWO_GROUPS_XSD);
         const command: ModifyAttributeGroupCommand = {
           type: "modifyAttributeGroup",
           payload: {
@@ -726,7 +648,7 @@ describe("AttributeGroup Validators", () => {
       });
 
       test("should reject modifying an attributeGroupRef when the ref does not exist on the parent", () => {
-        const schemaWithRef = unmarshal(schema, xmlWithRef);
+        const schemaWithRef = readTestSchema(ONE_OF_TWO_GROUPS_XSD);
         const command: ModifyAttributeGroupCommand = {
           type: "modifyAttributeGroup",
           payload: {
@@ -741,7 +663,7 @@ describe("AttributeGroup Validators", () => {
       });
 
       test("should reject when new ref target does not exist", () => {
-        const schemaWithRef = unmarshal(schema, xmlWithRef);
+        const schemaWithRef = readTestSchema(ONE_OF_TWO_GROUPS_XSD);
         const command: ModifyAttributeGroupCommand = {
           type: "modifyAttributeGroup",
           payload: {
@@ -756,7 +678,7 @@ describe("AttributeGroup Validators", () => {
       });
 
       test("should reject using groupName field on a reference ID", () => {
-        const schemaWithRef = unmarshal(schema, xmlWithRef);
+        const schemaWithRef = readTestSchema(ONE_OF_TWO_GROUPS_XSD);
         const command = {
           type: "modifyAttributeGroup",
           payload: {
@@ -789,7 +711,7 @@ describe("AttributeGroup Validators", () => {
 
         const result = validateModifyAttributeGroup(
           command,
-          schemaWithAttrGroups(`<xs:complexType name="PersonType"><xs:attributeGroup ref="CommonAttrs"/></xs:complexType>`),
+          schemaWithAttrGroups(PERSON_TYPE_WITH_COMMON_ATTRS_REF),
         );
         expect(result.valid).toBe(true);
       });
@@ -815,7 +737,7 @@ describe("AttributeGroup Validators", () => {
 
         const result = validateModifyAttributeGroup(
           command,
-          schemaWithAttrGroups(`<xs:complexType name="PersonType"><xs:attributeGroup ref="CommonAttrs"/></xs:complexType>`),
+          schemaWithAttrGroups(PERSON_TYPE_WITH_COMMON_ATTRS_REF),
         );
         expectInvalid(result);
         expect(result.error).toBe("Attribute group ref must be a valid XML name");

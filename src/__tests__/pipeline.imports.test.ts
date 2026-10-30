@@ -13,24 +13,21 @@ import type {
 } from "../../shared/types.js";
 import { toArray } from "../../shared/schemaUtils.js";
 import {
-  MINIMAL_SCHEMA,
   SCHEMA_WITH_IMPORT,
   runCommandExpectSuccessSchema,
   runCommandExpectValidationFailure,
-} from "./testHelpers.js";
+} from "./pipelineTestHelpers.js";
+import { emptySchemaXml, schemaXmlWith } from "./schemaTestHelpers.js";
 
 /** Schema that already has two imports so we can test position-based IDs. */
-const SCHEMA_TWO_IMPORTS = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:import namespace="http://example.com/a" schemaLocation="a.xsd"/>
-  <xs:import namespace="http://example.com/b" schemaLocation="b.xsd"/>
-</xs:schema>`;
+const SCHEMA_TWO_IMPORTS = schemaXmlWith(`<xs:import namespace="http://example.com/a" schemaLocation="a.xsd"/>
+<xs:import namespace="http://example.com/b" schemaLocation="b.xsd"/>`);
 
 describe("Integration: Import pipeline", () => {
   // ─── addImport ─────────────────────────────────────────────────────────────
 
   describe("addImport", () => {
-    it("adds an import with a namespace and schemaLocation", () => {
+    test("adds an import with a namespace and schemaLocation", () => {
       const cmd: AddImportCommand = {
         type: "addImport",
         payload: {
@@ -39,13 +36,13 @@ describe("Integration: Import pipeline", () => {
         },
       };
 
-      const result = runCommandExpectSuccessSchema(MINIMAL_SCHEMA, cmd);
+      const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
       const imports = toArray(result.import_);
 
       expect(imports.some((i) => i.namespace === "http://example.com/ext" && i.schemaLocation === "ext.xsd")).toBe(true);
     });
 
-    it("adds an import with an explicit prefix", () => {
+    test("adds an import with an explicit prefix", () => {
       const cmd: AddImportCommand = {
         type: "addImport",
         payload: {
@@ -55,14 +52,14 @@ describe("Integration: Import pipeline", () => {
         },
       };
 
-      const result = runCommandExpectSuccessSchema(MINIMAL_SCHEMA, cmd);
+      const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
       const imports = toArray(result.import_);
 
       expect(imports.some((i) => i.namespace === "http://example.com/ext")).toBe(true);
       expect(result._namespacePrefixes?.["ext"]).toBe("http://example.com/ext");
     });
 
-    it("auto-generates a prefix when none is provided", () => {
+    test("auto-generates a prefix when none is provided", () => {
       const cmd: AddImportCommand = {
         type: "addImport",
         payload: {
@@ -71,7 +68,7 @@ describe("Integration: Import pipeline", () => {
         },
       };
 
-      const result = runCommandExpectSuccessSchema(MINIMAL_SCHEMA, cmd);
+      const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
       const imports = toArray(result.import_);
 
       expect(imports.some((i) => i.namespace === "http://example.com/auto")).toBe(true);
@@ -84,16 +81,16 @@ describe("Integration: Import pipeline", () => {
       expect(autoPrefix).toMatch(/^ns\d+$/);
     });
 
-    it("returns validation error for an invalid namespace URI", () => {
+    test("returns validation error for an invalid namespace URI", () => {
       const cmd: AddImportCommand = {
         type: "addImport",
         payload: { namespace: "not a uri", schemaLocation: "x.xsd" },
       };
 
-      runCommandExpectValidationFailure(MINIMAL_SCHEMA, cmd, "Namespace must be a valid absolute URI");
+      runCommandExpectValidationFailure(emptySchemaXml(), cmd, "Namespace must be a valid absolute URI");
     });
 
-    it("returns validation error for a duplicate namespace", () => {
+    test("returns validation error for a duplicate namespace", () => {
       const cmd: AddImportCommand = {
         type: "addImport",
         payload: {
@@ -105,7 +102,7 @@ describe("Integration: Import pipeline", () => {
       runCommandExpectValidationFailure(SCHEMA_WITH_IMPORT, cmd, "An import for namespace 'http://example.com/ext' already exists");
     });
 
-    it("returns validation error for a reserved prefix 'xml'", () => {
+    test("returns validation error for a reserved prefix 'xml'", () => {
       const cmd: AddImportCommand = {
         type: "addImport",
         payload: {
@@ -115,14 +112,14 @@ describe("Integration: Import pipeline", () => {
         },
       };
 
-      runCommandExpectValidationFailure(MINIMAL_SCHEMA, cmd, "Prefix 'xml' is reserved and cannot be used");
+      runCommandExpectValidationFailure(emptySchemaXml(), cmd, "Prefix 'xml' is reserved and cannot be used");
     });
   });
 
   // ─── removeImport ──────────────────────────────────────────────────────────
 
   describe("removeImport", () => {
-    it("removes the first import by position ID", () => {
+    test("removes the first import by position ID", () => {
       const cmd: RemoveImportCommand = {
         type: "removeImport",
         payload: { importId: "/import[0]" },
@@ -134,7 +131,7 @@ describe("Integration: Import pipeline", () => {
       expect(imports.some((i) => i.namespace === "http://example.com/ext")).toBe(false);
     });
 
-    it("removes a specific import from a multi-import schema", () => {
+    test("removes a specific import from a multi-import schema", () => {
       const cmd: RemoveImportCommand = {
         type: "removeImport",
         payload: { importId: "/import[0]" },
@@ -147,7 +144,7 @@ describe("Integration: Import pipeline", () => {
       expect(imports.some((i) => i.namespace === "http://example.com/b")).toBe(true);
     });
 
-    it("returns validation error when import ID is out of range", () => {
+    test("returns validation error when import ID is out of range", () => {
       const cmd: RemoveImportCommand = {
         type: "removeImport",
         payload: { importId: "/import[5]" },
@@ -160,7 +157,7 @@ describe("Integration: Import pipeline", () => {
   // ─── modifyImport ──────────────────────────────────────────────────────────
 
   describe("modifyImport", () => {
-    it("changes the schemaLocation of an existing import", () => {
+    test("changes the schemaLocation of an existing import", () => {
       const cmd: ModifyImportCommand = {
         type: "modifyImport",
         payload: { importId: "/import[0]", schemaLocation: "updated-ext.xsd" },
@@ -174,7 +171,7 @@ describe("Integration: Import pipeline", () => {
       expect(ext!.schemaLocation).toBe("updated-ext.xsd");
     });
 
-    it("returns validation error when import ID is out of range", () => {
+    test("returns validation error when import ID is out of range", () => {
       const cmd: ModifyImportCommand = {
         type: "modifyImport",
         payload: { importId: "/import[99]", schemaLocation: "x.xsd" },

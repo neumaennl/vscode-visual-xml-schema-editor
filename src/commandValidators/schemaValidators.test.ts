@@ -2,7 +2,6 @@
  * Unit tests for schema validators (Import and Include).
  */
 
-import { unmarshal } from "@neumaennl/xmlbind-ts";
 import { schema } from "../../shared/types.js";
 import {
   AddImportCommand,
@@ -11,6 +10,7 @@ import {
   AddIncludeCommand,
   RemoveIncludeCommand,
   ModifyIncludeCommand,
+  ModifySchemaNamespacesCommand,
 } from "../../shared/types.js";
 import {
   validateAddImport,
@@ -19,17 +19,29 @@ import {
   validateAddInclude,
   validateRemoveInclude,
   validateModifyInclude,
+  validateModifySchemaNamespaces,
 } from "./schemaValidators.js";
-import { expectInvalid } from "./validationTestHelpers.js";
+import { expectInvalid } from "../__tests__/validationTestHelpers.js";
+import { emptySchema, readTestSchema, schemaWith, schemaWithIncludes } from "../__tests__/schemaTestHelpers.js";
+
+/** An import of the namespace `http://example.com/ns1`. */
+const NS1_IMPORT = `<xs:import namespace="http://example.com/ns1" schemaLocation="schema1.xsd"/>`;
+
+/** Imports of the namespaces `http://example.com/ns1` and `http://example.com/ns2`. */
+const NS1_AND_NS2_IMPORTS = `${NS1_IMPORT}
+<xs:import namespace="http://example.com/ns2" schemaLocation="schema2.xsd"/>`;
+
+/** The prefix `ext` for the namespace `http://example.com/ns1`. */
+const EXT_PREFIX = { ext: "http://example.com/ns1" };
+
+/** The prefixes `ext` and `other` for the namespaces `http://example.com/ns1` and `http://example.com/ns2`. */
+const EXT_AND_OTHER_PREFIXES = { ...EXT_PREFIX, other: "http://example.com/ns2" };
 
 describe("Import Validators", () => {
   let schemaObj: schema;
 
   beforeEach(() => {
-    const simpleSchemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
-    schemaObj = unmarshal(schema, simpleSchemaXml);
+    schemaObj = emptySchema();
   });
 
 describe("validateAddImport", () => {
@@ -116,11 +128,7 @@ describe("validateAddImport", () => {
     });
 
     test("should reject addImport when namespace is already imported", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:import namespace="http://example.com/existing" schemaLocation="existing.xsd"/>
-</xs:schema>`;
-      const schemaWithImport = unmarshal(schema, xml);
+      const schemaWithImport = schemaWith(`<xs:import namespace="http://example.com/existing" schemaLocation="existing.xsd"/>`);
       const command: AddImportCommand = {
         type: "addImport",
         payload: {
@@ -135,11 +143,7 @@ describe("validateAddImport", () => {
     });
 
     test("should reject addImport with an already-used prefix bound to a different namespace", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ext="http://example.com/existing">
-  <xs:import namespace="http://example.com/existing" schemaLocation="existing.xsd"/>
-</xs:schema>`;
-      const schemaWithPrefix = unmarshal(schema, xml);
+      const schemaWithPrefix = schemaWith(`<xs:import namespace="http://example.com/existing" schemaLocation="existing.xsd"/>`, { ext: "http://example.com/existing" });
       const command: AddImportCommand = {
         type: "addImport",
         payload: {
@@ -155,10 +159,7 @@ describe("validateAddImport", () => {
     });
 
     test("should accept addImport when prefix is already bound to the same namespace", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ext="http://example.com/new">
-</xs:schema>`;
-      const schemaWithPrefix = unmarshal(schema, xml);
+      const schemaWithPrefix = schemaWith("", { ext: "http://example.com/new" });
       const command: AddImportCommand = {
         type: "addImport",
         payload: {
@@ -246,11 +247,7 @@ describe("validateAddImport", () => {
     });
 
     test("should accept removeImport when import exists and is not referenced", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:import namespace="http://example.com/ns1" schemaLocation="schema1.xsd"/>
-</xs:schema>`;
-      const schemaWithImport = unmarshal(schema, xml);
+      const schemaWithImport = schemaWith(NS1_IMPORT);
       const command: RemoveImportCommand = {
         type: "removeImport",
         payload: { importId: "/import[0]" },
@@ -261,12 +258,9 @@ describe("validateAddImport", () => {
     });
 
     test("should reject removeImport when namespace prefix is referenced in an element type", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ext="http://example.com/ext">
-  <xs:import namespace="http://example.com/ext" schemaLocation="ext.xsd"/>
-  <xs:element name="foo" type="ext:MyType"/>
-</xs:schema>`;
-      const schemaWithRef = unmarshal(schema, xml);
+      const prefixes = { ext: "http://example.com/ext" };
+      const schemaWithRef = schemaWith(`<xs:import namespace="http://example.com/ext" schemaLocation="ext.xsd"/>
+<xs:element name="foo" type="ext:MyType"/>`, prefixes);
       const command: RemoveImportCommand = {
         type: "removeImport",
         payload: { importId: "/import[0]" },
@@ -280,18 +274,7 @@ describe("validateAddImport", () => {
     test("should reject removeImport when prefix is referenced in a deeply nested element (sequence → choice → element)", () => {
       // This verifies that the full recursive traversal catches references
       // that were missed by the old shallow implementation.
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ext="http://example.com/ext">
-  <xs:import namespace="http://example.com/ext" schemaLocation="ext.xsd"/>
-  <xs:complexType name="MyType">
-    <xs:sequence>
-      <xs:choice>
-        <xs:element name="deep" type="ext:DeepType"/>
-      </xs:choice>
-    </xs:sequence>
-  </xs:complexType>
-</xs:schema>`;
-      const schemaWithDeepRef = unmarshal(schema, xml);
+      const schemaWithDeepRef = readTestSchema("import-with-type-used-in-nested-choice.xsd");
       const command: RemoveImportCommand = {
         type: "removeImport",
         payload: { importId: "/import[0]" },
@@ -303,11 +286,7 @@ describe("validateAddImport", () => {
     });
 
     test("should reject removeImport when importId points to a non-import node type", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:include schemaLocation="other.xsd"/>
-</xs:schema>`;
-      const s = unmarshal(schema, xml);
+      const s = schemaWith(`<xs:include schemaLocation="other.xsd"/>`);
       // /include[0] has the wrong node type — must be rejected
       const command: RemoveImportCommand = {
         type: "removeImport",
@@ -347,11 +326,7 @@ describe("validateAddImport", () => {
     });
 
     test("should accept modifyImport when import exists", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:import namespace="http://example.com/ns1" schemaLocation="schema1.xsd"/>
-</xs:schema>`;
-      const schemaWithImport = unmarshal(schema, xml);
+      const schemaWithImport = schemaWith(NS1_IMPORT);
       const command: ModifyImportCommand = {
         type: "modifyImport",
         payload: {
@@ -365,11 +340,7 @@ describe("validateAddImport", () => {
     });
 
     test("should reject modifyImport with invalid namespace URI", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:import namespace="http://example.com/ns1" schemaLocation="schema1.xsd"/>
-</xs:schema>`;
-      const schemaWithImport = unmarshal(schema, xml);
+      const schemaWithImport = schemaWith(NS1_IMPORT);
       const command: ModifyImportCommand = {
         type: "modifyImport",
         payload: { importId: "/import[0]", namespace: "not-a-uri" },
@@ -381,12 +352,7 @@ describe("validateAddImport", () => {
     });
 
     test("should reject modifyImport when changing to a duplicate namespace", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:import namespace="http://example.com/ns1" schemaLocation="schema1.xsd"/>
-  <xs:import namespace="http://example.com/ns2" schemaLocation="schema2.xsd"/>
-</xs:schema>`;
-      const schemaWithImports = unmarshal(schema, xml);
+      const schemaWithImports = schemaWith(NS1_AND_NS2_IMPORTS);
       const command: ModifyImportCommand = {
         type: "modifyImport",
         payload: { importId: "/import[0]", namespace: "http://example.com/ns2" },
@@ -398,12 +364,7 @@ describe("validateAddImport", () => {
     });
 
     test("should reject modifyImport with an already-used prefix", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ext="http://example.com/ns1" xmlns:other="http://example.com/ns2">
-  <xs:import namespace="http://example.com/ns1" schemaLocation="schema1.xsd"/>
-  <xs:import namespace="http://example.com/ns2" schemaLocation="schema2.xsd"/>
-</xs:schema>`;
-      const schemaWithImports = unmarshal(schema, xml);
+      const schemaWithImports = schemaWith(NS1_AND_NS2_IMPORTS, EXT_AND_OTHER_PREFIXES);
       const command: ModifyImportCommand = {
         type: "modifyImport",
         payload: { importId: "/import[0]", prefix: "other" },
@@ -416,11 +377,7 @@ describe("validateAddImport", () => {
 
     test("should accept modifyImport renaming prefix to same value (no-op)", () => {
       // Renaming ext→ext on the same namespace should be a no-op and accepted.
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ext="http://example.com/ns1">
-  <xs:import namespace="http://example.com/ns1" schemaLocation="schema1.xsd"/>
-</xs:schema>`;
-      const schemaWithImport = unmarshal(schema, xml);
+      const schemaWithImport = schemaWith(NS1_IMPORT, EXT_PREFIX);
       const command: ModifyImportCommand = {
         type: "modifyImport",
         payload: { importId: "/import[0]", oldPrefix: "ext", prefix: "ext" },
@@ -431,11 +388,7 @@ describe("validateAddImport", () => {
     });
 
     test("should reject modifyImport when oldPrefix is not registered", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ext="http://example.com/ns1">
-  <xs:import namespace="http://example.com/ns1" schemaLocation="schema1.xsd"/>
-</xs:schema>`;
-      const schemaWithImport = unmarshal(schema, xml);
+      const schemaWithImport = schemaWith(NS1_IMPORT, EXT_PREFIX);
       const command: ModifyImportCommand = {
         type: "modifyImport",
         payload: { importId: "/import[0]", oldPrefix: "nonexistent", prefix: "newpfx" },
@@ -447,12 +400,7 @@ describe("validateAddImport", () => {
     });
 
     test("should reject modifyImport when oldPrefix belongs to a different namespace", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ext="http://example.com/ns1" xmlns:other="http://example.com/ns2">
-  <xs:import namespace="http://example.com/ns1" schemaLocation="schema1.xsd"/>
-  <xs:import namespace="http://example.com/ns2" schemaLocation="schema2.xsd"/>
-</xs:schema>`;
-      const schemaWithImports = unmarshal(schema, xml);
+      const schemaWithImports = schemaWith(NS1_AND_NS2_IMPORTS, EXT_AND_OTHER_PREFIXES);
       // Trying to rename the "other" prefix when modifying import[0] (ns1) — mismatch
       const command: ModifyImportCommand = {
         type: "modifyImport",
@@ -465,11 +413,7 @@ describe("validateAddImport", () => {
     });
 
     test("should reject modifyImport when oldPrefix is provided without prefix", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ext="http://example.com/ns1">
-  <xs:import namespace="http://example.com/ns1" schemaLocation="schema1.xsd"/>
-</xs:schema>`;
-      const schemaWithImport = unmarshal(schema, xml);
+      const schemaWithImport = schemaWith(NS1_IMPORT, EXT_PREFIX);
       const command: ModifyImportCommand = {
         type: "modifyImport",
         payload: { importId: "/import[0]", oldPrefix: "ext" },
@@ -480,11 +424,7 @@ describe("validateAddImport", () => {
     });
 
     test("should reject modifyImport with reserved prefix 'xml'", () => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ext="http://example.com/ns1">
-  <xs:import namespace="http://example.com/ns1" schemaLocation="schema1.xsd"/>
-</xs:schema>`;
-      const schemaWithImport = unmarshal(schema, xml);
+      const schemaWithImport = schemaWith(NS1_IMPORT, EXT_PREFIX);
       const command: ModifyImportCommand = {
         type: "modifyImport",
         payload: { importId: "/import[0]", oldPrefix: "ext", prefix: "xml" },
@@ -500,24 +440,8 @@ describe("Include Validators", () => {
   let schemaObj: schema;
 
   beforeEach(() => {
-    const simpleSchemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
-    schemaObj = unmarshal(schema, simpleSchemaXml);
+    schemaObj = emptySchema();
   });
-
-  function schemaWithIncludes(...schemaLocations: string[]): schema {
-    const includeXml = schemaLocations
-      .map((loc) => `  <xs:include schemaLocation="${loc}"/>`)
-      .join("\n");
-    return unmarshal(
-      schema,
-      `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-${includeXml}
-</xs:schema>`
-    );
-  }
 
   describe("validateAddInclude", () => {
     test("should reject addInclude with missing schemaLocation", () => {
@@ -735,6 +659,72 @@ ${includeXml}
 
       const result = validateModifyInclude(command, schemaWithInclude);
       expect(result.valid).toBe(true);
+    });
+  });
+
+  describe("validateModifySchemaNamespaces", () => {
+    test("should accept valid targetNamespace and namespace declarations", () => {
+      const command: ModifySchemaNamespacesCommand = {
+        type: "modifySchemaNamespaces",
+        payload: {
+          targetNamespace: "http://example.com/new-target",
+          namespacePrefixes: {
+            xs: "http://www.w3.org/2001/XMLSchema",
+            tns: "http://example.com/new-target",
+          },
+        },
+      };
+
+      const result = validateModifySchemaNamespaces(command, schemaObj);
+      expect(result.valid).toBe(true);
+    });
+
+    test("should reject invalid targetNamespace URI", () => {
+      const command: ModifySchemaNamespacesCommand = {
+        type: "modifySchemaNamespaces",
+        payload: {
+          targetNamespace: "not-a-uri",
+          namespacePrefixes: {
+            xs: "http://www.w3.org/2001/XMLSchema",
+          },
+        },
+      };
+
+      const result = validateModifySchemaNamespaces(command, schemaObj);
+      expectInvalid(result);
+      expect(result.error).toContain("targetNamespace must be a valid absolute URI");
+    });
+
+    test("should reject reserved namespace prefixes", () => {
+      const command: ModifySchemaNamespacesCommand = {
+        type: "modifySchemaNamespaces",
+        payload: {
+          targetNamespace: "http://example.com/new-target",
+          namespacePrefixes: {
+            xmlns: "http://example.com/new-target",
+          },
+        },
+      };
+
+      const result = validateModifySchemaNamespaces(command, schemaObj);
+      expectInvalid(result);
+      expect(result.error).toContain("reserved");
+    });
+
+    test("should reject when targetNamespace is not declared in namespace prefixes", () => {
+      const command: ModifySchemaNamespacesCommand = {
+        type: "modifySchemaNamespaces",
+        payload: {
+          targetNamespace: "http://example.com/new-target",
+          namespacePrefixes: {
+            xs: "http://www.w3.org/2001/XMLSchema",
+          },
+        },
+      };
+
+      const result = validateModifySchemaNamespaces(command, schemaObj);
+      expectInvalid(result);
+      expect(result.error).toContain("must match one of the declared namespace URIs");
     });
   });
 });

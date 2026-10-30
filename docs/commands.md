@@ -4,8 +4,8 @@ title: Commands
 description: The edit commands - payload fields, the rules the validators enforce, what the executors change in the schema, and where the webview sends them.
 tags: [commands, payload, validation, reference]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-23T12:44:12Z }
-verified: { by: human:neumaennl, at: 2026-10-23T12:58:14Z }
+generated: { by: human:neumaennl, at: 2026-10-29T15:16:40Z }
+verified: { by: human:neumaennl, at: 2026-10-29T15:30:22Z }
 sources:
   - id: commands
     resource: ../shared/commands/index.ts
@@ -59,41 +59,41 @@ This reference describes every edit command: its payload, the rules that the val
 
 # Overview
 
-"Sent by" names where the webview creates the command; commands without an entry are implemented and tested in the extension host, but no UI sends them yet. "Palette drop" means `DropCommandFactory` in `webview-src/drop/`, "Property panel" the files in `webview-src/propertyPanel/`.
+"Sent by" names where the webview creates the command; commands without an entry are implemented and tested in the extension host, but no UI sends them yet. "Palette drop" means `DropCommandFactory` in `webview-src/drop/`, "Properties panel" the files in `webview-src/propertiesPanel/`.
 
 | Area (file in `shared/commands/`) | Command | ID in payload | Sent by |
 |---|---|---|---|
 | Elements (`element.ts`) | `addElement` | `parentId` | Palette drop |
-| | `removeElement` | `elementId` | Property panel (delete) |
-| | `modifyElement` | `elementId` | Property panel |
+| | `removeElement` | `elementId` | Properties panel (delete) |
+| | `modifyElement` | `elementId` | Properties panel |
 | Attributes (`attribute.ts`) | `addAttribute` | `parentId` | Palette drop |
 | | `removeAttribute` | `attributeId` | - |
 | | `modifyAttribute` | `attributeId` | - |
 | Types (`schemaTypes.ts`) | `addSimpleType` | `parentId?` | Palette drop |
-| | `removeSimpleType` | `typeId` | Property panel (delete) |
-| | `modifySimpleType` | `typeId` | Property panel, palette drop |
+| | `removeSimpleType` | `typeId` | Properties panel (delete) |
+| | `modifySimpleType` | `typeId` | Properties panel, palette drop |
 | | `addComplexType` | `parentId?` | Palette drop |
-| | `removeComplexType` | `typeId` | Property panel (delete) |
-| | `modifyComplexType` | `typeId` | Property panel, palette drop |
+| | `removeComplexType` | `typeId` | Properties panel (delete) |
+| | `modifyComplexType` | `typeId` | Properties panel, palette drop |
 | Groups (`group.ts`) | `addGroup` | `parentId?` | Palette drop |
-| | `removeGroup` | `groupId` | Property panel (delete) |
-| | `modifyGroup` | `groupId` | Property panel, palette drop |
+| | `removeGroup` | `groupId` | Properties panel (delete) |
+| | `modifyGroup` | `groupId` | Properties panel, palette drop |
 | | `addAttributeGroup` | `parentId?` | - |
 | | `removeAttributeGroup` | `groupId` | - |
 | | `modifyAttributeGroup` | `groupId` | - |
-| Annotations (`metadata.ts`) | `addAnnotation` | `targetId` | Property panel (documentation) |
-| | `removeAnnotation` | `annotationId` | Property panel (documentation) |
+| Annotations (`metadata.ts`) | `addAnnotation` | `targetId` | Properties panel (documentation) |
+| | `removeAnnotation` | `annotationId` | Properties panel (documentation) |
 | | `modifyAnnotation` | `annotationId` | - |
-| | `addDocumentation` | `targetId` | Property panel (documentation) |
-| | `removeDocumentation` | `documentationId` | Property panel (documentation) |
-| | `modifyDocumentation` | `documentationId` | Property panel (documentation) |
+| | `addDocumentation` | `targetId` | Properties panel (documentation) |
+| | `removeDocumentation` | `documentationId` | Properties panel (documentation) |
+| | `modifyDocumentation` | `documentationId` | Properties panel (documentation) |
 | Schema (`module.ts`) | `addImport` | none | - |
 | | `removeImport` | `importId` | - |
 | | `modifyImport` | `importId` | - |
 | | `addInclude` | none | - |
 | | `removeInclude` | `includeId` | - |
 | | `modifyInclude` | `includeId` | - |
-| | `modifySchemaNamespaces` | none | Property panel (namespaces) |
+| | `modifySchemaNamespaces` | none | Properties panel (namespaces) |
 
 A drop on an existing type or group creates a `modify*` command instead of an `add*` command; for example, a compositor dropped on a complex type, or on an element with an anonymous complex type, becomes `modifyComplexType` with a new content model (see [Drag and drop](drag-and-drop.md)).[^drop-factory] That attributes can only be added is listed in [Known issues](known-issues.md#attribute-editing-is-half-implemented).
 
@@ -216,7 +216,7 @@ The six commands in `metadata.ts` edit `xs:annotation` and its `xs:documentation
 | `removeDocumentation` | `documentationId` | Removes one entry. |
 | `modifyDocumentation` | `documentationId`, `content?`, `lang?` | Changes one entry; an empty `lang` removes `xml:lang`. |
 
-The property panel uses these commands for the documentation of the selected node, not the `documentation` field of the `modify*` commands.[^validators][^executors]
+The properties panel uses these commands for the documentation of the selected node, not the `documentation` field of the `modify*` commands.[^validators][^executors]
 
 # Imports, includes and namespaces
 
@@ -285,11 +285,11 @@ The element prefix `xs:` is missing in the output because serialization drops it
 | `src/commandValidators/` | One validator per command, grouped by area, and `validationUtils.ts` |
 | `src/commandExecutors/` | One executor per command, grouped by area, and the shared rename and prefix helpers (`schemaLocalRenamer.ts`, `schemaQNameRewriter.ts`, `schemaPrefixChecker.ts`) |
 
-Each command type has a string literal as `type`, so `SchemaCommand` is a discriminated union: a `switch` on `command.type` narrows the payload to the right type. The type tests in `shared/__tests__/commands/` check that the payloads accept the intended fields; the behaviour is tested next to the validators and executors.[^commands]
+Each command type has a string literal as `type`, so `SchemaCommand` is a discriminated union: a `switch` on `command.type` narrows the payload to the right type. The type tests in `shared/commands/commandTypes.test-d.ts` check the required fields, the allowed values of `maxOccurs` and that the union rejects unknown types and mismatched payloads (see [Testing](testing.md#kinds-of-tests)); the behaviour is tested next to the validators and executors.[^commands]
 
 **Adding a command** touches these places:
 
-1. Payload and command type in the matching file in `shared/commands/`, and the command in the `SchemaCommand` union in `shared/commands/index.ts`.
+1. Payload and command type in the matching file in `shared/commands/`, and the command in the `SchemaCommand` union in `shared/commands/index.ts`. Required fields and restricted values of the payload get cases in `commandTypes.test-d.ts`.
 2. A validator in `src/commandValidators/` and its case in `src/commandValidator.ts`.
 3. An executor in `src/commandExecutors/` and its case in `src/commandExecutor.ts`.
 4. The place in `webview-src/` that creates and sends the command.

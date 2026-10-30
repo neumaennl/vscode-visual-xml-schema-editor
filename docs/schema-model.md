@@ -4,8 +4,8 @@ title: Schema model
 description: The object model of an XSD file - classes generated from the XSD meta-schema, XML binding with xmlbind-ts, and the path-based IDs that identify schema nodes.
 tags: [schema-model, data-model, xmlbind-ts, code-generation, ids, navigation]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-23T09:04:37Z }
-verified: { by: human:neumaennl, at: 2026-10-23T10:12:43Z }
+generated: { by: human:neumaennl, at: 2026-10-28T14:47:04Z }
+verified: { by: human:neumaennl, at: 2026-10-28T15:08:21Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -148,7 +148,7 @@ The schema root has the ID `/schema` (`SCHEMA_ROOT_ID`). `isSchemaRoot()` treats
 
 ## Who generates and who resolves IDs
 
-- **Generating.** The webview's diagram builder (`DiagramBuilder`, `SchemaProcessors*`, `TypeNodeCreators`, `DiagramBuilderHelpers`) gives every diagram item its ID while building the diagram (see [Diagram rendering](diagram-rendering.md)). The property panel and the drop handling put these IDs into the commands they send.
+- **Generating.** The webview's diagram builder (`DiagramBuilder`, `SchemaProcessors*`, `TypeNodeCreators`, `DiagramBuilderHelpers`) gives every diagram item its ID while building the diagram (see [Diagram rendering](diagram-rendering.md)). The properties panel and the drop handling put these IDs into the commands they send.
 - **Resolving.** The validators and executors in the extension host resolve IDs against the schema object with `locateNodeById()` from `src/schemaNavigator.ts`.[^navigator]
 
 `locateNodeById()` walks the segments from the schema root and returns the node the ID points to (as `parent`, because commands usually add to or change children of it) together with an internal type name such as `topLevelComplexType` or `sequence`. It supports these steps:[^navigator]

@@ -100,7 +100,7 @@ export default [
   },
   // Test files configuration (must come before webview config to avoid conflicts)
   {
-    files: ['**/*.test.ts', '**/__mocks__/**/*.ts'],
+    files: ['**/*.test.ts', '**/*.test-d.ts', '**/__mocks__/**/*.ts'],
     ignores: ['test/extension-host/**'],
     plugins: {
       vitest,
@@ -119,15 +119,22 @@ export default [
         {
           assertFunctionNames: [
             'expect',
+            'expectTypeOf',
             'expectFailure',
             'expectValidationFailure',
             'expectRuntimeFailure',
             'expectInvalid',
             'runCommandExpectValidationFailure',
             'runCommandExpectSuccessSchema',
+            'expectLinesInOrder',
+            'expectInOrderOnLine',
           ],
         },
       ],
+      // Test cases use test(), as in the extension host, where Mocha's TDD interface has no it().
+      // The defaults require it() inside describe(). Setting fn alone would be enough, because
+      // withinDescribe then takes its value, but both are set to make the intent obvious.
+      'vitest/consistent-test-it': ['error', { fn: 'test', withinDescribe: 'test' }],
       // Disabled in tests where we have more control over the test environment
       '@typescript-eslint/no-non-null-assertion': 'off',
       // vitest/unbound-method replaces @typescript-eslint/unbound-method in tests;

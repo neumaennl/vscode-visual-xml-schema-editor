@@ -4,6 +4,7 @@
 
 import {
   extractDocumentation,
+  extractDocumentationAnnotations,
   extractOccurrenceConstraints,
   extractAttributes,
 } from "./DiagramBuilderHelpers";
@@ -13,19 +14,19 @@ import { DiagramItemType } from "./DiagramTypes";
 
 describe("DiagramBuilderHelpers", () => {
   describe("extractDocumentation", () => {
-    it("should return undefined when no annotation", () => {
+    test("should return undefined when no annotation", () => {
       expect(extractDocumentation(undefined)).toBeUndefined();
       expect(extractDocumentation({})).toBeUndefined();
     });
 
-    it("should extract single documentation", () => {
+    test("should extract single documentation", () => {
       const annotation = {
         documentation: [{ value: "Test documentation" }],
       };
       expect(extractDocumentation(annotation)).toBe("Test documentation");
     });
 
-    it("should extract multiple documentation entries", () => {
+    test("should extract multiple documentation entries", () => {
       const annotation = {
         documentation: [
           { value: "First line" },
@@ -35,11 +36,53 @@ describe("DiagramBuilderHelpers", () => {
       expect(extractDocumentation(annotation)).toBe("First line\nSecond line");
     });
 
-    it("should handle empty documentation array", () => {
+    test("should handle empty documentation array", () => {
       const annotation = {
         documentation: [],
       };
       expect(extractDocumentation(annotation)).toBe("");
+    });
+
+    test("should flatten multiple annotations with multiple documentation nodes", () => {
+      const annotations = [
+        {
+          documentation: [{ value: "First annotation" }, { value: "Second entry" }],
+        },
+        {
+          documentation: [{ value: "Third entry" }],
+        },
+      ];
+
+      expect(extractDocumentation(annotations)).toBe(
+        "First annotation\nSecond entry\nThird entry"
+      );
+    });
+
+    test("preserves annotation/documentation structure and IDs for the properties panel", () => {
+      const annotations = [
+        {
+          documentation: [{ value: "First annotation" }, { value: "Second entry" }],
+        },
+        {
+          documentation: [{ value: "Third entry" }],
+        },
+      ];
+
+      expect(extractDocumentationAnnotations("/schema", annotations)).toEqual([
+        {
+          id: "/schema/annotation[0]",
+          documentationEntries: [
+            { id: "/schema/annotation[0]/documentation[0]", content: "First annotation", lang: undefined },
+            { id: "/schema/annotation[0]/documentation[1]", content: "Second entry", lang: undefined },
+          ],
+        },
+        {
+          id: "/schema/annotation[1]",
+          documentationEntries: [
+            { id: "/schema/annotation[1]/documentation[0]", content: "Third entry", lang: undefined },
+          ],
+        },
+      ]);
     });
   });
 
@@ -52,14 +95,14 @@ describe("DiagramBuilderHelpers", () => {
       item = new DiagramItem("test-1", "TestElement", DiagramItemType.element, diagram);
     });
 
-    it("should extract minOccurs and maxOccurs", () => {
+    test("should extract minOccurs and maxOccurs", () => {
       const source = { minOccurs: 0, maxOccurs: 10 };
       extractOccurrenceConstraints(item, source);
       expect(item.minOccurrence).toBe(0);
       expect(item.maxOccurrence).toBe(10);
     });
 
-    it("should handle unbounded maxOccurs", () => {
+    test("should handle unbounded maxOccurs", () => {
       const source = { maxOccurs: "unbounded" as const };
       extractOccurrenceConstraints(item, source);
       expect(item.maxOccurrence).toBe(-1);
@@ -75,7 +118,7 @@ describe("DiagramBuilderHelpers", () => {
       item = new DiagramItem("test-1", "TestElement", DiagramItemType.element, diagram);
     });
 
-    it("should extract single attribute", () => {
+    test("should extract single attribute", () => {
       const source = {
         attribute: {
           name: "id",
@@ -89,7 +132,7 @@ describe("DiagramBuilderHelpers", () => {
       expect(item.attributes[0].type).toBe("string");
     });
 
-    it("should handle null/undefined source", () => {
+    test("should handle null/undefined source", () => {
       extractAttributes(item, null);
       expect(item.attributes).toHaveLength(0);
       
@@ -97,7 +140,7 @@ describe("DiagramBuilderHelpers", () => {
       expect(item.attributes).toHaveLength(0);
     });
 
-    it("should skip attributes without name", () => {
+    test("should skip attributes without name", () => {
       const source = {
         attribute: [
           { type_: "string" }, // No name
@@ -109,7 +152,7 @@ describe("DiagramBuilderHelpers", () => {
       expect(item.attributes[0].name).toBe("validAttr");
     });
 
-    it("should extract multiple attributes", () => {
+    test("should extract multiple attributes", () => {
       const source = {
         attribute: [
           { name: "id", type_: "string" },
@@ -120,7 +163,7 @@ describe("DiagramBuilderHelpers", () => {
       expect(item.attributes).toHaveLength(2);
     });
 
-    it("should handle attribute without type", () => {
+    test("should handle attribute without type", () => {
       const source = {
         attribute: {
           name: "id",
@@ -131,7 +174,7 @@ describe("DiagramBuilderHelpers", () => {
       expect(item.attributes[0].type).toBe("inner simpleType or ref");
     });
 
-    it("should handle attribute without use", () => {
+    test("should handle attribute without use", () => {
       const source = {
         attribute: {
           name: "id",

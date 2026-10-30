@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:group name="PersonGroup">
+    <xs:sequence/>
+  </xs:group>
+  <xs:complexType name="PersonType">
+    <xs:sequence>
+      <xs:group ref="PersonGroup"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>

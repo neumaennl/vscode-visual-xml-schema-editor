@@ -13,28 +13,25 @@ import type {
 import { toArray } from "../../shared/schemaUtils.js";
 import {
   SCHEMA_WITH_COMPLEXTYPE,
-  MINIMAL_SCHEMA,
   runCommandExpectSuccessSchema,
   runCommandExpectValidationFailure,
-} from "./testHelpers.js";
+} from "./pipelineTestHelpers.js";
+import { emptySchemaXml, schemaXmlWith } from "./schemaTestHelpers.js";
 
 /** Schema with a complexType that has two attributes (id, status) for remove/modify tests. */
-const SCHEMA_WITH_TWO_ATTRS = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:complexType name="PersonType">
-    <xs:sequence>
-      <xs:element name="name" type="xs:string"/>
-    </xs:sequence>
-    <xs:attribute name="id" type="xs:string"/>
-    <xs:attribute name="status" type="xs:string"/>
-  </xs:complexType>
-</xs:schema>`;
+const SCHEMA_WITH_TWO_ATTRS = schemaXmlWith(`<xs:complexType name="PersonType">
+  <xs:sequence>
+    <xs:element name="name" type="xs:string"/>
+  </xs:sequence>
+  <xs:attribute name="id" type="xs:string"/>
+  <xs:attribute name="status" type="xs:string"/>
+</xs:complexType>`);
 
 describe("Integration: Attribute pipeline", () => {
   // ─── addAttribute ──────────────────────────────────────────────────────────
 
   describe("addAttribute", () => {
-    it("adds an attribute to an existing complexType", () => {
+    test("adds an attribute to an existing complexType", () => {
       const cmd: AddAttributeCommand = {
         type: "addAttribute",
         payload: {
@@ -51,7 +48,7 @@ describe("Integration: Attribute pipeline", () => {
       expect(attrs.some((a) => a.name === "email" && a.type_ === "xs:string")).toBe(true);
     });
 
-    it("adds a required attribute", () => {
+    test("adds a required attribute", () => {
       const cmd: AddAttributeCommand = {
         type: "addAttribute",
         payload: {
@@ -71,7 +68,7 @@ describe("Integration: Attribute pipeline", () => {
       expect(code!.use).toBe("required");
     });
 
-    it("returns validation error when attribute name is invalid", () => {
+    test("returns validation error when attribute name is invalid", () => {
       const cmd: AddAttributeCommand = {
         type: "addAttribute",
         payload: {
@@ -84,7 +81,7 @@ describe("Integration: Attribute pipeline", () => {
       runCommandExpectValidationFailure(SCHEMA_WITH_COMPLEXTYPE, cmd, "Attribute name must be a valid XML name");
     });
 
-    it("returns validation error when parent does not exist", () => {
+    test("returns validation error when parent does not exist", () => {
       const cmd: AddAttributeCommand = {
         type: "addAttribute",
         payload: {
@@ -94,14 +91,14 @@ describe("Integration: Attribute pipeline", () => {
         },
       };
 
-      runCommandExpectValidationFailure(MINIMAL_SCHEMA, cmd, "Parent node not found: /complexType:Missing");
+      runCommandExpectValidationFailure(emptySchemaXml(), cmd, "Parent node not found: /complexType:Missing");
     });
   });
 
   // ─── removeAttribute ───────────────────────────────────────────────────────
 
   describe("removeAttribute", () => {
-    it("removes an existing attribute from a complexType", () => {
+    test("removes an existing attribute from a complexType", () => {
       const cmd: RemoveAttributeCommand = {
         type: "removeAttribute",
         payload: { attributeId: "/complexType:PersonType/attribute:id[0]" },
@@ -115,7 +112,7 @@ describe("Integration: Attribute pipeline", () => {
       expect(attrs.some((a) => a.name === "status")).toBe(true);
     });
 
-    it("returns validation error when attribute ID is out of range", () => {
+    test("returns validation error when attribute ID is out of range", () => {
       const cmd: RemoveAttributeCommand = {
         type: "removeAttribute",
         payload: { attributeId: "/complexType:PersonType/attribute:id[99]" },
@@ -126,7 +123,7 @@ describe("Integration: Attribute pipeline", () => {
   });
 
   describe("modifyAttribute", () => {
-    it("renames an attribute", () => {
+    test("renames an attribute", () => {
       const cmd: ModifyAttributeCommand = {
         type: "modifyAttribute",
         payload: {
@@ -143,7 +140,7 @@ describe("Integration: Attribute pipeline", () => {
       expect(attrs.some((a) => a.name === "id")).toBe(false);
     });
 
-    it("changes the type of an attribute", () => {
+    test("changes the type of an attribute", () => {
       const cmd: ModifyAttributeCommand = {
         type: "modifyAttribute",
         payload: {
@@ -161,7 +158,7 @@ describe("Integration: Attribute pipeline", () => {
       expect(id!.type_).toBe("xs:integer");
     });
 
-    it("returns validation error when attribute ID is out of range", () => {
+    test("returns validation error when attribute ID is out of range", () => {
       const cmd: ModifyAttributeCommand = {
         type: "modifyAttribute",
         payload: {

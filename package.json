@@ -122,6 +122,7 @@
     "vitest": "^5.0.3"
   },
   "dependencies": {
-    "@neumaennl/xmlbind-ts": "^2.3.0"
+    "@neumaennl/xmlbind-ts": "^2.3.0",
+    "@vscode/codicons": "^0.0.45"
   }
 }

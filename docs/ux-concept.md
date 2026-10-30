@@ -1,11 +1,11 @@
 ---
 type: Concept
 title: UX concept
-description: The interaction model of the editor - which surface adds, edits and deletes what, how facets work, and how the property panel behaves - with a list of what the current editor does not implement yet.
-tags: [ux, editor, palette, property-panel, facets, context-menu, toolbar]
+description: The interaction model of the editor - which surface adds, edits and deletes what, how facets work, and how the properties panel behaves - with a list of what the current editor does not implement yet.
+tags: [ux, editor, palette, properties-panel, facets, context-menu, toolbar]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-08T10:18:09Z }
-verified: { by: human:neumaennl, at: 2026-10-08T12:56:31Z }
+generated: { by: human:neumaennl, at: 2026-10-28T14:47:04Z }
+verified: { by: human:neumaennl, at: 2026-10-28T15:08:21Z }
 sources:
   - id: palette-items
     resource: ../webview-src/palette/PaletteItems.ts
@@ -13,24 +13,24 @@ sources:
   - id: drop-type-helpers
     resource: ../webview-src/drop/DropCommandFactoryTypeHelpers.ts
     title: Drop helpers for types, derivations and facets
-  - id: property-panel
-    resource: ../webview-src/propertyPanel/propertyPanel.ts
-    title: PropertyPanel
+  - id: properties-panel
+    resource: ../webview-src/propertiesPanel/propertiesPanel.ts
+    title: PropertiesPanel
   - id: panel-types
-    resource: ../webview-src/propertyPanel/propertyPanelTypes.ts
-    title: Type and base type fields of the property panel
+    resource: ../webview-src/propertiesPanel/propertiesPanelTypes.ts
+    title: Type and base type fields of the properties panel
   - id: panel-facets
-    resource: ../webview-src/propertyPanel/propertyPanelFacets.ts
+    resource: ../webview-src/propertiesPanel/propertiesPanelFacets.ts
     title: Facets tab
   - id: panel-docs
-    resource: ../webview-src/propertyPanel/propertyPanelDocs.ts
+    resource: ../webview-src/propertiesPanel/propertiesPanelDocs.ts
     title: Docs tab
   - id: panel-xml
-    resource: ../webview-src/propertyPanel/propertyPanelXmlPreview.ts
+    resource: ../webview-src/propertiesPanel/propertiesPanelXmlPreview.ts
     title: XML tab preview
   - id: panel-commands
-    resource: ../webview-src/propertyPanel/propertyPanelCommands.ts
-    title: Commands sent by the property panel
+    resource: ../webview-src/propertiesPanel/propertiesPanelCommands.ts
+    title: Commands sent by the properties panel
   - id: webview-main
     resource: ../webview-src/main.ts
     title: Webview entry point (SchemaEditorApp)
@@ -38,17 +38,17 @@ sources:
 
 # Purpose
 
-This document defines how users interact with the editor: the palette, the diagram, the property panel, the context menu and the toolbar. It describes the intended model. Most of it is implemented; what is not is listed in [Current state](#current-state).
+This document defines how users interact with the editor: the palette, the diagram, the properties panel, the context menu and the toolbar. It describes the intended model. Most of it is implemented; what is not is listed in [Current state](#current-state).
 
 The components that implement the model are described in [Editor](editor.md); the commands they send are listed in [Commands](commands.md). A prototype of the UX direction exists in the `emergent` branch ([#153](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/153)).
 
 # Core rules
 
 - New constructs are added by dragging an item from the palette onto a node in the diagram.
-- Existing constructs are edited in the property panel, and deleted there where deletion is supported.
+- Existing constructs are edited in the properties panel, and deleted there where deletion is supported.
 - The toolbar only has actions for the whole schema or diagram.
 - The context menu complements palette and panel; it is never the main way to add or edit.
-- The XML tab of the property panel is read-only.
+- The XML tab of the properties panel is read-only.
 
 # What goes where
 
@@ -57,7 +57,7 @@ Each interaction belongs to one main surface:
 | Surface | Role | Examples |
 |---|---|---|
 | Palette and drag and drop | Add constructs | elements, attributes, groups, compositors, simple and complex types, restriction, extension, facets[^palette-items] |
-| Property panel | Edit and delete the selected node | name, type, cardinality, facet values, documentation, delete |
+| Properties panel | Edit and delete the selected node | name, type, cardinality, facet values, documentation, delete |
 | Toolbar | Actions for the whole diagram | zoom in, zoom out, fit view |
 | Context menu | Contextual operations | reorder, refactor, find usages, go to definition, cut, copy, paste, regenerate sample XML |
 | Read-only display | Computed values | namespace, derived labels, unresolved values |
@@ -71,7 +71,7 @@ Discoverability rule: adding starts in the palette, editing starts in the panel.
 Facets follow the same pattern as all other constructs:
 
 - **Add:** drag a facet item from the palette onto a simple type derived by restriction, or onto an element with such an anonymous simple type. The facet is added with a default value.[^drop-type-helpers]
-- **Edit:** change the value in the Facets tab of the property panel.
+- **Edit:** change the value in the Facets tab of the properties panel.
 - **Delete:** use the delete control in the facet's row.[^panel-facets]
 
 Every change in the Facets tab sends `modifySimpleType` with the base type and the complete set of facets (see [Commands](commands.md#restriction-facets)).
@@ -107,11 +107,11 @@ Palette drops and panel edits prevent facets that do not apply to the base type 
 
 XSD allows several `xs:pattern` facets in one restriction; a value must match all of them. The panel shows and edits the first pattern; the others are preserved when a facet is edited. Editing all patterns is planned for Phase 3.
 
-# Property panel
+# Properties panel
 
 ## General
 
-The panel shows an editable field only where the selected node supports the matching command:[^property-panel]
+The panel shows an editable field only where the selected node supports the matching command:[^properties-panel]
 
 | Node | Editable fields |
 |---|---|
@@ -121,7 +121,7 @@ The panel shows an editable field only where the selected node supports the matc
 | Group | Name |
 | Attribute | Name, type, use, default and fixed value |
 
-Computed values are shown as read-only text, for example the namespace, the group type, the anonymous-type indicator and summary labels such as `simpleType (restricts xs:string)`. The schema root shows its namespace declarations (see [Editor](editor.md#property-panel)).
+Computed values are shown as read-only text, for example the namespace, the group type, the anonymous-type indicator and summary labels such as `simpleType (restricts xs:string)`. The schema root shows its namespace declarations (see [Editor](editor.md#properties-panel)).
 
 The panel header has a delete button for the selected node.[^panel-commands]
 
@@ -190,9 +190,9 @@ The current editor does not implement these parts of the model yet:
 
 [^drop-type-helpers]: Drop helpers for types, derivations and facets
 
-[^property-panel]: PropertyPanel
+[^properties-panel]: PropertiesPanel
 
-[^panel-types]: Type and base type fields of the property panel
+[^panel-types]: Type and base type fields of the properties panel
 
 [^panel-facets]: Facets tab
 
@@ -200,6 +200,6 @@ The current editor does not implement these parts of the model yet:
 
 [^panel-xml]: XML tab preview
 
-[^panel-commands]: Commands sent by the property panel
+[^panel-commands]: Commands sent by the properties panel
 
 [^webview-main]: Webview entry point (SchemaEditorApp)

@@ -15,24 +15,24 @@ import type {
 } from "../../shared/types.js";
 import { toArray } from "../../shared/schemaUtils.js";
 import {
-  MINIMAL_SCHEMA,
   SCHEMA_WITH_GROUP,
   SCHEMA_WITH_ATTRIBUTEGROUP,
   runCommandExpectSuccessSchema,
   runCommandExpectValidationFailure,
-} from "./testHelpers.js";
+} from "./pipelineTestHelpers.js";
+import { emptySchemaXml } from "./schemaTestHelpers.js";
 
 describe("Integration: Group pipeline", () => {
   // ─── addGroup ──────────────────────────────────────────────────────────────
 
   describe("addGroup", () => {
-    it("adds a top-level named group with a sequence content model", () => {
+    test("adds a top-level named group with a sequence content model", () => {
       const cmd: AddGroupCommand = {
         type: "addGroup",
         payload: { groupName: "AddressGroup", contentModel: "sequence" },
       };
 
-      const result = runCommandExpectSuccessSchema(MINIMAL_SCHEMA, cmd);
+      const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
       const groups = toArray(result.group);
       const addressGroup = groups.find((g) => g.name === "AddressGroup");
 
@@ -41,13 +41,13 @@ describe("Integration: Group pipeline", () => {
       expect(addressGroup!.choice).toBeUndefined();
     });
 
-    it("adds a group with a choice content model", () => {
+    test("adds a group with a choice content model", () => {
       const cmd: AddGroupCommand = {
         type: "addGroup",
         payload: { groupName: "ChoiceGroup", contentModel: "choice" },
       };
 
-      const result = runCommandExpectSuccessSchema(MINIMAL_SCHEMA, cmd);
+      const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
       const choiceGroup = toArray(result.group).find((g) => g.name === "ChoiceGroup");
 
       expect(choiceGroup).toBeDefined();
@@ -55,7 +55,7 @@ describe("Integration: Group pipeline", () => {
       expect(choiceGroup!.sequence).toBeUndefined();
     });
 
-    it("returns validation error for duplicate group name", () => {
+    test("returns validation error for duplicate group name", () => {
       const cmd: AddGroupCommand = {
         type: "addGroup",
         payload: { groupName: "ContactGroup", contentModel: "sequence" },
@@ -64,20 +64,20 @@ describe("Integration: Group pipeline", () => {
       runCommandExpectValidationFailure(SCHEMA_WITH_GROUP, cmd, "Group name already exists: ContactGroup");
     });
 
-    it("returns validation error when group name is invalid", () => {
+    test("returns validation error when group name is invalid", () => {
       const cmd: AddGroupCommand = {
         type: "addGroup",
         payload: { groupName: "bad group", contentModel: "sequence" },
       };
 
-      runCommandExpectValidationFailure(MINIMAL_SCHEMA, cmd, "Group name must be a valid XML name");
+      runCommandExpectValidationFailure(emptySchemaXml(), cmd, "Group name must be a valid XML name");
     });
   });
 
   // ─── removeGroup ───────────────────────────────────────────────────────────
 
   describe("removeGroup", () => {
-    it("removes an existing top-level group", () => {
+    test("removes an existing top-level group", () => {
       const cmd: RemoveGroupCommand = {
         type: "removeGroup",
         payload: { groupId: "/group:ContactGroup" },
@@ -89,7 +89,7 @@ describe("Integration: Group pipeline", () => {
       expect(groups.some((g) => g.name === "ContactGroup")).toBe(false);
     });
 
-    it("returns validation error when group ID does not exist", () => {
+    test("returns validation error when group ID does not exist", () => {
       const cmd: RemoveGroupCommand = {
         type: "removeGroup",
         payload: { groupId: "/group:NoSuchGroup" },
@@ -102,7 +102,7 @@ describe("Integration: Group pipeline", () => {
   // ─── modifyGroup ───────────────────────────────────────────────────────────
 
   describe("modifyGroup", () => {
-    it("renames an existing group", () => {
+    test("renames an existing group", () => {
       const cmd: ModifyGroupCommand = {
         type: "modifyGroup",
         payload: { groupId: "/group:ContactGroup", groupName: "CommunicationGroup" },
@@ -115,7 +115,7 @@ describe("Integration: Group pipeline", () => {
       expect(groups.some((g) => g.name === "ContactGroup")).toBe(false);
     });
 
-    it("returns validation error when group ID does not exist", () => {
+    test("returns validation error when group ID does not exist", () => {
       const cmd: ModifyGroupCommand = {
         type: "modifyGroup",
         payload: { groupId: "/group:Ghost", groupName: "Other" },
@@ -130,19 +130,19 @@ describe("Integration: AttributeGroup pipeline", () => {
   // ─── addAttributeGroup ─────────────────────────────────────────────────────
 
   describe("addAttributeGroup", () => {
-    it("adds a top-level named attributeGroup", () => {
+    test("adds a top-level named attributeGroup", () => {
       const cmd: AddAttributeGroupCommand = {
         type: "addAttributeGroup",
         payload: { groupName: "AuditAttributes" },
       };
 
-      const result = runCommandExpectSuccessSchema(MINIMAL_SCHEMA, cmd);
+      const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
       const groups = toArray(result.attributeGroup);
 
       expect(groups.some((g) => g.name === "AuditAttributes")).toBe(true);
     });
 
-    it("returns validation error for duplicate attributeGroup name", () => {
+    test("returns validation error for duplicate attributeGroup name", () => {
       const cmd: AddAttributeGroupCommand = {
         type: "addAttributeGroup",
         payload: { groupName: "CommonAttrs" },
@@ -151,18 +151,18 @@ describe("Integration: AttributeGroup pipeline", () => {
       runCommandExpectValidationFailure(SCHEMA_WITH_ATTRIBUTEGROUP, cmd, "Attribute group name already exists: CommonAttrs");
     });
 
-    it("returns validation error when group name is invalid", () => {
+    test("returns validation error when group name is invalid", () => {
       const cmd: AddAttributeGroupCommand = {
         type: "addAttributeGroup",
         payload: { groupName: "bad name" },
       };
 
-      runCommandExpectValidationFailure(MINIMAL_SCHEMA, cmd, "Attribute group name must be a valid XML name");
+      runCommandExpectValidationFailure(emptySchemaXml(), cmd, "Attribute group name must be a valid XML name");
     });
   });
 
   describe("removeAttributeGroup", () => {
-    it("removes an existing top-level attributeGroup", () => {
+    test("removes an existing top-level attributeGroup", () => {
       const cmd: RemoveAttributeGroupCommand = {
         type: "removeAttributeGroup",
         payload: { groupId: "/attributeGroup:CommonAttrs" },
@@ -174,7 +174,7 @@ describe("Integration: AttributeGroup pipeline", () => {
       expect(groups.some((g) => g.name === "CommonAttrs")).toBe(false);
     });
 
-    it("returns validation error when group ID does not exist", () => {
+    test("returns validation error when group ID does not exist", () => {
       const cmd: RemoveAttributeGroupCommand = {
         type: "removeAttributeGroup",
         payload: { groupId: "/attributeGroup:Missing" },
@@ -187,7 +187,7 @@ describe("Integration: AttributeGroup pipeline", () => {
   // ─── modifyAttributeGroup ──────────────────────────────────────────────────
 
   describe("modifyAttributeGroup", () => {
-    it("renames an existing attributeGroup", () => {
+    test("renames an existing attributeGroup", () => {
       const cmd: ModifyAttributeGroupCommand = {
         type: "modifyAttributeGroup",
         payload: { groupId: "/attributeGroup:CommonAttrs", groupName: "SharedAttrs" },
@@ -200,7 +200,7 @@ describe("Integration: AttributeGroup pipeline", () => {
       expect(groups.some((g) => g.name === "CommonAttrs")).toBe(false);
     });
 
-    it("returns validation error when group ID does not exist", () => {
+    test("returns validation error when group ID does not exist", () => {
       const cmd: ModifyAttributeGroupCommand = {
         type: "modifyAttributeGroup",
         payload: { groupId: "/attributeGroup:NoSuch", groupName: "Other" },

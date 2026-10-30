@@ -20,23 +20,14 @@ import {
   validateRemoveAttribute,
   validateModifyAttribute,
 } from "./elementValidators.js";
-import { expectInvalid } from "./validationTestHelpers.js";
+import { expectInvalid } from "../__tests__/validationTestHelpers.js";
+import { readTestSchema, schemaWith } from "../__tests__/schemaTestHelpers.js";
 
-/**
- * Unmarshals a schema with the given content.
- *
- * @param body - The XSD content of the schema
- * @returns The schema object
- */
-function schemaWith(body: string): schema {
-  return unmarshal(
-    schema,
-    `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  ${body}
-</xs:schema>`,
-  );
-}
+/** An import of the namespace `http://example.com/external`. */
+const EXTERNAL_IMPORT = `<xs:import namespace="http://example.com/external" schemaLocation="external.xsd"/>`;
+
+/** The prefix `ext` for the namespace `http://example.com/external`. */
+const EXT_PREFIX = { ext: "http://example.com/external" };
 
 /** A top-level element `root` and a complexType `T` whose sequence holds two local elements and a reference to `root`. */
 const SEQUENCE_WITH_ELEMENTS = `<xs:element name="root" type="xs:string"/>
@@ -60,11 +51,7 @@ describe("Element Validators", () => {
   let schemaObj: schema;
 
   beforeEach(() => {
-    const simpleSchemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person" type="xs:string"/>
-</xs:schema>`;
-    schemaObj = unmarshal(schema, simpleSchemaXml);
+    schemaObj = schemaWith(`<xs:element name="person" type="xs:string"/>`);
   });
 
   describe("validateAddElement", () => {
@@ -72,7 +59,7 @@ describe("Element Validators", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "testElement",
           elementType: "string",
         },
@@ -86,7 +73,7 @@ describe("Element Validators", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "testElement",
           elementType: "xs:string",
         },
@@ -100,7 +87,7 @@ describe("Element Validators", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "testElement",
           elementType: "xsd:string",
         },
@@ -114,7 +101,7 @@ describe("Element Validators", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "testElement",
           elementType: "myprefix:int",
         },
@@ -128,7 +115,7 @@ describe("Element Validators", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "testElement",
           elementType: "int",
         },
@@ -142,7 +129,7 @@ describe("Element Validators", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "testElement",
           elementType: "invalidType",
         },
@@ -158,7 +145,7 @@ describe("Element Validators", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "testElement",
           elementType: "unknown:SomeType",
         },
@@ -171,20 +158,12 @@ describe("Element Validators", () => {
     });
 
     test("should accept user-defined complex type", () => {
-      const schemaWithTypes = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:complexType name="PersonType">
-    <xs:sequence>
-      <xs:element name="name" type="xs:string"/>
-    </xs:sequence>
-  </xs:complexType>
-</xs:schema>`;
-      const customSchema = unmarshal(schema, schemaWithTypes);
+      const customSchema = readTestSchema("person-type-with-name-element.xsd");
 
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "person",
           elementType: "PersonType",
         },
@@ -195,21 +174,17 @@ describe("Element Validators", () => {
     });
 
     test("should accept user-defined simple type", () => {
-      const schemaWithTypes = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:simpleType name="AgeType">
-    <xs:restriction base="xs:integer">
-      <xs:minInclusive value="0"/>
-      <xs:maxInclusive value="120"/>
-    </xs:restriction>
-  </xs:simpleType>
-</xs:schema>`;
-      const customSchema = unmarshal(schema, schemaWithTypes);
+      const customSchema = schemaWith(`<xs:simpleType name="AgeType">
+  <xs:restriction base="xs:integer">
+    <xs:minInclusive value="0"/>
+    <xs:maxInclusive value="120"/>
+  </xs:restriction>
+</xs:simpleType>`);
 
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "age",
           elementType: "AgeType",
         },
@@ -220,21 +195,17 @@ describe("Element Validators", () => {
     });
 
     test("should accept user-defined type with prefix", () => {
-      const schemaWithTypes = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
-           xmlns:tns="http://example.com/types">
-  <xs:complexType name="PersonType">
-    <xs:sequence>
-      <xs:element name="name" type="xs:string"/>
-    </xs:sequence>
-  </xs:complexType>
-</xs:schema>`;
-      const customSchema = unmarshal(schema, schemaWithTypes);
+      const prefixes = { tns: "http://example.com/types" };
+      const customSchema = schemaWith(`<xs:complexType name="PersonType">
+  <xs:sequence>
+    <xs:element name="name" type="xs:string"/>
+  </xs:sequence>
+</xs:complexType>`, prefixes);
 
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "person",
           elementType: "tns:PersonType",
         },
@@ -245,17 +216,12 @@ describe("Element Validators", () => {
     });
 
     test("should accept type from import", () => {
-      const schemaWithImport = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" 
-           xmlns:ext="http://example.com/external">
-  <xs:import namespace="http://example.com/external" schemaLocation="external.xsd"/>
-</xs:schema>`;
-      const customSchema = unmarshal(schema, schemaWithImport);
+      const customSchema = schemaWith(EXTERNAL_IMPORT, EXT_PREFIX);
 
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "externalElement",
           elementType: "ext:ExternalType",
         },
@@ -266,19 +232,15 @@ describe("Element Validators", () => {
     });
 
     test("should accept type from include (unprefixed, same namespace)", () => {
-      const schemaWithInclude = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:include schemaLocation="included.xsd"/>
-  <xs:simpleType name="IncludedType">
-    <xs:restriction base="xs:string"/>
-  </xs:simpleType>
-</xs:schema>`;
-      const customSchema = unmarshal(schema, schemaWithInclude);
+      const customSchema = schemaWith(`<xs:include schemaLocation="included.xsd"/>
+<xs:simpleType name="IncludedType">
+  <xs:restriction base="xs:string"/>
+</xs:simpleType>`);
 
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "includedElement",
           elementType: "IncludedType",
         },
@@ -289,17 +251,12 @@ describe("Element Validators", () => {
     });
 
     test("should reject type with prefix that doesn't match any import namespace", () => {
-      const schemaWithImport = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" 
-           xmlns:ext="http://example.com/external">
-  <xs:import namespace="http://example.com/external" schemaLocation="external.xsd"/>
-</xs:schema>`;
-      const customSchema = unmarshal(schema, schemaWithImport);
+      const customSchema = schemaWith(EXTERNAL_IMPORT, EXT_PREFIX);
 
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "testElement",
           elementType: "wrongprefix:SomeType",
         },
@@ -327,7 +284,7 @@ describe("Element Validators", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "myElement",
           elementType: "tns:MyType",
         },
@@ -341,7 +298,7 @@ describe("Element Validators", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "",
           elementType: "string",
         },
@@ -356,7 +313,7 @@ describe("Element Validators", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "test",
           elementType: "",
         },
@@ -456,16 +413,12 @@ describe("Element Validators", () => {
     });
 
     test("should accept modifyElement with user-defined type", () => {
-      const schemaWithTypes = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person" type="xs:string"/>
-  <xs:complexType name="PersonType">
-    <xs:sequence>
-      <xs:element name="name" type="xs:string"/>
-    </xs:sequence>
-  </xs:complexType>
-</xs:schema>`;
-      const customSchema = unmarshal(schema, schemaWithTypes);
+      const customSchema = schemaWith(`<xs:element name="person" type="xs:string"/>
+<xs:complexType name="PersonType">
+  <xs:sequence>
+    <xs:element name="name" type="xs:string"/>
+  </xs:sequence>
+</xs:complexType>`);
 
       const command: ModifyElementCommand = {
         type: "modifyElement",
@@ -493,6 +446,22 @@ describe("Element Validators", () => {
       expect(result.valid).toBe(true);
     });
 
+    test("should reject stale top-level rename replay after a successful rename", () => {
+      const renamedSchema = schemaWith(`<xs:element name="personRenamed" type="xs:string"/>`);
+
+      const command: ModifyElementCommand = {
+        type: "modifyElement",
+        payload: {
+          elementId: "/element:person",
+          elementName: "personRenamed",
+        },
+      };
+
+      const result = validateModifyElement(command, renamedSchema);
+      expectInvalid(result);
+      expect(result.error).toBe("Element not found: person");
+    });
+
     test("should reject modifyElement with minOccurs > maxOccurs", () => {
       const command: ModifyElementCommand = {
         type: "modifyElement",
@@ -513,14 +482,7 @@ describe("Element Validators", () => {
     let seqSchema: schema;
 
     beforeEach(() => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person" type="xs:string"/>
-  <xs:complexType name="OrderType">
-    <xs:sequence/>
-  </xs:complexType>
-</xs:schema>`;
-      seqSchema = unmarshal(schema, xml);
+      seqSchema = readTestSchema("person-element-and-order-type.xsd");
     });
 
     test("should accept addElement with valid ref to sequence", () => {
@@ -531,10 +493,25 @@ describe("Element Validators", () => {
       expect(validateAddElement(command, seqSchema).valid).toBe(true);
     });
 
+    test("should accept addElement for sequence in complexContent extension using group path", () => {
+      const extensionSchema = readTestSchema("person-element-and-worker-type-extension.xsd");
+
+      const command: AddElementCommand = {
+        type: "addElement",
+        payload: {
+          parentId: "/complexType:WorkerType/group:sequence[0]",
+          elementName: "department",
+          elementType: "xs:string",
+        },
+      };
+
+      expect(validateAddElement(command, extensionSchema).valid).toBe(true);
+    });
+
     test("should reject addElement with ref at schema level (top-level elements cannot be refs)", () => {
       const command: AddElementCommand = {
         type: "addElement",
-        payload: { parentId: "schema", ref: "person" },
+        payload: { parentId: "/schema", ref: "person" },
       };
       const result = validateAddElement(command, seqSchema);
       expectInvalid(result);
@@ -769,11 +746,7 @@ describe("Attribute Validators", () => {
   let schemaObj: schema;
 
   beforeEach(() => {
-    const simpleSchemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:attribute name="attr1" type="xs:string"/>
-</xs:schema>`;
-    schemaObj = unmarshal(schema, simpleSchemaXml);
+    schemaObj = schemaWith(`<xs:attribute name="attr1" type="xs:string"/>`);
   });
 
   describe("validateAddAttribute", () => {
@@ -811,7 +784,7 @@ describe("Attribute Validators", () => {
       const command: AddAttributeCommand = {
         type: "addAttribute",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           attributeName: "lang",
           attributeType: "xs:string",
           defaultValue: "en",
@@ -892,24 +865,16 @@ describe("Attribute Validators", () => {
     let refSchema: schema;
 
     beforeEach(() => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+      refSchema = schemaWith(`<xs:attribute name="lang" type="xs:string"/>
+<xs:complexType name="PersonType">
   <xs:attribute name="lang" type="xs:string"/>
-  <xs:complexType name="PersonType">
-    <xs:attribute name="lang" type="xs:string"/>
-  </xs:complexType>
-</xs:schema>`;
-      refSchema = unmarshal(schema, xml);
+</xs:complexType>`);
     });
 
     test("should accept addAttribute with valid ref to complex type", () => {
       // PersonType must NOT already have a lang attribute to avoid the duplicate check
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:attribute name="lang" type="xs:string"/>
-  <xs:complexType name="PersonType"/>
-</xs:schema>`;
-      const schemaWithoutDuplicate = unmarshal(schema, xml);
+      const schemaWithoutDuplicate = schemaWith(`<xs:attribute name="lang" type="xs:string"/>
+<xs:complexType name="PersonType"/>`);
       const command: AddAttributeCommand = {
         type: "addAttribute",
         payload: { parentId: "/complexType:PersonType", ref: "lang" },
@@ -920,7 +885,7 @@ describe("Attribute Validators", () => {
     test("should reject addAttribute with ref at schema level", () => {
       const command: AddAttributeCommand = {
         type: "addAttribute",
-        payload: { parentId: "schema", ref: "lang" },
+        payload: { parentId: "/schema", ref: "lang" },
       };
       const result = validateAddAttribute(command, refSchema);
       expectInvalid(result);
@@ -1068,7 +1033,7 @@ describe("Attribute Validators", () => {
     test("should reject a top-level attribute name that already exists", () => {
       const command: AddAttributeCommand = {
         type: "addAttribute",
-        payload: { parentId: "schema", attributeName: "lang", attributeType: "xs:string" },
+        payload: { parentId: "/schema", attributeName: "lang", attributeType: "xs:string" },
       };
 
       const result = validateAddAttribute(command, schemaWith(ATTRIBUTES));

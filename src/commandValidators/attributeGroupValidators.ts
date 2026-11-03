@@ -98,7 +98,7 @@ function attrGroupRefExistsInCompositor(
   compositor: CompositorWithElements
 ): boolean {
   for (const el of compositor.element ?? []) {
-    if (el?.complexType && attrGroupRefExistsInHolderDeep(name, el.complexType)) {
+    if (el.complexType && attrGroupRefExistsInHolderDeep(name, el.complexType)) {
       return true;
     }
   }

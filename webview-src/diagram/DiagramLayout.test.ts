@@ -104,8 +104,8 @@ describe("DiagramLayout", () => {
       layout.layout(diagram);
 
       expect(parent.childExpandButtonBox).toBeDefined();
-      expect(parent.childExpandButtonBox?.width).toBe(12);
-      expect(parent.childExpandButtonBox?.height).toBe(12);
+      expect(parent.childExpandButtonBox.width).toBe(12);
+      expect(parent.childExpandButtonBox.height).toBe(12);
     });
 
     test("should not add expand button when item has no children", () => {
@@ -172,7 +172,7 @@ describe("DiagramLayout", () => {
       layout.layout(diagram);
 
       expect(item.documentationBox).toBeDefined();
-      expect(item.documentationBox?.width).toBeGreaterThan(0);
+      expect(item.documentationBox.width).toBeGreaterThan(0);
     });
 
     test("should not add documentation box when showDocumentation is false", () => {

@@ -109,8 +109,7 @@ class SchemaEditorApp {
           }
 
           case "error": {
-            const errorMessage = message.data.message ?? "Unknown error";
-            this.showError(errorMessage);
+            this.showError(message.data.message);
             break;
           }
 
@@ -135,10 +134,6 @@ class SchemaEditorApp {
    * @param schemaObj - The schema to render
    */
   private renderSchema(schemaObj: schema): void {
-    if (!schemaObj) {
-      this.showMessage("No schema to display");
-      return;
-    }
 
     try {
       console.log("Schema object received:", schemaObj);

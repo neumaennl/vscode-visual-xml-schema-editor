@@ -156,9 +156,7 @@ describe("SchemaModelManager", () => {
       expect(cloned).not.toBe(manager.getSchema());
       expect(cloned.targetNamespace).toBe("http://example.com/test");
       
-      const clonedElements = Array.isArray(cloned.element) 
-        ? cloned.element 
-        : cloned.element ? [cloned.element] : [];
+      const clonedElements = cloned.element ?? [];
       expect(clonedElements).toHaveLength(1);
       expect(clonedElements[0].name).toBe("root");
     });
@@ -181,19 +179,12 @@ describe("SchemaModelManager", () => {
       const cloned = manager.cloneSchema();
 
       // Modify the cloned schema
-      const clonedElements = Array.isArray(cloned.element)
-        ? cloned.element
-        : cloned.element ? [cloned.element] : [];
-      
-      if (clonedElements.length > 0) {
-        clonedElements[0].name = "modified";
-      }
+      const clonedElements = cloned.element ?? [];
+      clonedElements[0].name = "modified";
 
       // Original should be unchanged
-      const originalElements = Array.isArray(original?.element)
-        ? original?.element
-        : original?.element ? [original.element] : [];
-      expect(originalElements[0]?.name).toBe("root");
+      const originalElements = original?.element ?? [];
+      expect(originalElements[0].name).toBe("root");
       expect(clonedElements[0].name).toBe("modified");
     });
   });

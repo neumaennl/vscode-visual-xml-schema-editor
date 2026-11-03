@@ -238,7 +238,7 @@ describe("TextRenderers", () => {
       renderDocumentation(item, mockGroup);
 
       const text = mockGroup.querySelector("text");
-      expect(text?.textContent?.length).toBeLessThanOrEqual(50);
+      expect(text?.textContent.length).toBeLessThanOrEqual(50);
     });
 
     test("should not render when documentation box has zero width", () => {

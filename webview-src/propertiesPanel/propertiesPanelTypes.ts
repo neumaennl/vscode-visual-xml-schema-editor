@@ -144,7 +144,7 @@ export function renderTypeProperty(
     root.appendChild(
       createEditableField("Type", node.type, (next) => {
         const normalizedNext = normalizeTypeReferenceForCurrentSchema(node, next);
-        const normalizedCurrent = normalizeTypeReferenceForCurrentSchema(node, node.type ?? "");
+        const normalizedCurrent = normalizeTypeReferenceForCurrentSchema(node, node.type);
         if (normalizedNext === normalizedCurrent) {
           return;
         }

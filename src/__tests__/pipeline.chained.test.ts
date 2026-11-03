@@ -147,7 +147,7 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
     beforeEach(() => {
       result = unmarshal(schema, BUILD_ORDER_TYPE.reduce(runCommandExpectSuccess, EXAMPLE_XSD));
       orderType = (result.complexType ?? []).find((t) => t.name === "OrderType")!;
-      seqElements = orderType?.sequence?.element ?? [];
+      seqElements = orderType.sequence?.element ?? [];
     });
 
     test("adds the top-level element order of type OrderType", () => {

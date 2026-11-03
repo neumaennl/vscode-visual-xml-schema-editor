@@ -77,12 +77,12 @@ export class DiagramRenderer {
 
   /**
    * Render a schema object to the canvas
-   * @param schemaObj - The schema to render
+   * @param schemaObj - The schema to render, or `null` to show a message instead
    * @param diagramOptions - Display options for the diagram
    * @param onNodeClick - Callback function for node click events
    */
   public renderSchema(
-    schemaObj: schema,
+    schemaObj: schema | null,
     diagramOptions: DiagramOptions,
     onNodeClick: (node: DiagramItem, isExpandButton: boolean) => void
   ): void {
@@ -159,9 +159,9 @@ export class DiagramRenderer {
       const target = e.target as SVGElement;
 
       // Check if clicked on expand button (or inside expand button group)
-      const expandButton = target.closest(".expand-button") as SVGElement;
+      const expandButton = target.closest<SVGElement>(".expand-button");
       if (expandButton) {
-        const itemGroup = expandButton.closest("[data-item-id]") as SVGElement;
+        const itemGroup = expandButton.closest<SVGElement>("[data-item-id]");
         if (itemGroup) {
           const itemId = itemGroup.getAttribute("data-item-id");
           const item = this.findItemById(itemId);
@@ -174,7 +174,7 @@ export class DiagramRenderer {
       }
 
       // Check if clicked on diagram item
-      const itemGroup = target.closest("[data-item-id]") as SVGElement;
+      const itemGroup = target.closest<SVGElement>("[data-item-id]");
       if (itemGroup) {
         const itemId = itemGroup.getAttribute("data-item-id");
         const item = this.findItemById(itemId);
@@ -233,6 +233,7 @@ export class DiagramRenderer {
         return;
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- jsdom, which runs the tests, has no elementFromPoint()
       const maybeElementUnderPointer = document.elementFromPoint?.(
         event.clientX,
         event.clientY
@@ -422,11 +423,6 @@ export class DiagramRenderer {
    * @param padding - Padding in screen pixels
    */
   public fitToCanvas(padding: number = 24): ViewState {
-    // Ensure there is content
-    if (!this.canvas || !this.mainGroup) {
-      return this.viewState;
-    }
-
     const bbox = this.mainGroup.getBBox();
     const canvasWidth =
       this.canvas.clientWidth || this.canvas.viewBox.baseVal.width || 0;

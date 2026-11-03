@@ -344,6 +344,7 @@ function applySimpleTypeBody(
   if (listItemType !== undefined || unionMemberTypes !== undefined) {
     throw new Error("Restriction simpleType payload cannot include list or union fields");
   }
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- base is missing when the restriction has an inline simpleType; the generated type is wrong (neumaennl/xmlbind-ts#278)
   const resolvedBaseType = baseType?.trim() || simpleType.restriction?.base?.trim() || "";
   if (!resolvedBaseType) {
     throw new Error("Base type is required");

@@ -426,14 +426,14 @@ function navigateFromGroup(
   }
 
   if (nodeType === SchemaNodeType.Group && name === "choice") {
-    const choice = ((group as { choice?: explicitGroup[] }).choice ?? [])[position ?? 0];
+    const choice = ((group as { choice?: explicitGroup[] }).choice ?? [])[position ?? 0] as explicitGroup | undefined;
     if (choice) {
       return { found: true, node: choice, nodeType: "choice" };
     }
   }
 
   if (nodeType === SchemaNodeType.Group && name === "sequence") {
-    const sequence = ((group as { sequence?: explicitGroup[] }).sequence ?? [])[position ?? 0];
+    const sequence = ((group as { sequence?: explicitGroup[] }).sequence ?? [])[position ?? 0] as explicitGroup | undefined;
     if (sequence) {
       return { found: true, node: sequence, nodeType: "sequence" };
     }

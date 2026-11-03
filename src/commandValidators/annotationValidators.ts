@@ -59,7 +59,7 @@ function annotationExists(schemaObj: schema, nodeId: string): boolean {
   if (!location.found || !hasAnnotationProperty(location.parent)) {
     return false;
   }
-  return location.parent.annotation !== undefined && location.parent.annotation !== null;
+  return location.parent.annotation !== undefined;
 }
 
 // ===== Annotation Command Validation =====

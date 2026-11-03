@@ -133,14 +133,10 @@ describe("Element Executors", () => {
         executeAddElement(command, schemaObj);
 
         // Verify the element was added to the sequence
-        const personElement = Array.isArray(schemaObj.element)
-          ? schemaObj.element[0]
-          : schemaObj.element;
-        const elements = Array.isArray(personElement?.complexType?.sequence?.element)
-          ? personElement?.complexType?.sequence?.element
-          : [personElement?.complexType?.sequence?.element];
+        const personElement = (schemaObj.element ?? [])[0];
+        const elements = personElement.complexType?.sequence?.element ?? [];
         expect(elements).toHaveLength(2);
-        expect(elements[1]!.name).toBe("name");
+        expect(elements[1].name).toBe("name");
       });
 
       test("should add element to a sequence in complexContent extension using group parent ID", () => {
@@ -158,7 +154,7 @@ describe("Element Executors", () => {
         executeAddElement(command, schemaObj);
 
         const workerType = (schemaObj.complexType ?? [])[0];
-        const sequence = workerType?.complexContent?.extension?.sequence;
+        const sequence = workerType.complexContent?.extension?.sequence;
         const elements = sequence?.element ?? [];
         expect(elements).toHaveLength(2);
         expect(elements[1]?.name).toBe("department");

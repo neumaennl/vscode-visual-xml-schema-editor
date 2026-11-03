@@ -172,6 +172,7 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
     webview: vscode.Webview
   ): Promise<void> {
     switch (message.command) {
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- executeCommand is the only message (see "Every message from the webview is a schema command" in docs/known-issues.md)
       case "executeCommand": {
         await this.executeCommand(message, document, webview);
         break;

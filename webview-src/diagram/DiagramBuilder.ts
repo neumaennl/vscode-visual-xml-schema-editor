@@ -71,14 +71,14 @@ export class DiagramBuilder {
     this.diagram = new Diagram();
     this.elementMap.clear();
     this.diagram.currentSchemaPrefix = this.resolveTargetNamespacePrefix(schemaObj);
-    this.diagram.schemaTargetNamespace = schemaObj?.targetNamespace?.toString() ?? "";
+    this.diagram.schemaTargetNamespace = schemaObj.targetNamespace?.toString() ?? "";
     this.diagram.schemaNamespacePrefixes = { ...(schemaObj._namespacePrefixes ?? {}) };
     this.diagram.localSchemaTypeNames = undefined;
 
     console.log("DiagramBuilder - Building from schema:", schemaObj);
 
     // Create a root node representing the schema
-    const targetNs = schemaObj?.targetNamespace?.toString() || "no namespace";
+    const targetNs = schemaObj.targetNamespace?.toString() || "no namespace";
     const schemaNode = new DiagramItem(
       SCHEMA_ROOT_ID,
       `Schema: ${targetNs}`,
@@ -142,7 +142,7 @@ export class DiagramBuilder {
   }
 
   private resolveTargetNamespacePrefix(schemaObj: schema): string | undefined {
-    const targetNamespace = schemaObj?.targetNamespace?.toString();
+    const targetNamespace = schemaObj.targetNamespace?.toString();
     if (!targetNamespace || !schemaObj._namespacePrefixes) {
       return undefined;
     }

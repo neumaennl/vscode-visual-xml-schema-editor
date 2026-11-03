@@ -1,5 +1,5 @@
 import { schema, SchemaCommand } from "../../shared/types";
-import { DiagramItem, DiagramItemGroupType, DiagramItemType } from "../diagram";
+import { DiagramItem, DiagramItemType } from "../diagram";
 import { generateSchemaId, parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy";
 import { PaletteSchemaConstruct } from "../palette/PaletteSchemaConstruct";
 import { createFacetNodeDropCommand, getAnonymousComplexTypeId, getAnonymousSimpleTypeId, getExtensionBaseType, getRestrictionBaseType, isComplexTypeNode, isSimpleTypeNode } from "./DropCommandFactoryTypeHelpers";
@@ -204,10 +204,7 @@ export class DropCommandFactory {
   ): SchemaCommand | null {
     if (
       this.isSchemaRoot(item) ||
-      (item.itemType === DiagramItemType.group &&
-        (item.groupType === DiagramItemGroupType.Sequence ||
-          item.groupType === DiagramItemGroupType.Choice ||
-          item.groupType === DiagramItemGroupType.All))
+      item.itemType === DiagramItemType.group
     ) {
       return {
         type: "addElement",

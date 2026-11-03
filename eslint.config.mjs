@@ -118,6 +118,8 @@ export default [
       // Disabled to allow type inference at module boundaries
       '@typescript-eslint/explicit-module-boundary-types': 'off',
       '@typescript-eslint/no-explicit-any': 'error',
+      // Reports checks that the types make unnecessary, such as `x ?? []` on an array that is never undefined
+      '@typescript-eslint/no-unnecessary-condition': 'error',
       '@typescript-eslint/no-non-null-assertion': 'warn',
       // Disallow `unknown` in type assertions (`x as unknown`) and in variable-type
       // annotations (`const x: unknown`). Both are escape hatches that bypass type

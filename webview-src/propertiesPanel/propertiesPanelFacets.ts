@@ -296,9 +296,9 @@ function appendOptionalStringFacet(
 }
 
 function countDefinedFacets(restrictions: RestrictionSnapshot): number {
-  return Object.values(restrictions).filter((value) =>
-    Array.isArray(value) ? value.length > 0 : value !== undefined
-  ).length;
+  // Object.values() drops undefined from the types of optional properties, but the draft sets them to undefined
+  const values: Array<RestrictionSnapshot[keyof RestrictionSnapshot]> = Object.values(restrictions);
+  return values.filter((value) => (Array.isArray(value) ? value.length > 0 : value !== undefined)).length;
 }
 
 function appendFacetRemoveButton(

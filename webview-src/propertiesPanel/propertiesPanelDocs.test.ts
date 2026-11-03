@@ -77,7 +77,7 @@ describe("PropertiesPanel: the Docs tab", () => {
     const deleteButton = annotationHeader?.querySelector("button") as HTMLButtonElement;
     expect(deleteButton.classList.contains("property-docs-action-icon-only")).toBe(true);
     expect(deleteButton.title).toBe("Remove annotation");
-    expect(deleteButton.textContent?.trim()).toBe("");
+    expect(deleteButton.textContent.trim()).toBe("");
   });
 
   test("preserves multi-line documentation in the docs tab", () => {
@@ -180,7 +180,7 @@ describe("PropertiesPanel: the Docs tab", () => {
     docsTab?.click();
 
     const addDocumentationButton = Array.from(container.querySelectorAll("button")).find(
-      (btn) => btn.textContent?.includes("Add documentation")
+      (btn) => btn.textContent.includes("Add documentation")
     );
     addDocumentationButton?.click();
 
@@ -211,7 +211,7 @@ describe("PropertiesPanel: the Docs tab", () => {
     expect(container.textContent).toContain("Annotation 2");
 
     const addDocumentationButton = Array.from(container.querySelectorAll("button")).find(
-      (btn) => btn.textContent?.includes("Add documentation")
+      (btn) => btn.textContent.includes("Add documentation")
     );
     addDocumentationButton?.click();
 
@@ -253,7 +253,7 @@ describe("PropertiesPanel: the Docs tab", () => {
     docsTab?.click();
 
     const addAnnotationButton = Array.from(container.querySelectorAll("button")).find(
-      (btn) => btn.textContent?.includes("Add annotation")
+      (btn) => btn.textContent.includes("Add annotation")
     );
     addAnnotationButton?.click();
 
@@ -309,6 +309,6 @@ describe("PropertiesPanel: the Docs tab", () => {
     expect(deleteButton).toBeTruthy();
     expect(deleteButton.classList.contains("property-docs-action-icon-only")).toBe(true);
     expect(deleteButton.title).toBe("Remove documentation");
-    expect(deleteButton.textContent?.trim()).toBe("");
+    expect(deleteButton.textContent.trim()).toBe("");
   });
 });

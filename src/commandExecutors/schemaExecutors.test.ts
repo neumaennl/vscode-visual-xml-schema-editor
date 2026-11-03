@@ -539,10 +539,10 @@ describe("executeModifyImport", () => {
     }, s);
 
     // "ext" is renamed to "newpfx"
-    expect(s._namespacePrefixes?.["newpfx"]).toBe("http://example.com/ns");
-    expect(s._namespacePrefixes?.["ext"]).toBeUndefined();
+    expect(s._namespacePrefixes["newpfx"]).toBe("http://example.com/ns");
+    expect(s._namespacePrefixes["ext"]).toBeUndefined();
     // "ext2" (the other prefix for the same namespace) remains untouched
-    expect(s._namespacePrefixes?.["ext2"]).toBe("http://example.com/ns");
+    expect(s._namespacePrefixes["ext2"]).toBe("http://example.com/ns");
   });
 });
 

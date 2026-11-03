@@ -436,6 +436,21 @@ describe("SimpleType Validators", () => {
         expect(result.valid).toBe(true);
       });
 
+      test("should reject providing typeName when modifying an anonymous simpleType", () => {
+        const command: ModifySimpleTypeCommand = {
+          type: "modifySimpleType",
+          payload: {
+            typeId: "/element:age/anonymousSimpleType[0]",
+            baseType: "xs:positiveInteger",
+            typeName: "AgeType",
+          },
+        };
+
+        const result = validateModifySimpleType(command, schemaWithElementAndSimpleType);
+        expectInvalid(result);
+        expect(result.error).toBe("Cannot provide 'typeName' when modifying an anonymous simpleType");
+      });
+
       test("should reject when no anonymous simpleType exists in element", () => {
         const command: ModifySimpleTypeCommand = {
           type: "modifySimpleType",

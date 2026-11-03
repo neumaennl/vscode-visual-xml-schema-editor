@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-03T07:56:24Z }
-verified: { by: human:neumaennl, at: 2026-11-03T08:26:21Z }
+generated: { by: human:neumaennl, at: 2026-11-03T09:28:22Z }
+verified: { by: human:neumaennl, at: 2026-11-03T09:31:33Z }
 ---
 
 # Purpose
@@ -265,12 +265,20 @@ Effort:
 - **Description:** The extension-to-webview message `schemaModified` is defined in the message types, but the extension never sends it and the webview does not handle it.
 - **GitHub issue:** none
 
-## `modifySimpleType` skips part of its validation
+## Every message from the webview is a schema command
 
-- **Location:** `src/commandValidators/typeValidators.ts` (`validateModifySimpleType()`)
+- **Location:** `shared/messages.ts` (`WebviewMessage`, `ExecuteCommandMessage`), `src/webviewProvider.ts` (`handleWebviewMessage()`), `webview-src/main.ts`
+- **Severity:** Low
+- **Effort:** M
+- **Description:** `WebviewMessage`, the union of the messages from the webview, has a single member, `executeCommand`, which wraps a `SchemaCommand` (see [Messaging](messaging.md#messages)). So the switch on `message.command` in `handleWebviewMessage()` has one case, which ESLint reports as an unnecessary condition (`@typescript-eslint/no-unnecessary-condition`); an `eslint-disable-next-line` comment points to this entry. It is unclear whether this is intended. If every message from the webview is meant to be a schema edit, the wrapper is redundant and the webview could send `SchemaCommand`s directly. If the webview is meant to send other requests as well, these are missing so far; the [UX concept](ux-concept.md) plans context menu operations such as find usages, go to definition and regenerating sample XML, some of which need the extension but do not change the schema, and the [missing correlation](messaging.md#limitations) of commands and results may need a request ID in the message. Deciding needs an analysis of the existing and planned features and an architecture decision, recorded as an ADR.
+- **GitHub issue:** none
+
+## `modifySimpleType` cannot change only the facets of a restriction
+
+- **Location:** `src/commandValidators/typeValidators.ts` (`validateModifySimpleType()`, `validateSimpleTypeBody()`)
 - **Severity:** Low
 - **Effort:** S
-- **Description:** The validator returns the result of `validateSimpleTypeBody()` with `if (bodyValidation) return bodyValidation;`. The result is always an object, so the function always returns there, and the checks after it never run: a `typeName` for an anonymous simple type is accepted and ignored by the executor instead of being rejected, and the message "Cannot apply restrictions without a base type" is unreachable. Because `validateSimpleTypeBody()` requires `baseType` for every restriction body, `restrictions` without `baseType` fail with "Base type cannot be empty", even if the type already is a restriction (see [Commands](commands.md#simple-types)). The properties panel always sends both. `validateAddSimpleType()` uses the same pattern, but there the body check is the last one. The fix is to return only invalid results and to decide whether `restrictions` may keep the current base type.
+- **Description:** `validateSimpleTypeBody()` requires `baseType` for every restriction body, so `restrictions` without `baseType` fail with "Base type cannot be empty", even if the type already is a restriction (see [Commands](commands.md#simple-types)). The properties panel always sends both. Because of this, the check after it that rejects `restrictions` for a list or union type with "Cannot apply restrictions without a base type" is unreachable. The fix is to decide whether `restrictions` may keep the current base type: if so, `validateSimpleTypeBody()` accepts them for an existing restriction and the later check becomes reachable; if not, the later check can be removed.
 - **GitHub issue:** none
 
 ## Leftovers of the removed top-level drop target

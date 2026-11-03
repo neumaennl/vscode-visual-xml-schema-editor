@@ -76,7 +76,7 @@ function groupRefExistsInCompositor(name: string, compositor: CompositorLike): b
   if ((compositor.group ?? []).some((ref) => ref.ref === name)) return true;
   if (
     (compositor.element ?? []).some(
-      (el) => el?.complexType !== undefined && groupRefExistsInHolder(name, el.complexType)
+      (el) => el.complexType !== undefined && groupRefExistsInHolder(name, el.complexType)
     )
   ) {
     return true;

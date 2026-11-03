@@ -89,7 +89,7 @@ export function extractDocumentation(
     return undefined;
   }
 
-  const hasDocumentationField = annotations.some((entry) => entry?.documentation !== undefined);
+  const hasDocumentationField = annotations.some((entry) => entry.documentation !== undefined);
   const docs = annotations.flatMap((entry) => entry.documentation ?? []);
   if (docs.length === 0) {
     return hasDocumentationField ? "" : undefined;

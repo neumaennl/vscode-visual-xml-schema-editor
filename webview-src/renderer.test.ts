@@ -88,10 +88,7 @@ describe("DiagramRenderer", () => {
     test("should handle null schema", () => {
       const onNodeClick = vi.fn();
       
-      // Test error handling with invalid input by bypassing type checking
-      // This is intentional to ensure robustness
-      type RenderSchemaFn = (schema: unknown, options: DiagramOptions, callback: typeof onNodeClick) => void;
-      (renderer.renderSchema as RenderSchemaFn)(null, DEFAULT_DIAGRAM_OPTIONS, onNodeClick);
+      renderer.renderSchema(null, DEFAULT_DIAGRAM_OPTIONS, onNodeClick);
       
       // Should show message instead of throwing
       expect(mockCanvas.textContent).toContain("No schema to display");
@@ -334,7 +331,8 @@ describe("DiagramRenderer", () => {
       const itemChild = itemElement.querySelector("*") as Element;
       itemElement.classList.add("drag-over");
 
-      const documentWithElementFromPoint = document as Document & {
+      // jsdom has no elementFromPoint()
+      const documentWithElementFromPoint = document as Omit<Document, "elementFromPoint"> & {
         elementFromPoint?: (x: number, y: number) => Element | null;
       };
       const originalElementFromPoint = documentWithElementFromPoint.elementFromPoint?.bind(

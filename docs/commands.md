@@ -4,8 +4,8 @@ title: Commands
 description: The edit commands - payload fields, the rules the validators enforce, what the executors change in the schema, and where the webview sends them.
 tags: [commands, payload, validation, reference]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-29T15:16:40Z }
-verified: { by: human:neumaennl, at: 2026-10-29T15:30:22Z }
+generated: { by: human:neumaennl, at: 2026-11-03T08:31:28Z }
+verified: { by: human:neumaennl, at: 2026-11-03T09:31:33Z }
 sources:
   - id: commands
     resource: ../shared/commands/index.ts
@@ -145,7 +145,7 @@ A drop on an existing type or group creates a `modify*` command instead of an `a
 | `unionMemberTypes` | union | union | Member types of a union; not empty, no empty entries. |
 | `documentation` | optional | optional | See [Conventions](#conventions). |
 
-The fields decide the kind of the body (`SimpleTypeDerivationKind`): `baseType` or `restrictions` make a restriction, `listItemType` a list, `unionMemberTypes` a union. Exactly one kind is allowed. `addSimpleType` needs a body. In `modifySimpleType`, body fields replace the body, also with another kind; without body fields, the body stays as it is. `restrictions` always need `baseType` in the same payload, even if the type already is a restriction ("Base type cannot be empty"). `modifySimpleType` accepts a `typeName` for an anonymous type and ignores it (see [Known issues](known-issues.md#modifysimpletype-skips-part-of-its-validation)).
+The fields decide the kind of the body (`SimpleTypeDerivationKind`): `baseType` or `restrictions` make a restriction, `listItemType` a list, `unionMemberTypes` a union. Exactly one kind is allowed. `addSimpleType` needs a body. In `modifySimpleType`, body fields replace the body, also with another kind; without body fields, the body stays as it is. `restrictions` always need `baseType` in the same payload, even if the type already is a restriction ("Base type cannot be empty", see [Known issues](known-issues.md#modifysimpletype-cannot-change-only-the-facets-of-a-restriction)). `modifySimpleType` rejects a `typeName` for an anonymous type.
 
 Creating an anonymous simple type removes the `type` attribute and an anonymous complex type of its element. `removeSimpleType` takes only `typeId` and does not check whether the type is still used (see [Known issues](known-issues.md#removing-a-simple-or-complex-type-does-not-check-for-references)).[^validators][^executors]
 

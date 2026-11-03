@@ -250,7 +250,7 @@ export class CommandExecutor {
       default:
         throw new Error(
           `Unknown command type: ${
-            (command as SchemaCommand).type ?? "undefined"
+            (command as SchemaCommand).type
           }`
         );
     }

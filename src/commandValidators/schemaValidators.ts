@@ -247,7 +247,7 @@ export function validateModifyImport(
     // registered for the same namespace that this import is being modified to.
     const targetNamespace = (namespace?.trim()) ?? imports[position].namespace;
     if (schemaObj._namespacePrefixes) {
-      const existingNs = schemaObj._namespacePrefixes[prefix];
+      const existingNs = schemaObj._namespacePrefixes[prefix] as string | undefined;
       if (existingNs !== undefined && existingNs !== targetNamespace) {
         return { valid: false, error: `Prefix '${prefix}' is already in use` };
       }

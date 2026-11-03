@@ -4,8 +4,8 @@ title: Messaging
 description: The message protocol between the extension host and the webview - the messages in both directions and the order in which they arrive.
 tags: [messaging, protocol, postMessage, commands, webview]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-28T14:47:04Z }
-verified: { by: human:neumaennl, at: 2026-10-28T15:08:21Z }
+generated: { by: human:neumaennl, at: 2026-11-03T09:28:22Z }
+verified: { by: human:neumaennl, at: 2026-11-03T09:31:33Z }
 sources:
   - id: messages
     resource: ../shared/messages.ts
@@ -141,6 +141,7 @@ interface BaseCommand<T> {
 - **No correlation.** Messages carry no request ID, and `commandResult` does not say which command it belongs to. Together with the missing queue for commands, the webview cannot tell which of several pending commands failed (see [Known issues](known-issues.md#commands-can-overlap-while-an-edit-is-applied)).
 - **Full updates.** Every change sends the whole schema, and the webview rebuilds the whole diagram. Incremental updates are not implemented.
 - **No results for runtime failures.** A command that fails at runtime produces an `error` message instead of a `commandResult`, so the webview does not restore the selection as it does for validation failures.
+- **One message from the webview.** The webview only sends schema commands; whether the message union is needed is open (see [Known issues](known-issues.md#every-message-from-the-webview-is-a-schema-command)).
 - **Unused types.** `schemaModified` is never sent, and 12 of the 31 commands are not sent by any UI yet (see [Commands](commands.md#overview)).
 
 [^messages]: [Message types](../shared/messages.ts)

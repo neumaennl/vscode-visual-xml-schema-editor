@@ -109,7 +109,7 @@ export function createSimpleTypeKindCommand(
   const inferredBaseType =
     node.simpleTypeListItemType ||
     node.simpleTypeUnionMemberTypes?.[0] ||
-    extractBaseType(node.type ?? "");
+    extractBaseType(node.type);
 
   switch (nextKind) {
     case "list": {

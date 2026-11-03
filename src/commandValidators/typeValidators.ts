@@ -252,7 +252,7 @@ export function validateAddSimpleType(
       return { valid: false, error: `'${parentId}' already has an anonymous simpleType` };
     }
     const bodyValidation = validateSimpleTypeBody(command.payload, schemaObj);
-    if (bodyValidation) {
+    if (!bodyValidation.valid) {
       return bodyValidation;
     }
     return { valid: true };
@@ -267,7 +267,7 @@ export function validateAddSimpleType(
     return { valid: false, error: `Simple type '${typeName}' already exists in schema` };
   }
   const bodyValidation = validateSimpleTypeBody(command.payload, schemaObj);
-  if (bodyValidation) {
+  if (!bodyValidation.valid) {
     return bodyValidation;
   }
   return { valid: true };
@@ -322,7 +322,7 @@ export function validateModifySimpleType(
       schemaObj,
       existingSimpleType.restriction ? "restriction" : existingSimpleType.list ? "list" : existingSimpleType.union ? "union" : undefined
     );
-    if (bodyValidation) {
+    if (!bodyValidation.valid) {
       return bodyValidation;
     }
     if (command.payload.restrictions !== undefined && command.payload.baseType === undefined) {
@@ -350,7 +350,7 @@ export function validateModifySimpleType(
     schemaObj,
     existingSimpleType.restriction ? "restriction" : existingSimpleType.list ? "list" : existingSimpleType.union ? "union" : undefined
   );
-  if (bodyValidation) {
+  if (!bodyValidation.valid) {
     return bodyValidation;
   }
   if (command.payload.restrictions !== undefined && command.payload.baseType === undefined) {

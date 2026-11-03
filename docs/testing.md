@@ -4,8 +4,8 @@ title: Testing
 description: How the extension is tested - running the tests and the type check, the four Vitest projects, mocks and helpers, conventions for tests, mocks, helper functions and helper classes, which tests to write for typical changes, coverage, CI, the smoke tests in the extension host with a mock webview, and how the current tests compare with the testing strategy of ADR 001.
 tags: [testing, vitest, mocks, coverage, ci, conventions]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-30T11:52:32Z }
-verified: { by: human:neumaennl, at: 2026-10-30T12:13:56Z }
+generated: { by: human:neumaennl, at: 2026-11-02T15:04:28Z }
+verified: { by: human:neumaennl, at: 2026-11-03T07:21:09Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -37,6 +37,9 @@ sources:
   - id: svg-test-helpers
     resource: ../webview-src/__tests__/svgTestHelpers.ts
     title: getBBox mock for jsdom
+  - id: properties-panel-test-helpers
+    resource: ../webview-src/__tests__/propertiesPanelTestHelpers.ts
+    title: Helpers that find the fields and buttons of the properties panel
   - id: workspace-edit-test
     resource: ../src/__tests__/pipeline.workspaceEdit.test.ts
     title: Integration tests for the WorkspaceEdit path
@@ -125,6 +128,7 @@ Use the Node version from `.nvmrc`, which CI also uses. It is the Node version o
 - **VS Code API.** `src/__mocks__/vscode.ts` replaces the `vscode` module in the `extension` and `shared` projects through an alias in `vitest.config.ts`. It provides `vi.fn()` mocks for the parts the code uses: `Uri`, `workspace` (including `applyEdit` and `getConfiguration`), `window`, `commands`, `languages`, `EventEmitter`, `WorkspaceEdit`, `Range` and a few more. Classes of the API whose instances need members, such as `WorkspaceEdit`, are mocked with a class (`vi.fn(class { … })`): the code creates them with `new`, Vitest passes `new` on to the implementation, and arrow functions cannot be called with `new`.[^vscode-mock]
 - **VS Code objects.** `stubEditor(xml)` in `src/__tests__/providerTestHelpers.ts` creates a `SchemaEditorProvider` and partial stubs of `ExtensionContext`, `Webview`, `WebviewPanel` and a `TextDocument` with the given text, with only the members the provider uses, and returns the mocks of `postMessage` and `asWebviewUri`. `resolveAndGetHandler()` opens the editor and returns the handler that the provider registered for messages from the webview.[^provider-test-helpers]
 - **Webview API.** `main.test.ts` sets `acquireVsCodeApi` on `globalThis` before the app is loaded, with mocks for `postMessage`, `getState` and `setState`, and builds the page with `document.body.innerHTML`. Each test loads the app again with `vi.resetModules()` and `await import("./main")`.[^main-test]
+- **Properties panel.** `webview-src/__tests__/propertiesPanelTestHelpers.ts` finds the fields of the panel by their labels (`getInputByLabel()`, `getSelectByLabel()`, `getSelectsByLabel()`, `hasLabel()`) and buttons, such as those of the tabs, by their text (`findButton()`).[^properties-panel-test-helpers]
 - **SVG measuring.** jsdom has no layout engine, so `setupGetBBoxMock()` in `webview-src/__tests__/svgTestHelpers.ts` gives every element a `getBBox()` that assumes 6 pixels per character and a height of 10 pixels.[^svg-test-helpers]
 - **Pipeline helpers.** `src/__tests__/pipelineTestHelpers.ts` has small schemas as constants (`SCHEMA_WITH_ELEMENTS` and others, built with `schemaXmlWith()`) and runs a command through a new `CommandProcessor`: `runCommand()`, `runCommandExpectSuccess()` (returns the XML), `runCommandExpectSuccessSchema()` (returns the unmarshalled schema) and `runCommandExpectValidationFailure()`.[^pipeline-test-helpers]
 - **Schema XML and objects.** `src/__tests__/schemaTestHelpers.ts` builds the XML of a schema with `schemaXmlWith(body, namespaces)` (the XML declaration, the `xs` namespace, further namespace declarations by prefix if given, and the given content) and of a schema without content with `emptySchemaXml()`, and reads XML files from `src/__tests__/test-resources` with `readTestXml(name)`. For the tests of validators and executors it unmarshals schemas: `schemaWith(body, namespaces)`, `emptySchema()`, `readTestSchema(name)` (a file from `test-resources`), `schemaWithAttrGroups(body)` and `schemaWithIncludes(...)`. A test that only needs the schema object uses these instead of unmarshalling XML itself.[^schema-test-helpers]
@@ -156,7 +160,7 @@ The `vscode` mock is not used through this mechanism: `src/__mocks__/vscode.ts` 
 | Webview app | `webview-src/main.test.ts` | [Editor](editor.md) |
 | Diagram | `webview-src/diagram/`, `webview-src/renderer.test.ts` | [Diagram rendering](diagram-rendering.md#tests) |
 | Palette and drag and drop | `webview-src/drop/DropCommandFactory.test.ts`, `webview-src/palette/PaletteView.test.ts`, `webview-src/renderer.test.ts` | [Drag and drop](drag-and-drop.md#adding-a-draggable-construct) |
-| Properties panel | `webview-src/propertiesPanel/propertiesPanel.test.ts` | [UX concept](ux-concept.md) |
+| Properties panel | `webview-src/propertiesPanel/propertiesPanel*.test.ts`, one per tab or editor | [UX concept](ux-concept.md) |
 | Scripts | `scripts/**/*.test.ts` | [Build and packaging](build-and-packaging.md#vs-code-and-node-versions) |
 
 # Conventions
@@ -166,6 +170,7 @@ Existing tests that do not follow these conventions yet are listed in [Known iss
 ## Files and structure
 
 - A test file tests one feature, usually one module. Test cases for a feature are not spread over several files, and no two test cases test the same thing.
+- A test file has at most 1000 lines and a single test at most 50 lines; ESLint checks both (see [Code size](development-guidelines.md#code-size)). A longer test file is not split by size alone but by module, for example the tests of the properties panel: each tab or editor has its own module and its own test file.
 - Unit tests sit next to the source file and have its name with `.test.ts`; type tests end in `.test-d.ts`. Integration tests sit in the `__tests__` folder of the part (`shared/`, `src/`, `webview-src/`, `scripts/`), in subfolders that mirror the source folders if needed.
 - Files that tests read sit in the `test-resources` folder in `__tests__`: XML in `src/__tests__/test-resources`, the VSIX files of the script tests in `scripts/__tests__/test-resources`.
 - Test XML is placed by its size and its use:
@@ -269,6 +274,8 @@ ADR 001 plans six levels of testing. The current state:[^adr-001]
 [^release-test-helpers]: Helpers for the tests of the scripts
 
 [^svg-test-helpers]: getBBox mock for jsdom
+
+[^properties-panel-test-helpers]: Helpers that find the fields and buttons of the properties panel
 
 [^workspace-edit-test]: Integration tests for the WorkspaceEdit path
 

@@ -51,12 +51,29 @@ const LOCAL_ELEMENT_WITH_REF = `<xs:element name="child"><xs:complexType><xs:seq
 
 /**
  * Places where XML Schema allows a reference to a group, as schema content in which
- * `REF` stands for the referenced group. The places that other tests in this file
- * cover (the sequence and the choice of a complexType, a complexType itself, the
- * inline complexType of a top-level element and the sequence of another group) are
- * not repeated here.
+ * `REF` stands for the referenced group.
  */
 const REFERENCE_PLACES: [string, string][] = [
+  [
+    "the sequence of a complexType",
+    `<xs:complexType name="T"><xs:sequence><xs:group ref="REF"/></xs:sequence></xs:complexType>`,
+  ],
+  [
+    "the choice of a complexType",
+    `<xs:complexType name="T"><xs:choice><xs:group ref="REF"/></xs:choice></xs:complexType>`,
+  ],
+  [
+    "a complexType itself",
+    `<xs:complexType name="T"><xs:group ref="REF"/></xs:complexType>`,
+  ],
+  [
+    "the inline complexType of a top-level element",
+    `<xs:element name="root"><xs:complexType><xs:sequence><xs:group ref="REF"/></xs:sequence></xs:complexType></xs:element>`,
+  ],
+  [
+    "the sequence of another group",
+    `<xs:group name="Combined"><xs:sequence><xs:group ref="REF"/></xs:sequence></xs:group>`,
+  ],
   [
     "a choice nested in the sequence of a complexType",
     `<xs:complexType name="T"><xs:sequence><xs:choice><xs:group ref="REF"/></xs:choice></xs:sequence></xs:complexType>`,
@@ -287,108 +304,6 @@ describe("Group Validators", () => {
       };
 
       const result = validateRemoveGroup(command, schemaWithGroup);
-      expect(result.valid).toBe(true);
-    });
-
-    test("should reject removeGroup when group is referenced by a complexType sequence", () => {
-      const schemaWithRef = readTestSchema(GROUP_REF_IN_SEQUENCE_XSD);
-
-      const command: RemoveGroupCommand = {
-        type: "removeGroup",
-        payload: {
-          groupId: "/group:PersonGroup",
-        },
-      };
-
-      const result = validateRemoveGroup(command, schemaWithRef);
-      expectInvalid(result);
-      expect(result.error).toBe(
-        "Group is still referenced and cannot be removed: PersonGroup"
-      );
-    });
-
-    test("should reject removeGroup when group is referenced by a complexType choice", () => {
-      const schemaWithRef = readTestSchema("shape-container-with-group-ref-in-choice.xsd");
-
-      const command: RemoveGroupCommand = {
-        type: "removeGroup",
-        payload: {
-          groupId: "/group:ShapeGroup",
-        },
-      };
-
-      const result = validateRemoveGroup(command, schemaWithRef);
-      expect(result.valid).toBe(false);
-    });
-
-    test("should reject removeGroup when group is referenced directly in a complexType", () => {
-      const schemaWithRef = schemaWith(`<xs:group name="AddressGroup">
-  <xs:sequence/>
-</xs:group>
-<xs:complexType name="OrderType">
-  <xs:group ref="AddressGroup"/>
-</xs:complexType>`);
-
-      const command: RemoveGroupCommand = {
-        type: "removeGroup",
-        payload: {
-          groupId: "/group:AddressGroup",
-        },
-      };
-
-      const result = validateRemoveGroup(command, schemaWithRef);
-      expectInvalid(result);
-      expect(result.error).toBe(
-        "Group is still referenced and cannot be removed: AddressGroup"
-      );
-    });
-
-    test("should reject removeGroup when group is referenced by an inline element complexType", () => {
-      const schemaWithRef = readTestSchema("person-element-with-group-ref.xsd");
-
-      const command: RemoveGroupCommand = {
-        type: "removeGroup",
-        payload: {
-          groupId: "/group:ContactGroup",
-        },
-      };
-
-      const result = validateRemoveGroup(command, schemaWithRef);
-      expectInvalid(result);
-      expect(result.error).toBe(
-        "Group is still referenced and cannot be removed: ContactGroup"
-      );
-    });
-
-    test("should reject removeGroup when group is referenced inside another group", () => {
-      const schemaWithRef = readTestSchema("outer-group-referencing-inner-group.xsd");
-
-      const command: RemoveGroupCommand = {
-        type: "removeGroup",
-        payload: {
-          groupId: "/group:InnerGroup",
-        },
-      };
-
-      const result = validateRemoveGroup(command, schemaWithRef);
-      expectInvalid(result);
-      expect(result.error).toBe(
-        "Group is still referenced and cannot be removed: InnerGroup"
-      );
-    });
-
-    test("should allow removeGroup when a different group is referenced", () => {
-      const schemaWithRef = readTestSchema("some-type-with-one-of-two-groups-in-sequence.xsd");
-
-      // GroupB is not referenced, so it can be removed
-      const command: RemoveGroupCommand = {
-        type: "removeGroup",
-        payload: {
-          groupId: "/group:GroupB",
-        },
-      };
-
-      const result = validateRemoveGroup(command, schemaWithRef);
       expect(result.valid).toBe(true);
     });
 

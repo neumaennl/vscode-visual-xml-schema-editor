@@ -4,6 +4,43 @@ import tsparser from '@typescript-eslint/parser';
 import vitest from '@vitest/eslint-plugin';
 import globals from 'globals';
 
+/** The most lines that the callback of a single test may have. */
+const MAX_LINES_PER_TEST = 50;
+
+/**
+ * Limits the length of single tests: the callbacks of `test()`, `test.each()` and the like.
+ * `max-lines-per-function` cannot do this, because it also counts the `describe` callbacks that hold the tests.
+ */
+const maxLinesPerTest = {
+  meta: {
+    type: 'suggestion',
+    messages: { tooLong: 'Test has {{lines}} lines. Maximum allowed is {{max}}.' },
+    schema: [],
+  },
+  create(context) {
+    const isTestCall = (callee) => {
+      let node = callee;
+      while (node.type === 'CallExpression' || node.type === 'MemberExpression') {
+        node = node.type === 'CallExpression' ? node.callee : node.object;
+      }
+      return node.type === 'Identifier' && node.name === 'test';
+    };
+    return {
+      CallExpression(node) {
+        if (!isTestCall(node.callee)) return;
+        const callback = node.arguments.find(
+          (arg) => arg.type === 'ArrowFunctionExpression' || arg.type === 'FunctionExpression'
+        );
+        if (!callback) return;
+        const lines = callback.loc.end.line - callback.loc.start.line + 1;
+        if (lines > MAX_LINES_PER_TEST) {
+          context.report({ node: callback, messageId: 'tooLong', data: { lines, max: MAX_LINES_PER_TEST } });
+        }
+      },
+    };
+  },
+};
+
 export default [
   // Global ignores
   {
@@ -104,6 +141,7 @@ export default [
     ignores: ['test/extension-host/**'],
     plugins: {
       vitest,
+      tests: { rules: { 'max-lines-per-test': maxLinesPerTest } },
     },
     languageOptions: {
       globals: {
@@ -113,6 +151,9 @@ export default [
     },
     rules: {
       ...vitest.configs.recommended.rules,
+      // Size limits for tests (see "Code size" in docs/development-guidelines.md)
+      'max-lines': ['error', { max: 1000 }],
+      'tests/max-lines-per-test': 'error',
       // Recognise custom assertion helpers as assertion-containing functions
       'vitest/expect-expect': [
         'warn',

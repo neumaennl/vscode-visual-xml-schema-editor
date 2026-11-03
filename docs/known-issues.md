@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-30T07:52:10Z }
-verified: { by: human:neumaennl, at: 2026-10-30T12:13:56Z }
+generated: { by: human:neumaennl, at: 2026-11-02T15:04:28Z }
+verified: { by: human:neumaennl, at: 2026-11-03T07:21:09Z }
 ---
 
 # Purpose
@@ -127,7 +127,7 @@ Effort:
 
 ## Renames and new references do not check for duplicates
 
-- **Location:** `src/commandValidators/elementValidators.ts` (`validateModifyElement()`, `validateModifyAttribute()`), `src/commandValidators/typeValidators.ts` (`validateModifySimpleType()`, `validateModifyComplexType()`), `src/commandValidators/groupValidators.ts` (`validateModifyGroup()`)
+- **Location:** `src/commandValidators/elementValidators.ts` (`validateModifyElement()`), `src/commandValidators/attributeValidators.ts` (`validateModifyAttribute()`), `src/commandValidators/typeValidators.ts` (`validateModifySimpleType()`, `validateModifyComplexType()`), `src/commandValidators/groupValidators.ts` (`validateModifyGroup()`)
 - **Severity:** Medium
 - **Effort:** M
 - **Description:** The `add*` validators reject a name or reference that already exists, but the `modify*` validators of elements, attributes, simple types, complex types and groups only check that the new name or reference is valid. Renaming the top-level element `a` to `b` while `b` exists is accepted and writes a schema with two top-level elements named `b`, which is invalid XSD; the same happens for attributes, types and groups. Likewise, changing a local element or attribute into a reference that its parent already contains (for example a second `<xs:attribute ref="lang"/>` in the same complexType) is accepted, which `validateAddElement()` and `validateAddAttribute()` reject. Because node IDs resolve to the first match, the two nodes can then no longer be told apart (see [Node IDs are ambiguous](#node-ids-are-ambiguous-and-have-many-special-cases)). `validateModifyAttributeGroup()` already has the check for names. The fix is the same check in these validators as in the matching `add*` validators, skipped when the name or reference does not change.
@@ -135,7 +135,7 @@ Effort:
 
 ## Removing a simple or complex type does not check for references
 
-- **Location:** `src/commandValidators/typeValidators.ts` (`validateRemoveSimpleType()`, `validateRemoveComplexType()`), `src/commandValidators/elementValidators.ts` (`validateRemoveElement()`, `validateRemoveAttribute()`)
+- **Location:** `src/commandValidators/typeValidators.ts` (`validateRemoveSimpleType()`, `validateRemoveComplexType()`), `src/commandValidators/elementValidators.ts` (`validateRemoveElement()`), `src/commandValidators/attributeValidators.ts` (`validateRemoveAttribute()`)
 - **Severity:** Medium
 - **Effort:** M
 - **Description:** Removing a top-level simple or complex type is accepted even if elements, attributes or other types still use it (`validateRemoveSimpleType()` has a `TODO Phase 2` for this). The schema is left with `type` and `base` values that point nowhere. The properties panel sends these commands when a type is deleted. The same applies to top-level elements and attributes that are still referenced with `ref` or `substitutionGroup`. Groups, attribute groups and imports already reject the removal while they are referenced; types, elements and attributes need the same check (see [Commands](commands.md#conventions)).
@@ -361,14 +361,6 @@ Effort:
 - **Description:** `@vscode/test-cli` 0.0.15 depends on Mocha 11, which brings `serialize-javascript` 6 ([GHSA-5c6j-r48x-rmvq](https://github.com/advisories/GHSA-5c6j-r48x-rmvq), high: code execution through crafted input; [GHSA-qj8w-gfj5-8c6v](https://github.com/advisories/GHSA-qj8w-gfj5-8c6v), moderate: denial of service) and `diff` 7 ([GHSA-73rr-hh4g-fpgx](https://github.com/advisories/GHSA-73rr-hh4g-fpgx), low: denial of service). `npm audit` reports them. They are development dependencies that only run the [tests in the extension host](testing.md#tests-in-the-extension-host) on this repository's own test files, and they are not part of the VSIX. `@vscode/test-cli` declares overrides for both packages itself, but npm ignores the overrides of dependencies, and its switch to Mocha 12 is merged ([microsoft/vscode-test-cli#118](https://github.com/microsoft/vscode-test-cli/pull/118)) but not released yet. The decision is to wait for that release instead of overriding the versions here. When it is out, update `@vscode/test-cli`, check `npm audit` and remove this entry.
 - **GitHub issue:** none
 
-## Tests are exempt from the size limits
-
-- **Location:** test files in `src/`, `webview-src/` and `shared/`
-- **Severity:** Low
-- **Effort:** S
-- **Description:** The limits of 500 lines per file and 120 lines per function in the [development guidelines](development-guidelines.md#code-size) do not apply to tests for now. Many test files are longer than 500 lines, and the `describe` callbacks that contain the tests are usually longer than 120 lines. Applying the function limit to these callbacks makes little sense, but without any limit test files can grow without bound. The rule needs to be refined, for example with a higher file limit for tests, a limit for single tests instead of `describe` callbacks, or splitting test files by topic.
-- **GitHub issue:** none
-
 ## Documentation in the diagram is cut off and hard to read
 
 - **Location:** `webview-src/diagram/TextRenderers.ts` (`renderDocumentation()`), `webview-src/diagram/DiagramBuilderHelpers.ts` (`extractDocumentation()`), `webview-src/diagram/DiagramLayout.ts`
@@ -390,7 +382,7 @@ Effort:
 - **Location:** `src/commandValidators/groupValidators.ts`, `src/commandExecutors/elementExecutors.ts`, `src/commandExecutors/schemaPrefixChecker.ts`, `webview-src/renderer.ts`, `webview-src/diagram/SchemaProcessors.ts`, `webview-src/propertiesPanel/propertiesPanelDocs.ts`, `propertiesPanelFacets.ts`, `propertiesPanelSimpleTypeEditors.ts`, `propertiesPanelTypes.ts`
 - **Severity:** Low
 - **Effort:** M
-- **Description:** Some code is longer than the [development guidelines](development-guidelines.md#code-size) allow. Counted with comments and blank lines, `elementExecutors.ts` and `renderer.ts` have slightly more than 500 lines, and eight functions have more than 120 lines: `renderFacetsTab()` and `renderEnumerationEditor()` in `propertiesPanelFacets.ts` (196 and 166 lines), `isQNameMatchedInSchema()`, `renderSimpleTypeUnionEditor()`, `validateModifyGroup()`, `processGroup()`, `createAnnotationSection()` and `renderTypeProperty()` (126 to 140 lines). The limits are not checked automatically, so these were not noticed. The fix is to split the code, and to enable the ESLint rules `max-lines` and `max-lines-per-function` for everything but the tests (see [Tests are exempt from the size limits](#tests-are-exempt-from-the-size-limits)).
+- **Description:** Some code is longer than the [development guidelines](development-guidelines.md#code-size) allow. Counted with comments and blank lines, `elementExecutors.ts` and `renderer.ts` have slightly more than 500 lines, and eight functions have more than 120 lines: `renderFacetsTab()` and `renderEnumerationEditor()` in `propertiesPanelFacets.ts` (196 and 166 lines), `isQNameMatchedInSchema()`, `renderSimpleTypeUnionEditor()`, `validateModifyGroup()`, `processGroup()`, `createAnnotationSection()` and `renderTypeProperty()` (126 to 140 lines). The limits are not checked automatically, so these were not noticed. The fix is to split the code, and to enable the ESLint rules `max-lines` and `max-lines-per-function` for the code, as `max-lines` and a local rule already do for the tests.
 - **GitHub issue:** none
 
 ## Top-level lookups are duplicated instead of shared

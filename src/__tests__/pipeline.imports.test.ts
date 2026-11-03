@@ -11,7 +11,6 @@ import type {
   RemoveImportCommand,
   ModifyImportCommand,
 } from "../../shared/types.js";
-import { toArray } from "../../shared/schemaUtils.js";
 import {
   SCHEMA_WITH_IMPORT,
   runCommandExpectSuccessSchema,
@@ -37,7 +36,7 @@ describe("Integration: Import pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
-      const imports = toArray(result.import_);
+      const imports = result.import_ ?? [];
 
       expect(imports.some((i) => i.namespace === "http://example.com/ext" && i.schemaLocation === "ext.xsd")).toBe(true);
     });
@@ -53,7 +52,7 @@ describe("Integration: Import pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
-      const imports = toArray(result.import_);
+      const imports = result.import_ ?? [];
 
       expect(imports.some((i) => i.namespace === "http://example.com/ext")).toBe(true);
       expect(result._namespacePrefixes?.["ext"]).toBe("http://example.com/ext");
@@ -69,7 +68,7 @@ describe("Integration: Import pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
-      const imports = toArray(result.import_);
+      const imports = result.import_ ?? [];
 
       expect(imports.some((i) => i.namespace === "http://example.com/auto")).toBe(true);
       // A prefix in the format "ns0", "ns1", ... must have been registered
@@ -126,7 +125,7 @@ describe("Integration: Import pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_IMPORT, cmd);
-      const imports = toArray(result.import_);
+      const imports = result.import_ ?? [];
 
       expect(imports.some((i) => i.namespace === "http://example.com/ext")).toBe(false);
     });
@@ -138,7 +137,7 @@ describe("Integration: Import pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(SCHEMA_TWO_IMPORTS, cmd);
-      const imports = toArray(result.import_);
+      const imports = result.import_ ?? [];
 
       expect(imports.some((i) => i.namespace === "http://example.com/a")).toBe(false);
       expect(imports.some((i) => i.namespace === "http://example.com/b")).toBe(true);
@@ -164,7 +163,7 @@ describe("Integration: Import pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_IMPORT, cmd);
-      const imports = toArray(result.import_);
+      const imports = result.import_ ?? [];
       const ext = imports.find((i) => i.namespace === "http://example.com/ext");
 
       expect(ext).toBeDefined();

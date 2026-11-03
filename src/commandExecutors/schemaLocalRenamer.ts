@@ -22,7 +22,7 @@ import {
   groupRef,
   attributeGroupRef,
 } from "../../shared/types.js";
-import { getCurrentSchemaPrefixes, toArray } from "../../shared/schemaUtils.js";
+import { getCurrentSchemaPrefixes } from "../../shared/schemaUtils.js";
 import { AttributeBearer, CompositorBearer } from "./schemaTraversalTypes.js";
 
 // ===== Local name renaming helpers =====
@@ -98,7 +98,7 @@ function renameSimpleTypeLocalNames(
       st.union.memberTypes,
       currentSchemaPrefixes
     );
-    for (const m of toArray(st.union.simpleType)) {
+    for (const m of st.union.simpleType ?? []) {
       renameSimpleTypeLocalNames(old, newName, m, currentSchemaPrefixes);
     }
   }
@@ -122,14 +122,14 @@ function renameCompositorTypeLocalNames(
   compositor: explicitGroup | simpleExplicitGroup,
   currentSchemaPrefixes: readonly string[]
 ): void {
-  for (const el of toArray(compositor.element)) {
+  for (const el of compositor.element ?? []) {
     renameElementTypeLocalNames(old, newName, el, currentSchemaPrefixes);
   }
   // compositor.group refs are group references, not type refs — not touched here
-  for (const sub of toArray(compositor.choice)) {
+  for (const sub of compositor.choice ?? []) {
     renameCompositorTypeLocalNames(old, newName, sub, currentSchemaPrefixes);
   }
-  for (const sub of toArray(compositor.sequence)) {
+  for (const sub of compositor.sequence ?? []) {
     renameCompositorTypeLocalNames(old, newName, sub, currentSchemaPrefixes);
   }
 }
@@ -141,7 +141,7 @@ function renameAttributeBearerLocalNames(
   currentSchemaPrefixes: readonly string[]
 ): void {
   bearer.base = renameSchemaScopedName(old, newName, bearer.base, currentSchemaPrefixes) ?? bearer.base;
-  for (const attr of toArray(bearer.attribute)) {
+  for (const attr of bearer.attribute ?? []) {
     attr.type_ = renameSchemaScopedName(old, newName, attr.type_, currentSchemaPrefixes);
     // attr.ref is an attribute reference, not a type reference — not touched here
     if (attr.simpleType) renameSimpleTypeLocalNames(old, newName, attr.simpleType, currentSchemaPrefixes);
@@ -158,7 +158,7 @@ function renameCompositorBearerLocalNames(
   renameAttributeBearerLocalNames(old, newName, bearer, currentSchemaPrefixes);
   // bearer.group.ref is a group reference, not a type reference — not touched here
   if (bearer.all) {
-    for (const el of toArray(bearer.all.element)) {
+    for (const el of bearer.all.element ?? []) {
       renameElementTypeLocalNames(old, newName, el, currentSchemaPrefixes);
     }
   }
@@ -201,13 +201,13 @@ function renameComplexTypeBodyLocalNames(
   }
   // ct.group.ref is a group reference, not a type reference — not touched here
   if (ct.all) {
-    for (const el of toArray(ct.all.element)) {
+    for (const el of ct.all.element ?? []) {
       renameElementTypeLocalNames(old, newName, el, currentSchemaPrefixes);
     }
   }
   if (ct.choice) renameCompositorTypeLocalNames(old, newName, ct.choice, currentSchemaPrefixes);
   if (ct.sequence) renameCompositorTypeLocalNames(old, newName, ct.sequence, currentSchemaPrefixes);
-  for (const attr of toArray(ct.attribute)) {
+  for (const attr of ct.attribute ?? []) {
     attr.type_ = renameSchemaScopedName(old, newName, attr.type_, currentSchemaPrefixes);
     if (attr.simpleType) renameSimpleTypeLocalNames(old, newName, attr.simpleType, currentSchemaPrefixes);
   }
@@ -239,7 +239,7 @@ export function renameLocalTypeInSchema(
   if (oldName === newName) return;
   const currentSchemaPrefixes = getCurrentSchemaPrefixes(schemaObj);
 
-  for (const el of toArray(schemaObj.element)) {
+  for (const el of schemaObj.element ?? []) {
     el.type_ = renameSchemaScopedName(oldName, newName, el.type_, currentSchemaPrefixes);
     if (el.simpleType) renameSimpleTypeLocalNames(oldName, newName, el.simpleType, currentSchemaPrefixes);
     if (el.complexType) {
@@ -247,22 +247,22 @@ export function renameLocalTypeInSchema(
     }
   }
 
-  for (const attr of toArray(schemaObj.attribute)) {
+  for (const attr of schemaObj.attribute ?? []) {
     attr.type_ = renameSchemaScopedName(oldName, newName, attr.type_, currentSchemaPrefixes);
     if (attr.simpleType) renameSimpleTypeLocalNames(oldName, newName, attr.simpleType, currentSchemaPrefixes);
   }
 
-  for (const ct of toArray(schemaObj.complexType)) {
+  for (const ct of schemaObj.complexType ?? []) {
     renameComplexTypeBodyLocalNames(oldName, newName, ct, currentSchemaPrefixes);
   }
 
-  for (const st of toArray(schemaObj.simpleType)) {
+  for (const st of schemaObj.simpleType ?? []) {
     renameSimpleTypeLocalNames(oldName, newName, st, currentSchemaPrefixes);
   }
 
-  for (const grp of toArray(schemaObj.group)) {
+  for (const grp of schemaObj.group ?? []) {
     if (grp.all) {
-      for (const el of toArray(grp.all.element)) {
+      for (const el of grp.all.element ?? []) {
         renameElementTypeLocalNames(oldName, newName, el, currentSchemaPrefixes);
       }
     }
@@ -272,8 +272,8 @@ export function renameLocalTypeInSchema(
     }
   }
 
-  for (const ag of toArray(schemaObj.attributeGroup)) {
-    for (const attr of toArray(ag.attribute)) {
+  for (const ag of schemaObj.attributeGroup ?? []) {
+    for (const attr of ag.attribute ?? []) {
       attr.type_ = renameSchemaScopedName(oldName, newName, attr.type_, currentSchemaPrefixes);
       if (attr.simpleType) {
         renameSimpleTypeLocalNames(oldName, newName, attr.simpleType, currentSchemaPrefixes);
@@ -303,12 +303,12 @@ export function renameLocalGroupRefInSchema(
   }
 
   function processCompositorGroupRefs(compositor: explicitGroup | simpleExplicitGroup): void {
-    for (const gr of toArray(compositor.group)) updateGroupRef(gr);
-    for (const sub of toArray(compositor.choice)) processCompositorGroupRefs(sub);
-    for (const sub of toArray(compositor.sequence)) processCompositorGroupRefs(sub);
+    for (const gr of compositor.group ?? []) updateGroupRef(gr);
+    for (const sub of compositor.choice ?? []) processCompositorGroupRefs(sub);
+    for (const sub of compositor.sequence ?? []) processCompositorGroupRefs(sub);
   }
 
-  for (const ct of toArray(schemaObj.complexType)) {
+  for (const ct of schemaObj.complexType ?? []) {
     if (ct.group) updateGroupRef(ct.group);
     if (ct.complexContent?.extension) {
       if (ct.complexContent.extension.group) {
@@ -336,7 +336,7 @@ export function renameLocalGroupRefInSchema(
     if (ct.sequence) processCompositorGroupRefs(ct.sequence);
   }
 
-  for (const grp of toArray(schemaObj.group)) {
+  for (const grp of schemaObj.group ?? []) {
     if (grp.choice) processCompositorGroupRefs(grp.choice);
     if (grp.sequence) processCompositorGroupRefs(grp.sequence);
   }
@@ -363,12 +363,12 @@ export function renameLocalAttributeGroupRefInSchema(
   }
 
   function processAttrGroupRefs(holder: {
-    attributeGroup?: attributeGroupRef | attributeGroupRef[];
+    attributeGroup?: attributeGroupRef[];
   }): void {
-    for (const agr of toArray(holder.attributeGroup)) updateAttrGroupRef(agr);
+    for (const agr of holder.attributeGroup ?? []) updateAttrGroupRef(agr);
   }
 
-  for (const ct of toArray(schemaObj.complexType)) {
+  for (const ct of schemaObj.complexType ?? []) {
     processAttrGroupRefs(ct);
     if (ct.complexContent?.extension) processAttrGroupRefs(ct.complexContent.extension);
     if (ct.complexContent?.restriction) processAttrGroupRefs(ct.complexContent.restriction);
@@ -376,7 +376,7 @@ export function renameLocalAttributeGroupRefInSchema(
     if (ct.simpleContent?.restriction) processAttrGroupRefs(ct.simpleContent.restriction);
   }
 
-  for (const ag of toArray(schemaObj.attributeGroup)) {
+  for (const ag of schemaObj.attributeGroup ?? []) {
     processAttrGroupRefs(ag);
   }
 }
@@ -403,12 +403,12 @@ export function renameLocalElementRefInSchema(
   }
 
   function processCompositorElementRefs(compositor: explicitGroup | simpleExplicitGroup): void {
-    for (const el of toArray(compositor.element)) updateElementRef(el);
-    for (const sub of toArray(compositor.choice)) processCompositorElementRefs(sub);
-    for (const sub of toArray(compositor.sequence)) processCompositorElementRefs(sub);
+    for (const el of compositor.element ?? []) updateElementRef(el);
+    for (const sub of compositor.choice ?? []) processCompositorElementRefs(sub);
+    for (const sub of compositor.sequence ?? []) processCompositorElementRefs(sub);
   }
 
-  for (const el of toArray(schemaObj.element)) {
+  for (const el of schemaObj.element ?? []) {
     el.substitutionGroup = renameSchemaScopedName(
       oldName,
       newName,
@@ -417,13 +417,13 @@ export function renameLocalElementRefInSchema(
     );
   }
 
-  for (const ct of toArray(schemaObj.complexType)) {
+  for (const ct of schemaObj.complexType ?? []) {
     if (ct.all) {
-      for (const el of toArray(ct.all.element)) updateElementRef(el);
+      for (const el of ct.all.element ?? []) updateElementRef(el);
     }
     if (ct.complexContent?.extension) {
       if (ct.complexContent.extension.all) {
-        for (const el of toArray(ct.complexContent.extension.all.element)) {
+        for (const el of ct.complexContent.extension.all.element ?? []) {
           updateElementRef(el);
         }
       }
@@ -436,7 +436,7 @@ export function renameLocalElementRefInSchema(
     }
     if (ct.complexContent?.restriction) {
       if (ct.complexContent.restriction.all) {
-        for (const el of toArray(ct.complexContent.restriction.all.element)) {
+        for (const el of ct.complexContent.restriction.all.element ?? []) {
           updateElementRef(el);
         }
       }
@@ -451,9 +451,9 @@ export function renameLocalElementRefInSchema(
     if (ct.sequence) processCompositorElementRefs(ct.sequence);
   }
 
-  for (const grp of toArray(schemaObj.group)) {
+  for (const grp of schemaObj.group ?? []) {
     if (grp.all) {
-      for (const el of toArray(grp.all.element)) updateElementRef(el);
+      for (const el of grp.all.element ?? []) updateElementRef(el);
     }
     if (grp.choice) processCompositorElementRefs(grp.choice);
     if (grp.sequence) processCompositorElementRefs(grp.sequence);

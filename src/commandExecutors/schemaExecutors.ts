@@ -33,7 +33,6 @@ import {
   ModifyIncludeCommand,
   ModifySchemaNamespacesCommand,
 } from "../../shared/types.js";
-import { toArray } from "../../shared/schemaUtils.js";
 import { parseSchemaId } from "../../shared/idStrategy.js";
 import { rewritePrefixInSchema } from "./schemaQNameRewriter.js";
 
@@ -50,7 +49,7 @@ function resolveImport(
   schemaObj: schema
 ): { imports: importType[]; index: number } {
   const parsed = parseSchemaId(importId);
-  return { imports: toArray(schemaObj.import_), index: parsed.position ?? 0 };
+  return { imports: schemaObj.import_ ?? [], index: parsed.position ?? 0 };
 }
 
 /**
@@ -110,7 +109,7 @@ export function executeAddImport(
   const newImport = new importType();
   newImport.namespace = namespace;
   newImport.schemaLocation = schemaLocation;
-  schemaObj.import_ = [...toArray(schemaObj.import_), newImport];
+  schemaObj.import_ = [...schemaObj.import_ ?? [], newImport];
 
   // Always ensure a prefix is registered so types can be referenced
   const registeredPrefix = prefix ?? generateUniquePrefix(schemaObj);
@@ -231,7 +230,7 @@ function resolveInclude(
   schemaObj: schema
 ): { includes: includeType[]; index: number } {
   const parsed = parseSchemaId(includeId);
-  return { includes: toArray(schemaObj.include), index: parsed.position ?? 0 };
+  return { includes: schemaObj.include ?? [], index: parsed.position ?? 0 };
 }
 
 /**
@@ -251,7 +250,7 @@ export function executeAddInclude(
   const schemaLocation = command.payload.schemaLocation.trim();
   const newInclude = new includeType();
   newInclude.schemaLocation = schemaLocation;
-  schemaObj.include = [...toArray(schemaObj.include), newInclude];
+  schemaObj.include = [...schemaObj.include ?? [], newInclude];
 }
 
 /**

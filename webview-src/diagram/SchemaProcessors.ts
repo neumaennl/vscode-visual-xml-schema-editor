@@ -23,7 +23,6 @@ import {
   extractAttributes,
   extractOccurrenceConstraints,
 } from "./DiagramBuilderHelpers";
-import { toArray } from "../../shared/schemaUtils";
 import type { localElement } from "../../shared/generated/localElement";
 import type { explicitGroup } from "../../shared/generated/explicitGroup";
 import type { all } from "../../shared/generated/all";
@@ -304,9 +303,7 @@ function processGroup(
   // Process elements within the group.
   // Import and use createElementNode from TypeNodeCreators would create a circular dependency,
   // so we create a lightweight element node inline with essential properties.
-  const elementsArray = toArray(
-    groupDef.element as (localElement | narrowMaxMin)[] | localElement | narrowMaxMin | undefined
-  );
+  const elementsArray = (groupDef.element as (localElement | narrowMaxMin)[] | undefined) ?? [];
   elementsArray.forEach((elem, elemPosition) => {
     const item = new DiagramItem(
       generateSchemaId({
@@ -362,15 +359,15 @@ function processGroup(
     groupItem.addChild(item);
   });
 
-  toArray((groupDef as { group?: groupRef | groupRef[] }).group).forEach((groupRefItem, groupRefPosition) => {
+  ((groupDef as { group?: groupRef[] }).group ?? []).forEach((groupRefItem, groupRefPosition) => {
     processGroupRef(groupItem, groupRefItem, groupRefPosition);
   });
 
-  toArray((groupDef as { choice?: explicitGroup[] }).choice).forEach((choice, choicePosition) => {
+  ((groupDef as { choice?: explicitGroup[] }).choice ?? []).forEach((choice, choicePosition) => {
     processChoice(groupItem, choice, choicePosition);
   });
 
-  toArray((groupDef as { sequence?: explicitGroup[] }).sequence).forEach((sequence, sequencePosition) => {
+  ((groupDef as { sequence?: explicitGroup[] }).sequence ?? []).forEach((sequence, sequencePosition) => {
     processSequence(groupItem, sequence, sequencePosition);
   });
 

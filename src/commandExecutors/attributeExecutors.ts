@@ -15,7 +15,6 @@ import {
   annotationType,
   documentationType,
 } from "../../shared/types.js";
-import { toArray } from "../../shared/schemaUtils.js";
 import { locateNodeById } from "../schemaNavigator.js";
 import { parseSchemaId, SCHEMA_ROOT_ID } from "../../shared/idStrategy.js";
 import { createAnnotation } from "./annotationUtils.js";
@@ -137,7 +136,7 @@ function addAttributeToParent(
 ): void {
   if (parentType === "schema") {
     const schemaObj = parent as schema;
-    const attributes = toArray(schemaObj.attribute);
+    const attributes = schemaObj.attribute ?? [];
     const newAttr = new topLevelAttribute();
     newAttr.name = name as string;
     newAttr.type_ = type;
@@ -154,7 +153,7 @@ function addAttributeToParent(
     schemaObj.attribute = attributes;
   } else if (parentType === "topLevelComplexType" || parentType === "localComplexType") {
     const complexType = parent as topLevelComplexType | localComplexType;
-    const attributes = toArray(complexType.attribute);
+    const attributes = complexType.attribute ?? [];
 
     if (ref !== undefined) {
       // Reference attribute
@@ -208,12 +207,12 @@ function removeAttributeFromParent(
 ): void {
   if (parentType === "schema") {
     const schemaObj = parent as schema;
-    const attributes = toArray(schemaObj.attribute);
+    const attributes = schemaObj.attribute ?? [];
     const filtered = filterAttributes(attributes, attributeName, position);
     schemaObj.attribute = filtered.length > 0 ? filtered : undefined;
   } else if (parentType === "topLevelComplexType" || parentType === "localComplexType") {
     const complexType = parent as topLevelComplexType | localComplexType;
-    const attributes = toArray(complexType.attribute);
+    const attributes = complexType.attribute ?? [];
     const filtered = filterAttributes(attributes, attributeName, position);
     complexType.attribute = filtered.length > 0 ? filtered : undefined;
   }
@@ -267,9 +266,9 @@ function getAttributesFromParent(
   parentType: string
 ): Array<topLevelAttribute | attribute> {
   if (parentType === "schema") {
-    return toArray((parent as schema).attribute);
+    return (parent as schema).attribute ?? [];
   } else if (parentType === "topLevelComplexType" || parentType === "localComplexType") {
-    return toArray((parent as topLevelComplexType | localComplexType).attribute);
+    return (parent as topLevelComplexType | localComplexType).attribute ?? [];
   }
   return [];
 }

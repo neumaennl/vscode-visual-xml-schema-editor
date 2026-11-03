@@ -17,7 +17,6 @@ import {
   documentationType,
   groupRef,
 } from "../../shared/types.js";
-import { toArray } from "../../shared/schemaUtils.js";
 import { parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy.js";
 import { locateNodeById } from "../schemaNavigator.js";
 import { createAnnotation } from "./annotationUtils.js";
@@ -60,7 +59,7 @@ export function executeAddGroup(
   }
   applyGroupContentModel(grp, contentModel as ContentModel);
 
-  const groups = toArray(schemaObj.group);
+  const groups = schemaObj.group ?? [];
   groups.push(grp);
   schemaObj.group = groups;
 }
@@ -114,7 +113,7 @@ export function executeRemoveGroup(
   }
 
   // Definition mode: remove top-level named group
-  const groups = toArray(schemaObj.group);
+  const groups = schemaObj.group ?? [];
   const filtered = groups.filter((g) => g.name !== parsed.name);
   schemaObj.group = filtered.length > 0 ? filtered : undefined;
 }
@@ -200,7 +199,7 @@ export function executeModifyGroup(
   }
 
   // Definition mode: modify top-level named group
-  const grp = toArray(schemaObj.group).find((g) => g.name === parsed.name);
+  const grp = (schemaObj.group ?? []).find((g) => g.name === parsed.name);
   if (!grp) {
     return;
   }
@@ -272,7 +271,7 @@ function addGroupRefToParent(
 ): void {
   if (parentType === "sequence" || parentType === "choice") {
     const compositor = parent as CompositorWithGroupRefs;
-    const refs = toArray(compositor.group);
+    const refs = compositor.group ?? [];
     refs.push(grpRef);
     compositor.group = refs;
   } else if (
@@ -296,7 +295,7 @@ function removeGroupRefFromParent(
 ): void {
   if (parentType === "sequence" || parentType === "choice") {
     const compositor = parent as CompositorWithGroupRefs;
-    const refs = toArray(compositor.group);
+    const refs = compositor.group ?? [];
     const filtered = filterGroupRef(refs, name, position);
     compositor.group = filtered.length > 0 ? filtered : undefined;
   } else if (
@@ -320,7 +319,7 @@ function findGroupRefInParent(
   position: number | undefined
 ): groupRef | undefined {
   if (parentType === "sequence" || parentType === "choice") {
-    const refs = toArray((parent as CompositorWithGroupRefs).group);
+    const refs = (parent as CompositorWithGroupRefs).group ?? [];
     return findGroupRef(refs, name, position);
   }
   if (

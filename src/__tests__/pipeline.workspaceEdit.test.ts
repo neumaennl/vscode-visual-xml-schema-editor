@@ -23,7 +23,6 @@ import { unmarshal } from "@neumaennl/xmlbind-ts";
 import * as vscode from "vscode";
 import { CommandProcessor } from "../commandProcessor.js";
 import { schema } from "../../shared/types.js";
-import { toArray } from "../../shared/schemaUtils.js";
 import { resolveAndGetHandler, stubEditor } from "./providerTestHelpers.js";
 import type { Mock } from "vitest";
 import { schemaXmlWith } from "./schemaTestHelpers.js";
@@ -75,7 +74,7 @@ describe("Integration: WorkspaceEdit via SchemaEditorProvider", () => {
       // Verify the written XML parses correctly and contains the new element
       const writtenXml = editInstance.replace.mock.calls[0][2];
       const parsedSchema = unmarshal(schema, writtenXml);
-      expect(toArray(parsedSchema.element).some((e) => e.name === "order")).toBe(true);
+      expect((parsedSchema.element ?? []).some((e) => e.name === "order")).toBe(true);
       expect(vscode.workspace.applyEdit).toHaveBeenCalled();
 
       // Webview must receive commandResult { success: true }

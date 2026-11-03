@@ -13,7 +13,6 @@ import type {
   RemoveDocumentationCommand,
   ModifyDocumentationCommand,
 } from "../../shared/types.js";
-import { toArray } from "../../shared/schemaUtils.js";
 import {
   SCHEMA_WITH_ELEMENTS,
   SCHEMA_WITH_ANNOTATION,
@@ -35,12 +34,12 @@ describe("Integration: Annotation pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_ELEMENTS, cmd);
-      const elements = toArray(result.element);
+      const elements = result.element ?? [];
       const person = elements.find((e) => e.name === "person");
 
       expect(person).toBeDefined();
       expect(person!.annotation).toBeDefined();
-      const docs = toArray(person!.annotation!.documentation);
+      const docs = person!.annotation!.documentation ?? [];
       expect(docs[0].value).toBe("A person record");
     });
 
@@ -51,10 +50,10 @@ describe("Integration: Annotation pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
-      const annotations = toArray(result.annotation);
+      const annotations = result.annotation ?? [];
 
       expect(annotations.length).toBe(1);
-      const docs = toArray(annotations[0].documentation);
+      const docs = annotations[0].documentation ?? [];
       expect(docs[0].value).toBe("My schema");
     });
 
@@ -102,7 +101,7 @@ describe("Integration: Annotation pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_ANNOTATION, cmd);
-      const elements = toArray(result.element);
+      const elements = result.element ?? [];
       const person = elements.find((e) => e.name === "person");
 
       expect(person).toBeDefined();
@@ -163,11 +162,11 @@ describe("Integration: Annotation pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_ANNOTATION, cmd);
-      const elements = toArray(result.element);
+      const elements = result.element ?? [];
       const person = elements.find((e) => e.name === "person");
 
       expect(person).toBeDefined();
-      const docs = toArray(person!.annotation!.documentation);
+      const docs = person!.annotation!.documentation ?? [];
       expect(docs[0].value).toBe("Updated description");
     });
 
@@ -196,11 +195,11 @@ describe("Integration: Documentation pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_ANNOTATION, cmd);
-      const elements = toArray(result.element);
+      const elements = result.element ?? [];
       const person = elements.find((e) => e.name === "person");
 
       expect(person).toBeDefined();
-      const docs = toArray(person!.annotation!.documentation);
+      const docs = person!.annotation!.documentation ?? [];
       expect(docs.some((d) => d.value === "Additional details")).toBe(true);
     });
 
@@ -227,11 +226,11 @@ describe("Integration: Documentation pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_ANNOTATION, cmd);
-      const elements = toArray(result.element);
+      const elements = result.element ?? [];
       const person = elements.find((e) => e.name === "person");
 
       expect(person).toBeDefined();
-      const docs = toArray(person!.annotation?.documentation);
+      const docs = person!.annotation?.documentation ?? [];
       expect(docs.some((d) => d.value === "A person element")).toBe(false);
     });
 
@@ -258,11 +257,11 @@ describe("Integration: Documentation pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_ANNOTATION, cmd);
-      const elements = toArray(result.element);
+      const elements = result.element ?? [];
       const person = elements.find((e) => e.name === "person");
 
       expect(person).toBeDefined();
-      const docs = toArray(person!.annotation!.documentation);
+      const docs = person!.annotation!.documentation ?? [];
       expect(docs[0].value).toBe("New documentation text");
     });
 

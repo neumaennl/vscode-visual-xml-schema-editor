@@ -1,5 +1,8 @@
 # Knowledge Bundle Update Log
 
+## 2026-11-03
+* **Update**: `toArray()` is removed ([#402](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/402)). Since `xmlbind-ts` 2.3, repeated children are always arrays, so the code reads them with `?? []`, and the types that allowed a single item or an array now only allow arrays. [Schema model](schema-model.md#generated-classes) describes how collections are read and that `annotation` is a single object except on the schema; [Architecture](architecture.md) no longer lists `toArray` among the helpers in `schemaUtils.ts`. [Known issues](known-issues.md): removed the entry "`toArray()` is obsolete since `xmlbind-ts` 2.3" and the bullet about `Array.isArray(x) ? x : [x]` in `validationUtils.ts` from "Top-level lookups are duplicated instead of shared".
+
 ## 2026-11-02
 * **Update**: Tests have size limits ([#402](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/402)): at most 1000 lines per test file and 50 lines per single test, checked by ESLint with `max-lines` and the local rule `tests/max-lines-per-test`. [Development guidelines](development-guidelines.md#code-size) state the limits and how to keep to them, [Testing](testing.md#files-and-structure) states them for test files and names the new `propertiesPanelTestHelpers.ts` and the test files of the properties panel, one per tab or editor; [Build and packaging](build-and-packaging.md#lint) names the rules. The attribute validators moved from `elementValidators.ts` to `attributeValidators.ts`, which [Known issues](known-issues.md) names in two locations. [Known issues](known-issues.md): removed the entry "Tests are exempt from the size limits"; "Code exceeds the size limits" no longer links it.
 

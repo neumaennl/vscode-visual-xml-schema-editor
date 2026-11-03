@@ -14,7 +14,6 @@ import {
   isValidXmlName,
   validateOccurrences,
 } from "./validationUtils.js";
-import { toArray } from "../../shared/schemaUtils.js";
 import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
 import { locateNodeById } from "../schemaNavigator.js";
 
@@ -74,15 +73,15 @@ type ComplexTypeParticleHolder = ContentModelHolder & {
  * @returns Whether a reference was found
  */
 function groupRefExistsInCompositor(name: string, compositor: CompositorLike): boolean {
-  if (toArray(compositor.group).some((ref) => ref.ref === name)) return true;
+  if ((compositor.group ?? []).some((ref) => ref.ref === name)) return true;
   if (
-    toArray(compositor.element).some(
+    (compositor.element ?? []).some(
       (el) => el?.complexType !== undefined && groupRefExistsInHolder(name, el.complexType)
     )
   ) {
     return true;
   }
-  return [...toArray(compositor.choice), ...toArray(compositor.sequence)].some((sub) =>
+  return [...compositor.choice ?? [], ...compositor.sequence ?? []].some((sub) =>
     groupRefExistsInCompositor(name, sub)
   );
 }
@@ -131,15 +130,15 @@ function groupRefExistsInHolder(name: string, holder: ComplexTypeParticleHolder)
  * @returns Whether a reference was found
  */
 function isGroupReferenced(name: string, schemaObj: schema): boolean {
-  if (toArray(schemaObj.complexType).some((ct) => groupRefExistsInHolder(name, ct))) return true;
+  if ((schemaObj.complexType ?? []).some((ct) => groupRefExistsInHolder(name, ct))) return true;
   if (
-    toArray(schemaObj.element).some(
+    (schemaObj.element ?? []).some(
       (el) => el.complexType !== undefined && groupRefExistsInHolder(name, el.complexType)
     )
   ) {
     return true;
   }
-  return toArray(schemaObj.group).some((grp) => groupRefExistsInContentModel(name, grp));
+  return (schemaObj.group ?? []).some((grp) => groupRefExistsInContentModel(name, grp));
 }
 
 /** Structural type for a complexType node that can hold a direct particle. */
@@ -163,7 +162,7 @@ function groupRefExistsInSequenceOrChoice(
   compositor: { group?: Array<{ ref?: string }> },
   parsed: { name?: string; position?: number }
 ): boolean {
-  const refs = toArray(compositor.group);
+  const refs = compositor.group ?? [];
   if (parsed.name !== undefined && parsed.position !== undefined) {
     return refs.some((r, idx) => r.ref === parsed.name && idx === parsed.position);
   }
@@ -202,7 +201,7 @@ export function validateAddGroup(
     if (!isValidXmlName(command.payload.ref)) {
       return { valid: false, error: "Group ref must be a valid XML name" };
     }
-    const groupExists = toArray(schemaObj.group).some(
+    const groupExists = (schemaObj.group ?? []).some(
       (g) => g.name === command.payload.ref
     );
     if (!groupExists) {
@@ -266,7 +265,7 @@ export function validateAddGroup(
       error: `Content model must be one of: ${VALID_GROUP_CONTENT_MODELS.join(", ")}`,
     };
   }
-  const exists = toArray(schemaObj.group).some(
+  const exists = (schemaObj.group ?? []).some(
     (g) => g.name === command.payload.groupName
   );
   if (exists) {
@@ -328,7 +327,7 @@ export function validateRemoveGroup(
   }
 
   // Definition mode: validate the definition exists and is not referenced
-  const found = toArray(schemaObj.group).some((g) => g.name === parsed.name);
+  const found = (schemaObj.group ?? []).some((g) => g.name === parsed.name);
   if (!found) {
     return {
       valid: false,
@@ -426,7 +425,7 @@ export function validateModifyGroup(
       if (!isValidXmlName(command.payload.ref)) {
         return { valid: false, error: "Group ref must be a valid XML name" };
       }
-      const groupExists = toArray(schemaObj.group).some(
+      const groupExists = (schemaObj.group ?? []).some(
         (g) => g.name === command.payload.ref
       );
       if (!groupExists) {
@@ -463,7 +462,7 @@ export function validateModifyGroup(
       error: "Cannot use ref, minOccurs, or maxOccurs when modifying a group definition — use groupName, contentModel, or documentation instead",
     };
   }
-  const found = toArray(schemaObj.group).some((g) => g.name === parsed.name);
+  const found = (schemaObj.group ?? []).some((g) => g.name === parsed.name);
   if (!found) {
     return {
       valid: false,

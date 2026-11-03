@@ -18,7 +18,6 @@ import {
 } from "./validationUtils.js";
 import { locateNodeById } from "../schemaNavigator.js";
 import { parseSchemaId, SCHEMA_ROOT_ID } from "../../shared/idStrategy.js";
-import { toArray } from "../../shared/schemaUtils.js";
 
 /** Parent types that can contain child elements. */
 const VALID_ELEMENT_PARENTS = ["schema", "sequence", "choice", "all"] as const;
@@ -32,13 +31,13 @@ function getChildElements(
   parentType: string
 ): Array<{ name?: string; ref?: string }> {
   if (parentType === "schema") {
-    return toArray((parent as schema).element);
+    return (parent as schema).element ?? [];
   }
   if (parentType === "sequence" || parentType === "choice") {
-    return toArray((parent as explicitGroup).element);
+    return (parent as explicitGroup).element ?? [];
   }
   if (parentType === "all") {
-    return toArray((parent as all).element);
+    return (parent as all).element ?? [];
   }
   return [];
 }
@@ -85,7 +84,7 @@ export function validateAddElement(
       return { valid: false, error: "Element ref must be a valid XML name" };
     }
     // Validate that the referenced element exists as a top-level element
-    const topLevelElements = toArray(schemaObj.element);
+    const topLevelElements = schemaObj.element ?? [];
     if (!topLevelElements.some(el => el.name === ref)) {
       return { valid: false, error: `Referenced element '${ref}' does not exist in schema` };
     }
@@ -206,7 +205,7 @@ export function validateModifyElement(
       return { valid: false, error: "Element ref must be a valid XML name" };
     }
     // Validate that the referenced element exists as a top-level element
-    const topLevelElements = toArray(schemaObj.element);
+    const topLevelElements = schemaObj.element ?? [];
     if (!topLevelElements.some(el => el.name === ref)) {
       return { valid: false, error: `Referenced element '${ref}' does not exist in schema` };
     }

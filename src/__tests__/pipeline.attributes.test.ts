@@ -10,7 +10,6 @@ import type {
   RemoveAttributeCommand,
   ModifyAttributeCommand,
 } from "../../shared/types.js";
-import { toArray } from "../../shared/schemaUtils.js";
 import {
   SCHEMA_WITH_COMPLEXTYPE,
   runCommandExpectSuccessSchema,
@@ -42,8 +41,8 @@ describe("Integration: Attribute pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_COMPLEXTYPE, cmd);
-      const ct = toArray(result.complexType)[0];
-      const attrs = toArray(ct.attribute);
+      const ct = (result.complexType ?? [])[0];
+      const attrs = ct.attribute ?? [];
 
       expect(attrs.some((a) => a.name === "email" && a.type_ === "xs:string")).toBe(true);
     });
@@ -60,8 +59,8 @@ describe("Integration: Attribute pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_COMPLEXTYPE, cmd);
-      const ct = toArray(result.complexType)[0];
-      const attrs = toArray(ct.attribute);
+      const ct = (result.complexType ?? [])[0];
+      const attrs = ct.attribute ?? [];
       const code = attrs.find((a) => a.name === "code");
 
       expect(code).toBeDefined();
@@ -105,8 +104,8 @@ describe("Integration: Attribute pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_TWO_ATTRS, cmd);
-      const ct = toArray(result.complexType)[0];
-      const attrs = toArray(ct.attribute);
+      const ct = (result.complexType ?? [])[0];
+      const attrs = ct.attribute ?? [];
 
       expect(attrs.some((a) => a.name === "id")).toBe(false);
       expect(attrs.some((a) => a.name === "status")).toBe(true);
@@ -133,8 +132,8 @@ describe("Integration: Attribute pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_COMPLEXTYPE, cmd);
-      const ct = toArray(result.complexType)[0];
-      const attrs = toArray(ct.attribute);
+      const ct = (result.complexType ?? [])[0];
+      const attrs = ct.attribute ?? [];
 
       expect(attrs.some((a) => a.name === "identifier")).toBe(true);
       expect(attrs.some((a) => a.name === "id")).toBe(false);
@@ -150,8 +149,8 @@ describe("Integration: Attribute pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_COMPLEXTYPE, cmd);
-      const ct = toArray(result.complexType)[0];
-      const attrs = toArray(ct.attribute);
+      const ct = (result.complexType ?? [])[0];
+      const attrs = ct.attribute ?? [];
       const id = attrs.find((a) => a.name === "id");
 
       expect(id).toBeDefined();

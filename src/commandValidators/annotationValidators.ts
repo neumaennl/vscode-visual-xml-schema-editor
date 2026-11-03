@@ -24,7 +24,7 @@ import {
 } from "../../shared/types.js";
 import { ValidationResult } from "./validationUtils.js";
 import { locateNodeById } from "../schemaNavigator.js";
-import { toArray, isSchemaRoot } from "../../shared/schemaUtils.js";
+import { isSchemaRoot } from "../../shared/schemaUtils.js";
 import {
   parseDocumentationId,
   parseSchemaAnnotationId,
@@ -109,7 +109,7 @@ export function validateRemoveAnnotation(
 
   const schemaAnnotIdx = parseSchemaAnnotationId(command.payload.annotationId);
   if (schemaAnnotIdx !== null) {
-    const annots = toArray(schemaObj.annotation);
+    const annots = schemaObj.annotation ?? [];
     if (schemaAnnotIdx < 0 || schemaAnnotIdx >= annots.length) {
       return {
         valid: false,
@@ -151,7 +151,7 @@ export function validateModifyAnnotation(
 
   const schemaAnnotIdx = parseSchemaAnnotationId(command.payload.annotationId);
   if (schemaAnnotIdx !== null) {
-    const annots = toArray(schemaObj.annotation);
+    const annots = schemaObj.annotation ?? [];
     if (schemaAnnotIdx < 0 || schemaAnnotIdx >= annots.length) {
       return {
         valid: false,
@@ -193,7 +193,7 @@ export function validateAddDocumentation(
 
   const schemaAnnotIdx = parseSchemaAnnotationId(command.payload.targetId);
   if (schemaAnnotIdx !== null) {
-    const annots = toArray(schemaObj.annotation);
+    const annots = schemaObj.annotation ?? [];
     if (schemaAnnotIdx >= annots.length) {
       return {
         valid: false,
@@ -223,14 +223,14 @@ export function validateRemoveDocumentation(
   // "/schema/annotation[N]/documentation[M]" format
   const schemaDId = parseSchemaDocumentationId(command.payload.documentationId);
   if (schemaDId) {
-    const annots = toArray(schemaObj.annotation);
+    const annots = schemaObj.annotation ?? [];
     if (schemaDId.annotIndex >= annots.length) {
       return {
         valid: false,
         error: `Annotation index ${schemaDId.annotIndex} out of bounds (length ${annots.length}): ${command.payload.documentationId}`,
       };
     }
-    const docs = toArray(annots[schemaDId.annotIndex].documentation);
+    const docs = annots[schemaDId.annotIndex].documentation ?? [];
     if (schemaDId.docIndex < 0 || schemaDId.docIndex >= docs.length) {
       return {
         valid: false,
@@ -254,11 +254,11 @@ export function validateRemoveDocumentation(
 
   // "/schema/documentation[N]" shorthand — targets first schema annotation
   if (isSchemaRoot(elementId)) {
-    const annots = toArray(schemaObj.annotation);
+    const annots = schemaObj.annotation ?? [];
     if (annots.length === 0) {
       return { valid: false, error: `No annotation found on schema root` };
     }
-    const docs = toArray(annots[0].documentation);
+    const docs = annots[0].documentation ?? [];
     if (docIndex < 0 || docIndex >= docs.length) {
       return {
         valid: false,
@@ -279,7 +279,7 @@ export function validateRemoveDocumentation(
   if (!hasAnnotationProperty(location.parent) || !location.parent.annotation) {
     return { valid: false, error: `No annotation found on node: ${elementId}` };
   }
-  const docs = toArray(location.parent.annotation.documentation);
+  const docs = location.parent.annotation.documentation ?? [];
   if (docIndex < 0 || docIndex >= docs.length) {
     return {
       valid: false,
@@ -301,14 +301,14 @@ export function validateModifyDocumentation(
   // "/schema/annotation[N]/documentation[M]" format
   const schemaDId = parseSchemaDocumentationId(command.payload.documentationId);
   if (schemaDId) {
-    const annots = toArray(schemaObj.annotation);
+    const annots = schemaObj.annotation ?? [];
     if (schemaDId.annotIndex >= annots.length) {
       return {
         valid: false,
         error: `Annotation index ${schemaDId.annotIndex} out of bounds (length ${annots.length}): ${command.payload.documentationId}`,
       };
     }
-    const docs = toArray(annots[schemaDId.annotIndex].documentation);
+    const docs = annots[schemaDId.annotIndex].documentation ?? [];
     if (schemaDId.docIndex < 0 || schemaDId.docIndex >= docs.length) {
       return {
         valid: false,
@@ -332,11 +332,11 @@ export function validateModifyDocumentation(
 
   // "/schema/documentation[N]" shorthand — targets first schema annotation
   if (isSchemaRoot(elementId)) {
-    const annots = toArray(schemaObj.annotation);
+    const annots = schemaObj.annotation ?? [];
     if (annots.length === 0) {
       return { valid: false, error: `No annotation found on schema root` };
     }
-    const docs = toArray(annots[0].documentation);
+    const docs = annots[0].documentation ?? [];
     if (docIndex < 0 || docIndex >= docs.length) {
       return {
         valid: false,
@@ -357,7 +357,7 @@ export function validateModifyDocumentation(
   if (!hasAnnotationProperty(location.parent) || !location.parent.annotation) {
     return { valid: false, error: `No annotation found on node: ${elementId}` };
   }
-  const docs = toArray(location.parent.annotation.documentation);
+  const docs = location.parent.annotation.documentation ?? [];
   if (docIndex < 0 || docIndex >= docs.length) {
     return {
       valid: false,

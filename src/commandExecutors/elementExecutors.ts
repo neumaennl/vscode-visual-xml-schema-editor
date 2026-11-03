@@ -16,7 +16,6 @@ import {
   explicitGroup,
   all,
 } from "../../shared/types.js";
-import { toArray } from "../../shared/schemaUtils.js";
 import { locateNodeById } from "../schemaNavigator.js";
 import { parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy.js";
 import { renameLocalElementRefInSchema } from "./schemaLocalRenamer.js";
@@ -221,7 +220,7 @@ function addElementToParent(
 ): void {
   if (parentType === "schema") {
     const schemaObj = parent as schema;
-    const elements = toArray(schemaObj.element);
+    const elements = schemaObj.element ?? [];
     
     elements.push(element as topLevelElement);
     schemaObj.element = elements;
@@ -230,14 +229,14 @@ function addElementToParent(
     parentType === "choice"
   ) {
     const group = parent as explicitGroup;
-    const elements = toArray(group.element);
+    const elements = group.element ?? [];
     const localElem = element as localElement;
     
     elements.push(localElem);
     group.element = elements;
   } else if (parentType === "all") {
     const allGroup = parent as all;
-    const elements = toArray(allGroup.element);
+    const elements = allGroup.element ?? [];
     const allElem = element as narrowMaxMin;
     
     elements.push(allElem);
@@ -262,7 +261,7 @@ function removeElementFromParent(
 ): void {
   if (parentType === "schema") {
     const schemaObj = parent as schema;
-    const elements = toArray(schemaObj.element);
+    const elements = schemaObj.element ?? [];
     const filtered = filterElement(elements, elementName, position);
     schemaObj.element = filtered.length > 0 ? filtered : undefined;
   } else if (
@@ -270,12 +269,12 @@ function removeElementFromParent(
     parentType === "choice"
   ) {
     const group = parent as explicitGroup;
-    const elements = toArray(group.element);
+    const elements = group.element ?? [];
     const filtered = filterElement(elements, elementName, position);
     group.element = filtered.length > 0 ? filtered : undefined;
   } else if (parentType === "all") {
     const allGroup = parent as all;
-    const elements = toArray(allGroup.element);
+    const elements = allGroup.element ?? [];
     const filtered = filterElement(elements, elementName, position);
     allGroup.element = filtered.length > 0 ? filtered : undefined;
   }
@@ -347,7 +346,7 @@ function modifyElementInParent(
 ): void {
   if (parentType === "schema") {
     const schemaObj = parent as schema;
-    const elements = toArray(schemaObj.element);
+    const elements = schemaObj.element ?? [];
     const element = findElement(elements, targetName, targetPosition);
     if (!element) return;
     updateElementProperties(
@@ -369,7 +368,7 @@ function modifyElementInParent(
     parentType === "choice"
   ) {
     const group = parent as explicitGroup;
-    const elements = toArray(group.element);
+    const elements = group.element ?? [];
     const element = findElement(elements, targetName, targetPosition);
     if (!element) return;
     updateElementProperties(
@@ -388,7 +387,7 @@ function modifyElementInParent(
     );
   } else if (parentType === "all") {
     const allGroup = parent as all;
-    const elements = toArray(allGroup.element);
+    const elements = allGroup.element ?? [];
     const element = findElement(elements, targetName, targetPosition);
     if (!element) return;
     updateElementProperties(

@@ -10,7 +10,6 @@ import type {
   RemoveIncludeCommand,
   ModifyIncludeCommand,
 } from "../../shared/types.js";
-import { toArray } from "../../shared/schemaUtils.js";
 import {
   SCHEMA_WITH_INCLUDE,
   runCommandExpectSuccessSchema,
@@ -33,7 +32,7 @@ describe("Integration: Include pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
-      const includes = toArray(result.include);
+      const includes = result.include ?? [];
 
       expect(includes.some((i) => i.schemaLocation === "types.xsd")).toBe(true);
     });
@@ -76,7 +75,7 @@ describe("Integration: Include pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_INCLUDE, cmd);
-      const includes = toArray(result.include);
+      const includes = result.include ?? [];
 
       expect(includes.some((i) => i.schemaLocation === "base.xsd")).toBe(false);
     });
@@ -88,7 +87,7 @@ describe("Integration: Include pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(SCHEMA_TWO_INCLUDES, cmd);
-      const includes = toArray(result.include);
+      const includes = result.include ?? [];
 
       expect(includes.some((i) => i.schemaLocation === "base.xsd")).toBe(false);
       expect(includes.some((i) => i.schemaLocation === "common.xsd")).toBe(true);
@@ -114,7 +113,7 @@ describe("Integration: Include pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_INCLUDE, cmd);
-      const includes = toArray(result.include);
+      const includes = result.include ?? [];
 
       expect(includes.some((i) => i.schemaLocation === "updated-base.xsd")).toBe(true);
       expect(includes.some((i) => i.schemaLocation === "base.xsd")).toBe(false);

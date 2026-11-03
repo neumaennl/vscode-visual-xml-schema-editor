@@ -83,7 +83,7 @@ export interface ElementWithOccurrence {
  * Uses the generated attribute class directly.
  */
 export interface ElementWithAttributes {
-  attribute?: attribute | attribute[];
+  attribute?: attribute[];
 }
 
 /**

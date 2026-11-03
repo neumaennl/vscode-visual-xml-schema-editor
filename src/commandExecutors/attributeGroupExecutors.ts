@@ -14,7 +14,6 @@ import {
   annotationType,
   documentationType,
 } from "../../shared/types.js";
-import { toArray } from "../../shared/schemaUtils.js";
 import { parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy.js";
 import { locateNodeById } from "../schemaNavigator.js";
 import { createAnnotation } from "./annotationUtils.js";
@@ -36,7 +35,7 @@ function addAttrGroupRefToParent(
   agRef: attributeGroupRef
 ): void {
   const holder = parent as AttrGroupRefHolder;
-  const refs = toArray(holder.attributeGroup);
+  const refs = holder.attributeGroup ?? [];
   refs.push(agRef);
   holder.attributeGroup = refs;
 }
@@ -126,7 +125,7 @@ export function executeAddAttributeGroup(
   if (documentation) {
     attrGroup.annotation = createAnnotation(documentation);
   }
-  const groups = toArray(schemaObj.attributeGroup);
+  const groups = schemaObj.attributeGroup ?? [];
   groups.push(attrGroup);
   schemaObj.attributeGroup = groups;
 }
@@ -156,14 +155,14 @@ export function executeRemoveAttributeGroup(
     }
     const location = locateNodeById(schemaObj, parsed.parentId);
     const holder = location.parent as AttrGroupRefHolder;
-    const refs = toArray(holder.attributeGroup);
+    const refs = holder.attributeGroup ?? [];
     const filtered = filterAttrGroupRef(refs, parsed.name, parsed.position);
     holder.attributeGroup = filtered.length > 0 ? filtered : undefined;
     return;
   }
 
   // Definition mode: remove top-level named attribute group
-  const groups = toArray(schemaObj.attributeGroup);
+  const groups = schemaObj.attributeGroup ?? [];
   const filtered = groups.filter((g) => g.name !== parsed.name);
   schemaObj.attributeGroup = filtered.length > 0 ? filtered : undefined;
 }
@@ -194,7 +193,7 @@ export function executeModifyAttributeGroup(
     const location = locateNodeById(schemaObj, parsed.parentId);
     const holder = location.parent as AttrGroupRefHolder;
     const target = findAttrGroupRef(
-      toArray(holder.attributeGroup),
+      holder.attributeGroup ?? [],
       parsed.name,
       parsed.position
     );
@@ -215,7 +214,7 @@ export function executeModifyAttributeGroup(
   }
 
   // Definition mode: modify top-level named attribute group
-  const attrGroup = toArray(schemaObj.attributeGroup).find(
+  const attrGroup = (schemaObj.attributeGroup ?? []).find(
     (g) => g.name === parsed.name
   );
   if (!attrGroup) {

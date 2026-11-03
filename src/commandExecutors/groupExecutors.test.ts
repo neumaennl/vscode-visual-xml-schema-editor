@@ -15,7 +15,6 @@ import {
   executeRemoveGroup,
   executeModifyGroup,
 } from "./groupExecutors.js";
-import { toArray } from "../../shared/schemaUtils.js";
 import { emptySchema, readTestSchema, schemaWith } from "../__tests__/schemaTestHelpers.js";
 
 /** The file with a complexType `PersonType` with the local element `name`. */
@@ -127,8 +126,8 @@ describe("Group Executors", () => {
 
       executeAddGroup(command, schemaObj);
 
-      expect(toArray(schemaObj.group)).toHaveLength(2);
-      expect(toArray(schemaObj.group)[1].name).toBe("NewGroup");
+      expect(schemaObj.group ?? []).toHaveLength(2);
+      expect((schemaObj.group ?? [])[1].name).toBe("NewGroup");
     });
 
     test("should produce valid XSD output (round-trip)", () => {
@@ -146,7 +145,7 @@ describe("Group Executors", () => {
 
       const xml = marshal(schemaObj);
       const reparsed = unmarshal(schema, xml);
-      const groups = toArray(reparsed.group);
+      const groups = reparsed.group ?? [];
       expect(groups).toHaveLength(1);
       expect(groups[0].name).toBe("MyGroup");
       expect(groups[0].sequence).toBeDefined();
@@ -188,8 +187,8 @@ describe("Group Executors", () => {
 
       executeRemoveGroup(command, schemaObj);
 
-      expect(toArray(schemaObj.group)).toHaveLength(1);
-      expect(toArray(schemaObj.group)[0].name).toBe("GroupB");
+      expect(schemaObj.group ?? []).toHaveLength(1);
+      expect((schemaObj.group ?? [])[0].name).toBe("GroupB");
     });
 
     test("should remove a compositor group from a complexType", () => {
@@ -204,7 +203,7 @@ describe("Group Executors", () => {
 
       executeRemoveGroup(command, schemaObj);
 
-      expect(toArray(schemaObj.complexType)[0].sequence).toBeUndefined();
+      expect((schemaObj.complexType ?? [])[0].sequence).toBeUndefined();
     });
 
   });
@@ -225,7 +224,7 @@ describe("Group Executors", () => {
 
       executeModifyGroup(command, schemaObj);
 
-      const grp = toArray(schemaObj.group)[0];
+      const grp = (schemaObj.group ?? [])[0];
       expect(grp.name).toBe("NewName");
     });
 
@@ -247,8 +246,8 @@ describe("Group Executors", () => {
 
       executeModifyGroup(command, schemaObj);
 
-      expect(toArray(schemaObj.group)[0].name).toBe("NewName");
-      expect(toArray(schemaObj.complexType)[0].group!.ref).toBe("NewName");
+      expect((schemaObj.group ?? [])[0].name).toBe("NewName");
+      expect((schemaObj.complexType ?? [])[0].group!.ref).toBe("NewName");
     });
 
     test("should change the content model of a group", () => {
@@ -266,7 +265,7 @@ describe("Group Executors", () => {
 
       executeModifyGroup(command, schemaObj);
 
-      const grp = toArray(schemaObj.group)[0];
+      const grp = (schemaObj.group ?? [])[0];
       expect(grp.choice).toBeDefined();
       expect(grp.sequence).toBeUndefined();
       expect(grp.all).toBeUndefined();
@@ -287,7 +286,7 @@ describe("Group Executors", () => {
 
       executeModifyGroup(command, schemaObj);
 
-      const grp = toArray(schemaObj.group)[0];
+      const grp = (schemaObj.group ?? [])[0];
       expect(grp.annotation).toBeDefined();
       expect(grp.annotation!.documentation![0].value).toBe(
         "Updated documentation"
@@ -311,7 +310,7 @@ describe("Group Executors", () => {
 
       executeModifyGroup(command, schemaObj);
 
-      const grp = toArray(schemaObj.group)[0];
+      const grp = (schemaObj.group ?? [])[0];
       expect(grp.name).toBe("UpdatedGroup");
       expect(grp.all).toBeDefined();
       expect(grp.sequence).toBeUndefined();
@@ -333,7 +332,7 @@ describe("Group Executors", () => {
 
       executeModifyGroup(command, schemaObj);
 
-      const grp = toArray(schemaObj.group)[0];
+      const grp = (schemaObj.group ?? [])[0];
       expect(grp.name).toBe("StableGroup");
       expect(grp.sequence).toBeDefined();
     });
@@ -352,7 +351,7 @@ describe("Group Executors", () => {
 
       executeModifyGroup(command, schemaObj);
 
-      const sequence = toArray(schemaObj.complexType)[0].sequence;
+      const sequence = (schemaObj.complexType ?? [])[0].sequence;
       expect(sequence?.minOccurs).toBe(0);
       expect(sequence?.maxOccurs).toBe("unbounded");
     });
@@ -373,8 +372,8 @@ describe("Group Executors", () => {
 
         executeAddGroup(command, schemaObj);
 
-        const ct = toArray(schemaObj.complexType)[0];
-        const refs = toArray(ct.sequence!.group);
+        const ct = (schemaObj.complexType ?? [])[0];
+        const refs = ct.sequence!.group ?? [];
         expect(refs).toHaveLength(1);
         expect(refs[0].ref).toBe("PersonGroup");
       });
@@ -394,7 +393,7 @@ describe("Group Executors", () => {
 
         executeAddGroup(command, schemaObj);
 
-        const ref = toArray(toArray(schemaObj.complexType)[0].sequence!.group)[0];
+        const ref = ((schemaObj.complexType ?? [])[0].sequence!.group ?? [])[0];
         expect(ref.ref).toBe("PersonGroup");
         expect(ref.minOccurs).toBe(0);
         expect(ref.maxOccurs).toBe("unbounded");
@@ -412,7 +411,7 @@ describe("Group Executors", () => {
           schemaObj
         );
 
-        const refs = toArray(toArray(schemaObj.complexType)[0].sequence!.group);
+        const refs = (schemaObj.complexType ?? [])[0].sequence!.group ?? [];
         expect(refs).toHaveLength(2);
         expect(refs[0].ref).toBe("PersonGroup");
         expect(refs[1].ref).toBe("AddressGroup");
@@ -431,7 +430,7 @@ describe("Group Executors", () => {
 
         executeAddGroup(command, schemaObj);
 
-        const ct = toArray(schemaObj.complexType)[0];
+        const ct = (schemaObj.complexType ?? [])[0];
         expect(ct.group).toBeDefined();
         expect(ct.group!.ref).toBe("PersonGroup");
       });
@@ -450,7 +449,7 @@ describe("Group Executors", () => {
 
         executeAddGroup(command, schemaObj);
 
-        const ref = toArray(toArray(schemaObj.complexType)[0].sequence!.group)[0];
+        const ref = ((schemaObj.complexType ?? [])[0].sequence!.group ?? [])[0];
         expect(ref.annotation).toBeDefined();
         expect(ref.annotation!.documentation![0].value).toBe("A person group ref annotation");
       });
@@ -468,7 +467,7 @@ describe("Group Executors", () => {
 
         executeRemoveGroup(command, schemaObj);
 
-        const refs = toArray(toArray(schemaObj.complexType)[0].sequence?.group);
+        const refs = (schemaObj.complexType ?? [])[0].sequence?.group ?? [];
         expect(refs).toHaveLength(0);
       });
 
@@ -482,7 +481,7 @@ describe("Group Executors", () => {
 
         executeRemoveGroup(command, schemaObj);
 
-        const refs = toArray(toArray(schemaObj.complexType)[0].sequence!.group);
+        const refs = (schemaObj.complexType ?? [])[0].sequence!.group ?? [];
         expect(refs).toHaveLength(1);
         expect(refs[0].ref).toBe("AddressGroup");
       });
@@ -497,7 +496,7 @@ describe("Group Executors", () => {
 
         executeRemoveGroup(command, schemaObj);
 
-        const ct = toArray(schemaObj.complexType)[0];
+        const ct = (schemaObj.complexType ?? [])[0];
         expect(ct.group).toBeUndefined();
       });
     });
@@ -516,7 +515,7 @@ describe("Group Executors", () => {
 
         executeModifyGroup(command, schemaObj);
 
-        const refs = toArray(toArray(schemaObj.complexType)[0].sequence!.group);
+        const refs = (schemaObj.complexType ?? [])[0].sequence!.group ?? [];
         expect(refs[0].ref).toBe("AddressGroup");
       });
 
@@ -534,7 +533,7 @@ describe("Group Executors", () => {
 
         executeModifyGroup(command, schemaObj);
 
-        const ref = toArray(toArray(schemaObj.complexType)[0].sequence!.group)[0];
+        const ref = ((schemaObj.complexType ?? [])[0].sequence!.group ?? [])[0];
         expect(ref.minOccurs).toBe(0);
         expect(ref.maxOccurs).toBe("unbounded");
       });
@@ -552,7 +551,7 @@ describe("Group Executors", () => {
 
         executeModifyGroup(command, schemaObj);
 
-        const ref = toArray(toArray(schemaObj.complexType)[0].sequence!.group)[0];
+        const ref = ((schemaObj.complexType ?? [])[0].sequence!.group ?? [])[0];
         expect(ref.annotation).toBeDefined();
         expect(ref.annotation!.documentation![0].value).toBe("Updated ref annotation");
       });
@@ -570,7 +569,7 @@ describe("Group Executors", () => {
 
         executeModifyGroup(command, schemaObj);
 
-        const ct = toArray(schemaObj.complexType)[0];
+        const ct = (schemaObj.complexType ?? [])[0];
         expect(ct.group!.ref).toBe("AddressGroup");
       });
     });

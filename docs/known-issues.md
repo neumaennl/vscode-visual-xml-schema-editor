@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-02T15:04:28Z }
-verified: { by: human:neumaennl, at: 2026-11-03T07:21:09Z }
+generated: { by: human:neumaennl, at: 2026-11-03T07:56:24Z }
+verified: { by: human:neumaennl, at: 2026-11-03T08:26:21Z }
 ---
 
 # Purpose
@@ -391,9 +391,8 @@ Effort:
 - **Severity:** Low
 - **Effort:** L
 - **Description:** `SchemaModelManager` has query methods (`findElement()`, `findComplexType()`, `findGroup()`, the `getAll*()` methods, `getTargetNamespace()`, `getImports()`, `getIncludes()`, `isLoaded()`, `clear()`), but they are only called from tests. They work on the schema stored in the manager, while validators and executors get a cloned schema object, and the webview cannot use code from `src/`. So the same lookups are written out again and again:
-  - About 40 places look up a top-level component by name with `toArray(schemaObj.<kind>).some(…)` or `.find(…)`.
+  - About 40 places look up a top-level component by name with `(schemaObj.<kind> ?? []).some(…)` or `.find(…)`.
   - `schemaQNameRewriter.ts`, `schemaLocalRenamer.ts`, `schemaPrefixChecker.ts` and the group and attribute group validators each iterate over all top-level kinds one by one.
-  - `validationUtils.ts` repeats `Array.isArray(x) ? x : [x]` instead of using `toArray()`; both are obsolete since `xmlbind-ts` 2.3 (see [`toArray()` is obsolete since `xmlbind-ts` 2.3](#toarray-is-obsolete-since-xmlbind-ts-23)).
   - `DiagramBuilder` and `DropCommandFactory` collect the same lists in the webview.
 
   The fix is to replace the manager's query methods with pure functions in `shared/` that take the schema object as a parameter (for example `findTopLevel(schemaObj, kind, name)`, `getTopLevel(schemaObj, kind)` and `forEachTopLevelComponent(schemaObj, callback)`), use them everywhere, and remove the unused methods.
@@ -434,14 +433,6 @@ Effort:
 - **Severity:** Low
 - **Effort:** L
 - **Description:** Every change redraws the whole diagram. Each `updateSchema` builds all diagram items from the schema object again, calculates the layout of every item and replaces all SVG content, even if the edit changed a single attribute. Changing a diagram option does the same, although the options are only applied after the build and would need only a new layout. Expanding or collapsing a node calls `refresh()`, which keeps the items but calculates the layout of all items and redraws the whole SVG. `DiagramLayout.relayoutItem()` was written to recalculate the layout of one item and its ancestors, but it is never called (see [Duplicated and dead code](#duplicated-and-dead-code)). For large schemas this probably makes editing slow; this was not measured. Smaller improvements are to use `refresh()` for option changes and `relayoutItem()` for expanding and collapsing; real incremental updates would need the [ambiguous node IDs](#node-ids-are-ambiguous-and-have-many-special-cases) fixed first, so that items can be matched across builds (see [Diagram rendering](diagram-rendering.md#pipeline)).
-- **GitHub issue:** none
-
-## `toArray()` is obsolete since `xmlbind-ts` 2.3
-
-- **Location:** `shared/schemaUtils.ts` (`toArray()`) and its callers in `shared/`, `src/` and `webview-src/`
-- **Severity:** Low
-- **Effort:** L
-- **Description:** Before version 2.3, `unmarshal` returned a single object instead of a one-item array when a repeated element occurred only once, although the generated classes declare arrays (`element?: topLevelElement[]`). The code therefore reads every repeated child through `toArray()`, about 250 times in production code. Since `xmlbind-ts` 2.3, these fields are always arrays: one item for a single occurrence, and an empty array when the element is absent ([xmlbind-ts#261](https://github.com/neumaennl/xmlbind-ts/issues/261)). `toArray()` and the `Array.isArray(x) ? x : [x]` checks in `validationUtils.ts` no longer change anything for unmarshalled data. The cleanup removes them; code that builds schema objects itself, such as the executors, then has to assign arrays as well, and the generated properties are still declared optional. It is done on the editor branch, which has more of these calls (Phase 9 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340)).
 - **GitHub issue:** none
 
 ## Executors do nothing or fail with a TypeError instead of a meaningful error

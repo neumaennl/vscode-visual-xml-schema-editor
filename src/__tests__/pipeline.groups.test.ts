@@ -13,7 +13,6 @@ import type {
   RemoveAttributeGroupCommand,
   ModifyAttributeGroupCommand,
 } from "../../shared/types.js";
-import { toArray } from "../../shared/schemaUtils.js";
 import {
   SCHEMA_WITH_GROUP,
   SCHEMA_WITH_ATTRIBUTEGROUP,
@@ -33,7 +32,7 @@ describe("Integration: Group pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
-      const groups = toArray(result.group);
+      const groups = result.group ?? [];
       const addressGroup = groups.find((g) => g.name === "AddressGroup");
 
       expect(addressGroup).toBeDefined();
@@ -48,7 +47,7 @@ describe("Integration: Group pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
-      const choiceGroup = toArray(result.group).find((g) => g.name === "ChoiceGroup");
+      const choiceGroup = (result.group ?? []).find((g) => g.name === "ChoiceGroup");
 
       expect(choiceGroup).toBeDefined();
       expect(choiceGroup!.choice).toBeDefined();
@@ -84,7 +83,7 @@ describe("Integration: Group pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_GROUP, cmd);
-      const groups = toArray(result.group);
+      const groups = result.group ?? [];
 
       expect(groups.some((g) => g.name === "ContactGroup")).toBe(false);
     });
@@ -109,7 +108,7 @@ describe("Integration: Group pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_GROUP, cmd);
-      const groups = toArray(result.group);
+      const groups = result.group ?? [];
 
       expect(groups.some((g) => g.name === "CommunicationGroup")).toBe(true);
       expect(groups.some((g) => g.name === "ContactGroup")).toBe(false);
@@ -137,7 +136,7 @@ describe("Integration: AttributeGroup pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
-      const groups = toArray(result.attributeGroup);
+      const groups = result.attributeGroup ?? [];
 
       expect(groups.some((g) => g.name === "AuditAttributes")).toBe(true);
     });
@@ -169,7 +168,7 @@ describe("Integration: AttributeGroup pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_ATTRIBUTEGROUP, cmd);
-      const groups = toArray(result.attributeGroup);
+      const groups = result.attributeGroup ?? [];
 
       expect(groups.some((g) => g.name === "CommonAttrs")).toBe(false);
     });
@@ -194,7 +193,7 @@ describe("Integration: AttributeGroup pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_ATTRIBUTEGROUP, cmd);
-      const groups = toArray(result.attributeGroup);
+      const groups = result.attributeGroup ?? [];
 
       expect(groups.some((g) => g.name === "SharedAttrs")).toBe(true);
       expect(groups.some((g) => g.name === "CommonAttrs")).toBe(false);

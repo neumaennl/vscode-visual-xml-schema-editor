@@ -10,7 +10,6 @@ import type {
   RemoveComplexTypeCommand,
   ModifyComplexTypeCommand,
 } from "../../shared/types.js";
-import { toArray } from "../../shared/schemaUtils.js";
 import {
   SCHEMA_WITH_COMPLEXTYPE,
   runCommandExpectSuccessSchema,
@@ -33,7 +32,7 @@ describe("Integration: ComplexType pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
-      const types = toArray(result.complexType);
+      const types = result.complexType ?? [];
       const orderType = types.find((t) => t.name === "OrderType");
 
       expect(orderType).toBeDefined();
@@ -53,7 +52,7 @@ describe("Integration: ComplexType pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
-      const choiceType = toArray(result.complexType).find((t) => t.name === "ChoiceType");
+      const choiceType = (result.complexType ?? []).find((t) => t.name === "ChoiceType");
 
       expect(choiceType).toBeDefined();
       expect(choiceType!.choice).toBeDefined();
@@ -71,7 +70,7 @@ describe("Integration: ComplexType pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
-      const allType = toArray(result.complexType).find((t) => t.name === "AllType");
+      const allType = (result.complexType ?? []).find((t) => t.name === "AllType");
 
       expect(allType).toBeDefined();
       expect(allType!.all).toBeDefined();
@@ -90,7 +89,7 @@ describe("Integration: ComplexType pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
-      const baseType = toArray(result.complexType).find((t) => t.name === "BaseType");
+      const baseType = (result.complexType ?? []).find((t) => t.name === "BaseType");
 
       expect(baseType).toBeDefined();
       expect(String(baseType!.abstract)).toBe("true");
@@ -125,7 +124,7 @@ describe("Integration: ComplexType pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_COMPLEXTYPE, cmd);
-      const types = toArray(result.complexType);
+      const types = result.complexType ?? [];
 
       expect(types.some((t) => t.name === "PersonType")).toBe(false);
     });
@@ -150,7 +149,7 @@ describe("Integration: ComplexType pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_COMPLEXTYPE, cmd);
-      const types = toArray(result.complexType);
+      const types = result.complexType ?? [];
 
       expect(types.some((t) => t.name === "IndividualType")).toBe(true);
       expect(types.some((t) => t.name === "PersonType")).toBe(false);
@@ -163,7 +162,7 @@ describe("Integration: ComplexType pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_COMPLEXTYPE, cmd);
-      const personType = toArray(result.complexType).find((t) => t.name === "PersonType");
+      const personType = (result.complexType ?? []).find((t) => t.name === "PersonType");
 
       expect(personType).toBeDefined();
       expect(String(personType!.abstract)).toBe("true");
@@ -176,7 +175,7 @@ describe("Integration: ComplexType pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_COMPLEXTYPE, cmd);
-      const personType = toArray(result.complexType).find((t) => t.name === "PersonType");
+      const personType = (result.complexType ?? []).find((t) => t.name === "PersonType");
 
       expect(personType).toBeDefined();
       expect(String(personType!.mixed)).toBe("true");

@@ -10,7 +10,6 @@ import {
   executeRemoveElement,
   executeModifyElement,
 } from "./elementExecutors.js";
-import { toArray } from "../../shared/schemaUtils.js";
 import { emptySchema, readTestSchema, schemaWith } from "../__tests__/schemaTestHelpers.js";
 
 /** The file with an element `person` and a complexType `OrderType`. */
@@ -158,9 +157,9 @@ describe("Element Executors", () => {
 
         executeAddElement(command, schemaObj);
 
-        const workerType = toArray(schemaObj.complexType)[0];
+        const workerType = (schemaObj.complexType ?? [])[0];
         const sequence = workerType?.complexContent?.extension?.sequence;
-        const elements = toArray(sequence?.element);
+        const elements = sequence?.element ?? [];
         expect(elements).toHaveLength(2);
         expect(elements[1]?.name).toBe("department");
       });
@@ -282,7 +281,7 @@ describe("Element Executors", () => {
 
         executeModifyElement(command, schemaObj);
 
-        const element = toArray(schemaObj.element)[0];
+        const element = (schemaObj.element ?? [])[0];
         expect(element.type_).toBe("PersonType");
         expect(element.complexType).toBeUndefined();
       });
@@ -304,7 +303,7 @@ describe("Element Executors", () => {
 
         executeModifyElement(command, schemaObj);
 
-        const element = toArray(schemaObj.element)[0];
+        const element = (schemaObj.element ?? [])[0];
         expect(element.type_).toBe("CodeType");
         expect(element.simpleType).toBeUndefined();
       });
@@ -328,10 +327,10 @@ describe("Element Executors", () => {
 
         executeModifyElement(command, schemaObj);
 
-        const elements = toArray(schemaObj.element);
+        const elements = schemaObj.element ?? [];
         expect(elements[0].name).toBe("customer");
         expect(elements[1].substitutionGroup).toBe("customer");
-        expect(toArray(toArray(schemaObj.complexType)[0].sequence!.element)[0].ref).toBe("customer");
+        expect(((schemaObj.complexType ?? [])[0].sequence!.element ?? [])[0].ref).toBe("customer");
       });
 
       test("should add documentation to element", () => {
@@ -468,7 +467,7 @@ describe("Element Executors", () => {
       const complexTypes = Array.isArray(schemaObj.complexType)
         ? schemaObj.complexType
         : [schemaObj.complexType];
-      const seqElements = toArray(complexTypes[0]!.sequence!.element);
+      const seqElements = complexTypes[0]!.sequence!.element ?? [];
       expect(seqElements).toHaveLength(1);
       expect(seqElements[0].ref).toBe("person");
       expect(seqElements[0].name).toBeUndefined();
@@ -493,7 +492,7 @@ describe("Element Executors", () => {
       const complexTypes = Array.isArray(schemaObj.complexType)
         ? schemaObj.complexType
         : [schemaObj.complexType];
-      const seqElements = toArray(complexTypes[0]!.sequence!.element);
+      const seqElements = complexTypes[0]!.sequence!.element ?? [];
       expect(seqElements[0].ref).toBe("person");
       expect(seqElements[0].minOccurs).toBe(0);
       expect(seqElements[0].maxOccurs).toBe("unbounded");
@@ -512,7 +511,7 @@ describe("Element Executors", () => {
       const complexTypes = Array.isArray(schemaObj.complexType)
         ? schemaObj.complexType
         : [schemaObj.complexType];
-      const seqElements = toArray(complexTypes[0]!.sequence?.element);
+      const seqElements = complexTypes[0]!.sequence?.element ?? [];
       expect(seqElements).toHaveLength(0);
     });
 
@@ -537,7 +536,7 @@ describe("Element Executors", () => {
       const complexTypes = Array.isArray(schemaObj.complexType)
         ? schemaObj.complexType
         : [schemaObj.complexType];
-      const seqElements = toArray(complexTypes[0]!.sequence!.element);
+      const seqElements = complexTypes[0]!.sequence!.element ?? [];
       expect(seqElements[0].ref).toBe("person");
       expect(seqElements[0].name).toBeUndefined();
       expect(seqElements[0].type_).toBeUndefined();
@@ -560,7 +559,7 @@ describe("Element Executors", () => {
       const complexTypes = Array.isArray(schemaObj.complexType)
         ? schemaObj.complexType
         : [schemaObj.complexType];
-      const seqElements = toArray(complexTypes[0]!.sequence!.element);
+      const seqElements = complexTypes[0]!.sequence!.element ?? [];
       expect(seqElements[0].name).toBe("employee");
       expect(seqElements[0].type_).toBe("xs:string");
       expect((seqElements[0]).ref).toBeUndefined();

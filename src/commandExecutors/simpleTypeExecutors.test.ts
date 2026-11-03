@@ -14,7 +14,6 @@ import {
   topLevelAttribute,
   topLevelElement,
 } from "../../shared/types.js";
-import { toArray } from "../../shared/schemaUtils.js";
 import {
   executeAddSimpleType,
   executeModifySimpleType,
@@ -44,19 +43,19 @@ function modifySimpleType(schemaObj: schema, payload: ModifySimpleTypeCommand["p
 }
 
 function simpleTypes(schemaObj: schema): NonNullable<schema["simpleType"]> {
-  return toArray(schemaObj.simpleType);
+  return schemaObj.simpleType ?? [];
 }
 
 function elements(schemaObj: schema): NonNullable<schema["element"]> {
-  return toArray(schemaObj.element);
+  return schemaObj.element ?? [];
 }
 
 function attributes(schemaObj: schema): NonNullable<schema["attribute"]> {
-  return toArray(schemaObj.attribute);
+  return schemaObj.attribute ?? [];
 }
 
 function complexTypes(schemaObj: schema): NonNullable<schema["complexType"]> {
-  return toArray(schemaObj.complexType);
+  return schemaObj.complexType ?? [];
 }
 
 // `simpleTypes(schemaObj)[number]["restriction"]` is a generated property type that
@@ -377,7 +376,7 @@ describe("SimpleType Executors", () => {
         source: `<xs:complexType name="PersonType"><xs:attribute name="gender"/></xs:complexType>`,
         parentId: "/complexType:PersonType/attribute:gender",
         getSimpleType: (schemaObj: schema): localSimpleType =>
-          toArray(complexTypes(schemaObj)[0].attribute)[0].simpleType!,
+          (complexTypes(schemaObj)[0].attribute ?? [])[0].simpleType!,
       },
     ];
 

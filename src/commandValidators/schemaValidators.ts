@@ -12,7 +12,6 @@ import {
   ModifyIncludeCommand,
   ModifySchemaNamespacesCommand,
 } from "../../shared/types.js";
-import { toArray } from "../../shared/schemaUtils.js";
 import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
 import { isValidXmlName, ValidationResult } from "./validationUtils.js";
 import { isAnyPrefixReferencedInSchema } from "../commandExecutors/schemaPrefixChecker.js";
@@ -64,7 +63,7 @@ function validateImportId(
       error: `'${importId}' does not refer to an import node (got '${parsed.nodeType}')`,
     };
   }
-  const imports = toArray(schemaObj.import_);
+  const imports = schemaObj.import_ ?? [];
   if (index === undefined || index < 0 || index >= imports.length) {
     return { valid: false, error: `Import not found: ${importId}` };
   }
@@ -117,7 +116,7 @@ export function validateAddImport(
   }
 
   // Check if an import for this namespace already exists
-  const existingImports = toArray(schemaObj.import_);
+  const existingImports = schemaObj.import_ ?? [];
   if (existingImports.some((imp) => imp.namespace === namespace.trim())) {
     return { valid: false, error: `An import for namespace '${namespace.trim()}' already exists` };
   }
@@ -159,7 +158,7 @@ export function validateRemoveImport(
   if (!idResult.valid) return idResult;
 
   // Check if the import's namespace prefix is still referenced in the schema
-  const imports = toArray(schemaObj.import_);
+  const imports = schemaObj.import_ ?? [];
   const targetImport = imports[idResult.position];
   if (isNamespaceReferenced(targetImport.namespace, schemaObj)) {
     return {
@@ -183,7 +182,7 @@ export function validateModifyImport(
   const idResult = validateImportId(importId, schemaObj);
   if (!idResult.valid) return idResult;
 
-  const imports = toArray(schemaObj.import_);
+  const imports = schemaObj.import_ ?? [];
   const position = idResult.position;
 
   if (namespace !== undefined) {
@@ -285,7 +284,7 @@ function validateIncludeId(
       error: `'${includeId}' does not refer to an include node (got '${parsed.nodeType}')`,
     };
   }
-  const includes = toArray(schemaObj.include);
+  const includes = schemaObj.include ?? [];
   if (index === undefined || index < 0 || index >= includes.length) {
     return { valid: false, error: `Include not found: ${includeId}` };
   }
@@ -307,7 +306,7 @@ export function validateAddInclude(
   }
 
   // Check if an include with this schemaLocation already exists
-  const existingIncludes = toArray(schemaObj.include);
+  const existingIncludes = schemaObj.include ?? [];
   if (existingIncludes.some((inc) => inc.schemaLocation === schemaLocation.trim())) {
     return { valid: false, error: `An include for schema location '${schemaLocation.trim()}' already exists` };
   }
@@ -349,7 +348,7 @@ export function validateModifyInclude(
 
   // Check if another include already uses this schemaLocation
   const trimmedLocation = schemaLocation.trim();
-  const includes = toArray(schemaObj.include);
+  const includes = schemaObj.include ?? [];
   const currentPosition = idResult.position;
   if (
     includes.some(

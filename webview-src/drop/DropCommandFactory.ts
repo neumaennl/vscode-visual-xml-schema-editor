@@ -1,5 +1,4 @@
 import { schema, SchemaCommand } from "../../shared/types";
-import { toArray } from "../../shared/schemaUtils";
 import { DiagramItem, DiagramItemGroupType, DiagramItemType } from "../diagram";
 import { generateSchemaId, parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy";
 import { PaletteSchemaConstruct } from "../palette/PaletteSchemaConstruct";
@@ -486,9 +485,9 @@ export class DropCommandFactory {
    * @param nodes - Named schema collection
    */
   private addNamedNodesToSet(
-    nodes: { name?: string }[] | { name?: string } | undefined
+    nodes: { name?: string }[] | undefined
   ): void {
-    toArray(nodes).forEach((node) => {
+    (nodes ?? []).forEach((node) => {
       if (node.name) {
         this.schemaTopLevelNames.add(node.name);
       }

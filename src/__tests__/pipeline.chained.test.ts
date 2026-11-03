@@ -14,7 +14,6 @@ import { readFileSync } from "fs";
 import { resolve } from "path";
 import { unmarshal } from "@neumaennl/xmlbind-ts";
 import { schema } from "../../shared/types.js";
-import { toArray } from "../../shared/schemaUtils.js";
 import type { SchemaCommand, localElement, topLevelComplexType } from "../../shared/types.js";
 import {
   runCommandExpectSuccess,
@@ -147,13 +146,13 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
 
     beforeEach(() => {
       result = unmarshal(schema, BUILD_ORDER_TYPE.reduce(runCommandExpectSuccess, EXAMPLE_XSD));
-      orderType = toArray(result.complexType).find((t) => t.name === "OrderType")!;
-      seqElements = toArray(orderType?.sequence?.element);
+      orderType = (result.complexType ?? []).find((t) => t.name === "OrderType")!;
+      seqElements = orderType?.sequence?.element ?? [];
     });
 
     test("adds the top-level element order of type OrderType", () => {
       // Two top-level elements: example and order
-      const topElements = toArray(result.element);
+      const topElements = result.element ?? [];
       expect(topElements.length).toBe(2);
       const orderElement = topElements.find((e) => e.name === "order");
       expect(orderElement).toBeDefined();
@@ -162,7 +161,7 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
 
     test("adds OrderType with a sequence of four elements", () => {
       // Three named complexTypes: choiceType, loggingType, OrderType
-      expect(toArray(result.complexType).length).toBe(3);
+      expect((result.complexType ?? []).length).toBe(3);
       expect(orderType).toBeDefined();
       expect(orderType.sequence).toBeDefined();
       // OrderType sequence: orderId, qty, items, example (ref)
@@ -177,7 +176,7 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
       expect(orderIdEl!.minOccurs).toBe(1);
       expect(orderIdEl!.maxOccurs).toBe(1);
       expect(orderIdEl!.annotation).toBeDefined();
-      const docText = toArray(orderIdEl!.annotation!.documentation)[0]?.value;
+      const docText = (orderIdEl!.annotation!.documentation ?? [])[0]?.value;
       expect(docText).toBe("Unique identifier for the order");
 
       // qty: xs:integer, 0..1
@@ -200,7 +199,7 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
       // items anonymous complexType → sequence → item (lengthRestrictionType, 1..*)
       const itemsAnonCT = itemsEl!.complexType!;
       expect(itemsAnonCT.sequence).toBeDefined();
-      const innerElements = toArray(itemsAnonCT.sequence!.element);
+      const innerElements = itemsAnonCT.sequence!.element ?? [];
       expect(innerElements.length).toBe(1);
       const itemEl = innerElements.find((e) => e.name === "item");
       expect(itemEl).toBeDefined();
@@ -216,7 +215,7 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
       expect(exampleRef!.minOccurs).toBe(0);
 
       // currency attribute on OrderType
-      const attrs = toArray(orderType.attribute);
+      const attrs = orderType.attribute ?? [];
       expect(attrs.length).toBe(1);
       expect(attrs[0].name).toBe("currency");
       expect(attrs[0].type_).toBe("xs:string");
@@ -277,8 +276,8 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
     });
 
     const result = unmarshal(schema, xml);
-    const orderType = toArray(result.complexType).find((t) => t.name === "OrderType");
-    const qtyEl = toArray(orderType!.sequence!.element).find((e) => e.name === "qty");
+    const orderType = (result.complexType ?? []).find((t) => t.name === "OrderType");
+    const qtyEl = (orderType!.sequence!.element ?? []).find((e) => e.name === "qty");
     expect(qtyEl).toBeDefined();
     expect(qtyEl!.type_).toBeUndefined();
     expect(qtyEl!.complexType?.sequence).toBeDefined();
@@ -313,17 +312,17 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
     });
 
     const result = unmarshal(schema, xml);
-    const orderType = toArray(result.complexType).find((t) => t.name === "OrderType");
+    const orderType = (result.complexType ?? []).find((t) => t.name === "OrderType");
     expect(orderType).toBeDefined();
 
-    const statusEl = toArray(orderType!.sequence!.element).find((e) => e.name === "status");
+    const statusEl = (orderType!.sequence!.element ?? []).find((e) => e.name === "status");
     expect(statusEl).toBeDefined();
     expect(statusEl!.type_).toBeUndefined();
     expect(statusEl!.simpleType).toBeDefined();
 
     const restriction = statusEl!.simpleType!.restriction!;
     expect(restriction.base).toBe("xs:string");
-    const enumerations = toArray(restriction.enumeration);
+    const enumerations = restriction.enumeration ?? [];
     expect(enumerations.length).toBe(3);
     const values = enumerations.map((e) => e.value);
     expect(values).toContain("pending");
@@ -355,10 +354,10 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
       payload: { parentId: "/schema", elementName: "wrapper", elementType: "WrapperType" },
     });
 
-    const wrapperType = toArray(result.complexType).find((t) => t.name === "WrapperType");
+    const wrapperType = (result.complexType ?? []).find((t) => t.name === "WrapperType");
     expect(wrapperType).toBeDefined();
 
-    const refEls = toArray(wrapperType!.sequence!.element);
+    const refEls = wrapperType!.sequence!.element ?? [];
     expect(refEls.length).toBe(1);
     expect(refEls[0].ref).toBe("example");
     expect(refEls[0].name).toBeUndefined();

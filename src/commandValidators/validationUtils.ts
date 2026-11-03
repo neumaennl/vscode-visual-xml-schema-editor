@@ -278,25 +278,13 @@ export function validateElementType(
   const localTypeName = getLocalTypeName(trimmedType);
 
   // Check if it's a user-defined simple type
-  if (schemaObj.simpleType) {
-    const simpleTypes = Array.isArray(schemaObj.simpleType) 
-      ? schemaObj.simpleType 
-      : [schemaObj.simpleType];
-    
-    if (simpleTypes.some(type => type.name === localTypeName)) {
-      return { valid: true };
-    }
+  if ((schemaObj.simpleType ?? []).some(type => type.name === localTypeName)) {
+    return { valid: true };
   }
 
   // Check if it's a user-defined complex type
-  if (schemaObj.complexType) {
-    const complexTypes = Array.isArray(schemaObj.complexType)
-      ? schemaObj.complexType
-      : [schemaObj.complexType];
-    
-    if (complexTypes.some(type => type.name === localTypeName)) {
-      return { valid: true };
-    }
+  if ((schemaObj.complexType ?? []).some(type => type.name === localTypeName)) {
+    return { valid: true };
   }
 
   // If the type has a prefix, validate it against imports
@@ -311,16 +299,10 @@ export function validateElementType(
       
       if (namespaceUri) {
         // Check if there's an import for this namespace
-        if (schemaObj.import_) {
-          const imports = Array.isArray(schemaObj.import_) 
-            ? schemaObj.import_ 
-            : [schemaObj.import_];
-          
-          const hasMatchingImport = imports.some(imp => imp.namespace === namespaceUri);
-          if (hasMatchingImport) {
-            // Type is from a valid import with matching namespace, allow it
-            return { valid: true };
-          }
+        const hasMatchingImport = (schemaObj.import_ ?? []).some(imp => imp.namespace === namespaceUri);
+        if (hasMatchingImport) {
+          // Type is from a valid import with matching namespace, allow it
+          return { valid: true };
         }
       }
     }
@@ -328,13 +310,8 @@ export function validateElementType(
     // Unqualified type name: allow it when the schema has xs:include elements,
     // since included schemas share the same target namespace and their types
     // are referenced without a prefix.
-    if (schemaObj.include) {
-      const includes = Array.isArray(schemaObj.include)
-        ? schemaObj.include
-        : [schemaObj.include];
-      if (includes.length > 0 && isValidXmlName(localTypeName)) {
-        return { valid: true };
-      }
+    if ((schemaObj.include ?? []).length > 0 && isValidXmlName(localTypeName)) {
+      return { valid: true };
     }
   }
 

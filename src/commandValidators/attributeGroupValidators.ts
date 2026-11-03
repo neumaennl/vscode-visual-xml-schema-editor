@@ -12,7 +12,6 @@ import {
   attributeGroupRef,
 } from "../../shared/types.js";
 import { ValidationResult, isValidXmlName } from "./validationUtils.js";
-import { toArray } from "../../shared/schemaUtils.js";
 import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
 import { locateNodeById } from "../schemaNavigator.js";
 
@@ -69,21 +68,21 @@ function attrGroupRefExistsInHolder(
   name: string,
   holder: AttributeGroupHolder
 ): boolean {
-  if (toArray(holder.attributeGroup).some((r) => r.ref === name)) return true;
+  if ((holder.attributeGroup ?? []).some((r) => r.ref === name)) return true;
   const ccExt = holder.complexContent?.extension;
-  if (ccExt && toArray(ccExt.attributeGroup).some((r) => r.ref === name)) {
+  if (ccExt && (ccExt.attributeGroup ?? []).some((r) => r.ref === name)) {
     return true;
   }
   const ccRestr = holder.complexContent?.restriction;
-  if (ccRestr && toArray(ccRestr.attributeGroup).some((r) => r.ref === name)) {
+  if (ccRestr && (ccRestr.attributeGroup ?? []).some((r) => r.ref === name)) {
     return true;
   }
   const scExt = holder.simpleContent?.extension;
-  if (scExt && toArray(scExt.attributeGroup).some((r) => r.ref === name)) {
+  if (scExt && (scExt.attributeGroup ?? []).some((r) => r.ref === name)) {
     return true;
   }
   const scRestr = holder.simpleContent?.restriction;
-  if (scRestr && toArray(scRestr.attributeGroup).some((r) => r.ref === name)) {
+  if (scRestr && (scRestr.attributeGroup ?? []).some((r) => r.ref === name)) {
     return true;
   }
   return false;
@@ -98,15 +97,15 @@ function attrGroupRefExistsInCompositor(
   name: string,
   compositor: CompositorWithElements
 ): boolean {
-  for (const el of toArray(compositor.element)) {
+  for (const el of compositor.element ?? []) {
     if (el?.complexType && attrGroupRefExistsInHolderDeep(name, el.complexType)) {
       return true;
     }
   }
-  for (const sub of toArray(compositor.choice)) {
+  for (const sub of compositor.choice ?? []) {
     if (attrGroupRefExistsInCompositor(name, sub)) return true;
   }
-  for (const sub of toArray(compositor.sequence)) {
+  for (const sub of compositor.sequence ?? []) {
     if (attrGroupRefExistsInCompositor(name, sub)) return true;
   }
   return false;
@@ -163,19 +162,19 @@ function attrGroupRefExistsInHolderDeep(
  * @returns Whether a reference was found
  */
 function isAttrGroupReferenced(name: string, schemaObj: schema): boolean {
-  for (const ct of toArray(schemaObj.complexType)) {
+  for (const ct of schemaObj.complexType ?? []) {
     if (attrGroupRefExistsInHolderDeep(name, ct)) return true;
   }
-  for (const el of toArray(schemaObj.element)) {
+  for (const el of schemaObj.element ?? []) {
     if (el.complexType && attrGroupRefExistsInHolderDeep(name, el.complexType)) {
       return true;
     }
   }
-  for (const group of toArray(schemaObj.group)) {
+  for (const group of schemaObj.group ?? []) {
     if (attrGroupRefExistsInCompositors(name, group)) return true;
   }
-  for (const ag of toArray(schemaObj.attributeGroup)) {
-    if (toArray(ag.attributeGroup).some((r) => r.ref === name)) return true;
+  for (const ag of schemaObj.attributeGroup ?? []) {
+    if ((ag.attributeGroup ?? []).some((r) => r.ref === name)) return true;
   }
   return false;
 }
@@ -242,7 +241,7 @@ export function validateAddAttributeGroup(
         error: "Attribute group ref must be a valid XML name",
       };
     }
-    const groupExists = toArray(schemaObj.attributeGroup).some(
+    const groupExists = (schemaObj.attributeGroup ?? []).some(
       (g) => g.name === ref
     );
     if (!groupExists) {
@@ -280,7 +279,7 @@ export function validateAddAttributeGroup(
       error: "Attribute group name must be a valid XML name",
     };
   }
-  const exists = toArray(schemaObj.attributeGroup).some(
+  const exists = (schemaObj.attributeGroup ?? []).some(
     (g) => g.name === groupName
   );
   if (exists) {
@@ -327,7 +326,7 @@ export function validateRemoveAttributeGroup(
         error: `Parent node not found: ${parsed.parentId}`,
       };
     }
-    const refs = toArray((location.parent as AttrGroupRefHolder).attributeGroup);
+    const refs = (location.parent as AttrGroupRefHolder).attributeGroup ?? [];
     if (!attrGroupRefExistsInParent(refs, parsed.name, parsed.position)) {
       return {
         valid: false,
@@ -338,7 +337,7 @@ export function validateRemoveAttributeGroup(
   }
 
   // Definition mode: validate existence and no references
-  const found = toArray(schemaObj.attributeGroup).some(
+  const found = (schemaObj.attributeGroup ?? []).some(
     (g) => g.name === parsed.name
   );
   if (!found) {
@@ -400,7 +399,7 @@ export function validateModifyAttributeGroup(
         error: `Parent node not found: ${parsed.parentId}`,
       };
     }
-    const refs = toArray((location.parent as AttrGroupRefHolder).attributeGroup);
+    const refs = (location.parent as AttrGroupRefHolder).attributeGroup ?? [];
     if (!attrGroupRefExistsInParent(refs, parsed.name, parsed.position)) {
       return {
         valid: false,
@@ -414,7 +413,7 @@ export function validateModifyAttributeGroup(
           error: "Attribute group ref must be a valid XML name",
         };
       }
-      const refExists = toArray(schemaObj.attributeGroup).some(
+      const refExists = (schemaObj.attributeGroup ?? []).some(
         (g) => g.name === command.payload.ref
       );
       if (!refExists) {
@@ -435,7 +434,7 @@ export function validateModifyAttributeGroup(
         "Cannot use ref when modifying an attribute group definition — use groupName or documentation instead",
     };
   }
-  const found = toArray(schemaObj.attributeGroup).some(
+  const found = (schemaObj.attributeGroup ?? []).some(
     (g) => g.name === parsed.name
   );
   if (!found) {
@@ -451,7 +450,7 @@ export function validateModifyAttributeGroup(
         error: "Attribute group name must be a valid XML name",
       };
     }
-    const nameExists = toArray(schemaObj.attributeGroup).some(
+    const nameExists = (schemaObj.attributeGroup ?? []).some(
       (g) => g.name === command.payload.groupName && g.name !== parsed.name
     );
     if (nameExists) {

@@ -18,7 +18,6 @@ import {
   topLevelSimpleType,
   namedGroup,
 } from "../../shared/types";
-import { toArray } from "../../shared/schemaUtils";
 import {
   generateSchemaId,
   SCHEMA_ROOT_ID,
@@ -88,7 +87,7 @@ export class DiagramBuilder {
     );
     schemaNode.documentationAnnotations = extractDocumentationAnnotations(schemaNode.id, schemaObj.annotation);
     schemaNode.documentation = extractDocumentation(schemaObj.annotation) ?? "";
-    schemaNode.attributes = toArray(schemaObj.attribute)
+    schemaNode.attributes = (schemaObj.attribute ?? [])
       .filter((attr) => !!attr.name)
       .map((attr) => ({
         name: String(attr.name),

@@ -22,7 +22,6 @@ import {
   importType,
   includeType,
 } from "../shared/types.js";
-import { toArray } from "../shared/schemaUtils.js";
 
 /**
  * Result of a schema query operation.
@@ -149,16 +148,15 @@ export class SchemaModelManager {
   /**
    * Helper method to find an item by name in a collection.
    * 
-   * @param items - The collection to search (may be undefined, single item, or array)
+   * @param items - The collection to search (may be undefined)
    * @param name - The name to search for
    * @returns Query result containing the item if found
    */
   private findByName<T extends { name: string }>(
-    items: T | T[] | undefined,
+    items: T[] | undefined,
     name: string
   ): QueryResult<T> {
-    const itemsArray = toArray(items);
-    const item = itemsArray.find((el) => el.name === name);
+    const item = (items ?? []).find((el) => el.name === name);
     return item ? { found: true, item } : { found: false };
   }
 
@@ -220,7 +218,7 @@ export class SchemaModelManager {
    * @returns Array of top-level elements, or empty array if none exist
    */
   public getAllElements(): topLevelElement[] {
-    return toArray(this.schemaState?.element);
+    return this.schemaState?.element ?? [];
   }
 
   /**
@@ -229,7 +227,7 @@ export class SchemaModelManager {
    * @returns Array of simple types, or empty array if none exist
    */
   public getAllSimpleTypes(): topLevelSimpleType[] {
-    return toArray(this.schemaState?.simpleType);
+    return this.schemaState?.simpleType ?? [];
   }
 
   /**
@@ -238,7 +236,7 @@ export class SchemaModelManager {
    * @returns Array of complex types, or empty array if none exist
    */
   public getAllComplexTypes(): topLevelComplexType[] {
-    return toArray(this.schemaState?.complexType);
+    return this.schemaState?.complexType ?? [];
   }
 
   /**
@@ -247,7 +245,7 @@ export class SchemaModelManager {
    * @returns Array of groups, or empty array if none exist
    */
   public getAllGroups(): namedGroup[] {
-    return toArray(this.schemaState?.group);
+    return this.schemaState?.group ?? [];
   }
 
   /**
@@ -256,7 +254,7 @@ export class SchemaModelManager {
    * @returns Array of attribute groups, or empty array if none exist
    */
   public getAllAttributeGroups(): namedAttributeGroup[] {
-    return toArray(this.schemaState?.attributeGroup);
+    return this.schemaState?.attributeGroup ?? [];
   }
 
   /**
@@ -274,7 +272,7 @@ export class SchemaModelManager {
    * @returns Array of import declarations
    */
   public getImports(): importType[] {
-    return toArray(this.schemaState?.import_);
+    return this.schemaState?.import_ ?? [];
   }
 
   /**
@@ -283,6 +281,6 @@ export class SchemaModelManager {
    * @returns Array of include declarations
    */
   public getIncludes(): includeType[] {
-    return toArray(this.schemaState?.include);
+    return this.schemaState?.include ?? [];
   }
 }

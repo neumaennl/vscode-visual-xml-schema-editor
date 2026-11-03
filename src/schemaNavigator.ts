@@ -18,7 +18,7 @@ import {
   attribute,
 } from "../shared/types.js";
 import { parseSchemaId, SchemaNodeType } from "../shared/idStrategy.js";
-import { toArray, isSchemaRoot } from "../shared/schemaUtils.js";
+import { isSchemaRoot } from "../shared/schemaUtils.js";
 
 /**
  * Result of a node location operation.
@@ -223,37 +223,37 @@ function navigateFromSchema(
   position?: number
 ): { found: boolean; node?: unknown; nodeType?: string } {
   if (nodeType === SchemaNodeType.Element) {
-    const elements = toArray(schemaObj.element);
+    const elements = schemaObj.element ?? [];
     const element = findByNameOrPosition(elements, name, position);
     if (element) {
       return { found: true, node: element, nodeType: "topLevelElement" };
     }
   } else if (nodeType === SchemaNodeType.ComplexType) {
-    const types = toArray(schemaObj.complexType);
+    const types = schemaObj.complexType ?? [];
     const type = findByNameOrPosition(types, name, position);
     if (type) {
       return { found: true, node: type, nodeType: "topLevelComplexType" };
     }
   } else if (nodeType === SchemaNodeType.SimpleType) {
-    const types = toArray(schemaObj.simpleType);
+    const types = schemaObj.simpleType ?? [];
     const type = findByNameOrPosition(types, name, position);
     if (type) {
       return { found: true, node: type, nodeType: "topLevelSimpleType" };
     }
   } else if (nodeType === SchemaNodeType.Group) {
-    const groups = toArray(schemaObj.group);
+    const groups = schemaObj.group ?? [];
     const group = findByNameOrPosition(groups, name, position);
     if (group) {
       return { found: true, node: group, nodeType: "namedGroup" };
     }
   } else if (nodeType === SchemaNodeType.AttributeGroup) {
-    const attrGroups = toArray(schemaObj.attributeGroup);
+    const attrGroups = schemaObj.attributeGroup ?? [];
     const attrGroup = findByNameOrPosition(attrGroups, name, position);
     if (attrGroup) {
       return { found: true, node: attrGroup, nodeType: "namedAttributeGroup" };
     }
   } else if (nodeType === SchemaNodeType.Attribute) {
-    const attrs = toArray(schemaObj.attribute);
+    const attrs = schemaObj.attribute ?? [];
     const attr = findByNameOrPosition(attrs, name, position);
     if (attr) {
       return { found: true, node: attr, nodeType: "topLevelAttribute" };
@@ -347,7 +347,7 @@ function navigateFromComplexType(
       }
     }
   } else if (nodeType === SchemaNodeType.Attribute) {
-    const attrs = toArray(complexType.attribute);
+    const attrs = complexType.attribute ?? [];
     const attr = findByNameOrPosition(attrs, name, position);
     if (attr) {
       return { found: true, node: attr, nodeType: "attribute" };
@@ -418,12 +418,7 @@ function navigateFromGroup(
   position?: number
 ): { found: boolean; node?: unknown; nodeType?: string } {
   if (nodeType === SchemaNodeType.Element) {
-    const elements = toArray(
-      group.element as
-        | Array<{ name?: string; ref?: string }>
-        | { name?: string; ref?: string }
-        | undefined
-    );
+    const elements: Array<{ name?: string; ref?: string }> = group.element ?? [];
     const element = findByNameOrPosition(elements, name, position);
     if (element) {
       return { found: true, node: element, nodeType: "localElement" };
@@ -431,14 +426,14 @@ function navigateFromGroup(
   }
 
   if (nodeType === SchemaNodeType.Group && name === "choice") {
-    const choice = toArray((group as { choice?: explicitGroup[] }).choice)[position ?? 0];
+    const choice = ((group as { choice?: explicitGroup[] }).choice ?? [])[position ?? 0];
     if (choice) {
       return { found: true, node: choice, nodeType: "choice" };
     }
   }
 
   if (nodeType === SchemaNodeType.Group && name === "sequence") {
-    const sequence = toArray((group as { sequence?: explicitGroup[] }).sequence)[position ?? 0];
+    const sequence = ((group as { sequence?: explicitGroup[] }).sequence ?? [])[position ?? 0];
     if (sequence) {
       return { found: true, node: sequence, nodeType: "sequence" };
     }

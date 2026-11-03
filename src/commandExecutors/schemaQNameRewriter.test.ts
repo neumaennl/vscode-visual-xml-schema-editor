@@ -31,7 +31,6 @@ import {
   topLevelSimpleType,
   unionType,
 } from "../../shared/types.js";
-import { toArray } from "../../shared/schemaUtils.js";
 import { rewritePrefixInSchema } from "./schemaQNameRewriter.js";
 import { emptySchema, schemaWith } from "../__tests__/schemaTestHelpers.js";
 
@@ -50,7 +49,7 @@ describe("rewritePrefixInSchema", () => {
 
     rewritePrefixInSchema("ext", "ext", schemaObj);
 
-    expect(toArray(schemaObj.element)[0].type_).toBe("ext:FooType");
+    expect(schemaObj.element[0].type_).toBe("ext:FooType");
   });
 
   test("does not throw on an empty schema", () => {
@@ -62,7 +61,7 @@ describe("rewritePrefixInSchema", () => {
 
     rewritePrefixInSchema("ext", "p", schemaObj);
 
-    expect(toArray(schemaObj.element)[0].type_).toBe("p:FooType");
+    expect((schemaObj.element ?? [])[0].type_).toBe("p:FooType");
   });
 
   test("rewrites top-level element @substitutionGroup", () => {
@@ -70,7 +69,7 @@ describe("rewritePrefixInSchema", () => {
 
     rewritePrefixInSchema("ext", "p", schemaObj);
 
-    expect(toArray(schemaObj.element)[0].substitutionGroup).toBe("p:Head");
+    expect((schemaObj.element ?? [])[0].substitutionGroup).toBe("p:Head");
   });
 
   test("does not rewrite element @type values with a different prefix", () => {
@@ -79,7 +78,7 @@ describe("rewritePrefixInSchema", () => {
 
     rewritePrefixInSchema("ext", "p", schemaObj);
 
-    expect(toArray(schemaObj.element)[1].type_).toBe("xs:string");
+    expect((schemaObj.element ?? [])[1].type_).toBe("xs:string");
   });
 
   test("rewrites top-level attribute @type", () => {
@@ -91,7 +90,7 @@ describe("rewritePrefixInSchema", () => {
 
     rewritePrefixInSchema("ext", "p", schemaObj);
 
-    expect(toArray(schemaObj.attribute)[0].type_).toBe("p:AttrType");
+    expect(schemaObj.attribute[0].type_).toBe("p:AttrType");
   });
 
   test("rewrites simpleType restriction/@base", () => {
@@ -105,7 +104,7 @@ describe("rewritePrefixInSchema", () => {
 
     rewritePrefixInSchema("ext", "p", schemaObj);
 
-    expect(toArray(schemaObj.simpleType)[0].restriction!.base).toBe("p:BaseString");
+    expect(schemaObj.simpleType[0].restriction!.base).toBe("p:BaseString");
   });
 
   test("rewrites simpleType list/@itemType", () => {
@@ -119,7 +118,7 @@ describe("rewritePrefixInSchema", () => {
 
     rewritePrefixInSchema("ext", "p", schemaObj);
 
-    expect(toArray(schemaObj.simpleType)[0].list!.itemType).toBe("p:ItemType");
+    expect(schemaObj.simpleType[0].list!.itemType).toBe("p:ItemType");
   });
 
   test("rewrites all matching union/@memberTypes tokens", () => {
@@ -133,7 +132,7 @@ describe("rewritePrefixInSchema", () => {
 
     rewritePrefixInSchema("ext", "p", schemaObj);
 
-    expect(toArray(schemaObj.simpleType)[0].union!.memberTypes).toBe("p:TypeA xs:string p:TypeB");
+    expect(schemaObj.simpleType[0].union!.memberTypes).toBe("p:TypeA xs:string p:TypeB");
   });
 
   test("rewrites complexContent extension/@base", () => {
@@ -149,7 +148,7 @@ describe("rewritePrefixInSchema", () => {
 
     rewritePrefixInSchema("ext", "p", schemaObj);
 
-    expect(toArray(schemaObj.complexType)[0].complexContent!.extension!.base).toBe("p:Parent");
+    expect(schemaObj.complexType[0].complexContent!.extension!.base).toBe("p:Parent");
   });
 
   test("rewrites complexContent restriction/@base", () => {
@@ -165,7 +164,7 @@ describe("rewritePrefixInSchema", () => {
 
     rewritePrefixInSchema("ext", "p", schemaObj);
 
-    expect(toArray(schemaObj.complexType)[0].complexContent!.restriction!.base).toBe("p:Base");
+    expect(schemaObj.complexType[0].complexContent!.restriction!.base).toBe("p:Base");
   });
 
   test("rewrites element @type inside a complexContent extension sequence", () => {
@@ -187,7 +186,7 @@ describe("rewritePrefixInSchema", () => {
 
     rewritePrefixInSchema("ext", "p", schemaObj);
 
-    expect(toArray(toArray(schemaObj.complexType)[0].complexContent!.extension!.sequence!.element)[0].type_).toBe(
+    expect((schemaObj.complexType[0].complexContent!.extension!.sequence!.element ?? [])[0].type_).toBe(
       "p:ChildType"
     );
   });
@@ -205,7 +204,7 @@ describe("rewritePrefixInSchema", () => {
 
     rewritePrefixInSchema("ext", "p", schemaObj);
 
-    expect(toArray(schemaObj.complexType)[0].simpleContent!.extension!.base).toBe("p:SimpleBase");
+    expect(schemaObj.complexType[0].simpleContent!.extension!.base).toBe("p:SimpleBase");
   });
 
   test("rewrites attribute @type inside a simpleContent extension", () => {
@@ -225,7 +224,7 @@ describe("rewritePrefixInSchema", () => {
 
     rewritePrefixInSchema("ext", "p", schemaObj);
 
-    expect(toArray(toArray(schemaObj.complexType)[0].simpleContent!.extension!.attribute)[0].type_).toBe(
+    expect((schemaObj.complexType[0].simpleContent!.extension!.attribute ?? [])[0].type_).toBe(
       "p:AttrType"
     );
   });
@@ -243,7 +242,7 @@ describe("rewritePrefixInSchema", () => {
 
     rewritePrefixInSchema("ext", "p", schemaObj);
 
-    expect(toArray(schemaObj.complexType)[0].simpleContent!.restriction!.base).toBe("p:SimpleBase");
+    expect(schemaObj.complexType[0].simpleContent!.restriction!.base).toBe("p:SimpleBase");
   });
 
   test("rewrites top-level complexType group refs", () => {
@@ -257,7 +256,7 @@ describe("rewritePrefixInSchema", () => {
 
     rewritePrefixInSchema("ext", "p", schemaObj);
 
-    expect(toArray(schemaObj.complexType)[0].group!.ref).toBe("p:MyGroup");
+    expect(schemaObj.complexType[0].group!.ref).toBe("p:MyGroup");
   });
 
   test("rewrites top-level complexType attributeGroup refs", () => {
@@ -271,7 +270,7 @@ describe("rewritePrefixInSchema", () => {
 
     rewritePrefixInSchema("ext", "p", schemaObj);
 
-    expect(toArray(toArray(schemaObj.complexType)[0].attributeGroup)[0].ref).toBe("p:MyAttrGroup");
+    expect((schemaObj.complexType[0].attributeGroup ?? [])[0].ref).toBe("p:MyAttrGroup");
   });
 
   test("rewrites top-level complexType attribute @type", () => {
@@ -286,7 +285,7 @@ describe("rewritePrefixInSchema", () => {
 
     rewritePrefixInSchema("ext", "p", schemaObj);
 
-    expect(toArray(toArray(schemaObj.complexType)[0].attribute)[0].type_).toBe("p:AttrType");
+    expect((schemaObj.complexType[0].attribute ?? [])[0].type_).toBe("p:AttrType");
   });
 
   test("rewrites inline simpleType restriction bases on complexType attributes", () => {
@@ -305,7 +304,7 @@ describe("rewritePrefixInSchema", () => {
 
     rewritePrefixInSchema("ext", "p", schemaObj);
 
-    expect(toArray(toArray(schemaObj.complexType)[0].attribute)[0].simpleType!.restriction!.base).toBe(
+    expect((schemaObj.complexType[0].attribute ?? [])[0].simpleType!.restriction!.base).toBe(
       "p:BaseType"
     );
   });
@@ -326,7 +325,7 @@ describe("rewritePrefixInSchema", () => {
 
     rewritePrefixInSchema("ext", "p", schemaObj);
 
-    expect(toArray(toArray(toArray(schemaObj.complexType)[0].sequence!.choice)[0].element)[0].type_).toBe(
+    expect(((schemaObj.complexType[0].sequence!.choice ?? [])[0].element ?? [])[0].type_).toBe(
       "p:DeepType"
     );
   });
@@ -344,7 +343,7 @@ describe("rewritePrefixInSchema", () => {
 
     rewritePrefixInSchema("ext", "p", schemaObj);
 
-    expect(toArray(toArray(schemaObj.complexType)[0].sequence!.group)[0].ref).toBe("p:SeqGroup");
+    expect((schemaObj.complexType[0].sequence!.group ?? [])[0].ref).toBe("p:SeqGroup");
   });
 
   test("rewrites keyref/@refer on top-level elements", () => {
@@ -359,7 +358,7 @@ describe("rewritePrefixInSchema", () => {
 
     rewritePrefixInSchema("ext", "p", schemaObj);
 
-    expect(toArray(schemaObj.element)[0].keyref![0].refer).toBe("p:KeyName");
+    expect(schemaObj.element[0].keyref![0].refer).toBe("p:KeyName");
   });
 
   test("rewrites keyref/@refer on nested elements", () => {
@@ -379,7 +378,7 @@ describe("rewritePrefixInSchema", () => {
 
     rewritePrefixInSchema("ext", "p", schemaObj);
 
-    expect(toArray(toArray(schemaObj.complexType)[0].sequence!.element)[0].keyref![0].refer).toBe(
+    expect((schemaObj.complexType[0].sequence!.element ?? [])[0].keyref![0].refer).toBe(
       "p:KeyName"
     );
   });
@@ -400,7 +399,7 @@ describe("rewritePrefixInSchema", () => {
 
     rewritePrefixInSchema("ext", "p", schemaObj);
 
-    expect(toArray(wrapper.complexType.sequence!.element)[0].type_).toBe("p:InnerType");
+    expect((wrapper.complexType.sequence!.element ?? [])[0].type_).toBe("p:InnerType");
   });
 
   test("rewrites named group sequence element @type values", () => {
@@ -417,7 +416,7 @@ describe("rewritePrefixInSchema", () => {
 
     rewritePrefixInSchema("ext", "p", schemaObj);
 
-    expect(toArray(toArray(schemaObj.group)[0].sequence!.element)[0].type_).toBe("p:ChildType");
+    expect((schemaObj.group[0].sequence!.element ?? [])[0].type_).toBe("p:ChildType");
   });
 
   test("rewrites named group choice element @type values", () => {
@@ -434,7 +433,7 @@ describe("rewritePrefixInSchema", () => {
 
     rewritePrefixInSchema("ext", "p", schemaObj);
 
-    expect(toArray(toArray(schemaObj.group)[0].choice!.element)[0].type_).toBe("p:OptType");
+    expect((schemaObj.group[0].choice!.element ?? [])[0].type_).toBe("p:OptType");
   });
 
   test("rewrites named attributeGroup attribute @type values", () => {
@@ -449,7 +448,7 @@ describe("rewritePrefixInSchema", () => {
 
     rewritePrefixInSchema("ext", "p", schemaObj);
 
-    expect(toArray(toArray(schemaObj.attributeGroup)[0].attribute)[0].type_).toBe("p:AttrType");
+    expect((schemaObj.attributeGroup[0].attribute ?? [])[0].type_).toBe("p:AttrType");
   });
 
   test("rewrites inline simpleType restriction bases in named attribute groups", () => {
@@ -468,7 +467,7 @@ describe("rewritePrefixInSchema", () => {
 
     rewritePrefixInSchema("ext", "p", schemaObj);
 
-    expect(toArray(toArray(schemaObj.attributeGroup)[0].attribute)[0].simpleType!.restriction!.base).toBe(
+    expect((schemaObj.attributeGroup[0].attribute ?? [])[0].simpleType!.restriction!.base).toBe(
       "p:BaseType"
     );
   });
@@ -484,6 +483,6 @@ describe("rewritePrefixInSchema", () => {
 
     rewritePrefixInSchema("ext", "p", schemaObj);
 
-    expect(toArray(toArray(schemaObj.attributeGroup)[0].attributeGroup)[0].ref).toBe("p:InnerGroup");
+    expect((schemaObj.attributeGroup[0].attributeGroup ?? [])[0].ref).toBe("p:InnerGroup");
   });
 });

@@ -10,7 +10,6 @@ import type {
   RemoveSimpleTypeCommand,
   ModifySimpleTypeCommand,
 } from "../../shared/types.js";
-import { toArray } from "../../shared/schemaUtils.js";
 import {
   SCHEMA_WITH_SIMPLETYPE,
   runCommandExpectSuccessSchema,
@@ -33,7 +32,7 @@ describe("Integration: SimpleType pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
-      const types = toArray(result.simpleType);
+      const types = result.simpleType ?? [];
       const ageType = types.find((t) => t.name === "AgeType");
 
       expect(ageType).toBeDefined();
@@ -52,11 +51,11 @@ describe("Integration: SimpleType pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
-      const types = toArray(result.simpleType);
+      const types = result.simpleType ?? [];
       const colorType = types.find((t) => t.name === "ColorType");
 
       expect(colorType).toBeDefined();
-      const enumerations = toArray(colorType!.restriction?.enumeration);
+      const enumerations = colorType!.restriction?.enumeration ?? [];
       const values = enumerations.map((e) => e.value);
       expect(values).toContain("red");
       expect(values).toContain("green");
@@ -75,7 +74,7 @@ describe("Integration: SimpleType pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
-      const types = toArray(result.simpleType);
+      const types = result.simpleType ?? [];
       const nameType = types.find((t) => t.name === "NameType");
 
       expect(nameType).toBeDefined();
@@ -93,7 +92,7 @@ describe("Integration: SimpleType pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
-      const tokenListType = toArray(result.simpleType).find((t) => t.name === "TokenListType");
+      const tokenListType = (result.simpleType ?? []).find((t) => t.name === "TokenListType");
 
       expect(tokenListType).toBeDefined();
       expect(tokenListType!.list?.itemType).toBe("xs:token");
@@ -110,7 +109,7 @@ describe("Integration: SimpleType pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
-      const unionType = toArray(result.simpleType).find((t) => t.name === "TextOrNumberType");
+      const unionType = (result.simpleType ?? []).find((t) => t.name === "TextOrNumberType");
 
       expect(unionType).toBeDefined();
       expect(unionType!.union?.memberTypes).toBe("xs:string xs:integer");
@@ -145,7 +144,7 @@ describe("Integration: SimpleType pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_SIMPLETYPE, cmd);
-      const types = toArray(result.simpleType);
+      const types = result.simpleType ?? [];
 
       expect(types.some((t) => t.name === "StatusType")).toBe(false);
     });
@@ -170,7 +169,7 @@ describe("Integration: SimpleType pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_SIMPLETYPE, cmd);
-      const types = toArray(result.simpleType);
+      const types = result.simpleType ?? [];
 
       expect(types.some((t) => t.name === "StateType")).toBe(true);
       expect(types.some((t) => t.name === "StatusType")).toBe(false);
@@ -183,7 +182,7 @@ describe("Integration: SimpleType pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_SIMPLETYPE, cmd);
-      const statusType = toArray(result.simpleType).find((t) => t.name === "StatusType");
+      const statusType = (result.simpleType ?? []).find((t) => t.name === "StatusType");
 
       expect(statusType).toBeDefined();
       expect(statusType!.restriction!.base).toBe("xs:token");
@@ -199,7 +198,7 @@ describe("Integration: SimpleType pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_SIMPLETYPE, cmd);
-      const statusType = toArray(result.simpleType).find((t) => t.name === "StatusType");
+      const statusType = (result.simpleType ?? []).find((t) => t.name === "StatusType");
 
       expect(statusType).toBeDefined();
       expect(statusType!.list?.itemType).toBe("xs:token");

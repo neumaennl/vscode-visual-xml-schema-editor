@@ -8,7 +8,6 @@ import type { restrictionType_1 } from "../../shared/generated/restrictionType_1
 import type { listType } from "../../shared/generated/listType";
 import type { unionType } from "../../shared/generated/unionType";
 import type { ContentTypeLike } from "./DiagramTypes";
-import { toArray } from "../../shared/schemaUtils";
 
 /**
  * Union type for restriction structures that may contain facets.
@@ -49,18 +48,18 @@ export function extractRestrictionFacets(parent: DiagramItem, restriction: Restr
     return;
   }
 
-  const enumeration = toArray(restriction.enumeration);
-  const pattern = toArray(restriction.pattern);
-  const length = toArray(restriction.length);
-  const minLength = toArray(restriction.minLength);
-  const maxLength = toArray(restriction.maxLength);
-  const minInclusive = toArray(restriction.minInclusive);
-  const maxInclusive = toArray(restriction.maxInclusive);
-  const minExclusive = toArray(restriction.minExclusive);
-  const maxExclusive = toArray(restriction.maxExclusive);
-  const totalDigits = toArray(restriction.totalDigits);
-  const fractionDigits = toArray(restriction.fractionDigits);
-  const whiteSpace = toArray(restriction.whiteSpace);
+  const enumeration = restriction.enumeration ?? [];
+  const pattern = restriction.pattern ?? [];
+  const length = restriction.length ?? [];
+  const minLength = restriction.minLength ?? [];
+  const maxLength = restriction.maxLength ?? [];
+  const minInclusive = restriction.minInclusive ?? [];
+  const maxInclusive = restriction.maxInclusive ?? [];
+  const minExclusive = restriction.minExclusive ?? [];
+  const maxExclusive = restriction.maxExclusive ?? [];
+  const totalDigits = restriction.totalDigits ?? [];
+  const fractionDigits = restriction.fractionDigits ?? [];
+  const whiteSpace = restriction.whiteSpace ?? [];
 
   const facetArrays = [
     enumeration,

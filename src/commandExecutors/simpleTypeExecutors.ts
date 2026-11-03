@@ -26,7 +26,7 @@ import {
   annotationType,
   documentationType,
 } from "../../shared/types.js";
-import { toArray, isSchemaRoot } from "../../shared/schemaUtils.js";
+import { isSchemaRoot } from "../../shared/schemaUtils.js";
 import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
 import { locateNodeById } from "../schemaNavigator.js";
 import { createAnnotation } from "./annotationUtils.js";
@@ -93,7 +93,7 @@ export function executeAddSimpleType(
     simpleType.annotation = createAnnotation(documentation);
   }
 
-  const simpleTypes = toArray(schemaObj.simpleType);
+  const simpleTypes = schemaObj.simpleType ?? [];
   simpleTypes.push(simpleType);
   schemaObj.simpleType = simpleTypes;
 }
@@ -126,7 +126,7 @@ export function executeRemoveSimpleType(
   }
 
   // Top-level named simpleType
-  const simpleTypes = toArray(schemaObj.simpleType);
+  const simpleTypes = schemaObj.simpleType ?? [];
   const filtered = simpleTypes.filter((st) => st.name !== parsed.name);
   schemaObj.simpleType = filtered.length > 0 ? filtered : undefined;
 }
@@ -174,7 +174,7 @@ export function executeModifySimpleType(
   }
 
   // Top-level named simpleType
-  const simpleType = toArray(schemaObj.simpleType).find((st) => st.name === parsed.name);
+  const simpleType = (schemaObj.simpleType ?? []).find((st) => st.name === parsed.name);
   if (!simpleType) {
     return;
   }

@@ -10,7 +10,6 @@ import {
   RemoveComplexTypeCommand,
   schema,
 } from "../../shared/types.js";
-import { toArray } from "../../shared/schemaUtils.js";
 import {
   executeAddComplexType,
   executeModifyComplexType,
@@ -39,11 +38,11 @@ function modifyComplexType(schemaObj: schema, payload: ModifyComplexTypeCommand[
 }
 
 function topLevelComplexTypes(schemaObj: schema): NonNullable<schema["complexType"]> {
-  return toArray(schemaObj.complexType);
+  return schemaObj.complexType ?? [];
 }
 
 function topLevelElements(schemaObj: schema): NonNullable<schema["element"]> {
-  return toArray(schemaObj.element);
+  return schemaObj.element ?? [];
 }
 
 describe("ComplexType Executors", () => {
@@ -285,7 +284,7 @@ describe("ComplexType Executors", () => {
 
       const extension = topLevelComplexTypes(schemaObj)[0].complexContent!.extension!;
       expect(extension.base).toBe("PersonType");
-      expect(toArray(extension.sequence?.element)[0].name).toBe("name");
+      expect((extension.sequence?.element ?? [])[0].name).toBe("name");
     });
 
     test("switches a complexType to a restriction without dropping its existing compositor content", () => {
@@ -306,7 +305,7 @@ describe("ComplexType Executors", () => {
 
       const restriction = topLevelComplexTypes(schemaObj)[0].complexContent!.restriction!;
       expect(restriction.base).toBe("WorkerType");
-      expect(toArray(restriction.sequence?.element)[0].name).toBe("name");
+      expect((restriction.sequence?.element ?? [])[0].name).toBe("name");
       expect(topLevelComplexTypes(schemaObj)[0].complexContent!.extension).toBeUndefined();
     });
 
@@ -495,7 +494,7 @@ describe("ComplexType Executors", () => {
 
       const restriction = topLevelElements(schemaObj)[0].complexType!.complexContent!.restriction!;
       expect(restriction.base).toBe("PersonType");
-      expect(toArray(restriction.sequence?.element)[0].name).toBe("name");
+      expect((restriction.sequence?.element ?? [])[0].name).toBe("name");
     });
 
     test("updates documentation on an anonymous complexType", () => {

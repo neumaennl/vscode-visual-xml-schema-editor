@@ -5,7 +5,6 @@
 
 import { CommandExecutor } from "./commandExecutor.js";
 import { schema, SchemaCommand, topLevelElement } from "../shared/types.js";
-import { toArray } from "../shared/schemaUtils.js";
 
 describe("CommandExecutor", () => {
   let executor: CommandExecutor;
@@ -176,7 +175,7 @@ describe("CommandExecutor", () => {
       executor.execute(command, mockSchema);
 
       expect(mockSchema.attributeGroup).toBeDefined();
-      expect(toArray(mockSchema.attributeGroup)[0].name).toBe("testAttrGroup");
+      expect((mockSchema.attributeGroup ?? [])[0].name).toBe("testAttrGroup");
     });
 
     test("should delegate addAnnotation execution successfully", () => {
@@ -193,8 +192,8 @@ describe("CommandExecutor", () => {
         executor.execute(command, mockSchema);
       }).not.toThrow();
 
-      expect(toArray(mockSchema.annotation)).toHaveLength(1);
-      expect(toArray(toArray(mockSchema.annotation)[0].documentation)[0].value).toBe(
+      expect(mockSchema.annotation ?? []).toHaveLength(1);
+      expect(((mockSchema.annotation ?? [])[0].documentation ?? [])[0].value).toBe(
         "Test schema annotation"
       );
     });
@@ -214,7 +213,7 @@ describe("CommandExecutor", () => {
         executor.execute(command, mockSchema);
       }).not.toThrow();
 
-      const docs = toArray(toArray(mockSchema.annotation)[0]?.documentation);
+      const docs = (mockSchema.annotation ?? [])[0]?.documentation ?? [];
       expect(docs).toHaveLength(1);
       expect(docs[0].value).toBe("Test schema documentation");
     });
@@ -232,7 +231,7 @@ describe("CommandExecutor", () => {
         executor.execute(command, mockSchema);
       }).not.toThrow();
 
-      expect(toArray(mockSchema.import_)).toHaveLength(1);
+      expect(mockSchema.import_ ?? []).toHaveLength(1);
     });
 
     test("should delegate addInclude execution successfully", () => {
@@ -247,8 +246,8 @@ describe("CommandExecutor", () => {
         executor.execute(command, mockSchema);
       }).not.toThrow();
 
-      expect(toArray(mockSchema.include)).toHaveLength(1);
-      expect(toArray(mockSchema.include)[0].schemaLocation).toBe("included.xsd");
+      expect(mockSchema.include ?? []).toHaveLength(1);
+      expect((mockSchema.include ?? [])[0].schemaLocation).toBe("included.xsd");
     });
   });
 });

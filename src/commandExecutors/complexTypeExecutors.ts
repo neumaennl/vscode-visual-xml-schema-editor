@@ -28,7 +28,7 @@ import {
   attributeGroupRef,
   wildcard,
 } from "../../shared/types.js";
-import { toArray, isSchemaRoot } from "../../shared/schemaUtils.js";
+import { isSchemaRoot } from "../../shared/schemaUtils.js";
 import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
 import { locateNodeById } from "../schemaNavigator.js";
 import { createAnnotation } from "./annotationUtils.js";
@@ -112,7 +112,7 @@ export function executeAddComplexType(
   }
   applyContentStructure(ct, contentModel, baseType, derivationKind);
 
-  const complexTypes = toArray(schemaObj.complexType);
+  const complexTypes = schemaObj.complexType ?? [];
   complexTypes.push(ct);
   schemaObj.complexType = complexTypes;
 }
@@ -145,7 +145,7 @@ export function executeRemoveComplexType(
   }
 
   // Top-level named complexType
-  const complexTypes = toArray(schemaObj.complexType);
+  const complexTypes = schemaObj.complexType ?? [];
   const filtered = complexTypes.filter((ct) => ct.name !== parsed.name);
   schemaObj.complexType = filtered.length > 0 ? filtered : undefined;
 }
@@ -186,7 +186,7 @@ export function executeModifyComplexType(
   }
 
   // Top-level named complexType
-  const ct = toArray(schemaObj.complexType).find((t) => t.name === parsed.name);
+  const ct = (schemaObj.complexType ?? []).find((t) => t.name === parsed.name);
   if (!ct) {
     return;
   }

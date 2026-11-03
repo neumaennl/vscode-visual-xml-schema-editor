@@ -14,7 +14,6 @@ import type {
   RemoveElementCommand,
   ModifyElementCommand,
 } from "../../shared/types.js";
-import { toArray } from "../../shared/schemaUtils.js";
 import {
   SCHEMA_WITH_ELEMENTS,
   runCommandExpectSuccessSchema,
@@ -33,7 +32,7 @@ describe("Integration: Element pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
-      const elements = toArray(result.element);
+      const elements = result.element ?? [];
 
       expect(elements).toHaveLength(1);
       expect(elements[0].name).toBe("order");
@@ -47,7 +46,7 @@ describe("Integration: Element pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_ELEMENTS, cmd);
-      const elements = toArray(result.element);
+      const elements = result.element ?? [];
 
       expect(elements).toHaveLength(3);
       expect(elements.some((e) => e.name === "person")).toBe(true);
@@ -66,11 +65,11 @@ describe("Integration: Element pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
-      const elements = toArray(result.element);
+      const elements = result.element ?? [];
       const invoice = elements.find((e) => e.name === "invoice");
 
       expect(invoice).toBeDefined();
-      const docs = toArray(invoice!.annotation?.documentation);
+      const docs = invoice!.annotation?.documentation ?? [];
       expect(docs[0].value).toBe("An invoice record");
     });
 
@@ -103,7 +102,7 @@ describe("Integration: Element pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_ELEMENTS, cmd);
-      const elements = toArray(result.element);
+      const elements = result.element ?? [];
 
       expect(elements.some((e) => e.name === "person")).toBe(false);
       expect(elements.some((e) => e.name === "company")).toBe(true);
@@ -129,7 +128,7 @@ describe("Integration: Element pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_ELEMENTS, cmd);
-      const elements = toArray(result.element);
+      const elements = result.element ?? [];
 
       expect(elements.some((e) => e.name === "individual")).toBe(true);
       expect(elements.some((e) => e.name === "person")).toBe(false);
@@ -142,7 +141,7 @@ describe("Integration: Element pipeline", () => {
       };
 
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_ELEMENTS, cmd);
-      const elements = toArray(result.element);
+      const elements = result.element ?? [];
       const person = elements.find((e) => e.name === "person");
 
       expect(person).toBeDefined();

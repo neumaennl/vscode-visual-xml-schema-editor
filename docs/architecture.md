@@ -4,8 +4,8 @@ title: Architecture
 description: How the extension host, the webview and the shared code work together to provide a visual editor for XML Schema (XSD) files, and the design decisions behind the command-based design.
 tags: [architecture, extension-host, webview, shared, design-decisions]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-28T14:47:04Z }
-verified: { by: human:neumaennl, at: 2026-10-28T15:08:21Z }
+generated: { by: human:neumaennl, at: 2026-11-03T07:56:24Z }
+verified: { by: human:neumaennl, at: 2026-11-03T08:26:21Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -135,7 +135,7 @@ shared/                   Used by both sides
   commands/               Command type definitions
   messages.ts             Message type definitions
   idStrategy.ts           Generating and parsing node IDs
-  schemaUtils.ts          Small helpers (toArray, schema root detection, prefixes)
+  schemaUtils.ts          Small helpers (schema root detection, prefixes)
   types.ts                Re-exports of all of the above
 schema/XMLSchema.xsd      The XSD meta-schema the model classes are generated from
 exampleFiles/             Sample XSD files for manual testing

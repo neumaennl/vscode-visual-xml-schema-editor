@@ -12,7 +12,6 @@ import {
 import { ValidationResult, isValidXmlName } from "./validationUtils.js";
 import { locateNodeById } from "../schemaNavigator.js";
 import { parseSchemaId, SCHEMA_ROOT_ID } from "../../shared/idStrategy.js";
-import { toArray } from "../../shared/schemaUtils.js";
 
 /** Parent types that can contain attributes. */
 const VALID_ATTR_PARENTS = ["schema", "topLevelComplexType", "localComplexType"] as const;
@@ -25,9 +24,9 @@ function getChildAttributes(
   parentType: string
 ): Array<{ name?: string; ref?: string }> {
   if (parentType === "schema") {
-    return toArray((parent as schema).attribute);
+    return (parent as schema).attribute ?? [];
   }
-  return toArray((parent as topLevelComplexType).attribute);
+  return (parent as topLevelComplexType).attribute ?? [];
 }
 
 export function validateAddAttribute(
@@ -56,7 +55,7 @@ export function validateAddAttribute(
       return { valid: false, error: "Attribute ref must be a valid XML name" };
     }
     // Validate that the referenced attribute exists as a top-level attribute
-    const topLevelAttributes = toArray(schemaObj.attribute);
+    const topLevelAttributes = schemaObj.attribute ?? [];
     if (!topLevelAttributes.some(a => a.name === ref)) {
       return { valid: false, error: `Referenced attribute '${ref}' does not exist in schema` };
     }
@@ -190,7 +189,7 @@ export function validateModifyAttribute(
       return { valid: false, error: "Attribute ref must be a valid XML name" };
     }
     // Validate that the referenced attribute exists as a top-level attribute
-    const topLevelAttributes = toArray(schemaObj.attribute);
+    const topLevelAttributes = schemaObj.attribute ?? [];
     if (!topLevelAttributes.some(a => a.name === ref)) {
       return { valid: false, error: `Referenced attribute '${ref}' does not exist in schema` };
     }

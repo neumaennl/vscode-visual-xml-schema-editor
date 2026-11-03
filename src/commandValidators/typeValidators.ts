@@ -18,7 +18,7 @@ import {
   validateElementType,
 } from "./validationUtils.js";
 import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
-import { toArray, isSchemaRoot } from "../../shared/schemaUtils.js";
+import { isSchemaRoot } from "../../shared/schemaUtils.js";
 import { locateNodeById } from "../schemaNavigator.js";
 
 function hasRestrictionFacetValues(restrictions: RestrictionFacets | undefined): boolean {
@@ -263,7 +263,7 @@ export function validateAddSimpleType(
     return { valid: false, error: "Type name must be a valid XML name" };
   }
 
-  if (toArray(schemaObj.simpleType).some(st => st.name === typeName)) {
+  if ((schemaObj.simpleType ?? []).some(st => st.name === typeName)) {
     return { valid: false, error: `Simple type '${typeName}' already exists in schema` };
   }
   const bodyValidation = validateSimpleTypeBody(command.payload, schemaObj);
@@ -290,7 +290,7 @@ export function validateRemoveSimpleType(
 
   // TODO Phase 2: Check if type is being used by other elements/types
   // Top-level named simpleType: check it exists
-  if (!toArray(schemaObj.simpleType).some(st => st.name === parsed.name)) {
+  if (!(schemaObj.simpleType ?? []).some(st => st.name === parsed.name)) {
     return { valid: false, error: `SimpleType not found: ${parsed.name}` };
   }
   return { valid: true };
@@ -340,7 +340,7 @@ export function validateModifySimpleType(
     return { valid: true };
   }
 
-  const existingSimpleType = toArray(schemaObj.simpleType).find(st => st.name === parsed.name);
+  const existingSimpleType = (schemaObj.simpleType ?? []).find(st => st.name === parsed.name);
   if (!existingSimpleType) {
     return { valid: false, error: `Simple type '${parsed.name}' not found in schema` };
   }
@@ -354,7 +354,7 @@ export function validateModifySimpleType(
     return bodyValidation;
   }
   if (command.payload.restrictions !== undefined && command.payload.baseType === undefined) {
-    const simpleType = toArray(schemaObj.simpleType).find(st => st.name === parsed.name);
+    const simpleType = (schemaObj.simpleType ?? []).find(st => st.name === parsed.name);
     if (simpleType && !simpleType.restriction) {
       return { valid: false, error: "Cannot apply restrictions without a base type" };
     }
@@ -411,7 +411,7 @@ export function validateAddComplexType(
   if (contentModelError) return contentModelError;
   const derivationKindError = validateDerivationKind(derivationKind);
   if (derivationKindError) return derivationKindError;
-  if (toArray(schemaObj.complexType).some((ct) => ct.name === typeName)) {
+  if ((schemaObj.complexType ?? []).some((ct) => ct.name === typeName)) {
     return {
       valid: false,
       error: `Complex type '${typeName}' already exists in schema`,
@@ -435,7 +435,7 @@ export function validateRemoveComplexType(
     return result.success ? { valid: true } : result.error;
   }
 
-  if (!toArray(schemaObj.complexType).some((ct) => ct.name === parsed.name)) {
+  if (!(schemaObj.complexType ?? []).some((ct) => ct.name === parsed.name)) {
     return { valid: false, error: `Complex type '${parsed.name}' not found in schema` };
   }
   return { valid: true };
@@ -478,7 +478,7 @@ export function validateModifyComplexType(
   }
   const derivationKindError = validateDerivationKind(command.payload.derivationKind);
   if (derivationKindError) return derivationKindError;
-  if (!toArray(schemaObj.complexType).some((ct) => ct.name === parsed.name)) {
+  if (!(schemaObj.complexType ?? []).some((ct) => ct.name === parsed.name)) {
     return { valid: false, error: `Complex type '${parsed.name}' not found in schema` };
   }
   return { valid: true };

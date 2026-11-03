@@ -22,7 +22,6 @@ import {
   localElement,
   narrowMaxMin,
 } from "../../shared/types.js";
-import { toArray } from "../../shared/schemaUtils.js";
 
 // ===== Type aliases =====
 
@@ -103,7 +102,7 @@ function rewriteSimpleType(
   }
   if (st.union) {
     st.union.memberTypes = rewriteMemberTypes(old, newPfx, st.union.memberTypes);
-    for (const member of toArray(st.union.simpleType)) {
+    for (const member of st.union.simpleType ?? []) {
       rewriteSimpleType(old, newPfx, member);
     }
   }
@@ -118,7 +117,7 @@ function rewriteElement(
   el.ref = rewriteQName(old, newPfx, el.ref);
   if (el.simpleType) rewriteSimpleType(old, newPfx, el.simpleType);
   if (el.complexType) rewriteComplexTypeBody(old, newPfx, el.complexType);
-  for (const kr of toArray(el.keyref)) {
+  for (const kr of el.keyref ?? []) {
     kr.refer = rewriteRequiredQName(old, newPfx, kr.refer);
   }
 }
@@ -128,16 +127,16 @@ function rewriteCompositor(
   newPfx: string,
   compositor: explicitGroup | simpleExplicitGroup
 ): void {
-  for (const el of toArray(compositor.element)) {
+  for (const el of compositor.element ?? []) {
     rewriteElement(old, newPfx, el);
   }
-  for (const gr of toArray(compositor.group)) {
+  for (const gr of compositor.group ?? []) {
     gr.ref = rewriteRequiredQName(old, newPfx, gr.ref);
   }
-  for (const sub of toArray(compositor.choice)) {
+  for (const sub of compositor.choice ?? []) {
     rewriteCompositor(old, newPfx, sub);
   }
-  for (const sub of toArray(compositor.sequence)) {
+  for (const sub of compositor.sequence ?? []) {
     rewriteCompositor(old, newPfx, sub);
   }
 }
@@ -148,12 +147,12 @@ function rewriteAttributeBearer(
   bearer: AttributeBearer
 ): void {
   bearer.base = rewriteRequiredQName(old, newPfx, bearer.base);
-  for (const attr of toArray(bearer.attribute)) {
+  for (const attr of bearer.attribute ?? []) {
     attr.type_ = rewriteQName(old, newPfx, attr.type_);
     attr.ref = rewriteQName(old, newPfx, attr.ref);
     if (attr.simpleType) rewriteSimpleType(old, newPfx, attr.simpleType);
   }
-  for (const agr of toArray(bearer.attributeGroup)) {
+  for (const agr of bearer.attributeGroup ?? []) {
     agr.ref = rewriteRequiredQName(old, newPfx, agr.ref);
   }
 }
@@ -168,7 +167,7 @@ function rewriteCompositorBearer(
     bearer.group.ref = rewriteRequiredQName(old, newPfx, bearer.group.ref);
   }
   if (bearer.all) {
-    for (const el of toArray(bearer.all.element)) {
+    for (const el of bearer.all.element ?? []) {
       rewriteElement(old, newPfx, el);
     }
   }
@@ -200,18 +199,18 @@ function rewriteComplexTypeBody(
     ct.group.ref = rewriteRequiredQName(old, newPfx, ct.group.ref);
   }
   if (ct.all) {
-    for (const el of toArray(ct.all.element)) {
+    for (const el of ct.all.element ?? []) {
       rewriteElement(old, newPfx, el);
     }
   }
   if (ct.choice) rewriteCompositor(old, newPfx, ct.choice);
   if (ct.sequence) rewriteCompositor(old, newPfx, ct.sequence);
-  for (const attr of toArray(ct.attribute)) {
+  for (const attr of ct.attribute ?? []) {
     attr.type_ = rewriteQName(old, newPfx, attr.type_);
     attr.ref = rewriteQName(old, newPfx, attr.ref);
     if (attr.simpleType) rewriteSimpleType(old, newPfx, attr.simpleType);
   }
-  for (const agr of toArray(ct.attributeGroup)) {
+  for (const agr of ct.attributeGroup ?? []) {
     agr.ref = rewriteRequiredQName(old, newPfx, agr.ref);
   }
 }
@@ -246,32 +245,32 @@ export function rewritePrefixInSchema(
 ): void {
   if (oldPrefix === newPrefix) return;
 
-  for (const el of toArray(schemaObj.element)) {
+  for (const el of schemaObj.element ?? []) {
     el.type_ = rewriteQName(oldPrefix, newPrefix, el.type_);
     el.substitutionGroup = rewriteQName(oldPrefix, newPrefix, el.substitutionGroup);
     if (el.simpleType) rewriteSimpleType(oldPrefix, newPrefix, el.simpleType);
     if (el.complexType) rewriteComplexTypeBody(oldPrefix, newPrefix, el.complexType);
-    for (const kr of toArray(el.keyref)) {
+    for (const kr of el.keyref ?? []) {
       kr.refer = rewriteRequiredQName(oldPrefix, newPrefix, kr.refer);
     }
   }
 
-  for (const attr of toArray(schemaObj.attribute)) {
+  for (const attr of schemaObj.attribute ?? []) {
     attr.type_ = rewriteQName(oldPrefix, newPrefix, attr.type_);
     if (attr.simpleType) rewriteSimpleType(oldPrefix, newPrefix, attr.simpleType);
   }
 
-  for (const ct of toArray(schemaObj.complexType)) {
+  for (const ct of schemaObj.complexType ?? []) {
     rewriteComplexTypeBody(oldPrefix, newPrefix, ct);
   }
 
-  for (const st of toArray(schemaObj.simpleType)) {
+  for (const st of schemaObj.simpleType ?? []) {
     rewriteSimpleType(oldPrefix, newPrefix, st);
   }
 
-  for (const grp of toArray(schemaObj.group)) {
+  for (const grp of schemaObj.group ?? []) {
     if (grp.all) {
-      for (const el of toArray(grp.all.element)) {
+      for (const el of grp.all.element ?? []) {
         rewriteElement(oldPrefix, newPrefix, el);
       }
     }
@@ -279,13 +278,13 @@ export function rewritePrefixInSchema(
     if (grp.sequence) rewriteCompositor(oldPrefix, newPrefix, grp.sequence);
   }
 
-  for (const ag of toArray(schemaObj.attributeGroup)) {
-    for (const attr of toArray(ag.attribute)) {
+  for (const ag of schemaObj.attributeGroup ?? []) {
+    for (const attr of ag.attribute ?? []) {
       attr.type_ = rewriteQName(oldPrefix, newPrefix, attr.type_);
       attr.ref = rewriteQName(oldPrefix, newPrefix, attr.ref);
       if (attr.simpleType) rewriteSimpleType(oldPrefix, newPrefix, attr.simpleType);
     }
-    for (const agr of toArray(ag.attributeGroup)) {
+    for (const agr of ag.attributeGroup ?? []) {
       agr.ref = rewriteRequiredQName(oldPrefix, newPrefix, agr.ref);
     }
   }

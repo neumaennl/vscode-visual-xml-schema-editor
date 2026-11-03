@@ -18,7 +18,6 @@ import {
   localElement,
   narrowMaxMin,
 } from "../../shared/types.js";
-import { toArray } from "../../shared/schemaUtils.js";
 import { AttributeBearer, CompositorBearer } from "./schemaTraversalTypes.js";
 
 // ===== Single-pass traversal =====
@@ -50,7 +49,7 @@ function isQNameMatchedInSchema(
     }
     if (st.union) {
       if (checkMemberTypes(st.union.memberTypes)) return true;
-      for (const m of toArray(st.union.simpleType)) {
+      for (const m of st.union.simpleType ?? []) {
         if (checkSimpleType(m)) return true;
       }
     }
@@ -61,23 +60,23 @@ function isQNameMatchedInSchema(
     if (qn(el.type_) || qn(el.ref)) return true;
     if (el.simpleType && checkSimpleType(el.simpleType)) return true;
     if (el.complexType && checkComplexTypeBody(el.complexType)) return true;
-    for (const kr of toArray(el.keyref)) {
+    for (const kr of el.keyref ?? []) {
       if (qn(kr.refer)) return true;
     }
     return false;
   }
 
   function checkCompositor(c: explicitGroup | simpleExplicitGroup): boolean {
-    for (const el of toArray(c.element)) {
+    for (const el of c.element ?? []) {
       if (checkElement(el)) return true;
     }
-    for (const gr of toArray(c.group)) {
+    for (const gr of c.group ?? []) {
       if (qn(gr.ref)) return true;
     }
-    for (const sub of toArray(c.choice)) {
+    for (const sub of c.choice ?? []) {
       if (checkCompositor(sub)) return true;
     }
-    for (const sub of toArray(c.sequence)) {
+    for (const sub of c.sequence ?? []) {
       if (checkCompositor(sub)) return true;
     }
     return false;
@@ -85,11 +84,11 @@ function isQNameMatchedInSchema(
 
   function checkAttributeBearer(b: AttributeBearer): boolean {
     if (qn(b.base)) return true;
-    for (const a of toArray(b.attribute)) {
+    for (const a of b.attribute ?? []) {
       if (qn(a.type_) || qn(a.ref)) return true;
       if (a.simpleType && checkSimpleType(a.simpleType)) return true;
     }
-    for (const ag of toArray(b.attributeGroup)) {
+    for (const ag of b.attributeGroup ?? []) {
       if (qn(ag.ref)) return true;
     }
     return false;
@@ -99,7 +98,7 @@ function isQNameMatchedInSchema(
     if (checkAttributeBearer(b)) return true;
     if (b.group && qn(b.group.ref)) return true;
     if (b.all) {
-      for (const el of toArray(b.all.element)) {
+      for (const el of b.all.element ?? []) {
         if (checkElement(el)) return true;
       }
     }
@@ -119,55 +118,55 @@ function isQNameMatchedInSchema(
     if (ct.complexContent?.extension && checkCompositorBearer(ct.complexContent.extension)) return true;
     if (ct.group && qn(ct.group.ref)) return true;
     if (ct.all) {
-      for (const el of toArray(ct.all.element)) {
+      for (const el of ct.all.element ?? []) {
         if (checkElement(el)) return true;
       }
     }
     if (ct.choice && checkCompositor(ct.choice)) return true;
     if (ct.sequence && checkCompositor(ct.sequence)) return true;
-    for (const a of toArray(ct.attribute)) {
+    for (const a of ct.attribute ?? []) {
       if (qn(a.type_) || qn(a.ref)) return true;
       if (a.simpleType && checkSimpleType(a.simpleType)) return true;
     }
-    for (const ag of toArray(ct.attributeGroup)) {
+    for (const ag of ct.attributeGroup ?? []) {
       if (qn(ag.ref)) return true;
     }
     return false;
   }
 
-  for (const el of toArray(schemaObj.element)) {
+  for (const el of schemaObj.element ?? []) {
     if (qn(el.type_) || qn(el.substitutionGroup)) return true;
     if (el.simpleType && checkSimpleType(el.simpleType)) return true;
     if (el.complexType && checkComplexTypeBody(el.complexType)) return true;
-    for (const kr of toArray(el.keyref)) {
+    for (const kr of el.keyref ?? []) {
       if (qn(kr.refer)) return true;
     }
   }
-  for (const a of toArray(schemaObj.attribute)) {
+  for (const a of schemaObj.attribute ?? []) {
     if (qn(a.type_)) return true;
     if (a.simpleType && checkSimpleType(a.simpleType)) return true;
   }
-  for (const ct of toArray(schemaObj.complexType)) {
+  for (const ct of schemaObj.complexType ?? []) {
     if (checkComplexTypeBody(ct)) return true;
   }
-  for (const st of toArray(schemaObj.simpleType)) {
+  for (const st of schemaObj.simpleType ?? []) {
     if (checkSimpleType(st)) return true;
   }
-  for (const grp of toArray(schemaObj.group)) {
+  for (const grp of schemaObj.group ?? []) {
     if (grp.all) {
-      for (const el of toArray(grp.all.element)) {
+      for (const el of grp.all.element ?? []) {
         if (checkElement(el)) return true;
       }
     }
     if (grp.choice && checkCompositor(grp.choice)) return true;
     if (grp.sequence && checkCompositor(grp.sequence)) return true;
   }
-  for (const ag of toArray(schemaObj.attributeGroup)) {
-    for (const a of toArray(ag.attribute)) {
+  for (const ag of schemaObj.attributeGroup ?? []) {
+    for (const a of ag.attribute ?? []) {
       if (qn(a.type_) || qn(a.ref)) return true;
       if (a.simpleType && checkSimpleType(a.simpleType)) return true;
     }
-    for (const agr of toArray(ag.attributeGroup)) {
+    for (const agr of ag.attributeGroup ?? []) {
       if (qn(agr.ref)) return true;
     }
   }

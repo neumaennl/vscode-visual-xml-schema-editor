@@ -16,7 +16,6 @@ import {
   executeRemoveAttribute,
   executeModifyAttribute,
 } from "./attributeExecutors.js";
-import { toArray } from "../../shared/schemaUtils.js";
 import { emptySchema, readTestSchema, schemaWith } from "../__tests__/schemaTestHelpers.js";
 
 /** The file with a complexType `PersonType` with the local element `name`. */
@@ -52,7 +51,7 @@ const PERSON_TYPE_WITH_LANG_ATTRIBUTE_REF = `<xs:attribute name="lang" type="xs:
  * @returns The attributes, in document order
  */
 function attributesOfT(schemaObj: schema): attribute[] {
-  return toArray(toArray(schemaObj.complexType).find((ct) => ct.name === "T")?.attribute);
+  return (schemaObj.complexType ?? []).find((ct) => ct.name === "T")?.attribute ?? [];
 }
 
 describe("Attribute Executors", () => {
@@ -473,7 +472,7 @@ describe("Attribute Executors", () => {
       const complexTypes = Array.isArray(schemaObj.complexType)
         ? schemaObj.complexType
         : [schemaObj.complexType];
-      const attrs = toArray(complexTypes[0]!.attribute);
+      const attrs = complexTypes[0]!.attribute ?? [];
       expect(attrs[0].default_).toBe("pending");
       expect(attrs[0].fixed).toBeUndefined();
     });
@@ -496,7 +495,7 @@ describe("Attribute Executors", () => {
       const complexTypes = Array.isArray(schemaObj.complexType)
         ? schemaObj.complexType
         : [schemaObj.complexType];
-      const attrs = toArray(complexTypes[0]!.attribute);
+      const attrs = complexTypes[0]!.attribute ?? [];
       expect(attrs[0].fixed).toBe("active");
       expect(attrs[0].default_).toBeUndefined();
     });
@@ -577,7 +576,7 @@ describe("Attribute Executors", () => {
       const complexTypes = Array.isArray(schemaObj.complexType)
         ? schemaObj.complexType
         : [schemaObj.complexType];
-      const attrs = toArray(complexTypes[0]!.attribute);
+      const attrs = complexTypes[0]!.attribute ?? [];
       expect(attrs).toHaveLength(1);
       expect(attrs[0].ref).toBe("lang");
       expect(attrs[0].name).toBeUndefined();
@@ -601,7 +600,7 @@ describe("Attribute Executors", () => {
       const complexTypes = Array.isArray(schemaObj.complexType)
         ? schemaObj.complexType
         : [schemaObj.complexType];
-      const attrs = toArray(complexTypes[0]!.attribute);
+      const attrs = complexTypes[0]!.attribute ?? [];
       expect(attrs[0].ref).toBe("lang");
       expect(attrs[0].use).toBe("required");
     });
@@ -641,7 +640,7 @@ describe("Attribute Executors", () => {
       const complexTypes = Array.isArray(schemaObj.complexType)
         ? schemaObj.complexType
         : [schemaObj.complexType];
-      const attrs = toArray(complexTypes[0]!.attribute);
+      const attrs = complexTypes[0]!.attribute ?? [];
       expect(attrs[0].ref).toBe("lang");
       expect(attrs[0].name).toBeUndefined();
       expect(attrs[0].type_).toBeUndefined();
@@ -664,7 +663,7 @@ describe("Attribute Executors", () => {
       const complexTypes = Array.isArray(schemaObj.complexType)
         ? schemaObj.complexType
         : [schemaObj.complexType];
-      const attrs = toArray(complexTypes[0]!.attribute);
+      const attrs = complexTypes[0]!.attribute ?? [];
       expect(attrs[0].name).toBe("locale");
       expect(attrs[0].type_).toBe("xs:string");
       expect(attrs[0].ref).toBeUndefined();
@@ -735,7 +734,7 @@ describe("Attribute Executors", () => {
 
       const added = attributesOfT(schemaObj)[0];
       expect(added.ref).toBe("lang");
-      expect(toArray(added.annotation?.documentation).map((d) => d.value)).toEqual(["Language of the content"]);
+      expect((added.annotation?.documentation ?? []).map((d) => d.value)).toEqual(["Language of the content"]);
     });
 
     test("should make a local attribute optional", () => {
@@ -762,8 +761,8 @@ describe("Attribute Executors", () => {
       executeModifyAttribute(command, schemaObj);
 
       const annotation = attributesOfT(schemaObj)[0].annotation!;
-      expect(toArray(annotation.documentation).map((d) => d.value)).toEqual(["New"]);
-      expect(toArray(annotation.appinfo)).toHaveLength(1);
+      expect((annotation.documentation ?? []).map((d) => d.value)).toEqual(["New"]);
+      expect(annotation.appinfo ?? []).toHaveLength(1);
     });
   });
 

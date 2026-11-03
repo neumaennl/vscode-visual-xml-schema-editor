@@ -120,11 +120,13 @@ describe("DiagramBuilderHelpers", () => {
 
     test("should extract single attribute", () => {
       const source = {
-        attribute: {
-          name: "id",
-          type_: "string",
-          use: "required",
-        },
+        attribute: [
+          {
+            name: "id",
+            type_: "string",
+            use: "required",
+          },
+        ],
       };
       extractAttributes(item, source);
       expect(item.attributes).toHaveLength(1);
@@ -165,9 +167,11 @@ describe("DiagramBuilderHelpers", () => {
 
     test("should handle attribute without type", () => {
       const source = {
-        attribute: {
-          name: "id",
-        },
+        attribute: [
+          {
+            name: "id",
+          },
+        ],
       };
       extractAttributes(item, source);
       expect(item.attributes).toHaveLength(1);
@@ -176,10 +180,12 @@ describe("DiagramBuilderHelpers", () => {
 
     test("should handle attribute without use", () => {
       const source = {
-        attribute: {
-          name: "id",
-          type_: "string",
-        },
+        attribute: [
+          {
+            name: "id",
+            type_: "string",
+          },
+        ],
       };
       extractAttributes(item, source);
       expect(item.attributes).toHaveLength(1);

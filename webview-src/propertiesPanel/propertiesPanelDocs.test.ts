@@ -38,7 +38,6 @@ describe("PropertiesPanel: the Docs tab", () => {
   });
 
   test("shows structured docs fields in docs tab", () => {
-    expect.hasAssertions();
     const item = new DiagramItem("test-1", "TestItem", DiagramItemType.element, diagram);
     item.documentationAnnotations = [
       {
@@ -57,7 +56,6 @@ describe("PropertiesPanel: the Docs tab", () => {
   });
 
   test("renders annotation delete as an icon-only button next to the annotation label", () => {
-    expect.hasAssertions();
     const item = new DiagramItem(SCHEMA_ROOT_ID, "schema", DiagramItemType.group, diagram);
     item.documentationAnnotations = [
       {
@@ -81,7 +79,6 @@ describe("PropertiesPanel: the Docs tab", () => {
   });
 
   test("preserves multi-line documentation in the docs tab", () => {
-    expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem("/element:person", "person", DiagramItemType.element, diagram);
@@ -115,7 +112,6 @@ describe("PropertiesPanel: the Docs tab", () => {
   });
 
   test("dispatches documentation command from docs tab", () => {
-    expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem("/element:person", "person", DiagramItemType.element, diagram);
@@ -144,7 +140,6 @@ describe("PropertiesPanel: the Docs tab", () => {
   test.each(["sequence", "choice", "all"] as const)(
     "shows %s compositor documentation in the docs tab",
     (compositor) => {
-      expect.hasAssertions();
       const compositorId = `/complexType:PersonType/group:${compositor}[0]`;
       const item = new DiagramItem(compositorId, compositor, DiagramItemType.group, diagram);
       item.documentationAnnotations = [
@@ -170,7 +165,6 @@ describe("PropertiesPanel: the Docs tab", () => {
   );
 
   test("adds schema-root documentation through the structured docs flow", () => {
-    expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem(SCHEMA_ROOT_ID, "schema", DiagramItemType.group, diagram);
@@ -194,7 +188,6 @@ describe("PropertiesPanel: the Docs tab", () => {
   });
 
   test("renders structured annotations and supports adding/removing documentation entries", () => {
-    expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem(SCHEMA_ROOT_ID, "schema", DiagramItemType.group, diagram);
@@ -235,7 +228,6 @@ describe("PropertiesPanel: the Docs tab", () => {
   });
 
   test("lets the schema add additional annotation sections in the docs tab", () => {
-    expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem(SCHEMA_ROOT_ID, "schema", DiagramItemType.group, diagram);
@@ -265,7 +257,6 @@ describe("PropertiesPanel: the Docs tab", () => {
   });
 
   test("limits non-schema docs editing to a single annotation section", () => {
-    expect.hasAssertions();
     const item = new DiagramItem("/element:person", "person", DiagramItemType.element, diagram);
     item.documentationAnnotations = [
       {
@@ -290,7 +281,6 @@ describe("PropertiesPanel: the Docs tab", () => {
   });
 
   test("renders documentation delete as an icon-only button next to the label with a tooltip", () => {
-    expect.hasAssertions();
     const item = new DiagramItem("/element:person", "person", DiagramItemType.element, diagram);
     item.documentationAnnotations = [
       {

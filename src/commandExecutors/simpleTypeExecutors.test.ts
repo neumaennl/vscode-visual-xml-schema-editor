@@ -190,7 +190,6 @@ describe("SimpleType Executors", () => {
     ];
 
     test.each(addFacetCases)("applies $name", ({ typeName, baseType, restrictions, assert }) => {
-      expect.hasAssertions();
       const schemaObj = emptySchema();
 
       addSimpleType(schemaObj, { typeName, baseType, restrictions });

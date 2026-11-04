@@ -21,6 +21,8 @@ const githubActionsReporter: ["github-actions", { jobSummary: { enabled: boolean
 export default defineConfig({
   test: {
     globals: true,
+    // Every test makes at least one assertion (see "Files and structure" in docs/testing.md)
+    expect: { requireAssertions: true },
     reporters: [
       "default",
       [

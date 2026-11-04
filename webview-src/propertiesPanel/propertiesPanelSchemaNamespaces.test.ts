@@ -21,7 +21,6 @@ describe("PropertiesPanel: the namespace fields of the schema", () => {
   });
 
   test("shows editable targetNamespace and namespace declarations for the schema node", () => {
-    expect.hasAssertions();
     const schemaRoot = new DiagramItem(SCHEMA_ROOT_ID, "schema", DiagramItemType.group, diagram);
     diagram.schemaTargetNamespace = "http://example.com/original";
     diagram.schemaNamespacePrefixes = {
@@ -36,7 +35,6 @@ describe("PropertiesPanel: the namespace fields of the schema", () => {
   });
 
   test("updates the matching namespace declaration when targetNamespace changes", () => {
-    expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
     const schemaRoot = new DiagramItem(SCHEMA_ROOT_ID, "schema", DiagramItemType.group, diagram);
@@ -70,7 +68,6 @@ describe("PropertiesPanel: the namespace fields of the schema", () => {
   });
 
   test("updates targetNamespace when the corresponding namespace declaration URI changes", () => {
-    expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
     const schemaRoot = new DiagramItem(SCHEMA_ROOT_ID, "schema", DiagramItemType.group, diagram);

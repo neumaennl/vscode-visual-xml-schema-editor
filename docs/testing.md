@@ -4,8 +4,8 @@ title: Testing
 description: How the extension is tested - running the tests and the type check, the four Vitest projects, mocks and helpers, conventions for tests, mocks, helper functions and helper classes, which tests to write for typical changes, coverage, CI, the smoke tests in the extension host with a mock webview, and how the current tests compare with the testing strategy of ADR 001.
 tags: [testing, vitest, mocks, coverage, ci, conventions]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-03T16:28:02Z }
-verified: { by: human:neumaennl, at: 2026-11-04T08:44:10Z }
+generated: { by: human:neumaennl, at: 2026-11-04T10:43:51Z }
+verified: { by: human:neumaennl, at: 2026-11-04T11:01:44Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -181,6 +181,7 @@ Existing tests that do not follow these conventions yet are listed in [Known iss
   - XML in a test or a constant is built with `schemaXmlWith()` or `schemaWith()`, which also declare further namespaces. Only a schema that they cannot express, for example one with a `targetNamespace` or a default namespace, is written out in full.
   - A schema without content is always `emptySchemaXml()` or `emptySchema()`, not a variable or constant with another name.
 - A file has a `describe` block for the feature and nested blocks for methods or cases. Test cases use `test("should …")` (and `test.each()`) and follow Arrange, Act, Assert, as the tests in the extension host have to, because Mocha's TDD interface has `suite()` and `test()` but no `it()`. ESLint enforces `test()` in the Vitest tests as well (rule `vitest/consistent-test-it`).
+- Every test makes at least one assertion with `expect`. Vitest checks this (`expect.requireAssertions` in `vitest.config.ts`), so tests do not call `expect.hasAssertions()` or `expect.assertions()`. Helpers that check something assert with `expect` too, not with `throw`, so that their checks count.
 
 ## Mocks
 

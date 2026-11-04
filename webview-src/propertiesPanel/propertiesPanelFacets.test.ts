@@ -53,7 +53,6 @@ describe("PropertiesPanel: the Facets tab", () => {
   });
 
   test("shows facet fields when facet tab is selected", () => {
-    expect.hasAssertions();
     const item = new DiagramItem("test-1", "TokenType", DiagramItemType.type, diagram);
     item.type = "xs:string";
     item.restrictions = {
@@ -77,7 +76,6 @@ describe("PropertiesPanel: the Facets tab", () => {
   });
 
   test("reorders enumeration values via drag and drop", () => {
-    expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem(
@@ -123,7 +121,6 @@ describe("PropertiesPanel: the Facets tab", () => {
   });
 
   test("dispatches modifySimpleType when facets are edited", () => {
-    expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem(
@@ -163,7 +160,6 @@ describe("PropertiesPanel: the Facets tab", () => {
   });
 
   test("removes a facet while retaining another restriction facet", () => {
-    expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem("/simpleType:TokenType", "TokenType", DiagramItemType.type, diagram);
@@ -189,7 +185,6 @@ describe("PropertiesPanel: the Facets tab", () => {
   });
 
   test("disables removal for the final restriction facet", () => {
-    expect.hasAssertions();
     const item = new DiagramItem("/simpleType:TokenType", "TokenType", DiagramItemType.type, diagram);
     item.type = "simpleType (restricts xs:string)";
     item.restrictions = { pattern: ["[A-Z]"] };
@@ -203,7 +198,6 @@ describe("PropertiesPanel: the Facets tab", () => {
   });
 
   test("disables removal of the last enumeration value when it is the only facet", () => {
-    expect.hasAssertions();
     const item = new DiagramItem("/simpleType:TokenType", "TokenType", DiagramItemType.type, diagram);
     item.type = "simpleType (restricts xs:string)";
     item.restrictions = { enumeration: ["A"] };
@@ -217,7 +211,6 @@ describe("PropertiesPanel: the Facets tab", () => {
   });
 
   test("shows the Facets tab for simple type nodes and elements with inline simple types", () => {
-    expect.hasAssertions();
     const element = new DiagramItem("/element:person", "person", DiagramItemType.element, diagram);
     element.type = "xs:string";
 
@@ -241,7 +234,6 @@ describe("PropertiesPanel: the Facets tab", () => {
   });
 
   test("hides the Facets tab for list and union simple types", () => {
-    expect.hasAssertions();
     const listType = new DiagramItem("/simpleType:TokenListType", "TokenListType", DiagramItemType.type, diagram);
     listType.type = "simpleType (list of xs:token)";
     listType.simpleTypeDerivationKind = "list";
@@ -258,7 +250,6 @@ describe("PropertiesPanel: the Facets tab", () => {
   });
 
   test("only renders editable controls for existing facets", () => {
-    expect.hasAssertions();
     const item = new DiagramItem("/simpleType:TokenType", "TokenType", DiagramItemType.type, diagram);
     item.type = "simpleType (restricts xs:string)";
     item.restrictions = {
@@ -277,7 +268,6 @@ describe("PropertiesPanel: the Facets tab", () => {
   });
 
   test("shows a palette hint when no facets exist yet", () => {
-    expect.hasAssertions();
     const item = new DiagramItem("/simpleType:TokenType", "TokenType", DiagramItemType.type, diagram);
     item.type = "simpleType (restricts xs:string)";
     item.restrictions = {};

@@ -21,7 +21,6 @@ describe("PropertiesPanel: the XML tab", () => {
   });
 
   test("renders unbounded in XML tab when maxOccurrence is unlimited", () => {
-    expect.hasAssertions();
     const item = new DiagramItem("/element:root/element:item[0]", "item", DiagramItemType.element, diagram);
     item.minOccurrence = 0;
     item.maxOccurrence = -1;
@@ -35,7 +34,6 @@ describe("PropertiesPanel: the XML tab", () => {
   });
 
   test("renders compositor nodes as XML fragments in the XML tab", () => {
-    expect.hasAssertions();
     const sequence = new DiagramItem(
       "/complexType:OrderType/group:sequence[0]",
       "sequence",
@@ -64,7 +62,6 @@ describe("PropertiesPanel: the XML tab", () => {
   });
 
   test("renders simpleType nodes in the XML tab even when the parsed node type is namespaced", () => {
-    expect.hasAssertions();
     const item = new DiagramItem(
       "/xs:simpleType:TokenType",
       "TokenType",
@@ -82,7 +79,6 @@ describe("PropertiesPanel: the XML tab", () => {
   });
 
   test("truncates deep XML preview content with an ellipsis marker", () => {
-    expect.hasAssertions();
     const schemaRoot = new DiagramItem(SCHEMA_ROOT_ID, "schema", DiagramItemType.group, diagram);
 
     const complexType = new DiagramItem(

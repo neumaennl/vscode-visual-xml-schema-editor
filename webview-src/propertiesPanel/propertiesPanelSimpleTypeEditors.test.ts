@@ -20,7 +20,6 @@ describe("PropertiesPanel: the editors of list and union simple types", () => {
   });
 
   test("edits simpleType list item types", () => {
-    expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem("/simpleType:TokenListType", "TokenListType", DiagramItemType.type, diagram);
@@ -44,7 +43,6 @@ describe("PropertiesPanel: the editors of list and union simple types", () => {
   });
 
   test("lets users switch a simpleType between restriction and list kinds", () => {
-    expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem("/simpleType:TokenType", "TokenType", DiagramItemType.type, diagram);
@@ -67,7 +65,6 @@ describe("PropertiesPanel: the editors of list and union simple types", () => {
   });
 
   test("uses structured simpleType fields instead of parsing display text for list editing", () => {
-    expect.hasAssertions();
     const item = new DiagramItem("/simpleType:TokenListType", "TokenListType", DiagramItemType.type, diagram);
     item.type = "simpleType";
     item.simpleTypeListItemType = "xs:token";
@@ -79,7 +76,6 @@ describe("PropertiesPanel: the editors of list and union simple types", () => {
   });
 
   test("edits simpleType union member types", () => {
-    expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem("/simpleType:TextOrNumberType", "TextOrNumberType", DiagramItemType.type, diagram);

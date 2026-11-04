@@ -8,7 +8,7 @@
  *
  * @param line - The line of text to search in
  * @param expectedStrings - The strings, in the order in which they must appear
- * @throws Error if a string is not found after the previous one
+ * @throws AssertionError if a string is not found after the previous one
  *
  * @example
  * ```typescript
@@ -25,14 +25,12 @@ export function expectInOrderOnLine(
   for (let i = 0; i < expectedStrings.length; i++) {
     const expectedStr = expectedStrings[i];
     const index = line.indexOf(expectedStr, searchStartIndex);
-
-    if (index === -1) {
-      const previous = i > 0 ? expectedStrings[i - 1] : "(start of line)";
-      throw new Error(
-        `Expected string "${expectedStr}" not found after "${previous}" on the same line. ` +
-        `Searched from position ${searchStartIndex} in line of length ${line.length}.`
-      );
-    }
+    const previous = i > 0 ? expectedStrings[i - 1] : "(start of line)";
+    expect(
+      index,
+      `Expected string "${expectedStr}" not found after "${previous}" on the same line. ` +
+      `Searched from position ${searchStartIndex} in line of length ${line.length}.`
+    ).not.toBe(-1);
 
     // The next string must come after this one
     searchStartIndex = index + expectedStr.length;
@@ -45,7 +43,7 @@ export function expectInOrderOnLine(
  *
  * @param text - The multi-line text to search in
  * @param expectedStrings - The strings, in the order in which their lines must appear
- * @throws Error if a string is not found on a line after the line of the previous one
+ * @throws AssertionError if a string is not found on a line after the line of the previous one
  *
  * @example
  * ```typescript
@@ -62,25 +60,17 @@ export function expectLinesInOrder(
 
   for (let i = 0; i < expectedStrings.length; i++) {
     const expectedStr = expectedStrings[i];
-    let found = false;
+    const lineIndex = lines.findIndex((line, index) => index >= currentLineIndex && line.includes(expectedStr));
+    const previous = i > 0 ? expectedStrings[i - 1] : "(start of text)";
+    const searchContext = lines.slice(Math.max(0, currentLineIndex - 2), currentLineIndex + 3).join('\n');
+    expect(
+      lineIndex,
+      `Expected string "${expectedStr}" not found on a line after "${previous}".\n` +
+      `Searched from line ${currentLineIndex + 1}.\n` +
+      `Context:\n${searchContext}`
+    ).not.toBe(-1);
 
-    // Search for the expected string starting from currentLineIndex
-    for (let lineIdx = currentLineIndex; lineIdx < lines.length; lineIdx++) {
-      if (lines[lineIdx].includes(expectedStr)) {
-        found = true;
-        currentLineIndex = lineIdx + 1; // The next string must be on a later line
-        break;
-      }
-    }
-
-    if (!found) {
-      const previous = i > 0 ? expectedStrings[i - 1] : "(start of text)";
-      const searchContext = lines.slice(Math.max(0, currentLineIndex - 2), currentLineIndex + 3).join('\n');
-      throw new Error(
-        `Expected string "${expectedStr}" not found on a line after "${previous}".\n` +
-        `Searched from line ${currentLineIndex + 1}.\n` +
-        `Context:\n${searchContext}`
-      );
-    }
+    // The next string must be on a later line
+    currentLineIndex = lineIndex + 1;
   }
 }

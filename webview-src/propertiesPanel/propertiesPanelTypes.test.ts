@@ -21,7 +21,6 @@ describe("PropertiesPanel: the type fields", () => {
   });
 
   test("edits simple type base types through a dedicated Base Type field", () => {
-    expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem("/simpleType:TokenType", "TokenType", DiagramItemType.type, diagram);
@@ -43,7 +42,6 @@ describe("PropertiesPanel: the type fields", () => {
   });
 
   test("does not dispatch a second command when Base Type blur is unchanged after stale simpleType rename replay", () => {
-    expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
 
@@ -86,7 +84,6 @@ describe("PropertiesPanel: the type fields", () => {
   });
 
   test("keeps computed complex type summaries read-only", () => {
-    expect.hasAssertions();
     const item = new DiagramItem("/complexType:PersonType", "PersonType", DiagramItemType.type, diagram);
     item.type = "complexType with simpleContent";
 
@@ -99,7 +96,6 @@ describe("PropertiesPanel: the type fields", () => {
   });
 
   test("keeps non-resolved simple type labels read-only", () => {
-    expect.hasAssertions();
     const item = new DiagramItem("/simpleType:TokenType", "TokenType", DiagramItemType.type, diagram);
     item.type = "simpleType";
 
@@ -110,7 +106,6 @@ describe("PropertiesPanel: the type fields", () => {
   });
 
   test("offers known schema types as suggestions while keeping type inputs free-form", () => {
-    expect.hasAssertions();
     const schemaRoot = new DiagramItem(SCHEMA_ROOT_ID, "schema", DiagramItemType.group, diagram);
     diagram.currentSchemaPrefix = "tns";
     const customerType = new DiagramItem(
@@ -140,7 +135,6 @@ describe("PropertiesPanel: the type fields", () => {
   });
 
   test("uses targetNamespace prefix for local type references when available", () => {
-    expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
     diagram.currentSchemaPrefix = "tns";
@@ -174,7 +168,6 @@ describe("PropertiesPanel: the type fields", () => {
   });
 
   test("lets elements with inline complex types replace them with an explicit type", () => {
-    expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem("/element:person", "person", DiagramItemType.element, diagram);
@@ -200,7 +193,6 @@ describe("PropertiesPanel: the type fields", () => {
   });
 
   test("lets elements with inline simple types replace them with an explicit type", () => {
-    expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem("/element:code", "code", DiagramItemType.element, diagram);
@@ -227,7 +219,6 @@ describe("PropertiesPanel: the type fields", () => {
   });
 
   test("edits inline simple type base types from the selected element", () => {
-    expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem("/element:code", "code", DiagramItemType.element, diagram);
@@ -254,7 +245,6 @@ describe("PropertiesPanel: the type fields", () => {
   });
 
   test("edits inline complex type extension bases from the selected element", () => {
-    expect.hasAssertions();
     const dispatch = vi.fn();
     panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem("/element:person", "person", DiagramItemType.element, diagram);

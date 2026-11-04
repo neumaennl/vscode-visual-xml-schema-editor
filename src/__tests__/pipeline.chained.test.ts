@@ -40,7 +40,7 @@ const BUILD_ORDER_TYPE: SchemaCommand[] = [
   {
     type: "addElement",
     payload: {
-      parentId: "/complexType:OrderType/sequence",
+      parentId: "/complexType:OrderType/group:sequence[0]",
       elementName: "orderId",
       elementType: "xs:string",
       minOccurs: 1,
@@ -51,7 +51,7 @@ const BUILD_ORDER_TYPE: SchemaCommand[] = [
   {
     type: "addElement",
     payload: {
-      parentId: "/complexType:OrderType/sequence",
+      parentId: "/complexType:OrderType/group:sequence[0]",
       elementName: "qty",
       elementType: "xs:integer",
       minOccurs: 0,
@@ -63,7 +63,7 @@ const BUILD_ORDER_TYPE: SchemaCommand[] = [
   {
     type: "addElement",
     payload: {
-      parentId: "/complexType:OrderType/sequence",
+      parentId: "/complexType:OrderType/group:sequence[0]",
       elementName: "items",
       minOccurs: 1,
       maxOccurs: "unbounded",
@@ -73,7 +73,7 @@ const BUILD_ORDER_TYPE: SchemaCommand[] = [
   {
     type: "addComplexType",
     payload: {
-      parentId: "/complexType:OrderType/sequence/element:items",
+      parentId: "/complexType:OrderType/group:sequence[0]/element:items",
       contentModel: "sequence",
     },
   },
@@ -81,7 +81,7 @@ const BUILD_ORDER_TYPE: SchemaCommand[] = [
   {
     type: "addElement",
     payload: {
-      parentId: "/complexType:OrderType/sequence/element:items/anonymousComplexType[0]/sequence",
+      parentId: "/complexType:OrderType/group:sequence[0]/element:items/anonymousComplexType[0]/group:sequence[0]",
       elementName: "item",
       elementType: "lengthRestrictionType",
       minOccurs: 1,
@@ -92,7 +92,7 @@ const BUILD_ORDER_TYPE: SchemaCommand[] = [
   {
     type: "addElement",
     payload: {
-      parentId: "/complexType:OrderType/sequence",
+      parentId: "/complexType:OrderType/group:sequence[0]",
       ref: "example",
       minOccurs: 0,
     },
@@ -119,7 +119,7 @@ const BUILD_ORDER_TYPE: SchemaCommand[] = [
   {
     type: "modifyElement",
     payload: {
-      elementId: "/complexType:OrderType/sequence/element:orderId",
+      elementId: "/complexType:OrderType/group:sequence[0]/element:orderId",
       documentation: "Unique identifier for the order",
     },
   },
@@ -231,7 +231,7 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
     xml = runCommandExpectSuccess(xml, {
       type: "addElement",
       payload: {
-        parentId: "/complexType:OrderType/sequence",
+        parentId: "/complexType:OrderType/group:sequence[0]",
         elementName: "orderId",
         elementType: "xs:string",
       },
@@ -243,7 +243,7 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
       {
         type: "addElement",
         payload: {
-          parentId: "/complexType:OrderType/sequence",
+          parentId: "/complexType:OrderType/group:sequence[0]",
           elementName: "orderId",
           elementType: "xs:integer",
         },
@@ -261,7 +261,7 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
     xml = runCommandExpectSuccess(xml, {
       type: "addElement",
       payload: {
-        parentId: "/complexType:OrderType/sequence",
+        parentId: "/complexType:OrderType/group:sequence[0]",
         elementName: "qty",
         elementType: "xs:integer",
       },
@@ -270,7 +270,7 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
     xml = runCommandExpectSuccess(xml, {
       type: "addComplexType",
       payload: {
-        parentId: "/complexType:OrderType/sequence/element:qty",
+        parentId: "/complexType:OrderType/group:sequence[0]/element:qty",
         contentModel: "sequence",
       },
     });
@@ -294,7 +294,7 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
     xml = runCommandExpectSuccess(xml, {
       type: "addElement",
       payload: {
-        parentId: "/complexType:OrderType/sequence",
+        parentId: "/complexType:OrderType/group:sequence[0]",
         elementName: "status",
       },
     });
@@ -303,7 +303,7 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
     xml = runCommandExpectSuccess(xml, {
       type: "addSimpleType",
       payload: {
-        parentId: "/complexType:OrderType/sequence/element:status",
+        parentId: "/complexType:OrderType/group:sequence[0]/element:status",
         baseType: "xs:string",
         restrictions: {
           enumeration: ["pending", "shipped", "delivered"],
@@ -342,7 +342,7 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
     xml = runCommandExpectSuccess(xml, {
       type: "addElement",
       payload: {
-        parentId: "/complexType:WrapperType/sequence",
+        parentId: "/complexType:WrapperType/group:sequence[0]",
         ref: "example",
         minOccurs: 0,
         maxOccurs: "unbounded",

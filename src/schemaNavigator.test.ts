@@ -15,6 +15,9 @@ const PERSON_WITH_NAME_XSD = "person-element-with-name.xsd";
 /** The file with a complexType `PersonType` with the local element `name`. */
 const PERSON_TYPE_WITH_NAME_XSD = "person-type-with-name-element.xsd";
 
+/** The file with one of each node that the navigator can navigate to. */
+const NAVIGABLE_NODES_XSD = "one-of-each-navigable-node.xsd";
+
 /** A group `PersonGroup` with the element `name` in its sequence. */
 const PERSON_GROUP_WITH_NAME_ELEMENT = `<xs:group name="PersonGroup">
   <xs:sequence>
@@ -35,15 +38,6 @@ describe("SchemaNavigator", () => {
         expect(result.parentType).toBe("schema");
       });
 
-      test("should locate schema root with '/schema' id", () => {
-        const schemaObj = emptySchema();
-
-        const result = locateNodeById(schemaObj, "/schema");
-
-        expect(result.found).toBe(true);
-        expect(result.parent).toBe(schemaObj);
-        expect(result.parentType).toBe("schema");
-      });
     });
 
     describe("Top-level element navigation", () => {
@@ -85,7 +79,7 @@ describe("SchemaNavigator", () => {
       test("should locate sequence within complex type", () => {
         const schemaObj = readTestSchema(PERSON_TYPE_WITH_NAME_XSD);
 
-        const result = locateNodeById(schemaObj, "/complexType:PersonType/sequence");
+        const result = locateNodeById(schemaObj, "/complexType:PersonType/group:sequence[0]");
 
         expect(result.found).toBe(true);
         expect(result.parentType).toBe("sequence");
@@ -98,7 +92,7 @@ describe("SchemaNavigator", () => {
   </xs:choice>
 </xs:complexType>`);
 
-        const result = locateNodeById(schemaObj, "/complexType:ChoiceType/choice");
+        const result = locateNodeById(schemaObj, "/complexType:ChoiceType/group:choice[0]");
 
         expect(result.found).toBe(true);
         expect(result.parentType).toBe("choice");
@@ -111,7 +105,7 @@ describe("SchemaNavigator", () => {
   </xs:all>
 </xs:complexType>`);
 
-        const result = locateNodeById(schemaObj, "/complexType:AllType/all");
+        const result = locateNodeById(schemaObj, "/complexType:AllType/group:all[0]");
 
         expect(result.found).toBe(true);
         expect(result.parentType).toBe("all");
@@ -124,6 +118,15 @@ describe("SchemaNavigator", () => {
 
         expect(result.found).toBe(true);
         expect(result.parentType).toBe("sequence");
+      });
+      test("should locate sequence within complexContent restriction via group path", () => {
+        const schemaObj = schemaWith(`<xs:complexType name="RestrictedType">
+  <xs:complexContent><xs:restriction base="xs:anyType"><xs:sequence/></xs:restriction></xs:complexContent>
+</xs:complexType>`);
+
+        const result = locateNodeById(schemaObj, "/complexType:RestrictedType/group:sequence[0]");
+
+        expect(result).toMatchObject({ found: true, parentType: "sequence" });
       });
     });
 
@@ -149,7 +152,7 @@ describe("SchemaNavigator", () => {
 
         const result = locateNodeById(
           schemaObj,
-          "/element:person/anonymousComplexType[0]/sequence"
+          "/element:person/anonymousComplexType[0]/group:sequence[0]"
         );
 
         expect(result.found).toBe(true);
@@ -167,7 +170,7 @@ describe("SchemaNavigator", () => {
 
         const result = locateNodeById(
           schemaObj,
-          "/element:payment/anonymousComplexType[0]/choice"
+          "/element:payment/anonymousComplexType[0]/group:choice[0]"
         );
 
         expect(result.found).toBe(true);
@@ -185,7 +188,7 @@ describe("SchemaNavigator", () => {
 
         const result = locateNodeById(
           schemaObj,
-          "/element:config/anonymousComplexType[0]/all"
+          "/element:config/anonymousComplexType[0]/group:all[0]"
         );
 
         expect(result.found).toBe(true);
@@ -199,7 +202,7 @@ describe("SchemaNavigator", () => {
 
         const result = locateNodeById(
           schemaObj,
-          "/element:person/anonymousComplexType[0]/sequence/element:name"
+          "/element:person/anonymousComplexType[0]/group:sequence[0]/element:name"
         );
 
         expect(result.found).toBe(true);
@@ -213,7 +216,7 @@ describe("SchemaNavigator", () => {
 
         const result = locateNodeById(
           schemaObj,
-          "/element:person/anonymousComplexType[0]/sequence/element[0]"
+          "/element:person/anonymousComplexType[0]/group:sequence[0]/element[0]"
         );
 
         expect(result.found).toBe(true);
@@ -250,68 +253,12 @@ describe("SchemaNavigator", () => {
         expect(parentGroup?.name).toBe("PersonGroup");
       });
 
-      test("should locate sequence via group:sequence[N] path under named complexType", () => {
-        const schemaObj = readTestSchema(PERSON_TYPE_WITH_NAME_XSD);
-
-        const result = locateNodeById(
-          schemaObj,
-          "/complexType:PersonType/group:sequence[0]"
-        );
-
-        expect(result.found).toBe(true);
-        expect(result.parentType).toBe("sequence");
-      });
-
       test("should locate sequence via group:sequence[N] path under named group", () => {
         const schemaObj = schemaWith(PERSON_GROUP_WITH_NAME_ELEMENT);
 
         const result = locateNodeById(
           schemaObj,
           "/group:PersonGroup/group:sequence[0]"
-        );
-
-        expect(result.found).toBe(true);
-        expect(result.parentType).toBe("sequence");
-      });
-
-      test("should locate choice via group:choice[N] path under named complexType", () => {
-        const schemaObj = schemaWith(`<xs:complexType name="ChoiceType">
-  <xs:choice>
-    <xs:element name="opt" type="xs:string"/>
-  </xs:choice>
-</xs:complexType>`);
-
-        const result = locateNodeById(
-          schemaObj,
-          "/complexType:ChoiceType/group:choice[0]"
-        );
-
-        expect(result.found).toBe(true);
-        expect(result.parentType).toBe("choice");
-      });
-
-      test("should locate all via group:all[N] path under named complexType", () => {
-        const schemaObj = schemaWith(`<xs:complexType name="AllType">
-  <xs:all>
-    <xs:element name="field" type="xs:string"/>
-  </xs:all>
-</xs:complexType>`);
-
-        const result = locateNodeById(
-          schemaObj,
-          "/complexType:AllType/group:all[0]"
-        );
-
-        expect(result.found).toBe(true);
-        expect(result.parentType).toBe("all");
-      });
-
-      test("should locate sequence via group:sequence[N] path under anonymous complexType", () => {
-        const schemaObj = readTestSchema(PERSON_WITH_NAME_XSD);
-
-        const result = locateNodeById(
-          schemaObj,
-          "/element:person/anonymousComplexType[0]/group:sequence[0]"
         );
 
         expect(result.found).toBe(true);
@@ -360,7 +307,48 @@ describe("SchemaNavigator", () => {
   <xs:choice/>
 </xs:complexType>`);
 
-        const result = locateNodeById(schemaObj, "/complexType:PersonType/sequence");
+        const result = locateNodeById(schemaObj, "/complexType:PersonType/group:sequence[0]");
+
+        expect(result.found).toBe(false);
+      });
+    });
+
+    describe("Every kind of node", () => {
+      test.each([
+        ["/attribute:lang", "topLevelAttribute"],
+        ["/attributeGroup:CommonAttributes", "namedAttributeGroup"],
+        ["/element:code/anonymousSimpleType[0]", "localSimpleType"],
+        ["/attribute:lang/anonymousSimpleType[0]", "localSimpleType"],
+        ["/complexType:ItemType/attribute:id", "attribute"],
+        ["/complexType:ItemType/attribute:id/anonymousSimpleType[0]", "localSimpleType"],
+        ["/complexType:ItemType/group:sequence[0]/group:choice[0]", "choice"],
+        ["/complexType:ItemType/group:sequence[0]/group:sequence[0]", "sequence"],
+        ["/group:ChoiceGroup/group:choice[0]", "choice"],
+        ["/group:AllGroup/group:all[0]", "all"],
+        ["/element:order/anonymousComplexType[0]/group:sequence[0]/element:line[0]/anonymousComplexType[0]", "localComplexType"],
+      ])("should locate %s as %s", (id, parentType) => {
+        const result = locateNodeById(readTestSchema(NAVIGABLE_NODES_XSD), id);
+
+        expect(result).toMatchObject({ found: true, parentType });
+      });
+
+      test.each([
+        "/complexType:Missing",
+        "/simpleType:Missing",
+        "/group:Missing",
+        "/attributeGroup:Missing",
+        "/attribute:Missing",
+        "/element:plain/anonymousSimpleType[0]",
+        "/element:plain/element:child[0]",
+        "/attribute:plainAttribute/anonymousSimpleType[0]",
+        "/simpleType:CodeType/anonymousSimpleType[0]",
+        "/complexType:ItemType/attribute:missing",
+        "/complexType:ItemType/group:sequence[0]/group:sequence[0]/group:choice[0]",
+        "/complexType:ItemType/group:sequence[0]/element:missing[0]",
+        "/group:ChoiceGroup/group:sequence[0]",
+        "/group:ChoiceGroup/group:all[0]",
+      ])("should not find %s", (id) => {
+        const result = locateNodeById(readTestSchema(NAVIGABLE_NODES_XSD), id);
 
         expect(result.found).toBe(false);
       });

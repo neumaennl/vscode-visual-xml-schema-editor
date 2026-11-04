@@ -69,7 +69,7 @@ export function executeAddGroup(
  *
  * The `groupId` is used for both:
  * - `/group:Name` — removes the top-level named group definition.
- * - `/complexType:X/sequence[0]/groupRef:Name[0]` — removes the group reference.
+ * - `/complexType:X/group:sequence[0]/groupRef:Name[0]` — removes the group reference.
  *
  * @param command - The removeGroup command to execute
  * @param schemaObj - The schema object to modify
@@ -107,7 +107,7 @@ export function executeRemoveGroup(
  *
  * The `groupId` is used for both:
  * - `/group:Name` — modifies the top-level named group definition.
- * - `/complexType:X/sequence[0]/groupRef:Name[0]` — modifies the group reference.
+ * - `/complexType:X/group:sequence[0]/groupRef:Name[0]` — modifies the group reference.
  *
  * @param command - The modifyGroup command to execute
  * @param schemaObj - The schema object to modify

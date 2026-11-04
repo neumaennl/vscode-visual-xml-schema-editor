@@ -57,7 +57,7 @@ export interface AddGroupCommand extends BaseCommand<AddGroupPayload> {
  * Payload for removing a group definition or a group reference.
  * The `groupId` field works for both:
  * - `/group:PersonGroup` — removes the top-level named group definition.
- * - `/complexType:X/sequence[0]/groupRef:PersonGroup[0]` — removes the group reference.
+ * - `/complexType:X/group:sequence[0]/groupRef:PersonGroup[0]` — removes the group reference.
  */
 export interface RemoveGroupPayload {
   /** ID of the group definition or group reference to remove */
@@ -76,7 +76,7 @@ export interface RemoveGroupCommand extends BaseCommand<RemoveGroupPayload> {
  * Payload for modifying a group definition or a group reference.
  * The `groupId` field works for both:
  * - `/group:PersonGroup` — modifies the top-level named group definition.
- * - `/complexType:X/sequence[0]/groupRef:PersonGroup[0]` — modifies the group reference.
+ * - `/complexType:X/group:sequence[0]/groupRef:PersonGroup[0]` — modifies the group reference.
  */
 export interface ModifyGroupPayload {
   /** ID of the group definition or group reference to modify */

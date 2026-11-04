@@ -48,7 +48,7 @@ export interface NodeLocation {
  * locateNodeById(schema, "/schema") // Returns { found: true, parent: schema, parentType: "schema" }
  *
  * // Find a sequence within a complex type
- * locateNodeById(schema, "/complexType:PersonType/sequence[0]")
+ * locateNodeById(schema, "/complexType:PersonType/group:sequence[0]")
  * // Returns the sequence group where elements can be added
  * ```
  */
@@ -91,13 +91,6 @@ export function locateNodeById(
         };
       }
 
-      if (!result.nodeType) {
-        return {
-          found: false,
-          error: `Invalid navigation result: missing nodeType for segment: ${segment}`,
-        };
-      }
-
       currentNode = result.node;
       currentType = result.nodeType;
     }
@@ -114,6 +107,11 @@ export function locateNodeById(
     };
   }
 }
+
+/**
+ * Result of navigating from a node to one of its children: the child and its type, if found.
+ */
+type NavigationResult = { found: true; node: unknown; nodeType: string } | { found: false };
 
 /**
  * Information parsed from a segment.
@@ -164,7 +162,7 @@ function navigateToChild(
   parent: unknown,
   parentType: string,
   segmentInfo: SegmentInfo
-): { found: boolean; node?: unknown; nodeType?: string } {
+): NavigationResult {
   const { nodeType, name, position } = segmentInfo;
 
   // Handle navigation based on parent type and target node type
@@ -221,7 +219,7 @@ function navigateFromSchema(
   nodeType: SchemaNodeType,
   name?: string,
   position?: number
-): { found: boolean; node?: unknown; nodeType?: string } {
+): NavigationResult {
   if (nodeType === SchemaNodeType.Element) {
     const elements = schemaObj.element ?? [];
     const element = findByNameOrPosition(elements, name, position);
@@ -271,7 +269,7 @@ function navigateFromElement(
   nodeType: SchemaNodeType,
   _name?: string,
   _position?: number
-): { found: boolean; node?: unknown; nodeType?: string } {
+): NavigationResult {
   if (nodeType === SchemaNodeType.AnonymousComplexType) {
     if (element.complexType) {
       return { found: true, node: element.complexType, nodeType: "localComplexType" };
@@ -293,7 +291,7 @@ function navigateFromComplexType(
   nodeType: SchemaNodeType,
   name?: string,
   position?: number
-): { found: boolean; node?: unknown; nodeType?: string } {
+): NavigationResult {
   // Complex types can have sequence, choice, or all as children
   if (nodeType === SchemaNodeType.Group && name === "sequence") {
     const sequence = resolveComplexTypeGroup(complexType, "sequence");
@@ -320,33 +318,7 @@ function navigateFromComplexType(
     }
   }
 
-  // Handle direct navigation to sequence/choice/all without explicit "group:" prefix
-  if (!name && !position) {
-    if (nodeType === "sequence" as SchemaNodeType) {
-      const sequence = resolveComplexTypeGroup(complexType, "sequence");
-      if (sequence) {
-        return {
-          found: true,
-          node: sequence,
-          nodeType: "sequence",
-        };
-      }
-    } else if (nodeType === "choice" as SchemaNodeType) {
-      const choice = resolveComplexTypeGroup(complexType, "choice");
-      if (choice) {
-        return {
-          found: true,
-          node: choice,
-          nodeType: "choice",
-        };
-      }
-    } else if (nodeType === "all" as SchemaNodeType) {
-      const all = resolveComplexTypeGroup(complexType, "all");
-      if (all) {
-        return { found: true, node: all, nodeType: "all" };
-      }
-    }
-  } else if (nodeType === SchemaNodeType.Attribute) {
+  if (nodeType === SchemaNodeType.Attribute) {
     const attrs = complexType.attribute ?? [];
     const attr = findByNameOrPosition(attrs, name, position);
     if (attr) {
@@ -379,7 +351,7 @@ function navigateFromAttribute(
   nodeType: SchemaNodeType,
   _name?: string,
   _position?: number
-): { found: boolean; node?: unknown; nodeType?: string } {
+): NavigationResult {
   if (nodeType === SchemaNodeType.AnonymousSimpleType) {
     if (attr.simpleType) {
       return { found: true, node: attr.simpleType, nodeType: "localSimpleType" };
@@ -394,7 +366,7 @@ function navigateFromNamedGroup(
   nodeType: SchemaNodeType,
   name?: string,
   _position?: number
-): { found: boolean; node?: unknown; nodeType?: string } {
+): NavigationResult {
   if (nodeType === SchemaNodeType.Group && name === "sequence" && group.sequence) {
     return { found: true, node: group.sequence, nodeType: "sequence" };
   }
@@ -416,7 +388,7 @@ function navigateFromGroup(
   nodeType: SchemaNodeType,
   name?: string,
   position?: number
-): { found: boolean; node?: unknown; nodeType?: string } {
+): NavigationResult {
   if (nodeType === SchemaNodeType.Element) {
     const elements: Array<{ name?: string; ref?: string }> = group.element ?? [];
     const element = findByNameOrPosition(elements, name, position);

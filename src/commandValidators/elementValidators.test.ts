@@ -474,7 +474,7 @@ describe("Element Validators", () => {
     test("should accept addElement with valid ref to sequence", () => {
       const command: AddElementCommand = {
         type: "addElement",
-        payload: { parentId: "/complexType:OrderType/sequence", ref: "person" },
+        payload: { parentId: "/complexType:OrderType/group:sequence[0]", ref: "person" },
       };
       expect(validateAddElement(command, seqSchema).valid).toBe(true);
     });
@@ -508,7 +508,7 @@ describe("Element Validators", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "/complexType:OrderType/sequence",
+          parentId: "/complexType:OrderType/group:sequence[0]",
           ref: "person",
           elementName: "person",
         },
@@ -522,7 +522,7 @@ describe("Element Validators", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "/complexType:OrderType/sequence",
+          parentId: "/complexType:OrderType/group:sequence[0]",
           ref: "123invalid",
         },
       };
@@ -548,7 +548,7 @@ describe("Element Validators", () => {
     test("should reject addElement with ref that does not exist in schema", () => {
       const command: AddElementCommand = {
         type: "addElement",
-        payload: { parentId: "/complexType:OrderType/sequence", ref: "nonexistent" },
+        payload: { parentId: "/complexType:OrderType/group:sequence[0]", ref: "nonexistent" },
       };
       const result = validateAddElement(command, seqSchema);
       expectInvalid(result);
@@ -569,7 +569,7 @@ describe("Element Validators", () => {
     test("should accept adding an element to an all", () => {
       const command: AddElementCommand = {
         type: "addElement",
-        payload: { parentId: "/complexType:T/all", elementName: "third", elementType: "xs:string" },
+        payload: { parentId: "/complexType:T/group:all[0]", elementName: "third", elementType: "xs:string" },
       };
 
       const result = validateAddElement(command, schemaWith(`<xs:complexType name="T"><xs:all/></xs:complexType>`));
@@ -579,7 +579,7 @@ describe("Element Validators", () => {
     test("should reject an element name that already exists in the all", () => {
       const command: AddElementCommand = {
         type: "addElement",
-        payload: { parentId: "/complexType:T/all", elementName: "first", elementType: "xs:string" },
+        payload: { parentId: "/complexType:T/group:all[0]", elementName: "first", elementType: "xs:string" },
       };
 
       const result = validateAddElement(
@@ -593,7 +593,7 @@ describe("Element Validators", () => {
     test("should reject an element without name and ref", () => {
       const command: AddElementCommand = {
         type: "addElement",
-        payload: { parentId: "/complexType:T/sequence" },
+        payload: { parentId: "/complexType:T/group:sequence[0]" },
       };
 
       const result = validateAddElement(command, schemaWith(SEQUENCE_WITH_ELEMENTS));
@@ -615,7 +615,7 @@ describe("Element Validators", () => {
     test("should reject a reference that already exists in the sequence", () => {
       const command: AddElementCommand = {
         type: "addElement",
-        payload: { parentId: "/complexType:T/sequence", ref: "root" },
+        payload: { parentId: "/complexType:T/group:sequence[0]", ref: "root" },
       };
 
       const result = validateAddElement(command, schemaWith(SEQUENCE_WITH_ELEMENTS));
@@ -626,7 +626,7 @@ describe("Element Validators", () => {
     test("should accept removing an element identified by position", () => {
       const command: RemoveElementCommand = {
         type: "removeElement",
-        payload: { elementId: "/complexType:T/sequence/element[1]" },
+        payload: { elementId: "/complexType:T/group:sequence[0]/element[1]" },
       };
 
       const result = validateRemoveElement(command, schemaWith(SEQUENCE_WITH_ELEMENTS));
@@ -636,7 +636,7 @@ describe("Element Validators", () => {
     test("should reject removing an element at a position after the last one", () => {
       const command: RemoveElementCommand = {
         type: "removeElement",
-        payload: { elementId: "/complexType:T/sequence/element[3]" },
+        payload: { elementId: "/complexType:T/group:sequence[0]/element[3]" },
       };
 
       const result = validateRemoveElement(command, schemaWith(SEQUENCE_WITH_ELEMENTS));
@@ -647,12 +647,12 @@ describe("Element Validators", () => {
     test("should reject removing an element whose parent does not exist", () => {
       const command: RemoveElementCommand = {
         type: "removeElement",
-        payload: { elementId: "/complexType:Missing/sequence/element:first" },
+        payload: { elementId: "/complexType:Missing/group:sequence[0]/element:first" },
       };
 
       const result = validateRemoveElement(command, schemaWith(SEQUENCE_WITH_ELEMENTS));
       expectInvalid(result);
-      expect(result.error).toBe("Parent node not found for element: /complexType:Missing/sequence/element:first");
+      expect(result.error).toBe("Parent node not found for element: /complexType:Missing/group:sequence[0]/element:first");
     });
 
     test("should reject removing an element from a parent that cannot hold elements", () => {
@@ -669,12 +669,12 @@ describe("Element Validators", () => {
     test("should reject modifying an element whose parent does not exist", () => {
       const command: ModifyElementCommand = {
         type: "modifyElement",
-        payload: { elementId: "/complexType:Missing/sequence/element:first", elementName: "renamed" },
+        payload: { elementId: "/complexType:Missing/group:sequence[0]/element:first", elementName: "renamed" },
       };
 
       const result = validateModifyElement(command, schemaWith(SEQUENCE_WITH_ELEMENTS));
       expectInvalid(result);
-      expect(result.error).toBe("Parent node not found for element: /complexType:Missing/sequence/element:first");
+      expect(result.error).toBe("Parent node not found for element: /complexType:Missing/group:sequence[0]/element:first");
     });
 
     test("should reject modifying an element in a parent that cannot hold elements", () => {
@@ -691,7 +691,7 @@ describe("Element Validators", () => {
     test("should reject modifying an element at a position after the last one", () => {
       const command: ModifyElementCommand = {
         type: "modifyElement",
-        payload: { elementId: "/complexType:T/sequence/element[3]", elementName: "renamed" },
+        payload: { elementId: "/complexType:T/group:sequence[0]/element[3]", elementName: "renamed" },
       };
 
       const result = validateModifyElement(command, schemaWith(SEQUENCE_WITH_ELEMENTS));
@@ -702,7 +702,7 @@ describe("Element Validators", () => {
     test("should reject changing an element to a reference with an invalid name", () => {
       const command: ModifyElementCommand = {
         type: "modifyElement",
-        payload: { elementId: "/complexType:T/sequence/element:first", ref: "123-invalid" },
+        payload: { elementId: "/complexType:T/group:sequence[0]/element:first", ref: "123-invalid" },
       };
 
       const result = validateModifyElement(command, schemaWith(SEQUENCE_WITH_ELEMENTS));
@@ -713,7 +713,7 @@ describe("Element Validators", () => {
     test("should accept changing an element to a reference to an existing top-level element", () => {
       const command: ModifyElementCommand = {
         type: "modifyElement",
-        payload: { elementId: "/complexType:T/sequence/element:first", ref: "root" },
+        payload: { elementId: "/complexType:T/group:sequence[0]/element:first", ref: "root" },
       };
 
       const result = validateModifyElement(

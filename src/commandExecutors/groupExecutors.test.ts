@@ -366,7 +366,7 @@ describe("Group Executors", () => {
           type: "addGroup",
           payload: {
             ref: "PersonGroup",
-            parentId: "/complexType:PersonType/sequence",
+            parentId: "/complexType:PersonType/group:sequence[0]",
           },
         };
 
@@ -385,7 +385,7 @@ describe("Group Executors", () => {
           type: "addGroup",
           payload: {
             ref: "PersonGroup",
-            parentId: "/complexType:PersonType/sequence",
+            parentId: "/complexType:PersonType/group:sequence[0]",
             minOccurs: 0,
             maxOccurs: "unbounded",
           },
@@ -403,11 +403,11 @@ describe("Group Executors", () => {
         const schemaObj = readTestSchema(TWO_GROUPS_AND_PERSON_XSD);
 
         executeAddGroup(
-          { type: "addGroup", payload: { ref: "PersonGroup", parentId: "/complexType:PersonType/sequence" } },
+          { type: "addGroup", payload: { ref: "PersonGroup", parentId: "/complexType:PersonType/group:sequence[0]" } },
           schemaObj
         );
         executeAddGroup(
-          { type: "addGroup", payload: { ref: "AddressGroup", parentId: "/complexType:PersonType/sequence" } },
+          { type: "addGroup", payload: { ref: "AddressGroup", parentId: "/complexType:PersonType/group:sequence[0]" } },
           schemaObj
         );
 
@@ -442,7 +442,7 @@ describe("Group Executors", () => {
           type: "addGroup",
           payload: {
             ref: "PersonGroup",
-            parentId: "/complexType:PersonType/sequence",
+            parentId: "/complexType:PersonType/group:sequence[0]",
             documentation: "A person group ref annotation",
           },
         };
@@ -462,7 +462,7 @@ describe("Group Executors", () => {
 
         const command: RemoveGroupCommand = {
           type: "removeGroup",
-          payload: { groupId: "/complexType:PersonType/sequence[0]/groupRef:PersonGroup[0]" },
+          payload: { groupId: "/complexType:PersonType/group:sequence[0]/groupRef:PersonGroup[0]" },
         };
 
         executeRemoveGroup(command, schemaObj);
@@ -476,7 +476,7 @@ describe("Group Executors", () => {
 
         const command: RemoveGroupCommand = {
           type: "removeGroup",
-          payload: { groupId: "/complexType:PersonType/sequence[0]/groupRef:PersonGroup[0]" },
+          payload: { groupId: "/complexType:PersonType/group:sequence[0]/groupRef:PersonGroup[0]" },
         };
 
         executeRemoveGroup(command, schemaObj);
@@ -508,7 +508,7 @@ describe("Group Executors", () => {
         const command: ModifyGroupCommand = {
           type: "modifyGroup",
           payload: {
-            groupId: "/complexType:PersonType/sequence[0]/groupRef:PersonGroup[0]",
+            groupId: "/complexType:PersonType/group:sequence[0]/groupRef:PersonGroup[0]",
             ref: "AddressGroup",
           },
         };
@@ -525,7 +525,7 @@ describe("Group Executors", () => {
         const command: ModifyGroupCommand = {
           type: "modifyGroup",
           payload: {
-            groupId: "/complexType:PersonType/sequence[0]/groupRef:PersonGroup[0]",
+            groupId: "/complexType:PersonType/group:sequence[0]/groupRef:PersonGroup[0]",
             minOccurs: 0,
             maxOccurs: "unbounded",
           },
@@ -544,7 +544,7 @@ describe("Group Executors", () => {
         const command: ModifyGroupCommand = {
           type: "modifyGroup",
           payload: {
-            groupId: "/complexType:PersonType/sequence[0]/groupRef:PersonGroup[0]",
+            groupId: "/complexType:PersonType/group:sequence[0]/groupRef:PersonGroup[0]",
             documentation: "Updated ref annotation",
           },
         };

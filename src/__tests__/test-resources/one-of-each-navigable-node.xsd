@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- One of each node that locateNodeById() can navigate to, nested where IDs pass through it. -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="code">
+    <xs:simpleType>
+      <xs:restriction base="xs:string"/>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="plain" type="xs:string"/>
+  <xs:element name="order">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="line">
+          <xs:complexType>
+            <xs:sequence/>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:attribute name="lang">
+    <xs:simpleType>
+      <xs:restriction base="xs:language"/>
+    </xs:simpleType>
+  </xs:attribute>
+  <xs:attribute name="plainAttribute" type="xs:string"/>
+  <xs:complexType name="ItemType">
+    <xs:sequence>
+      <xs:choice/>
+      <xs:sequence/>
+    </xs:sequence>
+    <xs:attribute name="id">
+      <xs:simpleType>
+        <xs:restriction base="xs:ID"/>
+      </xs:simpleType>
+    </xs:attribute>
+  </xs:complexType>
+  <xs:simpleType name="CodeType">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:group name="ChoiceGroup">
+    <xs:choice/>
+  </xs:group>
+  <xs:group name="AllGroup">
+    <xs:all/>
+  </xs:group>
+  <xs:attributeGroup name="CommonAttributes"/>
+</xs:schema>

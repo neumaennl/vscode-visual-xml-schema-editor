@@ -124,7 +124,7 @@ describe("Element Executors", () => {
         const command: AddElementCommand = {
           type: "addElement",
           payload: {
-            parentId: "/element:person/anonymousComplexType[0]/sequence",
+            parentId: "/element:person/anonymousComplexType[0]/group:sequence[0]",
             elementName: "name",
             elementType: "string",
           },
@@ -190,7 +190,7 @@ describe("Element Executors", () => {
       const command: RemoveElementCommand = {
         type: "removeElement",
         payload: {
-          elementId: "/element:person/anonymousComplexType[0]/sequence[0]/element:firstName",
+          elementId: "/element:person/anonymousComplexType[0]/group:sequence[0]/element:firstName",
         },
       };
 
@@ -365,7 +365,7 @@ describe("Element Executors", () => {
         const command: ModifyElementCommand = {
           type: "modifyElement",
           payload: {
-            elementId: "/element:person/anonymousComplexType[0]/sequence[0]/element:firstName",
+            elementId: "/element:person/anonymousComplexType[0]/group:sequence[0]/element:firstName",
             elementName: "givenName",
           },
         };
@@ -395,7 +395,7 @@ describe("Element Executors", () => {
         const command: ModifyElementCommand = {
           type: "modifyElement",
           payload: {
-            elementId: "/element:person/anonymousComplexType[0]/sequence[0]/element:phone",
+            elementId: "/element:person/anonymousComplexType[0]/group:sequence[0]/element:phone",
             minOccurs: 0,
             maxOccurs: "unbounded",
           },
@@ -453,7 +453,7 @@ describe("Element Executors", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "/complexType:OrderType/sequence",
+          parentId: "/complexType:OrderType/group:sequence[0]",
           ref: "person",
         },
       };
@@ -476,7 +476,7 @@ describe("Element Executors", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "/complexType:OrderType/sequence",
+          parentId: "/complexType:OrderType/group:sequence[0]",
           ref: "person",
           minOccurs: 0,
           maxOccurs: "unbounded",
@@ -499,7 +499,7 @@ describe("Element Executors", () => {
 
       const command: RemoveElementCommand = {
         type: "removeElement",
-        payload: { elementId: "/complexType:OrderType/sequence/element:person" },
+        payload: { elementId: "/complexType:OrderType/group:sequence[0]/element:person" },
       };
 
       executeRemoveElement(command, schemaObj);
@@ -522,7 +522,7 @@ describe("Element Executors", () => {
       const command: ModifyElementCommand = {
         type: "modifyElement",
         payload: {
-          elementId: "/complexType:OrderType/sequence/element:item",
+          elementId: "/complexType:OrderType/group:sequence[0]/element:item",
           ref: "person",
         },
       };
@@ -544,7 +544,7 @@ describe("Element Executors", () => {
       const command: ModifyElementCommand = {
         type: "modifyElement",
         payload: {
-          elementId: "/complexType:OrderType/sequence/element:person",
+          elementId: "/complexType:OrderType/group:sequence[0]/element:person",
           elementName: "employee",
           elementType: "xs:string",
         },
@@ -567,7 +567,7 @@ describe("Element Executors", () => {
       executeAddElement(
         {
           type: "addElement",
-          payload: { parentId: "/complexType:OrderType/sequence", ref: "person" },
+          payload: { parentId: "/complexType:OrderType/group:sequence[0]", ref: "person" },
         },
         schemaObj
       );

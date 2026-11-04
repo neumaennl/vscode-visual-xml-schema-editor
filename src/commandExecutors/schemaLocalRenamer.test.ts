@@ -5,8 +5,51 @@ import {
   renameLocalTypeInSchema,
 } from "./schemaLocalRenamer.js";
 import { readTestSchema, schemaWith } from "../__tests__/schemaTestHelpers.js";
+import { localComplexType, schema } from "../../shared/types.js";
+
+/** The schema with a QName in every place where XML Schema allows one. */
+const QNAME_IN_EVERY_PLACE = "qname-in-every-place.xsd";
+
+/**
+ * Returns the anonymous complex type of the element `anonymous` in {@link QNAME_IN_EVERY_PLACE}.
+ *
+ * @param schemaObj - The schema
+ * @returns The anonymous complex type
+ */
+function anonymousType(schemaObj: schema): localComplexType | undefined {
+  return schemaObj.element?.find((el) => el.name === "anonymous")?.complexType;
+}
 
 describe("schemaLocalRenamer", () => {
+  test.each([
+    {
+      rename: renameLocalGroupRefInSchema,
+      oldName: "groupRef",
+      read: (s: schema): string | undefined => anonymousType(s)?.sequence?.group?.[0]?.ref,
+    },
+    {
+      rename: renameLocalGroupRefInSchema,
+      oldName: "groupRefInGroup",
+      read: (s: schema): string | undefined => s.group?.[0]?.sequence?.element?.[0]?.complexType?.sequence?.group?.[0]?.ref,
+    },
+    {
+      rename: renameLocalAttributeGroupRefInSchema,
+      oldName: "attributeGroupRef",
+      read: (s: schema): string | undefined => anonymousType(s)?.attributeGroup?.[0]?.ref,
+    },
+    {
+      rename: renameLocalElementRefInSchema,
+      oldName: "elementRef",
+      read: (s: schema): string | undefined => anonymousType(s)?.sequence?.element?.[0]?.ref,
+    },
+  ])("$rename.name renames the reference to $oldName in an anonymous complex type", ({ rename, oldName, read }) => {
+    const schemaObj = readTestSchema(QNAME_IN_EVERY_PLACE);
+
+    rename(oldName, "Renamed", schemaObj);
+
+    expect(read(schemaObj)).toBe("tns:Renamed");
+  });
+
   describe("renameLocalTypeInSchema", () => {
     test("renames unqualified type references throughout the schema", () => {
       const schemaObj = readTestSchema("types-referencing-base-type.xsd");

@@ -4,8 +4,8 @@ title: Commands
 description: The edit commands - payload fields, the rules the validators enforce, what the executors change in the schema, and where the webview sends them.
 tags: [commands, payload, validation, reference]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-04T11:06:54Z }
-verified: { by: human:neumaennl, at: 2026-11-04T12:13:55Z }
+generated: { by: human:neumaennl, at: 2026-11-04T13:47:32Z }
+verified: { by: human:neumaennl, at: 2026-11-04T15:09:14Z }
 sources:
   - id: commands
     resource: ../shared/commands/index.ts
@@ -227,7 +227,7 @@ The commands in `module.ts` change the schema root.[^module] They have no parent
 |---|---|---|
 | `addImport` | `namespace`, `schemaLocation`, `prefix?` | `namespace` must be an absolute URI without an existing import, `schemaLocation` must not contain whitespace. The prefix must be a valid, unused, non-reserved name; if it is omitted, the executor generates `ns0`, `ns1`, …, and binds it to the namespace. |
 | `removeImport` | `importId` | Rejected while a QName still uses a prefix of the namespace. Removes the prefix bindings of the namespace. |
-| `modifyImport` | `importId`, `namespace?`, `schemaLocation?`, `oldPrefix?`, `prefix?` | `prefix` with `oldPrefix` renames the binding and rewrites all QNames that use it. `prefix` alone adds another binding for the namespace. `oldPrefix` requires `prefix`. |
+| `modifyImport` | `importId`, `namespace?`, `schemaLocation?`, `oldPrefix?`, `prefix?` | `prefix` with `oldPrefix` renames the binding and rewrites all QNames that use it, also in the `xpath` of the selectors and fields of identity constraints. `prefix` alone adds another binding for the namespace. `oldPrefix` requires `prefix`. |
 | `addInclude` | `schemaLocation` | No other include with the same location. |
 | `removeInclude` | `includeId` | |
 | `modifyInclude` | `includeId`, `schemaLocation` | Replaces the location. |
@@ -283,7 +283,7 @@ The element prefix `xs:` is missing in the output because serialization drops it
 | `shared/messages.ts` | The messages that carry the commands (see [Messaging](messaging.md)) |
 | `shared/types.ts` | Re-exports the generated classes, the commands and the messages |
 | `src/commandValidators/` | One validator per command, grouped by area, and `validationUtils.ts` |
-| `src/commandExecutors/` | One executor per command, grouped by area, and the shared rename and prefix helpers (`schemaLocalRenamer.ts`, `schemaQNameRewriter.ts`, `schemaPrefixChecker.ts`) |
+| `src/commandExecutors/` | One executor per command, grouped by area, and the shared rename and prefix helpers (`schemaLocalRenamer.ts`, `schemaQNameRewriter.ts`, `schemaPrefixChecker.ts`), which all use the walk over every QName of the schema in `schemaQNameReferences.ts` |
 
 Each command type has a string literal as `type`, so `SchemaCommand` is a discriminated union: a `switch` on `command.type` narrows the payload to the right type. The type tests in `shared/commands/commandTypes.test-d.ts` check the required fields, the allowed values of `maxOccurs` and that the union rejects unknown types and mismatched payloads (see [Testing](testing.md#kinds-of-tests)); the behaviour is tested next to the validators and executors.[^commands]
 

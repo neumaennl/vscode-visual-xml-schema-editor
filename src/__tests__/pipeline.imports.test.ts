@@ -22,6 +22,15 @@ import { emptySchemaXml, schemaXmlWith } from "./schemaTestHelpers.js";
 const SCHEMA_TWO_IMPORTS = schemaXmlWith(`<xs:import namespace="http://example.com/a" schemaLocation="a.xsd"/>
 <xs:import namespace="http://example.com/b" schemaLocation="b.xsd"/>`);
 
+/** Schema whose only use of the imported namespace is the prefix `ext` in the XPath of a key. */
+const SCHEMA_WITH_PREFIX_IN_XPATH = schemaXmlWith(
+  `<xs:import namespace="http://example.com/ext" schemaLocation="ext.xsd"/>
+<xs:element name="root">
+  <xs:key name="itemKey"><xs:selector xpath="ext:item"/><xs:field xpath="@id"/></xs:key>
+</xs:element>`,
+  { ext: "http://example.com/ext" }
+);
+
 describe("Integration: Import pipeline", () => {
   // ─── addImport ─────────────────────────────────────────────────────────────
 
@@ -143,6 +152,19 @@ describe("Integration: Import pipeline", () => {
       expect(imports.some((i) => i.namespace === "http://example.com/b")).toBe(true);
     });
 
+    test("returns validation error when the namespace is only used in the XPath of a key", () => {
+      const cmd: RemoveImportCommand = {
+        type: "removeImport",
+        payload: { importId: "/import[0]" },
+      };
+
+      runCommandExpectValidationFailure(
+        SCHEMA_WITH_PREFIX_IN_XPATH,
+        cmd,
+        "Cannot remove import: namespace 'http://example.com/ext' is still referenced in the schema"
+      );
+    });
+
     test("returns validation error when import ID is out of range", () => {
       const cmd: RemoveImportCommand = {
         type: "removeImport",
@@ -168,6 +190,17 @@ describe("Integration: Import pipeline", () => {
 
       expect(ext).toBeDefined();
       expect(ext!.schemaLocation).toBe("updated-ext.xsd");
+    });
+
+    test("rewrites the prefix in the XPath of a key when the prefix is renamed", () => {
+      const cmd: ModifyImportCommand = {
+        type: "modifyImport",
+        payload: { importId: "/import[0]", oldPrefix: "ext", prefix: "neu" },
+      };
+
+      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_PREFIX_IN_XPATH, cmd);
+
+      expect(result.element?.[0]?.key?.[0]?.selector.xpath).toBe("neu:item");
     });
 
     test("returns validation error when import ID is out of range", () => {

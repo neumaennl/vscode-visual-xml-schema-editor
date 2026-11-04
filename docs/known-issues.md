@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-04T13:11:15Z }
-verified: { by: human:neumaennl, at: 2026-11-04T13:17:02Z }
+generated: { by: human:neumaennl, at: 2026-11-04T13:47:32Z }
+verified: { by: human:neumaennl, at: 2026-11-04T15:09:14Z }
 ---
 
 # Purpose
@@ -379,10 +379,10 @@ Effort:
 
 ## Code exceeds the size limits
 
-- **Location:** `src/commandValidators/groupValidators.ts`, `src/commandExecutors/elementExecutors.ts`, `src/commandExecutors/schemaPrefixChecker.ts`, `webview-src/renderer.ts`, `webview-src/diagram/SchemaProcessors.ts`, `webview-src/propertiesPanel/propertiesPanelDocs.ts`, `propertiesPanelFacets.ts`, `propertiesPanelSimpleTypeEditors.ts`, `propertiesPanelTypes.ts`
+- **Location:** `src/commandValidators/groupValidators.ts`, `src/commandExecutors/elementExecutors.ts`, `webview-src/renderer.ts`, `webview-src/diagram/SchemaProcessors.ts`, `webview-src/propertiesPanel/propertiesPanelDocs.ts`, `propertiesPanelFacets.ts`, `propertiesPanelSimpleTypeEditors.ts`, `propertiesPanelTypes.ts`
 - **Severity:** Low
 - **Effort:** M
-- **Description:** Some code is longer than the [development guidelines](development-guidelines.md#code-size) allow. Counted with comments and blank lines, `elementExecutors.ts` and `renderer.ts` have slightly more than 500 lines, and eight functions have more than 120 lines: `renderFacetsTab()` and `renderEnumerationEditor()` in `propertiesPanelFacets.ts` (196 and 166 lines), `isQNameMatchedInSchema()`, `renderSimpleTypeUnionEditor()`, `validateModifyGroup()`, `processGroup()`, `createAnnotationSection()` and `renderTypeProperty()` (126 to 140 lines). The limits are not checked automatically, so these were not noticed. The fix is to split the code, and to enable the ESLint rules `max-lines` and `max-lines-per-function` for the code, as `max-lines` and a local rule already do for the tests.
+- **Description:** Some code is longer than the [development guidelines](development-guidelines.md#code-size) allow. Counted with comments and blank lines, `elementExecutors.ts` and `renderer.ts` have slightly more than 500 lines, and seven functions have more than 120 lines: `renderFacetsTab()` and `renderEnumerationEditor()` in `propertiesPanelFacets.ts` (196 and 166 lines), `validateModifyGroup()`, `renderSimpleTypeUnionEditor()`, `processGroup()`, `createAnnotationSection()` and `renderTypeProperty()` (126 to 148 lines). The limits are not checked automatically, so these were not noticed. The fix is to split the code, and to enable the ESLint rules `max-lines` and `max-lines-per-function` for the code, as `max-lines` and a local rule already do for the tests.
 - **GitHub issue:** none
 
 ## Top-level lookups are duplicated instead of shared
@@ -392,7 +392,7 @@ Effort:
 - **Effort:** L
 - **Description:** `SchemaModelManager` has query methods (`findElement()`, `findComplexType()`, `findGroup()`, the `getAll*()` methods, `getTargetNamespace()`, `getImports()`, `getIncludes()`, `isLoaded()`, `clear()`), but they are only called from tests. They work on the schema stored in the manager, while validators and executors get a cloned schema object, and the webview cannot use code from `src/`. So the same lookups are written out again and again:
   - About 40 places look up a top-level component by name with `(schemaObj.<kind> ?? []).some(…)` or `.find(…)`.
-  - `schemaQNameRewriter.ts`, `schemaLocalRenamer.ts`, `schemaPrefixChecker.ts` and the group and attribute group validators each iterate over all top-level kinds one by one.
+  - The group and attribute group validators iterate over all top-level kinds one by one.
   - `DiagramBuilder` and `DropCommandFactory` collect the same lists in the webview.
 
   The fix is to replace the manager's query methods with pure functions in `shared/` that take the schema object as a parameter (for example `findTopLevel(schemaObj, kind, name)`, `getTopLevel(schemaObj, kind)` and `forEachTopLevelComponent(schemaObj, callback)`), use them everywhere, and remove the unused methods.

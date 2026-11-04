@@ -132,6 +132,20 @@ describe("Integration: Group pipeline", () => {
       expect(groups.some((g) => g.name === "ContactGroup")).toBe(false);
     });
 
+    test("renames the references to a group in the anonymous complex type of an element", () => {
+      const xml = schemaXmlWith(`<xs:group name="ContactGroup"><xs:sequence/></xs:group>
+<xs:element name="person"><xs:complexType><xs:sequence><xs:group ref="ContactGroup"/></xs:sequence></xs:complexType></xs:element>`);
+      const cmd: ModifyGroupCommand = {
+        type: "modifyGroup",
+        payload: { groupId: "/group:ContactGroup", groupName: "CommunicationGroup" },
+      };
+
+      const result = runCommandExpectSuccessSchema(xml, cmd);
+      const person = (result.element ?? []).find((el) => el.name === "person");
+
+      expect(person?.complexType?.sequence?.group?.[0]?.ref).toBe("CommunicationGroup");
+    });
+
     test("returns validation error when group ID does not exist", () => {
       const cmd: ModifyGroupCommand = {
         type: "modifyGroup",

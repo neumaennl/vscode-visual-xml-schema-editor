@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-04T11:06:54Z }
-verified: { by: human:neumaennl, at: 2026-11-04T12:13:55Z }
+generated: { by: human:neumaennl, at: 2026-11-04T13:11:15Z }
+verified: { by: human:neumaennl, at: 2026-11-04T13:17:02Z }
 ---
 
 # Purpose
@@ -177,7 +177,7 @@ Effort:
 
 ## Element references are not shown as references
 
-- **Location:** `webview-src/diagram/SchemaProcessors.ts`, `webview-src/diagram/SchemaProcessorsGroups.ts`
+- **Location:** `webview-src/diagram/SchemaProcessors.ts`
 - **Severity:** Medium
 - **Effort:** M
 - **Description:** The diagram builder does not read the `ref` attribute of local elements. An `<xs:element ref="…"/>` is shown with the name "unnamed" and is not marked as a reference. `isReference` is only set for group references, and `DiagramItem.inheritFrom` is declared but never set. (That commands on such nodes fail is part of [Node IDs are ambiguous and have many special cases](#node-ids-are-ambiguous-and-have-many-special-cases).) See also [Diagram items copy values from the schema objects](#diagram-items-copy-values-from-the-schema-objects).
@@ -404,7 +404,6 @@ Effort:
 - **Severity:** Low
 - **Effort:** L
 - **Description:** The [development guidelines](development-guidelines.md#code-quality) ask to avoid code duplication, but the code base likely contains a fair amount of duplicated and dead code that was not caught in reviews. The [leftovers of the removed top-level drop target](#leftovers-of-the-removed-top-level-drop-target) and the [duplicated top-level lookups](#top-level-lookups-are-duplicated-instead-of-shared) are examples. A systematic cleanup by an agent is planned. Besides duplicates within one part, the agent should look explicitly for code that the extension (`src/`) and the webview (`webview-src/`) each implement on their own, and move it to `shared/`, which both use; for example the rules where an element or attribute may be placed, which both sides check (see [Architecture](architecture.md#principles)), and the top-level lookups in `DiagramBuilder` and `DropCommandFactory`. Examples found in the diagram code (see [Diagram rendering](diagram-rendering.md)):
-  - `SchemaProcessorsGroups.ts` is not imported anywhere; `SchemaProcessors.ts` contains its functions.
   - `DiagramLayout` has its own `isCompositorGroup()`, which returns `true` when the ID cannot be parsed, while the one in `groupUtils.ts` returns `false`.
   - `DiagramLayout.relayoutItem()` and `DiagramItem.getTextDocumentation()` are only called from tests, `DiagramBuilder.elementMap` is only cleared, and `DiagramItem.inheritFrom` is never set.
   - `DiagramItemType.reference` is never assigned; only the layout and a test handle it, and the renderer draws no shape for it.
@@ -448,7 +447,7 @@ Effort:
 - **Location:** `vitest.config.ts` (`coverage.thresholds`), code of the editor in `src/` and `webview-src/`
 - **Severity:** Low
 - **Effort:** L
-- **Description:** Much of the code of the editor has no tests for some of its branches. Branch coverage is 73.4%, below the 80% that applies to lines, statements and functions, so the threshold for branches is 70% for now (see [Testing](testing.md#coverage)). About 270 more covered branches are needed for 80%. The largest gaps are in `schemaLocalRenamer.ts` (38%), `schemaPrefixChecker.ts` (53%), `propertiesPanelXmlPreview.ts` (56%), `renderer.ts` (43%), `webview-src/main.ts` (37%) and `SchemaProcessorsGroups.ts`, which no test covers. The fix is the tests that are missing, after which all four thresholds are raised to 85% (Phase 9 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340)).
+- **Description:** Much of the code of the editor has no tests for some of its branches. Branch coverage is 73.4%, below the 80% that applies to lines, statements and functions, so the threshold for branches is 70% for now (see [Testing](testing.md#coverage)). About 270 more covered branches are needed for 80%. The largest gaps are in `schemaLocalRenamer.ts` (38%), `schemaPrefixChecker.ts` (53%), `propertiesPanelXmlPreview.ts` (56%), `renderer.ts` (43%) and `webview-src/main.ts` (37%). The fix is the tests that are missing, after which all four thresholds are raised to 85% (Phase 9 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340)).
 - **GitHub issue:** none
 
 ## The extension host is not bundled

@@ -300,6 +300,27 @@ describe("SimpleType Validators", () => {
       expect(result.valid).toBe(true);
     });
 
+    test("should accept facets without a base type for a restriction", () => {
+      const command: ModifySimpleTypeCommand = {
+        type: "modifySimpleType",
+        payload: { typeId: "/simpleType:AgeType", restrictions: { minInclusive: "0" } },
+      };
+
+      expect(validateModifySimpleType(command, schemaWithAgeType).valid).toBe(true);
+    });
+
+    test("should reject facets without a base type for a list", () => {
+      const listSchema = schemaWith(`<xs:simpleType name="Ages"><xs:list itemType="xs:integer"/></xs:simpleType>`);
+      const command: ModifySimpleTypeCommand = {
+        type: "modifySimpleType",
+        payload: { typeId: "/simpleType:Ages", restrictions: { minInclusive: "0" } },
+      };
+
+      const result = validateModifySimpleType(command, listSchema);
+      expectInvalid(result);
+      expect(result.error).toBe("Cannot apply restrictions without a base type");
+    });
+
     test("should reject stale simpleType rename replay after a successful rename", () => {
       const renamedSchema = schemaWith(`<xs:simpleType name="AgeTypeRenamed">
   <xs:restriction base="xs:int"/>

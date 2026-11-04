@@ -4,8 +4,8 @@ title: Development guidelines
 description: Rules for everyone who changes the extension - code size, code quality and ESLint, TypeScript and naming, VS Code and Node versions, TSDoc, tests, documentation and the knowledge bundle, issues, what to check before committing, and commits.
 tags: [guidelines, conventions, code-quality, typescript, documentation, workflow]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-02T15:04:28Z }
-verified: { by: human:neumaennl, at: 2026-11-03T07:21:09Z }
+generated: { by: human:neumaennl, at: 2026-11-04T11:36:32Z }
+verified: { by: human:neumaennl, at: 2026-11-04T12:13:55Z }
 sources:
   - id: eslint
     resource: ../eslint.config.mjs
@@ -52,6 +52,7 @@ ESLint checks the limits for tests (`max-lines` and the local rule `tests/max-li
 - Define interfaces or types for all data structures. Commands and messages are discriminated unions (see [Commands](commands.md) and [Messaging](messaging.md)).
 - Names: PascalCase for classes, interfaces and types; camelCase for functions, methods and variables; UPPER_CASE for module-level constants. Names say what something is or does.
 - Length of names: clarity comes first, but keep them short. Aim for less than 15 characters; 25 to 30 is the upper limit. `createElement` is better than `createElementWithChildren`; `createElementNodeWithProcessingOfAnonymousTypes` is too long, `cen` too cryptic.
+- Functions that check a command or a part of it are called `validate...()`, for example `validateRestrictionFacets()`, and return a `ValidationResult`, also when the command is valid, not `null` or a bare error.
 
 # VS Code and Node versions
 

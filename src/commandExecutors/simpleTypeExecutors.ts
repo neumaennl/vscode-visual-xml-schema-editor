@@ -314,15 +314,14 @@ function applySimpleTypeBody(
     return;
   }
 
-  const resolvedBaseType = assumeValidated(
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- base is missing when the restriction has an inline simpleType; the generated type is wrong (neumaennl/xmlbind-ts#278)
-    baseType?.trim() || simpleType.restriction?.base?.trim() || undefined,
-    "Base type"
-  );
   if (!simpleType.restriction) {
-    simpleType.restriction = buildRestriction(resolvedBaseType, restrictions);
+    simpleType.restriction = buildRestriction(assumeValidated(baseType, "Base type"), restrictions);
   } else {
-    simpleType.restriction.base = resolvedBaseType;
+    // Without a base type, the restriction keeps its base, which may be an inline simple type
+    if (baseType !== undefined) {
+      simpleType.restriction.base = baseType.trim();
+      simpleType.restriction.simpleType = undefined;
+    }
     if (restrictions !== undefined) {
       applyRestrictionFacets(simpleType.restriction, restrictions);
     }

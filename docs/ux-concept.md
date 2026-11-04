@@ -4,8 +4,8 @@ title: UX concept
 description: The interaction model of the editor - which surface adds, edits and deletes what, how facets work, and how the properties panel behaves - with a list of what the current editor does not implement yet.
 tags: [ux, editor, palette, properties-panel, facets, context-menu, toolbar]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-28T14:47:04Z }
-verified: { by: human:neumaennl, at: 2026-10-28T15:08:21Z }
+generated: { by: human:neumaennl, at: 2026-11-04T11:06:54Z }
+verified: { by: human:neumaennl, at: 2026-11-04T12:13:55Z }
 sources:
   - id: palette-items
     resource: ../webview-src/palette/PaletteItems.ts
@@ -74,7 +74,7 @@ Facets follow the same pattern as all other constructs:
 - **Edit:** change the value in the Facets tab of the properties panel.
 - **Delete:** use the delete control in the facet's row.[^panel-facets]
 
-Every change in the Facets tab sends `modifySimpleType` with the base type and the complete set of facets (see [Commands](commands.md#restriction-facets)).
+Every change in the Facets tab sends `modifySimpleType` with the complete set of facets and without a base type, so the restriction keeps its base, also an inline simple type (see [Commands](commands.md#restriction-facets)).
 
 ## Multiple facets on the same type
 

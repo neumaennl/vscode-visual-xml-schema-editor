@@ -4,8 +4,8 @@ title: Commands
 description: The edit commands - payload fields, the rules the validators enforce, what the executors change in the schema, and where the webview sends them.
 tags: [commands, payload, validation, reference]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-03T16:28:02Z }
-verified: { by: human:neumaennl, at: 2026-11-04T08:44:10Z }
+generated: { by: human:neumaennl, at: 2026-11-04T11:06:54Z }
+verified: { by: human:neumaennl, at: 2026-11-04T12:13:55Z }
 sources:
   - id: commands
     resource: ../shared/commands/index.ts
@@ -146,7 +146,7 @@ A drop on an existing type or group creates a `modify*` command instead of an `a
 | `unionMemberTypes` | union | union | Member types of a union; not empty, no empty entries. |
 | `documentation` | optional | optional | See [Conventions](#conventions). |
 
-The fields decide the kind of the body (`SimpleTypeDerivationKind`): `baseType` or `restrictions` make a restriction, `listItemType` a list, `unionMemberTypes` a union. Exactly one kind is allowed. `addSimpleType` needs a body. In `modifySimpleType`, body fields replace the body, also with another kind; without body fields, the body stays as it is. `restrictions` always need `baseType` in the same payload, even if the type already is a restriction ("Base type cannot be empty", see [Known issues](known-issues.md#modifysimpletype-cannot-change-only-the-facets-of-a-restriction)). `modifySimpleType` rejects a `typeName` for an anonymous type.
+The fields decide the kind of the body (`SimpleTypeDerivationKind`): `baseType` or `restrictions` make a restriction, `listItemType` a list, `unionMemberTypes` a union. Exactly one kind is allowed. `addSimpleType` needs a body. In `modifySimpleType`, body fields replace the body, also with another kind; without body fields, the body stays as it is. `restrictions` without `baseType` change only the facets of an existing restriction, which keeps its base, also an inline simple type; a list, a union or a new type needs `baseType` ("Cannot apply restrictions without a base type", "Base type cannot be empty"). A `baseType` replaces the base, also an inline simple type. `modifySimpleType` rejects a `typeName` for an anonymous type.
 
 Creating an anonymous simple type removes the `type` attribute and an anonymous complex type of its element. `removeSimpleType` takes only `typeId` and does not check whether the type is still used (see [Known issues](known-issues.md#removing-a-simple-or-complex-type-does-not-check-for-references)).[^validators][^executors]
 
@@ -259,14 +259,13 @@ The executor appends to the schema:
 </simpleType>
 ```
 
-To allow leading letters, the client sends the base type and the complete new set of facets. `maxLength` is not in the payload, so it is removed:
+To allow leading letters, the client sends the complete new set of facets. Without `baseType`, the type keeps `xs:string`; `maxLength` is not in the payload, so it is removed:
 
 ```json
 {
   "type": "modifySimpleType",
   "payload": {
     "typeId": "/simpleType:PostalCode",
-    "baseType": "xs:string",
     "restrictions": { "pattern": "[A-Z]{0,2}[0-9]{5}" }
   }
 }

@@ -1,6 +1,8 @@
 # Knowledge Bundle Update Log
 
 ## 2026-11-04
+* **Update**: [Development guidelines](development-guidelines.md#typescript): functions that check a command or a part of it are called `validate...()` and return a `ValidationResult` ([#402](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/402)).
+* **Update**: `modifySimpleType` changes only the facets of an existing restriction when `restrictions` come without `baseType`, and the restriction keeps its base, also an inline simple type; a `baseType` replaces an inline base ([#402](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/402)). [Commands](commands.md#simple-types) states the rule and the example in [Restriction facets](commands.md#restriction-facets) no longer sends the base type; [UX concept](ux-concept.md) says that the Facets tab sends no base type, so it also edits the facets of a restriction with an inline base. [Known issues](known-issues.md): removed "`modifySimpleType` cannot change only the facets of a restriction".
 * **Update**: [Testing](testing.md#files-and-structure): every test makes at least one assertion with `expect`, which Vitest checks (`expect.requireAssertions` in `vitest.config.ts`), so tests no longer call `expect.hasAssertions()`, and helpers assert with `expect` instead of `throw` ([#402](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/402)).
 
 ## 2026-11-03

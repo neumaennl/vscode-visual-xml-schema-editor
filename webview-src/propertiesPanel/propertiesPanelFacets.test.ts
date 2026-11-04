@@ -111,7 +111,6 @@ describe("PropertiesPanel: the Facets tab", () => {
       type: "modifySimpleType",
       payload: {
         typeId: "/simpleType:TokenType",
-        baseType: "xs:string",
         restrictions: {
           ...NO_FACETS,
           enumeration: ["B", "C", "A"],
@@ -149,13 +148,32 @@ describe("PropertiesPanel: the Facets tab", () => {
       type: "modifySimpleType",
       payload: {
         typeId: "/simpleType:TokenType",
-        baseType: "xs:string",
         restrictions: {
           ...NO_FACETS,
           enumeration: ["A", "B", "C"],
           pattern: "[A-Z]",
         },
       },
+    });
+  });
+
+  test("edits the facets of a restriction with an inline base type", () => {
+    const dispatch = vi.fn();
+    panel = new PropertiesPanel(container, dispatch);
+    const item = new DiagramItem("/simpleType:ShortCode", "ShortCode", DiagramItemType.type, diagram);
+    item.type = "simpleType";
+    item.simpleTypeDerivationKind = "restriction";
+    item.restrictions = { maxLength: 8 };
+
+    panel.display(item);
+    findButton(container, "Facets")?.click();
+    const maxLength = getInputByLabel(container, "Max Length");
+    maxLength.value = "4";
+    maxLength.dispatchEvent(new Event("blur"));
+
+    expect(dispatch).toHaveBeenCalledWith({
+      type: "modifySimpleType",
+      payload: { typeId: "/simpleType:ShortCode", restrictions: { ...NO_FACETS, maxLength: 4 } },
     });
   });
 
@@ -175,7 +193,6 @@ describe("PropertiesPanel: the Facets tab", () => {
       type: "modifySimpleType",
       payload: {
         typeId: "/simpleType:TokenType",
-        baseType: "xs:string",
         restrictions: {
           ...NO_FACETS,
           enumeration: ["A"],

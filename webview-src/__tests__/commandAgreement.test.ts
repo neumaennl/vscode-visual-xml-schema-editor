@@ -58,11 +58,13 @@ function commandsForNode(id: string): SchemaCommand[] {
         { type: "removeSimpleType", payload: { typeId: id } },
         { type: "modifySimpleType", payload: { typeId: id, documentation: "Changed" } },
         { type: "modifySimpleType", payload: { typeId: id, typeName: `Renamed${name}` } },
+        { type: "modifySimpleType", payload: { typeId: id, restrictions: { maxLength: 99 } } },
       ];
     case SchemaNodeType.AnonymousSimpleType:
       return [
         { type: "removeSimpleType", payload: { typeId: id } },
         { type: "modifySimpleType", payload: { typeId: id, documentation: "Changed" } },
+        { type: "modifySimpleType", payload: { typeId: id, restrictions: { maxLength: 99 } } },
       ];
     case SchemaNodeType.Group:
     case SchemaNodeType.GroupRef:

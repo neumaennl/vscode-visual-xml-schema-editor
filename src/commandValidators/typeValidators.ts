@@ -36,14 +36,47 @@ function hasRestrictionFacetValues(restrictions: RestrictionFacets | undefined):
   });
 }
 
-function getRestrictionFacetError(restrictions: RestrictionFacets | undefined): ValidationResult | null {
-  if (restrictions === undefined) {
-    return null;
-  }
-  if (!hasRestrictionFacetValues(restrictions)) {
+/**
+ * Validates the facets of a restriction body.
+ *
+ * @param restrictions - The `restrictions` of the payload
+ * @returns The validation result; a body without `restrictions` is valid
+ */
+function validateRestrictionFacets(restrictions: RestrictionFacets | undefined): ValidationResult {
+  if (restrictions !== undefined && !hasRestrictionFacetValues(restrictions)) {
     return { valid: false, error: "Restriction simpleType body must include at least one facet" };
   }
-  return null;
+  return { valid: true };
+}
+
+/**
+ * Validates the base type of a new restriction body.
+ *
+ * @param baseTypeField - The `baseType` of the payload
+ * @param existingBodyKind - The kind of the current body, or `undefined` if the type is new
+ * @param schemaObj - The schema, to resolve the base type
+ * @returns The validation result
+ */
+function validateRestrictionBaseType(
+  baseTypeField: string | undefined,
+  existingBodyKind: "restriction" | "list" | "union" | undefined,
+  schemaObj: schema
+): ValidationResult {
+  if (baseTypeField === undefined && existingBodyKind !== undefined) {
+    return { valid: false, error: "Cannot apply restrictions without a base type" };
+  }
+  const baseType = (baseTypeField ?? "").trim();
+  if (!baseType) {
+    return { valid: false, error: "Base type cannot be empty" };
+  }
+  const baseTypeResult = validateElementType(baseType, schemaObj);
+  if (!baseTypeResult.valid) {
+    return {
+      valid: false,
+      error: baseTypeResult.error ? `Base type: ${baseTypeResult.error}` : `Base type '${baseType}' is not a recognized XSD type`,
+    };
+  }
+  return { valid: true };
 }
 
 function validateSimpleTypeBody(
@@ -73,22 +106,14 @@ function validateSimpleTypeBody(
 
   const derivationKind = bodyKinds[0];
   if (derivationKind === "restriction") {
-    const baseType = (payload.baseType ?? "").trim();
-    if (!baseType) {
-      return { valid: false, error: "Base type cannot be empty" };
+    // Facets without a base type keep the base of an existing restriction
+    if (payload.baseType !== undefined || existingBodyKind !== "restriction") {
+      const baseTypeResult = validateRestrictionBaseType(payload.baseType, existingBodyKind, schemaObj);
+      if (!baseTypeResult.valid) {
+        return baseTypeResult;
+      }
     }
-    const baseTypeResult = validateElementType(baseType, schemaObj);
-    if (!baseTypeResult.valid) {
-      return {
-        valid: false,
-        error: baseTypeResult.error ? `Base type: ${baseTypeResult.error}` : `Base type '${baseType}' is not a recognized XSD type`,
-      };
-    }
-    const facetError = getRestrictionFacetError(payload.restrictions);
-    if (facetError) {
-      return facetError;
-    }
-    return { valid: true };
+    return validateRestrictionFacets(payload.restrictions);
   }
 
   if (derivationKind === "list") {
@@ -188,12 +213,12 @@ function validateAnonymousTypeParent(
 
 /**
  * Validates a content model value against the provided list of valid models.
- * Returns a validation error if the model is missing or unsupported, otherwise null.
+ * Returns a validation error if the model is missing or unsupported.
  */
 function validateContentModel(
   contentModel: string | undefined,
   validModels: readonly string[]
-): ValidationResult | null {
+): ValidationResult {
   if (!contentModel) {
     return { valid: false, error: "Content model is required" };
   }
@@ -203,14 +228,20 @@ function validateContentModel(
       error: `Content model must be one of: ${validModels.join(", ")}`,
     };
   }
-  return null;
+  return { valid: true };
 }
 
+/**
+ * Validates the derivation kind of a complex type payload.
+ *
+ * @param derivationKind - The `derivationKind` of the payload; a payload without one is valid
+ * @returns The validation result
+ */
 function validateDerivationKind(
   derivationKind: string | undefined
-): ValidationResult | null {
+): ValidationResult {
   if (derivationKind === undefined) {
-    return null;
+    return { valid: true };
   }
   if (!VALID_COMPLEX_TYPE_DERIVATION_KINDS.includes(derivationKind as typeof VALID_COMPLEX_TYPE_DERIVATION_KINDS[number])) {
     return {
@@ -218,7 +249,7 @@ function validateDerivationKind(
       error: `Derivation kind must be one of: ${VALID_COMPLEX_TYPE_DERIVATION_KINDS.join(", ")}`,
     };
   }
-  return null;
+  return { valid: true };
 }
 
 /**
@@ -241,13 +272,13 @@ type ExistingComplexType = {
  * @param payload - The base type and derivation kind of the payload; an empty base type removes the base
  * @param existing - The existing complex type when modifying, otherwise `undefined`
  * @param schemaObj - The schema, to check the base type against
- * @returns A validation error, or `null` if the derivation is valid
+ * @returns The validation result
  */
 function validateComplexTypeDerivation(
   payload: { baseType?: string; derivationKind?: string },
   existing: ExistingComplexType | undefined,
   schemaObj: schema
-): ValidationResult | null {
+): ValidationResult {
   const baseType = payload.baseType?.trim();
   if (baseType) {
     const baseTypeResult = validateElementType(baseType, schemaObj);
@@ -263,7 +294,7 @@ function validateComplexTypeDerivation(
   if (payload.derivationKind !== undefined && !effectiveBase) {
     return { valid: false, error: "Derivation kind requires a base type" };
   }
-  return null;
+  return { valid: true };
 }
 
 /**
@@ -274,13 +305,13 @@ function validateComplexTypeDerivation(
  * @param payload - The changed fields of the payload
  * @param existing - The existing complex type
  * @param typeId - The ID of the complex type, for the error message
- * @returns A validation error, or `null` if the change is possible
+ * @returns The validation result
  */
 function validateComplexTypeContentChange(
   payload: { baseType?: string; derivationKind?: string; contentModel?: string },
   existing: ExistingComplexType,
   typeId: string
-): ValidationResult | null {
+): ValidationResult {
   const changesContent =
     payload.baseType !== undefined || payload.derivationKind !== undefined || payload.contentModel !== undefined;
   if (changesContent && existing.simpleContent) {
@@ -296,7 +327,7 @@ function validateComplexTypeContentChange(
       error: `'${typeId}' already has a particle (a group reference) and cannot get a content model`,
     };
   }
-  return null;
+  return { valid: true };
 }
 
 // ===== SimpleType Command Validation =====
@@ -403,12 +434,6 @@ export function validateModifySimpleType(
     if (!bodyValidation.valid) {
       return bodyValidation;
     }
-    if (command.payload.restrictions !== undefined && command.payload.baseType === undefined) {
-      const anonymousType = (location.parent as { simpleType?: { restriction?: unknown } }).simpleType;
-      if (anonymousType && !(anonymousType).restriction) {
-        return { valid: false, error: "Cannot apply restrictions without a base type" };
-      }
-    }
     if (command.payload.typeName !== undefined) {
       return {
         valid: false,
@@ -430,12 +455,6 @@ export function validateModifySimpleType(
   );
   if (!bodyValidation.valid) {
     return bodyValidation;
-  }
-  if (command.payload.restrictions !== undefined && command.payload.baseType === undefined) {
-    const simpleType = (schemaObj.simpleType ?? []).find(st => st.name === parsed.name);
-    if (simpleType && !simpleType.restriction) {
-      return { valid: false, error: "Cannot apply restrictions without a base type" };
-    }
   }
   return { valid: true };
 }
@@ -474,12 +493,12 @@ export function validateAddComplexType(
     if (holder.complexType) {
       return { valid: false, error: `'${parentId}' already has an anonymous complexType` };
     }
-    const contentModelError = validateContentModel(contentModel, VALID_COMPLEX_TYPE_CONTENT_MODELS);
-    if (contentModelError) return contentModelError;
-    const derivationKindError = validateDerivationKind(derivationKind);
-    if (derivationKindError) return derivationKindError;
-    const derivationError = validateComplexTypeDerivation(command.payload, undefined, schemaObj);
-    if (derivationError) return derivationError;
+    const contentModelResult = validateContentModel(contentModel, VALID_COMPLEX_TYPE_CONTENT_MODELS);
+    if (!contentModelResult.valid) return contentModelResult;
+    const derivationKindResult = validateDerivationKind(derivationKind);
+    if (!derivationKindResult.valid) return derivationKindResult;
+    const derivationResult = validateComplexTypeDerivation(command.payload, undefined, schemaObj);
+    if (!derivationResult.valid) return derivationResult;
     return { valid: true };
   }
 
@@ -487,12 +506,12 @@ export function validateAddComplexType(
   if (!isValidXmlName(typeName ?? "")) {
     return { valid: false, error: "Type name must be a valid XML name" };
   }
-  const contentModelError = validateContentModel(contentModel, VALID_COMPLEX_TYPE_CONTENT_MODELS);
-  if (contentModelError) return contentModelError;
-  const derivationKindError = validateDerivationKind(derivationKind);
-  if (derivationKindError) return derivationKindError;
-  const derivationError = validateComplexTypeDerivation(command.payload, undefined, schemaObj);
-  if (derivationError) return derivationError;
+  const contentModelResult = validateContentModel(contentModel, VALID_COMPLEX_TYPE_CONTENT_MODELS);
+  if (!contentModelResult.valid) return contentModelResult;
+  const derivationKindResult = validateDerivationKind(derivationKind);
+  if (!derivationKindResult.valid) return derivationKindResult;
+  const derivationResult = validateComplexTypeDerivation(command.payload, undefined, schemaObj);
+  if (!derivationResult.valid) return derivationResult;
   if ((schemaObj.complexType ?? []).some((ct) => ct.name === typeName)) {
     return {
       valid: false,
@@ -543,33 +562,31 @@ export function validateModifyComplexType(
       };
     }
     if (command.payload.contentModel !== undefined) {
-      const contentModelError = validateContentModel(command.payload.contentModel, VALID_COMPLEX_TYPE_CONTENT_MODELS);
-      if (contentModelError) return contentModelError;
+      const contentModelResult = validateContentModel(command.payload.contentModel, VALID_COMPLEX_TYPE_CONTENT_MODELS);
+      if (!contentModelResult.valid) return contentModelResult;
     }
-    const derivationKindError = validateDerivationKind(command.payload.derivationKind);
-    if (derivationKindError) return derivationKindError;
+    const derivationKindResult = validateDerivationKind(command.payload.derivationKind);
+    if (!derivationKindResult.valid) return derivationKindResult;
     const existing = (result.location.parent as { complexType: ExistingComplexType }).complexType;
-    return (
-      validateComplexTypeContentChange(command.payload, existing, command.payload.typeId) ??
-      validateComplexTypeDerivation(command.payload, existing, schemaObj) ?? { valid: true }
-    );
+    const contentChangeResult = validateComplexTypeContentChange(command.payload, existing, command.payload.typeId);
+    if (!contentChangeResult.valid) return contentChangeResult;
+    return validateComplexTypeDerivation(command.payload, existing, schemaObj);
   }
 
   if (command.payload.typeName !== undefined && !isValidXmlName(command.payload.typeName)) {
     return { valid: false, error: "Type name must be a valid XML name" };
   }
   if (command.payload.contentModel !== undefined) {
-    const contentModelError = validateContentModel(command.payload.contentModel, VALID_COMPLEX_TYPE_CONTENT_MODELS);
-    if (contentModelError) return contentModelError;
+    const contentModelResult = validateContentModel(command.payload.contentModel, VALID_COMPLEX_TYPE_CONTENT_MODELS);
+    if (!contentModelResult.valid) return contentModelResult;
   }
-  const derivationKindError = validateDerivationKind(command.payload.derivationKind);
-  if (derivationKindError) return derivationKindError;
+  const derivationKindResult = validateDerivationKind(command.payload.derivationKind);
+  if (!derivationKindResult.valid) return derivationKindResult;
   const existing = (schemaObj.complexType ?? []).find((ct) => ct.name === parsed.name);
   if (!existing) {
     return { valid: false, error: `Complex type '${parsed.name}' not found in schema` };
   }
-  return (
-    validateComplexTypeContentChange(command.payload, existing, command.payload.typeId) ??
-    validateComplexTypeDerivation(command.payload, existing, schemaObj) ?? { valid: true }
-  );
+  const contentChangeResult = validateComplexTypeContentChange(command.payload, existing, command.payload.typeId);
+  if (!contentChangeResult.valid) return contentChangeResult;
+  return validateComplexTypeDerivation(command.payload, existing, schemaObj);
 }

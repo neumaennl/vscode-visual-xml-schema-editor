@@ -7,7 +7,6 @@ import { SchemaCommand } from "../../shared/types";
 import { DiagramItem } from "../diagram";
 import { createEditableField } from "./propertiesPanelDom";
 import { resolveSimpleTypeId } from "./propertiesPanelCommands";
-import { extractBaseType } from "./propertiesPanelSimpleTypeCommands";
 import { hasEditableFacetValues, RestrictionSnapshot } from "./propertiesPanelDraft";
 import {
   getFacetIconStyle,
@@ -59,8 +58,7 @@ export function renderFacetsTab(
 
   const restrictions = node.restrictions;
   const simpleTypeId = resolveSimpleTypeId(node);
-  const baseType = extractBaseType(node.type);
-  if (!simpleTypeId || !baseType) {
+  if (!simpleTypeId) {
     addPropertyToContainer(root, "Facets", "Facets can only be edited for simple types");
     return root;
   }
@@ -91,11 +89,11 @@ export function renderFacetsTab(
     updater(nextRestrictions);
     node.restrictions = nextRestrictions;
 
+    // Without a base type, the restriction keeps its base, which may be an inline simple type
     dispatchCommand({
       type: "modifySimpleType",
       payload: {
         typeId: simpleTypeId,
-        baseType,
         restrictions: {
           enumeration: nextRestrictions.enumeration,
           pattern: nextRestrictions.pattern?.[0],

@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-03T16:28:02Z }
-verified: { by: human:neumaennl, at: 2026-11-04T08:44:10Z }
+generated: { by: human:neumaennl, at: 2026-11-04T11:06:54Z }
+verified: { by: human:neumaennl, at: 2026-11-04T12:13:55Z }
 ---
 
 # Purpose
@@ -271,14 +271,6 @@ Effort:
 - **Severity:** Low
 - **Effort:** M
 - **Description:** `WebviewMessage`, the union of the messages from the webview, has a single member, `executeCommand`, which wraps a `SchemaCommand` (see [Messaging](messaging.md#messages)). So the switch on `message.command` in `handleWebviewMessage()` has one case, which ESLint reports as an unnecessary condition (`@typescript-eslint/no-unnecessary-condition`); an `eslint-disable-next-line` comment points to this entry. It is unclear whether this is intended. If every message from the webview is meant to be a schema edit, the wrapper is redundant and the webview could send `SchemaCommand`s directly. If the webview is meant to send other requests as well, these are missing so far; the [UX concept](ux-concept.md) plans context menu operations such as find usages, go to definition and regenerating sample XML, some of which need the extension but do not change the schema, and the [missing correlation](messaging.md#limitations) of commands and results may need a request ID in the message. Deciding needs an analysis of the existing and planned features and an architecture decision, recorded as an ADR.
-- **GitHub issue:** none
-
-## `modifySimpleType` cannot change only the facets of a restriction
-
-- **Location:** `src/commandValidators/typeValidators.ts` (`validateModifySimpleType()`, `validateSimpleTypeBody()`)
-- **Severity:** Low
-- **Effort:** S
-- **Description:** `validateSimpleTypeBody()` requires `baseType` for every restriction body, so `restrictions` without `baseType` fail with "Base type cannot be empty", even if the type already is a restriction (see [Commands](commands.md#simple-types)). The properties panel always sends both. Because of this, the check after it that rejects `restrictions` for a list or union type with "Cannot apply restrictions without a base type" is unreachable. The fix is to decide whether `restrictions` may keep the current base type: if so, `validateSimpleTypeBody()` accepts them for an existing restriction and the later check becomes reachable; if not, the later check can be removed.
 - **GitHub issue:** none
 
 ## Leftovers of the removed top-level drop target

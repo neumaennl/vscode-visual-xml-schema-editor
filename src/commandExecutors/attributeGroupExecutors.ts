@@ -15,7 +15,7 @@ import {
   documentationType,
 } from "../../shared/types.js";
 import { parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy.js";
-import { locateNodeById } from "../schemaNavigator.js";
+import { assumeRemoved, assumeValidated, locateValidated } from "./assumeValidated.js";
 import { createAnnotation } from "./annotationUtils.js";
 import { renameLocalAttributeGroupRefInSchema } from "./schemaLocalRenamer.js";
 
@@ -109,19 +109,19 @@ export function executeAddAttributeGroup(
 
   if (ref !== undefined) {
     // Reference mode: add xs:attributeGroup ref="..." to a complexType or namedAttributeGroup
-    const location = locateNodeById(schemaObj, parentId ?? SCHEMA_ROOT_ID);
+    const location = locateValidated(schemaObj, parentId ?? SCHEMA_ROOT_ID);
     const agRef = new attributeGroupRef();
     agRef.ref = ref;
     if (documentation) {
       agRef.annotation = createAnnotation(documentation);
     }
-    addAttrGroupRefToParent(location.parent, location.parentType ?? "", agRef);
+    addAttrGroupRefToParent(location.parent, location.parentType, agRef);
     return;
   }
 
   // Definition mode: add a top-level named attribute group
   const attrGroup = new namedAttributeGroup();
-  attrGroup.name = groupName as string;
+  attrGroup.name = assumeValidated(groupName, "Attribute group name");
   if (documentation) {
     attrGroup.annotation = createAnnotation(documentation);
   }
@@ -150,20 +150,21 @@ export function executeRemoveAttributeGroup(
 
   if (parsed.nodeType === SchemaNodeType.AttributeGroupRef) {
     // Reference mode: remove xs:attributeGroup ref="..." from its parent
-    if (!parsed.parentId) {
-      return;
-    }
-    const location = locateNodeById(schemaObj, parsed.parentId);
+    const location = locateValidated(schemaObj, assumeValidated(parsed.parentId, `Parent of ${groupId}`));
     const holder = location.parent as AttrGroupRefHolder;
     const refs = holder.attributeGroup ?? [];
-    const filtered = filterAttrGroupRef(refs, parsed.name, parsed.position);
+    const filtered = assumeRemoved(
+      refs,
+      filterAttrGroupRef(refs, parsed.name, parsed.position),
+      `Attribute group reference ${groupId}`
+    );
     holder.attributeGroup = filtered.length > 0 ? filtered : undefined;
     return;
   }
 
   // Definition mode: remove top-level named attribute group
   const groups = schemaObj.attributeGroup ?? [];
-  const filtered = groups.filter((g) => g.name !== parsed.name);
+  const filtered = assumeRemoved(groups, groups.filter((g) => g.name !== parsed.name), `Attribute group ${groupId}`);
   schemaObj.attributeGroup = filtered.length > 0 ? filtered : undefined;
 }
 
@@ -187,41 +188,33 @@ export function executeModifyAttributeGroup(
 
   if (parsed.nodeType === SchemaNodeType.AttributeGroupRef) {
     // Reference mode: modify xs:attributeGroup ref="..." in its parent
-    if (!parsed.parentId) {
-      return;
-    }
-    const location = locateNodeById(schemaObj, parsed.parentId);
+    const location = locateValidated(schemaObj, assumeValidated(parsed.parentId, `Parent of ${groupId}`));
     const holder = location.parent as AttrGroupRefHolder;
-    const target = findAttrGroupRef(
-      holder.attributeGroup ?? [],
-      parsed.name,
-      parsed.position
+    const target = assumeValidated(
+      findAttrGroupRef(holder.attributeGroup ?? [], parsed.name, parsed.position),
+      `Attribute group reference ${groupId}`
     );
-    if (target) {
-      if (ref !== undefined) {
-        target.ref = ref;
+    if (ref !== undefined) {
+      target.ref = ref;
+    }
+    if (documentation !== undefined) {
+      if (!target.annotation) {
+        target.annotation = new annotationType();
       }
-      if (documentation !== undefined) {
-        if (!target.annotation) {
-          target.annotation = new annotationType();
-        }
-        const doc = new documentationType();
-        doc.value = documentation;
-        target.annotation.documentation = [doc];
-      }
+      const doc = new documentationType();
+      doc.value = documentation;
+      target.annotation.documentation = [doc];
     }
     return;
   }
 
   // Definition mode: modify top-level named attribute group
-  const attrGroup = (schemaObj.attributeGroup ?? []).find(
-    (g) => g.name === parsed.name
+  const attrGroup = assumeValidated(
+    (schemaObj.attributeGroup ?? []).find((g) => g.name === parsed.name),
+    `Attribute group ${groupId}`
   );
-  if (!attrGroup) {
-    return;
-  }
   if (groupName !== undefined) {
-    renameLocalAttributeGroupRefInSchema(parsed.name as string, groupName, schemaObj);
+    renameLocalAttributeGroupRefInSchema(attrGroup.name, groupName, schemaObj);
     attrGroup.name = groupName;
   }
   if (documentation !== undefined) {

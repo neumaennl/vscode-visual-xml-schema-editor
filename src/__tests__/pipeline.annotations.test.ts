@@ -39,8 +39,8 @@ describe("Integration: Annotation pipeline", () => {
 
       expect(person).toBeDefined();
       expect(person!.annotation).toBeDefined();
-      const docs = person!.annotation!.documentation ?? [];
-      expect(docs[0].value).toBe("A person record");
+      const documentations = person!.annotation!.documentation ?? [];
+      expect(documentations[0].value).toBe("A person record");
     });
 
     test("adds a schema-level annotation", () => {
@@ -53,8 +53,8 @@ describe("Integration: Annotation pipeline", () => {
       const annotations = result.annotation ?? [];
 
       expect(annotations.length).toBe(1);
-      const docs = annotations[0].documentation ?? [];
-      expect(docs[0].value).toBe("My schema");
+      const documentations = annotations[0].documentation ?? [];
+      expect(documentations[0].value).toBe("My schema");
     });
 
     test("inserts a schema-level annotation before top-level declarations", () => {
@@ -120,28 +120,28 @@ describe("Integration: Annotation pipeline", () => {
     test("keeps remaining schema annotations before top-level declarations after deletion", () => {
       const schemaWithTopLevelElement = schemaXmlWith(`<xs:element name="root" type="xs:string"/>`);
 
-      const afterFirstDoc = runCommandExpectSuccess(schemaWithTopLevelElement, {
+      const afterFirstDocumentation = runCommandExpectSuccess(schemaWithTopLevelElement, {
         type: "addDocumentation",
         payload: { targetId: "/schema", content: "doc A1" },
       });
 
-      const afterSecondDoc = runCommandExpectSuccess(afterFirstDoc, {
+      const afterSecondDocumentation = runCommandExpectSuccess(afterFirstDocumentation, {
         type: "addDocumentation",
         payload: { targetId: "/schema/annotation[0]", content: "doc A2" },
       });
 
-      const afterSecondAnnotation = runCommandExpectSuccess(afterSecondDoc, {
+      const afterSecondAnnotation = runCommandExpectSuccess(afterSecondDocumentation, {
         type: "addAnnotation",
         payload: { targetId: "/schema" },
       });
       expectLinesInOrder(afterSecondAnnotation, ["<xs:annotation", "<xs:element "]);
 
-      const afterDocOnSecondAnnotation = runCommandExpectSuccess(afterSecondAnnotation, {
+      const afterDocumentationOnSecondAnnotation = runCommandExpectSuccess(afterSecondAnnotation, {
         type: "addDocumentation",
         payload: { targetId: "/schema/annotation[1]", content: "doc B1" },
       });
 
-      const afterRemoval = runCommandExpectSuccess(afterDocOnSecondAnnotation, {
+      const afterRemoval = runCommandExpectSuccess(afterDocumentationOnSecondAnnotation, {
         type: "removeAnnotation",
         payload: { annotationId: "/schema/annotation[0]" },
       });
@@ -166,8 +166,8 @@ describe("Integration: Annotation pipeline", () => {
       const person = elements.find((e) => e.name === "person");
 
       expect(person).toBeDefined();
-      const docs = person!.annotation!.documentation ?? [];
-      expect(docs[0].value).toBe("Updated description");
+      const documentations = person!.annotation!.documentation ?? [];
+      expect(documentations[0].value).toBe("Updated description");
     });
 
     test("returns validation error when element does not exist", () => {
@@ -199,8 +199,8 @@ describe("Integration: Documentation pipeline", () => {
       const person = elements.find((e) => e.name === "person");
 
       expect(person).toBeDefined();
-      const docs = person!.annotation!.documentation ?? [];
-      expect(docs.some((d) => d.value === "Additional details")).toBe(true);
+      const documentations = person!.annotation!.documentation ?? [];
+      expect(documentations.some((d) => d.value === "Additional details")).toBe(true);
     });
 
     test("returns validation error when target element does not exist", () => {
@@ -230,8 +230,8 @@ describe("Integration: Documentation pipeline", () => {
       const person = elements.find((e) => e.name === "person");
 
       expect(person).toBeDefined();
-      const docs = person!.annotation?.documentation ?? [];
-      expect(docs.some((d) => d.value === "A person element")).toBe(false);
+      const documentations = person!.annotation?.documentation ?? [];
+      expect(documentations.some((d) => d.value === "A person element")).toBe(false);
     });
 
     test("returns validation error when documentation index is out of bounds", () => {
@@ -261,8 +261,8 @@ describe("Integration: Documentation pipeline", () => {
       const person = elements.find((e) => e.name === "person");
 
       expect(person).toBeDefined();
-      const docs = person!.annotation!.documentation ?? [];
-      expect(docs[0].value).toBe("New documentation text");
+      const documentations = person!.annotation!.documentation ?? [];
+      expect(documentations[0].value).toBe("New documentation text");
     });
 
     test("returns validation error when documentation index is out of bounds", () => {

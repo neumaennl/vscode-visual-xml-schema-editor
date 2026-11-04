@@ -275,6 +275,16 @@ describe("PropertiesPanel", () => {
     expect(hasLabel(container, "Cardinality")).toBe(false);
   });
 
+  test("does not show cardinality fields for the compositor of a group definition", () => {
+    expect.hasAssertions();
+    const item = new DiagramItem("/group:PersonGroup/group:sequence[0]", "sequence", DiagramItemType.group, diagram);
+
+    panel.display(item);
+
+    expect(hasLabel(container, "minOccurs")).toBe(false);
+    expect(hasLabel(container, "maxOccurs")).toBe(false);
+  });
+
   test("does not show cardinality fields for simpleType nodes", () => {
     expect.hasAssertions();
     const item = new DiagramItem("/simpleType:CodeType", "CodeType", DiagramItemType.type, diagram);

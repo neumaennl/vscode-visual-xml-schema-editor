@@ -12,10 +12,11 @@ import type {
 } from "../../shared/types.js";
 import {
   SCHEMA_WITH_COMPLEXTYPE,
+  runCommandExpectSuccess,
   runCommandExpectSuccessSchema,
   runCommandExpectValidationFailure,
 } from "./pipelineTestHelpers.js";
-import { emptySchemaXml } from "./schemaTestHelpers.js";
+import { emptySchemaXml, readTestXml } from "./schemaTestHelpers.js";
 
 describe("Integration: ComplexType pipeline", () => {
   // ─── addComplexType ────────────────────────────────────────────────────────
@@ -188,6 +189,38 @@ describe("Integration: ComplexType pipeline", () => {
       };
 
       runCommandExpectValidationFailure(SCHEMA_WITH_COMPLEXTYPE, cmd, "Complex type 'Ghost' not found in schema");
+    });
+
+    test("wraps the group reference of a type without a compositor when it gets a base type", () => {
+      const cmd: ModifyComplexTypeCommand = {
+        type: "modifyComplexType",
+        payload: { typeId: "/complexType:PersonType", baseType: "xs:anyType" },
+      };
+
+      const result = runCommandExpectSuccessSchema(readTestXml("person-type-with-group-ref.xsd"), cmd);
+      const personType = (result.complexType ?? []).find((t) => t.name === "PersonType");
+
+      expect(personType?.group).toBeUndefined();
+      expect(personType?.sequence).toBeUndefined();
+      expect(personType?.complexContent?.extension?.base).toBe("xs:anyType");
+      expect(personType?.complexContent?.extension?.group?.ref).toBe("PersonGroup");
+    });
+
+    test("unwraps the group reference of a type without a compositor when its base type is removed", () => {
+      const withBase = runCommandExpectSuccess(readTestXml("person-type-with-group-ref.xsd"), {
+        type: "modifyComplexType",
+        payload: { typeId: "/complexType:PersonType", baseType: "xs:anyType" },
+      });
+      const cmd: ModifyComplexTypeCommand = {
+        type: "modifyComplexType",
+        payload: { typeId: "/complexType:PersonType", baseType: "" },
+      };
+
+      const result = runCommandExpectSuccessSchema(withBase, cmd);
+      const personType = (result.complexType ?? []).find((t) => t.name === "PersonType");
+
+      expect(personType?.complexContent).toBeUndefined();
+      expect(personType?.group?.ref).toBe("PersonGroup");
     });
   });
 });

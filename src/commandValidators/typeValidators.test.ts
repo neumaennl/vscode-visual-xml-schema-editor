@@ -20,7 +20,7 @@ import {
   validateModifyComplexType,
 } from "./typeValidators.js";
 import { expectInvalid } from "../__tests__/validationTestHelpers.js";
-import { emptySchema, schemaWith } from "../__tests__/schemaTestHelpers.js";
+import { emptySchema, readTestSchema, schemaWith } from "../__tests__/schemaTestHelpers.js";
 
 /** A top-level element `person` with an inline complexType and an empty sequence. */
 const PERSON_ELEMENT_WITH_EMPTY_SEQUENCE = `<xs:element name="person">
@@ -705,6 +705,16 @@ describe("ComplexType Validators", () => {
       const result = validateAddComplexType(command, schemaWithTypedEl);
       expect(result.valid).toBe(true);
     });
+
+    test("should reject addComplexType with a derivation kind but no base type", () => {
+      const command: AddComplexTypeCommand = {
+        type: "addComplexType",
+        payload: { typeName: "OrderType", contentModel: "sequence", derivationKind: "restriction" },
+      };
+      const result = validateAddComplexType(command, emptySchemaObj);
+      expectInvalid(result);
+      expect(result.error).toBe("Derivation kind requires a base type");
+    });
   });
 
   describe("validateRemoveComplexType", () => {
@@ -838,7 +848,7 @@ describe("ComplexType Validators", () => {
         type: "modifyComplexType",
         payload: {
           typeId: "/complexType:PersonType",
-          baseType: "BaseType",
+          baseType: "xs:anyType",
           derivationKind: "restriction",
         },
       };
@@ -855,6 +865,38 @@ describe("ComplexType Validators", () => {
       const result = validateModifyComplexType(command, schemaWithPersonType);
       expectInvalid(result);
       expect(result.error).toContain("Derivation kind must be one of");
+    });
+
+    test.each([
+      [
+        "a derivation kind for a type without a base type",
+        (): schema => schemaWithPersonType,
+        { typeId: "/complexType:PersonType", derivationKind: "restriction" as const },
+        "Derivation kind requires a base type",
+      ],
+      [
+        "an unknown base type",
+        (): schema => schemaWithPersonType,
+        { typeId: "/complexType:PersonType", baseType: "NoSuchType" },
+        "Base type",
+      ],
+      [
+        "a content model for a type whose particle is a group reference",
+        (): schema => readTestSchema("person-type-with-group-ref.xsd"),
+        { typeId: "/complexType:PersonType", contentModel: "sequence" as const },
+        "already has a particle",
+      ],
+      [
+        "a base type for a type with simple content",
+        (): schema => readTestSchema("price-type-with-simple-content.xsd"),
+        { typeId: "/complexType:PriceType", baseType: "xs:string" },
+        "has simple content",
+      ],
+    ])("should reject modifyComplexType with %s", (_, schemaOf, payload, message) => {
+      const command: ModifyComplexTypeCommand = { type: "modifyComplexType", payload };
+      const result = validateModifyComplexType(command, schemaOf());
+      expectInvalid(result);
+      expect(result.error).toContain(message);
     });
 
     test("should accept modifyComplexType for an existing anonymous complexType", () => {

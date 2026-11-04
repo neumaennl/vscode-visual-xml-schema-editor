@@ -107,13 +107,13 @@ export function validateRemoveAnnotation(
     };
   }
 
-  const schemaAnnotIdx = parseSchemaAnnotationId(command.payload.annotationId);
-  if (schemaAnnotIdx !== null) {
-    const annots = schemaObj.annotation ?? [];
-    if (schemaAnnotIdx < 0 || schemaAnnotIdx >= annots.length) {
+  const schemaAnnotationIndex = parseSchemaAnnotationId(command.payload.annotationId);
+  if (schemaAnnotationIndex !== null) {
+    const annotations = schemaObj.annotation ?? [];
+    if (schemaAnnotationIndex < 0 || schemaAnnotationIndex >= annotations.length) {
       return {
         valid: false,
-        error: `Annotation index ${schemaAnnotIdx} out of bounds (length ${annots.length}): ${command.payload.annotationId}`,
+        error: `Annotation index ${schemaAnnotationIndex} out of bounds (length ${annotations.length}): ${command.payload.annotationId}`,
       };
     }
     return { valid: true };
@@ -149,13 +149,13 @@ export function validateModifyAnnotation(
     };
   }
 
-  const schemaAnnotIdx = parseSchemaAnnotationId(command.payload.annotationId);
-  if (schemaAnnotIdx !== null) {
-    const annots = schemaObj.annotation ?? [];
-    if (schemaAnnotIdx < 0 || schemaAnnotIdx >= annots.length) {
+  const schemaAnnotationIndex = parseSchemaAnnotationId(command.payload.annotationId);
+  if (schemaAnnotationIndex !== null) {
+    const annotations = schemaObj.annotation ?? [];
+    if (schemaAnnotationIndex < 0 || schemaAnnotationIndex >= annotations.length) {
       return {
         valid: false,
-        error: `Annotation index ${schemaAnnotIdx} out of bounds (length ${annots.length}): ${command.payload.annotationId}`,
+        error: `Annotation index ${schemaAnnotationIndex} out of bounds (length ${annotations.length}): ${command.payload.annotationId}`,
       };
     }
     return { valid: true };
@@ -191,13 +191,13 @@ export function validateAddDocumentation(
     return { valid: true };
   }
 
-  const schemaAnnotIdx = parseSchemaAnnotationId(command.payload.targetId);
-  if (schemaAnnotIdx !== null) {
-    const annots = schemaObj.annotation ?? [];
-    if (schemaAnnotIdx >= annots.length) {
+  const schemaAnnotationIndex = parseSchemaAnnotationId(command.payload.targetId);
+  if (schemaAnnotationIndex !== null) {
+    const annotations = schemaObj.annotation ?? [];
+    if (schemaAnnotationIndex >= annotations.length) {
       return {
         valid: false,
-        error: `Annotation index ${schemaAnnotIdx} out of bounds (length ${annots.length}): ${command.payload.targetId}`,
+        error: `Annotation index ${schemaAnnotationIndex} out of bounds (length ${annotations.length}): ${command.payload.targetId}`,
       };
     }
     return { valid: true };
@@ -221,20 +221,20 @@ export function validateRemoveDocumentation(
   }
 
   // "/schema/annotation[N]/documentation[M]" format
-  const schemaDId = parseSchemaDocumentationId(command.payload.documentationId);
-  if (schemaDId) {
-    const annots = schemaObj.annotation ?? [];
-    if (schemaDId.annotIndex >= annots.length) {
+  const schemaDocumentationId = parseSchemaDocumentationId(command.payload.documentationId);
+  if (schemaDocumentationId) {
+    const annotations = schemaObj.annotation ?? [];
+    if (schemaDocumentationId.annotationIndex >= annotations.length) {
       return {
         valid: false,
-        error: `Annotation index ${schemaDId.annotIndex} out of bounds (length ${annots.length}): ${command.payload.documentationId}`,
+        error: `Annotation index ${schemaDocumentationId.annotationIndex} out of bounds (length ${annotations.length}): ${command.payload.documentationId}`,
       };
     }
-    const docs = annots[schemaDId.annotIndex].documentation ?? [];
-    if (schemaDId.docIndex < 0 || schemaDId.docIndex >= docs.length) {
+    const documentations = annotations[schemaDocumentationId.annotationIndex].documentation ?? [];
+    if (schemaDocumentationId.documentationIndex < 0 || schemaDocumentationId.documentationIndex >= documentations.length) {
       return {
         valid: false,
-        error: `Documentation index ${schemaDId.docIndex} out of bounds (length ${docs.length}): ${command.payload.documentationId}`,
+        error: `Documentation index ${schemaDocumentationId.documentationIndex} out of bounds (length ${documentations.length}): ${command.payload.documentationId}`,
       };
     }
     return { valid: true };
@@ -242,9 +242,9 @@ export function validateRemoveDocumentation(
 
   // "elementPath/documentation[N]" format
   let elementId: string;
-  let docIndex: number;
+  let documentationIndex: number;
   try {
-    ({ elementId, docIndex } = parseDocumentationId(command.payload.documentationId));
+    ({ elementId, documentationIndex } = parseDocumentationId(command.payload.documentationId));
   } catch (e) {
     return {
       valid: false,
@@ -254,15 +254,15 @@ export function validateRemoveDocumentation(
 
   // "/schema/documentation[N]" shorthand — targets first schema annotation
   if (isSchemaRoot(elementId)) {
-    const annots = schemaObj.annotation ?? [];
-    if (annots.length === 0) {
+    const annotations = schemaObj.annotation ?? [];
+    if (annotations.length === 0) {
       return { valid: false, error: `No annotation found on schema root` };
     }
-    const docs = annots[0].documentation ?? [];
-    if (docIndex < 0 || docIndex >= docs.length) {
+    const documentations = annotations[0].documentation ?? [];
+    if (documentationIndex < 0 || documentationIndex >= documentations.length) {
       return {
         valid: false,
-        error: `Documentation index ${docIndex} out of bounds (length ${docs.length}): ${command.payload.documentationId}`,
+        error: `Documentation index ${documentationIndex} out of bounds (length ${documentations.length}): ${command.payload.documentationId}`,
       };
     }
     return { valid: true };
@@ -279,11 +279,11 @@ export function validateRemoveDocumentation(
   if (!hasAnnotationProperty(location.parent) || !location.parent.annotation) {
     return { valid: false, error: `No annotation found on node: ${elementId}` };
   }
-  const docs = location.parent.annotation.documentation ?? [];
-  if (docIndex < 0 || docIndex >= docs.length) {
+  const documentations = location.parent.annotation.documentation ?? [];
+  if (documentationIndex < 0 || documentationIndex >= documentations.length) {
     return {
       valid: false,
-      error: `Documentation index ${docIndex} out of bounds (length ${docs.length}): ${command.payload.documentationId}`,
+      error: `Documentation index ${documentationIndex} out of bounds (length ${documentations.length}): ${command.payload.documentationId}`,
     };
   }
 
@@ -299,20 +299,20 @@ export function validateModifyDocumentation(
   }
 
   // "/schema/annotation[N]/documentation[M]" format
-  const schemaDId = parseSchemaDocumentationId(command.payload.documentationId);
-  if (schemaDId) {
-    const annots = schemaObj.annotation ?? [];
-    if (schemaDId.annotIndex >= annots.length) {
+  const schemaDocumentationId = parseSchemaDocumentationId(command.payload.documentationId);
+  if (schemaDocumentationId) {
+    const annotations = schemaObj.annotation ?? [];
+    if (schemaDocumentationId.annotationIndex >= annotations.length) {
       return {
         valid: false,
-        error: `Annotation index ${schemaDId.annotIndex} out of bounds (length ${annots.length}): ${command.payload.documentationId}`,
+        error: `Annotation index ${schemaDocumentationId.annotationIndex} out of bounds (length ${annotations.length}): ${command.payload.documentationId}`,
       };
     }
-    const docs = annots[schemaDId.annotIndex].documentation ?? [];
-    if (schemaDId.docIndex < 0 || schemaDId.docIndex >= docs.length) {
+    const documentations = annotations[schemaDocumentationId.annotationIndex].documentation ?? [];
+    if (schemaDocumentationId.documentationIndex < 0 || schemaDocumentationId.documentationIndex >= documentations.length) {
       return {
         valid: false,
-        error: `Documentation index ${schemaDId.docIndex} out of bounds (length ${docs.length}): ${command.payload.documentationId}`,
+        error: `Documentation index ${schemaDocumentationId.documentationIndex} out of bounds (length ${documentations.length}): ${command.payload.documentationId}`,
       };
     }
     return { valid: true };
@@ -320,9 +320,9 @@ export function validateModifyDocumentation(
 
   // "elementPath/documentation[N]" format
   let elementId: string;
-  let docIndex: number;
+  let documentationIndex: number;
   try {
-    ({ elementId, docIndex } = parseDocumentationId(command.payload.documentationId));
+    ({ elementId, documentationIndex } = parseDocumentationId(command.payload.documentationId));
   } catch (e) {
     return {
       valid: false,
@@ -332,15 +332,15 @@ export function validateModifyDocumentation(
 
   // "/schema/documentation[N]" shorthand — targets first schema annotation
   if (isSchemaRoot(elementId)) {
-    const annots = schemaObj.annotation ?? [];
-    if (annots.length === 0) {
+    const annotations = schemaObj.annotation ?? [];
+    if (annotations.length === 0) {
       return { valid: false, error: `No annotation found on schema root` };
     }
-    const docs = annots[0].documentation ?? [];
-    if (docIndex < 0 || docIndex >= docs.length) {
+    const documentations = annotations[0].documentation ?? [];
+    if (documentationIndex < 0 || documentationIndex >= documentations.length) {
       return {
         valid: false,
-        error: `Documentation index ${docIndex} out of bounds (length ${docs.length}): ${command.payload.documentationId}`,
+        error: `Documentation index ${documentationIndex} out of bounds (length ${documentations.length}): ${command.payload.documentationId}`,
       };
     }
     return { valid: true };
@@ -357,11 +357,11 @@ export function validateModifyDocumentation(
   if (!hasAnnotationProperty(location.parent) || !location.parent.annotation) {
     return { valid: false, error: `No annotation found on node: ${elementId}` };
   }
-  const docs = location.parent.annotation.documentation ?? [];
-  if (docIndex < 0 || docIndex >= docs.length) {
+  const documentations = location.parent.annotation.documentation ?? [];
+  if (documentationIndex < 0 || documentationIndex >= documentations.length) {
     return {
       valid: false,
-      error: `Documentation index ${docIndex} out of bounds (length ${docs.length}): ${command.payload.documentationId}`,
+      error: `Documentation index ${documentationIndex} out of bounds (length ${documentations.length}): ${command.payload.documentationId}`,
     };
   }
 

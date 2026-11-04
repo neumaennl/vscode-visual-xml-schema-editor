@@ -213,9 +213,9 @@ describe("CommandExecutor", () => {
         executor.execute(command, mockSchema);
       }).not.toThrow();
 
-      const docs = (mockSchema.annotation ?? [])[0]?.documentation ?? [];
-      expect(docs).toHaveLength(1);
-      expect(docs[0].value).toBe("Test schema documentation");
+      const documentations = (mockSchema.annotation ?? [])[0]?.documentation ?? [];
+      expect(documentations).toHaveLength(1);
+      expect(documentations[0].value).toBe("Test schema documentation");
     });
 
     test("should delegate addImport execution successfully", () => {

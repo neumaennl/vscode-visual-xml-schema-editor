@@ -19,7 +19,7 @@ import {
   runCommandExpectSuccessSchema,
   runCommandExpectValidationFailure,
 } from "./pipelineTestHelpers.js";
-import { emptySchemaXml } from "./schemaTestHelpers.js";
+import { emptySchemaXml, schemaXmlWith } from "./schemaTestHelpers.js";
 
 describe("Integration: Group pipeline", () => {
   // ─── addGroup ──────────────────────────────────────────────────────────────
@@ -96,6 +96,24 @@ describe("Integration: Group pipeline", () => {
 
       runCommandExpectValidationFailure(SCHEMA_WITH_GROUP, cmd, "Group not found: /group:NoSuchGroup");
     });
+
+    test("removes a compositor nested in another compositor", () => {
+      const cmd: RemoveGroupCommand = {
+        type: "removeGroup",
+        payload: { groupId: "/complexType:T/group:sequence[0]/group:choice[0]" },
+      };
+
+      const result = runCommandExpectSuccessSchema(
+        schemaXmlWith(`<xs:complexType name="T">
+  <xs:sequence><xs:choice><xs:element name="a" type="xs:string"/></xs:choice></xs:sequence>
+</xs:complexType>`),
+        cmd
+      );
+      const sequence = (result.complexType ?? [])[0].sequence;
+
+      expect(sequence).toBeDefined();
+      expect(sequence?.choice ?? []).toHaveLength(0);
+    });
   });
 
   // ─── modifyGroup ───────────────────────────────────────────────────────────
@@ -121,6 +139,19 @@ describe("Integration: Group pipeline", () => {
       };
 
       runCommandExpectValidationFailure(SCHEMA_WITH_GROUP, cmd, "Group not found: /group:Ghost");
+    });
+
+    test("returns validation error for occurrences on the compositor of a group definition", () => {
+      const cmd: ModifyGroupCommand = {
+        type: "modifyGroup",
+        payload: { groupId: "/group:ContactGroup/group:sequence[0]", minOccurs: 0 },
+      };
+
+      runCommandExpectValidationFailure(
+        SCHEMA_WITH_GROUP,
+        cmd,
+        "The compositor of a group definition cannot have minOccurs or maxOccurs"
+      );
     });
   });
 });

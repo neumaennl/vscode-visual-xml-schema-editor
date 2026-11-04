@@ -90,11 +90,11 @@ export function extractDocumentation(
   }
 
   const hasDocumentationField = annotations.some((entry) => entry.documentation !== undefined);
-  const docs = annotations.flatMap((entry) => entry.documentation ?? []);
-  if (docs.length === 0) {
+  const documentations = annotations.flatMap((entry) => entry.documentation ?? []);
+  if (documentations.length === 0) {
     return hasDocumentationField ? "" : undefined;
   }
-  return docs.map((doc) => doc.value?.toString() || "").join("\n");
+  return documentations.map((doc) => doc.value?.toString() || "").join("\n");
 }
 
 /**

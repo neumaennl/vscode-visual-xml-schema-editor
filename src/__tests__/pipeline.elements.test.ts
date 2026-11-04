@@ -69,8 +69,8 @@ describe("Integration: Element pipeline", () => {
       const invoice = elements.find((e) => e.name === "invoice");
 
       expect(invoice).toBeDefined();
-      const docs = invoice!.annotation?.documentation ?? [];
-      expect(docs[0].value).toBe("An invoice record");
+      const documentations = invoice!.annotation?.documentation ?? [];
+      expect(documentations[0].value).toBe("An invoice record");
     });
 
     test("returns validation error when element name is invalid", () => {

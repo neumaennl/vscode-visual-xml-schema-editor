@@ -30,7 +30,7 @@ import {
 } from "../../shared/types.js";
 import { isSchemaRoot } from "../../shared/schemaUtils.js";
 import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
-import { locateNodeById } from "../schemaNavigator.js";
+import { assumeRemoved, assumeValidated, locateValidated } from "./assumeValidated.js";
 import { createAnnotation } from "./annotationUtils.js";
 import { renameLocalTypeInSchema } from "./schemaLocalRenamer.js";
 
@@ -78,7 +78,7 @@ export function executeAddComplexType(
 
   if (!isSchemaRoot(parentId)) {
     // Anonymous complexType inside an element — isSchemaRoot guarantees parentId is a non-empty string here
-    const location = locateNodeById(schemaObj, parentId as string);
+    const location = locateValidated(schemaObj, parentId as string);
     const holder = location.parent as {
       type_?: string;
       complexType?: localComplexType;
@@ -98,9 +98,9 @@ export function executeAddComplexType(
     return;
   }
 
-  // Top-level named complexType — typeName is a valid non-empty string here (enforced by the validator)
+  // Top-level named complexType
   const ct = new topLevelComplexType();
-  ct.name = typeName as string;
+  ct.name = assumeValidated(typeName, "Type name");
   if (isAbstract !== undefined) {
     ct.abstract = isAbstract;
   }
@@ -134,19 +134,20 @@ export function executeRemoveComplexType(
   const parsed = parseSchemaId(typeId);
 
   if (parsed.nodeType === SchemaNodeType.AnonymousComplexType) {
-    const parentId = parsed.parentId;
-    if (!parentId) {
-      return;
-    }
-    const location = locateNodeById(schemaObj, parentId);
+    const location = locateValidated(schemaObj, assumeValidated(parsed.parentId, `Parent of ${typeId}`));
     const holder = location.parent as { complexType?: localComplexType };
+    assumeValidated(holder.complexType, `Complex type ${typeId}`);
     holder.complexType = undefined;
     return;
   }
 
   // Top-level named complexType
   const complexTypes = schemaObj.complexType ?? [];
-  const filtered = complexTypes.filter((ct) => ct.name !== parsed.name);
+  const filtered = assumeRemoved(
+    complexTypes,
+    complexTypes.filter((ct) => ct.name !== parsed.name),
+    `Complex type ${typeId}`
+  );
   schemaObj.complexType = filtered.length > 0 ? filtered : undefined;
 }
 
@@ -168,14 +169,9 @@ export function executeModifyComplexType(
   const parsed = parseSchemaId(typeId);
 
   if (parsed.nodeType === SchemaNodeType.AnonymousComplexType) {
-    const parentId = parsed.parentId;
-    if (!parentId) {
-      return;
-    }
-    const location = locateNodeById(schemaObj, parentId);
+    const location = locateValidated(schemaObj, assumeValidated(parsed.parentId, `Parent of ${typeId}`));
     const holder = location.parent as { complexType?: localComplexType };
-    if (!holder.complexType) return;
-    updateComplexTypeContents(holder.complexType, {
+    updateComplexTypeContents(assumeValidated(holder.complexType, `Complex type ${typeId}`), {
       mixed,
       contentModel,
       baseType,
@@ -186,13 +182,13 @@ export function executeModifyComplexType(
   }
 
   // Top-level named complexType
-  const ct = (schemaObj.complexType ?? []).find((t) => t.name === parsed.name);
-  if (!ct) {
-    return;
-  }
+  const ct = assumeValidated(
+    (schemaObj.complexType ?? []).find((t) => t.name === parsed.name),
+    `Complex type ${typeId}`
+  );
 
   if (typeName !== undefined) {
-    renameLocalTypeInSchema(parsed.name as string, typeName, schemaObj);
+    renameLocalTypeInSchema(ct.name, typeName, schemaObj);
     ct.name = typeName;
   }
   if (isAbstract !== undefined) {
@@ -234,11 +230,10 @@ function updateComplexTypeContents(
   }
   if (contentModel !== undefined || baseType !== undefined || derivationKind !== undefined) {
     const effectiveBase = baseType !== undefined ? baseType : getBaseType(ct);
+    // Without a compositor, the content (a group reference, attributes or nothing) is moved as it is
     const effectiveModel = contentModel ?? getContentModel(ct);
     const effectiveDerivationKind = derivationKind ?? getDerivationKind(ct) ?? "extension";
-    if (effectiveModel) {
-      applyContentStructure(ct, effectiveModel, effectiveBase, effectiveDerivationKind);
-    }
+    applyContentStructure(ct, effectiveModel, effectiveBase, effectiveDerivationKind);
   }
 }
 
@@ -247,13 +242,13 @@ function updateComplexTypeContents(
  * on a complexType holder, clearing any previously set content first.
  *
  * @param ct - The complexType holder to update
- * @param contentModel - The content model to apply
+ * @param contentModel - The content model to apply, or `undefined` for a type without a compositor
  * @param baseType - Optional base type; when truthy wraps the compositor in
  *   a complexContent/extension element
  */
 function applyContentStructure(
   ct: ComplexTypeHolder,
-  contentModel: ContentModel,
+  contentModel: ContentModel | undefined,
   baseType?: string,
   derivationKind: ComplexTypeDerivationKind = "extension"
 ): void {
@@ -342,14 +337,14 @@ function captureContentState(ct: ComplexTypeHolder): ComplexTypeContentState {
 
 function restoreContentState(
   target: ComplexTypeContentState,
-  contentModel: ContentModel,
+  contentModel: ContentModel | undefined,
   existingContent: ComplexTypeContentState
 ): void {
   if (contentModel === "sequence") {
     target.sequence = existingContent.sequence ?? new explicitGroup();
   } else if (contentModel === "choice") {
     target.choice = existingContent.choice ?? new explicitGroup();
-  } else {
+  } else if (contentModel === "all") {
     target.all = existingContent.all ?? new all();
   }
   target.group = existingContent.group;

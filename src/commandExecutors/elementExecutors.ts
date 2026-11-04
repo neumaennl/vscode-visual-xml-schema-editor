@@ -16,7 +16,7 @@ import {
   explicitGroup,
   all,
 } from "../../shared/types.js";
-import { locateNodeById } from "../schemaNavigator.js";
+import { assumeRemoved, assumeValidated, assumptionFailed, locateValidated } from "./assumeValidated.js";
 import { parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy.js";
 import { renameLocalElementRefInSchema } from "./schemaLocalRenamer.js";
 
@@ -35,7 +35,7 @@ export function executeAddElement(
     command.payload;
 
   // Locate the parent node
-  const location = locateNodeById(schemaObj, parentId);
+  const location = locateValidated(schemaObj, parentId);
 
   // Create the new element
   const newElement = createNewElement(
@@ -50,7 +50,7 @@ export function executeAddElement(
   );
 
   // Add the element to the appropriate parent
-  addElementToParent(location.parent, location.parentType ?? "", newElement);
+  addElementToParent(location.parent, location.parentType, newElement);
 }
 
 /**
@@ -71,10 +71,10 @@ export function executeRemoveElement(
   
   // Determine the parent location
   const parentId = parsed.parentId || SCHEMA_ROOT_ID;
-  const location = locateNodeById(schemaObj, parentId);
+  const location = locateValidated(schemaObj, parentId);
 
   // Remove the element from its parent container
-  removeElementFromParent(location.parent, location.parentType ?? "", parsed.name, parsed.position);
+  removeElementFromParent(location.parent, location.parentType, parsed.name, parsed.position);
 }
 
 /**
@@ -96,7 +96,7 @@ export function executeModifyElement(
   
   // Determine the parent location from the parsed ID
   const parentId = parsed.parentId || SCHEMA_ROOT_ID;
-  const location = locateNodeById(schemaObj, parentId);
+  const location = locateValidated(schemaObj, parentId);
 
   // When a top-level element is renamed, update all element refs and
   // substitutionGroup references pointing to the old name.
@@ -112,7 +112,7 @@ export function executeModifyElement(
   // Find and modify the element in its parent container
   modifyElementInParent(
     location.parent,
-    location.parentType ?? "",
+    location.parentType,
     parsed.name,
     parsed.position,
     elementName,
@@ -211,7 +211,7 @@ function createNewElement(
  * @param parent - Parent container object
  * @param parentType - Type of the parent container
  * @param element - Element to add
- * @throws Error if element cannot be added or duplicate name exists
+ * @throws Error if the parent cannot hold elements
  */
 function addElementToParent(
   parent: unknown,
@@ -241,6 +241,8 @@ function addElementToParent(
     
     elements.push(allElem);
     allGroup.element = elements;
+  } else {
+    assumptionFailed(`Parent of type '${parentType}' for an element`);
   }
 }
 
@@ -262,7 +264,11 @@ function removeElementFromParent(
   if (parentType === "schema") {
     const schemaObj = parent as schema;
     const elements = schemaObj.element ?? [];
-    const filtered = filterElement(elements, elementName, position);
+    const filtered = assumeRemoved(
+      elements,
+      filterElement(elements, elementName, position),
+      describeElement(elementName, position)
+    );
     schemaObj.element = filtered.length > 0 ? filtered : undefined;
   } else if (
     parentType === "sequence" ||
@@ -270,13 +276,23 @@ function removeElementFromParent(
   ) {
     const group = parent as explicitGroup;
     const elements = group.element ?? [];
-    const filtered = filterElement(elements, elementName, position);
+    const filtered = assumeRemoved(
+      elements,
+      filterElement(elements, elementName, position),
+      describeElement(elementName, position)
+    );
     group.element = filtered.length > 0 ? filtered : undefined;
   } else if (parentType === "all") {
     const allGroup = parent as all;
     const elements = allGroup.element ?? [];
-    const filtered = filterElement(elements, elementName, position);
+    const filtered = assumeRemoved(
+      elements,
+      filterElement(elements, elementName, position),
+      describeElement(elementName, position)
+    );
     allGroup.element = filtered.length > 0 ? filtered : undefined;
+  } else {
+    assumptionFailed(`Parent of type '${parentType}' for an element`);
   }
 }
 
@@ -288,7 +304,6 @@ function removeElementFromParent(
  * @param elementName - Name or ref value of the element to filter (optional)
  * @param position - Position of the element to filter (optional)
  * @returns Filtered array
- * @throws Error if element not found
  */
 function filterElement<T extends { name?: string; ref?: string }>(
   elements: T[],
@@ -347,8 +362,10 @@ function modifyElementInParent(
   if (parentType === "schema") {
     const schemaObj = parent as schema;
     const elements = schemaObj.element ?? [];
-    const element = findElement(elements, targetName, targetPosition);
-    if (!element) return;
+    const element = assumeValidated(
+      findElement(elements, targetName, targetPosition),
+      describeElement(targetName, targetPosition)
+    );
     updateElementProperties(
       element,
       newName,
@@ -369,8 +386,10 @@ function modifyElementInParent(
   ) {
     const group = parent as explicitGroup;
     const elements = group.element ?? [];
-    const element = findElement(elements, targetName, targetPosition);
-    if (!element) return;
+    const element = assumeValidated(
+      findElement(elements, targetName, targetPosition),
+      describeElement(targetName, targetPosition)
+    );
     updateElementProperties(
       element,
       newName,
@@ -388,8 +407,10 @@ function modifyElementInParent(
   } else if (parentType === "all") {
     const allGroup = parent as all;
     const elements = allGroup.element ?? [];
-    const element = findElement(elements, targetName, targetPosition);
-    if (!element) return;
+    const element = assumeValidated(
+      findElement(elements, targetName, targetPosition),
+      describeElement(targetName, targetPosition)
+    );
     updateElementProperties(
       element,
       newName,
@@ -404,7 +425,20 @@ function modifyElementInParent(
       newDefault,
       newFixed
     );
+  } else {
+    assumptionFailed(`Parent of type '${parentType}' for an element`);
   }
+}
+
+/**
+ * Describes an element by its name or position, for error messages.
+ *
+ * @param name - The name or ref value of the element (optional)
+ * @param position - The position of the element (optional)
+ * @returns For example `Element person` or `Element at position 2`
+ */
+function describeElement(name?: string, position?: number): string {
+  return name !== undefined ? `Element ${name}` : `Element at position ${position}`;
 }
 
 /**

@@ -176,8 +176,8 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
       expect(orderIdEl!.minOccurs).toBe(1);
       expect(orderIdEl!.maxOccurs).toBe(1);
       expect(orderIdEl!.annotation).toBeDefined();
-      const docText = (orderIdEl!.annotation!.documentation ?? [])[0]?.value;
-      expect(docText).toBe("Unique identifier for the order");
+      const documentationText = (orderIdEl!.annotation!.documentation ?? [])[0]?.value;
+      expect(documentationText).toBe("Unique identifier for the order");
 
       // qty: xs:integer, 0..1
       const qtyEl = seqElements.find((e) => e.name === "qty");

@@ -4,8 +4,8 @@ title: Architecture
 description: How the extension host, the webview and the shared code work together to provide a visual editor for XML Schema (XSD) files, and the design decisions behind the command-based design.
 tags: [architecture, extension-host, webview, shared, design-decisions]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-03T07:56:24Z }
-verified: { by: human:neumaennl, at: 2026-11-03T08:26:21Z }
+generated: { by: human:neumaennl, at: 2026-11-03T16:28:02Z }
+verified: { by: human:neumaennl, at: 2026-11-04T08:44:10Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -37,6 +37,9 @@ sources:
   - id: adr-001
     resource: architecture/001-editor-transition.md
     title: "ADR 001: Editor Transition Architecture (design rationale and deviations)"
+  - id: adr-003
+    resource: architecture/003-validators-check-executors-assume.md
+    title: "ADR 003: Validators check, executors assume"
 ---
 
 # Purpose
@@ -95,6 +98,7 @@ The `shared/` code is imported by both sides and compiled into each separately. 
 - **The XSD document is the single source of truth.** The webview never holds authoritative state. It re-renders from each `updateSchema`. The state it saves with `setState` is only a cache so the view survives being hidden and restored.
 - **All changes are commands.** The webview never edits the schema directly. It sends typed commands, and the extension host validates and executes them.
 - **Checks complement each other.** The webview checks what it can decide from the diagram, to give immediate feedback: drop targets, and empty or unchanged input. The extension host is the gatekeeper: it checks every command completely, including the rules that need the whole schema (names, types, references, duplicates), and decides. Rules are not copied to the webview for their own sake; where both sides check the same thing, such as where an element or attribute may be placed, it is because the webview needs it for feedback and the extension host must not rely on the webview (see [Messaging](messaging.md#validation-in-the-webview)).
+- **Validators check, executors assume.** The validator of a command checks everything its executor relies on; the executor does not check it again and states only what it assumes, so that a disagreement fails with an error instead of doing nothing ([ADR 003](architecture/003-validators-check-executors-assume.md)).[^adr-003]
 - **Transactional execution.** Commands run on a copy of the schema, so a failed command leaves the document unchanged. The result is written as a single edit, which VS Code's undo handles as one step.
 - **One set of shared types.** Commands, messages and the schema model are defined once in `shared/` and used by both sides, so the compiler checks both ends of the protocol.
 - **Path-based IDs.** Schema nodes are identified by XPath-like IDs such as `/element:person/anonymousComplexType[0]`, which both sides can generate and resolve. See [Schema model](schema-model.md).
@@ -187,3 +191,5 @@ exampleFiles/             Sample XSD files for manual testing
 [^properties-panel-commands]: Properties panel command helpers
 
 [^adr-001]: ADR 001: Editor Transition Architecture (design rationale and deviations)
+
+[^adr-003]: [ADR 003: Validators check, executors assume](architecture/003-validators-check-executors-assume.md)

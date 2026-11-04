@@ -371,6 +371,14 @@ export function validateModifyGroup(
       command.payload.minOccurs !== undefined ||
       command.payload.maxOccurs !== undefined
     ) {
+      // XML Schema allows no occurrences on the compositor of a group definition
+      const parentOfCompositor = parseSchemaId(parsed.parentId);
+      if (parentOfCompositor.nodeType === SchemaNodeType.Group && !parentOfCompositor.parentId) {
+        return {
+          valid: false,
+          error: "The compositor of a group definition cannot have minOccurs or maxOccurs",
+        };
+      }
       const occurrenceValidation: ValidationResult = validateOccurrences(
         command.payload.minOccurs,
         command.payload.maxOccurs

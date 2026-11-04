@@ -4,8 +4,8 @@ title: Commands
 description: The edit commands - payload fields, the rules the validators enforce, what the executors change in the schema, and where the webview sends them.
 tags: [commands, payload, validation, reference]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-03T08:31:28Z }
-verified: { by: human:neumaennl, at: 2026-11-03T09:31:33Z }
+generated: { by: human:neumaennl, at: 2026-11-03T16:28:02Z }
+verified: { by: human:neumaennl, at: 2026-11-04T08:44:10Z }
 sources:
   - id: commands
     resource: ../shared/commands/index.ts
@@ -55,6 +55,7 @@ This reference describes every edit command: its payload, the rules that the val
 - **Types.** A type name (`elementType`, `baseType`, `listItemType`, union members) is accepted if it is a built-in XSD type with any prefix, a type defined in the schema, a type whose prefix belongs to an import, or any valid name if the schema has an include. Attribute types are not checked.
 - **`documentation` field.** Most add and modify payloads have an optional `documentation` string. `add*` writes it only if it is not empty. `modify*` replaces *all* documentation entries of the node with one entry containing the string, even if it is empty; it does not remove the annotation. To edit single entries, use the [documentation commands](#annotations-and-documentation).
 - **Insertion.** New nodes are appended to the end of their parent.
+- **Validator and executor.** The validator checks everything the executor relies on, and the executor does not check it again. Where the executor assumes something, it fails with an error such as "Element person not found, although the validator accepted the command" if the assumption does not hold ([ADR 003](architecture/003-validators-check-executors-assume.md)).
 - **Removal.** Removing a group, attribute group or import is rejected while it is still referenced. Removing an element, attribute or type is not checked and can leave references that point nowhere.
 
 # Overview
@@ -171,14 +172,14 @@ A restriction without `restrictions` has no facets, which XSD allows. If `restri
 |---|---|---|---|
 | `parentId` / `typeId` | optional | required | Parent for an anonymous type: an element without `ref` and without an anonymous type. |
 | `typeName` | top-level only | top-level only | Must be unique when added. Renaming updates references like `modifySimpleType`. |
-| `contentModel` | required | optional | `sequence`, `choice` or `all` (`ContentModel`). Changing it replaces the compositor and moves its particles into the new one. |
-| `baseType` | optional | optional | Wraps the compositor in `complexContent` with an `extension` or `restriction` of this type. |
-| `derivationKind` | optional | optional | `extension` (default) or `restriction` (`ComplexTypeDerivationKind`). |
+| `contentModel` | required | optional | `sequence`, `choice` or `all` (`ContentModel`). Changing it replaces the compositor and moves its particles into the new one. Rejected for a type whose particle is a group reference, because a complex type has at most one particle. |
+| `baseType` | optional | optional | Checked like the other type names (see [Conventions](#conventions)). Wraps the content in `complexContent` with an `extension` or `restriction` of this type: the compositor, or for a type without one, its group reference and attributes as they are. An empty string removes the base and unwraps the content. |
+| `derivationKind` | optional | optional | `extension` (default) or `restriction` (`ComplexTypeDerivationKind`). Needs a base type, from the payload or the existing type ("Derivation kind requires a base type"). |
 | `mixed` | optional | optional | |
 | `abstract` | optional | optional | Only applied to top-level types. |
 | `documentation` | optional | optional | See [Conventions](#conventions). |
 
-Creating an anonymous complex type removes the `type` attribute and an anonymous simple type of its element. `removeComplexType` takes only `typeId` and does not check whether the type is still used.[^validators][^executors]
+The complex type commands cannot create or change simple content: for a complex type with `simpleContent`, `modifyComplexType` rejects `baseType`, `derivationKind` and `contentModel` (see [Known issues](known-issues.md#complex-types-with-simple-content-cannot-be-created-or-derived)). Creating an anonymous complex type removes the `type` attribute and an anonymous simple type of its element. `removeComplexType` takes only `typeId` and does not check whether the type is still used.[^validators][^executors]
 
 # Groups
 
@@ -195,9 +196,9 @@ Creating an anonymous complex type removes the `type` attribute and an anonymous
 |---|---|---|
 | Group definition | `/group:Address` | `groupName`, `contentModel`, `documentation`. Renaming updates the references. |
 | Group reference | `…/group:sequence[0]/groupRef:Address[0]` | `ref`, `minOccurs`, `maxOccurs`, `documentation` |
-| Compositor | `…/group:sequence[0]` | `minOccurs`, `maxOccurs`, `documentation` |
+| Compositor | `…/group:sequence[0]` | `minOccurs`, `maxOccurs`, `documentation`. The compositor of a group definition (`/group:Address/group:sequence[0]`) has no occurrences in XML Schema, so only `documentation` is accepted there. |
 
-A group definition cannot be removed while a reference points to it.[^validators][^executors]
+`removeGroup` on a compositor removes it from the complex type, the group definition or the compositor that contains it. A group definition cannot be removed while a reference points to it.[^validators][^executors]
 
 # Attribute groups
 
@@ -293,7 +294,7 @@ Each command type has a string literal as `type`, so `SchemaCommand` is a discri
 2. A validator in `src/commandValidators/` and its case in `src/commandValidator.ts`.
 3. An executor in `src/commandExecutors/` and its case in `src/commandExecutor.ts`.
 4. The place in `webview-src/` that creates and sends the command.
-5. Tests for the validator and the executor next to them, and a pipeline test in `src/__tests__/` if the command needs one.
+5. Tests for the validator and the executor next to them, a pipeline test in `src/__tests__/` if the command needs one, and the command in the agreement test `webview-src/__tests__/commandAgreement.test.ts`, with a schema in `src/__tests__/test-resources` that contains its node.
 6. A row in the [Overview](#overview) and a section in this reference.
 
 The switches in `commandValidator.ts` and `commandExecutor.ts` have one case per command type and a `default` branch, so TypeScript does not report a missing case. A command missing in the validator fails validation with "Unknown command type", one missing in the executor fails at runtime with the same message.

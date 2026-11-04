@@ -28,7 +28,7 @@ import {
 } from "../../shared/types.js";
 import { isSchemaRoot } from "../../shared/schemaUtils.js";
 import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
-import { locateNodeById } from "../schemaNavigator.js";
+import { assumeRemoved, assumeValidated, locateValidated } from "./assumeValidated.js";
 import { createAnnotation } from "./annotationUtils.js";
 import { renameLocalTypeInSchema } from "./schemaLocalRenamer.js";
 
@@ -57,7 +57,7 @@ export function executeAddSimpleType(
 
   if (!isSchemaRoot(parentId)) {
     // Anonymous simpleType inside an element or attribute — isSchemaRoot guarantees parentId is a non-empty string here
-    const location = locateNodeById(schemaObj, parentId as string);
+    const location = locateValidated(schemaObj, parentId as string);
     // Both elements and attributes share the same localSimpleType inline child structure
     const holder = location.parent as {
       type_?: string;
@@ -65,12 +65,13 @@ export function executeAddSimpleType(
       complexType?: unknown;
     };
     const anonType = new localSimpleType();
-    applySimpleTypeBody(anonType, {
+    const anonBody = {
       baseType,
       listItemType,
       unionMemberTypes,
       restrictions,
-    });
+    };
+    applySimpleTypeBody(anonType, anonBody, assumeValidated(derivationKindOf(anonBody), "Simple type body"));
     if (documentation) {
       anonType.annotation = createAnnotation(documentation);
     }
@@ -80,15 +81,16 @@ export function executeAddSimpleType(
     return;
   }
 
-  // Top-level named simpleType — typeName is a valid non-empty string here (enforced by the validator)
+  // Top-level named simpleType
   const simpleType = new topLevelSimpleType();
-  simpleType.name = typeName as string;
-  applySimpleTypeBody(simpleType, {
+  simpleType.name = assumeValidated(typeName, "Type name");
+  const namedBody = {
     baseType,
     listItemType,
     unionMemberTypes,
     restrictions,
-  });
+  };
+  applySimpleTypeBody(simpleType, namedBody, assumeValidated(derivationKindOf(namedBody), "Simple type body"));
   if (documentation) {
     simpleType.annotation = createAnnotation(documentation);
   }
@@ -115,19 +117,20 @@ export function executeRemoveSimpleType(
   const parsed = parseSchemaId(typeId);
 
   if (parsed.nodeType === SchemaNodeType.AnonymousSimpleType) {
-    const parentId = parsed.parentId;
-    if (!parentId) {
-      return;
-    }
-    const location = locateNodeById(schemaObj, parentId);
+    const location = locateValidated(schemaObj, assumeValidated(parsed.parentId, `Parent of ${typeId}`));
     const holder = location.parent as { simpleType?: localSimpleType };
+    assumeValidated(holder.simpleType, `Simple type ${typeId}`);
     holder.simpleType = undefined;
     return;
   }
 
   // Top-level named simpleType
   const simpleTypes = schemaObj.simpleType ?? [];
-  const filtered = simpleTypes.filter((st) => st.name !== parsed.name);
+  const filtered = assumeRemoved(
+    simpleTypes,
+    simpleTypes.filter((st) => st.name !== parsed.name),
+    `Simple type ${typeId}`
+  );
   schemaObj.simpleType = filtered.length > 0 ? filtered : undefined;
 }
 
@@ -156,14 +159,9 @@ export function executeModifySimpleType(
   const parsed = parseSchemaId(typeId);
 
   if (parsed.nodeType === SchemaNodeType.AnonymousSimpleType) {
-    const parentId = parsed.parentId;
-    if (!parentId) {
-      return;
-    }
-    const location = locateNodeById(schemaObj, parentId);
+    const location = locateValidated(schemaObj, assumeValidated(parsed.parentId, `Parent of ${typeId}`));
     const holder = location.parent as { simpleType?: localSimpleType };
-    if (!holder.simpleType) return;
-    updateTypeContents(holder.simpleType, {
+    updateTypeContents(assumeValidated(holder.simpleType, `Simple type ${typeId}`), {
       baseType,
       listItemType,
       unionMemberTypes,
@@ -174,12 +172,12 @@ export function executeModifySimpleType(
   }
 
   // Top-level named simpleType
-  const simpleType = (schemaObj.simpleType ?? []).find((st) => st.name === parsed.name);
-  if (!simpleType) {
-    return;
-  }
+  const simpleType = assumeValidated(
+    (schemaObj.simpleType ?? []).find((st) => st.name === parsed.name),
+    `Simple type ${typeId}`
+  );
   if (typeName !== undefined) {
-    renameLocalTypeInSchema(parsed.name as string, typeName, schemaObj);
+    renameLocalTypeInSchema(simpleType.name, typeName, schemaObj);
     simpleType.name = typeName;
   }
   updateTypeContents(simpleType, {
@@ -237,14 +235,12 @@ function updateTypeContents(
     documentation,
   } = updates;
 
-  const fallbackDerivationKind = simpleType.restriction ? "restriction" : simpleType.list ? "list" : simpleType.union ? "union" : undefined;
-
-  applySimpleTypeBody(simpleType, {
-    baseType,
-    listItemType,
-    unionMemberTypes,
-    restrictions,
-  }, fallbackDerivationKind);
+  // Without body fields, the body stays as it is
+  const body = { baseType, listItemType, unionMemberTypes, restrictions };
+  const derivationKind = derivationKindOf(body);
+  if (derivationKind) {
+    applySimpleTypeBody(simpleType, body, derivationKind);
+  }
 
   if (documentation !== undefined) {
     if (!simpleType.annotation) {
@@ -256,35 +252,32 @@ function updateTypeContents(
   }
 }
 
-function inferSimpleTypeDerivationKindForExecutor(updates: {
+/**
+ * Returns the kind of body that the body fields of a payload describe. The validator ensures that
+ * they describe at most one kind.
+ *
+ * @param body - The body fields of the payload
+ * @returns The kind, or `undefined` if the payload has no body fields
+ */
+function derivationKindOf(body: {
   baseType?: string;
   listItemType?: string;
   unionMemberTypes?: string[];
   restrictions?: RestrictionFacets;
 }): SimpleTypeDerivationKind | undefined {
-  const hasRestrictionBody = updates.baseType !== undefined || updates.restrictions !== undefined;
-  const hasListBody = updates.listItemType !== undefined;
-  const hasUnionBody = updates.unionMemberTypes !== undefined;
-
-  const bodyKinds = [hasRestrictionBody ? "restriction" : null, hasListBody ? "list" : null, hasUnionBody ? "union" : null].filter(Boolean) as SimpleTypeDerivationKind[];
-  return bodyKinds.length === 1 ? bodyKinds[0] : undefined;
+  if (body.listItemType !== undefined) return "list";
+  if (body.unionMemberTypes !== undefined) return "union";
+  if (body.baseType !== undefined || body.restrictions !== undefined) return "restriction";
+  return undefined;
 }
 
-function hasRestrictionFacetValues(restrictions: RestrictionFacets | undefined): boolean {
-  if (!restrictions) {
-    return false;
-  }
-  return Object.values(restrictions).some((value) => {
-    if (value === undefined || value === null) {
-      return false;
-    }
-    if (Array.isArray(value)) {
-      return value.length > 0;
-    }
-    return true;
-  });
-}
-
+/**
+ * Replaces the body of a simple type with a body of the given kind.
+ *
+ * @param simpleType - The simple type to change
+ * @param updates - The body fields of the payload
+ * @param derivationKind - The kind of the new body
+ */
 function applySimpleTypeBody(
   simpleType: { restriction?: restrictionType; list?: listType; union?: unionType },
   updates: {
@@ -293,65 +286,39 @@ function applySimpleTypeBody(
     unionMemberTypes?: string[];
     restrictions?: RestrictionFacets;
   },
-  fallbackDerivationKind?: SimpleTypeDerivationKind
+  derivationKind: SimpleTypeDerivationKind
 ): void {
   const { baseType, listItemType, unionMemberTypes, restrictions } = updates;
-  const inferredDerivationKind = inferSimpleTypeDerivationKindForExecutor(updates) ?? fallbackDerivationKind;
-  if (!inferredDerivationKind) {
-    throw new Error("Simple type body must be specified as exactly one of restriction, list, or union");
-  }
 
-  if (inferredDerivationKind === "list") {
-    if (baseType !== undefined || restrictions !== undefined || unionMemberTypes !== undefined) {
-      throw new Error("List simpleType payload cannot include restriction or union fields");
-    }
-    if (!listItemType || !listItemType.trim()) {
-      throw new Error("List item type is required");
-    }
+  if (derivationKind === "list") {
     if (!simpleType.list) {
       simpleType.list = new listType();
     }
-    simpleType.list.itemType = listItemType.trim();
+    simpleType.list.itemType = assumeValidated(listItemType, "List item type").trim();
     simpleType.list.simpleType = undefined;
     simpleType.restriction = undefined;
     simpleType.union = undefined;
     return;
   }
 
-  if (inferredDerivationKind === "union") {
-    if (baseType !== undefined || listItemType !== undefined || restrictions !== undefined) {
-      throw new Error("Union simpleType payload cannot include restriction or list fields");
-    }
-    const normalized = (unionMemberTypes ?? [])
-      .map((memberType) => memberType.trim())
-      .filter((memberType) => memberType.length > 0);
-    if (normalized.length === 0) {
-      throw new Error("Union member types are required");
-    }
+  if (derivationKind === "union") {
     if (!simpleType.union) {
       simpleType.union = new unionType();
     }
-    simpleType.union.memberTypes = normalized.join(" ");
+    simpleType.union.memberTypes = assumeValidated(unionMemberTypes, "Union member types")
+      .map((memberType) => memberType.trim())
+      .join(" ");
     simpleType.union.simpleType = undefined;
     simpleType.restriction = undefined;
     simpleType.list = undefined;
     return;
   }
 
-  if (baseType !== undefined && !baseType.trim()) {
-    throw new Error("Base type is required");
-  }
-  if (listItemType !== undefined || unionMemberTypes !== undefined) {
-    throw new Error("Restriction simpleType payload cannot include list or union fields");
-  }
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- base is missing when the restriction has an inline simpleType; the generated type is wrong (neumaennl/xmlbind-ts#278)
-  const resolvedBaseType = baseType?.trim() || simpleType.restriction?.base?.trim() || "";
-  if (!resolvedBaseType) {
-    throw new Error("Base type is required");
-  }
-  if (restrictions !== undefined && !hasRestrictionFacetValues(restrictions) && !simpleType.restriction) {
-    throw new Error("Restriction simpleType body must include at least one facet");
-  }
+  const resolvedBaseType = assumeValidated(
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- base is missing when the restriction has an inline simpleType; the generated type is wrong (neumaennl/xmlbind-ts#278)
+    baseType?.trim() || simpleType.restriction?.base?.trim() || undefined,
+    "Base type"
+  );
   if (!simpleType.restriction) {
     simpleType.restriction = buildRestriction(resolvedBaseType, restrictions);
   } else {

@@ -15,7 +15,13 @@ import {
   runCommandExpectSuccessSchema,
   runCommandExpectValidationFailure,
 } from "./pipelineTestHelpers.js";
-import { emptySchemaXml } from "./schemaTestHelpers.js";
+import { emptySchemaXml, schemaXmlWith } from "./schemaTestHelpers.js";
+
+/** A list simpleType `Codes` of tokens. */
+const LIST_TYPE = `<xs:simpleType name="Codes"><xs:list itemType="xs:token"/></xs:simpleType>`;
+
+/** A union simpleType `Size` of integers and tokens. */
+const UNION_TYPE = `<xs:simpleType name="Size"><xs:union memberTypes="xs:integer xs:token"/></xs:simpleType>`;
 
 describe("Integration: SimpleType pipeline", () => {
   // ─── addSimpleType ─────────────────────────────────────────────────────────
@@ -203,6 +209,31 @@ describe("Integration: SimpleType pipeline", () => {
       expect(statusType).toBeDefined();
       expect(statusType!.list?.itemType).toBe("xs:token");
       expect(statusType!.restriction).toBeUndefined();
+    });
+
+    test("renames a list simpleType and keeps its item type", () => {
+      const cmd: ModifySimpleTypeCommand = {
+        type: "modifySimpleType",
+        payload: { typeId: "/simpleType:Codes", typeName: "CodeList" },
+      };
+
+      const result = runCommandExpectSuccessSchema(schemaXmlWith(LIST_TYPE), cmd);
+      const codeList = (result.simpleType ?? []).find((t) => t.name === "CodeList");
+
+      expect(codeList?.list?.itemType).toBe("xs:token");
+    });
+
+    test("changes only the documentation of a union simpleType", () => {
+      const cmd: ModifySimpleTypeCommand = {
+        type: "modifySimpleType",
+        payload: { typeId: "/simpleType:Size", documentation: "A number or a word" },
+      };
+
+      const result = runCommandExpectSuccessSchema(schemaXmlWith(UNION_TYPE), cmd);
+      const size = (result.simpleType ?? []).find((t) => t.name === "Size");
+
+      expect(size?.union?.memberTypes).toBe("xs:integer xs:token");
+      expect(size?.annotation?.documentation?.[0]?.value).toBe("A number or a word");
     });
 
     test("returns validation error when type ID does not exist", () => {

@@ -73,7 +73,7 @@ describe("SimpleType Executors", () => {
       const schemaObj = emptySchema();
 
       expect(() => addSimpleType(schemaObj, { typeName: "NameType" }))
-        .toThrow("Simple type body must be specified as exactly one of restriction, list, or union");
+        .toThrow("Simple type body not found, although the validator accepted the command");
     });
 
     test("adds a named simpleType with base type only and serializes back to valid XSD", () => {

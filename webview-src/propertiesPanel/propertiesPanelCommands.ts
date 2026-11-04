@@ -161,10 +161,14 @@ export function canEditCardinality(node: DiagramItem): boolean {
   if (nodeType === SchemaNodeType.Group) {
     try {
       const parsed = parseSchemaId(node.id);
-      return (
-        parsed.parentId !== undefined &&
-        (parsed.name === "sequence" || parsed.name === "choice" || parsed.name === "all")
-      );
+      const isCompositor = parsed.name === "sequence" || parsed.name === "choice" || parsed.name === "all";
+      if (!isCompositor || parsed.parentId === undefined) {
+        return false;
+      }
+      // XML Schema allows no occurrences on the compositor of a group definition
+      const parent = parseSchemaId(parsed.parentId);
+      const isInGroupDefinition = parent.nodeType === SchemaNodeType.Group && parent.parentId === undefined;
+      return !isInGroupDefinition;
     } catch {
       return false;
     }

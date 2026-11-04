@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-03T09:28:22Z }
-verified: { by: human:neumaennl, at: 2026-11-03T09:31:33Z }
+generated: { by: human:neumaennl, at: 2026-11-03T16:28:02Z }
+verified: { by: human:neumaennl, at: 2026-11-04T08:44:10Z }
 ---
 
 # Purpose
@@ -411,7 +411,7 @@ Effort:
 - **Location:** whole repository
 - **Severity:** Low
 - **Effort:** L
-- **Description:** The [development guidelines](development-guidelines.md#code-quality) ask to avoid code duplication, but the code base likely contains a fair amount of duplicated and dead code that was not caught in reviews. The [leftovers of the removed top-level drop target](#leftovers-of-the-removed-top-level-drop-target) and the [duplicated top-level lookups](#top-level-lookups-are-duplicated-instead-of-shared) are examples. A systematic cleanup by an agent is planned. Examples found in the diagram code (see [Diagram rendering](diagram-rendering.md)):
+- **Description:** The [development guidelines](development-guidelines.md#code-quality) ask to avoid code duplication, but the code base likely contains a fair amount of duplicated and dead code that was not caught in reviews. The [leftovers of the removed top-level drop target](#leftovers-of-the-removed-top-level-drop-target) and the [duplicated top-level lookups](#top-level-lookups-are-duplicated-instead-of-shared) are examples. A systematic cleanup by an agent is planned. Besides duplicates within one part, the agent should look explicitly for code that the extension (`src/`) and the webview (`webview-src/`) each implement on their own, and move it to `shared/`, which both use; for example the rules where an element or attribute may be placed, which both sides check (see [Architecture](architecture.md#principles)), and the top-level lookups in `DiagramBuilder` and `DropCommandFactory`. Examples found in the diagram code (see [Diagram rendering](diagram-rendering.md)):
   - `SchemaProcessorsGroups.ts` is not imported anywhere; `SchemaProcessors.ts` contains its functions.
   - `DiagramLayout` has its own `isCompositorGroup()`, which returns `true` when the ID cannot be parsed, while the one in `groupUtils.ts` returns `false`.
   - `DiagramLayout.relayoutItem()` and `DiagramItem.getTextDocumentation()` are only called from tests, `DiagramBuilder.elementMap` is only cleared, and `DiagramItem.inheritFrom` is never set.
@@ -427,6 +427,14 @@ Effort:
 - **Description:** `DiagramItem` does not reference the schema object it represents; the builder copies about 22 values into it instead (see [Diagram rendering](diagram-rendering.md#data-model)). The renderer needs only a few of them; most are read by the properties panel and the drop code. Every new value has to be added to the item, to the builder and to `createDraftNode()`, which copies all fields again by hand for the properties panel draft. The extraction is partly duplicated: `processGroup` builds group elements inline instead of using `createElementNode`. Values that are not copied, or copied in a reduced form, cause bugs: [Editing facets drops all but the first pattern](#editing-facets-drops-all-but-the-first-pattern), [Restricted complex content is shown without content and attributes](#restricted-complex-content-is-shown-without-content-and-attributes), [Element references are not shown as references](#element-references-are-not-shown-as-references) and [Items with maxOccurs 0 are drawn as repeated](#items-with-maxoccurs-0-are-drawn-as-repeated) come at least partly from this layer. The plan is to keep only view state on the item, add a typed reference to the schema object, and read values through one module of accessor functions. The properties panel draft must then be a deep copy of the schema object: after a failed command the webview receives no new schema, so changes to the shared object would remain. The many `toArray()` calls come from xmlbind-ts, which returns a single object for a repeated element that occurs once ([neumaennl/xmlbind-ts#261](https://github.com/neumaennl/xmlbind-ts/issues/261)). This should be planned together with [inline types](#inline-types-have-no-node-of-their-own) and the [node ID redesign](#node-ids-are-ambiguous-and-have-many-special-cases), which also change the builder.
 - **GitHub issue:** [#360](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/360)
 
+## Complex types with simple content cannot be created or derived
+
+- **Location:** `shared/commands/schemaTypes.ts` (`AddComplexTypePayload`, `ModifyComplexTypePayload`), `src/commandValidators/typeValidators.ts` (`validateModifyComplexType()`), `src/commandExecutors/complexTypeExecutors.ts`
+- **Severity:** Low
+- **Effort:** L
+- **Description:** A complex type with `xs:simpleContent` has text content of a simple type plus attributes, for example a price with a currency. The complex type commands only know complex content: `addComplexType` requires a `contentModel` and always creates a compositor, and the executor only builds `complexContent`, so a `baseType` or `contentModel` for a type with simple content would add a `complexContent` next to the `simpleContent`, which is invalid. `modifyComplexType` therefore rejects `baseType`, `derivationKind` and `contentModel` for such types (see [Commands](commands.md#complex-types)). Such types can be shown and renamed, and their documentation can be edited, but a type with simple content cannot be created, its base type and derivation cannot be changed, and an existing type cannot be switched between simple and complex content. Related problems are [Attributes on derived complex types are rejected or misplaced](#attributes-on-derived-complex-types-are-rejected-or-misplaced) and the [mixed content toggle](#mixed-content-toggle-ignores-simple-content-complexcontent-and-the-base-type). The fix needs a way to choose simple content in the payloads, for example a content kind, and an executor that builds `simpleContent` with an `extension` or `restriction` of a simple base type.
+- **GitHub issue:** none
+
 ## Identity constraints, notations and redefines cannot be shown or edited
 
 - **Location:** `shared/commands/`, `src/commandValidators/`, `src/commandExecutors/`, `webview-src/diagram/DiagramBuilder.ts`, `webview-src/propertiesPanel/`
@@ -441,14 +449,6 @@ Effort:
 - **Severity:** Low
 - **Effort:** L
 - **Description:** Every change redraws the whole diagram. Each `updateSchema` builds all diagram items from the schema object again, calculates the layout of every item and replaces all SVG content, even if the edit changed a single attribute. Changing a diagram option does the same, although the options are only applied after the build and would need only a new layout. Expanding or collapsing a node calls `refresh()`, which keeps the items but calculates the layout of all items and redraws the whole SVG. `DiagramLayout.relayoutItem()` was written to recalculate the layout of one item and its ancestors, but it is never called (see [Duplicated and dead code](#duplicated-and-dead-code)). For large schemas this probably makes editing slow; this was not measured. Smaller improvements are to use `refresh()` for option changes and `relayoutItem()` for expanding and collapsing; real incremental updates would need the [ambiguous node IDs](#node-ids-are-ambiguous-and-have-many-special-cases) fixed first, so that items can be matched across builds (see [Diagram rendering](diagram-rendering.md#pipeline)).
-- **GitHub issue:** none
-
-## Executors do nothing or fail with a TypeError instead of a meaningful error
-
-- **Location:** `src/commandExecutors/`
-- **Severity:** Low
-- **Effort:** L
-- **Description:** The executors rely on the validators: `CommandProcessor` only runs an executor after the validator has accepted the command, and the executors do not repeat the validators' checks, which is intended. But when an executor cannot do what it is supposed to do, for example because the node to change does not exist, it should throw an error that says so. Instead, a missing target mostly changes nothing, so the command reports success without an effect; only some commands that address an entry by an index that is too large cause a `TypeError` such as "Cannot read properties of undefined": removing or modifying an import, modifying an include, and some annotation and documentation commands. A missing parent changes nothing for elements, attributes and group references, but causes a `TypeError` for anonymous types, attribute group references, annotations and documentation. Their TSDoc nevertheless says "@throws Error if … not found". This only shows when a validator and its executor disagree, which is then hard to notice. The fix is a meaningful error in every executor where it cannot find its target or its parent, without repeating the other checks of the validators. It is done on the editor branch, which rewrites many executors.
 - **GitHub issue:** none
 
 ## Branch coverage is below 80%

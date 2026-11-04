@@ -4,8 +4,8 @@ title: Testing
 description: How the extension is tested - running the tests and the type check, the four Vitest projects, mocks and helpers, conventions for tests, mocks, helper functions and helper classes, which tests to write for typical changes, coverage, CI, the smoke tests in the extension host with a mock webview, and how the current tests compare with the testing strategy of ADR 001.
 tags: [testing, vitest, mocks, coverage, ci, conventions]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-02T15:04:28Z }
-verified: { by: human:neumaennl, at: 2026-11-03T07:21:09Z }
+generated: { by: human:neumaennl, at: 2026-11-03T16:28:02Z }
+verified: { by: human:neumaennl, at: 2026-11-04T08:44:10Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -147,7 +147,7 @@ The `vscode` mock is not used through this mechanism: `src/__mocks__/vscode.ts` 
 # Kinds of tests
 
 - **Unit tests** test one module and sit next to it: `src/commandProcessor.ts` is tested in `src/commandProcessor.test.ts`.
-- **Integration tests** test several modules together and sit in the `__tests__` folder of the part. The `src/__tests__/pipeline.*.test.ts` files send commands through the real `CommandProcessor`, which validates, executes and serializes them (see [Persistence](persistence.md#command-pipeline)), and check the resulting XML or schema; `pipeline.chained.test.ts` runs several commands in a row. `pipeline.workspaceEdit.test.ts` starts one step earlier: it sends an `executeCommand` message to `SchemaEditorProvider` and checks the `WorkspaceEdit`, the `applyEdit` call and the reply.[^workspace-edit-test]
+- **Integration tests** test several modules together and sit in the `__tests__` folder of the part. The `src/__tests__/pipeline.*.test.ts` files send commands through the real `CommandProcessor`, which validates, executes and serializes them (see [Persistence](persistence.md#command-pipeline)), and check the resulting XML or schema; `pipeline.chained.test.ts` runs several commands in a row. `pipeline.workspaceEdit.test.ts` starts one step earlier: it sends an `executeCommand` message to `SchemaEditorProvider` and checks the `WorkspaceEdit`, the `applyEdit` call and the reply.[^workspace-edit-test] `webview-src/__tests__/commandAgreement.test.ts` checks that the validators and the executors agree ([ADR 003](architecture/003-validators-check-executors-assume.md)): it builds the diagram of every schema in `src/__tests__/test-resources` and `exampleFiles`, creates the commands that the webview can send for its nodes, and applies every command that the validator accepts; the executor must neither throw nor leave the schema unchanged. It sits in the webview project because it needs the `DiagramBuilder`; the validators and executors it imports do not use `vscode`.
 - **Type tests** check rules of types that the compiler enforces and the code relies on, with `expectTypeOf()`, for example `expectTypeOf<Omit<P, "id">>().not.toExtend<P>()` for a required field. `shared/commands/commandTypes.test-d.ts` checks the required fields of the command payloads, the allowed values of `maxOccurs` and that `SchemaCommand` rejects an unknown `type` and a payload of another command. A type test is only written for such a rule, not for values assigned to a typed literal: the compiler already checks those, so such a test cannot fail.
 
 | Area | Tests | Details |
@@ -207,7 +207,7 @@ There are no helper classes in the tests today. Factory functions and plain obje
 
 # Tests for typical changes
 
-- **A new or changed command:** the command type in `shared/commands/` and, if its payload has required fields or restricted values, cases in `shared/commands/commandTypes.test-d.ts`; validator tests in `src/commandValidators/<area>Validators.test.ts`, executor tests in `src/commandExecutors/<area>Executors.test.ts`, and a pipeline test in `src/__tests__/pipeline.<area>.test.ts` that runs the command on XML (see [Commands](commands.md#files) for the other places a new command touches).
+- **A new or changed command:** the command type in `shared/commands/` and, if its payload has required fields or restricted values, cases in `shared/commands/commandTypes.test-d.ts`; validator tests in `src/commandValidators/<area>Validators.test.ts`, executor tests in `src/commandExecutors/<area>Executors.test.ts`, a pipeline test in `src/__tests__/pipeline.<area>.test.ts` that runs the command on XML, and the command in the agreement test `webview-src/__tests__/commandAgreement.test.ts` (see [Commands](commands.md#files) for the other places a new command touches).
 - **A new message:** `webviewProvider.test.ts` for the extension host side and `main.test.ts` for the webview side.
 - **A new draggable construct:** placement and payload in `DropCommandFactory.test.ts`; `renderer.test.ts` only if the event handling changes (see [Drag and drop](drag-and-drop.md#adding-a-draggable-construct)).
 - **Changes to the webview UI:** a jsdom test next to the changed module that builds the needed DOM, triggers the event and checks the DOM and the posted messages. Tests that measure text call `setupGetBBoxMock()`.

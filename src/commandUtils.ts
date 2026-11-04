@@ -27,12 +27,12 @@ export function parseSchemaAnnotationId(id: string): number | null {
  */
 export function parseSchemaDocumentationId(
   id: string
-): { annotIndex: number; docIndex: number } | null {
+): { annotationIndex: number; documentationIndex: number } | null {
   const match = id.match(
     /^\/schema\/annotation\[(\d+)\]\/documentation\[(\d+)\]$/
   );
   return match
-    ? { annotIndex: parseInt(match[1], 10), docIndex: parseInt(match[2], 10) }
+    ? { annotationIndex: parseInt(match[1], 10), documentationIndex: parseInt(match[2], 10) }
     : null;
 }
 
@@ -44,7 +44,7 @@ export function parseSchemaDocumentationId(
  */
 export function parseDocumentationId(documentationId: string): {
   elementId: string;
-  docIndex: number;
+  documentationIndex: number;
 } {
   const match = documentationId.match(/^(.+)\/documentation\[(\d+)\]$/);
   // The greedy `.+` is intentional: with the `$` anchor the engine backtracks to
@@ -56,5 +56,5 @@ export function parseDocumentationId(documentationId: string): {
       `Invalid documentationId format — expected "{elementPath}/documentation[N]": ${documentationId}`
     );
   }
-  return { elementId: match[1], docIndex: parseInt(match[2], 10) };
+  return { elementId: match[1], documentationIndex: parseInt(match[2], 10) };
 }

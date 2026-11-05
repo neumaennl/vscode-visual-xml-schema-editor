@@ -276,7 +276,7 @@ export function validateRemoveDocumentation(
   }
 
   const location = locateNodeById(schemaObj, elementId);
-  if (!hasAnnotationProperty(location.parent) || !location.parent.annotation) {
+  if (!location.found || !hasAnnotationProperty(location.parent) || !location.parent.annotation) {
     return { valid: false, error: `No annotation found on node: ${elementId}` };
   }
   const documentations = location.parent.annotation.documentation ?? [];
@@ -354,7 +354,7 @@ export function validateModifyDocumentation(
   }
 
   const location = locateNodeById(schemaObj, elementId);
-  if (!hasAnnotationProperty(location.parent) || !location.parent.annotation) {
+  if (!location.found || !hasAnnotationProperty(location.parent) || !location.parent.annotation) {
     return { valid: false, error: `No annotation found on node: ${elementId}` };
   }
   const documentations = location.parent.annotation.documentation ?? [];

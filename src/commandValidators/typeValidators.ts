@@ -19,7 +19,7 @@ import {
 } from "./validationUtils.js";
 import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
 import { isSchemaRoot } from "../../shared/schemaUtils.js";
-import { locateNodeById } from "../schemaNavigator.js";
+import { locateNodeById, NodeLocation } from "../schemaNavigator.js";
 
 function hasRestrictionFacetValues(restrictions: RestrictionFacets | undefined): boolean {
   if (!restrictions) {
@@ -190,7 +190,7 @@ function validateAnonymousTypeParent(
   parentId: string | undefined,
   schemaObj: schema,
   prop: string
-): { success: false; error: ValidationResult } | { success: true; location: ReturnType<typeof locateNodeById> } {
+): { success: false; error: ValidationResult } | { success: true; location: Extract<NodeLocation, { found: true }> } {
   if (!parentId) {
     return { success: false, error: { valid: false, error: `Invalid anonymous ${prop} ID: ${typeId}` } };
   }
@@ -344,7 +344,7 @@ export function validateAddSimpleType(
     if (!location.found) {
       return { valid: false, error: `Parent not found: ${parentId}` };
     }
-    if (!INLINE_SIMPLE_TYPE_PARENT_TYPES.includes(location.parentType ?? "")) {
+    if (!INLINE_SIMPLE_TYPE_PARENT_TYPES.includes(location.parentType)) {
       return {
         valid: false,
         error: `Parent of type '${location.parentType}' cannot contain a simpleType`,
@@ -473,7 +473,7 @@ export function validateAddComplexType(
     if (!location.found) {
       return { valid: false, error: `Parent not found: ${parentId}` };
     }
-    if (!INLINE_COMPLEX_TYPE_PARENT_TYPES.includes(location.parentType ?? "")) {
+    if (!INLINE_COMPLEX_TYPE_PARENT_TYPES.includes(location.parentType)) {
       return {
         valid: false,
         error: `Parent of type '${location.parentType}' cannot contain a complexType`,

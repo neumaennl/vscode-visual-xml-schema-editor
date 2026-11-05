@@ -33,9 +33,7 @@ describe("SchemaNavigator", () => {
 
         const result = locateNodeById(schemaObj, "/schema");
 
-        expect(result.found).toBe(true);
-        expect(result.parent).toBe(schemaObj);
-        expect(result.parentType).toBe("schema");
+        expect(result).toEqual({ found: true, parent: schemaObj, parentType: "schema" });
       });
 
     });
@@ -46,10 +44,7 @@ describe("SchemaNavigator", () => {
 
         const result = locateNodeById(schemaObj, "/element:person");
 
-        expect(result.found).toBe(true);
-        expect(result.parentType).toBe("topLevelElement");
-        const parentElement = result.parent as { name: string } | undefined;
-        expect(parentElement?.name).toBe("person");
+        expect(result).toMatchObject({ found: true, parentType: "topLevelElement", parent: { name: "person" } });
       });
 
       test("should return not found for non-existent element", () => {
@@ -57,8 +52,7 @@ describe("SchemaNavigator", () => {
 
         const result = locateNodeById(schemaObj, "/element:nonexistent");
 
-        expect(result.found).toBe(false);
-        expect(result.error).toContain("not found");
+        expect(result).toEqual({ found: false, error: "Node not found at segment: element:nonexistent" });
       });
     });
 
@@ -70,10 +64,7 @@ describe("SchemaNavigator", () => {
 
         const result = locateNodeById(schemaObj, "/complexType:PersonType");
 
-        expect(result.found).toBe(true);
-        expect(result.parentType).toBe("topLevelComplexType");
-        const parentType = result.parent as { name: string } | undefined;
-        expect(parentType?.name).toBe("PersonType");
+        expect(result).toMatchObject({ found: true, parentType: "topLevelComplexType", parent: { name: "PersonType" } });
       });
 
       test("should locate sequence within complex type", () => {
@@ -81,8 +72,7 @@ describe("SchemaNavigator", () => {
 
         const result = locateNodeById(schemaObj, "/complexType:PersonType/group:sequence[0]");
 
-        expect(result.found).toBe(true);
-        expect(result.parentType).toBe("sequence");
+        expect(result).toMatchObject({ found: true, parentType: "sequence" });
       });
 
       test("should locate choice within complex type", () => {
@@ -94,8 +84,7 @@ describe("SchemaNavigator", () => {
 
         const result = locateNodeById(schemaObj, "/complexType:ChoiceType/group:choice[0]");
 
-        expect(result.found).toBe(true);
-        expect(result.parentType).toBe("choice");
+        expect(result).toMatchObject({ found: true, parentType: "choice" });
       });
 
       test("should locate all group within complex type", () => {
@@ -107,8 +96,7 @@ describe("SchemaNavigator", () => {
 
         const result = locateNodeById(schemaObj, "/complexType:AllType/group:all[0]");
 
-        expect(result.found).toBe(true);
-        expect(result.parentType).toBe("all");
+        expect(result).toMatchObject({ found: true, parentType: "all" });
       });
 
       test("should locate sequence within complexContent extension via group path", () => {
@@ -116,8 +104,7 @@ describe("SchemaNavigator", () => {
 
         const result = locateNodeById(schemaObj, "/complexType:PersonType/group:sequence[0]");
 
-        expect(result.found).toBe(true);
-        expect(result.parentType).toBe("sequence");
+        expect(result).toMatchObject({ found: true, parentType: "sequence" });
       });
       test("should locate sequence within complexContent restriction via group path", () => {
         const schemaObj = schemaWith(`<xs:complexType name="RestrictedType">
@@ -143,8 +130,7 @@ describe("SchemaNavigator", () => {
           "/element:person/anonymousComplexType[0]"
         );
 
-        expect(result.found).toBe(true);
-        expect(result.parentType).toBe("localComplexType");
+        expect(result).toMatchObject({ found: true, parentType: "localComplexType" });
       });
 
       test("should locate sequence within anonymous complex type", () => {
@@ -155,8 +141,7 @@ describe("SchemaNavigator", () => {
           "/element:person/anonymousComplexType[0]/group:sequence[0]"
         );
 
-        expect(result.found).toBe(true);
-        expect(result.parentType).toBe("sequence");
+        expect(result).toMatchObject({ found: true, parentType: "sequence" });
       });
 
       test("should locate choice within anonymous complex type", () => {
@@ -173,8 +158,7 @@ describe("SchemaNavigator", () => {
           "/element:payment/anonymousComplexType[0]/group:choice[0]"
         );
 
-        expect(result.found).toBe(true);
-        expect(result.parentType).toBe("choice");
+        expect(result).toMatchObject({ found: true, parentType: "choice" });
       });
 
       test("should locate all group within anonymous complex type", () => {
@@ -191,8 +175,7 @@ describe("SchemaNavigator", () => {
           "/element:config/anonymousComplexType[0]/group:all[0]"
         );
 
-        expect(result.found).toBe(true);
-        expect(result.parentType).toBe("all");
+        expect(result).toMatchObject({ found: true, parentType: "all" });
       });
     });
 
@@ -205,10 +188,7 @@ describe("SchemaNavigator", () => {
           "/element:person/anonymousComplexType[0]/group:sequence[0]/element:name"
         );
 
-        expect(result.found).toBe(true);
-        expect(result.parentType).toBe("localElement");
-        const parentElement = result.parent as { name: string } | undefined;
-        expect(parentElement?.name).toBe("name");
+        expect(result).toMatchObject({ found: true, parentType: "localElement", parent: { name: "name" } });
       });
 
       test("should locate element within sequence by position", () => {
@@ -219,10 +199,7 @@ describe("SchemaNavigator", () => {
           "/element:person/anonymousComplexType[0]/group:sequence[0]/element[0]"
         );
 
-        expect(result.found).toBe(true);
-        expect(result.parentType).toBe("localElement");
-        const parentElement = result.parent as { name: string } | undefined;
-        expect(parentElement?.name).toBe("name");
+        expect(result).toMatchObject({ found: true, parentType: "localElement", parent: { name: "name" } });
       });
     });
 
@@ -234,10 +211,7 @@ describe("SchemaNavigator", () => {
 
         const result = locateNodeById(schemaObj, "/simpleType:StringType");
 
-        expect(result.found).toBe(true);
-        expect(result.parentType).toBe("topLevelSimpleType");
-        const parentType = result.parent as { name: string } | undefined;
-        expect(parentType?.name).toBe("StringType");
+        expect(result).toMatchObject({ found: true, parentType: "topLevelSimpleType", parent: { name: "StringType" } });
       });
     });
 
@@ -247,10 +221,7 @@ describe("SchemaNavigator", () => {
 
         const result = locateNodeById(schemaObj, "/group:PersonGroup");
 
-        expect(result.found).toBe(true);
-        expect(result.parentType).toBe("namedGroup");
-        const parentGroup = result.parent as { name: string } | undefined;
-        expect(parentGroup?.name).toBe("PersonGroup");
+        expect(result).toMatchObject({ found: true, parentType: "namedGroup", parent: { name: "PersonGroup" } });
       });
 
       test("should locate sequence via group:sequence[N] path under named group", () => {
@@ -261,8 +232,7 @@ describe("SchemaNavigator", () => {
           "/group:PersonGroup/group:sequence[0]"
         );
 
-        expect(result.found).toBe(true);
-        expect(result.parentType).toBe("sequence");
+        expect(result).toMatchObject({ found: true, parentType: "sequence" });
       });
 
       test("should locate element inside sequence via full group:sequence[N] path", () => {
@@ -273,10 +243,7 @@ describe("SchemaNavigator", () => {
           "/element:person/anonymousComplexType[0]/group:sequence[0]/element:name[0]"
         );
 
-        expect(result.found).toBe(true);
-        expect(result.parentType).toBe("localElement");
-        const elem = result.parent as { name: string } | undefined;
-        expect(elem?.name).toBe("name");
+        expect(result).toMatchObject({ found: true, parentType: "localElement", parent: { name: "name" } });
       });
     });
 
@@ -286,8 +253,10 @@ describe("SchemaNavigator", () => {
 
         const result = locateNodeById(schemaObj, "invalid-id");
 
-        expect(result.found).toBe(false);
-        expect(result.error).toBeDefined();
+        expect(result).toEqual({
+          found: false,
+          error: "Failed to parse or locate node: Invalid schema ID format: must start with /: invalid-id",
+        });
       });
 
       test("should return not found for missing intermediate node", () => {
@@ -298,8 +267,7 @@ describe("SchemaNavigator", () => {
           "/element:person/anonymousComplexType[0]"
         );
 
-        expect(result.found).toBe(false);
-        expect(result.error).toContain("not found");
+        expect(result).toEqual({ found: false, error: "Node not found at segment: anonymousComplexType[0]" });
       });
 
       test("should return not found for non-existent sequence", () => {
@@ -361,10 +329,7 @@ describe("SchemaNavigator", () => {
 
         const result = locateNodeById(schemaObj, "/element[1]");
 
-        expect(result.found).toBe(true);
-        expect(result.parentType).toBe("topLevelElement");
-        const parentElement = result.parent as { name: string } | undefined;
-        expect(parentElement?.name).toBe("company");
+        expect(result).toMatchObject({ found: true, parentType: "topLevelElement", parent: { name: "company" } });
       });
 
       test("should locate complex type by position", () => {
@@ -377,10 +342,7 @@ describe("SchemaNavigator", () => {
 
         const result = locateNodeById(schemaObj, "/complexType[0]");
 
-        expect(result.found).toBe(true);
-        expect(result.parentType).toBe("topLevelComplexType");
-        const parentType = result.parent as { name: string } | undefined;
-        expect(parentType?.name).toBe("Type1");
+        expect(result).toMatchObject({ found: true, parentType: "topLevelComplexType", parent: { name: "Type1" } });
       });
     });
   });

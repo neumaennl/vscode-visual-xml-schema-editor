@@ -107,7 +107,7 @@ export function validateAddElement(
   if (!location.found) {
     return { valid: false, error: `Parent node not found: ${parentId}` };
   }
-  const parentType = location.parentType ?? "";
+  const parentType = location.parentType;
 
   // Validate parent type supports elements
   if (!VALID_ELEMENT_PARENTS.includes(parentType as (typeof VALID_ELEMENT_PARENTS)[number])) {
@@ -148,7 +148,7 @@ export function validateRemoveElement(
   if (!location.found) {
     return { valid: false, error: `Parent node not found for element: ${command.payload.elementId}` };
   }
-  const parentType = location.parentType ?? "";
+  const parentType = location.parentType;
 
   if (!VALID_ELEMENT_PARENTS.includes(parentType as (typeof VALID_ELEMENT_PARENTS)[number])) {
     return { valid: false, error: `Cannot remove element from parent of type: ${parentType}` };
@@ -184,7 +184,7 @@ export function validateModifyElement(
   if (!location.found) {
     return { valid: false, error: `Parent node not found for element: ${elementId}` };
   }
-  const parentType = location.parentType ?? "";
+  const parentType = location.parentType;
 
   if (!VALID_ELEMENT_PARENTS.includes(parentType as (typeof VALID_ELEMENT_PARENTS)[number])) {
     return { valid: false, error: `Cannot modify element in parent of type: ${parentType}` };

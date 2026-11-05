@@ -259,7 +259,7 @@ export function validateAddAttributeGroup(
     }
     // Validate that the parent type supports attribute group refs
     const validAttrGroupRefParents = ["topLevelComplexType", "localComplexType", "namedAttributeGroup"];
-    if (!validAttrGroupRefParents.includes(location.parentType ?? "")) {
+    if (!validAttrGroupRefParents.includes(location.parentType)) {
       return { valid: false, error: `Cannot add attribute group reference to parent type: ${location.parentType}` };
     }
     return { valid: true };

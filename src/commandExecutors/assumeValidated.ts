@@ -61,6 +61,8 @@ export function assumeRemoved<T>(items: T[], remaining: T[], what: string): T[] 
  */
 export function locateValidated(schemaObj: schema, nodeId: string): { parent: unknown; parentType: string } {
   const location = locateNodeById(schemaObj, nodeId);
-  const parent = location.found ? location.parent : undefined;
-  return { parent: assumeValidated(parent, `Node ${nodeId}`), parentType: location.parentType ?? "" };
+  if (!location.found) {
+    return assumptionFailed(`Node ${nodeId} not found`);
+  }
+  return location;
 }

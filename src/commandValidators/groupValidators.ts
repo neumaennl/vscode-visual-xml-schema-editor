@@ -229,11 +229,11 @@ export function validateAddGroup(
     }
     // Validate that the parent type supports group refs
     const validGroupRefParents = ["sequence", "choice", "topLevelComplexType", "localComplexType"];
-    if (!validGroupRefParents.includes(location.parentType ?? "")) {
+    if (!validGroupRefParents.includes(location.parentType)) {
       return { valid: false, error: `Cannot add group ref to parent type: ${location.parentType}` };
     }
     // When adding a group ref directly onto a complexType, reject if a particle is already set
-    if (isComplexTypeParent(location.parentType ?? "") && complexTypeHasParticle(location.parent as ComplexTypeWithParticles)) {
+    if (isComplexTypeParent(location.parentType) && complexTypeHasParticle(location.parent as ComplexTypeWithParticles)) {
       return {
         valid: false,
         error: `Cannot add a group reference to complexType '${parentId}': it already has a particle (group, sequence, choice, or all)`,
@@ -304,7 +304,7 @@ export function validateRemoveGroup(
       return { valid: false, error: `Parent node not found: ${parsed.parentId}` };
     }
     // For complexType parents, verify the group ref exists and has the right name
-    if (isComplexTypeParent(location.parentType ?? "")) {
+    if (isComplexTypeParent(location.parentType)) {
       const ct = location.parent as ComplexTypeWithParticles;
       if (!ct.group) {
         return { valid: false, error: `GroupRef not found: ${command.payload.groupId}` };
@@ -410,7 +410,7 @@ export function validateModifyGroup(
       return { valid: false, error: `Parent node not found: ${parsed.parentId}` };
     }
     // For complexType parents, verify the group ref exists and has the right name
-    if (isComplexTypeParent(location.parentType ?? "")) {
+    if (isComplexTypeParent(location.parentType)) {
       const ct = location.parent as ComplexTypeWithParticles;
       if (!ct.group) {
         return { valid: false, error: `GroupRef not found: ${command.payload.groupId}` };

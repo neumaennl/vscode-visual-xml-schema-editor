@@ -21,18 +21,22 @@ import { parseSchemaId, SchemaNodeType } from "../shared/idStrategy.js";
 import { isSchemaRoot } from "../shared/schemaUtils.js";
 
 /**
- * Result of a node location operation.
+ * Result of a node location operation: the node and its type if it was found, otherwise an error.
+ * The node is called `parent` because callers usually add children to it.
  */
-export interface NodeLocation {
-  /** Whether the node was found */
-  found: boolean;
-  /** The parent container object (schema, complex type, sequence, etc.) */
-  parent?: unknown;
-  /** The type of the parent container */
-  parentType?: string;
-  /** Error message if not found */
-  error?: string;
-}
+export type NodeLocation =
+  | {
+      found: true;
+      /** The node: the schema, a complex type, a sequence and so on */
+      parent: unknown;
+      /** The type of the node, for example `topLevelComplexType` or `sequence` */
+      parentType: string;
+    }
+  | {
+      found: false;
+      /** Why the node was not found */
+      error: string;
+    };
 
 /**
  * Locates a node in the schema by its ID path.

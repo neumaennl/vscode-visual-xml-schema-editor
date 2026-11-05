@@ -4,8 +4,8 @@ title: Schema model
 description: The object model of an XSD file - classes generated from the XSD meta-schema, XML binding with xmlbind-ts, and the path-based IDs that identify schema nodes.
 tags: [schema-model, data-model, xmlbind-ts, code-generation, ids, navigation]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-03T07:56:24Z }
-verified: { by: human:neumaennl, at: 2026-11-03T08:26:21Z }
+generated: { by: human:neumaennl, at: 2026-11-05T05:01:58Z }
+verified: { by: human:neumaennl, at: 2026-11-05T05:24:33Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -130,7 +130,7 @@ The schema root has the ID `/schema` (`SCHEMA_ROOT_ID`). `isSchemaRoot()` treats
 - **Anonymous types** are a segment of their own: `/element:person/anonymousComplexType[0]`. The compositor of an anonymous complex type follows it: `/element:person/anonymousComplexType[0]/group:sequence[0]`.
 - **Derivation is skipped.** For a complex type with `complexContent`, the compositor of the `extension` or `restriction` is addressed as if it were a direct child of the complex type.[^navigator]
 - **Local elements** have both name and position, the position counting only the elements of the same compositor: `/complexType:PersonType/group:sequence[0]/element:first[0]`. Local elements without a name get the name `unnamed`.[^schema-processors]
-- **Group references** use `groupRef` with the referenced name: `…/group:sequence[0]/groupRef:SharedGroup[0]`.
+- **Group references** use `groupRef` with the referenced name and the position among the group references of the parent: `…/group:sequence[0]/groupRef:SharedGroup[0]`. Both are required; `removeGroup` and `modifyGroup` reject an ID without them ("Invalid groupRef ID").
 - **Annotations of the schema root** have their own IDs: `/schema/annotation[0]` and `/schema/annotation[0]/documentation[1]`. The shorthand `/schema/documentation[N]` addresses the documentation entries of the first schema annotation.[^annotation-executors] For all other components, the annotation ID is the component's ID, and documentation entries are `<component ID>/documentation[N]`.[^builder-helpers]
 - **Imports and includes** are addressed by position: `/import[0]`, `/include[0]`.[^schema-executors]
 

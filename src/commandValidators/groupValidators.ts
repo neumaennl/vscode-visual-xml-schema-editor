@@ -155,24 +155,40 @@ function isComplexTypeParent(parentType: string): boolean {
 }
 
 /**
- * Checks whether a groupRef node exists in a sequence or choice compositor parent.
- * Used by both validateRemoveGroup and validateModifyGroup.
+ * Validates that the group reference that a groupRef ID identifies exists. The webview identifies a
+ * group reference by its ref and its position among the group references of its parent
+ * (`…/groupRef:Name[N]`); used by both validateRemoveGroup and validateModifyGroup.
+ *
+ * @param groupId - The groupRef ID
+ * @param schemaObj - The schema
+ * @returns The validation result
  */
-function groupRefExistsInSequenceOrChoice(
-  compositor: { group?: Array<{ ref?: string }> },
-  parsed: { name?: string; position?: number }
-): boolean {
-  const refs = compositor.group ?? [];
-  if (parsed.name !== undefined && parsed.position !== undefined) {
-    return refs.some((r, idx) => r.ref === parsed.name && idx === parsed.position);
+function validateGroupRefExists(groupId: string, schemaObj: schema): ValidationResult {
+  const parsed = parseSchemaId(groupId);
+  if (!parsed.parentId || parsed.name === undefined || parsed.position === undefined) {
+    return { valid: false, error: `Invalid groupRef ID: ${groupId}` };
   }
-  if (parsed.name !== undefined) {
-    return refs.some(r => r.ref === parsed.name);
+  const location = locateNodeById(schemaObj, parsed.parentId);
+  if (!location.found) {
+    return { valid: false, error: `Parent node not found: ${parsed.parentId}` };
   }
-  if (parsed.position !== undefined) {
-    return parsed.position >= 0 && parsed.position < refs.length;
+  // A complexType holds at most one group reference
+  if (isComplexTypeParent(location.parentType)) {
+    const ct = location.parent as ComplexTypeWithParticles;
+    if (!ct.group) {
+      return { valid: false, error: `GroupRef not found: ${groupId}` };
+    }
+    if (ct.group.ref !== parsed.name) {
+      return { valid: false, error: `GroupRef name mismatch: expected '${parsed.name}' but found '${ct.group.ref}'` };
+    }
   }
-  return false;
+  if (location.parentType === "sequence" || location.parentType === "choice") {
+    const refs = (location.parent as { group?: Array<{ ref?: string }> }).group ?? [];
+    if (!refs.some((r, index) => r.ref === parsed.name && index === parsed.position)) {
+      return { valid: false, error: `GroupRef not found: ${groupId}` };
+    }
+  }
+  return { valid: true };
 }
 
 /** Returns true if the complexType node already carries one of the four mutually exclusive particles. */
@@ -295,35 +311,7 @@ export function validateRemoveGroup(
   }
 
   if (parsed.nodeType === SchemaNodeType.GroupRef) {
-    // Reference mode: validate the parent exists
-    if (!parsed.parentId) {
-      return { valid: false, error: `Invalid groupRef ID: ${command.payload.groupId}` };
-    }
-    const location = locateNodeById(schemaObj, parsed.parentId);
-    if (!location.found) {
-      return { valid: false, error: `Parent node not found: ${parsed.parentId}` };
-    }
-    // For complexType parents, verify the group ref exists and has the right name
-    if (isComplexTypeParent(location.parentType)) {
-      const ct = location.parent as ComplexTypeWithParticles;
-      if (!ct.group) {
-        return { valid: false, error: `GroupRef not found: ${command.payload.groupId}` };
-      }
-      if (parsed.name !== undefined && ct.group.ref !== parsed.name) {
-        return {
-          valid: false,
-          error: `GroupRef name mismatch: expected '${parsed.name}' but found '${ct.group.ref}'`,
-        };
-      }
-    }
-    // For sequence/choice parents, check the group ref exists
-    if (location.parentType === "sequence" || location.parentType === "choice") {
-      const compositor = location.parent as { group?: Array<{ ref?: string }> };
-      if (!groupRefExistsInSequenceOrChoice(compositor, parsed)) {
-        return { valid: false, error: `GroupRef not found: ${command.payload.groupId}` };
-      }
-    }
-    return { valid: true };
+    return validateGroupRefExists(command.payload.groupId, schemaObj);
   }
 
   // Definition mode: validate the definition exists and is not referenced
@@ -402,32 +390,9 @@ export function validateModifyGroup(
         error: "Cannot use groupName or contentModel when modifying a group reference — use ref, minOccurs, maxOccurs, or documentation instead",
       };
     }
-    if (!parsed.parentId) {
-      return { valid: false, error: `Invalid groupRef ID: ${command.payload.groupId}` };
-    }
-    const location = locateNodeById(schemaObj, parsed.parentId);
-    if (!location.found) {
-      return { valid: false, error: `Parent node not found: ${parsed.parentId}` };
-    }
-    // For complexType parents, verify the group ref exists and has the right name
-    if (isComplexTypeParent(location.parentType)) {
-      const ct = location.parent as ComplexTypeWithParticles;
-      if (!ct.group) {
-        return { valid: false, error: `GroupRef not found: ${command.payload.groupId}` };
-      }
-      if (parsed.name !== undefined && ct.group.ref !== parsed.name) {
-        return {
-          valid: false,
-          error: `GroupRef name mismatch: expected '${parsed.name}' but found '${ct.group.ref}'`,
-        };
-      }
-    }
-    // For sequence/choice parents, check the group ref exists
-    if (location.parentType === "sequence" || location.parentType === "choice") {
-      const compositor = location.parent as { group?: Array<{ ref?: string }> };
-      if (!groupRefExistsInSequenceOrChoice(compositor, parsed)) {
-        return { valid: false, error: `GroupRef not found: ${command.payload.groupId}` };
-      }
+    const refResult = validateGroupRefExists(command.payload.groupId, schemaObj);
+    if (!refResult.valid) {
+      return refResult;
     }
     if (command.payload.ref !== undefined) {
       if (!isValidXmlName(command.payload.ref)) {

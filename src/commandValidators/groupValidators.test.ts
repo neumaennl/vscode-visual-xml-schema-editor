@@ -796,46 +796,36 @@ describe("Group Validators", () => {
   });
 
   describe("group references in compositors", () => {
-    test("should accept removing a reference identified by name only", () => {
+    test("should accept removing a reference identified by name and position", () => {
       const command: RemoveGroupCommand = {
         type: "removeGroup",
-        payload: { groupId: "/complexType:T/group:sequence[0]/groupRef:OtherGroup" },
+        payload: { groupId: "/complexType:T/group:sequence[0]/groupRef:OtherGroup[1]" },
       };
 
       const result = validateRemoveGroup(command, schemaWithGroups(TWO_REFS));
       expect(result.valid).toBe(true);
     });
 
-    test("should accept removing a reference identified by position only", () => {
-      const command: RemoveGroupCommand = {
-        type: "removeGroup",
-        payload: { groupId: "/complexType:T/group:sequence[0]/groupRef[1]" },
-      };
+    // The diagram builder always generates groupRef IDs with name and position
+    test.each([
+      "/complexType:T/group:sequence[0]/groupRef:OtherGroup",
+      "/complexType:T/group:sequence[0]/groupRef[1]",
+      "/complexType:T/group:sequence[0]/groupRef",
+    ])("should reject removing a reference whose ID %s lacks the name or the position", (groupId) => {
+      const result = validateRemoveGroup({ type: "removeGroup", payload: { groupId } }, schemaWithGroups(TWO_REFS));
 
-      const result = validateRemoveGroup(command, schemaWithGroups(TWO_REFS));
-      expect(result.valid).toBe(true);
+      expect(result).toEqual({ valid: false, error: `Invalid groupRef ID: ${groupId}` });
     });
 
-    test("should reject removing a reference at a position after the last one", () => {
+    test("should reject removing a reference whose name is at another position", () => {
       const command: RemoveGroupCommand = {
         type: "removeGroup",
-        payload: { groupId: "/complexType:T/group:sequence[0]/groupRef[2]" },
+        payload: { groupId: "/complexType:T/group:sequence[0]/groupRef:OtherGroup[0]" },
       };
 
       const result = validateRemoveGroup(command, schemaWithGroups(TWO_REFS));
       expectInvalid(result);
-      expect(result.error).toBe("GroupRef not found: /complexType:T/group:sequence[0]/groupRef[2]");
-    });
-
-    test("should reject removing a reference whose ID has neither name nor position", () => {
-      const command: RemoveGroupCommand = {
-        type: "removeGroup",
-        payload: { groupId: "/complexType:T/group:sequence[0]/groupRef" },
-      };
-
-      const result = validateRemoveGroup(command, schemaWithGroups(TWO_REFS));
-      expectInvalid(result);
-      expect(result.error).toBe("GroupRef not found: /complexType:T/group:sequence[0]/groupRef");
+      expect(result.error).toBe("GroupRef not found: /complexType:T/group:sequence[0]/groupRef:OtherGroup[0]");
     });
 
     test("should reject removing a reference ID without a parent", () => {

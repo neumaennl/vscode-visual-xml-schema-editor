@@ -1,6 +1,7 @@
 # Knowledge Bundle Update Log
 
 ## 2026-11-05
+* **Update**: [Schema model](schema-model.md#conventions): a group reference ID needs both the referenced name and the position (`groupRef:SharedGroup[0]`), which is the only form the diagram builder generates; `removeGroup` and `modifyGroup` reject IDs with only one of them, which the validator and the executor each resolved on their own before ([#402](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/402)).
 * **Update**: The validators of the type commands are split into `simpleTypeValidators.ts` and `complexTypeValidators.ts`, because `typeValidators.ts` had more than the 500 lines that the [development guidelines](development-guidelines.md#code-size) allow ([#402](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/402)). [Known issues](known-issues.md) names the new files.
 
 ## 2026-11-04

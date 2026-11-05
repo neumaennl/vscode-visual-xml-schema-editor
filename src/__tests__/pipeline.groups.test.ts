@@ -6,6 +6,8 @@
  */
 
 import type {
+  annotationType,
+  schema,
   AddGroupCommand,
   RemoveGroupCommand,
   ModifyGroupCommand,
@@ -20,6 +22,28 @@ import {
   runCommandExpectValidationFailure,
 } from "./pipelineTestHelpers.js";
 import { emptySchemaXml, schemaXmlWith } from "./schemaTestHelpers.js";
+
+/**
+ * Group references in anonymous complex types, documented particles, and compositors in
+ * complex content and in other compositors.
+ */
+const GROUP_PARTICLES = schemaXmlWith(`<xs:group name="Contact">
+  <xs:annotation><xs:documentation>Old</xs:documentation></xs:annotation>
+  <xs:sequence/>
+</xs:group>
+<xs:element name="person"><xs:complexType>
+  <xs:group ref="Contact"><xs:annotation><xs:documentation>Old</xs:documentation></xs:annotation></xs:group>
+</xs:complexType></xs:element>
+<xs:element name="empty"><xs:complexType/></xs:element>
+<xs:complexType name="Choices">
+  <xs:sequence><xs:annotation><xs:documentation>Old</xs:documentation></xs:annotation><xs:choice/><xs:choice/></xs:sequence>
+</xs:complexType>
+<xs:complexType name="Restricted">
+  <xs:complexContent><xs:restriction base="xs:anyType"><xs:sequence/></xs:restriction></xs:complexContent>
+</xs:complexType>`);
+
+/** The ID of the group reference in the anonymous complex type of `person`. */
+const PERSON_GROUP_REF_ID = "/element:person/anonymousComplexType[0]/groupRef:Contact[0]";
 
 describe("Integration: Group pipeline", () => {
   // ─── addGroup ──────────────────────────────────────────────────────────────
@@ -251,6 +275,68 @@ describe("Integration: AttributeGroup pipeline", () => {
       };
 
       runCommandExpectValidationFailure(SCHEMA_WITH_ATTRIBUTEGROUP, cmd, "Attribute group not found: /attributeGroup:NoSuch");
+    });
+  });
+
+  // ─── particles ─────────────────────────────────────────────────────────────
+
+  describe("group particles", () => {
+    test("adds a group reference to an anonymous complex type", () => {
+      const cmd: AddGroupCommand = {
+        type: "addGroup",
+        payload: { parentId: "/element:empty/anonymousComplexType[0]", ref: "Contact" },
+      };
+
+      const result = runCommandExpectSuccessSchema(GROUP_PARTICLES, cmd);
+
+      expect(result.element?.find((el) => el.name === "empty")?.complexType?.group?.ref).toBe("Contact");
+    });
+
+    test("removes a group reference from an anonymous complex type", () => {
+      const cmd: RemoveGroupCommand = { type: "removeGroup", payload: { groupId: PERSON_GROUP_REF_ID } };
+
+      const result = runCommandExpectSuccessSchema(GROUP_PARTICLES, cmd);
+
+      expect(result.element?.find((el) => el.name === "person")?.complexType?.group).toBeUndefined();
+    });
+
+    test.each([
+      { node: "a group definition", groupId: "/group:Contact", read: (s: schema): annotationType | undefined => s.group?.[0]?.annotation },
+      {
+        node: "a group reference in an anonymous complex type",
+        groupId: PERSON_GROUP_REF_ID,
+        read: (s: schema): annotationType | undefined => s.element?.find((el) => el.name === "person")?.complexType?.group?.annotation,
+      },
+      {
+        node: "a compositor",
+        groupId: "/complexType:Choices/group:sequence[0]",
+        read: (s: schema): annotationType | undefined => s.complexType?.[0]?.sequence?.annotation,
+      },
+    ])("replaces the documentation of $node", ({ groupId, read }) => {
+      const cmd: ModifyGroupCommand = { type: "modifyGroup", payload: { groupId, documentation: "New" } };
+
+      const result = runCommandExpectSuccessSchema(GROUP_PARTICLES, cmd);
+
+      expect(read(result)?.documentation?.map((doc) => doc.value)).toEqual(["New"]);
+    });
+
+    test("removes one of two compositors nested in a sequence", () => {
+      const cmd: RemoveGroupCommand = {
+        type: "removeGroup",
+        payload: { groupId: "/complexType:Choices/group:sequence[0]/group:choice[1]" },
+      };
+
+      const result = runCommandExpectSuccessSchema(GROUP_PARTICLES, cmd);
+
+      expect(result.complexType?.[0]?.sequence?.choice).toHaveLength(1);
+    });
+
+    test("removes the compositor of a complexContent restriction", () => {
+      const cmd: RemoveGroupCommand = { type: "removeGroup", payload: { groupId: "/complexType:Restricted/group:sequence[0]" } };
+
+      const result = runCommandExpectSuccessSchema(GROUP_PARTICLES, cmd);
+
+      expect(result.complexType?.[1]?.complexContent?.restriction?.sequence).toBeUndefined();
     });
   });
 });

@@ -19,7 +19,14 @@ import {
   runCommandExpectSuccessSchema,
   runCommandExpectValidationFailure,
 } from "./pipelineTestHelpers.js";
-import { emptySchemaXml } from "./schemaTestHelpers.js";
+import { emptySchemaXml, schemaXmlWith } from "./schemaTestHelpers.js";
+
+/** A top-level element `item` with a default value, and a complex type with an `all` group. */
+const ELEMENT_AND_ALL_GROUP = schemaXmlWith(`<xs:element name="item" type="xs:string" default="none" fixed="none"/>
+<xs:complexType name="ConfigType"><xs:all><xs:element name="timeout" type="xs:int"/></xs:all></xs:complexType>`);
+
+/** The ID of the `all` group of `ConfigType`. */
+const ALL_GROUP_ID = "/complexType:ConfigType/group:all[0]";
 
 describe("Integration: Element pipeline", () => {
   // ─── addElement ────────────────────────────────────────────────────────────
@@ -164,6 +171,49 @@ describe("Integration: Element pipeline", () => {
       };
 
       runCommandExpectValidationFailure(SCHEMA_WITH_ELEMENTS, cmd, "Element name must be a valid XML name");
+    });
+  });
+
+  describe("element properties", () => {
+    test.each([
+      { change: { nillable: true }, expected: { nillable: true } },
+      { change: { nillable: false }, expected: { nillable: undefined } },
+      { change: { abstract: true }, expected: { abstract: true } },
+      { change: { abstract: false }, expected: { abstract: undefined } },
+      { change: { default_: "unknown" }, expected: { default_: "unknown" } },
+      { change: { default_: "" }, expected: { default_: undefined } },
+      { change: { fixed: "fixed" }, expected: { fixed: "fixed" } },
+      { change: { fixed: "" }, expected: { fixed: undefined } },
+    ])("sets $change on a top-level element", ({ change, expected }) => {
+      const cmd: ModifyElementCommand = { type: "modifyElement", payload: { elementId: "/element:item", ...change } };
+
+      const result = runCommandExpectSuccessSchema(ELEMENT_AND_ALL_GROUP, cmd);
+
+      expect(result.element?.[0]).toMatchObject(expected);
+    });
+
+    test("adds an element to an all group with occurrences", () => {
+      const cmd: AddElementCommand = {
+        type: "addElement",
+        payload: { parentId: ALL_GROUP_ID, elementName: "retries", elementType: "xs:int", minOccurs: 0, maxOccurs: 1 },
+      };
+
+      const result = runCommandExpectSuccessSchema(ELEMENT_AND_ALL_GROUP, cmd);
+
+      // The generated class of an element in an all group (narrowMaxMin) has string occurrences
+      const retries = result.complexType?.[0]?.all?.element?.find((el) => el.name === "retries");
+      expect(retries).toMatchObject({ minOccurs: "0", maxOccurs: "1" });
+    });
+
+    test("changes the occurrences of an element in an all group", () => {
+      const cmd: ModifyElementCommand = {
+        type: "modifyElement",
+        payload: { elementId: `${ALL_GROUP_ID}/element:timeout[0]`, minOccurs: 0, maxOccurs: 1 },
+      };
+
+      const result = runCommandExpectSuccessSchema(ELEMENT_AND_ALL_GROUP, cmd);
+
+      expect(result.complexType?.[0]?.all?.element?.[0]).toMatchObject({ minOccurs: "0", maxOccurs: "1" });
     });
   });
 });

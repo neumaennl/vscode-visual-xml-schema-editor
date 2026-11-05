@@ -17,7 +17,7 @@ import {
   documentationType,
   groupRef,
 } from "../../shared/types.js";
-import { parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy.js";
+import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
 import { assumeRemoved, assumeValidated, assumptionFailed, locateValidated } from "./assumeValidated.js";
 import { createAnnotation } from "./annotationUtils.js";
 import { renameLocalGroupRefInSchema } from "./schemaLocalRenamer.js";
@@ -45,7 +45,8 @@ export function executeAddGroup(
 
   if (ref !== undefined) {
     // Reference mode: add xs:group ref="..." to a compositor or complexType
-    const location = locateValidated(schemaObj, parentId ?? SCHEMA_ROOT_ID);
+    // The schema cannot hold group references, so the validator requires a parent
+    const location = locateValidated(schemaObj, assumeValidated(parentId, "Parent of the group reference"));
     const grpRef = buildGroupRef(ref, minOccurs, maxOccurs, documentation);
     addGroupRefToParent(location.parent, location.parentType, grpRef);
     return;
@@ -270,7 +271,9 @@ function removeGroupRefFromParent(
   if (parentType === "sequence" || parentType === "choice") {
     const compositor = parent as CompositorWithGroupRefs;
     const refs = compositor.group ?? [];
-    const filtered = assumeRemoved(refs, filterGroupRef(refs, name, position), `Group reference ${groupId}`);
+    // The validator ensures that the ID has the ref and the position of the reference
+    const remaining = refs.filter((r, index) => !(r.ref === name && index === position));
+    const filtered = assumeRemoved(refs, remaining, `Group reference ${groupId}`);
     compositor.group = filtered.length > 0 ? filtered : undefined;
   } else if (
     parentType === "topLevelComplexType" ||
@@ -297,33 +300,14 @@ function findGroupRefInParent(
 ): groupRef | undefined {
   if (parentType === "sequence" || parentType === "choice") {
     const refs = (parent as CompositorWithGroupRefs).group ?? [];
-    return findGroupRef(refs, name, position);
+    // The validator ensures that the ID has the ref and the position of the reference
+    return refs.find((r, index) => r.ref === name && index === position);
   }
   if (
     parentType === "topLevelComplexType" ||
     parentType === "localComplexType"
   ) {
     return (parent as ComplexTypeWithGroupRef).group;
-  }
-  return undefined;
-}
-
-/**
- * Finds a groupRef in an array by its ref name and optional position.
- */
-function findGroupRef(
-  refs: groupRef[],
-  name: string | undefined,
-  position: number | undefined
-): groupRef | undefined {
-  if (name !== undefined && position !== undefined) {
-    return refs.find((r, idx) => r.ref === name && idx === position);
-  }
-  if (name !== undefined) {
-    return refs.find((r) => r.ref === name);
-  }
-  if (position !== undefined) {
-    return refs[position];
   }
   return undefined;
 }
@@ -374,33 +358,6 @@ function removeCompositorGroupFromParent(
     removeFrom(holder.complexContent?.extension) ||
     removeFrom(holder.complexContent?.restriction);
   assumeValidated(removed || undefined, `Compositor ${groupKind} in its parent`);
-}
-
-/**
- * Returns a new array with the first matching groupRef removed.
- */
-function filterGroupRef(
-  refs: groupRef[],
-  name: string | undefined,
-  position: number | undefined
-): groupRef[] {
-  if (name !== undefined && position !== undefined) {
-    return refs.filter((r, idx) => !(r.ref === name && idx === position));
-  }
-  if (name !== undefined) {
-    let removed = false;
-    return refs.filter((r) => {
-      if (!removed && r.ref === name) {
-        removed = true;
-        return false;
-      }
-      return true;
-    });
-  }
-  if (position !== undefined) {
-    return refs.filter((_, idx) => idx !== position);
-  }
-  return refs;
 }
 
 /**

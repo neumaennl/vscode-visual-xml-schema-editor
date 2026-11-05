@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-04T13:47:32Z }
-verified: { by: human:neumaennl, at: 2026-11-04T15:09:14Z }
+generated: { by: human:neumaennl, at: 2026-11-05T04:38:31Z }
+verified: { by: human:neumaennl, at: 2026-11-05T04:58:01Z }
 ---
 
 # Purpose
@@ -127,7 +127,7 @@ Effort:
 
 ## Renames and new references do not check for duplicates
 
-- **Location:** `src/commandValidators/elementValidators.ts` (`validateModifyElement()`), `src/commandValidators/attributeValidators.ts` (`validateModifyAttribute()`), `src/commandValidators/typeValidators.ts` (`validateModifySimpleType()`, `validateModifyComplexType()`), `src/commandValidators/groupValidators.ts` (`validateModifyGroup()`)
+- **Location:** `src/commandValidators/elementValidators.ts` (`validateModifyElement()`), `src/commandValidators/attributeValidators.ts` (`validateModifyAttribute()`), `src/commandValidators/simpleTypeValidators.ts` (`validateModifySimpleType()`), `src/commandValidators/complexTypeValidators.ts` (`validateModifyComplexType()`), `src/commandValidators/groupValidators.ts` (`validateModifyGroup()`)
 - **Severity:** Medium
 - **Effort:** M
 - **Description:** The `add*` validators reject a name or reference that already exists, but the `modify*` validators of elements, attributes, simple types, complex types and groups only check that the new name or reference is valid. Renaming the top-level element `a` to `b` while `b` exists is accepted and writes a schema with two top-level elements named `b`, which is invalid XSD; the same happens for attributes, types and groups. Likewise, changing a local element or attribute into a reference that its parent already contains (for example a second `<xs:attribute ref="lang"/>` in the same complexType) is accepted, which `validateAddElement()` and `validateAddAttribute()` reject. Because node IDs resolve to the first match, the two nodes can then no longer be told apart (see [Node IDs are ambiguous](#node-ids-are-ambiguous-and-have-many-special-cases)). `validateModifyAttributeGroup()` already has the check for names. The fix is the same check in these validators as in the matching `add*` validators, skipped when the name or reference does not change.
@@ -135,7 +135,7 @@ Effort:
 
 ## Removing a simple or complex type does not check for references
 
-- **Location:** `src/commandValidators/typeValidators.ts` (`validateRemoveSimpleType()`, `validateRemoveComplexType()`), `src/commandValidators/elementValidators.ts` (`validateRemoveElement()`), `src/commandValidators/attributeValidators.ts` (`validateRemoveAttribute()`)
+- **Location:** `src/commandValidators/simpleTypeValidators.ts` (`validateRemoveSimpleType()`), `src/commandValidators/complexTypeValidators.ts` (`validateRemoveComplexType()`), `src/commandValidators/elementValidators.ts` (`validateRemoveElement()`), `src/commandValidators/attributeValidators.ts` (`validateRemoveAttribute()`)
 - **Severity:** Medium
 - **Effort:** M
 - **Description:** Removing a top-level simple or complex type is accepted even if elements, attributes or other types still use it (`validateRemoveSimpleType()` has a `TODO Phase 2` for this). The schema is left with `type` and `base` values that point nowhere. The properties panel sends these commands when a type is deleted. The same applies to top-level elements and attributes that are still referenced with `ref` or `substitutionGroup`. Groups, attribute groups and imports already reject the removal while they are referenced; types, elements and attributes need the same check (see [Commands](commands.md#conventions)).
@@ -206,7 +206,7 @@ Effort:
 
 ## Facets are not checked against the base type
 
-- **Location:** `src/commandValidators/typeValidators.ts` (`validateSimpleTypeBody()`), `webview-src/propertiesPanel/propertiesPanelFacets.ts`
+- **Location:** `src/commandValidators/simpleTypeValidators.ts` (`validateSimpleTypeBody()`), `webview-src/propertiesPanel/propertiesPanelFacets.ts`
 - **Severity:** Medium
 - **Effort:** L
 - **Description:** `addSimpleType` and `modifySimpleType` only check that a restriction has at least one facet. They do not check whether a facet applies to the base type, or whether facet values fit together. `maxLength` on `xs:integer`, `fractionDigits` on `xs:string`, `minLength` greater than `maxLength` or a `maxInclusive` that is not a valid value of the base type are accepted and written to the file, which makes the schema invalid. The properties panel does not limit the facets by base type either. The fix is a table of the facets that apply to each built-in primitive type (XSD Part 2), a lookup that follows user-defined base types down to their primitive type, and checks for the value constraints between facets (see [Commands](commands.md#restriction-facets)).
@@ -420,7 +420,7 @@ Effort:
 
 ## Complex types with simple content cannot be created or derived
 
-- **Location:** `shared/commands/schemaTypes.ts` (`AddComplexTypePayload`, `ModifyComplexTypePayload`), `src/commandValidators/typeValidators.ts` (`validateModifyComplexType()`), `src/commandExecutors/complexTypeExecutors.ts`
+- **Location:** `shared/commands/schemaTypes.ts` (`AddComplexTypePayload`, `ModifyComplexTypePayload`), `src/commandValidators/complexTypeValidators.ts` (`validateModifyComplexType()`), `src/commandExecutors/complexTypeExecutors.ts`
 - **Severity:** Low
 - **Effort:** L
 - **Description:** A complex type with `xs:simpleContent` has text content of a simple type plus attributes, for example a price with a currency. The complex type commands only know complex content: `addComplexType` requires a `contentModel` and always creates a compositor, and the executor only builds `complexContent`, so a `baseType` or `contentModel` for a type with simple content would add a `complexContent` next to the `simpleContent`, which is invalid. `modifyComplexType` therefore rejects `baseType`, `derivationKind` and `contentModel` for such types (see [Commands](commands.md#complex-types)). Such types can be shown and renamed, and their documentation can be edited, but a type with simple content cannot be created, its base type and derivation cannot be changed, and an existing type cannot be switched between simple and complex content. Related problems are [Attributes on derived complex types are rejected or misplaced](#attributes-on-derived-complex-types-are-rejected-or-misplaced) and the [mixed content toggle](#mixed-content-toggle-ignores-simple-content-complexcontent-and-the-base-type). The fix needs a way to choose simple content in the payloads, for example a content kind, and an executor that builds `simpleContent` with an `extension` or `restriction` of a simple base type.

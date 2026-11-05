@@ -1,31 +1,58 @@
 /**
- * Unit tests for type validators (SimpleType and ComplexType).
+ * Unit tests for the simple type validators.
  */
 
-import { schema } from "../../shared/types.js";
 import {
+  schema,
   AddSimpleTypeCommand,
   RemoveSimpleTypeCommand,
   ModifySimpleTypeCommand,
-  AddComplexTypeCommand,
-  RemoveComplexTypeCommand,
-  ModifyComplexTypeCommand,
 } from "../../shared/types.js";
 import {
   validateAddSimpleType,
   validateRemoveSimpleType,
   validateModifySimpleType,
-  validateAddComplexType,
-  validateRemoveComplexType,
-  validateModifyComplexType,
-} from "./typeValidators.js";
+} from "./simpleTypeValidators.js";
+import { ValidationResult } from "./validationUtils.js";
 import { expectInvalid } from "../__tests__/validationTestHelpers.js";
-import { emptySchema, readTestSchema, schemaWith } from "../__tests__/schemaTestHelpers.js";
+import { emptySchema, schemaWith } from "../__tests__/schemaTestHelpers.js";
 
-/** A top-level element `person` with an inline complexType and an empty sequence. */
-const PERSON_ELEMENT_WITH_EMPTY_SEQUENCE = `<xs:element name="person">
-  <xs:complexType><xs:sequence/></xs:complexType>
-</xs:element>`;
+/**
+ * A schema with a simple type, an element with an anonymous list type, an element without a type,
+ * a complex type and a reference to an element in an anonymous complex type.
+ */
+const SIMPLE_TYPE_PARENTS = `<xs:simpleType name="AgeType"><xs:restriction base="xs:integer"/></xs:simpleType>
+<xs:element name="codes"><xs:simpleType><xs:list itemType="xs:token"/></xs:simpleType></xs:element>
+<xs:element name="plain"/>
+<xs:element name="person"><xs:complexType><xs:sequence><xs:element ref="plain"/></xs:sequence></xs:complexType></xs:element>
+<xs:complexType name="PersonType"/>`;
+
+/** The ID of the reference to `plain` in the anonymous complex type of `person`. */
+const REF_ID = "/element:person/anonymousComplexType[0]/group:sequence[0]/element:plain[0]";
+
+/** The error for the type name `Unknown`, which names no type. */
+const UNKNOWN_TYPE_ERROR =
+  "Invalid element type 'Unknown': must be a built-in XSD type, a user-defined type in the schema, a type from a valid import with a matching namespace prefix, or a type from an included schema";
+
+/**
+ * Validates `addSimpleType` with the payload against {@link SIMPLE_TYPE_PARENTS}.
+ *
+ * @param payload - The payload
+ * @returns The validation result
+ */
+function validateAdd(payload: AddSimpleTypeCommand["payload"]): ValidationResult {
+  return validateAddSimpleType({ type: "addSimpleType", payload }, schemaWith(SIMPLE_TYPE_PARENTS));
+}
+
+/**
+ * Validates `modifySimpleType` with the payload against {@link SIMPLE_TYPE_PARENTS}.
+ *
+ * @param payload - The payload
+ * @returns The validation result
+ */
+function validateModify(payload: ModifySimpleTypeCommand["payload"]): ValidationResult {
+  return validateModifySimpleType({ type: "modifySimpleType", payload }, schemaWith(SIMPLE_TYPE_PARENTS));
+}
 
 describe("SimpleType Validators", () => {
   let emptySchemaObj: schema;
@@ -632,339 +659,88 @@ describe("Anonymous SimpleType in Attributes Validators", () => {
   });
 });
 
-describe("ComplexType Validators", () => {
-  let emptySchemaObj: schema;
-  let schemaWithPersonType: schema;
-  let schemaWithElement: schema;
-
-  beforeEach(() => {
-    emptySchemaObj = emptySchema();
-
-    schemaWithPersonType = schemaWith(`<xs:complexType name="PersonType">
-  <xs:sequence/>
-</xs:complexType>`);
-
-    schemaWithElement = schemaWith(`<xs:element name="person"/>`);
+describe("Simple type rules", () => {
+  test.each<{ rule: string; result: ValidationResult; error: string }>([
+    {
+      rule: "facets that are all undefined",
+      result: validateAdd({ parentId: "/schema", typeName: "T", baseType: "xs:string", restrictions: { minLength: undefined } }),
+      error: "Restriction simpleType body must include at least one facet",
+    },
+    {
+      rule: "facets without a base type for a new type",
+      result: validateAdd({ parentId: "/schema", typeName: "T", restrictions: { minLength: 1 } }),
+      error: "Base type cannot be empty",
+    },
+    {
+      rule: "a body of two kinds",
+      result: validateAdd({ parentId: "/schema", typeName: "T", baseType: "xs:string", listItemType: "xs:token" }),
+      error: "Simple type body must be specified as exactly one of restriction, list, or union",
+    },
+    {
+      rule: "an unknown list item type",
+      result: validateAdd({ parentId: "/schema", typeName: "T", listItemType: "Unknown" }),
+      error: `List item type: ${UNKNOWN_TYPE_ERROR}`,
+    },
+    {
+      rule: "an empty union member",
+      result: validateAdd({ parentId: "/schema", typeName: "T", unionMemberTypes: ["xs:int", " "] }),
+      error: "Union member types cannot contain empty entries",
+    },
+    {
+      rule: "an unknown union member",
+      result: validateAdd({ parentId: "/schema", typeName: "T", unionMemberTypes: ["Unknown"] }),
+      error: "Union member type 'Unknown' is not a recognized type",
+    },
+    {
+      rule: "a top-level type without a name",
+      result: validateAdd({ parentId: "/schema", baseType: "xs:string" }),
+      error: "Type name must be a valid XML name",
+    },
+    {
+      rule: "an anonymous type in a missing parent",
+      result: validateAdd({ parentId: "/element:missing", baseType: "xs:string" }),
+      error: "Parent not found: /element:missing",
+    },
+    {
+      rule: "an anonymous type in a complex type",
+      result: validateAdd({ parentId: "/complexType:PersonType", baseType: "xs:string" }),
+      error: "Parent of type 'topLevelComplexType' cannot contain a simpleType",
+    },
+    {
+      rule: "an anonymous type in an element reference",
+      result: validateAdd({ parentId: REF_ID, baseType: "xs:string" }),
+      error: `'${REF_ID}' has a ref attribute and cannot carry an inline simpleType`,
+    },
+    {
+      rule: "changing an anonymous type that does not exist",
+      result: validateModify({ typeId: "/element:plain/anonymousSimpleType[0]", documentation: "Docs" }),
+      error: "No anonymous simpleType found in parent: /element:plain",
+    },
+    {
+      rule: "facets without a base type for an anonymous list type",
+      result: validateModify({ typeId: "/element:codes/anonymousSimpleType[0]", restrictions: { minLength: 1 } }),
+      error: "Cannot apply restrictions without a base type",
+    },
+    {
+      rule: "an anonymous type ID without a parent",
+      result: validateRemoveSimpleType(
+        { type: "removeSimpleType", payload: { typeId: "/anonymousSimpleType[0]" } },
+        schemaWith(SIMPLE_TYPE_PARENTS)
+      ),
+      error: "Invalid anonymous simpleType ID: /anonymousSimpleType[0]",
+    },
+  ])("should reject $rule", ({ result, error }) => {
+    expect(result).toEqual({ valid: false, error });
   });
 
-  describe("validateAddComplexType", () => {
-    // ── top-level ──────────────────────────────────────────────────────────
-    test("should accept a valid top-level addComplexType command", () => {
-      const command: AddComplexTypeCommand = {
-        type: "addComplexType",
-        payload: { typeName: "PersonType", contentModel: "sequence" },
-      };
-      const result = validateAddComplexType(command, emptySchemaObj);
-      expect(result.valid).toBe(true);
+  test("should ignore undefined facets next to defined ones", () => {
+    const result = validateAdd({
+      parentId: "/schema",
+      typeName: "T",
+      baseType: "xs:string",
+      restrictions: { minLength: undefined, maxLength: 5 },
     });
 
-    test("should reject addComplexType with missing typeName", () => {
-      const command: AddComplexTypeCommand = {
-        type: "addComplexType",
-        payload: { typeName: "", contentModel: "sequence" },
-      };
-      const result = validateAddComplexType(command, emptySchemaObj);
-      expectInvalid(result);
-      expect(result.error).toBe("Type name must be a valid XML name");
-    });
-
-    test("should reject addComplexType with missing contentModel", () => {
-      // eslint-disable-next-line no-restricted-syntax -- `contentModel` absent intentionally; TypeScript requires it, but it is omitted to test the validator rejection
-      const command = { type: "addComplexType", payload: { typeName: "TestType" } } as unknown as AddComplexTypeCommand;
-      const result = validateAddComplexType(command, emptySchemaObj);
-      expectInvalid(result);
-      expect(result.error).toBe("Content model is required");
-    });
-
-    test("should reject addComplexType when type name already exists", () => {
-      const command: AddComplexTypeCommand = {
-        type: "addComplexType",
-        payload: { typeName: "PersonType", contentModel: "choice" },
-      };
-      const result = validateAddComplexType(command, schemaWithPersonType);
-      expectInvalid(result);
-      expect(result.error).toBe("Complex type 'PersonType' already exists in schema");
-    });
-
-    // ── anonymous ──────────────────────────────────────────────────────────
-    test("should accept a valid anonymous addComplexType command", () => {
-      const command: AddComplexTypeCommand = {
-        type: "addComplexType",
-        payload: { parentId: "/element:person", contentModel: "sequence" },
-      };
-      const result = validateAddComplexType(command, schemaWithElement);
-      expect(result.valid).toBe(true);
-    });
-
-    test("should reject anonymous addComplexType when parent element not found", () => {
-      const command: AddComplexTypeCommand = {
-        type: "addComplexType",
-        payload: { parentId: "/element:nonExistent", contentModel: "sequence" },
-      };
-      const result = validateAddComplexType(command, emptySchemaObj);
-      expectInvalid(result);
-      expect(result.error).toContain("Parent not found");
-    });
-
-    test("should reject anonymous addComplexType when element already has a complexType", () => {
-      const schemaWithInlineCT = schemaWith(PERSON_ELEMENT_WITH_EMPTY_SEQUENCE);
-      const command: AddComplexTypeCommand = {
-        type: "addComplexType",
-        payload: { parentId: "/element:person", contentModel: "choice" },
-      };
-      const result = validateAddComplexType(command, schemaWithInlineCT);
-      expectInvalid(result);
-      expect(result.error).toContain("already has an anonymous complexType");
-    });
-
-    test("should accept replacing an element type attribute with an anonymous complexType", () => {
-      const schemaWithTypedEl = schemaWith(`<xs:element name="person" type="xs:string"/>`);
-      const command: AddComplexTypeCommand = {
-        type: "addComplexType",
-        payload: { parentId: "/element:person", contentModel: "sequence" },
-      };
-      const result = validateAddComplexType(command, schemaWithTypedEl);
-      expect(result.valid).toBe(true);
-    });
-
-    test("should reject addComplexType with a derivation kind but no base type", () => {
-      const command: AddComplexTypeCommand = {
-        type: "addComplexType",
-        payload: { typeName: "OrderType", contentModel: "sequence", derivationKind: "restriction" },
-      };
-      const result = validateAddComplexType(command, emptySchemaObj);
-      expectInvalid(result);
-      expect(result.error).toBe("Derivation kind requires a base type");
-    });
-  });
-
-  describe("validateRemoveComplexType", () => {
-    test("should reject removeComplexType with missing typeId", () => {
-      const command: RemoveComplexTypeCommand = {
-        type: "removeComplexType",
-        payload: { typeId: "" },
-      };
-      const result = validateRemoveComplexType(command, emptySchemaObj);
-      expectInvalid(result);
-      expect(result.error).toBe("Type ID cannot be empty");
-    });
-
-    test("should accept removeComplexType for an existing top-level type", () => {
-      const command: RemoveComplexTypeCommand = {
-        type: "removeComplexType",
-        payload: { typeId: "/complexType:PersonType" },
-      };
-      const result = validateRemoveComplexType(command, schemaWithPersonType);
-      expect(result.valid).toBe(true);
-    });
-
-    test("should reject removeComplexType when top-level type does not exist", () => {
-      const command: RemoveComplexTypeCommand = {
-        type: "removeComplexType",
-        payload: { typeId: "/complexType:NonExistent" },
-      };
-      const result = validateRemoveComplexType(command, emptySchemaObj);
-      expectInvalid(result);
-      expect(result.error).toBe("Complex type 'NonExistent' not found in schema");
-    });
-
-    test("should accept removeComplexType for an existing anonymous complexType", () => {
-      const schemaWithInlineCT = schemaWith(PERSON_ELEMENT_WITH_EMPTY_SEQUENCE);
-      const command: RemoveComplexTypeCommand = {
-        type: "removeComplexType",
-        payload: { typeId: "/element:person/anonymousComplexType[0]" },
-      };
-      const result = validateRemoveComplexType(command, schemaWithInlineCT);
-      expect(result.valid).toBe(true);
-    });
-
-    test("should reject removeComplexType when parent element has no anonymous complexType", () => {
-      const command: RemoveComplexTypeCommand = {
-        type: "removeComplexType",
-        payload: { typeId: "/element:person/anonymousComplexType[0]" },
-      };
-      const result = validateRemoveComplexType(command, schemaWithElement);
-      expectInvalid(result);
-      expect(result.error).toContain("No anonymous complexType found");
-    });
-
-    test("should reject removeComplexType when parent element not found", () => {
-      const command: RemoveComplexTypeCommand = {
-        type: "removeComplexType",
-        payload: { typeId: "/element:nonExistent/anonymousComplexType[0]" },
-      };
-      const result = validateRemoveComplexType(command, emptySchemaObj);
-      expectInvalid(result);
-      expect(result.error).toContain("Parent not found");
-    });
-  });
-
-  describe("validateModifyComplexType", () => {
-    test("should reject modifyComplexType with missing typeId", () => {
-      const command: ModifyComplexTypeCommand = {
-        type: "modifyComplexType",
-        payload: { typeId: "" },
-      };
-      const result = validateModifyComplexType(command, emptySchemaObj);
-      expectInvalid(result);
-      expect(result.error).toBe("Type ID cannot be empty");
-    });
-
-    test("should accept modifyComplexType for an existing top-level type", () => {
-      const command: ModifyComplexTypeCommand = {
-        type: "modifyComplexType",
-        payload: { typeId: "/complexType:PersonType", typeName: "NewName" },
-      };
-      const result = validateModifyComplexType(command, schemaWithPersonType);
-      expect(result.valid).toBe(true);
-    });
-
-    test("should reject modifyComplexType when top-level type does not exist", () => {
-      const command: ModifyComplexTypeCommand = {
-        type: "modifyComplexType",
-        payload: { typeId: "/complexType:NonExistent" },
-      };
-      const result = validateModifyComplexType(command, emptySchemaObj);
-      expectInvalid(result);
-      expect(result.error).toBe("Complex type 'NonExistent' not found in schema");
-    });
-
-    test("should reject stale complexType rename replay after a successful rename", () => {
-      const renamedSchema = schemaWith(`<xs:complexType name="PersonTypeRenamed">
-  <xs:sequence/>
-</xs:complexType>`);
-      const command: ModifyComplexTypeCommand = {
-        type: "modifyComplexType",
-        payload: {
-          typeId: "/complexType:PersonType",
-          typeName: "PersonTypeRenamed",
-        },
-      };
-
-      const result = validateModifyComplexType(command, renamedSchema);
-      expectInvalid(result);
-      expect(result.error).toBe("Complex type 'PersonType' not found in schema");
-    });
-
-    test("should reject modifyComplexType with invalid new typeName", () => {
-      const command: ModifyComplexTypeCommand = {
-        type: "modifyComplexType",
-        payload: { typeId: "/complexType:PersonType", typeName: "123invalid" },
-      };
-      const result = validateModifyComplexType(command, schemaWithPersonType);
-      expectInvalid(result);
-      expect(result.error).toBe("Type name must be a valid XML name");
-    });
-
-    test("should reject modifyComplexType with invalid contentModel", () => {
-      // eslint-disable-next-line no-restricted-syntax -- `contentModel: "invalid"` outside the ContentModel union; cast needed to test validator rejection
-      const command = { type: "modifyComplexType", payload: { typeId: "/complexType:PersonType", contentModel: "invalid" } } as unknown as ModifyComplexTypeCommand;
-      const result = validateModifyComplexType(command, schemaWithPersonType);
-      expectInvalid(result);
-      expect(result.error).toContain("Content model must be one of");
-    });
-
-    test("should accept modifyComplexType with restriction derivation kind", () => {
-      const command: ModifyComplexTypeCommand = {
-        type: "modifyComplexType",
-        payload: {
-          typeId: "/complexType:PersonType",
-          baseType: "xs:anyType",
-          derivationKind: "restriction",
-        },
-      };
-      const result = validateModifyComplexType(command, schemaWithPersonType);
-      expect(result.valid).toBe(true);
-    });
-
-    test("should reject modifyComplexType with invalid derivation kind", () => {
-      // eslint-disable-next-line no-restricted-syntax -- `derivationKind: "invalid"` is outside the union; cast is needed to test validator rejection
-      const command = {
-        type: "modifyComplexType",
-        payload: { typeId: "/complexType:PersonType", derivationKind: "invalid" },
-      } as unknown as ModifyComplexTypeCommand;
-      const result = validateModifyComplexType(command, schemaWithPersonType);
-      expectInvalid(result);
-      expect(result.error).toContain("Derivation kind must be one of");
-    });
-
-    test.each([
-      [
-        "a derivation kind for a type without a base type",
-        (): schema => schemaWithPersonType,
-        { typeId: "/complexType:PersonType", derivationKind: "restriction" as const },
-        "Derivation kind requires a base type",
-      ],
-      [
-        "an unknown base type",
-        (): schema => schemaWithPersonType,
-        { typeId: "/complexType:PersonType", baseType: "NoSuchType" },
-        "Base type",
-      ],
-      [
-        "a content model for a type whose particle is a group reference",
-        (): schema => readTestSchema("person-type-with-group-ref.xsd"),
-        { typeId: "/complexType:PersonType", contentModel: "sequence" as const },
-        "already has a particle",
-      ],
-      [
-        "a base type for a type with simple content",
-        (): schema => readTestSchema("price-type-with-simple-content.xsd"),
-        { typeId: "/complexType:PriceType", baseType: "xs:string" },
-        "has simple content",
-      ],
-    ])("should reject modifyComplexType with %s", (_, schemaOf, payload, message) => {
-      const command: ModifyComplexTypeCommand = { type: "modifyComplexType", payload };
-      const result = validateModifyComplexType(command, schemaOf());
-      expectInvalid(result);
-      expect(result.error).toContain(message);
-    });
-
-    test("should accept modifyComplexType for an existing anonymous complexType", () => {
-      const schemaWithInlineCT = schemaWith(PERSON_ELEMENT_WITH_EMPTY_SEQUENCE);
-      const command: ModifyComplexTypeCommand = {
-        type: "modifyComplexType",
-        payload: {
-          typeId: "/element:person/anonymousComplexType[0]",
-          contentModel: "choice",
-        },
-      };
-      const result = validateModifyComplexType(command, schemaWithInlineCT);
-      expect(result.valid).toBe(true);
-    });
-
-    test("should reject modifyComplexType when parent element not found (anonymous)", () => {
-      const command: ModifyComplexTypeCommand = {
-        type: "modifyComplexType",
-        payload: { typeId: "/element:nonExistent/anonymousComplexType[0]" },
-      };
-      const result = validateModifyComplexType(command, emptySchemaObj);
-      expectInvalid(result);
-      expect(result.error).toContain("Parent not found");
-    });
-
-    test("should reject modifyComplexType when parent element has no anonymous complexType", () => {
-      const command: ModifyComplexTypeCommand = {
-        type: "modifyComplexType",
-        payload: { typeId: "/element:person/anonymousComplexType[0]" },
-      };
-      const result = validateModifyComplexType(command, schemaWithElement);
-      expectInvalid(result);
-      expect(result.error).toContain("No anonymous complexType found");
-    });
-
-    test("should reject providing typeName when modifying an anonymous complexType", () => {
-      const schemaWithInlineCT = schemaWith(PERSON_ELEMENT_WITH_EMPTY_SEQUENCE);
-      const command: ModifyComplexTypeCommand = {
-        type: "modifyComplexType",
-        payload: {
-          typeId: "/element:person/anonymousComplexType[0]",
-          typeName: "SomeName",
-        },
-      };
-      const result = validateModifyComplexType(command, schemaWithInlineCT);
-      expectInvalid(result);
-      expect(result.error).toContain("Cannot provide 'typeName'");
-    });
+    expect(result).toEqual({ valid: true });
   });
 });

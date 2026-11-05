@@ -63,7 +63,8 @@ import { ValidationResult } from "./commandValidators/validationUtils.js";
 // Import validation functions from specialized modules for default usage
 import * as elementValidators from "./commandValidators/elementValidators.js";
 import * as attributeValidators from "./commandValidators/attributeValidators.js";
-import * as typeValidators from "./commandValidators/typeValidators.js";
+import * as simpleTypeValidators from "./commandValidators/simpleTypeValidators.js";
+import * as complexTypeValidators from "./commandValidators/complexTypeValidators.js";
 import * as groupValidators from "./commandValidators/groupValidators.js";
 import * as attributeGroupValidators from "./commandValidators/attributeGroupValidators.js";
 import * as annotationValidators from "./commandValidators/annotationValidators.js";
@@ -137,12 +138,12 @@ export class CommandValidator {
       validateAddAttribute: attributeValidators.validateAddAttribute,
       validateRemoveAttribute: attributeValidators.validateRemoveAttribute,
       validateModifyAttribute: attributeValidators.validateModifyAttribute,
-      validateAddSimpleType: typeValidators.validateAddSimpleType,
-      validateRemoveSimpleType: typeValidators.validateRemoveSimpleType,
-      validateModifySimpleType: typeValidators.validateModifySimpleType,
-      validateAddComplexType: typeValidators.validateAddComplexType,
-      validateRemoveComplexType: typeValidators.validateRemoveComplexType,
-      validateModifyComplexType: typeValidators.validateModifyComplexType,
+      validateAddSimpleType: simpleTypeValidators.validateAddSimpleType,
+      validateRemoveSimpleType: simpleTypeValidators.validateRemoveSimpleType,
+      validateModifySimpleType: simpleTypeValidators.validateModifySimpleType,
+      validateAddComplexType: complexTypeValidators.validateAddComplexType,
+      validateRemoveComplexType: complexTypeValidators.validateRemoveComplexType,
+      validateModifyComplexType: complexTypeValidators.validateModifyComplexType,
       validateAddGroup: groupValidators.validateAddGroup,
       validateRemoveGroup: groupValidators.validateRemoveGroup,
       validateModifyGroup: groupValidators.validateModifyGroup,

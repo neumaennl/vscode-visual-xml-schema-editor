@@ -2,6 +2,9 @@
  * Shared validation utilities for command validators.
  */
 
+import { schema } from "../../shared/types.js";
+import { locateNodeById, NodeLocation } from "../schemaNavigator.js";
+
 /** A validation check that passed. */
 export interface ValidationSuccess {
   valid: true;
@@ -319,4 +322,39 @@ export function validateElementType(
     valid: false, 
     error: `Invalid element type '${trimmedType}': must be a built-in XSD type, a user-defined type in the schema, a type from a valid import with a matching namespace prefix, or a type from an included schema` 
   };
+}
+
+/**
+ * Validates that an anonymous type's parent exists and carries the expected property.
+ *
+ * @param typeId - The full ID of the anonymous type (used in error messages).
+ * @param parentId - The ID of the parent container element/attribute.
+ * @param schemaObj - The root schema object to search.
+ * @param prop - The property name to check and use in error messages (e.g. `"simpleType"` or `"complexType"`).
+ * @returns `{ success: true, location }` when valid; `{ success: false, error }` otherwise.
+ */
+export function validateAnonymousTypeParent(
+  typeId: string,
+  parentId: string | undefined,
+  schemaObj: schema,
+  prop: string
+): { success: false; error: ValidationResult } | { success: true; location: Extract<NodeLocation, { found: true }> } {
+  if (!parentId) {
+    return { success: false, error: { valid: false, error: `Invalid anonymous ${prop} ID: ${typeId}` } };
+  }
+  const location = locateNodeById(schemaObj, parentId);
+  if (!location.found) {
+    return { success: false, error: { valid: false, error: `Parent not found: ${parentId}` } };
+  }
+  const holder = location.parent as Record<string, unknown>;
+  if (!holder[prop]) {
+    return {
+      success: false,
+      error: {
+        valid: false,
+        error: `No anonymous ${prop} found in parent: ${parentId}`,
+      },
+    };
+  }
+  return { success: true, location };
 }

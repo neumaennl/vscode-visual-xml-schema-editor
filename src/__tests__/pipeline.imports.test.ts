@@ -22,6 +22,14 @@ import { emptySchemaXml, schemaXmlWith } from "./schemaTestHelpers.js";
 const SCHEMA_TWO_IMPORTS = schemaXmlWith(`<xs:import namespace="http://example.com/a" schemaLocation="a.xsd"/>
 <xs:import namespace="http://example.com/b" schemaLocation="b.xsd"/>`);
 
+/** Schema with an import without a namespace, which imports a schema without a target namespace. */
+const SCHEMA_WITH_NO_NAMESPACE_IMPORT = schemaXmlWith(`<xs:import schemaLocation="no-namespace.xsd"/>`);
+
+/** Schema with an import of `http://example.com/ext` that is bound to the prefix `ext`. */
+const SCHEMA_WITH_EXT_IMPORT = schemaXmlWith(`<xs:import namespace="http://example.com/ext" schemaLocation="ext.xsd"/>`, {
+  ext: "http://example.com/ext",
+});
+
 /** Schema whose only use of the imported namespace is the prefix `ext` in the XPath of a key. */
 const SCHEMA_WITH_PREFIX_IN_XPATH = schemaXmlWith(
   `<xs:import namespace="http://example.com/ext" schemaLocation="ext.xsd"/>
@@ -210,6 +218,58 @@ describe("Integration: Import pipeline", () => {
       };
 
       runCommandExpectValidationFailure(SCHEMA_WITH_IMPORT, cmd, "Import not found: /import[99]");
+    });
+  });
+
+  // ─── imports without a namespace and prefix bindings ──────────────────────
+
+  describe("namespaces of imports", () => {
+    test("removes an import without a namespace", () => {
+      const cmd: RemoveImportCommand = { type: "removeImport", payload: { importId: "/import[0]" } };
+
+      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_NO_NAMESPACE_IMPORT, cmd);
+
+      expect(result.import_ ?? []).toHaveLength(0);
+    });
+
+    test("gives an import without a namespace a namespace", () => {
+      const cmd: ModifyImportCommand = {
+        type: "modifyImport",
+        payload: { importId: "/import[0]", namespace: "http://example.com/new" },
+      };
+
+      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_NO_NAMESPACE_IMPORT, cmd);
+
+      expect(result.import_?.[0]?.namespace).toBe("http://example.com/new");
+    });
+
+    test("returns validation error for a prefix for an import without a namespace", () => {
+      const cmd: ModifyImportCommand = { type: "modifyImport", payload: { importId: "/import[0]", prefix: "none" } };
+
+      runCommandExpectValidationFailure(
+        SCHEMA_WITH_NO_NAMESPACE_IMPORT,
+        cmd,
+        "Cannot bind prefix 'none' to an import without a namespace"
+      );
+    });
+
+    test("binds an additional prefix to the namespace of an import", () => {
+      const cmd: ModifyImportCommand = { type: "modifyImport", payload: { importId: "/import[0]", prefix: "more" } };
+
+      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_EXT_IMPORT, cmd);
+
+      expect(result._namespacePrefixes).toMatchObject({ ext: "http://example.com/ext", more: "http://example.com/ext" });
+    });
+
+    test("keeps the binding when a prefix is renamed to itself", () => {
+      const cmd: ModifyImportCommand = {
+        type: "modifyImport",
+        payload: { importId: "/import[0]", oldPrefix: "ext", prefix: "ext" },
+      };
+
+      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_EXT_IMPORT, cmd);
+
+      expect(result._namespacePrefixes).toMatchObject({ ext: "http://example.com/ext" });
     });
   });
 });

@@ -502,6 +502,10 @@ function updateElementProperties(
     element.type_ = undefined;
     (element as localElement | topLevelElement).simpleType = undefined;
     (element as localElement | topLevelElement).complexType = undefined;
+    // XML Schema allows none of these on a reference
+    (element as localElement).default_ = undefined;
+    (element as localElement).fixed = undefined;
+    (element as localElement).nillable = undefined;
   } else {
     // Update name (clearing ref when switching to named)
     if (newName !== undefined) {
@@ -546,14 +550,20 @@ function updateElementProperties(
     element.abstract = newAbstract ? true : undefined;
   }
 
-  // Update default value
+  // Update default and fixed value; an empty string removes the value
+  const valueHolder = element as topLevelElement | localElement;
   if (newDefault !== undefined) {
-    (element as topLevelElement | localElement).default_ = newDefault || undefined;
+    valueHolder.default_ = newDefault || undefined;
   }
-
-  // Update fixed value
   if (newFixed !== undefined) {
-    (element as topLevelElement | localElement).fixed = newFixed || undefined;
+    valueHolder.fixed = newFixed || undefined;
+  }
+  // An element has at most one of them, so a new value of one removes the other
+  if (newDefault) {
+    valueHolder.fixed = undefined;
+  }
+  if (newFixed) {
+    valueHolder.default_ = undefined;
   }
 
   // Update documentation if provided

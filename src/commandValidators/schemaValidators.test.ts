@@ -21,6 +21,7 @@ import {
   validateModifyInclude,
   validateModifySchemaNamespaces,
 } from "./schemaValidators.js";
+import { ValidationResult } from "./validationUtils.js";
 import { expectInvalid } from "../__tests__/validationTestHelpers.js";
 import { emptySchema, readTestSchema, schemaWith, schemaWithIncludes } from "../__tests__/schemaTestHelpers.js";
 
@@ -726,5 +727,78 @@ describe("Include Validators", () => {
       expectInvalid(result);
       expect(result.error).toContain("must match one of the declared namespace URIs");
     });
+  });
+});
+
+describe("Import and namespace rules", () => {
+  /** The schema with one import of `http://example.com/ns1`, bound to the prefix `ext`. */
+  const schemaWithImport = schemaWith(NS1_IMPORT, EXT_PREFIX);
+
+  test.each<{ rule: string; result: ValidationResult; error: string }>([
+    {
+      rule: "an empty prefix for a new import",
+      result: validateAddImport(
+        { type: "addImport", payload: { namespace: "http://example.com/ns2", schemaLocation: "b.xsd", prefix: "" } },
+        schemaWithImport
+      ),
+      error: "Prefix cannot be empty when provided",
+    },
+    {
+      rule: "an empty prefix for a changed import",
+      result: validateModifyImport({ type: "modifyImport", payload: { importId: "/import[0]", prefix: "" } }, schemaWithImport),
+      error: "Prefix cannot be empty when provided",
+    },
+    {
+      rule: "a schema location with whitespace for a changed import",
+      result: validateModifyImport(
+        { type: "modifyImport", payload: { importId: "/import[0]", schemaLocation: "a b.xsd" } },
+        schemaWithImport
+      ),
+      error: "Schema location must be a valid path or URI without whitespace",
+    },
+    {
+      rule: "an empty namespace URI for a prefix",
+      result: validateModifySchemaNamespaces(
+        { type: "modifySchemaNamespaces", payload: { namespacePrefixes: { ext: " " } } },
+        schemaWithImport
+      ),
+      error: "Namespace URI cannot be empty",
+    },
+    {
+      rule: "a relative namespace URI for a prefix",
+      result: validateModifySchemaNamespaces(
+        { type: "modifySchemaNamespaces", payload: { namespacePrefixes: { ext: "relative/path" } } },
+        schemaWithImport
+      ),
+      error: "Namespace URI 'relative/path' must be a valid absolute URI",
+    },
+  ])("should reject $rule", ({ result, error }) => {
+    expect(result).toEqual({ valid: false, error });
+  });
+
+  test.each<{ rule: string; result: ValidationResult }>([
+    {
+      rule: "removing an import without a namespace",
+      result: validateRemoveImport(
+        { type: "removeImport", payload: { importId: "/import[0]" } },
+        schemaWith(`<xs:import schemaLocation="no-namespace.xsd"/>`)
+      ),
+    },
+    {
+      rule: "changing an import to the namespace it already has",
+      result: validateModifyImport(
+        { type: "modifyImport", payload: { importId: "/import[0]", namespace: "http://example.com/ns1" } },
+        schemaWithImport
+      ),
+    },
+    {
+      rule: "changing the prefixes without changing the targetNamespace",
+      result: validateModifySchemaNamespaces(
+        { type: "modifySchemaNamespaces", payload: { namespacePrefixes: { ext: "http://example.com/ns1" } } },
+        schemaWithImport
+      ),
+    },
+  ])("should accept $rule", ({ result }) => {
+    expect(result).toEqual({ valid: true });
   });
 });

@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-05T04:38:31Z }
-verified: { by: human:neumaennl, at: 2026-11-05T04:58:01Z }
+generated: { by: human:neumaennl, at: 2026-11-05T05:38:13Z }
+verified: { by: human:neumaennl, at: 2026-11-05T06:30:01Z }
 ---
 
 # Purpose
@@ -84,6 +84,22 @@ Effort:
 
   The goal is one consistent grammar, generated and resolved by a single implementation in `shared/`. Since IDs are not stored in the XSD file, a new format needs no migration. The redesign should be planned together with [Diagram items copy values from the schema objects](#diagram-items-copy-values-from-the-schema-objects), which also changes the diagram builder.
 - **GitHub issue:** [#348](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/348)
+
+## Turning the default namespace into a prefix does not rewrite references
+
+- **Location:** `src/commandExecutors/schemaExecutors.ts` (`executeModifySchemaNamespaces()`), `src/commandExecutors/schemaQNameRewriter.ts`
+- **Severity:** Medium
+- **Effort:** S
+- **Description:** `modifySchemaNamespaces` treats a prefix whose name changed but whose URI did not as a rename, and rewrites the QNames that use it (see [Commands](commands.md#imports-includes-and-namespaces)). If one side of the rename is the empty prefix of the default namespace, nothing is rewritten. When `xmlns="urn:x"` becomes `xmlns:tns="urn:x"`, unprefixed QNames such as `type="Address"` no longer resolve to `urn:x`; when `tns` becomes the default namespace, `tns:Address` loses its binding. The fix is to add the prefix to unprefixed QNames in the first case and to remove it in the second. The `xpath` of selectors and fields needs its own rule: XPath does not apply the default namespace to unprefixed names, so a name in an XPath keeps its prefix, and turning a prefix that an XPath uses into the default namespace should be rejected.
+- **GitHub issue:** none
+
+## Removing an import without a namespace does not check for references
+
+- **Location:** `src/commandValidators/schemaValidators.ts` (`validateRemoveImport()`, `isNamespaceReferenced()`)
+- **Severity:** Medium
+- **Effort:** S
+- **Description:** `removeImport` rejects the removal of an import whose namespace is still referenced, by looking for QNames with a prefix of that namespace. An `<xs:import>` without a `namespace` imports a schema without a target namespace, whose components are referenced with unprefixed QNames when the schema has no default namespace. These references have no prefix to look for, so `isNamespaceReferenced()` returns `false` and the import can always be removed, leaving references that cannot be resolved. The fix is to treat the unprefixed QNames that do not name a component of the schema itself as references to the import, as long as the schema has no default namespace. The test that accepts removing such an import uses a schema without references.
+- **GitHub issue:** none
 
 ## Removing a namespace prefix does not check for references
 

@@ -198,23 +198,17 @@ export function executeModifyImport(
     if (!schemaObj._namespacePrefixes) {
       schemaObj._namespacePrefixes = {};
     }
-    const targetNamespace = namespace ?? oldNamespace;
+    const targetNamespace = assumeValidated(namespace ?? oldNamespace, `Namespace of ${importId}`);
     if (oldPrefix !== undefined) {
       // Explicit rename: remove the named old prefix, register the new one,
       // and rewrite all QName references from oldPrefix to prefix.
       delete schemaObj._namespacePrefixes[oldPrefix];
-      if (targetNamespace) {
-        schemaObj._namespacePrefixes[prefix] = targetNamespace;
-        if (oldPrefix !== prefix) {
-          rewritePrefixInSchema(oldPrefix, prefix, schemaObj);
-        }
-      }
-    } else {
-      // No oldPrefix: simply register prefix as an additional binding.
-      if (targetNamespace) {
-        schemaObj._namespacePrefixes[prefix] = targetNamespace;
+      if (oldPrefix !== prefix) {
+        rewritePrefixInSchema(oldPrefix, prefix, schemaObj);
       }
     }
+    // Without oldPrefix, the prefix is an additional binding of the namespace
+    schemaObj._namespacePrefixes[prefix] = targetNamespace;
   }
 }
 
@@ -345,7 +339,10 @@ export function executeModifySchemaNamespaces(
   );
   const prefixRenames = detectPrefixRenames(previousNamespacePrefixes, normalizedNamespacePrefixes);
   for (const { oldPrefix, newPrefix } of prefixRenames) {
-    if (oldPrefix && newPrefix && oldPrefix !== newPrefix) {
+    // A rename pairs a removed prefix with an added one, so the two always differ. Renames from or to
+    // the default namespace (the empty prefix) are not rewritten yet (see "Turning the default
+    // namespace into a prefix does not rewrite references" in docs/known-issues.md)
+    if (oldPrefix && newPrefix) {
       rewritePrefixInSchema(oldPrefix, newPrefix, schemaObj);
     }
   }

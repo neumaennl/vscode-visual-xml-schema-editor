@@ -21,9 +21,18 @@ import {
 } from "./pipelineTestHelpers.js";
 import { emptySchemaXml, schemaXmlWith } from "./schemaTestHelpers.js";
 
-/** A top-level element `item` with a default value, and a complex type with an `all` group. */
-const ELEMENT_AND_ALL_GROUP = schemaXmlWith(`<xs:element name="item" type="xs:string" default="none" fixed="none"/>
-<xs:complexType name="ConfigType"><xs:all><xs:element name="timeout" type="xs:int"/></xs:all></xs:complexType>`);
+/**
+ * A top-level element `item` with a fixed value, a complex type with an `all` group, and a complex
+ * type with a local element `code` that has a default value.
+ */
+const ELEMENT_AND_ALL_GROUP = schemaXmlWith(`<xs:element name="item" type="xs:string" fixed="none"/>
+<xs:complexType name="ConfigType"><xs:all><xs:element name="timeout" type="xs:int"/></xs:all></xs:complexType>
+<xs:complexType name="CodeType"><xs:sequence>
+  <xs:element name="code" type="xs:string" default="A" nillable="true"/>
+</xs:sequence></xs:complexType>`);
+
+/** The ID of the local element `code` of `CodeType`. */
+const CODE_ID = "/complexType:CodeType/group:sequence[0]/element:code[0]";
 
 /** The ID of the `all` group of `ConfigType`. */
 const ALL_GROUP_ID = "/complexType:ConfigType/group:all[0]";
@@ -180,9 +189,10 @@ describe("Integration: Element pipeline", () => {
       { change: { nillable: false }, expected: { nillable: undefined } },
       { change: { abstract: true }, expected: { abstract: true } },
       { change: { abstract: false }, expected: { abstract: undefined } },
-      { change: { default_: "unknown" }, expected: { default_: "unknown" } },
-      { change: { default_: "" }, expected: { default_: undefined } },
-      { change: { fixed: "fixed" }, expected: { fixed: "fixed" } },
+      // An element has at most one of default and fixed, so setting one removes the other
+      { change: { default_: "unknown" }, expected: { default_: "unknown", fixed: undefined } },
+      { change: { default_: "" }, expected: { default_: undefined, fixed: "none" } },
+      { change: { fixed: "other" }, expected: { fixed: "other" } },
       { change: { fixed: "" }, expected: { fixed: undefined } },
     ])("sets $change on a top-level element", ({ change, expected }) => {
       const cmd: ModifyElementCommand = { type: "modifyElement", payload: { elementId: "/element:item", ...change } };
@@ -190,6 +200,42 @@ describe("Integration: Element pipeline", () => {
       const result = runCommandExpectSuccessSchema(ELEMENT_AND_ALL_GROUP, cmd);
 
       expect(result.element?.[0]).toMatchObject(expected);
+    });
+
+    test("removes the default value when the fixed value is set", () => {
+      const cmd: ModifyElementCommand = { type: "modifyElement", payload: { elementId: CODE_ID, fixed: "B" } };
+
+      const result = runCommandExpectSuccessSchema(ELEMENT_AND_ALL_GROUP, cmd);
+
+      expect(result.complexType?.[1]?.sequence?.element?.[0]).toMatchObject({ fixed: "B", default_: undefined });
+    });
+
+    test("removes default, fixed and nillable when an element becomes a reference", () => {
+      const cmd: ModifyElementCommand = { type: "modifyElement", payload: { elementId: CODE_ID, ref: "item" } };
+
+      const result = runCommandExpectSuccessSchema(ELEMENT_AND_ALL_GROUP, cmd);
+
+      expect(result.complexType?.[1]?.sequence?.element?.[0]).toMatchObject({
+        ref: "item",
+        default_: undefined,
+        fixed: undefined,
+        nillable: undefined,
+      });
+    });
+
+    test.each([
+      {
+        rule: "both a default and a fixed value",
+        payload: { elementId: "/element:item", default_: "a", fixed: "b" },
+        error: "An element cannot have both a default value and a fixed value",
+      },
+      {
+        rule: "a default value for a new reference",
+        payload: { elementId: CODE_ID, ref: "item", default_: "a" },
+        error: "A reference element cannot have a default or fixed value",
+      },
+    ])("returns validation error for $rule", ({ payload, error }) => {
+      runCommandExpectValidationFailure(ELEMENT_AND_ALL_GROUP, { type: "modifyElement", payload }, error);
     });
 
     test("adds an element to an all group with occurrences", () => {

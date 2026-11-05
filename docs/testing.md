@@ -4,8 +4,8 @@ title: Testing
 description: How the extension is tested - running the tests and the type check, the four Vitest projects, mocks and helpers, conventions for tests, mocks, helper functions and helper classes, which tests to write for typical changes, coverage, CI, the smoke tests in the extension host with a mock webview, and how the current tests compare with the testing strategy of ADR 001.
 tags: [testing, vitest, mocks, coverage, ci, conventions]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-04T10:43:51Z }
-verified: { by: human:neumaennl, at: 2026-11-04T11:01:44Z }
+generated: { by: human:neumaennl, at: 2026-11-05T06:15:25Z }
+verified: { by: human:neumaennl, at: 2026-11-05T06:30:01Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -167,6 +167,12 @@ The `vscode` mock is not used through this mechanism: `src/__mocks__/vscode.ts` 
 
 Existing tests that do not follow these conventions yet are listed in [Known issues](known-issues.md#code). They are fixed on the editor branch in Phase 9 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340), which has more of the affected tests.[^issue-340]
 
+## Expected results
+
+- A test describes the intended behavior, as the documentation in `docs/` (for example [Commands](commands.md)), XML Schema or an ADR defines it, not the behavior that the code happens to have. If the code does something else, fix the code or record a [known issue](known-issues.md); never write a test that confirms wrong behavior.
+- A test only uses input that can reach the code in real use: IDs in the form that the webview generates (see [Schema model](schema-model.md#node-ids)), and nothing that a validator already rejects before an executor runs. Tests of an executor may use such input to check the error of an assumption that does not hold (see [ADR 003](architecture/003-validators-check-executors-assume.md)).
+- Where the documentation does not define a detail, such as the wording of an error message, a test may check the current value.
+
 ## Files and structure
 
 - A test file tests one feature, usually one module. Test cases for a feature are not spread over several files, and no two test cases test the same thing.
@@ -219,7 +225,7 @@ There are no helper classes in the tests today. Factory functions and plain obje
 
 The coverage report (`@vitest/coverage-v8`) includes all TypeScript files in `shared/`, `src/` and `webview-src/` except type declarations, generated classes (`shared/generated/`), test files (`*.test.ts`, `*.test-d.ts`), and `__tests__` and `__mocks__` folders. The scripts in `scripts/` are not part of it. Files that contain only types, such as `webview-src/webviewTypes.ts`, appear with no statements and do not change the totals. CI shows the coverage report in the job summary and on pull requests (see [CI](#ci)).[^vitest-config]
 
-The thresholds are 80% for lines, statements and functions and 70% for branches (`coverage.thresholds` in `vitest.config.ts`). A run with coverage below one of them fails, also in CI. The threshold for branches is lower only until the code of the editor has the tests it lacks (see [Known issues](known-issues.md#branch-coverage-is-below-80)); then all four are raised to 85% (Phase 9 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340)). New tests describe the intended behavior and only use input that can reach the code in real use, for example nothing that a validator would already reject before an executor runs.
+The thresholds are 80% for lines, statements and functions and 70% for branches (`coverage.thresholds` in `vitest.config.ts`). A run with coverage below one of them fails, also in CI. The threshold for branches is lower only until the code of the editor has the tests it lacks (see [Known issues](known-issues.md#branch-coverage-is-below-80)); then all four are raised to 85% (Phase 9 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340)).
 
 # CI
 

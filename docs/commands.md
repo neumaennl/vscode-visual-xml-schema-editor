@@ -4,8 +4,8 @@ title: Commands
 description: The edit commands - payload fields, the rules the validators enforce, what the executors change in the schema, and where the webview sends them.
 tags: [commands, payload, validation, reference]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-04T13:47:32Z }
-verified: { by: human:neumaennl, at: 2026-11-04T15:09:14Z }
+generated: { by: human:neumaennl, at: 2026-11-05T05:36:22Z }
+verified: { by: human:neumaennl, at: 2026-11-05T06:30:01Z }
 sources:
   - id: commands
     resource: ../shared/commands/index.ts
@@ -112,7 +112,7 @@ A drop on an existing type or group creates a `modify*` command instead of an `a
 | `documentation` | optional | optional | See [Conventions](#conventions). |
 | `nillable` | - | optional | |
 | `abstract` | - | optional | Only applied to top-level elements. |
-| `default_`, `fixed` | - | optional | An empty string removes the attribute. |
+| `default_`, `fixed` | - | optional | Not both, and not on a reference. Setting one removes the other; an empty string removes the attribute. Turning an element into a reference also removes `default`, `fixed` and `nillable`. |
 
 `removeElement` takes only `elementId`. Renaming a top-level element also renames the `ref` and `substitutionGroup` values that point to it. Renames do not check for an existing element with the new name (see [Known issues](known-issues.md#renames-and-new-references-do-not-check-for-duplicates)).[^validators][^executors]
 
@@ -227,7 +227,7 @@ The commands in `module.ts` change the schema root.[^module] They have no parent
 |---|---|---|
 | `addImport` | `namespace`, `schemaLocation`, `prefix?` | `namespace` must be an absolute URI without an existing import, `schemaLocation` must not contain whitespace. The prefix must be a valid, unused, non-reserved name; if it is omitted, the executor generates `ns0`, `ns1`, …, and binds it to the namespace. |
 | `removeImport` | `importId` | Rejected while a QName still uses a prefix of the namespace. Removes the prefix bindings of the namespace. |
-| `modifyImport` | `importId`, `namespace?`, `schemaLocation?`, `oldPrefix?`, `prefix?` | `prefix` with `oldPrefix` renames the binding and rewrites all QNames that use it, also in the `xpath` of the selectors and fields of identity constraints. `prefix` alone adds another binding for the namespace. `oldPrefix` requires `prefix`. |
+| `modifyImport` | `importId`, `namespace?`, `schemaLocation?`, `oldPrefix?`, `prefix?` | `prefix` with `oldPrefix` renames the binding and rewrites all QNames that use it, also in the `xpath` of the selectors and fields of identity constraints. `prefix` alone adds another binding for the namespace. `oldPrefix` requires `prefix`. An import without a namespace cannot get a prefix. |
 | `addInclude` | `schemaLocation` | No other include with the same location. |
 | `removeInclude` | `includeId` | |
 | `modifyInclude` | `includeId`, `schemaLocation` | Replaces the location. |

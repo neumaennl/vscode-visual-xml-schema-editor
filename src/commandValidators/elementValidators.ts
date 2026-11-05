@@ -170,7 +170,7 @@ export function validateModifyElement(
   command: ModifyElementCommand,
   schemaObj: schema
 ): ValidationResult {
-  const { elementId, elementName, elementType, ref, minOccurs, maxOccurs } = command.payload;
+  const { elementId, elementName, elementType, ref, minOccurs, maxOccurs, default_, fixed } = command.payload;
 
   // Validate elementId is not empty
   if (!elementId.trim()) {
@@ -222,6 +222,15 @@ export function validateModifyElement(
         return typeValidation;
       }
     }
+  }
+
+  // XML Schema allows at most one of default and fixed, and neither on a reference; an empty string removes the value
+  if (default_ && fixed) {
+    return { valid: false, error: "An element cannot have both a default value and a fixed value" };
+  }
+  const isReference = ref !== undefined || (el.ref !== undefined && elementName === undefined);
+  if (isReference && (default_ || fixed)) {
+    return { valid: false, error: "A reference element cannot have a default or fixed value" };
   }
 
   // Validate occurrences

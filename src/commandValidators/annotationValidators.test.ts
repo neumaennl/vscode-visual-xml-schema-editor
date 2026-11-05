@@ -597,3 +597,28 @@ describe("Schema-root Annotation Validators", () => {
     });
   });
 });
+
+describe("Documentation IDs of components", () => {
+  test.each([
+    {
+      rule: "a component that does not exist",
+      documentationId: "/element:missing/documentation[0]",
+      error: "Target node not found or does not support annotations: /element:missing",
+    },
+    {
+      rule: "a component without an annotation",
+      documentationId: "/element:person/documentation[0]",
+      error: "No annotation found on node: /element:person",
+    },
+  ])("should reject the documentation of $rule", ({ documentationId, error }) => {
+    const schemaObj = schemaWith(PERSON_ELEMENT);
+
+    expect(validateRemoveDocumentation({ type: "removeDocumentation", payload: { documentationId } }, schemaObj)).toEqual({
+      valid: false,
+      error,
+    });
+    expect(
+      validateModifyDocumentation({ type: "modifyDocumentation", payload: { documentationId, content: "Changed" } }, schemaObj)
+    ).toEqual({ valid: false, error });
+  });
+});

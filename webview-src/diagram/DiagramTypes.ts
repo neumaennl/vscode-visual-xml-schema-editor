@@ -7,6 +7,9 @@ import type { attribute } from "../../shared/generated/attribute";
 import type { allNNI } from "../../shared/generated/types";
 import type { explicitGroup } from "../../shared/generated/explicitGroup";
 import type { all } from "../../shared/generated/all";
+import type { simpleExplicitGroup } from "../../shared/generated/simpleExplicitGroup";
+import type { allType } from "../../shared/generated/allType";
+import type { groupRef } from "../../shared/generated/groupRef";
 import type { localComplexType } from "../../shared/generated/localComplexType";
 import type { topLevelComplexType } from "../../shared/generated/topLevelComplexType";
 import type { localSimpleType } from "../../shared/generated/localSimpleType";
@@ -24,6 +27,9 @@ export enum DiagramItemGroupType {
   Choice = "choice",
   All = "all",
 }
+
+export type DiagramComplexDerivationKind = "extension" | "restriction";
+export type DiagramSimpleTypeDerivationKind = "restriction" | "list" | "union";
 
 export interface Point {
   x: number;
@@ -43,6 +49,25 @@ export interface Rectangle {
 }
 
 /**
+ * A single xs:documentation node shown in the diagram/properties-panel layer.
+ * Keeps the schema ID so the UI can edit or remove the exact node later.
+ */
+export interface DiagramDocumentationEntry {
+  id: string;
+  content: string;
+  lang?: string;
+}
+
+/**
+ * An xs:annotation node shown in the diagram/properties-panel layer.
+ * Keeps the schema ID plus all contained xs:documentation nodes.
+ */
+export interface DiagramAnnotationEntry {
+  id: string;
+  documentationEntries: DiagramDocumentationEntry[];
+}
+
+/**
  * Interface for schema elements that have occurrence constraints.
  * This includes localElement, groupRef, and other elements that can appear
  * within complex types.
@@ -58,7 +83,7 @@ export interface ElementWithOccurrence {
  * Uses the generated attribute class directly.
  */
 export interface ElementWithAttributes {
-  attribute?: attribute | attribute[];
+  attribute?: attribute[];
 }
 
 /**
@@ -79,6 +104,7 @@ export type SimpleTypeLike = localSimpleType | topLevelSimpleType;
  */
 export interface ContentTypeLike extends ElementWithAttributes {
   base?: string;
+  group?: groupRef;
   sequence?: explicitGroup;
   choice?: explicitGroup;
   all?: all;
@@ -89,7 +115,7 @@ export interface ContentTypeLike extends ElementWithAttributes {
  * Represents sequence, choice, or all group structures.
  * Includes the generated schema types directly.
  */
-export type GroupDefLike = explicitGroup | all;
+export type GroupDefLike = explicitGroup | simpleExplicitGroup | all | allType;
 
 export interface DiagramStyle {
   fontFamily: string;

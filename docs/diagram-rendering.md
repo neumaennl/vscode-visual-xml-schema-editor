@@ -4,7 +4,8 @@ title: Diagram rendering
 description: How the schema object becomes the SVG diagram - the build, layout and render steps, which schema constructs become which nodes, the layout rules, the notation, the interaction, and the origin in xsddiagram.
 tags: [diagram, rendering, layout, svg, webview, xsddiagram]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-07T14:41:24Z }
+generated: { by: human:neumaennl, at: 2026-10-29T12:13:52Z }
+verified: { by: human:neumaennl, at: 2026-10-29T13:13:53Z }
 verified:
   by: human:neumaennl
   at: 2026-10-08T08:46:19Z
@@ -116,13 +117,13 @@ The type text gets suffixes for content and derivation, for example `complexType
 
 **Not shown as nodes:**
 
-- attributes: they are stored in `item.attributes` and shown in the property panel; attributes with `ref` are skipped;
+- attributes: they are stored in `item.attributes` and shown in the properties panel; attributes with `ref` are skipped;
 - attribute groups and attribute group references (see [Known issues](known-issues.md#palette-has-no-entry-for-attribute-groups));
 - `any` and `anyAttribute`;
 - element references: shown as "unnamed" elements (see [Known issues](known-issues.md#element-references-are-not-shown-as-references));
-- imports, includes, redefines, notations and identity constraints (`key`, `keyref`, `unique`); they cannot be edited in the property panel either (see [Known issues](known-issues.md#imports-and-includes-cannot-be-edited-in-the-editor) and [Known issues](known-issues.md#identity-constraints-notations-and-redefines-cannot-be-shown-or-edited)).
+- imports, includes, redefines, notations and identity constraints (`key`, `keyref`, `unique`); they cannot be edited in the properties panel either (see [Known issues](known-issues.md#imports-and-includes-cannot-be-edited-in-the-editor) and [Known issues](known-issues.md#identity-constraints-notations-and-redefines-cannot-be-shown-or-edited)).
 
-**Values.** Besides the label, the builder copies the values the property panel needs into the item: occurrence (`minOccurrence`, `maxOccurrence` with -1 for `unbounded`), documentation (all entries joined with line breaks, plus the individual entries with their IDs), `abstract`, `mixed`, `nillable`, default and fixed values, the derivation kind, list item type, union member types and the facets of restrictions. Only the occurrence, the documentation and simple content change the drawing.[^builder-helpers][^type-node-creators]
+**Values.** Besides the label, the builder copies the values the properties panel needs into the item: occurrence (`minOccurrence`, `maxOccurrence` with -1 for `unbounded`), documentation (all entries joined with line breaks, plus the individual entries with their IDs), `abstract`, `mixed`, `nillable`, default and fixed values, the derivation kind, list item type, union member types and the facets of restrictions. Only the occurrence, the documentation and simple content change the drawing.[^builder-helpers][^type-node-creators]
 
 # Data model
 
@@ -134,9 +135,9 @@ The type text gets suffixes for content and derivation, for example `complexType
 | Tree | `parent`, `childElements`, `hasChildElements`, `showChildElements` (expanded) |
 | Notation | `minOccurrence`, `maxOccurrence`, `isReference`, `isSimpleContent` |
 | Layout | `location`, `size`, `elementBox` (the shape), `childExpandButtonBox`, `documentationBox`, `boundingBox` (shape plus visible children) |
-| Content for the property panel | `documentation`, `documentationAnnotations`, `attributes`, `restrictions`, `isAbstract`, `isMixed`, `isNillable`, `hasAnonymousComplexType`, `elementDefault`, `elementFixed`, `complexDerivationKind`, `simpleTypeDerivationKind`, `simpleTypeListItemType`, `simpleTypeUnionMemberTypes`, `namespace` |
+| Content for the properties panel | `documentation`, `documentationAnnotations`, `attributes`, `restrictions`, `isAbstract`, `isMixed`, `isNillable`, `hasAnonymousComplexType`, `elementDefault`, `elementFixed`, `complexDerivationKind`, `simpleTypeDerivationKind`, `simpleTypeListItemType`, `simpleTypeUnionMemberTypes`, `namespace` |
 
-`Diagram` holds the root items (always one, the schema), the three display options `showDocumentation`, `alwaysShowOccurrence` and `showType`, the style, the bounding box with a padding of 20, and the namespace information of the schema that the property panel uses (`currentSchemaPrefix`, `schemaTargetNamespace`, `schemaNamespacePrefixes`, `localSchemaTypeNames`).[^diagram]
+`Diagram` holds the root items (always one, the schema), the three display options `showDocumentation`, `alwaysShowOccurrence` and `showType`, the style, the bounding box with a padding of 20, and the namespace information of the schema that the properties panel uses (`currentSchemaPrefix`, `schemaTargetNamespace`, `schemaNamespacePrefixes`, `localSchemaTypeNames`).[^diagram]
 
 The style is read once from VS Code's CSS variables when the module is loaded: font family, foreground, background and line colors. The colors are written into the SVG as inline styles, so the diagram does not follow a theme change until the webview is recreated (see [Known issues](known-issues.md#diagram-does-not-follow-theme-changes)). The font sizes are fixed: 10 pt for labels, 8 pt for occurrence, 9 pt for documentation.[^diagram-types]
 
@@ -190,7 +191,7 @@ Rules:
 All mouse handling on nodes is done with one listener per event type on the canvas. The listener finds the item with `closest("[data-item-id]")` and looks it up by ID in the current diagram.[^renderer]
 
 - **Expand button.** A click inside `.expand-button` toggles `showChildElements` and calls `refresh()`.
-- **Selection.** A click elsewhere on an item selects it: `selectNode()` moves the `.selected` class to it, and the property panel shows it. After an `updateSchema`, the app selects the node with the same ID again. After expanding, collapsing or a changed diagram option it does not, so the highlight disappears while the property panel still shows the node (see [Known issues](known-issues.md#selection-highlight-is-lost-after-expanding-or-collapsing)).[^webview-main]
+- **Selection.** A click elsewhere on an item selects it: `selectNode()` moves the `.selected` class to it, and the properties panel shows it. After an `updateSchema`, the app selects the node with the same ID again. After expanding, collapsing or a changed diagram option it does not, so the highlight disappears while the properties panel still shows the node (see [Known issues](known-issues.md#selection-highlight-is-lost-after-expanding-or-collapsing)).[^webview-main]
 - **Drop targets.** During a palette drag, `dragover` adds `.drag-over` to valid targets, and `drop` hands the item to the drop handler (see [Drag and drop](drag-and-drop.md#flow)).
 - **Zoom and pan** change the transform of the canvas group (`updateView()`); `fitToCanvas()` scales and moves it so that the whole diagram fits with 24 px padding. The mouse and toolbar handling is described in [Editor](editor.md#navigation).
 
@@ -212,7 +213,7 @@ Licensing facts: XSD Diagram is offered under GPL, LGPL or MS-PL. This repositor
 
 # Tests
 
-`DiagramBuilder.test.ts`, `SchemaProcessors.test.ts`, `TypeNodeCreators.test.ts` and `DiagramBuilderHelpers.test.ts` cover the build; `DiagramLayout.test.ts`, `DiagramItem.test.ts` and `Diagram.test.ts` the layout; `DiagramSvgRenderer.test.ts`, `ShapeRenderers.test.ts`, `TextRenderers.test.ts` and `SvgHelpers.test.ts` the drawing; `renderer.test.ts` the expand state, clicks and drag events. The webview tests run in jsdom, which has no layout engine, so `getBBox()` is mocked (`setupGetBBoxMock()` in `webview-src/__tests__/svgTestUtils.ts`).
+`DiagramBuilder.test.ts`, `SchemaProcessors.test.ts`, `TypeNodeCreators.test.ts` and `DiagramBuilderHelpers.test.ts` cover the build; `DiagramLayout.test.ts`, `DiagramItem.test.ts` and `Diagram.test.ts` the layout; `DiagramSvgRenderer.test.ts`, `ShapeRenderers.test.ts`, `TextRenderers.test.ts` and `SvgHelpers.test.ts` the drawing; `renderer.test.ts` the expand state, clicks and drag events. The webview tests run in jsdom, which has no layout engine, so `getBBox()` is mocked (`setupGetBBoxMock()` in `webview-src/__tests__/svgTestHelpers.ts`).
 
 [^renderer]: DiagramRenderer
 

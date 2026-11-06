@@ -30,6 +30,7 @@
     "out",
     "webview",
     "**/*.test.ts",
+    "**/*.test-d.ts",
     "**/__tests__/**"
   ]
 }

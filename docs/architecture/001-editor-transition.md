@@ -4,8 +4,8 @@ title: "ADR 001: Editor transition architecture"
 description: The decision to turn the viewer into an editor whose webview sends commands that the extension host validates, executes and writes to the XSD file, with the roadmap and the deviations of the implementation from the design.
 tags: [adr, architecture, commands, roadmap]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-14T12:24:51Z }
-verified: { by: human:neumaennl, at: 2026-10-14T13:22:19Z }
+generated: { by: human:neumaennl, at: 2026-10-28T14:47:04Z }
+verified: { by: human:neumaennl, at: 2026-10-28T15:08:21Z }
 ---
 
 # ADR 001: Editor Transition Architecture
@@ -29,7 +29,7 @@ The Visual XML Schema Editor currently operates as a **viewer** with limited edi
 - The `applySchemaChanges` method is stubbed but not implemented
 
 > **Implementation Progress (as of 2026-10-08, branch `copilot/add-editor-capabilities`):**
-> Phases 1 (Foundation) and 2 (Basic Editing) are complete: all command types are defined, validated, executed and written back to the document, with unit and integration tests. Phase 3 (UI Integration) is in progress: constructs are added by dragging items from a palette onto the diagram, and the selected node is edited and deleted in an editable property panel with the tabs General, Facets, Docs and XML. Of Phase 4, only the skipping of collapsed nodes is implemented; every schema update rebuilds the whole diagram. Phases 5 and 6 have not started. See the [roadmap](#6-implementation-roadmap) for the milestones and [section 9](#9-deviations-from-this-design) for where the implementation deviates from this design.
+> Phases 1 (Foundation) and 2 (Basic Editing) are complete: all command types are defined, validated, executed and written back to the document, with unit and integration tests. Phase 3 (UI Integration) is in progress: constructs are added by dragging items from a palette onto the diagram, and the selected node is edited and deleted in an editable properties panel with the tabs General, Facets, Docs and XML. Of Phase 4, only the skipping of collapsed nodes is implemented; every schema update rebuilds the whole diagram. Phases 5 and 6 have not started. See the [roadmap](#6-implementation-roadmap) for the milestones and [section 9](#9-deviations-from-this-design) for where the implementation deviates from this design.
 
 ### Goal
 
@@ -414,7 +414,7 @@ The existing diagram renderer (ported from xsddiagram) handles:
 
 ### Integration Approach
 
-> **Deviation:** the UX concept changed most of this section: palette instead of toolbar for adding, property panel instead of inline editing, a context menu with other operations, and listeners on the canvas instead of per-item handlers. See [section 9](#9-deviations-from-this-design).
+> **Deviation:** the UX concept changed most of this section: palette instead of toolbar for adding, properties panel instead of inline editing, a context menu with other operations, and listeners on the canvas instead of per-item handlers. See [section 9](#9-deviations-from-this-design).
 
 #### 5.1 Make Diagram Interactive
 
@@ -528,7 +528,7 @@ class DiagramRenderer {
 
 1. **Toolbar Actions**: Toolbar buttons (Add Element, Delete, etc.) operate on the current selection. Buttons are enabled/disabled based on selection state and valid operations.
 
-2. **Properties Panel**: The properties panel displays details for the currently selected node. Selection changes trigger property panel updates.
+2. **Properties Panel**: The properties panel displays details for the currently selected node. Selection changes trigger properties panel updates.
 
 3. **Context Menus**: Right-click menus show operations valid for the selected node's type. The selection determines available menu items.
 
@@ -636,7 +636,7 @@ class DiagramRenderer {
 
 - [ ] Implement drag-and-drop reordering of elements — planned as reorder in the context menu (section 9)
 - [ ] Add copy/paste functionality with clipboard integration
-- [x] ~~Implement inline editing (double-click to rename)~~ — dropped: names are edited in the property panel (section 9)
+- [x] ~~Implement inline editing (double-click to rename)~~ — dropped: names are edited in the properties panel (section 9)
 - [ ] Add find/replace functionality
 - [ ] Implement batch operations (multi-delete, bulk property changes)
 - [ ] Add validation feedback in UI with actionable messages
@@ -942,17 +942,17 @@ The phased implementation approach allows for iterative development and testing,
 
 _As of 2026-10-10._
 
-After this ADR was accepted, the interaction design was worked out in a UX concept ([#153](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/153), documented in [UX concept](../ux-concept.md)). Its core rules: new constructs are added by dragging an item from the palette onto a node, existing constructs are edited in the property panel, the toolbar only has actions for the whole diagram, and the context menu complements palette and panel but is never the main way to add or edit. Several deviations follow from these rules.
+After this ADR was accepted, the interaction design was worked out in a UX concept ([#153](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/153), documented in [UX concept](../ux-concept.md)). Its core rules: new constructs are added by dragging an item from the palette onto a node, existing constructs are edited in the properties panel, the toolbar only has actions for the whole diagram, and the context menu complements palette and panel but is never the main way to add or edit. Several deviations follow from these rules.
 
 | Section | This ADR | Implementation | Reason |
 |---|---|---|---|
 | 3.1, 5.3, 5.5 | Constructs are added with toolbar buttons and the context menu ("Add Child"), which act on the selected node. | Constructs are added by dragging an item from the palette onto a node in the diagram. | UX concept: each interaction has one main surface, and adding starts in the palette. |
-| 5.3 | The toolbar has Add Element, Add Attribute, Delete and the selection info. | The toolbar has zoom in, zoom out and fit view. | UX concept: the toolbar only has actions for the whole diagram; operations on single nodes belong in the palette, the property panel or the context menu. |
+| 5.3 | The toolbar has Add Element, Add Attribute, Delete and the selection info. | The toolbar has zoom in, zoom out and fit view. | UX concept: the toolbar only has actions for the whole diagram; operations on single nodes belong in the palette, the properties panel or the context menu. |
 | 5.1 | The context menu offers Add Child, Delete and Edit Properties. | Planned with contextual operations instead: reorder, refactor, find usages, go to definition, cut, copy, paste and regenerate sample XML. | UX concept: the context menu complements palette and panel; it may repeat add, edit and delete as shortcuts. |
-| 5.1, Phase 5 | Elements are renamed inline with a double click. | Names are edited in the property panel. | UX concept: existing constructs are edited in the property panel. |
+| 5.1, Phase 5 | Elements are renamed inline with a double click. | Names are edited in the properties panel. | UX concept: existing constructs are edited in the properties panel. |
 | 5.1, Phase 5 | Nodes are dragged to reorder or move them. | Only palette items can be dragged. Reorder, cut and paste are planned in the context menu. | UX concept. |
 | 5.1 | `DiagramItem.enableEditing()` attaches interaction handlers to each item. | `renderer.ts` has one click, one drag-over and one drop listener on the canvas; they find the item through the `data-item-id` attribute of the event target. | The SVG is recreated on every render. Listeners on the canvas are set up once and survive this, whereas handlers on each item would have to be attached again after every render. All input on nodes (clicks, expand buttons, drag and drop, and later the context menu) is handled in one place, and diagram items stay plain data for the build and the layout, without DOM or UI code. The cost is a lookup of the item by its ID for each event. |
-| 4.3 | One layer of Action Creators, pure functions used by all UI parts, builds the commands and validates the input. | Each surface builds its own commands: `DropCommandFactory` for palette drops, the property panel modules for edits. | Commands are built where the input is collected, and the two surfaces collect different input (a palette item and a drop target; a field of the selected node). `DropCommandFactory` keeps the names of the top-level components and reserves each generated name, so that several drops before the next schema update get different names. |
+| 4.3 | One layer of Action Creators, pure functions used by all UI parts, builds the commands and validates the input. | Each surface builds its own commands: `DropCommandFactory` for palette drops, the properties panel modules for edits. | Commands are built where the input is collected, and the two surfaces collect different input (a palette item and a drop target; a field of the selected node). `DropCommandFactory` keeps the names of the top-level components and reserves each generated name, so that several drops before the next schema update get different names. |
 | 4.3, 5.4 | The webview validates input before it creates a command. | The webview checks only what it can decide from the diagram: drop targets, and empty or unchanged input. The extension host checks every command completely. | The checks complement each other: the extension host is the gatekeeper and must not rely on the webview, and rules are not copied to the webview for their own sake (see [Architecture](../architecture.md#principles)). |
 | 5.4 | Several properties can be edited before the changes are applied (batch edits). | Each field commits on blur or Enter and sends one command; there is no save button. | UX concept. Each change is one command and one undo step. |
 | 6 (Testing Strategy) | Unit tests use Jest or Mocha. | The tests use Vitest; until Phase 3 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340), they used Jest. | Vitest is built on Vite, which also builds the webview since Phase 4, and it supports ES modules without the workarounds Jest needed (see [Testing](../testing.md)). |

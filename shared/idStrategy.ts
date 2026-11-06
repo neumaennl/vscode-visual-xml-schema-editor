@@ -150,6 +150,9 @@ export function generateSchemaId(params: IdGenerationParams): string {
   }
 }
 
+/** Canonical schema-root ID used throughout the webview and extension. */
+export const SCHEMA_ROOT_ID = generateSchemaId({ nodeType: SchemaNodeType.Schema });
+
 /**
  * Parses a schema ID string into its components.
  *

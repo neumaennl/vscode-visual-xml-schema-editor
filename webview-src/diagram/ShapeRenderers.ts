@@ -6,6 +6,7 @@
 import { DiagramItem } from "./DiagramItem";
 import { DiagramItemGroupType, Point, Rectangle } from "./DiagramTypes";
 import { svgRectangle, svgPolygon, svgCircle, svgLine } from "./SvgHelpers";
+import { isCompositorGroup } from "./groupUtils";
 
 /** Offset for shadow effect on multiple occurrence shapes */
 const SHADOW_OFFSET = 3;
@@ -72,8 +73,10 @@ export function renderGroupShape(
   }
   svgPolygon(group, points, fill, stroke);
 
-  // Draw group type indicator
-  renderGroupTypeIndicator(item, rect, group);
+  // Draw group type indicator only for compositor groups (sequence/choice/all)
+  if (isCompositorGroup(item)) {
+    renderGroupTypeIndicator(item, rect, group);
+  }
 }
 
 /**

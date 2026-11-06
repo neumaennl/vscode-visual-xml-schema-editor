@@ -9,26 +9,34 @@ import {
   localElement,
   topLevelComplexType,
   localComplexType,
+  namedGroup,
   explicitGroup,
+  simpleExplicitGroup,
+  all as allGroup,
+  allType,
   topLevelAttribute,
   attribute,
 } from "../shared/types.js";
 import { parseSchemaId, SchemaNodeType } from "../shared/idStrategy.js";
-import { toArray, isSchemaRoot } from "../shared/schemaUtils.js";
+import { isSchemaRoot } from "../shared/schemaUtils.js";
 
 /**
- * Result of a node location operation.
+ * Result of a node location operation: the node and its type if it was found, otherwise an error.
+ * The node is called `parent` because callers usually add children to it.
  */
-export interface NodeLocation {
-  /** Whether the node was found */
-  found: boolean;
-  /** The parent container object (schema, complex type, sequence, etc.) */
-  parent?: unknown;
-  /** The type of the parent container */
-  parentType?: string;
-  /** Error message if not found */
-  error?: string;
-}
+export type NodeLocation =
+  | {
+      found: true;
+      /** The node: the schema, a complex type, a sequence and so on */
+      parent: unknown;
+      /** The type of the node, for example `topLevelComplexType` or `sequence` */
+      parentType: string;
+    }
+  | {
+      found: false;
+      /** Why the node was not found */
+      error: string;
+    };
 
 /**
  * Locates a node in the schema by its ID path.
@@ -41,10 +49,10 @@ export interface NodeLocation {
  * @example
  * ```typescript
  * // Find the schema root (for adding top-level elements)
- * locateNodeById(schema, "schema") // Returns { found: true, parent: schema, parentType: "schema" }
+ * locateNodeById(schema, "/schema") // Returns { found: true, parent: schema, parentType: "schema" }
  *
  * // Find a sequence within a complex type
- * locateNodeById(schema, "/complexType:PersonType/sequence[0]")
+ * locateNodeById(schema, "/complexType:PersonType/group:sequence[0]")
  * // Returns the sequence group where elements can be added
  * ```
  */
@@ -52,7 +60,7 @@ export function locateNodeById(
   schemaObj: schema,
   nodeId: string
 ): NodeLocation {
-  // Special case: "schema" refers to the schema root
+  // Special case: the canonical schema root ID refers to the schema root
   if (isSchemaRoot(nodeId)) {
     return {
       found: true,
@@ -87,13 +95,6 @@ export function locateNodeById(
         };
       }
 
-      if (!result.nodeType) {
-        return {
-          found: false,
-          error: `Invalid navigation result: missing nodeType for segment: ${segment}`,
-        };
-      }
-
       currentNode = result.node;
       currentType = result.nodeType;
     }
@@ -110,6 +111,11 @@ export function locateNodeById(
     };
   }
 }
+
+/**
+ * Result of navigating from a node to one of its children: the child and its type, if found.
+ */
+type NavigationResult = { found: true; node: unknown; nodeType: string } | { found: false };
 
 /**
  * Information parsed from a segment.
@@ -160,7 +166,7 @@ function navigateToChild(
   parent: unknown,
   parentType: string,
   segmentInfo: SegmentInfo
-): { found: boolean; node?: unknown; nodeType?: string } {
+): NavigationResult {
   const { nodeType, name, position } = segmentInfo;
 
   // Handle navigation based on parent type and target node type
@@ -186,6 +192,8 @@ function navigateToChild(
       name,
       position
     );
+  } else if (parentType === "namedGroup") {
+    return navigateFromNamedGroup(parent as namedGroup, nodeType, name, position);
   } else if (
     parentType === "topLevelAttribute" ||
     parentType === "attribute"
@@ -215,39 +223,39 @@ function navigateFromSchema(
   nodeType: SchemaNodeType,
   name?: string,
   position?: number
-): { found: boolean; node?: unknown; nodeType?: string } {
+): NavigationResult {
   if (nodeType === SchemaNodeType.Element) {
-    const elements = toArray(schemaObj.element);
+    const elements = schemaObj.element ?? [];
     const element = findByNameOrPosition(elements, name, position);
     if (element) {
       return { found: true, node: element, nodeType: "topLevelElement" };
     }
   } else if (nodeType === SchemaNodeType.ComplexType) {
-    const types = toArray(schemaObj.complexType);
+    const types = schemaObj.complexType ?? [];
     const type = findByNameOrPosition(types, name, position);
     if (type) {
       return { found: true, node: type, nodeType: "topLevelComplexType" };
     }
   } else if (nodeType === SchemaNodeType.SimpleType) {
-    const types = toArray(schemaObj.simpleType);
+    const types = schemaObj.simpleType ?? [];
     const type = findByNameOrPosition(types, name, position);
     if (type) {
       return { found: true, node: type, nodeType: "topLevelSimpleType" };
     }
   } else if (nodeType === SchemaNodeType.Group) {
-    const groups = toArray(schemaObj.group);
+    const groups = schemaObj.group ?? [];
     const group = findByNameOrPosition(groups, name, position);
     if (group) {
       return { found: true, node: group, nodeType: "namedGroup" };
     }
   } else if (nodeType === SchemaNodeType.AttributeGroup) {
-    const attrGroups = toArray(schemaObj.attributeGroup);
+    const attrGroups = schemaObj.attributeGroup ?? [];
     const attrGroup = findByNameOrPosition(attrGroups, name, position);
     if (attrGroup) {
       return { found: true, node: attrGroup, nodeType: "namedAttributeGroup" };
     }
   } else if (nodeType === SchemaNodeType.Attribute) {
-    const attrs = toArray(schemaObj.attribute);
+    const attrs = schemaObj.attribute ?? [];
     const attr = findByNameOrPosition(attrs, name, position);
     if (attr) {
       return { found: true, node: attr, nodeType: "topLevelAttribute" };
@@ -265,7 +273,7 @@ function navigateFromElement(
   nodeType: SchemaNodeType,
   _name?: string,
   _position?: number
-): { found: boolean; node?: unknown; nodeType?: string } {
+): NavigationResult {
   if (nodeType === SchemaNodeType.AnonymousComplexType) {
     if (element.complexType) {
       return { found: true, node: element.complexType, nodeType: "localComplexType" };
@@ -287,49 +295,35 @@ function navigateFromComplexType(
   nodeType: SchemaNodeType,
   name?: string,
   position?: number
-): { found: boolean; node?: unknown; nodeType?: string } {
+): NavigationResult {
   // Complex types can have sequence, choice, or all as children
   if (nodeType === SchemaNodeType.Group && name === "sequence") {
-    if ((complexType).sequence) {
+    const sequence = resolveComplexTypeGroup(complexType, "sequence");
+    if (sequence) {
       return {
         found: true,
-        node: (complexType).sequence,
+        node: sequence,
         nodeType: "sequence",
       };
     }
   } else if (nodeType === SchemaNodeType.Group && name === "choice") {
-    if ((complexType).choice) {
+    const choice = resolveComplexTypeGroup(complexType, "choice");
+    if (choice) {
       return {
         found: true,
-        node: (complexType).choice,
+        node: choice,
         nodeType: "choice",
       };
     }
   } else if (nodeType === SchemaNodeType.Group && name === "all") {
-    if ((complexType).all) {
-      return { found: true, node: (complexType).all, nodeType: "all" };
+    const all = resolveComplexTypeGroup(complexType, "all");
+    if (all) {
+      return { found: true, node: all, nodeType: "all" };
     }
   }
 
-  // Handle direct navigation to sequence/choice/all without explicit "group:" prefix
-  if (!name && !position) {
-    if (nodeType === "sequence" as SchemaNodeType && (complexType).sequence) {
-      return {
-        found: true,
-        node: (complexType).sequence,
-        nodeType: "sequence",
-      };
-    } else if (nodeType === "choice" as SchemaNodeType && (complexType).choice) {
-      return {
-        found: true,
-        node: (complexType).choice,
-        nodeType: "choice",
-      };
-    } else if (nodeType === "all" as SchemaNodeType && (complexType).all) {
-      return { found: true, node: (complexType).all, nodeType: "all" };
-    }
-  } else if (nodeType === SchemaNodeType.Attribute) {
-    const attrs = toArray(complexType.attribute);
+  if (nodeType === SchemaNodeType.Attribute) {
+    const attrs = complexType.attribute ?? [];
     const attr = findByNameOrPosition(attrs, name, position);
     if (attr) {
       return { found: true, node: attr, nodeType: "attribute" };
@@ -337,6 +331,20 @@ function navigateFromComplexType(
   }
 
   return { found: false };
+}
+
+function resolveComplexTypeGroup(
+  complexType: topLevelComplexType | localComplexType,
+  groupKind: "sequence" | "choice" | "all"
+): explicitGroup | allGroup | undefined {
+  const direct = complexType[groupKind];
+  if (direct) {
+    return direct;
+  }
+
+  const extension = complexType.complexContent?.extension;
+  const restriction = complexType.complexContent?.restriction;
+  return extension?.[groupKind] ?? restriction?.[groupKind];
 }
 
 /**
@@ -347,7 +355,7 @@ function navigateFromAttribute(
   nodeType: SchemaNodeType,
   _name?: string,
   _position?: number
-): { found: boolean; node?: unknown; nodeType?: string } {
+): NavigationResult {
   if (nodeType === SchemaNodeType.AnonymousSimpleType) {
     if (attr.simpleType) {
       return { found: true, node: attr.simpleType, nodeType: "localSimpleType" };
@@ -357,20 +365,53 @@ function navigateFromAttribute(
   return { found: false };
 }
 
+function navigateFromNamedGroup(
+  group: namedGroup,
+  nodeType: SchemaNodeType,
+  name?: string,
+  _position?: number
+): NavigationResult {
+  if (nodeType === SchemaNodeType.Group && name === "sequence" && group.sequence) {
+    return { found: true, node: group.sequence, nodeType: "sequence" };
+  }
+  if (nodeType === SchemaNodeType.Group && name === "choice" && group.choice) {
+    return { found: true, node: group.choice, nodeType: "choice" };
+  }
+  if (nodeType === SchemaNodeType.Group && name === "all" && group.all) {
+    return { found: true, node: group.all, nodeType: "all" };
+  }
+
+  return { found: false };
+}
+
 /**
  * Navigate from a group (sequence/choice/all) to a child element.
  */
 function navigateFromGroup(
-  group: explicitGroup,
+  group: explicitGroup | simpleExplicitGroup | allGroup | allType,
   nodeType: SchemaNodeType,
   name?: string,
   position?: number
-): { found: boolean; node?: unknown; nodeType?: string } {
+): NavigationResult {
   if (nodeType === SchemaNodeType.Element) {
-    const elements = toArray(group.element);
+    const elements: Array<{ name?: string; ref?: string }> = group.element ?? [];
     const element = findByNameOrPosition(elements, name, position);
     if (element) {
       return { found: true, node: element, nodeType: "localElement" };
+    }
+  }
+
+  if (nodeType === SchemaNodeType.Group && name === "choice") {
+    const choice = ((group as { choice?: explicitGroup[] }).choice ?? [])[position ?? 0] as explicitGroup | undefined;
+    if (choice) {
+      return { found: true, node: choice, nodeType: "choice" };
+    }
+  }
+
+  if (nodeType === SchemaNodeType.Group && name === "sequence") {
+    const sequence = ((group as { sequence?: explicitGroup[] }).sequence ?? [])[position ?? 0] as explicitGroup | undefined;
+    if (sequence) {
+      return { found: true, node: sequence, nodeType: "sequence" };
     }
   }
 

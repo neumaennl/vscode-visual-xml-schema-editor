@@ -4,8 +4,8 @@ title: Development guidelines
 description: Rules for everyone who changes the extension - code size, code quality and ESLint, TypeScript and naming, VS Code and Node versions, TSDoc, tests, documentation and the knowledge bundle, issues, what to check before committing, and commits.
 tags: [guidelines, conventions, code-quality, typescript, documentation, workflow]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-19T08:27:59Z }
-verified: { by: human:neumaennl, at: 2026-10-19T09:11:14Z }
+generated: { by: human:neumaennl, at: 2026-11-04T11:36:32Z }
+verified: { by: human:neumaennl, at: 2026-11-04T12:13:55Z }
 sources:
   - id: eslint
     resource: ../eslint.config.mjs
@@ -34,9 +34,9 @@ Topics that have their own document are only linked here: the structure of the c
 
 - A TypeScript file has at most 500 lines. When it grows beyond that, move related code into a module of its own with a clear name.
 - A function has at most 120 lines. Split longer functions into smaller helpers with one responsibility each.
-- For now, test files are exempt from both limits.
+- Tests have their own limits: a test file has at most 1000 lines, and a single test (the callback of `test()` or `test.each()`) at most 50 lines. The `describe` callbacks that hold the tests have no limit. A test file still tests one module: when it grows beyond the limit, the module probably has more than one responsibility and is split, or tests that differ only in their input are combined with `test.each()`. Long tests move their data into constants and their repeated steps into helpers (see [Testing](testing.md#files-and-structure)).
 
-ESLint does not check the limits. Some code exceeds them, and the exemption for tests is not settled yet (see [Code exceeds the size limits](known-issues.md#code-exceeds-the-size-limits) and [Tests are exempt from the size limits](known-issues.md#tests-are-exempt-from-the-size-limits)).
+ESLint checks the limits for tests (`max-lines` and the local rule `tests/max-lines-per-test` in `eslint.config.mjs`), but not yet for the other code, some of which exceeds them (see [Code exceeds the size limits](known-issues.md#code-exceeds-the-size-limits)).
 
 # Code quality
 
@@ -52,6 +52,7 @@ ESLint does not check the limits. Some code exceeds them, and the exemption for 
 - Define interfaces or types for all data structures. Commands and messages are discriminated unions (see [Commands](commands.md) and [Messaging](messaging.md)).
 - Names: PascalCase for classes, interfaces and types; camelCase for functions, methods and variables; UPPER_CASE for module-level constants. Names say what something is or does.
 - Length of names: clarity comes first, but keep them short. Aim for less than 15 characters; 25 to 30 is the upper limit. `createElement` is better than `createElementWithChildren`; `createElementNodeWithProcessingOfAnonymousTypes` is too long, `cen` too cryptic.
+- Functions that check a command or a part of it are called `validate...()`, for example `validateRestrictionFacets()`, and return a `ValidationResult`, also when the command is valid, not `null` or a bare error.
 
 # VS Code and Node versions
 

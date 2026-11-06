@@ -10,11 +10,11 @@ import {
   AddIncludeCommand,
   RemoveIncludeCommand,
   ModifyIncludeCommand,
+  ModifySchemaNamespacesCommand,
 } from "../../shared/types.js";
-import { toArray } from "../../shared/schemaUtils.js";
 import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
 import { isValidXmlName, ValidationResult } from "./validationUtils.js";
-import { isAnyPrefixReferencedInSchema } from "../commandExecutors/schemaQNameRewriter.js";
+import { isAnyPrefixReferencedInSchema } from "../commandExecutors/schemaPrefixChecker.js";
 
 // ===== Helpers =====
 
@@ -63,7 +63,7 @@ function validateImportId(
       error: `'${importId}' does not refer to an import node (got '${parsed.nodeType}')`,
     };
   }
-  const imports = toArray(schemaObj.import_);
+  const imports = schemaObj.import_ ?? [];
   if (index === undefined || index < 0 || index >= imports.length) {
     return { valid: false, error: `Import not found: ${importId}` };
   }
@@ -89,6 +89,58 @@ function isNamespaceReferenced(namespace: string | undefined, schemaObj: schema)
   return isAnyPrefixReferencedInSchema(prefixesForNs, schemaObj);
 }
 
+/**
+ * Validates a namespace prefix: no surrounding whitespace, not reserved, and a valid XML name. The empty
+ * prefix stands for the default namespace; the callers decide whether they allow it.
+ *
+ * @param prefix - The prefix
+ * @returns The validation result
+ */
+function validatePrefix(prefix: string): ValidationResult {
+  if (prefix !== prefix.trim()) {
+    return { valid: false, error: `Prefix '${prefix}' must not contain leading or trailing whitespace` };
+  }
+  if (prefix === "xml" || prefix === "xmlns") {
+    return { valid: false, error: `Prefix '${prefix}' is reserved and cannot be used` };
+  }
+  if (prefix && !isValidXmlName(prefix)) {
+    return { valid: false, error: `Prefix '${prefix}' is not a valid XML name` };
+  }
+  return { valid: true };
+}
+
+/**
+ * Validates the namespace of an import: not empty and an absolute URI.
+ *
+ * @param namespace - The namespace
+ * @returns The validation result
+ */
+function validateImportNamespace(namespace: string): ValidationResult {
+  if (!namespace.trim()) {
+    return { valid: false, error: "Namespace cannot be empty" };
+  }
+  if (!isAbsoluteUri(namespace.trim())) {
+    return { valid: false, error: "Namespace must be a valid absolute URI" };
+  }
+  return { valid: true };
+}
+
+/**
+ * Validates the schema location of an import or include: not empty, and a path or URI without whitespace.
+ *
+ * @param schemaLocation - The schema location
+ * @returns The validation result
+ */
+function validateSchemaLocation(schemaLocation: string): ValidationResult {
+  if (!schemaLocation.trim()) {
+    return { valid: false, error: "Schema location cannot be empty" };
+  }
+  if (!isValidSchemaLocation(schemaLocation)) {
+    return { valid: false, error: "Schema location must be a valid path or URI without whitespace" };
+  }
+  return { valid: true };
+}
+
 // ===== Import Command Validation =====
 
 export function validateAddImport(
@@ -97,26 +149,14 @@ export function validateAddImport(
 ): ValidationResult {
   const { namespace, schemaLocation, prefix } = command.payload;
 
-  if (!namespace.trim()) {
-    return { valid: false, error: "Namespace cannot be empty" };
-  }
+  const namespaceResult = validateImportNamespace(namespace);
+  if (!namespaceResult.valid) return namespaceResult;
 
-  // Validate namespace URI format: must be a valid absolute URI
-  if (!isAbsoluteUri(namespace.trim())) {
-    return { valid: false, error: "Namespace must be a valid absolute URI" };
-  }
-
-  if (!schemaLocation.trim()) {
-    return { valid: false, error: "Schema location cannot be empty" };
-  }
-
-  // Validate schemaLocation format: must be a valid path or URI without whitespace
-  if (!isValidSchemaLocation(schemaLocation)) {
-    return { valid: false, error: "Schema location must be a valid path or URI without whitespace" };
-  }
+  const locationResult = validateSchemaLocation(schemaLocation);
+  if (!locationResult.valid) return locationResult;
 
   // Check if an import for this namespace already exists
-  const existingImports = toArray(schemaObj.import_);
+  const existingImports = schemaObj.import_ ?? [];
   if (existingImports.some((imp) => imp.namespace === namespace.trim())) {
     return { valid: false, error: `An import for namespace '${namespace.trim()}' already exists` };
   }
@@ -126,15 +166,8 @@ export function validateAddImport(
     if (!prefix) {
       return { valid: false, error: "Prefix cannot be empty when provided" };
     }
-    if (prefix !== prefix.trim()) {
-      return { valid: false, error: `Prefix '${prefix}' must not contain leading or trailing whitespace` };
-    }
-    if (prefix === "xml" || prefix === "xmlns") {
-      return { valid: false, error: `Prefix '${prefix}' is reserved and cannot be used` };
-    }
-    if (!isValidXmlName(prefix)) {
-      return { valid: false, error: `Prefix '${prefix}' is not a valid XML name` };
-    }
+    const prefixResult = validatePrefix(prefix);
+    if (!prefixResult.valid) return prefixResult;
     // Check prefix uniqueness: only reject when bound to a different namespace
     if (schemaObj._namespacePrefixes && Object.prototype.hasOwnProperty.call(schemaObj._namespacePrefixes, prefix)) {
       const existingNs = schemaObj._namespacePrefixes[prefix];
@@ -158,7 +191,7 @@ export function validateRemoveImport(
   if (!idResult.valid) return idResult;
 
   // Check if the import's namespace prefix is still referenced in the schema
-  const imports = toArray(schemaObj.import_);
+  const imports = schemaObj.import_ ?? [];
   const targetImport = imports[idResult.position];
   if (isNamespaceReferenced(targetImport.namespace, schemaObj)) {
     return {
@@ -182,16 +215,12 @@ export function validateModifyImport(
   const idResult = validateImportId(importId, schemaObj);
   if (!idResult.valid) return idResult;
 
-  const imports = toArray(schemaObj.import_);
+  const imports = schemaObj.import_ ?? [];
   const position = idResult.position;
 
   if (namespace !== undefined) {
-    if (!namespace.trim()) {
-      return { valid: false, error: "Namespace cannot be empty" };
-    }
-    if (!isAbsoluteUri(namespace.trim())) {
-      return { valid: false, error: "Namespace must be a valid absolute URI" };
-    }
+    const namespaceResult = validateImportNamespace(namespace);
+    if (!namespaceResult.valid) return namespaceResult;
     // Check that changing the namespace won't create a duplicate
     const currentNamespace = imports[position].namespace;
     if (namespace.trim() !== currentNamespace) {
@@ -202,12 +231,8 @@ export function validateModifyImport(
   }
 
   if (schemaLocation !== undefined) {
-    if (!schemaLocation.trim()) {
-      return { valid: false, error: "Schema location cannot be empty" };
-    }
-    if (!isValidSchemaLocation(schemaLocation)) {
-      return { valid: false, error: "Schema location must be a valid path or URI without whitespace" };
-    }
+    const locationResult = validateSchemaLocation(schemaLocation);
+    if (!locationResult.valid) return locationResult;
   }
 
   if (oldPrefix !== undefined) {
@@ -233,21 +258,18 @@ export function validateModifyImport(
     if (!prefix) {
       return { valid: false, error: "Prefix cannot be empty when provided" };
     }
-    if (prefix !== prefix.trim()) {
-      return { valid: false, error: `Prefix '${prefix}' must not contain leading or trailing whitespace` };
-    }
-    if (prefix === "xml" || prefix === "xmlns") {
-      return { valid: false, error: `Prefix '${prefix}' is reserved and cannot be used` };
-    }
-    if (!isValidXmlName(prefix)) {
-      return { valid: false, error: `Prefix '${prefix}' is not a valid XML name` };
-    }
+    const prefixResult = validatePrefix(prefix);
+    if (!prefixResult.valid) return prefixResult;
     // Check prefix uniqueness: the new prefix must not already be registered
     // for a *different* namespace.  It is fine (no-op) if it is already
     // registered for the same namespace that this import is being modified to.
     const targetNamespace = (namespace?.trim()) ?? imports[position].namespace;
+    // A prefix binds a namespace, so an import without one cannot get a prefix
+    if (!targetNamespace) {
+      return { valid: false, error: `Cannot bind prefix '${prefix}' to an import without a namespace` };
+    }
     if (schemaObj._namespacePrefixes) {
-      const existingNs = schemaObj._namespacePrefixes[prefix];
+      const existingNs = schemaObj._namespacePrefixes[prefix] as string | undefined;
       if (existingNs !== undefined && existingNs !== targetNamespace) {
         return { valid: false, error: `Prefix '${prefix}' is already in use` };
       }
@@ -284,7 +306,7 @@ function validateIncludeId(
       error: `'${includeId}' does not refer to an include node (got '${parsed.nodeType}')`,
     };
   }
-  const includes = toArray(schemaObj.include);
+  const includes = schemaObj.include ?? [];
   if (index === undefined || index < 0 || index >= includes.length) {
     return { valid: false, error: `Include not found: ${includeId}` };
   }
@@ -297,16 +319,11 @@ export function validateAddInclude(
 ): ValidationResult {
   const { schemaLocation } = command.payload;
 
-  if (!schemaLocation.trim()) {
-    return { valid: false, error: "Schema location cannot be empty" };
-  }
-
-  if (!isValidSchemaLocation(schemaLocation)) {
-    return { valid: false, error: "Schema location must be a valid path or URI without whitespace" };
-  }
+  const locationResult = validateSchemaLocation(schemaLocation);
+  if (!locationResult.valid) return locationResult;
 
   // Check if an include with this schemaLocation already exists
-  const existingIncludes = toArray(schemaObj.include);
+  const existingIncludes = schemaObj.include ?? [];
   if (existingIncludes.some((inc) => inc.schemaLocation === schemaLocation.trim())) {
     return { valid: false, error: `An include for schema location '${schemaLocation.trim()}' already exists` };
   }
@@ -339,16 +356,12 @@ export function validateModifyInclude(
   const idResult = validateIncludeId(includeId, schemaObj);
   if (!idResult.valid) return idResult;
 
-  if (!schemaLocation.trim()) {
-    return { valid: false, error: "Schema location cannot be empty" };
-  }
-  if (!isValidSchemaLocation(schemaLocation)) {
-    return { valid: false, error: "Schema location must be a valid path or URI without whitespace" };
-  }
+  const locationResult = validateSchemaLocation(schemaLocation);
+  if (!locationResult.valid) return locationResult;
 
   // Check if another include already uses this schemaLocation
   const trimmedLocation = schemaLocation.trim();
-  const includes = toArray(schemaObj.include);
+  const includes = schemaObj.include ?? [];
   const currentPosition = idResult.position;
   if (
     includes.some(
@@ -359,6 +372,44 @@ export function validateModifyInclude(
     return {
       valid: false,
       error: `An include for schema location '${trimmedLocation}' already exists`,
+    };
+  }
+
+  return { valid: true };
+}
+
+export function validateModifySchemaNamespaces(
+  command: ModifySchemaNamespacesCommand,
+  _schemaObj: schema
+): ValidationResult {
+  const { targetNamespace, namespacePrefixes } = command.payload;
+
+  if (targetNamespace !== undefined) {
+    const trimmedTargetNamespace = targetNamespace.trim();
+    if (trimmedTargetNamespace && !isAbsoluteUri(trimmedTargetNamespace)) {
+      return { valid: false, error: "targetNamespace must be a valid absolute URI" };
+    }
+  }
+
+  for (const [prefix, namespaceUri] of Object.entries(namespacePrefixes)) {
+    const prefixResult = validatePrefix(prefix);
+    if (!prefixResult.valid) return prefixResult;
+    if (!namespaceUri.trim()) {
+      return { valid: false, error: "Namespace URI cannot be empty" };
+    }
+    if (!isAbsoluteUri(namespaceUri.trim())) {
+      return { valid: false, error: `Namespace URI '${namespaceUri}' must be a valid absolute URI` };
+    }
+  }
+
+  const trimmedTargetNamespace = targetNamespace?.trim();
+  if (
+    trimmedTargetNamespace &&
+    !Object.values(namespacePrefixes).some((namespaceUri) => namespaceUri.trim() === trimmedTargetNamespace)
+  ) {
+    return {
+      valid: false,
+      error: "targetNamespace must match one of the declared namespace URIs",
     };
   }
 

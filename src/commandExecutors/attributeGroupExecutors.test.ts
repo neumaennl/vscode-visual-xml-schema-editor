@@ -16,31 +16,19 @@ import {
   executeRemoveAttributeGroup,
   executeModifyAttributeGroup,
 } from "./attributeGroupExecutors.js";
-import { toArray } from "../../shared/schemaUtils.js";
+import { emptySchema, readTestSchema, schemaWith, schemaWithAttrGroups } from "../__tests__/schemaTestHelpers.js";
 
-/**
- * Unmarshals a schema with the attribute groups `CommonAttrs` and `OtherAttrs` and the given content.
- *
- * @param body - The XSD content after the two attribute group definitions
- * @returns The schema object
- */
-function schemaWithAttrGroups(body: string): schema {
-  return unmarshal(
-    schema,
-    `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:attributeGroup name="CommonAttrs"/>
-  <xs:attributeGroup name="OtherAttrs"/>
-  ${body}
-</xs:schema>`,
-  );
-}
+/** The file with a complexType `PersonType` that references the attribute group `CommonAttrs`. */
+const PERSON_TYPE_WITH_REF_XSD = "person-type-with-attribute-group-ref.xsd";
 
 /** A complexType `T` with references to `CommonAttrs` and `OtherAttrs`, in this order. */
 const TWO_REFS = `<xs:complexType name="T">
     <xs:attributeGroup ref="CommonAttrs"/>
     <xs:attributeGroup ref="OtherAttrs"/>
   </xs:complexType>`;
+
+/** An annotation with application information and a documentation entry. */
+const ANNOTATION = `<xs:annotation><xs:appinfo>tool data</xs:appinfo><xs:documentation>Old</xs:documentation></xs:annotation>`;
 
 /**
  * Returns the names that the attribute group references of the complexType `T` refer to.
@@ -49,18 +37,15 @@ const TWO_REFS = `<xs:complexType name="T">
  * @returns The referenced names, in document order
  */
 function refsOfT(schemaObj: schema): (string | undefined)[] {
-  const t = toArray(schemaObj.complexType).find((ct) => ct.name === "T");
-  return toArray(t?.attributeGroup).map((r) => r.ref);
+  const t = (schemaObj.complexType ?? []).find((ct) => ct.name === "T");
+  return (t?.attributeGroup ?? []).map((r) => r.ref);
 }
 
 describe("AttributeGroup Executors", () => {
   describe("executeAddAttributeGroup", () => {
     describe("definition mode", () => {
-      it("should add a named attribute group", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+      test("should add a named attribute group", () => {
+        const schemaObj = emptySchema();
 
         const command: AddAttributeGroupCommand = {
           type: "addAttributeGroup",
@@ -74,11 +59,8 @@ describe("AttributeGroup Executors", () => {
         expect(schemaObj.attributeGroup![0].annotation).toBeUndefined();
       });
 
-      it("should add an attribute group with documentation", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+      test("should add an attribute group with documentation", () => {
+        const schemaObj = emptySchema();
 
         const command: AddAttributeGroupCommand = {
           type: "addAttributeGroup",
@@ -92,12 +74,8 @@ describe("AttributeGroup Executors", () => {
         expect(ag.annotation?.documentation?.[0].value).toBe("Documented group");
       });
 
-      it("should append to existing attribute groups", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:attributeGroup name="FirstAttrs"/>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+      test("should append to existing attribute groups", () => {
+        const schemaObj = schemaWith(`<xs:attributeGroup name="FirstAttrs"/>`);
 
         const command: AddAttributeGroupCommand = {
           type: "addAttributeGroup",
@@ -110,11 +88,8 @@ describe("AttributeGroup Executors", () => {
         expect(schemaObj.attributeGroup![1].name).toBe("SecondAttrs");
       });
 
-      it("should produce valid XSD output (round-trip)", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+      test("should produce valid XSD output (round-trip)", () => {
+        const schemaObj = emptySchema();
 
         const command: AddAttributeGroupCommand = {
           type: "addAttributeGroup",
@@ -125,19 +100,15 @@ describe("AttributeGroup Executors", () => {
 
         const xml = marshal(schemaObj);
         const reparsed = unmarshal(schema, xml);
-        expect(toArray(reparsed.attributeGroup)).toHaveLength(1);
-        expect(toArray(reparsed.attributeGroup)[0].name).toBe("RoundTripAttrs");
+        expect(reparsed.attributeGroup ?? []).toHaveLength(1);
+        expect((reparsed.attributeGroup ?? [])[0].name).toBe("RoundTripAttrs");
       });
     });
 
     describe("reference mode", () => {
-      it("should add an attribute group ref to a complexType", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:attributeGroup name="CommonAttrs"/>
-  <xs:complexType name="PersonType"/>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+      test("should add an attribute group ref to a complexType", () => {
+        const schemaObj = schemaWith(`<xs:attributeGroup name="CommonAttrs"/>
+<xs:complexType name="PersonType"/>`);
 
         const command: AddAttributeGroupCommand = {
           type: "addAttributeGroup",
@@ -146,18 +117,14 @@ describe("AttributeGroup Executors", () => {
 
         executeAddAttributeGroup(command, schemaObj);
 
-        const ct = toArray(schemaObj.complexType)[0];
-        expect(toArray(ct.attributeGroup)).toHaveLength(1);
-        expect(toArray(ct.attributeGroup)[0].ref).toBe("CommonAttrs");
+        const ct = (schemaObj.complexType ?? [])[0];
+        expect(ct.attributeGroup ?? []).toHaveLength(1);
+        expect((ct.attributeGroup ?? [])[0].ref).toBe("CommonAttrs");
       });
 
-      it("should add an attribute group ref with documentation", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:attributeGroup name="CommonAttrs"/>
-  <xs:complexType name="PersonType"/>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+      test("should add an attribute group ref with documentation", () => {
+        const schemaObj = schemaWith(`<xs:attributeGroup name="CommonAttrs"/>
+<xs:complexType name="PersonType"/>`);
 
         const command: AddAttributeGroupCommand = {
           type: "addAttributeGroup",
@@ -170,20 +137,16 @@ describe("AttributeGroup Executors", () => {
 
         executeAddAttributeGroup(command, schemaObj);
 
-        const ct = toArray(schemaObj.complexType)[0];
-        const agRef = toArray(ct.attributeGroup)[0];
+        const ct = (schemaObj.complexType ?? [])[0];
+        const agRef = (ct.attributeGroup ?? [])[0];
         expect(agRef.ref).toBe("CommonAttrs");
         expect(agRef.annotation?.documentation?.[0].value).toBe("Ref docs");
       });
 
-      it("should add multiple attribute group refs to the same complexType", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:attributeGroup name="AttrsA"/>
-  <xs:attributeGroup name="AttrsB"/>
-  <xs:complexType name="PersonType"/>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+      test("should add multiple attribute group refs to the same complexType", () => {
+        const schemaObj = schemaWith(`<xs:attributeGroup name="AttrsA"/>
+<xs:attributeGroup name="AttrsB"/>
+<xs:complexType name="PersonType"/>`);
 
         executeAddAttributeGroup(
           { type: "addAttributeGroup", payload: { ref: "AttrsA", parentId: "/complexType:PersonType" } },
@@ -194,18 +157,14 @@ describe("AttributeGroup Executors", () => {
           schemaObj
         );
 
-        const ct = toArray(schemaObj.complexType)[0];
-        expect(toArray(ct.attributeGroup)).toHaveLength(2);
-        expect(toArray(ct.attributeGroup)[1].ref).toBe("AttrsB");
+        const ct = (schemaObj.complexType ?? [])[0];
+        expect(ct.attributeGroup ?? []).toHaveLength(2);
+        expect((ct.attributeGroup ?? [])[1].ref).toBe("AttrsB");
       });
 
-      it("should add an attribute group ref to a namedAttributeGroup", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:attributeGroup name="BaseAttrs"/>
-  <xs:attributeGroup name="ExtendedAttrs"/>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+      test("should add an attribute group ref to a namedAttributeGroup", () => {
+        const schemaObj = schemaWith(`<xs:attributeGroup name="BaseAttrs"/>
+<xs:attributeGroup name="ExtendedAttrs"/>`);
 
         const command: AddAttributeGroupCommand = {
           type: "addAttributeGroup",
@@ -214,11 +173,11 @@ describe("AttributeGroup Executors", () => {
 
         executeAddAttributeGroup(command, schemaObj);
 
-        const extGroup = toArray(schemaObj.attributeGroup).find(
+        const extGroup = (schemaObj.attributeGroup ?? []).find(
           (g) => g.name === "ExtendedAttrs"
         );
-        expect(toArray(extGroup?.attributeGroup)).toHaveLength(1);
-        expect(toArray(extGroup?.attributeGroup)[0].ref).toBe("BaseAttrs");
+        expect(extGroup?.attributeGroup ?? []).toHaveLength(1);
+        expect((extGroup?.attributeGroup ?? [])[0].ref).toBe("BaseAttrs");
       });
 
     });
@@ -226,12 +185,8 @@ describe("AttributeGroup Executors", () => {
 
   describe("executeRemoveAttributeGroup", () => {
     describe("definition mode", () => {
-      it("should remove an attribute group by ID", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:attributeGroup name="RemovableAttrs"/>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+      test("should remove an attribute group by ID", () => {
+        const schemaObj = schemaWith(`<xs:attributeGroup name="RemovableAttrs"/>`);
 
         const command: RemoveAttributeGroupCommand = {
           type: "removeAttributeGroup",
@@ -243,13 +198,9 @@ describe("AttributeGroup Executors", () => {
         expect(schemaObj.attributeGroup).toBeUndefined();
       });
 
-      it("should remove one attribute group while leaving others intact", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:attributeGroup name="GroupA"/>
-  <xs:attributeGroup name="GroupB"/>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+      test("should remove one attribute group while leaving others intact", () => {
+        const schemaObj = schemaWith(`<xs:attributeGroup name="GroupA"/>
+<xs:attributeGroup name="GroupB"/>`);
 
         const command: RemoveAttributeGroupCommand = {
           type: "removeAttributeGroup",
@@ -258,22 +209,15 @@ describe("AttributeGroup Executors", () => {
 
         executeRemoveAttributeGroup(command, schemaObj);
 
-        expect(toArray(schemaObj.attributeGroup)).toHaveLength(1);
-        expect(toArray(schemaObj.attributeGroup)[0].name).toBe("GroupB");
+        expect(schemaObj.attributeGroup ?? []).toHaveLength(1);
+        expect((schemaObj.attributeGroup ?? [])[0].name).toBe("GroupB");
       });
 
     });
 
     describe("reference mode", () => {
-      it("should remove an attribute group ref from a complexType", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:attributeGroup name="CommonAttrs"/>
-  <xs:complexType name="PersonType">
-    <xs:attributeGroup ref="CommonAttrs"/>
-  </xs:complexType>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+      test("should remove an attribute group ref from a complexType", () => {
+        const schemaObj = readTestSchema(PERSON_TYPE_WITH_REF_XSD);
 
         const command: RemoveAttributeGroupCommand = {
           type: "removeAttributeGroup",
@@ -282,21 +226,17 @@ describe("AttributeGroup Executors", () => {
 
         executeRemoveAttributeGroup(command, schemaObj);
 
-        const ct = toArray(schemaObj.complexType)[0];
+        const ct = (schemaObj.complexType ?? [])[0];
         expect(ct.attributeGroup).toBeUndefined();
       });
 
-      it("should remove only the matching ref while leaving others intact", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:attributeGroup name="AttrsA"/>
-  <xs:attributeGroup name="AttrsB"/>
-  <xs:complexType name="PersonType">
-    <xs:attributeGroup ref="AttrsA"/>
-    <xs:attributeGroup ref="AttrsB"/>
-  </xs:complexType>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+      test("should remove only the matching ref while leaving others intact", () => {
+        const schemaObj = schemaWith(`<xs:attributeGroup name="AttrsA"/>
+<xs:attributeGroup name="AttrsB"/>
+<xs:complexType name="PersonType">
+  <xs:attributeGroup ref="AttrsA"/>
+  <xs:attributeGroup ref="AttrsB"/>
+</xs:complexType>`);
 
         const command: RemoveAttributeGroupCommand = {
           type: "removeAttributeGroup",
@@ -305,20 +245,16 @@ describe("AttributeGroup Executors", () => {
 
         executeRemoveAttributeGroup(command, schemaObj);
 
-        const ct = toArray(schemaObj.complexType)[0];
-        expect(toArray(ct.attributeGroup)).toHaveLength(1);
-        expect(toArray(ct.attributeGroup)[0].ref).toBe("AttrsB");
+        const ct = (schemaObj.complexType ?? [])[0];
+        expect(ct.attributeGroup ?? []).toHaveLength(1);
+        expect((ct.attributeGroup ?? [])[0].ref).toBe("AttrsB");
       });
 
-      it("should remove an attribute group ref from a namedAttributeGroup", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:attributeGroup name="BaseAttrs"/>
-  <xs:attributeGroup name="ExtendedAttrs">
-    <xs:attributeGroup ref="BaseAttrs"/>
-  </xs:attributeGroup>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+      test("should remove an attribute group ref from a namedAttributeGroup", () => {
+        const schemaObj = schemaWith(`<xs:attributeGroup name="BaseAttrs"/>
+<xs:attributeGroup name="ExtendedAttrs">
+  <xs:attributeGroup ref="BaseAttrs"/>
+</xs:attributeGroup>`);
 
         const command: RemoveAttributeGroupCommand = {
           type: "removeAttributeGroup",
@@ -327,7 +263,7 @@ describe("AttributeGroup Executors", () => {
 
         executeRemoveAttributeGroup(command, schemaObj);
 
-        const extGroup = toArray(schemaObj.attributeGroup).find(
+        const extGroup = (schemaObj.attributeGroup ?? []).find(
           (g) => g.name === "ExtendedAttrs"
         );
         expect(extGroup?.attributeGroup).toBeUndefined();
@@ -338,12 +274,8 @@ describe("AttributeGroup Executors", () => {
 
   describe("executeModifyAttributeGroup", () => {
     describe("definition mode", () => {
-      it("should rename an attribute group", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:attributeGroup name="OldName"/>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+      test("should rename an attribute group", () => {
+        const schemaObj = schemaWith(`<xs:attributeGroup name="OldName"/>`);
 
         const command: ModifyAttributeGroupCommand = {
           type: "modifyAttributeGroup",
@@ -352,15 +284,11 @@ describe("AttributeGroup Executors", () => {
 
         executeModifyAttributeGroup(command, schemaObj);
 
-        expect(toArray(schemaObj.attributeGroup)[0].name).toBe("NewName");
+        expect((schemaObj.attributeGroup ?? [])[0].name).toBe("NewName");
       });
 
-      it("should update documentation of an attribute group", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:attributeGroup name="DocGroup"/>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+      test("should update documentation of an attribute group", () => {
+        const schemaObj = schemaWith(`<xs:attributeGroup name="DocGroup"/>`);
 
         const command: ModifyAttributeGroupCommand = {
           type: "modifyAttributeGroup",
@@ -372,16 +300,12 @@ describe("AttributeGroup Executors", () => {
 
         executeModifyAttributeGroup(command, schemaObj);
 
-        const ag = toArray(schemaObj.attributeGroup)[0];
+        const ag = (schemaObj.attributeGroup ?? [])[0];
         expect(ag.annotation?.documentation?.[0].value).toBe("New documentation");
       });
 
-      it("should update name and documentation together", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:attributeGroup name="OldGroup"/>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+      test("should update name and documentation together", () => {
+        const schemaObj = schemaWith(`<xs:attributeGroup name="OldGroup"/>`);
 
         const command: ModifyAttributeGroupCommand = {
           type: "modifyAttributeGroup",
@@ -394,17 +318,13 @@ describe("AttributeGroup Executors", () => {
 
         executeModifyAttributeGroup(command, schemaObj);
 
-        const ag = toArray(schemaObj.attributeGroup)[0];
+        const ag = (schemaObj.attributeGroup ?? [])[0];
         expect(ag.name).toBe("UpdatedGroup");
         expect(ag.annotation?.documentation?.[0].value).toBe("Updated docs");
       });
 
-      it("should leave unchanged properties untouched", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:attributeGroup name="StableGroup"/>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+      test("should leave unchanged properties untouched", () => {
+        const schemaObj = schemaWith(`<xs:attributeGroup name="StableGroup"/>`);
 
         const command: ModifyAttributeGroupCommand = {
           type: "modifyAttributeGroup",
@@ -413,21 +333,13 @@ describe("AttributeGroup Executors", () => {
 
         executeModifyAttributeGroup(command, schemaObj);
 
-        expect(toArray(schemaObj.attributeGroup)[0].name).toBe("StableGroup");
+        expect((schemaObj.attributeGroup ?? [])[0].name).toBe("StableGroup");
       });
     });
 
     describe("reference mode", () => {
-      it("should change the ref target of an attribute group reference", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:attributeGroup name="AttrsA"/>
-  <xs:attributeGroup name="AttrsB"/>
-  <xs:complexType name="PersonType">
-    <xs:attributeGroup ref="AttrsA"/>
-  </xs:complexType>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+      test("should change the ref target of an attribute group reference", () => {
+        const schemaObj = readTestSchema("person-type-with-one-of-two-attribute-groups.xsd");
 
         const command: ModifyAttributeGroupCommand = {
           type: "modifyAttributeGroup",
@@ -439,19 +351,12 @@ describe("AttributeGroup Executors", () => {
 
         executeModifyAttributeGroup(command, schemaObj);
 
-        const ct = toArray(schemaObj.complexType)[0];
-        expect(toArray(ct.attributeGroup)[0].ref).toBe("AttrsB");
+        const ct = (schemaObj.complexType ?? [])[0];
+        expect((ct.attributeGroup ?? [])[0].ref).toBe("AttrsB");
       });
 
-      it("should set documentation annotation on an attribute group reference", () => {
-        const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:attributeGroup name="CommonAttrs"/>
-  <xs:complexType name="PersonType">
-    <xs:attributeGroup ref="CommonAttrs"/>
-  </xs:complexType>
-</xs:schema>`;
-        const schemaObj = unmarshal(schema, schemaXml);
+      test("should set documentation annotation on an attribute group reference", () => {
+        const schemaObj = readTestSchema(PERSON_TYPE_WITH_REF_XSD);
 
         const command: ModifyAttributeGroupCommand = {
           type: "modifyAttributeGroup",
@@ -463,15 +368,15 @@ describe("AttributeGroup Executors", () => {
 
         executeModifyAttributeGroup(command, schemaObj);
 
-        const ct = toArray(schemaObj.complexType)[0];
-        const agRef = toArray(ct.attributeGroup)[0];
+        const ct = (schemaObj.complexType ?? [])[0];
+        const agRef = (ct.attributeGroup ?? [])[0];
         expect(agRef.annotation?.documentation?.[0].value).toBe("Ref annotation");
       });
 
     });
   });
   describe("identifying references", () => {
-    it("should remove a reference identified by name only", () => {
+    test("should remove a reference identified by name only", () => {
       const schemaObj = schemaWithAttrGroups(TWO_REFS);
       const command: RemoveAttributeGroupCommand = {
         type: "removeAttributeGroup",
@@ -483,7 +388,7 @@ describe("AttributeGroup Executors", () => {
       expect(refsOfT(schemaObj)).toEqual(["CommonAttrs"]);
     });
 
-    it("should remove a reference identified by position only", () => {
+    test("should remove a reference identified by position only", () => {
       const schemaObj = schemaWithAttrGroups(TWO_REFS);
       const command: RemoveAttributeGroupCommand = {
         type: "removeAttributeGroup",
@@ -495,7 +400,7 @@ describe("AttributeGroup Executors", () => {
       expect(refsOfT(schemaObj)).toEqual(["OtherAttrs"]);
     });
 
-    it("should change a reference identified by name only", () => {
+    test("should change a reference identified by name only", () => {
       const schemaObj = schemaWithAttrGroups(TWO_REFS);
       const command: ModifyAttributeGroupCommand = {
         type: "modifyAttributeGroup",
@@ -507,7 +412,7 @@ describe("AttributeGroup Executors", () => {
       expect(refsOfT(schemaObj)).toEqual(["CommonAttrs", "CommonAttrs"]);
     });
 
-    it("should change a reference identified by position only", () => {
+    test("should change a reference identified by position only", () => {
       const schemaObj = schemaWithAttrGroups(TWO_REFS);
       const command: ModifyAttributeGroupCommand = {
         type: "modifyAttributeGroup",
@@ -522,17 +427,8 @@ describe("AttributeGroup Executors", () => {
   });
 
   describe("documentation in an existing annotation", () => {
-    /** An annotation with application information and a documentation entry. */
-    const ANNOTATION = `<xs:annotation><xs:appinfo>tool data</xs:appinfo><xs:documentation>Old</xs:documentation></xs:annotation>`;
-
-    it("should replace the documentation of a definition and keep its appinfo", () => {
-      const schemaObj = unmarshal(
-        schema,
-        `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:attributeGroup name="CommonAttrs">${ANNOTATION}</xs:attributeGroup>
-</xs:schema>`,
-      );
+    test("should replace the documentation of a definition and keep its appinfo", () => {
+      const schemaObj = schemaWith(`<xs:attributeGroup name="CommonAttrs">${ANNOTATION}</xs:attributeGroup>`);
       const command: ModifyAttributeGroupCommand = {
         type: "modifyAttributeGroup",
         payload: { groupId: "/attributeGroup:CommonAttrs", documentation: "New" },
@@ -541,11 +437,11 @@ describe("AttributeGroup Executors", () => {
       executeModifyAttributeGroup(command, schemaObj);
 
       const annotation = schemaObj.attributeGroup![0].annotation!;
-      expect(toArray(annotation.documentation).map((d) => d.value)).toEqual(["New"]);
-      expect(toArray(annotation.appinfo)).toHaveLength(1);
+      expect((annotation.documentation ?? []).map((d) => d.value)).toEqual(["New"]);
+      expect(annotation.appinfo ?? []).toHaveLength(1);
     });
 
-    it("should replace the documentation of a reference and keep its appinfo", () => {
+    test("should replace the documentation of a reference and keep its appinfo", () => {
       const schemaObj = schemaWithAttrGroups(
         `<xs:complexType name="T"><xs:attributeGroup ref="CommonAttrs">${ANNOTATION}</xs:attributeGroup></xs:complexType>`,
       );
@@ -556,10 +452,10 @@ describe("AttributeGroup Executors", () => {
 
       executeModifyAttributeGroup(command, schemaObj);
 
-      const t = toArray(schemaObj.complexType).find((ct) => ct.name === "T");
-      const annotation = toArray(t?.attributeGroup)[0].annotation!;
-      expect(toArray(annotation.documentation).map((d) => d.value)).toEqual(["New"]);
-      expect(toArray(annotation.appinfo)).toHaveLength(1);
+      const t = (schemaObj.complexType ?? []).find((ct) => ct.name === "T");
+      const annotation = (t?.attributeGroup ?? [])[0].annotation!;
+      expect((annotation.documentation ?? []).map((d) => d.value)).toEqual(["New"]);
+      expect(annotation.appinfo ?? []).toHaveLength(1);
     });
 
   });

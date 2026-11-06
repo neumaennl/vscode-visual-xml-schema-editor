@@ -15,9 +15,8 @@ import {
   annotationType,
   documentationType,
 } from "../../shared/types.js";
-import { toArray } from "../../shared/schemaUtils.js";
-import { locateNodeById } from "../schemaNavigator.js";
-import { parseSchemaId } from "../../shared/idStrategy.js";
+import { assumeRemoved, assumeValidated, assumptionFailed, locateValidated } from "./assumeValidated.js";
+import { parseSchemaId, SCHEMA_ROOT_ID } from "../../shared/idStrategy.js";
 import { createAnnotation } from "./annotationUtils.js";
 
 /**
@@ -36,11 +35,11 @@ export function executeAddAttribute(
     parentId, attributeName, attributeType, ref, required, defaultValue, fixedValue, documentation,
   } = command.payload;
 
-  const location = locateNodeById(schemaObj, parentId);
+  const location = locateValidated(schemaObj, parentId);
 
   addAttributeToParent(
     location.parent,
-    location.parentType ?? "",
+    location.parentType,
     attributeName,
     attributeType,
     ref,
@@ -66,10 +65,10 @@ export function executeRemoveAttribute(
   const { attributeId } = command.payload;
 
   const parsed = parseSchemaId(attributeId);
-  const parentId = parsed.parentId ?? "schema";
-  const location = locateNodeById(schemaObj, parentId);
+  const parentId = parsed.parentId ?? SCHEMA_ROOT_ID;
+  const location = locateValidated(schemaObj, parentId);
 
-  removeAttributeFromParent(location.parent, location.parentType ?? "", parsed.name, parsed.position);
+  removeAttributeFromParent(location.parent, location.parentType, parsed.name, parsed.position);
 }
 
 /**
@@ -89,12 +88,12 @@ export function executeModifyAttribute(
   } = command.payload;
 
   const parsed = parseSchemaId(attributeId);
-  const parentId = parsed.parentId ?? "schema";
-  const location = locateNodeById(schemaObj, parentId);
+  const parentId = parsed.parentId ?? SCHEMA_ROOT_ID;
+  const location = locateValidated(schemaObj, parentId);
 
   modifyAttributeInParent(
     location.parent,
-    location.parentType ?? "",
+    location.parentType,
     parsed.name,
     parsed.position,
     attributeName,
@@ -137,9 +136,9 @@ function addAttributeToParent(
 ): void {
   if (parentType === "schema") {
     const schemaObj = parent as schema;
-    const attributes = toArray(schemaObj.attribute);
+    const attributes = schemaObj.attribute ?? [];
     const newAttr = new topLevelAttribute();
-    newAttr.name = name as string;
+    newAttr.name = assumeValidated(name, "Attribute name");
     newAttr.type_ = type;
     if (defaultValue !== undefined) {
       newAttr.default_ = defaultValue;
@@ -154,7 +153,7 @@ function addAttributeToParent(
     schemaObj.attribute = attributes;
   } else if (parentType === "topLevelComplexType" || parentType === "localComplexType") {
     const complexType = parent as topLevelComplexType | localComplexType;
-    const attributes = toArray(complexType.attribute);
+    const attributes = complexType.attribute ?? [];
 
     if (ref !== undefined) {
       // Reference attribute
@@ -188,6 +187,8 @@ function addAttributeToParent(
     }
 
     complexType.attribute = attributes;
+  } else {
+    assumptionFailed(`Parent of type '${parentType}' for an attribute`);
   }
 }
 
@@ -208,14 +209,24 @@ function removeAttributeFromParent(
 ): void {
   if (parentType === "schema") {
     const schemaObj = parent as schema;
-    const attributes = toArray(schemaObj.attribute);
-    const filtered = filterAttributes(attributes, attributeName, position);
+    const attributes = schemaObj.attribute ?? [];
+    const filtered = assumeRemoved(
+      attributes,
+      filterAttributes(attributes, attributeName, position),
+      describeAttribute(attributeName, position)
+    );
     schemaObj.attribute = filtered.length > 0 ? filtered : undefined;
   } else if (parentType === "topLevelComplexType" || parentType === "localComplexType") {
     const complexType = parent as topLevelComplexType | localComplexType;
-    const attributes = toArray(complexType.attribute);
-    const filtered = filterAttributes(attributes, attributeName, position);
+    const attributes = complexType.attribute ?? [];
+    const filtered = assumeRemoved(
+      attributes,
+      filterAttributes(attributes, attributeName, position),
+      describeAttribute(attributeName, position)
+    );
     complexType.attribute = filtered.length > 0 ? filtered : undefined;
+  } else {
+    assumptionFailed(`Parent of type '${parentType}' for an attribute`);
   }
 }
 
@@ -249,8 +260,10 @@ function modifyAttributeInParent(
   newDocumentation?: string
 ): void {
   const attributes = getAttributesFromParent(parent, parentType);
-  const attr = findAttribute(attributes, targetName, targetPosition);
-  if (!attr) return;
+  const attr = assumeValidated(
+    findAttribute(attributes, targetName, targetPosition),
+    describeAttribute(targetName, targetPosition)
+  );
   updateAttributeProperties(attr, newName, newType, newRef, newRequired, newDefaultValue, newFixedValue, newDocumentation);
 }
 
@@ -267,11 +280,22 @@ function getAttributesFromParent(
   parentType: string
 ): Array<topLevelAttribute | attribute> {
   if (parentType === "schema") {
-    return toArray((parent as schema).attribute);
+    return (parent as schema).attribute ?? [];
   } else if (parentType === "topLevelComplexType" || parentType === "localComplexType") {
-    return toArray((parent as topLevelComplexType | localComplexType).attribute);
+    return (parent as topLevelComplexType | localComplexType).attribute ?? [];
   }
-  return [];
+  return assumptionFailed(`Parent of type '${parentType}' for an attribute`);
+}
+
+/**
+ * Describes an attribute by its name or position, for error messages.
+ *
+ * @param name - The name or ref value of the attribute (optional)
+ * @param position - The position of the attribute (optional)
+ * @returns For example `Attribute lang` or `Attribute at position 2`
+ */
+function describeAttribute(name?: string, position?: number): string {
+  return name !== undefined ? `Attribute ${name}` : `Attribute at position ${position}`;
 }
 
 /**
@@ -282,7 +306,6 @@ function getAttributesFromParent(
  * @param attributeName - Name or ref value to filter (optional)
  * @param position - Position to filter (optional)
  * @returns Filtered array
- * @throws Error if attribute not found
  */
 function filterAttributes<T extends { name?: string; ref?: string }>(
   attributes: T[],

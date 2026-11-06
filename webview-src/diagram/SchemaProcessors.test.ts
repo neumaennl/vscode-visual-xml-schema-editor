@@ -7,11 +7,15 @@ import {
   processRestriction,
   processAnonymousSimpleType,
   processComplexType,
+  processSequence,
+  processChoice,
+  processAll,
+  processAnonymousComplexType,
   extractRestrictionFacets,
 } from "../diagram/SchemaProcessors";
 import { DiagramItem } from "../diagram/DiagramItem";
 import { Diagram } from "../diagram/Diagram";
-import { DiagramItemType } from "../diagram/DiagramTypes";
+import { DiagramItemGroupType, DiagramItemType } from "../diagram/DiagramTypes";
 
 describe("SchemaProcessors", () => {
   let diagram: Diagram;
@@ -23,7 +27,7 @@ describe("SchemaProcessors", () => {
   });
 
   describe("processExtension", () => {
-    it("should append extension info to existing type", () => {
+    test("should append extension info to existing type", () => {
       item.type = "complexType";
       const extension = { base: "BaseType" };
 
@@ -32,7 +36,7 @@ describe("SchemaProcessors", () => {
       expect(item.type).toBe("complexType (extends BaseType)");
     });
 
-    it("should append extension info to empty type", () => {
+    test("should append extension info to empty type", () => {
       item.type = "";
       const extension = { base: "BaseType" };
 
@@ -43,7 +47,7 @@ describe("SchemaProcessors", () => {
   });
 
   describe("extractRestrictionFacets", () => {
-    it("should extract enumeration values", () => {
+    test("should extract enumeration values", () => {
       const restriction = {
         enumeration: [{ value: "error" }, { value: "warning" }, { value: "info" }],
       };
@@ -54,7 +58,7 @@ describe("SchemaProcessors", () => {
       expect(item.restrictions?.enumeration).toEqual(["error", "warning", "info"]);
     });
 
-    it("should extract pattern values", () => {
+    test("should extract pattern values", () => {
       const restriction = {
         pattern: [{ value: "[A-Z]{3}" }, { value: "[0-9]+" }],
       };
@@ -65,7 +69,7 @@ describe("SchemaProcessors", () => {
       expect(item.restrictions?.pattern).toEqual(["[A-Z]{3}", "[0-9]+"]);
     });
 
-    it("should extract length constraints", () => {
+    test("should extract length constraints", () => {
       const restriction = {
         length: [{ value: 10 }],
         minLength: [{ value: 5 }],
@@ -80,7 +84,7 @@ describe("SchemaProcessors", () => {
       expect(item.restrictions?.maxLength).toBe(255);
     });
 
-    it("should extract min/max value constraints", () => {
+    test("should extract min/max value constraints", () => {
       const restriction = {
         minInclusive: [{ value: "0" }],
         maxInclusive: [{ value: "100" }],
@@ -93,7 +97,7 @@ describe("SchemaProcessors", () => {
       expect(item.restrictions?.maxInclusive).toBe("100");
     });
 
-    it("should extract exclusive value constraints", () => {
+    test("should extract exclusive value constraints", () => {
       const restriction = {
         minExclusive: [{ value: "-10" }],
         maxExclusive: [{ value: "10" }],
@@ -106,7 +110,7 @@ describe("SchemaProcessors", () => {
       expect(item.restrictions?.maxExclusive).toBe("10");
     });
 
-    it("should extract digit constraints", () => {
+    test("should extract digit constraints", () => {
       const restriction = {
         totalDigits: [{ value: 10 }],
         fractionDigits: [{ value: 2 }],
@@ -119,7 +123,7 @@ describe("SchemaProcessors", () => {
       expect(item.restrictions?.fractionDigits).toBe(2);
     });
 
-    it("should extract whiteSpace constraint", () => {
+    test("should extract whiteSpace constraint", () => {
       const restriction = {
         whiteSpace: [{ value: "collapse" }],
       };
@@ -130,7 +134,7 @@ describe("SchemaProcessors", () => {
       expect(item.restrictions?.whiteSpace).toBe("collapse");
     });
 
-    it("should extract multiple facets at once", () => {
+    test("should extract multiple facets at once", () => {
       const restriction = {
         enumeration: [{ value: "one" }, { value: "two" }],
         pattern: [{ value: "[a-z]+" }],
@@ -147,7 +151,7 @@ describe("SchemaProcessors", () => {
       expect(item.restrictions?.maxLength).toBe(10);
     });
 
-    it("should not create restrictions object if no facets present", () => {
+    test("should not create restrictions object if no facets present", () => {
       const restriction = {};
 
       extractRestrictionFacets(item, restriction);
@@ -155,7 +159,7 @@ describe("SchemaProcessors", () => {
       expect(item.restrictions).toBeUndefined();
     });
 
-    it("should handle empty arrays", () => {
+    test("should handle empty arrays", () => {
       const restriction = {
         enumeration: [],
         pattern: [],
@@ -168,7 +172,7 @@ describe("SchemaProcessors", () => {
   });
 
   describe("processRestriction", () => {
-    it("should append restriction info to existing type", () => {
+    test("should append restriction info to existing type", () => {
       item.type = "simpleType";
       const restriction = { base: "string" };
 
@@ -177,7 +181,7 @@ describe("SchemaProcessors", () => {
       expect(item.type).toBe("simpleType (restricts string)");
     });
 
-    it("should append restriction info to empty type", () => {
+    test("should append restriction info to empty type", () => {
       item.type = "";
       const restriction = { base: "integer" };
 
@@ -186,7 +190,7 @@ describe("SchemaProcessors", () => {
       expect(item.type).toBe(" (restricts integer)");
     });
 
-    it("should extract restriction facets when processing restriction", () => {
+    test("should extract restriction facets when processing restriction", () => {
       item.type = "simpleType";
       const restriction = {
         base: "string",
@@ -204,7 +208,7 @@ describe("SchemaProcessors", () => {
   });
 
   describe("processAnonymousSimpleType", () => {
-    it("should set type before processing restriction", () => {
+    test("should set type before processing restriction", () => {
       const simpleType = {
         restriction: { base: "string" },
       };
@@ -216,17 +220,43 @@ describe("SchemaProcessors", () => {
       expect(item.type).toContain("restricts string");
     });
 
-    it("should mark item as simple content", () => {
+    test("should mark item as simple content", () => {
       const simpleType = {};
 
       processAnonymousSimpleType(item, simpleType);
 
       expect(item.isSimpleContent).toBe(true);
     });
+
+    test("should extract list itemType metadata", () => {
+      const simpleType = {
+        list: { itemType: "xs:token" },
+      };
+
+      processAnonymousSimpleType(item, simpleType);
+
+      expect(item.isSimpleContent).toBe(true);
+      expect(item.simpleTypeDerivationKind).toBe("list");
+      expect(item.simpleTypeListItemType).toBe("xs:token");
+      expect(item.type).toContain("list of xs:token");
+    });
+
+    test("should extract union memberTypes metadata", () => {
+      const simpleType = {
+        union: { memberTypes: "xs:string xs:integer" },
+      };
+
+      processAnonymousSimpleType(item, simpleType);
+
+      expect(item.isSimpleContent).toBe(true);
+      expect(item.simpleTypeDerivationKind).toBe("union");
+      expect(item.simpleTypeUnionMemberTypes).toEqual(["xs:string", "xs:integer"]);
+      expect(item.type).toContain("union of xs:string, xs:integer");
+    });
   });
 
   describe("processComplexType", () => {
-    it("should process complexContent with extension", () => {
+    test("should process complexContent with extension", () => {
       item.type = "complexType";
       const complexType = {
         complexContent: {
@@ -240,7 +270,7 @@ describe("SchemaProcessors", () => {
       expect(item.type).toContain("extends BaseType");
     });
 
-    it("should process simpleContent with restriction", () => {
+    test("should process simpleContent with restriction", () => {
       item.type = "complexType";
       const complexType = {
         simpleContent: {
@@ -253,6 +283,228 @@ describe("SchemaProcessors", () => {
       expect(item.type).toContain("with simpleContent");
       expect(item.type).toContain("restricts string");
       expect(item.isSimpleContent).toBe(true);
+    });
+  });
+
+  describe("processSequence / processChoice / processAll — group IDs", () => {
+    test("should generate a group ID containing 'sequence' for a sequence under a named complexType", () => {
+      const ctItem = new DiagramItem(
+        "/complexType:PersonType",
+        "PersonType",
+        DiagramItemType.type,
+        diagram
+      );
+
+      processSequence(ctItem, { element: [{ name: "name", type_: "xs:string" }] });
+
+      expect(ctItem.childElements).toHaveLength(1);
+      const seq = ctItem.childElements[0];
+      expect(seq.groupType).toBe(DiagramItemGroupType.Sequence);
+      expect(seq.id).toBe("/complexType:PersonType/group:sequence[0]");
+    });
+
+    test("should generate a group ID containing 'choice' for a choice under a named complexType", () => {
+      const ctItem = new DiagramItem(
+        "/complexType:ChoiceType",
+        "ChoiceType",
+        DiagramItemType.type,
+        diagram
+      );
+
+      processChoice(ctItem, { element: [{ name: "opt", type_: "xs:string" }] });
+
+      const choice = ctItem.childElements[0];
+      expect(choice.groupType).toBe(DiagramItemGroupType.Choice);
+      expect(choice.id).toBe("/complexType:ChoiceType/group:choice[0]");
+    });
+
+    test("should generate a group ID containing 'all' for an all group under a named complexType", () => {
+      const ctItem = new DiagramItem(
+        "/complexType:AllType",
+        "AllType",
+        DiagramItemType.type,
+        diagram
+      );
+
+      processAll(ctItem, { element: [{ name: "field", type_: "xs:string" }] });
+
+      const allGroup = ctItem.childElements[0];
+      expect(allGroup.groupType).toBe(DiagramItemGroupType.All);
+      expect(allGroup.id).toBe("/complexType:AllType/group:all[0]");
+    });
+
+    test("should include anonymousComplexType in the group ID when parent is an element with anonymous CT", () => {
+      const elemItem = new DiagramItem(
+        "/element:person",
+        "person",
+        DiagramItemType.element,
+        diagram
+      );
+      // Mark as having anonymous complex type (as processAnonymousComplexType does)
+      elemItem.hasAnonymousComplexType = true;
+
+      processSequence(elemItem, { element: [{ name: "name", type_: "xs:string" }] });
+
+      const seq = elemItem.childElements[0];
+      expect(seq.id).toBe("/element:person/anonymousComplexType[0]/group:sequence[0]");
+    });
+
+    test("child element IDs inside a group should use the correct group parent", () => {
+      const ctItem = new DiagramItem(
+        "/complexType:PersonType",
+        "PersonType",
+        DiagramItemType.type,
+        diagram
+      );
+
+      processSequence(ctItem, {
+        element: [
+          { name: "first", type_: "xs:string" },
+          { name: "last", type_: "xs:string" },
+        ],
+      });
+
+      const seq = ctItem.childElements[0];
+      expect(seq.childElements[0].id).toBe(
+        "/complexType:PersonType/group:sequence[0]/element:first[0]"
+      );
+      expect(seq.childElements[1].id).toBe(
+        "/complexType:PersonType/group:sequence[0]/element:last[1]"
+      );
+    });
+
+    test("should add an empty group to the parent so it can act as a drop target", () => {
+      const ctItem = new DiagramItem(
+        "/complexType:EmptyType",
+        "EmptyType",
+        DiagramItemType.type,
+        diagram
+      );
+
+      processSequence(ctItem, { element: [] });
+      expect(ctItem.childElements).toHaveLength(1);
+      expect(ctItem.childElements[0].groupType).toBe(DiagramItemGroupType.Sequence);
+    });
+
+    test("should mark local group elements with inline anonymous complexType and extension base", () => {
+      const ctItem = new DiagramItem(
+        "/complexType:ContainerType",
+        "ContainerType",
+        DiagramItemType.type,
+        diagram
+      );
+
+      processSequence(ctItem, {
+        element: [
+          {
+            name: "meta",
+            complexType: {
+              complexContent: {
+                extension: {
+                  base: "xs:anyType",
+                  sequence: {},
+                },
+              },
+            },
+          },
+        ],
+      });
+
+      const sequence = ctItem.childElements[0];
+      const meta = sequence.childElements[0];
+      expect(meta.name).toBe("meta");
+      expect(meta.hasAnonymousComplexType).toBe(true);
+      expect(meta.complexDerivationKind).toBe("extension");
+      expect(meta.type).toContain("extends xs:anyType");
+    });
+
+    test("should render nested group references inside sequence groups", () => {
+      const ctItem = new DiagramItem(
+        "/complexType:PersonType",
+        "PersonType",
+        DiagramItemType.type,
+        diagram
+      );
+
+      processSequence(ctItem, {
+        group: [{ ref: "SharedGroup", minOccurs: 0, maxOccurs: "unbounded" }],
+      });
+
+      const sequence = ctItem.childElements[0];
+      expect(sequence.childElements).toHaveLength(1);
+      expect(sequence.childElements[0].id).toBe(
+        "/complexType:PersonType/group:sequence[0]/groupRef:SharedGroup[0]"
+      );
+      expect(sequence.childElements[0].minOccurrence).toBe(0);
+      expect(sequence.childElements[0].maxOccurrence).toBe(-1);
+      expect(sequence.childElements[0].isReference).toBe(true);
+    });
+
+    test("should render nested compositors using schema positions", () => {
+      const ctItem = new DiagramItem(
+        "/complexType:PersonType",
+        "PersonType",
+        DiagramItemType.type,
+        diagram
+      );
+
+      processSequence(ctItem, {
+        element: [{ name: "first", type_: "xs:string" }],
+        choice: [{ element: [{ name: "second", type_: "xs:string" }] }],
+      });
+
+      const sequence = ctItem.childElements[0];
+      expect(sequence.childElements[1].id).toBe(
+        "/complexType:PersonType/group:sequence[0]/group:choice[0]"
+      );
+    });
+
+    test("should extract compositor documentation for properties-panel docs editing", () => {
+      const ctItem = new DiagramItem(
+        "/complexType:PersonType",
+        "PersonType",
+        DiagramItemType.type,
+        diagram
+      );
+
+      processSequence(ctItem, {
+        annotation: {
+          documentation: [{ value: "Sequence docs" }],
+        },
+      });
+
+      const sequence = ctItem.childElements[0];
+      expect(sequence.documentation).toBe("Sequence docs");
+      expect(sequence.documentationAnnotations).toEqual([
+        {
+          id: "/complexType:PersonType/group:sequence[0]",
+          documentationEntries: [
+            {
+              id: "/complexType:PersonType/group:sequence[0]/documentation[0]",
+              content: "Sequence docs",
+              lang: undefined,
+            },
+          ],
+        },
+      ]);
+    });
+  });
+
+  describe("processAnonymousComplexType — group IDs", () => {
+    test("should produce sequence ID with anonymousComplexType segment", () => {
+      const elemItem = new DiagramItem(
+        "/element:person",
+        "person",
+        DiagramItemType.element,
+        diagram
+      );
+
+      processAnonymousComplexType(elemItem, {
+        sequence: { element: [{ name: "name", type_: "xs:string" }] },
+      });
+
+      const seq = elemItem.childElements[0];
+      expect(seq.id).toBe("/element:person/anonymousComplexType[0]/group:sequence[0]");
     });
   });
 });

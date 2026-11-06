@@ -133,3 +133,30 @@ export interface ModifyIncludeCommand extends BaseCommand<ModifyIncludePayload> 
   type: "modifyInclude";
   payload: ModifyIncludePayload;
 }
+
+/**
+ * Payload for modifying schema root namespace declarations and targetNamespace.
+ */
+export interface ModifySchemaNamespacesPayload {
+  /**
+   * New targetNamespace URI.
+   * Use an empty string to remove targetNamespace.
+   */
+  targetNamespace?: string;
+  /**
+   * Complete namespace prefix mapping for schema declarations (prefix -> namespace URI).
+   */
+  namespacePrefixes: Record<string, string>;
+  /**
+   * Previous namespace prefix mapping, used to detect prefix renames for QName rewrites.
+   */
+  previousNamespacePrefixes?: Record<string, string>;
+}
+
+/**
+ * Command to modify schema root namespace declarations and targetNamespace.
+ */
+export interface ModifySchemaNamespacesCommand extends BaseCommand<ModifySchemaNamespacesPayload> {
+  type: "modifySchemaNamespaces";
+  payload: ModifySchemaNamespacesPayload;
+}

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="person" type="xs:string">
+    <xs:annotation>
+      <xs:documentation xml:lang="en">English</xs:documentation>
+      <xs:documentation xml:lang="de">Deutsch</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+</xs:schema>

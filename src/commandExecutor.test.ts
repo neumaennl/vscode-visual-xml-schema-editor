@@ -5,7 +5,6 @@
 
 import { CommandExecutor } from "./commandExecutor.js";
 import { schema, SchemaCommand, topLevelElement } from "../shared/types.js";
-import { toArray } from "../shared/schemaUtils.js";
 
 describe("CommandExecutor", () => {
   let executor: CommandExecutor;
@@ -22,7 +21,7 @@ describe("CommandExecutor", () => {
   });
 
   describe("execute() method", () => {
-    it("should throw error for unknown command types", () => {
+    test("should throw error for unknown command types", () => {
       expect(() => {
         executor.execute(
           // eslint-disable-next-line no-restricted-syntax -- `type` not in SchemaCommand union; cast needed to test runtime rejection
@@ -32,11 +31,11 @@ describe("CommandExecutor", () => {
       }).toThrow("Unknown command type: unknownCommandType");
     });
 
-    it("should delegate addElement execution successfully", () => {
+    test("should delegate addElement execution successfully", () => {
       const command: SchemaCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "testElement",
           elementType: "string",
         },
@@ -50,7 +49,7 @@ describe("CommandExecutor", () => {
       expect(mockSchema.element).toBeDefined();
     });
 
-    it("should delegate removeElement execution successfully", () => {
+    test("should delegate removeElement execution successfully", () => {
       // Add an element first
       mockSchema.element = [
         {
@@ -75,7 +74,7 @@ describe("CommandExecutor", () => {
       expect(mockSchema.element).toBeUndefined();
     });
 
-    it("should delegate modifyElement execution", () => {
+    test("should delegate modifyElement execution", () => {
       // Add an element first so we have something to modify
       const testSchema = new schema();
       const element = new topLevelElement();
@@ -101,11 +100,11 @@ describe("CommandExecutor", () => {
       expect(elements[0].type_).toBe("int");
     });
 
-    it("should delegate addAttribute execution successfully", () => {
+    test("should delegate addAttribute execution successfully", () => {
       const command: SchemaCommand = {
         type: "addAttribute",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           attributeName: "testAttr",
           attributeType: "xs:string",
         },
@@ -119,7 +118,7 @@ describe("CommandExecutor", () => {
       expect(mockSchema.attribute).toBeDefined();
     });
 
-    it("should delegate addSimpleType execution successfully", () => {
+    test("should delegate addSimpleType execution successfully", () => {
       const command: SchemaCommand = {
         type: "addSimpleType",
         payload: {
@@ -135,7 +134,7 @@ describe("CommandExecutor", () => {
       expect(mockSchema.simpleType).toBeDefined();
     });
 
-    it("should delegate addComplexType execution and add the type to the schema", () => {
+    test("should delegate addComplexType execution and add the type to the schema", () => {
       const command: SchemaCommand = {
         type: "addComplexType",
         payload: {
@@ -150,7 +149,7 @@ describe("CommandExecutor", () => {
       expect(mockSchema.complexType![0].name).toBe("testComplexType");
     });
 
-    it("should delegate addGroup execution and add the group to the schema", () => {
+    test("should delegate addGroup execution and add the group to the schema", () => {
       const command: SchemaCommand = {
         type: "addGroup",
         payload: {
@@ -165,7 +164,7 @@ describe("CommandExecutor", () => {
       expect(mockSchema.group![0].name).toBe("testGroup");
     });
 
-    it("should delegate addAttributeGroup execution and add the group to the schema", () => {
+    test("should delegate addAttributeGroup execution and add the group to the schema", () => {
       const command: SchemaCommand = {
         type: "addAttributeGroup",
         payload: {
@@ -176,15 +175,15 @@ describe("CommandExecutor", () => {
       executor.execute(command, mockSchema);
 
       expect(mockSchema.attributeGroup).toBeDefined();
-      expect(toArray(mockSchema.attributeGroup)[0].name).toBe("testAttrGroup");
+      expect((mockSchema.attributeGroup ?? [])[0].name).toBe("testAttrGroup");
     });
 
-    it("should delegate addAnnotation execution successfully", () => {
+    test("should delegate addAnnotation execution successfully", () => {
       // Add annotation to the schema root itself — it supports xs:annotation natively.
       const command: SchemaCommand = {
         type: "addAnnotation",
         payload: {
-          targetId: "schema",
+          targetId: "/schema",
           documentation: "Test schema annotation",
         },
       };
@@ -193,18 +192,18 @@ describe("CommandExecutor", () => {
         executor.execute(command, mockSchema);
       }).not.toThrow();
 
-      expect(toArray(mockSchema.annotation)).toHaveLength(1);
-      expect(toArray(toArray(mockSchema.annotation)[0].documentation)[0].value).toBe(
+      expect(mockSchema.annotation ?? []).toHaveLength(1);
+      expect(((mockSchema.annotation ?? [])[0].documentation ?? [])[0].value).toBe(
         "Test schema annotation"
       );
     });
 
-    it("should delegate addDocumentation execution successfully", () => {
+    test("should delegate addDocumentation execution successfully", () => {
       // Add documentation directly to the schema root's annotation.
       const command: SchemaCommand = {
         type: "addDocumentation",
         payload: {
-          targetId: "schema",
+          targetId: "/schema",
           content: "Test schema documentation",
           lang: "en",
         },
@@ -214,12 +213,12 @@ describe("CommandExecutor", () => {
         executor.execute(command, mockSchema);
       }).not.toThrow();
 
-      const docs = toArray(toArray(mockSchema.annotation)[0]?.documentation);
-      expect(docs).toHaveLength(1);
-      expect(docs[0].value).toBe("Test schema documentation");
+      const documentations = (mockSchema.annotation ?? [])[0]?.documentation ?? [];
+      expect(documentations).toHaveLength(1);
+      expect(documentations[0].value).toBe("Test schema documentation");
     });
 
-    it("should delegate addImport execution successfully", () => {
+    test("should delegate addImport execution successfully", () => {
       const command: SchemaCommand = {
         type: "addImport",
         payload: {
@@ -232,10 +231,10 @@ describe("CommandExecutor", () => {
         executor.execute(command, mockSchema);
       }).not.toThrow();
 
-      expect(toArray(mockSchema.import_)).toHaveLength(1);
+      expect(mockSchema.import_ ?? []).toHaveLength(1);
     });
 
-    it("should delegate addInclude execution successfully", () => {
+    test("should delegate addInclude execution successfully", () => {
       const command: SchemaCommand = {
         type: "addInclude",
         payload: {
@@ -247,8 +246,8 @@ describe("CommandExecutor", () => {
         executor.execute(command, mockSchema);
       }).not.toThrow();
 
-      expect(toArray(mockSchema.include)).toHaveLength(1);
-      expect(toArray(mockSchema.include)[0].schemaLocation).toBe("included.xsd");
+      expect(mockSchema.include ?? []).toHaveLength(1);
+      expect((mockSchema.include ?? [])[0].schemaLocation).toBe("included.xsd");
     });
   });
 });

@@ -19,7 +19,7 @@ export interface SharedData {
   electronNode: Record<string, string>;
   typesVscode: string[];
   typesNode: string[];
-  nodeSchedule: Record<string, { end: string }>;
+  nodeSchedule: Partial<Record<string, { end: string }>>;
 }
 
 /** The values of `package.json` and `.nvmrc` that follow from a VS Code release. */

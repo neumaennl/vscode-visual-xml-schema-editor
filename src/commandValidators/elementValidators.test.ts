@@ -1,5 +1,5 @@
 /**
- * Unit tests for element and attribute validators.
+ * Unit tests for element validators.
  */
 
 import { unmarshal } from "@neumaennl/xmlbind-ts";
@@ -8,35 +8,20 @@ import {
   AddElementCommand,
   RemoveElementCommand,
   ModifyElementCommand,
-  AddAttributeCommand,
-  RemoveAttributeCommand,
-  ModifyAttributeCommand,
 } from "../../shared/types.js";
 import {
   validateAddElement,
   validateRemoveElement,
   validateModifyElement,
-  validateAddAttribute,
-  validateRemoveAttribute,
-  validateModifyAttribute,
 } from "./elementValidators.js";
-import { expectInvalid } from "./validationTestHelpers.js";
+import { expectInvalid } from "../__tests__/validationTestHelpers.js";
+import { readTestSchema, schemaWith } from "../__tests__/schemaTestHelpers.js";
 
-/**
- * Unmarshals a schema with the given content.
- *
- * @param body - The XSD content of the schema
- * @returns The schema object
- */
-function schemaWith(body: string): schema {
-  return unmarshal(
-    schema,
-    `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  ${body}
-</xs:schema>`,
-  );
-}
+/** An import of the namespace `http://example.com/external`. */
+const EXTERNAL_IMPORT = `<xs:import namespace="http://example.com/external" schemaLocation="external.xsd"/>`;
+
+/** The prefix `ext` for the namespace `http://example.com/external`. */
+const EXT_PREFIX = { ext: "http://example.com/external" };
 
 /** A top-level element `root` and a complexType `T` whose sequence holds two local elements and a reference to `root`. */
 const SEQUENCE_WITH_ELEMENTS = `<xs:element name="root" type="xs:string"/>
@@ -48,23 +33,11 @@ const SEQUENCE_WITH_ELEMENTS = `<xs:element name="root" type="xs:string"/>
     </xs:sequence>
   </xs:complexType>`;
 
-/** A top-level attribute `lang` and a complexType `T` with a local attribute `code` and a reference to `lang`. */
-const ATTRIBUTES = `<xs:attribute name="lang" type="xs:string"/>
-  <xs:complexType name="T">
-    <xs:attribute name="code" type="xs:string"/>
-    <xs:attribute ref="lang"/>
-  </xs:complexType>
-  <xs:element name="root" type="xs:string"/>`;
-
 describe("Element Validators", () => {
   let schemaObj: schema;
 
   beforeEach(() => {
-    const simpleSchemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person" type="xs:string"/>
-</xs:schema>`;
-    schemaObj = unmarshal(schema, simpleSchemaXml);
+    schemaObj = schemaWith(`<xs:element name="person" type="xs:string"/>`);
   });
 
   describe("validateAddElement", () => {
@@ -72,7 +45,7 @@ describe("Element Validators", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "testElement",
           elementType: "string",
         },
@@ -86,7 +59,7 @@ describe("Element Validators", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "testElement",
           elementType: "xs:string",
         },
@@ -100,7 +73,7 @@ describe("Element Validators", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "testElement",
           elementType: "xsd:string",
         },
@@ -114,7 +87,7 @@ describe("Element Validators", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "testElement",
           elementType: "myprefix:int",
         },
@@ -128,7 +101,7 @@ describe("Element Validators", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "testElement",
           elementType: "int",
         },
@@ -142,7 +115,7 @@ describe("Element Validators", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "testElement",
           elementType: "invalidType",
         },
@@ -158,7 +131,7 @@ describe("Element Validators", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "testElement",
           elementType: "unknown:SomeType",
         },
@@ -171,20 +144,12 @@ describe("Element Validators", () => {
     });
 
     test("should accept user-defined complex type", () => {
-      const schemaWithTypes = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:complexType name="PersonType">
-    <xs:sequence>
-      <xs:element name="name" type="xs:string"/>
-    </xs:sequence>
-  </xs:complexType>
-</xs:schema>`;
-      const customSchema = unmarshal(schema, schemaWithTypes);
+      const customSchema = readTestSchema("person-type-with-name-element.xsd");
 
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "person",
           elementType: "PersonType",
         },
@@ -195,21 +160,17 @@ describe("Element Validators", () => {
     });
 
     test("should accept user-defined simple type", () => {
-      const schemaWithTypes = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:simpleType name="AgeType">
-    <xs:restriction base="xs:integer">
-      <xs:minInclusive value="0"/>
-      <xs:maxInclusive value="120"/>
-    </xs:restriction>
-  </xs:simpleType>
-</xs:schema>`;
-      const customSchema = unmarshal(schema, schemaWithTypes);
+      const customSchema = schemaWith(`<xs:simpleType name="AgeType">
+  <xs:restriction base="xs:integer">
+    <xs:minInclusive value="0"/>
+    <xs:maxInclusive value="120"/>
+  </xs:restriction>
+</xs:simpleType>`);
 
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "age",
           elementType: "AgeType",
         },
@@ -220,21 +181,17 @@ describe("Element Validators", () => {
     });
 
     test("should accept user-defined type with prefix", () => {
-      const schemaWithTypes = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
-           xmlns:tns="http://example.com/types">
-  <xs:complexType name="PersonType">
-    <xs:sequence>
-      <xs:element name="name" type="xs:string"/>
-    </xs:sequence>
-  </xs:complexType>
-</xs:schema>`;
-      const customSchema = unmarshal(schema, schemaWithTypes);
+      const prefixes = { tns: "http://example.com/types" };
+      const customSchema = schemaWith(`<xs:complexType name="PersonType">
+  <xs:sequence>
+    <xs:element name="name" type="xs:string"/>
+  </xs:sequence>
+</xs:complexType>`, prefixes);
 
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "person",
           elementType: "tns:PersonType",
         },
@@ -245,17 +202,12 @@ describe("Element Validators", () => {
     });
 
     test("should accept type from import", () => {
-      const schemaWithImport = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" 
-           xmlns:ext="http://example.com/external">
-  <xs:import namespace="http://example.com/external" schemaLocation="external.xsd"/>
-</xs:schema>`;
-      const customSchema = unmarshal(schema, schemaWithImport);
+      const customSchema = schemaWith(EXTERNAL_IMPORT, EXT_PREFIX);
 
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "externalElement",
           elementType: "ext:ExternalType",
         },
@@ -266,19 +218,15 @@ describe("Element Validators", () => {
     });
 
     test("should accept type from include (unprefixed, same namespace)", () => {
-      const schemaWithInclude = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:include schemaLocation="included.xsd"/>
-  <xs:simpleType name="IncludedType">
-    <xs:restriction base="xs:string"/>
-  </xs:simpleType>
-</xs:schema>`;
-      const customSchema = unmarshal(schema, schemaWithInclude);
+      const customSchema = schemaWith(`<xs:include schemaLocation="included.xsd"/>
+<xs:simpleType name="IncludedType">
+  <xs:restriction base="xs:string"/>
+</xs:simpleType>`);
 
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "includedElement",
           elementType: "IncludedType",
         },
@@ -289,17 +237,12 @@ describe("Element Validators", () => {
     });
 
     test("should reject type with prefix that doesn't match any import namespace", () => {
-      const schemaWithImport = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" 
-           xmlns:ext="http://example.com/external">
-  <xs:import namespace="http://example.com/external" schemaLocation="external.xsd"/>
-</xs:schema>`;
-      const customSchema = unmarshal(schema, schemaWithImport);
+      const customSchema = schemaWith(EXTERNAL_IMPORT, EXT_PREFIX);
 
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "testElement",
           elementType: "wrongprefix:SomeType",
         },
@@ -327,7 +270,7 @@ describe("Element Validators", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "myElement",
           elementType: "tns:MyType",
         },
@@ -341,7 +284,7 @@ describe("Element Validators", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "",
           elementType: "string",
         },
@@ -356,7 +299,7 @@ describe("Element Validators", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "schema",
+          parentId: "/schema",
           elementName: "test",
           elementType: "",
         },
@@ -456,16 +399,12 @@ describe("Element Validators", () => {
     });
 
     test("should accept modifyElement with user-defined type", () => {
-      const schemaWithTypes = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person" type="xs:string"/>
-  <xs:complexType name="PersonType">
-    <xs:sequence>
-      <xs:element name="name" type="xs:string"/>
-    </xs:sequence>
-  </xs:complexType>
-</xs:schema>`;
-      const customSchema = unmarshal(schema, schemaWithTypes);
+      const customSchema = schemaWith(`<xs:element name="person" type="xs:string"/>
+<xs:complexType name="PersonType">
+  <xs:sequence>
+    <xs:element name="name" type="xs:string"/>
+  </xs:sequence>
+</xs:complexType>`);
 
       const command: ModifyElementCommand = {
         type: "modifyElement",
@@ -493,6 +432,22 @@ describe("Element Validators", () => {
       expect(result.valid).toBe(true);
     });
 
+    test("should reject stale top-level rename replay after a successful rename", () => {
+      const renamedSchema = schemaWith(`<xs:element name="personRenamed" type="xs:string"/>`);
+
+      const command: ModifyElementCommand = {
+        type: "modifyElement",
+        payload: {
+          elementId: "/element:person",
+          elementName: "personRenamed",
+        },
+      };
+
+      const result = validateModifyElement(command, renamedSchema);
+      expectInvalid(result);
+      expect(result.error).toBe("Element not found: person");
+    });
+
     test("should reject modifyElement with minOccurs > maxOccurs", () => {
       const command: ModifyElementCommand = {
         type: "modifyElement",
@@ -513,28 +468,36 @@ describe("Element Validators", () => {
     let seqSchema: schema;
 
     beforeEach(() => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="person" type="xs:string"/>
-  <xs:complexType name="OrderType">
-    <xs:sequence/>
-  </xs:complexType>
-</xs:schema>`;
-      seqSchema = unmarshal(schema, xml);
+      seqSchema = readTestSchema("person-element-and-order-type.xsd");
     });
 
     test("should accept addElement with valid ref to sequence", () => {
       const command: AddElementCommand = {
         type: "addElement",
-        payload: { parentId: "/complexType:OrderType/sequence", ref: "person" },
+        payload: { parentId: "/complexType:OrderType/group:sequence[0]", ref: "person" },
       };
       expect(validateAddElement(command, seqSchema).valid).toBe(true);
+    });
+
+    test("should accept addElement for sequence in complexContent extension using group path", () => {
+      const extensionSchema = readTestSchema("person-element-and-worker-type-extension.xsd");
+
+      const command: AddElementCommand = {
+        type: "addElement",
+        payload: {
+          parentId: "/complexType:WorkerType/group:sequence[0]",
+          elementName: "department",
+          elementType: "xs:string",
+        },
+      };
+
+      expect(validateAddElement(command, extensionSchema).valid).toBe(true);
     });
 
     test("should reject addElement with ref at schema level (top-level elements cannot be refs)", () => {
       const command: AddElementCommand = {
         type: "addElement",
-        payload: { parentId: "schema", ref: "person" },
+        payload: { parentId: "/schema", ref: "person" },
       };
       const result = validateAddElement(command, seqSchema);
       expectInvalid(result);
@@ -545,7 +508,7 @@ describe("Element Validators", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "/complexType:OrderType/sequence",
+          parentId: "/complexType:OrderType/group:sequence[0]",
           ref: "person",
           elementName: "person",
         },
@@ -559,7 +522,7 @@ describe("Element Validators", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
-          parentId: "/complexType:OrderType/sequence",
+          parentId: "/complexType:OrderType/group:sequence[0]",
           ref: "123invalid",
         },
       };
@@ -585,7 +548,7 @@ describe("Element Validators", () => {
     test("should reject addElement with ref that does not exist in schema", () => {
       const command: AddElementCommand = {
         type: "addElement",
-        payload: { parentId: "/complexType:OrderType/sequence", ref: "nonexistent" },
+        payload: { parentId: "/complexType:OrderType/group:sequence[0]", ref: "nonexistent" },
       };
       const result = validateAddElement(command, seqSchema);
       expectInvalid(result);
@@ -606,7 +569,7 @@ describe("Element Validators", () => {
     test("should accept adding an element to an all", () => {
       const command: AddElementCommand = {
         type: "addElement",
-        payload: { parentId: "/complexType:T/all", elementName: "third", elementType: "xs:string" },
+        payload: { parentId: "/complexType:T/group:all[0]", elementName: "third", elementType: "xs:string" },
       };
 
       const result = validateAddElement(command, schemaWith(`<xs:complexType name="T"><xs:all/></xs:complexType>`));
@@ -616,7 +579,7 @@ describe("Element Validators", () => {
     test("should reject an element name that already exists in the all", () => {
       const command: AddElementCommand = {
         type: "addElement",
-        payload: { parentId: "/complexType:T/all", elementName: "first", elementType: "xs:string" },
+        payload: { parentId: "/complexType:T/group:all[0]", elementName: "first", elementType: "xs:string" },
       };
 
       const result = validateAddElement(
@@ -630,7 +593,7 @@ describe("Element Validators", () => {
     test("should reject an element without name and ref", () => {
       const command: AddElementCommand = {
         type: "addElement",
-        payload: { parentId: "/complexType:T/sequence" },
+        payload: { parentId: "/complexType:T/group:sequence[0]" },
       };
 
       const result = validateAddElement(command, schemaWith(SEQUENCE_WITH_ELEMENTS));
@@ -652,7 +615,7 @@ describe("Element Validators", () => {
     test("should reject a reference that already exists in the sequence", () => {
       const command: AddElementCommand = {
         type: "addElement",
-        payload: { parentId: "/complexType:T/sequence", ref: "root" },
+        payload: { parentId: "/complexType:T/group:sequence[0]", ref: "root" },
       };
 
       const result = validateAddElement(command, schemaWith(SEQUENCE_WITH_ELEMENTS));
@@ -663,7 +626,7 @@ describe("Element Validators", () => {
     test("should accept removing an element identified by position", () => {
       const command: RemoveElementCommand = {
         type: "removeElement",
-        payload: { elementId: "/complexType:T/sequence/element[1]" },
+        payload: { elementId: "/complexType:T/group:sequence[0]/element[1]" },
       };
 
       const result = validateRemoveElement(command, schemaWith(SEQUENCE_WITH_ELEMENTS));
@@ -673,7 +636,7 @@ describe("Element Validators", () => {
     test("should reject removing an element at a position after the last one", () => {
       const command: RemoveElementCommand = {
         type: "removeElement",
-        payload: { elementId: "/complexType:T/sequence/element[3]" },
+        payload: { elementId: "/complexType:T/group:sequence[0]/element[3]" },
       };
 
       const result = validateRemoveElement(command, schemaWith(SEQUENCE_WITH_ELEMENTS));
@@ -684,12 +647,12 @@ describe("Element Validators", () => {
     test("should reject removing an element whose parent does not exist", () => {
       const command: RemoveElementCommand = {
         type: "removeElement",
-        payload: { elementId: "/complexType:Missing/sequence/element:first" },
+        payload: { elementId: "/complexType:Missing/group:sequence[0]/element:first" },
       };
 
       const result = validateRemoveElement(command, schemaWith(SEQUENCE_WITH_ELEMENTS));
       expectInvalid(result);
-      expect(result.error).toBe("Parent node not found for element: /complexType:Missing/sequence/element:first");
+      expect(result.error).toBe("Parent node not found for element: /complexType:Missing/group:sequence[0]/element:first");
     });
 
     test("should reject removing an element from a parent that cannot hold elements", () => {
@@ -706,12 +669,12 @@ describe("Element Validators", () => {
     test("should reject modifying an element whose parent does not exist", () => {
       const command: ModifyElementCommand = {
         type: "modifyElement",
-        payload: { elementId: "/complexType:Missing/sequence/element:first", elementName: "renamed" },
+        payload: { elementId: "/complexType:Missing/group:sequence[0]/element:first", elementName: "renamed" },
       };
 
       const result = validateModifyElement(command, schemaWith(SEQUENCE_WITH_ELEMENTS));
       expectInvalid(result);
-      expect(result.error).toBe("Parent node not found for element: /complexType:Missing/sequence/element:first");
+      expect(result.error).toBe("Parent node not found for element: /complexType:Missing/group:sequence[0]/element:first");
     });
 
     test("should reject modifying an element in a parent that cannot hold elements", () => {
@@ -728,7 +691,7 @@ describe("Element Validators", () => {
     test("should reject modifying an element at a position after the last one", () => {
       const command: ModifyElementCommand = {
         type: "modifyElement",
-        payload: { elementId: "/complexType:T/sequence/element[3]", elementName: "renamed" },
+        payload: { elementId: "/complexType:T/group:sequence[0]/element[3]", elementName: "renamed" },
       };
 
       const result = validateModifyElement(command, schemaWith(SEQUENCE_WITH_ELEMENTS));
@@ -739,7 +702,7 @@ describe("Element Validators", () => {
     test("should reject changing an element to a reference with an invalid name", () => {
       const command: ModifyElementCommand = {
         type: "modifyElement",
-        payload: { elementId: "/complexType:T/sequence/element:first", ref: "123-invalid" },
+        payload: { elementId: "/complexType:T/group:sequence[0]/element:first", ref: "123-invalid" },
       };
 
       const result = validateModifyElement(command, schemaWith(SEQUENCE_WITH_ELEMENTS));
@@ -750,7 +713,7 @@ describe("Element Validators", () => {
     test("should accept changing an element to a reference to an existing top-level element", () => {
       const command: ModifyElementCommand = {
         type: "modifyElement",
-        payload: { elementId: "/complexType:T/sequence/element:first", ref: "root" },
+        payload: { elementId: "/complexType:T/group:sequence[0]/element:first", ref: "root" },
       };
 
       const result = validateModifyElement(
@@ -760,472 +723,6 @@ describe("Element Validators", () => {
         ),
       );
       expect(result.valid).toBe(true);
-    });
-  });
-
-});
-
-describe("Attribute Validators", () => {
-  let schemaObj: schema;
-
-  beforeEach(() => {
-    const simpleSchemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:attribute name="attr1" type="xs:string"/>
-</xs:schema>`;
-    schemaObj = unmarshal(schema, simpleSchemaXml);
-  });
-
-  describe("validateAddAttribute", () => {
-    test("should reject addAttribute with missing attributeName", () => {
-      const command: AddAttributeCommand = {
-        type: "addAttribute",
-        payload: {
-          parentId: "element-1",
-          attributeName: "",
-          attributeType: "string",
-        },
-      };
-
-      const result = validateAddAttribute(command, schemaObj);
-      expectInvalid(result);
-      expect(result.error).toBe("Attribute name must be a valid XML name");
-    });
-
-    test("should reject addAttribute with missing parentId", () => {
-      const command: AddAttributeCommand = {
-        type: "addAttribute",
-        payload: {
-          parentId: "",
-          attributeName: "testAttr",
-          attributeType: "string",
-        },
-      };
-
-      const result = validateAddAttribute(command, schemaObj);
-      expectInvalid(result);
-      expect(result.error).toBe("Parent ID cannot be empty");
-    });
-
-    test("should reject addAttribute with both defaultValue and fixedValue", () => {
-      const command: AddAttributeCommand = {
-        type: "addAttribute",
-        payload: {
-          parentId: "schema",
-          attributeName: "lang",
-          attributeType: "xs:string",
-          defaultValue: "en",
-          fixedValue: "en",
-        },
-      };
-
-      const result = validateAddAttribute(command, schemaObj);
-      expectInvalid(result);
-      expect(result.error).toBe(
-        "An attribute cannot have both a default value and a fixed value"
-      );
-    });
-  });
-
-  describe("validateRemoveAttribute", () => {
-    test("should reject removeAttribute with missing attributeId", () => {
-      const command: RemoveAttributeCommand = {
-        type: "removeAttribute",
-        payload: {
-          attributeId: "",
-        },
-      };
-
-      const result = validateRemoveAttribute(command, schemaObj);
-      expectInvalid(result);
-      expect(result.error).toBe("Attribute ID cannot be empty");
-    });
-  });
-
-  describe("validateModifyAttribute", () => {
-    test("should reject modifyAttribute with missing attributeId", () => {
-      const command: ModifyAttributeCommand = {
-        type: "modifyAttribute",
-        payload: {
-          attributeId: "",
-        },
-      };
-
-      const result = validateModifyAttribute(command, schemaObj);
-      expectInvalid(result);
-      expect(result.error).toBe("Attribute ID cannot be empty");
-    });
-
-    test("should accept modifyAttribute with valid payload", () => {
-      const command: ModifyAttributeCommand = {
-        type: "modifyAttribute",
-        payload: {
-          attributeId: "/attribute:attr1",
-          attributeName: "validName",
-          attributeType: "string",
-        },
-      };
-
-      const result = validateModifyAttribute(command, schemaObj);
-      expect(result.valid).toBe(true);
-    });
-
-    test("should reject modifyAttribute with both defaultValue and fixedValue", () => {
-      const command: ModifyAttributeCommand = {
-        type: "modifyAttribute",
-        payload: {
-          attributeId: "/attribute:attr1",
-          defaultValue: "en",
-          fixedValue: "en",
-        },
-      };
-
-      const result = validateModifyAttribute(command, schemaObj);
-      expectInvalid(result);
-      expect(result.error).toBe(
-        "An attribute cannot have both a default value and a fixed value"
-      );
-    });
-  });
-
-  describe("Reference attribute validation", () => {
-    let refSchema: schema;
-
-    beforeEach(() => {
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:attribute name="lang" type="xs:string"/>
-  <xs:complexType name="PersonType">
-    <xs:attribute name="lang" type="xs:string"/>
-  </xs:complexType>
-</xs:schema>`;
-      refSchema = unmarshal(schema, xml);
-    });
-
-    test("should accept addAttribute with valid ref to complex type", () => {
-      // PersonType must NOT already have a lang attribute to avoid the duplicate check
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:attribute name="lang" type="xs:string"/>
-  <xs:complexType name="PersonType"/>
-</xs:schema>`;
-      const schemaWithoutDuplicate = unmarshal(schema, xml);
-      const command: AddAttributeCommand = {
-        type: "addAttribute",
-        payload: { parentId: "/complexType:PersonType", ref: "lang" },
-      };
-      expect(validateAddAttribute(command, schemaWithoutDuplicate).valid).toBe(true);
-    });
-
-    test("should reject addAttribute with ref at schema level", () => {
-      const command: AddAttributeCommand = {
-        type: "addAttribute",
-        payload: { parentId: "schema", ref: "lang" },
-      };
-      const result = validateAddAttribute(command, refSchema);
-      expectInvalid(result);
-      expect(result.error).toBe("Top-level attributes cannot be references");
-    });
-
-    test("should reject addAttribute with ref and attributeName together", () => {
-      const command: AddAttributeCommand = {
-        type: "addAttribute",
-        payload: {
-          parentId: "/complexType:PersonType",
-          ref: "lang",
-          attributeName: "lang",
-        },
-      };
-      const result = validateAddAttribute(command, refSchema);
-      expectInvalid(result);
-      expect(result.error).toBe("A reference attribute cannot have a name or type");
-    });
-
-    test("should reject addAttribute with ref and defaultValue together", () => {
-      const command: AddAttributeCommand = {
-        type: "addAttribute",
-        payload: {
-          parentId: "/complexType:PersonType",
-          ref: "lang",
-          defaultValue: "en",
-        },
-      };
-      const result = validateAddAttribute(command, refSchema);
-      expectInvalid(result);
-      expect(result.error).toBe(
-        "A reference attribute cannot have a default or fixed value"
-      );
-    });
-
-    test("should reject addAttribute with invalid ref name", () => {
-      const command: AddAttributeCommand = {
-        type: "addAttribute",
-        payload: { parentId: "/complexType:PersonType", ref: "123invalid" },
-      };
-      const result = validateAddAttribute(command, refSchema);
-      expectInvalid(result);
-      expect(result.error).toBe("Attribute ref must be a valid XML name");
-    });
-
-    test("should reject modifyAttribute with ref and attributeName together", () => {
-      const command: ModifyAttributeCommand = {
-        type: "modifyAttribute",
-        payload: {
-          attributeId: "/complexType:PersonType/attribute:lang",
-          ref: "lang",
-          attributeName: "other",
-        },
-      };
-      const result = validateModifyAttribute(command, refSchema);
-      expectInvalid(result);
-      expect(result.error).toBe("Cannot set both ref and name/type on an attribute");
-    });
-
-    test("should reject modifyAttribute with ref and fixedValue together", () => {
-      const command: ModifyAttributeCommand = {
-        type: "modifyAttribute",
-        payload: {
-          attributeId: "/complexType:PersonType/attribute:lang",
-          ref: "lang",
-          fixedValue: "en",
-        },
-      };
-      const result = validateModifyAttribute(command, refSchema);
-      expectInvalid(result);
-      expect(result.error).toBe(
-        "A reference attribute cannot have a default or fixed value"
-      );
-    });
-
-    test("should reject addAttribute with ref that does not exist in schema", () => {
-      const command: AddAttributeCommand = {
-        type: "addAttribute",
-        payload: { parentId: "/complexType:PersonType", ref: "nonexistent" },
-      };
-      const result = validateAddAttribute(command, refSchema);
-      expectInvalid(result);
-      expect(result.error).toBe("Referenced attribute 'nonexistent' does not exist in schema");
-    });
-
-    test("should reject modifyAttribute with ref that does not exist in schema", () => {
-      const command: ModifyAttributeCommand = {
-        type: "modifyAttribute",
-        payload: {
-          attributeId: "/complexType:PersonType/attribute:lang",
-          ref: "nonexistent",
-        },
-      };
-      const result = validateModifyAttribute(command, refSchema);
-      expectInvalid(result);
-      expect(result.error).toBe("Referenced attribute 'nonexistent' does not exist in schema");
-    });
-  });
-  describe("parents, positions and duplicates of attributes", () => {
-    test("should reject an attribute without name and ref", () => {
-      const command: AddAttributeCommand = {
-        type: "addAttribute",
-        payload: { parentId: "/complexType:T" },
-      };
-
-      const result = validateAddAttribute(command, schemaWith(ATTRIBUTES));
-      expectInvalid(result);
-      expect(result.error).toBe("Attribute name must be a valid XML name");
-    });
-
-    test("should reject adding an attribute directly to an element", () => {
-      const command: AddAttributeCommand = {
-        type: "addAttribute",
-        payload: { parentId: "/element:root", attributeName: "id", attributeType: "xs:ID" },
-      };
-
-      const result = validateAddAttribute(command, schemaWith(ATTRIBUTES));
-      expectInvalid(result);
-      expect(result.error).toBe("Cannot add attribute to parent of type: topLevelElement");
-    });
-
-    test("should reject a reference that already exists in the complexType", () => {
-      const command: AddAttributeCommand = {
-        type: "addAttribute",
-        payload: { parentId: "/complexType:T", ref: "lang" },
-      };
-
-      const result = validateAddAttribute(command, schemaWith(ATTRIBUTES));
-      expectInvalid(result);
-      expect(result.error).toBe("Cannot add attribute: duplicate attribute reference 'lang' in topLevelComplexType");
-    });
-
-    test("should reject a name that a reference in the complexType already uses", () => {
-      const command: AddAttributeCommand = {
-        type: "addAttribute",
-        payload: { parentId: "/complexType:T", attributeName: "lang", attributeType: "xs:string" },
-      };
-
-      const result = validateAddAttribute(command, schemaWith(ATTRIBUTES));
-      expectInvalid(result);
-      expect(result.error).toBe("Cannot add attribute: duplicate attribute name 'lang' in topLevelComplexType");
-    });
-
-    test("should reject a top-level attribute name that already exists", () => {
-      const command: AddAttributeCommand = {
-        type: "addAttribute",
-        payload: { parentId: "schema", attributeName: "lang", attributeType: "xs:string" },
-      };
-
-      const result = validateAddAttribute(command, schemaWith(ATTRIBUTES));
-      expectInvalid(result);
-      expect(result.error).toBe("Cannot add attribute: duplicate attribute name 'lang' in schema");
-    });
-
-    test("should accept removing a top-level attribute", () => {
-      const command: RemoveAttributeCommand = {
-        type: "removeAttribute",
-        payload: { attributeId: "/attribute:lang" },
-      };
-
-      const result = validateRemoveAttribute(command, schemaWith(ATTRIBUTES));
-      expect(result.valid).toBe(true);
-    });
-
-    test("should accept removing an attribute reference identified by the referenced name", () => {
-      const command: RemoveAttributeCommand = {
-        type: "removeAttribute",
-        payload: { attributeId: "/complexType:T/attribute:lang" },
-      };
-
-      const result = validateRemoveAttribute(command, schemaWith(ATTRIBUTES));
-      expect(result.valid).toBe(true);
-    });
-
-    test("should accept removing an attribute identified by position", () => {
-      const command: RemoveAttributeCommand = {
-        type: "removeAttribute",
-        payload: { attributeId: "/complexType:T/attribute[1]" },
-      };
-
-      const result = validateRemoveAttribute(command, schemaWith(ATTRIBUTES));
-      expect(result.valid).toBe(true);
-    });
-
-    test("should reject removing an attribute at a position after the last one", () => {
-      const command: RemoveAttributeCommand = {
-        type: "removeAttribute",
-        payload: { attributeId: "/complexType:T/attribute[2]" },
-      };
-
-      const result = validateRemoveAttribute(command, schemaWith(ATTRIBUTES));
-      expectInvalid(result);
-      expect(result.error).toBe("Attribute not found at position: 2");
-    });
-
-    test("should reject removing an attribute whose name does not exist", () => {
-      const command: RemoveAttributeCommand = {
-        type: "removeAttribute",
-        payload: { attributeId: "/complexType:T/attribute:missing" },
-      };
-
-      const result = validateRemoveAttribute(command, schemaWith(ATTRIBUTES));
-      expectInvalid(result);
-      expect(result.error).toBe("Attribute not found with name: missing");
-    });
-
-    test("should reject removing an attribute whose parent does not exist", () => {
-      const command: RemoveAttributeCommand = {
-        type: "removeAttribute",
-        payload: { attributeId: "/complexType:Missing/attribute:code" },
-      };
-
-      const result = validateRemoveAttribute(command, schemaWith(ATTRIBUTES));
-      expectInvalid(result);
-      expect(result.error).toBe("Parent node not found for attribute: /complexType:Missing/attribute:code");
-    });
-
-    test("should reject removing an attribute from a parent that cannot hold attributes", () => {
-      const command: RemoveAttributeCommand = {
-        type: "removeAttribute",
-        payload: { attributeId: "/element:root/attribute:code" },
-      };
-
-      const result = validateRemoveAttribute(command, schemaWith(ATTRIBUTES));
-      expectInvalid(result);
-      expect(result.error).toBe("Cannot remove attribute from parent of type: topLevelElement");
-    });
-
-    test("should reject modifying an attribute whose parent does not exist", () => {
-      const command: ModifyAttributeCommand = {
-        type: "modifyAttribute",
-        payload: { attributeId: "/complexType:Missing/attribute:code", attributeName: "renamed" },
-      };
-
-      const result = validateModifyAttribute(command, schemaWith(ATTRIBUTES));
-      expectInvalid(result);
-      expect(result.error).toBe("Parent node not found for attribute: /complexType:Missing/attribute:code");
-    });
-
-    test("should reject modifying an attribute in a parent that cannot hold attributes", () => {
-      const command: ModifyAttributeCommand = {
-        type: "modifyAttribute",
-        payload: { attributeId: "/element:root/attribute:code", attributeName: "renamed" },
-      };
-
-      const result = validateModifyAttribute(command, schemaWith(ATTRIBUTES));
-      expectInvalid(result);
-      expect(result.error).toBe("Cannot modify attribute in parent of type: topLevelElement");
-    });
-
-    test("should reject modifying an attribute at a position after the last one", () => {
-      const command: ModifyAttributeCommand = {
-        type: "modifyAttribute",
-        payload: { attributeId: "/complexType:T/attribute[2]", attributeName: "renamed" },
-      };
-
-      const result = validateModifyAttribute(command, schemaWith(ATTRIBUTES));
-      expectInvalid(result);
-      expect(result.error).toContain("Attribute not found");
-    });
-
-    test("should accept modifying an attribute reference identified by the referenced name", () => {
-      const command: ModifyAttributeCommand = {
-        type: "modifyAttribute",
-        payload: { attributeId: "/complexType:T/attribute:lang", documentation: "Language of the content" },
-      };
-
-      const result = validateModifyAttribute(command, schemaWith(ATTRIBUTES));
-      expect(result.valid).toBe(true);
-    });
-
-    test("should reject changing an attribute to a reference with an invalid name", () => {
-      const command: ModifyAttributeCommand = {
-        type: "modifyAttribute",
-        payload: { attributeId: "/complexType:T/attribute:code", ref: "123-invalid" },
-      };
-
-      const result = validateModifyAttribute(command, schemaWith(ATTRIBUTES));
-      expectInvalid(result);
-      expect(result.error).toBe("Attribute ref must be a valid XML name");
-    });
-
-    test("should accept changing an attribute to a reference to an existing top-level attribute", () => {
-      const command: ModifyAttributeCommand = {
-        type: "modifyAttribute",
-        payload: { attributeId: "/complexType:T/attribute:code", ref: "lang" },
-      };
-
-      const result = validateModifyAttribute(
-        command,
-        schemaWith(`<xs:attribute name="lang" type="xs:string"/><xs:complexType name="T"><xs:attribute name="code" type="xs:string"/></xs:complexType>`),
-      );
-      expect(result.valid).toBe(true);
-    });
-
-    test("should reject renaming an attribute to an invalid name", () => {
-      const command: ModifyAttributeCommand = {
-        type: "modifyAttribute",
-        payload: { attributeId: "/complexType:T/attribute:code", attributeName: "123-invalid" },
-      };
-
-      const result = validateModifyAttribute(command, schemaWith(ATTRIBUTES));
-      expectInvalid(result);
-      expect(result.error).toBe("Attribute name must be a valid XML name");
     });
   });
 

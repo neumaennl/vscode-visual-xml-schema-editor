@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createInterface } from "node:readline/promises";
 import { installNode, runWith } from "./lib/node-setup.ts";
-import { release, releasesPage, stubFetch } from "./__tests__/testHelpers.ts";
+import { release, releasesPage, stubFetch } from "./__tests__/releaseTestHelpers.ts";
 import { check, choose, formatTable, main, update, writeValues } from "./vscode-version.ts";
 
 const asker = { question: vi.fn<(query: string) => Promise<string>>(), close: vi.fn() };
@@ -17,7 +17,7 @@ const PACKAGE_JSON = {
   devDependencies: { "@types/node": "~24.13.0", "@types/vscode": "~1.125.0" },
 };
 
-const realIsTTY = Object.getOwnPropertyDescriptor(process.stdin, "isTTY") ?? { value: undefined, configurable: true };
+const ORIGINAL_IS_TTY = Object.getOwnPropertyDescriptor(process.stdin, "isTTY") ?? { value: undefined, configurable: true };
 
 let dir: string;
 
@@ -79,7 +79,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  Object.defineProperty(process.stdin, "isTTY", realIsTTY);
+  Object.defineProperty(process.stdin, "isTTY", ORIGINAL_IS_TTY);
   rmSync(dir, { recursive: true, force: true });
   vi.unstubAllGlobals();
   vi.unstubAllEnvs();
@@ -88,13 +88,13 @@ afterEach(() => {
 
 describe("vscode-version", () => {
   describe("formatTable", () => {
-    it("should align the columns and underline the header", () => {
+    test("should align the columns and underline the header", () => {
       expect(formatTable(["A", "Long"], [["xyz", "1"]])).toBe("A    Long\n---  ----\nxyz  1");
     });
   });
 
   describe("check", () => {
-    it("should return 0 if @types/vscode, @types/node and .nvmrc match engines.vscode", async () => {
+    test("should return 0 if @types/vscode, @types/node and .nvmrc match engines.vscode", async () => {
       writeProject();
       stubReleases();
 
@@ -102,7 +102,7 @@ describe("vscode-version", () => {
       expect(console.log).toHaveBeenCalledWith("engines.vscode, @types/vscode, @types/node and .nvmrc match.");
     });
 
-    it("should return 1 and name each value that does not match", async () => {
+    test("should return 1 and name each value that does not match", async () => {
       writeProject("24");
       stubReleases();
 
@@ -113,7 +113,7 @@ describe("vscode-version", () => {
   });
 
   describe("writeValues", () => {
-    it("should write the values and keep the other fields and the CRLF line endings", () => {
+    test("should write the values and keep the other fields and the CRLF line endings", () => {
       const values = { engines: "^1.141.0", typesVscode: "~1.140.0", typesNode: "~24.19.0", nvmrc: "24.21.0" };
 
       writeValues({ pkg: structuredClone(PACKAGE_JSON), crlf: true }, values, dir);
@@ -127,7 +127,7 @@ describe("vscode-version", () => {
   });
 
   describe("update", () => {
-    it("should write the values of the given version and print the steps without a terminal", async () => {
+    test("should write the values of the given version and print the steps without a terminal", async () => {
       writeProject();
       stubReleases();
 
@@ -141,13 +141,13 @@ describe("vscode-version", () => {
       expect(console.log).toHaveBeenCalledWith(expect.stringContaining("Install and use Node 24.21.0, then run:"));
     });
 
-    it("should throw without a version if there is no terminal to ask", async () => {
+    test("should throw without a version if there is no terminal to ask", async () => {
       writeProject();
 
       await expect(update(undefined, dir)).rejects.toThrow("Not running in a terminal");
     });
 
-    it("should throw for a version that is not a release", async () => {
+    test("should throw for a version that is not a release", async () => {
       writeProject();
       stubReleases();
 
@@ -155,7 +155,7 @@ describe("vscode-version", () => {
       expect(read(".nvmrc")).toBe("24.15.0\n");
     });
 
-    it("should ask for the version, install Node and run the steps in a terminal", async () => {
+    test("should ask for the version, install Node and run the steps in a terminal", async () => {
       writeProject();
       stubReleases();
       stubTerminal(true);
@@ -171,7 +171,7 @@ describe("vscode-version", () => {
       expect(asker.close).toHaveBeenCalled();
     });
 
-    it("should only print the steps if the user declines", async () => {
+    test("should only print the steps if the user declines", async () => {
       writeProject();
       stubReleases();
       stubTerminal(true);
@@ -182,7 +182,7 @@ describe("vscode-version", () => {
       expect(installNode).not.toHaveBeenCalled();
     });
 
-    it("should return 1 and print the steps if Node cannot be installed", async () => {
+    test("should return 1 and print the steps if Node cannot be installed", async () => {
       writeProject();
       stubReleases();
       stubTerminal(true);
@@ -202,7 +202,7 @@ describe("vscode-version", () => {
       { vscode: "1.125.0", electron: "42.3.0", node: "24.15.0", typesVscode: "1.125.0", typesNode: "24.13.6" },
     ];
 
-    it("should ask again until the answer is a version with both @types versions", async () => {
+    test("should ask again until the answer is a version with both @types versions", async () => {
       asker.question.mockResolvedValueOnce("1.110.0").mockResolvedValueOnce(" 1.125.0 ");
 
       await expect(choose(rows, { "1.110.0": "2026-03-09", "1.125.0": "2026-06-17" }, "1.125.0", asker)).resolves.toBe("1.125.0");
@@ -213,7 +213,7 @@ describe("vscode-version", () => {
   });
 
   describe("main", () => {
-    it("should print the usage and return 2 for an unknown command", async () => {
+    test("should print the usage and return 2 for an unknown command", async () => {
       await expect(main(["help"])).resolves.toBe(2);
       expect(console.error).toHaveBeenCalledWith("Usage: node scripts/vscode-version.ts check | update [version]");
     });

@@ -4,8 +4,8 @@ title: Schema model
 description: The object model of an XSD file - classes generated from the XSD meta-schema, XML binding with xmlbind-ts, and the path-based IDs that identify schema nodes.
 tags: [schema-model, data-model, xmlbind-ts, code-generation, ids, navigation]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-23T09:04:37Z }
-verified: { by: human:neumaennl, at: 2026-10-23T10:12:43Z }
+generated: { by: human:neumaennl, at: 2026-11-05T05:01:58Z }
+verified: { by: human:neumaennl, at: 2026-11-05T05:24:33Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -73,7 +73,7 @@ The generator creates one class per type and per element declaration of the meta
 - **Decorators.** Each class carries `xmlbind-ts` decorators: `@XmlRoot` with the XSD namespace and prefixes, `@XmlElement` for child elements (with the element type and whether it is an array) and `@XmlAttribute` for attributes. Attributes whose values are not strings pass their type explicitly (`type: Number`, `type: Boolean`). The decorators are compiled as TypeScript's legacy decorators (`experimentalDecorators`), not as TC39 Stage 3 decorators, and `useDefineForClassFields` creates every declared property on the objects, even without a value; the annotation validators rely on that. The reasons are in [ADR 002](architecture/002-legacy-decorators.md).[^generated-schema][^adr-002]
 - **Class names.** The names follow the meta-schema: the root is `schema`, and the type classes are what the code mostly works with, for example `topLevelElement`, `localElement`, `topLevelComplexType`, `localComplexType`, `topLevelSimpleType`, `namedGroup`, `explicitGroup`, `namedAttributeGroup`, `attribute`, `importType` and `includeType`. Element declarations become thin subclasses (`sequence extends explicitGroup`). Names that clash with TypeScript or with each other get a suffix: `import_`, `any_`, `anyType_1`, `restrictionType_1`.
 - **Inheritance.** Types derived by extension in the meta-schema become subclasses, for example of `annotated` (which adds `annotation` and `id`) and `openAttrs`. Types derived by restriction, which include most of the types above (`topLevelElement`, `localElement`, `topLevelComplexType`, `explicitGroup`, `namedGroup`), are standalone classes with all their properties, so they cannot be handled through a common base class.
-- **Collections.** Repeating children are optional arrays (`element?: topLevelElement[]`). Since `xmlbind-ts` 2.3, `unmarshal` always fills them with an array, an empty one if the element is absent. Code still reads them through `toArray()` from `shared/schemaUtils.ts`, which turns `undefined`, `null`, a single item or an array into an array; this is no longer needed for unmarshalled data (see [Known issues](known-issues.md#toarray-is-obsolete-since-xmlbind-ts-23)).[^schema-utils]
+- **Collections.** Repeating children are optional arrays (`element?: topLevelElement[]`). Since `xmlbind-ts` 2.3, `unmarshal` always fills them with an array, an empty one if the element is absent. The properties are still declared optional, and objects that the code builds itself leave them `undefined` until something is added, so code reads them with `?? []` (for example `(schemaObj.element ?? []).find(…)`). `annotation` is the exception: a component has at most one annotation, so its field holds a single object; only the schema has an array.
 
 The classes also have properties that are not in the meta-schema and are filled by `xmlbind-ts`:[^generated-schema][^generated-open-attrs]
 
@@ -130,7 +130,7 @@ The schema root has the ID `/schema` (`SCHEMA_ROOT_ID`). `isSchemaRoot()` treats
 - **Anonymous types** are a segment of their own: `/element:person/anonymousComplexType[0]`. The compositor of an anonymous complex type follows it: `/element:person/anonymousComplexType[0]/group:sequence[0]`.
 - **Derivation is skipped.** For a complex type with `complexContent`, the compositor of the `extension` or `restriction` is addressed as if it were a direct child of the complex type.[^navigator]
 - **Local elements** have both name and position, the position counting only the elements of the same compositor: `/complexType:PersonType/group:sequence[0]/element:first[0]`. Local elements without a name get the name `unnamed`.[^schema-processors]
-- **Group references** use `groupRef` with the referenced name: `…/group:sequence[0]/groupRef:SharedGroup[0]`.
+- **Group references** use `groupRef` with the referenced name and the position among the group references of the parent: `…/group:sequence[0]/groupRef:SharedGroup[0]`. Both are required; `removeGroup` and `modifyGroup` reject an ID without them ("Invalid groupRef ID").
 - **Annotations of the schema root** have their own IDs: `/schema/annotation[0]` and `/schema/annotation[0]/documentation[1]`. The shorthand `/schema/documentation[N]` addresses the documentation entries of the first schema annotation.[^annotation-executors] For all other components, the annotation ID is the component's ID, and documentation entries are `<component ID>/documentation[N]`.[^builder-helpers]
 - **Imports and includes** are addressed by position: `/import[0]`, `/include[0]`.[^schema-executors]
 
@@ -148,7 +148,7 @@ The schema root has the ID `/schema` (`SCHEMA_ROOT_ID`). `isSchemaRoot()` treats
 
 ## Who generates and who resolves IDs
 
-- **Generating.** The webview's diagram builder (`DiagramBuilder`, `SchemaProcessors*`, `TypeNodeCreators`, `DiagramBuilderHelpers`) gives every diagram item its ID while building the diagram (see [Diagram rendering](diagram-rendering.md)). The property panel and the drop handling put these IDs into the commands they send.
+- **Generating.** The webview's diagram builder (`DiagramBuilder`, `SchemaProcessors*`, `TypeNodeCreators`, `DiagramBuilderHelpers`) gives every diagram item its ID while building the diagram (see [Diagram rendering](diagram-rendering.md)). The properties panel and the drop handling put these IDs into the commands they send.
 - **Resolving.** The validators and executors in the extension host resolve IDs against the schema object with `locateNodeById()` from `src/schemaNavigator.ts`.[^navigator]
 
 `locateNodeById()` walks the segments from the schema root and returns the node the ID points to (as `parent`, because commands usually add to or change children of it) together with an internal type name such as `topLevelComplexType` or `sequence`. It supports these steps:[^navigator]

@@ -39,7 +39,7 @@ describe("stage", () => {
     rmSync(root, { recursive: true, force: true });
   });
 
-  it("assembles a copy of the extension with the mock as its webview", () => {
+  test("assembles a copy of the extension with the mock as its webview", () => {
     stage(root);
 
     const extension = join(root, ".vscode-test", "extension");
@@ -49,20 +49,20 @@ describe("stage", () => {
     expect(read(join(extension, "webview", "styles.css"))).toBe("");
   });
 
-  it("puts a copy of the example schema into the workspace", () => {
+  test("puts a copy of the example schema into the workspace", () => {
     stage(root);
 
     expect(read(join(root, ".vscode-test", "workspace", "example.xsd"))).toBe("<xs:schema/>");
   });
 
-  it("keeps the secondary side bar with the chat view closed in the workspace", () => {
+  test("keeps the secondary side bar with the chat view closed in the workspace", () => {
     stage(root);
 
     const settings = read(join(root, ".vscode-test", "workspace", ".vscode", "settings.json"));
     expect(JSON.parse(settings)).toEqual({ "workbench.secondarySideBar.defaultVisibility": "hidden" });
   });
 
-  it("removes leftovers of an earlier run but keeps the downloaded VS Code", () => {
+  test("removes leftovers of an earlier run but keeps the downloaded VS Code", () => {
     stage(root);
     write(join(root, ".vscode-test", "extension", "old.js"), "");
     write(join(root, ".vscode-test", "workspace", "old.xsd"), "");
@@ -75,13 +75,13 @@ describe("stage", () => {
     expect(existsSync(join(root, ".vscode-test", "vscode-linux-x64-1.125.0", "is-complete"))).toBe(true);
   });
 
-  it("fails if the extension was not compiled", () => {
+  test("fails if the extension was not compiled", () => {
     rmSync(join(root, "out"), { recursive: true });
 
     expect(() => stage(root)).toThrow(/ENOENT.*out/);
   });
 
-  it("fails if the tests were not compiled", () => {
+  test("fails if the tests were not compiled", () => {
     rmSync(join(root, ".vscode-test", "out"), { recursive: true });
 
     expect(() => stage(root)).toThrow(/mockWebview\.js/);

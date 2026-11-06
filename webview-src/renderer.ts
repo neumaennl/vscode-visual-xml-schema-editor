@@ -8,6 +8,11 @@ import {
   Diagram,
   DiagramItem,
 } from "./diagram";
+import {
+  getActiveDraggedPaletteSchemaConstruct,
+  PALETTE_MIME_TYPE,
+  setActiveDraggedPaletteSchemaConstruct,
+} from "./palette/PaletteItems";
 
 export class DiagramRenderer {
   private canvas: SVGSVGElement;
@@ -20,6 +25,12 @@ export class DiagramRenderer {
   private onNodeClickCallback:
     | ((node: DiagramItem, isExpandButton: boolean) => void)
     | null = null;
+  private onNodeDropCallback:
+    | ((node: DiagramItem, construct: string) => void)
+    | null = null;
+  private canDropOnNodeCallback:
+    | ((node: DiagramItem, construct: string) => boolean)
+    | null = null;
 
   /**
    * Get the current diagram (exposed for testing).
@@ -27,6 +38,15 @@ export class DiagramRenderer {
    */
   public getCurrentDiagram(): Diagram | null {
     return this.currentDiagram;
+  }
+
+  /**
+   * Find a diagram item by its ID in the current diagram.
+   * @param itemId - ID of the item to find
+   * @returns The diagram item or null if not found
+   */
+  public getItemById(itemId: string | null): DiagramItem | null {
+    return this.findItemById(itemId);
   }
 
   /**
@@ -52,16 +72,17 @@ export class DiagramRenderer {
 
     // Setup click handling
     this.setupClickHandling();
+    this.setupDropHandling();
   }
 
   /**
    * Render a schema object to the canvas
-   * @param schemaObj - The schema to render
+   * @param schemaObj - The schema to render, or `null` to show a message instead
    * @param diagramOptions - Display options for the diagram
    * @param onNodeClick - Callback function for node click events
    */
   public renderSchema(
-    schemaObj: schema,
+    schemaObj: schema | null,
     diagramOptions: DiagramOptions,
     onNodeClick: (node: DiagramItem, isExpandButton: boolean) => void
   ): void {
@@ -99,8 +120,10 @@ export class DiagramRenderer {
       // Apply view transformations
       this.updateView(this.viewState);
     } catch (error) {
-      this.showError(`Failed to render schema: ${(error as Error).message}`);
+      const message = error instanceof Error ? error.message : String(error);
+      this.showError(`Schema rendering error: ${message}`);
       console.error("Schema rendering error:", error);
+      throw error;
     }
   }
 
@@ -121,8 +144,10 @@ export class DiagramRenderer {
       // Apply view transformations
       this.updateView(this.viewState);
     } catch (error) {
-      this.showError(`Failed to refresh diagram: ${(error as Error).message}`);
+      const message = error instanceof Error ? error.message : String(error);
+      this.showError(`Diagram refresh error: ${message}`);
       console.error("Diagram refresh error:", error);
+      throw error;
     }
   }
 
@@ -134,9 +159,9 @@ export class DiagramRenderer {
       const target = e.target as SVGElement;
 
       // Check if clicked on expand button (or inside expand button group)
-      const expandButton = target.closest(".expand-button") as SVGElement;
+      const expandButton = target.closest<SVGElement>(".expand-button");
       if (expandButton) {
-        const itemGroup = expandButton.closest("[data-item-id]") as SVGElement;
+        const itemGroup = expandButton.closest<SVGElement>("[data-item-id]");
         if (itemGroup) {
           const itemId = itemGroup.getAttribute("data-item-id");
           const item = this.findItemById(itemId);
@@ -149,7 +174,7 @@ export class DiagramRenderer {
       }
 
       // Check if clicked on diagram item
-      const itemGroup = target.closest("[data-item-id]") as SVGElement;
+      const itemGroup = target.closest<SVGElement>("[data-item-id]");
       if (itemGroup) {
         const itemId = itemGroup.getAttribute("data-item-id");
         const item = this.findItemById(itemId);
@@ -158,6 +183,131 @@ export class DiagramRenderer {
         }
       }
     });
+  }
+
+  /**
+   * Register callback for node-level drop operations.
+   *
+   * @param onNodeDrop - Callback that receives target node and dropped XML schema construct from palette
+   */
+  public setDropHandler(
+    onNodeDrop: (node: DiagramItem, construct: string) => void
+  ): void {
+    this.onNodeDropCallback = onNodeDrop;
+  }
+
+  /**
+   * Register callback that determines whether a node is a valid drop target for a palette item.
+   *
+   * @param canDropOnNode - Callback that returns true when dropping is allowed
+   */
+  public setNodeDropValidator(
+    canDropOnNode: (node: DiagramItem, construct: string) => boolean
+  ): void {
+    this.canDropOnNodeCallback = canDropOnNode;
+  }
+
+  /**
+   * Set up drag-and-drop handling for diagram items.
+   */
+  private setupDropHandling(): void {
+    this.canvas.addEventListener("dragover", (event: DragEvent) => {
+      const context = this.getNodeDropContext(event);
+      if (!context) {
+        return;
+      }
+
+      if (!context.canDrop) {
+        context.itemGroup.classList.remove("drag-over");
+        return;
+      }
+
+      event.preventDefault();
+      context.itemGroup.classList.add("drag-over");
+    });
+
+    this.canvas.addEventListener("dragleave", (event: DragEvent) => {
+      const target = event.target as Element;
+      const itemGroup = target.closest("[data-item-id]");
+      if (!itemGroup) {
+        return;
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- jsdom, which runs the tests, has no elementFromPoint()
+      const maybeElementUnderPointer = document.elementFromPoint?.(
+        event.clientX,
+        event.clientY
+      );
+      if (
+        maybeElementUnderPointer &&
+        itemGroup.contains(maybeElementUnderPointer)
+      ) {
+        return;
+      }
+
+      const relatedTarget = event.relatedTarget;
+      if (relatedTarget instanceof Node && itemGroup.contains(relatedTarget)) {
+        return;
+      }
+
+      itemGroup.classList.remove("drag-over");
+    });
+
+    this.canvas.addEventListener("drop", (event: DragEvent) => {
+      const context = this.getNodeDropContext(event);
+      if (!context || !context.canDrop || !context.item) {
+        return;
+      }
+
+      event.preventDefault();
+      context.itemGroup.classList.remove("drag-over");
+
+      if (this.onNodeDropCallback) {
+        this.onNodeDropCallback(context.item, context.construct);
+      }
+      setActiveDraggedPaletteSchemaConstruct(null);
+    });
+  }
+
+  /**
+   * Resolve drop context for a diagram node under the current drag event.
+   *
+   * Returns null when event target is not a diagram item.
+   */
+  private getNodeDropContext(event: DragEvent): {
+    itemGroup: Element;
+    item: DiagramItem | null;
+    construct: string;
+    canDrop: boolean;
+  } | null {
+    const target = event.target;
+    if (!(target instanceof Element)) {
+      return null;
+    }
+
+    const itemGroup = target.closest("[data-item-id]");
+    if (!itemGroup) {
+      return null;
+    }
+
+    const itemId = itemGroup.getAttribute("data-item-id");
+    const item = this.findItemById(itemId);
+    const construct = this.getDraggedPaletteSchemaConstruct(event);
+    const canDrop =
+      !!item &&
+      !!construct &&
+      (!this.canDropOnNodeCallback || this.canDropOnNodeCallback(item, construct));
+
+    return { itemGroup, item, construct, canDrop };
+  }
+
+  /**
+   * Resolve dragged XML schema construct from DataTransfer, with fallback to
+   * module-level drag state for environments where dragover getData is empty.
+   */
+  private getDraggedPaletteSchemaConstruct(event: DragEvent): string {
+    const fromDataTransfer = event.dataTransfer?.getData(PALETTE_MIME_TYPE) ?? "";
+    return fromDataTransfer || getActiveDraggedPaletteSchemaConstruct() || "";
   }
 
   /**
@@ -273,11 +423,6 @@ export class DiagramRenderer {
    * @param padding - Padding in screen pixels
    */
   public fitToCanvas(padding: number = 24): ViewState {
-    // Ensure there is content
-    if (!this.canvas || !this.mainGroup) {
-      return this.viewState;
-    }
-
     const bbox = this.mainGroup.getBBox();
     const canvasWidth =
       this.canvas.clientWidth || this.canvas.viewBox.baseVal.width || 0;
@@ -336,20 +481,22 @@ export class DiagramRenderer {
     }
   }
 
+  /** X offset for error text appended to the canvas. */
+  private static readonly ERROR_TEXT_X = 20;
+  /** Y offset for error text appended to the canvas. */
+  private static readonly ERROR_TEXT_Y = 30;
+
   /**
-   * Display an error message on the canvas
+   * Display an error message on the canvas without clearing existing content.
    * @param message - Error message to display
    */
   public showError(message: string): void {
-    // Clear canvas and show error
-    this.canvas.innerHTML = "";
-    this.mainGroup = document.createElementNS(
-      "http://www.w3.org/2000/svg",
-      "g"
+    const text = this.createText(
+      DiagramRenderer.ERROR_TEXT_X,
+      DiagramRenderer.ERROR_TEXT_Y,
+      `Error: ${message}`,
+      "error-message"
     );
-    this.canvas.appendChild(this.mainGroup);
-
-    const text = this.createText(50, 50, `Error: ${message}`, "error-message");
     this.mainGroup.appendChild(text);
   }
 

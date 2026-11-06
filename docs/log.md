@@ -1,7 +1,7 @@
 # Knowledge Bundle Update Log
 
 ## 2026-11-06
-* **Update**: [Testing](testing.md#mocks-and-helpers): `webview-src/__tests__/diagramTestHelpers.ts` builds the diagram of a real schema for tests of the panel and the drop code; the tests of the XML tab, the list and union editors and the agreement test use it instead of creating `DiagramItem`s by hand ([#402](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/402)).
+* **Update**: [Testing](testing.md#mocks-and-helpers): `webview-src/__tests__/diagramTestHelpers.ts` builds the diagram of a real schema, which tests of the panel and the drop code use instead of creating `DiagramItem`s by hand; new tests follow this rule, some older ones were rewritten, and others still create the items by hand ([#402](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/402)).
 * **Update**: [Known issues](known-issues.md#lists-and-unions-with-inline-types-are-shown-as-if-they-had-named-types): new entry "Lists and unions with inline types are shown as if they had named types", found while testing the XML tab; "Diagram items copy values from the schema objects" no longer mentions the removed `toArray()` calls ([#402](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/402)).
 
 ## 2026-11-05

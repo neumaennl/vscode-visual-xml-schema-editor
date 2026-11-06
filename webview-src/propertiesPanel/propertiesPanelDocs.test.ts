@@ -8,6 +8,8 @@ import { Diagram } from "../diagram/Diagram";
 import { DiagramItemType } from "../diagram/DiagramTypes";
 import { SCHEMA_ROOT_ID } from "../../shared/idStrategy";
 import { findButton } from "../__tests__/propertiesPanelTestHelpers";
+import { diagramItem } from "../__tests__/diagramTestHelpers";
+import { schemaWith } from "../../src/__tests__/schemaTestHelpers";
 
 /** Two annotations of the schema, the first with two documentation entries and the second with one. */
 const TWO_SCHEMA_ANNOTATIONS = [
@@ -300,5 +302,46 @@ describe("PropertiesPanel: the Docs tab", () => {
     expect(deleteButton.classList.contains("property-docs-action-icon-only")).toBe(true);
     expect(deleteButton.title).toBe("Remove documentation");
     expect(deleteButton.textContent.trim()).toBe("");
+  });
+
+  describe("adding the first documentation", () => {
+    /** Undocumented nodes of every kind that the Docs tab shows. */
+    const UNDOCUMENTED = schemaWith(`<xs:element name="plain" type="xs:string"/>
+<xs:element name="code"><xs:simpleType><xs:restriction base="xs:string"/></xs:simpleType></xs:element>
+<xs:element name="person"><xs:complexType><xs:sequence><xs:group ref="Contact"/></xs:sequence></xs:complexType></xs:element>
+<xs:simpleType name="Word"><xs:restriction base="xs:string"/></xs:simpleType>
+<xs:complexType name="PersonType"><xs:sequence/></xs:complexType>
+<xs:group name="Contact"><xs:choice/></xs:group>`);
+
+    beforeEach(() => {
+      // The diagram builder logs every schema it builds
+      vi.spyOn(console, "log").mockImplementation(() => undefined);
+    });
+
+    test.each([
+      { id: "/element:plain", targetId: "/element:plain" },
+      // The documentation of an anonymous type goes to the type, where the diagram builder also reads it
+      { id: "/element:code", targetId: "/element:code/anonymousSimpleType[0]" },
+      { id: "/element:person", targetId: "/element:person/anonymousComplexType[0]" },
+      { id: "/simpleType:Word", targetId: "/simpleType:Word" },
+      { id: "/complexType:PersonType", targetId: "/complexType:PersonType" },
+      { id: "/group:Contact", targetId: "/group:Contact" },
+      { id: "/group:Contact/group:choice[0]", targetId: "/group:Contact/group:choice[0]" },
+      {
+        id: "/element:person/anonymousComplexType[0]/group:sequence[0]/groupRef:Contact[0]",
+        targetId: "/element:person/anonymousComplexType[0]/group:sequence[0]/groupRef:Contact[0]",
+      },
+    ])("adds documentation to $targetId for $id", ({ id, targetId }) => {
+      const dispatch = vi.fn();
+      new PropertiesPanel(container, dispatch).display(diagramItem(UNDOCUMENTED, id));
+
+      findButton(container, "Docs")?.click();
+      findButton(container, "Add documentation")?.click();
+
+      expect(dispatch).toHaveBeenCalledWith({
+        type: "addDocumentation",
+        payload: { targetId, content: "New documentation" },
+      });
+    });
   });
 });

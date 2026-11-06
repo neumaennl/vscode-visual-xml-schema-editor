@@ -281,7 +281,7 @@ export function resolveComplexTypeId(node: DiagramItem): string | null {
  * Resolves the default annotation/documentation target for Docs-tab operations.
  * For element nodes that inline anonymous types, this returns the anonymous type ID
  * so documentation edits target the actual annotated schema node instead of the
- * parent element wrapper.
+ * parent element wrapper. Anonymous types are no diagram items of their own.
  *
  * @param node - Diagram item being edited in the Docs tab
  * @returns The schema ID that documentation commands should target, or null when unsupported
@@ -291,9 +291,6 @@ export function resolveDocumentationTargetId(node: DiagramItem): string | null {
   switch (nodeType) {
     case SchemaNodeType.Schema:
       return SCHEMA_ROOT_ID;
-    case SchemaNodeType.SimpleType:
-    case SchemaNodeType.AnonymousSimpleType:
-      return resolveSimpleTypeId(node) ?? node.id;
     case SchemaNodeType.Element:
       if (node.hasAnonymousComplexType) {
         return generateSchemaId({
@@ -303,8 +300,8 @@ export function resolveDocumentationTargetId(node: DiagramItem): string | null {
         });
       }
       return resolveSimpleTypeId(node) ?? node.id;
+    case SchemaNodeType.SimpleType:
     case SchemaNodeType.ComplexType:
-    case SchemaNodeType.AnonymousComplexType:
     case SchemaNodeType.Group:
     case SchemaNodeType.GroupRef:
       return node.id;
@@ -339,14 +336,7 @@ export function createTypeCommand(node: DiagramItem, nextType: string): SchemaCo
       }
       return { type: "modifyElement", payload: { elementId: node.id, elementType: typeName } };
     case SchemaNodeType.SimpleType:
-    case SchemaNodeType.AnonymousSimpleType:
-      return {
-        type: "modifySimpleType",
-        payload: {
-          typeId: resolveSimpleTypeId(node) ?? node.id,
-          baseType: typeName,
-        },
-      };
+      return { type: "modifySimpleType", payload: { typeId: node.id, baseType: typeName } };
     default:
       return null;
   }

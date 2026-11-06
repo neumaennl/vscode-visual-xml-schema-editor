@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-06T14:28:56Z }
-verified: { by: human:neumaennl, at: 2026-11-06T14:48:13Z }
+generated: { by: human:neumaennl, at: 2026-11-06T15:59:24Z }
+verified: { by: human:neumaennl, at: 2026-11-06T16:02:03Z }
 ---
 
 # Purpose
@@ -464,14 +464,6 @@ Effort:
 - **Severity:** Low
 - **Effort:** L
 - **Description:** Every change redraws the whole diagram. Each `updateSchema` builds all diagram items from the schema object again, calculates the layout of every item and replaces all SVG content, even if the edit changed a single attribute. Changing a diagram option does the same, although the options are only applied after the build and would need only a new layout. Expanding or collapsing a node calls `refresh()`, which keeps the items but calculates the layout of all items and redraws the whole SVG. `DiagramLayout.relayoutItem()` was written to recalculate the layout of one item and its ancestors, but it is never called (see [Duplicated and dead code](#duplicated-and-dead-code)). For large schemas this probably makes editing slow; this was not measured. Smaller improvements are to use `refresh()` for option changes and `relayoutItem()` for expanding and collapsing; real incremental updates would need the [ambiguous node IDs](#node-ids-are-ambiguous-and-have-many-special-cases) fixed first, so that items can be matched across builds (see [Diagram rendering](diagram-rendering.md#pipeline)).
-- **GitHub issue:** none
-
-## Branch coverage is below 80%
-
-- **Location:** `vitest.config.ts` (`coverage.thresholds`), code of the editor in `src/` and `webview-src/`
-- **Severity:** Low
-- **Effort:** L
-- **Description:** Much of the code of the editor has no tests for some of its branches. Branch coverage is 73.4%, below the 80% that applies to lines, statements and functions, so the threshold for branches is 70% for now (see [Testing](testing.md#coverage)). About 270 more covered branches are needed for 80%. The largest gaps are in `schemaLocalRenamer.ts` (38%), `schemaPrefixChecker.ts` (53%), `propertiesPanelXmlPreview.ts` (56%), `renderer.ts` (43%) and `webview-src/main.ts` (37%). The fix is the tests that are missing, after which all four thresholds are raised to 85% (Phase 9 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340)).
 - **GitHub issue:** none
 
 ## The extension host is not bundled

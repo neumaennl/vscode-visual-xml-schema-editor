@@ -49,9 +49,8 @@ export default defineConfig({
         "**/*.test-d.ts",
       ],
       reporter: ["text", "json-summary", "json", "html"],
-      // A run below these values fails. Branches are at 70% only until the editor's code has the
-      // tests it lacks; Phase 9 of #340 then raises all four to 85%.
-      thresholds: { lines: 80, statements: 80, functions: 80, branches: 70 },
+      // A run below these values fails (see "Coverage" in docs/testing.md)
+      thresholds: { lines: 85, statements: 85, functions: 85, branches: 85 },
     },
     projects: [
       {

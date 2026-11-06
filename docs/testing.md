@@ -229,7 +229,7 @@ There are no helper classes in the tests today. Factory functions and plain obje
 
 The coverage report (`@vitest/coverage-v8`) includes all TypeScript files in `shared/`, `src/` and `webview-src/` except type declarations, generated classes (`shared/generated/`), test files (`*.test.ts`, `*.test-d.ts`), and `__tests__` and `__mocks__` folders. The scripts in `scripts/` are not part of it. Files that contain only types, such as `webview-src/webviewTypes.ts`, appear with no statements and do not change the totals. CI shows the coverage report in the job summary and on pull requests (see [CI](#ci)).[^vitest-config]
 
-The thresholds are 80% for lines, statements and functions and 70% for branches (`coverage.thresholds` in `vitest.config.ts`). A run with coverage below one of them fails, also in CI. The threshold for branches is lower only until the code of the editor has the tests it lacks (see [Known issues](known-issues.md#branch-coverage-is-below-80)); then all four are raised to 85% (Phase 9 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340)).
+The threshold is 85% for lines, statements, functions and branches (`coverage.thresholds` in `vitest.config.ts`). A run with coverage below one of them fails, also in CI. The coverage is only a little above the thresholds, which is enough because new and changed code is tested anyway (see [Development guidelines](development-guidelines.md#tests)).
 
 # CI
 

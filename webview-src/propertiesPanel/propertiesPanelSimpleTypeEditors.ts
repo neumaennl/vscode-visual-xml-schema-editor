@@ -4,7 +4,6 @@
  */
 
 import { SchemaCommand } from "../../shared/types";
-import { RestrictionFacets } from "../../shared/commands/schemaTypes";
 import { SchemaNodeType } from "../../shared/idStrategy";
 import { DiagramItem } from "../diagram";
 import { createEditableField } from "./propertiesPanelDom";
@@ -17,7 +16,8 @@ import {
 import { getReadOnlyTypeValue } from "./propertiesPanelTypeHelpers";
 
 /**
- * Resolves the current simpleType derivation kind from structured diagram state.
+ * Resolves the current simpleType derivation kind from structured diagram state. The diagram builder
+ * sets the kind for every simple type with a body; other nodes count as restrictions.
  *
  * @param node - Diagram node being edited
  * @returns The current simpleType derivation kind
@@ -25,16 +25,47 @@ import { getReadOnlyTypeValue } from "./propertiesPanelTypeHelpers";
 export function getSimpleTypeDerivationKind(
   node: DiagramItem
 ): "restriction" | "list" | "union" {
-  if (node.simpleTypeDerivationKind) {
-    return node.simpleTypeDerivationKind;
-  }
-  if (node.simpleTypeUnionMemberTypes?.length) {
-    return "union";
-  }
-  if (node.simpleTypeListItemType) {
-    return "list";
-  }
-  return "restriction";
+  return node.simpleTypeDerivationKind ?? "restriction";
+}
+
+/**
+ * Returns the start of the type label of a simple type, as the diagram builder writes it.
+ *
+ * @param hasInlineSimpleType - Whether the simple type is the anonymous type of an element
+ * @returns The start of the label
+ */
+function typeLabelPrefix(hasInlineSimpleType: boolean): string {
+  return hasInlineSimpleType ? "<anonymous simpleType>" : "simpleType";
+}
+
+/**
+ * Shows a list body on the draft node, so that the panel shows it before the diagram is rebuilt.
+ *
+ * @param node - The draft node
+ * @param itemType - The item type of the list
+ * @param hasInlineSimpleType - Whether the simple type is the anonymous type of an element
+ */
+function showListBody(node: DiagramItem, itemType: string, hasInlineSimpleType: boolean): void {
+  node.simpleTypeDerivationKind = "list";
+  node.simpleTypeListItemType = itemType;
+  node.simpleTypeUnionMemberTypes = undefined;
+  node.restrictions = undefined;
+  node.type = `${typeLabelPrefix(hasInlineSimpleType)} (list of ${itemType})`;
+}
+
+/**
+ * Shows a union body on the draft node, so that the panel shows it before the diagram is rebuilt.
+ *
+ * @param node - The draft node
+ * @param memberTypes - The member types of the union
+ * @param hasInlineSimpleType - Whether the simple type is the anonymous type of an element
+ */
+function showUnionBody(node: DiagramItem, memberTypes: string[], hasInlineSimpleType: boolean): void {
+  node.simpleTypeDerivationKind = "union";
+  node.simpleTypeListItemType = undefined;
+  node.simpleTypeUnionMemberTypes = memberTypes;
+  node.restrictions = undefined;
+  node.type = `${typeLabelPrefix(hasInlineSimpleType)} (union of ${memberTypes.join(", ")})`;
 }
 
 /**
@@ -81,84 +112,28 @@ export function renderSimpleTypeKindSelector(
   }
 
   select.value = currentKind;
+  // A select only reports a change to another value, so the new kind always differs from the current one
   select.addEventListener("change", () => {
     const nextKind = select.value as "restriction" | "list" | "union";
-    if (nextKind === currentKind) {
-      return;
-    }
     const command = createSimpleTypeKindCommand(node, nextKind);
     if (!command) {
+      // Nothing to derive the new body from, for example a union of inline types only
       select.value = currentKind;
       return;
     }
 
-    const payload = command.payload as {
-      listItemType?: string;
-      unionMemberTypes?: string[];
-      baseType?: string;
-      restrictions?: RestrictionFacets;
-    };
-    const prefix = hasInlineSimpleType ? "<anonymous simpleType>" : "simpleType";
-
-    switch (nextKind) {
-      case "list": {
-        const nextItemType = payload.listItemType;
-        if (!nextItemType) {
-          select.value = currentKind;
-          return;
-        }
-        node.simpleTypeDerivationKind = "list";
-        node.simpleTypeListItemType = nextItemType;
-        node.simpleTypeUnionMemberTypes = undefined;
-        node.restrictions = undefined;
-        node.type = `${prefix} (list of ${nextItemType})`;
-        break;
-      }
-      case "union": {
-        const nextMemberTypes = payload.unionMemberTypes;
-        if (!nextMemberTypes?.length) {
-          select.value = currentKind;
-          return;
-        }
-        node.simpleTypeDerivationKind = "union";
-        node.simpleTypeListItemType = undefined;
-        node.simpleTypeUnionMemberTypes = nextMemberTypes;
-        node.restrictions = undefined;
-        node.type = `${prefix} (union of ${nextMemberTypes.join(", ")})`;
-        break;
-      }
-      case "restriction": {
-        const nextBaseType = payload.baseType;
-        if (!nextBaseType) {
-          select.value = currentKind;
-          return;
-        }
-        node.simpleTypeDerivationKind = "restriction";
-        node.simpleTypeListItemType = undefined;
-        node.simpleTypeUnionMemberTypes = undefined;
-        if (payload.restrictions) {
-          node.restrictions = {
-            enumeration: Array.isArray(payload.restrictions.enumeration)
-              ? [...payload.restrictions.enumeration]
-              : undefined,
-            pattern: payload.restrictions.pattern ? [payload.restrictions.pattern] : undefined,
-            length: payload.restrictions.length,
-            minLength: payload.restrictions.minLength,
-            maxLength: payload.restrictions.maxLength,
-            minInclusive: payload.restrictions.minInclusive,
-            maxInclusive: payload.restrictions.maxInclusive,
-            minExclusive: payload.restrictions.minExclusive,
-            maxExclusive: payload.restrictions.maxExclusive,
-            totalDigits: payload.restrictions.totalDigits,
-            fractionDigits: payload.restrictions.fractionDigits,
-            whiteSpace: payload.restrictions.whiteSpace,
-          };
-        } else {
-          node.restrictions = undefined;
-        }
-        node.type = `${prefix} (restricts ${nextBaseType})`;
-        break;
-      }
+    // The command builder derives the new body from the current one; a list or union has no facets
+    const payload = command.payload as { listItemType: string; unionMemberTypes: string[]; baseType: string };
+    if (nextKind === "list") {
+      showListBody(node, payload.listItemType, hasInlineSimpleType);
+    } else if (nextKind === "union") {
+      showUnionBody(node, payload.unionMemberTypes, hasInlineSimpleType);
+    } else {
+      node.simpleTypeDerivationKind = "restriction";
+      node.simpleTypeListItemType = undefined;
+      node.simpleTypeUnionMemberTypes = undefined;
+      node.restrictions = undefined;
+      node.type = `${typeLabelPrefix(hasInlineSimpleType)} (restricts ${payload.baseType})`;
     }
 
     dispatchCommand(command);
@@ -192,12 +167,7 @@ export function renderSimpleTypeListEditor(
       if (!command) {
         return;
       }
-      const prefix = hasInlineSimpleType ? "<anonymous simpleType>" : "simpleType";
-      node.simpleTypeDerivationKind = "list";
-      node.simpleTypeListItemType = normalizedNext;
-      node.simpleTypeUnionMemberTypes = undefined;
-      node.restrictions = undefined;
-      node.type = `${prefix} (list of ${normalizedNext})`;
+      showListBody(node, normalizedNext, hasInlineSimpleType);
       dispatchCommand(command);
     }, typeSuggestions)
   );
@@ -257,12 +227,7 @@ export function renderSimpleTypeUnionEditor(
     if (!command) {
       return;
     }
-    const prefix = hasInlineSimpleType ? "<anonymous simpleType>" : "simpleType";
-    node.simpleTypeDerivationKind = "union";
-    node.simpleTypeListItemType = undefined;
-    node.simpleTypeUnionMemberTypes = parsedMemberTypes;
-    node.restrictions = undefined;
-    node.type = `${prefix} (union of ${parsedMemberTypes.join(", ")})`;
+    showUnionBody(node, parsedMemberTypes, hasInlineSimpleType);
     dispatchCommand(command);
   };
 
@@ -294,12 +259,6 @@ export function renderSimpleTypeUnionEditor(
         select.appendChild(option);
       }
 
-      if (memberType && !optionValues.includes(memberType)) {
-        const currentOption = document.createElement("option");
-        currentOption.value = memberType;
-        currentOption.textContent = memberType;
-        select.appendChild(currentOption);
-      }
       select.value = memberType;
       select.addEventListener("change", () => {
         memberTypes[index] = select.value;

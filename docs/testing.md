@@ -4,8 +4,8 @@ title: Testing
 description: How the extension is tested - running the tests and the type check, the four Vitest projects, mocks and helpers, conventions for tests, mocks, helper functions and helper classes, which tests to write for typical changes, coverage, CI, the smoke tests in the extension host with a mock webview, and how the current tests compare with the testing strategy of ADR 001.
 tags: [testing, vitest, mocks, coverage, ci, conventions]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-05T06:15:25Z }
-verified: { by: human:neumaennl, at: 2026-11-05T06:30:01Z }
+generated: { by: human:neumaennl, at: 2026-11-06T14:51:31Z }
+verified: { by: human:neumaennl, at: 2026-11-06T15:25:45Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -40,6 +40,9 @@ sources:
   - id: properties-panel-test-helpers
     resource: ../webview-src/__tests__/propertiesPanelTestHelpers.ts
     title: Helpers that find the fields and buttons of the properties panel
+  - id: diagram-test-helpers
+    resource: ../webview-src/__tests__/diagramTestHelpers.ts
+    title: Helpers that build the diagram of a schema
   - id: workspace-edit-test
     resource: ../src/__tests__/pipeline.workspaceEdit.test.ts
     title: Integration tests for the WorkspaceEdit path
@@ -129,6 +132,7 @@ Use the Node version from `.nvmrc`, which CI also uses. It is the Node version o
 - **VS Code objects.** `stubEditor(xml)` in `src/__tests__/providerTestHelpers.ts` creates a `SchemaEditorProvider` and partial stubs of `ExtensionContext`, `Webview`, `WebviewPanel` and a `TextDocument` with the given text, with only the members the provider uses, and returns the mocks of `postMessage` and `asWebviewUri`. `resolveAndGetHandler()` opens the editor and returns the handler that the provider registered for messages from the webview.[^provider-test-helpers]
 - **Webview API.** `main.test.ts` sets `acquireVsCodeApi` on `globalThis` before the app is loaded, with mocks for `postMessage`, `getState` and `setState`, and builds the page with `document.body.innerHTML`. Each test loads the app again with `vi.resetModules()` and `await import("./main")`.[^main-test]
 - **Properties panel.** `webview-src/__tests__/propertiesPanelTestHelpers.ts` finds the fields of the panel by their labels (`getInputByLabel()`, `getSelectByLabel()`, `getSelectsByLabel()`, `hasLabel()`) and buttons, such as those of the tabs, by their text (`findButton()`).[^properties-panel-test-helpers]
+- **Diagram items.** `webview-src/__tests__/diagramTestHelpers.ts` builds the diagram of a real schema with the `DiagramBuilder`: `diagramItems(schemaObj)` returns all items, `diagramItem(schemaObj, id)` the item with an ID. Tests of the panel and the drop code use them instead of creating `DiagramItem`s by hand, so that the items have the IDs and values that the builder gives them (see [Expected results](#expected-results)); so far, the tests of the XML tab, the list and union editors and the agreement test do, and many older ones still create the items by hand.[^diagram-test-helpers]
 - **SVG measuring.** jsdom has no layout engine, so `setupGetBBoxMock()` in `webview-src/__tests__/svgTestHelpers.ts` gives every element a `getBBox()` that assumes 6 pixels per character and a height of 10 pixels.[^svg-test-helpers]
 - **Pipeline helpers.** `src/__tests__/pipelineTestHelpers.ts` has small schemas as constants (`SCHEMA_WITH_ELEMENTS` and others, built with `schemaXmlWith()`) and runs a command through a new `CommandProcessor`: `runCommand()`, `runCommandExpectSuccess()` (returns the XML), `runCommandExpectSuccessSchema()` (returns the unmarshalled schema) and `runCommandExpectValidationFailure()`.[^pipeline-test-helpers]
 - **Schema XML and objects.** `src/__tests__/schemaTestHelpers.ts` builds the XML of a schema with `schemaXmlWith(body, namespaces)` (the XML declaration, the `xs` namespace, further namespace declarations by prefix if given, and the given content) and of a schema without content with `emptySchemaXml()`, and reads XML files from `src/__tests__/test-resources` with `readTestXml(name)`. For the tests of validators and executors it unmarshals schemas: `schemaWith(body, namespaces)`, `emptySchema()`, `readTestSchema(name)` (a file from `test-resources`), `schemaWithAttrGroups(body)` and `schemaWithIncludes(...)`. A test that only needs the schema object uses these instead of unmarshalling XML itself.[^schema-test-helpers]
@@ -283,6 +287,8 @@ ADR 001 plans six levels of testing. The current state:[^adr-001]
 [^svg-test-helpers]: getBBox mock for jsdom
 
 [^properties-panel-test-helpers]: Helpers that find the fields and buttons of the properties panel
+
+[^diagram-test-helpers]: Helpers that build the diagram of a schema
 
 [^workspace-edit-test]: Integration tests for the WorkspaceEdit path
 

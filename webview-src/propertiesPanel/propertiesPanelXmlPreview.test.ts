@@ -8,9 +8,8 @@
 
 import { PropertiesPanel } from "./propertiesPanel";
 import { buildXmlPreview } from "./propertiesPanelXmlPreview";
-import { DiagramBuilder } from "../diagram/DiagramBuilder";
-import type { DiagramItem } from "../diagram/DiagramItem";
 import { findButton } from "../__tests__/propertiesPanelTestHelpers";
+import { diagramItem } from "../__tests__/diagramTestHelpers";
 import { unmarshal } from "@neumaennl/xmlbind-ts";
 import { schema } from "../../shared/types";
 import { schemaWith } from "../../src/__tests__/schemaTestHelpers";
@@ -43,27 +42,6 @@ const PREVIEW_NODES = `<xs:element name="code" type="xs:string" nillable="true" 
 <xs:group name="Contact"><xs:choice><xs:element name="phone" type="xs:string"/></xs:choice></xs:group>
 <xs:complexType name="WithRef"><xs:sequence><xs:group ref="Contact" minOccurs="0"/></xs:sequence></xs:complexType>
 <xs:element name="pair"><xs:complexType><xs:attribute name="key" type="xs:string"/></xs:complexType></xs:element>`;
-
-/**
- * Builds the diagram of a schema and returns the item with the given ID.
- *
- * @param schemaObj - The schema
- * @param id - The ID of the item
- * @returns The item
- */
-function diagramItem(schemaObj: schema, id: string): DiagramItem {
-  const items: DiagramItem[] = [];
-  const collect = (item: DiagramItem): void => {
-    items.push(item);
-    item.childElements.forEach(collect);
-  };
-  new DiagramBuilder().buildFromSchema(schemaObj).rootElements.forEach(collect);
-  const item = items.find((candidate) => candidate.id === id);
-  if (!item) {
-    return expect.fail(`No diagram item ${id}`);
-  }
-  return item;
-}
 
 describe("PropertiesPanel: the XML tab", () => {
   beforeEach(() => {

@@ -16,8 +16,8 @@ import type { SchemaCommand } from "../../shared/types";
 import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy";
 import { CommandValidator } from "../../src/commandValidator.js";
 import { CommandExecutor } from "../../src/commandExecutor.js";
-import { DiagramBuilder } from "../diagram/DiagramBuilder";
 import type { DiagramItem } from "../diagram/DiagramItem";
+import { diagramItems } from "./diagramTestHelpers";
 
 /** The folders with the schemas of the test. */
 const SCHEMA_FOLDERS = [
@@ -138,22 +138,6 @@ function commandsForSchemaContent(schemaObj: schema): SchemaCommand[] {
       { type: "modifyAttribute", payload: { attributeId, documentation: "Changed" } },
     ]),
   ];
-}
-
-/**
- * Returns all diagram items of a schema, depth first.
- *
- * @param schemaObj - The schema
- * @returns The diagram items
- */
-function diagramItems(schemaObj: schema): DiagramItem[] {
-  const items: DiagramItem[] = [];
-  const collect = (item: DiagramItem): void => {
-    items.push(item);
-    item.childElements.forEach(collect);
-  };
-  new DiagramBuilder().buildFromSchema(schemaObj).rootElements.forEach(collect);
-  return items;
 }
 
 /**

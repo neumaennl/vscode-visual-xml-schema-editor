@@ -1,5 +1,8 @@
 # Knowledge Bundle Update Log
 
+## 2026-11-06
+* **Update**: [Known issues](known-issues.md#lists-and-unions-with-inline-types-are-shown-as-if-they-had-named-types): new entry "Lists and unions with inline types are shown as if they had named types", found while testing the XML tab; "Diagram items copy values from the schema objects" no longer mentions the removed `toArray()` calls ([#402](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/402)).
+
 ## 2026-11-05
 * **Update**: [Testing](testing.md#expected-results): new section "Expected results" with the rule that a test describes the intended behavior as `docs/`, XML Schema or an ADR define it, and only uses input that can reach the code in real use; the Coverage section no longer states its own version of the rule ([#402](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/402)). [Commands](commands.md#elements): an element has at most one of `default_` and `fixed`, and a reference has neither; setting one removes the other, and turning an element into a reference removes `default`, `fixed` and `nillable`. [Known issues](known-issues.md#removing-an-import-without-a-namespace-does-not-check-for-references): new entry "Removing an import without a namespace does not check for references".
 * **Update**: [Commands](commands.md#imports-includes-and-namespaces): `modifyImport` rejects a prefix for an import without a namespace, which the executor silently ignored before ([#402](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/402)). [Known issues](known-issues.md#turning-the-default-namespace-into-a-prefix-does-not-rewrite-references): new entry "Turning the default namespace into a prefix does not rewrite references".

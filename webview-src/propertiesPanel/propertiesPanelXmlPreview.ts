@@ -11,18 +11,12 @@ import { extractBaseType } from "./propertiesPanelSimpleTypeCommands";
 
 const INDENT = "  ";
 const TRUNCATION_MARKER = "<!-- ... truncated ... -->";
+/** How many levels of children the preview shows below the selected node. */
 const MAX_PREVIEW_DESCENDANT_DEPTH = 1;
+/** How many children of a node the preview shows. */
 const MAX_PREVIEW_CHILDREN_PER_NODE = 50;
-const MAX_PREVIEW_NODES = 250;
 
 type XmlAttr = [name: string, value: string];
-
-interface XmlPreviewRenderContext {
-  maxDescendantDepth: number;
-  maxChildrenPerNode: number;
-  maxNodes: number;
-  renderedNodes: number;
-}
 
 function escapeXml(value: string): string {
   return value
@@ -57,53 +51,21 @@ function renderTruncationMarker(level: number): string {
   return `${pad(level)}${TRUNCATION_MARKER}`;
 }
 
-function createRenderContext(): XmlPreviewRenderContext {
-  return {
-    maxDescendantDepth: MAX_PREVIEW_DESCENDANT_DEPTH,
-    maxChildrenPerNode: MAX_PREVIEW_CHILDREN_PER_NODE,
-    maxNodes: MAX_PREVIEW_NODES,
-    renderedNodes: 0,
-  };
-}
-
-function tryCountNode(context: XmlPreviewRenderContext): boolean {
-  if (context.renderedNodes >= context.maxNodes) {
-    return false;
-  }
-  context.renderedNodes += 1;
-  return true;
-}
-
-function renderChildNodes(
-  children: DiagramItem[],
-  level: number,
-  depth: number,
-  context: XmlPreviewRenderContext
-): string[] {
+function renderChildNodes(children: DiagramItem[], level: number, depth: number): string[] {
   if (children.length === 0) {
     return [];
   }
 
-  if (depth >= context.maxDescendantDepth) {
+  if (depth >= MAX_PREVIEW_DESCENDANT_DEPTH) {
     return [renderTruncationMarker(level)];
   }
 
-  const limitedChildren = children.slice(0, context.maxChildrenPerNode);
-  const rendered: string[] = [];
-
-  for (const child of limitedChildren) {
-    const nextNode = renderNode(child, level, depth + 1, context);
-    if (!nextNode) {
-      rendered.push(renderTruncationMarker(level));
-      return rendered;
-    }
-    rendered.push(nextNode);
-  }
-
-  if (children.length > context.maxChildrenPerNode) {
+  const rendered = children
+    .slice(0, MAX_PREVIEW_CHILDREN_PER_NODE)
+    .map((child) => renderNode(child, level, depth + 1));
+  if (children.length > MAX_PREVIEW_CHILDREN_PER_NODE) {
     rendered.push(renderTruncationMarker(level));
   }
-
   return rendered;
 }
 
@@ -232,20 +194,12 @@ function renderSimpleTypeChildren(node: DiagramItem, level: number): string[] {
   return [renderTag("xs:restriction", restrictionAttributes, facets, level)];
 }
 
-function renderComplexTypeBody(
-  node: DiagramItem,
-  level: number,
-  depth: number,
-  context: XmlPreviewRenderContext
-): string[] {
-  const modelChildren = renderChildNodes(node.childElements, level, depth, context);
-  const attributeChildren = renderAttributeNodes(node, level);
-
+function renderComplexTypeBody(node: DiagramItem, level: number, depth: number): string[] {
   const baseType = extractBaseType(node.type);
   if (baseType && node.complexDerivationKind) {
     const derivationTag = node.complexDerivationKind === "restriction" ? "xs:restriction" : "xs:extension";
     const derivationChildren = [
-      ...renderChildNodes(node.childElements, level + 2, depth, context),
+      ...renderChildNodes(node.childElements, level + 2, depth),
       ...renderAttributeNodes(node, level + 2),
     ];
     const contentTag = node.isSimpleContent ? "xs:simpleContent" : "xs:complexContent";
@@ -260,16 +214,10 @@ function renderComplexTypeBody(
     ];
   }
 
-  return [...modelChildren, ...attributeChildren];
+  return [...renderChildNodes(node.childElements, level, depth), ...renderAttributeNodes(node, level)];
 }
 
-function renderElementNode(
-  node: DiagramItem,
-  nodeType: SchemaNodeType | null,
-  level: number,
-  depth: number,
-  context: XmlPreviewRenderContext
-): string {
+function renderElementNode(node: DiagramItem, nodeType: SchemaNodeType | null, level: number, depth: number): string {
   const attributes: XmlAttr[] = [["name", node.name]];
 
   if (node.type && !node.hasAnonymousComplexType && !node.isSimpleContent && !node.type.startsWith("<anonymous")) {
@@ -301,25 +249,19 @@ function renderElementNode(
     if (node.isMixed) {
       complexTypeAttributes.push(["mixed", "true"]);
     }
-    const complexTypeChildren = renderComplexTypeBody(node, level + 2, depth, context);
+    const complexTypeChildren = renderComplexTypeBody(node, level + 2, depth);
     children.push(renderTag("xs:complexType", complexTypeAttributes, complexTypeChildren, level + 1));
   } else if (node.isSimpleContent) {
     const simpleTypeChildren = renderSimpleTypeChildren(node, level + 2);
     children.push(renderTag("xs:simpleType", [], simpleTypeChildren, level + 1));
   } else {
-    children.push(...renderChildNodes(node.childElements, level + 1, depth, context));
+    children.push(...renderChildNodes(node.childElements, level + 1, depth));
   }
 
   return renderTag("xs:element", attributes, children, level);
 }
 
-function renderGroupNode(
-  node: DiagramItem,
-  nodeType: SchemaNodeType | null,
-  level: number,
-  depth: number,
-  context: XmlPreviewRenderContext
-): string {
+function renderGroupNode(node: DiagramItem, nodeType: SchemaNodeType | null, level: number, depth: number): string {
   if (nodeType === SchemaNodeType.GroupRef || node.isReference) {
     const attrs: XmlAttr[] = [["ref", node.name]];
     appendOccurrenceAttributes(attrs, node, false);
@@ -341,7 +283,7 @@ function renderGroupNode(
     const attrs: XmlAttr[] = [["name", node.name]];
     const children = [
       ...renderAnnotations(node, level + 1),
-      ...renderChildNodes(node.childElements, level + 1, depth, context),
+      ...renderChildNodes(node.childElements, level + 1, depth),
     ];
     return renderTag("xs:group", attrs, children, level);
   }
@@ -351,51 +293,18 @@ function renderGroupNode(
   appendOccurrenceAttributes(attrs, node, false);
   const children = [
     ...renderAnnotations(node, level + 1),
-    ...renderChildNodes(node.childElements, level + 1, depth, context),
+    ...renderChildNodes(node.childElements, level + 1, depth),
   ];
   return renderTag(`xs:${compositor}`, attrs, children, level);
 }
 
-function shouldRenderNamedType(node: DiagramItem, nodeType: SchemaNodeType | null, expectedNodeType: SchemaNodeType): boolean {
-  return nodeType === expectedNodeType || node.itemType === DiagramItemType.type;
-}
-
-function isSimpleTypePreviewNode(node: DiagramItem, nodeType: SchemaNodeType | null): boolean {
-  return (
-    nodeType === SchemaNodeType.SimpleType ||
-    nodeType === SchemaNodeType.AnonymousSimpleType ||
-    (node.itemType === DiagramItemType.type && node.type.includes("simpleType"))
-  );
-}
-
-function isComplexTypePreviewNode(node: DiagramItem, nodeType: SchemaNodeType | null): boolean {
-  return (
-    nodeType === SchemaNodeType.ComplexType ||
-    nodeType === SchemaNodeType.AnonymousComplexType ||
-    (node.itemType === DiagramItemType.type && node.type.includes("complexType"))
-  );
-}
-
-function renderSimpleTypeNode(node: DiagramItem, nodeType: SchemaNodeType | null, level: number): string {
-  const attrs: XmlAttr[] = [];
-  if (shouldRenderNamedType(node, nodeType, SchemaNodeType.SimpleType)) {
-    attrs.push(["name", node.name]);
-  }
+function renderSimpleTypeNode(node: DiagramItem, level: number): string {
   const children = [...renderAnnotations(node, level + 1), ...renderSimpleTypeChildren(node, level + 1)];
-  return renderTag("xs:simpleType", attrs, children, level);
+  return renderTag("xs:simpleType", [["name", node.name]], children, level);
 }
 
-function renderComplexTypeNode(
-  node: DiagramItem,
-  nodeType: SchemaNodeType | null,
-  level: number,
-  depth: number,
-  context: XmlPreviewRenderContext
-): string {
-  const attrs: XmlAttr[] = [];
-  if (shouldRenderNamedType(node, nodeType, SchemaNodeType.ComplexType)) {
-    attrs.push(["name", node.name]);
-  }
+function renderComplexTypeNode(node: DiagramItem, level: number, depth: number): string {
+  const attrs: XmlAttr[] = [["name", node.name]];
   if (node.isAbstract) {
     attrs.push(["abstract", "true"]);
   }
@@ -405,18 +314,13 @@ function renderComplexTypeNode(
 
   const children = [
     ...renderAnnotations(node, level + 1),
-    ...renderComplexTypeBody(node, level + 1, depth, context),
+    ...renderComplexTypeBody(node, level + 1, depth),
   ];
 
   return renderTag("xs:complexType", attrs, children, level);
 }
 
-function renderSchemaNode(
-  node: DiagramItem,
-  level: number,
-  depth: number,
-  context: XmlPreviewRenderContext
-): string {
+function renderSchemaNode(node: DiagramItem, level: number, depth: number): string {
   const attrs: XmlAttr[] = [];
 
   const namespaceEntries = Object.entries(node.diagram?.schemaNamespacePrefixes ?? {});
@@ -435,30 +339,26 @@ function renderSchemaNode(
 
   const children = [
     ...renderAnnotations(node, level + 1),
-    ...renderChildNodes(node.childElements, level + 1, depth, context),
+    ...renderChildNodes(node.childElements, level + 1, depth),
   ];
 
   return renderTag("xs:schema", attrs, children, level);
 }
 
-function renderNode(
-  node: DiagramItem,
-  level: number,
-  depth: number,
-  context: XmlPreviewRenderContext
-): string | null {
-  if (!tryCountNode(context)) {
-    return null;
-  }
-
+/**
+ * Renders a diagram item. The diagram builder creates items for the schema, elements, groups and
+ * compositors, group references, and named simple and complex types; anonymous types are part of
+ * their element.
+ */
+function renderNode(node: DiagramItem, level: number, depth: number): string {
   const nodeType = getNodeType(node);
 
   if (node.id === SCHEMA_ROOT_ID || nodeType === SchemaNodeType.Schema) {
-    return renderSchemaNode(node, level, depth, context);
+    return renderSchemaNode(node, level, depth);
   }
 
   if (nodeType === SchemaNodeType.Element || node.itemType === DiagramItemType.element) {
-    return renderElementNode(node, nodeType, level, depth, context);
+    return renderElementNode(node, nodeType, level, depth);
   }
 
   if (
@@ -466,29 +366,19 @@ function renderNode(
     nodeType === SchemaNodeType.GroupRef ||
     node.itemType === DiagramItemType.group
   ) {
-    return renderGroupNode(node, nodeType, level, depth, context);
+    return renderGroupNode(node, nodeType, level, depth);
   }
 
-  if (isSimpleTypePreviewNode(node, nodeType)) {
-    return renderSimpleTypeNode(node, nodeType, level);
+  if (nodeType === SchemaNodeType.SimpleType) {
+    return renderSimpleTypeNode(node, level);
   }
 
-  if (isComplexTypePreviewNode(node, nodeType)) {
-    return renderComplexTypeNode(node, nodeType, level, depth, context);
-  }
-
-  const fallbackChildren = renderChildNodes(node.childElements, level + 1, depth, context);
-  return renderTag("xs:node", [["name", node.name]], fallbackChildren, level);
+  return renderComplexTypeNode(node, level, depth);
 }
 
 /**
  * Builds an XML fragment representing the currently selected diagram node.
  */
 export function buildXmlPreview(node: DiagramItem): string {
-  const context = createRenderContext();
-  const rendered = renderNode(node, 0, 0, context);
-  if (!rendered) {
-    return TRUNCATION_MARKER;
-  }
-  return rendered;
+  return renderNode(node, 0, 0);
 }

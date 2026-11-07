@@ -2,6 +2,7 @@ import { statSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { defineConfig, type Plugin } from "vite";
+import { readTarget } from "./scripts/lib/compiler-target.ts";
 
 /** Size above which the build warns about a file of the webview, as webpack's performance hints did. */
 const MAX_FILE_SIZE = 1024 * 1024;
@@ -41,6 +42,9 @@ export default defineConfig(({ mode }) => ({
     // file, and the map makes stack traces from bug reports readable. warnLargeFiles()
     // keeps an eye on the size.
     sourcemap: "inline",
+    // The ECMAScript edition of the lowest supported VS Code version, which
+    // `npm run vscode:update` keeps in line with its Node (and V8) version.
+    target: readTarget(fileURLToPath(new URL("tsconfig.webview.json", import.meta.url))).toLowerCase(),
     minify: mode === "production",
     // styles.css is small and loaded from disk; it stays as written.
     cssMinify: false,

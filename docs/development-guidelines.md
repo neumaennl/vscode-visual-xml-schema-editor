@@ -4,8 +4,8 @@ title: Development guidelines
 description: Rules for everyone who changes the extension - code size, code quality and ESLint, TypeScript and naming, VS Code and Node versions, TSDoc, tests, documentation and the knowledge bundle, issues, what to check before committing, and commits.
 tags: [guidelines, conventions, code-quality, typescript, documentation, workflow]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-04T11:36:32Z }
-verified: { by: human:neumaennl, at: 2026-11-04T12:13:55Z }
+generated: { by: human:neumaennl, at: 2026-11-07T20:16:13Z }
+verified: { by: human:neumaennl, at: 2026-11-07T20:27:42Z }
 sources:
   - id: eslint
     resource: ../eslint.config.mjs
@@ -56,8 +56,8 @@ ESLint checks the limits for tests (`max-lines` and the local rule `tests/max-li
 
 # VS Code and Node versions
 
-- The lowest supported VS Code version (`engines.vscode`) decides the Node version the extension runs on. `@types/vscode`, `@types/node` and `.nvmrc` are derived from it; change all four only with `npm run vscode:update`, not by hand. How the versions are derived is described in [Build and packaging](build-and-packaging.md#vs-code-and-node-versions).[^manifest]
-- Use only the VS Code and Node APIs that these types offer. A newer API needs a higher minimum VS Code version first.
+- The lowest supported VS Code version (`engines.vscode`) decides the Node version the extension runs on. `@types/vscode`, `@types/node`, `.nvmrc` and the ECMAScript edition in the tsconfig files and `eslint.config.mjs` are derived from it; change them only with `npm run vscode:update`, not by hand. How the versions are derived is described in [Build and packaging](build-and-packaging.md#vs-code-and-node-versions).[^manifest]
+- Use only the VS Code and Node APIs that these types offer, and only the syntax and library features of that ECMAScript edition. A newer API or feature needs a higher minimum VS Code version first.
 
 # TSDoc
 

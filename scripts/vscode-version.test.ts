@@ -2,6 +2,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createInterface } from "node:readline/promises";
+import { baseUrl } from "./lib/compiler-target.ts";
 import { installNode, runWith } from "./lib/node-setup.ts";
 import { release, releasesPage, stubFetch } from "./__tests__/releaseTestHelpers.ts";
 import { check, choose, formatTable, main, update, writeValues } from "./vscode-version.ts";
@@ -17,19 +18,23 @@ const PACKAGE_JSON = {
   devDependencies: { "@types/node": "~24.13.0", "@types/vscode": "~1.125.0" },
 };
 
+/** A TypeScript configuration with the given ECMAScript edition. */
+const tsconfig = (edition: string): string => `{ "compilerOptions": { "target": "${edition}", "lib": ["${edition}", "DOM"] } }\n`;
+
 const ORIGINAL_IS_TTY = Object.getOwnPropertyDescriptor(process.stdin, "isTTY") ?? { value: undefined, configurable: true };
 
 let dir: string;
 
 /**
- * Writes `package.json` and `.nvmrc` into the test folder.
+ * Writes `package.json`, `.nvmrc` and a TypeScript configuration into the test folder.
  *
  * @param nvmrc - The content of `.nvmrc`
- * @param eol - The line endings of both files
+ * @param edition - The ECMAScript edition of the TypeScript configuration
  */
-function writeProject(nvmrc = "24.15.0", eol = "\n"): void {
-  writeFileSync(join(dir, "package.json"), `${JSON.stringify(PACKAGE_JSON, null, 2)}\n`.replace(/\n/g, eol));
-  writeFileSync(join(dir, ".nvmrc"), `${nvmrc}${eol}`);
+function writeProject(nvmrc = "24.15.0", edition = "ES2024"): void {
+  writeFileSync(join(dir, "package.json"), `${JSON.stringify(PACKAGE_JSON, null, 2)}\n`);
+  writeFileSync(join(dir, ".nvmrc"), `${nvmrc}\n`);
+  writeFileSync(join(dir, "tsconfig.json"), tsconfig(edition));
 }
 
 /**
@@ -42,19 +47,25 @@ function read(name: string): string {
   return readFileSync(join(dir, name), "utf8");
 }
 
-/** Answers the lookups of VS Code 1.125.0 and 1.141.0 and their Electron and Node versions. */
+/**
+ * Answers the lookups of VS Code 1.125.0, 1.141.0 and 1.150.0, their Electron and
+ * Node versions, and the @tsconfig/bases configuration of Node 24 (not of Node 26).
+ */
 function stubReleases(): void {
   stubFetch({
     "https://releases.electronjs.org/releases.json": [
       { version: "42.3.0", node: "24.15.0" },
       { version: "43.7.7", node: "24.21.0" },
+      { version: "45.1.0", node: "26.2.0" },
     ],
     "https://registry.npmjs.org/@types%2fvscode": { versions: { "1.125.0": {}, "1.140.0": {} } },
     "https://registry.npmjs.org/@types%2fnode": { versions: { "24.13.6": {}, "24.19.1": {} } },
     "https://raw.githubusercontent.com/nodejs/Release/main/schedule.json": { v24: { end: "2028-04-30" } },
     "https://raw.githubusercontent.com/microsoft/vscode/1.125.0/.npmrc": 'target="42.3.0"\n',
     "https://raw.githubusercontent.com/microsoft/vscode/1.141.0/.npmrc": 'target="43.7.7"\n',
-    [releasesPage(1)]: [release("1.141.0"), release("1.125.0")],
+    "https://raw.githubusercontent.com/microsoft/vscode/1.150.0/.npmrc": 'target="45.1.0"\n',
+    [releasesPage(1)]: [release("1.150.0"), release("1.141.0"), release("1.125.0")],
+    [baseUrl(24)]: '{ "compilerOptions": { "target": "es2024", "lib": ["es2024", "ESNext.Array"] } }',
   });
 }
 
@@ -94,12 +105,21 @@ describe("vscode-version", () => {
   });
 
   describe("check", () => {
-    test("should return 0 if @types/vscode, @types/node and .nvmrc match engines.vscode", async () => {
+    test("should return 0 if @types/vscode, @types/node, .nvmrc and the edition match engines.vscode", async () => {
       writeProject();
       stubReleases();
 
       await expect(check(dir)).resolves.toBe(0);
-      expect(console.log).toHaveBeenCalledWith("engines.vscode, @types/vscode, @types/node and .nvmrc match.");
+      expect(console.log).toHaveBeenCalledWith("engines.vscode, @types/vscode, @types/node, .nvmrc and the ECMAScript edition match.");
+    });
+
+    test("should return 1 and name each place in the configurations with another edition", async () => {
+      writeProject("24.15.0", "ES2020");
+      stubReleases();
+
+      await expect(check(dir)).resolves.toBe(1);
+      expect(console.error).toHaveBeenCalledWith("tsconfig.json: target is ES2020, expected ES2024");
+      expect(console.error).toHaveBeenCalledWith("tsconfig.json: lib is ES2020, expected ES2024");
     });
 
     test("should return 1 and name each value that does not match", async () => {
@@ -137,8 +157,27 @@ describe("vscode-version", () => {
       expect(pkg.engines.vscode).toBe("^1.141.0");
       expect(pkg.devDependencies).toEqual({ "@types/node": "~24.19.0", "@types/vscode": "~1.140.0" });
       expect(read(".nvmrc")).toBe("24.21.0\n");
+      expect(read("tsconfig.json")).toBe(tsconfig("ES2024"));
       expect(installNode).not.toHaveBeenCalled();
       expect(console.log).toHaveBeenCalledWith(expect.stringContaining("Install and use Node 24.21.0, then run:"));
+    });
+
+    test("should write the edition into the configurations", async () => {
+      writeProject("24.15.0", "ES2020");
+      stubReleases();
+
+      await expect(update("1.141.0", dir)).resolves.toBe(0);
+
+      expect(read("tsconfig.json")).toBe(tsconfig("ES2024"));
+      expect(console.log).toHaveBeenCalledWith(expect.stringContaining("the ECMAScript edition ES2024 (changed tsconfig.json)."));
+    });
+
+    test("should throw for a version whose Node version has no @tsconfig/bases configuration", async () => {
+      writeProject();
+      stubReleases();
+
+      await expect(update("1.150.0", dir)).rejects.toThrow("There is no @tsconfig/bases configuration for Node 26.");
+      expect(read(".nvmrc")).toBe("24.15.0\n");
     });
 
     test("should throw without a version if there is no terminal to ask", async () => {
@@ -198,16 +237,18 @@ describe("vscode-version", () => {
 
   describe("choose", () => {
     const rows = [
-      { vscode: "1.110.0", electron: "39.6.0", node: "22.22.0", typesNode: "22.20.5" },
-      { vscode: "1.125.0", electron: "42.3.0", node: "24.15.0", typesVscode: "1.125.0", typesNode: "24.13.6" },
+      { vscode: "1.110.0", electron: "39.6.0", node: "22.22.0", typesNode: "22.20.5", edition: "ES2023" },
+      { vscode: "1.125.0", electron: "42.3.0", node: "24.15.0", typesVscode: "1.125.0", typesNode: "24.13.6", edition: "ES2024" },
+      { vscode: "1.150.0", electron: "45.1.0", node: "26.2.0", typesVscode: "1.150.0", typesNode: "26.1.0" },
     ];
+    const dates = { "1.110.0": "2026-03-09", "1.125.0": "2026-06-17", "1.150.0": "2027-06-16" };
 
-    test("should ask again until the answer is a version with both @types versions", async () => {
-      asker.question.mockResolvedValueOnce("1.110.0").mockResolvedValueOnce(" 1.125.0 ");
+    test("should ask again until the answer is a version with both @types versions and an edition", async () => {
+      asker.question.mockResolvedValueOnce("1.110.0").mockResolvedValueOnce("1.150.0").mockResolvedValueOnce(" 1.125.0 ");
 
-      await expect(choose(rows, { "1.110.0": "2026-03-09", "1.125.0": "2026-06-17" }, "1.125.0", asker)).resolves.toBe("1.125.0");
+      await expect(choose(rows, dates, "1.125.0", asker)).resolves.toBe("1.125.0");
 
-      expect(asker.question).toHaveBeenCalledTimes(2);
+      expect(asker.question).toHaveBeenCalledTimes(3);
       expect(console.log).toHaveBeenCalledWith(expect.stringContaining("1.125.0 (current)"));
     });
   });

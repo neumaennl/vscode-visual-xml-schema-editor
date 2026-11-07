@@ -1,5 +1,8 @@
 # Knowledge Bundle Update Log
 
+## 2026-11-07
+* **Update**: The ECMAScript edition follows the lowest supported VS Code version ([#416](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/416)): it is the `target` of the `@tsconfig/bases` configuration for the Node version of the extension host, without its `ESNext.*` libraries, currently ES2024 instead of ES2020 (ES2022 and ES2023 for the scripts). [Build and packaging](build-and-packaging.md#vs-code-and-node-versions) describes where the edition is set (`target` and the `ESxxxx` entries of `lib` in the tsconfig files, `ecmaVersion` in `eslint.config.mjs`, and Vite's `build.target`, which is read from `tsconfig.webview.json`), and that `npm run vscode:update` replaces it and `npm run vscode:check` checks it. The [development guidelines](development-guidelines.md#vs-code-and-node-versions) name the edition among the derived values. [Testing](testing.md#mocks-and-helpers) describes the tests of `scripts/lib/compiler-target.ts`.
+
 ## 2026-11-06
 * **Update**: [Testing](testing.md#coverage): the coverage thresholds are 85% for all four metrics ([#402](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/402)). [Known issues](known-issues.md): removed "Branch coverage is below 80%".
 * **Update**: [Testing](testing.md#mocks-and-helpers): `webview-src/__tests__/diagramTestHelpers.ts` builds the diagram of a real schema, which tests of the panel and the drop code use instead of creating `DiagramItem`s by hand; new tests follow this rule, some older ones were rewritten, and others still create the items by hand ([#402](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/402)).

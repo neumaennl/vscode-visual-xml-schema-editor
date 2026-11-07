@@ -72,7 +72,7 @@ export default [
     files: ['*.mjs'],
     ...eslint.configs.recommended,
     languageOptions: {
-      ecmaVersion: 2020,
+      ecmaVersion: 2024,
       sourceType: 'module',
       globals: {
         ...globals.node,
@@ -85,7 +85,7 @@ export default [
     languageOptions: {
       parser: tsparser,
       parserOptions: {
-        ecmaVersion: 2020,
+        ecmaVersion: 2024,
         sourceType: 'module',
         project: [
           './tsconfig.extension.json',

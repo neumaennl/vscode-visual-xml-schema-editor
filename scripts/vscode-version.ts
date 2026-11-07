@@ -1,18 +1,22 @@
 // Keeps the lowest supported VS Code version (`engines.vscode`), `@types/vscode`,
-// `@types/node` and `.nvmrc` in line. The extension host runs on the Node version
-// of the Electron that VS Code ships, so these values are derived from it.
+// `@types/node`, `.nvmrc` and the ECMAScript edition of the TypeScript and ESLint
+// configurations in line. The extension host runs on the Node version of the
+// Electron that VS Code ships, so these values are derived from it.
 //
 //   node scripts/vscode-version.ts update [version]
 //     Shows the VS Code releases since the current minimum with their Electron and
-//     Node versions, asks for the new minimum (unless given), updates `package.json`
-//     and `.nvmrc`, and then installs that Node version (with nvm, nvm-windows or
-//     fnm) and runs npm install, lint, the tests and the packaging.
+//     Node versions and the ECMAScript edition, asks for the new minimum (unless
+//     given), updates `package.json`, `.nvmrc` and the edition in the configurations,
+//     and then installs that Node version (with nvm, nvm-windows or fnm) and runs
+//     npm install, lint, the tests and the packaging.
 //   node scripts/vscode-version.ts check
-//     Fails if `@types/vscode`, `@types/node` or `.nvmrc` don't match `engines.vscode`.
+//     Fails if `@types/vscode`, `@types/node`, `.nvmrc` or the edition in the
+//     configurations don't match `engines.vscode`.
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { createInterface, type Interface } from "node:readline/promises";
 import { pathToFileURL } from "node:url";
+import { editionProblems, loadEdition, loadEditions, writeEdition } from "./lib/compiler-target.ts";
 import { installNode, runWith } from "./lib/node-setup.ts";
 import {
   deriveVersions,
@@ -33,6 +37,9 @@ export interface PackageJson {
   engines: { vscode: string };
   devDependencies: Record<string, string>;
 }
+
+/** The versions of a VS Code release with the ECMAScript edition of its Node version. */
+export type ReleaseRow = DerivedVersions & { edition?: string };
 
 /** `package.json` as read from disk, with its line endings. */
 export interface Manifest {
@@ -81,9 +88,10 @@ function readCurrent(dir: string): Manifest & { actual: ExpectedValues } {
 }
 
 /**
- * Checks that `@types/vscode`, `@types/node` and `.nvmrc` match `engines.vscode`.
+ * Checks that `@types/vscode`, `@types/node`, `.nvmrc` and the ECMAScript edition
+ * in the configurations match `engines.vscode`.
  *
- * @param dir - The folder with `package.json` and `.nvmrc`
+ * @param dir - The folder with `package.json`, `.nvmrc` and the configurations
  * @returns The exit code: 0 if everything matches, 1 otherwise
  */
 export async function check(dir = "."): Promise<number> {
@@ -92,16 +100,20 @@ export async function check(dir = "."): Promise<number> {
   const derived = deriveVersions(vscode, { ...(await loadSharedData()), electron: await electronOf(vscode) });
   const expected = expectedValues(derived);
   const keys = Object.keys(expected) as (keyof ExpectedValues)[];
-  const drift = keys.filter((key) => expected[key] !== actual[key]);
+  const nodeMajor = parseVersion(derived.node)[0];
+  const problems = [
+    ...keys.filter((key) => expected[key] !== actual[key]).map((key) => `${LABELS[key]}: is "${actual[key]}", expected "${expected[key]}"`),
+    ...editionProblems(dir, nodeMajor, await loadEdition(nodeMajor)),
+  ];
   console.log(`VS Code ${vscode} ships Electron ${derived.electron} with Node ${derived.node}.`);
-  for (const key of drift) {
-    console.error(`${LABELS[key]}: is "${actual[key]}", expected "${expected[key]}"`);
+  for (const problem of problems) {
+    console.error(problem);
   }
-  if (drift.length > 0) {
+  if (problems.length > 0) {
     console.error("Run `npm run vscode:update -- " + vscode + "` to fix this.");
     return 1;
   }
-  console.log("engines.vscode, @types/vscode, @types/node and .nvmrc match.");
+  console.log("engines.vscode, @types/vscode, @types/node, .nvmrc and the ECMAScript edition match.");
   return 0;
 }
 
@@ -114,8 +126,8 @@ export async function check(dir = "."): Promise<number> {
  * @param rl - The terminal interface
  * @returns The chosen VS Code version
  */
-export async function choose(rows: DerivedVersions[], dates: Record<string, string>, current: string, rl: Asker): Promise<string> {
-  const header = ["VS Code", "Released", "Electron", "Node", "@types/vscode", "@types/node", "Node end of life"];
+export async function choose(rows: ReleaseRow[], dates: Record<string, string>, current: string, rl: Asker): Promise<string> {
+  const header = ["VS Code", "Released", "Electron", "Node", "@types/vscode", "@types/node", "ECMAScript", "Node end of life"];
   const cells = rows.map((r) => [
     r.vscode === current ? `${r.vscode} (current)` : r.vscode,
     dates[r.vscode],
@@ -123,16 +135,18 @@ export async function choose(rows: DerivedVersions[], dates: Record<string, stri
     r.node,
     r.typesVscode ?? "-",
     r.typesNode ?? "-",
+    r.edition ?? "-",
     r.nodeEnd ?? "-",
   ]);
   console.log(`\n${formatTable(header, cells)}\n`);
-  console.log("@types/vscode and @types/node show the highest published version that is not newer.\n");
+  console.log("@types/vscode and @types/node show the highest published version that is not newer.");
+  console.log("ECMAScript shows the target of the @tsconfig/bases configuration for the Node version.\n");
   for (;;) {
     const answer = (await rl.question("New minimum VS Code version: ")).trim();
-    if (rows.some((r) => r.vscode === answer && r.typesVscode && r.typesNode)) {
+    if (rows.some((r) => r.vscode === answer && r.typesVscode && r.typesNode && r.edition)) {
       return answer;
     }
-    console.log(`Choose a version from the table that has both @types versions.`);
+    console.log(`Choose a version from the table that has both @types versions and an ECMAScript edition.`);
   }
 }
 
@@ -206,12 +220,12 @@ function printSteps(version: string): void {
  * @param dates - Release date per VS Code version
  * @param manifest - The parsed `package.json` and its line endings
  * @param requested - The new minimum VS Code version, or undefined to ask
- * @param dir - The folder with `package.json` and `.nvmrc`
+ * @param dir - The folder with `package.json`, `.nvmrc` and the configurations
  * @returns The written values and whether to run the steps
- * @throws {Error} If the version is not a release in the table
+ * @throws {Error} If the version is not a release in the table or its Node version has no ECMAScript edition
  */
 async function apply(
-  rows: DerivedVersions[],
+  rows: ReleaseRow[],
   dates: Record<string, string>,
   manifest: Manifest,
   requested: string | undefined,
@@ -225,10 +239,15 @@ async function apply(
     if (!derived) {
       throw new Error(`VS Code ${vscode} is not a release x.y.0 of microsoft/vscode`);
     }
+    if (!derived.edition) {
+      throw new Error(`There is no @tsconfig/bases configuration for Node ${parseVersion(derived.node)[0]}.`);
+    }
     const values = expectedValues(derived);
     writeValues(manifest, values, dir);
+    const changed = writeEdition(dir, derived.edition);
     console.log(`Set engines.vscode ${values.engines}, @types/vscode ${values.typesVscode}, ` +
-      `@types/node ${values.typesNode} and .nvmrc ${values.nvmrc}.`);
+      `@types/node ${values.typesNode}, .nvmrc ${values.nvmrc} and the ECMAScript edition ${derived.edition}` +
+      (changed.length > 0 ? ` (changed ${changed.join(", ")}).` : "."));
     return { values, run: await confirmSteps(rl, values.nvmrc) };
   } finally {
     rl.close();
@@ -239,7 +258,7 @@ async function apply(
  * Updates the minimum VS Code version and the versions derived from it.
  *
  * @param requested - The new minimum VS Code version, or undefined to ask
- * @param dir - The folder with `package.json` and `.nvmrc`
+ * @param dir - The folder with `package.json`, `.nvmrc` and the configurations
  * @returns The exit code
  * @throws {Error} If no version is given and there is no terminal to ask
  */
@@ -252,7 +271,10 @@ export async function update(requested: string | undefined, dir = "."): Promise<
   const fromMinor = Math.min(currentMinor, requested ? parseVersion(requested)[1] : Infinity);
   const [shared, releases] = await Promise.all([loadSharedData(), listReleases(fromMinor)]);
   const electrons = await Promise.all(releases.map((r) => electronOf(r.version)));
-  const rows = releases.map((r, i) => deriveVersions(r.version, { ...shared, electron: electrons[i] }));
+  const derived = releases.map((r, i) => deriveVersions(r.version, { ...shared, electron: electrons[i] }));
+  const nodeMajor = (r: DerivedVersions): number => parseVersion(r.node)[0];
+  const editions = await loadEditions(derived.map(nodeMajor));
+  const rows: ReleaseRow[] = derived.map((r) => ({ ...r, edition: editions.get(nodeMajor(r)) }));
   const dates = Object.fromEntries(releases.map((r) => [r.version, r.date]));
   const { values, run } = await apply(rows, dates, { pkg, crlf }, requested, dir);
   if (!run) {

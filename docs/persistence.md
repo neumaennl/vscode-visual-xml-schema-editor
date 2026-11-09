@@ -90,10 +90,10 @@ Because of this, each command changes the text of the entire file, even if it on
 
 Kept:
 
-- Comments, including comments before the root element, at their position among the child elements.
-- The order of child elements.
+- Comments, including comments before the root element. A comment between two children of the same kind moves behind the last child of that kind.
+- The order of child elements, as long as each kind of child occurs in one unbroken run.
 - The XML declaration, but only if the file had one.
-- The namespace declarations, including a default namespace, and the prefixes of the element names: a file with `xs:element` keeps `xs:element`, and one that declares the XML Schema namespace as default keeps `element`. So QName values such as `type="xs:string"`, `type="t:myType"` or an unprefixed `type="myType"` keep their meaning.[^serialization-test]
+- The namespace declarations of the root element, including a default namespace, and the prefixes of the element names: a file with `xs:element` keeps `xs:element`, and one that declares the XML Schema namespace as default keeps `element`. So QName values such as `type="xs:string"`, `type="t:myType"` or an unprefixed `type="myType"` keep their meaning.[^serialization-test]
 
 Changed:
 
@@ -101,6 +101,17 @@ Changed:
 - Attributes are reordered, and single quotes become double quotes.
 - Empty elements written as `<a></a>` become `<a/>`.
 - Leading and trailing whitespace in text content such as `documentation` is trimmed. This is intended.
+- Children of one kind that occur in more than one run are written together, which changes the meaning of a `sequence`.
+- Mixed content in `documentation` is scrambled, element text that looks like a number is converted (`1.0` becomes `1`), and character references such as `&#65;` become `&amp;#65;`.
+- The XML declaration is always written as `<?xml version="1.0" encoding="UTF-8"?>`.
+
+Lost:
+
+- Content that the generated classes do not map, such as XSD 1.1 constructs (`xs:assert`) and foreign elements at the top level.
+- Processing instructions, a document type declaration and comments after the root element.
+- Namespace declarations below the root element, so QNames that use such a prefix no longer resolve.
+
+The changes in "Changed" after the trimmed whitespace, and everything in "Lost", are not intended; [Known issues](known-issues.md#commands-can-change-or-lose-content-outside-the-edit) describes them with examples.
 
 # Undo, redo and save
 

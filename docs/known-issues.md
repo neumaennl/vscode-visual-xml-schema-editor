@@ -86,6 +86,22 @@ Effort:
   The goal is one consistent grammar, generated and resolved by a single implementation in `shared/`. Since IDs are not stored in the XSD file, a new format needs no migration. The redesign should be planned together with [Diagram items copy values from the schema objects](#diagram-items-copy-values-from-the-schema-objects), which also changes the diagram builder.
 - **GitHub issue:** [#348](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/348)
 
+## Commands can change or lose content outside the edit
+
+- **Location:** `@neumaennl/xmlbind-ts` (`marshal()`, `unmarshal()`), `src/webviewProvider.ts` (`executeCommand()`)
+- **Severity:** High
+- **Effort:** L
+- **Description:** Every command writes the whole document with `marshal` (see [Persistence](persistence.md#what-serialization-changes)). Besides the formatting (see [Every command reformats the whole document](#every-command-reformats-the-whole-document)), this changes or loses content that the command did not touch, even when it only renames something. Reproduced with `unmarshal` and `marshal` and the generated schema classes:
+  - Children of one kind that occur in more than one run are written together: the `sequence` `element z, choice, any, element a, group` becomes `element z, element a, choice, any, group`, which changes its meaning. Comments move with them: in `element a, <!--c1-->, element b, simpleType s, <!--c2-->, element c`, `c1` moves behind `c`. ([xmlbind-ts: elements](https://github.com/neumaennl/xmlbind-ts/blob/main/docs/known-issues.md#elements-are-reordered-when-occurrences-are-not-contiguous), [comments](https://github.com/neumaennl/xmlbind-ts/blob/main/docs/known-issues.md#comments-between-repeated-elements-move))
+  - Content that the classes generated from XSD 1.0 do not map is dropped without notice: XSD 1.1 constructs such as `xs:assert`, and foreign elements at the top level. Processing instructions, a document type declaration and comments after the root element are dropped as well. ([xmlbind-ts: unmapped content](https://github.com/neumaennl/xmlbind-ts/blob/main/docs/known-issues.md#unmapped-content-is-dropped-without-notice), [processing instructions](https://github.com/neumaennl/xmlbind-ts/blob/main/docs/known-issues.md#processing-instructions-the-document-type-and-comments-after-the-root-are-dropped))
+  - Mixed content in `xs:documentation` is scrambled: `Some <b>mixed</b> &amp; text` becomes `<b>mixed</b>` followed by `Some&amp; text`. ([xmlbind-ts](https://github.com/neumaennl/xmlbind-ts/blob/main/docs/known-issues.md#mixed-content-is-reordered-and-loses-whitespace))
+  - A namespace declaration below the root element is dropped: `<xs:element xmlns:t="urn:t" name="e" type="t:T"/>` loses `xmlns:t`, so `t:T` no longer resolves. ([xmlbind-ts](https://github.com/neumaennl/xmlbind-ts/blob/main/docs/known-issues.md#namespace-declarations-below-the-root-are-not-kept))
+  - Element text that looks like a number is converted, so `<xs:documentation>1.0</xs:documentation>` becomes `1`, and a character reference such as `&#65;` becomes `&amp;#65;`. ([xmlbind-ts: numbers](https://github.com/neumaennl/xmlbind-ts/blob/main/docs/known-issues.md#element-text-that-looks-like-a-number-is-converted), [character references](https://github.com/neumaennl/xmlbind-ts/blob/main/docs/known-issues.md#character-references-are-not-decoded))
+  - The XML declaration is always written as `<?xml version="1.0" encoding="UTF-8"?>`. ([xmlbind-ts](https://github.com/neumaennl/xmlbind-ts/blob/main/docs/known-issues.md#the-attributes-of-the-xml-declaration-are-not-kept))
+
+  The editor does not warn about any of this. The causes are in `xmlbind-ts` and are fixed there (see [Architecture](architecture.md#responsibilities-of-xmlbind-ts-and-the-editor)). What the editor does with a schema that does not survive a round trip unchanged is its own decision: for example, it could compare the document with the result of a round trip when it is opened, and warn or switch to read-only if they differ.
+- **GitHub issue:** none
+
 ## Turning the default namespace into a prefix does not rewrite references
 
 - **Location:** `src/commandExecutors/schemaExecutors.ts` (`executeModifySchemaNamespaces()`), `src/commandExecutors/schemaQNameRewriter.ts`
@@ -181,7 +197,7 @@ Effort:
 - **Location:** `webview-src/diagram/SchemaProcessors.ts` (`processGroup()`)
 - **Severity:** Medium
 - **Effort:** M
-- **Description:** The generated classes store the particles of a compositor in one array per kind, and the diagram builder adds them kind by kind: first the elements, then the group references, then nested `choice`s, then nested `sequence`s. A `sequence` of `a`, a `choice` and `b` is therefore shown as `a`, `b`, `choice`, which gives the wrong order for a sequence. The node IDs are not affected, because positions are counted per kind. xmlbind-ts keeps the element order for serialization (see [Persistence](persistence.md#what-serialization-changes)); the fix is to use it when the children are added (see [Diagram rendering](diagram-rendering.md#from-schema-to-diagram-items)).
+- **Description:** The generated classes store the particles of a compositor in one array per kind, and the diagram builder adds them kind by kind: first the elements, then the group references, then nested `choice`s, then nested `sequence`s. A `sequence` of `a`, a `choice` and `b` is therefore shown as `a`, `b`, `choice`, which gives the wrong order for a sequence. The node IDs are not affected, because positions are counted per kind. xmlbind-ts records the local names of the child elements in document order (`_elementOrder`), from which the diagram builder could restore the order when the children are added (see [Diagram rendering](diagram-rendering.md#from-schema-to-diagram-items)). But xmlbind-ts does not use this order completely when it writes the document, so after the first command the file itself can have the wrong order (see [Commands can change or lose content outside the edit](#commands-can-change-or-lose-content-outside-the-edit)).
 - **GitHub issue:** none
 
 ## Imports and includes cannot be edited in the editor
@@ -234,7 +250,7 @@ Effort:
 - **Location:** `src/webviewProvider.ts` (`executeCommand()`), `@neumaennl/xmlbind-ts` (`marshal`)
 - **Severity:** Medium
 - **Effort:** L
-- **Description:** The provider replaces the whole document with the output of `marshal`, which does not keep the source formatting: indentation becomes two spaces, attributes are reordered, quotes and empty elements are normalized, and element prefixes change (see [Persistence](persistence.md#what-serialization-changes)). Even a small command therefore changes most lines of a hand-formatted file, which makes Git diffs and undo steps large. Comments, element order and the XML declaration are kept. The fix belongs in `xmlbind-ts`, for example by keeping attribute order, quote style and indentation as metadata like the element order.
+- **Description:** The provider replaces the whole document with the output of `marshal`, which does not keep the source formatting: indentation becomes two spaces, attributes are reordered, and quotes and empty elements are normalized (see [Persistence](persistence.md#what-serialization-changes)). Even a small command therefore changes most lines of a hand-formatted file, which makes Git diffs and undo steps large. Comments, the prefixes of the element names and the XML declaration are kept; changes beyond the formatting are described in [Commands can change or lose content outside the edit](#commands-can-change-or-lose-content-outside-the-edit). The fix belongs in `xmlbind-ts`, for example by keeping attribute order, quote style and indentation as metadata like the element order.
 - **GitHub issue:** [xmlbind-ts#252](https://github.com/neumaennl/xmlbind-ts/issues/252)
 
 ## Lists and unions with inline types are shown as if they had named types

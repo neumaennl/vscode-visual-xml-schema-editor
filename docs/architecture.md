@@ -1,7 +1,7 @@
 ---
 type: Architecture
 title: Architecture
-description: How the extension host, the webview and the shared code work together to provide a visual editor for XML Schema (XSD) files, and the design decisions behind the command-based design.
+description: How the extension host, the webview and the shared code work together to provide a visual editor for XML Schema (XSD) files, what xmlbind-ts is responsible for and what the editor is, and the design decisions behind the command-based design.
 tags: [architecture, extension-host, webview, shared, design-decisions]
 status: stable
 generated: { by: human:neumaennl, at: 2026-11-03T16:28:02Z }
@@ -101,8 +101,27 @@ The `shared/` code is imported by both sides and compiled into each separately. 
 - **Validators check, executors assume.** The validator of a command checks everything its executor relies on; the executor does not check it again and states only what it assumes, so that a disagreement fails with an error instead of doing nothing ([ADR 003](architecture/003-validators-check-executors-assume.md)).[^adr-003]
 - **Transactional execution.** Commands run on a copy of the schema, so a failed command leaves the document unchanged. The result is written as a single edit, which VS Code's undo handles as one step.
 - **One set of shared types.** Commands, messages and the schema model are defined once in `shared/` and used by both sides, so the compiler checks both ends of the protocol.
+- **Generic XML handling belongs to xmlbind-ts.** What any application that binds XML would need is done by the library; what needs XSD semantics or VS Code is done by the editor (see [Responsibilities of xmlbind-ts and the editor](#responsibilities-of-xmlbind-ts-and-the-editor)).
 - **Path-based IDs.** Schema nodes are identified by XPath-like IDs such as `/element:person/anonymousComplexType[0]`, which both sides can generate and resolve. See [Schema model](schema-model.md).
 - **Native VS Code look.** The webview uses VS Code theme CSS variables and Codicons.
+
+# Responsibilities of xmlbind-ts and the editor
+
+The rule of thumb: if an application that binds a completely different XML format would need it as well, it belongs in `xmlbind-ts`. If it needs XSD semantics or VS Code, it belongs in the editor. The [scope of xmlbind-ts](https://github.com/neumaennl/xmlbind-ts/blob/main/docs/architecture.md#scope) describes the library's part in detail.
+
+| Concern | Owner | Why |
+|---|---|---|
+| Parsing and writing XML, and the choice of the libraries that do it | xmlbind-ts | Generic. |
+| Decorators, the `xsd2ts` generator, and the conversion of values to the type of their field | xmlbind-ts | Generic binding mechanics. |
+| Keeping the source on a round trip: order, comments, processing instructions, prefixes, attribute order, quotes, empty-element style and indentation | xmlbind-ts | Every application that writes a document back needs it. |
+| Keeping content that no field maps, such as XSD 1.1 constructs or foreign elements | xmlbind-ts | The same. |
+| Reporting what a round trip drops or changes | xmlbind-ts | Only the library sees it. It reports facts, not decisions. |
+| What happens to a schema that does not survive a round trip unchanged: warn, read-only, or refuse to save | Editor | A product decision. |
+| Which schema for schemas the classes are generated from (XSD 1.0), and keeping them up to date | Editor | XSD-specific. |
+| What a valid edit is: commands and their validation, such as "a group that is still referenced cannot be removed" | Editor | XSD semantics. |
+| Resolving QNames, included and imported schemas, and the symbol table | Editor | XSD semantics. |
+| Diagram, properties panel, `WorkspaceEdit`, undo and redo | Editor | VS Code and UI. |
+| Tests that a command changes only what it should | Editor | Only the editor knows what a command should change. |
 
 # Runtime dependencies
 

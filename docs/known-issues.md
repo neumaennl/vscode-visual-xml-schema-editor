@@ -17,6 +17,7 @@ Rules:
 - Each issue is a `##` heading with a short title, followed by its location, severity, effort, a description and the GitHub issue (a link, or "none").
 - Within each section, entries are sorted by severity (high first), then by effort (small first).
 - When an issue is fixed, its entry is removed and the removal is recorded in [log.md](log.md).
+- If the cause is in `xmlbind-ts` (see [Architecture](architecture.md#responsibilities-of-xmlbind-ts-and-the-editor)), the problem is recorded in the [known issues of xmlbind-ts](https://github.com/neumaennl/xmlbind-ts/blob/main/docs/known-issues.md). The entry here describes the effect on schemas and the editor, and links to the entry there.
 - Entries in [GitHub issues](#github-issues) describe open GitHub issues that do not match the code or the documentation. They are removed when the GitHub issue is updated or closed.
 
 Severity:

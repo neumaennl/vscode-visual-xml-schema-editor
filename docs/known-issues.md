@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-09T13:19:15Z }
-verified: { by: human:neumaennl, at: 2026-11-09T13:22:13Z }
+generated: { by: human:neumaennl, at: 2026-11-09T15:50:21Z }
+verified: { by: human:neumaennl, at: 2026-11-09T15:51:07Z }
 ---
 
 # Purpose
@@ -416,7 +416,7 @@ Effort:
 - **Severity:** Low
 - **Effort:** M
 - **Description:** The properties panel builds its commands in two ways. `propertiesPanelCommands.ts` and `propertiesPanelSimpleTypeCommands.ts` have functions that take a node and return a command, such as `createRenameNodeComand()` and `createTypeCommand()`. Twenty other commands are written out inside the event handlers that render the fields and update the draft copy: seven in `propertiesPanel.ts` (cardinality, nillable, abstract, mixed), seven in `propertiesPanelDocs.ts` and one or two in each of the other files listed. These can only be tested through the DOM, and changes to a command or to the values it reads (for example [#360](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/360), see [Diagram items copy values from the schema objects](#diagram-items-copy-values-from-the-schema-objects)) have to be found in all of these places. `propertiesPanel.ts` has 484 lines, close to the limit of 500 in the [development guidelines](development-guidelines.md#code-size). The fix is to move the construction of these commands into functions in the command modules and to leave only the draft update and the dispatch in the handlers.
-- **GitHub issue:** [#154](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/154)
+- **GitHub issue:** [#156](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/156)
 
 ## Code exceeds the size limits
 

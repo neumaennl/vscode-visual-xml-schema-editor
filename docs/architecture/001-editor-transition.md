@@ -4,8 +4,8 @@ title: "ADR 001: Editor transition architecture"
 description: The decision to turn the viewer into an editor whose webview sends commands that the extension host validates, executes and writes to the XSD file, with the roadmap and the deviations of the implementation from the design.
 tags: [adr, architecture, commands, roadmap]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-09T12:26:11Z }
-verified: { by: human:neumaennl, at: 2026-11-09T12:27:25Z }
+generated: { by: human:neumaennl, at: 2026-11-09T15:33:49Z }
+verified: { by: human:neumaennl, at: 2026-11-09T15:51:07Z }
 ---
 
 # ADR 001: Editor Transition Architecture
@@ -611,8 +611,8 @@ Each phase has a GitHub issue ([#16](https://github.com/neumaennl/vscode-visual-
 - [ ] Restyle the toolbar and add the actions for the whole diagram, such as exporting the diagram as an image ([#155](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/155))
 - [ ] Add context menu to diagram items with relevant actions ([#155](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/155))
 - [ ] Add visual feedback for operations (loading states, confirmations)
-- [ ] Implement selection manager ~~with multi-select support~~ — single selection works ([#157](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/157)); multi-select moved to Phase 5
-- [ ] Add keyboard shortcuts for common operations
+- [x] Implement selection manager ~~with multi-select support~~ — single selection works ([#157](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/157)); multi-select and selection with the keyboard moved to Phase 5
+- [x] ~~Add keyboard shortcuts for common operations~~ — moved to Phase 5 ([#433](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/433))
 
 **Success Criteria**: Users can perform all basic editing operations through intuitive UI interactions.
 
@@ -644,6 +644,7 @@ Each phase has a GitHub issue ([#16](https://github.com/neumaennl/vscode-visual-
 - [x] ~~Implement inline editing (double-click to rename)~~ — dropped: names are edited in the properties panel (section 9)
 - [ ] Add find/replace functionality
 - [ ] Implement multi-select and batch operations (multi-delete, bulk property changes) ([#422](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/422))
+- [ ] Select diagram nodes and trigger common operations with the keyboard ([#433](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/433))
 - [ ] Add validation feedback in UI with actionable messages ([#421](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/421)), after the integration of the Red Hat XML extension ([#284](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/284))
 
 **Success Criteria**: Users can perform all editing operations defined in Phase 1-4 using advanced methods (drag-and-drop, copy/paste, keyboard shortcuts, batch operations). Operations that span multiple elements (find/replace, bulk edits) work reliably. UI provides real-time validation feedback.

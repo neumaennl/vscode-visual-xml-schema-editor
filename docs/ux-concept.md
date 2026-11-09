@@ -4,8 +4,8 @@ title: UX concept
 description: The interaction model of the editor - which surface adds, edits and deletes what, how facets work, and how the properties panel behaves - with a list of what the current editor does not implement yet.
 tags: [ux, editor, palette, properties-panel, facets, context-menu, toolbar]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-09T12:10:15Z }
-verified: { by: human:neumaennl, at: 2026-11-09T12:27:25Z }
+generated: { by: human:neumaennl, at: 2026-11-09T15:33:49Z }
+verified: { by: human:neumaennl, at: 2026-11-09T15:51:07Z }
 sources:
   - id: palette-items
     resource: ../webview-src/palette/PaletteItems.ts
@@ -174,7 +174,7 @@ The XML tab is read-only. It shows an XSD fragment for the node, generated in th
 The current editor does not implement these parts of the model yet:
 
 - **Context menu:** there is none.
-- **Keyboard shortcuts:** there are none (for example, Delete or arrow keys to move the selection); Enter only commits a field (see [#157](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/157) for the selection and [#20](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/20) for shortcuts of the advanced editing features).
+- **Keyboard shortcuts:** there are none (for example, Delete or arrow keys to move the selection); Enter only commits a field. Selecting nodes and common operations with the keyboard are planned for Phase 5 ([#433](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/433)).
 - **Attribute groups:** the palette has no item for them (see [Known issues](known-issues.md#palette-has-no-entry-for-attribute-groups)). The `any` item is shown but disabled.
 - **Facet checks:** neither the webview nor the extension host checks facets against the base type or forbidden combinations (see [Known issues](known-issues.md#facets-are-not-checked-against-the-base-type)).
 - **Multiple patterns:** editing a facet deletes all patterns except the first (see [Known issues](known-issues.md#editing-facets-drops-all-but-the-first-pattern)).

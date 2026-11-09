@@ -47,3 +47,4 @@ The maintainer reviews your work directly in the session.
 - Guidelines: [docs/development-guidelines.md](docs/development-guidelines.md). They apply to you like to every contributor.
 - Documentation: [docs/index.md](docs/index.md). Before you change code, read the documents that describe it. Update them and the [known issues](docs/known-issues.md) as described in [Documentation](docs/development-guidelines.md#documentation).
 - Before handing work back, run the checks in [Before committing](docs/development-guidelines.md#before-committing).
+- Project board: [docs/agent-instructions/project-board.md](docs/agent-instructions/project-board.md) says how to find the next work on the project board and how to change it.

@@ -35,3 +35,7 @@ okf_version: "0.2"
 # Maintenance
 
 * [Known issues](known-issues.md) - Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
+
+# Agent instructions
+
+The folder `agent-instructions/` holds instructions for AI coding agents that [`AGENTS.md`](../AGENTS.md) refers to. They are plain files without front matter: they tell agents how to work, rather than describing the code, and are not part of the knowledge bundle.

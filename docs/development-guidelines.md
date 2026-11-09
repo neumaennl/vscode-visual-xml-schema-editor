@@ -4,8 +4,8 @@ title: Development guidelines
 description: Rules for everyone who changes the extension - code size, code quality and ESLint, TypeScript and naming, VS Code and Node versions, TSDoc, tests, documentation and the knowledge bundle, issues, what to check before committing, and commits.
 tags: [guidelines, conventions, code-quality, typescript, documentation, workflow]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-07T20:16:13Z }
-verified: { by: human:neumaennl, at: 2026-11-07T20:27:42Z }
+generated: { by: human:neumaennl, at: 2026-11-09T14:13:23Z }
+verified: { by: human:neumaennl, at: 2026-11-09T14:28:08Z }
 sources:
   - id: eslint
     resource: ../eslint.config.mjs
@@ -93,7 +93,7 @@ The documentation of the extension is the knowledge bundle in `docs/`, in the Op
 
 # Issues
 
-- When you start working on an issue, move it to "In Progress" on the project board [Editor Refactor](https://github.com/users/neumaennl/projects/1). If you cannot change the board, comment on the issue that you are working on it.
+- When you start working on an issue, move it to "In Progress" on the project board [Visual XML Schema Editor](https://github.com/users/neumaennl/projects/1). How agents use the board is described in [the agent instructions for the project board](agent-instructions/project-board.md). If you cannot change the board, tell the maintainer.
 
 # Before committing
 

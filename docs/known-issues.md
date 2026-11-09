@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-06T15:59:24Z }
-verified: { by: human:neumaennl, at: 2026-11-06T16:02:03Z }
+generated: { by: human:neumaennl, at: 2026-11-09T12:00:53Z }
+verified: { by: human:neumaennl, at: 2026-11-09T12:06:19Z }
 ---
 
 # Purpose
@@ -416,7 +416,7 @@ Effort:
 - **Severity:** Low
 - **Effort:** M
 - **Description:** The properties panel builds its commands in two ways. `propertiesPanelCommands.ts` and `propertiesPanelSimpleTypeCommands.ts` have functions that take a node and return a command, such as `createRenameNodeComand()` and `createTypeCommand()`. Twenty other commands are written out inside the event handlers that render the fields and update the draft copy: seven in `propertiesPanel.ts` (cardinality, nillable, abstract, mixed), seven in `propertiesPanelDocs.ts` and one or two in each of the other files listed. These can only be tested through the DOM, and changes to a command or to the values it reads (for example [#360](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/360), see [Diagram items copy values from the schema objects](#diagram-items-copy-values-from-the-schema-objects)) have to be found in all of these places. `propertiesPanel.ts` has 484 lines, close to the limit of 500 in the [development guidelines](development-guidelines.md#code-size). The fix is to move the construction of these commands into functions in the command modules and to leave only the draft update and the dispatch in the handlers.
-- **GitHub issue:** none
+- **GitHub issue:** [#154](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/154)
 
 ## Code exceeds the size limits
 
@@ -503,19 +503,19 @@ Effort:
 
 # GitHub issues
 
-## Phase 3 toolbar issue contradicts the UX concept
-
-- **GitHub issues:** [#18](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/18), [#155](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/155)
-- **Severity:** Medium
-- **Effort:** S
-- **Description:** #155 asks for toolbar buttons to add and remove nodes. The UX concept keeps the toolbar for diagram-wide actions and adds nodes through the palette. #18 tracks #155 and should be updated with it.
-
 ## Attribute editing is half implemented
 
 - **GitHub issue:** [#282](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/282)
 - **Severity:** Medium
 - **Effort:** S
 - **Description:** The issue has no body. The commands `modifyAttribute` and `removeAttribute` exist with executors in `src/commandExecutors/attributeExecutors.ts`, but the webview never sends them: attributes can only be added from the palette, and the properties panel lists them read-only.
+
+## Phase 3 issue still plans toolbar actions on nodes and SchemaActions
+
+- **GitHub issue:** [#18](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/18)
+- **Severity:** Low
+- **Effort:** S
+- **Description:** The task list of #18 still has "Implement SchemaActions and action handlers" and "Toolbars and context menus for add/remove/edit", and its acceptance criteria name toolbar actions. The UX concept keeps the toolbar for actions on the whole diagram and adds nodes through the palette, and the webview builds its commands without a layer of SchemaActions (see [ADR 001](architecture/001-editor-transition.md#9-deviations-from-this-design)). Its sub-issues [#154](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/154) and [#155](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/155) describe this already; #18 is to be updated together with the descriptions of the phases.
 
 ## Phase 5 issue does not reflect palette drag and drop
 

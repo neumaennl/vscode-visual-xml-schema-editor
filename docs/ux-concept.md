@@ -4,8 +4,8 @@ title: UX concept
 description: The interaction model of the editor - which surface adds, edits and deletes what, how facets work, and how the properties panel behaves - with a list of what the current editor does not implement yet.
 tags: [ux, editor, palette, properties-panel, facets, context-menu, toolbar]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-04T11:06:54Z }
-verified: { by: human:neumaennl, at: 2026-11-04T12:13:55Z }
+generated: { by: human:neumaennl, at: 2026-11-09T12:00:53Z }
+verified: { by: human:neumaennl, at: 2026-11-09T12:06:19Z }
 sources:
   - id: palette-items
     resource: ../webview-src/palette/PaletteItems.ts
@@ -184,7 +184,7 @@ The current editor does not implement these parts of the model yet:
 - **Mixed content:** the toggle is also shown for simple content, ignores `mixed` on `xs:complexContent` and does not check the base type (see [Known issues](known-issues.md#mixed-content-toggle-ignores-simple-content-complexcontent-and-the-base-type)).
 - **Deleting nodes:** the header delete button exists only for elements, named simple and complex types, groups and group references; attributes, compositors and anonymous types cannot be deleted.
 - **Documentation language:** `xml:lang` is preserved but neither shown nor editable (see [Known issues](known-issues.md#language-of-documentation-entries-cannot-be-edited)).
-- **Toolbar:** implemented as described; an open Phase 3 issue still plans node actions there (see [Known issues](known-issues.md#phase-3-toolbar-issue-contradicts-the-ux-concept)).
+- **Toolbar:** implemented as described; an open Phase 3 issue still plans node actions there (see [Known issues](known-issues.md#phase-3-issue-still-plans-toolbar-actions-on-nodes-and-schemaactions)).
 
 [^palette-items]: Palette item definitions
 

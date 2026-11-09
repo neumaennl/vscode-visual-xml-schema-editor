@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-09T12:10:15Z }
-verified: { by: human:neumaennl, at: 2026-11-09T12:27:25Z }
+generated: { by: human:neumaennl, at: 2026-11-09T13:19:15Z }
+verified: { by: human:neumaennl, at: 2026-11-09T13:22:13Z }
 ---
 
 # Purpose
@@ -42,7 +42,7 @@ Effort:
 - **Severity:** High
 - **Effort:** S
 - **Description:** Dropping the enumeration facet onto a type that already has enumeration values sends `modifySimpleType` with the existing facets overwritten by the default facet, so `["a", "b"]` becomes `["value"]`. The values are lost without a warning; only undo brings them back. The fix is to append the default value (made unique, for example `value2`) to the existing list instead of replacing it.
-- **GitHub issue:** none
+- **GitHub issue:** [#423](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/423)
 
 ## Editing facets drops all but the first pattern
 
@@ -50,7 +50,7 @@ Effort:
 - **Severity:** High
 - **Effort:** M
 - **Description:** XSD allows several `xs:pattern` facets in one restriction, and the diagram reads all of them, but `RestrictionFacets.pattern` is a single string. `modifySimpleType` replaces all facets with the ones in the payload, and the properties panel sends only the first pattern (`pattern?.[0]`). Changing any facet of a type with two or more patterns therefore deletes all patterns but the first, without a warning (see [Commands](commands.md#restriction-facets)). Dropping a facet from the palette does the same, and dropping a pattern replaces the existing pattern with the default `.*` instead of adding one (see [Drag and drop](drag-and-drop.md#defaults)). The fix is to make `pattern` a `string[]` like `enumeration`, write one `xs:pattern` per value, send all patterns from the properties panel and the facet drop, and append a dropped pattern. See also [Diagram items copy values from the schema objects](#diagram-items-copy-values-from-the-schema-objects).
-- **GitHub issue:** none
+- **GitHub issue:** [#424](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/424)
 
 ## Attributes on derived complex types are rejected or misplaced
 
@@ -62,7 +62,7 @@ Effort:
   - On an element with an anonymous complex type, the drop is accepted whatever the content model is. `addAttribute` always appends the attribute to the complex type itself, so for a derived anonymous type it writes `<attribute>` after `<complexContent>`, which is invalid XSD, and reports success.
 
   The fix is to use `isComplexTypeNode()` in the attribute drop rule, as the other rules do, and to add the attribute to the extension or restriction in the executor when the complex type has complex or simple content.
-- **GitHub issue:** none
+- **GitHub issue:** [#425](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/425)
 
 ## Node IDs are ambiguous and have many special cases
 
@@ -108,7 +108,7 @@ Effort:
 - **Severity:** Medium
 - **Effort:** S
 - **Description:** `modifySchemaNamespaces` treats a prefix whose name changed but whose URI did not as a rename, and rewrites the QNames that use it (see [Commands](commands.md#imports-includes-and-namespaces)). If one side of the rename is the empty prefix of the default namespace, nothing is rewritten. When `xmlns="urn:x"` becomes `xmlns:tns="urn:x"`, unprefixed QNames such as `type="Address"` no longer resolve to `urn:x`; when `tns` becomes the default namespace, `tns:Address` loses its binding. The fix is to add the prefix to unprefixed QNames in the first case and to remove it in the second. The `xpath` of selectors and fields needs its own rule: XPath does not apply the default namespace to unprefixed names, so a name in an XPath keeps its prefix, and turning a prefix that an XPath uses into the default namespace should be rejected.
-- **GitHub issue:** none
+- **GitHub issue:** [#426](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/426)
 
 ## Removing an import without a namespace does not check for references
 
@@ -116,7 +116,7 @@ Effort:
 - **Severity:** Medium
 - **Effort:** S
 - **Description:** `removeImport` rejects the removal of an import whose namespace is still referenced, by looking for QNames with a prefix of that namespace. An `<xs:import>` without a `namespace` imports a schema without a target namespace, whose components are referenced with unprefixed QNames when the schema has no default namespace. These references have no prefix to look for, so `isNamespaceReferenced()` returns `false` and the import can always be removed, leaving references that cannot be resolved. The fix is to treat the unprefixed QNames that do not name a component of the schema itself as references to the import, as long as the schema has no default namespace. The test that accepts removing such an import uses a schema without references.
-- **GitHub issue:** none
+- **GitHub issue:** [#427](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/427)
 
 ## Removing a namespace prefix does not check for references
 
@@ -124,7 +124,7 @@ Effort:
 - **Severity:** Medium
 - **Effort:** S
 - **Description:** `modifySchemaNamespaces` replaces the complete prefix map, so a prefix that is missing from the map is removed. The validator does not check whether QNames such as `type="tns:Address"` still use the removed prefix, and the schema is left with references that cannot be resolved. The properties panel sends this command when a namespace row is deleted. `removeImport` already rejects the removal of a namespace that is still referenced (`isPrefixReferencedInSchema()`); the same check is needed for prefixes that are removed and not renamed.
-- **GitHub issue:** none
+- **GitHub issue:** [#428](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/428)
 
 ## Documentation overlaps the next item
 
@@ -132,7 +132,7 @@ Effort:
 - **Severity:** Medium
 - **Effort:** S
 - **Description:** With `showDocumentation`, the documentation of an item is drawn in a box 5 px below its shape, up to 100 px high. The item's bounding box does not include this box, and the next sibling is placed 20 px below the bounding box. The documentation is therefore drawn over the next item: for a top-level element with 150 characters of documentation, the box ends at y = 115, while the next element starts at y = 60. The fix is to include the documentation box in the bounding box (see [Diagram rendering](diagram-rendering.md#layout)). See also [Documentation in the diagram is cut off and hard to read](#documentation-in-the-diagram-is-cut-off-and-hard-to-read).
-- **GitHub issue:** none
+- **GitHub issue:** [#429](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/429)
 
 ## Generated names ignore local names in the drop target
 
@@ -140,7 +140,7 @@ Effort:
 - **Severity:** Medium
 - **Effort:** S
 - **Description:** The names for dropped elements and attributes are generated from the names of top-level constructs only. If the drop target already contains a local element `Element1` or a local attribute `Attribute1`, the drop generates the same name, and the command is rejected with an error such as "Cannot add element: duplicate element name 'Element1' in sequence". For attributes, the message contains the internal term `topLevelComplexType` instead of the type name. A second drop succeeds, because the failed name stays reserved until the next schema update. The fix is to also skip the names already used in the drop target (see [Drag and drop](drag-and-drop.md#defaults)).
-- **GitHub issue:** none
+- **GitHub issue:** [#430](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/430)
 
 ## Diagram error text stays after a successful render
 
@@ -148,7 +148,7 @@ Effort:
 - **Severity:** Medium
 - **Effort:** S
 - **Description:** When building, laying out or drawing fails, `DiagramRenderer.showError()` adds the text "Error: …" to the canvas group. The next render only empties the content group inside it, so the error text stays visible over the diagram, even after the schema has been fixed. The app also shows the error in the notification bar, which is enough. The fix is to remove the SVG error text, or to put it into the content group (see [Diagram rendering](diagram-rendering.md#pipeline)).
-- **GitHub issue:** none
+- **GitHub issue:** [#431](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/431)
 
 ## Restricted complex content is shown without content and attributes
 
@@ -190,7 +190,7 @@ Effort:
 - **Severity:** Medium
 - **Effort:** M
 - **Description:** `CommandProcessor` guards against concurrent commands with an `isExecuting` flag, but `execute()` is synchronous, so the flag can never be set when the next command arrives. The asynchronous part is not guarded: the provider awaits `applyEdit()`, and the webview sends commands without waiting for `commandResult`. A second command that arrives during the wait reads the document text before the first edit and computes its replace range from it, so it can undo the first change or leave parts of the old text in the document. This follows from the code and was not reproduced in VS Code. The fix is to queue commands in the provider (process one after the other, each after the previous edit is applied) and to remove the flag; the webview could additionally block input while a command is pending (see [Persistence](persistence.md#concurrency)). The messages carry no request ID and `commandResult` does not name its command, so the webview cannot tell which of several pending commands a result belongs to (see [Messaging](messaging.md#limitations)).
-- **GitHub issue:** none
+- **GitHub issue:** [#432](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/432)
 
 ## Particles are not shown in document order
 

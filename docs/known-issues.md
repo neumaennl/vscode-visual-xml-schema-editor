@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-09T12:00:53Z }
-verified: { by: human:neumaennl, at: 2026-11-09T12:06:19Z }
+generated: { by: human:neumaennl, at: 2026-11-09T12:10:15Z }
+verified: { by: human:neumaennl, at: 2026-11-09T12:27:25Z }
 ---
 
 # Purpose
@@ -509,20 +509,6 @@ Effort:
 - **Severity:** Medium
 - **Effort:** S
 - **Description:** The issue has no body. The commands `modifyAttribute` and `removeAttribute` exist with executors in `src/commandExecutors/attributeExecutors.ts`, but the webview never sends them: attributes can only be added from the palette, and the properties panel lists them read-only.
-
-## Phase 3 issue still plans toolbar actions on nodes and SchemaActions
-
-- **GitHub issue:** [#18](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/18)
-- **Severity:** Low
-- **Effort:** S
-- **Description:** The task list of #18 still has "Implement SchemaActions and action handlers" and "Toolbars and context menus for add/remove/edit", and its acceptance criteria name toolbar actions. The UX concept keeps the toolbar for actions on the whole diagram and adds nodes through the palette, and the webview builds its commands without a layer of SchemaActions (see [ADR 001](architecture/001-editor-transition.md#9-deviations-from-this-design)). Its sub-issues [#154](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/154) and [#155](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/155) describe this already; #18 is to be updated together with the descriptions of the phases.
-
-## Phase 5 issue does not reflect palette drag and drop
-
-- **GitHub issue:** [#20](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/20)
-- **Severity:** Low
-- **Effort:** S
-- **Description:** Drag and drop from the palette exists; moving or reordering existing nodes by drag and drop, copy and paste, keyboard shortcuts and double-click renaming do not. The issue does not distinguish between the two kinds of drag and drop.
 
 ## Focus issue mentions toolbar add actions
 

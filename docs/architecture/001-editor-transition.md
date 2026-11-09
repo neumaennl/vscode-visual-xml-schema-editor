@@ -4,8 +4,8 @@ title: "ADR 001: Editor transition architecture"
 description: The decision to turn the viewer into an editor whose webview sends commands that the extension host validates, executes and writes to the XSD file, with the roadmap and the deviations of the implementation from the design.
 tags: [adr, architecture, commands, roadmap]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-28T14:47:04Z }
-verified: { by: human:neumaennl, at: 2026-10-28T15:08:21Z }
+generated: { by: human:neumaennl, at: 2026-11-09T12:26:11Z }
+verified: { by: human:neumaennl, at: 2026-11-09T12:27:25Z }
 ---
 
 # ADR 001: Editor Transition Architecture
@@ -28,8 +28,8 @@ The Visual XML Schema Editor currently operates as a **viewer** with limited edi
 - Document changes trigger re-parsing and full diagram updates
 - The `applySchemaChanges` method is stubbed but not implemented
 
-> **Implementation Progress (as of 2026-10-08, branch `copilot/add-editor-capabilities`):**
-> Phases 1 (Foundation) and 2 (Basic Editing) are complete: all command types are defined, validated, executed and written back to the document, with unit and integration tests. Phase 3 (UI Integration) is in progress: constructs are added by dragging items from a palette onto the diagram, and the selected node is edited and deleted in an editable properties panel with the tabs General, Facets, Docs and XML. Of Phase 4, only the skipping of collapsed nodes is implemented; every schema update rebuilds the whole diagram. Phases 5 and 6 have not started. See the [roadmap](#6-implementation-roadmap) for the milestones and [section 9](#9-deviations-from-this-design) for where the implementation deviates from this design.
+> **Implementation Progress (as of 2026-11-09, branch `copilot/add-editor-capabilities`):**
+> Phases 1 (Foundation) and 2 (Basic Editing) are complete: all command types are defined, validated, executed and written back to the document, with unit and integration tests. Phase 3 (UI Integration) is in progress: constructs are added by dragging items from a palette onto the diagram, and the selected node is edited and deleted in an editable properties panel with the tabs General, Facets, Docs and XML. Of Phase 4, only the skipping of collapsed nodes is implemented; every schema update rebuilds the whole diagram. Phase 5 has not started. Of Phase 6, parts of the testing started early: coverage thresholds of 85%, tests in the extension host, and tests of the properties panel and the drop handling with real diagrams. See the [roadmap](#6-implementation-roadmap) for the milestones and [section 9](#9-deviations-from-this-design) for where the implementation deviates from this design.
 
 ### Goal
 
@@ -554,6 +554,10 @@ class DiagramRenderer {
 
 ## 6. Implementation Roadmap
 
+The phases group the work by scope, not by time. A phase says which work belongs together, not when it is done: work from a later phase starts early when it makes other work easier, and work of an earlier phase can continue while a later one is under way. For example, the testing that Phase 6 lists started during the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340), long before Phases 4 and 5.
+
+Each phase has a GitHub issue ([#16](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/16) to [#21](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/21)), and the field "Phase" on the project board [Editor Refactor](https://github.com/users/neumaennl/projects/1) assigns every issue to a phase. The order in which the work is done is kept on the board: in the manual order of the items and in the "blocked by" relationships between the issues. The milestones below record what was planned for each phase and how the plan changed.
+
 ### Phase 1: Foundation
 
 **Goal**: Establish command infrastructure and core abstractions.
@@ -602,11 +606,12 @@ class DiagramRenderer {
 
 - [x] ~~Implement SchemaActions in webview for command dispatch~~ — replaced: each surface builds its own commands (section 9)
 - [x] Add a palette whose items are dragged onto diagram nodes to add constructs (replaces the toolbar editing buttons, section 9)
-- [ ] Add context menu to diagram items with relevant actions
 - [x] ~~Implement toolbar editing buttons~~ — dropped: the toolbar only has actions for the whole diagram (section 9)
-- [ ] Make properties panel editable with inline validation — the panel is editable; inline validation is missing
+- [ ] Make properties panel editable ~~with inline validation~~ — the panel is editable ([#156](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/156)); validation feedback moved to Phase 5
+- [ ] Restyle the toolbar and add the actions for the whole diagram, such as exporting the diagram as an image ([#155](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/155))
+- [ ] Add context menu to diagram items with relevant actions ([#155](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/155))
 - [ ] Add visual feedback for operations (loading states, confirmations)
-- [ ] Implement selection manager with multi-select support
+- [ ] Implement selection manager ~~with multi-select support~~ — single selection works ([#157](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/157)); multi-select moved to Phase 5
 - [ ] Add keyboard shortcuts for common operations
 
 **Success Criteria**: Users can perform all basic editing operations through intuitive UI interactions.
@@ -638,8 +643,8 @@ class DiagramRenderer {
 - [ ] Add copy/paste functionality with clipboard integration
 - [x] ~~Implement inline editing (double-click to rename)~~ — dropped: names are edited in the properties panel (section 9)
 - [ ] Add find/replace functionality
-- [ ] Implement batch operations (multi-delete, bulk property changes)
-- [ ] Add validation feedback in UI with actionable messages
+- [ ] Implement multi-select and batch operations (multi-delete, bulk property changes) ([#422](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/422))
+- [ ] Add validation feedback in UI with actionable messages ([#421](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/421)), after the integration of the Red Hat XML extension ([#284](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/284))
 
 **Success Criteria**: Users can perform all editing operations defined in Phase 1-4 using advanced methods (drag-and-drop, copy/paste, keyboard shortcuts, batch operations). Operations that span multiple elements (find/replace, bulk edits) work reliably. UI provides real-time validation feedback.
 
@@ -649,7 +654,7 @@ class DiagramRenderer {
 
 #### Milestones:
 
-- [ ] Comprehensive integration testing (see Testing Strategy below)
+- [ ] Comprehensive integration testing (see Testing Strategy below) — started early: coverage thresholds of 85%, smoke tests in the extension host, tests with real diagrams; end-to-end tests of the webview UI are planned ([#377](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/377))
 - [ ] Error handling and recovery for edge cases
 - [ ] Performance testing with large, real-world schemas
 - [ ] Accessibility improvements (ARIA labels, keyboard navigation)

@@ -4,8 +4,8 @@ title: UX concept
 description: The interaction model of the editor - which surface adds, edits and deletes what, how facets work, and how the properties panel behaves - with a list of what the current editor does not implement yet.
 tags: [ux, editor, palette, properties-panel, facets, context-menu, toolbar]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-09T12:00:53Z }
-verified: { by: human:neumaennl, at: 2026-11-09T12:06:19Z }
+generated: { by: human:neumaennl, at: 2026-11-09T12:10:15Z }
+verified: { by: human:neumaennl, at: 2026-11-09T12:27:25Z }
 sources:
   - id: palette-items
     resource: ../webview-src/palette/PaletteItems.ts
@@ -174,7 +174,7 @@ The XML tab is read-only. It shows an XSD fragment for the node, generated in th
 The current editor does not implement these parts of the model yet:
 
 - **Context menu:** there is none.
-- **Keyboard shortcuts:** there are none (for example, Delete or arrow keys to move the selection); Enter only commits a field (see [Known issues](known-issues.md#phase-5-issue-does-not-reflect-palette-drag-and-drop)).
+- **Keyboard shortcuts:** there are none (for example, Delete or arrow keys to move the selection); Enter only commits a field (see [#157](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/157) for the selection and [#20](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/20) for shortcuts of the advanced editing features).
 - **Attribute groups:** the palette has no item for them (see [Known issues](known-issues.md#palette-has-no-entry-for-attribute-groups)). The `any` item is shown but disabled.
 - **Facet checks:** neither the webview nor the extension host checks facets against the base type or forbidden combinations (see [Known issues](known-issues.md#facets-are-not-checked-against-the-base-type)).
 - **Multiple patterns:** editing a facet deletes all patterns except the first (see [Known issues](known-issues.md#editing-facets-drops-all-but-the-first-pattern)).
@@ -184,7 +184,7 @@ The current editor does not implement these parts of the model yet:
 - **Mixed content:** the toggle is also shown for simple content, ignores `mixed` on `xs:complexContent` and does not check the base type (see [Known issues](known-issues.md#mixed-content-toggle-ignores-simple-content-complexcontent-and-the-base-type)).
 - **Deleting nodes:** the header delete button exists only for elements, named simple and complex types, groups and group references; attributes, compositors and anonymous types cannot be deleted.
 - **Documentation language:** `xml:lang` is preserved but neither shown nor editable (see [Known issues](known-issues.md#language-of-documentation-entries-cannot-be-edited)).
-- **Toolbar:** implemented as described; an open Phase 3 issue still plans node actions there (see [Known issues](known-issues.md#phase-3-issue-still-plans-toolbar-actions-on-nodes-and-schemaactions)).
+- **Toolbar:** implemented as described; restyling it and adding more actions for the whole diagram, such as exporting the diagram as an image, are planned ([#155](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/155)).
 
 [^palette-items]: Palette item definitions
 

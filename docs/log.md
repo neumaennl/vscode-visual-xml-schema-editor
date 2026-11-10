@@ -1,5 +1,8 @@
 # Knowledge Bundle Update Log
 
+## 2026-11-10
+* **Update**: [ADR 002](architecture/002-legacy-decorators.md#review): the review is tracked in [#434](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/434), which is blocked by [oxc-project/oxc#9170](https://github.com/oxc-project/oxc/issues/9170) and relates to [neumaennl/xmlbind-ts#290](https://github.com/neumaennl/xmlbind-ts/issues/290); any Vite or Vitest release that mentions decorators is a reason to review, not only major upgrades, because Oxc's support for Stage 3 decorators may arrive in a minor release.
+
 ## 2026-11-09
 * **Update**: [Known issues](known-issues.md#properties-panel-builds-commands-in-its-event-handlers): "Properties panel builds commands in its event handlers" links [#156](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/156) instead of [#154](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/154). #154 is now about the palette and #156 about the properties panel; each has the related issues as sub-issues.
 * **Update**: [ADR 001](architecture/001-editor-transition.md#phase-3-ui-integration): the selection manager of Phase 3 is done with single selection ([#157](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/157), closed); selecting nodes and shortcuts with the keyboard moved to Phase 5 ([#433](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/433)). [UX concept](ux-concept.md#current-state) links #433 for the keyboard.

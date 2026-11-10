@@ -4,8 +4,8 @@ title: "ADR 002: Legacy TypeScript decorators"
 description: The decision to compile the decorators of the generated schema classes as TypeScript's legacy decorators instead of TC39 Stage 3 decorators, with the reasons, the consequences, the rejected alternatives and when to review it.
 tags: [adr, architecture, decorators, typescript, build, testing]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-29T06:58:32Z }
-verified: { by: human:neumaennl, at: 2026-10-29T07:47:32Z }
+generated: { by: human:neumaennl, at: 2026-11-10T10:54:23Z }
+verified: { by: human:neumaennl, at: 2026-11-10T11:14:05Z }
 sources:
   - id: tsconfig
     resource: ../../tsconfig.extension.json
@@ -115,10 +115,11 @@ Review this decision when one of these happens:
 - Oxc lowers Stage 3 decorators ([oxc-project/oxc#9170](https://github.com/oxc-project/oxc/issues/9170)).[^oxc-9170]
 - The decorators proposal changes its stage, or a JavaScript engine ships decorators.[^tc39-proposal]
 - TypeScript deprecates `experimentalDecorators` or changes how either kind is compiled.
-- A major upgrade of TypeScript, Vite, Vitest or `xmlbind-ts`, including the Dependabot pull requests for them.
+- A major upgrade of TypeScript or `xmlbind-ts`, including the Dependabot pull requests for them.
+- A release of Vite or Vitest, major or not, whose changelog mentions decorators: Oxc's support for Stage 3 decorators may arrive in a minor release.
 - `xmlbind-ts` drops support for one of the two kinds.
 
-The maintainer follows oxc-project/oxc#9170 and the repository `tc39/proposal-decorators` on GitHub and gets notified when they change.
+[#434](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/434) tracks the review. It is blocked by [oxc-project/oxc#9170](https://github.com/oxc-project/oxc/issues/9170), relates to the review in `xmlbind-ts` ([neumaennl/xmlbind-ts#290](https://github.com/neumaennl/xmlbind-ts/issues/290)), and collects what changes in the meantime.
 
 [^tsconfig]: TypeScript configuration of the extension host
 

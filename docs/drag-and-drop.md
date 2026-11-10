@@ -4,10 +4,8 @@ title: Drag and drop
 description: How a construct is dragged from the palette onto a diagram node - the responsibilities of palette, renderer, DropCommandFactory and extension host, the event flow, which construct can be dropped on which node with which command, and the generated defaults.
 tags: [drag-and-drop, palette, renderer, drop-command-factory, webview]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-07T14:41:24Z }
-verified:
-  by: human:neumaennl
-  at: 2026-10-08T08:46:19Z
+generated: { by: human:neumaennl, at: 2026-11-10T12:18:00Z }
+verified: { by: human:neumaennl, at: 2026-11-10T12:35:24Z }
 sources:
   - id: palette-items
     resource: ../webview-src/palette/PaletteItems.ts
@@ -130,17 +128,17 @@ Every other combination returns `null`. In particular, nothing can be dropped on
 
 **Base types.** For a restriction or extension, the base type is the one shown on the node, read from its label (`restricts …` or `extends …`). Without one, a restriction uses `xs:anyType` for complex types and elements with anonymous complex types, and `xs:string` otherwise; an extension uses `xs:anyType`.[^drop-type-helpers]
 
-**Facets.** A dropped facet gets a default value, which overwrites the facet if it already exists:
+**Facets.** A dropped facet gets a default value. A dropped enumeration adds its value to the existing ones; every other facet overwrites the facet if it already exists:
 
 | Facet | Default |
 |---|---|
-| `enumeration` | `["value"]` |
+| `enumeration` | `value`, or `value2`, `value3`, … with the lowest number that is not in use yet |
 | `pattern` | `.*` |
 | `length`, `minLength`, `maxLength`, `totalDigits`, `fractionDigits` | `1` |
 | `minInclusive`, `maxInclusive`, `minExclusive`, `maxExclusive` | `0` |
 | `whiteSpace` | `preserve` |
 
-The facet drop sends only the first existing pattern, and dropping an enumeration or a pattern replaces the existing values instead of adding one (see [Known issues](known-issues.md#editing-facets-drops-all-but-the-first-pattern) and [Known issues](known-issues.md#dropping-an-enumeration-replaces-the-existing-values)). Facets are not checked against the base type (see [Known issues](known-issues.md#facets-are-not-checked-against-the-base-type)).
+The facet drop sends only the first existing pattern, and dropping a pattern replaces the existing pattern instead of adding one (see [Known issues](known-issues.md#editing-facets-drops-all-but-the-first-pattern)). Facets are not checked against the base type (see [Known issues](known-issues.md#facets-are-not-checked-against-the-base-type)).
 
 # Adding a draggable construct
 

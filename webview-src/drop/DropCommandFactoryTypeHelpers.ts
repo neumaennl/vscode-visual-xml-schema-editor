@@ -54,7 +54,8 @@ export function createFacetNodeDropCommand(
   if (!isRestrictionSimpleType(item)) {
     return null;
   }
-  const facet = createDefaultFacet(construct);
+  const existingFacets = getRestrictionFacets(item);
+  const facet = createDefaultFacet(construct, existingFacets);
   if (!facet) {
     return null;
   }
@@ -63,7 +64,7 @@ export function createFacetNodeDropCommand(
     payload: {
       typeId: item.itemType === DiagramItemType.element ? getAnonymousSimpleTypeId(item) : item.id,
       baseType: getRestrictionBaseType(item),
-      restrictions: { ...getRestrictionFacets(item), ...facet },
+      restrictions: { ...existingFacets, ...facet },
     },
   };
 }
@@ -94,10 +95,23 @@ function getRestrictionFacets(item: DiagramItem): RestrictionFacets {
   };
 }
 
-function createDefaultFacet(construct: FacetPaletteConstruct): RestrictionFacets | null {
+/**
+ * Creates the default value of a dropped facet. An enumeration is appended to the existing values
+ * instead of replacing them; every other facet overwrites the existing one.
+ *
+ * @param construct - The facet dropped from the palette.
+ * @param existingFacets - The facets the drop target already has.
+ * @returns The facet to merge into the existing facets, or `null` if the construct is no facet.
+ */
+function createDefaultFacet(
+  construct: FacetPaletteConstruct,
+  existingFacets: RestrictionFacets
+): RestrictionFacets | null {
   switch (construct) {
-    case PaletteSchemaConstruct.Enumeration:
-      return { enumeration: ["value"] };
+    case PaletteSchemaConstruct.Enumeration: {
+      const existingValues = existingFacets.enumeration ?? [];
+      return { enumeration: [...existingValues, createUniqueEnumerationValue(existingValues)] };
+    }
     case PaletteSchemaConstruct.Pattern:
       return { pattern: ".*" };
     case PaletteSchemaConstruct.Length:
@@ -114,6 +128,24 @@ function createDefaultFacet(construct: FacetPaletteConstruct): RestrictionFacets
     case PaletteSchemaConstruct.WhiteSpace:
       return { whiteSpace: "preserve" };
   }
+}
+
+/**
+ * Creates an enumeration value that the restriction does not contain yet.
+ *
+ * @param existingValues - The enumeration values the restriction already has.
+ * @returns `value`, or `value2`, `value3`, … with the lowest number that is not in use yet.
+ */
+function createUniqueEnumerationValue(existingValues: readonly string[]): string {
+  const usedValues = new Set(existingValues);
+  if (!usedValues.has("value")) {
+    return "value";
+  }
+  let suffix = 2;
+  while (usedValues.has(`value${suffix}`)) {
+    suffix++;
+  }
+  return `value${suffix}`;
 }
 
 function extractDisplayedBaseType(typeText: string): string | null {

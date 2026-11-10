@@ -1,6 +1,7 @@
 # Knowledge Bundle Update Log
 
 ## 2026-11-10
+* **Update**: [Drag and drop](drag-and-drop.md#defaults): a dropped enumeration adds its value to the existing ones instead of replacing them; the value is `value`, or `value2`, `value3`, … with the lowest number that is not in use yet ([#423](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/423)). [Known issues](known-issues.md): removed "Dropping an enumeration replaces the existing values".
 * **Update**: [ADR 002](architecture/002-legacy-decorators.md#review): the review is tracked in [#434](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/434), which is blocked by [oxc-project/oxc#9170](https://github.com/oxc-project/oxc/issues/9170) and relates to [neumaennl/xmlbind-ts#290](https://github.com/neumaennl/xmlbind-ts/issues/290); any Vite or Vitest release that mentions decorators is a reason to review, not only major upgrades, because Oxc's support for Stage 3 decorators may arrive in a minor release.
 
 ## 2026-11-09

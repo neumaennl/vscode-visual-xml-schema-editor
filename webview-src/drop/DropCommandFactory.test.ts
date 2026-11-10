@@ -7,6 +7,8 @@ import { DropCommandFactory } from "./DropCommandFactory";
 import { DiagramItem } from "../diagram/DiagramItem";
 import { DiagramItemGroupType, DiagramItemType } from "../diagram/DiagramTypes";
 import { PaletteSchemaConstruct } from "../palette/PaletteSchemaConstruct";
+import { diagramItem } from "../__tests__/diagramTestHelpers";
+import { schemaWith } from "../../src/__tests__/schemaTestHelpers";
 
 function makeItem(
   id: string,
@@ -519,6 +521,45 @@ describe("DropCommandFactory", () => {
             fractionDigits: undefined,
             whiteSpace: undefined,
           },
+        },
+      });
+    });
+
+    test.each([
+      { existing: [], expected: ["value"] },
+      { existing: ["a", "b"], expected: ["a", "b", "value"] },
+      { existing: ["value", "value2"], expected: ["value", "value2", "value3"] },
+      { existing: ["value", "value3"], expected: ["value", "value3", "value2"] },
+    ])("appends a unique enumeration value to $existing", ({ existing, expected }) => {
+      const enumerations = existing.map((value) => `<xs:enumeration value="${value}"/>`).join("");
+      const schemaObj = schemaWith(
+        `<xs:simpleType name="Status"><xs:restriction base="xs:string">${enumerations}</xs:restriction></xs:simpleType>`
+      );
+      const item = diagramItem(schemaObj, "/simpleType:Status");
+
+      const command = factory.createNodeDropCommand(item, PaletteSchemaConstruct.Enumeration);
+
+      expect(command).toMatchObject({
+        type: "modifySimpleType",
+        payload: { typeId: "/simpleType:Status", restrictions: { enumeration: expected } },
+      });
+    });
+
+    test("appends an enumeration value to the anonymous simpleType of an element", () => {
+      const schemaObj = schemaWith(
+        `<xs:element name="code"><xs:simpleType><xs:restriction base="xs:string">` +
+          `<xs:enumeration value="a"/><xs:enumeration value="value"/>` +
+          `</xs:restriction></xs:simpleType></xs:element>`
+      );
+      const item = diagramItem(schemaObj, "/element:code");
+
+      const command = factory.createNodeDropCommand(item, PaletteSchemaConstruct.Enumeration);
+
+      expect(command).toMatchObject({
+        type: "modifySimpleType",
+        payload: {
+          typeId: "/element:code/anonymousSimpleType[0]",
+          restrictions: { enumeration: ["a", "value", "value2"] },
         },
       });
     });

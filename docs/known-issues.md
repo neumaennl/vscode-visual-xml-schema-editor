@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-09T15:50:21Z }
-verified: { by: human:neumaennl, at: 2026-11-09T15:51:07Z }
+generated: { by: human:neumaennl, at: 2026-11-10T12:18:00Z }
+verified: { by: human:neumaennl, at: 2026-11-10T12:35:24Z }
 ---
 
 # Purpose
@@ -35,14 +35,6 @@ Effort:
 - **L:** a day or more, or design decisions are needed.
 
 # Code
-
-## Dropping an enumeration replaces the existing values
-
-- **Location:** `webview-src/drop/DropCommandFactoryTypeHelpers.ts` (`createFacetNodeDropCommand()`)
-- **Severity:** High
-- **Effort:** S
-- **Description:** Dropping the enumeration facet onto a type that already has enumeration values sends `modifySimpleType` with the existing facets overwritten by the default facet, so `["a", "b"]` becomes `["value"]`. The values are lost without a warning; only undo brings them back. The fix is to append the default value (made unique, for example `value2`) to the existing list instead of replacing it.
-- **GitHub issue:** [#423](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/423)
 
 ## Editing facets drops all but the first pattern
 

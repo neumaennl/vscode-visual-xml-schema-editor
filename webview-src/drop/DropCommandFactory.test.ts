@@ -525,6 +525,41 @@ describe("DropCommandFactory", () => {
       });
     });
 
+    test("keeps all patterns when a facet is dropped", () => {
+      const schemaObj = schemaWith(
+        `<xs:simpleType name="Code"><xs:restriction base="xs:string">` +
+          `<xs:pattern value="[A-Z]{3}"/><xs:pattern value="[0-9]{3}"/>` +
+          `</xs:restriction></xs:simpleType>`
+      );
+      const item = diagramItem(schemaObj, "/simpleType:Code");
+
+      const command = factory.createNodeDropCommand(item, PaletteSchemaConstruct.MaxLength);
+
+      expect(command).toMatchObject({
+        type: "modifySimpleType",
+        payload: { typeId: "/simpleType:Code", restrictions: { pattern: ["[A-Z]{3}", "[0-9]{3}"], maxLength: 1 } },
+      });
+    });
+
+    test.each([
+      { existing: [], expected: [".*"] },
+      { existing: ["[A-Z]{3}"], expected: ["[A-Z]{3}", "[^a-zA-Z0-9\\s]*"] },
+      { existing: ["[A-Z]{3}", "[^a-zA-Z0-9\\s]*"], expected: ["[A-Z]{3}", "[^a-zA-Z0-9\\s]*", "[^a-zA-Z0-9\\s]*"] },
+    ])("appends a default pattern to $existing", ({ existing, expected }) => {
+      const patterns = existing.map((value) => `<xs:pattern value="${value}"/>`).join("");
+      const schemaObj = schemaWith(
+        `<xs:simpleType name="Code"><xs:restriction base="xs:string">${patterns}</xs:restriction></xs:simpleType>`
+      );
+      const item = diagramItem(schemaObj, "/simpleType:Code");
+
+      const command = factory.createNodeDropCommand(item, PaletteSchemaConstruct.Pattern);
+
+      expect(command).toMatchObject({
+        type: "modifySimpleType",
+        payload: { typeId: "/simpleType:Code", restrictions: { pattern: expected } },
+      });
+    });
+
     test.each([
       { existing: [], expected: ["value"] },
       { existing: ["a", "b"], expected: ["a", "b", "value"] },

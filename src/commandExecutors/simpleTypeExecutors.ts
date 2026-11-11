@@ -412,8 +412,10 @@ function applyRestrictionFacets(
     restriction.whiteSpace = [ws];
   }
   if (facets.pattern !== undefined) {
-    const pt = new patternType();
-    pt.value = facets.pattern;
-    restriction.pattern = [pt];
+    restriction.pattern = facets.pattern.map((val) => {
+      const pt = new patternType();
+      pt.value = val;
+      return pt;
+    });
   }
 }

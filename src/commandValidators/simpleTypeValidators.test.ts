@@ -667,6 +667,11 @@ describe("Simple type rules", () => {
       error: "Restriction simpleType body must include at least one facet",
     },
     {
+      rule: "an empty pattern list as the only facet",
+      result: validateAdd({ parentId: "/schema", typeName: "T", baseType: "xs:string", restrictions: { pattern: [] } }),
+      error: "Restriction simpleType body must include at least one facet",
+    },
+    {
       rule: "facets without a base type for a new type",
       result: validateAdd({ parentId: "/schema", typeName: "T", restrictions: { minLength: 1 } }),
       error: "Base type cannot be empty",

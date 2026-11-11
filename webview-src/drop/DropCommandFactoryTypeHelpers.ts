@@ -81,7 +81,7 @@ function isRestrictionSimpleType(item: DiagramItem): boolean {
 function getRestrictionFacets(item: DiagramItem): RestrictionFacets {
   return {
     enumeration: item.restrictions?.enumeration,
-    pattern: item.restrictions?.pattern?.[0],
+    pattern: item.restrictions?.pattern,
     length: item.restrictions?.length,
     minLength: item.restrictions?.minLength,
     maxLength: item.restrictions?.maxLength,
@@ -95,9 +95,18 @@ function getRestrictionFacets(item: DiagramItem): RestrictionFacets {
   };
 }
 
+/** The pattern of the first dropped pattern facet; it accepts every value without line breaks. */
+const FIRST_PATTERN = ".*";
+
 /**
- * Creates the default value of a dropped facet. An enumeration is appended to the existing values
- * instead of replacing them; every other facet overwrites the existing one.
+ * The pattern appended by a pattern drop to a restriction that already has patterns. Patterns of one
+ * restriction are alternatives, so it only adds values without letters, digits and whitespace.
+ */
+const ADDITIONAL_PATTERN = "[^a-zA-Z0-9\\s]*";
+
+/**
+ * Creates the default value of a dropped facet. An enumeration or a pattern is appended to the existing
+ * values instead of replacing them; every other facet overwrites the existing one.
  *
  * @param construct - The facet dropped from the palette.
  * @param existingFacets - The facets the drop target already has.
@@ -112,8 +121,11 @@ function createDefaultFacet(
       const existingValues = existingFacets.enumeration ?? [];
       return { enumeration: [...existingValues, createUniqueEnumerationValue(existingValues)] };
     }
-    case PaletteSchemaConstruct.Pattern:
-      return { pattern: ".*" };
+    case PaletteSchemaConstruct.Pattern: {
+      const existingPatterns = existingFacets.pattern ?? [];
+      const pattern = existingPatterns.length > 0 ? ADDITIONAL_PATTERN : FIRST_PATTERN;
+      return { pattern: [...existingPatterns, pattern] };
+    }
     case PaletteSchemaConstruct.Length:
     case PaletteSchemaConstruct.MinLength:
     case PaletteSchemaConstruct.MaxLength:

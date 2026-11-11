@@ -59,6 +59,21 @@ export function getSelectsByLabel(container: HTMLElement, label: string): HTMLSe
 }
 
 /**
+ * Returns the values of the chips of the field with the given label, such as the values of an
+ * enumeration, and fails the test if there is no such field.
+ *
+ * @param container - The element that holds the panel
+ * @param label - The label without the colon
+ * @returns The values, in document order
+ */
+export function getChipValuesByLabel(container: HTMLElement, label: string): string[] {
+  const match = findLabel(container, label);
+  expect(match).toBeDefined();
+  const chips = Array.from(match?.parentElement?.querySelectorAll(".property-value-chip") ?? []);
+  return chips.map((chip) => chip.textContent);
+}
+
+/**
  * Tells whether the container has a field with the given label.
  *
  * @param container - The element that holds the panel

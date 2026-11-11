@@ -160,12 +160,12 @@ describe("SimpleType Executors", () => {
         },
       },
       {
-        name: "pattern facet",
+        name: "pattern facets",
         typeName: "PhoneType",
         baseType: "xs:string",
-        restrictions: { pattern: "[0-9]{10}" },
+        restrictions: { pattern: ["[0-9]{10}", "\\+[0-9]{12}"] },
         assert: (restriction): void => {
-          expect(restriction.pattern![0].value).toBe("[0-9]{10}");
+          expect(restriction.pattern!.map((value) => value.value)).toEqual(["[0-9]{10}", "\\+[0-9]{12}"]);
         },
       },
       {
@@ -321,6 +321,21 @@ describe("SimpleType Executors", () => {
 
       expect(simpleTypes(schemaObj)[0].restriction).toBeDefined();
       assert(schemaObj);
+    });
+
+    test("replaces all patterns and keeps them through serialization", () => {
+      const schemaObj = schemaWith(
+        `<xs:simpleType name="CodeType"><xs:restriction base="xs:string"><xs:pattern value="[A-Z]+"/></xs:restriction></xs:simpleType>`
+      );
+
+      modifySimpleType(schemaObj, {
+        typeId: "/simpleType:CodeType",
+        restrictions: { pattern: ["[A-Z]{3}", "[0-9]{3}"], maxLength: 3 },
+      });
+
+      const restriction = simpleTypes(unmarshal(schema, marshal(schemaObj)))[0].restriction!;
+      expect(restriction.pattern!.map((value) => value.value)).toEqual(["[A-Z]{3}", "[0-9]{3}"]);
+      expect(restriction.maxLength![0].value).toBe(3);
     });
 
     test("switches an existing restriction simpleType to list", () => {

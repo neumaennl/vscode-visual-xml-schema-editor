@@ -251,15 +251,17 @@ body {
   opacity: 0.45;
 }
 
-.property-enum-list {
+.property-value-list {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   align-items: center;
 }
 
-.property-enum-chip {
+.property-value-chip {
   display: inline-flex;
+  max-width: 100%;
+  box-sizing: border-box;
   align-items: center;
   gap: 4px;
   padding: 2px 4px 2px 8px;
@@ -269,20 +271,49 @@ body {
   border-radius: 12px;
   font-family: var(--vscode-editor-font-family, monospace);
   font-size: 11px;
+}
+
+.property-value-chip-grip {
+  flex-shrink: 0;
+  margin-left: -4px;
+  font-size: 12px;
+  opacity: 0;
+  color: var(--vscode-descriptionForeground);
   cursor: grab;
 }
 
-.property-enum-chip-dragging {
+.property-value-chip:hover .property-value-chip-grip {
+  opacity: 1;
+}
+
+.property-value-chip-grip:active {
+  cursor: grabbing;
+}
+
+.property-value-chip-text {
+  min-width: 0;
+  padding: 0;
+  overflow-wrap: anywhere;
+  text-align: left;
+  background: transparent;
+  color: inherit;
+  border: none;
+  font: inherit;
+  cursor: text;
+}
+
+.property-value-chip-dragging {
   opacity: 0.5;
 }
 
-.property-enum-chip-drag-over {
+.property-value-chip-drag-over {
   border-color: var(--vscode-focusBorder);
   box-shadow: inset 0 0 0 1px var(--vscode-focusBorder);
 }
 
-.property-enum-chip-remove {
+.property-value-chip-remove {
   display: inline-flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
   width: 16px;
@@ -295,16 +326,16 @@ body {
   cursor: pointer;
 }
 
-.property-enum-chip-remove:hover {
+.property-value-chip-remove:hover {
   background-color: var(--vscode-toolbar-hoverBackground, var(--vscode-list-hoverBackground));
   color: var(--vscode-errorForeground);
 }
 
-.property-enum-chip-remove .codicon {
+.property-value-chip-remove .codicon {
   font-size: 12px;
 }
 
-.property-enum-add-button {
+.property-value-add-button {
   padding: 3px 8px;
   background: transparent;
   color: var(--vscode-descriptionForeground);
@@ -315,13 +346,15 @@ body {
   font: inherit;
 }
 
-.property-enum-add-button:hover {
+.property-value-add-button:hover {
   color: var(--vscode-textLink-foreground);
   border-color: var(--vscode-textLink-foreground);
 }
 
-.property-enum-add-input {
-  width: 100px;
+.property-value-input {
+  field-sizing: content;
+  min-width: 100px;
+  max-width: 100%;
   box-sizing: border-box;
   padding: 3px 8px;
   background-color: var(--vscode-input-background);

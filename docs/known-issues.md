@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-11T07:58:06Z }
-verified: { by: human:neumaennl, at: 2026-11-11T08:28:29Z }
+generated: { by: human:neumaennl, at: 2026-11-11T12:54:49Z }
+verified: { by: human:neumaennl, at: 2026-11-11T13:20:42Z }
 ---
 
 # Purpose
@@ -35,14 +35,6 @@ Effort:
 - **L:** a day or more, or design decisions are needed.
 
 # Code
-
-## Editing facets drops all but the first pattern
-
-- **Location:** `shared/commands/schemaTypes.ts` (`RestrictionFacets.pattern`), `src/commandExecutors/simpleTypeExecutors.ts`, `webview-src/propertiesPanel/propertiesPanelFacets.ts`, `webview-src/drop/DropCommandFactoryTypeHelpers.ts` (`createFacetNodeDropCommand()`)
-- **Severity:** High
-- **Effort:** M
-- **Description:** XSD allows several `xs:pattern` facets in one restriction, and the diagram reads all of them, but `RestrictionFacets.pattern` is a single string. `modifySimpleType` replaces all facets with the ones in the payload, and the properties panel sends only the first pattern (`pattern?.[0]`). Changing any facet of a type with two or more patterns therefore deletes all patterns but the first, without a warning (see [Commands](commands.md#restriction-facets)). Dropping a facet from the palette does the same, and dropping a pattern replaces the existing pattern with the default `.*` instead of adding one (see [Drag and drop](drag-and-drop.md#defaults)). The fix is to make `pattern` a `string[]` like `enumeration`, write one `xs:pattern` per value, send all patterns from the properties panel and the facet drop, and append a dropped pattern. See also [Diagram items copy values from the schema objects](#diagram-items-copy-values-from-the-schema-objects).
-- **GitHub issue:** [#424](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/424)
 
 ## Attributes on derived complex types are rejected or misplaced
 
@@ -431,7 +423,7 @@ Effort:
 - **Location:** `src/commandValidators/groupValidators.ts`, `src/commandExecutors/elementExecutors.ts`, `webview-src/renderer.ts`, `webview-src/diagram/SchemaProcessors.ts`, `webview-src/propertiesPanel/propertiesPanelDocs.ts`, `propertiesPanelFacets.ts`, `propertiesPanelSimpleTypeEditors.ts`, `propertiesPanelTypes.ts`
 - **Severity:** Low
 - **Effort:** M
-- **Description:** Some code is longer than the [development guidelines](development-guidelines.md#code-size) allow. Counted with comments and blank lines, `elementExecutors.ts` and `renderer.ts` have slightly more than 500 lines, and seven functions have more than 120 lines: `renderFacetsTab()` and `renderEnumerationEditor()` in `propertiesPanelFacets.ts` (196 and 166 lines), `validateModifyGroup()`, `renderSimpleTypeUnionEditor()`, `processGroup()`, `createAnnotationSection()` and `renderTypeProperty()` (126 to 148 lines). The limits are not checked automatically, so these were not noticed. The fix is to split the code, and to enable the ESLint rules `max-lines` and `max-lines-per-function` for the code, as `max-lines` and a local rule already do for the tests.
+- **Description:** Some code is longer than the [development guidelines](development-guidelines.md#code-size) allow. Counted with comments and blank lines, `elementExecutors.ts` and `renderer.ts` have slightly more than 500 lines, and six functions have more than 120 lines: `renderFacetsTab()` in `propertiesPanelFacets.ts` (193 lines), `validateModifyGroup()`, `renderSimpleTypeUnionEditor()`, `processGroup()`, `createAnnotationSection()` and `renderTypeProperty()` (126 to 148 lines). The limits are not checked automatically, so these were not noticed. The fix is to split the code, and to enable the ESLint rules `max-lines` and `max-lines-per-function` for the code, as `max-lines` and a local rule already do for the tests.
 - **GitHub issue:** none
 
 ## Top-level lookups are duplicated instead of shared
@@ -464,7 +456,7 @@ Effort:
 - **Location:** `webview-src/diagram/DiagramItem.ts`, `webview-src/diagram/SchemaProcessors*.ts`, `webview-src/diagram/TypeNodeCreators.ts`, `webview-src/propertiesPanel/propertiesPanelDraft.ts`, `webview-src/propertiesPanel/`, `webview-src/drop/`
 - **Severity:** Low
 - **Effort:** L
-- **Description:** `DiagramItem` does not reference the schema object it represents; the builder copies about 22 values into it instead (see [Diagram rendering](diagram-rendering.md#data-model)). The renderer needs only a few of them; most are read by the properties panel and the drop code. Every new value has to be added to the item, to the builder and to `createDraftNode()`, which copies all fields again by hand for the properties panel draft. The extraction is partly duplicated: `processGroup` builds group elements inline instead of using `createElementNode`. Values that are not copied, or copied in a reduced form, cause bugs: [Editing facets drops all but the first pattern](#editing-facets-drops-all-but-the-first-pattern), [Restricted complex content is shown without content and attributes](#restricted-complex-content-is-shown-without-content-and-attributes), [Element references are not shown as references](#element-references-are-not-shown-as-references) and [Items with maxOccurs 0 are drawn as repeated](#items-with-maxoccurs-0-are-drawn-as-repeated) come at least partly from this layer. The plan is to keep only view state on the item, add a typed reference to the schema object, and read values through one module of accessor functions. The properties panel draft must then be a deep copy of the schema object: after a failed command the webview receives no new schema, so changes to the shared object would remain. This should be planned together with [inline types](#inline-types-have-no-node-of-their-own) and the [node ID redesign](#node-ids-are-ambiguous-and-have-many-special-cases), which also change the builder.
+- **Description:** `DiagramItem` does not reference the schema object it represents; the builder copies about 22 values into it instead (see [Diagram rendering](diagram-rendering.md#data-model)). The renderer needs only a few of them; most are read by the properties panel and the drop code. Every new value has to be added to the item, to the builder and to `createDraftNode()`, which copies all fields again by hand for the properties panel draft. The extraction is partly duplicated: `processGroup` builds group elements inline instead of using `createElementNode`. Values that are not copied, or copied in a reduced form, cause bugs: [Restricted complex content is shown without content and attributes](#restricted-complex-content-is-shown-without-content-and-attributes), [Element references are not shown as references](#element-references-are-not-shown-as-references) and [Items with maxOccurs 0 are drawn as repeated](#items-with-maxoccurs-0-are-drawn-as-repeated) come at least partly from this layer. The plan is to keep only view state on the item, add a typed reference to the schema object, and read values through one module of accessor functions. The properties panel draft must then be a deep copy of the schema object: after a failed command the webview receives no new schema, so changes to the shared object would remain. This should be planned together with [inline types](#inline-types-have-no-node-of-their-own) and the [node ID redesign](#node-ids-are-ambiguous-and-have-many-special-cases), which also change the builder.
 - **GitHub issue:** [#360](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/360)
 
 ## Complex types with simple content cannot be created or derived

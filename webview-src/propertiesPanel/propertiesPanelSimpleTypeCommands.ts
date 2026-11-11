@@ -148,7 +148,7 @@ export function createSimpleTypeKindCommand(
       const restrictions: RestrictionFacets | undefined = node.restrictions
         ? {
             enumeration: node.restrictions.enumeration,
-            pattern: node.restrictions.pattern?.[0],
+            pattern: node.restrictions.pattern,
             length: node.restrictions.length,
             minLength: node.restrictions.minLength,
             maxLength: node.restrictions.maxLength,

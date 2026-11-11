@@ -13,6 +13,7 @@ import {
   type FacetIconStyle,
 } from "../palette/FacetIconStyles";
 import { PaletteSchemaConstruct } from "../palette/PaletteSchemaConstruct";
+import { appendFacetRemoveButton, renderValueListFacet } from "./propertiesPanelFacetLists";
 
 /** Numeric facet keys editable in the Facets tab. */
 type NumericRestrictionKey = "length" | "minLength" | "maxLength" | "totalDigits" | "fractionDigits";
@@ -96,7 +97,7 @@ export function renderFacetsTab(
         typeId: simpleTypeId,
         restrictions: {
           enumeration: nextRestrictions.enumeration,
-          pattern: nextRestrictions.pattern?.[0],
+          pattern: nextRestrictions.pattern,
           length: nextRestrictions.length,
           minLength: nextRestrictions.minLength,
           maxLength: nextRestrictions.maxLength,
@@ -119,8 +120,9 @@ export function renderFacetsTab(
   const canRemoveFacet = countDefinedFacets(restrictions) > 1;
 
   if (restrictions.enumeration?.length) {
-    renderEnumerationEditor(
+    renderValueListFacet(
       root,
+      "enumeration",
       restrictions.enumeration,
       buildAndDispatch,
       canRemoveFacet,
@@ -129,16 +131,13 @@ export function renderFacetsTab(
   }
 
   if (restrictions.pattern?.length) {
-    const field = createEditableField("Pattern", restrictions.pattern[0] ?? "", (next) => {
-      buildAndDispatch((draft) => {
-        const value = next.trim();
-        draft.pattern = value ? [value] : undefined;
-      });
-    }, undefined, getFacetIconStyle(PaletteSchemaConstruct.Pattern));
-    root.appendChild(
-      appendFacetRemoveButton(field, "Pattern", canRemoveFacet, () => {
-        buildAndDispatch((draft) => { draft.pattern = undefined; });
-      })
+    renderValueListFacet(
+      root,
+      "pattern",
+      restrictions.pattern,
+      buildAndDispatch,
+      canRemoveFacet,
+      () => buildAndDispatch((draft) => { draft.pattern = undefined; })
     );
   }
 
@@ -297,202 +296,4 @@ function countDefinedFacets(restrictions: RestrictionSnapshot): number {
   // Object.values() drops undefined from the types of optional properties, but the draft sets them to undefined
   const values: Array<RestrictionSnapshot[keyof RestrictionSnapshot]> = Object.values(restrictions);
   return values.filter((value) => (Array.isArray(value) ? value.length > 0 : value !== undefined)).length;
-}
-
-function appendFacetRemoveButton(
-  field: HTMLElement,
-  label: string,
-  canRemove: boolean,
-  onRemove: () => void
-): HTMLElement {
-  field.classList.add("property-facet");
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = "property-facet-remove property-docs-action-icon-only";
-  button.disabled = !canRemove;
-  button.setAttribute("aria-label", `Remove ${label} facet`);
-  button.title = canRemove ? `Remove ${label} facet` : "A restriction requires at least one facet";
-
-  const icon = document.createElement("span");
-  icon.className = "codicon codicon-close";
-  icon.setAttribute("aria-hidden", "true");
-  button.appendChild(icon);
-  button.addEventListener("click", onRemove);
-  field.appendChild(button);
-  return field;
-}
-
-/**
- * Renders the enumeration facet as a list of removable value chips with an add control,
- * instead of a single comma-separated textbox.
- *
- * @param root - Container to append the editor to
- * @param initialValues - Current enumeration values
- * @param buildAndDispatch - Callback used to commit a restriction-snapshot update
- */
-function renderEnumerationEditor(
-  root: HTMLElement,
-  initialValues: string[],
-  buildAndDispatch: (updater: (next: RestrictionSnapshot) => void) => void,
-  canRemove: boolean,
-  onRemove: () => void
-): void {
-  const field = document.createElement("div");
-  field.className = "property";
-
-  const label = document.createElement("label");
-  const labelIcon = document.createElement("span");
-  const enumerationStyle = getFacetIconStyle(PaletteSchemaConstruct.Enumeration);
-  labelIcon.className = `codicon codicon-${enumerationStyle.icon} property-facet-icon`;
-  labelIcon.setAttribute("aria-hidden", "true");
-  labelIcon.style.color = enumerationStyle.color;
-  label.appendChild(labelIcon);
-  label.appendChild(document.createTextNode("Enumeration:"));
-  field.appendChild(label);
-  appendFacetRemoveButton(field, "Enumeration", canRemove, onRemove);
-
-  const list = document.createElement("div");
-  list.className = "property-enum-list";
-  field.appendChild(list);
-
-  let values = [...initialValues];
-  let isAdding = false;
-  let draggedIndex: number | null = null;
-
-  const commit = (): void => {
-    buildAndDispatch((draft) => {
-      draft.enumeration = values.length > 0 ? [...values] : undefined;
-    });
-  };
-
-  const moveValueTo = (sourceIndex: number, targetIndex: number): void => {
-    if (
-      sourceIndex < 0 ||
-      sourceIndex >= values.length ||
-      targetIndex < 0 ||
-      targetIndex >= values.length ||
-      sourceIndex === targetIndex
-    ) {
-      return;
-    }
-    const next = [...values];
-    const [moved] = next.splice(sourceIndex, 1);
-    next.splice(targetIndex, 0, moved);
-    values = next;
-    commit();
-    render();
-  };
-
-  const clearDragOverStyling = (): void => {
-    list.querySelectorAll(".property-enum-chip-drag-over").forEach((el) => {
-      el.classList.remove("property-enum-chip-drag-over");
-    });
-  };
-
-  const render = (): void => {
-    list.replaceChildren();
-
-    values.forEach((value, index) => {
-      const chip = document.createElement("span");
-      chip.className = "property-enum-chip";
-      chip.draggable = true;
-      chip.title = "Drag to reorder";
-
-      const valueText = document.createElement("span");
-      valueText.className = "property-enum-chip-value";
-      valueText.textContent = value;
-      chip.appendChild(valueText);
-
-      const removeButton = document.createElement("button");
-      removeButton.type = "button";
-      removeButton.className = "property-enum-chip-remove";
-      removeButton.setAttribute("aria-label", `Remove ${value}`);
-      const canRemoveValue = values.length > 1 || canRemove;
-      removeButton.disabled = !canRemoveValue;
-      removeButton.title = canRemoveValue ? `Remove ${value}` : "A restriction requires at least one facet";
-      const icon = document.createElement("span");
-      icon.className = "codicon codicon-close";
-      icon.setAttribute("aria-hidden", "true");
-      removeButton.appendChild(icon);
-      removeButton.addEventListener("click", () => {
-        values = values.filter((_, i) => i !== index);
-        commit();
-        render();
-      });
-      chip.appendChild(removeButton);
-
-      chip.addEventListener("dragstart", (event) => {
-        draggedIndex = index;
-        event.dataTransfer?.setData("text/plain", String(index));
-        if (event.dataTransfer) {
-          event.dataTransfer.effectAllowed = "move";
-        }
-        chip.classList.add("property-enum-chip-dragging");
-      });
-      chip.addEventListener("dragend", () => {
-        chip.classList.remove("property-enum-chip-dragging");
-        clearDragOverStyling();
-        draggedIndex = null;
-      });
-      chip.addEventListener("dragover", (event) => {
-        event.preventDefault();
-        if (event.dataTransfer) {
-          event.dataTransfer.dropEffect = "move";
-        }
-        chip.classList.add("property-enum-chip-drag-over");
-      });
-      chip.addEventListener("dragleave", () => {
-        chip.classList.remove("property-enum-chip-drag-over");
-      });
-      chip.addEventListener("drop", (event) => {
-        event.preventDefault();
-        chip.classList.remove("property-enum-chip-drag-over");
-        const sourceIndex = draggedIndex ?? Number(event.dataTransfer?.getData("text/plain"));
-        moveValueTo(sourceIndex, index);
-      });
-
-      list.appendChild(chip);
-    });
-
-    if (isAdding) {
-      const input = document.createElement("input");
-      input.type = "text";
-      input.className = "property-enum-add-input";
-      const finishAdding = (): void => {
-        const next = input.value.trim();
-        isAdding = false;
-        if (next && !values.includes(next)) {
-          values = [...values, next];
-          commit();
-        }
-        render();
-      };
-      input.addEventListener("blur", finishAdding);
-      input.addEventListener("keydown", (event: KeyboardEvent) => {
-        if (event.key === "Enter") {
-          event.preventDefault();
-          input.blur();
-        }
-        if (event.key === "Escape") {
-          isAdding = false;
-          render();
-        }
-      });
-      list.appendChild(input);
-      input.focus();
-    } else {
-      const addButton = document.createElement("button");
-      addButton.type = "button";
-      addButton.className = "property-enum-add-button";
-      addButton.textContent = "+ value";
-      addButton.addEventListener("click", () => {
-        isAdding = true;
-        render();
-      });
-      list.appendChild(addButton);
-    }
-  };
-
-  render();
-  root.appendChild(field);
 }

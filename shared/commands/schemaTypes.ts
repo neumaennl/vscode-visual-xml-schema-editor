@@ -23,8 +23,8 @@ export interface RestrictionFacets {
   minLength?: number;
   /** Maximum length */
   maxLength?: number;
-  /** Regular expression pattern */
-  pattern?: string;
+  /** Regular expression patterns; a value is valid if it matches any of them */
+  pattern?: string[];
   /** Enumeration values */
   enumeration?: string[];
   /** Whitespace handling */

@@ -4,8 +4,8 @@ title: Commands
 description: The edit commands - payload fields, the rules the validators enforce, what the executors change in the schema, and where the webview sends them.
 tags: [commands, payload, validation, reference]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-05T05:36:22Z }
-verified: { by: human:neumaennl, at: 2026-11-05T06:30:01Z }
+generated: { by: human:neumaennl, at: 2026-11-11T12:54:49Z }
+verified: { by: human:neumaennl, at: 2026-11-11T13:20:42Z }
 sources:
   - id: commands
     resource: ../shared/commands/index.ts
@@ -158,11 +158,11 @@ Creating an anonymous simple type removes the `type` attribute and an anonymous 
 |---|---|
 | `minInclusive`, `maxInclusive`, `minExclusive`, `maxExclusive` | string |
 | `length`, `minLength`, `maxLength`, `totalDigits`, `fractionDigits` | number |
-| `pattern` | string (one pattern) |
+| `pattern` | string[] (one `xs:pattern` per value; a value of the type must match one of them) |
 | `enumeration` | string[] (one `xs:enumeration` per value) |
 | `whiteSpace` | `"preserve"`, `"replace"` or `"collapse"` |
 
-A restriction without `restrictions` has no facets, which XSD allows. If `restrictions` is given, it must contain at least one facet ("Restriction simpleType body must include at least one facet"). `restrictions` always replaces all facets: facets that are not in the payload are removed, so a client must send the complete set. A type with several `xs:pattern` facets keeps only the one that is sent (see [Known issues](known-issues.md#editing-facets-drops-all-but-the-first-pattern)). Facets are not checked against the base type; `maxLength` on `xs:integer` or `minLength` greater than `maxLength` are accepted (see [Known issues](known-issues.md#facets-are-not-checked-against-the-base-type)).[^executors]
+A restriction without `restrictions` has no facets, which XSD allows. If `restrictions` is given, it must contain at least one facet ("Restriction simpleType body must include at least one facet"). `restrictions` always replaces all facets: facets that are not in the payload are removed, so a client must send the complete set. Facets are not checked against the base type; `maxLength` on `xs:integer` or `minLength` greater than `maxLength` are accepted (see [Known issues](known-issues.md#facets-are-not-checked-against-the-base-type)).[^executors]
 
 # Complex types
 
@@ -243,7 +243,7 @@ A top-level simple type for German postal codes, created and then changed. The w
   "payload": {
     "typeName": "PostalCode",
     "baseType": "xs:string",
-    "restrictions": { "pattern": "[0-9]{5}", "maxLength": 5 }
+    "restrictions": { "pattern": ["[0-9]{5}"], "maxLength": 5 }
   }
 }
 ```
@@ -266,7 +266,7 @@ To allow leading letters, the client sends the complete new set of facets. Witho
   "type": "modifySimpleType",
   "payload": {
     "typeId": "/simpleType:PostalCode",
-    "restrictions": { "pattern": "[A-Z]{0,2}[0-9]{5}" }
+    "restrictions": { "pattern": ["[A-Z]{0,2}[0-9]{5}"] }
   }
 }
 ```

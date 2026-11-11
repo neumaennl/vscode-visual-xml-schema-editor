@@ -4,8 +4,8 @@ title: UX concept
 description: The interaction model of the editor - which surface adds, edits and deletes what, how facets work, and how the properties panel behaves - with a list of what the current editor does not implement yet.
 tags: [ux, editor, palette, properties-panel, facets, context-menu, toolbar]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-09T15:33:49Z }
-verified: { by: human:neumaennl, at: 2026-11-09T15:51:07Z }
+generated: { by: human:neumaennl, at: 2026-11-11T12:54:49Z }
+verified: { by: human:neumaennl, at: 2026-11-11T13:20:42Z }
 sources:
   - id: palette-items
     resource: ../webview-src/palette/PaletteItems.ts
@@ -22,6 +22,9 @@ sources:
   - id: panel-facets
     resource: ../webview-src/propertiesPanel/propertiesPanelFacets.ts
     title: Facets tab
+  - id: panel-facet-lists
+    resource: ../webview-src/propertiesPanel/propertiesPanelFacetLists.ts
+    title: Chips of enumeration values and patterns
   - id: panel-docs
     resource: ../webview-src/propertiesPanel/propertiesPanelDocs.ts
     title: Docs tab
@@ -72,7 +75,7 @@ Facets follow the same pattern as all other constructs:
 
 - **Add:** drag a facet item from the palette onto a simple type derived by restriction, or onto an element with such an anonymous simple type. The facet is added with a default value.[^drop-type-helpers]
 - **Edit:** change the value in the Facets tab of the properties panel.
-- **Delete:** use the delete control in the facet's row.[^panel-facets]
+- **Delete:** use the delete control in the facet's row, or the one of a single enumeration value or pattern.[^panel-facets]
 
 Every change in the Facets tab sends `modifySimpleType` with the complete set of facets and without a base type, so the restriction keeps its base, also an inline simple type (see [Commands](commands.md#restriction-facets)).
 
@@ -105,7 +108,7 @@ Palette drops and panel edits prevent facets that do not apply to the base type 
 
 ## Multiple patterns
 
-XSD allows several `xs:pattern` facets in one restriction; a value must match all of them. The panel shows and edits the first pattern; the others are preserved when a facet is edited. Editing all patterns is planned for Phase 3.
+XSD allows several `xs:pattern` facets in one restriction. They are alternatives: a value must match at least one of them. Patterns of different derivation steps are combined differently: a value must match the patterns of every step (XML Schema 1.0 Part 2, section 4.3.4.3). A dropped pattern therefore widens the type, which is why its default accepts few values (see [Drag and drop](drag-and-drop.md#defaults)).
 
 # Properties panel
 
@@ -129,6 +132,11 @@ The panel header has a delete button for the selected node.[^panel-commands]
 
 - Shown for simple types and elements with simple content that are derived by restriction, not by list or union.
 - Shows an editable row for every facet that is present.
+- Enumeration values and patterns are shown as chips, one per value:[^panel-facet-lists]
+  - Clicking a value edits it in place. Enter or leaving the field saves the value, Escape cancels. An empty value removes it; an unchanged value or one that the facet already has keeps the old value.
+  - The close button of a chip removes the value, and "+ value" or "+ pattern" adds one. A value that the facet already has is not added.
+  - The chips of a facet with several values are reordered by dragging their grab handle. The order matters for enumerations only.
+  - The last value of the only facet of a restriction cannot be removed.
 - Without facets, it points the user to the palette.[^panel-facets]
 
 ## Type editing safety rule
@@ -177,7 +185,6 @@ The current editor does not implement these parts of the model yet:
 - **Keyboard shortcuts:** there are none (for example, Delete or arrow keys to move the selection); Enter only commits a field. Selecting nodes and common operations with the keyboard are planned for Phase 5 ([#433](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/433)).
 - **Attribute groups:** the palette has no item for them (see [Known issues](known-issues.md#palette-has-no-entry-for-attribute-groups)). The `any` item is shown but disabled.
 - **Facet checks:** neither the webview nor the extension host checks facets against the base type or forbidden combinations (see [Known issues](known-issues.md#facets-are-not-checked-against-the-base-type)).
-- **Multiple patterns:** editing a facet deletes all patterns except the first (see [Known issues](known-issues.md#editing-facets-drops-all-but-the-first-pattern)).
 - **Deleting facets:** the last facet of a restriction cannot be deleted in the Facets tab.
 - **Empty Facets tab:** the hint still says that adding facets is "available in a future release" (see [Known issues](known-issues.md#empty-facets-tab-says-adding-facets-is-not-available-yet)).
 - **Attributes:** no field is editable (see [Known issues](known-issues.md#attribute-editing-is-half-implemented)).
@@ -195,6 +202,8 @@ The current editor does not implement these parts of the model yet:
 [^panel-types]: Type and base type fields of the properties panel
 
 [^panel-facets]: Facets tab
+
+[^panel-facet-lists]: Chips of enumeration values and patterns
 
 [^panel-docs]: Docs tab
 

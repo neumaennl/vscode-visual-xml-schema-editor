@@ -61,9 +61,9 @@ function complexTypes(schemaObj: schema): NonNullable<schema["complexType"]> {
 // `simpleTypes(schemaObj)[number]["restriction"]` is a generated property type that
 // includes `undefined` and varies with the surrounding helper return type. This alias
 // peels the type out of the actual `simpleTypes()` helper and removes `undefined` so
-// the table-driven facet assertions stay strongly typed without repeating the long
+// the table-driven facet expectations stay strongly typed without repeating the long
 // indexed-access expression at every case definition.
-type RestrictionAssert = (
+type RestrictionExpectation = (
   restriction: NonNullable<ReturnType<typeof simpleTypes>[number]["restriction"]>
 ) => void;
 
@@ -110,20 +110,20 @@ describe("SimpleType Executors", () => {
       );
     });
 
-    // Keep the shared assertion signature separate so the facet case table remains readable.
+    // Keep the shared expectation signature separate so the facet case table remains readable.
     const addFacetCases: Array<{
       name: string;
       typeName: string;
       baseType: string;
       restrictions: RestrictionFacets;
-      assert: RestrictionAssert;
+      expectRestriction: RestrictionExpectation;
     }> = [
       {
         name: "min/max inclusive facets",
         typeName: "AgeType",
         baseType: "xs:integer",
         restrictions: { minInclusive: "0", maxInclusive: "120" },
-        assert: (restriction): void => {
+        expectRestriction: (restriction): void => {
           expect(restriction.minInclusive![0].value).toBe("0");
           expect(restriction.maxInclusive![0].value).toBe("120");
         },
@@ -133,7 +133,7 @@ describe("SimpleType Executors", () => {
         typeName: "PositiveType",
         baseType: "xs:decimal",
         restrictions: { minExclusive: "0", maxExclusive: "100" },
-        assert: (restriction): void => {
+        expectRestriction: (restriction): void => {
           expect(restriction.minExclusive![0].value).toBe("0");
           expect(restriction.maxExclusive![0].value).toBe("100");
         },
@@ -143,7 +143,7 @@ describe("SimpleType Executors", () => {
         typeName: "CodeType",
         baseType: "xs:string",
         restrictions: { length: 5, minLength: 1, maxLength: 255 },
-        assert: (restriction): void => {
+        expectRestriction: (restriction): void => {
           expect(restriction.length![0].value).toBe(5);
           expect(restriction.minLength![0].value).toBe(1);
           expect(restriction.maxLength![0].value).toBe(255);
@@ -154,7 +154,7 @@ describe("SimpleType Executors", () => {
         typeName: "PriceType",
         baseType: "xs:decimal",
         restrictions: { totalDigits: 8, fractionDigits: 2 },
-        assert: (restriction): void => {
+        expectRestriction: (restriction): void => {
           expect(restriction.totalDigits![0].value).toBe(8);
           expect(restriction.fractionDigits![0].value).toBe(2);
         },
@@ -164,7 +164,7 @@ describe("SimpleType Executors", () => {
         typeName: "PhoneType",
         baseType: "xs:string",
         restrictions: { pattern: ["[0-9]{10}", "\\+[0-9]{12}"] },
-        assert: (restriction): void => {
+        expectRestriction: (restriction): void => {
           expect(restriction.pattern!.map((value) => value.value)).toEqual(["[0-9]{10}", "\\+[0-9]{12}"]);
         },
       },
@@ -173,7 +173,7 @@ describe("SimpleType Executors", () => {
         typeName: "ColorType",
         baseType: "xs:string",
         restrictions: { enumeration: ["red", "green", "blue"] },
-        assert: (restriction): void => {
+        expectRestriction: (restriction): void => {
           expect(restriction.enumeration).toHaveLength(3);
           expect(restriction.enumeration!.map((value) => value.value)).toEqual(["red", "green", "blue"]);
         },
@@ -183,18 +183,20 @@ describe("SimpleType Executors", () => {
         typeName: "NormalizedType",
         baseType: "xs:string",
         restrictions: { whiteSpace: "collapse" },
-        assert: (restriction): void => {
+        expectRestriction: (restriction): void => {
           expect(restriction.whiteSpace![0].value).toBe("collapse");
         },
       },
     ];
 
-    test.each(addFacetCases)("applies $name", ({ typeName, baseType, restrictions, assert }) => {
+    test.each(addFacetCases)("applies $name", ({ typeName, baseType, restrictions, expectRestriction }) => {
       const schemaObj = emptySchema();
 
       addSimpleType(schemaObj, { typeName, baseType, restrictions });
 
-      assert(simpleTypes(schemaObj)[0].restriction!);
+      const restriction = simpleTypes(schemaObj)[0].restriction;
+      expect(restriction?.base).toBe(baseType);
+      expectRestriction(restriction!);
     });
 
     test("adds a named list simpleType using list itemType", () => {
@@ -272,13 +274,17 @@ describe("SimpleType Executors", () => {
       expect(simpleType.annotation!.documentation![0].value).toBe("A person's age in years");
     });
 
-    const modifySimpleTypeFacetCases = [
+    const modifySimpleTypeFacetCases: Array<{
+      name: string;
+      source: string;
+      payload: Omit<ModifySimpleTypeCommand["payload"], "typeId">;
+      expectRestriction: RestrictionExpectation;
+    }> = [
       {
         name: "replaces scalar facets",
         source: AGE_TYPE_WITH_MIN,
         payload: { restrictions: { minInclusive: "0", maxInclusive: "150" } },
-        assert: (schemaObj: schema): void => {
-          const restriction = simpleTypes(schemaObj)[0].restriction!;
+        expectRestriction: (restriction): void => {
           expect(restriction.minInclusive![0].value).toBe("0");
           expect(restriction.maxInclusive![0].value).toBe("150");
         },
@@ -287,16 +293,16 @@ describe("SimpleType Executors", () => {
         name: "clears existing facets when given an empty restrictions object",
         source: AGE_TYPE_WITH_MIN,
         payload: { restrictions: {} },
-        assert: (schemaObj: schema): void => {
-          expect(simpleTypes(schemaObj)[0].restriction!.minInclusive).toBeUndefined();
+        expectRestriction: (restriction): void => {
+          expect(restriction.minInclusive).toBeUndefined();
         },
       },
       {
         name: "replaces enumeration values",
         source: `<xs:simpleType name="ColorType"><xs:restriction base="xs:string"><xs:enumeration value="red"/></xs:restriction></xs:simpleType>`,
         payload: { restrictions: { enumeration: ["red", "green", "blue"] } },
-        assert: (schemaObj: schema): void => {
-          expect(simpleTypes(schemaObj)[0].restriction!.enumeration!.map((value) => value.value)).toEqual([
+        expectRestriction: (restriction): void => {
+          expect(restriction.enumeration!.map((value) => value.value)).toEqual([
             "red",
             "green",
             "blue",
@@ -307,20 +313,21 @@ describe("SimpleType Executors", () => {
         name: "creates a restriction when only baseType is supplied",
         source: `<xs:simpleType name="UnionType"><xs:union memberTypes="xs:string xs:integer"/></xs:simpleType>`,
         payload: { baseType: "xs:string" },
-        assert: (schemaObj: schema): void => {
-          expect(simpleTypes(schemaObj)[0].restriction!.base).toBe("xs:string");
+        expectRestriction: (restriction): void => {
+          expect(restriction.base).toBe("xs:string");
         },
       },
     ];
 
-    test.each(modifySimpleTypeFacetCases)("$name", ({ source, payload, assert }) => {
+    test.each(modifySimpleTypeFacetCases)("$name", ({ source, payload, expectRestriction }) => {
       const schemaObj = schemaWith(source);
       const typeName = simpleTypes(schemaObj)[0].name;
 
       modifySimpleType(schemaObj, { typeId: `/simpleType:${typeName}`, ...payload });
 
-      expect(simpleTypes(schemaObj)[0].restriction).toBeDefined();
-      assert(schemaObj);
+      const restriction = simpleTypes(schemaObj)[0].restriction;
+      expect(restriction).toBeDefined();
+      expectRestriction(restriction!);
     });
 
     test("replaces all patterns and keeps them through serialization", () => {
@@ -538,7 +545,7 @@ describe("SimpleType Executors", () => {
         source: `
   <xs:simpleType name="StatusType"><xs:restriction base="xs:string"/></xs:simpleType>
   <xs:element name="status" type="StatusType"/>`,
-        assert: (schemaObj: schema): void => expect(elements(schemaObj)[0].type_).toBe("StateType"),
+        expectReferences: (schemaObj: schema): void => expect(elements(schemaObj)[0].type_).toBe("StateType"),
       },
       {
         name: "attribute/@type",
@@ -547,7 +554,7 @@ describe("SimpleType Executors", () => {
   <xs:attribute name="code" type="CodeType"/>`,
         oldName: "CodeType",
         newName: "IdentifierType",
-        assert: (schemaObj: schema): void => expect(attributes(schemaObj)[0].type_).toBe("IdentifierType"),
+        expectReferences: (schemaObj: schema): void => expect(attributes(schemaObj)[0].type_).toBe("IdentifierType"),
       },
       {
         name: "restriction/@base",
@@ -556,7 +563,7 @@ describe("SimpleType Executors", () => {
   <xs:simpleType name="DerivedType"><xs:restriction base="BaseType"><xs:maxLength value="50"/></xs:restriction></xs:simpleType>`,
         oldName: "BaseType",
         newName: "RootType",
-        assert: (schemaObj: schema): void =>
+        expectReferences: (schemaObj: schema): void =>
           expect(
             simpleTypes(schemaObj).find((simpleType) => simpleType.name === "DerivedType")!.restriction!.base
           ).toBe("RootType"),
@@ -567,7 +574,7 @@ describe("SimpleType Executors", () => {
   <xs:simpleType name="StatusType"><xs:restriction base="xs:string"/></xs:simpleType>
   <xs:element name="a" type="StatusType"/>
   <xs:element name="b" type="xs:StatusType"/>`,
-        assert: (schemaObj: schema): void => {
+        expectReferences: (schemaObj: schema): void => {
           const [first, second] = elements(schemaObj);
           expect(first.type_).toBe("StateType");
           expect(second.type_).toBe("xs:StatusType");
@@ -585,7 +592,7 @@ describe("SimpleType Executors", () => {
             tns: "http://example.com/ns",
           };
         },
-        assert: (schemaObj: schema): void => {
+        expectReferences: (schemaObj: schema): void => {
           expect(elements(schemaObj)[0].type_).toBe("tns:StateType");
         },
       },
@@ -593,14 +600,14 @@ describe("SimpleType Executors", () => {
 
     test.each(renameReferenceCases)(
       "renames references in $name",
-      ({ source, oldName = "StatusType", newName = "StateType", assert, setup }) => {
+      ({ source, oldName = "StatusType", newName = "StateType", expectReferences, setup }) => {
         const schemaObj = schemaWith(source);
         setup?.(schemaObj);
 
         modifySimpleType(schemaObj, { typeId: `/simpleType:${oldName}`, typeName: newName });
 
         expect(simpleTypes(schemaObj).find((simpleType) => simpleType.name === newName)).toBeDefined();
-        assert(schemaObj);
+        expectReferences(schemaObj);
       }
     );
   });

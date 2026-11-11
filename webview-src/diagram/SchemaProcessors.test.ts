@@ -16,6 +16,7 @@ import {
 import { DiagramItem } from "../diagram/DiagramItem";
 import { Diagram } from "../diagram/Diagram";
 import { DiagramItemGroupType, DiagramItemType } from "../diagram/DiagramTypes";
+import { DERIVATIONS, derivedComplexTypeT, schemaWith } from "../../src/__tests__/schemaTestHelpers";
 
 describe("SchemaProcessors", () => {
   let diagram: Diagram;
@@ -283,6 +284,16 @@ describe("SchemaProcessors", () => {
       expect(item.type).toContain("with simpleContent");
       expect(item.type).toContain("restricts string");
       expect(item.isSimpleContent).toBe(true);
+    });
+
+    test.each(DERIVATIONS)("should read the attributes of the %s %s", (content, derivation) => {
+      const complexType = schemaWith(
+        derivedComplexTypeT(content, derivation, `<xs:attribute name="id" type="xs:integer"/>`)
+      ).complexType![0];
+
+      processComplexType(item, complexType);
+
+      expect(item.attributes.map((attribute) => attribute.name)).toEqual(["id"]);
     });
   });
 

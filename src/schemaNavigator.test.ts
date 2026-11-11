@@ -115,6 +115,16 @@ describe("SchemaNavigator", () => {
 
         expect(result).toMatchObject({ found: true, parentType: "sequence" });
       });
+
+      test("should locate an attribute within complexContent extension", () => {
+        const schemaObj = schemaWith(`<xs:complexType name="T">
+  <xs:complexContent><xs:extension base="B"><xs:attribute name="id"/></xs:extension></xs:complexContent>
+</xs:complexType>`);
+
+        const result = locateNodeById(schemaObj, "/complexType:T/attribute:id");
+
+        expect(result).toMatchObject({ found: true, parentType: "attribute", parent: { name: "id" } });
+      });
     });
 
     describe("Anonymous complex type navigation", () => {

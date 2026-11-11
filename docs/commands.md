@@ -4,8 +4,8 @@ title: Commands
 description: The edit commands - payload fields, the rules the validators enforce, what the executors change in the schema, and where the webview sends them.
 tags: [commands, payload, validation, reference]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-11T12:54:49Z }
-verified: { by: human:neumaennl, at: 2026-11-11T13:20:42Z }
+generated: { by: human:neumaennl, at: 2026-11-11T19:28:57Z }
+verified: { by: human:neumaennl, at: 2026-11-11T19:31:18Z }
 sources:
   - id: commands
     resource: ../shared/commands/index.ts
@@ -122,7 +122,7 @@ A drop on an existing type or group creates a `modify*` command instead of an `a
 
 | Field | add | modify | Meaning and rules |
 |---|---|---|---|
-| `parentId` / `attributeId` | required | required | Parent: the schema or a complex type (top-level or anonymous). |
+| `parentId` / `attributeId` | required | required | Parent: the schema or a complex type (top-level or anonymous). In a complex type with `xs:complexContent` or `xs:simpleContent`, the attributes are those of its `xs:extension` or `xs:restriction`. |
 | `attributeName` | name or `ref` | optional | Must be unique within the parent when added. |
 | `attributeType` | optional | optional | Not checked. |
 | `ref` | name or `ref` | optional | Name of a top-level attribute. Not allowed directly under the schema. |
@@ -131,6 +131,8 @@ A drop on an existing type or group creates a `modify*` command instead of an `a
 | `documentation` | optional | optional | See [Conventions](#conventions). |
 
 `removeAttribute` takes only `attributeId`.[^validators][^executors]
+
+Two cases are accepted although they make the schema invalid, for attributes and for attribute group references (`addAttributeGroup`): a new attribute is written after an existing `xs:anyAttribute` if the parent has no attribute yet (see [Known issues](known-issues.md#new-attributes-are-written-after-xsanyattribute)), and an attribute in an `xs:restriction` is not checked against the attributes of the base type (see [Known issues](known-issues.md#attributes-in-a-restriction-are-not-checked-against-the-base-type)).
 
 # Simple types
 
@@ -202,7 +204,7 @@ The complex type commands cannot create or change simple content: for a complex 
 
 # Attribute groups
 
-`addAttributeGroup`, `removeAttributeGroup` and `modifyAttributeGroup` are defined in `group.ts`.[^group] They work like the group commands with fewer fields: a definition has `groupName`, a reference `ref` and `parentId` (a complex type), both can have `documentation`. `modifyAttributeGroup` changes `groupName`, `ref` or `documentation`; renaming a definition updates the references and checks for an existing attribute group with the new name. A definition cannot be removed while a reference points to it.[^validators][^executors]
+`addAttributeGroup`, `removeAttributeGroup` and `modifyAttributeGroup` are defined in `group.ts`.[^group] They work like the group commands with fewer fields: a definition has `groupName`, a reference `ref` and `parentId` (a complex type or an attribute group), both can have `documentation`. Like attributes, the references of a complex type with complex or simple content are those of its extension or restriction. `modifyAttributeGroup` changes `groupName`, `ref` or `documentation`; renaming a definition updates the references and checks for an existing attribute group with the new name. A definition cannot be removed while a reference points to it.[^validators][^executors]
 
 # Annotations and documentation
 

@@ -4,8 +4,8 @@ title: Schema model
 description: The object model of an XSD file - classes generated from the XSD meta-schema, XML binding with xmlbind-ts, and the path-based IDs that identify schema nodes.
 tags: [schema-model, data-model, xmlbind-ts, code-generation, ids, navigation]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-11T07:57:55Z }
-verified: { by: human:neumaennl, at: 2026-11-11T08:28:29Z }
+generated: { by: human:neumaennl, at: 2026-11-11T19:21:21Z }
+verified: { by: human:neumaennl, at: 2026-11-11T19:24:43Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -128,7 +128,7 @@ The schema root has the ID `/schema` (`SCHEMA_ROOT_ID`). `isSchemaRoot()` treats
 - **Top-level components** have a name and no position: `/element:person`, `/complexType:PersonType`, `/group:PersonGroup`.
 - **Compositors** use the node type `group` with the compositor as the name: `group:sequence[0]`, `group:choice[0]`, `group:all[0]`. This is how the navigator tells a compositor from a named group.[^schema-processors]
 - **Anonymous types** are a segment of their own: `/element:person/anonymousComplexType[0]`. The compositor of an anonymous complex type follows it: `/element:person/anonymousComplexType[0]/group:sequence[0]`.
-- **Derivation is skipped.** For a complex type with `complexContent`, the compositor of the `extension` or `restriction` is addressed as if it were a direct child of the complex type.[^navigator]
+- **Derivation is skipped.** For a complex type with `complexContent` or `simpleContent`, the content of the `extension` or `restriction` is addressed as if it were a direct child of the complex type: the compositor, the attributes and the attribute group references, for example `/complexType:T/attribute:id` for an attribute in the extension. `getContentContainer()` in `shared/schemaUtils.ts` decides where this content lives; the navigator, the commands and the diagram builder use it.[^navigator][^schema-utils]
 - **Local elements** have both name and position, the position counting only the elements of the same compositor: `/complexType:PersonType/group:sequence[0]/element:first[0]`. Local elements without a name get the name `unnamed`.[^schema-processors]
 - **Group references** use `groupRef` with the referenced name and the position among the group references of the parent: `…/group:sequence[0]/groupRef:SharedGroup[0]`. Both are required; `removeGroup` and `modifyGroup` reject an ID without them ("Invalid groupRef ID").
 - **Annotations of the schema root** have their own IDs: `/schema/annotation[0]` and `/schema/annotation[0]/documentation[1]`. The shorthand `/schema/documentation[N]` addresses the documentation entries of the first schema annotation.[^annotation-executors] For all other components, the annotation ID is the component's ID, and documentation entries are `<component ID>/documentation[N]`.[^builder-helpers]
@@ -157,7 +157,7 @@ The schema root has the ID `/schema` (`SCHEMA_ROOT_ID`). `isSchemaRoot()` treats
 |---|---|
 | schema | top-level `element`, `complexType`, `simpleType`, `group`, `attributeGroup`, `attribute` |
 | element | `anonymousComplexType`, `anonymousSimpleType` |
-| complex type | `group:sequence`, `group:choice`, `group:all` (also through `complexContent`), `attribute` |
+| complex type | `group:sequence`, `group:choice`, `group:all`, `attribute` (also through `complexContent` and `simpleContent`) |
 | named group | `group:sequence`, `group:choice`, `group:all` |
 | attribute | `anonymousSimpleType` |
 | compositor | `element`, nested `group:sequence`, `group:choice` |

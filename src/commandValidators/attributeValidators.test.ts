@@ -24,6 +24,11 @@ const ATTRIBUTES = `<xs:attribute name="lang" type="xs:string"/>
   </xs:complexType>
   <xs:element name="root" type="xs:string"/>`;
 
+/** A complexType `T` that extends `B` and has the attribute `code` in its extension. */
+const EXTENSION_WITH_ATTRIBUTE = `<xs:complexType name="T"><xs:complexContent><xs:extension base="B">
+  <xs:attribute name="code" type="xs:string"/>
+</xs:extension></xs:complexContent></xs:complexType>`;
+
 describe("Attribute Validators", () => {
   let schemaObj: schema;
 
@@ -473,6 +478,37 @@ describe("Attribute Validators", () => {
       const result = validateModifyAttribute(command, schemaWith(ATTRIBUTES));
       expectInvalid(result);
       expect(result.error).toBe("Attribute name must be a valid XML name");
+    });
+  });
+
+  describe("attributes in the extension of a derived complexType", () => {
+    test("should reject a name that an attribute in the extension already uses", () => {
+      const command: AddAttributeCommand = {
+        type: "addAttribute",
+        payload: { parentId: "/complexType:T", attributeName: "code", attributeType: "xs:string" },
+      };
+
+      const result = validateAddAttribute(command, schemaWith(EXTENSION_WITH_ATTRIBUTE));
+      expectInvalid(result);
+      expect(result.error).toBe("Cannot add attribute: duplicate attribute name 'code' in topLevelComplexType");
+    });
+
+    test("should accept removing an attribute in the extension", () => {
+      const command: RemoveAttributeCommand = {
+        type: "removeAttribute",
+        payload: { attributeId: "/complexType:T/attribute:code" },
+      };
+
+      expect(validateRemoveAttribute(command, schemaWith(EXTENSION_WITH_ATTRIBUTE)).valid).toBe(true);
+    });
+
+    test("should accept modifying an attribute in the extension", () => {
+      const command: ModifyAttributeCommand = {
+        type: "modifyAttribute",
+        payload: { attributeId: "/complexType:T/attribute:code", attributeType: "xs:integer" },
+      };
+
+      expect(validateModifyAttribute(command, schemaWith(EXTENSION_WITH_ATTRIBUTE)).valid).toBe(true);
     });
   });
 

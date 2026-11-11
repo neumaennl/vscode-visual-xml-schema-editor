@@ -28,7 +28,7 @@ import {
   attributeGroupRef,
   wildcard,
 } from "../../shared/types.js";
-import { isSchemaRoot } from "../../shared/schemaUtils.js";
+import { getContentContainer, getContentDerivation, isSchemaRoot } from "../../shared/schemaUtils.js";
 import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
 import { assumeRemoved, assumeValidated, locateValidated } from "./assumeValidated.js";
 import { createAnnotation } from "./annotationUtils.js";
@@ -282,41 +282,49 @@ function applyContentStructure(
 }
 
 /**
- * Returns the base type of a complexType if it uses complexContent/extension.
+ * Returns the base type of a complexType if it derives from one with complexContent.
  *
  * @param ct - The complexType holder to inspect
  * @returns The base type name or undefined
  */
 function getBaseType(ct: ComplexTypeHolder): string | undefined {
-  return ct.complexContent?.extension?.base ?? ct.complexContent?.restriction?.base;
+  return getContentDerivation<{ base?: string }>(ct)?.base;
 }
 
 /**
- * Infers the current content model of a complexType by inspecting its
- * direct compositor properties and complexContent/extension child.
+ * Infers the current content model of a complexType from the compositor in its content container
+ * (see {@link getContentContainer}).
  *
  * @param ct - The complexType holder to inspect
  * @returns The current ContentModel or undefined if none is set
  */
 function getContentModel(ct: ComplexTypeHolder): ContentModel | undefined {
-  if (ct.sequence ?? ct.complexContent?.extension?.sequence ?? ct.complexContent?.restriction?.sequence) {
+  const content = getContentContainer<ComplexTypeContentState>(ct);
+  if (content.sequence) {
     return "sequence";
   }
-  if (ct.choice ?? ct.complexContent?.extension?.choice ?? ct.complexContent?.restriction?.choice) {
+  if (content.choice) {
     return "choice";
   }
-  if (ct.all ?? ct.complexContent?.extension?.all ?? ct.complexContent?.restriction?.all) {
+  if (content.all) {
     return "all";
   }
   return undefined;
 }
 
+/**
+ * Returns whether a complexType derives from its base by extension or by restriction. Like
+ * {@link getContentDerivation}, it checks the extension first.
+ *
+ * @param ct - The complexType holder to inspect
+ * @returns The derivation kind, or undefined if the type has no complexContent
+ */
 function getDerivationKind(ct: ComplexTypeHolder): ComplexTypeDerivationKind | undefined {
-  if (ct.complexContent?.restriction) {
-    return "restriction";
-  }
   if (ct.complexContent?.extension) {
     return "extension";
+  }
+  if (ct.complexContent?.restriction) {
+    return "restriction";
   }
   return undefined;
 }
@@ -326,8 +334,7 @@ function captureContentState(ct: ComplexTypeHolder): ComplexTypeContentState {
   // complexContent/extension|restriction wrapper. Capture whichever structure
   // is active so derivation-mode switches can rebuild the holder without
   // discarding the current compositor or attribute content.
-  const wrapper = ct.complexContent?.extension ?? ct.complexContent?.restriction;
-  const source = wrapper ?? ct;
+  const source = getContentContainer<ComplexTypeContentState>(ct);
   // Copy properties because the source object will be mutated when rebuilding
   // derivation wrappers in executeModifyComplexType.
   const { sequence, choice, all, group, attribute, attributeGroup, anyAttribute } =

@@ -25,6 +25,16 @@ const EMPLOYEE_TYPE = `<xs:complexType name="EmployeeType">
 /** A top-level element `order` without a type. */
 const ORDER_ELEMENT = `<xs:element name="order"/>`;
 
+/** A complexType `ManagerType` that restricts `EmployeeType`, with the element `name` and the attribute `id`. */
+const MANAGER_TYPE = `<xs:complexType name="ManagerType">
+  <xs:complexContent>
+    <xs:restriction base="EmployeeType">
+      <xs:sequence><xs:element name="name" type="xs:string"/></xs:sequence>
+      <xs:attribute name="id" type="xs:integer"/>
+    </xs:restriction>
+  </xs:complexContent>
+</xs:complexType>`;
+
 function addComplexType(schemaObj: schema, payload: AddComplexTypeCommand["payload"]): void {
   executeAddComplexType({ type: "addComplexType", payload }, schemaObj);
 }
@@ -307,6 +317,31 @@ describe("ComplexType Executors", () => {
       expect(restriction.base).toBe("WorkerType");
       expect((restriction.sequence?.element ?? [])[0].name).toBe("name");
       expect(topLevelComplexTypes(schemaObj)[0].complexContent!.extension).toBeUndefined();
+    });
+
+    test("switches a restricting complexType to an extension and keeps its base and content", () => {
+      const schemaObj = schemaWith(MANAGER_TYPE);
+
+      modifyComplexType(schemaObj, { typeId: "/complexType:ManagerType", derivationKind: "extension" });
+
+      const complexContent = topLevelComplexTypes(schemaObj)[0].complexContent!;
+      expect(complexContent.restriction).toBeUndefined();
+      expect(complexContent.extension?.base).toBe("EmployeeType");
+      expect((complexContent.extension?.sequence?.element ?? []).map((element) => element.name)).toEqual(["name"]);
+      expect((complexContent.extension?.attribute ?? []).map((attribute) => attribute.name)).toEqual(["id"]);
+    });
+
+    test("changes the content model of a restricting complexType and keeps its base and attributes", () => {
+      const schemaObj = schemaWith(MANAGER_TYPE);
+
+      modifyComplexType(schemaObj, { typeId: "/complexType:ManagerType", contentModel: "choice" });
+
+      const complexContent = topLevelComplexTypes(schemaObj)[0].complexContent!;
+      expect(complexContent.extension).toBeUndefined();
+      expect(complexContent.restriction?.base).toBe("EmployeeType");
+      expect(complexContent.restriction?.choice).toBeDefined();
+      expect(complexContent.restriction?.sequence).toBeUndefined();
+      expect((complexContent.restriction?.attribute ?? []).map((attribute) => attribute.name)).toEqual(["id"]);
     });
 
     test("updates an existing extension base type", () => {

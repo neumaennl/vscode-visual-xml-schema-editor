@@ -7,6 +7,7 @@ import { unmarshal, marshal } from "@neumaennl/xmlbind-ts";
 import {
   schema,
   attribute,
+  topLevelComplexType,
   AddAttributeCommand,
   RemoveAttributeCommand,
   ModifyAttributeCommand,
@@ -16,7 +17,7 @@ import {
   executeRemoveAttribute,
   executeModifyAttribute,
 } from "./attributeExecutors.js";
-import { emptySchema, readTestSchema, schemaWith } from "../__tests__/schemaTestHelpers.js";
+import { emptySchema, readTestSchema, schemaWith, DERIVATIONS, derivedComplexTypeT } from "../__tests__/schemaTestHelpers.js";
 
 /** The file with a complexType `PersonType` with the local element `name`. */
 const PERSON_TYPE_WITH_NAME_XSD = "person-type-with-name-element.xsd";
@@ -52,6 +53,19 @@ const PERSON_TYPE_WITH_LANG_ATTRIBUTE_REF = `<xs:attribute name="lang" type="xs:
  */
 function attributesOfT(schemaObj: schema): attribute[] {
   return (schemaObj.complexType ?? []).find((ct) => ct.name === "T")?.attribute ?? [];
+}
+
+/** The attribute `id`. */
+const ID_ATTRIBUTE = `<xs:attribute name="id" type="xs:integer"/>`;
+
+/**
+ * Returns the complexType `T`.
+ *
+ * @param schemaObj - The schema object
+ * @returns The complexType `T`
+ */
+function complexTypeT(schemaObj: schema): topLevelComplexType {
+  return (schemaObj.complexType ?? []).find((ct) => ct.name === "T")!;
 }
 
 describe("Attribute Executors", () => {
@@ -763,6 +777,68 @@ describe("Attribute Executors", () => {
       const annotation = attributesOfT(schemaObj)[0].annotation!;
       expect((annotation.documentation ?? []).map((d) => d.value)).toEqual(["New"]);
       expect(annotation.appinfo ?? []).toHaveLength(1);
+    });
+  });
+
+  describe("derived complex types", () => {
+    test.each(DERIVATIONS)(
+      "should add an attribute to the %s %s of a named complex type",
+      (content, derivation) => {
+        const schemaObj = schemaWith(derivedComplexTypeT(content, derivation, ID_ATTRIBUTE));
+
+        executeAddAttribute(
+          { type: "addAttribute", payload: { parentId: "/complexType:T", attributeName: "lang", attributeType: "xs:string" } },
+          schemaObj
+        );
+
+        const ct = complexTypeT(schemaObj);
+        expect(ct[content]?.[derivation]?.attribute?.map((a) => a.name)).toEqual(["id", "lang"]);
+        expect(ct.attribute ?? []).toEqual([]);
+      }
+    );
+
+    test.each(DERIVATIONS)(
+      "should remove an attribute from the %s %s of a named complex type",
+      (content, derivation) => {
+        const schemaObj = schemaWith(derivedComplexTypeT(content, derivation, ID_ATTRIBUTE));
+
+        executeRemoveAttribute({ type: "removeAttribute", payload: { attributeId: "/complexType:T/attribute:id" } }, schemaObj);
+
+        expect(complexTypeT(schemaObj)[content]?.[derivation]?.attribute).toBeUndefined();
+      }
+    );
+
+    test.each(DERIVATIONS)(
+      "should modify an attribute in the %s %s of a named complex type",
+      (content, derivation) => {
+        const schemaObj = schemaWith(derivedComplexTypeT(content, derivation, ID_ATTRIBUTE));
+
+        executeModifyAttribute(
+          { type: "modifyAttribute", payload: { attributeId: "/complexType:T/attribute:id", attributeType: "xs:string" } },
+          schemaObj
+        );
+
+        expect(complexTypeT(schemaObj)[content]?.[derivation]?.attribute?.[0].type_).toBe("xs:string");
+      }
+    );
+
+    test("should add an attribute to the extension of an anonymous complex type and serialize it there", () => {
+      const schemaObj = schemaWith(`<xs:element name="person"><xs:complexType><xs:complexContent>
+  <xs:extension base="B"><xs:sequence/></xs:extension>
+</xs:complexContent></xs:complexType></xs:element>`);
+
+      executeAddAttribute(
+        {
+          type: "addAttribute",
+          payload: { parentId: "/element:person/anonymousComplexType[0]", attributeName: "lang", attributeType: "xs:string" },
+        },
+        schemaObj
+      );
+
+      const reparsed = unmarshal(schema, marshal(schemaObj));
+      const complexType = reparsed.element![0].complexType!;
+      expect(complexType.complexContent?.extension?.attribute?.map((a) => a.name)).toEqual(["lang"]);
+      expect(complexType.attribute ?? []).toEqual([]);
     });
   });
 

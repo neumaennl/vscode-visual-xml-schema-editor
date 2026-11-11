@@ -7,6 +7,7 @@
 import { unmarshal, marshal } from "@neumaennl/xmlbind-ts";
 import {
   schema,
+  topLevelComplexType,
   AddAttributeGroupCommand,
   RemoveAttributeGroupCommand,
   ModifyAttributeGroupCommand,
@@ -16,7 +17,7 @@ import {
   executeRemoveAttributeGroup,
   executeModifyAttributeGroup,
 } from "./attributeGroupExecutors.js";
-import { emptySchema, readTestSchema, schemaWith, schemaWithAttrGroups } from "../__tests__/schemaTestHelpers.js";
+import { emptySchema, readTestSchema, schemaWith, schemaWithAttrGroups, DERIVATIONS, derivedComplexTypeT } from "../__tests__/schemaTestHelpers.js";
 
 /** The file with a complexType `PersonType` that references the attribute group `CommonAttrs`. */
 const PERSON_TYPE_WITH_REF_XSD = "person-type-with-attribute-group-ref.xsd";
@@ -39,6 +40,19 @@ const ANNOTATION = `<xs:annotation><xs:appinfo>tool data</xs:appinfo><xs:documen
 function refsOfT(schemaObj: schema): (string | undefined)[] {
   const t = (schemaObj.complexType ?? []).find((ct) => ct.name === "T");
   return (t?.attributeGroup ?? []).map((r) => r.ref);
+}
+
+/** A reference to the attribute group `CommonAttrs`. */
+const COMMON_ATTRS_REF = `<xs:attributeGroup ref="CommonAttrs"/>`;
+
+/**
+ * Returns the complexType `T`.
+ *
+ * @param schemaObj - The schema object
+ * @returns The complexType `T`
+ */
+function complexTypeT(schemaObj: schema): topLevelComplexType {
+  return (schemaObj.complexType ?? []).find((ct) => ct.name === "T")!;
 }
 
 describe("AttributeGroup Executors", () => {
@@ -424,6 +438,64 @@ describe("AttributeGroup Executors", () => {
       expect(refsOfT(schemaObj)).toEqual(["OtherAttrs", "OtherAttrs"]);
     });
 
+  });
+
+  describe("references in derived complex types", () => {
+    test.each(DERIVATIONS)("should add a reference to the %s %s", (content, derivation) => {
+      const schemaObj = schemaWithAttrGroups(derivedComplexTypeT(content, derivation, COMMON_ATTRS_REF));
+
+      executeAddAttributeGroup(
+        { type: "addAttributeGroup", payload: { ref: "OtherAttrs", parentId: "/complexType:T" } },
+        schemaObj
+      );
+
+      const ct = complexTypeT(schemaObj);
+      expect(ct[content]?.[derivation]?.attributeGroup?.map((r) => r.ref)).toEqual(["CommonAttrs", "OtherAttrs"]);
+      expect(ct.attributeGroup ?? []).toEqual([]);
+    });
+
+    test.each(DERIVATIONS)("should remove a reference from the %s %s", (content, derivation) => {
+      const schemaObj = schemaWithAttrGroups(derivedComplexTypeT(content, derivation, COMMON_ATTRS_REF));
+
+      executeRemoveAttributeGroup(
+        { type: "removeAttributeGroup", payload: { groupId: "/complexType:T/attributeGroupRef:CommonAttrs[0]" } },
+        schemaObj
+      );
+
+      expect(complexTypeT(schemaObj)[content]?.[derivation]?.attributeGroup).toBeUndefined();
+    });
+
+    test.each(DERIVATIONS)("should change a reference in the %s %s", (content, derivation) => {
+      const schemaObj = schemaWithAttrGroups(derivedComplexTypeT(content, derivation, COMMON_ATTRS_REF));
+
+      executeModifyAttributeGroup(
+        {
+          type: "modifyAttributeGroup",
+          payload: { groupId: "/complexType:T/attributeGroupRef:CommonAttrs[0]", ref: "OtherAttrs" },
+        },
+        schemaObj
+      );
+
+      expect(complexTypeT(schemaObj)[content]?.[derivation]?.attributeGroup?.map((r) => r.ref)).toEqual(["OtherAttrs"]);
+    });
+
+    test("should serialize a reference added to a derived anonymous complex type inside the extension", () => {
+      const schemaObj = schemaWithAttrGroups(`<xs:element name="person"><xs:complexType><xs:complexContent>
+  <xs:extension base="B"><xs:sequence/></xs:extension>
+</xs:complexContent></xs:complexType></xs:element>`);
+
+      executeAddAttributeGroup(
+        {
+          type: "addAttributeGroup",
+          payload: { ref: "CommonAttrs", parentId: "/element:person/anonymousComplexType[0]" },
+        },
+        schemaObj
+      );
+
+      const complexType = unmarshal(schema, marshal(schemaObj)).element![0].complexType!;
+      expect(complexType.complexContent?.extension?.attributeGroup?.map((r) => r.ref)).toEqual(["CommonAttrs"]);
+      expect(complexType.attributeGroup ?? []).toEqual([]);
+    });
   });
 
   describe("documentation in an existing annotation", () => {

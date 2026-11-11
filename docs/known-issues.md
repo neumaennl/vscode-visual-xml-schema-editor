@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-11T13:36:01Z }
-verified: { by: human:neumaennl, at: 2026-11-11T13:48:37Z }
+generated: { by: human:neumaennl, at: 2026-11-11T18:33:27Z }
+verified: { by: human:neumaennl, at: 2026-11-11T19:10:51Z }
 ---
 
 # Purpose
@@ -36,17 +36,13 @@ Effort:
 
 # Code
 
-## Attributes on derived complex types are rejected or misplaced
+## New attributes are written after `xs:anyAttribute`
 
-- **Location:** `webview-src/drop/DropCommandFactory.ts` (`createAttributeNodeDropCommand()`), `src/commandExecutors/attributeExecutors.ts` (`addAttributeToParent()`)
+- **Location:** `src/commandExecutors/attributeExecutors.ts` (`addAttributeToParent()`), `src/commandExecutors/attributeGroupExecutors.ts` (`addAttrGroupRefToParent()`), `xmlbind-ts` (`marshal`)
 - **Severity:** High
-- **Effort:** M
-- **Description:** In a complex type with `xs:complexContent` or `xs:simpleContent`, attributes belong inside the `xs:extension` or `xs:restriction`. The drop and the command get this wrong in two ways:
-  - The attribute drop accepts a named complex type only if its label is exactly `complexType`. A derived named type is labelled `complexType (extends Base)` or `complexType (restricts Base)`, so the drop is rejected.
-  - On an element with an anonymous complex type, the drop is accepted whatever the content model is. `addAttribute` always appends the attribute to the complex type itself, so for a derived anonymous type it writes `<attribute>` after `<complexContent>`, which is invalid XSD, and reports success.
-
-  The fix is to use `isComplexTypeNode()` in the attribute drop rule, as the other rules do, and to add the attribute to the extension or restriction in the executor when the complex type has complex or simple content.
-- **GitHub issue:** [#425](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/425)
+- **Effort:** S
+- **Description:** XML Schema requires the attributes and attribute group references of a complex type, or of its extension or restriction, to come before `xs:anyAttribute`. When `addAttribute` or `addAttributeGroup` adds the first attribute or reference to a node that already has an `xs:anyAttribute`, `marshal` writes the new child after it, because children of a kind that was not in the source are written after all others. Reproduced: adding the attribute `a` to `<xs:extension base="B"><xs:sequence/><xs:anyAttribute/></xs:extension>` writes `<xs:sequence/><xs:anyAttribute/><xs:attribute name="a"/>`; the same happens in a complex type without derivation and in a restriction of simple content. The command reports success, and the saved schema is invalid. The cause is in `xmlbind-ts` ([xmlbind-ts](https://github.com/neumaennl/xmlbind-ts/blob/main/docs/known-issues.md#children-that-were-not-in-the-source-are-written-after-all-others)); once it is fixed there, the editor only needs the new version.
+- **GitHub issue:** none
 
 ## Node IDs are ambiguous and have many special cases
 
@@ -134,20 +130,32 @@ Effort:
 - **Description:** When building, laying out or drawing fails, `DiagramRenderer.showError()` adds the text "Error: …" to the canvas group. The next render only empties the content group inside it, so the error text stays visible over the diagram, even after the schema has been fixed. The app also shows the error in the notification bar, which is enough. The fix is to remove the SVG error text, or to put it into the content group (see [Diagram rendering](diagram-rendering.md#pipeline)).
 - **GitHub issue:** [#431](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/431)
 
-## Restricted complex content is shown without content and attributes
+## Inline complex types with simple content are treated as inline simple types
+
+- **Location:** `webview-src/diagram/SchemaProcessors.ts` (`processComplexType()`, `processAnonymousSimpleType()`), `webview-src/drop/DropCommandFactoryTypeHelpers.ts` (`isRestrictionSimpleType()`, `createFacetNodeDropCommand()`), `webview-src/propertiesPanel/propertiesPanelTypeHelpers.ts` (`isInlineSimpleTypeElement()`), `webview-src/propertiesPanel/propertiesPanelCommands.ts` (`resolveSimpleTypeId()`)
+- **Severity:** Medium
+- **Effort:** S
+- **Description:** The diagram builder sets `isSimpleContent` both on an element with an inline simple type and on an element whose inline complex type has `xs:simpleContent`. The drop rules and the properties panel read the flag as "the element has an inline simple type" and address `/element:x/anonymousSimpleType[0]`, which only exists in the first case. For the element `price` with `<xs:complexType><xs:simpleContent><xs:restriction base="B"/></xs:simpleContent></xs:complexType>`, labelled `<anonymous complexType> with simpleContent (restricts B)`:
+  - a facet drop is accepted while dragging, and then sends `modifySimpleType` for `/element:price/anonymousSimpleType[0]`, which fails;
+  - the properties panel shows the editors of an inline simple type, and changing a facet or the derivation there fails the same way.
+
+  The fix is to check `hasAnonymousComplexType` wherever the flag is read as an inline simple type, or to split the flag. The facets of a restriction of simple content cannot be edited by any command yet (see [Complex types with simple content cannot be created or derived](#complex-types-with-simple-content-cannot-be-created-or-derived)).
+- **GitHub issue:** none
+
+## Restricted complex content is shown without content
 
 - **Location:** `webview-src/diagram/SchemaProcessors.ts` (`processComplexType()`), `webview-src/diagram/SchemaProcessorsSimpleTypes.ts` (`processRestriction()`)
 - **Severity:** Medium
 - **Effort:** M
-- **Description:** For `xs:complexContent` and `xs:simpleContent`, an `xs:extension` is processed with its attributes and compositors, but an `xs:restriction` is passed to the simple type function `processRestriction()`, which only reads facets. A complex type that restricts another one with complex content is therefore shown without children, and the attributes of both kinds of restriction are missing in the properties panel. The function also sets `simpleTypeDerivationKind` on the complex type. The fix is to process restrictions of complex content like extensions (attributes and compositors), and to read the attributes of restrictions of simple content as well (see [Diagram rendering](diagram-rendering.md#from-schema-to-diagram-items)). See also [Diagram items copy values from the schema objects](#diagram-items-copy-values-from-the-schema-objects).
+- **Description:** For `xs:complexContent`, an `xs:extension` is processed with its compositors, but an `xs:restriction` is passed to the simple type function `processRestriction()`, which only reads facets. A complex type that restricts another one with complex content is therefore shown without children; its attributes are read like those of an extension. The function also sets `simpleTypeDerivationKind` on the complex type. The fix is to process the compositors of restrictions of complex content like those of extensions (see [Diagram rendering](diagram-rendering.md#from-schema-to-diagram-items)). See also [Diagram items copy values from the schema objects](#diagram-items-copy-values-from-the-schema-objects).
 - **GitHub issue:** none
 
 ## Renames and new references do not check for duplicates
 
-- **Location:** `src/commandValidators/elementValidators.ts` (`validateModifyElement()`), `src/commandValidators/attributeValidators.ts` (`validateModifyAttribute()`), `src/commandValidators/simpleTypeValidators.ts` (`validateModifySimpleType()`), `src/commandValidators/complexTypeValidators.ts` (`validateModifyComplexType()`), `src/commandValidators/groupValidators.ts` (`validateModifyGroup()`)
+- **Location:** `src/commandValidators/elementValidators.ts` (`validateModifyElement()`), `src/commandValidators/attributeValidators.ts` (`validateModifyAttribute()`), `src/commandValidators/simpleTypeValidators.ts` (`validateModifySimpleType()`), `src/commandValidators/complexTypeValidators.ts` (`validateModifyComplexType()`), `src/commandValidators/groupValidators.ts` (`validateModifyGroup()`), `src/commandValidators/attributeGroupValidators.ts` (`validateAddAttributeGroup()`, `validateModifyAttributeGroup()`)
 - **Severity:** Medium
 - **Effort:** M
-- **Description:** The `add*` validators reject a name or reference that already exists, but the `modify*` validators of elements, attributes, simple types, complex types and groups only check that the new name or reference is valid. Renaming the top-level element `a` to `b` while `b` exists is accepted and writes a schema with two top-level elements named `b`, which is invalid XSD; the same happens for attributes, types and groups. Likewise, changing a local element or attribute into a reference that its parent already contains (for example a second `<xs:attribute ref="lang"/>` in the same complexType) is accepted, which `validateAddElement()` and `validateAddAttribute()` reject. Because node IDs resolve to the first match, the two nodes can then no longer be told apart (see [Node IDs are ambiguous](#node-ids-are-ambiguous-and-have-many-special-cases)). `validateModifyAttributeGroup()` already has the check for names. The fix is the same check in these validators as in the matching `add*` validators, skipped when the name or reference does not change.
+- **Description:** The `add*` validators, except for attribute group references, reject a name or reference that already exists, but the `modify*` validators of elements, attributes, simple types, complex types and groups only check that the new name or reference is valid. Renaming the top-level element `a` to `b` while `b` exists is accepted and writes a schema with two top-level elements named `b`, which is invalid XSD; the same happens for attributes, types and groups. Likewise, changing a local element or attribute into a reference that its parent already contains (for example a second `<xs:attribute ref="lang"/>` in the same complexType) is accepted, which `validateAddElement()` and `validateAddAttribute()` reject. Because node IDs resolve to the first match, the two nodes can then no longer be told apart (see [Node IDs are ambiguous](#node-ids-are-ambiguous-and-have-many-special-cases)). `validateModifyAttributeGroup()` already has the check for names. Attribute group references are not checked at all: `addAttributeGroup` in reference mode and `modifyAttributeGroup` with a new `ref` accept a reference to a group that the complex type, or the extension or restriction of its content, already references, which declares the same attributes twice and is invalid XSD. The fix is the same check in these validators as in the matching `add*` validators, skipped when the name or reference does not change, and a check for existing references in `validateAddAttributeGroup()`.
 - **GitHub issue:** none
 
 ## Removing a simple or complex type does not check for references
@@ -229,6 +237,14 @@ Effort:
 - **Description:** `addSimpleType` and `modifySimpleType` only check that a restriction has at least one facet. They do not check whether a facet applies to the base type, or whether facet values fit together. `maxLength` on `xs:integer`, `fractionDigits` on `xs:string`, `minLength` greater than `maxLength` or a `maxInclusive` that is not a valid value of the base type are accepted and written to the file, which makes the schema invalid. The properties panel does not limit the facets by base type either. The fix is a table of the facets that apply to each built-in primitive type (XSD Part 2), a lookup that follows user-defined base types down to their primitive type, and checks for the value constraints between facets (see [Commands](commands.md#restriction-facets)).
 - **GitHub issue:** none
 
+## Attributes in a restriction are not checked against the base type
+
+- **Location:** `src/commandValidators/attributeValidators.ts` (`validateAddAttribute()`), `src/commandValidators/attributeGroupValidators.ts` (`validateAddAttributeGroup()`), `webview-src/drop/DropCommandFactory.ts` (`createAttributeNodeDropCommand()`)
+- **Severity:** Medium
+- **Effort:** L
+- **Description:** In a complex type that derives by restriction, XML Schema only allows attributes that restrict an attribute of the base type, or that the base type's `xs:anyAttribute` allows ("Derivation Valid (Restriction, Complex)"). `addAttribute` and `addAttributeGroup` add any attribute or reference to the `xs:restriction` of complex or simple content, and the attribute drop accepts such types and adds `Attribute1`. Unless the base type declares `Attribute1` or has a matching wildcard, the schema is then invalid; the command reports success. The user can rename the attribute to one of the base type. The fix needs the attributes of the base type, including those of its attribute groups and its own base types, and its wildcard; it can share the lookup of the base type with [Facets are not checked against the base type](#facets-are-not-checked-against-the-base-type).
+- **GitHub issue:** none
+
 ## Every command reformats the whole document
 
 - **Location:** `src/webviewProvider.ts` (`executeCommand()`), `@neumaennl/xmlbind-ts` (`marshal`)
@@ -243,7 +259,7 @@ Effort:
 - **Severity:** Medium
 - **Effort:** L
 - **Description:** An anonymous (inline) complex or simple type is not drawn as a node; its content is merged into the element (see [Diagram rendering](diagram-rendering.md#from-schema-to-diagram-items)). In the schema model and the node IDs, however, the anonymous type has its own segment (`/element:person/anonymousComplexType[0]`, see [Schema model](schema-model.md#conventions)). So one diagram node stands for two constructs, and every part of the editor has to decide which of the two is meant:
-  - The drop rules have extra cases for "element with anonymous complex type" and "element with simple content", which turn a drop on the element into a command on its type (see [Drag and drop](drag-and-drop.md)). Attributes dropped on a derived anonymous complex type end up in the wrong place (see [Attributes on derived complex types are rejected or misplaced](#attributes-on-derived-complex-types-are-rejected-or-misplaced)).
+  - The drop rules have extra cases for "element with anonymous complex type" and "element with simple content", which turn a drop on the element into a command on its type (see [Drag and drop](drag-and-drop.md)).
   - The properties panel of an element mixes element and type fields: Base Type, Replacement Type, `mixed` and the Facets tab belong to the type (see [UX concept](ux-concept.md)).
   - Anonymous types cannot be selected or deleted on their own, and the element's documentation falls back to the type's documentation, which cannot be told apart.
 
@@ -466,7 +482,7 @@ Effort:
 - **Location:** `webview-src/diagram/DiagramItem.ts`, `webview-src/diagram/SchemaProcessors*.ts`, `webview-src/diagram/TypeNodeCreators.ts`, `webview-src/propertiesPanel/propertiesPanelDraft.ts`, `webview-src/propertiesPanel/`, `webview-src/drop/`
 - **Severity:** Low
 - **Effort:** L
-- **Description:** `DiagramItem` does not reference the schema object it represents; the builder copies about 22 values into it instead (see [Diagram rendering](diagram-rendering.md#data-model)). The renderer needs only a few of them; most are read by the properties panel and the drop code. Every new value has to be added to the item, to the builder and to `createDraftNode()`, which copies all fields again by hand for the properties panel draft. The extraction is partly duplicated: `processGroup` builds group elements inline instead of using `createElementNode`. Values that are not copied, or copied in a reduced form, cause bugs: [Restricted complex content is shown without content and attributes](#restricted-complex-content-is-shown-without-content-and-attributes), [Element references are not shown as references](#element-references-are-not-shown-as-references) and [Items with maxOccurs 0 are drawn as repeated](#items-with-maxoccurs-0-are-drawn-as-repeated) come at least partly from this layer. The plan is to keep only view state on the item, add a typed reference to the schema object, and read values through one module of accessor functions. The properties panel draft must then be a deep copy of the schema object: after a failed command the webview receives no new schema, so changes to the shared object would remain. This should be planned together with [inline types](#inline-types-have-no-node-of-their-own) and the [node ID redesign](#node-ids-are-ambiguous-and-have-many-special-cases), which also change the builder.
+- **Description:** `DiagramItem` does not reference the schema object it represents; the builder copies about 22 values into it instead (see [Diagram rendering](diagram-rendering.md#data-model)). The renderer needs only a few of them; most are read by the properties panel and the drop code. Every new value has to be added to the item, to the builder and to `createDraftNode()`, which copies all fields again by hand for the properties panel draft. The extraction is partly duplicated: `processGroup` builds group elements inline instead of using `createElementNode`. Values that are not copied, or copied in a reduced form, cause bugs: [Restricted complex content is shown without content](#restricted-complex-content-is-shown-without-content), [Element references are not shown as references](#element-references-are-not-shown-as-references) and [Items with maxOccurs 0 are drawn as repeated](#items-with-maxoccurs-0-are-drawn-as-repeated) come at least partly from this layer. The plan is to keep only view state on the item, add a typed reference to the schema object, and read values through one module of accessor functions. The properties panel draft must then be a deep copy of the schema object: after a failed command the webview receives no new schema, so changes to the shared object would remain. This should be planned together with [inline types](#inline-types-have-no-node-of-their-own) and the [node ID redesign](#node-ids-are-ambiguous-and-have-many-special-cases), which also change the builder.
 - **GitHub issue:** [#360](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/360)
 
 ## Complex types with simple content cannot be created or derived
@@ -474,7 +490,7 @@ Effort:
 - **Location:** `shared/commands/schemaTypes.ts` (`AddComplexTypePayload`, `ModifyComplexTypePayload`), `src/commandValidators/complexTypeValidators.ts` (`validateModifyComplexType()`), `src/commandExecutors/complexTypeExecutors.ts`
 - **Severity:** Low
 - **Effort:** L
-- **Description:** A complex type with `xs:simpleContent` has text content of a simple type plus attributes, for example a price with a currency. The complex type commands only know complex content: `addComplexType` requires a `contentModel` and always creates a compositor, and the executor only builds `complexContent`, so a `baseType` or `contentModel` for a type with simple content would add a `complexContent` next to the `simpleContent`, which is invalid. `modifyComplexType` therefore rejects `baseType`, `derivationKind` and `contentModel` for such types (see [Commands](commands.md#complex-types)). Such types can be shown and renamed, and their documentation can be edited, but a type with simple content cannot be created, its base type and derivation cannot be changed, and an existing type cannot be switched between simple and complex content. Related problems are [Attributes on derived complex types are rejected or misplaced](#attributes-on-derived-complex-types-are-rejected-or-misplaced) and the [mixed content toggle](#mixed-content-toggle-ignores-simple-content-complexcontent-and-the-base-type). The fix needs a way to choose simple content in the payloads, for example a content kind, and an executor that builds `simpleContent` with an `extension` or `restriction` of a simple base type.
+- **Description:** A complex type with `xs:simpleContent` has text content of a simple type plus attributes, for example a price with a currency. The complex type commands only know complex content: `addComplexType` requires a `contentModel` and always creates a compositor, and the executor only builds `complexContent`, so a `baseType` or `contentModel` for a type with simple content would add a `complexContent` next to the `simpleContent`, which is invalid. `modifyComplexType` therefore rejects `baseType`, `derivationKind` and `contentModel` for such types (see [Commands](commands.md#complex-types)). Such types can be shown and renamed, and their documentation can be edited, but a type with simple content cannot be created, its base type and derivation cannot be changed, and an existing type cannot be switched between simple and complex content. A related problem is the [mixed content toggle](#mixed-content-toggle-ignores-simple-content-complexcontent-and-the-base-type). The fix needs a way to choose simple content in the payloads, for example a content kind, and an executor that builds `simpleContent` with an `extension` or `restriction` of a simple base type.
 - **GitHub issue:** none
 
 ## Identity constraints, notations and redefines cannot be shown or edited

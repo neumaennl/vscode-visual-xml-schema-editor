@@ -125,6 +125,11 @@ const REFERENCE_PLACES: [string, string][] = [
   ],
 ];
 
+/** A complexType `T` that extends `B` and references `CommonAttrs` in its extension. */
+const EXTENSION_WITH_REF = `<xs:complexType name="T"><xs:complexContent><xs:extension base="B">
+  <xs:attributeGroup ref="CommonAttrs"/>
+</xs:extension></xs:complexContent></xs:complexType>`;
+
 describe("AttributeGroup Validators", () => {
   let schemaObj: schema;
   let schemaWithAttrGroup: schema;
@@ -744,5 +749,25 @@ describe("AttributeGroup Validators", () => {
       });
     });
 
+  });
+
+  describe("references in the extension of a derived complexType", () => {
+    test("should accept removing a reference in the extension", () => {
+      const command: RemoveAttributeGroupCommand = {
+        type: "removeAttributeGroup",
+        payload: { groupId: "/complexType:T/attributeGroupRef:CommonAttrs[0]" },
+      };
+
+      expect(validateRemoveAttributeGroup(command, schemaWithAttrGroups(EXTENSION_WITH_REF)).valid).toBe(true);
+    });
+
+    test("should accept changing a reference in the extension", () => {
+      const command: ModifyAttributeGroupCommand = {
+        type: "modifyAttributeGroup",
+        payload: { groupId: "/complexType:T/attributeGroupRef:CommonAttrs[0]", ref: "OtherAttrs" },
+      };
+
+      expect(validateModifyAttributeGroup(command, schemaWithAttrGroups(EXTENSION_WITH_REF)).valid).toBe(true);
+    });
   });
 });

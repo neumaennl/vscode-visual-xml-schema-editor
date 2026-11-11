@@ -7,10 +7,10 @@ import {
   AddAttributeCommand,
   RemoveAttributeCommand,
   ModifyAttributeCommand,
-  topLevelComplexType,
 } from "../../shared/types.js";
 import { ValidationResult, isValidXmlName } from "./validationUtils.js";
 import { locateNodeById } from "../schemaNavigator.js";
+import { getAttributeContainer } from "../../shared/schemaUtils.js";
 import { parseSchemaId, SCHEMA_ROOT_ID } from "../../shared/idStrategy.js";
 
 /** Parent types that can contain attributes. */
@@ -18,6 +18,7 @@ const VALID_ATTR_PARENTS = ["schema", "topLevelComplexType", "localComplexType"]
 
 /**
  * Returns the array of attributes from a schema or complexType parent container.
+ * For a complex type with complex or simple content, these are the attributes of its extension or restriction.
  */
 function getChildAttributes(
   parent: unknown,
@@ -26,7 +27,7 @@ function getChildAttributes(
   if (parentType === "schema") {
     return (parent as schema).attribute ?? [];
   }
-  return (parent as topLevelComplexType).attribute ?? [];
+  return getAttributeContainer(parent).attribute ?? [];
 }
 
 export function validateAddAttribute(

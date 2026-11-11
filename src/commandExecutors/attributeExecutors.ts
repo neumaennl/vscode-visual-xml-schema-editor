@@ -10,18 +10,18 @@ import {
   ModifyAttributeCommand,
   attribute,
   topLevelAttribute,
-  topLevelComplexType,
-  localComplexType,
   annotationType,
   documentationType,
 } from "../../shared/types.js";
 import { assumeRemoved, assumeValidated, assumptionFailed, locateValidated } from "./assumeValidated.js";
 import { parseSchemaId, SCHEMA_ROOT_ID } from "../../shared/idStrategy.js";
 import { createAnnotation } from "./annotationUtils.js";
+import { getAttributeContainer } from "../../shared/schemaUtils.js";
 
 /**
  * Executes an addAttribute command.
- * Adds a new attribute to a schema, topLevelComplexType, or localComplexType.
+ * Adds a new attribute to a schema, topLevelComplexType, or localComplexType. In a complex type with
+ * complex or simple content, the attribute is added to its extension or restriction.
  *
  * @param command - The addAttribute command to execute
  * @param schemaObj - The schema object to modify
@@ -109,7 +109,8 @@ export function executeModifyAttribute(
 // ===== Helper Functions =====
 
 /**
- * Adds an attribute to a parent container.
+ * Adds an attribute to a parent container. The attributes of a complex type with complex or simple
+ * content live in its extension or restriction (see {@link getAttributeContainer}).
  * Supply either `name`+`type` (named attribute) or `ref` (reference attribute).
  *
  * @param parent - Parent container object
@@ -152,8 +153,8 @@ function addAttributeToParent(
     attributes.push(newAttr);
     schemaObj.attribute = attributes;
   } else if (parentType === "topLevelComplexType" || parentType === "localComplexType") {
-    const complexType = parent as topLevelComplexType | localComplexType;
-    const attributes = complexType.attribute ?? [];
+    const container = getAttributeContainer(parent);
+    const attributes = container.attribute ?? [];
 
     if (ref !== undefined) {
       // Reference attribute
@@ -186,7 +187,7 @@ function addAttributeToParent(
       attributes.push(newAttr);
     }
 
-    complexType.attribute = attributes;
+    container.attribute = attributes;
   } else {
     assumptionFailed(`Parent of type '${parentType}' for an attribute`);
   }
@@ -217,14 +218,14 @@ function removeAttributeFromParent(
     );
     schemaObj.attribute = filtered.length > 0 ? filtered : undefined;
   } else if (parentType === "topLevelComplexType" || parentType === "localComplexType") {
-    const complexType = parent as topLevelComplexType | localComplexType;
-    const attributes = complexType.attribute ?? [];
+    const container = getAttributeContainer(parent);
+    const attributes = container.attribute ?? [];
     const filtered = assumeRemoved(
       attributes,
       filterAttributes(attributes, attributeName, position),
       describeAttribute(attributeName, position)
     );
-    complexType.attribute = filtered.length > 0 ? filtered : undefined;
+    container.attribute = filtered.length > 0 ? filtered : undefined;
   } else {
     assumptionFailed(`Parent of type '${parentType}' for an attribute`);
   }
@@ -282,7 +283,7 @@ function getAttributesFromParent(
   if (parentType === "schema") {
     return (parent as schema).attribute ?? [];
   } else if (parentType === "topLevelComplexType" || parentType === "localComplexType") {
-    return (parent as topLevelComplexType | localComplexType).attribute ?? [];
+    return getAttributeContainer(parent).attribute ?? [];
   }
   return assumptionFailed(`Parent of type '${parentType}' for an attribute`);
 }

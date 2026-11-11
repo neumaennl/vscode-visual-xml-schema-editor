@@ -23,6 +23,7 @@ import {
   extractAttributes,
   extractOccurrenceConstraints,
 } from "./DiagramBuilderHelpers";
+import { getAttributeContainer } from "../../shared/schemaUtils";
 import type { localElement } from "../../shared/generated/localElement";
 import type { explicitGroup } from "../../shared/generated/explicitGroup";
 import type { all } from "../../shared/generated/all";
@@ -142,8 +143,8 @@ export function processComplexType(
   parent: DiagramItem,
   complexType: ComplexTypeLike
 ): void {
-  // Process attributes
-  extractAttributes(parent, complexType);
+  // Process attributes, which live in the extension or restriction of complex or simple content
+  extractAttributes(parent, getAttributeContainer(complexType));
 
   // Process complexContent
   if (complexType.complexContent) {
@@ -421,7 +422,7 @@ export function processGroupRef(
 
 /**
  * Processes an extension in complexContent or simpleContent.
- * Extracts base type and attributes, then processes child groups.
+ * Extracts the base type, then processes child groups. The attributes are read by {@link processComplexType}.
  *
  * @param parent - Parent diagram item to extend
  * @param extension - Extension definition from schema
@@ -434,9 +435,6 @@ export function processExtension(
   if (extension.base) {
     parent.type += ` (extends ${extension.base})`;
   }
-
-  // Extract attributes from extension
-  extractAttributes(parent, extension);
 
   // Process sequence in extension
   if (extension.sequence) {

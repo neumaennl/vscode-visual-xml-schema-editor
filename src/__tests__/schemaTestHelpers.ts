@@ -99,3 +99,29 @@ export function schemaWithIncludes(...schemaLocations: string[]): schema {
     schemaLocations.map((loc) => `<xs:include schemaLocation="${loc}"/>`).join("\n")
   );
 }
+
+/** The content of a derived complex type. */
+export type DerivedContent = "complexContent" | "simpleContent";
+
+/** The derivation inside the content of a derived complex type. */
+export type Derivation = "extension" | "restriction";
+
+/** Every combination of content and derivation of a derived complex type. */
+export const DERIVATIONS: ReadonlyArray<readonly [DerivedContent, Derivation]> = [
+  ["complexContent", "extension"],
+  ["complexContent", "restriction"],
+  ["simpleContent", "extension"],
+  ["simpleContent", "restriction"],
+];
+
+/**
+ * Returns the XML of a complexType `T` derived from `B` with the given content and derivation.
+ *
+ * @param content - The content of the complexType
+ * @param derivation - The derivation inside the content
+ * @param body - The XSD content of the extension or restriction
+ * @returns The XML of the complexType
+ */
+export function derivedComplexTypeT(content: DerivedContent, derivation: Derivation, body = ""): string {
+  return `<xs:complexType name="T"><xs:${content}><xs:${derivation} base="B">${body}</xs:${derivation}></xs:${content}></xs:complexType>`;
+}

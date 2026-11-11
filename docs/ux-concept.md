@@ -4,8 +4,8 @@ title: UX concept
 description: The interaction model of the editor - which surface adds, edits and deletes what, how facets work, and how the properties panel behaves - with a list of what the current editor does not implement yet.
 tags: [ux, editor, palette, properties-panel, facets, context-menu, toolbar]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-11T12:54:49Z }
-verified: { by: human:neumaennl, at: 2026-11-11T13:20:42Z }
+generated: { by: human:neumaennl, at: 2026-11-11T19:28:57Z }
+verified: { by: human:neumaennl, at: 2026-11-11T19:31:18Z }
 sources:
   - id: palette-items
     resource: ../webview-src/palette/PaletteItems.ts
@@ -185,6 +185,7 @@ The current editor does not implement these parts of the model yet:
 - **Keyboard shortcuts:** there are none (for example, Delete or arrow keys to move the selection); Enter only commits a field. Selecting nodes and common operations with the keyboard are planned for Phase 5 ([#433](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/433)).
 - **Attribute groups:** the palette has no item for them (see [Known issues](known-issues.md#palette-has-no-entry-for-attribute-groups)). The `any` item is shown but disabled.
 - **Facet checks:** neither the webview nor the extension host checks facets against the base type or forbidden combinations (see [Known issues](known-issues.md#facets-are-not-checked-against-the-base-type)).
+- **Simple content of inline complex types:** an element whose inline complex type has simple content gets the editors of an inline simple type, and changing a facet or the derivation there fails (see [Known issues](known-issues.md#inline-complex-types-with-simple-content-are-treated-as-inline-simple-types)).
 - **Deleting facets:** the last facet of a restriction cannot be deleted in the Facets tab.
 - **Empty Facets tab:** the hint still says that adding facets is "available in a future release" (see [Known issues](known-issues.md#empty-facets-tab-says-adding-facets-is-not-available-yet)).
 - **Attributes:** no field is editable (see [Known issues](known-issues.md#attribute-editing-is-half-implemented)).

@@ -222,10 +222,7 @@ export class DropCommandFactory {
     item: DiagramItem,
     reserveNames: boolean
   ): SchemaCommand | null {
-    if (
-      this.isSchemaRoot(item) ||
-      (item.itemType === DiagramItemType.type && item.type === "complexType")
-    ) {
+    if (this.isSchemaRoot(item) || isComplexTypeNode(item)) {
       return {
         type: "addAttribute",
         payload: {

@@ -4,8 +4,8 @@ title: Drag and drop
 description: How a construct is dragged from the palette onto a diagram node - the responsibilities of palette, renderer, DropCommandFactory and extension host, the event flow, which construct can be dropped on which node with which command, and the generated defaults.
 tags: [drag-and-drop, palette, renderer, drop-command-factory, webview]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-11T12:54:49Z }
-verified: { by: human:neumaennl, at: 2026-11-11T13:20:42Z }
+generated: { by: human:neumaennl, at: 2026-11-11T19:28:57Z }
+verified: { by: human:neumaennl, at: 2026-11-11T19:31:18Z }
 sources:
   - id: palette-items
     resource: ../webview-src/palette/PaletteItems.ts
@@ -94,7 +94,7 @@ The node kinds in the table are:
 | Construct | Target | Command |
 |---|---|---|
 | element | schema root, compositor | `addElement` with a generated name and type `xs:string` |
-| attribute | schema root, complex type labelled exactly `complexType` | `addAttribute` with a generated name and type `xs:string` |
+| attribute | schema root, named complex type, also a derived one | `addAttribute` with a generated name and type `xs:string` |
 | | element with anonymous complex type | `addAttribute` on the anonymous complex type |
 | group | schema root | `addGroup` with a generated name and content model `sequence` (a definition; references cannot be dropped) |
 | simpleType | schema root | `addSimpleType` with a generated name and base type `xs:string` |
@@ -118,7 +118,7 @@ The node kinds in the table are:
 | facets (all twelve) | simple type derived by restriction, element with simple content derived by restriction | `modifySimpleType` with the existing facets plus the dropped one |
 | any | - | not supported (disabled in the palette) |
 
-Every other combination returns `null`. In particular, nothing can be dropped on attributes or group references, and only elements can be dropped on compositors. A compositor drop on a type that already has one replaces the compositor and moves its particles into the new one (see [Commands](commands.md#complex-types)).[^drop-factory] Attributes cannot be dropped on derived named complex types, and on derived anonymous complex types they end up in the wrong place (see [Known issues](known-issues.md#attributes-on-derived-complex-types-are-rejected-or-misplaced)).
+Every other combination returns `null`. In particular, nothing can be dropped on attributes or group references, and only elements can be dropped on compositors. A compositor drop on a type that already has one replaces the compositor and moves its particles into the new one (see [Commands](commands.md#complex-types)).[^drop-factory] In a derived complex type, `addAttribute` puts the attribute into the `xs:extension` or `xs:restriction` (see [Commands](commands.md#attributes)). In a restriction, the dropped attribute is not checked against the base type, so it usually makes the schema invalid (see [Known issues](known-issues.md#attributes-in-a-restriction-are-not-checked-against-the-base-type)). A facet drop is also accepted on an element whose inline complex type has simple content derived by restriction, and the command then fails (see [Known issues](known-issues.md#inline-complex-types-with-simple-content-are-treated-as-inline-simple-types)).
 
 # Defaults
 

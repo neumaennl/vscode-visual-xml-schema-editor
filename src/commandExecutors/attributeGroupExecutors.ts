@@ -18,23 +18,19 @@ import { parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idSt
 import { assumeRemoved, assumeValidated, locateValidated } from "./assumeValidated.js";
 import { createAnnotation } from "./annotationUtils.js";
 import { renameLocalAttributeGroupRefInSchema } from "./schemaLocalRenamer.js";
-
-// ===== Structural types =====
-
-/** Any node that carries a direct array of attribute group references. */
-type AttrGroupRefHolder = { attributeGroup?: attributeGroupRef[] };
+import { getAttributeContainer } from "../../shared/schemaUtils.js";
 
 // ===== Helper functions =====
 
 /**
- * Adds an attributeGroupRef to a parent node's `attributeGroup` array.
+ * Adds an attributeGroupRef to a parent node's `attributeGroup` array. In a complex type with
+ * complex or simple content, the reference is added to its extension or restriction.
  */
 function addAttrGroupRefToParent(
   parent: unknown,
-  parentType: string,
   agRef: attributeGroupRef
 ): void {
-  const holder = parent as AttrGroupRefHolder;
+  const holder = getAttributeContainer(parent);
   const refs = holder.attributeGroup ?? [];
   refs.push(agRef);
   holder.attributeGroup = refs;
@@ -115,7 +111,7 @@ export function executeAddAttributeGroup(
     if (documentation) {
       agRef.annotation = createAnnotation(documentation);
     }
-    addAttrGroupRefToParent(location.parent, location.parentType, agRef);
+    addAttrGroupRefToParent(location.parent, agRef);
     return;
   }
 
@@ -151,7 +147,7 @@ export function executeRemoveAttributeGroup(
   if (parsed.nodeType === SchemaNodeType.AttributeGroupRef) {
     // Reference mode: remove xs:attributeGroup ref="..." from its parent
     const location = locateValidated(schemaObj, assumeValidated(parsed.parentId, `Parent of ${groupId}`));
-    const holder = location.parent as AttrGroupRefHolder;
+    const holder = getAttributeContainer(location.parent);
     const refs = holder.attributeGroup ?? [];
     const filtered = assumeRemoved(
       refs,
@@ -189,7 +185,7 @@ export function executeModifyAttributeGroup(
   if (parsed.nodeType === SchemaNodeType.AttributeGroupRef) {
     // Reference mode: modify xs:attributeGroup ref="..." in its parent
     const location = locateValidated(schemaObj, assumeValidated(parsed.parentId, `Parent of ${groupId}`));
-    const holder = location.parent as AttrGroupRefHolder;
+    const holder = getAttributeContainer(location.parent);
     const target = assumeValidated(
       findAttrGroupRef(holder.attributeGroup ?? [], parsed.name, parsed.position),
       `Attribute group reference ${groupId}`

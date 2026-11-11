@@ -4,8 +4,8 @@ title: Diagram rendering
 description: How the schema object becomes the SVG diagram - the build, layout and render steps, which schema constructs become which nodes, the layout rules, the notation, the interaction, and the origin in xsddiagram.
 tags: [diagram, rendering, layout, svg, webview, xsddiagram]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-29T12:13:52Z }
-verified: { by: human:neumaennl, at: 2026-10-29T13:13:53Z }
+generated: { by: human:neumaennl, at: 2026-11-11T16:17:27Z }
+verified: { by: human:neumaennl, at: 2026-11-11T19:10:51Z }
 verified:
   by: human:neumaennl
   at: 2026-10-08T08:46:19Z
@@ -111,13 +111,13 @@ The type text gets suffixes for content and derivation, for example `complexType
 
 **Inline types.** An anonymous complex or simple type is not a node of its own. Its content is merged into the element: the compositors of the type become children of the element, and its documentation is used if the element has none (see [Known issues](known-issues.md#inline-types-have-no-node-of-their-own)).[^schema-processors]
 
-**Children.** Complex types, elements with an inline complex type and extensions get their compositor (`sequence`, `choice` or `all`) or group reference as a child. A compositor's children are its elements, then its group references, then nested `choice`s, then nested `sequence`s. This order is fixed and not the order of the schema (see [Known issues](known-issues.md#particles-are-not-shown-in-document-order)). A restriction of complex content shows no children (see [Known issues](known-issues.md#restricted-complex-content-is-shown-without-content-and-attributes)).[^schema-processors]
+**Children.** Complex types, elements with an inline complex type and extensions get their compositor (`sequence`, `choice` or `all`) or group reference as a child. A compositor's children are its elements, then its group references, then nested `choice`s, then nested `sequence`s. This order is fixed and not the order of the schema (see [Known issues](known-issues.md#particles-are-not-shown-in-document-order)). A restriction of complex content shows no children (see [Known issues](known-issues.md#restricted-complex-content-is-shown-without-content)).[^schema-processors]
 
 **References are not expanded.** An element with `type="Address"` has no children, even if `Address` is a complex type with content; the content is only shown at the type's own node. Group references are not expanded either. So there are no cycles, even for recursive schemas.
 
 **Not shown as nodes:**
 
-- attributes: they are stored in `item.attributes` and shown in the properties panel; attributes with `ref` are skipped;
+- attributes: they are stored in `item.attributes` and shown in the properties panel; in a complex type with complex or simple content, they are read from its extension or restriction; attributes with `ref` are skipped;
 - attribute groups and attribute group references (see [Known issues](known-issues.md#palette-has-no-entry-for-attribute-groups));
 - `any` and `anyAttribute`;
 - element references: shown as "unnamed" elements (see [Known issues](known-issues.md#element-references-are-not-shown-as-references));

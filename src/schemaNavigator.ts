@@ -18,7 +18,7 @@ import {
   attribute,
 } from "../shared/types.js";
 import { parseSchemaId, SchemaNodeType } from "../shared/idStrategy.js";
-import { isSchemaRoot } from "../shared/schemaUtils.js";
+import { getContentContainer, isSchemaRoot } from "../shared/schemaUtils.js";
 
 /**
  * Result of a node location operation: the node and its type if it was found, otherwise an error.
@@ -323,7 +323,7 @@ function navigateFromComplexType(
   }
 
   if (nodeType === SchemaNodeType.Attribute) {
-    const attrs = complexType.attribute ?? [];
+    const attrs = getContentContainer<ComplexTypeContent>(complexType).attribute ?? [];
     const attr = findByNameOrPosition(attrs, name, position);
     if (attr) {
       return { found: true, node: attr, nodeType: "attribute" };
@@ -333,18 +333,26 @@ function navigateFromComplexType(
   return { found: false };
 }
 
+/**
+ * The content that a complex type, or the extension or restriction of its content, can hold. An
+ * extension or restriction of simple content has attributes but no compositors.
+ */
+type ComplexTypeContent = {
+  sequence?: explicitGroup;
+  choice?: explicitGroup;
+  all?: allGroup;
+  attribute?: attribute[];
+};
+
+/**
+ * Returns the compositor of the given kind of a complex type, which lives in the extension or restriction
+ * of its content if it has complex content (see {@link getContentContainer}).
+ */
 function resolveComplexTypeGroup(
   complexType: topLevelComplexType | localComplexType,
   groupKind: "sequence" | "choice" | "all"
 ): explicitGroup | allGroup | undefined {
-  const direct = complexType[groupKind];
-  if (direct) {
-    return direct;
-  }
-
-  const extension = complexType.complexContent?.extension;
-  const restriction = complexType.complexContent?.restriction;
-  return extension?.[groupKind] ?? restriction?.[groupKind];
+  return getContentContainer<ComplexTypeContent>(complexType)[groupKind];
 }
 
 /**

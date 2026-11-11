@@ -8,7 +8,7 @@ import { DiagramItem } from "../diagram/DiagramItem";
 import { DiagramItemGroupType, DiagramItemType } from "../diagram/DiagramTypes";
 import { PaletteSchemaConstruct } from "../palette/PaletteSchemaConstruct";
 import { diagramItem } from "../__tests__/diagramTestHelpers";
-import { schemaWith } from "../../src/__tests__/schemaTestHelpers";
+import { DERIVATIONS, derivedComplexTypeT, schemaWith } from "../../src/__tests__/schemaTestHelpers";
 
 function makeItem(
   id: string,
@@ -160,6 +160,14 @@ describe("DropCommandFactory", () => {
       expect((cmd! as { payload: { parentId: string } }).payload.parentId).toBe(
         "/complexType:PersonType"
       );
+    });
+
+    test.each(DERIVATIONS)("should produce addAttribute command when target is a named complexType with %s %s", (content, derivation) => {
+      const item = diagramItem(schemaWith(derivedComplexTypeT(content, derivation)), "/complexType:T");
+
+      const cmd = factory.createNodeDropCommand(item, PaletteSchemaConstruct.Attribute);
+
+      expect(cmd).toMatchObject({ type: "addAttribute", payload: { parentId: "/complexType:T" } });
     });
 
     test("should produce addAttribute targeting the anonymousComplexType when element has one", () => {

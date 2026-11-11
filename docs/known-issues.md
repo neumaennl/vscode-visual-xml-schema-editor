@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-11T12:54:49Z }
-verified: { by: human:neumaennl, at: 2026-11-11T13:20:42Z }
+generated: { by: human:neumaennl, at: 2026-11-11T13:36:01Z }
+verified: { by: human:neumaennl, at: 2026-11-11T13:48:37Z }
 ---
 
 # Purpose
@@ -394,6 +394,14 @@ Effort:
 - **Description:** `@vscode/test-cli` 0.0.15 depends on Mocha 11, which brings `serialize-javascript` 6 ([GHSA-5c6j-r48x-rmvq](https://github.com/advisories/GHSA-5c6j-r48x-rmvq), high: code execution through crafted input; [GHSA-qj8w-gfj5-8c6v](https://github.com/advisories/GHSA-qj8w-gfj5-8c6v), moderate: denial of service) and `diff` 7 ([GHSA-73rr-hh4g-fpgx](https://github.com/advisories/GHSA-73rr-hh4g-fpgx), low: denial of service). `npm audit` reports them. They are development dependencies that only run the [tests in the extension host](testing.md#tests-in-the-extension-host) on this repository's own test files, and they are not part of the VSIX. `@vscode/test-cli` declares overrides for both packages itself, but npm ignores the overrides of dependencies, and its switch to Mocha 12 is merged ([microsoft/vscode-test-cli#118](https://github.com/microsoft/vscode-test-cli/pull/118)) but not released yet. The decision is to wait for that release instead of overriding the versions here. When it is out, update `@vscode/test-cli`, check `npm audit` and remove this entry.
 - **GitHub issue:** none
 
+## Duplicated code is not detected automatically
+
+- **Location:** `shared/`, `src/`, `webview-src/`, `scripts/`, `package.json`, `.github/workflows/ci.yml`
+- **Severity:** Low
+- **Effort:** S
+- **Description:** The [development guidelines](development-guidelines.md#code-quality) ask to avoid duplicated code, but only reviews check this, and duplicates got through (see [Duplicated and dead code](#duplicated-and-dead-code) and [Top-level lookups are duplicated instead of shared](#top-level-lookups-are-duplicated-instead-of-shared)). The coverage report cannot find duplicates, because V8 coverage only records which code runs. A copy-paste detector such as [jscpd](https://github.com/kucherenko/jscpd) can check the code in `npm run lint` and in CI and fail the run above a threshold of duplicated lines, starting at the current level. It also finds code that the extension and the webview each implement on their own.
+- **GitHub issue:** [#439](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/439)
+
 ## Every message from the webview is a schema command
 
 - **Location:** `shared/messages.ts` (`WebviewMessage`, `ExecuteCommandMessage`), `src/webviewProvider.ts` (`handleWebviewMessage()`), `webview-src/main.ts`
@@ -436,7 +444,7 @@ Effort:
   - The group and attribute group validators iterate over all top-level kinds one by one.
   - `DiagramBuilder` and `DropCommandFactory` collect the same lists in the webview.
 
-  The fix is to replace the manager's query methods with pure functions in `shared/` that take the schema object as a parameter (for example `findTopLevel(schemaObj, kind, name)`, `getTopLevel(schemaObj, kind)` and `forEachTopLevelComponent(schemaObj, callback)`), use them everywhere, and remove the unused methods.
+  The fix is to replace the manager's query methods with pure functions in `shared/` that take the schema object as a parameter (for example `findTopLevel(schemaObj, kind, name)`, `getTopLevel(schemaObj, kind)` and `forEachTopLevelComponent(schemaObj, callback)`), use them everywhere, and remove the unused methods. Once duplicates are [detected automatically](#duplicated-code-is-not-detected-automatically), the fix also lowers the threshold of that check.
 - **GitHub issue:** none
 
 ## Duplicated and dead code
@@ -449,6 +457,8 @@ Effort:
   - `DiagramLayout.relayoutItem()` and `DiagramItem.getTextDocumentation()` are only called from tests, `DiagramBuilder.elementMap` is only cleared, and `DiagramItem.inheritFrom` is never set.
   - `DiagramItemType.reference` is never assigned; only the layout and a test handle it, and the renderer draws no shape for it.
   - `Diagram.size` is not used, and `Diagram.scale` is always 1, so the `scale*()` helpers of `Diagram` and `DiagramItem` change nothing.
+
+  Once duplicates are [detected automatically](#duplicated-code-is-not-detected-automatically), the first report of that check is input for the cleanup, and every removed duplicate lowers its threshold.
 - **GitHub issue:** none
 
 ## Diagram items copy values from the schema objects

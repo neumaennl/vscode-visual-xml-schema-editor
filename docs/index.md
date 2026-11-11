@@ -8,6 +8,7 @@ okf_version: "0.2"
 * [ADR 001: Editor transition architecture](architecture/001-editor-transition.md) - The decision to turn the viewer into an editor whose webview sends commands that the extension host validates, executes and writes to the XSD file, with the roadmap and the deviations of the implementation from the design.
 * [ADR 002: Legacy TypeScript decorators](architecture/002-legacy-decorators.md) - The decision to compile the decorators of the generated schema classes as TypeScript's legacy decorators instead of TC39 Stage 3 decorators, with the reasons, the consequences, the rejected alternatives and when to review it.
 * [ADR 003: Validators check, executors assume](architecture/003-validators-check-executors-assume.md) - The decision that the validators check everything an executor relies on and the executors do not check it again, how an executor states what it assumes, why this is safe, the scenarios that were examined, and how a test keeps validators and executors in agreement.
+* [ADR 004: XML Schema 1.0 first](architecture/004-xml-schema-1-0-first.md) - The decision to support XML Schema 1.0 now and XML Schema 1.1 later, the two conditions that keep the way to 1.1 open, how 1.1 could be added, the open question about validation, and when to review it.
 
 # Working on the extension
 

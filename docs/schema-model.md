@@ -4,8 +4,8 @@ title: Schema model
 description: The object model of an XSD file - classes generated from the XSD meta-schema, XML binding with xmlbind-ts, and the path-based IDs that identify schema nodes.
 tags: [schema-model, data-model, xmlbind-ts, code-generation, ids, navigation]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-05T05:01:58Z }
-verified: { by: human:neumaennl, at: 2026-11-05T05:24:33Z }
+generated: { by: human:neumaennl, at: 2026-11-11T07:57:55Z }
+verified: { by: human:neumaennl, at: 2026-11-11T08:28:29Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -66,7 +66,7 @@ The extension does not work on XML text or DOM nodes. It parses an XSD file into
 
 # Generated classes
 
-The classes in `shared/generated/` are generated from the W3C XML Schema 1.0 meta-schema `schema/XMLSchema.xsd` with the `xsd2ts` generator of `@neumaennl/xmlbind-ts`. The npm script `generate-classes-from-schema` runs `xsd2ts --force -i schema/XMLSchema.xsd -o shared/generated`.[^manifest] The files must not be edited by hand; changes come from regenerating, for example after updating `xmlbind-ts`.[^generated-readme]
+The classes in `shared/generated/` are generated from the W3C XML Schema 1.0 meta-schema `schema/XMLSchema.xsd` with the `xsd2ts` generator of `@neumaennl/xmlbind-ts`. Why the editor supports 1.0 first, and how 1.1 could follow, is decided in [ADR 004](architecture/004-xml-schema-1-0-first.md). The npm script `generate-classes-from-schema` runs `xsd2ts --force -i schema/XMLSchema.xsd -o shared/generated`.[^manifest] The files must not be edited by hand; changes come from regenerating, for example after updating `xmlbind-ts`.[^generated-readme]
 
 The generator creates one class per type and per element declaration of the meta-schema, plus `types.ts` (type aliases for built-in types such as `blockSet`), `enums.ts` (enumerations such as `formChoice`) and the barrel `index.ts`. `shared/types.ts` re-exports all generated classes together with the command and message types, so the rest of the code imports them from there.[^shared-types]
 

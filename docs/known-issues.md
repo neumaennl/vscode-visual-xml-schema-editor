@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-10T12:18:00Z }
-verified: { by: human:neumaennl, at: 2026-11-10T12:35:24Z }
+generated: { by: human:neumaennl, at: 2026-11-11T07:58:06Z }
+verified: { by: human:neumaennl, at: 2026-11-11T08:28:29Z }
 ---
 
 # Purpose
@@ -242,16 +242,8 @@ Effort:
 - **Location:** `src/webviewProvider.ts` (`executeCommand()`), `@neumaennl/xmlbind-ts` (`marshal`)
 - **Severity:** Medium
 - **Effort:** L
-- **Description:** The provider replaces the whole document with the output of `marshal`, which does not keep the source formatting: indentation becomes two spaces, attributes are reordered, and quotes and empty elements are normalized (see [Persistence](persistence.md#what-serialization-changes)). Even a small command therefore changes most lines of a hand-formatted file, which makes Git diffs and undo steps large. Comments, the prefixes of the element names and the XML declaration are kept; changes beyond the formatting are described in [Commands can change or lose content outside the edit](#commands-can-change-or-lose-content-outside-the-edit). The fix belongs in `xmlbind-ts`, for example by keeping attribute order, quote style and indentation as metadata like the element order.
+- **Description:** The provider replaces the whole document with the output of `marshal`, which does not keep the source formatting: indentation becomes two spaces, attributes are reordered, and quotes and empty elements are normalized (see [Persistence](persistence.md#what-serialization-changes)). Even a small command therefore changes most lines of a hand-formatted file, which makes Git diffs and undo steps large. Comments, the prefixes of the element names and the XML declaration are kept; changes beyond the formatting are described in [Commands can change or lose content outside the edit](#commands-can-change-or-lose-content-outside-the-edit). The fix belongs in `xmlbind-ts`, for example by keeping attribute order, quote style and indentation as metadata like the element order. Smaller still would be edits of the changed part only: if `xmlbind-ts` recorded where each element is in the source text, a command could replace just the text of the element it changed and leave everything else as it is, which fits commands that each change one place ([xmlbind-ts#252](https://github.com/neumaennl/xmlbind-ts/issues/252), approach 3).
 - **GitHub issue:** [xmlbind-ts#252](https://github.com/neumaennl/xmlbind-ts/issues/252)
-
-## Lists and unions with inline types are shown as if they had named types
-
-- **Location:** `webview-src/diagram/SchemaProcessorsSimpleTypes.ts` (`processList()`, `processUnion()`), `webview-src/propertiesPanel/propertiesPanelXmlPreview.ts`
-- **Severity:** Low
-- **Effort:** S
-- **Description:** For a list whose item type is an inline simple type (`<xs:list><xs:simpleType><xs:restriction base="xs:int"/></xs:simpleType></xs:list>`), `processList()` takes the base of the inline type as the item type. The diagram shows "list of xs:int", the properties panel offers `xs:int` as the item type, and the XML tab shows `<xs:list itemType="xs:int"/>`, although the list has no `itemType`. Changing the item type in the panel replaces the inline type. A union with inline member types is shown without any member types: the XML tab shows an empty `<xs:union/>`. The fix is to show inline item and member types as such, which depends on [Inline types have no node of their own](#inline-types-have-no-node-of-their-own).
-- **GitHub issue:** none
 
 ## Inline types have no node of their own
 
@@ -272,6 +264,22 @@ Effort:
 - **Severity:** Medium
 - **Effort:** L
 - **Description:** The palette has items for elements, attributes and groups, but none for attribute groups, so they cannot be created or referenced in the editor. The commands exist (`addAttributeGroup`, `removeAttributeGroup`, `modifyAttributeGroup`, see [Commands](commands.md#attribute-groups)), but the webview never sends them. The diagram does not show attribute groups either: it only reads `attribute`, so top-level attribute group definitions and `<xs:attributeGroup ref="…"/>` inside complex types are left out, and the only use in the webview is the duplicate-name check in `DropCommandFactory`. The fix is a palette item with drop targets for the schema (definition) and complex types (reference), showing definitions and references in the diagram, and the header delete button for them.
+- **GitHub issue:** none
+
+## References to included and imported schemas are not checked
+
+- **Location:** `src/commandValidators/validationUtils.ts` (`validateElementType()`)
+- **Severity:** Medium
+- **Effort:** L
+- **Description:** The editor never reads the schemas that `xs:include` and `xs:import` refer to. `validateElementType()` therefore accepts every type name with a prefix whose namespace has an `xs:import`, and every name without a prefix as soon as the schema has an `xs:include`, whether the type exists there or not: a misspelled `type="tns:Adress"` is accepted when `tns` is imported. The diagram cannot show the content of such types either. The fix needs the referenced files to be read and their components collected, the symbol table of [Responsibilities of xmlbind-ts and the editor](architecture.md#responsibilities-of-xmlbind-ts-and-the-editor). See also [Imports and includes cannot be edited in the editor](#imports-and-includes-cannot-be-edited-in-the-editor).
+- **GitHub issue:** none
+
+## Lists and unions with inline types are shown as if they had named types
+
+- **Location:** `webview-src/diagram/SchemaProcessorsSimpleTypes.ts` (`processList()`, `processUnion()`), `webview-src/propertiesPanel/propertiesPanelXmlPreview.ts`
+- **Severity:** Low
+- **Effort:** S
+- **Description:** For a list whose item type is an inline simple type (`<xs:list><xs:simpleType><xs:restriction base="xs:int"/></xs:simpleType></xs:list>`), `processList()` takes the base of the inline type as the item type. The diagram shows "list of xs:int", the properties panel offers `xs:int` as the item type, and the XML tab shows `<xs:list itemType="xs:int"/>`, although the list has no `itemType`. Changing the item type in the panel replaces the inline type. A union with inline member types is shown without any member types: the XML tab shows an empty `<xs:union/>`. The fix is to show inline item and member types as such, which depends on [Inline types have no node of their own](#inline-types-have-no-node-of-their-own).
 - **GitHub issue:** none
 
 ## `SchemaEditorProvider` parses XML without `SchemaModelManager`
@@ -298,12 +306,12 @@ Effort:
 - **Description:** The extension-to-webview message `schemaModified` is defined in the message types, but the extension never sends it and the webview does not handle it.
 - **GitHub issue:** none
 
-## Every message from the webview is a schema command
+## `vscode:check` does not check the Node versions that runtime dependencies require
 
-- **Location:** `shared/messages.ts` (`WebviewMessage`, `ExecuteCommandMessage`), `src/webviewProvider.ts` (`handleWebviewMessage()`), `webview-src/main.ts`
+- **Location:** `scripts/vscode-version.ts`, `.github/workflows/ci.yml`
 - **Severity:** Low
-- **Effort:** M
-- **Description:** `WebviewMessage`, the union of the messages from the webview, has a single member, `executeCommand`, which wraps a `SchemaCommand` (see [Messaging](messaging.md#messages)). So the switch on `message.command` in `handleWebviewMessage()` has one case, which ESLint reports as an unnecessary condition (`@typescript-eslint/no-unnecessary-condition`); an `eslint-disable-next-line` comment points to this entry. It is unclear whether this is intended. If every message from the webview is meant to be a schema edit, the wrapper is redundant and the webview could send `SchemaCommand`s directly. If the webview is meant to send other requests as well, these are missing so far; the [UX concept](ux-concept.md) plans context menu operations such as find usages, go to definition and regenerating sample XML, some of which need the extension but do not change the schema, and the [missing correlation](messaging.md#limitations) of commands and results may need a request ID in the message. Deciding needs an analysis of the existing and planned features and an architecture decision, recorded as an ADR.
+- **Effort:** S
+- **Description:** The extension runs on the Node version of the extension host, which `.nvmrc` records (see [VS Code and Node versions](build-and-packaging.md#vs-code-and-node-versions)). `npm run vscode:check` checks the values derived from the VS Code version, but not whether the runtime dependencies accept that Node version: `@neumaennl/xmlbind-ts` declares `engines.node` `>=24`, which fits the extension host's 24.15.0, but an upgrade that raises its minimum would go unnoticed. `xmlbind-ts` checks the same for its own dependencies with `npm run node:check`. The fix is a check after `npm ci` that reads `engines.node` of the runtime dependencies from `node_modules` and compares it with `.nvmrc`.
 - **GitHub issue:** none
 
 ## Leftovers of the removed top-level drop target
@@ -392,6 +400,14 @@ Effort:
 - **Severity:** Low
 - **Effort:** S
 - **Description:** `@vscode/test-cli` 0.0.15 depends on Mocha 11, which brings `serialize-javascript` 6 ([GHSA-5c6j-r48x-rmvq](https://github.com/advisories/GHSA-5c6j-r48x-rmvq), high: code execution through crafted input; [GHSA-qj8w-gfj5-8c6v](https://github.com/advisories/GHSA-qj8w-gfj5-8c6v), moderate: denial of service) and `diff` 7 ([GHSA-73rr-hh4g-fpgx](https://github.com/advisories/GHSA-73rr-hh4g-fpgx), low: denial of service). `npm audit` reports them. They are development dependencies that only run the [tests in the extension host](testing.md#tests-in-the-extension-host) on this repository's own test files, and they are not part of the VSIX. `@vscode/test-cli` declares overrides for both packages itself, but npm ignores the overrides of dependencies, and its switch to Mocha 12 is merged ([microsoft/vscode-test-cli#118](https://github.com/microsoft/vscode-test-cli/pull/118)) but not released yet. The decision is to wait for that release instead of overriding the versions here. When it is out, update `@vscode/test-cli`, check `npm audit` and remove this entry.
+- **GitHub issue:** none
+
+## Every message from the webview is a schema command
+
+- **Location:** `shared/messages.ts` (`WebviewMessage`, `ExecuteCommandMessage`), `src/webviewProvider.ts` (`handleWebviewMessage()`), `webview-src/main.ts`
+- **Severity:** Low
+- **Effort:** M
+- **Description:** `WebviewMessage`, the union of the messages from the webview, has a single member, `executeCommand`, which wraps a `SchemaCommand` (see [Messaging](messaging.md#messages)). So the switch on `message.command` in `handleWebviewMessage()` has one case, which ESLint reports as an unnecessary condition (`@typescript-eslint/no-unnecessary-condition`); an `eslint-disable-next-line` comment points to this entry. It is unclear whether this is intended. If every message from the webview is meant to be a schema edit, the wrapper is redundant and the webview could send `SchemaCommand`s directly. If the webview is meant to send other requests as well, these are missing so far; the [UX concept](ux-concept.md) plans context menu operations such as find usages, go to definition and regenerating sample XML, some of which need the extension but do not change the schema, and the [missing correlation](messaging.md#limitations) of commands and results may need a request ID in the message. Deciding needs an analysis of the existing and planned features and an architecture decision, recorded as an ADR.
 - **GitHub issue:** none
 
 ## Documentation in the diagram is cut off and hard to read
@@ -514,4 +530,4 @@ Effort:
 - **GitHub issues:** see description
 - **Severity:** Low
 - **Effort:** M
-- **Description:** [#279](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/279), [#282](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/282), [#283](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/283) and [#307](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/307) have no description, so their scope is only given by the title; [#284](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/284) only has a link. These and [#276](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/276), [#280](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/280), [#302](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/302), [#304](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/304) and [#308](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/308) have no labels.
+- **Description:** [#279](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/279), [#282](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/282), [#283](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/283) and [#307](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/307) have no description, so their scope is only given by the title. These, [#284](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/284) and [#276](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/276), [#280](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/280), [#302](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/302), [#304](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/304) and [#308](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/308) have no labels.

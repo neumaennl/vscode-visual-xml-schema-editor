@@ -4,8 +4,8 @@ title: Build and packaging
 description: How the extension is built, run, linted, packaged and checked - the build outputs and tsconfig files, the npm scripts, the scripts in TypeScript, running it in VS Code, the VSIX and its check, the generated schema classes, dependencies and the Node version, ESLint, CI, and planned changes.
 tags: [build, packaging, vsix, vite, typescript, eslint, ci, dependencies]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-07T20:16:13Z }
-verified: { by: human:neumaennl, at: 2026-11-07T20:27:42Z }
+generated: { by: human:neumaennl, at: 2026-11-11T07:57:55Z }
+verified: { by: human:neumaennl, at: 2026-11-11T08:28:29Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -186,6 +186,8 @@ The extension runs in the extension host of VS Code, which uses the Node version
 | ECMAScript edition | The `target` of the [`@tsconfig/bases`](https://github.com/tsconfig/bases) configuration for the major version of the extension host's Node, for example `es2024` for Node 24 (`@tsconfig/node24`), in `target` and `lib` of the tsconfig files and in `ecmaVersion` in `eslint.config.mjs` (see [Build outputs](#build-outputs)). The `ESNext.*` libraries of the base are left out, because their content changes with every TypeScript release and could allow APIs that this Node version lacks. The webview gets the same edition: it runs in the Chromium of the same Electron, which shares the V8 engine with Node. |
 
 VS Code builds a release with the Electron version in the `target` of the `.npmrc` at its tag in `microsoft/vscode`; the `electron` entry in its `package.json` can differ or be missing. The Electron release list gives the Node version of each Electron version. Inside VS Code, `process.versions` in the developer tools shows both.
+
+The runtime dependencies must accept the Node version of the extension host. `@neumaennl/xmlbind-ts` declares `>=24`, which fits; nothing checks this automatically yet (see [Known issues](known-issues.md#vscodecheck-does-not-check-the-node-versions-that-runtime-dependencies-require)).
 
 To change the lowest supported VS Code version, run `npm run vscode:update`. It lists the VS Code releases from the current minimum on, with their release date, Electron and Node version, the matching `@types/vscode` and `@types/node`, the ECMAScript edition, and the end of life of the Node version, and asks for the new minimum; `npm run vscode:update -- <version>` skips the question. It refuses a version whose Node version has no `@tsconfig/bases` configuration. It writes the four values to `package.json` and `.nvmrc`, with the line endings that `package.json` has, and replaces the edition in all `tsconfig*.json` files and in `eslint.config.mjs`, changing nothing else in them.[^compiler-target] After asking, it installs the Node version with nvm, nvm-windows or fnm (or uses the running Node if it already has that version) and runs `npm install`, `npm run lint`, `npm test`, `npm run package` and `npm run package:verify` with it. Without a terminal, or if no version manager can install the Node version, it prints these steps instead. Then fix what fails, update the requirements in `README.md`, and commit the changes together.[^vscode-version]
 

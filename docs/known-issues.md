@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-11T18:33:27Z }
-verified: { by: human:neumaennl, at: 2026-11-11T19:10:51Z }
+generated: { by: human:neumaennl, at: 2026-11-11T19:44:14Z }
+verified: { by: human:neumaennl, at: 2026-11-11T19:45:16Z }
 ---
 
 # Purpose
@@ -42,7 +42,7 @@ Effort:
 - **Severity:** High
 - **Effort:** S
 - **Description:** XML Schema requires the attributes and attribute group references of a complex type, or of its extension or restriction, to come before `xs:anyAttribute`. When `addAttribute` or `addAttributeGroup` adds the first attribute or reference to a node that already has an `xs:anyAttribute`, `marshal` writes the new child after it, because children of a kind that was not in the source are written after all others. Reproduced: adding the attribute `a` to `<xs:extension base="B"><xs:sequence/><xs:anyAttribute/></xs:extension>` writes `<xs:sequence/><xs:anyAttribute/><xs:attribute name="a"/>`; the same happens in a complex type without derivation and in a restriction of simple content. The command reports success, and the saved schema is invalid. The cause is in `xmlbind-ts` ([xmlbind-ts](https://github.com/neumaennl/xmlbind-ts/blob/main/docs/known-issues.md#children-that-were-not-in-the-source-are-written-after-all-others)); once it is fixed there, the editor only needs the new version.
-- **GitHub issue:** none
+- **GitHub issue:** [xmlbind-ts#296](https://github.com/neumaennl/xmlbind-ts/issues/296)
 
 ## Node IDs are ambiguous and have many special cases
 
@@ -140,7 +140,7 @@ Effort:
   - the properties panel shows the editors of an inline simple type, and changing a facet or the derivation there fails the same way.
 
   The fix is to check `hasAnonymousComplexType` wherever the flag is read as an inline simple type, or to split the flag. The facets of a restriction of simple content cannot be edited by any command yet (see [Complex types with simple content cannot be created or derived](#complex-types-with-simple-content-cannot-be-created-or-derived)).
-- **GitHub issue:** none
+- **GitHub issue:** [#440](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/440)
 
 ## Restricted complex content is shown without content
 

@@ -19,7 +19,7 @@ import {
   executeModifySimpleType,
   executeRemoveSimpleType,
 } from "./simpleTypeExecutors.js";
-import { emptySchema, schemaWith } from "../__tests__/schemaTestHelpers.js";
+import { emptySchema, schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
 
 /** A simpleType `AgeType` that restricts `xs:integer`. */
 const AGE_TYPE = `<xs:simpleType name="AgeType"><xs:restriction base="xs:integer"/></xs:simpleType>`;

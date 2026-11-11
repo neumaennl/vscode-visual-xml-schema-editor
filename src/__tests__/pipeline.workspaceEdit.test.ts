@@ -25,7 +25,7 @@ import { CommandProcessor } from "../commandProcessor.js";
 import { schema } from "../../shared/types.js";
 import { resolveAndGetHandler, stubEditor } from "./providerTestHelpers.js";
 import type { Mock } from "vitest";
-import { schemaXmlWith } from "./schemaTestHelpers.js";
+import { schemaXmlWith } from "../../shared/__tests__/schemaTestHelpers.js";
 
 // ─── Test infrastructure ──────────────────────────────────────────────────────
 

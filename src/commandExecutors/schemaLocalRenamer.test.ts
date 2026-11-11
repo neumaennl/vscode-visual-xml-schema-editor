@@ -4,7 +4,8 @@ import {
   renameLocalGroupRefInSchema,
   renameLocalTypeInSchema,
 } from "./schemaLocalRenamer.js";
-import { readTestSchema, schemaWith } from "../__tests__/schemaTestHelpers.js";
+import { schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
+import { readTestSchema } from "../__tests__/resourceTestHelpers.js";
 import { localComplexType, schema } from "../../shared/types.js";
 
 /** The schema with a QName in every place where XML Schema allows one. */

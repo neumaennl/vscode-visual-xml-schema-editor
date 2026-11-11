@@ -8,7 +8,7 @@ import { DiagramItem } from "../diagram/DiagramItem";
 import { DiagramItemGroupType, DiagramItemType } from "../diagram/DiagramTypes";
 import { PaletteSchemaConstruct } from "../palette/PaletteSchemaConstruct";
 import { diagramItem } from "../__tests__/diagramTestHelpers";
-import { DERIVATIONS, derivedComplexTypeT, schemaWith } from "../../src/__tests__/schemaTestHelpers";
+import { DERIVATIONS, derivedComplexTypeT, schemaWith } from "../../shared/__tests__/schemaTestHelpers";
 
 function makeItem(
   id: string,

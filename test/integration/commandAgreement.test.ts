@@ -16,12 +16,13 @@ import type { SchemaCommand } from "../../shared/types";
 import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy";
 import { CommandValidator } from "../../src/commandValidator.js";
 import { CommandExecutor } from "../../src/commandExecutor.js";
-import type { DiagramItem } from "../diagram/DiagramItem";
-import { diagramItems } from "./diagramTestHelpers";
+import type { DiagramItem } from "../../webview-src/diagram/DiagramItem";
+import { diagramItems } from "../../webview-src/__tests__/diagramTestHelpers";
+import { TEST_RESOURCES } from "../../src/__tests__/resourceTestHelpers.js";
 
 /** The folders with the schemas of the test. */
 const SCHEMA_FOLDERS = [
-  join(import.meta.dirname, "../../src/__tests__/test-resources"),
+  TEST_RESOURCES,
   join(import.meta.dirname, "../../exampleFiles"),
 ];
 

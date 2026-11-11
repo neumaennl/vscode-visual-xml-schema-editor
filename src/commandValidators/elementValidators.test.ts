@@ -15,7 +15,8 @@ import {
   validateModifyElement,
 } from "./elementValidators.js";
 import { expectInvalid } from "../__tests__/validationTestHelpers.js";
-import { readTestSchema, schemaWith } from "../__tests__/schemaTestHelpers.js";
+import { schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
+import { readTestSchema } from "../__tests__/resourceTestHelpers.js";
 
 /** An import of the namespace `http://example.com/external`. */
 const EXTERNAL_IMPORT = `<xs:import namespace="http://example.com/external" schemaLocation="external.xsd"/>`;

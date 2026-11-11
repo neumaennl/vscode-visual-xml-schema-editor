@@ -16,7 +16,8 @@ import {
   runCommandExpectSuccessSchema,
   runCommandExpectValidationFailure,
 } from "./pipelineTestHelpers.js";
-import { emptySchemaXml, readTestXml } from "./schemaTestHelpers.js";
+import { emptySchemaXml } from "../../shared/__tests__/schemaTestHelpers.js";
+import { readTestXml } from "./resourceTestHelpers.js";
 
 describe("Integration: ComplexType pipeline", () => {
   // ─── addComplexType ────────────────────────────────────────────────────────

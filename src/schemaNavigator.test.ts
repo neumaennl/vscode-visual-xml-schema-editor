@@ -4,7 +4,8 @@
  */
 
 import { locateNodeById } from "./schemaNavigator.js";
-import { emptySchema, readTestSchema, schemaWith } from "./__tests__/schemaTestHelpers.js";
+import { emptySchema, schemaWith } from "../shared/__tests__/schemaTestHelpers.js";
+import { readTestSchema } from "./__tests__/resourceTestHelpers.js";
 
 /** The file with an element `person` with the local elements `name` and `age`. */
 const PERSON_NAME_AND_AGE_XSD = "person-element-with-name-and-age.xsd";

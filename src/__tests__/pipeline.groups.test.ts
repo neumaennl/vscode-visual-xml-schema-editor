@@ -21,7 +21,7 @@ import {
   runCommandExpectSuccessSchema,
   runCommandExpectValidationFailure,
 } from "./pipelineTestHelpers.js";
-import { emptySchemaXml, schemaXmlWith } from "./schemaTestHelpers.js";
+import { emptySchemaXml, schemaXmlWith } from "../../shared/__tests__/schemaTestHelpers.js";
 
 /**
  * Group references in anonymous complex types, documented particles, and compositors in

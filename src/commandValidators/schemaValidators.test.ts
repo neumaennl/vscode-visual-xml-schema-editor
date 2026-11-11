@@ -23,7 +23,8 @@ import {
 } from "./schemaValidators.js";
 import { ValidationResult } from "./validationUtils.js";
 import { expectInvalid } from "../__tests__/validationTestHelpers.js";
-import { emptySchema, readTestSchema, schemaWith, schemaWithIncludes } from "../__tests__/schemaTestHelpers.js";
+import { emptySchema, schemaWith, schemaWithIncludes } from "../../shared/__tests__/schemaTestHelpers.js";
+import { readTestSchema } from "../__tests__/resourceTestHelpers.js";
 
 /** An import of the namespace `http://example.com/ns1`. */
 const NS1_IMPORT = `<xs:import namespace="http://example.com/ns1" schemaLocation="schema1.xsd"/>`;

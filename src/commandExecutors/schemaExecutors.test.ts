@@ -40,7 +40,7 @@ import {
   executeModifyInclude,
   executeModifySchemaNamespaces,
 } from "./schemaExecutors.js";
-import { emptySchema, schemaWith, schemaWithIncludes } from "../__tests__/schemaTestHelpers.js";
+import { emptySchema, schemaWith, schemaWithIncludes } from "../../shared/__tests__/schemaTestHelpers.js";
 
 // ---------------------------------------------------------------------------
 // Helpers

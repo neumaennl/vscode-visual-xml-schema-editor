@@ -18,7 +18,7 @@ import {
   keyrefType,
 } from "../../shared/types.js";
 import { isPrefixReferencedInSchema, isAnyPrefixReferencedInSchema } from "./schemaPrefixChecker.js";
-import { emptySchema, schemaWith } from "../__tests__/schemaTestHelpers.js";
+import { emptySchema, schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
 
 /** The prefix `ext` for the namespace `http://example.com/ext`. */
 const EXT_PREFIX = { ext: "http://example.com/ext" };

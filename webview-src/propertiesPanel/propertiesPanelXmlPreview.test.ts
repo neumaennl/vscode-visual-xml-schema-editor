@@ -12,7 +12,7 @@ import { findButton } from "../__tests__/propertiesPanelTestHelpers";
 import { diagramItem } from "../__tests__/diagramTestHelpers";
 import { unmarshal } from "@neumaennl/xmlbind-ts";
 import { schema } from "../../shared/types";
-import { schemaWith } from "../../src/__tests__/schemaTestHelpers";
+import { schemaWith } from "../../shared/__tests__/schemaTestHelpers";
 
 /** Elements, types and a group with the properties that the fragment shows. */
 const PREVIEW_NODES = `<xs:element name="code" type="xs:string" nillable="true" default="A"/>

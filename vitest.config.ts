@@ -77,6 +77,12 @@ export default defineConfig({
         extends: true,
         test: { name: "scripts", environment: "node", include: ["scripts/**/*.test.ts"] },
       },
+      {
+        // Tests that use the extension host and the webview together; the only code allowed to import both
+        extends: true,
+        resolve: { alias: [vscodeMock] },
+        test: { name: "integration", environment: "jsdom", include: ["test/integration/**/*.test.ts"] },
+      },
     ],
   },
 });

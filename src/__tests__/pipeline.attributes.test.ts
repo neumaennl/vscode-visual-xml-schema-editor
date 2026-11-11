@@ -15,7 +15,7 @@ import {
   runCommandExpectSuccessSchema,
   runCommandExpectValidationFailure,
 } from "./pipelineTestHelpers.js";
-import { emptySchemaXml, schemaXmlWith } from "./schemaTestHelpers.js";
+import { emptySchemaXml, schemaXmlWith } from "../../shared/__tests__/schemaTestHelpers.js";
 
 /** Schema with a complexType that has two attributes (id, status) for remove/modify tests. */
 const SCHEMA_WITH_TWO_ATTRS = schemaXmlWith(`<xs:complexType name="PersonType">

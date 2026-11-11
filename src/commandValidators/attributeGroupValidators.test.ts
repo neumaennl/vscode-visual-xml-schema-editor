@@ -16,7 +16,8 @@ import {
   validateModifyAttributeGroup,
 } from "./attributeGroupValidators.js";
 import { expectInvalid } from "../__tests__/validationTestHelpers.js";
-import { emptySchema, readTestSchema, schemaWith, schemaWithAttrGroups } from "../__tests__/schemaTestHelpers.js";
+import { emptySchema, schemaWith, schemaWithAttrGroups } from "../../shared/__tests__/schemaTestHelpers.js";
+import { readTestSchema } from "../__tests__/resourceTestHelpers.js";
 
 /** The file with a complexType `PersonType` that references the attribute group `CommonAttrs`. */
 const PERSON_TYPE_WITH_REF_XSD = "person-type-with-attribute-group-ref.xsd";

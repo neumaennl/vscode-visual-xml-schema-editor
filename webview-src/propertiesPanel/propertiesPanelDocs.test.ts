@@ -9,7 +9,7 @@ import { DiagramItemType } from "../diagram/DiagramTypes";
 import { SCHEMA_ROOT_ID } from "../../shared/idStrategy";
 import { findButton } from "../__tests__/propertiesPanelTestHelpers";
 import { diagramItem } from "../__tests__/diagramTestHelpers";
-import { schemaWith } from "../../src/__tests__/schemaTestHelpers";
+import { schemaWith } from "../../shared/__tests__/schemaTestHelpers";
 
 /** Two annotations of the schema, the first with two documentation entries and the second with one. */
 const TWO_SCHEMA_ANNOTATIONS = [

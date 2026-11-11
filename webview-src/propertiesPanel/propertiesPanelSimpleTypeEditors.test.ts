@@ -9,7 +9,7 @@ import { PropertiesPanel } from "./propertiesPanel";
 import type { DiagramItem } from "../diagram/DiagramItem";
 import { diagramItem } from "../__tests__/diagramTestHelpers";
 import { getInputByLabel, getSelectByLabel, getSelectsByLabel, hasLabel } from "../__tests__/propertiesPanelTestHelpers";
-import { schemaWith } from "../../src/__tests__/schemaTestHelpers";
+import { schemaWith } from "../../shared/__tests__/schemaTestHelpers";
 
 /** Named and anonymous list, union and restriction types. */
 const SIMPLE_TYPES = schemaWith(`<xs:simpleType name="Tokens"><xs:list itemType="xs:token"/></xs:simpleType>

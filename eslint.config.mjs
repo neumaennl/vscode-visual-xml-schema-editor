@@ -93,6 +93,7 @@ export default [
           './tsconfig.extension-test.json',
           './tsconfig.webview-test.json',
           './tsconfig.shared-test.json',
+          './tsconfig.integration-test.json',
           './tsconfig.nodeTools.json',
           './tsconfig.extension-host-test.json',
         ],
@@ -196,6 +197,30 @@ export default [
       },
     },
   },
+  // Project boundaries (see "Project boundaries" in docs/development-guidelines.md): `shared` uses only
+  // `shared`; `src` and `webview-src` use only their own code and `shared`; `scripts` uses only
+  // `scripts`. Only the tests in `test/integration` may use the extension host and the webview together.
+  ...[
+    { folder: 'shared', allowed: 'shared', forbidden: ['src', 'webview-src', 'test', 'scripts'] },
+    { folder: 'src', allowed: 'its own code and shared', forbidden: ['webview-src', 'test', 'scripts'] },
+    { folder: 'webview-src', allowed: 'its own code and shared', forbidden: ['src', 'test', 'scripts'] },
+    { folder: 'scripts', allowed: 'its own code', forbidden: ['src', 'webview-src', 'shared', 'test'] },
+  ].map(({ folder, allowed, forbidden }) => ({
+    files: [`${folder}/**/*.ts`],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              regex: `^(\\.\\./)+(${forbidden.join('|')})(/|$)`,
+              message: `Code in ${folder} may only import ${allowed} (see "Project boundaries" in docs/development-guidelines.md).`,
+            },
+          ],
+        },
+      ],
+    },
+  })),
   // Webview TypeScript files configuration (browser environment)
   {
     files: ['webview-src/**/*.ts'],

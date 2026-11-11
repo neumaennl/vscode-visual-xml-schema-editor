@@ -15,7 +15,7 @@ import {
   runCommandExpectSuccessSchema,
   runCommandExpectValidationFailure,
 } from "./pipelineTestHelpers.js";
-import { emptySchemaXml, schemaXmlWith } from "./schemaTestHelpers.js";
+import { emptySchemaXml, schemaXmlWith } from "../../shared/__tests__/schemaTestHelpers.js";
 
 /** A list simpleType `Codes` of tokens. */
 const LIST_TYPE = `<xs:simpleType name="Codes"><xs:list itemType="xs:token"/></xs:simpleType>`;

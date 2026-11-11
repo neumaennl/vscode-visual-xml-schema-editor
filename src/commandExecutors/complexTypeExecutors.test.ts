@@ -15,7 +15,7 @@ import {
   executeModifyComplexType,
   executeRemoveComplexType,
 } from "./complexTypeExecutors.js";
-import { emptySchema, schemaWith } from "../__tests__/schemaTestHelpers.js";
+import { emptySchema, schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
 
 /** A complexType `EmployeeType` that extends `PersonType`. */
 const EMPLOYEE_TYPE = `<xs:complexType name="EmployeeType">

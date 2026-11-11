@@ -3,7 +3,7 @@
  */
 
 import { getAttributeContainer, getContentDerivation, isSchemaRoot } from "./schemaUtils.js";
-import { DERIVATIONS, derivedComplexTypeT, schemaWith } from "../src/__tests__/schemaTestHelpers.js";
+import { DERIVATIONS, derivedComplexTypeT, schemaWith } from "./__tests__/schemaTestHelpers.js";
 
 describe("schemaUtils", () => {
   describe("isSchemaRoot", () => {

@@ -5,7 +5,8 @@
 
 import { SchemaModelManager } from "./schemaModelManager.js";
 import { schema } from "../shared/types.js";
-import { emptySchemaXml, readTestXml, schemaXmlWith } from "./__tests__/schemaTestHelpers.js";
+import { emptySchemaXml, schemaXmlWith } from "../shared/__tests__/schemaTestHelpers.js";
+import { readTestXml } from "./__tests__/resourceTestHelpers.js";
 
 /** A schema with a target namespace and the element `root`. */
 const SCHEMA_WITH_TARGET_NAMESPACE = `<?xml version="1.0" encoding="UTF-8"?>

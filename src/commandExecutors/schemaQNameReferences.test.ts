@@ -6,7 +6,8 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { unmarshal } from "@neumaennl/xmlbind-ts";
 import { schema } from "../../shared/types.js";
-import { readTestSchema, schemaWith } from "../__tests__/schemaTestHelpers.js";
+import { schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
+import { readTestSchema, TEST_RESOURCES } from "../__tests__/resourceTestHelpers.js";
 import { forEachQNameReference, QNameReference } from "./schemaQNameReferences.js";
 
 /** The schema with a QName in every place where XML Schema allows one. */
@@ -14,7 +15,7 @@ const QNAME_IN_EVERY_PLACE = "qname-in-every-place.xsd";
 
 /** The paths of all schemas in the test resources and the example files. */
 const ALL_SCHEMA_FILES = [
-  join(import.meta.dirname, "../__tests__/test-resources"),
+  TEST_RESOURCES,
   join(import.meta.dirname, "../../exampleFiles"),
 ].flatMap((folder) => readdirSync(folder).filter((name) => name.endsWith(".xsd")).map((name) => join(folder, name)));
 

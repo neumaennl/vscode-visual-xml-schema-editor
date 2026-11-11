@@ -4,8 +4,8 @@ title: Architecture
 description: How the extension host, the webview and the shared code work together to provide a visual editor for XML Schema (XSD) files, what xmlbind-ts is responsible for and what the editor is, and the design decisions behind the command-based design.
 tags: [architecture, extension-host, webview, shared, design-decisions]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-03T16:28:02Z }
-verified: { by: human:neumaennl, at: 2026-11-04T08:44:10Z }
+generated: { by: human:neumaennl, at: 2026-11-11T18:50:29Z }
+verified: { by: human:neumaennl, at: 2026-11-11T19:10:51Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -161,6 +161,9 @@ shared/                   Used by both sides
   schemaUtils.ts          Small helpers (schema root detection, prefixes)
   types.ts                Re-exports of all of the above
 schema/XMLSchema.xsd      The XSD meta-schema the model classes are generated from
+test/                     Tests outside the three projects
+  integration/            Tests that use the extension host and the webview together
+  extension-host/         Smoke tests that run inside VS Code
 exampleFiles/             Sample XSD files for manual testing
 ```
 

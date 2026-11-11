@@ -4,8 +4,8 @@ title: "ADR 003: Validators check, executors assume"
 description: The decision that the validators check everything an executor relies on and the executors do not check it again, how an executor states what it assumes, why this is safe, the scenarios that were examined, and how a test keeps validators and executors in agreement.
 tags: [adr, architecture, commands, validation, error-handling, testing]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-03T16:26:46Z }
-verified: { by: human:neumaennl, at: 2026-11-04T08:44:10Z }
+generated: { by: human:neumaennl, at: 2026-11-11T18:50:29Z }
+verified: { by: human:neumaennl, at: 2026-11-11T19:10:51Z }
 sources:
   - id: command-processor
     resource: ../../src/commandProcessor.ts
@@ -14,7 +14,7 @@ sources:
     resource: ../../src/commandExecutors/assumeValidated.ts
     title: Assumptions of the executors
   - id: command-agreement-test
-    resource: ../../webview-src/__tests__/commandAgreement.test.ts
+    resource: ../../test/integration/commandAgreement.test.ts
     title: "Integration test: validators and executors agree"
   - id: issue-402
     resource: https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/402
@@ -37,7 +37,7 @@ Every command has a validator and an executor (see [Commands](../commands.md)). 
 - **The executor does not repeat these checks.** It assumes that the command is valid.
 - **Where the types need such an assumption, the executor states it** with the helpers in `src/commandExecutors/assumeValidated.ts`:[^assume-validated] `assumeValidated(value, what)` returns a value that the validator guarantees, `assumeRemoved()` checks that a removal removed something, `locateValidated()` locates a node that the validator found, and `assumptionFailed()` marks a branch that a valid command cannot reach. If an assumption does not hold, the command fails with an error such as "Element person not found, although the validator accepted the command".
 - **`CommandProcessor` turns every exception into a runtime failure.** The document stays unchanged, and the webview shows the message.
-- **A test keeps validators and executors in agreement.** `webview-src/__tests__/commandAgreement.test.ts` builds the diagram of every schema in `src/__tests__/test-resources` and `exampleFiles`, creates the commands that the webview can send for its nodes, and applies every command that the validator accepts. The executor must neither throw nor leave the schema unchanged.[^command-agreement-test]
+- **A test keeps validators and executors in agreement.** `test/integration/commandAgreement.test.ts` builds the diagram of every schema in `src/__tests__/test-resources` and `exampleFiles`, creates the commands that the webview can send for its nodes, and applies every command that the validator accepts. The executor must neither throw nor leave the schema unchanged.[^command-agreement-test]
 
 ## Reasons
 
@@ -84,6 +84,6 @@ Review this decision if the executors are called from somewhere other than `Comm
 
 [^assume-validated]: [Assumptions of the executors](../../src/commandExecutors/assumeValidated.ts)
 
-[^command-agreement-test]: [Integration test: validators and executors agree](../../webview-src/__tests__/commandAgreement.test.ts)
+[^command-agreement-test]: [Integration test: validators and executors agree](../../test/integration/commandAgreement.test.ts)
 
 [^issue-402]: [Modernization Phase 9: reintegrate with the editor branch (#402)](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/402)

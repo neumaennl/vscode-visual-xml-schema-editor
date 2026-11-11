@@ -17,7 +17,7 @@ import type {
 } from "../commandProcessor.js";
 import { schema } from "../../shared/types.js";
 import type { SchemaCommand } from "../../shared/types.js";
-import { schemaXmlWith } from "./schemaTestHelpers.js";
+import { schemaXmlWith } from "../../shared/__tests__/schemaTestHelpers.js";
 
 // ─── XML Fixtures ────────────────────────────────────────────────────────────
 

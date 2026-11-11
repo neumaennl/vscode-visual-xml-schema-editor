@@ -1,11 +1,11 @@
 ---
 type: Testing Strategy
 title: Testing
-description: How the extension is tested - running the tests and the type check, the four Vitest projects, mocks and helpers, conventions for tests, mocks, helper functions and helper classes, which tests to write for typical changes, coverage, CI, the smoke tests in the extension host with a mock webview, and how the current tests compare with the testing strategy of ADR 001.
+description: How the extension is tested - running the tests and the type check, the five Vitest projects, mocks and helpers, conventions for tests, mocks, helper functions and helper classes, which tests to write for typical changes, coverage, CI, the smoke tests in the extension host with a mock webview, and how the current tests compare with the testing strategy of ADR 001.
 tags: [testing, vitest, mocks, coverage, ci, conventions]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-11T14:18:14Z }
-verified: { by: human:neumaennl, at: 2026-11-11T19:10:51Z }
+generated: { by: human:neumaennl, at: 2026-11-11T19:16:50Z }
+verified: { by: human:neumaennl, at: 2026-11-11T19:19:10Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -20,8 +20,11 @@ sources:
     resource: ../src/__tests__/pipelineTestHelpers.ts
     title: Schema constants and pipeline helpers
   - id: schema-test-helpers
-    resource: ../src/__tests__/schemaTestHelpers.ts
+    resource: ../shared/__tests__/schemaTestHelpers.ts
     title: Helpers that build schema objects
+  - id: resource-test-helpers
+    resource: ../src/__tests__/resourceTestHelpers.ts
+    title: Helpers that read the test resources
   - id: provider-test-helpers
     resource: ../src/__tests__/providerTestHelpers.ts
     title: Stubs of the VS Code objects for the provider
@@ -104,7 +107,7 @@ This document describes how the extension is tested today and the conventions fo
 | `npm run test:coverage` | Runs all tests with a coverage report in `coverage/`, without compiling and without the type check. |
 | `npm run test:extension-host` | Runs the smoke tests inside VS Code (see [Tests in the extension host](#tests-in-the-extension-host)). `npm test` does not run them. |
 
-Vitest only removes the types from the TypeScript files; it does not check them. `npm run typecheck` runs `tsc --noEmit` with the test configurations `tsconfig.extension-test.json`, `tsconfig.webview-test.json` and `tsconfig.shared-test.json`, with `tsconfig.nodeTools.json` (the scripts and the configurations of Vite and Vitest), and with `tsconfig.extension-host-test.json` (the tests in the extension host), so a type error in a test or in the code it tests fails `npm test`.[^manifest]
+Vitest only removes the types from the TypeScript files; it does not check them. `npm run typecheck` runs `tsc --noEmit` with the test configurations `tsconfig.extension-test.json`, `tsconfig.webview-test.json`, `tsconfig.shared-test.json` and `tsconfig.integration-test.json`, with `tsconfig.nodeTools.json` (the scripts and the configurations of Vite and Vitest), and with `tsconfig.extension-host-test.json` (the tests in the extension host), so a type error in a test or in the code it tests fails `npm test`.[^manifest]
 
 `npx vitest run` runs the tests without compiling and without the type check; `npx vitest run --project webview` or a path such as `npx vitest run src/commandValidators` runs a part of them. Each run writes a JUnit report to `test-results/vitest-junit.xml`. Both `coverage/` and `test-results/` are ignored by Git.[^vitest-config]
 
@@ -112,7 +115,7 @@ Use the Node version from `.nvmrc`, which CI also uses. It is the Node version o
 
 # Vitest projects
 
-`vitest.config.ts` defines four projects, one for each part of the code (see [Architecture](architecture.md#components)), on top of one shared base:[^vitest-config]
+`vitest.config.ts` defines five projects, one for each part of the code (see [Architecture](architecture.md#components)) and one for the integration tests that use the extension host and the webview together, on top of one shared base:[^vitest-config]
 
 | Project | Tests | Environment | Aliases | Type-checked with |
 |---|---|---|---|---|
@@ -120,6 +123,7 @@ Use the Node version from `.nvmrc`, which CI also uses. It is the Node version o
 | `shared` | `shared/**/*.test.ts`, type tests `shared/**/*.test-d.ts` | Node.js | `vscode` to the mock | `tsconfig.shared-test.json` |
 | `webview` | `webview-src/**/*.test.ts` | jsdom | none | `tsconfig.webview-test.json` |
 | `scripts` | `scripts/**/*.test.ts` | Node.js | none | `tsconfig.nodeTools.json` |
+| `integration` | `test/integration/**/*.test.ts` | jsdom | `vscode` to the mock | `tsconfig.integration-test.json` |
 
 - **Shared base.** The base enables the globals (`describe`, `test`, `expect`, `vi` without an import), defines the reporters and the coverage. The projects only add their name, environment, test files and the `vscode` alias, and in `shared` the type checking mode for type tests.
 - **Type tests.** The `shared` project has Vitest's type checking mode on for `*.test-d.ts` files: Vitest does not run them but checks them with `tsc` and `tsconfig.shared-test.json`, and reports each `test()` whose code has a type error as failed. `npm test` therefore also fails when a type test fails.[^vitest-config]
@@ -128,14 +132,14 @@ Use the Node version from `.nvmrc`, which CI also uses. It is the Node version o
 
 # Mocks and helpers
 
-- **VS Code API.** `src/__mocks__/vscode.ts` replaces the `vscode` module in the `extension` and `shared` projects through an alias in `vitest.config.ts`. It provides `vi.fn()` mocks for the parts the code uses: `Uri`, `workspace` (including `applyEdit` and `getConfiguration`), `window`, `commands`, `languages`, `EventEmitter`, `WorkspaceEdit`, `Range` and a few more. Classes of the API whose instances need members, such as `WorkspaceEdit`, are mocked with a class (`vi.fn(class { … })`): the code creates them with `new`, Vitest passes `new` on to the implementation, and arrow functions cannot be called with `new`.[^vscode-mock]
+- **VS Code API.** `src/__mocks__/vscode.ts` replaces the `vscode` module in the `extension`, `shared` and `integration` projects through an alias in `vitest.config.ts`. It provides `vi.fn()` mocks for the parts the code uses: `Uri`, `workspace` (including `applyEdit` and `getConfiguration`), `window`, `commands`, `languages`, `EventEmitter`, `WorkspaceEdit`, `Range` and a few more. Classes of the API whose instances need members, such as `WorkspaceEdit`, are mocked with a class (`vi.fn(class { … })`): the code creates them with `new`, Vitest passes `new` on to the implementation, and arrow functions cannot be called with `new`.[^vscode-mock]
 - **VS Code objects.** `stubEditor(xml)` in `src/__tests__/providerTestHelpers.ts` creates a `SchemaEditorProvider` and partial stubs of `ExtensionContext`, `Webview`, `WebviewPanel` and a `TextDocument` with the given text, with only the members the provider uses, and returns the mocks of `postMessage` and `asWebviewUri`. `resolveAndGetHandler()` opens the editor and returns the handler that the provider registered for messages from the webview.[^provider-test-helpers]
 - **Webview API.** `main.test.ts` sets `acquireVsCodeApi` on `globalThis` before the app is loaded, with mocks for `postMessage`, `getState` and `setState`, and builds the page with `document.body.innerHTML`. Each test loads the app again with `vi.resetModules()` and `await import("./main")`.[^main-test]
 - **Properties panel.** `webview-src/__tests__/propertiesPanelTestHelpers.ts` finds the fields of the panel by their labels (`getInputByLabel()`, `getSelectByLabel()`, `getSelectsByLabel()`, `hasLabel()`) and buttons, such as those of the tabs, by their text (`findButton()`).[^properties-panel-test-helpers]
 - **Diagram items.** `webview-src/__tests__/diagramTestHelpers.ts` builds the diagram of a real schema with the `DiagramBuilder`: `diagramItems(schemaObj)` returns all items, `diagramItem(schemaObj, id)` the item with an ID. Tests of the panel and the drop code use them instead of creating `DiagramItem`s by hand, so that the items have the IDs and values that the builder gives them (see [Expected results](#expected-results)). New tests follow this rule, and some older ones were rewritten to follow it; others still create the items by hand.[^diagram-test-helpers]
 - **SVG measuring.** jsdom has no layout engine, so `setupGetBBoxMock()` in `webview-src/__tests__/svgTestHelpers.ts` gives every element a `getBBox()` that assumes 6 pixels per character and a height of 10 pixels.[^svg-test-helpers]
 - **Pipeline helpers.** `src/__tests__/pipelineTestHelpers.ts` has small schemas as constants (`SCHEMA_WITH_ELEMENTS` and others, built with `schemaXmlWith()`) and runs a command through a new `CommandProcessor`: `runCommand()`, `runCommandExpectSuccess()` (returns the XML), `runCommandExpectSuccessSchema()` (returns the unmarshalled schema) and `runCommandExpectValidationFailure()`.[^pipeline-test-helpers]
-- **Schema XML and objects.** `src/__tests__/schemaTestHelpers.ts` builds the XML of a schema with `schemaXmlWith(body, namespaces)` (the XML declaration, the `xs` namespace, further namespace declarations by prefix if given, and the given content) and of a schema without content with `emptySchemaXml()`, and reads XML files from `src/__tests__/test-resources` with `readTestXml(name)`. For the tests of validators and executors it unmarshals schemas: `schemaWith(body, namespaces)`, `emptySchema()`, `readTestSchema(name)` (a file from `test-resources`), `schemaWithAttrGroups(body)` and `schemaWithIncludes(...)`. `derivedComplexTypeT(content, derivation, body)` builds the XML of a derived complex type `T`, and `DERIVATIONS` lists the four combinations of `complexContent` or `simpleContent` with `extension` or `restriction` for `test.each()`. A test that only needs the schema object uses these instead of unmarshalling XML itself.[^schema-test-helpers]
+- **Schema XML and objects.** `shared/__tests__/schemaTestHelpers.ts`, which the tests of all projects use, builds the XML of a schema with `schemaXmlWith(body, namespaces)` (the XML declaration, the `xs` namespace, further namespace declarations by prefix if given, and the given content) and of a schema without content with `emptySchemaXml()`. For the tests of validators and executors it unmarshals schemas: `schemaWith(body, namespaces)`, `emptySchema()`, `schemaWithAttrGroups(body)` and `schemaWithIncludes(...)`. `derivedComplexTypeT(content, derivation, body)` builds the XML of a derived complex type `T`, and `DERIVATIONS` lists the four combinations of `complexContent` or `simpleContent` with `extension` or `restriction` for `test.each()`. A test that only needs the schema object uses these instead of unmarshalling XML itself.[^schema-test-helpers] `src/__tests__/resourceTestHelpers.ts` reads the XML files in `src/__tests__/test-resources` for the tests of the extension host: `readTestXml(name)` returns the text, `readTestSchema(name)` the unmarshalled schema, and `TEST_RESOURCES` is the path of the folder, which the agreement test lists.[^resource-test-helpers]
 - **Assertions.** `expectInvalid()` in `src/__tests__/validationTestHelpers.ts` checks that a validation failed and narrows the result, so that the test can read `error`.[^validation-test-helpers] `src/__tests__/textTestHelpers.ts` checks the order of strings in text such as serialized XML: `expectLinesInOrder()` across lines, `expectInOrderOnLine()` within one line.[^text-test-helpers]
 - **Scripts.** The tests of the scripts send no request and install nothing. `scripts/__tests__/releaseTestHelpers.ts` replaces `fetch` with `stubFetch()`, which answers each URL with a given body, and builds GitHub releases with `release()` and `releasesPage()`. The tests of `vscode-version.ts` and `scripts/lib/node-setup.ts` mock `node:child_process`, `node:fs` and `node:readline/promises` where the script would start programs, check files or ask in the terminal, and work in a temporary folder. The tests of `scripts/lib/compiler-target.ts` write tsconfig files and an ESLint configuration into a temporary folder and check which editions it finds and replaces. The tests of `verify-vsix.ts` unpack tiny VSIX files from `scripts/__tests__/test-resources/` with the same tool as the script (`unzip`, on Windows `tar.exe`), because unpacking is what the script checks: a valid extension, one without `activate()` and one with a missing dependency, all ES modules like the extension.[^release-test-helpers]
 
@@ -151,7 +155,7 @@ The `vscode` mock is not used through this mechanism: `src/__mocks__/vscode.ts` 
 # Kinds of tests
 
 - **Unit tests** test one module and sit next to it: `src/commandProcessor.ts` is tested in `src/commandProcessor.test.ts`.
-- **Integration tests** test several modules together and sit in the `__tests__` folder of the part. The `src/__tests__/pipeline.*.test.ts` files send commands through the real `CommandProcessor`, which validates, executes and serializes them (see [Persistence](persistence.md#command-pipeline)), and check the resulting XML or schema; `pipeline.chained.test.ts` runs several commands in a row. `pipeline.workspaceEdit.test.ts` starts one step earlier: it sends an `executeCommand` message to `SchemaEditorProvider` and checks the `WorkspaceEdit`, the `applyEdit` call and the reply.[^workspace-edit-test] `webview-src/__tests__/commandAgreement.test.ts` checks that the validators and the executors agree ([ADR 003](architecture/003-validators-check-executors-assume.md)): it builds the diagram of every schema in `src/__tests__/test-resources` and `exampleFiles`, creates the commands that the webview can send for its nodes, and applies every command that the validator accepts; the executor must neither throw nor leave the schema unchanged. It sits in the webview project because it needs the `DiagramBuilder`; the validators and executors it imports do not use `vscode`.
+- **Integration tests** test several modules together. Those within one project sit in the `__tests__` folder of the part; those that use the extension host and the webview together sit in `test/integration/` (see [Project boundaries](development-guidelines.md#project-boundaries)). The `src/__tests__/pipeline.*.test.ts` files send commands through the real `CommandProcessor`, which validates, executes and serializes them (see [Persistence](persistence.md#command-pipeline)), and check the resulting XML or schema; `pipeline.chained.test.ts` runs several commands in a row. `pipeline.workspaceEdit.test.ts` starts one step earlier: it sends an `executeCommand` message to `SchemaEditorProvider` and checks the `WorkspaceEdit`, the `applyEdit` call and the reply.[^workspace-edit-test] `test/integration/commandAgreement.test.ts` checks that the validators and the executors agree ([ADR 003](architecture/003-validators-check-executors-assume.md)): it builds the diagram of every schema in `src/__tests__/test-resources` and `exampleFiles`, creates the commands that the webview can send for its nodes, and applies every command that the validator accepts; the executor must neither throw nor leave the schema unchanged. It sits in the `integration` project, the only one that may use the extension host and the webview together (see [Project boundaries](development-guidelines.md#project-boundaries)), because it needs the `DiagramBuilder` of the webview and the validators and executors of the extension host; these do not use `vscode`.
 - **Type tests** check rules of types that the compiler enforces and the code relies on, with `expectTypeOf()`, for example `expectTypeOf<Omit<P, "id">>().not.toExtend<P>()` for a required field. `shared/commands/commandTypes.test-d.ts` checks the required fields of the command payloads, the allowed values of `maxOccurs` and that `SchemaCommand` rejects an unknown `type` and a payload of another command. A type test is only written for such a rule, not for values assigned to a typed literal: the compiler already checks those, so such a test cannot fail.
 
 | Area | Tests | Details |
@@ -208,7 +212,7 @@ Existing tests that do not follow these conventions yet are listed in [Known iss
 ## Helper functions
 
 - **One file.** A helper that only one test file uses is defined at the top of that file, after the imports, with a TSDoc comment.
-- **Several files.** A helper that more than one test file needs is moved to a helper module in the `__tests__` folder of the part and imported from there; it is not copied. Helper modules are named `<topic>TestHelpers.ts`, for example `schemaTestHelpers.ts`. Files in `__tests__` are excluded from the build and from the coverage report, and production code never imports them.
+- **Several files.** A helper that more than one test file needs is moved to a helper module in the `__tests__` folder of the part and imported from there; it is not copied. A helper that tests of several projects need goes into `shared/__tests__/`, because tests may only import their own project and `shared/` (see [Project boundaries](development-guidelines.md#project-boundaries)). Helper modules are named `<topic>TestHelpers.ts`, for example `schemaTestHelpers.ts`. Files in `__tests__` are excluded from the build and from the coverage report, and production code never imports them.
 - **Fresh fixtures.** Helpers that build test data return a new object on every call (for example `schemaWith(body)`, which unmarshals a schema with the given content), so that one test cannot change the data of another. Constants are only used for strings, such as XML snippets.
 - **Assertion helpers.** A helper that contains the assertions of a test has a name that starts with `expect` or contains `Expect` (`expectValidationFailure()`, `runCommandExpectSuccess()`). Its name is added to `assertFunctionNames` of the rule `vitest/expect-expect` in `eslint.config.mjs`; otherwise ESLint warns that the tests that use it have no assertion.[^eslint]
 
@@ -218,7 +222,7 @@ There are no helper classes in the tests today. Factory functions and plain obje
 
 # Tests for typical changes
 
-- **A new or changed command:** the command type in `shared/commands/` and, if its payload has required fields or restricted values, cases in `shared/commands/commandTypes.test-d.ts`; validator tests in `src/commandValidators/<area>Validators.test.ts`, executor tests in `src/commandExecutors/<area>Executors.test.ts`, a pipeline test in `src/__tests__/pipeline.<area>.test.ts` that runs the command on XML, and the command in the agreement test `webview-src/__tests__/commandAgreement.test.ts` (see [Commands](commands.md#files) for the other places a new command touches).
+- **A new or changed command:** the command type in `shared/commands/` and, if its payload has required fields or restricted values, cases in `shared/commands/commandTypes.test-d.ts`; validator tests in `src/commandValidators/<area>Validators.test.ts`, executor tests in `src/commandExecutors/<area>Executors.test.ts`, a pipeline test in `src/__tests__/pipeline.<area>.test.ts` that runs the command on XML, and the command in the agreement test `test/integration/commandAgreement.test.ts` (see [Commands](commands.md#files) for the other places a new command touches).
 - **A new message:** `webviewProvider.test.ts` for the extension host side and `main.test.ts` for the webview side.
 - **A new draggable construct:** placement and payload in `DropCommandFactory.test.ts`; `renderer.test.ts` only if the event handling changes (see [Drag and drop](drag-and-drop.md#adding-a-draggable-construct)).
 - **Changes to the webview UI:** a jsdom test next to the changed module that builds the needed DOM, triggers the event and checks the DOM and the posted messages. Tests that measure text call `setupGetBBoxMock()`.
@@ -275,6 +279,8 @@ ADR 001 plans six levels of testing. The current state:[^adr-001]
 [^pipeline-test-helpers]: Schema constants and pipeline helpers
 
 [^schema-test-helpers]: Helpers that build schema objects
+
+[^resource-test-helpers]: Helpers that read the test resources
 
 [^provider-test-helpers]: Stubs of the VS Code objects for the provider
 

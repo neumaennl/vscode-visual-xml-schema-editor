@@ -17,7 +17,8 @@ import {
   executeRemoveAttribute,
   executeModifyAttribute,
 } from "./attributeExecutors.js";
-import { emptySchema, readTestSchema, schemaWith, DERIVATIONS, derivedComplexTypeT } from "../__tests__/schemaTestHelpers.js";
+import { emptySchema, schemaWith, DERIVATIONS, derivedComplexTypeT } from "../../shared/__tests__/schemaTestHelpers.js";
+import { readTestSchema } from "../__tests__/resourceTestHelpers.js";
 
 /** The file with a complexType `PersonType` with the local element `name`. */
 const PERSON_TYPE_WITH_NAME_XSD = "person-type-with-name-element.xsd";

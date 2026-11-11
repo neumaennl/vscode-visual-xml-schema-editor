@@ -10,7 +10,8 @@ import {
   executeRemoveElement,
   executeModifyElement,
 } from "./elementExecutors.js";
-import { emptySchema, readTestSchema, schemaWith } from "../__tests__/schemaTestHelpers.js";
+import { emptySchema, schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
+import { readTestSchema } from "../__tests__/resourceTestHelpers.js";
 
 /** The file with an element `person` and a complexType `OrderType`. */
 const PERSON_AND_ORDER_TYPE_XSD = "person-element-and-order-type.xsd";

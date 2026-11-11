@@ -1,14 +1,10 @@
 /**
- * Helpers that build schema XML and schema objects for the tests.
+ * Helpers that build schema XML and schema objects for the tests of all projects.
  * The helpers that return a schema object create a new one on every call, so that one test cannot change the schema of another.
  */
 
-import { readFileSync } from "node:fs";
 import { unmarshal } from "@neumaennl/xmlbind-ts";
-import { schema } from "../../shared/types.js";
-
-/** The folder with the XML files of the tests. */
-const TEST_RESOURCES = new URL("./test-resources/", import.meta.url);
+import { schema } from "../types.js";
 
 /**
  * Returns the XML of a schema with the given content.
@@ -34,26 +30,6 @@ ${body}
  */
 export function emptySchemaXml(): string {
   return schemaXmlWith("");
-}
-
-/**
- * Reads an XML file from `src/__tests__/test-resources`.
- *
- * @param name - The file name, for example `person-type-with-name-element.xsd`
- * @returns The content of the file
- */
-export function readTestXml(name: string): string {
-  return readFileSync(new URL(name, TEST_RESOURCES), "utf8");
-}
-
-/**
- * Reads an XML file from `src/__tests__/test-resources` and unmarshals it.
- *
- * @param name - The file name, for example `person-type-with-name-element.xsd`
- * @returns The schema object
- */
-export function readTestSchema(name: string): schema {
-  return unmarshal(schema, readTestXml(name));
 }
 
 /**

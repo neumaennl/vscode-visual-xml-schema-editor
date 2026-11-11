@@ -85,7 +85,7 @@
     "watch-extension": "tsc -watch -p ./tsconfig.extension.json",
     "watch-webview": "vite build --watch --mode development",
     "pretest": "npm run compile && npm run typecheck",
-    "typecheck": "tsc --noEmit -p tsconfig.extension-test.json && tsc --noEmit -p tsconfig.webview-test.json && tsc --noEmit -p tsconfig.shared-test.json && tsc --noEmit -p tsconfig.nodeTools.json && tsc --noEmit -p tsconfig.extension-host-test.json",
+    "typecheck": "tsc --noEmit -p tsconfig.extension-test.json && tsc --noEmit -p tsconfig.webview-test.json && tsc --noEmit -p tsconfig.shared-test.json && tsc --noEmit -p tsconfig.integration-test.json && tsc --noEmit -p tsconfig.nodeTools.json && tsc --noEmit -p tsconfig.extension-host-test.json",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",

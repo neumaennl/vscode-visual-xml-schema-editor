@@ -21,7 +21,7 @@ import {
   runCommandExpectValidationFailure,
 } from "./pipelineTestHelpers.js";
 import { expectLinesInOrder } from "./textTestHelpers.js";
-import { emptySchemaXml, schemaXmlWith } from "./schemaTestHelpers.js";
+import { emptySchemaXml, schemaXmlWith } from "../../shared/__tests__/schemaTestHelpers.js";
 
 describe("Integration: Annotation pipeline", () => {
   // ─── addAnnotation ─────────────────────────────────────────────────────────

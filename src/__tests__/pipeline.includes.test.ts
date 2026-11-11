@@ -15,7 +15,7 @@ import {
   runCommandExpectSuccessSchema,
   runCommandExpectValidationFailure,
 } from "./pipelineTestHelpers.js";
-import { emptySchemaXml, schemaXmlWith } from "./schemaTestHelpers.js";
+import { emptySchemaXml, schemaXmlWith } from "../../shared/__tests__/schemaTestHelpers.js";
 
 /** Schema that already has two includes so we can test position-based IDs. */
 const SCHEMA_TWO_INCLUDES = schemaXmlWith(`<xs:include schemaLocation="base.xsd"/>

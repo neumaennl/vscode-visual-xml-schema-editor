@@ -15,7 +15,7 @@ import {
 } from "./simpleTypeValidators.js";
 import { ValidationResult } from "./validationUtils.js";
 import { expectInvalid } from "../__tests__/validationTestHelpers.js";
-import { emptySchema, schemaWith } from "../__tests__/schemaTestHelpers.js";
+import { emptySchema, schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
 
 /**
  * A schema with a simple type, an element with an anonymous list type, an element without a type,

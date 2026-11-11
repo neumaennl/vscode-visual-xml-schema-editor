@@ -295,7 +295,7 @@ Each command type has a string literal as `type`, so `SchemaCommand` is a discri
 2. A validator in `src/commandValidators/` and its case in `src/commandValidator.ts`.
 3. An executor in `src/commandExecutors/` and its case in `src/commandExecutor.ts`.
 4. The place in `webview-src/` that creates and sends the command.
-5. Tests for the validator and the executor next to them, a pipeline test in `src/__tests__/` if the command needs one, and the command in the agreement test `webview-src/__tests__/commandAgreement.test.ts`, with a schema in `src/__tests__/test-resources` that contains its node.
+5. Tests for the validator and the executor next to them, a pipeline test in `src/__tests__/` if the command needs one, and the command in the agreement test `test/integration/commandAgreement.test.ts`, with a schema in `src/__tests__/test-resources` that contains its node.
 6. A row in the [Overview](#overview) and a section in this reference.
 
 The switches in `commandValidator.ts` and `commandExecutor.ts` have one case per command type and a `default` branch, so TypeScript does not report a missing case. A command missing in the validator fails validation with "Unknown command type", one missing in the executor fails at runtime with the same message.

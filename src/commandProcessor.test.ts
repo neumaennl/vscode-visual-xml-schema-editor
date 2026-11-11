@@ -15,7 +15,7 @@ import { AddElementCommand, SchemaCommand, schema, topLevelElement } from "../sh
 import type { CommandValidator } from "./commandValidator.js";
 import type { CommandExecutor } from "./commandExecutor.js";
 import { SchemaModelManager } from "./schemaModelManager.js";
-import { emptySchemaXml, schemaXmlWith } from "./__tests__/schemaTestHelpers.js";
+import { emptySchemaXml, schemaXmlWith } from "../shared/__tests__/schemaTestHelpers.js";
 
 // Type-safe mock types for testing
 type MockValidator = Pick<CommandValidator, "validate">;

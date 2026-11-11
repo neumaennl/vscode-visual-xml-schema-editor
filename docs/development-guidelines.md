@@ -4,8 +4,8 @@ title: Development guidelines
 description: Rules for everyone who changes the extension - code size, code quality and ESLint, TypeScript and naming, VS Code and Node versions, TSDoc, tests, documentation and the knowledge bundle, issues, what to check before committing, and commits.
 tags: [guidelines, conventions, code-quality, typescript, documentation, workflow]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-09T14:13:23Z }
-verified: { by: human:neumaennl, at: 2026-11-09T14:28:08Z }
+generated: { by: human:neumaennl, at: 2026-11-11T19:16:50Z }
+verified: { by: human:neumaennl, at: 2026-11-11T19:19:10Z }
 sources:
   - id: eslint
     resource: ../eslint.config.mjs
@@ -53,6 +53,13 @@ ESLint checks the limits for tests (`max-lines` and the local rule `tests/max-li
 - Names: PascalCase for classes, interfaces and types; camelCase for functions, methods and variables; UPPER_CASE for module-level constants. Names say what something is or does.
 - Length of names: clarity comes first, but keep them short. Aim for less than 15 characters; 25 to 30 is the upper limit. `createElement` is better than `createElementWithChildren`; `createElementNodeWithProcessingOfAnonymousTypes` is too long, `cen` too cryptic.
 - Functions that check a command or a part of it are called `validate...()`, for example `validateRestrictionFacets()`, and return a `ValidationResult`, also when the command is valid, not `null` or a bare error.
+
+# Project boundaries
+
+- The code is split into the projects `shared/`, `src/` (extension host) and `webview-src/` (webview), each with its tests (see [Architecture](architecture.md#components)).
+- `shared/` only uses code from `shared/`. `src/` and `webview-src/` only use their own code and `shared/`. `scripts/` only uses code from `scripts/`: Node runs the scripts directly, without a build, which the code in `shared/` needs (see [Build and packaging](build-and-packaging.md#scripts)). This also applies to tests and test helpers: a helper that tests of several projects need belongs in `shared/__tests__/`.
+- Only the integration tests in `test/integration/` may use `src/` and `webview-src/` together, for example to check that the commands the webview builds are accepted by the extension host (see [Testing](testing.md#kinds-of-tests)).
+- ESLint enforces these boundaries with `no-restricted-imports` (see [Build and packaging](build-and-packaging.md#lint)). The rule only sees static imports and exports; dynamic `import()`, the paths of `vi.mock()` and files read with `node:fs` are not checked and follow the rule all the same.[^eslint]
 
 # VS Code and Node versions
 

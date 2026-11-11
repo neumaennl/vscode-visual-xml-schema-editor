@@ -17,7 +17,8 @@ import {
 } from "./complexTypeValidators.js";
 import { ValidationResult } from "./validationUtils.js";
 import { expectInvalid } from "../__tests__/validationTestHelpers.js";
-import { emptySchema, readTestSchema, schemaWith } from "../__tests__/schemaTestHelpers.js";
+import { emptySchema, schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
+import { readTestSchema } from "../__tests__/resourceTestHelpers.js";
 
 /** A top-level element `person` with an inline complexType and an empty sequence. */
 const PERSON_ELEMENT_WITH_EMPTY_SEQUENCE = `<xs:element name="person">

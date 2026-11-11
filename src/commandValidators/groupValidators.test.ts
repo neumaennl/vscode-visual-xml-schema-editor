@@ -14,7 +14,8 @@ import {
   validateModifyGroup,
 } from "./groupValidators.js";
 import { expectInvalid } from "../__tests__/validationTestHelpers.js";
-import { emptySchema, readTestSchema, schemaWith } from "../__tests__/schemaTestHelpers.js";
+import { emptySchema, schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
+import { readTestSchema } from "../__tests__/resourceTestHelpers.js";
 
 /** The file with a complexType `PersonType` with the local element `name`. */
 const PERSON_TYPE_WITH_NAME_XSD = "person-type-with-name-element.xsd";

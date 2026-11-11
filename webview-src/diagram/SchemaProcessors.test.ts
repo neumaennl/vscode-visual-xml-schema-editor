@@ -16,7 +16,7 @@ import {
 import { DiagramItem } from "../diagram/DiagramItem";
 import { Diagram } from "../diagram/Diagram";
 import { DiagramItemGroupType, DiagramItemType } from "../diagram/DiagramTypes";
-import { DERIVATIONS, derivedComplexTypeT, schemaWith } from "../../src/__tests__/schemaTestHelpers";
+import { DERIVATIONS, derivedComplexTypeT, schemaWith } from "../../shared/__tests__/schemaTestHelpers";
 
 describe("SchemaProcessors", () => {
   let diagram: Diagram;

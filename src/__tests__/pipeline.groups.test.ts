@@ -16,11 +16,14 @@ import type {
   ModifyAttributeGroupCommand,
 } from "../../shared/types.js";
 import {
+  COMPLEX_TYPES_WITH_ANY_ATTRIBUTE,
   SCHEMA_WITH_GROUP,
   SCHEMA_WITH_ATTRIBUTEGROUP,
+  runCommandExpectSuccess,
   runCommandExpectSuccessSchema,
   runCommandExpectValidationFailure,
 } from "./pipelineTestHelpers.js";
+import { expectLinesInOrder } from "./textTestHelpers.js";
 import { emptySchemaXml, schemaXmlWith } from "../../shared/__tests__/schemaTestHelpers.js";
 
 /**
@@ -226,6 +229,16 @@ describe("Integration: AttributeGroup pipeline", () => {
       };
 
       runCommandExpectValidationFailure(emptySchemaXml(), cmd, "Attribute group name must be a valid XML name");
+    });
+
+    test.each(COMPLEX_TYPES_WITH_ANY_ATTRIBUTE)("should write a new reference of %s before xs:anyAttribute", (_, complexType) => {
+      const cmd: AddAttributeGroupCommand = {
+        type: "addAttributeGroup",
+        payload: { ref: "CommonAttrs", parentId: "/complexType:T" },
+      };
+
+      const updatedXml = runCommandExpectSuccess(schemaXmlWith(`<xs:attributeGroup name="CommonAttrs"/>\n${complexType}`), cmd);
+      expectLinesInOrder(updatedXml, [`<xs:attributeGroup ref="CommonAttrs"/>`, "<xs:anyAttribute/>"]);
     });
   });
 

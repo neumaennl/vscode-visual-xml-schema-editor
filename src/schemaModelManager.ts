@@ -24,6 +24,22 @@ import {
 } from "../shared/types.js";
 
 /**
+ * Corrects the line breaks at the start and end of the output of `marshal()`.
+ *
+ * Since xmlbind-ts 2.4.0, the output starts with a line break unless it starts
+ * with the XML declaration, and no longer ends with one (see the xmlbind-ts
+ * known issue "The output of `marshal()` starts with a line break"). This
+ * removes the leading line break and ends the document with exactly one, as
+ * 2.3.0 did. Remove it with the move to xmlbind-ts 3 (#444).
+ *
+ * @param xml - The output of `marshal()`
+ * @returns The XML without a leading line break, ending with one line break
+ */
+function fixOutputLineBreaks(xml: string): string {
+  return xml.replace(/^\n/, "").replace(/\n*$/, "\n");
+}
+
+/**
  * Result of a schema query operation.
  */
 export interface QueryResult<T> {
@@ -88,7 +104,7 @@ export class SchemaModelManager {
   /**
    * Marshals the current schema to XML.
    * 
-   * @returns The XML string representation of the schema
+   * @returns The XML string representation of the schema, ending with a line break
    * @throws Error if schema is not loaded or marshalling fails
    */
   public toXml(): string {
@@ -97,7 +113,7 @@ export class SchemaModelManager {
     }
 
     try {
-      return marshal(this.schemaState);
+      return fixOutputLineBreaks(marshal(this.schemaState));
     } catch (error) {
       throw new Error(
         `Failed to marshal schema to XML: ${(error as Error).message}`

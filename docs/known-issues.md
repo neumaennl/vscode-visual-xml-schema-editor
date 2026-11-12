@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-11T19:44:14Z }
-verified: { by: human:neumaennl, at: 2026-11-11T19:45:16Z }
+generated: { by: human:neumaennl, at: 2026-11-12T12:01:26Z }
+verified: { by: human:neumaennl, at: 2026-11-12T12:07:29Z }
 ---
 
 # Purpose
@@ -36,14 +36,6 @@ Effort:
 
 # Code
 
-## New attributes are written after `xs:anyAttribute`
-
-- **Location:** `src/commandExecutors/attributeExecutors.ts` (`addAttributeToParent()`), `src/commandExecutors/attributeGroupExecutors.ts` (`addAttrGroupRefToParent()`), `xmlbind-ts` (`marshal`)
-- **Severity:** High
-- **Effort:** S
-- **Description:** XML Schema requires the attributes and attribute group references of a complex type, or of its extension or restriction, to come before `xs:anyAttribute`. When `addAttribute` or `addAttributeGroup` adds the first attribute or reference to a node that already has an `xs:anyAttribute`, `marshal` writes the new child after it, because children of a kind that was not in the source are written after all others. Reproduced: adding the attribute `a` to `<xs:extension base="B"><xs:sequence/><xs:anyAttribute/></xs:extension>` writes `<xs:sequence/><xs:anyAttribute/><xs:attribute name="a"/>`; the same happens in a complex type without derivation and in a restriction of simple content. The command reports success, and the saved schema is invalid. The cause is in `xmlbind-ts` ([xmlbind-ts](https://github.com/neumaennl/xmlbind-ts/blob/main/docs/known-issues.md#children-that-were-not-in-the-source-are-written-after-all-others)); once it is fixed there, the editor only needs the new version.
-- **GitHub issue:** [xmlbind-ts#296](https://github.com/neumaennl/xmlbind-ts/issues/296)
-
 ## Node IDs are ambiguous and have many special cases
 
 - **Location:** `shared/idStrategy.ts`, `src/schemaNavigator.ts`, `src/commandValidators/`, `src/commandExecutors/`, `webview-src/diagram/` (ID generation)
@@ -72,15 +64,14 @@ Effort:
 - **Severity:** High
 - **Effort:** L
 - **Description:** Every command writes the whole document with `marshal` (see [Persistence](persistence.md#what-serialization-changes)). Besides the formatting (see [Every command reformats the whole document](#every-command-reformats-the-whole-document)), this changes or loses content that the command did not touch, even when it only renames something. Reproduced with `unmarshal` and `marshal` and the generated schema classes:
-  - Children of one kind that occur in more than one run are written together: the `sequence` `element z, choice, any, element a, group` becomes `element z, element a, choice, any, group`, which changes its meaning. Comments move with them: in `element a, <!--c1-->, element b, simpleType s, <!--c2-->, element c`, `c1` moves behind `c`. ([xmlbind-ts: elements](https://github.com/neumaennl/xmlbind-ts/blob/main/docs/known-issues.md#elements-are-reordered-when-occurrences-are-not-contiguous), [comments](https://github.com/neumaennl/xmlbind-ts/blob/main/docs/known-issues.md#comments-between-repeated-elements-move))
-  - Content that the classes generated from XSD 1.0 do not map is dropped without notice: XSD 1.1 constructs such as `xs:assert`, and foreign elements at the top level. Processing instructions, a document type declaration and comments after the root element are dropped as well. ([xmlbind-ts: unmapped content](https://github.com/neumaennl/xmlbind-ts/blob/main/docs/known-issues.md#unmapped-content-is-dropped-without-notice), [processing instructions](https://github.com/neumaennl/xmlbind-ts/blob/main/docs/known-issues.md#processing-instructions-the-document-type-and-comments-after-the-root-are-dropped))
+  - Children of one kind that occur in more than one run are written together: the `sequence` `element z, choice, any, element a, group` becomes `element z, element a, choice, any, group`, which changes its meaning. A comment is written after as many elements as were before it in the source, so it moves when they are reordered: in `element a, <!--c1-->, element b, simpleType s, <!--c2-->, element c`, `c2` moves behind `c`. ([xmlbind-ts: elements](https://github.com/neumaennl/xmlbind-ts/blob/main/docs/known-issues.md#elements-are-reordered-when-occurrences-are-not-contiguous), [comments](https://github.com/neumaennl/xmlbind-ts/blob/main/docs/known-issues.md#comments-move-when-elements-are-reordered-or-dropped))
+  - Content that the classes generated from XSD 1.0 do not map is dropped without notice: XSD 1.1 constructs such as `xs:assert`, and foreign elements at the top level. A comment after dropped content moves for the same reason: in `sequence, assert, <!--c-->, attribute`, `c` moves behind `attribute`. Processing instructions, a document type declaration and comments after the root element are dropped as well. ([xmlbind-ts: unmapped content](https://github.com/neumaennl/xmlbind-ts/blob/main/docs/known-issues.md#unmapped-content-is-dropped-without-notice), [comments](https://github.com/neumaennl/xmlbind-ts/blob/main/docs/known-issues.md#comments-move-when-elements-are-reordered-or-dropped), [processing instructions](https://github.com/neumaennl/xmlbind-ts/blob/main/docs/known-issues.md#processing-instructions-the-document-type-and-comments-after-the-root-are-dropped))
   - Mixed content in `xs:documentation` is scrambled: `Some <b>mixed</b> &amp; text` becomes `<b>mixed</b>` followed by `Some&amp; text`. ([xmlbind-ts](https://github.com/neumaennl/xmlbind-ts/blob/main/docs/known-issues.md#mixed-content-is-reordered-and-loses-whitespace))
   - A namespace declaration below the root element is dropped: `<xs:element xmlns:t="urn:t" name="e" type="t:T"/>` loses `xmlns:t`, so `t:T` no longer resolves. ([xmlbind-ts](https://github.com/neumaennl/xmlbind-ts/blob/main/docs/known-issues.md#namespace-declarations-below-the-root-are-not-kept))
-  - Element text that looks like a number is converted, so `<xs:documentation>1.0</xs:documentation>` becomes `1`, and a character reference such as `&#65;` becomes `&amp;#65;`. ([xmlbind-ts: numbers](https://github.com/neumaennl/xmlbind-ts/blob/main/docs/known-issues.md#element-text-that-looks-like-a-number-is-converted), [character references](https://github.com/neumaennl/xmlbind-ts/blob/main/docs/known-issues.md#character-references-are-not-decoded))
   - The XML declaration is always written as `<?xml version="1.0" encoding="UTF-8"?>`. ([xmlbind-ts](https://github.com/neumaennl/xmlbind-ts/blob/main/docs/known-issues.md#the-attributes-of-the-xml-declaration-are-not-kept))
 
-  The editor does not warn about any of this. The causes are in `xmlbind-ts` and are fixed there (see [Architecture](architecture.md#responsibilities-of-xmlbind-ts-and-the-editor)). What the editor does with a schema that does not survive a round trip unchanged is its own decision: for example, it could compare the document with the result of a round trip when it is opened, and warn or switch to read-only if they differ.
-- **GitHub issue:** none
+  The editor does not warn about any of this. The causes are in `xmlbind-ts` (see [Architecture](architecture.md#responsibilities-of-xmlbind-ts-and-the-editor)); 2.x gets no more fixes, and version 3, which writes only the changes of a command, fixes them ([#444](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/444)). What the editor does with a schema that does not survive a round trip unchanged is its own decision: for example, it could compare the document with the result of a round trip when it is opened, and warn or switch to read-only if they differ.
+- **GitHub issue:** [#444](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/444)
 
 ## Turning the default namespace into a prefix does not rewrite references
 
@@ -417,6 +408,14 @@ Effort:
 - **Effort:** S
 - **Description:** The [development guidelines](development-guidelines.md#code-quality) ask to avoid duplicated code, but only reviews check this, and duplicates got through (see [Duplicated and dead code](#duplicated-and-dead-code) and [Top-level lookups are duplicated instead of shared](#top-level-lookups-are-duplicated-instead-of-shared)). The coverage report cannot find duplicates, because V8 coverage only records which code runs. A copy-paste detector such as [jscpd](https://github.com/kucherenko/jscpd) can check the code in `npm run lint` and in CI and fail the run above a threshold of duplicated lines, starting at the current level. It also finds code that the extension and the webview each implement on their own.
 - **GitHub issue:** [#439](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/439)
+
+## The editor corrects the line breaks of the output
+
+- **Location:** `src/schemaModelManager.ts` (`fixOutputLineBreaks()`), `xmlbind-ts` (`marshal`)
+- **Severity:** Low
+- **Effort:** S
+- **Description:** Since version 2.4.0, `marshal` starts its output with a line break unless it starts with the XML declaration, and no longer ends it with one ([xmlbind-ts](https://github.com/neumaennl/xmlbind-ts/blob/main/docs/known-issues.md#the-output-of-marshal-starts-with-a-line-break)). Every command would therefore remove the line break at the end of the file and put an empty line at the start of a schema without an XML declaration. `SchemaModelManager.toXml()` removes the leading line break and ends the output with exactly one (see [Persistence](persistence.md#what-serialization-changes)). Keeping the formatting of the source belongs to `xmlbind-ts` (see [Architecture](architecture.md#responsibilities-of-xmlbind-ts-and-the-editor)), and 2.x gets no more fixes, so the editor works around it until it moves to version 3, whose output has to keep the line breaks of the source; then `fixOutputLineBreaks()` is removed.
+- **GitHub issue:** [#444](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/444)
 
 ## Every message from the webview is a schema command
 

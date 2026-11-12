@@ -17,7 +17,7 @@ import type {
 } from "../commandProcessor.js";
 import { schema } from "../../shared/types.js";
 import type { SchemaCommand } from "../../shared/types.js";
-import { schemaXmlWith } from "../../shared/__tests__/schemaTestHelpers.js";
+import { DERIVATIONS, derivedComplexTypeT, schemaXmlWith } from "../../shared/__tests__/schemaTestHelpers.js";
 
 // ─── XML Fixtures ────────────────────────────────────────────────────────────
 
@@ -65,6 +65,18 @@ export const SCHEMA_WITH_IMPORT = schemaXmlWith(`<xs:import namespace="http://ex
 
 /** Schema that declares one include. */
 export const SCHEMA_WITH_INCLUDE = schemaXmlWith(`<xs:include schemaLocation="base.xsd"/>`);
+
+/**
+ * Complex types `T` with an `xs:anyAttribute` and no attributes, each with a description for test
+ * names: one without derivation, and one with each extension or restriction.
+ */
+export const COMPLEX_TYPES_WITH_ANY_ATTRIBUTE: ReadonlyArray<readonly [string, string]> = [
+  ["a complex type", `<xs:complexType name="T"><xs:sequence/><xs:anyAttribute/></xs:complexType>`],
+  ...DERIVATIONS.map(([content, derivation]) => [
+    `the ${derivation} of ${content}`,
+    derivedComplexTypeT(content, derivation, "<xs:anyAttribute/>"),
+  ] as const),
+];
 
 // ─── Pipeline Helpers ─────────────────────────────────────────────────────────
 

@@ -11,10 +11,13 @@ import type {
   ModifyAttributeCommand,
 } from "../../shared/types.js";
 import {
+  COMPLEX_TYPES_WITH_ANY_ATTRIBUTE,
   SCHEMA_WITH_COMPLEXTYPE,
+  runCommandExpectSuccess,
   runCommandExpectSuccessSchema,
   runCommandExpectValidationFailure,
 } from "./pipelineTestHelpers.js";
+import { expectLinesInOrder } from "./textTestHelpers.js";
 import { emptySchemaXml, schemaXmlWith } from "../../shared/__tests__/schemaTestHelpers.js";
 
 /** Schema with a complexType that has two attributes (id, status) for remove/modify tests. */
@@ -65,6 +68,16 @@ describe("Integration: Attribute pipeline", () => {
 
       expect(code).toBeDefined();
       expect(code!.use).toBe("required");
+    });
+
+    test.each(COMPLEX_TYPES_WITH_ANY_ATTRIBUTE)("should write a new attribute of %s before xs:anyAttribute", (_, complexType) => {
+      const cmd: AddAttributeCommand = {
+        type: "addAttribute",
+        payload: { parentId: "/complexType:T", attributeName: "a", attributeType: "xs:string" },
+      };
+
+      const updatedXml = runCommandExpectSuccess(schemaXmlWith(complexType), cmd);
+      expectLinesInOrder(updatedXml, ["<xs:attribute ", "<xs:anyAttribute/>"]);
     });
 
     test("returns validation error when attribute name is invalid", () => {

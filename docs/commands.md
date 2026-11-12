@@ -4,8 +4,8 @@ title: Commands
 description: The edit commands - payload fields, the rules the validators enforce, what the executors change in the schema, and where the webview sends them.
 tags: [commands, payload, validation, reference]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-11T19:28:57Z }
-verified: { by: human:neumaennl, at: 2026-11-11T19:31:18Z }
+generated: { by: human:neumaennl, at: 2026-11-12T11:54:16Z }
+verified: { by: human:neumaennl, at: 2026-11-12T12:00:05Z }
 sources:
   - id: commands
     resource: ../shared/commands/index.ts
@@ -132,7 +132,7 @@ A drop on an existing type or group creates a `modify*` command instead of an `a
 
 `removeAttribute` takes only `attributeId`.[^validators][^executors]
 
-Two cases are accepted although they make the schema invalid, for attributes and for attribute group references (`addAttributeGroup`): a new attribute is written after an existing `xs:anyAttribute` if the parent has no attribute yet (see [Known issues](known-issues.md#new-attributes-are-written-after-xsanyattribute)), and an attribute in an `xs:restriction` is not checked against the attributes of the base type (see [Known issues](known-issues.md#attributes-in-a-restriction-are-not-checked-against-the-base-type)).
+New attributes and attribute group references (`addAttributeGroup`) are written before an existing `xs:anyAttribute`, as XML Schema requires. One case is accepted although it makes the schema invalid, for attributes and for attribute group references: an attribute in an `xs:restriction` is not checked against the attributes of the base type (see [Known issues](known-issues.md#attributes-in-a-restriction-are-not-checked-against-the-base-type)).
 
 # Simple types
 

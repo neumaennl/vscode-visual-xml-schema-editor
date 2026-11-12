@@ -23,6 +23,23 @@ import {
 import { expectLinesInOrder } from "./textTestHelpers.js";
 import { emptySchemaXml, schemaXmlWith } from "../../shared/__tests__/schemaTestHelpers.js";
 
+/** A complex type without an annotation, with comments before and between its children. */
+const COMPLEX_TYPE_WITH_COMMENTS = schemaXmlWith(`<xs:complexType name="PersonType">
+  <!--before sequence-->
+  <xs:sequence/>
+  <!--before attribute-->
+  <xs:attribute name="id"/>
+</xs:complexType>`);
+
+/** The lines that a new annotation of `PersonType` in `COMPLEX_TYPE_WITH_COMMENTS` and its children give, in order. */
+const ANNOTATED_COMPLEX_TYPE_LINES = [
+  "<xs:annotation>",
+  "<!--before sequence-->",
+  "<xs:sequence/>",
+  "<!--before attribute-->",
+  "<xs:attribute ",
+];
+
 describe("Integration: Annotation pipeline", () => {
   // ─── addAnnotation ─────────────────────────────────────────────────────────
 
@@ -79,6 +96,38 @@ describe("Integration: Annotation pipeline", () => {
 
       const updatedXml = runCommandExpectSuccess(schemaWithComplexType, cmd);
       expectLinesInOrder(updatedXml, ["<xs:annotation>", "<xs:sequence"]);
+    });
+
+    test("should add an annotation before the first child of a node and keep its comments in place", () => {
+      const cmd: AddAnnotationCommand = {
+        type: "addAnnotation",
+        payload: { targetId: "/complexType:PersonType", documentation: "Complex type docs" },
+      };
+
+      const updatedXml = runCommandExpectSuccess(COMPLEX_TYPE_WITH_COMMENTS, cmd);
+      expectLinesInOrder(updatedXml, ANNOTATED_COMPLEX_TYPE_LINES);
+    });
+
+    test("should add a schema annotation before the top-level declarations and keep the comments in place", () => {
+      const schemaWithComments = schemaXmlWith(`<xs:import namespace="urn:other"/>
+<!--before element-->
+<xs:element name="person" type="xs:string"/>
+<!--before complex type-->
+<xs:complexType name="PersonType"/>`);
+      const cmd: AddAnnotationCommand = {
+        type: "addAnnotation",
+        payload: { targetId: "/schema", documentation: "Schema docs" },
+      };
+
+      const updatedXml = runCommandExpectSuccess(schemaWithComments, cmd);
+      expectLinesInOrder(updatedXml, [
+        "<xs:import ",
+        "<xs:annotation>",
+        "<!--before element-->",
+        "<xs:element ",
+        "<!--before complex type-->",
+        "<xs:complexType ",
+      ]);
     });
 
     test("returns validation error when target element does not exist", () => {
@@ -201,6 +250,39 @@ describe("Integration: Documentation pipeline", () => {
       expect(person).toBeDefined();
       const documentations = person!.annotation!.documentation ?? [];
       expect(documentations.some((d) => d.value === "Additional details")).toBe(true);
+    });
+
+    test("should create the annotation of a node before its first child and keep its comments in place", () => {
+      const cmd: AddDocumentationCommand = {
+        type: "addDocumentation",
+        payload: { targetId: "/complexType:PersonType", content: "Complex type docs" },
+      };
+
+      const updatedXml = runCommandExpectSuccess(COMPLEX_TYPE_WITH_COMMENTS, cmd);
+      expectLinesInOrder(updatedXml, ANNOTATED_COMPLEX_TYPE_LINES);
+    });
+
+    test("should keep a schema annotation after top-level declarations in its place", () => {
+      const schemaWithLateAnnotation = schemaXmlWith(`<xs:element name="person" type="xs:string"/>
+<!--before annotation-->
+<xs:annotation><xs:documentation>Existing docs</xs:documentation></xs:annotation>
+<!--before complex type-->
+<xs:complexType name="PersonType"/>`);
+      const cmd: AddDocumentationCommand = {
+        type: "addDocumentation",
+        payload: { targetId: "/schema", content: "More docs" },
+      };
+
+      const updatedXml = runCommandExpectSuccess(schemaWithLateAnnotation, cmd);
+      expectLinesInOrder(updatedXml, [
+        "<xs:element ",
+        "<!--before annotation-->",
+        "<xs:annotation>",
+        "Existing docs",
+        "More docs",
+        "<!--before complex type-->",
+        "<xs:complexType ",
+      ]);
     });
 
     test("returns validation error when target element does not exist", () => {

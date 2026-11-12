@@ -114,6 +114,30 @@ describe("SchemaModelManager", () => {
       expect(output).toContain("root");
     });
 
+    test("should start with the XML declaration and end with one line break", () => {
+      const manager = new SchemaModelManager();
+      manager.loadFromXml(`${schemaXmlWith(`<xs:element name="root" type="xs:string"/>`)}\n`);
+
+      const output = manager.toXml();
+
+      expect(output.startsWith("<?xml ")).toBe(true);
+      expect(output.endsWith("</xs:schema>\n")).toBe(true);
+    });
+
+    test.each([
+      ["the root element", `<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"/>`, "<xs:schema "],
+      ["a comment", `<!--header-->\n<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"/>`, "<!--header-->"],
+    ])("should start with %s and end with one line break without an XML declaration", (_, xml, start) => {
+      const manager = new SchemaModelManager();
+      manager.loadFromXml(xml);
+
+      const output = manager.toXml();
+
+      expect(output.startsWith(start)).toBe(true);
+      expect(output.endsWith("\n")).toBe(true);
+      expect(output.endsWith("\n\n")).toBe(false);
+    });
+
     test("should throw error when schema not loaded", () => {
       const manager = new SchemaModelManager();
 

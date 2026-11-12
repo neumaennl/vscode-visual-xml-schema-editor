@@ -4,8 +4,8 @@ title: Persistence
 description: How edits reach the XSD file - the command pipeline, the document edit, what serialization changes, undo and save, and how changes from outside reach the diagram.
 tags: [persistence, command-pipeline, workspace-edit, serialization, undo, xmlbind-ts]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-28T13:57:27Z }
-verified: { by: human:neumaennl, at: 2026-10-28T14:01:23Z }
+generated: { by: human:neumaennl, at: 2026-11-12T12:01:26Z }
+verified: { by: human:neumaennl, at: 2026-11-12T12:07:29Z }
 sources:
   - id: extension
     resource: ../src/extension.ts
@@ -90,7 +90,8 @@ Because of this, each command changes the text of the entire file, even if it on
 
 Kept:
 
-- Comments, including comments before the root element. A comment between two children of the same kind moves behind the last child of that kind.
+- Comments, including comments before the root element. A comment is written after as many child elements as were before it, so it only moves when the elements before it are reordered or dropped (see below).
+- Element text that looks like a number, such as `1.0` in `documentation`, stays as it is.
 - The order of child elements, as long as each kind of child occurs in one unbroken run.
 - The XML declaration, but only if the file had one.
 - The namespace declarations of the root element, including a default namespace, and the prefixes of the element names: a file with `xs:element` keeps `xs:element`, and one that declares the XML Schema namespace as default keeps `element`. So QName values such as `type="xs:string"`, `type="t:myType"` or an unprefixed `type="myType"` keep their meaning.[^serialization-test]
@@ -100,14 +101,16 @@ Changed:
 - Indentation becomes two spaces.
 - Attributes are reordered, and single quotes become double quotes.
 - Empty elements written as `<a></a>` become `<a/>`.
+- The document ends with exactly one line break, and a document without an XML declaration starts with its first comment or the root element, without empty lines before it. `marshal` of `xmlbind-ts` 2.4 does not end the document with a line break and starts a document without an XML declaration with one; `SchemaModelManager.toXml()` corrects both (see [Known issues](known-issues.md#the-editor-corrects-the-line-breaks-of-the-output)).[^model-manager]
+- Character references such as `&#65;` or `&#x263A;` are written as the characters they stand for, except `&#13;`, which stays a reference because a literal carriage return would be read as a line break.
 - Leading and trailing whitespace in text content such as `documentation` is trimmed. This is intended.
-- Children of one kind that occur in more than one run are written together, which changes the meaning of a `sequence`.
-- Mixed content in `documentation` is scrambled, element text that looks like a number is converted (`1.0` becomes `1`), and character references such as `&#65;` become `&amp;#65;`.
+- Children of one kind that occur in more than one run are written together, which changes the meaning of a `sequence`, and comments between them move.
+- Mixed content in `documentation` is scrambled.
 - The XML declaration is always written as `<?xml version="1.0" encoding="UTF-8"?>`.
 
 Lost:
 
-- Content that the generated classes do not map, such as XSD 1.1 constructs (`xs:assert`) and foreign elements at the top level.
+- Content that the generated classes do not map, such as XSD 1.1 constructs (`xs:assert`) and foreign elements at the top level. A comment after such content moves.
 - Processing instructions, a document type declaration and comments after the root element.
 - Namespace declarations below the root element, so QNames that use such a prefix no longer resolve.
 

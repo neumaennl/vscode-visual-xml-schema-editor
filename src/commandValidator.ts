@@ -56,12 +56,15 @@ import {
   AddIncludeCommand,
   RemoveIncludeCommand,
   ModifyIncludeCommand,
+  ModifySchemaNamespacesCommand,
 } from "../shared/commands/index.js";
 import { ValidationResult } from "./commandValidators/validationUtils.js";
 
 // Import validation functions from specialized modules for default usage
 import * as elementValidators from "./commandValidators/elementValidators.js";
-import * as typeValidators from "./commandValidators/typeValidators.js";
+import * as attributeValidators from "./commandValidators/attributeValidators.js";
+import * as simpleTypeValidators from "./commandValidators/simpleTypeValidators.js";
+import * as complexTypeValidators from "./commandValidators/complexTypeValidators.js";
 import * as groupValidators from "./commandValidators/groupValidators.js";
 import * as attributeGroupValidators from "./commandValidators/attributeGroupValidators.js";
 import * as annotationValidators from "./commandValidators/annotationValidators.js";
@@ -111,6 +114,7 @@ export interface ValidatorFunctions {
   validateAddInclude: ValidatorFunction<AddIncludeCommand>;
   validateRemoveInclude: ValidatorFunction<RemoveIncludeCommand>;
   validateModifyInclude: ValidatorFunction<ModifyIncludeCommand>;
+  validateModifySchemaNamespaces: ValidatorFunction<ModifySchemaNamespacesCommand>;
 }
 
 /**
@@ -131,15 +135,15 @@ export class CommandValidator {
       validateAddElement: elementValidators.validateAddElement,
       validateRemoveElement: elementValidators.validateRemoveElement,
       validateModifyElement: elementValidators.validateModifyElement,
-      validateAddAttribute: elementValidators.validateAddAttribute,
-      validateRemoveAttribute: elementValidators.validateRemoveAttribute,
-      validateModifyAttribute: elementValidators.validateModifyAttribute,
-      validateAddSimpleType: typeValidators.validateAddSimpleType,
-      validateRemoveSimpleType: typeValidators.validateRemoveSimpleType,
-      validateModifySimpleType: typeValidators.validateModifySimpleType,
-      validateAddComplexType: typeValidators.validateAddComplexType,
-      validateRemoveComplexType: typeValidators.validateRemoveComplexType,
-      validateModifyComplexType: typeValidators.validateModifyComplexType,
+      validateAddAttribute: attributeValidators.validateAddAttribute,
+      validateRemoveAttribute: attributeValidators.validateRemoveAttribute,
+      validateModifyAttribute: attributeValidators.validateModifyAttribute,
+      validateAddSimpleType: simpleTypeValidators.validateAddSimpleType,
+      validateRemoveSimpleType: simpleTypeValidators.validateRemoveSimpleType,
+      validateModifySimpleType: simpleTypeValidators.validateModifySimpleType,
+      validateAddComplexType: complexTypeValidators.validateAddComplexType,
+      validateRemoveComplexType: complexTypeValidators.validateRemoveComplexType,
+      validateModifyComplexType: complexTypeValidators.validateModifyComplexType,
       validateAddGroup: groupValidators.validateAddGroup,
       validateRemoveGroup: groupValidators.validateRemoveGroup,
       validateModifyGroup: groupValidators.validateModifyGroup,
@@ -158,6 +162,7 @@ export class CommandValidator {
       validateAddInclude: schemaValidators.validateAddInclude,
       validateRemoveInclude: schemaValidators.validateRemoveInclude,
       validateModifyInclude: schemaValidators.validateModifyInclude,
+      validateModifySchemaNamespaces: schemaValidators.validateModifySchemaNamespaces,
     };
   }
 
@@ -231,6 +236,8 @@ export class CommandValidator {
         return this.validators.validateRemoveInclude(command, schemaObj);
       case "modifyInclude":
         return this.validators.validateModifyInclude(command, schemaObj);
+      case "modifySchemaNamespaces":
+        return this.validators.validateModifySchemaNamespaces(command, schemaObj);
       default:
         return {
           valid: false,

@@ -22,7 +22,22 @@ import {
   importType,
   includeType,
 } from "../shared/types.js";
-import { toArray } from "../shared/schemaUtils.js";
+
+/**
+ * Corrects the line breaks at the start and end of the output of `marshal()`.
+ *
+ * Since xmlbind-ts 2.4.0, the output starts with a line break unless it starts
+ * with the XML declaration, and no longer ends with one (see the xmlbind-ts
+ * known issue "The output of `marshal()` starts with a line break"). This
+ * removes the leading line break and ends the document with exactly one, as
+ * 2.3.0 did. Remove it with the move to xmlbind-ts 3 (#444).
+ *
+ * @param xml - The output of `marshal()`
+ * @returns The XML without a leading line break, ending with one line break
+ */
+function fixOutputLineBreaks(xml: string): string {
+  return xml.replace(/^\n/, "").replace(/\n*$/, "\n");
+}
 
 /**
  * Result of a schema query operation.
@@ -89,7 +104,7 @@ export class SchemaModelManager {
   /**
    * Marshals the current schema to XML.
    * 
-   * @returns The XML string representation of the schema
+   * @returns The XML string representation of the schema, ending with a line break
    * @throws Error if schema is not loaded or marshalling fails
    */
   public toXml(): string {
@@ -98,7 +113,7 @@ export class SchemaModelManager {
     }
 
     try {
-      return marshal(this.schemaState);
+      return fixOutputLineBreaks(marshal(this.schemaState));
     } catch (error) {
       throw new Error(
         `Failed to marshal schema to XML: ${(error as Error).message}`
@@ -149,16 +164,15 @@ export class SchemaModelManager {
   /**
    * Helper method to find an item by name in a collection.
    * 
-   * @param items - The collection to search (may be undefined, single item, or array)
+   * @param items - The collection to search (may be undefined)
    * @param name - The name to search for
    * @returns Query result containing the item if found
    */
   private findByName<T extends { name: string }>(
-    items: T | T[] | undefined,
+    items: T[] | undefined,
     name: string
   ): QueryResult<T> {
-    const itemsArray = toArray(items);
-    const item = itemsArray.find((el) => el.name === name);
+    const item = (items ?? []).find((el) => el.name === name);
     return item ? { found: true, item } : { found: false };
   }
 
@@ -220,7 +234,7 @@ export class SchemaModelManager {
    * @returns Array of top-level elements, or empty array if none exist
    */
   public getAllElements(): topLevelElement[] {
-    return toArray(this.schemaState?.element);
+    return this.schemaState?.element ?? [];
   }
 
   /**
@@ -229,7 +243,7 @@ export class SchemaModelManager {
    * @returns Array of simple types, or empty array if none exist
    */
   public getAllSimpleTypes(): topLevelSimpleType[] {
-    return toArray(this.schemaState?.simpleType);
+    return this.schemaState?.simpleType ?? [];
   }
 
   /**
@@ -238,7 +252,7 @@ export class SchemaModelManager {
    * @returns Array of complex types, or empty array if none exist
    */
   public getAllComplexTypes(): topLevelComplexType[] {
-    return toArray(this.schemaState?.complexType);
+    return this.schemaState?.complexType ?? [];
   }
 
   /**
@@ -247,7 +261,7 @@ export class SchemaModelManager {
    * @returns Array of groups, or empty array if none exist
    */
   public getAllGroups(): namedGroup[] {
-    return toArray(this.schemaState?.group);
+    return this.schemaState?.group ?? [];
   }
 
   /**
@@ -256,7 +270,7 @@ export class SchemaModelManager {
    * @returns Array of attribute groups, or empty array if none exist
    */
   public getAllAttributeGroups(): namedAttributeGroup[] {
-    return toArray(this.schemaState?.attributeGroup);
+    return this.schemaState?.attributeGroup ?? [];
   }
 
   /**
@@ -274,7 +288,7 @@ export class SchemaModelManager {
    * @returns Array of import declarations
    */
   public getImports(): importType[] {
-    return toArray(this.schemaState?.import_);
+    return this.schemaState?.import_ ?? [];
   }
 
   /**
@@ -283,6 +297,6 @@ export class SchemaModelManager {
    * @returns Array of include declarations
    */
   public getIncludes(): includeType[] {
-    return toArray(this.schemaState?.include);
+    return this.schemaState?.include ?? [];
   }
 }

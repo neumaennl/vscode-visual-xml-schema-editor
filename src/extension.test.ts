@@ -54,7 +54,7 @@ describe("Extension", () => {
   });
 
   describe("activate", () => {
-    it("should register custom editor provider", () => {
+    test("should register custom editor provider", () => {
       activate(mockContext);
 
       expect(vscode.window.registerCustomEditorProvider).toHaveBeenCalledWith(
@@ -69,7 +69,7 @@ describe("Extension", () => {
       );
     });
 
-    it("should register openEditor command", () => {
+    test("should register openEditor command", () => {
       activate(mockContext);
 
       expect(vscode.commands.registerCommand).toHaveBeenCalledWith(
@@ -78,7 +78,7 @@ describe("Extension", () => {
       );
     });
 
-    it("should add registrations to context subscriptions", () => {
+    test("should add registrations to context subscriptions", () => {
       activate(mockContext);
 
       expect(mockContext.subscriptions.length).toBeGreaterThan(0);
@@ -86,7 +86,7 @@ describe("Extension", () => {
   });
 
   describe("openEditor command", () => {
-    it("should open file with custom editor when URI is provided", async () => {
+    test("should open file with custom editor when URI is provided", async () => {
       activate(mockContext);
 
       // Get the registered command handler
@@ -109,7 +109,7 @@ describe("Extension", () => {
       );
     });
 
-    it("should show error when non-XSD file is provided", async () => {
+    test("should show error when non-XSD file is provided", async () => {
       activate(mockContext);
 
       const commandHandler = registerCommandMock.mock.calls.find(
@@ -134,7 +134,7 @@ describe("Extension", () => {
       setActiveEditor(undefined);
     });
 
-    it("should open the XSD file of the active editor", async () => {
+    test("should open the XSD file of the active editor", async () => {
       setActiveEditor("/test/schema.xsd");
       const handler = activateAndGetOpenEditorHandler(mockContext);
 
@@ -147,7 +147,7 @@ describe("Extension", () => {
       );
     });
 
-    it("should show an error when the active editor shows a file that is not an XSD file", async () => {
+    test("should show an error when the active editor shows a file that is not an XSD file", async () => {
       setActiveEditor("/test/notes.txt");
       const handler = activateAndGetOpenEditorHandler(mockContext);
 
@@ -159,7 +159,7 @@ describe("Extension", () => {
       );
     });
 
-    it("should show an error when no editor is active", async () => {
+    test("should show an error when no editor is active", async () => {
       setActiveEditor(undefined);
       const handler = activateAndGetOpenEditorHandler(mockContext);
 
@@ -173,7 +173,7 @@ describe("Extension", () => {
   });
 
   describe("deactivate", () => {
-    it("should complete without errors", () => {
+    test("should complete without errors", () => {
       expect(() => deactivate()).not.toThrow();
     });
   });

@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-29T06:58:32Z }
-verified: { by: human:neumaennl, at: 2026-10-29T07:47:32Z }
+generated: { by: human:neumaennl, at: 2026-11-12T12:01:26Z }
+verified: { by: human:neumaennl, at: 2026-11-12T12:07:29Z }
 ---
 
 # Purpose
@@ -17,6 +17,7 @@ Rules:
 - Each issue is a `##` heading with a short title, followed by its location, severity, effort, a description and the GitHub issue (a link, or "none").
 - Within each section, entries are sorted by severity (high first), then by effort (small first).
 - When an issue is fixed, its entry is removed and the removal is recorded in [log.md](log.md).
+- If the cause is in `xmlbind-ts` (see [Architecture](architecture.md#responsibilities-of-xmlbind-ts-and-the-editor)), the problem is recorded in the [known issues of xmlbind-ts](https://github.com/neumaennl/xmlbind-ts/blob/main/docs/known-issues.md). The entry here describes the effect on schemas and the editor, and links to the entry there.
 - Entries in [GitHub issues](#github-issues) describe open GitHub issues that do not match the code or the documentation. They are removed when the GitHub issue is updated or closed.
 
 Severity:
@@ -34,34 +35,6 @@ Effort:
 - **L:** a day or more, or design decisions are needed.
 
 # Code
-
-## Dropping an enumeration replaces the existing values
-
-- **Location:** `webview-src/drop/DropCommandFactoryTypeHelpers.ts` (`createFacetNodeDropCommand()`)
-- **Severity:** High
-- **Effort:** S
-- **Description:** Dropping the enumeration facet onto a type that already has enumeration values sends `modifySimpleType` with the existing facets overwritten by the default facet, so `["a", "b"]` becomes `["value"]`. The values are lost without a warning; only undo brings them back. The fix is to append the default value (made unique, for example `value2`) to the existing list instead of replacing it.
-- **GitHub issue:** none
-
-## Editing facets drops all but the first pattern
-
-- **Location:** `shared/commands/schemaTypes.ts` (`RestrictionFacets.pattern`), `src/commandExecutors/simpleTypeExecutors.ts`, `webview-src/propertyPanel/propertyPanelFacets.ts`, `webview-src/drop/DropCommandFactoryTypeHelpers.ts` (`createFacetNodeDropCommand()`)
-- **Severity:** High
-- **Effort:** M
-- **Description:** XSD allows several `xs:pattern` facets in one restriction, and the diagram reads all of them, but `RestrictionFacets.pattern` is a single string. `modifySimpleType` replaces all facets with the ones in the payload, and the property panel sends only the first pattern (`pattern?.[0]`). Changing any facet of a type with two or more patterns therefore deletes all patterns but the first, without a warning (see [Commands](commands.md#restriction-facets)). Dropping a facet from the palette does the same, and dropping a pattern replaces the existing pattern with the default `.*` instead of adding one (see [Drag and drop](drag-and-drop.md#defaults)). The fix is to make `pattern` a `string[]` like `enumeration`, write one `xs:pattern` per value, send all patterns from the property panel and the facet drop, and append a dropped pattern. See also [Diagram items copy values from the schema objects](#diagram-items-copy-values-from-the-schema-objects).
-- **GitHub issue:** none
-
-## Attributes on derived complex types are rejected or misplaced
-
-- **Location:** `webview-src/drop/DropCommandFactory.ts` (`createAttributeNodeDropCommand()`), `src/commandExecutors/attributeExecutors.ts` (`addAttributeToParent()`)
-- **Severity:** High
-- **Effort:** M
-- **Description:** In a complex type with `xs:complexContent` or `xs:simpleContent`, attributes belong inside the `xs:extension` or `xs:restriction`. The drop and the command get this wrong in two ways:
-  - The attribute drop accepts a named complex type only if its label is exactly `complexType`. A derived named type is labelled `complexType (extends Base)` or `complexType (restricts Base)`, so the drop is rejected.
-  - On an element with an anonymous complex type, the drop is accepted whatever the content model is. `addAttribute` always appends the attribute to the complex type itself, so for a derived anonymous type it writes `<attribute>` after `<complexContent>`, which is invalid XSD, and reports success.
-
-  The fix is to use `isComplexTypeNode()` in the attribute drop rule, as the other rules do, and to add the attribute to the extension or restriction in the executor when the complex type has complex or simple content.
-- **GitHub issue:** none
 
 ## Node IDs are ambiguous and have many special cases
 
@@ -85,13 +58,44 @@ Effort:
   The goal is one consistent grammar, generated and resolved by a single implementation in `shared/`. Since IDs are not stored in the XSD file, a new format needs no migration. The redesign should be planned together with [Diagram items copy values from the schema objects](#diagram-items-copy-values-from-the-schema-objects), which also changes the diagram builder.
 - **GitHub issue:** [#348](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/348)
 
+## Commands can change or lose content outside the edit
+
+- **Location:** `@neumaennl/xmlbind-ts` (`marshal()`, `unmarshal()`), `src/webviewProvider.ts` (`executeCommand()`)
+- **Severity:** High
+- **Effort:** L
+- **Description:** Every command writes the whole document with `marshal` (see [Persistence](persistence.md#what-serialization-changes)). Besides the formatting (see [Every command reformats the whole document](#every-command-reformats-the-whole-document)), this changes or loses content that the command did not touch, even when it only renames something. Reproduced with `unmarshal` and `marshal` and the generated schema classes:
+  - Children of one kind that occur in more than one run are written together: the `sequence` `element z, choice, any, element a, group` becomes `element z, element a, choice, any, group`, which changes its meaning. A comment is written after as many elements as were before it in the source, so it moves when they are reordered: in `element a, <!--c1-->, element b, simpleType s, <!--c2-->, element c`, `c2` moves behind `c`. ([xmlbind-ts: elements](https://github.com/neumaennl/xmlbind-ts/blob/main/docs/known-issues.md#elements-are-reordered-when-occurrences-are-not-contiguous), [comments](https://github.com/neumaennl/xmlbind-ts/blob/main/docs/known-issues.md#comments-move-when-elements-are-reordered-or-dropped))
+  - Content that the classes generated from XSD 1.0 do not map is dropped without notice: XSD 1.1 constructs such as `xs:assert`, and foreign elements at the top level. A comment after dropped content moves for the same reason: in `sequence, assert, <!--c-->, attribute`, `c` moves behind `attribute`. Processing instructions, a document type declaration and comments after the root element are dropped as well. ([xmlbind-ts: unmapped content](https://github.com/neumaennl/xmlbind-ts/blob/main/docs/known-issues.md#unmapped-content-is-dropped-without-notice), [comments](https://github.com/neumaennl/xmlbind-ts/blob/main/docs/known-issues.md#comments-move-when-elements-are-reordered-or-dropped), [processing instructions](https://github.com/neumaennl/xmlbind-ts/blob/main/docs/known-issues.md#processing-instructions-the-document-type-and-comments-after-the-root-are-dropped))
+  - Mixed content in `xs:documentation` is scrambled: `Some <b>mixed</b> &amp; text` becomes `<b>mixed</b>` followed by `Some&amp; text`. ([xmlbind-ts](https://github.com/neumaennl/xmlbind-ts/blob/main/docs/known-issues.md#mixed-content-is-reordered-and-loses-whitespace))
+  - A namespace declaration below the root element is dropped: `<xs:element xmlns:t="urn:t" name="e" type="t:T"/>` loses `xmlns:t`, so `t:T` no longer resolves. ([xmlbind-ts](https://github.com/neumaennl/xmlbind-ts/blob/main/docs/known-issues.md#namespace-declarations-below-the-root-are-not-kept))
+  - The XML declaration is always written as `<?xml version="1.0" encoding="UTF-8"?>`. ([xmlbind-ts](https://github.com/neumaennl/xmlbind-ts/blob/main/docs/known-issues.md#the-attributes-of-the-xml-declaration-are-not-kept))
+
+  The editor does not warn about any of this. The causes are in `xmlbind-ts` (see [Architecture](architecture.md#responsibilities-of-xmlbind-ts-and-the-editor)); 2.x gets no more fixes, and version 3, which writes only the changes of a command, fixes them ([#444](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/444)). What the editor does with a schema that does not survive a round trip unchanged is its own decision: for example, it could compare the document with the result of a round trip when it is opened, and warn or switch to read-only if they differ.
+- **GitHub issue:** [#444](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/444)
+
+## Turning the default namespace into a prefix does not rewrite references
+
+- **Location:** `src/commandExecutors/schemaExecutors.ts` (`executeModifySchemaNamespaces()`), `src/commandExecutors/schemaQNameRewriter.ts`
+- **Severity:** Medium
+- **Effort:** S
+- **Description:** `modifySchemaNamespaces` treats a prefix whose name changed but whose URI did not as a rename, and rewrites the QNames that use it (see [Commands](commands.md#imports-includes-and-namespaces)). If one side of the rename is the empty prefix of the default namespace, nothing is rewritten. When `xmlns="urn:x"` becomes `xmlns:tns="urn:x"`, unprefixed QNames such as `type="Address"` no longer resolve to `urn:x`; when `tns` becomes the default namespace, `tns:Address` loses its binding. The fix is to add the prefix to unprefixed QNames in the first case and to remove it in the second. The `xpath` of selectors and fields needs its own rule: XPath does not apply the default namespace to unprefixed names, so a name in an XPath keeps its prefix, and turning a prefix that an XPath uses into the default namespace should be rejected.
+- **GitHub issue:** [#426](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/426)
+
+## Removing an import without a namespace does not check for references
+
+- **Location:** `src/commandValidators/schemaValidators.ts` (`validateRemoveImport()`, `isNamespaceReferenced()`)
+- **Severity:** Medium
+- **Effort:** S
+- **Description:** `removeImport` rejects the removal of an import whose namespace is still referenced, by looking for QNames with a prefix of that namespace. An `<xs:import>` without a `namespace` imports a schema without a target namespace, whose components are referenced with unprefixed QNames when the schema has no default namespace. These references have no prefix to look for, so `isNamespaceReferenced()` returns `false` and the import can always be removed, leaving references that cannot be resolved. The fix is to treat the unprefixed QNames that do not name a component of the schema itself as references to the import, as long as the schema has no default namespace. The test that accepts removing such an import uses a schema without references.
+- **GitHub issue:** [#427](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/427)
+
 ## Removing a namespace prefix does not check for references
 
 - **Location:** `src/commandValidators/schemaValidators.ts` (`validateModifySchemaNamespaces()`)
 - **Severity:** Medium
 - **Effort:** S
-- **Description:** `modifySchemaNamespaces` replaces the complete prefix map, so a prefix that is missing from the map is removed. The validator does not check whether QNames such as `type="tns:Address"` still use the removed prefix, and the schema is left with references that cannot be resolved. The property panel sends this command when a namespace row is deleted. `removeImport` already rejects the removal of a namespace that is still referenced (`isPrefixReferencedInSchema()`); the same check is needed for prefixes that are removed and not renamed.
-- **GitHub issue:** none
+- **Description:** `modifySchemaNamespaces` replaces the complete prefix map, so a prefix that is missing from the map is removed. The validator does not check whether QNames such as `type="tns:Address"` still use the removed prefix, and the schema is left with references that cannot be resolved. The properties panel sends this command when a namespace row is deleted. `removeImport` already rejects the removal of a namespace that is still referenced (`isPrefixReferencedInSchema()`); the same check is needed for prefixes that are removed and not renamed.
+- **GitHub issue:** [#428](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/428)
 
 ## Documentation overlaps the next item
 
@@ -99,7 +103,7 @@ Effort:
 - **Severity:** Medium
 - **Effort:** S
 - **Description:** With `showDocumentation`, the documentation of an item is drawn in a box 5 px below its shape, up to 100 px high. The item's bounding box does not include this box, and the next sibling is placed 20 px below the bounding box. The documentation is therefore drawn over the next item: for a top-level element with 150 characters of documentation, the box ends at y = 115, while the next element starts at y = 60. The fix is to include the documentation box in the bounding box (see [Diagram rendering](diagram-rendering.md#layout)). See also [Documentation in the diagram is cut off and hard to read](#documentation-in-the-diagram-is-cut-off-and-hard-to-read).
-- **GitHub issue:** none
+- **GitHub issue:** [#429](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/429)
 
 ## Generated names ignore local names in the drop target
 
@@ -107,7 +111,7 @@ Effort:
 - **Severity:** Medium
 - **Effort:** S
 - **Description:** The names for dropped elements and attributes are generated from the names of top-level constructs only. If the drop target already contains a local element `Element1` or a local attribute `Attribute1`, the drop generates the same name, and the command is rejected with an error such as "Cannot add element: duplicate element name 'Element1' in sequence". For attributes, the message contains the internal term `topLevelComplexType` instead of the type name. A second drop succeeds, because the failed name stays reserved until the next schema update. The fix is to also skip the names already used in the drop target (see [Drag and drop](drag-and-drop.md#defaults)).
-- **GitHub issue:** none
+- **GitHub issue:** [#430](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/430)
 
 ## Diagram error text stays after a successful render
 
@@ -115,30 +119,42 @@ Effort:
 - **Severity:** Medium
 - **Effort:** S
 - **Description:** When building, laying out or drawing fails, `DiagramRenderer.showError()` adds the text "Error: …" to the canvas group. The next render only empties the content group inside it, so the error text stays visible over the diagram, even after the schema has been fixed. The app also shows the error in the notification bar, which is enough. The fix is to remove the SVG error text, or to put it into the content group (see [Diagram rendering](diagram-rendering.md#pipeline)).
-- **GitHub issue:** none
+- **GitHub issue:** [#431](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/431)
 
-## Restricted complex content is shown without content and attributes
+## Inline complex types with simple content are treated as inline simple types
+
+- **Location:** `webview-src/diagram/SchemaProcessors.ts` (`processComplexType()`, `processAnonymousSimpleType()`), `webview-src/drop/DropCommandFactoryTypeHelpers.ts` (`isRestrictionSimpleType()`, `createFacetNodeDropCommand()`), `webview-src/propertiesPanel/propertiesPanelTypeHelpers.ts` (`isInlineSimpleTypeElement()`), `webview-src/propertiesPanel/propertiesPanelCommands.ts` (`resolveSimpleTypeId()`)
+- **Severity:** Medium
+- **Effort:** S
+- **Description:** The diagram builder sets `isSimpleContent` both on an element with an inline simple type and on an element whose inline complex type has `xs:simpleContent`. The drop rules and the properties panel read the flag as "the element has an inline simple type" and address `/element:x/anonymousSimpleType[0]`, which only exists in the first case. For the element `price` with `<xs:complexType><xs:simpleContent><xs:restriction base="B"/></xs:simpleContent></xs:complexType>`, labelled `<anonymous complexType> with simpleContent (restricts B)`:
+  - a facet drop is accepted while dragging, and then sends `modifySimpleType` for `/element:price/anonymousSimpleType[0]`, which fails;
+  - the properties panel shows the editors of an inline simple type, and changing a facet or the derivation there fails the same way.
+
+  The fix is to check `hasAnonymousComplexType` wherever the flag is read as an inline simple type, or to split the flag. The facets of a restriction of simple content cannot be edited by any command yet (see [Complex types with simple content cannot be created or derived](#complex-types-with-simple-content-cannot-be-created-or-derived)).
+- **GitHub issue:** [#440](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/440)
+
+## Restricted complex content is shown without content
 
 - **Location:** `webview-src/diagram/SchemaProcessors.ts` (`processComplexType()`), `webview-src/diagram/SchemaProcessorsSimpleTypes.ts` (`processRestriction()`)
 - **Severity:** Medium
 - **Effort:** M
-- **Description:** For `xs:complexContent` and `xs:simpleContent`, an `xs:extension` is processed with its attributes and compositors, but an `xs:restriction` is passed to the simple type function `processRestriction()`, which only reads facets. A complex type that restricts another one with complex content is therefore shown without children, and the attributes of both kinds of restriction are missing in the property panel. The function also sets `simpleTypeDerivationKind` on the complex type. The fix is to process restrictions of complex content like extensions (attributes and compositors), and to read the attributes of restrictions of simple content as well (see [Diagram rendering](diagram-rendering.md#from-schema-to-diagram-items)). See also [Diagram items copy values from the schema objects](#diagram-items-copy-values-from-the-schema-objects).
+- **Description:** For `xs:complexContent`, an `xs:extension` is processed with its compositors, but an `xs:restriction` is passed to the simple type function `processRestriction()`, which only reads facets. A complex type that restricts another one with complex content is therefore shown without children; its attributes are read like those of an extension. The function also sets `simpleTypeDerivationKind` on the complex type. The fix is to process the compositors of restrictions of complex content like those of extensions (see [Diagram rendering](diagram-rendering.md#from-schema-to-diagram-items)). See also [Diagram items copy values from the schema objects](#diagram-items-copy-values-from-the-schema-objects).
 - **GitHub issue:** none
 
 ## Renames and new references do not check for duplicates
 
-- **Location:** `src/commandValidators/elementValidators.ts` (`validateModifyElement()`, `validateModifyAttribute()`), `src/commandValidators/typeValidators.ts` (`validateModifySimpleType()`, `validateModifyComplexType()`), `src/commandValidators/groupValidators.ts` (`validateModifyGroup()`)
+- **Location:** `src/commandValidators/elementValidators.ts` (`validateModifyElement()`), `src/commandValidators/attributeValidators.ts` (`validateModifyAttribute()`), `src/commandValidators/simpleTypeValidators.ts` (`validateModifySimpleType()`), `src/commandValidators/complexTypeValidators.ts` (`validateModifyComplexType()`), `src/commandValidators/groupValidators.ts` (`validateModifyGroup()`), `src/commandValidators/attributeGroupValidators.ts` (`validateAddAttributeGroup()`, `validateModifyAttributeGroup()`)
 - **Severity:** Medium
 - **Effort:** M
-- **Description:** The `add*` validators reject a name or reference that already exists, but the `modify*` validators of elements, attributes, simple types, complex types and groups only check that the new name or reference is valid. Renaming the top-level element `a` to `b` while `b` exists is accepted and writes a schema with two top-level elements named `b`, which is invalid XSD; the same happens for attributes, types and groups. Likewise, changing a local element or attribute into a reference that its parent already contains (for example a second `<xs:attribute ref="lang"/>` in the same complexType) is accepted, which `validateAddElement()` and `validateAddAttribute()` reject. Because node IDs resolve to the first match, the two nodes can then no longer be told apart (see [Node IDs are ambiguous](#node-ids-are-ambiguous-and-have-many-special-cases)). `validateModifyAttributeGroup()` already has the check for names. The fix is the same check in these validators as in the matching `add*` validators, skipped when the name or reference does not change.
+- **Description:** The `add*` validators, except for attribute group references, reject a name or reference that already exists, but the `modify*` validators of elements, attributes, simple types, complex types and groups only check that the new name or reference is valid. Renaming the top-level element `a` to `b` while `b` exists is accepted and writes a schema with two top-level elements named `b`, which is invalid XSD; the same happens for attributes, types and groups. Likewise, changing a local element or attribute into a reference that its parent already contains (for example a second `<xs:attribute ref="lang"/>` in the same complexType) is accepted, which `validateAddElement()` and `validateAddAttribute()` reject. Because node IDs resolve to the first match, the two nodes can then no longer be told apart (see [Node IDs are ambiguous](#node-ids-are-ambiguous-and-have-many-special-cases)). `validateModifyAttributeGroup()` already has the check for names. Attribute group references are not checked at all: `addAttributeGroup` in reference mode and `modifyAttributeGroup` with a new `ref` accept a reference to a group that the complex type, or the extension or restriction of its content, already references, which declares the same attributes twice and is invalid XSD. The fix is the same check in these validators as in the matching `add*` validators, skipped when the name or reference does not change, and a check for existing references in `validateAddAttributeGroup()`.
 - **GitHub issue:** none
 
 ## Removing a simple or complex type does not check for references
 
-- **Location:** `src/commandValidators/typeValidators.ts` (`validateRemoveSimpleType()`, `validateRemoveComplexType()`), `src/commandValidators/elementValidators.ts` (`validateRemoveElement()`, `validateRemoveAttribute()`)
+- **Location:** `src/commandValidators/simpleTypeValidators.ts` (`validateRemoveSimpleType()`), `src/commandValidators/complexTypeValidators.ts` (`validateRemoveComplexType()`), `src/commandValidators/elementValidators.ts` (`validateRemoveElement()`), `src/commandValidators/attributeValidators.ts` (`validateRemoveAttribute()`)
 - **Severity:** Medium
 - **Effort:** M
-- **Description:** Removing a top-level simple or complex type is accepted even if elements, attributes or other types still use it (`validateRemoveSimpleType()` has a `TODO Phase 2` for this). The schema is left with `type` and `base` values that point nowhere. The property panel sends these commands when a type is deleted. The same applies to top-level elements and attributes that are still referenced with `ref` or `substitutionGroup`. Groups, attribute groups and imports already reject the removal while they are referenced; types, elements and attributes need the same check (see [Commands](commands.md#conventions)).
+- **Description:** Removing a top-level simple or complex type is accepted even if elements, attributes or other types still use it (`validateRemoveSimpleType()` has a `TODO Phase 2` for this). The schema is left with `type` and `base` values that point nowhere. The properties panel sends these commands when a type is deleted. The same applies to top-level elements and attributes that are still referenced with `ref` or `substitutionGroup`. Groups, attribute groups and imports already reject the removal while they are referenced; types, elements and attributes need the same check (see [Commands](commands.md#conventions)).
 - **GitHub issue:** none
 
 ## View state is not restored after reopening
@@ -157,27 +173,27 @@ Effort:
 - **Severity:** Medium
 - **Effort:** M
 - **Description:** `CommandProcessor` guards against concurrent commands with an `isExecuting` flag, but `execute()` is synchronous, so the flag can never be set when the next command arrives. The asynchronous part is not guarded: the provider awaits `applyEdit()`, and the webview sends commands without waiting for `commandResult`. A second command that arrives during the wait reads the document text before the first edit and computes its replace range from it, so it can undo the first change or leave parts of the old text in the document. This follows from the code and was not reproduced in VS Code. The fix is to queue commands in the provider (process one after the other, each after the previous edit is applied) and to remove the flag; the webview could additionally block input while a command is pending (see [Persistence](persistence.md#concurrency)). The messages carry no request ID and `commandResult` does not name its command, so the webview cannot tell which of several pending commands a result belongs to (see [Messaging](messaging.md#limitations)).
-- **GitHub issue:** none
+- **GitHub issue:** [#432](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/432)
 
 ## Particles are not shown in document order
 
 - **Location:** `webview-src/diagram/SchemaProcessors.ts` (`processGroup()`)
 - **Severity:** Medium
 - **Effort:** M
-- **Description:** The generated classes store the particles of a compositor in one array per kind, and the diagram builder adds them kind by kind: first the elements, then the group references, then nested `choice`s, then nested `sequence`s. A `sequence` of `a`, a `choice` and `b` is therefore shown as `a`, `b`, `choice`, which gives the wrong order for a sequence. The node IDs are not affected, because positions are counted per kind. xmlbind-ts keeps the element order for serialization (see [Persistence](persistence.md#what-serialization-changes)); the fix is to use it when the children are added (see [Diagram rendering](diagram-rendering.md#from-schema-to-diagram-items)).
+- **Description:** The generated classes store the particles of a compositor in one array per kind, and the diagram builder adds them kind by kind: first the elements, then the group references, then nested `choice`s, then nested `sequence`s. A `sequence` of `a`, a `choice` and `b` is therefore shown as `a`, `b`, `choice`, which gives the wrong order for a sequence. The node IDs are not affected, because positions are counted per kind. xmlbind-ts records the local names of the child elements in document order (`_elementOrder`), from which the diagram builder could restore the order when the children are added (see [Diagram rendering](diagram-rendering.md#from-schema-to-diagram-items)). But xmlbind-ts does not use this order completely when it writes the document, so after the first command the file itself can have the wrong order (see [Commands can change or lose content outside the edit](#commands-can-change-or-lose-content-outside-the-edit)).
 - **GitHub issue:** none
 
 ## Imports and includes cannot be edited in the editor
 
-- **Location:** `webview-src/diagram/DiagramBuilder.ts`, `webview-src/propertyPanel/`, `webview-src/palette/`
+- **Location:** `webview-src/diagram/DiagramBuilder.ts`, `webview-src/propertiesPanel/`, `webview-src/palette/`
 - **Severity:** Medium
 - **Effort:** M
-- **Description:** `xs:import` and `xs:include` are neither shown in the diagram nor in the property panel, and the palette has no entry for them. The commands exist (`addImport`, `removeImport`, `modifyImport`, `addInclude`, `removeInclude`, `modifyInclude`, see [Commands](commands.md#imports-includes-and-namespaces)), but nothing in the webview sends them, so imports and includes can only be edited in the text editor. Other edits keep them unchanged. One option is a section in the property panel of the schema root, next to the namespace declarations.
+- **Description:** `xs:import` and `xs:include` are neither shown in the diagram nor in the properties panel, and the palette has no entry for them. The commands exist (`addImport`, `removeImport`, `modifyImport`, `addInclude`, `removeInclude`, `modifyInclude`, see [Commands](commands.md#imports-includes-and-namespaces)), but nothing in the webview sends them, so imports and includes can only be edited in the text editor. Other edits keep them unchanged. One option is a section in the properties panel of the schema root, next to the namespace declarations.
 - **GitHub issue:** [#359](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/359)
 
 ## Element references are not shown as references
 
-- **Location:** `webview-src/diagram/SchemaProcessors.ts`, `webview-src/diagram/SchemaProcessorsGroups.ts`
+- **Location:** `webview-src/diagram/SchemaProcessors.ts`
 - **Severity:** Medium
 - **Effort:** M
 - **Description:** The diagram builder does not read the `ref` attribute of local elements. An `<xs:element ref="…"/>` is shown with the name "unnamed" and is not marked as a reference. `isReference` is only set for group references, and `DiagramItem.inheritFrom` is declared but never set. (That commands on such nodes fail is part of [Node IDs are ambiguous and have many special cases](#node-ids-are-ambiguous-and-have-many-special-cases).) See also [Diagram items copy values from the schema objects](#diagram-items-copy-values-from-the-schema-objects).
@@ -193,10 +209,10 @@ Effort:
 
 ## Mixed content toggle ignores simple content, `complexContent` and the base type
 
-- **Location:** `webview-src/propertyPanel/propertyPanel.ts` (`renderConstraintsSection()`, `canShowConstraintsSection()`), `webview-src/diagram/TypeNodeCreators.ts`, `webview-src/diagram/SchemaProcessors.ts`, `src/commandExecutors/complexTypeExecutors.ts`, `src/commandValidators/`
+- **Location:** `webview-src/propertiesPanel/propertiesPanel.ts` (`renderConstraintsSection()`, `canShowConstraintsSection()`), `webview-src/diagram/TypeNodeCreators.ts`, `webview-src/diagram/SchemaProcessors.ts`, `src/commandExecutors/complexTypeExecutors.ts`, `src/commandValidators/`
 - **Severity:** Medium
 - **Effort:** M
-- **Description:** The property panel shows a "Mixed content" toggle for every complex type and for every element with an anonymous complex type. The diagram reads, and `modifyComplexType` writes, only the `mixed` attribute of `xs:complexType`. This is wrong in three cases:
+- **Description:** The properties panel shows a "Mixed content" toggle for every complex type and for every element with an anonymous complex type. The diagram reads, and `modifyComplexType` writes, only the `mixed` attribute of `xs:complexType`. This is wrong in three cases:
   - **Simple content.** With `xs:simpleContent`, `mixed="true"` has no effect, and XSD 1.0 says it should be avoided. The toggle is shown anyway.
   - **`mixed` on `xs:complexContent`.** If present, it takes precedence over the attribute on `xs:complexType`. It is neither read nor written, so the toggle can show the wrong state, and switching it changes nothing.
   - **Derivation by extension.** The content types of the base and the derived type must both be mixed or both be element-only. Switching only the derived type can make the schema invalid; no validator checks `mixed`.
@@ -206,10 +222,18 @@ Effort:
 
 ## Facets are not checked against the base type
 
-- **Location:** `src/commandValidators/typeValidators.ts` (`validateSimpleTypeBody()`), `webview-src/propertyPanel/propertyPanelFacets.ts`
+- **Location:** `src/commandValidators/simpleTypeValidators.ts` (`validateSimpleTypeBody()`), `webview-src/propertiesPanel/propertiesPanelFacets.ts`
 - **Severity:** Medium
 - **Effort:** L
-- **Description:** `addSimpleType` and `modifySimpleType` only check that a restriction has at least one facet. They do not check whether a facet applies to the base type, or whether facet values fit together. `maxLength` on `xs:integer`, `fractionDigits` on `xs:string`, `minLength` greater than `maxLength` or a `maxInclusive` that is not a valid value of the base type are accepted and written to the file, which makes the schema invalid. The property panel does not limit the facets by base type either. The fix is a table of the facets that apply to each built-in primitive type (XSD Part 2), a lookup that follows user-defined base types down to their primitive type, and checks for the value constraints between facets (see [Commands](commands.md#restriction-facets)).
+- **Description:** `addSimpleType` and `modifySimpleType` only check that a restriction has at least one facet. They do not check whether a facet applies to the base type, or whether facet values fit together. `maxLength` on `xs:integer`, `fractionDigits` on `xs:string`, `minLength` greater than `maxLength` or a `maxInclusive` that is not a valid value of the base type are accepted and written to the file, which makes the schema invalid. The properties panel does not limit the facets by base type either. The fix is a table of the facets that apply to each built-in primitive type (XSD Part 2), a lookup that follows user-defined base types down to their primitive type, and checks for the value constraints between facets (see [Commands](commands.md#restriction-facets)).
+- **GitHub issue:** none
+
+## Attributes in a restriction are not checked against the base type
+
+- **Location:** `src/commandValidators/attributeValidators.ts` (`validateAddAttribute()`), `src/commandValidators/attributeGroupValidators.ts` (`validateAddAttributeGroup()`), `webview-src/drop/DropCommandFactory.ts` (`createAttributeNodeDropCommand()`)
+- **Severity:** Medium
+- **Effort:** L
+- **Description:** In a complex type that derives by restriction, XML Schema only allows attributes that restrict an attribute of the base type, or that the base type's `xs:anyAttribute` allows ("Derivation Valid (Restriction, Complex)"). `addAttribute` and `addAttributeGroup` add any attribute or reference to the `xs:restriction` of complex or simple content, and the attribute drop accepts such types and adds `Attribute1`. Unless the base type declares `Attribute1` or has a matching wildcard, the schema is then invalid; the command reports success. The user can rename the attribute to one of the base type. The fix needs the attributes of the base type, including those of its attribute groups and its own base types, and its wildcard; it can share the lookup of the base type with [Facets are not checked against the base type](#facets-are-not-checked-against-the-base-type).
 - **GitHub issue:** none
 
 ## Every command reformats the whole document
@@ -217,17 +241,17 @@ Effort:
 - **Location:** `src/webviewProvider.ts` (`executeCommand()`), `@neumaennl/xmlbind-ts` (`marshal`)
 - **Severity:** Medium
 - **Effort:** L
-- **Description:** The provider replaces the whole document with the output of `marshal`, which does not keep the source formatting: indentation becomes two spaces, attributes are reordered, quotes and empty elements are normalized, and element prefixes change (see [Persistence](persistence.md#what-serialization-changes)). Even a small command therefore changes most lines of a hand-formatted file, which makes Git diffs and undo steps large. Comments, element order and the XML declaration are kept. The fix belongs in `xmlbind-ts`, for example by keeping attribute order, quote style and indentation as metadata like the element order.
+- **Description:** The provider replaces the whole document with the output of `marshal`, which does not keep the source formatting: indentation becomes two spaces, attributes are reordered, and quotes and empty elements are normalized (see [Persistence](persistence.md#what-serialization-changes)). Even a small command therefore changes most lines of a hand-formatted file, which makes Git diffs and undo steps large. Comments, the prefixes of the element names and the XML declaration are kept; changes beyond the formatting are described in [Commands can change or lose content outside the edit](#commands-can-change-or-lose-content-outside-the-edit). The fix belongs in `xmlbind-ts`, for example by keeping attribute order, quote style and indentation as metadata like the element order. Smaller still would be edits of the changed part only: if `xmlbind-ts` recorded where each element is in the source text, a command could replace just the text of the element it changed and leave everything else as it is, which fits commands that each change one place ([xmlbind-ts#252](https://github.com/neumaennl/xmlbind-ts/issues/252), approach 3).
 - **GitHub issue:** [xmlbind-ts#252](https://github.com/neumaennl/xmlbind-ts/issues/252)
 
 ## Inline types have no node of their own
 
-- **Location:** `webview-src/diagram/SchemaProcessors.ts`, `webview-src/drop/` (drop rules), `webview-src/propertyPanel/` (element editors), `shared/idStrategy.ts`, `src/commandExecutors/`
+- **Location:** `webview-src/diagram/SchemaProcessors.ts`, `webview-src/drop/` (drop rules), `webview-src/propertiesPanel/` (element editors), `shared/idStrategy.ts`, `src/commandExecutors/`
 - **Severity:** Medium
 - **Effort:** L
 - **Description:** An anonymous (inline) complex or simple type is not drawn as a node; its content is merged into the element (see [Diagram rendering](diagram-rendering.md#from-schema-to-diagram-items)). In the schema model and the node IDs, however, the anonymous type has its own segment (`/element:person/anonymousComplexType[0]`, see [Schema model](schema-model.md#conventions)). So one diagram node stands for two constructs, and every part of the editor has to decide which of the two is meant:
-  - The drop rules have extra cases for "element with anonymous complex type" and "element with simple content", which turn a drop on the element into a command on its type (see [Drag and drop](drag-and-drop.md)). Attributes dropped on a derived anonymous complex type end up in the wrong place (see [Attributes on derived complex types are rejected or misplaced](#attributes-on-derived-complex-types-are-rejected-or-misplaced)).
-  - The property panel of an element mixes element and type fields: Base Type, Replacement Type, `mixed` and the Facets tab belong to the type (see [UX concept](ux-concept.md)).
+  - The drop rules have extra cases for "element with anonymous complex type" and "element with simple content", which turn a drop on the element into a command on its type (see [Drag and drop](drag-and-drop.md)).
+  - The properties panel of an element mixes element and type fields: Base Type, Replacement Type, `mixed` and the Facets tab belong to the type (see [UX concept](ux-concept.md)).
   - Anonymous types cannot be selected or deleted on their own, and the element's documentation falls back to the type's documentation, which cannot be told apart.
 
   How Altova XMLSpy shows anonymous types is unclear: its manual says that "there is no separate symbol for local complex types", which can mean that they are merged into the element or that they use the same symbol as named complex types; this was not tried in XMLSpy. The editor does not have to follow XMLSpy here. An alternative is to draw the anonymous type as a child node of the element, so that every node is exactly one construct. This could be a diagram option. It should be decided before the [node IDs are redesigned](#node-ids-are-ambiguous-and-have-many-special-cases). It should also be planned together with [Diagram items copy values from the schema objects](#diagram-items-copy-values-from-the-schema-objects).
@@ -239,6 +263,22 @@ Effort:
 - **Severity:** Medium
 - **Effort:** L
 - **Description:** The palette has items for elements, attributes and groups, but none for attribute groups, so they cannot be created or referenced in the editor. The commands exist (`addAttributeGroup`, `removeAttributeGroup`, `modifyAttributeGroup`, see [Commands](commands.md#attribute-groups)), but the webview never sends them. The diagram does not show attribute groups either: it only reads `attribute`, so top-level attribute group definitions and `<xs:attributeGroup ref="…"/>` inside complex types are left out, and the only use in the webview is the duplicate-name check in `DropCommandFactory`. The fix is a palette item with drop targets for the schema (definition) and complex types (reference), showing definitions and references in the diagram, and the header delete button for them.
+- **GitHub issue:** none
+
+## References to included and imported schemas are not checked
+
+- **Location:** `src/commandValidators/validationUtils.ts` (`validateElementType()`)
+- **Severity:** Medium
+- **Effort:** L
+- **Description:** The editor never reads the schemas that `xs:include` and `xs:import` refer to. `validateElementType()` therefore accepts every type name with a prefix whose namespace has an `xs:import`, and every name without a prefix as soon as the schema has an `xs:include`, whether the type exists there or not: a misspelled `type="tns:Adress"` is accepted when `tns` is imported. The diagram cannot show the content of such types either. The fix needs the referenced files to be read and their components collected, the symbol table of [Responsibilities of xmlbind-ts and the editor](architecture.md#responsibilities-of-xmlbind-ts-and-the-editor). See also [Imports and includes cannot be edited in the editor](#imports-and-includes-cannot-be-edited-in-the-editor).
+- **GitHub issue:** none
+
+## Lists and unions with inline types are shown as if they had named types
+
+- **Location:** `webview-src/diagram/SchemaProcessorsSimpleTypes.ts` (`processList()`, `processUnion()`), `webview-src/propertiesPanel/propertiesPanelXmlPreview.ts`
+- **Severity:** Low
+- **Effort:** S
+- **Description:** For a list whose item type is an inline simple type (`<xs:list><xs:simpleType><xs:restriction base="xs:int"/></xs:simpleType></xs:list>`), `processList()` takes the base of the inline type as the item type. The diagram shows "list of xs:int", the properties panel offers `xs:int` as the item type, and the XML tab shows `<xs:list itemType="xs:int"/>`, although the list has no `itemType`. Changing the item type in the panel replaces the inline type. A union with inline member types is shown without any member types: the XML tab shows an empty `<xs:union/>`. The fix is to show inline item and member types as such, which depends on [Inline types have no node of their own](#inline-types-have-no-node-of-their-own).
 - **GitHub issue:** none
 
 ## `SchemaEditorProvider` parses XML without `SchemaModelManager`
@@ -265,12 +305,12 @@ Effort:
 - **Description:** The extension-to-webview message `schemaModified` is defined in the message types, but the extension never sends it and the webview does not handle it.
 - **GitHub issue:** none
 
-## `modifySimpleType` skips part of its validation
+## `vscode:check` does not check the Node versions that runtime dependencies require
 
-- **Location:** `src/commandValidators/typeValidators.ts` (`validateModifySimpleType()`)
+- **Location:** `scripts/vscode-version.ts`, `.github/workflows/ci.yml`
 - **Severity:** Low
 - **Effort:** S
-- **Description:** The validator returns the result of `validateSimpleTypeBody()` with `if (bodyValidation) return bodyValidation;`. The result is always an object, so the function always returns there, and the checks after it never run: a `typeName` for an anonymous simple type is accepted and ignored by the executor instead of being rejected, and the message "Cannot apply restrictions without a base type" is unreachable. Because `validateSimpleTypeBody()` requires `baseType` for every restriction body, `restrictions` without `baseType` fail with "Base type cannot be empty", even if the type already is a restriction (see [Commands](commands.md#simple-types)). The property panel always sends both. `validateAddSimpleType()` uses the same pattern, but there the body check is the last one. The fix is to return only invalid results and to decide whether `restrictions` may keep the current base type.
+- **Description:** The extension runs on the Node version of the extension host, which `.nvmrc` records (see [VS Code and Node versions](build-and-packaging.md#vs-code-and-node-versions)). `npm run vscode:check` checks the values derived from the VS Code version, but not whether the runtime dependencies accept that Node version: `@neumaennl/xmlbind-ts` declares `engines.node` `>=24`, which fits the extension host's 24.15.0, but an upgrade that raises its minimum would go unnoticed. `xmlbind-ts` checks the same for its own dependencies with `npm run node:check`. The fix is a check after `npm ci` that reads `engines.node` of the runtime dependencies from `node_modules` and compares it with `.nvmrc`.
 - **GitHub issue:** none
 
 ## Leftovers of the removed top-level drop target
@@ -299,7 +339,7 @@ Effort:
 
 ## Empty Facets tab says adding facets is not available yet
 
-- **Location:** `webview-src/propertyPanel/propertyPanelFacets.ts` (`renderFacetsTab()`)
+- **Location:** `webview-src/propertiesPanel/propertiesPanelFacets.ts` (`renderFacetsTab()`)
 - **Severity:** Low
 - **Effort:** S
 - **Description:** A restriction without facets shows "This type has no facets yet. To add a facet, drag one from the palette onto the node (available in a future release)." Dropping facets from the palette already works (see [UX concept](ux-concept.md#adding-editing-and-deleting)), so the part in parentheses should be removed.
@@ -307,7 +347,7 @@ Effort:
 
 ## Language of documentation entries cannot be edited
 
-- **Location:** `webview-src/propertyPanel/propertyPanelDocs.ts`
+- **Location:** `webview-src/propertiesPanel/propertiesPanelDocs.ts`
 - **Severity:** Low
 - **Effort:** S
 - **Description:** The Docs tab shows only the text of a documentation entry, not its `xml:lang` attribute, and it has no field to set or change it. Existing values are preserved because `modifyDocumentation` is sent without `lang`, but new entries always lack a language. Both commands already accept `lang`, and in `modifyDocumentation` an empty value removes the attribute (see [Commands](commands.md#annotations-and-documentation)); only the webview is missing. The fix is a language field next to each entry that sends `lang` with `addDocumentation` and `modifyDocumentation`.
@@ -342,7 +382,7 @@ Effort:
 - **Location:** `webview-src/main.ts` (`onNodeClick()`, `updateDiagramOptions` handler), `webview-src/renderer.ts` (`refresh()`)
 - **Severity:** Low
 - **Effort:** S
-- **Description:** Every render recreates the SVG of all items, which removes the `.selected` class. After `updateSchema`, the app selects the node again, but not after an expand or collapse and not after a changed diagram option. The highlight disappears while the property panel still shows the node. The fix is to apply the selection again in the renderer after each render, or to call `refreshSelection()` in these places as well (see [Diagram rendering](diagram-rendering.md#interaction)).
+- **Description:** Every render recreates the SVG of all items, which removes the `.selected` class. After `updateSchema`, the app selects the node again, but not after an expand or collapse and not after a changed diagram option. The highlight disappears while the properties panel still shows the node. The fix is to apply the selection again in the renderer after each render, or to call `refreshSelection()` in these places as well (see [Diagram rendering](diagram-rendering.md#interaction)).
 - **GitHub issue:** none
 
 ## Diagram does not follow theme changes
@@ -353,22 +393,6 @@ Effort:
 - **Description:** The diagram colors and font are read from VS Code's CSS variables once, when the module is loaded, and written into the SVG as inline styles. When the user switches the color theme, the rest of the webview follows, but the diagram keeps the old colors until the webview is recreated; with a switch between light and dark themes, the diagram can become hard to read. This follows from the code and was not tried in VS Code. The fix is to use the CSS variables directly in the SVG styles (`var(--vscode-editor-foreground)`), or to read them again on each render.
 - **GitHub issue:** none
 
-## Command and message type tests only check object literals
-
-- **Location:** `shared/__tests__/commands/` (six files), `shared/__tests__/messages.test.ts`
-- **Severity:** Low
-- **Effort:** S
-- **Description:** These tests build typed object literals for commands and messages and check that the fields have the values just assigned. The compiler already checks that the literals match the types, and the files contain no runtime code to test, so the tests cannot fail for a reason the build would not catch. They are also unit tests in a `__tests__` folder, which the conventions reserve for integration tests (see [Testing](testing.md#files-and-structure)). The fix is to delete them, or to replace them with type tests that the compiler checks (for example with `@ts-expect-error` for payloads that must be rejected). This is planned for Phase 9 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340), on the editor branch, which has more of these tests.
-- **GitHub issue:** none
-
-## Test helpers are copied between test files
-
-- **Location:** `src/commandExecutors/schemaExecutors.test.ts`, `schemaPrefixChecker.test.ts`, `schemaQNameRewriter.test.ts`, `simpleTypeExecutors.test.ts`, `complexTypeExecutors.test.ts`, `schemaLocalRenamer.test.ts`, `src/commandValidators/annotationValidators.test.ts`, `src/commandExecutors/annotationExecutors.test.ts`, `src/webviewProvider.test.ts`, `src/__tests__/pipeline.workspaceEdit.test.ts`, `src/__tests__/testHelpers.ts`, `webview-src/__tests__/svgTestUtils.ts`
-- **Severity:** Low
-- **Effort:** S
-- **Description:** Some helpers exist as copies in several test files, against the conventions in [Testing](testing.md#helper-functions): `emptySchema()` is identical in three executor tests, `schemaWith(body)` is in three (once with line breaks around the body), the XML constants `schemaWithAnnotationXml` and `schemaWithTwoAnnotationsXml` are in both the annotation validator and executor tests, and the stubs of the VS Code objects for `SchemaEditorProvider` are built separately in `webviewProvider.test.ts` and `pipeline.workspaceEdit.test.ts`. The two helper modules are named `testHelpers.ts` and `svgTestUtils.ts` instead of `<topic>TestHelpers.ts`. The fix is to move the copies into helper modules and rename the two modules. This is planned for Phase 9 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340), on the editor branch, which has more of these tests. Moving the inline XML is a separate, larger task (see [Test XML is inline instead of in `test-resources`](#test-xml-is-inline-instead-of-in-test-resources)).
-- **GitHub issue:** none
-
 ## Mocha brings dependencies with known vulnerabilities
 
 - **Location:** `package.json` (`@vscode/test-cli`)
@@ -377,20 +401,28 @@ Effort:
 - **Description:** `@vscode/test-cli` 0.0.15 depends on Mocha 11, which brings `serialize-javascript` 6 ([GHSA-5c6j-r48x-rmvq](https://github.com/advisories/GHSA-5c6j-r48x-rmvq), high: code execution through crafted input; [GHSA-qj8w-gfj5-8c6v](https://github.com/advisories/GHSA-qj8w-gfj5-8c6v), moderate: denial of service) and `diff` 7 ([GHSA-73rr-hh4g-fpgx](https://github.com/advisories/GHSA-73rr-hh4g-fpgx), low: denial of service). `npm audit` reports them. They are development dependencies that only run the [tests in the extension host](testing.md#tests-in-the-extension-host) on this repository's own test files, and they are not part of the VSIX. `@vscode/test-cli` declares overrides for both packages itself, but npm ignores the overrides of dependencies, and its switch to Mocha 12 is merged ([microsoft/vscode-test-cli#118](https://github.com/microsoft/vscode-test-cli/pull/118)) but not released yet. The decision is to wait for that release instead of overriding the versions here. When it is out, update `@vscode/test-cli`, check `npm audit` and remove this entry.
 - **GitHub issue:** none
 
-## Tests are exempt from the size limits
+## Duplicated code is not detected automatically
 
-- **Location:** test files in `src/`, `webview-src/` and `shared/`
+- **Location:** `shared/`, `src/`, `webview-src/`, `scripts/`, `package.json`, `.github/workflows/ci.yml`
 - **Severity:** Low
 - **Effort:** S
-- **Description:** The limits of 500 lines per file and 120 lines per function in the [development guidelines](development-guidelines.md#code-size) do not apply to tests for now. Many test files are longer than 500 lines, and the `describe` callbacks that contain the tests are usually longer than 120 lines. Applying the function limit to these callbacks makes little sense, but without any limit test files can grow without bound. The rule needs to be refined, for example with a higher file limit for tests, a limit for single tests instead of `describe` callbacks, or splitting test files by topic.
-- **GitHub issue:** none
+- **Description:** The [development guidelines](development-guidelines.md#code-quality) ask to avoid duplicated code, but only reviews check this, and duplicates got through (see [Duplicated and dead code](#duplicated-and-dead-code) and [Top-level lookups are duplicated instead of shared](#top-level-lookups-are-duplicated-instead-of-shared)). The coverage report cannot find duplicates, because V8 coverage only records which code runs. A copy-paste detector such as [jscpd](https://github.com/kucherenko/jscpd) can check the code in `npm run lint` and in CI and fail the run above a threshold of duplicated lines, starting at the current level. It also finds code that the extension and the webview each implement on their own.
+- **GitHub issue:** [#439](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/439)
 
-## Most test files use `it()` instead of `test()`
+## The editor corrects the line breaks of the output
 
-- **Location:** 46 of the 62 Vitest test files, in `src/`, `shared/`, `webview-src/` and `scripts/`
+- **Location:** `src/schemaModelManager.ts` (`fixOutputLineBreaks()`), `xmlbind-ts` (`marshal`)
 - **Severity:** Low
 - **Effort:** S
-- **Description:** The [test conventions](testing.md#files-and-structure) ask for `test("should …")`, but most Vitest test files use `it("should …")`. Vitest treats both the same, and no file mixes them, but the two styles make the tests look inconsistent, and new tests in these files follow the deviating style. The fix is to rename `it(` and `it.each(` to `test(` and `test.each(` in these files, and then to enable the ESLint rule `vitest/consistent-test-it` with `{ fn: "test", withinDescribe: "test" }` in `eslint.config.mjs`, so that ESLint enforces the style. This is planned for Phase 9 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340), on the editor branch, which has more of these tests.
+- **Description:** Since version 2.4.0, `marshal` starts its output with a line break unless it starts with the XML declaration, and no longer ends it with one ([xmlbind-ts](https://github.com/neumaennl/xmlbind-ts/blob/main/docs/known-issues.md#the-output-of-marshal-starts-with-a-line-break)). Every command would therefore remove the line break at the end of the file and put an empty line at the start of a schema without an XML declaration. `SchemaModelManager.toXml()` removes the leading line break and ends the output with exactly one (see [Persistence](persistence.md#what-serialization-changes)). Keeping the formatting of the source belongs to `xmlbind-ts` (see [Architecture](architecture.md#responsibilities-of-xmlbind-ts-and-the-editor)), and 2.x gets no more fixes, so the editor works around it until it moves to version 3, whose output has to keep the line breaks of the source; then `fixOutputLineBreaks()` is removed.
+- **GitHub issue:** [#444](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/444)
+
+## Every message from the webview is a schema command
+
+- **Location:** `shared/messages.ts` (`WebviewMessage`, `ExecuteCommandMessage`), `src/webviewProvider.ts` (`handleWebviewMessage()`), `webview-src/main.ts`
+- **Severity:** Low
+- **Effort:** M
+- **Description:** `WebviewMessage`, the union of the messages from the webview, has a single member, `executeCommand`, which wraps a `SchemaCommand` (see [Messaging](messaging.md#messages)). So the switch on `message.command` in `handleWebviewMessage()` has one case, which ESLint reports as an unnecessary condition (`@typescript-eslint/no-unnecessary-condition`); an `eslint-disable-next-line` comment points to this entry. It is unclear whether this is intended. If every message from the webview is meant to be a schema edit, the wrapper is redundant and the webview could send `SchemaCommand`s directly. If the webview is meant to send other requests as well, these are missing so far; the [UX concept](ux-concept.md) plans context menu operations such as find usages, go to definition and regenerating sample XML, some of which need the extension but do not change the schema, and the [missing correlation](messaging.md#limitations) of commands and results may need a request ID in the message. Deciding needs an analysis of the existing and planned features and an architecture decision, recorded as an ADR.
 - **GitHub issue:** none
 
 ## Documentation in the diagram is cut off and hard to read
@@ -398,23 +430,23 @@ Effort:
 - **Location:** `webview-src/diagram/TextRenderers.ts` (`renderDocumentation()`), `webview-src/diagram/DiagramBuilderHelpers.ts` (`extractDocumentation()`), `webview-src/diagram/DiagramLayout.ts`
 - **Severity:** Low
 - **Effort:** M
-- **Description:** With `showDocumentation` (off by default), the documentation is drawn in a way that is likely to confuse (see [Diagram rendering](diagram-rendering.md#shapes-and-notation)). All `xs:documentation` entries of an item, in all languages, are joined with line breaks into one text. The renderer draws only its first three lines and cuts each after 50 characters, without wrapping and without an ellipsis, so the reader cannot tell that text is missing. Line breaks inside a documentation entry (the parser keeps them, only the outer whitespace is trimmed) count as lines, so a second language may appear as the third line without any marker, or may not appear at all. The full text cannot be seen anywhere in the diagram. Related layout problems are listed in [Documentation overlaps the next item](#documentation-overlaps-the-next-item) and [Documentation box size does not match the drawn text](#documentation-box-size-does-not-match-the-drawn-text). A better presentation needs a short design: for example, wrap the text to the box width, normalize whitespace, mark cut text with an ellipsis, show only one language, and show the full text in a tooltip or in the property panel.
+- **Description:** With `showDocumentation` (off by default), the documentation is drawn in a way that is likely to confuse (see [Diagram rendering](diagram-rendering.md#shapes-and-notation)). All `xs:documentation` entries of an item, in all languages, are joined with line breaks into one text. The renderer draws only its first three lines and cuts each after 50 characters, without wrapping and without an ellipsis, so the reader cannot tell that text is missing. Line breaks inside a documentation entry (the parser keeps them, only the outer whitespace is trimmed) count as lines, so a second language may appear as the third line without any marker, or may not appear at all. The full text cannot be seen anywhere in the diagram. Related layout problems are listed in [Documentation overlaps the next item](#documentation-overlaps-the-next-item) and [Documentation box size does not match the drawn text](#documentation-box-size-does-not-match-the-drawn-text). A better presentation needs a short design: for example, wrap the text to the box width, normalize whitespace, mark cut text with an ellipsis, show only one language, and show the full text in a tooltip or in the properties panel.
 - **GitHub issue:** none
 
-## Property panel builds commands in its event handlers
+## Properties panel builds commands in its event handlers
 
-- **Location:** `webview-src/propertyPanel/propertyPanel.ts` (`renderCardinalitySection()`, `renderConstraintsSection()`), `propertyPanelDocs.ts`, `propertyPanelElementDefaults.ts`, `propertyPanelFacets.ts`, `propertyPanelSchemaNamespaces.ts`, `propertyPanelSimpleTypeEditors.ts`, `propertyPanelTypes.ts`
+- **Location:** `webview-src/propertiesPanel/propertiesPanel.ts` (`renderCardinalitySection()`, `renderConstraintsSection()`), `propertiesPanelDocs.ts`, `propertiesPanelElementDefaults.ts`, `propertiesPanelFacets.ts`, `propertiesPanelSchemaNamespaces.ts`, `propertiesPanelSimpleTypeEditors.ts`, `propertiesPanelTypes.ts`
 - **Severity:** Low
 - **Effort:** M
-- **Description:** The property panel builds its commands in two ways. `propertyPanelCommands.ts` and `propertyPanelSimpleTypeCommands.ts` have functions that take a node and return a command, such as `createRenameNodeComand()` and `createTypeCommand()`. Twenty other commands are written out inside the event handlers that render the fields and update the draft copy: seven in `propertyPanel.ts` (cardinality, nillable, abstract, mixed), seven in `propertyPanelDocs.ts` and one or two in each of the other files listed. These can only be tested through the DOM, and changes to a command or to the values it reads (for example [#360](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/360), see [Diagram items copy values from the schema objects](#diagram-items-copy-values-from-the-schema-objects)) have to be found in all of these places. `propertyPanel.ts` has 484 lines, close to the limit of 500 in the [development guidelines](development-guidelines.md#code-size). The fix is to move the construction of these commands into functions in the command modules and to leave only the draft update and the dispatch in the handlers.
-- **GitHub issue:** none
+- **Description:** The properties panel builds its commands in two ways. `propertiesPanelCommands.ts` and `propertiesPanelSimpleTypeCommands.ts` have functions that take a node and return a command, such as `createRenameNodeComand()` and `createTypeCommand()`. Twenty other commands are written out inside the event handlers that render the fields and update the draft copy: seven in `propertiesPanel.ts` (cardinality, nillable, abstract, mixed), seven in `propertiesPanelDocs.ts` and one or two in each of the other files listed. These can only be tested through the DOM, and changes to a command or to the values it reads (for example [#360](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/360), see [Diagram items copy values from the schema objects](#diagram-items-copy-values-from-the-schema-objects)) have to be found in all of these places. `propertiesPanel.ts` has 484 lines, close to the limit of 500 in the [development guidelines](development-guidelines.md#code-size). The fix is to move the construction of these commands into functions in the command modules and to leave only the draft update and the dispatch in the handlers.
+- **GitHub issue:** [#156](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/156)
 
 ## Code exceeds the size limits
 
-- **Location:** `src/commandValidators/groupValidators.ts`, `src/commandExecutors/elementExecutors.ts`, `src/commandExecutors/schemaPrefixChecker.ts`, `webview-src/renderer.ts`, `webview-src/diagram/SchemaProcessors.ts`, `webview-src/propertyPanel/propertyPanelDocs.ts`, `propertyPanelFacets.ts`, `propertyPanelSimpleTypeEditors.ts`, `propertyPanelTypes.ts`
+- **Location:** `src/commandValidators/groupValidators.ts`, `src/commandExecutors/elementExecutors.ts`, `webview-src/renderer.ts`, `webview-src/diagram/SchemaProcessors.ts`, `webview-src/propertiesPanel/propertiesPanelDocs.ts`, `propertiesPanelFacets.ts`, `propertiesPanelSimpleTypeEditors.ts`, `propertiesPanelTypes.ts`
 - **Severity:** Low
 - **Effort:** M
-- **Description:** Some code is longer than the [development guidelines](development-guidelines.md#code-size) allow. Counted with comments and blank lines, `groupValidators.ts`, `elementExecutors.ts` and `renderer.ts` have slightly more than 500 lines, and eight functions have more than 120 lines: `renderFacetsTab()` and `renderEnumerationEditor()` in `propertyPanelFacets.ts` (196 and 166 lines), `isQNameMatchedInSchema()`, `renderSimpleTypeUnionEditor()`, `validateModifyGroup()`, `processGroup()`, `createAnnotationSection()` and `renderTypeProperty()` (126 to 139 lines). The limits are not checked automatically, so these were not noticed. The fix is to split the code, and to enable the ESLint rules `max-lines` and `max-lines-per-function` for everything but the tests (see [Tests are exempt from the size limits](#tests-are-exempt-from-the-size-limits)).
+- **Description:** Some code is longer than the [development guidelines](development-guidelines.md#code-size) allow. Counted with comments and blank lines, `elementExecutors.ts` and `renderer.ts` have slightly more than 500 lines, and six functions have more than 120 lines: `renderFacetsTab()` in `propertiesPanelFacets.ts` (193 lines), `validateModifyGroup()`, `renderSimpleTypeUnionEditor()`, `processGroup()`, `createAnnotationSection()` and `renderTypeProperty()` (126 to 148 lines). The limits are not checked automatically, so these were not noticed. The fix is to split the code, and to enable the ESLint rules `max-lines` and `max-lines-per-function` for the code, as `max-lines` and a local rule already do for the tests.
 - **GitHub issue:** none
 
 ## Top-level lookups are duplicated instead of shared
@@ -423,12 +455,11 @@ Effort:
 - **Severity:** Low
 - **Effort:** L
 - **Description:** `SchemaModelManager` has query methods (`findElement()`, `findComplexType()`, `findGroup()`, the `getAll*()` methods, `getTargetNamespace()`, `getImports()`, `getIncludes()`, `isLoaded()`, `clear()`), but they are only called from tests. They work on the schema stored in the manager, while validators and executors get a cloned schema object, and the webview cannot use code from `src/`. So the same lookups are written out again and again:
-  - About 40 places look up a top-level component by name with `toArray(schemaObj.<kind>).some(…)` or `.find(…)`.
-  - `schemaQNameRewriter.ts`, `schemaLocalRenamer.ts`, `schemaPrefixChecker.ts` and the group and attribute group validators each iterate over all top-level kinds one by one.
-  - `validationUtils.ts` repeats `Array.isArray(x) ? x : [x]` instead of using `toArray()`; both are obsolete since `xmlbind-ts` 2.3 (see [`toArray()` is obsolete since `xmlbind-ts` 2.3](#toarray-is-obsolete-since-xmlbind-ts-23)).
+  - About 40 places look up a top-level component by name with `(schemaObj.<kind> ?? []).some(…)` or `.find(…)`.
+  - The group and attribute group validators iterate over all top-level kinds one by one.
   - `DiagramBuilder` and `DropCommandFactory` collect the same lists in the webview.
 
-  The fix is to replace the manager's query methods with pure functions in `shared/` that take the schema object as a parameter (for example `findTopLevel(schemaObj, kind, name)`, `getTopLevel(schemaObj, kind)` and `forEachTopLevelComponent(schemaObj, callback)`), use them everywhere, and remove the unused methods.
+  The fix is to replace the manager's query methods with pure functions in `shared/` that take the schema object as a parameter (for example `findTopLevel(schemaObj, kind, name)`, `getTopLevel(schemaObj, kind)` and `forEachTopLevelComponent(schemaObj, callback)`), use them everywhere, and remove the unused methods. Once duplicates are [detected automatically](#duplicated-code-is-not-detected-automatically), the fix also lowers the threshold of that check.
 - **GitHub issue:** none
 
 ## Duplicated and dead code
@@ -436,30 +467,37 @@ Effort:
 - **Location:** whole repository
 - **Severity:** Low
 - **Effort:** L
-- **Description:** The [development guidelines](development-guidelines.md#code-quality) ask to avoid code duplication, but the code base likely contains a fair amount of duplicated and dead code that was not caught in reviews. The [leftovers of the removed top-level drop target](#leftovers-of-the-removed-top-level-drop-target) and the [duplicated top-level lookups](#top-level-lookups-are-duplicated-instead-of-shared) are examples. A systematic cleanup by an agent is planned. Examples found in the diagram code (see [Diagram rendering](diagram-rendering.md)):
-  - `SchemaProcessorsGroups.ts` is not imported anywhere; `SchemaProcessors.ts` contains its functions.
+- **Description:** The [development guidelines](development-guidelines.md#code-quality) ask to avoid code duplication, but the code base likely contains a fair amount of duplicated and dead code that was not caught in reviews. The [leftovers of the removed top-level drop target](#leftovers-of-the-removed-top-level-drop-target) and the [duplicated top-level lookups](#top-level-lookups-are-duplicated-instead-of-shared) are examples. A systematic cleanup by an agent is planned. Besides duplicates within one part, the agent should look explicitly for code that the extension (`src/`) and the webview (`webview-src/`) each implement on their own, and move it to `shared/`, which both use; for example the rules where an element or attribute may be placed, which both sides check (see [Architecture](architecture.md#principles)), and the top-level lookups in `DiagramBuilder` and `DropCommandFactory`. Examples found in the diagram code (see [Diagram rendering](diagram-rendering.md)):
   - `DiagramLayout` has its own `isCompositorGroup()`, which returns `true` when the ID cannot be parsed, while the one in `groupUtils.ts` returns `false`.
   - `DiagramLayout.relayoutItem()` and `DiagramItem.getTextDocumentation()` are only called from tests, `DiagramBuilder.elementMap` is only cleared, and `DiagramItem.inheritFrom` is never set.
   - `DiagramItemType.reference` is never assigned; only the layout and a test handle it, and the renderer draws no shape for it.
   - `Diagram.size` is not used, and `Diagram.scale` is always 1, so the `scale*()` helpers of `Diagram` and `DiagramItem` change nothing.
 
-  Example found in the tests: `src/__test-utils__/assertions.ts` (`expectStringsOnSameLine()`, `expectStringsOnConsecutiveLines()`) is not used by any test. `tsconfig.extension.json` does not exclude it, so it is compiled into `out/` and packaged.
+  Once duplicates are [detected automatically](#duplicated-code-is-not-detected-automatically), the first report of that check is input for the cleanup, and every removed duplicate lowers its threshold.
 - **GitHub issue:** none
 
 ## Diagram items copy values from the schema objects
 
-- **Location:** `webview-src/diagram/DiagramItem.ts`, `webview-src/diagram/SchemaProcessors*.ts`, `webview-src/diagram/TypeNodeCreators.ts`, `webview-src/propertyPanel/propertyPanelDraft.ts`, `webview-src/propertyPanel/`, `webview-src/drop/`
+- **Location:** `webview-src/diagram/DiagramItem.ts`, `webview-src/diagram/SchemaProcessors*.ts`, `webview-src/diagram/TypeNodeCreators.ts`, `webview-src/propertiesPanel/propertiesPanelDraft.ts`, `webview-src/propertiesPanel/`, `webview-src/drop/`
 - **Severity:** Low
 - **Effort:** L
-- **Description:** `DiagramItem` does not reference the schema object it represents; the builder copies about 22 values into it instead (see [Diagram rendering](diagram-rendering.md#data-model)). The renderer needs only a few of them; most are read by the property panel and the drop code. Every new value has to be added to the item, to the builder and to `createDraftNode()`, which copies all fields again by hand for the property panel draft. The extraction is partly duplicated: `processGroup` builds group elements inline instead of using `createElementNode`. Values that are not copied, or copied in a reduced form, cause bugs: [Editing facets drops all but the first pattern](#editing-facets-drops-all-but-the-first-pattern), [Restricted complex content is shown without content and attributes](#restricted-complex-content-is-shown-without-content-and-attributes), [Element references are not shown as references](#element-references-are-not-shown-as-references) and [Items with maxOccurs 0 are drawn as repeated](#items-with-maxoccurs-0-are-drawn-as-repeated) come at least partly from this layer. The plan is to keep only view state on the item, add a typed reference to the schema object, and read values through one module of accessor functions. The property panel draft must then be a deep copy of the schema object: after a failed command the webview receives no new schema, so changes to the shared object would remain. The many `toArray()` calls come from xmlbind-ts, which returns a single object for a repeated element that occurs once ([neumaennl/xmlbind-ts#261](https://github.com/neumaennl/xmlbind-ts/issues/261)). This should be planned together with [inline types](#inline-types-have-no-node-of-their-own) and the [node ID redesign](#node-ids-are-ambiguous-and-have-many-special-cases), which also change the builder.
+- **Description:** `DiagramItem` does not reference the schema object it represents; the builder copies about 22 values into it instead (see [Diagram rendering](diagram-rendering.md#data-model)). The renderer needs only a few of them; most are read by the properties panel and the drop code. Every new value has to be added to the item, to the builder and to `createDraftNode()`, which copies all fields again by hand for the properties panel draft. The extraction is partly duplicated: `processGroup` builds group elements inline instead of using `createElementNode`. Values that are not copied, or copied in a reduced form, cause bugs: [Restricted complex content is shown without content](#restricted-complex-content-is-shown-without-content), [Element references are not shown as references](#element-references-are-not-shown-as-references) and [Items with maxOccurs 0 are drawn as repeated](#items-with-maxoccurs-0-are-drawn-as-repeated) come at least partly from this layer. The plan is to keep only view state on the item, add a typed reference to the schema object, and read values through one module of accessor functions. The properties panel draft must then be a deep copy of the schema object: after a failed command the webview receives no new schema, so changes to the shared object would remain. This should be planned together with [inline types](#inline-types-have-no-node-of-their-own) and the [node ID redesign](#node-ids-are-ambiguous-and-have-many-special-cases), which also change the builder.
 - **GitHub issue:** [#360](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/360)
+
+## Complex types with simple content cannot be created or derived
+
+- **Location:** `shared/commands/schemaTypes.ts` (`AddComplexTypePayload`, `ModifyComplexTypePayload`), `src/commandValidators/complexTypeValidators.ts` (`validateModifyComplexType()`), `src/commandExecutors/complexTypeExecutors.ts`
+- **Severity:** Low
+- **Effort:** L
+- **Description:** A complex type with `xs:simpleContent` has text content of a simple type plus attributes, for example a price with a currency. The complex type commands only know complex content: `addComplexType` requires a `contentModel` and always creates a compositor, and the executor only builds `complexContent`, so a `baseType` or `contentModel` for a type with simple content would add a `complexContent` next to the `simpleContent`, which is invalid. `modifyComplexType` therefore rejects `baseType`, `derivationKind` and `contentModel` for such types (see [Commands](commands.md#complex-types)). Such types can be shown and renamed, and their documentation can be edited, but a type with simple content cannot be created, its base type and derivation cannot be changed, and an existing type cannot be switched between simple and complex content. A related problem is the [mixed content toggle](#mixed-content-toggle-ignores-simple-content-complexcontent-and-the-base-type). The fix needs a way to choose simple content in the payloads, for example a content kind, and an executor that builds `simpleContent` with an `extension` or `restriction` of a simple base type.
+- **GitHub issue:** none
 
 ## Identity constraints, notations and redefines cannot be shown or edited
 
-- **Location:** `shared/commands/`, `src/commandValidators/`, `src/commandExecutors/`, `webview-src/diagram/DiagramBuilder.ts`, `webview-src/propertyPanel/`
+- **Location:** `shared/commands/`, `src/commandValidators/`, `src/commandExecutors/`, `webview-src/diagram/DiagramBuilder.ts`, `webview-src/propertiesPanel/`
 - **Severity:** Low
 - **Effort:** L
-- **Description:** Identity constraints (`xs:key`, `xs:keyref`, `xs:unique` with their `selector` and `field`s), `xs:notation` and `xs:redefine` are in the schema classes, but there are no commands for them, the diagram does not show them, and the property panel has no fields for them (see [Diagram rendering](diagram-rendering.md#from-schema-to-diagram-items)). They can only be edited in the text editor; other edits keep them unchanged. Renaming or removing an element does not update the selectors, fields or `refer` values that point to it. All three are rare: in a GitHub code search (October 2026, `xs:` prefix only, approximate counts), `xs:unique` appeared in about 6% as many XSD files as `xs:complexType`, `xs:redefine`, `xs:key` and `xs:keyref` in 1 to 2%, and `xs:notation` in 0.2%. `redefine` is also deprecated in XSD 1.1. Because they are kept unchanged and are rarely used, full editing support is not planned for now; showing them read-only would be a smaller first step.
+- **Description:** Identity constraints (`xs:key`, `xs:keyref`, `xs:unique` with their `selector` and `field`s), `xs:notation` and `xs:redefine` are in the schema classes, but there are no commands for them, the diagram does not show them, and the properties panel has no fields for them (see [Diagram rendering](diagram-rendering.md#from-schema-to-diagram-items)). They can only be edited in the text editor; other edits keep them unchanged. Renaming or removing an element does not update the selectors, fields or `refer` values that point to it. All three are rare: in a GitHub code search (October 2026, `xs:` prefix only, approximate counts), `xs:unique` appeared in about 6% as many XSD files as `xs:complexType`, `xs:redefine`, `xs:key` and `xs:keyref` in 1 to 2%, and `xs:notation` in 0.2%. `redefine` is also deprecated in XSD 1.1. Because they are kept unchanged and are rarely used, full editing support is not planned for now; showing them read-only would be a smaller first step.
 - **GitHub issue:** none
 
 ## Diagram is rebuilt in full on every change
@@ -468,30 +506,6 @@ Effort:
 - **Severity:** Low
 - **Effort:** L
 - **Description:** Every change redraws the whole diagram. Each `updateSchema` builds all diagram items from the schema object again, calculates the layout of every item and replaces all SVG content, even if the edit changed a single attribute. Changing a diagram option does the same, although the options are only applied after the build and would need only a new layout. Expanding or collapsing a node calls `refresh()`, which keeps the items but calculates the layout of all items and redraws the whole SVG. `DiagramLayout.relayoutItem()` was written to recalculate the layout of one item and its ancestors, but it is never called (see [Duplicated and dead code](#duplicated-and-dead-code)). For large schemas this probably makes editing slow; this was not measured. Smaller improvements are to use `refresh()` for option changes and `relayoutItem()` for expanding and collapsing; real incremental updates would need the [ambiguous node IDs](#node-ids-are-ambiguous-and-have-many-special-cases) fixed first, so that items can be matched across builds (see [Diagram rendering](diagram-rendering.md#pipeline)).
-- **GitHub issue:** none
-
-## Test XML is inline instead of in `test-resources`
-
-- **Location:** test files in `src/`, `webview-src/` and `shared/`
-- **Severity:** Low
-- **Effort:** L
-- **Description:** The [test conventions](testing.md#files-and-structure) require larger XML snippets that several tests use to be stored in `src/__tests__/test-resources`. The folder does not exist; the snippets are inline in the test files, often repeated. They should be moved there and shared.
-- **GitHub issue:** none
-
-## `toArray()` is obsolete since `xmlbind-ts` 2.3
-
-- **Location:** `shared/schemaUtils.ts` (`toArray()`) and its callers in `shared/`, `src/` and `webview-src/`
-- **Severity:** Low
-- **Effort:** L
-- **Description:** Before version 2.3, `unmarshal` returned a single object instead of a one-item array when a repeated element occurred only once, although the generated classes declare arrays (`element?: topLevelElement[]`). The code therefore reads every repeated child through `toArray()`, about 200 times in production code. Since `xmlbind-ts` 2.3, these fields are always arrays: one item for a single occurrence, and an empty array when the element is absent ([xmlbind-ts#261](https://github.com/neumaennl/xmlbind-ts/issues/261)). `toArray()` and the `Array.isArray(x) ? x : [x]` checks in `validationUtils.ts` no longer change anything for unmarshalled data. The cleanup removes them; code that builds schema objects itself, such as the executors, then has to assign arrays as well, and the generated properties are still declared optional. It is done on the editor branch, which has more of these calls (Phase 9 of the [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/340)).
-- **GitHub issue:** none
-
-## Executors do nothing or fail with a TypeError instead of a meaningful error
-
-- **Location:** `src/commandExecutors/`
-- **Severity:** Low
-- **Effort:** L
-- **Description:** The executors rely on the validators: `CommandProcessor` only runs an executor after the validator has accepted the command, and the executors do not repeat the validators' checks, which is intended. But when an executor cannot do what it is supposed to do, for example because the node to change does not exist, it should throw an error that says so. Instead, a missing target mostly changes nothing, so the command reports success without an effect; only some commands that address an entry by an index that is too large cause a `TypeError` such as "Cannot read properties of undefined": removing or modifying an import, modifying an include, and some annotation and documentation commands. A missing parent changes nothing for elements, attributes and group references, but causes a `TypeError` for anonymous types, attribute group references, annotations and documentation. Their TSDoc nevertheless says "@throws Error if … not found". This only shows when a validator and its executor disagree, which is then hard to notice. The fix is a meaningful error in every executor where it cannot find its target or its parent, without repeating the other checks of the validators. It is done on the editor branch, which rewrites many executors.
 - **GitHub issue:** none
 
 ## The extension host is not bundled
@@ -514,26 +528,12 @@ Effort:
 
 # GitHub issues
 
-## Phase 3 toolbar issue contradicts the UX concept
-
-- **GitHub issues:** [#18](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/18), [#155](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/155)
-- **Severity:** Medium
-- **Effort:** S
-- **Description:** #155 asks for toolbar buttons to add and remove nodes. The UX concept keeps the toolbar for diagram-wide actions and adds nodes through the palette. #18 tracks #155 and should be updated with it.
-
 ## Attribute editing is half implemented
 
 - **GitHub issue:** [#282](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/282)
 - **Severity:** Medium
 - **Effort:** S
-- **Description:** The issue has no body. The commands `modifyAttribute` and `removeAttribute` exist with executors in `src/commandExecutors/attributeExecutors.ts`, but the webview never sends them: attributes can only be added from the palette, and the property panel lists them read-only.
-
-## Phase 5 issue does not reflect palette drag and drop
-
-- **GitHub issue:** [#20](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/20)
-- **Severity:** Low
-- **Effort:** S
-- **Description:** Drag and drop from the palette exists; moving or reordering existing nodes by drag and drop, copy and paste, keyboard shortcuts and double-click renaming do not. The issue does not distinguish between the two kinds of drag and drop.
+- **Description:** The issue has no body. The commands `modifyAttribute` and `removeAttribute` exist with executors in `src/commandExecutors/attributeExecutors.ts`, but the webview never sends them: attributes can only be added from the palette, and the properties panel lists them read-only.
 
 ## Focus issue mentions toolbar add actions
 
@@ -547,4 +547,4 @@ Effort:
 - **GitHub issues:** see description
 - **Severity:** Low
 - **Effort:** M
-- **Description:** [#279](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/279), [#282](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/282), [#283](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/283) and [#307](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/307) have no description, so their scope is only given by the title; [#284](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/284) only has a link. These and [#276](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/276), [#280](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/280), [#302](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/302), [#304](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/304) and [#308](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/308) have no labels.
+- **Description:** [#279](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/279), [#282](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/282), [#283](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/283) and [#307](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/307) have no description, so their scope is only given by the title. These, [#284](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/284) and [#276](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/276), [#280](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/280), [#302](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/302), [#304](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/304) and [#308](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/308) have no labels.

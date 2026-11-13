@@ -14,11 +14,11 @@ describe("Diagram", () => {
   });
 
   describe("constructor", () => {
-    it("should initialize with empty root elements", () => {
+    test("should initialize with empty root elements", () => {
       expect(diagram.rootElements).toEqual([]);
     });
 
-    it("should initialize with default settings", () => {
+    test("should initialize with default settings", () => {
       expect(diagram.showDocumentation).toBe(false);
       expect(diagram.alwaysShowOccurrence).toBe(false);
       expect(diagram.showType).toBe(false);
@@ -26,7 +26,7 @@ describe("Diagram", () => {
   });
 
   describe("addRootElement", () => {
-    it("should add element to root elements", () => {
+    test("should add element to root elements", () => {
       const item = new DiagramItem("test-1", "TestItem", DiagramItemType.element, diagram);
       
       diagram.addRootElement(item);
@@ -35,7 +35,7 @@ describe("Diagram", () => {
       expect(diagram.rootElements[0]).toBe(item);
     });
 
-    it("should set diagram reference on the element", () => {
+    test("should set diagram reference on the element", () => {
       const item = new DiagramItem("test-1", "TestItem", DiagramItemType.element, diagram);
       const newDiagram = new Diagram();
       
@@ -46,13 +46,13 @@ describe("Diagram", () => {
   });
 
   describe("calculateBoundingBox", () => {
-    it("should return empty box for no root elements", () => {
+    test("should return empty box for no root elements", () => {
       const box = diagram.calculateBoundingBox();
 
       expect(box).toEqual({ x: 0, y: 0, width: 0, height: 0 });
     });
 
-    it("should calculate bounding box with padding", () => {
+    test("should calculate bounding box with padding", () => {
       const item = new DiagramItem("test-1", "TestItem", DiagramItemType.element, diagram);
       item.location = { x: 10, y: 20 };
       item.size = { width: 100, height: 50 };
@@ -68,7 +68,7 @@ describe("Diagram", () => {
   });
 
   describe("scaleRectangle", () => {
-    it("should scale rectangle dimensions", () => {
+    test("should scale rectangle dimensions", () => {
       diagram.scale = 2.0;
       const rect = { x: 10, y: 20, width: 100, height: 50 };
 
@@ -77,7 +77,7 @@ describe("Diagram", () => {
       expect(scaled).toEqual({ x: 20, y: 40, width: 200, height: 100 });
     });
 
-    it("should round scaled values", () => {
+    test("should round scaled values", () => {
       diagram.scale = 1.5;
       const rect = { x: 10, y: 10, width: 11, height: 11 };
 

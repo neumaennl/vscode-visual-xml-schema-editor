@@ -16,9 +16,9 @@ import {
   explicitGroup,
   all,
 } from "../../shared/types.js";
-import { toArray } from "../../shared/schemaUtils.js";
-import { locateNodeById } from "../schemaNavigator.js";
-import { parseSchemaId } from "../../shared/idStrategy.js";
+import { assumeRemoved, assumeValidated, assumptionFailed, locateValidated } from "./assumeValidated.js";
+import { parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy.js";
+import { renameLocalElementRefInSchema } from "./schemaLocalRenamer.js";
 
 /**
  * Executes an addElement command.
@@ -35,7 +35,7 @@ export function executeAddElement(
     command.payload;
 
   // Locate the parent node
-  const location = locateNodeById(schemaObj, parentId);
+  const location = locateValidated(schemaObj, parentId);
 
   // Create the new element
   const newElement = createNewElement(
@@ -50,7 +50,7 @@ export function executeAddElement(
   );
 
   // Add the element to the appropriate parent
-  addElementToParent(location.parent, location.parentType ?? "", newElement);
+  addElementToParent(location.parent, location.parentType, newElement);
 }
 
 /**
@@ -70,11 +70,11 @@ export function executeRemoveElement(
   const parsed = parseSchemaId(elementId);
   
   // Determine the parent location
-  const parentId = parsed.parentId || "schema";
-  const location = locateNodeById(schemaObj, parentId);
+  const parentId = parsed.parentId || SCHEMA_ROOT_ID;
+  const location = locateValidated(schemaObj, parentId);
 
   // Remove the element from its parent container
-  removeElementFromParent(location.parent, location.parentType ?? "", parsed.name, parsed.position);
+  removeElementFromParent(location.parent, location.parentType, parsed.name, parsed.position);
 }
 
 /**
@@ -88,20 +88,31 @@ export function executeModifyElement(
   command: ModifyElementCommand,
   schemaObj: schema
 ): void {
-  const { elementId, elementName, elementType, ref, minOccurs, maxOccurs, documentation } =
+  const { elementId, elementName, elementType, ref, minOccurs, maxOccurs, documentation, nillable, abstract: isAbstract, default_, fixed } =
     command.payload;
 
   // Parse the element ID to get information about the element
   const parsed = parseSchemaId(elementId);
   
   // Determine the parent location from the parsed ID
-  const parentId = parsed.parentId || "schema";
-  const location = locateNodeById(schemaObj, parentId);
+  const parentId = parsed.parentId || SCHEMA_ROOT_ID;
+  const location = locateValidated(schemaObj, parentId);
+
+  // When a top-level element is renamed, update all element refs and
+  // substitutionGroup references pointing to the old name.
+  if (
+    elementName !== undefined &&
+    parsed.nodeType === SchemaNodeType.Element &&
+    !parsed.parentId &&
+    parsed.name
+  ) {
+    renameLocalElementRefInSchema(parsed.name, elementName, schemaObj);
+  }
 
   // Find and modify the element in its parent container
   modifyElementInParent(
     location.parent,
-    location.parentType ?? "",
+    location.parentType,
     parsed.name,
     parsed.position,
     elementName,
@@ -109,7 +120,11 @@ export function executeModifyElement(
     ref,
     minOccurs,
     maxOccurs,
-    documentation
+    documentation,
+    nillable,
+    isAbstract,
+    default_,
+    fixed
   );
 }
 
@@ -196,7 +211,7 @@ function createNewElement(
  * @param parent - Parent container object
  * @param parentType - Type of the parent container
  * @param element - Element to add
- * @throws Error if element cannot be added or duplicate name exists
+ * @throws Error if the parent cannot hold elements
  */
 function addElementToParent(
   parent: unknown,
@@ -205,7 +220,7 @@ function addElementToParent(
 ): void {
   if (parentType === "schema") {
     const schemaObj = parent as schema;
-    const elements = toArray(schemaObj.element);
+    const elements = schemaObj.element ?? [];
     
     elements.push(element as topLevelElement);
     schemaObj.element = elements;
@@ -214,18 +229,20 @@ function addElementToParent(
     parentType === "choice"
   ) {
     const group = parent as explicitGroup;
-    const elements = toArray(group.element);
+    const elements = group.element ?? [];
     const localElem = element as localElement;
     
     elements.push(localElem);
     group.element = elements;
   } else if (parentType === "all") {
     const allGroup = parent as all;
-    const elements = toArray(allGroup.element);
+    const elements = allGroup.element ?? [];
     const allElem = element as narrowMaxMin;
     
     elements.push(allElem);
     allGroup.element = elements;
+  } else {
+    assumptionFailed(`Parent of type '${parentType}' for an element`);
   }
 }
 
@@ -246,22 +263,36 @@ function removeElementFromParent(
 ): void {
   if (parentType === "schema") {
     const schemaObj = parent as schema;
-    const elements = toArray(schemaObj.element);
-    const filtered = filterElement(elements, elementName, position);
+    const elements = schemaObj.element ?? [];
+    const filtered = assumeRemoved(
+      elements,
+      filterElement(elements, elementName, position),
+      describeElement(elementName, position)
+    );
     schemaObj.element = filtered.length > 0 ? filtered : undefined;
   } else if (
     parentType === "sequence" ||
     parentType === "choice"
   ) {
     const group = parent as explicitGroup;
-    const elements = toArray(group.element);
-    const filtered = filterElement(elements, elementName, position);
+    const elements = group.element ?? [];
+    const filtered = assumeRemoved(
+      elements,
+      filterElement(elements, elementName, position),
+      describeElement(elementName, position)
+    );
     group.element = filtered.length > 0 ? filtered : undefined;
   } else if (parentType === "all") {
     const allGroup = parent as all;
-    const elements = toArray(allGroup.element);
-    const filtered = filterElement(elements, elementName, position);
+    const elements = allGroup.element ?? [];
+    const filtered = assumeRemoved(
+      elements,
+      filterElement(elements, elementName, position),
+      describeElement(elementName, position)
+    );
     allGroup.element = filtered.length > 0 ? filtered : undefined;
+  } else {
+    assumptionFailed(`Parent of type '${parentType}' for an element`);
   }
 }
 
@@ -273,7 +304,6 @@ function removeElementFromParent(
  * @param elementName - Name or ref value of the element to filter (optional)
  * @param position - Position of the element to filter (optional)
  * @returns Filtered array
- * @throws Error if element not found
  */
 function filterElement<T extends { name?: string; ref?: string }>(
   elements: T[],
@@ -307,6 +337,10 @@ function filterElement<T extends { name?: string; ref?: string }>(
  * @param newMinOccurs - New minimum occurrences (optional)
  * @param newMaxOccurs - New maximum occurrences (optional)
  * @param newDocumentation - New documentation (optional)
+ * @param newNillable - New nillable flag (optional)
+ * @param newAbstract - New abstract flag; only applies to top-level elements (optional)
+ * @param newDefault - New default value (optional; empty string clears it)
+ * @param newFixed - New fixed value (optional; empty string clears it)
  * @throws Error if element not found
  */
 function modifyElementInParent(
@@ -319,13 +353,19 @@ function modifyElementInParent(
   newRef?: string,
   newMinOccurs?: number,
   newMaxOccurs?: number | "unbounded",
-  newDocumentation?: string
+  newDocumentation?: string,
+  newNillable?: boolean,
+  newAbstract?: boolean,
+  newDefault?: string,
+  newFixed?: string
 ): void {
   if (parentType === "schema") {
     const schemaObj = parent as schema;
-    const elements = toArray(schemaObj.element);
-    const element = findElement(elements, targetName, targetPosition);
-    if (!element) return;
+    const elements = schemaObj.element ?? [];
+    const element = assumeValidated(
+      findElement(elements, targetName, targetPosition),
+      describeElement(targetName, targetPosition)
+    );
     updateElementProperties(
       element,
       newName,
@@ -334,16 +374,22 @@ function modifyElementInParent(
       undefined, // top-level elements don't have occurrences
       undefined,
       newDocumentation,
-      false
+      false,
+      newNillable,
+      newAbstract,
+      newDefault,
+      newFixed
     );
   } else if (
     parentType === "sequence" ||
     parentType === "choice"
   ) {
     const group = parent as explicitGroup;
-    const elements = toArray(group.element);
-    const element = findElement(elements, targetName, targetPosition);
-    if (!element) return;
+    const elements = group.element ?? [];
+    const element = assumeValidated(
+      findElement(elements, targetName, targetPosition),
+      describeElement(targetName, targetPosition)
+    );
     updateElementProperties(
       element,
       newName,
@@ -352,13 +398,19 @@ function modifyElementInParent(
       newMinOccurs,
       newMaxOccurs,
       newDocumentation,
-      false
+      false,
+      newNillable,
+      undefined, // abstract not applicable to local elements
+      newDefault,
+      newFixed
     );
   } else if (parentType === "all") {
     const allGroup = parent as all;
-    const elements = toArray(allGroup.element);
-    const element = findElement(elements, targetName, targetPosition);
-    if (!element) return;
+    const elements = allGroup.element ?? [];
+    const element = assumeValidated(
+      findElement(elements, targetName, targetPosition),
+      describeElement(targetName, targetPosition)
+    );
     updateElementProperties(
       element,
       newName,
@@ -367,9 +419,26 @@ function modifyElementInParent(
       newMinOccurs,
       newMaxOccurs,
       newDocumentation,
-      true
+      true,
+      newNillable,
+      undefined, // abstract not applicable to local elements
+      newDefault,
+      newFixed
     );
+  } else {
+    assumptionFailed(`Parent of type '${parentType}' for an element`);
   }
+}
+
+/**
+ * Describes an element by its name or position, for error messages.
+ *
+ * @param name - The name or ref value of the element (optional)
+ * @param position - The position of the element (optional)
+ * @returns For example `Element person` or `Element at position 2`
+ */
+function describeElement(name?: string, position?: number): string {
+  return name !== undefined ? `Element ${name}` : `Element at position ${position}`;
 }
 
 /**
@@ -407,6 +476,10 @@ function findElement<T extends { name?: string; ref?: string }>(
  * @param newMaxOccurs - New maximum occurrences (optional)
  * @param newDocumentation - New documentation (optional)
  * @param isInAllGroup - Whether this element is in an 'all' group
+ * @param newNillable - New nillable flag (optional)
+ * @param newAbstract - New abstract flag; only written to top-level elements (optional)
+ * @param newDefault - New default value (optional; empty string clears it)
+ * @param newFixed - New fixed value (optional; empty string clears it)
  */
 function updateElementProperties(
   element: topLevelElement | localElement | narrowMaxMin,
@@ -416,13 +489,23 @@ function updateElementProperties(
   newMinOccurs?: number,
   newMaxOccurs?: number | "unbounded",
   newDocumentation?: string,
-  isInAllGroup: boolean = false
+  isInAllGroup: boolean = false,
+  newNillable?: boolean,
+  newAbstract?: boolean,
+  newDefault?: string,
+  newFixed?: string
 ): void {
   if (newRef !== undefined) {
     // Switching to a reference: clear name and type
     (element as localElement).ref = newRef;
     element.name = undefined;
     element.type_ = undefined;
+    (element as localElement | topLevelElement).simpleType = undefined;
+    (element as localElement | topLevelElement).complexType = undefined;
+    // XML Schema allows none of these on a reference
+    (element as localElement).default_ = undefined;
+    (element as localElement).fixed = undefined;
+    (element as localElement).nillable = undefined;
   } else {
     // Update name (clearing ref when switching to named)
     if (newName !== undefined) {
@@ -431,6 +514,8 @@ function updateElementProperties(
     }
     if (newType !== undefined) {
       element.type_ = newType;
+      (element as localElement | topLevelElement).simpleType = undefined;
+      (element as localElement | topLevelElement).complexType = undefined;
     }
   }
 
@@ -453,6 +538,32 @@ function updateElementProperties(
         localElem.maxOccurs = newMaxOccurs;
       }
     }
+  }
+
+  // Update nillable flag
+  if (newNillable !== undefined) {
+    (element as topLevelElement | localElement).nillable = newNillable ? true : undefined;
+  }
+
+  // Update abstract flag (top-level elements only)
+  if (newAbstract !== undefined && 'abstract' in element) {
+    element.abstract = newAbstract ? true : undefined;
+  }
+
+  // Update default and fixed value; an empty string removes the value
+  const valueHolder = element as topLevelElement | localElement;
+  if (newDefault !== undefined) {
+    valueHolder.default_ = newDefault || undefined;
+  }
+  if (newFixed !== undefined) {
+    valueHolder.fixed = newFixed || undefined;
+  }
+  // An element has at most one of them, so a new value of one removes the other
+  if (newDefault) {
+    valueHolder.fixed = undefined;
+  }
+  if (newFixed) {
+    valueHolder.default_ = undefined;
   }
 
   // Update documentation if provided

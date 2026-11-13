@@ -4,8 +4,8 @@ title: Build and packaging
 description: How the extension is built, run, linted, packaged and checked - the build outputs and tsconfig files, the npm scripts, the scripts in TypeScript, running it in VS Code, the VSIX and its check, the generated schema classes, dependencies and the Node version, ESLint, CI, and planned changes.
 tags: [build, packaging, vsix, vite, typescript, eslint, ci, dependencies]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-29T06:58:32Z }
-verified: { by: human:neumaennl, at: 2026-10-29T07:47:32Z }
+generated: { by: human:neumaennl, at: 2026-11-11T19:22:11Z }
+verified: { by: human:neumaennl, at: 2026-11-11T19:24:43Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -37,6 +37,9 @@ sources:
   - id: vscode-version
     resource: ../scripts/vscode-version.ts
     title: Derive the Node and @types versions from the VS Code version
+  - id: compiler-target
+    resource: ../scripts/lib/compiler-target.ts
+    title: ECMAScript edition per Node version
   - id: nvmrc
     resource: ../.nvmrc
     title: Node version for development and CI
@@ -79,21 +82,24 @@ The extension consists of two separately built parts (see [Architecture](archite
 
 | Part | Tool | Sources | Output |
 |---|---|---|---|
-| Extension host | `tsc` with `tsconfig.extension.json` | `src/`, `shared/` | `out/src/`, `out/shared/` (ES modules, ES2020, with source maps); the entry point is `out/src/extension.js` (`main` in `package.json`) |
-| Webview | Vite with `vite.config.ts`, after a type check with `tsconfig.webview.json` | `webview-src/`, `shared/` | `webview/main.js` (one ES module) and `webview/styles.css` |
+| Extension host | `tsc` with `tsconfig.extension.json` | `src/`, `shared/` | `out/src/`, `out/shared/` (ES modules, ES2024, with source maps); the entry point is `out/src/extension.js` (`main` in `package.json`) |
+| Webview | Vite with `vite.config.ts`, after a type check with `tsconfig.webview.json` | `webview-src/`, `shared/` | `webview/main.js` (one ES module, ES2024) and `webview/styles.css` |
 
 The extension host loads `webview/main.js`, `webview/styles.css` and `node_modules/@vscode/codicons/dist/codicon.css` into the webview through `asWebviewUri`. Both output folders are ignored by Git.[^tsconfig][^vite-config]
 
 | tsconfig | Used by | Notes |
 |---|---|---|
-| `tsconfig.json` | VS Code | A solution file without files of its own: it lists the other seven configurations as references, so VS Code type-checks each file with the configuration that includes it.[^tsconfig-solution] |
-| `tsconfig.extension.json` | `tsc` (extension host) | Excludes test files, `__tests__`, `__mocks__` and `*TestHelpers.ts`. `module` and `moduleResolution` are `nodenext`: TypeScript resolves imports the way Node does and writes ES modules, because `package.json` has `"type": "module"`; relative imports therefore need the `.js` extension (also for `.ts` files and for folders, `./folder/index.js`). `types` lists `node` and `vscode`, because TypeScript 6 no longer includes all `@types` packages by default. Decorators are compiled as legacy decorators (`experimentalDecorators`) with `useDefineForClassFields` (see [ADR 002](architecture/002-legacy-decorators.md)).[^adr-002] |
+| `tsconfig.json` | VS Code | A solution file without files of its own: it lists the other eight configurations as references, so VS Code type-checks each file with the configuration that includes it.[^tsconfig-solution] |
+| `tsconfig.extension.json` | `tsc` (extension host) | Excludes test files (including the type tests `*.test-d.ts`), `__tests__` and `__mocks__`. `module` and `moduleResolution` are `nodenext`: TypeScript resolves imports the way Node does and writes ES modules, because `package.json` has `"type": "module"`; relative imports therefore need the `.js` extension (also for `.ts` files and for folders, `./folder/index.js`). `types` lists `node` and `vscode`, because TypeScript 6 no longer includes all `@types` packages by default. Decorators are compiled as legacy decorators (`experimentalDecorators`) with `useDefineForClassFields` (see [ADR 002](architecture/002-legacy-decorators.md)).[^adr-002] |
 | `tsconfig.webview.json` | `compile-webview` (type check only) | `esnext` modules with `moduleResolution: bundler`, because Vite resolves the imports, and the `DOM` library; `types: ["vite/client"]` declares the import of `styles.css`, which TypeScript 6 checks by default (`noUncheckedSideEffectImports`). No output (`noEmit`), because Vite builds the bundle. The same decorator settings as `tsconfig.extension.json`.[^tsconfig-webview] |
 | `tsconfig.extension-test.json`, `tsconfig.webview-test.json`, `tsconfig.shared-test.json` | `npm run typecheck` and ESLint | Extend the two above with the Vitest globals and the Node types for the test files; the webview tests keep `vite/client` (see [Testing](testing.md#vitest-projects)). |
+| `tsconfig.integration-test.json` | `npm run typecheck` and ESLint | The integration tests in `test/integration/`, which use the extension host and the webview together. Extends `tsconfig.webview.json`, whose `bundler` resolution accepts both the imports with `.js` of the extension host and those without an extension of the webview, with the Vitest globals and the Node types; like the webview tests, it keeps `vite/client`. |
 | `tsconfig.nodeTools.json` | `npm run typecheck` and ESLint | TypeScript that Node runs directly, without a build: the scripts in `scripts/` and their tests (see [Scripts](#scripts)), and the configuration files `vite.config.ts` and `vitest.config.ts`. `NodeNext` modules, no output (`noEmit`), `.ts` extensions in imports, and only syntax that Node can remove (`erasableSyntaxOnly`).[^tsconfig-node-tools] |
 | `tsconfig.extension-host-test.json` | `pretest:extension-host`, `npm run typecheck` and ESLint | The tests in the extension host in `test/extension-host/`, compiled to `.vscode-test/out/` with the Mocha, Node and `vscode` types and the `DOM` library for the mock webview. `nodenext` like the extension, so the tests and the mock webview (`mockWebview.ts`) are ES modules; the webview loads the mock with `type="module"` (see [Testing](testing.md#tests-in-the-extension-host)).[^tsconfig-extension-host-test] |
 
 ESLint uses all configurations except `tsconfig.json`, so each TypeScript file must belong to at least one of them.
+
+All configurations use the same ECMAScript edition, currently ES2024: `tsconfig.extension.json`, `tsconfig.webview.json`, `tsconfig.nodeTools.json` and `tsconfig.extension-host-test.json` set it as `target` and as the `ESxxxx` entry of `lib`, and the test configurations inherit it. `lib` holds only the edition and, for the webview and the tests in the extension host, `DOM`. The edition follows the lowest supported VS Code version; `npm run vscode:update` changes it and `npm run vscode:check` checks it (see [VS Code and Node versions](#vs-code-and-node-versions)). The code can therefore use only the syntax and library features of that edition, which every supported VS Code version has.[^compiler-target]
 
 ## The webview build
 
@@ -104,6 +110,7 @@ ESLint uses all configurations except `tsconfig.json`, so each TypeScript file m
 - **Type check.** Vite only removes the types. `compile-webview` therefore runs `tsc --noEmit -p tsconfig.webview.json` first, as `ts-loader` did with webpack. `watch-webview` does not; in VS Code, type errors show up in the Problems view while you edit.
 - **Source map.** Every build embeds its source map in `main.js`. The content security policy blocks loading a separate `.map` file, and the map makes stack traces from the installed extension, for example in bug reports, readable. It makes `main.js` several times larger.
 - **Size warning.** A small plugin in `vite.config.ts` warns when a file in `webview/` is larger than 1 MiB as written, including the source map. Vite's own warning (`build.chunkSizeWarningLimit`) does not work in library mode. If the warning appears, decide whether the source map is still worth its size.
+- **Target.** `build.target` is the `target` of `tsconfig.webview.json` in lower case, so Vite lowers newer syntax to the same edition that the extension host is compiled for, instead of using its default browser baseline, which does not depend on VS Code.
 - **Output folder.** Vite empties `webview/` before every build, so no file from an earlier build is left behind.
 - **Minification.** The production build (`--mode production`) shortens names and code, but in library mode with ES modules Vite keeps line breaks and `/* @__PURE__ */` comments. The watch build (`--mode development`) is not minified.
 
@@ -169,7 +176,7 @@ Dependabot opens pull requests for npm packages and GitHub Actions every day and
 
 ## VS Code and Node versions
 
-The extension runs in the extension host of VS Code, which uses the Node version of the Electron that VS Code ships, not the Node installed on the machine. The lowest supported VS Code version in `engines.vscode` therefore decides which Node version the extension runs on, and three other values are derived from it:[^manifest][^nvmrc][^vscode-version]
+The extension runs in the extension host of VS Code, which uses the Node version of the Electron that VS Code ships, not the Node installed on the machine. The lowest supported VS Code version in `engines.vscode` therefore decides which Node version the extension runs on, and four other values are derived from it:[^manifest][^nvmrc][^vscode-version]
 
 | Value | Rule |
 |---|---|
@@ -177,14 +184,17 @@ The extension runs in the extension host of VS Code, which uses the Node version
 | `@types/vscode` | `~` and the highest published version that is not newer than that VS Code version, so that `vsce` packages and the types offer no API that this version lacks. |
 | `@types/node` | `~` and the highest published version with the major version of the extension host's Node and a minor version that is not higher, so that the types offer no Node API that the extension host lacks. |
 | `.nvmrc` | The exact Node version of the extension host. Development and CI use it, so the tests run on that version. |
+| ECMAScript edition | The `target` of the [`@tsconfig/bases`](https://github.com/tsconfig/bases) configuration for the major version of the extension host's Node, for example `es2024` for Node 24 (`@tsconfig/node24`), in `target` and `lib` of the tsconfig files and in `ecmaVersion` in `eslint.config.mjs` (see [Build outputs](#build-outputs)). The `ESNext.*` libraries of the base are left out, because their content changes with every TypeScript release and could allow APIs that this Node version lacks. The webview gets the same edition: it runs in the Chromium of the same Electron, which shares the V8 engine with Node. |
 
 VS Code builds a release with the Electron version in the `target` of the `.npmrc` at its tag in `microsoft/vscode`; the `electron` entry in its `package.json` can differ or be missing. The Electron release list gives the Node version of each Electron version. Inside VS Code, `process.versions` in the developer tools shows both.
 
-To change the lowest supported VS Code version, run `npm run vscode:update`. It lists the VS Code releases from the current minimum on, with their release date, Electron and Node version, the matching `@types/vscode` and `@types/node`, and the end of life of the Node version, and asks for the new minimum; `npm run vscode:update -- <version>` skips the question. It writes the four values to `package.json` and `.nvmrc`, with the line endings that `package.json` has. After asking, it installs the Node version with nvm, nvm-windows or fnm (or uses the running Node if it already has that version) and runs `npm install`, `npm run lint`, `npm test`, `npm run package` and `npm run package:verify` with it. Without a terminal, or if no version manager can install the Node version, it prints these steps instead. Then fix what fails, update the requirements in `README.md`, and commit the changes together.[^vscode-version]
+The runtime dependencies must accept the Node version of the extension host. `@neumaennl/xmlbind-ts` declares `>=24`, which fits; nothing checks this automatically yet (see [Known issues](known-issues.md#vscodecheck-does-not-check-the-node-versions-that-runtime-dependencies-require)).
+
+To change the lowest supported VS Code version, run `npm run vscode:update`. It lists the VS Code releases from the current minimum on, with their release date, Electron and Node version, the matching `@types/vscode` and `@types/node`, the ECMAScript edition, and the end of life of the Node version, and asks for the new minimum; `npm run vscode:update -- <version>` skips the question. It refuses a version whose Node version has no `@tsconfig/bases` configuration. It writes the four values to `package.json` and `.nvmrc`, with the line endings that `package.json` has, and replaces the edition in all `tsconfig*.json` files and in `eslint.config.mjs`, changing nothing else in them.[^compiler-target] After asking, it installs the Node version with nvm, nvm-windows or fnm (or uses the running Node if it already has that version) and runs `npm install`, `npm run lint`, `npm test`, `npm run package` and `npm run package:verify` with it. Without a terminal, or if no version manager can install the Node version, it prints these steps instead. Then fix what fails, update the requirements in `README.md`, and commit the changes together.[^vscode-version]
 
 A Node version past its end of life is a poor choice: Node no longer fixes it, and current development tools stop supporting it.
 
-The script reads the GitHub API, `raw.githubusercontent.com`, the Electron release list, the Node release schedule and the npm registry. It sends `GITHUB_TOKEN` or `GH_TOKEN` to the GitHub API if one of them is set. `npm run vscode:check` derives the values from `engines.vscode` in the same way and fails if `@types/vscode`, `@types/node` or `.nvmrc` differ; CI runs it (see [CI](#ci)).[^vscode-version][^ci]
+The script reads the GitHub API, `raw.githubusercontent.com` (VS Code's `.npmrc`, the Node release schedule and the `@tsconfig/bases` configurations), the Electron release list and the npm registry. It sends `GITHUB_TOKEN` or `GH_TOKEN` to the GitHub API if one of them is set. `npm run vscode:check` derives the values from `engines.vscode` in the same way and fails if `@types/vscode`, `@types/node` or `.nvmrc` differ, if there is no `@tsconfig/bases` configuration for the Node version, or if a `target`, an `ESxxxx` entry of `lib` or an `ecmaVersion` names another edition; CI runs it (see [CI](#ci)). If `@tsconfig/bases` raises the edition for a Node version, the check fails until `npm run vscode:update -- <current version>` has taken it over. The check does not ask TypeScript whether it supports the edition; `npm test` and `npm run lint` fail if it does not.[^vscode-version][^compiler-target][^ci]
 
 # Lint
 
@@ -192,14 +202,15 @@ The script reads the GitHub API, `raw.githubusercontent.com`, the Electron relea
 
 - It ignores `out/`, `dist/`, `webview/`, `.vscode-test/`, `node_modules/`, type declarations and generated code.
 - `.js` and `.cjs` files are not allowed. `eslint.config.mjs` and `.vscode-test.mjs` are the only JavaScript files and are checked with the recommended JavaScript rules of ESLint; `vscode-test` cannot load a TypeScript configuration. All other code, including the scripts in `scripts/` and the configurations of Vite and Vitest, is TypeScript (`.ts`). ESLint cannot load a TypeScript configuration without the extra dependency `jiti` (Node would need an unstable flag), so `eslint.config.mjs` stays JavaScript for now; check again when ESLint can do it. The rule therefore does not forbid `.mjs` files yet.
-- TypeScript files are checked with the type information from the tsconfig files listed in [Build outputs](#build-outputs), with the recommended rules of `typescript-eslint` including those that need type information. Return types must be declared, `any` is an error, non-null assertions are warnings, and `unknown` in type assertions and variable annotations is forbidden (`no-restricted-syntax`); an exception needs an `eslint-disable-next-line` comment with a reason.
-- Test files and mocks additionally use the recommended rules of `@vitest/eslint-plugin` and the Vitest globals (see [Testing](testing.md#conventions)). The tests in the extension host in `test/extension-host/` use Mocha instead and get the Mocha and browser globals.
+- TypeScript files are checked with the type information from the tsconfig files listed in [Build outputs](#build-outputs), with the recommended rules of `typescript-eslint` including those that need type information. Return types must be declared, `any` is an error, checks that the types make unnecessary are errors (`no-unnecessary-condition`, for example `x ?? []` on an array that is never `undefined`), non-null assertions are warnings, and `unknown` in type assertions and variable annotations is forbidden (`no-restricted-syntax`); an exception needs an `eslint-disable-next-line` comment with a reason.
+- `no-restricted-imports` enforces the [project boundaries](development-guidelines.md#project-boundaries): code in `shared/` may not import from `src/`, `webview-src/`, `test/` or `scripts/`, code in `src/` not from `webview-src/`, `test/` or `scripts/`, code in `webview-src/` not from `src/`, `test/` or `scripts/`, and code in `scripts/` not from `src/`, `webview-src/`, `shared/` or `test/`. The integration tests in `test/integration/` are not restricted.
+- Test files and mocks additionally use the recommended rules of `@vitest/eslint-plugin` and the Vitest globals (see [Testing](testing.md#conventions)), and `vitest/consistent-test-it` requires `test()` instead of `it()`. `max-lines` limits test files to 1000 lines, and the local rule `tests/max-lines-per-test`, defined in `eslint.config.mjs`, limits single tests to 50 lines (see [Code size](development-guidelines.md#code-size)). The tests in the extension host in `test/extension-host/` use Mocha instead and get the Mocha and browser globals.
 
 # CI
 
 The workflow `ci.yml` runs on pushes to `main` and on every pull request, whatever its target branch, on Ubuntu with the Node version from `.nvmrc`. A new push to a pull request cancels the run for the previous one; runs for pushes each have a concurrency group of their own, so none of them is cancelled or held back:[^ci]
 
-1. `npm run vscode:check`, which fails if `@types/vscode`, `@types/node` and `.nvmrc` don't match `engines.vscode` (see [VS Code and Node versions](#vs-code-and-node-versions)).
+1. `npm run vscode:check`, which fails if `@types/vscode`, `@types/node`, `.nvmrc` or the ECMAScript edition of the configurations don't match `engines.vscode` (see [VS Code and Node versions](#vs-code-and-node-versions)).
 2. `npm ci`, with `NODE_AUTH_TOKEN` and the auth line that `actions/setup-node` writes for GitHub Packages.
 3. `npm run lint`.
 4. `npm run package`, the only build: `vscode:prepublish` deletes `out/` and `webview/` and compiles both parts, including the type check of the webview. Then `npm run package:verify`.
@@ -232,6 +243,8 @@ The [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-sc
 [^verify-vsix]: Check that the packaged extension loads
 
 [^vscode-version]: Derive the Node and @types versions from the VS Code version
+
+[^compiler-target]: ECMAScript edition per Node version
 
 [^nvmrc]: Node version for development and CI
 

@@ -4,20 +4,22 @@ okf_version: "0.2"
 
 # Overview
 
-* [Architecture](architecture.md) - How the extension host, the webview and the shared code work together to provide a visual editor for XML Schema (XSD) files, and the design decisions behind the command-based design.
+* [Architecture](architecture.md) - How the extension host, the webview and the shared code work together to provide a visual editor for XML Schema (XSD) files, what xmlbind-ts is responsible for and what the editor is, and the design decisions behind the command-based design.
 * [ADR 001: Editor transition architecture](architecture/001-editor-transition.md) - The decision to turn the viewer into an editor whose webview sends commands that the extension host validates, executes and writes to the XSD file, with the roadmap and the deviations of the implementation from the design.
 * [ADR 002: Legacy TypeScript decorators](architecture/002-legacy-decorators.md) - The decision to compile the decorators of the generated schema classes as TypeScript's legacy decorators instead of TC39 Stage 3 decorators, with the reasons, the consequences, the rejected alternatives and when to review it.
+* [ADR 003: Validators check, executors assume](architecture/003-validators-check-executors-assume.md) - The decision that the validators check everything an executor relies on and the executors do not check it again, how an executor states what it assumes, why this is safe, the scenarios that were examined, and how a test keeps validators and executors in agreement.
+* [ADR 004: XML Schema 1.0 first](architecture/004-xml-schema-1-0-first.md) - The decision to support XML Schema 1.0 now and XML Schema 1.1 later, the two conditions that keep the way to 1.1 open, how 1.1 could be added, the open question about validation, and when to review it.
 
 # Working on the extension
 
 * [Development guidelines](development-guidelines.md) - Rules for everyone who changes the extension - code size, code quality and ESLint, TypeScript and naming, VS Code and Node versions, TSDoc, tests, documentation and the knowledge bundle, issues, what to check before committing, and commits.
 * [Build and packaging](build-and-packaging.md) - How the extension is built, run, linted, packaged and checked - the build outputs and tsconfig files, the npm scripts, the scripts in TypeScript, running it in VS Code, the VSIX and its check, the generated schema classes, dependencies and the Node version, ESLint, CI, and planned changes.
-* [Testing](testing.md) - How the extension is tested - running the tests and the type check, the four Vitest projects, mocks and helpers, conventions for tests, mocks, helper functions and helper classes, which tests to write for typical changes, coverage, CI, the smoke tests in the extension host with a mock webview, and how the current tests compare with the testing strategy of ADR 001.
+* [Testing](testing.md) - How the extension is tested - running the tests and the type check, the five Vitest projects, mocks and helpers, conventions for tests, mocks, helper functions and helper classes, which tests to write for typical changes, coverage, CI, the smoke tests in the extension host with a mock webview, and how the current tests compare with the testing strategy of ADR 001.
 
 # User experience
 
-* [UX concept](ux-concept.md) - The interaction model of the editor - which surface adds, edits and deletes what, how facets work, and how the property panel behaves - with a list of what the current editor does not implement yet.
-* [Editor](editor.md) - The custom editor and the webview app - how the editor opens, the page layout, the app that wires palette, diagram and property panel together, navigation, diagram settings, the palette and the property panel tabs.
+* [UX concept](ux-concept.md) - The interaction model of the editor - which surface adds, edits and deletes what, how facets work, and how the properties panel behaves - with a list of what the current editor does not implement yet.
+* [Editor](editor.md) - The custom editor and the webview app - how the editor opens, the page layout, the app that wires palette, diagram and properties panel together, navigation, diagram settings, the palette and the properties panel tabs.
 
 # Schema and edits
 
@@ -34,3 +36,7 @@ okf_version: "0.2"
 # Maintenance
 
 * [Known issues](known-issues.md) - Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
+
+# Agent instructions
+
+The folder `agent-instructions/` holds instructions for AI coding agents that [`AGENTS.md`](../AGENTS.md) refers to. They are plain files without front matter: they tell agents how to work, rather than describing the code, and are not part of the knowledge bundle.

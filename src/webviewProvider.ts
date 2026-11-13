@@ -61,6 +61,7 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
   ): void {
     webviewPanel.webview.options = {
       enableScripts: true,
+      localResourceRoots: [this.context.extensionUri],
     };
 
     webviewPanel.webview.html = this.getHtmlForWebview(webviewPanel.webview);
@@ -171,6 +172,7 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
     webview: vscode.Webview
   ): Promise<void> {
     switch (message.command) {
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- executeCommand is the only message (see "Every message from the webview is a schema command" in docs/known-issues.md)
       case "executeCommand": {
         await this.executeCommand(message, document, webview);
         break;
@@ -282,8 +284,19 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
     const styleUri = webview.asWebviewUri(
       vscode.Uri.joinPath(this.context.extensionUri, "webview", "styles.css")
     );
+    const codiconUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(
+        this.context.extensionUri,
+        "node_modules",
+        "@vscode",
+        "codicons",
+        "dist",
+        "codicon.css"
+      )
+    );
     const scriptSrc = scriptUri.toString();
     const styleSrc = styleUri.toString();
+    const codiconSrc = codiconUri.toString();
 
     const nonce = this.getNonce();
 
@@ -292,22 +305,34 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; font-src ${webview.cspSource}; script-src 'nonce-${nonce}';">
     <link href="${styleSrc}" rel="stylesheet">
+    <link href="${codiconSrc}" rel="stylesheet">
     <title>Visual XML Schema Editor</title>
 </head>
 <body>
-    <div id="toolbar">
-        <button id="zoomIn">Zoom In</button>
-        <button id="zoomOut">Zoom Out</button>
-        <button id="fitView">Fit View</button>
-    </div>
-    <div id="canvas-container">
-        <svg id="schema-canvas" width="100%" height="100%"></svg>
-    </div>
-    <div id="properties-panel">
-        <h3>Properties</h3>
-        <div id="properties-content"></div>
+    <div id="editor-layout">
+      <aside id="palette-panel">
+        <h3>Palette</h3>
+        <div id="palette-content"></div>
+      </aside>
+      <main id="main-panel">
+        <div id="notification-bar" hidden>
+          <span id="notification-message"></span>
+          <button id="notification-dismiss" type="button">✕</button>
+        </div>
+        <div id="toolbar">
+            <button id="zoomIn">Zoom In</button>
+            <button id="zoomOut">Zoom Out</button>
+            <button id="fitView">Fit View</button>
+        </div>
+        <div id="canvas-container">
+            <svg id="schema-canvas" width="100%" height="100%"></svg>
+        </div>
+      </main>
+      <aside id="properties-panel">
+          <div id="properties-content"></div>
+      </aside>
     </div>
     <script type="module" nonce="${nonce}" src="${scriptSrc}"></script>
 </body>

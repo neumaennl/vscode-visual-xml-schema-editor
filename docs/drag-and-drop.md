@@ -4,10 +4,8 @@ title: Drag and drop
 description: How a construct is dragged from the palette onto a diagram node - the responsibilities of palette, renderer, DropCommandFactory and extension host, the event flow, which construct can be dropped on which node with which command, and the generated defaults.
 tags: [drag-and-drop, palette, renderer, drop-command-factory, webview]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-07T14:41:24Z }
-verified:
-  by: human:neumaennl
-  at: 2026-10-08T08:46:19Z
+generated: { by: human:neumaennl, at: 2026-11-11T19:28:57Z }
+verified: { by: human:neumaennl, at: 2026-11-11T19:31:18Z }
 sources:
   - id: palette-items
     resource: ../webview-src/palette/PaletteItems.ts
@@ -96,7 +94,7 @@ The node kinds in the table are:
 | Construct | Target | Command |
 |---|---|---|
 | element | schema root, compositor | `addElement` with a generated name and type `xs:string` |
-| attribute | schema root, complex type labelled exactly `complexType` | `addAttribute` with a generated name and type `xs:string` |
+| attribute | schema root, named complex type, also a derived one | `addAttribute` with a generated name and type `xs:string` |
 | | element with anonymous complex type | `addAttribute` on the anonymous complex type |
 | group | schema root | `addGroup` with a generated name and content model `sequence` (a definition; references cannot be dropped) |
 | simpleType | schema root | `addSimpleType` with a generated name and base type `xs:string` |
@@ -120,7 +118,7 @@ The node kinds in the table are:
 | facets (all twelve) | simple type derived by restriction, element with simple content derived by restriction | `modifySimpleType` with the existing facets plus the dropped one |
 | any | - | not supported (disabled in the palette) |
 
-Every other combination returns `null`. In particular, nothing can be dropped on attributes or group references, and only elements can be dropped on compositors. A compositor drop on a type that already has one replaces the compositor and moves its particles into the new one (see [Commands](commands.md#complex-types)).[^drop-factory] Attributes cannot be dropped on derived named complex types, and on derived anonymous complex types they end up in the wrong place (see [Known issues](known-issues.md#attributes-on-derived-complex-types-are-rejected-or-misplaced)).
+Every other combination returns `null`. In particular, nothing can be dropped on attributes or group references, and only elements can be dropped on compositors. A compositor drop on a type that already has one replaces the compositor and moves its particles into the new one (see [Commands](commands.md#complex-types)).[^drop-factory] In a derived complex type, `addAttribute` puts the attribute into the `xs:extension` or `xs:restriction` (see [Commands](commands.md#attributes)). In a restriction, the dropped attribute is not checked against the base type, so it usually makes the schema invalid (see [Known issues](known-issues.md#attributes-in-a-restriction-are-not-checked-against-the-base-type)). A facet drop is also accepted on an element whose inline complex type has simple content derived by restriction, and the command then fails (see [Known issues](known-issues.md#inline-complex-types-with-simple-content-are-treated-as-inline-simple-types)).
 
 # Defaults
 
@@ -130,17 +128,17 @@ Every other combination returns `null`. In particular, nothing can be dropped on
 
 **Base types.** For a restriction or extension, the base type is the one shown on the node, read from its label (`restricts …` or `extends …`). Without one, a restriction uses `xs:anyType` for complex types and elements with anonymous complex types, and `xs:string` otherwise; an extension uses `xs:anyType`.[^drop-type-helpers]
 
-**Facets.** A dropped facet gets a default value, which overwrites the facet if it already exists:
+**Facets.** A dropped facet gets a default value. A dropped enumeration or pattern adds its value to the existing ones; every other facet overwrites the facet if it already exists:
 
 | Facet | Default |
 |---|---|
-| `enumeration` | `["value"]` |
-| `pattern` | `.*` |
+| `enumeration` | `value`, or `value2`, `value3`, … with the lowest number that is not in use yet |
+| `pattern` | `.*` if the restriction has no pattern yet; otherwise `[^a-zA-Z0-9\s]*`, also if the restriction already has this pattern |
 | `length`, `minLength`, `maxLength`, `totalDigits`, `fractionDigits` | `1` |
 | `minInclusive`, `maxInclusive`, `minExclusive`, `maxExclusive` | `0` |
 | `whiteSpace` | `preserve` |
 
-The facet drop sends only the first existing pattern, and dropping an enumeration or a pattern replaces the existing values instead of adding one (see [Known issues](known-issues.md#editing-facets-drops-all-but-the-first-pattern) and [Known issues](known-issues.md#dropping-an-enumeration-replaces-the-existing-values)). Facets are not checked against the base type (see [Known issues](known-issues.md#facets-are-not-checked-against-the-base-type)).
+Patterns of one restriction are alternatives (see [UX concept](ux-concept.md#multiple-patterns)), so every added pattern widens the type. `.*` keeps a type without patterns as it was, apart from values with line breaks; `[^a-zA-Z0-9\s]*` only adds values without letters, digits and whitespace, until the user edits it. Facets are not checked against the base type (see [Known issues](known-issues.md#facets-are-not-checked-against-the-base-type)).
 
 # Adding a draggable construct
 

@@ -17,7 +17,7 @@ window.addEventListener("message", (event: MessageEvent<{ command: string }>) =>
     command: "executeCommand",
     data: {
       type: "addElement",
-      payload: { parentId: "schema", elementName: "smokeTestElement", elementType: "xs:string" },
+      payload: { parentId: "/schema", elementName: "smokeTestElement", elementType: "xs:string" },
     },
   });
 });

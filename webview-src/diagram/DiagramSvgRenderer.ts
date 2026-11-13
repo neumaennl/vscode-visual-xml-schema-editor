@@ -9,6 +9,7 @@ import {
   DiagramItemType,
   Point,
 } from "./DiagramTypes";
+import { isCompositorGroup } from "./groupUtils";
 import {
   svgLine,
   svgRectangle,
@@ -102,8 +103,8 @@ export class DiagramSvgRenderer {
     // Render the main shape
     this.renderShape(item, group);
 
-    // Render text (skip for group items - they only show the symbol)
-    if (item.itemType !== DiagramItemType.group) {
+    // Render text for non-group items and named groups (skip compositor symbols only)
+    if (item.itemType !== DiagramItemType.group || !isCompositorGroup(item)) {
       renderText(item, group, this.svg);
     }
 

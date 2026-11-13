@@ -12,9 +12,9 @@ import {
   attributeGroupRef,
 } from "../../shared/types.js";
 import { ValidationResult, isValidXmlName } from "./validationUtils.js";
-import { toArray } from "../../shared/schemaUtils.js";
 import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
 import { locateNodeById } from "../schemaNavigator.js";
+import { ContentHolder, getAttributeContainer, getContentContainer } from "../../shared/schemaUtils.js";
 
 // ===== AttributeGroup Reference Helpers =====
 
@@ -39,55 +39,16 @@ type CompositorHolder = {
 };
 
 /**
- * Structural type for objects that can hold attribute group references.
- * Matches complexType (top-level and local), extensionType, restrictionType,
- * and any inline complexType within a local element.
+ * Structural type for the content of a complexType that can reference attribute groups: the complexType
+ * itself, or the extension or restriction of its complexContent or simpleContent.
  */
-type AttributeGroupHolder = CompositorHolder & {
-  attributeGroup?: attributeGroupRef[];
-  complexContent?: {
-    extension?: CompositorHolder & { attributeGroup?: attributeGroupRef[] };
-    restriction?: CompositorHolder & { attributeGroup?: attributeGroupRef[] };
-  };
-  simpleContent?: {
-    extension?: { attributeGroup?: attributeGroupRef[] };
-    restriction?: { attributeGroup?: attributeGroupRef[] };
-  };
-};
+type AttributeGroupContent = CompositorHolder & { attributeGroup?: attributeGroupRef[] };
 
 /**
- * Structural type for objects that carry a direct array of attribute group refs.
- * Used in reference-mode validators to check parent containers.
+ * Structural type for complexTypes (top-level, local, and inline in a local element) whose content can
+ * reference attribute groups.
  */
-type AttrGroupRefHolder = { attributeGroup?: attributeGroupRef[] };
-
-/**
- * Returns true if the named attribute group is directly referenced within a holder
- * (top-level attributeGroup array, or inside complexContent/simpleContent).
- */
-function attrGroupRefExistsInHolder(
-  name: string,
-  holder: AttributeGroupHolder
-): boolean {
-  if (toArray(holder.attributeGroup).some((r) => r.ref === name)) return true;
-  const ccExt = holder.complexContent?.extension;
-  if (ccExt && toArray(ccExt.attributeGroup).some((r) => r.ref === name)) {
-    return true;
-  }
-  const ccRestr = holder.complexContent?.restriction;
-  if (ccRestr && toArray(ccRestr.attributeGroup).some((r) => r.ref === name)) {
-    return true;
-  }
-  const scExt = holder.simpleContent?.extension;
-  if (scExt && toArray(scExt.attributeGroup).some((r) => r.ref === name)) {
-    return true;
-  }
-  const scRestr = holder.simpleContent?.restriction;
-  if (scRestr && toArray(scRestr.attributeGroup).some((r) => r.ref === name)) {
-    return true;
-  }
-  return false;
-}
+type AttributeGroupHolder = ContentHolder<AttributeGroupContent>;
 
 /**
  * Returns true if the named attribute group is referenced within any local element's
@@ -98,15 +59,15 @@ function attrGroupRefExistsInCompositor(
   name: string,
   compositor: CompositorWithElements
 ): boolean {
-  for (const el of toArray(compositor.element)) {
-    if (el?.complexType && attrGroupRefExistsInHolderDeep(name, el.complexType)) {
+  for (const el of compositor.element ?? []) {
+    if (el.complexType && attrGroupRefExistsInHolderDeep(name, el.complexType)) {
       return true;
     }
   }
-  for (const sub of toArray(compositor.choice)) {
+  for (const sub of compositor.choice ?? []) {
     if (attrGroupRefExistsInCompositor(name, sub)) return true;
   }
-  for (const sub of toArray(compositor.sequence)) {
+  for (const sub of compositor.sequence ?? []) {
     if (attrGroupRefExistsInCompositor(name, sub)) return true;
   }
   return false;
@@ -127,9 +88,9 @@ function attrGroupRefExistsInCompositors(name: string, holder: CompositorHolder)
 }
 
 /**
- * Deep variant of attrGroupRefExistsInHolder that also checks compositor trees
- * (sequence/choice/all and their nested local element complexTypes), also inside
- * a complexContent extension or restriction.
+ * Returns true if the named attribute group is referenced in a complexType: directly in its content
+ * container (see {@link getContentContainer}), or in its compositor trees, including the inline
+ * complexTypes of nested local elements.
  *
  * @param name - The name of the attribute group
  * @param holder - The complexType to search
@@ -139,11 +100,10 @@ function attrGroupRefExistsInHolderDeep(
   name: string,
   holder: AttributeGroupHolder
 ): boolean {
-  if (attrGroupRefExistsInHolder(name, holder)) return true;
-  if (attrGroupRefExistsInCompositors(name, holder)) return true;
-  const { extension, restriction } = holder.complexContent ?? {};
-  return [extension, restriction].some(
-    (derivation) => derivation !== undefined && attrGroupRefExistsInCompositors(name, derivation)
+  const content = getContentContainer(holder);
+  return (
+    (content.attributeGroup ?? []).some((r) => r.ref === name) ||
+    attrGroupRefExistsInCompositors(name, content)
   );
 }
 
@@ -163,19 +123,19 @@ function attrGroupRefExistsInHolderDeep(
  * @returns Whether a reference was found
  */
 function isAttrGroupReferenced(name: string, schemaObj: schema): boolean {
-  for (const ct of toArray(schemaObj.complexType)) {
+  for (const ct of schemaObj.complexType ?? []) {
     if (attrGroupRefExistsInHolderDeep(name, ct)) return true;
   }
-  for (const el of toArray(schemaObj.element)) {
+  for (const el of schemaObj.element ?? []) {
     if (el.complexType && attrGroupRefExistsInHolderDeep(name, el.complexType)) {
       return true;
     }
   }
-  for (const group of toArray(schemaObj.group)) {
+  for (const group of schemaObj.group ?? []) {
     if (attrGroupRefExistsInCompositors(name, group)) return true;
   }
-  for (const ag of toArray(schemaObj.attributeGroup)) {
-    if (toArray(ag.attributeGroup).some((r) => r.ref === name)) return true;
+  for (const ag of schemaObj.attributeGroup ?? []) {
+    if ((ag.attributeGroup ?? []).some((r) => r.ref === name)) return true;
   }
   return false;
 }
@@ -242,7 +202,7 @@ export function validateAddAttributeGroup(
         error: "Attribute group ref must be a valid XML name",
       };
     }
-    const groupExists = toArray(schemaObj.attributeGroup).some(
+    const groupExists = (schemaObj.attributeGroup ?? []).some(
       (g) => g.name === ref
     );
     if (!groupExists) {
@@ -260,7 +220,7 @@ export function validateAddAttributeGroup(
     }
     // Validate that the parent type supports attribute group refs
     const validAttrGroupRefParents = ["topLevelComplexType", "localComplexType", "namedAttributeGroup"];
-    if (!validAttrGroupRefParents.includes(location.parentType ?? "")) {
+    if (!validAttrGroupRefParents.includes(location.parentType)) {
       return { valid: false, error: `Cannot add attribute group reference to parent type: ${location.parentType}` };
     }
     return { valid: true };
@@ -280,7 +240,7 @@ export function validateAddAttributeGroup(
       error: "Attribute group name must be a valid XML name",
     };
   }
-  const exists = toArray(schemaObj.attributeGroup).some(
+  const exists = (schemaObj.attributeGroup ?? []).some(
     (g) => g.name === groupName
   );
   if (exists) {
@@ -327,7 +287,7 @@ export function validateRemoveAttributeGroup(
         error: `Parent node not found: ${parsed.parentId}`,
       };
     }
-    const refs = toArray((location.parent as AttrGroupRefHolder).attributeGroup);
+    const refs = getAttributeContainer(location.parent).attributeGroup ?? [];
     if (!attrGroupRefExistsInParent(refs, parsed.name, parsed.position)) {
       return {
         valid: false,
@@ -338,7 +298,7 @@ export function validateRemoveAttributeGroup(
   }
 
   // Definition mode: validate existence and no references
-  const found = toArray(schemaObj.attributeGroup).some(
+  const found = (schemaObj.attributeGroup ?? []).some(
     (g) => g.name === parsed.name
   );
   if (!found) {
@@ -400,7 +360,7 @@ export function validateModifyAttributeGroup(
         error: `Parent node not found: ${parsed.parentId}`,
       };
     }
-    const refs = toArray((location.parent as AttrGroupRefHolder).attributeGroup);
+    const refs = getAttributeContainer(location.parent).attributeGroup ?? [];
     if (!attrGroupRefExistsInParent(refs, parsed.name, parsed.position)) {
       return {
         valid: false,
@@ -414,7 +374,7 @@ export function validateModifyAttributeGroup(
           error: "Attribute group ref must be a valid XML name",
         };
       }
-      const refExists = toArray(schemaObj.attributeGroup).some(
+      const refExists = (schemaObj.attributeGroup ?? []).some(
         (g) => g.name === command.payload.ref
       );
       if (!refExists) {
@@ -435,7 +395,7 @@ export function validateModifyAttributeGroup(
         "Cannot use ref when modifying an attribute group definition — use groupName or documentation instead",
     };
   }
-  const found = toArray(schemaObj.attributeGroup).some(
+  const found = (schemaObj.attributeGroup ?? []).some(
     (g) => g.name === parsed.name
   );
   if (!found) {
@@ -451,7 +411,7 @@ export function validateModifyAttributeGroup(
         error: "Attribute group name must be a valid XML name",
       };
     }
-    const nameExists = toArray(schemaObj.attributeGroup).some(
+    const nameExists = (schemaObj.attributeGroup ?? []).some(
       (g) => g.name === command.payload.groupName && g.name !== parsed.name
     );
     if (nameExists) {

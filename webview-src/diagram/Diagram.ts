@@ -40,6 +40,18 @@ export class Diagram {
   /** Whether to show type information */
   public showType: boolean = false;
 
+  /** Prefix bound to this schema's targetNamespace, when available */
+  public currentSchemaPrefix?: string;
+
+  /** Schema-level targetNamespace (schema root metadata) */
+  public schemaTargetNamespace: string = "";
+
+  /** Schema-level namespace declarations keyed by prefix */
+  public schemaNamespacePrefixes: Record<string, string> = {};
+
+  /** Cached local simple/complex type names discovered in the current schema diagram */
+  public localSchemaTypeNames?: ReadonlySet<string>;
+
   /** Visual style settings for the diagram */
   public style: DiagramStyle = { ...defaultDiagramStyle };
 

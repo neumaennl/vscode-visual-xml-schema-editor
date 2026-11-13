@@ -2,7 +2,6 @@
  * Unit tests for group validators.
  */
 
-import { unmarshal } from "@neumaennl/xmlbind-ts";
 import { schema } from "../../shared/types.js";
 import {
   AddGroupCommand,
@@ -14,7 +13,27 @@ import {
   validateRemoveGroup,
   validateModifyGroup,
 } from "./groupValidators.js";
-import { expectInvalid } from "./validationTestHelpers.js";
+import { expectInvalid } from "../__tests__/validationTestHelpers.js";
+import { emptySchema, schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
+import { readTestSchema } from "../__tests__/resourceTestHelpers.js";
+
+/** The file with a complexType `PersonType` with the local element `name`. */
+const PERSON_TYPE_WITH_NAME_XSD = "person-type-with-name-element.xsd";
+
+/** The file with a complexType `PersonType` with a group reference in its sequence. */
+const GROUP_REF_IN_SEQUENCE_XSD = "person-type-with-group-ref-in-sequence.xsd";
+
+/** The file with a complexType `PersonType` with a direct group reference. */
+const DIRECT_GROUP_REF_XSD = "person-type-with-group-ref.xsd";
+
+/** A group `PersonGroup` and a complexType `PersonType` with an empty sequence. */
+const PERSON_GROUP_AND_EMPTY_PERSON_TYPE = `<xs:group name="PersonGroup"><xs:sequence/></xs:group>
+<xs:complexType name="PersonType">
+  <xs:sequence/>
+</xs:complexType>`;
+
+/** A complexType whose sequence references `CommonGroup` and `OtherGroup`, in this order. */
+const TWO_REFS = `<xs:complexType name="T"><xs:sequence><xs:group ref="CommonGroup"/><xs:group ref="OtherGroup"/></xs:sequence></xs:complexType>`;
 
 /**
  * Unmarshals a schema with the groups `CommonGroup` and `OtherGroup` and the given content.
@@ -23,15 +42,9 @@ import { expectInvalid } from "./validationTestHelpers.js";
  * @returns The schema object
  */
 function schemaWithGroups(body: string): schema {
-  return unmarshal(
-    schema,
-    `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:group name="CommonGroup"><xs:sequence/></xs:group>
-  <xs:group name="OtherGroup"><xs:sequence/></xs:group>
-  ${body}
-</xs:schema>`,
-  );
+  return schemaWith(`<xs:group name="CommonGroup"><xs:sequence/></xs:group>
+<xs:group name="OtherGroup"><xs:sequence/></xs:group>
+${body}`);
 }
 
 /** A local element whose inline complexType references the group `REF`. */
@@ -39,12 +52,29 @@ const LOCAL_ELEMENT_WITH_REF = `<xs:element name="child"><xs:complexType><xs:seq
 
 /**
  * Places where XML Schema allows a reference to a group, as schema content in which
- * `REF` stands for the referenced group. The places that other tests in this file
- * cover (the sequence and the choice of a complexType, a complexType itself, the
- * inline complexType of a top-level element and the sequence of another group) are
- * not repeated here.
+ * `REF` stands for the referenced group.
  */
 const REFERENCE_PLACES: [string, string][] = [
+  [
+    "the sequence of a complexType",
+    `<xs:complexType name="T"><xs:sequence><xs:group ref="REF"/></xs:sequence></xs:complexType>`,
+  ],
+  [
+    "the choice of a complexType",
+    `<xs:complexType name="T"><xs:choice><xs:group ref="REF"/></xs:choice></xs:complexType>`,
+  ],
+  [
+    "a complexType itself",
+    `<xs:complexType name="T"><xs:group ref="REF"/></xs:complexType>`,
+  ],
+  [
+    "the inline complexType of a top-level element",
+    `<xs:element name="root"><xs:complexType><xs:sequence><xs:group ref="REF"/></xs:sequence></xs:complexType></xs:element>`,
+  ],
+  [
+    "the sequence of another group",
+    `<xs:group name="Combined"><xs:sequence><xs:group ref="REF"/></xs:sequence></xs:group>`,
+  ],
   [
     "a choice nested in the sequence of a complexType",
     `<xs:complexType name="T"><xs:sequence><xs:choice><xs:group ref="REF"/></xs:choice></xs:sequence></xs:complexType>`,
@@ -145,10 +175,7 @@ describe("Group Validators", () => {
   let schemaObj: schema;
 
   beforeEach(() => {
-    const simpleSchemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-</xs:schema>`;
-    schemaObj = unmarshal(schema, simpleSchemaXml);
+    schemaObj = emptySchema();
   });
 
   describe("validateAddGroup", () => {
@@ -175,13 +202,9 @@ describe("Group Validators", () => {
     });
 
     test("should reject addGroup when group name already exists", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:group name="ExistingGroup">
-    <xs:sequence/>
-  </xs:group>
-</xs:schema>`;
-      const schemaWithGroup = unmarshal(schema, schemaXml);
+      const schemaWithGroup = schemaWith(`<xs:group name="ExistingGroup">
+  <xs:sequence/>
+</xs:group>`);
 
       const command: AddGroupCommand = {
         type: "addGroup",
@@ -210,7 +233,7 @@ describe("Group Validators", () => {
     });
 
     test("should reject addGroup when both ref and groupName are provided", () => {
-      const command = { type: "addGroup", payload: { ref: "SomeGroup", groupName: "AlsoAGroup", parentId: "/complexType:PersonType/sequence" } } as AddGroupCommand;
+      const command = { type: "addGroup", payload: { ref: "SomeGroup", groupName: "AlsoAGroup", parentId: "/complexType:PersonType/group:sequence[0]" } } as AddGroupCommand;
 
       const result = validateAddGroup(command, schemaObj);
       expectInvalid(result);
@@ -218,7 +241,7 @@ describe("Group Validators", () => {
     });
 
     test("should reject addGroup when both ref and contentModel are provided", () => {
-      const command = { type: "addGroup", payload: { ref: "SomeGroup", contentModel: "sequence", parentId: "/complexType:PersonType/sequence" } } as AddGroupCommand;
+      const command = { type: "addGroup", payload: { ref: "SomeGroup", contentModel: "sequence", parentId: "/complexType:PersonType/group:sequence[0]" } } as AddGroupCommand;
 
       const result = validateAddGroup(command, schemaObj);
       expectInvalid(result);
@@ -226,7 +249,7 @@ describe("Group Validators", () => {
     });
 
     test("should reject addGroup definition when parentId is provided alongside groupName", () => {
-      const command = { type: "addGroup", payload: { groupName: "SomeGroup", contentModel: "sequence", parentId: "/complexType:PersonType/sequence" } } as AddGroupCommand;
+      const command = { type: "addGroup", payload: { groupName: "SomeGroup", contentModel: "sequence", parentId: "/complexType:PersonType/group:sequence[0]" } } as AddGroupCommand;
 
       const result = validateAddGroup(command, schemaObj);
       expectInvalid(result);
@@ -270,13 +293,9 @@ describe("Group Validators", () => {
     });
 
     test("should accept removeGroup when group exists", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:group name="MyGroup">
-    <xs:sequence/>
-  </xs:group>
-</xs:schema>`;
-      const schemaWithGroup = unmarshal(schema, schemaXml);
+      const schemaWithGroup = schemaWith(`<xs:group name="MyGroup">
+  <xs:sequence/>
+</xs:group>`);
 
       const command: RemoveGroupCommand = {
         type: "removeGroup",
@@ -289,169 +308,17 @@ describe("Group Validators", () => {
       expect(result.valid).toBe(true);
     });
 
-    test("should reject removeGroup when group is referenced by a complexType sequence", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:group name="PersonGroup">
-    <xs:sequence/>
-  </xs:group>
-  <xs:complexType name="PersonType">
-    <xs:sequence>
-      <xs:group ref="PersonGroup"/>
-    </xs:sequence>
-  </xs:complexType>
-</xs:schema>`;
-      const schemaWithRef = unmarshal(schema, schemaXml);
+    test("should accept removing a compositor group", () => {
+      const schemaWithCompositor = readTestSchema(PERSON_TYPE_WITH_NAME_XSD);
 
       const command: RemoveGroupCommand = {
         type: "removeGroup",
         payload: {
-          groupId: "/group:PersonGroup",
+          groupId: "/complexType:PersonType/group:sequence[0]",
         },
       };
 
-      const result = validateRemoveGroup(command, schemaWithRef);
-      expectInvalid(result);
-      expect(result.error).toBe(
-        "Group is still referenced and cannot be removed: PersonGroup"
-      );
-    });
-
-    test("should reject removeGroup when group is referenced by a complexType choice", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:group name="ShapeGroup">
-    <xs:choice/>
-  </xs:group>
-  <xs:complexType name="ShapeContainer">
-    <xs:choice>
-      <xs:group ref="ShapeGroup"/>
-    </xs:choice>
-  </xs:complexType>
-</xs:schema>`;
-      const schemaWithRef = unmarshal(schema, schemaXml);
-
-      const command: RemoveGroupCommand = {
-        type: "removeGroup",
-        payload: {
-          groupId: "/group:ShapeGroup",
-        },
-      };
-
-      const result = validateRemoveGroup(command, schemaWithRef);
-      expect(result.valid).toBe(false);
-    });
-
-    test("should reject removeGroup when group is referenced directly in a complexType", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:group name="AddressGroup">
-    <xs:sequence/>
-  </xs:group>
-  <xs:complexType name="OrderType">
-    <xs:group ref="AddressGroup"/>
-  </xs:complexType>
-</xs:schema>`;
-      const schemaWithRef = unmarshal(schema, schemaXml);
-
-      const command: RemoveGroupCommand = {
-        type: "removeGroup",
-        payload: {
-          groupId: "/group:AddressGroup",
-        },
-      };
-
-      const result = validateRemoveGroup(command, schemaWithRef);
-      expectInvalid(result);
-      expect(result.error).toBe(
-        "Group is still referenced and cannot be removed: AddressGroup"
-      );
-    });
-
-    test("should reject removeGroup when group is referenced by an inline element complexType", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:group name="ContactGroup">
-    <xs:sequence/>
-  </xs:group>
-  <xs:element name="person">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:group ref="ContactGroup"/>
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-</xs:schema>`;
-      const schemaWithRef = unmarshal(schema, schemaXml);
-
-      const command: RemoveGroupCommand = {
-        type: "removeGroup",
-        payload: {
-          groupId: "/group:ContactGroup",
-        },
-      };
-
-      const result = validateRemoveGroup(command, schemaWithRef);
-      expectInvalid(result);
-      expect(result.error).toBe(
-        "Group is still referenced and cannot be removed: ContactGroup"
-      );
-    });
-
-    test("should reject removeGroup when group is referenced inside another group", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:group name="InnerGroup">
-    <xs:sequence/>
-  </xs:group>
-  <xs:group name="OuterGroup">
-    <xs:sequence>
-      <xs:group ref="InnerGroup"/>
-    </xs:sequence>
-  </xs:group>
-</xs:schema>`;
-      const schemaWithRef = unmarshal(schema, schemaXml);
-
-      const command: RemoveGroupCommand = {
-        type: "removeGroup",
-        payload: {
-          groupId: "/group:InnerGroup",
-        },
-      };
-
-      const result = validateRemoveGroup(command, schemaWithRef);
-      expectInvalid(result);
-      expect(result.error).toBe(
-        "Group is still referenced and cannot be removed: InnerGroup"
-      );
-    });
-
-    test("should allow removeGroup when a different group is referenced", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:group name="GroupA">
-    <xs:sequence/>
-  </xs:group>
-  <xs:group name="GroupB">
-    <xs:sequence/>
-  </xs:group>
-  <xs:complexType name="SomeType">
-    <xs:sequence>
-      <xs:group ref="GroupA"/>
-    </xs:sequence>
-  </xs:complexType>
-</xs:schema>`;
-      const schemaWithRef = unmarshal(schema, schemaXml);
-
-      // GroupB is not referenced, so it can be removed
-      const command: RemoveGroupCommand = {
-        type: "removeGroup",
-        payload: {
-          groupId: "/group:GroupB",
-        },
-      };
-
-      const result = validateRemoveGroup(command, schemaWithRef);
+      const result = validateRemoveGroup(command, schemaWithCompositor);
       expect(result.valid).toBe(true);
     });
   });
@@ -484,13 +351,9 @@ describe("Group Validators", () => {
     });
 
     test("should accept modifyGroup when group exists", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:group name="MyGroup">
-    <xs:sequence/>
-  </xs:group>
-</xs:schema>`;
-      const schemaWithGroup = unmarshal(schema, schemaXml);
+      const schemaWithGroup = schemaWith(`<xs:group name="MyGroup">
+  <xs:sequence/>
+</xs:group>`);
 
       const command: ModifyGroupCommand = {
         type: "modifyGroup",
@@ -503,22 +366,67 @@ describe("Group Validators", () => {
       const result = validateModifyGroup(command, schemaWithGroup);
       expect(result.valid).toBe(true);
     });
+
+    test("should reject stale group rename replay after a successful rename", () => {
+      const renamedSchema = schemaWith(`<xs:group name="UpdatedGroup">
+  <xs:sequence/>
+</xs:group>`);
+      const command: ModifyGroupCommand = {
+        type: "modifyGroup",
+        payload: {
+          groupId: "/group:MyGroup",
+          groupName: "UpdatedGroup",
+        },
+      };
+
+      const result = validateModifyGroup(command, renamedSchema);
+      expectInvalid(result);
+      expect(result.error).toBe("Group not found: /group:MyGroup");
+    });
+
+    test("should accept occurrence updates for compositor groups", () => {
+      const schemaWithCompositor = readTestSchema(PERSON_TYPE_WITH_NAME_XSD);
+
+      const command: ModifyGroupCommand = {
+        type: "modifyGroup",
+        payload: {
+          groupId: "/complexType:PersonType/group:sequence[0]",
+          minOccurs: 0,
+          maxOccurs: "unbounded",
+        },
+      };
+
+      const result = validateModifyGroup(command, schemaWithCompositor);
+      expect(result.valid).toBe(true);
+    });
+
+    test("should reject renaming a compositor group", () => {
+      const schemaWithCompositor = readTestSchema(PERSON_TYPE_WITH_NAME_XSD);
+
+      const command: ModifyGroupCommand = {
+        type: "modifyGroup",
+        payload: {
+          groupId: "/complexType:PersonType/group:sequence[0]",
+          groupName: "renamed",
+        },
+      };
+
+      const result = validateModifyGroup(command, schemaWithCompositor);
+      expectInvalid(result);
+      expect(result.error).toContain("Compositor groups only support");
+    });
   });
 
   describe("validateAddGroup (reference mode)", () => {
     let schemaWithGroup: schema;
 
     beforeEach(() => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:group name="PersonGroup">
-    <xs:sequence/>
-  </xs:group>
-  <xs:complexType name="PersonType">
-    <xs:sequence/>
-  </xs:complexType>
-</xs:schema>`;
-      schemaWithGroup = unmarshal(schema, schemaXml);
+      schemaWithGroup = schemaWith(`<xs:group name="PersonGroup">
+  <xs:sequence/>
+</xs:group>
+<xs:complexType name="PersonType">
+  <xs:sequence/>
+</xs:complexType>`);
     });
 
     test("should reject when ref is provided without parentId", () => {
@@ -534,7 +442,7 @@ describe("Group Validators", () => {
     test("should reject when ref is not a valid XML name", () => {
       const command: AddGroupCommand = {
         type: "addGroup",
-        payload: { ref: "123-invalid", parentId: "/complexType:PersonType/sequence" },
+        payload: { ref: "123-invalid", parentId: "/complexType:PersonType/group:sequence[0]" },
       };
       const result = validateAddGroup(command, schemaWithGroup);
       expectInvalid(result);
@@ -544,7 +452,7 @@ describe("Group Validators", () => {
     test("should reject when referenced group does not exist", () => {
       const command: AddGroupCommand = {
         type: "addGroup",
-        payload: { ref: "NoSuchGroup", parentId: "/complexType:PersonType/sequence" },
+        payload: { ref: "NoSuchGroup", parentId: "/complexType:PersonType/group:sequence[0]" },
       };
       const result = validateAddGroup(command, schemaWithGroup);
       expectInvalid(result);
@@ -554,7 +462,7 @@ describe("Group Validators", () => {
     test("should reject when parent node does not exist", () => {
       const command: AddGroupCommand = {
         type: "addGroup",
-        payload: { ref: "PersonGroup", parentId: "/complexType:NoSuchType/sequence" },
+        payload: { ref: "PersonGroup", parentId: "/complexType:NoSuchType/group:sequence[0]" },
       };
       const result = validateAddGroup(command, schemaWithGroup);
       expectInvalid(result);
@@ -564,7 +472,7 @@ describe("Group Validators", () => {
     test("should accept a valid group reference", () => {
       const command: AddGroupCommand = {
         type: "addGroup",
-        payload: { ref: "PersonGroup", parentId: "/complexType:PersonType/sequence" },
+        payload: { ref: "PersonGroup", parentId: "/complexType:PersonType/group:sequence[0]" },
       };
       const result = validateAddGroup(command, schemaWithGroup);
       expect(result.valid).toBe(true);
@@ -575,7 +483,7 @@ describe("Group Validators", () => {
         type: "addGroup",
         payload: {
           ref: "PersonGroup",
-          parentId: "/complexType:PersonType/sequence",
+          parentId: "/complexType:PersonType/group:sequence[0]",
           documentation: "This is a group ref annotation",
         },
       };
@@ -588,7 +496,7 @@ describe("Group Validators", () => {
         type: "addGroup",
         payload: {
           ref: "PersonGroup",
-          parentId: "/complexType:PersonType/sequence",
+          parentId: "/complexType:PersonType/group:sequence[0]",
           minOccurs: 0,
           maxOccurs: "unbounded",
         },
@@ -602,7 +510,7 @@ describe("Group Validators", () => {
         type: "addGroup",
         payload: {
           ref: "PersonGroup",
-          parentId: "/complexType:PersonType/sequence",
+          parentId: "/complexType:PersonType/group:sequence[0]",
           minOccurs: -1,
         },
       };
@@ -615,7 +523,7 @@ describe("Group Validators", () => {
         type: "addGroup",
         payload: {
           ref: "PersonGroup",
-          parentId: "/complexType:PersonType/sequence",
+          parentId: "/complexType:PersonType/group:sequence[0]",
           minOccurs: 5,
           maxOccurs: 2,
         },
@@ -639,12 +547,8 @@ describe("Group Validators", () => {
     });
 
     test("should accept adding group ref directly to a complexType with no existing particle", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:group name="PersonGroup"><xs:sequence/></xs:group>
-  <xs:complexType name="EmptyType"/>
-</xs:schema>`;
-      const emptySchema = unmarshal(schema, schemaXml);
+      const emptySchema = schemaWith(`<xs:group name="PersonGroup"><xs:sequence/></xs:group>
+<xs:complexType name="EmptyType"/>`);
       const command: AddGroupCommand = {
         type: "addGroup",
         payload: {
@@ -661,24 +565,13 @@ describe("Group Validators", () => {
     let schemaWithRef: schema;
 
     beforeEach(() => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:group name="PersonGroup">
-    <xs:sequence/>
-  </xs:group>
-  <xs:complexType name="PersonType">
-    <xs:sequence>
-      <xs:group ref="PersonGroup"/>
-    </xs:sequence>
-  </xs:complexType>
-</xs:schema>`;
-      schemaWithRef = unmarshal(schema, schemaXml);
+      schemaWithRef = readTestSchema(GROUP_REF_IN_SEQUENCE_XSD);
     });
 
     test("should accept removing a group reference when parent exists", () => {
       const command: RemoveGroupCommand = {
         type: "removeGroup",
-        payload: { groupId: "/complexType:PersonType/sequence[0]/groupRef:PersonGroup[0]" },
+        payload: { groupId: "/complexType:PersonType/group:sequence[0]/groupRef:PersonGroup[0]" },
       };
       const result = validateRemoveGroup(command, schemaWithRef);
       expect(result.valid).toBe(true);
@@ -687,7 +580,7 @@ describe("Group Validators", () => {
     test("should reject when parent of group reference does not exist", () => {
       const command: RemoveGroupCommand = {
         type: "removeGroup",
-        payload: { groupId: "/complexType:NoSuchType/sequence[0]/groupRef:PersonGroup[0]" },
+        payload: { groupId: "/complexType:NoSuchType/group:sequence[0]/groupRef:PersonGroup[0]" },
       };
       const result = validateRemoveGroup(command, schemaWithRef);
       expectInvalid(result);
@@ -695,14 +588,7 @@ describe("Group Validators", () => {
     });
 
     test("should accept removing a direct group ref from a complexType parent", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:group name="PersonGroup"><xs:sequence/></xs:group>
-  <xs:complexType name="PersonType">
-    <xs:group ref="PersonGroup"/>
-  </xs:complexType>
-</xs:schema>`;
-      const schemaWithDirectRef = unmarshal(schema, schemaXml);
+      const schemaWithDirectRef = readTestSchema(DIRECT_GROUP_REF_XSD);
       const command: RemoveGroupCommand = {
         type: "removeGroup",
         payload: { groupId: "/complexType:PersonType/groupRef:PersonGroup[0]" },
@@ -712,14 +598,7 @@ describe("Group Validators", () => {
     });
 
     test("should reject removing a direct group ref from a complexType when the ref name does not match", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:group name="PersonGroup"><xs:sequence/></xs:group>
-  <xs:complexType name="PersonType">
-    <xs:group ref="PersonGroup"/>
-  </xs:complexType>
-</xs:schema>`;
-      const schemaWithDirectRef = unmarshal(schema, schemaXml);
+      const schemaWithDirectRef = readTestSchema(DIRECT_GROUP_REF_XSD);
       const command: RemoveGroupCommand = {
         type: "removeGroup",
         payload: { groupId: "/complexType:PersonType/groupRef:OtherGroup[0]" },
@@ -730,14 +609,7 @@ describe("Group Validators", () => {
     });
 
     test("should reject removing a direct group ref from a complexType that has no group", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:group name="PersonGroup"><xs:sequence/></xs:group>
-  <xs:complexType name="PersonType">
-    <xs:sequence/>
-  </xs:complexType>
-</xs:schema>`;
-      const schemaNoDirectGroup = unmarshal(schema, schemaXml);
+      const schemaNoDirectGroup = schemaWith(PERSON_GROUP_AND_EMPTY_PERSON_TYPE);
       const command: RemoveGroupCommand = {
         type: "removeGroup",
         payload: { groupId: "/complexType:PersonType/groupRef:PersonGroup[0]" },
@@ -752,28 +624,14 @@ describe("Group Validators", () => {
     let schemaWithRef: schema;
 
     beforeEach(() => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:group name="PersonGroup">
-    <xs:sequence/>
-  </xs:group>
-  <xs:group name="AddressGroup">
-    <xs:sequence/>
-  </xs:group>
-  <xs:complexType name="PersonType">
-    <xs:sequence>
-      <xs:group ref="PersonGroup"/>
-    </xs:sequence>
-  </xs:complexType>
-</xs:schema>`;
-      schemaWithRef = unmarshal(schema, schemaXml);
+      schemaWithRef = readTestSchema("person-type-with-one-of-two-groups-in-sequence.xsd");
     });
 
     test("should accept modifying a group reference without changing the ref", () => {
       const command: ModifyGroupCommand = {
         type: "modifyGroup",
         payload: {
-          groupId: "/complexType:PersonType/sequence[0]/groupRef:PersonGroup[0]",
+          groupId: "/complexType:PersonType/group:sequence[0]/groupRef:PersonGroup[0]",
           minOccurs: 0,
         },
       };
@@ -785,7 +643,7 @@ describe("Group Validators", () => {
       const command: ModifyGroupCommand = {
         type: "modifyGroup",
         payload: {
-          groupId: "/complexType:PersonType/sequence[0]/groupRef:PersonGroup[0]",
+          groupId: "/complexType:PersonType/group:sequence[0]/groupRef:PersonGroup[0]",
           ref: "AddressGroup",
         },
       };
@@ -797,7 +655,7 @@ describe("Group Validators", () => {
       const command: ModifyGroupCommand = {
         type: "modifyGroup",
         payload: {
-          groupId: "/complexType:PersonType/sequence[0]/groupRef:PersonGroup[0]",
+          groupId: "/complexType:PersonType/group:sequence[0]/groupRef:PersonGroup[0]",
           ref: "NonExistentGroup",
         },
       };
@@ -807,14 +665,14 @@ describe("Group Validators", () => {
     });
 
     test("should reject when definition-mode fields are used with a group reference ID", () => {
-      const command = { type: "modifyGroup", payload: { groupId: "/complexType:PersonType/sequence[0]/groupRef:PersonGroup[0]", groupName: "RenamedGroup" } } as ModifyGroupCommand;
+      const command = { type: "modifyGroup", payload: { groupId: "/complexType:PersonType/group:sequence[0]/groupRef:PersonGroup[0]", groupName: "RenamedGroup" } } as ModifyGroupCommand;
       const result = validateModifyGroup(command, schemaWithRef);
       expectInvalid(result);
       expect(result.error).toContain("Cannot use groupName or contentModel when modifying a group reference");
     });
 
     test("should reject when contentModel is used with a group reference ID", () => {
-      const command = { type: "modifyGroup", payload: { groupId: "/complexType:PersonType/sequence[0]/groupRef:PersonGroup[0]", contentModel: "choice" } } as ModifyGroupCommand;
+      const command = { type: "modifyGroup", payload: { groupId: "/complexType:PersonType/group:sequence[0]/groupRef:PersonGroup[0]", contentModel: "choice" } } as ModifyGroupCommand;
       const result = validateModifyGroup(command, schemaWithRef);
       expectInvalid(result);
       expect(result.error).toContain("Cannot use groupName or contentModel when modifying a group reference");
@@ -824,7 +682,7 @@ describe("Group Validators", () => {
       const command: ModifyGroupCommand = {
         type: "modifyGroup",
         payload: {
-          groupId: "/complexType:PersonType/sequence[0]/groupRef:PersonGroup[0]",
+          groupId: "/complexType:PersonType/group:sequence[0]/groupRef:PersonGroup[0]",
           documentation: "Updated documentation on the ref",
         },
       };
@@ -836,7 +694,7 @@ describe("Group Validators", () => {
       const command: ModifyGroupCommand = {
         type: "modifyGroup",
         payload: {
-          groupId: "/complexType:PersonType/sequence[0]/groupRef:PersonGroup[0]",
+          groupId: "/complexType:PersonType/group:sequence[0]/groupRef:PersonGroup[0]",
           minOccurs: -1,
         },
       };
@@ -849,15 +707,7 @@ describe("Group Validators", () => {
     let schemaWithDirectRef: schema;
 
     beforeEach(() => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:group name="PersonGroup"><xs:sequence/></xs:group>
-  <xs:group name="AddressGroup"><xs:sequence/></xs:group>
-  <xs:complexType name="PersonType">
-    <xs:group ref="PersonGroup"/>
-  </xs:complexType>
-</xs:schema>`;
-      schemaWithDirectRef = unmarshal(schema, schemaXml);
+      schemaWithDirectRef = readTestSchema("person-type-with-one-of-two-groups.xsd");
     });
 
     test("should accept modifying a group ref directly on a complexType", () => {
@@ -873,14 +723,7 @@ describe("Group Validators", () => {
     });
 
     test("should reject when complexType has no group ref at all", () => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:group name="PersonGroup"><xs:sequence/></xs:group>
-  <xs:complexType name="PersonType">
-    <xs:sequence/>
-  </xs:complexType>
-</xs:schema>`;
-      const noGroupSchema = unmarshal(schema, schemaXml);
+      const noGroupSchema = schemaWith(PERSON_GROUP_AND_EMPTY_PERSON_TYPE);
       const command: ModifyGroupCommand = {
         type: "modifyGroup",
         payload: {
@@ -911,13 +754,9 @@ describe("Group Validators", () => {
     let schemaWithGroup: schema;
 
     beforeEach(() => {
-      const schemaXml = `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:group name="PersonGroup">
-    <xs:sequence/>
-  </xs:group>
-</xs:schema>`;
-      schemaWithGroup = unmarshal(schema, schemaXml);
+      schemaWithGroup = schemaWith(`<xs:group name="PersonGroup">
+  <xs:sequence/>
+</xs:group>`);
     });
 
     test("should reject when ref is used with a definition ID", () => {
@@ -958,49 +797,36 @@ describe("Group Validators", () => {
   });
 
   describe("group references in compositors", () => {
-    /** A complexType whose sequence references `CommonGroup` and `OtherGroup`, in this order. */
-    const TWO_REFS = `<xs:complexType name="T"><xs:sequence><xs:group ref="CommonGroup"/><xs:group ref="OtherGroup"/></xs:sequence></xs:complexType>`;
-
-    test("should accept removing a reference identified by name only", () => {
+    test("should accept removing a reference identified by name and position", () => {
       const command: RemoveGroupCommand = {
         type: "removeGroup",
-        payload: { groupId: "/complexType:T/sequence/groupRef:OtherGroup" },
+        payload: { groupId: "/complexType:T/group:sequence[0]/groupRef:OtherGroup[1]" },
       };
 
       const result = validateRemoveGroup(command, schemaWithGroups(TWO_REFS));
       expect(result.valid).toBe(true);
     });
 
-    test("should accept removing a reference identified by position only", () => {
-      const command: RemoveGroupCommand = {
-        type: "removeGroup",
-        payload: { groupId: "/complexType:T/sequence/groupRef[1]" },
-      };
+    // The diagram builder always generates groupRef IDs with name and position
+    test.each([
+      "/complexType:T/group:sequence[0]/groupRef:OtherGroup",
+      "/complexType:T/group:sequence[0]/groupRef[1]",
+      "/complexType:T/group:sequence[0]/groupRef",
+    ])("should reject removing a reference whose ID %s lacks the name or the position", (groupId) => {
+      const result = validateRemoveGroup({ type: "removeGroup", payload: { groupId } }, schemaWithGroups(TWO_REFS));
 
-      const result = validateRemoveGroup(command, schemaWithGroups(TWO_REFS));
-      expect(result.valid).toBe(true);
+      expect(result).toEqual({ valid: false, error: `Invalid groupRef ID: ${groupId}` });
     });
 
-    test("should reject removing a reference at a position after the last one", () => {
+    test("should reject removing a reference whose name is at another position", () => {
       const command: RemoveGroupCommand = {
         type: "removeGroup",
-        payload: { groupId: "/complexType:T/sequence/groupRef[2]" },
+        payload: { groupId: "/complexType:T/group:sequence[0]/groupRef:OtherGroup[0]" },
       };
 
       const result = validateRemoveGroup(command, schemaWithGroups(TWO_REFS));
       expectInvalid(result);
-      expect(result.error).toBe("GroupRef not found: /complexType:T/sequence/groupRef[2]");
-    });
-
-    test("should reject removing a reference whose ID has neither name nor position", () => {
-      const command: RemoveGroupCommand = {
-        type: "removeGroup",
-        payload: { groupId: "/complexType:T/sequence/groupRef" },
-      };
-
-      const result = validateRemoveGroup(command, schemaWithGroups(TWO_REFS));
-      expectInvalid(result);
-      expect(result.error).toBe("GroupRef not found: /complexType:T/sequence/groupRef");
+      expect(result.error).toBe("GroupRef not found: /complexType:T/group:sequence[0]/groupRef:OtherGroup[0]");
     });
 
     test("should reject removing a reference ID without a parent", () => {
@@ -1017,12 +843,12 @@ describe("Group Validators", () => {
     test("should reject modifying a reference that is not in the sequence", () => {
       const command: ModifyGroupCommand = {
         type: "modifyGroup",
-        payload: { groupId: "/complexType:T/sequence/groupRef:Missing[0]", ref: "OtherGroup" },
+        payload: { groupId: "/complexType:T/group:sequence[0]/groupRef:Missing[0]", ref: "OtherGroup" },
       };
 
       const result = validateModifyGroup(command, schemaWithGroups(TWO_REFS));
       expectInvalid(result);
-      expect(result.error).toBe("GroupRef not found: /complexType:T/sequence/groupRef:Missing[0]");
+      expect(result.error).toBe("GroupRef not found: /complexType:T/group:sequence[0]/groupRef:Missing[0]");
     });
 
     test("should reject modifying a reference ID without a parent", () => {
@@ -1039,18 +865,18 @@ describe("Group Validators", () => {
     test("should reject modifying a reference whose parent does not exist", () => {
       const command: ModifyGroupCommand = {
         type: "modifyGroup",
-        payload: { groupId: "/complexType:Missing/sequence/groupRef:CommonGroup[0]", ref: "OtherGroup" },
+        payload: { groupId: "/complexType:Missing/group:sequence[0]/groupRef:CommonGroup[0]", ref: "OtherGroup" },
       };
 
       const result = validateModifyGroup(command, schemaWithGroups(TWO_REFS));
       expectInvalid(result);
-      expect(result.error).toBe("Parent node not found: /complexType:Missing/sequence");
+      expect(result.error).toBe("Parent node not found: /complexType:Missing/group:sequence[0]");
     });
 
     test("should reject a new ref that is not a valid XML name", () => {
       const command: ModifyGroupCommand = {
         type: "modifyGroup",
-        payload: { groupId: "/complexType:T/sequence/groupRef:CommonGroup[0]", ref: "123-invalid" },
+        payload: { groupId: "/complexType:T/group:sequence[0]/groupRef:CommonGroup[0]", ref: "123-invalid" },
       };
 
       const result = validateModifyGroup(command, schemaWithGroups(TWO_REFS));
@@ -1074,7 +900,7 @@ describe("Group Validators", () => {
     test("should reject a group reference in an all, which XML Schema 1.0 does not allow", () => {
       const command: AddGroupCommand = {
         type: "addGroup",
-        payload: { ref: "CommonGroup", parentId: "/complexType:T/all" },
+        payload: { ref: "CommonGroup", parentId: "/complexType:T/group:all[0]" },
       };
 
       const result = validateAddGroup(command, schemaWithGroups(`<xs:complexType name="T"><xs:all/></xs:complexType>`));
@@ -1124,4 +950,3 @@ describe("Group Validators", () => {
   });
 
 });
-

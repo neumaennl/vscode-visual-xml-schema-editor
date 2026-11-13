@@ -2,10 +2,10 @@
   "compilerOptions": {
     "module": "nodenext",
     "moduleResolution": "nodenext",
-    "target": "ES2020",
+    "target": "ES2024",
     "outDir": "out",
     "lib": [
-      "ES2020"
+      "ES2024"
     ],
     "sourceMap": true,
     "types": [
@@ -33,8 +33,8 @@
     "webview",
     "out",
     "**/*.test.ts",
+    "**/*.test-d.ts",
     "**/__tests__/**",
-    "**/__mocks__/**",
-    "**/*TestHelpers.ts"
+    "**/__mocks__/**"
   ]
 }

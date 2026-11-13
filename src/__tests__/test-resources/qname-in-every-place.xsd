@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- A QName in every place where XML Schema allows one, each with a value that names the place.
+     The appinfo and the foreign attributes x:ref and x:type look like QNames but are not part of the schema. -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tns="urn:test" xmlns:x="urn:extension" targetNamespace="urn:test">
+  <xs:element name="root" type="tns:ElementType" substitutionGroup="tns:head" x:ref="tns:NotAReference" x:type="tns:NotAType">
+    <xs:annotation>
+      <xs:appinfo><info ref="tns:NotAReference" type="tns:NotAType"/></xs:appinfo>
+    </xs:annotation>
+    <xs:keyref name="rootKeyref" refer="tns:rootKey">
+      <xs:selector xpath=".//tns:item | child::tns:other/*"/>
+      <xs:field xpath="@tns:code"/>
+    </xs:keyref>
+  </xs:element>
+  <xs:element name="anonymous">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="tns:elementRef"/>
+        <xs:group ref="tns:groupRef"/>
+        <xs:choice>
+          <xs:element name="nested" type="tns:NestedElementType"/>
+        </xs:choice>
+      </xs:sequence>
+      <xs:attribute ref="tns:attributeRef"/>
+      <xs:attributeGroup ref="tns:attributeGroupRef"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attribute name="topAttribute" type="tns:AttributeType"/>
+  <xs:complexType name="Derived">
+    <xs:complexContent>
+      <xs:extension base="tns:ExtensionBase">
+        <xs:all>
+          <xs:element name="inAll" type="tns:AllElementType"/>
+        </xs:all>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="WithSimpleContent">
+    <xs:simpleContent>
+      <xs:restriction base="tns:SimpleContentBase"/>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:simpleType name="List">
+    <xs:list itemType="tns:ItemType"/>
+  </xs:simpleType>
+  <xs:simpleType name="Union">
+    <xs:union memberTypes="tns:MemberA  tns:MemberB"/>
+  </xs:simpleType>
+  <xs:simpleType name="Inline">
+    <xs:restriction>
+      <xs:simpleType>
+        <xs:restriction base="tns:InlineBase"/>
+      </xs:simpleType>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:group name="Group">
+    <xs:sequence>
+      <xs:element name="inGroup">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:group ref="tns:groupRefInGroup"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:group>
+  <xs:attributeGroup name="AttributeGroup">
+    <xs:attribute name="inAttributeGroup" type="tns:AttributeGroupAttributeType"/>
+    <xs:attributeGroup ref="tns:attributeGroupRefInAttributeGroup"/>
+  </xs:attributeGroup>
+</xs:schema>

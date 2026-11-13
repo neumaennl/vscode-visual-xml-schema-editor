@@ -2,11 +2,11 @@
   "compilerOptions": {
     "module": "nodenext",
     "moduleResolution": "nodenext",
-    "target": "ES2020",
+    "target": "ES2024",
     "rootDir": "test/extension-host",
     "outDir": ".vscode-test/out",
     "lib": [
-      "ES2020",
+      "ES2024",
       "DOM"
     ],
     "sourceMap": true,

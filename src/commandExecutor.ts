@@ -35,6 +35,7 @@ import {
   AddIncludeCommand,
   RemoveIncludeCommand,
   ModifyIncludeCommand,
+  ModifySchemaNamespacesCommand,
 } from "../shared/commands/index.js";
 
 // Import execution functions from specialized modules
@@ -90,6 +91,7 @@ export interface ExecutorFunctions {
   executeAddInclude: ExecutorFunction<AddIncludeCommand>;
   executeRemoveInclude: ExecutorFunction<RemoveIncludeCommand>;
   executeModifyInclude: ExecutorFunction<ModifyIncludeCommand>;
+  executeModifySchemaNamespaces: ExecutorFunction<ModifySchemaNamespacesCommand>;
 }
 
 /**
@@ -137,6 +139,7 @@ export class CommandExecutor {
       executeAddInclude: schemaExecutors.executeAddInclude,
       executeRemoveInclude: schemaExecutors.executeRemoveInclude,
       executeModifyInclude: schemaExecutors.executeModifyInclude,
+      executeModifySchemaNamespaces: schemaExecutors.executeModifySchemaNamespaces,
     };
   }
 
@@ -241,10 +244,13 @@ export class CommandExecutor {
       case "modifyInclude":
         this.executors.executeModifyInclude(command, schemaObj);
         break;
+      case "modifySchemaNamespaces":
+        this.executors.executeModifySchemaNamespaces(command, schemaObj);
+        break;
       default:
         throw new Error(
           `Unknown command type: ${
-            (command as SchemaCommand).type ?? "undefined"
+            (command as SchemaCommand).type
           }`
         );
     }

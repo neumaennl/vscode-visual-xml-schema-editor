@@ -7,7 +7,7 @@ Contributions are welcome: bug reports, ideas and pull requests. This file expla
 | Branch | Content |
 |---|---|
 | `main` | The current version: a viewer that shows XML Schema files as a diagram. |
-| `copilot/add-editor-capabilities` | The editor in development: it adds a palette, drag and drop and an editable property panel. **Base your work and pull requests on this branch.** |
+| `copilot/add-editor-capabilities` | The editor in development: it adds a palette, drag and drop and an editable properties panel. **Base your work and pull requests on this branch.** |
 
 The documentation in [`docs/`](docs/index.md) describes the editor branch.
 

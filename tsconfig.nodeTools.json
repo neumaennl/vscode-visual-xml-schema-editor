@@ -2,9 +2,9 @@
   "compilerOptions": {
     "module": "nodenext",
     "moduleResolution": "nodenext",
-    "target": "ES2022",
+    "target": "ES2024",
     "lib": [
-      "ES2023"
+      "ES2024"
     ],
     "types": [
       "node",

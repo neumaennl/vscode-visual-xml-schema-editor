@@ -34,7 +34,7 @@ describe("ShapeRenderers", () => {
   });
 
   describe("renderElementShape", () => {
-    it("should render a single rectangle for single occurrence", () => {
+    test("should render a single rectangle for single occurrence", () => {
       const rect: Rectangle = { x: 10, y: 10, width: 100, height: 50 };
       const item = new DiagramItem("id1", "Test", DiagramItemType.element);
       item.maxOccurrence = 1;
@@ -49,7 +49,7 @@ describe("ShapeRenderers", () => {
       expect(rectangles[0].getAttribute("height")).toBe("50");
     });
 
-    it("should render shadow for multiple occurrences", () => {
+    test("should render shadow for multiple occurrences", () => {
       const rect: Rectangle = { x: 10, y: 10, width: 100, height: 50 };
       const item = new DiagramItem("id2", "Test", DiagramItemType.element);
       item.maxOccurrence = -1; // Unbounded
@@ -68,7 +68,7 @@ describe("ShapeRenderers", () => {
       expect(rectangles[1].getAttribute("y")).toBe("10");
     });
 
-    it("should render shadow for maxOccurrence > 1", () => {
+    test("should render shadow for maxOccurrence > 1", () => {
       const rect: Rectangle = { x: 0, y: 0, width: 50, height: 30 };
       const item = new DiagramItem("id3", "Test", DiagramItemType.element);
       item.maxOccurrence = 5;
@@ -81,7 +81,7 @@ describe("ShapeRenderers", () => {
   });
 
   describe("renderGroupShape", () => {
-    it("should render an octagon for single occurrence", () => {
+    test("should render an octagon for single occurrence", () => {
       const rect: Rectangle = { x: 10, y: 10, width: 100, height: 50 };
       const item = new DiagramItem("id4", "Test", DiagramItemType.group);
       item.maxOccurrence = 1;
@@ -98,7 +98,7 @@ describe("ShapeRenderers", () => {
       expect(points?.length).toBe(8);
     });
 
-    it("should render shadow for multiple occurrences", () => {
+    test("should render shadow for multiple occurrences", () => {
       const rect: Rectangle = { x: 10, y: 10, width: 100, height: 50 };
       const item = new DiagramItem("id5", "Test", DiagramItemType.group);
       item.maxOccurrence = -1;
@@ -113,7 +113,7 @@ describe("ShapeRenderers", () => {
   });
 
   describe("renderTypeShape", () => {
-    it("should render a beveled rectangle for single occurrence", () => {
+    test("should render a beveled rectangle for single occurrence", () => {
       const rect: Rectangle = { x: 10, y: 10, width: 100, height: 50 };
       const item = new DiagramItem("id9", "Test", DiagramItemType.type);
       item.maxOccurrence = 1;
@@ -129,7 +129,7 @@ describe("ShapeRenderers", () => {
       expect(points?.length).toBe(6);
     });
 
-    it("should render shadow for multiple occurrences", () => {
+    test("should render shadow for multiple occurrences", () => {
       const rect: Rectangle = { x: 10, y: 10, width: 100, height: 50 };
       const item = new DiagramItem("id10", "Test", DiagramItemType.type);
       item.maxOccurrence = 2;
@@ -141,7 +141,7 @@ describe("ShapeRenderers", () => {
       expect(polygons.length).toBe(2); // Shadow + main
     });
 
-    it("should render filled bevel area for simple content", () => {
+    test("should render filled bevel area for simple content", () => {
       const rect: Rectangle = { x: 10, y: 10, width: 100, height: 50 };
       const item = new DiagramItem("id11", "Test", DiagramItemType.type);
       item.maxOccurrence = 1;
@@ -157,7 +157,7 @@ describe("ShapeRenderers", () => {
       expect(bevelFill.getAttribute("style")).toContain("fill:#ff0000");
     });
 
-    it("should handle stroke color with semicolon", () => {
+    test("should handle stroke color with semicolon", () => {
       const rect: Rectangle = { x: 10, y: 10, width: 100, height: 50 };
       const item = new DiagramItem("id12", "Test", DiagramItemType.type);
       item.maxOccurrence = 1;
@@ -178,7 +178,7 @@ describe("ShapeRenderers", () => {
   });
 
   describe("renderGroupTypeIndicator", () => {
-    it("should render sequence indicator with dots and line", () => {
+    test("should render sequence indicator with dots and line", () => {
       const rect: Rectangle = { x: 10, y: 10, width: 100, height: 50 };
       const item = new DiagramItem("id13", "Test", DiagramItemType.group);
       item.diagram = mockDiagram;
@@ -192,7 +192,7 @@ describe("ShapeRenderers", () => {
       expect(lines.length).toBe(1); // One horizontal line
     });
 
-    it("should render choice indicator with dots and lines", () => {
+    test("should render choice indicator with dots and lines", () => {
       const rect: Rectangle = { x: 10, y: 10, width: 100, height: 50 };
       const item = new DiagramItem("id14", "Test", DiagramItemType.group);
       item.diagram = mockDiagram;
@@ -206,7 +206,7 @@ describe("ShapeRenderers", () => {
       expect(lines.length).toBe(6); // Multiple lines for choice pattern
     });
 
-    it("should render all indicator with dots and lines", () => {
+    test("should render all indicator with dots and lines", () => {
       const rect: Rectangle = { x: 10, y: 10, width: 100, height: 50 };
       const item = new DiagramItem("id15", "Test", DiagramItemType.group);
       item.diagram = mockDiagram;
@@ -220,7 +220,7 @@ describe("ShapeRenderers", () => {
       expect(lines.length).toBe(8); // Multiple lines for all pattern
     });
 
-    it("should render centered on rectangle", () => {
+    test("should render centered on rectangle", () => {
       const rect: Rectangle = { x: 50, y: 50, width: 100, height: 60 };
       const item = new DiagramItem("id17", "Test", DiagramItemType.group);
       item.diagram = mockDiagram;

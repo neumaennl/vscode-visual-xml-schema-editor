@@ -1,11 +1,11 @@
 ---
 type: Architecture
 title: Architecture
-description: How the extension host, the webview and the shared code work together to provide a visual editor for XML Schema (XSD) files, and the design decisions behind the command-based design.
+description: How the extension host, the webview and the shared code work together to provide a visual editor for XML Schema (XSD) files, what xmlbind-ts is responsible for and what the editor is, and the design decisions behind the command-based design.
 tags: [architecture, extension-host, webview, shared, design-decisions]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-28T13:57:27Z }
-verified: { by: human:neumaennl, at: 2026-10-28T14:01:23Z }
+generated: { by: human:neumaennl, at: 2026-11-11T18:50:29Z }
+verified: { by: human:neumaennl, at: 2026-11-11T19:10:51Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -31,12 +31,15 @@ sources:
   - id: drop-factory
     resource: ../webview-src/drop/DropCommandFactory.ts
     title: DropCommandFactory
-  - id: property-panel-commands
-    resource: ../webview-src/propertyPanel/propertyPanelCommands.ts
-    title: Property panel command helpers
+  - id: properties-panel-commands
+    resource: ../webview-src/propertiesPanel/propertiesPanelCommands.ts
+    title: Properties panel command helpers
   - id: adr-001
     resource: architecture/001-editor-transition.md
     title: "ADR 001: Editor Transition Architecture (design rationale and deviations)"
+  - id: adr-003
+    resource: architecture/003-validators-check-executors-assume.md
+    title: "ADR 003: Validators check, executors assume"
 ---
 
 # Purpose
@@ -45,7 +48,7 @@ The extension adds a visual editor for XML Schema (`*.xsd`) files to VS Code. It
 
 The visual editor is offered as an alternative editor (priority `option`) next to the normal text editor. It opens through "Open With…", the explorer context menu or the command `visualXmlSchemaEditor.openEditor`.[^manifest]
 
-This documentation describes the editor as it is developed on the branch `copilot/add-editor-capabilities`. The version on `main` is still a viewer: it shows the diagram and the properties of the selected node, but has no palette and no editable property panel.
+This documentation describes the editor as it is developed on the branch `copilot/add-editor-capabilities`. The version on `main` is still a viewer: it shows the diagram and the properties of the selected node, but has no palette and no editable properties panel.
 
 # Components
 
@@ -54,7 +57,7 @@ The code is split into three parts that run in two separate environments:
 | Part | Folder | Runs in | Responsibility |
 |---|---|---|---|
 | Extension host | `src/` | VS Code extension host (Node.js) | Registers the custom editor, parses and serializes XSD, validates and executes edit commands, writes changes to the document. |
-| Webview | `webview-src/` | Sandboxed webview (browser) | Renders the diagram, palette and property panel; turns user interactions into commands. |
+| Webview | `webview-src/` | Sandboxed webview (browser) | Renders the diagram, palette and properties panel; turns user interactions into commands. |
 | Shared | `shared/` | Both (compiled into each side) | Schema model classes generated from the XSD meta-schema, command and message types, the ID strategy and small schema utilities. |
 
 ```mermaid
@@ -71,7 +74,7 @@ flowchart LR
     subgraph Webview
       APP[SchemaEditorApp] --> DIA[Diagram renderer]
       APP --> PAL[Palette]
-      APP --> PP[Property panel]
+      APP --> PP[Properties panel]
       APP --> DROP[DropCommandFactory]
     end
   end
@@ -85,7 +88,7 @@ The `shared/` code is imported by both sides and compiled into each separately. 
 
 1. **Open.** VS Code calls `SchemaEditorProvider.resolveCustomTextEditor`. The provider sets up the webview HTML, parses the document text into a schema object and sends it to the webview (`updateSchema`), together with the diagram settings (`updateDiagramOptions`).[^webview-provider]
 2. **Render.** The webview builds a diagram model from the schema object, lays it out and renders it as SVG. See [Diagram rendering](diagram-rendering.md).
-3. **Edit.** A user action (drop from the palette, change in the property panel) becomes a command. The webview sends it as an `executeCommand` message. See [Messaging](messaging.md).
+3. **Edit.** A user action (drop from the palette, change in the properties panel) becomes a command. The webview sends it as an `executeCommand` message. See [Messaging](messaging.md).
 4. **Execute.** The provider passes the command and the current document text to the `CommandProcessor`, which orchestrates the steps: `SchemaModelManager` parses the XML into a schema object, `CommandValidator` validates the command, `CommandExecutor` executes it on a copy of the schema, and `SchemaModelManager` serializes the result and parses it again as a check.[^command-processor] See [Persistence](persistence.md).
 5. **Write back.** On success, the provider replaces the whole document text with the new XML in one `WorkspaceEdit` and reports `commandResult`.
 6. **Refresh.** The document change fires `onDidChangeTextDocument`, and the provider parses the document again and sends a fresh `updateSchema`. The same path handles changes made in the text editor or by other tools.
@@ -95,10 +98,30 @@ The `shared/` code is imported by both sides and compiled into each separately. 
 - **The XSD document is the single source of truth.** The webview never holds authoritative state. It re-renders from each `updateSchema`. The state it saves with `setState` is only a cache so the view survives being hidden and restored.
 - **All changes are commands.** The webview never edits the schema directly. It sends typed commands, and the extension host validates and executes them.
 - **Checks complement each other.** The webview checks what it can decide from the diagram, to give immediate feedback: drop targets, and empty or unchanged input. The extension host is the gatekeeper: it checks every command completely, including the rules that need the whole schema (names, types, references, duplicates), and decides. Rules are not copied to the webview for their own sake; where both sides check the same thing, such as where an element or attribute may be placed, it is because the webview needs it for feedback and the extension host must not rely on the webview (see [Messaging](messaging.md#validation-in-the-webview)).
+- **Validators check, executors assume.** The validator of a command checks everything its executor relies on; the executor does not check it again and states only what it assumes, so that a disagreement fails with an error instead of doing nothing ([ADR 003](architecture/003-validators-check-executors-assume.md)).[^adr-003]
 - **Transactional execution.** Commands run on a copy of the schema, so a failed command leaves the document unchanged. The result is written as a single edit, which VS Code's undo handles as one step.
 - **One set of shared types.** Commands, messages and the schema model are defined once in `shared/` and used by both sides, so the compiler checks both ends of the protocol.
+- **Generic XML handling belongs to xmlbind-ts.** What any application that binds XML would need is done by the library; what needs XSD semantics or VS Code is done by the editor (see [Responsibilities of xmlbind-ts and the editor](#responsibilities-of-xmlbind-ts-and-the-editor)).
 - **Path-based IDs.** Schema nodes are identified by XPath-like IDs such as `/element:person/anonymousComplexType[0]`, which both sides can generate and resolve. See [Schema model](schema-model.md).
 - **Native VS Code look.** The webview uses VS Code theme CSS variables and Codicons.
+
+# Responsibilities of xmlbind-ts and the editor
+
+The rule of thumb: if an application that binds a completely different XML format would need it as well, it belongs in `xmlbind-ts`. If it needs XSD semantics or VS Code, it belongs in the editor. The [scope of xmlbind-ts](https://github.com/neumaennl/xmlbind-ts/blob/main/docs/architecture.md#scope) describes the library's part in detail.
+
+| Concern | Owner | Why |
+|---|---|---|
+| Parsing and writing XML, and the choice of the libraries that do it | xmlbind-ts | Generic. |
+| Decorators, the `xsd2ts` generator, and the conversion of values to the type of their field | xmlbind-ts | Generic binding mechanics. |
+| Keeping the source on a round trip: order, comments, processing instructions, prefixes, attribute order, quotes, empty-element style and indentation | xmlbind-ts | Every application that writes a document back needs it. |
+| Keeping content that no field maps, such as XSD 1.1 constructs or foreign elements | xmlbind-ts | The same. |
+| Reporting what a round trip drops or changes | xmlbind-ts | Only the library sees it. It reports facts, not decisions. |
+| What happens to a schema that does not survive a round trip unchanged: warn, read-only, or refuse to save | Editor | A product decision. |
+| Which schema for schemas the classes are generated from (XSD 1.0), and keeping them up to date | Editor | XSD-specific. |
+| What a valid edit is: commands and their validation, such as "a group that is still referenced cannot be removed" | Editor | XSD semantics. |
+| Resolving QNames, included and imported schemas, and the symbol table | Editor | XSD semantics. |
+| Diagram, properties panel, `WorkspaceEdit`, undo and redo | Editor | VS Code and UI. |
+| Tests that a command changes only what it should | Editor | Only the editor knows what a command should change. |
 
 # Runtime dependencies
 
@@ -128,16 +151,19 @@ webview-src/              Webview
   diagram/                Schema → diagram model → layout → SVG
   palette/                Palette of schema constructs
   drop/                   Turns drops into commands
-  propertyPanel/          Property panel tabs and editors
+  propertiesPanel/        Properties panel tabs and editors
   styles.css              Layout and theming
 shared/                   Used by both sides
   generated/              Classes generated from schema/XMLSchema.xsd (do not edit)
   commands/               Command type definitions
   messages.ts             Message type definitions
   idStrategy.ts           Generating and parsing node IDs
-  schemaUtils.ts          Small helpers (toArray, schema root detection, prefixes)
+  schemaUtils.ts          Small helpers (schema root detection, prefixes)
   types.ts                Re-exports of all of the above
 schema/XMLSchema.xsd      The XSD meta-schema the model classes are generated from
+test/                     Tests outside the three projects
+  integration/            Tests that use the extension host and the webview together
+  extension-host/         Smoke tests that run inside VS Code
 exampleFiles/             Sample XSD files for manual testing
 ```
 
@@ -153,7 +179,7 @@ exampleFiles/             Sample XSD files for manual testing
 - Integration with VS Code: every command ends in one `WorkspaceEdit`, so undo, redo, the dirty marker and saving work as for any text edit (see [Persistence](persistence.md#undo-redo-and-save)).
 - Single source of truth: the document; the webview only holds derived state.
 
-**Where commands are created.** Each surface builds the commands for its own input: `DropCommandFactory` for drops from the palette,[^drop-factory] the property panel for edits.[^property-panel-commands] This follows the UX concept: adding starts in the palette, editing starts in the property panel, and the toolbar has no editing actions (see [UX concept](ux-concept.md#core-rules)).
+**Where commands are created.** Each surface builds the commands for its own input: `DropCommandFactory` for drops from the palette,[^drop-factory] the properties panel for edits.[^properties-panel-commands] This follows the UX concept: adding starts in the palette, editing starts in the properties panel, and the toolbar has no editing actions (see [UX concept](ux-concept.md#core-rules)).
 
 **Diagram updates.** Every `updateSchema` rebuilds the whole diagram; only the expand state is carried over by node ID (see [Diagram rendering](diagram-rendering.md#pipeline) and [Known issues](known-issues.md#diagram-is-rebuilt-in-full-on-every-change)). Incremental updates are planned ([#19](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/19)); they need unambiguous node IDs first ([#348](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/348)).
 
@@ -184,6 +210,8 @@ exampleFiles/             Sample XSD files for manual testing
 
 [^drop-factory]: DropCommandFactory
 
-[^property-panel-commands]: Property panel command helpers
+[^properties-panel-commands]: Properties panel command helpers
 
 [^adr-001]: ADR 001: Editor Transition Architecture (design rationale and deviations)
+
+[^adr-003]: [ADR 003: Validators check, executors assume](architecture/003-validators-check-executors-assume.md)

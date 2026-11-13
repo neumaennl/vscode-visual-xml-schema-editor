@@ -1,4 +1,4 @@
-import { release, releasesPage, stubFetch } from "../__tests__/testHelpers.ts";
+import { release, releasesPage, stubFetch } from "../__tests__/releaseTestHelpers.ts";
 import {
   deriveVersions,
   electronOf,
@@ -18,43 +18,43 @@ afterEach(() => {
 
 describe("vscode-releases", () => {
   describe("parseVersion", () => {
-    it("should parse a version into major, minor and patch", () => {
+    test("should parse a version into major, minor and patch", () => {
       expect(parseVersion("1.125.0")).toEqual([1, 125, 0]);
     });
 
-    it("should accept the prefixes ^, ~ and v and surrounding whitespace", () => {
+    test("should accept the prefixes ^, ~ and v and surrounding whitespace", () => {
       expect(parseVersion("^1.125.0")).toEqual([1, 125, 0]);
       expect(parseVersion("~24.13.0")).toEqual([24, 13, 0]);
       expect(parseVersion(" v24.15.0\n")).toEqual([24, 15, 0]);
     });
 
-    it("should throw for text that is not a version", () => {
+    test("should throw for text that is not a version", () => {
       expect(() => parseVersion("24")).toThrow('Not a version: "24"');
       expect(() => parseVersion("1.125.0-beta")).toThrow();
     });
   });
 
   describe("highestAtOrBelow", () => {
-    it("should return the highest version of the major version up to the minor version", () => {
+    test("should return the highest version of the major version up to the minor version", () => {
       expect(highestAtOrBelow(["24.12.2", "24.13.1", "24.13.6", "24.19.1"], 24, 15)).toBe("24.13.6");
     });
 
-    it("should ignore pre-releases and other major versions", () => {
+    test("should ignore pre-releases and other major versions", () => {
       expect(highestAtOrBelow(["22.20.5", "24.13.0-beta", "24.12.2", "26.1.0"], 24, 15)).toBe("24.12.2");
     });
 
-    it("should return undefined if no version matches", () => {
+    test("should return undefined if no version matches", () => {
       expect(highestAtOrBelow(["24.19.1"], 24, 15)).toBeUndefined();
     });
   });
 
   describe("parseElectronTarget", () => {
-    it("should read a quoted or unquoted target", () => {
+    test("should read a quoted or unquoted target", () => {
       expect(parseElectronTarget('disturl="https://electronjs.org/headers"\ntarget="42.3.0"\n')).toBe("42.3.0");
       expect(parseElectronTarget("target=39.8.8")).toBe("39.8.8");
     });
 
-    it("should return undefined if the file has no target", () => {
+    test("should return undefined if the file has no target", () => {
       expect(parseElectronTarget('runtime="electron"\n')).toBeUndefined();
     });
   });
@@ -68,7 +68,7 @@ describe("vscode-releases", () => {
       nodeSchedule: { v24: { end: "2028-04-30" } },
     };
 
-    it("should derive the Node and @types versions of a VS Code release", () => {
+    test("should derive the Node and @types versions of a VS Code release", () => {
       expect(deriveVersions("1.125.0", data)).toEqual({
         vscode: "1.125.0",
         electron: "42.3.0",
@@ -79,14 +79,14 @@ describe("vscode-releases", () => {
       });
     });
 
-    it("should leave out what has no match", () => {
+    test("should leave out what has no match", () => {
       const derived = deriveVersions("1.110.0", { ...data, nodeSchedule: {} });
 
       expect(derived.typesVscode).toBeUndefined();
       expect(derived.nodeEnd).toBeUndefined();
     });
 
-    it("should throw if the Node version of the Electron release is unknown", () => {
+    test("should throw if the Node version of the Electron release is unknown", () => {
       expect(() => deriveVersions("1.125.0", { ...data, electron: "99.0.0" })).toThrow(
         "Unknown Node version for Electron 99.0.0",
       );
@@ -94,7 +94,7 @@ describe("vscode-releases", () => {
   });
 
   describe("expectedValues", () => {
-    it("should turn derived versions into the values of package.json and .nvmrc", () => {
+    test("should turn derived versions into the values of package.json and .nvmrc", () => {
       const derived = { vscode: "1.125.0", electron: "42.3.0", node: "24.15.0", typesVscode: "1.125.0", typesNode: "24.13.6" };
 
       expect(expectedValues(derived)).toEqual({
@@ -105,7 +105,7 @@ describe("vscode-releases", () => {
       });
     });
 
-    it("should throw if an @types version is missing", () => {
+    test("should throw if an @types version is missing", () => {
       const derived: DerivedVersions = { vscode: "1.110.0", electron: "39.6.0", node: "22.22.0", typesNode: "22.20.5" };
 
       expect(() => expectedValues(derived)).toThrow("No matching @types/vscode or @types/node for VS Code 1.110.0");
@@ -113,7 +113,7 @@ describe("vscode-releases", () => {
   });
 
   describe("loadSharedData", () => {
-    it("should load the Electron releases, the @types versions and the Node schedule", async () => {
+    test("should load the Electron releases, the @types versions and the Node schedule", async () => {
       const fetchMock = stubFetch({
         "https://releases.electronjs.org/releases.json": [{ version: "42.3.0", node: "24.15.0" }],
         "https://registry.npmjs.org/@types%2fvscode": { versions: { "1.125.0": {} } },
@@ -136,19 +136,19 @@ describe("vscode-releases", () => {
   });
 
   describe("electronOf", () => {
-    it("should read the Electron version from the .npmrc of the release tag", async () => {
+    test("should read the Electron version from the .npmrc of the release tag", async () => {
       stubFetch({ "https://raw.githubusercontent.com/microsoft/vscode/1.125.0/.npmrc": 'target="42.3.0"\n' });
 
       await expect(electronOf("1.125.0")).resolves.toBe("42.3.0");
     });
 
-    it("should throw if the .npmrc has no target", async () => {
+    test("should throw if the .npmrc has no target", async () => {
       stubFetch({ "https://raw.githubusercontent.com/microsoft/vscode/1.125.0/.npmrc": 'runtime="electron"\n' });
 
       await expect(electronOf("1.125.0")).rejects.toThrow("No Electron target in the .npmrc of VS Code 1.125.0");
     });
 
-    it("should throw if the request fails", async () => {
+    test("should throw if the request fails", async () => {
       stubFetch({});
 
       await expect(electronOf("1.999.0")).rejects.toThrow("HTTP 404");
@@ -156,7 +156,7 @@ describe("vscode-releases", () => {
   });
 
   describe("listReleases", () => {
-    it("should list the releases x.y.0 from the given minor version on, oldest first", async () => {
+    test("should list the releases x.y.0 from the given minor version on, oldest first", async () => {
       stubFetch({
         [releasesPage(1)]: [
           release("1.126.0"),
@@ -174,7 +174,7 @@ describe("vscode-releases", () => {
       ]);
     });
 
-    it("should read further pages until a page reaches below the minor version", async () => {
+    test("should read further pages until a page reaches below the minor version", async () => {
       const firstPage = Array.from({ length: 100 }, (_, i) => release(`1.${300 - i}.0`));
       const fetchMock = stubFetch({
         [releasesPage(1)]: firstPage,
@@ -188,7 +188,7 @@ describe("vscode-releases", () => {
       expect(releases[0].version).toBe("1.200.0");
     });
 
-    it("should send a GitHub token if one is set", async () => {
+    test("should send a GitHub token if one is set", async () => {
       vi.stubEnv("GITHUB_TOKEN", "test-token");
       const fetchMock = stubFetch({ [releasesPage(1)]: [] });
 

@@ -2,6 +2,9 @@
  * Shared validation utilities for command validators.
  */
 
+import { schema } from "../../shared/types.js";
+import { locateNodeById, NodeLocation } from "../schemaNavigator.js";
+
 /** A validation check that passed. */
 export interface ValidationSuccess {
   valid: true;
@@ -278,25 +281,13 @@ export function validateElementType(
   const localTypeName = getLocalTypeName(trimmedType);
 
   // Check if it's a user-defined simple type
-  if (schemaObj.simpleType) {
-    const simpleTypes = Array.isArray(schemaObj.simpleType) 
-      ? schemaObj.simpleType 
-      : [schemaObj.simpleType];
-    
-    if (simpleTypes.some(type => type.name === localTypeName)) {
-      return { valid: true };
-    }
+  if ((schemaObj.simpleType ?? []).some(type => type.name === localTypeName)) {
+    return { valid: true };
   }
 
   // Check if it's a user-defined complex type
-  if (schemaObj.complexType) {
-    const complexTypes = Array.isArray(schemaObj.complexType)
-      ? schemaObj.complexType
-      : [schemaObj.complexType];
-    
-    if (complexTypes.some(type => type.name === localTypeName)) {
-      return { valid: true };
-    }
+  if ((schemaObj.complexType ?? []).some(type => type.name === localTypeName)) {
+    return { valid: true };
   }
 
   // If the type has a prefix, validate it against imports
@@ -311,23 +302,59 @@ export function validateElementType(
       
       if (namespaceUri) {
         // Check if there's an import for this namespace
-        if (schemaObj.import_) {
-          const imports = Array.isArray(schemaObj.import_) 
-            ? schemaObj.import_ 
-            : [schemaObj.import_];
-          
-          const hasMatchingImport = imports.some(imp => imp.namespace === namespaceUri);
-          if (hasMatchingImport) {
-            // Type is from a valid import with matching namespace, allow it
-            return { valid: true };
-          }
+        const hasMatchingImport = (schemaObj.import_ ?? []).some(imp => imp.namespace === namespaceUri);
+        if (hasMatchingImport) {
+          // Type is from a valid import with matching namespace, allow it
+          return { valid: true };
         }
       }
+    }
+  } else {
+    // Unqualified type name: allow it when the schema has xs:include elements,
+    // since included schemas share the same target namespace and their types
+    // are referenced without a prefix.
+    if ((schemaObj.include ?? []).length > 0 && isValidXmlName(localTypeName)) {
+      return { valid: true };
     }
   }
 
   return { 
     valid: false, 
-    error: `Invalid element type '${trimmedType}': must be a built-in XSD type, a user-defined type in the schema, or a type from a valid import with a matching namespace prefix` 
+    error: `Invalid element type '${trimmedType}': must be a built-in XSD type, a user-defined type in the schema, a type from a valid import with a matching namespace prefix, or a type from an included schema` 
   };
+}
+
+/**
+ * Validates that an anonymous type's parent exists and carries the expected property.
+ *
+ * @param typeId - The full ID of the anonymous type (used in error messages).
+ * @param parentId - The ID of the parent container element/attribute.
+ * @param schemaObj - The root schema object to search.
+ * @param prop - The property name to check and use in error messages (e.g. `"simpleType"` or `"complexType"`).
+ * @returns `{ success: true, location }` when valid; `{ success: false, error }` otherwise.
+ */
+export function validateAnonymousTypeParent(
+  typeId: string,
+  parentId: string | undefined,
+  schemaObj: schema,
+  prop: string
+): { success: false; error: ValidationResult } | { success: true; location: Extract<NodeLocation, { found: true }> } {
+  if (!parentId) {
+    return { success: false, error: { valid: false, error: `Invalid anonymous ${prop} ID: ${typeId}` } };
+  }
+  const location = locateNodeById(schemaObj, parentId);
+  if (!location.found) {
+    return { success: false, error: { valid: false, error: `Parent not found: ${parentId}` } };
+  }
+  const holder = location.parent as Record<string, unknown>;
+  if (!holder[prop]) {
+    return {
+      success: false,
+      error: {
+        valid: false,
+        error: `No anonymous ${prop} found in parent: ${parentId}`,
+      },
+    };
+  }
+  return { success: true, location };
 }

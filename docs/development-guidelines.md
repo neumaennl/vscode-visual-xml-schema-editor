@@ -4,8 +4,8 @@ title: Development guidelines
 description: Rules for everyone who changes the extension - code size, code quality and ESLint, TypeScript and naming, VS Code and Node versions, TSDoc, tests, documentation and the knowledge bundle, issues, what to check before committing, and commits.
 tags: [guidelines, conventions, code-quality, typescript, documentation, workflow]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-14T21:48:08Z }
-verified: { by: human:neumaennl, at: 2026-11-14T22:07:09Z }
+generated: { by: human:neumaennl, at: 2026-11-14T22:13:38Z }
+verified: { by: human:neumaennl, at: 2026-11-14T22:14:45Z }
 sources:
   - id: eslint
     resource: ../eslint.config.mjs
@@ -120,7 +120,7 @@ The documentation of the extension is the knowledge bundle in `docs/`, in the Op
 
 - Each commit has one purpose and a clear message.
 - Work that the maintainer approves step by step is committed locally after each approved step; drafts that are not approved yet stay uncommitted.
-- When all steps are done, the message of the first commit is reworded to describe the whole change, and the later commits are marked as `fixup` with `git rebase -i`. Do not use `squash`, because it combines the messages. Push only after the maintainer has agreed.
+- When all steps are done, the message of the first commit is reworded to describe the whole change, and the later commits are marked as `fixup` with `git rebase -i`. Do not use `squash`, because it combines the messages. The commits stay separate instead if each of them has a purpose of its own and the maintainer agrees, for example a check and the cleanups it requires; then the last commit closes the issue. Push only after the maintainer has agreed.
 - If work in progress was pushed, ask whether the next commit is a new one or a `fixup` of the pushed one; a `fixup` then needs a force push.
 
 [^eslint]: ESLint configuration

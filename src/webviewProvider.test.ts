@@ -10,6 +10,37 @@ import type { EditorStubs } from "./__tests__/providerTestHelpers.js";
 import { expectLinesInOrder } from "./__tests__/textTestHelpers.js";
 import type { Mock, MockedFunction } from "vitest";
 
+
+/** The error message that the provider sends to the webview. */
+type ErrorMessage = { command: string; data: { message: string; code: string; stack?: string } };
+
+/**
+ * Sends an executeCommand message that adds the element `x` to the given parent, and waits for the
+ * provider to handle it.
+ *
+ * @param editor - The stubbed editor
+ * @param parentId - The ID of the parent
+ */
+async function sendAddElement(editor: EditorStubs, parentId: string): Promise<void> {
+  resolveAndGetHandler(editor)({
+    command: "executeCommand",
+    data: { type: "addElement", payload: { parentId, elementName: "x", elementType: "string" } },
+  });
+  await new Promise<void>((resolve) => setTimeout(resolve, 0));
+}
+
+/**
+ * Asserts that the provider sent an error message and no commandResult, and returns the error message.
+ *
+ * @param editor - The stubbed editor
+ * @returns The first message sent, the error message
+ */
+function sentError(editor: EditorStubs): ErrorMessage {
+  expect(editor.postMessage).toHaveBeenCalledWith(expect.objectContaining({ command: "error" }));
+  expect(editor.postMessage).not.toHaveBeenCalledWith(expect.objectContaining({ command: "commandResult" }));
+  return (editor.postMessage as MockedFunction<(msg: ErrorMessage) => Promise<boolean>>).mock.calls[0][0];
+}
+
 describe("SchemaEditorProvider", () => {
   let editor: EditorStubs;
 
@@ -146,61 +177,26 @@ describe("SchemaEditorProvider", () => {
   });
 
   describe("diagram options", () => {
-    test("should send diagram options to webview on initialization", () => {
+    test.each([
+      [
+        "the configured values",
+        { showDocumentation: true, alwaysShowOccurrence: false, showType: true },
+        { showDocumentation: true, alwaysShowOccurrence: false, showType: true },
+      ],
+      ["the default values when nothing is configured", {}, { showDocumentation: false, alwaysShowOccurrence: false, showType: false }],
+    ])("should send %s as diagram options on initialization", (_case, configured: Record<string, boolean>, expected) => {
       const mockConfig = {
-        get: vi.fn((key: string, defaultValue: boolean) => {
-          if (key === "showDocumentation") return true;
-          if (key === "alwaysShowOccurrence") return false;
-          if (key === "showType") return true;
-          return defaultValue;
-        }),
+        get: vi.fn((key: string, defaultValue: boolean) => configured[key] ?? defaultValue),
       };
       (vscode.workspace.getConfiguration as Mock).mockReturnValue(mockConfig);
 
-      editor.provider.resolveCustomTextEditor(
-        editor.document,
-        editor.webviewPanel,
-        {} as vscode.CancellationToken
-      );
+      editor.provider.resolveCustomTextEditor(editor.document, editor.webviewPanel, {} as vscode.CancellationToken);
 
-      // Should have called postMessage twice: once for updateSchema, once for updateDiagramOptions
-      expect(editor.postMessage).toHaveBeenCalledWith(
-        expect.objectContaining({
-          command: "updateDiagramOptions",
-          data: {
-            showDocumentation: true,
-            alwaysShowOccurrence: false,
-            showType: true,
-          },
-        })
-      );
-    });
-
-    test("should use default values when configuration is not set", () => {
-      const mockConfig = {
-        get: vi.fn((_key: string, defaultValue: boolean) => defaultValue),
-      };
-      (vscode.workspace.getConfiguration as Mock).mockReturnValue(mockConfig);
-
-      editor.provider.resolveCustomTextEditor(
-        editor.document,
-        editor.webviewPanel,
-        {} as vscode.CancellationToken
-      );
-
-      expect(editor.postMessage).toHaveBeenCalledWith(
-        expect.objectContaining({
-          command: "updateDiagramOptions",
-          data: {
-            showDocumentation: false,
-            alwaysShowOccurrence: false,
-            showType: false,
-          },
-        })
-      );
+      expect(editor.postMessage).toHaveBeenCalledWith(expect.objectContaining({ command: "updateDiagramOptions", data: expected }));
     });
   });
 
+  // The routing of validation failures is tested with the real validator in pipeline.workspaceEdit.test.ts
   describe("executeCommand error routing", () => {
     // Use vi.spyOn on the CommandProcessor prototype so we can control the
     // return value without changing the provider's constructor.
@@ -219,63 +215,13 @@ describe("SchemaEditorProvider", () => {
         xmlContent: null,
       });
 
-      const handler = resolveAndGetHandler(editor);
-      handler({
-        command: "executeCommand",
-        data: { type: "addElement", payload: { parentId: "/schema", elementName: "x", elementType: "string" } },
-      });
-
-      // Wait for the async handleWebviewMessage microtask
-      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+      await sendAddElement(editor, "/schema");
 
       // Verify correct message type was sent
-      expect(editor.postMessage).toHaveBeenCalledWith(
-        expect.objectContaining({ command: "error" })
-      );
-      // Must NOT have sent a commandResult for this runtime failure
-      expect(editor.postMessage).not.toHaveBeenCalledWith(
-        expect.objectContaining({ command: "commandResult" })
-      );
-
-      // Verify data fields via a typed extraction to avoid any-typed matchers
-      type ErrorMsg = { command: string; data: { message: string; code: string; stack?: string } };
-      type PostMsgFn = MockedFunction<(msg: ErrorMsg) => Promise<boolean>>;
-      const sentMsg = (editor.postMessage as PostMsgFn).mock.calls[0][0];
+      const sentMsg = sentError(editor);
       expect(sentMsg.data.message).toContain("Something exploded");
       expect(sentMsg.data.code).toBe("COMMAND_EXECUTION_ERROR");
       expect(sentMsg.data.stack).toContain("executeAddElement");
-    });
-
-    test("should send 'commandResult' with success:false for validation errors", async () => {
-      vi.spyOn(CommandProcessor.prototype, "execute").mockReturnValue({
-        success: false,
-        errorKind: "validation",
-        error: "Parent element not found: /element:missing",
-        schema: null,
-        xmlContent: null,
-      });
-
-      const handler = resolveAndGetHandler(editor);
-      handler({
-        command: "executeCommand",
-        data: { type: "addElement", payload: { parentId: "/element:missing", elementName: "x", elementType: "string" } },
-      });
-
-      await new Promise<void>((resolve) => setTimeout(resolve, 0));
-
-      expect(editor.postMessage).toHaveBeenCalledWith(
-        expect.objectContaining({
-          command: "commandResult",
-          data: {
-            success: false,
-            error: "Parent element not found: /element:missing",
-          },
-        })
-      );
-      // Must NOT have sent an error message for a validation failure
-      expect(editor.postMessage).not.toHaveBeenCalledWith(
-        expect.objectContaining({ command: "error" })
-      );
     });
 
     test("should send 'error' message with code and stack when commandProcessor throws", async () => {
@@ -283,22 +229,9 @@ describe("SchemaEditorProvider", () => {
         throw new Error("Completely unexpected failure");
       });
 
-      const handler = resolveAndGetHandler(editor);
-      handler({
-        command: "executeCommand",
-        data: { type: "addElement", payload: { parentId: "/schema", elementName: "x", elementType: "string" } },
-      });
+      await sendAddElement(editor, "/schema");
 
-      await new Promise<void>((resolve) => setTimeout(resolve, 0));
-
-      expect(editor.postMessage).toHaveBeenCalledWith(
-        expect.objectContaining({ command: "error" })
-      );
-
-      // Verify data fields via a typed extraction to avoid any-typed matchers
-      type ErrorMsg = { command: string; data: { message: string; code: string } };
-      type PostMsgFn = MockedFunction<(msg: ErrorMsg) => Promise<boolean>>;
-      const sentMsg = (editor.postMessage as PostMsgFn).mock.calls[0][0];
+      const sentMsg = sentError(editor);
       expect(sentMsg.data.message).toContain("Completely unexpected failure");
       expect(sentMsg.data.code).toBe("COMMAND_EXECUTION_ERROR");
     });
@@ -311,26 +244,9 @@ describe("SchemaEditorProvider", () => {
       });
       (vscode.workspace.applyEdit as Mock).mockResolvedValue(false);
 
-      const handler = resolveAndGetHandler(editor);
-      handler({
-        command: "executeCommand",
-        data: { type: "addElement", payload: { parentId: "/schema", elementName: "x", elementType: "string" } },
-      });
+      await sendAddElement(editor, "/schema");
 
-      await new Promise<void>((resolve) => setTimeout(resolve, 0));
-
-      expect(editor.postMessage).toHaveBeenCalledWith(
-        expect.objectContaining({ command: "error" })
-      );
-      // Must NOT send a commandResult for an edit-application failure
-      expect(editor.postMessage).not.toHaveBeenCalledWith(
-        expect.objectContaining({ command: "commandResult" })
-      );
-
-      // Verify data fields via a typed extraction to avoid any-typed matchers
-      type ErrorMsg = { command: string; data: { message: string; code: string } };
-      type PostMsgFn = MockedFunction<(msg: ErrorMsg) => Promise<boolean>>;
-      const sentMsg = (editor.postMessage as PostMsgFn).mock.calls[0][0];
+      const sentMsg = sentError(editor);
       expect(sentMsg.data.message).toBe("Failed to apply edit to the document.");
       expect(sentMsg.data.code).toBe("COMMAND_EXECUTION_ERROR");
     });

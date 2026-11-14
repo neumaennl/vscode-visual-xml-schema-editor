@@ -45,6 +45,21 @@ import * as schemaValidators from "./commandValidators/schemaValidators.js";
 export type ValidatorFunctions = CommandHandlers<"validate", ValidationResult>;
 
 /**
+ * The validator functions of the validator modules, which CommandValidator uses unless others are
+ * injected. The modules also export constants, which the lookup by name never finds.
+ */
+export const defaultValidators: ValidatorFunctions = {
+  ...elementValidators,
+  ...attributeValidators,
+  ...simpleTypeValidators,
+  ...complexTypeValidators,
+  ...groupValidators,
+  ...attributeGroupValidators,
+  ...annotationValidators,
+  ...schemaValidators,
+};
+
+/**
  * CommandValidator class.
  * Validates commands before execution by delegating to specialized validator modules.
  */
@@ -58,16 +73,7 @@ export class CommandValidator {
    */
   constructor(validators?: ValidatorFunctions) {
     // Use provided validators or default to actual validator modules
-    this.validators = validators ?? {
-      ...elementValidators,
-      ...attributeValidators,
-      ...simpleTypeValidators,
-      ...complexTypeValidators,
-      ...groupValidators,
-      ...attributeGroupValidators,
-      ...annotationValidators,
-      ...schemaValidators,
-    };
+    this.validators = validators ?? defaultValidators;
   }
 
   /**

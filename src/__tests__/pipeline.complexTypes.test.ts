@@ -5,11 +5,6 @@
  * Success-path assertions are made against the unmarshalled schema object.
  */
 
-import type {
-  AddComplexTypeCommand,
-  RemoveComplexTypeCommand,
-  ModifyComplexTypeCommand,
-} from "../../shared/types.js";
 import {
   SCHEMA_WITH_COMPLEXTYPE,
   runCommandExpectSuccess,
@@ -24,16 +19,14 @@ describe("Integration: ComplexType pipeline", () => {
 
   describe("addComplexType", () => {
     test("adds a top-level named complexType with a sequence content model", () => {
-      const cmd: AddComplexTypeCommand = {
+      const result = runCommandExpectSuccessSchema(emptySchemaXml(), {
         type: "addComplexType",
         payload: {
           parentId: "/schema",
           typeName: "OrderType",
           contentModel: "sequence",
         },
-      };
-
-      const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
+      });
       const types = result.complexType ?? [];
       const orderType = types.find((t) => t.name === "OrderType");
 
@@ -44,16 +37,14 @@ describe("Integration: ComplexType pipeline", () => {
     });
 
     test("adds a complexType with a choice content model", () => {
-      const cmd: AddComplexTypeCommand = {
+      const result = runCommandExpectSuccessSchema(emptySchemaXml(), {
         type: "addComplexType",
         payload: {
           parentId: "/schema",
           typeName: "ChoiceType",
           contentModel: "choice",
         },
-      };
-
-      const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
+      });
       const choiceType = (result.complexType ?? []).find((t) => t.name === "ChoiceType");
 
       expect(choiceType).toBeDefined();
@@ -62,16 +53,14 @@ describe("Integration: ComplexType pipeline", () => {
     });
 
     test("adds a complexType with an all content model", () => {
-      const cmd: AddComplexTypeCommand = {
+      const result = runCommandExpectSuccessSchema(emptySchemaXml(), {
         type: "addComplexType",
         payload: {
           parentId: "/schema",
           typeName: "AllType",
           contentModel: "all",
         },
-      };
-
-      const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
+      });
       const allType = (result.complexType ?? []).find((t) => t.name === "AllType");
 
       expect(allType).toBeDefined();
@@ -80,7 +69,7 @@ describe("Integration: ComplexType pipeline", () => {
     });
 
     test("adds a complexType marked as abstract", () => {
-      const cmd: AddComplexTypeCommand = {
+      const result = runCommandExpectSuccessSchema(emptySchemaXml(), {
         type: "addComplexType",
         payload: {
           parentId: "/schema",
@@ -88,9 +77,7 @@ describe("Integration: ComplexType pipeline", () => {
           contentModel: "sequence",
           abstract: true,
         },
-      };
-
-      const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
+      });
       const baseType = (result.complexType ?? []).find((t) => t.name === "BaseType");
 
       expect(baseType).toBeDefined();
@@ -98,21 +85,17 @@ describe("Integration: ComplexType pipeline", () => {
     });
 
     test("returns validation error when type name is invalid", () => {
-      const cmd: AddComplexTypeCommand = {
+      runCommandExpectValidationFailure(emptySchemaXml(), {
         type: "addComplexType",
         payload: { parentId: "/schema", typeName: "123Bad", contentModel: "sequence" },
-      };
-
-      runCommandExpectValidationFailure(emptySchemaXml(), cmd, "Type name must be a valid XML name");
+      }, "Type name must be a valid XML name");
     });
 
     test("returns validation error for duplicate complex type name", () => {
-      const cmd: AddComplexTypeCommand = {
+      runCommandExpectValidationFailure(SCHEMA_WITH_COMPLEXTYPE, {
         type: "addComplexType",
         payload: { parentId: "/schema", typeName: "PersonType", contentModel: "sequence" },
-      };
-
-      runCommandExpectValidationFailure(SCHEMA_WITH_COMPLEXTYPE, cmd, "Complex type 'PersonType' already exists in schema");
+      }, "Complex type 'PersonType' already exists in schema");
     });
   });
 
@@ -120,24 +103,20 @@ describe("Integration: ComplexType pipeline", () => {
 
   describe("removeComplexType", () => {
     test("removes an existing top-level complexType", () => {
-      const cmd: RemoveComplexTypeCommand = {
+      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_COMPLEXTYPE, {
         type: "removeComplexType",
         payload: { typeId: "/complexType:PersonType" },
-      };
-
-      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_COMPLEXTYPE, cmd);
+      });
       const types = result.complexType ?? [];
 
       expect(types.some((t) => t.name === "PersonType")).toBe(false);
     });
 
     test("returns validation error when type ID does not exist", () => {
-      const cmd: RemoveComplexTypeCommand = {
+      runCommandExpectValidationFailure(SCHEMA_WITH_COMPLEXTYPE, {
         type: "removeComplexType",
         payload: { typeId: "/complexType:NoSuchType" },
-      };
-
-      runCommandExpectValidationFailure(SCHEMA_WITH_COMPLEXTYPE, cmd, "Complex type 'NoSuchType' not found in schema");
+      }, "Complex type 'NoSuchType' not found in schema");
     });
   });
 
@@ -145,12 +124,10 @@ describe("Integration: ComplexType pipeline", () => {
 
   describe("modifyComplexType", () => {
     test("renames an existing complexType", () => {
-      const cmd: ModifyComplexTypeCommand = {
+      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_COMPLEXTYPE, {
         type: "modifyComplexType",
         payload: { typeId: "/complexType:PersonType", typeName: "IndividualType" },
-      };
-
-      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_COMPLEXTYPE, cmd);
+      });
       const types = result.complexType ?? [];
 
       expect(types.some((t) => t.name === "IndividualType")).toBe(true);
@@ -158,12 +135,10 @@ describe("Integration: ComplexType pipeline", () => {
     });
 
     test("marks a complexType as abstract", () => {
-      const cmd: ModifyComplexTypeCommand = {
+      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_COMPLEXTYPE, {
         type: "modifyComplexType",
         payload: { typeId: "/complexType:PersonType", abstract: true },
-      };
-
-      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_COMPLEXTYPE, cmd);
+      });
       const personType = (result.complexType ?? []).find((t) => t.name === "PersonType");
 
       expect(personType).toBeDefined();
@@ -171,12 +146,10 @@ describe("Integration: ComplexType pipeline", () => {
     });
 
     test("enables mixed content on a complexType", () => {
-      const cmd: ModifyComplexTypeCommand = {
+      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_COMPLEXTYPE, {
         type: "modifyComplexType",
         payload: { typeId: "/complexType:PersonType", mixed: true },
-      };
-
-      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_COMPLEXTYPE, cmd);
+      });
       const personType = (result.complexType ?? []).find((t) => t.name === "PersonType");
 
       expect(personType).toBeDefined();
@@ -184,21 +157,17 @@ describe("Integration: ComplexType pipeline", () => {
     });
 
     test("returns validation error when type ID does not exist", () => {
-      const cmd: ModifyComplexTypeCommand = {
+      runCommandExpectValidationFailure(SCHEMA_WITH_COMPLEXTYPE, {
         type: "modifyComplexType",
         payload: { typeId: "/complexType:Ghost", typeName: "Other" },
-      };
-
-      runCommandExpectValidationFailure(SCHEMA_WITH_COMPLEXTYPE, cmd, "Complex type 'Ghost' not found in schema");
+      }, "Complex type 'Ghost' not found in schema");
     });
 
     test("wraps the group reference of a type without a compositor when it gets a base type", () => {
-      const cmd: ModifyComplexTypeCommand = {
+      const result = runCommandExpectSuccessSchema(readTestXml("person-type-with-group-ref.xsd"), {
         type: "modifyComplexType",
         payload: { typeId: "/complexType:PersonType", baseType: "xs:anyType" },
-      };
-
-      const result = runCommandExpectSuccessSchema(readTestXml("person-type-with-group-ref.xsd"), cmd);
+      });
       const personType = (result.complexType ?? []).find((t) => t.name === "PersonType");
 
       expect(personType?.group).toBeUndefined();
@@ -212,12 +181,10 @@ describe("Integration: ComplexType pipeline", () => {
         type: "modifyComplexType",
         payload: { typeId: "/complexType:PersonType", baseType: "xs:anyType" },
       });
-      const cmd: ModifyComplexTypeCommand = {
+      const result = runCommandExpectSuccessSchema(withBase, {
         type: "modifyComplexType",
         payload: { typeId: "/complexType:PersonType", baseType: "" },
-      };
-
-      const result = runCommandExpectSuccessSchema(withBase, cmd);
+      });
       const personType = (result.complexType ?? []).find((t) => t.name === "PersonType");
 
       expect(personType?.complexContent).toBeUndefined();

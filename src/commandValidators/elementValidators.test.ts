@@ -113,19 +113,13 @@ describe("Element Validators", () => {
     });
 
     test("should reject invalid element type", () => {
-      const command: AddElementCommand = {
-        type: "addElement",
-        payload: {
-          parentId: "/schema",
-          elementName: "testElement",
-          elementType: "invalidType",
-        },
-      };
+      const result = validateAddElement(
+        { type: "addElement", payload: { parentId: "/schema", elementName: "testElement", elementType: "invalidType" } },
+        schemaObj
+      );
 
-      const result = validateAddElement(command, schemaObj);
       expectInvalid(result);
-      expect(result.error).toContain("Invalid element type");
-      expect(result.error).toContain("invalidType");
+      expect(result.error).toContain("Invalid element type 'invalidType'");
     });
 
     test("should reject prefixed type when no imports or includes exist", () => {
@@ -329,14 +323,7 @@ describe("Element Validators", () => {
 
   describe("validateRemoveElement", () => {
     test("should reject removeElement with missing elementId", () => {
-      const command: RemoveElementCommand = {
-        type: "removeElement",
-        payload: {
-          elementId: "",
-        },
-      };
-
-      const result = validateRemoveElement(command, schemaObj);
+      const result = validateRemoveElement({ type: "removeElement", payload: { elementId: "" } }, schemaObj);
       expectInvalid(result);
       expect(result.error).toBe("Element ID cannot be empty");
     });
@@ -372,18 +359,10 @@ describe("Element Validators", () => {
     });
 
     test("should reject modifyElement with invalid elementType", () => {
-      const command: ModifyElementCommand = {
-        type: "modifyElement",
-        payload: {
-          elementId: "/element:person",
-          elementType: "invalidType",
-        },
-      };
+      const result = validateModifyElement({ type: "modifyElement", payload: { elementId: "/element:person", elementType: "invalidType" } }, schemaObj);
 
-      const result = validateModifyElement(command, schemaObj);
       expectInvalid(result);
-      expect(result.error).toContain("Invalid element type");
-      expect(result.error).toContain("invalidType");
+      expect(result.error).toContain("Invalid element type 'invalidType'");
     });
 
     test("should accept modifyElement with valid built-in type", () => {
@@ -496,11 +475,7 @@ describe("Element Validators", () => {
     });
 
     test("should reject addElement with ref at schema level (top-level elements cannot be refs)", () => {
-      const command: AddElementCommand = {
-        type: "addElement",
-        payload: { parentId: "/schema", ref: "person" },
-      };
-      const result = validateAddElement(command, seqSchema);
+      const result = validateAddElement({ type: "addElement", payload: { parentId: "/schema", ref: "person" } }, seqSchema);
       expectInvalid(result);
       expect(result.error).toBe("Top-level elements cannot be references");
     });

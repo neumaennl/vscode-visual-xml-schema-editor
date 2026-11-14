@@ -122,13 +122,11 @@ describe("ComplexType Validators", () => {
     });
 
     // ── anonymous ──────────────────────────────────────────────────────────
-    test("should accept a valid anonymous addComplexType command", () => {
-      const command: AddComplexTypeCommand = {
-        type: "addComplexType",
-        payload: { parentId: "/element:person", contentModel: "sequence" },
-      };
-      const result = validateAddComplexType(command, schemaWithElement);
-      expect(result.valid).toBe(true);
+    test("should accept an anonymous addComplexType command, also in place of a type attribute", () => {
+      const command: AddComplexTypeCommand = { type: "addComplexType", payload: { parentId: "/element:person", contentModel: "sequence" } };
+
+      expect(validateAddComplexType(command, schemaWithElement).valid).toBe(true);
+      expect(validateAddComplexType(command, schemaWith(`<xs:element name="person" type="xs:string"/>`)).valid).toBe(true);
     });
 
     test("should reject anonymous addComplexType when parent element not found", () => {
@@ -152,16 +150,6 @@ describe("ComplexType Validators", () => {
       expect(result.error).toContain("already has an anonymous complexType");
     });
 
-    test("should accept replacing an element type attribute with an anonymous complexType", () => {
-      const schemaWithTypedEl = schemaWith(`<xs:element name="person" type="xs:string"/>`);
-      const command: AddComplexTypeCommand = {
-        type: "addComplexType",
-        payload: { parentId: "/element:person", contentModel: "sequence" },
-      };
-      const result = validateAddComplexType(command, schemaWithTypedEl);
-      expect(result.valid).toBe(true);
-    });
-
     test("should reject addComplexType with a derivation kind but no base type", () => {
       const command: AddComplexTypeCommand = {
         type: "addComplexType",
@@ -175,11 +163,7 @@ describe("ComplexType Validators", () => {
 
   describe("validateRemoveComplexType", () => {
     test("should reject removeComplexType with missing typeId", () => {
-      const command: RemoveComplexTypeCommand = {
-        type: "removeComplexType",
-        payload: { typeId: "" },
-      };
-      const result = validateRemoveComplexType(command, emptySchemaObj);
+      const result = validateRemoveComplexType({ type: "removeComplexType", payload: { typeId: "" } }, emptySchemaObj);
       expectInvalid(result);
       expect(result.error).toBe("Type ID cannot be empty");
     });
@@ -236,11 +220,7 @@ describe("ComplexType Validators", () => {
 
   describe("validateModifyComplexType", () => {
     test("should reject modifyComplexType with missing typeId", () => {
-      const command: ModifyComplexTypeCommand = {
-        type: "modifyComplexType",
-        payload: { typeId: "" },
-      };
-      const result = validateModifyComplexType(command, emptySchemaObj);
+      const result = validateModifyComplexType({ type: "modifyComplexType", payload: { typeId: "" } }, emptySchemaObj);
       expectInvalid(result);
       expect(result.error).toBe("Type ID cannot be empty");
     });

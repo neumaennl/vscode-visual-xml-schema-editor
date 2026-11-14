@@ -1,8 +1,17 @@
 /**
- * Unit tests for the lookups of children and attribute group references in commandUtils.
+ * Unit tests for commandUtils: the parsing of annotation and documentation IDs, and the lookups of
+ * children and attribute group references.
  */
 
-import { findAttributeGroupRef, findIdentifiedChild, identifyChild, isIdentifiedChild } from "./commandUtils.js";
+import {
+  findAttributeGroupRef,
+  findIdentifiedChild,
+  identifyChild,
+  isIdentifiedChild,
+  parseDocumentationId,
+  parseSchemaAnnotationId,
+  parseSchemaDocumentationId,
+} from "./commandUtils.js";
 import { attributeGroupRef } from "../shared/types.js";
 
 /** Children with a name, a ref and a name that repeats. */
@@ -68,5 +77,89 @@ describe("findAttributeGroupRef", () => {
     ["neither a name nor a position", undefined, undefined],
   ])("finds nothing for %s", (_case, name, position) => {
     expect(findAttributeGroupRef(refs, name, position)).toBeUndefined();
+  });
+});
+
+// ─── parseDocumentationId ────────────────────────────────────────────────────
+
+describe("parseDocumentationId", () => {
+  test("parses a simple element path with index 0", () => {
+    const result = parseDocumentationId("/element:person/documentation[0]");
+    expect(result.elementId).toBe("/element:person");
+    expect(result.documentationIndex).toBe(0);
+  });
+
+  test("parses a nested path with index 2", () => {
+    const result = parseDocumentationId(
+      "/element:person/anonymousComplexType[0]/documentation[2]"
+    );
+    expect(result.elementId).toBe("/element:person/anonymousComplexType[0]");
+    expect(result.documentationIndex).toBe(2);
+  });
+
+  test("throws for an ID without documentation suffix", () => {
+    expect(() => parseDocumentationId("/element:person")).toThrow(
+      "Invalid documentationId format"
+    );
+  });
+
+  test("throws for a bare non-path string", () => {
+    expect(() => parseDocumentationId("doc1")).toThrow(
+      "Invalid documentationId format"
+    );
+  });
+});
+
+// ─── parseSchemaAnnotationId / parseSchemaDocumentationId ───────────────────
+
+describe("parseSchemaAnnotationId", () => {
+  test("parses '/schema/annotation[0]'", () => {
+    expect(parseSchemaAnnotationId("/schema/annotation[0]")).toBe(0);
+  });
+
+  test("parses '/schema/annotation[2]'", () => {
+    expect(parseSchemaAnnotationId("/schema/annotation[2]")).toBe(2);
+  });
+
+  test("returns null for a non-canonical 'schema/annotation[0]' path", () => {
+    expect(parseSchemaAnnotationId("schema/annotation[0]")).toBeNull();
+  });
+
+  test("returns null for a non-schema path", () => {
+    expect(parseSchemaAnnotationId("/element:person")).toBeNull();
+  });
+
+  test("returns null for a plain 'schema'", () => {
+    expect(parseSchemaAnnotationId("schema")).toBeNull();
+  });
+});
+
+describe("parseSchemaDocumentationId", () => {
+  test("parses '/schema/annotation[0]/documentation[1]'", () => {
+    const result = parseSchemaDocumentationId(
+      "/schema/annotation[0]/documentation[1]"
+    );
+    expect(result).toEqual({ annotationIndex: 0, documentationIndex: 1 });
+  });
+
+  test("parses '/schema/annotation[2]/documentation[3]'", () => {
+    const result = parseSchemaDocumentationId(
+      "/schema/annotation[2]/documentation[3]"
+    );
+    expect(result).toEqual({ annotationIndex: 2, documentationIndex: 3 });
+  });
+
+  test("returns null for a plain '/schema/documentation[0]'", () => {
+    expect(parseSchemaDocumentationId("/schema/documentation[0]")).toBeNull();
+  });
+
+  test("returns null for a non-canonical 'schema/annotation[0]/documentation[1]' path", () => {
+    expect(parseSchemaDocumentationId("schema/annotation[0]/documentation[1]")).toBeNull();
+  });
+
+  test("returns null for an element path", () => {
+    expect(
+      parseSchemaDocumentationId("/element:person/documentation[0]")
+    ).toBeNull();
   });
 });

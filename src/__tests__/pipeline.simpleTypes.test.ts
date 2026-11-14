@@ -5,11 +5,6 @@
  * Success-path assertions are made against the unmarshalled schema object.
  */
 
-import type {
-  AddSimpleTypeCommand,
-  RemoveSimpleTypeCommand,
-  ModifySimpleTypeCommand,
-} from "../../shared/types.js";
 import {
   SCHEMA_WITH_SIMPLETYPE,
   runCommandExpectSuccessSchema,
@@ -36,16 +31,14 @@ describe("Integration: SimpleType pipeline", () => {
 
   describe("addSimpleType", () => {
     test("adds a top-level named simpleType with a base type", () => {
-      const cmd: AddSimpleTypeCommand = {
+      const result = runCommandExpectSuccessSchema(emptySchemaXml(), {
         type: "addSimpleType",
         payload: {
           parentId: "/schema",
           typeName: "AgeType",
           baseType: "xs:integer",
         },
-      };
-
-      const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
+      });
       const types = result.simpleType ?? [];
       const ageType = types.find((t) => t.name === "AgeType");
 
@@ -54,7 +47,7 @@ describe("Integration: SimpleType pipeline", () => {
     });
 
     test("adds a simpleType with enumeration restrictions", () => {
-      const cmd: AddSimpleTypeCommand = {
+      const result = runCommandExpectSuccessSchema(emptySchemaXml(), {
         type: "addSimpleType",
         payload: {
           parentId: "/schema",
@@ -62,9 +55,7 @@ describe("Integration: SimpleType pipeline", () => {
           baseType: "xs:string",
           restrictions: { enumeration: ["red", "green", "blue"] },
         },
-      };
-
-      const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
+      });
       const types = result.simpleType ?? [];
       const colorType = types.find((t) => t.name === "ColorType");
 
@@ -77,7 +68,7 @@ describe("Integration: SimpleType pipeline", () => {
     });
 
     test("adds a simpleType with minLength / maxLength facets", () => {
-      const cmd: AddSimpleTypeCommand = {
+      const result = runCommandExpectSuccessSchema(emptySchemaXml(), {
         type: "addSimpleType",
         payload: {
           parentId: "/schema",
@@ -85,9 +76,7 @@ describe("Integration: SimpleType pipeline", () => {
           baseType: "xs:string",
           restrictions: { minLength: 1, maxLength: 50 },
         },
-      };
-
-      const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
+      });
       const types = result.simpleType ?? [];
       const nameType = types.find((t) => t.name === "NameType");
 
@@ -96,16 +85,14 @@ describe("Integration: SimpleType pipeline", () => {
     });
 
     test("adds a simpleType list with an item type", () => {
-      const cmd: AddSimpleTypeCommand = {
+      const result = runCommandExpectSuccessSchema(emptySchemaXml(), {
         type: "addSimpleType",
         payload: {
           parentId: "/schema",
           typeName: "TokenListType",
           listItemType: "xs:token",
         },
-      };
-
-      const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
+      });
       const tokenListType = (result.simpleType ?? []).find((t) => t.name === "TokenListType");
 
       expect(tokenListType).toBeDefined();
@@ -113,16 +100,14 @@ describe("Integration: SimpleType pipeline", () => {
     });
 
     test("adds a simpleType union with member types", () => {
-      const cmd: AddSimpleTypeCommand = {
+      const result = runCommandExpectSuccessSchema(emptySchemaXml(), {
         type: "addSimpleType",
         payload: {
           parentId: "/schema",
           typeName: "TextOrNumberType",
           unionMemberTypes: ["xs:string", "xs:integer"],
         },
-      };
-
-      const result = runCommandExpectSuccessSchema(emptySchemaXml(), cmd);
+      });
       const unionType = (result.simpleType ?? []).find((t) => t.name === "TextOrNumberType");
 
       expect(unionType).toBeDefined();
@@ -130,21 +115,17 @@ describe("Integration: SimpleType pipeline", () => {
     });
 
     test("returns validation error when type name is invalid", () => {
-      const cmd: AddSimpleTypeCommand = {
+      runCommandExpectValidationFailure(emptySchemaXml(), {
         type: "addSimpleType",
         payload: { parentId: "/schema", typeName: "bad type", baseType: "xs:string" },
-      };
-
-      runCommandExpectValidationFailure(emptySchemaXml(), cmd, "Type name must be a valid XML name");
+      }, "Type name must be a valid XML name");
     });
 
     test("returns validation error for duplicate type name", () => {
-      const cmd: AddSimpleTypeCommand = {
+      runCommandExpectValidationFailure(SCHEMA_WITH_SIMPLETYPE, {
         type: "addSimpleType",
         payload: { parentId: "/schema", typeName: "StatusType", baseType: "xs:string" },
-      };
-
-      runCommandExpectValidationFailure(SCHEMA_WITH_SIMPLETYPE, cmd, "Simple type 'StatusType' already exists in schema");
+      }, "Simple type 'StatusType' already exists in schema");
     });
   });
 
@@ -152,24 +133,20 @@ describe("Integration: SimpleType pipeline", () => {
 
   describe("removeSimpleType", () => {
     test("removes an existing top-level simpleType", () => {
-      const cmd: RemoveSimpleTypeCommand = {
+      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_SIMPLETYPE, {
         type: "removeSimpleType",
         payload: { typeId: "/simpleType:StatusType" },
-      };
-
-      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_SIMPLETYPE, cmd);
+      });
       const types = result.simpleType ?? [];
 
       expect(types.some((t) => t.name === "StatusType")).toBe(false);
     });
 
     test("returns validation error when type ID does not exist", () => {
-      const cmd: RemoveSimpleTypeCommand = {
+      runCommandExpectValidationFailure(SCHEMA_WITH_SIMPLETYPE, {
         type: "removeSimpleType",
         payload: { typeId: "/simpleType:NonExistent" },
-      };
-
-      runCommandExpectValidationFailure(SCHEMA_WITH_SIMPLETYPE, cmd, "Simple type 'NonExistent' not found in schema");
+      }, "Simple type 'NonExistent' not found in schema");
     });
   });
 
@@ -177,12 +154,10 @@ describe("Integration: SimpleType pipeline", () => {
 
   describe("modifySimpleType", () => {
     test("renames an existing simpleType", () => {
-      const cmd: ModifySimpleTypeCommand = {
+      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_SIMPLETYPE, {
         type: "modifySimpleType",
         payload: { typeId: "/simpleType:StatusType", typeName: "StateType" },
-      };
-
-      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_SIMPLETYPE, cmd);
+      });
       const types = result.simpleType ?? [];
 
       expect(types.some((t) => t.name === "StateType")).toBe(true);
@@ -190,12 +165,10 @@ describe("Integration: SimpleType pipeline", () => {
     });
 
     test("changes the base type of a simpleType", () => {
-      const cmd: ModifySimpleTypeCommand = {
+      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_SIMPLETYPE, {
         type: "modifySimpleType",
         payload: { typeId: "/simpleType:StatusType", baseType: "xs:token" },
-      };
-
-      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_SIMPLETYPE, cmd);
+      });
       const statusType = (result.simpleType ?? []).find((t) => t.name === "StatusType");
 
       expect(statusType).toBeDefined();
@@ -203,12 +176,10 @@ describe("Integration: SimpleType pipeline", () => {
     });
 
     test("changes only the facets and keeps the base type", () => {
-      const cmd: ModifySimpleTypeCommand = {
+      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_SIMPLETYPE, {
         type: "modifySimpleType",
         payload: { typeId: "/simpleType:StatusType", restrictions: { enumeration: ["on", "off"] } },
-      };
-
-      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_SIMPLETYPE, cmd);
+      });
       const restriction = (result.simpleType ?? []).find((t) => t.name === "StatusType")?.restriction;
 
       expect(restriction?.base).toBe("xs:string");
@@ -216,12 +187,10 @@ describe("Integration: SimpleType pipeline", () => {
     });
 
     test("changes only the facets and keeps an inline base type", () => {
-      const cmd: ModifySimpleTypeCommand = {
+      const result = runCommandExpectSuccessSchema(schemaXmlWith(INLINE_BASE_TYPE), {
         type: "modifySimpleType",
         payload: { typeId: "/simpleType:ShortCode", restrictions: { maxLength: 4 } },
-      };
-
-      const result = runCommandExpectSuccessSchema(schemaXmlWith(INLINE_BASE_TYPE), cmd);
+      });
       const restriction = (result.simpleType ?? []).find((t) => t.name === "ShortCode")?.restriction;
 
       expect(restriction?.simpleType?.restriction?.base).toBe("xs:token");
@@ -229,12 +198,10 @@ describe("Integration: SimpleType pipeline", () => {
     });
 
     test("replaces an inline base type with a named one", () => {
-      const cmd: ModifySimpleTypeCommand = {
+      const result = runCommandExpectSuccessSchema(schemaXmlWith(INLINE_BASE_TYPE), {
         type: "modifySimpleType",
         payload: { typeId: "/simpleType:ShortCode", baseType: "xs:string" },
-      };
-
-      const result = runCommandExpectSuccessSchema(schemaXmlWith(INLINE_BASE_TYPE), cmd);
+      });
       const restriction = (result.simpleType ?? []).find((t) => t.name === "ShortCode")?.restriction;
 
       expect(restriction?.base).toBe("xs:string");
@@ -243,15 +210,13 @@ describe("Integration: SimpleType pipeline", () => {
     });
 
     test("switches an existing simpleType from restriction to list", () => {
-      const cmd: ModifySimpleTypeCommand = {
+      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_SIMPLETYPE, {
         type: "modifySimpleType",
         payload: {
           typeId: "/simpleType:StatusType",
           listItemType: "xs:token",
         },
-      };
-
-      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_SIMPLETYPE, cmd);
+      });
       const statusType = (result.simpleType ?? []).find((t) => t.name === "StatusType");
 
       expect(statusType).toBeDefined();
@@ -260,24 +225,20 @@ describe("Integration: SimpleType pipeline", () => {
     });
 
     test("renames a list simpleType and keeps its item type", () => {
-      const cmd: ModifySimpleTypeCommand = {
+      const result = runCommandExpectSuccessSchema(schemaXmlWith(LIST_TYPE), {
         type: "modifySimpleType",
         payload: { typeId: "/simpleType:Codes", typeName: "CodeList" },
-      };
-
-      const result = runCommandExpectSuccessSchema(schemaXmlWith(LIST_TYPE), cmd);
+      });
       const codeList = (result.simpleType ?? []).find((t) => t.name === "CodeList");
 
       expect(codeList?.list?.itemType).toBe("xs:token");
     });
 
     test("changes only the documentation of a union simpleType", () => {
-      const cmd: ModifySimpleTypeCommand = {
+      const result = runCommandExpectSuccessSchema(schemaXmlWith(UNION_TYPE), {
         type: "modifySimpleType",
         payload: { typeId: "/simpleType:Size", documentation: "A number or a word" },
-      };
-
-      const result = runCommandExpectSuccessSchema(schemaXmlWith(UNION_TYPE), cmd);
+      });
       const size = (result.simpleType ?? []).find((t) => t.name === "Size");
 
       expect(size?.union?.memberTypes).toBe("xs:integer xs:token");
@@ -285,12 +246,10 @@ describe("Integration: SimpleType pipeline", () => {
     });
 
     test("returns validation error when type ID does not exist", () => {
-      const cmd: ModifySimpleTypeCommand = {
+      runCommandExpectValidationFailure(SCHEMA_WITH_SIMPLETYPE, {
         type: "modifySimpleType",
         payload: { typeId: "/simpleType:Missing", typeName: "Other" },
-      };
-
-      runCommandExpectValidationFailure(SCHEMA_WITH_SIMPLETYPE, cmd, "Simple type 'Missing' not found in schema");
+      }, "Simple type 'Missing' not found in schema");
     });
   });
 });

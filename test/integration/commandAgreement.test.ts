@@ -55,18 +55,18 @@ function commandsForNode(id: string): SchemaCommand[] {
         { type: "modifyComplexType", payload: { typeId: id, derivationKind: "restriction" } },
       ];
     case SchemaNodeType.SimpleType:
-      return [
-        { type: "removeSimpleType", payload: { typeId: id } },
-        { type: "modifySimpleType", payload: { typeId: id, documentation: "Changed" } },
-        { type: "modifySimpleType", payload: { typeId: id, typeName: `Renamed${name}` } },
-        { type: "modifySimpleType", payload: { typeId: id, restrictions: { maxLength: 99 } } },
-      ];
-    case SchemaNodeType.AnonymousSimpleType:
-      return [
+    case SchemaNodeType.AnonymousSimpleType: {
+      const commands: SchemaCommand[] = [
         { type: "removeSimpleType", payload: { typeId: id } },
         { type: "modifySimpleType", payload: { typeId: id, documentation: "Changed" } },
         { type: "modifySimpleType", payload: { typeId: id, restrictions: { maxLength: 99 } } },
       ];
+      // Only named simpleTypes can be renamed
+      if (nodeType === SchemaNodeType.SimpleType) {
+        commands.push({ type: "modifySimpleType", payload: { typeId: id, typeName: `Renamed${name}` } });
+      }
+      return commands;
+    }
     case SchemaNodeType.Group:
     case SchemaNodeType.GroupRef:
       return [

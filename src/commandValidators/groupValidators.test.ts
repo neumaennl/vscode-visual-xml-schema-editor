@@ -14,6 +14,7 @@ import {
   validateModifyGroup,
 } from "./groupValidators.js";
 import { expectInvalid } from "../__tests__/validationTestHelpers.js";
+import { localElementPlaces } from "../__tests__/referenceTestHelpers.js";
 import { emptySchema, schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
 import { readTestSchema } from "../__tests__/resourceTestHelpers.js";
 
@@ -111,64 +112,10 @@ const REFERENCE_PLACES: [string, string][] = [
     `<xs:complexType name="Derived"><xs:complexContent><xs:restriction base="xs:anyType"><xs:choice><xs:group ref="REF"/></xs:choice></xs:restriction></xs:complexContent></xs:complexType>`,
   ],
   [
-    "a local element in the sequence of a complexType",
-    `<xs:complexType name="T"><xs:sequence>${LOCAL_ELEMENT_WITH_REF}</xs:sequence></xs:complexType>`,
-  ],
-  [
-    "a local element in the choice of a complexType",
-    `<xs:complexType name="T"><xs:choice>${LOCAL_ELEMENT_WITH_REF}</xs:choice></xs:complexType>`,
-  ],
-  [
-    "a local element in a choice nested in a sequence",
-    `<xs:complexType name="T"><xs:sequence><xs:choice>${LOCAL_ELEMENT_WITH_REF}</xs:choice></xs:sequence></xs:complexType>`,
-  ],
-  [
-    "a local element in the all of a complexType",
-    `<xs:complexType name="T"><xs:all>${LOCAL_ELEMENT_WITH_REF}</xs:all></xs:complexType>`,
-  ],
-  [
-    "a local element in the sequence of a complexContent extension",
-    `<xs:complexType name="Base"/>
-     <xs:complexType name="Derived"><xs:complexContent><xs:extension base="Base"><xs:sequence>${LOCAL_ELEMENT_WITH_REF}</xs:sequence></xs:extension></xs:complexContent></xs:complexType>`,
-  ],
-  [
-    "a local element in the choice of a complexContent extension",
-    `<xs:complexType name="Base"/>
-     <xs:complexType name="Derived"><xs:complexContent><xs:extension base="Base"><xs:choice>${LOCAL_ELEMENT_WITH_REF}</xs:choice></xs:extension></xs:complexContent></xs:complexType>`,
-  ],
-  [
-    "a local element in the all of a complexContent extension",
-    `<xs:complexType name="Base"/>
-     <xs:complexType name="Derived"><xs:complexContent><xs:extension base="Base"><xs:all>${LOCAL_ELEMENT_WITH_REF}</xs:all></xs:extension></xs:complexContent></xs:complexType>`,
-  ],
-  [
-    "a local element in the sequence of a complexContent restriction",
-    `<xs:complexType name="Derived"><xs:complexContent><xs:restriction base="xs:anyType"><xs:sequence>${LOCAL_ELEMENT_WITH_REF}</xs:sequence></xs:restriction></xs:complexContent></xs:complexType>`,
-  ],
-  [
-    "a local element in the choice of a complexContent restriction",
-    `<xs:complexType name="Derived"><xs:complexContent><xs:restriction base="xs:anyType"><xs:choice>${LOCAL_ELEMENT_WITH_REF}</xs:choice></xs:restriction></xs:complexContent></xs:complexType>`,
-  ],
-  [
-    "a local element in the all of a complexContent restriction",
-    `<xs:complexType name="Derived"><xs:complexContent><xs:restriction base="xs:anyType"><xs:all>${LOCAL_ELEMENT_WITH_REF}</xs:all></xs:restriction></xs:complexContent></xs:complexType>`,
-  ],
-  [
-    "a local element inside a top-level element",
-    `<xs:element name="root"><xs:complexType><xs:sequence>${LOCAL_ELEMENT_WITH_REF}</xs:sequence></xs:complexType></xs:element>`,
-  ],
-  [
     "the choice of another group",
     `<xs:group name="Combined"><xs:choice><xs:group ref="REF"/></xs:choice></xs:group>`,
   ],
-  [
-    "a local element in the sequence of another group",
-    `<xs:group name="Combined"><xs:sequence>${LOCAL_ELEMENT_WITH_REF}</xs:sequence></xs:group>`,
-  ],
-  [
-    "a local element in the all of another group",
-    `<xs:group name="Combined"><xs:all>${LOCAL_ELEMENT_WITH_REF}</xs:all></xs:group>`,
-  ],
+  ...localElementPlaces(LOCAL_ELEMENT_WITH_REF),
 ];
 
 describe("Group Validators", () => {

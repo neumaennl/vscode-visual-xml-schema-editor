@@ -5,11 +5,6 @@
  * Success-path assertions are made against the unmarshalled schema object.
  */
 
-import type {
-  AddAttributeCommand,
-  RemoveAttributeCommand,
-  ModifyAttributeCommand,
-} from "../../shared/types.js";
 import {
   COMPLEX_TYPES_WITH_ANY_ATTRIBUTE,
   SCHEMA_WITH_COMPLEXTYPE,
@@ -34,16 +29,14 @@ describe("Integration: Attribute pipeline", () => {
 
   describe("addAttribute", () => {
     test("adds an attribute to an existing complexType", () => {
-      const cmd: AddAttributeCommand = {
+      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_COMPLEXTYPE, {
         type: "addAttribute",
         payload: {
           parentId: "/complexType:PersonType",
           attributeName: "email",
           attributeType: "xs:string",
         },
-      };
-
-      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_COMPLEXTYPE, cmd);
+      });
       const ct = (result.complexType ?? [])[0];
       const attrs = ct.attribute ?? [];
 
@@ -51,7 +44,7 @@ describe("Integration: Attribute pipeline", () => {
     });
 
     test("adds a required attribute", () => {
-      const cmd: AddAttributeCommand = {
+      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_COMPLEXTYPE, {
         type: "addAttribute",
         payload: {
           parentId: "/complexType:PersonType",
@@ -59,9 +52,7 @@ describe("Integration: Attribute pipeline", () => {
           attributeType: "xs:string",
           required: true,
         },
-      };
-
-      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_COMPLEXTYPE, cmd);
+      });
       const ct = (result.complexType ?? [])[0];
       const attrs = ct.attribute ?? [];
       const code = attrs.find((a) => a.name === "code");
@@ -71,39 +62,33 @@ describe("Integration: Attribute pipeline", () => {
     });
 
     test.each(COMPLEX_TYPES_WITH_ANY_ATTRIBUTE)("should write a new attribute of %s before xs:anyAttribute", (_, complexType) => {
-      const cmd: AddAttributeCommand = {
+      const updatedXml = runCommandExpectSuccess(schemaXmlWith(complexType), {
         type: "addAttribute",
         payload: { parentId: "/complexType:T", attributeName: "a", attributeType: "xs:string" },
-      };
-
-      const updatedXml = runCommandExpectSuccess(schemaXmlWith(complexType), cmd);
+      });
       expectLinesInOrder(updatedXml, ["<xs:attribute ", "<xs:anyAttribute/>"]);
     });
 
     test("returns validation error when attribute name is invalid", () => {
-      const cmd: AddAttributeCommand = {
+      runCommandExpectValidationFailure(SCHEMA_WITH_COMPLEXTYPE, {
         type: "addAttribute",
         payload: {
           parentId: "/complexType:PersonType",
           attributeName: "bad attr",
           attributeType: "xs:string",
         },
-      };
-
-      runCommandExpectValidationFailure(SCHEMA_WITH_COMPLEXTYPE, cmd, "Attribute name must be a valid XML name");
+      }, "Attribute name must be a valid XML name");
     });
 
     test("returns validation error when parent does not exist", () => {
-      const cmd: AddAttributeCommand = {
+      runCommandExpectValidationFailure(emptySchemaXml(), {
         type: "addAttribute",
         payload: {
           parentId: "/complexType:Missing",
           attributeName: "x",
           attributeType: "xs:string",
         },
-      };
-
-      runCommandExpectValidationFailure(emptySchemaXml(), cmd, "Parent node not found: /complexType:Missing");
+      }, "Parent node not found: /complexType:Missing");
     });
   });
 
@@ -111,12 +96,10 @@ describe("Integration: Attribute pipeline", () => {
 
   describe("removeAttribute", () => {
     test("removes an existing attribute from a complexType", () => {
-      const cmd: RemoveAttributeCommand = {
+      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_TWO_ATTRS, {
         type: "removeAttribute",
         payload: { attributeId: "/complexType:PersonType/attribute:id[0]" },
-      };
-
-      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_TWO_ATTRS, cmd);
+      });
       const ct = (result.complexType ?? [])[0];
       const attrs = ct.attribute ?? [];
 
@@ -125,26 +108,22 @@ describe("Integration: Attribute pipeline", () => {
     });
 
     test("returns validation error when attribute ID is out of range", () => {
-      const cmd: RemoveAttributeCommand = {
+      runCommandExpectValidationFailure(SCHEMA_WITH_COMPLEXTYPE, {
         type: "removeAttribute",
         payload: { attributeId: "/complexType:PersonType/attribute:id[99]" },
-      };
-
-      runCommandExpectValidationFailure(SCHEMA_WITH_COMPLEXTYPE, cmd, "Attribute not found at position: 99");
+      }, "Attribute not found at position: 99");
     });
   });
 
   describe("modifyAttribute", () => {
     test("renames an attribute", () => {
-      const cmd: ModifyAttributeCommand = {
+      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_COMPLEXTYPE, {
         type: "modifyAttribute",
         payload: {
           attributeId: "/complexType:PersonType/attribute:id[0]",
           attributeName: "identifier",
         },
-      };
-
-      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_COMPLEXTYPE, cmd);
+      });
       const ct = (result.complexType ?? [])[0];
       const attrs = ct.attribute ?? [];
 
@@ -153,15 +132,13 @@ describe("Integration: Attribute pipeline", () => {
     });
 
     test("changes the type of an attribute", () => {
-      const cmd: ModifyAttributeCommand = {
+      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_COMPLEXTYPE, {
         type: "modifyAttribute",
         payload: {
           attributeId: "/complexType:PersonType/attribute:id[0]",
           attributeType: "xs:integer",
         },
-      };
-
-      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_COMPLEXTYPE, cmd);
+      });
       const ct = (result.complexType ?? [])[0];
       const attrs = ct.attribute ?? [];
       const id = attrs.find((a) => a.name === "id");
@@ -171,15 +148,13 @@ describe("Integration: Attribute pipeline", () => {
     });
 
     test("returns validation error when attribute ID is out of range", () => {
-      const cmd: ModifyAttributeCommand = {
+      runCommandExpectValidationFailure(SCHEMA_WITH_COMPLEXTYPE, {
         type: "modifyAttribute",
         payload: {
           attributeId: "/complexType:PersonType/attribute:id[99]",
           attributeName: "other",
         },
-      };
-
-      runCommandExpectValidationFailure(SCHEMA_WITH_COMPLEXTYPE, cmd, "Attribute not found at position: 99");
+      }, "Attribute not found at position: 99");
     });
   });
 });

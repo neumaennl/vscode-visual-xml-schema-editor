@@ -3,12 +3,9 @@
  */
 
 import {
+  schema,
   AddAnnotationCommand,
-  RemoveAnnotationCommand,
-  ModifyAnnotationCommand,
   AddDocumentationCommand,
-  RemoveDocumentationCommand,
-  ModifyDocumentationCommand,
 } from "../../shared/types.js";
 import {
   validateAddAnnotation,
@@ -18,6 +15,7 @@ import {
   validateRemoveDocumentation,
   validateModifyDocumentation,
 } from "./annotationValidators.js";
+import { ValidationResult } from "./validationUtils.js";
 import { expectInvalid } from "../__tests__/validationTestHelpers.js";
 import { emptySchema, schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
 import { readTestSchema } from "../__tests__/resourceTestHelpers.js";
@@ -32,6 +30,119 @@ const TWO_ANNOTATIONS_XSD = "schema-with-two-annotations.xsd";
 
 /** A plain element (no annotation). */
 const PERSON_ELEMENT = `<xs:element name="person" type="xs:string"/>`;
+
+/** A single annotation on the schema element. */
+const SCHEMA_ANNOTATION = `<xs:annotation>
+  <xs:documentation>Schema description.</xs:documentation>
+</xs:annotation>`;
+
+/** The expected result of a validation: success, or a failure whose error contains the text. */
+type Expected = { valid: true } | { error: string };
+
+/**
+ * Asserts that a validation result is the expected one.
+ *
+ * @param result - The result
+ * @param expected - Success, or the text that the error contains
+ */
+function expectResult(result: ValidationResult, expected: Expected): void {
+  if ("error" in expected) {
+    expectInvalid(result);
+    expect(result.error).toContain(expected.error);
+  } else {
+    expect(result).toEqual({ valid: true });
+  }
+}
+
+/**
+ * Loads the schema of a test case.
+ *
+ * @param source - A file in the test resources (ending in `.xsd`), schema content, or "" for an empty schema
+ * @returns The schema
+ */
+function loadSchema(source: string): schema {
+  if (source.endsWith(".xsd")) {
+    return readTestSchema(source);
+  }
+  return source ? schemaWith(source) : emptySchema();
+}
+
+/**
+ * Combines validators with cases, so that every validator is checked with every case.
+ *
+ * @param validators - Names and validators
+ * @param cases - The cases
+ * @returns The rows for `test.each`: name, the case, and the validator
+ */
+function eachValidator<C extends unknown[], V>(validators: Array<[string, V]>, cases: C[]): Array<[string, ...C, V]> {
+  return validators.flatMap(([name, validate]) => cases.map((c): [string, ...C, V] => [name, ...c, validate]));
+}
+
+/** The validators of removeAnnotation and modifyAnnotation, which check the annotation ID the same way. */
+const ANNOTATION_ID_VALIDATORS: Array<[string, (annotationId: string, schemaObj: schema) => ValidationResult]> = [
+  ["removeAnnotation", (annotationId, s): ValidationResult => validateRemoveAnnotation({ type: "removeAnnotation", payload: { annotationId } }, s)],
+  [
+    "modifyAnnotation",
+    (annotationId, s): ValidationResult => validateModifyAnnotation({ type: "modifyAnnotation", payload: { annotationId, documentation: "Updated." } }, s),
+  ],
+];
+
+/** Annotation IDs: the schema (see {@link loadSchema}), the ID and the expected result. */
+const ANNOTATION_ID_CASES: Array<[string, string, string, Expected]> = [
+  ["an empty ID", "", "", { error: "Annotation ID cannot be empty" }],
+  ["a missing element", "", "/element:missing", { error: "not found" }],
+  ["an element without annotation", PERSON_ELEMENT, "/element:person", { error: "No annotation" }],
+  ["an element with an annotation", DOCUMENTED_PERSON_XSD, "/element:person", { valid: true }],
+  ["a valid schema annotation index", TWO_ANNOTATIONS_XSD, "/schema/annotation[1]", { valid: true }],
+  ["a schema annotation index out of bounds", SCHEMA_ANNOTATION, "/schema/annotation[5]", { error: "out of bounds" }],
+  ["the legacy bare schema-root ID 'schema'", SCHEMA_ANNOTATION, "schema", { error: "Target node not found" }],
+  ["the bare schema-root ID '/schema'", SCHEMA_ANNOTATION, "/schema", { error: "/schema/annotation[N]" }],
+];
+
+/** The validators of removeDocumentation and modifyDocumentation, which check the documentation ID the same way. */
+const DOCUMENTATION_ID_VALIDATORS: Array<[string, (documentationId: string, schemaObj: schema) => ValidationResult]> = [
+  ["removeDocumentation", (documentationId, s): ValidationResult => validateRemoveDocumentation({ type: "removeDocumentation", payload: { documentationId } }, s)],
+  [
+    "modifyDocumentation",
+    (documentationId, s): ValidationResult =>
+      validateModifyDocumentation({ type: "modifyDocumentation", payload: { documentationId, content: "Updated." } }, s),
+  ],
+];
+
+/** Documentation IDs: the schema (see {@link loadSchema}), the ID and the expected result. */
+const DOCUMENTATION_ID_CASES: Array<[string, string, string, Expected]> = [
+  ["an empty ID", "", "", { error: "Documentation ID cannot be empty" }],
+  ["an ID of an invalid format", DOCUMENTED_PERSON_XSD, "not-a-valid-id", { error: "Invalid documentationId format" }],
+  [
+    "a component that does not exist",
+    PERSON_ELEMENT,
+    "/element:missing/documentation[0]",
+    { error: "Target node not found or does not support annotations: /element:missing" },
+  ],
+  [
+    "a component without an annotation",
+    PERSON_ELEMENT,
+    "/element:person/documentation[0]",
+    { error: "No annotation found on node: /element:person" },
+  ],
+  ["an index out of bounds", DOCUMENTED_PERSON_XSD, "/element:person/documentation[5]", { error: "out of bounds" }],
+  ["an existing entry", DOCUMENTED_PERSON_XSD, "/element:person/documentation[0]", { valid: true }],
+  [
+    "the second entry of an annotation",
+    "person-element-with-two-documentations.xsd",
+    "/element:person/documentation[1]",
+    { valid: true },
+  ],
+  ["valid schema annotation and entry indices", SCHEMA_ANNOTATION, "/schema/annotation[0]/documentation[0]", { valid: true }],
+  [
+    "a schema annotation index out of bounds",
+    SCHEMA_ANNOTATION,
+    "/schema/annotation[9]/documentation[0]",
+    { error: "out of bounds" },
+  ],
+  ["the shorthand for the first schema annotation", SCHEMA_ANNOTATION, "/schema/documentation[0]", { valid: true }],
+  ["the shorthand without schema annotations", "", "/schema/documentation[0]", { error: "No annotation found on schema root" }],
+];
 
 // ─── Annotation Validators ──────────────────────────────────────────────────
 
@@ -84,92 +195,6 @@ describe("Annotation Validators", () => {
       expect(result.error).toContain("already has an annotation");
     });
   });
-
-  describe("validateRemoveAnnotation", () => {
-    test("should reject removeAnnotation with missing annotationId", () => {
-      const schemaObj = emptySchema();
-      const command: RemoveAnnotationCommand = {
-        type: "removeAnnotation",
-        payload: { annotationId: "" },
-      };
-
-      const result = validateRemoveAnnotation(command, schemaObj);
-      expectInvalid(result);
-      expect(result.error).toBe("Annotation ID cannot be empty");
-    });
-
-    test("should reject removeAnnotation when element does not exist", () => {
-      const schemaObj = emptySchema();
-      const command: RemoveAnnotationCommand = {
-        type: "removeAnnotation",
-        payload: { annotationId: "/element:missing" },
-      };
-
-      const result = validateRemoveAnnotation(command, schemaObj);
-      expectInvalid(result);
-      expect(result.error).toContain("not found");
-    });
-
-    test("should reject removeAnnotation when element has no annotation", () => {
-      const schemaObj = schemaWith(PERSON_ELEMENT);
-      const command: RemoveAnnotationCommand = {
-        type: "removeAnnotation",
-        payload: { annotationId: "/element:person" },
-      };
-
-      const result = validateRemoveAnnotation(command, schemaObj);
-      expectInvalid(result);
-      expect(result.error).toContain("No annotation");
-    });
-
-    test("should accept removeAnnotation when annotation exists", () => {
-      const schemaObj = readTestSchema(DOCUMENTED_PERSON_XSD);
-      const command: RemoveAnnotationCommand = {
-        type: "removeAnnotation",
-        payload: { annotationId: "/element:person" },
-      };
-
-      const result = validateRemoveAnnotation(command, schemaObj);
-      expect(result.valid).toBe(true);
-    });
-  });
-
-  describe("validateModifyAnnotation", () => {
-    test("should reject modifyAnnotation with missing annotationId", () => {
-      const schemaObj = emptySchema();
-      const command: ModifyAnnotationCommand = {
-        type: "modifyAnnotation",
-        payload: { annotationId: "" },
-      };
-
-      const result = validateModifyAnnotation(command, schemaObj);
-      expectInvalid(result);
-      expect(result.error).toBe("Annotation ID cannot be empty");
-    });
-
-    test("should reject modifyAnnotation when element has no annotation", () => {
-      const schemaObj = schemaWith(PERSON_ELEMENT);
-      const command: ModifyAnnotationCommand = {
-        type: "modifyAnnotation",
-        payload: { annotationId: "/element:person", documentation: "Updated." },
-      };
-
-      const result = validateModifyAnnotation(command, schemaObj);
-      expectInvalid(result);
-      expect(result.error).toContain("No annotation");
-    });
-
-    test("should accept modifyAnnotation when annotation exists", () => {
-      const schemaObj = readTestSchema(DOCUMENTED_PERSON_XSD);
-      const command: ModifyAnnotationCommand = {
-        type: "modifyAnnotation",
-        payload: { annotationId: "/element:person", documentation: "Updated." },
-      };
-
-      const result = validateModifyAnnotation(command, schemaObj);
-      expect(result.valid).toBe(true);
-    });
-  });
 });
 
 // ─── Documentation Validators ───────────────────────────────────────────────
@@ -212,142 +237,28 @@ describe("Documentation Validators", () => {
     });
   });
 
-  describe("validateRemoveDocumentation", () => {
-    test("should reject removeDocumentation with missing documentationId", () => {
-      const schemaObj = emptySchema();
-      const command: RemoveDocumentationCommand = {
-        type: "removeDocumentation",
-        payload: { documentationId: "" },
-      };
+  test("should accept modifyDocumentation with lang update only", () => {
+    const result = validateModifyDocumentation(
+      { type: "modifyDocumentation", payload: { documentationId: "/element:person/documentation[0]", lang: "en" } },
+      readTestSchema(DOCUMENTED_PERSON_XSD)
+    );
 
-      const result = validateRemoveDocumentation(command, schemaObj);
-      expectInvalid(result);
-      expect(result.error).toBe("Documentation ID cannot be empty");
-    });
-
-    test("should reject removeDocumentation with invalid documentationId format", () => {
-      const schemaObj = readTestSchema(DOCUMENTED_PERSON_XSD);
-      const command: RemoveDocumentationCommand = {
-        type: "removeDocumentation",
-        payload: { documentationId: "not-a-valid-id" },
-      };
-
-      const result = validateRemoveDocumentation(command, schemaObj);
-      expectInvalid(result);
-      expect(result.error).toContain("Invalid documentationId format");
-    });
-
-    test("should reject removeDocumentation when documentation index is out of bounds", () => {
-      const schemaObj = readTestSchema(DOCUMENTED_PERSON_XSD);
-      const command: RemoveDocumentationCommand = {
-        type: "removeDocumentation",
-        payload: { documentationId: "/element:person/documentation[5]" },
-      };
-
-      const result = validateRemoveDocumentation(command, schemaObj);
-      expectInvalid(result);
-      expect(result.error).toContain("out of bounds");
-    });
-
-    test("should accept removeDocumentation for an existing documentation element", () => {
-      const schemaObj = readTestSchema(DOCUMENTED_PERSON_XSD);
-      const command: RemoveDocumentationCommand = {
-        type: "removeDocumentation",
-        payload: { documentationId: "/element:person/documentation[0]" },
-      };
-
-      const result = validateRemoveDocumentation(command, schemaObj);
-      expect(result.valid).toBe(true);
-    });
-
-    test("should accept removeDocumentation for second element in multi-doc annotation", () => {
-      const schemaObj = readTestSchema("person-element-with-two-documentations.xsd");
-      const command: RemoveDocumentationCommand = {
-        type: "removeDocumentation",
-        payload: { documentationId: "/element:person/documentation[1]" },
-      };
-
-      const result = validateRemoveDocumentation(command, schemaObj);
-      expect(result.valid).toBe(true);
-    });
+    expect(result.valid).toBe(true);
   });
+});
 
-  describe("validateModifyDocumentation", () => {
-    test("should reject modifyDocumentation with missing documentationId", () => {
-      const schemaObj = emptySchema();
-      const command: ModifyDocumentationCommand = {
-        type: "modifyDocumentation",
-        payload: { documentationId: "" },
-      };
+// ─── IDs of the remove and modify commands ──────────────────────────────────
 
-      const result = validateModifyDocumentation(command, schemaObj);
-      expectInvalid(result);
-      expect(result.error).toBe("Documentation ID cannot be empty");
-    });
-
-    test("should reject modifyDocumentation with invalid documentationId format", () => {
-      const schemaObj = readTestSchema(DOCUMENTED_PERSON_XSD);
-      const command: ModifyDocumentationCommand = {
-        type: "modifyDocumentation",
-        payload: { documentationId: "not-a-valid-id" },
-      };
-
-      const result = validateModifyDocumentation(command, schemaObj);
-      expectInvalid(result);
-      expect(result.error).toContain("Invalid documentationId format");
-    });
-
-    test("should reject modifyDocumentation when documentation index is out of bounds", () => {
-      const schemaObj = readTestSchema(DOCUMENTED_PERSON_XSD);
-      const command: ModifyDocumentationCommand = {
-        type: "modifyDocumentation",
-        payload: {
-          documentationId: "/element:person/documentation[3]",
-          content: "Updated",
-        },
-      };
-
-      const result = validateModifyDocumentation(command, schemaObj);
-      expectInvalid(result);
-      expect(result.error).toContain("out of bounds");
-    });
-
-    test("should accept modifyDocumentation with valid payload", () => {
-      const schemaObj = readTestSchema(DOCUMENTED_PERSON_XSD);
-      const command: ModifyDocumentationCommand = {
-        type: "modifyDocumentation",
-        payload: {
-          documentationId: "/element:person/documentation[0]",
-          content: "Updated documentation content",
-        },
-      };
-
-      const result = validateModifyDocumentation(command, schemaObj);
-      expect(result.valid).toBe(true);
-    });
-
-    test("should accept modifyDocumentation with lang update only", () => {
-      const schemaObj = readTestSchema(DOCUMENTED_PERSON_XSD);
-      const command: ModifyDocumentationCommand = {
-        type: "modifyDocumentation",
-        payload: {
-          documentationId: "/element:person/documentation[0]",
-          lang: "en",
-        },
-      };
-
-      const result = validateModifyDocumentation(command, schemaObj);
-      expect(result.valid).toBe(true);
-    });
+describe("IDs of the remove and modify commands", () => {
+  test.each([
+    ...eachValidator(ANNOTATION_ID_VALIDATORS, ANNOTATION_ID_CASES),
+    ...eachValidator(DOCUMENTATION_ID_VALIDATORS, DOCUMENTATION_ID_CASES),
+  ])("%s should check %s", (_name, _case, source, id, expected, validate) => {
+    expectResult(validate(id, loadSchema(source)), expected);
   });
 });
 
 // ─── Schema-root annotation validators ──────────────────────────────────────
-
-/** A single annotation on the schema element. */
-const SCHEMA_ANNOTATION = `<xs:annotation>
-  <xs:documentation>Schema description.</xs:documentation>
-</xs:annotation>`;
 
 describe("Schema-root Annotation Validators", () => {
   describe("validateAddAnnotation — schema root", () => {
@@ -371,104 +282,6 @@ describe("Schema-root Annotation Validators", () => {
 
       const result = validateAddAnnotation(command, schemaObj);
       expect(result.valid).toBe(true);
-    });
-  });
-
-  describe("validateRemoveAnnotation — schema root", () => {
-    test("accepts a valid '/schema/annotation[N]' index", () => {
-      const schemaObj = readTestSchema(TWO_ANNOTATIONS_XSD);
-      const command: RemoveAnnotationCommand = {
-        type: "removeAnnotation",
-        payload: { annotationId: "/schema/annotation[1]" },
-      };
-
-      const result = validateRemoveAnnotation(command, schemaObj);
-      expect(result.valid).toBe(true);
-    });
-
-    test("rejects when annotation index is out of bounds", () => {
-      const schemaObj = schemaWith(SCHEMA_ANNOTATION);
-      const command: RemoveAnnotationCommand = {
-        type: "removeAnnotation",
-        payload: { annotationId: "/schema/annotation[5]" },
-      };
-
-      const result = validateRemoveAnnotation(command, schemaObj);
-      expectInvalid(result);
-      expect(result.error).toContain("out of bounds");
-    });
-
-    test("rejects the legacy bare schema-root ID 'schema'", () => {
-      const schemaObj = schemaWith(SCHEMA_ANNOTATION);
-      const command: RemoveAnnotationCommand = {
-        type: "removeAnnotation",
-        payload: { annotationId: "schema" },
-      };
-
-      const result = validateRemoveAnnotation(command, schemaObj);
-      expectInvalid(result);
-      expect(result.error).toContain("Target node not found");
-    });
-
-    test("rejects bare schema-root ID '/schema' (requires schema/annotation[N])", () => {
-      const schemaObj = schemaWith(SCHEMA_ANNOTATION);
-      const command: RemoveAnnotationCommand = {
-        type: "removeAnnotation",
-        payload: { annotationId: "/schema" },
-      };
-
-      const result = validateRemoveAnnotation(command, schemaObj);
-      expectInvalid(result);
-      expect(result.error).toContain("/schema/annotation[N]");
-    });
-  });
-
-  describe("validateModifyAnnotation — schema root", () => {
-    test("accepts a valid '/schema/annotation[N]' index", () => {
-      const schemaObj = schemaWith(SCHEMA_ANNOTATION);
-      const command: ModifyAnnotationCommand = {
-        type: "modifyAnnotation",
-        payload: { annotationId: "/schema/annotation[0]", documentation: "Updated." },
-      };
-
-      const result = validateModifyAnnotation(command, schemaObj);
-      expect(result.valid).toBe(true);
-    });
-
-    test("rejects when annotation index is out of bounds", () => {
-      const schemaObj = emptySchema();
-      const command: ModifyAnnotationCommand = {
-        type: "modifyAnnotation",
-        payload: { annotationId: "/schema/annotation[0]", documentation: "x" },
-      };
-
-      const result = validateModifyAnnotation(command, schemaObj);
-      expectInvalid(result);
-      expect(result.error).toContain("out of bounds");
-    });
-
-    test("rejects the legacy bare schema-root ID 'schema'", () => {
-      const schemaObj = schemaWith(SCHEMA_ANNOTATION);
-      const command: ModifyAnnotationCommand = {
-        type: "modifyAnnotation",
-        payload: { annotationId: "schema", documentation: "Updated." },
-      };
-
-      const result = validateModifyAnnotation(command, schemaObj);
-      expectInvalid(result);
-      expect(result.error).toContain("Target node not found");
-    });
-
-    test("rejects bare schema-root ID '/schema' (requires schema/annotation[N])", () => {
-      const schemaObj = schemaWith(SCHEMA_ANNOTATION);
-      const command: ModifyAnnotationCommand = {
-        type: "modifyAnnotation",
-        payload: { annotationId: "/schema", documentation: "Updated." },
-      };
-
-      const result = validateModifyAnnotation(command, schemaObj);
-      expectInvalid(result);
-      expect(result.error).toContain("/schema/annotation[N]");
     });
   });
 
@@ -506,120 +319,5 @@ describe("Schema-root Annotation Validators", () => {
       expectInvalid(result);
       expect(result.error).toContain("out of bounds");
     });
-  });
-
-  describe("validateRemoveDocumentation — schema root", () => {
-    test("accepts '/schema/annotation[N]/documentation[M]' with valid indices", () => {
-      const schemaObj = schemaWith(SCHEMA_ANNOTATION);
-      const command: RemoveDocumentationCommand = {
-        type: "removeDocumentation",
-        payload: { documentationId: "/schema/annotation[0]/documentation[0]" },
-      };
-
-      const result = validateRemoveDocumentation(command, schemaObj);
-      expect(result.valid).toBe(true);
-    });
-
-    test("rejects '/schema/annotation[N]/documentation[M]' when annotation index out of bounds", () => {
-      const schemaObj = schemaWith(SCHEMA_ANNOTATION);
-      const command: RemoveDocumentationCommand = {
-        type: "removeDocumentation",
-        payload: { documentationId: "/schema/annotation[9]/documentation[0]" },
-      };
-
-      const result = validateRemoveDocumentation(command, schemaObj);
-      expectInvalid(result);
-      expect(result.error).toContain("out of bounds");
-    });
-
-    test("accepts '/schema/documentation[N]' shorthand when first annotation has docs", () => {
-      const schemaObj = schemaWith(SCHEMA_ANNOTATION);
-      const command: RemoveDocumentationCommand = {
-        type: "removeDocumentation",
-        payload: { documentationId: "/schema/documentation[0]" },
-      };
-
-      const result = validateRemoveDocumentation(command, schemaObj);
-      expect(result.valid).toBe(true);
-    });
-
-    test("rejects '/schema/documentation[N]' when schema has no annotations", () => {
-      const schemaObj = emptySchema();
-      const command: RemoveDocumentationCommand = {
-        type: "removeDocumentation",
-        payload: { documentationId: "/schema/documentation[0]" },
-      };
-
-      const result = validateRemoveDocumentation(command, schemaObj);
-      expectInvalid(result);
-      expect(result.error).toContain("No annotation found on schema root");
-    });
-  });
-
-  describe("validateModifyDocumentation — schema root", () => {
-    test("accepts '/schema/annotation[N]/documentation[M]' with valid indices", () => {
-      const schemaObj = schemaWith(SCHEMA_ANNOTATION);
-      const command: ModifyDocumentationCommand = {
-        type: "modifyDocumentation",
-        payload: {
-          documentationId: "/schema/annotation[0]/documentation[0]",
-          content: "Updated.",
-        },
-      };
-
-      const result = validateModifyDocumentation(command, schemaObj);
-      expect(result.valid).toBe(true);
-    });
-
-    test("accepts '/schema/documentation[N]' shorthand", () => {
-      const schemaObj = schemaWith(SCHEMA_ANNOTATION);
-      const command: ModifyDocumentationCommand = {
-        type: "modifyDocumentation",
-        payload: {
-          documentationId: "/schema/documentation[0]",
-          content: "Updated.",
-        },
-      };
-
-      const result = validateModifyDocumentation(command, schemaObj);
-      expect(result.valid).toBe(true);
-    });
-
-    test("rejects '/schema/documentation[N]' when schema has no annotations", () => {
-      const schemaObj = emptySchema();
-      const command: ModifyDocumentationCommand = {
-        type: "modifyDocumentation",
-        payload: { documentationId: "/schema/documentation[0]", content: "x" },
-      };
-
-      const result = validateModifyDocumentation(command, schemaObj);
-      expectInvalid(result);
-      expect(result.error).toContain("No annotation found on schema root");
-    });
-  });
-});
-
-describe("Documentation IDs of components", () => {
-  test.each([
-    {
-      rule: "a component that does not exist",
-      documentationId: "/element:missing/documentation[0]",
-      error: "Target node not found or does not support annotations: /element:missing",
-    },
-    {
-      rule: "a component without an annotation",
-      documentationId: "/element:person/documentation[0]",
-      error: "No annotation found on node: /element:person",
-    },
-  ])("should reject the documentation of $rule", ({ documentationId, error }) => {
-    const schemaObj = schemaWith(PERSON_ELEMENT);
-
-    expect(validateRemoveDocumentation({ type: "removeDocumentation", payload: { documentationId } }, schemaObj)).toEqual({
-      valid: false,
-      error,
-    });
-    expect(
-      validateModifyDocumentation({ type: "modifyDocumentation", payload: { documentationId, content: "Changed" } }, schemaObj)
-    ).toEqual({ valid: false, error });
   });
 });

@@ -42,6 +42,76 @@ import {
 } from "./schemaExecutors.js";
 import { emptySchema, schemaWith, schemaWithIncludes } from "../../shared/__tests__/schemaTestHelpers.js";
 
+/**
+ * Executes an addImport command.
+ *
+ * @param schemaObj - The schema to change
+ * @param payload - The payload of the command
+ */
+function addImport(schemaObj: schema, payload: AddImportCommand["payload"]): void {
+  executeAddImport({ type: "addImport", payload }, schemaObj);
+}
+
+/**
+ * Executes an addInclude command.
+ *
+ * @param schemaObj - The schema to change
+ * @param payload - The payload of the command
+ */
+function addInclude(schemaObj: schema, payload: AddIncludeCommand["payload"]): void {
+  executeAddInclude({ type: "addInclude", payload }, schemaObj);
+}
+
+/**
+ * Executes a modifyImport command.
+ *
+ * @param schemaObj - The schema to change
+ * @param payload - The payload of the command
+ */
+function modifyImport(schemaObj: schema, payload: ModifyImportCommand["payload"]): void {
+  executeModifyImport({ type: "modifyImport", payload }, schemaObj);
+}
+
+/**
+ * Executes a modifyInclude command.
+ *
+ * @param schemaObj - The schema to change
+ * @param payload - The payload of the command
+ */
+function modifyInclude(schemaObj: schema, payload: ModifyIncludeCommand["payload"]): void {
+  executeModifyInclude({ type: "modifyInclude", payload }, schemaObj);
+}
+
+/**
+ * Executes a modifySchemaNamespaces command.
+ *
+ * @param schemaObj - The schema to change
+ * @param payload - The payload of the command
+ */
+function modifySchemaNamespaces(schemaObj: schema, payload: ModifySchemaNamespacesCommand["payload"]): void {
+  executeModifySchemaNamespaces({ type: "modifySchemaNamespaces", payload }, schemaObj);
+}
+
+/**
+ * Executes a removeImport command.
+ *
+ * @param schemaObj - The schema to change
+ * @param payload - The payload of the command
+ */
+function removeImport(schemaObj: schema, payload: RemoveImportCommand["payload"]): void {
+  executeRemoveImport({ type: "removeImport", payload }, schemaObj);
+}
+
+/**
+ * Executes a removeInclude command.
+ *
+ * @param schemaObj - The schema to change
+ * @param payload - The payload of the command
+ */
+function removeInclude(schemaObj: schema, payload: RemoveIncludeCommand["payload"]): void {
+  executeRemoveInclude({ type: "removeInclude", payload }, schemaObj);
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -73,15 +143,11 @@ function schemaWithImports(
 describe("executeAddImport", () => {
   test("should add a single import to a schema with no existing imports", () => {
     const schemaObj = emptySchema();
-    const command: AddImportCommand = {
-      type: "addImport",
-      payload: {
-        namespace: "http://example.com/ns1",
-        schemaLocation: "schema1.xsd",
-      },
-    };
 
-    executeAddImport(command, schemaObj);
+    addImport(schemaObj, {
+      namespace: "http://example.com/ns1",
+      schemaLocation: "schema1.xsd",
+    });
 
     const imports = schemaObj.import_ ?? [];
     expect(imports).toHaveLength(1);
@@ -94,15 +160,11 @@ describe("executeAddImport", () => {
       namespace: "http://example.com/ns1",
       schemaLocation: "schema1.xsd",
     });
-    const command: AddImportCommand = {
-      type: "addImport",
-      payload: {
-        namespace: "http://example.com/ns2",
-        schemaLocation: "schema2.xsd",
-      },
-    };
 
-    executeAddImport(command, schemaObj);
+    addImport(schemaObj, {
+      namespace: "http://example.com/ns2",
+      schemaLocation: "schema2.xsd",
+    });
 
     const imports = schemaObj.import_ ?? [];
     expect(imports).toHaveLength(2);
@@ -112,16 +174,12 @@ describe("executeAddImport", () => {
 
   test("should produce a schema that survives a marshal/unmarshal round-trip", () => {
     const schemaObj = emptySchema();
-    const command: AddImportCommand = {
-      type: "addImport",
-      payload: {
-        namespace: "http://example.com/types",
-        schemaLocation: "types.xsd",
-        prefix: "ext",
-      },
-    };
 
-    executeAddImport(command, schemaObj);
+    addImport(schemaObj, {
+      namespace: "http://example.com/types",
+      schemaLocation: "types.xsd",
+      prefix: "ext",
+    });
 
     // Marshal to XML and unmarshal back to verify the result is a valid schema
     const xml = marshal(schemaObj);
@@ -136,31 +194,23 @@ describe("executeAddImport", () => {
 
   test("should register the explicit prefix in _namespacePrefixes", () => {
     const schemaObj = emptySchema();
-    const command: AddImportCommand = {
-      type: "addImport",
-      payload: {
-        namespace: "http://example.com/ns",
-        schemaLocation: "schema.xsd",
-        prefix: "ext",
-      },
-    };
 
-    executeAddImport(command, schemaObj);
+    addImport(schemaObj, {
+      namespace: "http://example.com/ns",
+      schemaLocation: "schema.xsd",
+      prefix: "ext",
+    });
 
     expect(schemaObj._namespacePrefixes?.["ext"]).toBe("http://example.com/ns");
   });
 
   test("should auto-generate a prefix when none is provided", () => {
     const schemaObj = emptySchema();
-    const command: AddImportCommand = {
-      type: "addImport",
-      payload: {
-        namespace: "http://example.com/ns",
-        schemaLocation: "schema.xsd",
-      },
-    };
 
-    executeAddImport(command, schemaObj);
+    addImport(schemaObj, {
+      namespace: "http://example.com/ns",
+      schemaLocation: "schema.xsd",
+    });
 
     // A prefix must have been registered
     const prefixes = schemaObj._namespacePrefixes ?? {};
@@ -204,12 +254,8 @@ describe("executeRemoveImport", () => {
       namespace: "http://example.com/ns1",
       schemaLocation: "schema1.xsd",
     });
-    const command: RemoveImportCommand = {
-      type: "removeImport",
-      payload: { importId: "/import[0]" },
-    };
 
-    executeRemoveImport(command, schemaObj);
+    removeImport(schemaObj, { importId: "/import[0]" });
 
     expect(schemaObj.import_).toBeUndefined();
   });
@@ -219,12 +265,8 @@ describe("executeRemoveImport", () => {
       { namespace: "http://example.com/ns1", schemaLocation: "schema1.xsd" },
       { namespace: "http://example.com/ns2", schemaLocation: "schema2.xsd" }
     );
-    const command: RemoveImportCommand = {
-      type: "removeImport",
-      payload: { importId: "/import[0]" },
-    };
 
-    executeRemoveImport(command, schemaObj);
+    removeImport(schemaObj, { importId: "/import[0]" });
 
     const imports = schemaObj.import_ ?? [];
     expect(imports).toHaveLength(1);
@@ -236,12 +278,8 @@ describe("executeRemoveImport", () => {
       { namespace: "http://example.com/ns1", schemaLocation: "schema1.xsd" },
       { namespace: "http://example.com/ns2", schemaLocation: "schema2.xsd" }
     );
-    const command: RemoveImportCommand = {
-      type: "removeImport",
-      payload: { importId: "/import[1]" },
-    };
 
-    executeRemoveImport(command, schemaObj);
+    removeImport(schemaObj, { importId: "/import[1]" });
 
     const imports = schemaObj.import_ ?? [];
     expect(imports).toHaveLength(1);
@@ -274,15 +312,11 @@ describe("executeModifyImport", () => {
       namespace: "http://example.com/old-ns",
       schemaLocation: "schema.xsd",
     });
-    const command: ModifyImportCommand = {
-      type: "modifyImport",
-      payload: {
-        importId: "/import[0]",
-        namespace: "http://example.com/new-ns",
-      },
-    };
 
-    executeModifyImport(command, schemaObj);
+    modifyImport(schemaObj, {
+      importId: "/import[0]",
+      namespace: "http://example.com/new-ns",
+    });
 
     const imports = schemaObj.import_ ?? [];
     expect(imports[0].namespace).toBe("http://example.com/new-ns");
@@ -294,15 +328,11 @@ describe("executeModifyImport", () => {
       namespace: "http://example.com/ns",
       schemaLocation: "old-schema.xsd",
     });
-    const command: ModifyImportCommand = {
-      type: "modifyImport",
-      payload: {
-        importId: "/import[0]",
-        schemaLocation: "new-schema.xsd",
-      },
-    };
 
-    executeModifyImport(command, schemaObj);
+    modifyImport(schemaObj, {
+      importId: "/import[0]",
+      schemaLocation: "new-schema.xsd",
+    });
 
     const imports = schemaObj.import_ ?? [];
     expect(imports[0].namespace).toBe("http://example.com/ns");
@@ -314,16 +344,12 @@ describe("executeModifyImport", () => {
       namespace: "http://example.com/old-ns",
       schemaLocation: "old-schema.xsd",
     });
-    const command: ModifyImportCommand = {
-      type: "modifyImport",
-      payload: {
-        importId: "/import[0]",
-        namespace: "http://example.com/new-ns",
-        schemaLocation: "new-schema.xsd",
-      },
-    };
 
-    executeModifyImport(command, schemaObj);
+    modifyImport(schemaObj, {
+      importId: "/import[0]",
+      namespace: "http://example.com/new-ns",
+      schemaLocation: "new-schema.xsd",
+    });
 
     const imports = schemaObj.import_ ?? [];
     expect(imports[0].namespace).toBe("http://example.com/new-ns");
@@ -335,15 +361,11 @@ describe("executeModifyImport", () => {
       { namespace: "http://example.com/ns1", schemaLocation: "schema1.xsd" },
       { namespace: "http://example.com/ns2", schemaLocation: "schema2.xsd" }
     );
-    const command: ModifyImportCommand = {
-      type: "modifyImport",
-      payload: {
-        importId: "/import[1]",
-        namespace: "http://example.com/modified",
-      },
-    };
 
-    executeModifyImport(command, schemaObj);
+    modifyImport(schemaObj, {
+      importId: "/import[1]",
+      namespace: "http://example.com/modified",
+    });
 
     const imports = schemaObj.import_ ?? [];
     expect(imports[0].namespace).toBe("http://example.com/ns1");
@@ -355,12 +377,8 @@ describe("executeModifyImport", () => {
       namespace: "http://example.com/ns",
       schemaLocation: "schema.xsd",
     });
-    const command: ModifyImportCommand = {
-      type: "modifyImport",
-      payload: { importId: "/import[0]" },
-    };
 
-    executeModifyImport(command, schemaObj);
+    modifyImport(schemaObj, { importId: "/import[0]" });
 
     const imports = schemaObj.import_ ?? [];
     expect(imports[0].namespace).toBe("http://example.com/ns");
@@ -557,12 +575,8 @@ describe("executeModifyImport", () => {
 describe("executeAddInclude", () => {
   test("should add a single include to a schema with no existing includes", () => {
     const schemaObj = emptySchema();
-    const command: AddIncludeCommand = {
-      type: "addInclude",
-      payload: { schemaLocation: "other.xsd" },
-    };
 
-    executeAddInclude(command, schemaObj);
+    addInclude(schemaObj, { schemaLocation: "other.xsd" });
 
     const includes = schemaObj.include ?? [];
     expect(includes).toHaveLength(1);
@@ -571,12 +585,8 @@ describe("executeAddInclude", () => {
 
   test("should append a second include without removing existing ones", () => {
     const schemaObj = schemaWithIncludes("first.xsd");
-    const command: AddIncludeCommand = {
-      type: "addInclude",
-      payload: { schemaLocation: "second.xsd" },
-    };
 
-    executeAddInclude(command, schemaObj);
+    addInclude(schemaObj, { schemaLocation: "second.xsd" });
 
     const includes = schemaObj.include ?? [];
     expect(includes).toHaveLength(2);
@@ -586,28 +596,18 @@ describe("executeAddInclude", () => {
 
   test("should trim leading/trailing whitespace from schemaLocation", () => {
     const schemaObj = emptySchema();
-    const command: AddIncludeCommand = {
-      type: "addInclude",
-      payload: { schemaLocation: "  trimmed.xsd  " },
-    };
 
-    executeAddInclude(command, schemaObj);
+    addInclude(schemaObj, { schemaLocation: "  trimmed.xsd  " });
 
     expect((schemaObj.include ?? [])[0].schemaLocation).toBe("trimmed.xsd");
   });
 
   test("should produce a schema that survives a marshal/unmarshal round-trip", () => {
     const schemaObj = emptySchema();
-    const command: AddIncludeCommand = {
-      type: "addInclude",
-      payload: { schemaLocation: "included.xsd" },
-    };
 
-    executeAddInclude(command, schemaObj);
+    addInclude(schemaObj, { schemaLocation: "included.xsd" });
 
-    const xml = marshal(schemaObj);
-    const roundTripped = unmarshal(schema, xml);
-    const includes = roundTripped.include ?? [];
+    const includes = unmarshal(schema, marshal(schemaObj)).include ?? [];
     expect(includes).toHaveLength(1);
     expect(includes[0].schemaLocation).toBe("included.xsd");
   });
@@ -620,24 +620,16 @@ describe("executeAddInclude", () => {
 describe("executeRemoveInclude", () => {
   test("should remove the only include, leaving include undefined", () => {
     const schemaObj = schemaWithIncludes("other.xsd");
-    const command: RemoveIncludeCommand = {
-      type: "removeInclude",
-      payload: { includeId: "/include[0]" },
-    };
 
-    executeRemoveInclude(command, schemaObj);
+    removeInclude(schemaObj, { includeId: "/include[0]" });
 
     expect(schemaObj.include).toBeUndefined();
   });
 
   test("should remove the first include when multiple includes exist", () => {
     const schemaObj = schemaWithIncludes("first.xsd", "second.xsd");
-    const command: RemoveIncludeCommand = {
-      type: "removeInclude",
-      payload: { includeId: "/include[0]" },
-    };
 
-    executeRemoveInclude(command, schemaObj);
+    removeInclude(schemaObj, { includeId: "/include[0]" });
 
     const includes = schemaObj.include ?? [];
     expect(includes).toHaveLength(1);
@@ -646,12 +638,8 @@ describe("executeRemoveInclude", () => {
 
   test("should remove the last include when multiple includes exist", () => {
     const schemaObj = schemaWithIncludes("first.xsd", "second.xsd");
-    const command: RemoveIncludeCommand = {
-      type: "removeInclude",
-      payload: { includeId: "/include[1]" },
-    };
 
-    executeRemoveInclude(command, schemaObj);
+    removeInclude(schemaObj, { includeId: "/include[1]" });
 
     const includes = schemaObj.include ?? [];
     expect(includes).toHaveLength(1);
@@ -666,24 +654,16 @@ describe("executeRemoveInclude", () => {
 describe("executeModifyInclude", () => {
   test("should update schemaLocation", () => {
     const schemaObj = schemaWithIncludes("old.xsd");
-    const command: ModifyIncludeCommand = {
-      type: "modifyInclude",
-      payload: { includeId: "/include[0]", schemaLocation: "new.xsd" },
-    };
 
-    executeModifyInclude(command, schemaObj);
+    modifyInclude(schemaObj, { includeId: "/include[0]", schemaLocation: "new.xsd" });
 
     expect((schemaObj.include ?? [])[0].schemaLocation).toBe("new.xsd");
   });
 
   test("should modify only the include at the specified position", () => {
     const schemaObj = schemaWithIncludes("first.xsd", "second.xsd");
-    const command: ModifyIncludeCommand = {
-      type: "modifyInclude",
-      payload: { includeId: "/include[1]", schemaLocation: "modified.xsd" },
-    };
 
-    executeModifyInclude(command, schemaObj);
+    modifyInclude(schemaObj, { includeId: "/include[1]", schemaLocation: "modified.xsd" });
 
     const includes = schemaObj.include ?? [];
     expect(includes[0].schemaLocation).toBe("first.xsd");
@@ -692,12 +672,8 @@ describe("executeModifyInclude", () => {
 
   test("should trim whitespace from schemaLocation when modifying", () => {
     const schemaObj = schemaWithIncludes("old.xsd");
-    const command: ModifyIncludeCommand = {
-      type: "modifyInclude",
-      payload: { includeId: "/include[0]", schemaLocation: "  trimmed.xsd  " },
-    };
 
-    executeModifyInclude(command, schemaObj);
+    modifyInclude(schemaObj, { includeId: "/include[0]", schemaLocation: "  trimmed.xsd  " });
 
     expect((schemaObj.include ?? [])[0].schemaLocation).toBe("trimmed.xsd");
   });
@@ -712,18 +688,13 @@ describe("executeModifySchemaNamespaces", () => {
       tns: "http://example.com/old-target",
     };
 
-    const command: ModifySchemaNamespacesCommand = {
-      type: "modifySchemaNamespaces",
-      payload: {
-        targetNamespace: "http://example.com/new-target",
-        namespacePrefixes: {
-          xs: "http://www.w3.org/2001/XMLSchema",
-          tns: "http://example.com/new-target",
-        },
+    modifySchemaNamespaces(schemaObj, {
+      targetNamespace: "http://example.com/new-target",
+      namespacePrefixes: {
+        xs: "http://www.w3.org/2001/XMLSchema",
+        tns: "http://example.com/new-target",
       },
-    };
-
-    executeModifySchemaNamespaces(command, schemaObj);
+    });
 
     expect(schemaObj.targetNamespace).toBe("http://example.com/new-target");
     expect(schemaObj._namespacePrefixes).toEqual({
@@ -743,22 +714,17 @@ describe("executeModifySchemaNamespaces", () => {
     element.type_ = "old:PersonType";
     schemaObj.element = [element];
 
-    const command: ModifySchemaNamespacesCommand = {
-      type: "modifySchemaNamespaces",
-      payload: {
-        targetNamespace: "",
-        namespacePrefixes: {
-          xs: "http://www.w3.org/2001/XMLSchema",
-          new: "http://example.com/ns",
-        },
-        previousNamespacePrefixes: {
-          xs: "http://www.w3.org/2001/XMLSchema",
-          old: "http://example.com/ns",
-        },
+    modifySchemaNamespaces(schemaObj, {
+      targetNamespace: "",
+      namespacePrefixes: {
+        xs: "http://www.w3.org/2001/XMLSchema",
+        new: "http://example.com/ns",
       },
-    };
-
-    executeModifySchemaNamespaces(command, schemaObj);
+      previousNamespacePrefixes: {
+        xs: "http://www.w3.org/2001/XMLSchema",
+        old: "http://example.com/ns",
+      },
+    });
 
     expect(schemaObj._namespacePrefixes).toEqual({
       xs: "http://www.w3.org/2001/XMLSchema",
@@ -775,15 +741,10 @@ describe("executeModifySchemaNamespaces", () => {
       tns: "http://example.com/old-target",
     };
 
-    const command: ModifySchemaNamespacesCommand = {
-      type: "modifySchemaNamespaces",
-      payload: {
-        targetNamespace: "",
-        namespacePrefixes: {},
-      },
-    };
-
-    executeModifySchemaNamespaces(command, schemaObj);
+    modifySchemaNamespaces(schemaObj, {
+      targetNamespace: "",
+      namespacePrefixes: {},
+    });
 
     expect(schemaObj.targetNamespace).toBeUndefined();
     expect(schemaObj._namespacePrefixes).toBeUndefined();

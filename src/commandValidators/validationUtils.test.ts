@@ -32,10 +32,8 @@ describe("validationUtils", () => {
       expect(result.valid).toBe(true);
     });
 
-    test("should accept valid minOccurs values", () => {
-      expect(validateMinOccurs(0).valid).toBe(true);
-      expect(validateMinOccurs(1).valid).toBe(true);
-      expect(validateMinOccurs(10).valid).toBe(true);
+    test.each([0, 1, 10])("should accept the minOccurs %d", (value) => {
+      expect(validateMinOccurs(value).valid).toBe(true);
     });
 
     test("should reject negative minOccurs", () => {
@@ -62,10 +60,8 @@ describe("validationUtils", () => {
       expect(result.valid).toBe(true);
     });
 
-    test("should accept valid numeric maxOccurs values", () => {
-      expect(validateMaxOccurs(0).valid).toBe(true);
-      expect(validateMaxOccurs(1).valid).toBe(true);
-      expect(validateMaxOccurs(10).valid).toBe(true);
+    test.each([0, 1, 10])("should accept the numeric maxOccurs %d", (value) => {
+      expect(validateMaxOccurs(value).valid).toBe(true);
     });
 
     test("should reject negative maxOccurs", () => {

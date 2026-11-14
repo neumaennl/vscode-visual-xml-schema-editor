@@ -127,6 +127,25 @@ const BUILD_ORDER_TYPE: SchemaCommand[] = [
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
+
+/**
+ * Builds a schema with the complexType `OrderType` whose sequence holds one element.
+ *
+ * @param elementName - The name of the element
+ * @param elementType - The type of the element, if it has one
+ * @returns The XML of the schema
+ */
+function orderTypeWithElement(elementName: string, elementType?: string): string {
+  const xml = runCommandExpectSuccess(EXAMPLE_XSD, {
+    type: "addComplexType",
+    payload: { parentId: "/schema", typeName: "OrderType", contentModel: "sequence" },
+  });
+  return runCommandExpectSuccess(xml, {
+    type: "addElement",
+    payload: { parentId: "/complexType:OrderType/group:sequence[0]", elementName, elementType },
+  });
+}
+
 describe("Integration: chained editing pipeline on example.xsd", () => {
   /**
    * Main scenario: build a complete OrderType with:
@@ -224,18 +243,7 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
 
   test("rejects adding a duplicate element into OrderType sequence", () => {
     // Build a schema that already has orderId in OrderType/sequence
-    let xml = runCommandExpectSuccess(EXAMPLE_XSD, {
-      type: "addComplexType",
-      payload: { parentId: "/schema", typeName: "OrderType", contentModel: "sequence" },
-    });
-    xml = runCommandExpectSuccess(xml, {
-      type: "addElement",
-      payload: {
-        parentId: "/complexType:OrderType/group:sequence[0]",
-        elementName: "orderId",
-        elementType: "xs:string",
-      },
-    });
+    let xml = orderTypeWithElement("orderId", "xs:string");
 
     // Attempt to add orderId again
     runCommandExpectValidationFailure(
@@ -254,18 +262,7 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
 
   test("replaces an element type attribute when adding an anonymous complexType", () => {
     // qty starts with a type attribute and is then converted to an inline complexType
-    let xml = runCommandExpectSuccess(EXAMPLE_XSD, {
-      type: "addComplexType",
-      payload: { parentId: "/schema", typeName: "OrderType", contentModel: "sequence" },
-    });
-    xml = runCommandExpectSuccess(xml, {
-      type: "addElement",
-      payload: {
-        parentId: "/complexType:OrderType/group:sequence[0]",
-        elementName: "qty",
-        elementType: "xs:integer",
-      },
-    });
+    let xml = orderTypeWithElement("qty", "xs:integer");
 
     xml = runCommandExpectSuccess(xml, {
       type: "addComplexType",
@@ -285,19 +282,7 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
 
   test("chains addElement without type, then addSimpleType with enumeration restrictions", () => {
     // Build schema with OrderType, then add a status element with anonymous simpleType
-    let xml = runCommandExpectSuccess(EXAMPLE_XSD, {
-      type: "addComplexType",
-      payload: { parentId: "/schema", typeName: "OrderType", contentModel: "sequence" },
-    });
-
-    // Add status element without a type (will carry an anonymous simpleType)
-    xml = runCommandExpectSuccess(xml, {
-      type: "addElement",
-      payload: {
-        parentId: "/complexType:OrderType/group:sequence[0]",
-        elementName: "status",
-      },
-    });
+    let xml = orderTypeWithElement("status");
 
     // Add anonymous simpleType with enumeration restrictions in one command
     xml = runCommandExpectSuccess(xml, {

@@ -4,8 +4,8 @@ title: Testing
 description: How the extension is tested - running the tests and the type check, the five Vitest projects, mocks and helpers, conventions for tests, mocks, helper functions and helper classes, which tests to write for typical changes, coverage, CI, the smoke tests in the extension host with a mock webview, and how the current tests compare with the testing strategy of ADR 001.
 tags: [testing, vitest, mocks, coverage, ci, conventions]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-11T19:16:50Z }
-verified: { by: human:neumaennl, at: 2026-11-11T19:19:10Z }
+generated: { by: human:neumaennl, at: 2026-11-14T19:05:00Z }
+verified: { by: human:neumaennl, at: 2026-11-14T20:20:13Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -34,6 +34,9 @@ sources:
   - id: text-test-helpers
     resource: ../src/__tests__/textTestHelpers.ts
     title: Assertion helpers for the order of strings in text
+  - id: reference-test-helpers
+    resource: ../src/__tests__/referenceTestHelpers.ts
+    title: Places of references for the group and attribute group validators
   - id: release-test-helpers
     resource: ../scripts/__tests__/releaseTestHelpers.ts
     title: Helpers for the tests of the scripts
@@ -138,7 +141,8 @@ Use the Node version from `.nvmrc`, which CI also uses. It is the Node version o
 - **Properties panel.** `webview-src/__tests__/propertiesPanelTestHelpers.ts` finds the fields of the panel by their labels (`getInputByLabel()`, `getSelectByLabel()`, `getSelectsByLabel()`, `hasLabel()`) and buttons, such as those of the tabs, by their text (`findButton()`).[^properties-panel-test-helpers]
 - **Diagram items.** `webview-src/__tests__/diagramTestHelpers.ts` builds the diagram of a real schema with the `DiagramBuilder`: `diagramItems(schemaObj)` returns all items, `diagramItem(schemaObj, id)` the item with an ID. Tests of the panel and the drop code use them instead of creating `DiagramItem`s by hand, so that the items have the IDs and values that the builder gives them (see [Expected results](#expected-results)). New tests follow this rule, and some older ones were rewritten to follow it; others still create the items by hand.[^diagram-test-helpers]
 - **SVG measuring.** jsdom has no layout engine, so `setupGetBBoxMock()` in `webview-src/__tests__/svgTestHelpers.ts` gives every element a `getBBox()` that assumes 6 pixels per character and a height of 10 pixels.[^svg-test-helpers]
-- **Pipeline helpers.** `src/__tests__/pipelineTestHelpers.ts` has small schemas as constants (`SCHEMA_WITH_ELEMENTS` and others, built with `schemaXmlWith()`) and runs a command through a new `CommandProcessor`: `runCommand()`, `runCommandExpectSuccess()` (returns the XML), `runCommandExpectSuccessSchema()` (returns the unmarshalled schema) and `runCommandExpectValidationFailure()`.[^pipeline-test-helpers]
+- **Pipeline helpers.** `src/__tests__/pipelineTestHelpers.ts` has small schemas as constants (`SCHEMA_WITH_ELEMENTS` and others, built with `schemaXmlWith()`) and runs a command through a new `CommandProcessor`: `runCommand()`, `runCommandExpectSuccess()` (returns the XML), `runCommandExpectSuccessSchema()` (returns the unmarshalled schema) and `runCommandExpectValidationFailure()`. `findTopLevelElement(schemaObj, name)` returns a top-level element of the result and asserts that it exists.[^pipeline-test-helpers]
+- **Places of references.** `localElementPlaces(localElement)` in `src/__tests__/referenceTestHelpers.ts` returns the places where a local element can be nested in schema content, for the tests of the group and attribute group validators that check whether a definition is still referenced.[^reference-test-helpers]
 - **Schema XML and objects.** `shared/__tests__/schemaTestHelpers.ts`, which the tests of all projects use, builds the XML of a schema with `schemaXmlWith(body, namespaces)` (the XML declaration, the `xs` namespace, further namespace declarations by prefix if given, and the given content) and of a schema without content with `emptySchemaXml()`. For the tests of validators and executors it unmarshals schemas: `schemaWith(body, namespaces)`, `emptySchema()`, `schemaWithAttrGroups(body)` and `schemaWithIncludes(...)`. `derivedComplexTypeT(content, derivation, body)` builds the XML of a derived complex type `T`, and `DERIVATIONS` lists the four combinations of `complexContent` or `simpleContent` with `extension` or `restriction` for `test.each()`. A test that only needs the schema object uses these instead of unmarshalling XML itself.[^schema-test-helpers] `src/__tests__/resourceTestHelpers.ts` reads the XML files in `src/__tests__/test-resources` for the tests of the extension host: `readTestXml(name)` returns the text, `readTestSchema(name)` the unmarshalled schema, and `TEST_RESOURCES` is the path of the folder, which the agreement test lists.[^resource-test-helpers]
 - **Assertions.** `expectInvalid()` in `src/__tests__/validationTestHelpers.ts` checks that a validation failed and narrows the result, so that the test can read `error`.[^validation-test-helpers] `src/__tests__/textTestHelpers.ts` checks the order of strings in text such as serialized XML: `expectLinesInOrder()` across lines, `expectInOrderOnLine()` within one line.[^text-test-helpers]
 - **Scripts.** The tests of the scripts send no request and install nothing. `scripts/__tests__/releaseTestHelpers.ts` replaces `fetch` with `stubFetch()`, which answers each URL with a given body, and builds GitHub releases with `release()` and `releasesPage()`. The tests of `vscode-version.ts` and `scripts/lib/node-setup.ts` mock `node:child_process`, `node:fs` and `node:readline/promises` where the script would start programs, check files or ask in the terminal, and work in a temporary folder. The tests of `scripts/lib/compiler-target.ts` write tsconfig files and an ESLint configuration into a temporary folder and check which editions it finds and replaces. The tests of `verify-vsix.ts` unpack tiny VSIX files from `scripts/__tests__/test-resources/` with the same tool as the script (`unzip`, on Windows `tar.exe`), because unpacking is what the script checks: a valid extension, one without `activate()` and one with a missing dependency, all ES modules like the extension.[^release-test-helpers]
@@ -199,7 +203,7 @@ Existing tests that do not follow these conventions yet are listed in [Known iss
 
 ## Mocks
 
-- **Mock only the boundaries.** Mock the VS Code API, the webview API (`acquireVsCodeApi`), browser features that jsdom lacks (such as `getBBox()`), the network and other programs, and calls that are needed to force an error path. Everything else runs for real: the `CommandProcessor`, the XML binding, the DOM in jsdom.
+- **Mock at the boundary of the unit.** A unit test tests one module or class (see [Kinds of tests](#kinds-of-tests)); what the module imports may be mocked, so that the test depends only on the unit, for example the `SchemaModelManager` in the tests of the `CommandProcessor`. Integration tests, such as the pipeline tests in `src/__tests__/`, mock only what lies outside the extension: the VS Code API, the webview API (`acquireVsCodeApi`), browser features that jsdom lacks (such as `getBBox()`), the network and other programs; everything else runs for real in them, such as the `CommandProcessor`, the XML binding and the DOM in jsdom. Both kinds of tests may mock calls that are needed to force an error path.
 - **One mock of the VS Code API.** Tests use `src/__mocks__/vscode.ts` through the alias and do not call `vi.mock("vscode")`. If a test needs a part of the API that is missing, it is added to the mock. A test changes the behavior of a mock function with `mockReturnValue()` or `mockImplementation()`.
 - **Partial stubs of VS Code objects.** Objects that the code receives (`TextDocument`, `Webview`, `WebviewPanel`, `ExtensionContext`) are stubbed with only the members the code under test uses, and cast with `as unknown as`. The lint rule `no-restricted-syntax` forbids this cast, so each one gets `// eslint-disable-next-line no-restricted-syntax -- <reason>`.[^eslint]
 - **Types of mocks.** `vi.fn()` does not take the parameter types from the variable or property it is assigned to; a mock that needs them gets the function type, for example `vi.fn<CommandExecutor["execute"]>(…)`. A cast to a mock type uses `Mock` or `MockedFunction`, imported with `import type { Mock } from "vitest"`; the other Vitest functions are globals.
@@ -285,6 +289,8 @@ ADR 001 plans six levels of testing. The current state:[^adr-001]
 [^provider-test-helpers]: Stubs of the VS Code objects for the provider
 
 [^validation-test-helpers]: Assertion helper for validation results
+
+[^reference-test-helpers]: Places of references for the group and attribute group validators
 
 [^text-test-helpers]: Assertion helpers for the order of strings in text
 

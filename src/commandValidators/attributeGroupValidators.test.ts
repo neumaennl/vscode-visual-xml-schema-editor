@@ -16,6 +16,7 @@ import {
   validateModifyAttributeGroup,
 } from "./attributeGroupValidators.js";
 import { expectInvalid } from "../__tests__/validationTestHelpers.js";
+import { localElementPlaces } from "../__tests__/referenceTestHelpers.js";
 import { emptySchema, schemaWith, schemaWithAttrGroups } from "../../shared/__tests__/schemaTestHelpers.js";
 import { readTestSchema } from "../__tests__/resourceTestHelpers.js";
 
@@ -69,61 +70,15 @@ const REFERENCE_PLACES: [string, string][] = [
     `<xs:element name="root"><xs:complexType><xs:attributeGroup ref="REF"/></xs:complexType></xs:element>`,
   ],
   [
-    "a local element inside a top-level element",
-    `<xs:element name="root"><xs:complexType><xs:sequence>${LOCAL_ELEMENT_WITH_REF}</xs:sequence></xs:complexType></xs:element>`,
-  ],
-  [
-    "a local element in a choice nested in a sequence",
-    `<xs:complexType name="T"><xs:sequence><xs:choice>${LOCAL_ELEMENT_WITH_REF}</xs:choice></xs:sequence></xs:complexType>`,
-  ],
-  [
-    "a local element in a sequence nested in a choice",
-    `<xs:complexType name="T"><xs:choice><xs:sequence>${LOCAL_ELEMENT_WITH_REF}</xs:sequence></xs:choice></xs:complexType>`,
-  ],
-  [
-    "a local element in an all",
-    `<xs:complexType name="T"><xs:all>${LOCAL_ELEMENT_WITH_REF}</xs:all></xs:complexType>`,
-  ],
-  [
-    "a local element in the sequence of a complexContent extension",
-    `<xs:complexType name="Base"/>
-     <xs:complexType name="Derived"><xs:complexContent><xs:extension base="Base"><xs:sequence>${LOCAL_ELEMENT_WITH_REF}</xs:sequence></xs:extension></xs:complexContent></xs:complexType>`,
-  ],
-  [
-    "a local element in the choice of a complexContent extension",
-    `<xs:complexType name="Base"/>
-     <xs:complexType name="Derived"><xs:complexContent><xs:extension base="Base"><xs:choice>${LOCAL_ELEMENT_WITH_REF}</xs:choice></xs:extension></xs:complexContent></xs:complexType>`,
-  ],
-  [
-    "a local element in the all of a complexContent extension",
-    `<xs:complexType name="Base"/>
-     <xs:complexType name="Derived"><xs:complexContent><xs:extension base="Base"><xs:all>${LOCAL_ELEMENT_WITH_REF}</xs:all></xs:extension></xs:complexContent></xs:complexType>`,
-  ],
-  [
-    "a local element in the sequence of a complexContent restriction",
-    `<xs:complexType name="Derived"><xs:complexContent><xs:restriction base="xs:anyType"><xs:sequence>${LOCAL_ELEMENT_WITH_REF}</xs:sequence></xs:restriction></xs:complexContent></xs:complexType>`,
-  ],
-  [
-    "a local element in the choice of a complexContent restriction",
-    `<xs:complexType name="Derived"><xs:complexContent><xs:restriction base="xs:anyType"><xs:choice>${LOCAL_ELEMENT_WITH_REF}</xs:choice></xs:restriction></xs:complexContent></xs:complexType>`,
-  ],
-  [
-    "a local element in the all of a complexContent restriction",
-    `<xs:complexType name="Derived"><xs:complexContent><xs:restriction base="xs:anyType"><xs:all>${LOCAL_ELEMENT_WITH_REF}</xs:all></xs:restriction></xs:complexContent></xs:complexType>`,
-  ],
-  [
     "a local element whose inline complexType extends another type",
     `<xs:complexType name="Base"/>
      <xs:complexType name="T"><xs:sequence><xs:element name="child"><xs:complexType><xs:complexContent><xs:extension base="Base"><xs:attributeGroup ref="REF"/></xs:extension></xs:complexContent></xs:complexType></xs:element></xs:sequence></xs:complexType>`,
   ],
   [
-    "a local element in a named model group",
-    `<xs:group name="Content"><xs:sequence>${LOCAL_ELEMENT_WITH_REF}</xs:sequence></xs:group>`,
-  ],
-  [
     "another attribute group",
     `<xs:attributeGroup name="Combined"><xs:attributeGroup ref="REF"/></xs:attributeGroup>`,
   ],
+  ...localElementPlaces(LOCAL_ELEMENT_WITH_REF),
 ];
 
 /** A complexType `T` that extends `B` and references `CommonAttrs` in its extension. */
@@ -144,23 +99,13 @@ describe("AttributeGroup Validators", () => {
   describe("validateAddAttributeGroup", () => {
     describe("definition mode", () => {
       test("should reject addAttributeGroup with missing groupName", () => {
-        const command: AddAttributeGroupCommand = {
-          type: "addAttributeGroup",
-          payload: { groupName: "" },
-        };
-
-        const result = validateAddAttributeGroup(command, schemaObj);
+        const result = validateAddAttributeGroup({ type: "addAttributeGroup", payload: { groupName: "" } }, schemaObj);
         expectInvalid(result);
         expect(result.error).toBe("Attribute group name must be a valid XML name");
       });
 
       test("should reject addAttributeGroup with an invalid XML name", () => {
-        const command: AddAttributeGroupCommand = {
-          type: "addAttributeGroup",
-          payload: { groupName: "123-invalid" },
-        };
-
-        const result = validateAddAttributeGroup(command, schemaObj);
+        const result = validateAddAttributeGroup({ type: "addAttributeGroup", payload: { groupName: "123-invalid" } }, schemaObj);
         expectInvalid(result);
         expect(result.error).toBe("Attribute group name must be a valid XML name");
       });
@@ -177,12 +122,7 @@ describe("AttributeGroup Validators", () => {
       });
 
       test("should accept addAttributeGroup with a valid unique name", () => {
-        const command: AddAttributeGroupCommand = {
-          type: "addAttributeGroup",
-          payload: { groupName: "NewAttrs" },
-        };
-
-        const result = validateAddAttributeGroup(command, schemaObj);
+        const result = validateAddAttributeGroup({ type: "addAttributeGroup", payload: { groupName: "NewAttrs" } }, schemaObj);
         expect(result.valid).toBe(true);
       });
 
@@ -273,12 +213,7 @@ describe("AttributeGroup Validators", () => {
     });
     describe("parents of references", () => {
       test("should reject a definition without groupName and ref", () => {
-        const command: AddAttributeGroupCommand = {
-          type: "addAttributeGroup",
-          payload: {},
-        };
-
-        const result = validateAddAttributeGroup(command, schemaObj);
+        const result = validateAddAttributeGroup({ type: "addAttributeGroup", payload: {} }, schemaObj);
         expectInvalid(result);
         expect(result.error).toBe("Attribute group name must be a valid XML name");
       });
@@ -326,12 +261,7 @@ describe("AttributeGroup Validators", () => {
   describe("validateRemoveAttributeGroup", () => {
     describe("definition mode", () => {
       test("should reject removeAttributeGroup with missing groupId", () => {
-        const command: RemoveAttributeGroupCommand = {
-          type: "removeAttributeGroup",
-          payload: { groupId: "" },
-        };
-
-        const result = validateRemoveAttributeGroup(command, schemaObj);
+        const result = validateRemoveAttributeGroup({ type: "removeAttributeGroup", payload: { groupId: "" } }, schemaObj);
         expectInvalid(result);
         expect(result.error).toBe("Attribute group ID cannot be empty");
       });
@@ -347,38 +277,16 @@ describe("AttributeGroup Validators", () => {
         expect(result.error).toContain("Attribute group not found");
       });
 
-      test("should reject removeAttributeGroup when group is referenced in a complexType", () => {
-        const referenced = readTestSchema(PERSON_TYPE_WITH_REF_XSD);
-        const command: RemoveAttributeGroupCommand = {
-          type: "removeAttributeGroup",
-          payload: { groupId: "/attributeGroup:CommonAttrs" },
-        };
+      test.each([
+        ["a complexType", PERSON_TYPE_WITH_REF_XSD],
+        ["the inline complexType of a local element in a sequence", "attribute-group-ref-in-local-element-in-sequence.xsd"],
+        ["the inline complexType of a local element in a choice", "attribute-group-ref-in-local-element-in-choice.xsd"],
+      ])("should reject removeAttributeGroup when group is referenced in %s", (_place, file) => {
+        const result = validateRemoveAttributeGroup(
+          { type: "removeAttributeGroup", payload: { groupId: "/attributeGroup:CommonAttrs" } },
+          readTestSchema(file)
+        );
 
-        const result = validateRemoveAttributeGroup(command, referenced);
-        expectInvalid(result);
-        expect(result.error).toContain("still referenced");
-      });
-
-      test("should reject removeAttributeGroup when group is referenced inside a nested local element's inline complexType", () => {
-        const referenced = readTestSchema("attribute-group-ref-in-local-element-in-sequence.xsd");
-        const command: RemoveAttributeGroupCommand = {
-          type: "removeAttributeGroup",
-          payload: { groupId: "/attributeGroup:CommonAttrs" },
-        };
-
-        const result = validateRemoveAttributeGroup(command, referenced);
-        expectInvalid(result);
-        expect(result.error).toContain("still referenced");
-      });
-
-      test("should reject removeAttributeGroup when group is referenced inside a nested choice's local element", () => {
-        const referenced = readTestSchema("attribute-group-ref-in-local-element-in-choice.xsd");
-        const command: RemoveAttributeGroupCommand = {
-          type: "removeAttributeGroup",
-          payload: { groupId: "/attributeGroup:CommonAttrs" },
-        };
-
-        const result = validateRemoveAttributeGroup(command, referenced);
         expectInvalid(result);
         expect(result.error).toContain("still referenced");
       });
@@ -529,12 +437,7 @@ describe("AttributeGroup Validators", () => {
   describe("validateModifyAttributeGroup", () => {
     describe("definition mode", () => {
       test("should reject modifyAttributeGroup with missing groupId", () => {
-        const command: ModifyAttributeGroupCommand = {
-          type: "modifyAttributeGroup",
-          payload: { groupId: "" },
-        };
-
-        const result = validateModifyAttributeGroup(command, schemaObj);
+        const result = validateModifyAttributeGroup({ type: "modifyAttributeGroup", payload: { groupId: "" } }, schemaObj);
         expectInvalid(result);
         expect(result.error).toBe("Attribute group ID cannot be empty");
       });

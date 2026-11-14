@@ -11,7 +11,7 @@ import type {
   CommandExecutionValidationFailure,
   CommandExecutionRuntimeFailure,
 } from "./commandProcessor.js";
-import { AddElementCommand, SchemaCommand, schema, topLevelElement } from "../shared/types.js";
+import { AddElementCommand, AddElementPayload, SchemaCommand, schema, topLevelElement } from "../shared/types.js";
 import type { CommandValidator } from "./commandValidator.js";
 import type { CommandExecutor } from "./commandExecutor.js";
 import { SchemaModelManager } from "./schemaModelManager.js";
@@ -32,6 +32,82 @@ const INVALID_COMMAND = { type: "unknownCommand", payload: {} } as unknown as Sc
 const PERSON_ELEMENT = `<xs:element name="person" type="xs:string"/>`;
 
 /**
+ * Creates a command that adds the top-level element `test` of type `string`.
+ *
+ * @param payload - Payload fields that differ from that
+ * @returns The command
+ */
+function addTestElement(payload: Partial<AddElementPayload> = {}): AddElementCommand {
+  return {
+    type: "addElement",
+    payload: { parentId: "/schema", elementName: "test", elementType: "string", ...payload },
+  };
+}
+
+/**
+ * Creates a model manager mock that loads, clones and serializes successfully.
+ *
+ * @param schemaObj - The schema that the mock returns as loaded and as clone
+ * @param overrides - Mock functions that differ from that
+ * @returns The mock
+ */
+function mockModelManager(schemaObj: schema, overrides: Partial<MockModelManager> = {}): MockModelManager {
+  return {
+    loadFromXml: vi.fn(),
+    getSchema: vi.fn().mockReturnValue(schemaObj),
+    setSchema: vi.fn(),
+    cloneSchema: vi.fn().mockReturnValue(schemaObj),
+    toXml: vi.fn().mockReturnValue(emptySchemaXml()),
+    ...overrides,
+  };
+}
+
+/**
+ * Creates an executor mock that changes the schema in place, like a successful executor.
+ *
+ * @returns The mock
+ */
+function versionSettingExecutor(): MockExecutor {
+  return {
+    execute: vi.fn<CommandExecutor["execute"]>((_command, schemaObj) => {
+      schemaObj.version = "1.0";
+    }),
+  };
+}
+
+/**
+ * Creates an executor mock that throws.
+ *
+ * @param message - The message of the error
+ * @returns The mock
+ */
+function throwingExecutor(message: string): MockExecutor {
+  return {
+    execute: vi.fn(() => {
+      throw new Error(message);
+    }),
+  };
+}
+
+/**
+ * Creates a processor with the given mocks and the real implementations otherwise.
+ *
+ * @param mocks - The mocks to use
+ * @returns The processor
+ */
+function processorWith(mocks: {
+  validator?: MockValidator;
+  executor?: MockExecutor;
+  modelManager?: MockModelManager | SchemaModelManager;
+}): CommandProcessor {
+  return new CommandProcessor(
+    mocks.validator as CommandValidator | undefined,
+    mocks.executor as CommandExecutor | undefined,
+    mocks.modelManager as SchemaModelManager | undefined
+  );
+}
+
+/**
  * Returns the names of the top-level elements of the schema that the model manager holds.
  *
  * @param modelManager - The model manager
@@ -42,20 +118,22 @@ function topLevelElementNames(modelManager: SchemaModelManager): string[] {
 }
 
 /**
- * Asserts that a CommandExecutionResult represents a failure and narrows its
+ * Asserts that a CommandExecutionResult represents a failure without a schema or XML, and narrows its
  * type to CommandExecutionFailure, enabling access to `.error` and `.errorKind`.
  */
 function expectFailure(
   result: CommandExecutionResult
 ): asserts result is CommandExecutionFailure {
   expect(result.success).toBe(false);
+  expect(result.schema).toBeNull();
+  expect(result.xmlContent).toBeNull();
   if (result.success !== false)
     throw new Error("Expected command execution to fail");
 }
 
 /**
- * Asserts that a CommandExecutionResult represents a runtime failure and narrows
- * its type to CommandExecutionRuntimeFailure, enabling access to `.stack`.
+ * Asserts that a CommandExecutionResult represents a runtime failure with a stack and narrows its type
+ * to CommandExecutionRuntimeFailure.
  */
 function expectRuntimeFailure(
   result: CommandExecutionResult
@@ -64,6 +142,7 @@ function expectRuntimeFailure(
   expect(result.errorKind).toBe("runtime");
   if (result.errorKind !== "runtime")
     throw new Error("Expected runtime failure");
+  expect(typeof result.stack).toBe("string");
 }
 
 /**
@@ -85,203 +164,78 @@ describe("CommandProcessor", () => {
 
   beforeEach(() => {
     processor = new CommandProcessor();
-    // Create a mock schema object
     mockSchema = new schema();
   });
 
   describe("Core Functionality", () => {
-    test("should successfully execute command with mocked dependencies", () => {
-      // Mock SchemaModelManager
-      const mockModelManager: MockModelManager = {
-        loadFromXml: vi.fn(),
-        getSchema: vi.fn().mockReturnValue(mockSchema),
-        setSchema: vi.fn(),
-        cloneSchema: vi.fn().mockReturnValue(mockSchema),
-        toXml: vi.fn().mockReturnValue(emptySchemaXml()),
-      };
+    test("should load, clone, execute and serialize in order and return the result", () => {
+      const modelManager = mockModelManager(mockSchema);
+      const executor = versionSettingExecutor();
 
-      // Mock executor that modifies the schema (executor must modify schema in-place)
-      const mockExecutor: MockExecutor = {
-        execute: vi.fn<CommandExecutor["execute"]>((cmd, schemaObj) => {
-          // Modify the schema object to simulate successful execution
-          schemaObj.version = "1.0";
-        }),
-      };
+      const result = processorWith({ executor, modelManager }).execute(addTestElement(), emptySchemaXml());
 
-      const processorWithMock = new CommandProcessor(
-        undefined,
-        mockExecutor as CommandExecutor,
-        mockModelManager as SchemaModelManager
-      );
-
-      const command: AddElementCommand = {
-        type: "addElement",
-        payload: {
-          parentId: "/schema",
-          elementName: "testElement",
-          elementType: "string",
-        },
-      };
-
-      const result = processorWithMock.execute(command, emptySchemaXml());
-
-      // Verify mocks were called in correct order
-      expect(mockModelManager.loadFromXml).toHaveBeenCalledWith(emptySchemaXml());
-      expect(mockModelManager.getSchema).toHaveBeenCalled();
-      expect(mockModelManager.cloneSchema).toHaveBeenCalled();
-      expect(mockExecutor.execute).toHaveBeenCalled();
-      expect(mockModelManager.setSchema).toHaveBeenCalled();
-      expect(mockModelManager.toXml).toHaveBeenCalled();
-
-      // With a successful executor, command should succeed
+      expect(modelManager.loadFromXml).toHaveBeenCalledWith(emptySchemaXml());
+      expect(modelManager.getSchema).toHaveBeenCalled();
+      expect(modelManager.cloneSchema).toHaveBeenCalled();
+      expect(executor.execute).toHaveBeenCalled();
+      expect(modelManager.setSchema).toHaveBeenCalled();
+      expect(modelManager.toXml).toHaveBeenCalled();
       expect(result.success).toBe(true);
       expect(result.schema).not.toBeNull();
       expect(result.xmlContent).not.toBeNull();
-    });
-
-    test("should handle SchemaModelManager load failure", () => {
-      // Mock SchemaModelManager that throws on load
-      const mockModelManager: MockModelManager = {
-        loadFromXml: vi.fn(() => {
-          throw new Error("Failed to load schema from XML: Invalid XML");
-        }),
-        getSchema: vi.fn(),
-        setSchema: vi.fn(),
-        cloneSchema: vi.fn(),
-        toXml: vi.fn(),
-      };
-
-      const processorWithMock = new CommandProcessor(
-        undefined,
-        undefined,
-        mockModelManager as SchemaModelManager
-      );
-
-      const command: AddElementCommand = {
-        type: "addElement",
-        payload: {
-          parentId: "/schema",
-          elementName: "testElement",
-          elementType: "string",
-        },
-      };
-
-      const result = processorWithMock.execute(command, emptySchemaXml());
-
-      expectFailure(result);
-      expect(result.error).toContain("Failed to load schema from XML");
-      expect(mockModelManager.loadFromXml).toHaveBeenCalled();
+      expect(result).not.toHaveProperty("errorKind");
     });
 
     test("should return failure when parent node is not found", () => {
-      const result = processor.execute(
-        {
-          type: "addElement",
-          payload: {
-            parentId: "/element:nonexistent",
-            elementName: "testElement",
-            elementType: "string",
-          },
-        },
-        emptySchemaXml()
-      );
+      const result = processor.execute(addTestElement({ parentId: "/element:nonexistent" }), emptySchemaXml());
 
-      expect(result.success).toBe(false);
-      expect(result.schema).toBeNull();
-      expect(result.xmlContent).toBeNull();
+      expectFailure(result);
     });
   });
 
   describe("Transactional Behavior", () => {
     test("should preserve original schema on validation failure", () => {
       const modelManager = new SchemaModelManager();
-      const processorWithManager = new CommandProcessor(undefined, undefined, modelManager);
-      const command: AddElementCommand = {
-        type: "addElement",
-        payload: {
-          parentId: "",
-          elementName: "",
-          elementType: "",
-        },
-      };
+      const command = addTestElement({ parentId: "", elementName: "", elementType: "" });
 
-      const result = processorWithManager.execute(command, schemaXmlWith(PERSON_ELEMENT));
+      const result = processorWith({ modelManager }).execute(command, schemaXmlWith(PERSON_ELEMENT));
 
       expectValidationFailure(result);
-      expect(result.schema).toBeNull();
-      expect(result.xmlContent).toBeNull();
       expect(topLevelElementNames(modelManager)).toEqual(["person"]);
     });
 
     test("should clone schema before executing commands", () => {
-      const mockClonedSchema = new schema();
-      mockClonedSchema.version = "cloned";
-
-      // Mock SchemaModelManager
-      const mockModelManager: MockModelManager = {
-        loadFromXml: vi.fn(),
-        getSchema: vi.fn().mockReturnValue(mockSchema),
-        setSchema: vi.fn(),
-        cloneSchema: vi.fn().mockReturnValue(mockClonedSchema),
-        toXml: vi.fn().mockReturnValue(emptySchemaXml()),
-      };
-
-      // Mock executor
-      const mockExecutor: MockExecutor = {
-        execute: vi.fn<CommandExecutor["execute"]>((command, schema) => {
-          // Verify we're working on the cloned schema
-          expect(schema.version).toBe("cloned");
-          schema.version = "modified";
+      const clonedSchema = new schema();
+      clonedSchema.version = "cloned";
+      const modelManager = mockModelManager(mockSchema, { cloneSchema: vi.fn().mockReturnValue(clonedSchema) });
+      const executor: MockExecutor = {
+        execute: vi.fn<CommandExecutor["execute"]>((_command, schemaObj) => {
+          expect(schemaObj.version).toBe("cloned");
+          schemaObj.version = "modified";
         }),
       };
+      const command = addTestElement();
 
-      const processorWithMock = new CommandProcessor(
-        undefined,
-        mockExecutor as CommandExecutor,
-        mockModelManager as SchemaModelManager
-      );
-
-      const command: AddElementCommand = {
-        type: "addElement",
-        payload: {
-          parentId: "/schema",
-          elementName: "test",
-          elementType: "string",
-        },
-      };
-
-      const result = processorWithMock.execute(command, emptySchemaXml());
+      const result = processorWith({ executor, modelManager }).execute(command, emptySchemaXml());
 
       expect(result.success).toBe(true);
-      expect(mockModelManager.cloneSchema).toHaveBeenCalled();
-      expect(mockExecutor.execute).toHaveBeenCalledWith(command, mockClonedSchema);
+      expect(executor.execute).toHaveBeenCalledWith(command, clonedSchema);
     });
 
     test("should preserve original schema on execution failure", () => {
       const modelManager = new SchemaModelManager();
-      const processorWithManager = new CommandProcessor(undefined, undefined, modelManager);
-      const command: AddElementCommand = {
-        type: "addElement",
-        payload: {
-          parentId: "/element:nonexistent",
-          elementName: "test",
-          elementType: "string",
-        },
-      };
+      const command = addTestElement({ parentId: "/element:nonexistent" });
 
-      const result = processorWithManager.execute(command, schemaXmlWith(PERSON_ELEMENT));
+      const result = processorWith({ modelManager }).execute(command, schemaXmlWith(PERSON_ELEMENT));
 
-      // The parent node doesn't exist
       expectFailure(result);
-      expect(result.schema).toBeNull();
-      expect(result.xmlContent).toBeNull();
       expect(topLevelElementNames(modelManager)).toEqual(["person"]);
     });
 
     test("should preserve original schema when command fails", () => {
       const modelManager = new SchemaModelManager();
-      // Mock executor that changes the working copy and then throws an error
-      const mockExecutor: MockExecutor = {
+      // Executor that changes the working copy and then throws an error
+      const executor: MockExecutor = {
         execute: vi.fn<CommandExecutor["execute"]>((_command, workingSchema) => {
           const added = new topLevelElement();
           added.name = "added";
@@ -290,237 +244,80 @@ describe("CommandProcessor", () => {
         }),
       };
 
-      const processorWithMock = new CommandProcessor(
-        undefined,
-        mockExecutor as CommandExecutor,
-        modelManager
-      );
-
-      const command: AddElementCommand = {
-        type: "addElement",
-        payload: {
-          parentId: "/schema",
-          elementName: "test",
-          elementType: "string",
-        },
-      };
-
-      const result = processorWithMock.execute(command, schemaXmlWith(PERSON_ELEMENT));
+      const result = processorWith({ executor, modelManager }).execute(addTestElement(), schemaXmlWith(PERSON_ELEMENT));
 
       expectFailure(result);
-      expect(result.schema).toBeNull();
       expect(result.error).toContain("Execution failed");
-      expect(mockExecutor.execute).toHaveBeenCalled();
       expect(topLevelElementNames(modelManager)).toEqual(["person"]);
     });
   });
 
   describe("Error Handling", () => {
     test("should handle malformed XML gracefully", () => {
-      const malformedXml = "not valid xml at all";
-      const command: AddElementCommand = {
-        type: "addElement",
-        payload: {
-          parentId: "/schema",
-          elementName: "test",
-          elementType: "string",
-        },
-      };
+      const result = processor.execute(addTestElement(), "not valid xml at all");
 
-      const result = processor.execute(command, malformedXml);
-      expectFailure(result);
+      expectRuntimeFailure(result);
       expect(result.error).toContain("Failed to load schema from XML");
     });
 
-    test("should provide meaningful error messages", () => {
-      const command: AddElementCommand = {
-        type: "addElement",
-        payload: {
-          parentId: " ", // Whitespace-only string
-          elementName: "test",
-          elementType: "string",
-        },
-      };
-
-      const result = processor.execute(command, emptySchemaXml());
-      expectFailure(result);
-      expect(result.error).toBe("Parent ID cannot be empty");
-    });
-
-    test("should handle multiple validation errors", () => {
-      const command: AddElementCommand = {
-        type: "addElement",
-        payload: {
-          parentId: "/schema",
-          elementName: "123invalid", // Invalid XML name (starts with digit)
-          elementType: "string",
-        },
-      };
-
-      const result = processor.execute(command, emptySchemaXml());
-      expectFailure(result);
-      // Should catch the first validation error
-      expect(result.error).toBe("Element name must be a valid XML name");
-    });
-
-    test("should handle executor exceptions gracefully", () => {
-      // Mock executor that throws an exception
-      const mockExecutor: MockExecutor = {
-        execute: vi.fn(() => {
-          throw new Error("Executor crashed unexpectedly");
+    test("should report a failing schema load as a runtime failure", () => {
+      const modelManager = mockModelManager(mockSchema, {
+        loadFromXml: vi.fn(() => {
+          throw new Error("XML parse error");
         }),
-      };
+      });
 
-      const processorWithMock = new CommandProcessor(
-        undefined,
-        mockExecutor as CommandExecutor
+      const result = processorWith({ modelManager }).execute(addTestElement(), emptySchemaXml());
+
+      expectRuntimeFailure(result);
+      expect(result.error).toContain("XML parse error");
+      expect(modelManager.loadFromXml).toHaveBeenCalled();
+    });
+
+    test.each([
+      ["a whitespace-only parent ID", { parentId: " " }, "Parent ID cannot be empty"],
+      ["an invalid element name", { elementName: "123invalid" }, "Element name must be a valid XML name"],
+    ])("should report the first validation error for %s", (_case, payload, error) => {
+      const result = processor.execute(addTestElement(payload), emptySchemaXml());
+
+      expectValidationFailure(result);
+      expect(result.error).toBe(error);
+    });
+
+    test("should report a throwing executor as a runtime failure with its stack", () => {
+      const result = processorWith({ executor: throwingExecutor("Executor crashed unexpectedly") }).execute(
+        addTestElement(),
+        emptySchemaXml()
       );
 
-      const command: AddElementCommand = {
-        type: "addElement",
-        payload: {
-          parentId: "/schema",
-          elementName: "test",
-          elementType: "string",
-        },
-      };
-
-      const result = processorWithMock.execute(command, emptySchemaXml());
-
-      expectFailure(result);
+      expectRuntimeFailure(result);
       expect(result.error).toContain("Executor crashed unexpectedly");
-      expect(result.schema).toBeNull();
-      expect(result.xmlContent).toBeNull();
     });
 
     test("should handle validator exceptions gracefully", () => {
-      // Mock validator that throws an exception
-      const mockValidator: MockValidator = {
+      const validator: MockValidator = {
         validate: vi.fn(() => {
           throw new Error("Validator crashed");
         }),
       };
 
-      const processorWithMock = new CommandProcessor(
-        mockValidator as CommandValidator,
-        undefined
-      );
-
-      const command: AddElementCommand = {
-        type: "addElement",
-        payload: {
-          parentId: "/schema",
-          elementName: "test",
-          elementType: "string",
-        },
-      };
-
-      const result = processorWithMock.execute(command, emptySchemaXml());
+      const result = processorWith({ validator }).execute(addTestElement(), emptySchemaXml());
 
       expectFailure(result);
       expect(result.error).toContain("Validator crashed");
-      expect(result.schema).toBeNull();
-      expect(result.xmlContent).toBeNull();
-    });
-
-    test("should have consistent result structure on success", () => {
-      // Mock dependencies for successful execution
-      const mockModelManager: MockModelManager = {
-        loadFromXml: vi.fn(),
-        getSchema: vi.fn().mockReturnValue(mockSchema),
-        setSchema: vi.fn(),
-        cloneSchema: vi.fn().mockReturnValue(mockSchema),
-        toXml: vi.fn().mockReturnValue(emptySchemaXml()),
-      };
-
-      const mockExecutor: MockExecutor = {
-        execute: vi.fn<CommandExecutor["execute"]>((command, schema) => {
-          schema.version = "1.0";
-        }),
-      };
-
-      const processorWithMock = new CommandProcessor(
-        undefined,
-        mockExecutor as CommandExecutor,
-        mockModelManager as SchemaModelManager
-      );
-
-      const command: AddElementCommand = {
-        type: "addElement",
-        payload: {
-          parentId: "/schema",
-          elementName: "test",
-          elementType: "string",
-        },
-      };
-
-      const result = processorWithMock.execute(command, emptySchemaXml());
-
-      // Verify result structure on success
-      expect(result).toHaveProperty("success");
-      expect(result.success).toBe(true);
-      expect(result).toHaveProperty("schema");
-      expect(result).toHaveProperty("xmlContent");
-      expect(result.schema).not.toBeNull();
-      expect(result.xmlContent).not.toBeNull();
-    });
-
-    test("should have consistent result structure on failure", () => {
-      const command: AddElementCommand = {
-        type: "addElement",
-        payload: {
-          parentId: "",
-          elementName: "test",
-          elementType: "string",
-        },
-      };
-
-      const result = processor.execute(command, emptySchemaXml());
-
-      // Verify result structure on failure
-      expect(result).toHaveProperty("success");
-      expect(result.success).toBe(false);
-      expect(result).toHaveProperty("error");
-      expect(result).toHaveProperty("schema");
-      expect(result).toHaveProperty("xmlContent");
-      expect(result.schema).toBeNull();
-      expect(result.xmlContent).toBeNull();
     });
 
     test("should handle SchemaModelManager toXml failure", () => {
-      // Mock SchemaModelManager that fails on toXml
-      const mockModelManager: MockModelManager = {
-        loadFromXml: vi.fn(),
-        getSchema: vi.fn().mockReturnValue(mockSchema),
-        setSchema: vi.fn(),
-        cloneSchema: vi.fn().mockReturnValue(mockSchema),
+      const modelManager = mockModelManager(mockSchema, {
         toXml: vi.fn(() => {
           throw new Error("Failed to serialize schema");
         }),
-      };
+      });
 
-      const mockExecutor: MockExecutor = {
-        execute: vi.fn<CommandExecutor["execute"]>((command, schema) => {
-          schema.version = "1.0";
-        }),
-      };
-
-      const processorWithMock = new CommandProcessor(
-        undefined,
-        mockExecutor as CommandExecutor,
-        mockModelManager as SchemaModelManager
+      const result = processorWith({ executor: versionSettingExecutor(), modelManager }).execute(
+        addTestElement(),
+        emptySchemaXml()
       );
-
-      const command: AddElementCommand = {
-        type: "addElement",
-        payload: {
-          parentId: "/schema",
-          elementName: "test",
-          elementType: "string",
-        },
-      };
-
-      const result = processorWithMock.execute(command, emptySchemaXml());
 
       expectFailure(result);
       expect(result.error).toContain("Failed to serialize schema");
@@ -529,83 +326,29 @@ describe("CommandProcessor", () => {
 
   describe("Round-trip Validation", () => {
     test("should validate serialized XML can be parsed back", () => {
-      const mockModelManager: MockModelManager = {
-        loadFromXml: vi.fn(),
-        getSchema: vi.fn().mockReturnValue(mockSchema),
-        setSchema: vi.fn(),
-        cloneSchema: vi.fn().mockReturnValue(mockSchema),
-        toXml: vi.fn().mockReturnValue(emptySchemaXml()),
-      };
+      const modelManager = mockModelManager(mockSchema);
 
-      const mockExecutor: MockExecutor = {
-        execute: vi.fn<CommandExecutor["execute"]>((command, schema) => {
-          schema.element = schema.element || [];
-        }),
-      };
-
-      const processorWithMock = new CommandProcessor(
-        undefined,
-        mockExecutor as CommandExecutor,
-        mockModelManager as SchemaModelManager
+      const result = processorWith({ executor: versionSettingExecutor(), modelManager }).execute(
+        addTestElement(),
+        emptySchemaXml()
       );
 
-      const command: AddElementCommand = {
-        type: "addElement",
-        payload: {
-          parentId: "/schema",
-          elementName: "test",
-          elementType: "string",
-        },
-      };
-
-      const result = processorWithMock.execute(command, emptySchemaXml());
-
-      // Should succeed with mock
       expect(result.success).toBe(true);
-      expect(result.xmlContent).not.toBeNull();
-
-      // Verify loadFromXml was called for round-trip validation
-      expect(mockModelManager.loadFromXml).toHaveBeenCalledTimes(2); // Initial + validation
+      // Initial load and round-trip validation
+      expect(modelManager.loadFromXml).toHaveBeenCalledTimes(2);
     });
 
     test("should fail if round-trip validation fails", () => {
-      let loadCallCount = 0;
-      const mockModelManager: MockModelManager = {
-        loadFromXml: vi.fn(() => {
-          loadCallCount++;
-          if (loadCallCount === 2) {
-            // Fail on round-trip validation
-            throw new Error("Round-trip validation failed");
-          }
-        }),
-        getSchema: vi.fn().mockReturnValue(mockSchema),
-        setSchema: vi.fn(),
-        cloneSchema: vi.fn().mockReturnValue(mockSchema),
-        toXml: vi.fn().mockReturnValue(emptySchemaXml()),
-      };
+      const loadFromXml = vi.fn<SchemaModelManager["loadFromXml"]>();
+      loadFromXml.mockImplementationOnce(() => undefined).mockImplementationOnce(() => {
+        throw new Error("Round-trip validation failed");
+      });
+      const modelManager = mockModelManager(mockSchema, { loadFromXml });
 
-      const mockExecutor: MockExecutor = {
-        execute: vi.fn<CommandExecutor["execute"]>((command, schema) => {
-          schema.version = "1.0";
-        }),
-      };
-
-      const processorWithMock = new CommandProcessor(
-        undefined,
-        mockExecutor as CommandExecutor,
-        mockModelManager as SchemaModelManager
+      const result = processorWith({ executor: versionSettingExecutor(), modelManager }).execute(
+        addTestElement(),
+        emptySchemaXml()
       );
-
-      const command: AddElementCommand = {
-        type: "addElement",
-        payload: {
-          parentId: "/schema",
-          elementName: "test",
-          elementType: "string",
-        },
-      };
-
-      const result = processorWithMock.execute(command, emptySchemaXml());
 
       expectFailure(result);
       expect(result.error).toContain("Round-trip validation failed");
@@ -613,367 +356,75 @@ describe("CommandProcessor", () => {
   });
 
   describe("Invalid Commands", () => {
-    test("should reject command with unknown type", () => {
+    test("should reject command with unknown type as a validation failure", () => {
       const result = processor.execute(INVALID_COMMAND, emptySchemaXml());
-      expectFailure(result);
+
+      expectValidationFailure(result);
       expect(result.error).toContain("Unknown command type");
     });
   });
 
   describe("Dependency Injection", () => {
     test("should accept custom validator, executor, and model manager", () => {
-      // Create mock validator that always returns valid
-      const mockValidator: MockValidator = {
-        validate: vi.fn().mockReturnValue({ valid: true }),
-      };
+      const validator: MockValidator = { validate: vi.fn().mockReturnValue({ valid: true }) };
+      const executor: MockExecutor = { execute: vi.fn() };
+      const modelManager = mockModelManager(mockSchema);
 
-      // Create mock executor
-      const mockExecutor: MockExecutor = {
-        execute: vi.fn(),
-      };
+      const result = processorWith({ validator, executor, modelManager }).execute(addTestElement(), emptySchemaXml());
 
-      // Create mock model manager
-      const mockModelManager: MockModelManager = {
-        loadFromXml: vi.fn(),
-        getSchema: vi.fn().mockReturnValue(mockSchema),
-        setSchema: vi.fn(),
-        cloneSchema: vi.fn().mockReturnValue(mockSchema),
-        toXml: vi.fn().mockReturnValue(emptySchemaXml()),
-      };
-
-      // Create processor with mocked dependencies
-      const customProcessor = new CommandProcessor(
-        mockValidator as CommandValidator,
-        mockExecutor as CommandExecutor,
-        mockModelManager as SchemaModelManager
-      );
-
-      const command: AddElementCommand = {
-        type: "addElement",
-        payload: {
-          parentId: "/schema",
-          elementName: "test",
-          elementType: "string",
-        },
-      };
-
-      const result = customProcessor.execute(command, emptySchemaXml());
-
-      // Verify mocks were called
-      expect(mockValidator.validate).toHaveBeenCalled();
-      expect(mockExecutor.execute).toHaveBeenCalled();
-      expect(mockModelManager.loadFromXml).toHaveBeenCalled();
-      expect(mockModelManager.getSchema).toHaveBeenCalled();
-      expect(mockModelManager.cloneSchema).toHaveBeenCalled();
-      expect(mockModelManager.setSchema).toHaveBeenCalled();
-      expect(mockModelManager.toXml).toHaveBeenCalled();
-
-      // Verify the result
+      expect(validator.validate).toHaveBeenCalled();
+      expect(executor.execute).toHaveBeenCalled();
+      expect(modelManager.toXml).toHaveBeenCalled();
       expect(result.success).toBe(true);
     });
 
     test("should use default dependencies when none provided", () => {
-      // Create processor without dependencies
-      const defaultProcessor = new CommandProcessor();
+      const result = new CommandProcessor().execute(addTestElement(), emptySchemaXml());
 
-      const command: AddElementCommand = {
-        type: "addElement",
-        payload: {
-          parentId: "/schema",
-          elementName: "test",
-          elementType: "string",
-        },
-      };
-
-      const result = defaultProcessor.execute(command, emptySchemaXml());
-
-      // Should use default validator and executor successfully
       expect(result.success).toBe(true);
-      expect(result.xmlContent).toBeTruthy();
       expect(result.xmlContent).toContain('name="test"');
     });
   });
 
   describe("Concurrency Control", () => {
-    test("should prevent concurrent command executions", () => {
-      const mockExecutor: MockExecutor = {
-        execute: vi.fn(),
-      };
-
-      const mockModelManager: MockModelManager = {
-        loadFromXml: vi.fn(),
-        getSchema: vi.fn().mockReturnValue(mockSchema),
-        setSchema: vi.fn(),
-        cloneSchema: vi.fn().mockReturnValue(mockSchema),
-        toXml: vi.fn().mockReturnValue(emptySchemaXml()),
-      };
-
-      const processorWithMock = new CommandProcessor(
-        undefined,
-        mockExecutor as CommandExecutor,
-        mockModelManager as SchemaModelManager
-      );
-
-      const command: AddElementCommand = {
-        type: "addElement",
-        payload: {
-          parentId: "/schema",
-          elementName: "test",
-          elementType: "string",
-        },
-      };
-
-      // Manually set the isExecuting flag to simulate in-progress execution
+    test("should reject a command while another is executing, as a validation failure", () => {
+      const executor: MockExecutor = { execute: vi.fn() };
+      const processorWithMock = processorWith({ executor, modelManager: mockModelManager(mockSchema) });
+      // Simulate an execution in progress
       Object.assign(processorWithMock, { isExecuting: true });
 
-      // Try to execute command while another is "in progress"
-      const result = processorWithMock.execute(command, emptySchemaXml());
+      const result = processorWithMock.execute(addTestElement(), emptySchemaXml());
 
-      // Should be rejected due to concurrent execution
-      expectFailure(result);
+      expectValidationFailure(result);
       expect(result.error).toContain("Another command is currently being executed");
-      
-      // Reset the flag
-      Object.assign(processorWithMock, { isExecuting: false });
+      expect(executor.execute).not.toHaveBeenCalled();
     });
 
     test("should allow execution after previous command completes", () => {
-      const mockModelManager: MockModelManager = {
-        loadFromXml: vi.fn(),
-        getSchema: vi.fn().mockReturnValue(mockSchema),
-        setSchema: vi.fn(),
-        cloneSchema: vi.fn().mockReturnValue(mockSchema),
-        toXml: vi.fn().mockReturnValue(emptySchemaXml()),
-      };
+      const executor = versionSettingExecutor();
+      const processorWithMock = processorWith({ executor, modelManager: mockModelManager(mockSchema) });
 
-      const mockExecutor: MockExecutor = {
-        execute: vi.fn<CommandExecutor["execute"]>((command, schema) => {
-          schema.version = "1.0";
-        }),
-      };
+      const result1 = processorWithMock.execute(addTestElement(), emptySchemaXml());
+      const result2 = processorWithMock.execute(addTestElement(), emptySchemaXml());
 
-      const processorWithMock = new CommandProcessor(
-        undefined,
-        mockExecutor as CommandExecutor,
-        mockModelManager as SchemaModelManager
-      );
-
-      const command: AddElementCommand = {
-        type: "addElement",
-        payload: {
-          parentId: "/schema",
-          elementName: "test",
-          elementType: "string",
-        },
-      };
-
-      // Execute first command
-      const result1 = processorWithMock.execute(command, emptySchemaXml());
       expect(result1.success).toBe(true);
-
-      // Execute second command after first completes
-      const result2 = processorWithMock.execute(command, emptySchemaXml());
       expect(result2.success).toBe(true);
-
-      // Both should have executed successfully
-      expect(mockExecutor.execute).toHaveBeenCalledTimes(2);
+      expect(executor.execute).toHaveBeenCalledTimes(2);
     });
 
     test("should release lock even when execution fails", () => {
-      const mockModelManager: MockModelManager = {
-        loadFromXml: vi.fn(),
-        getSchema: vi.fn().mockReturnValue(mockSchema),
-        setSchema: vi.fn(),
-        cloneSchema: vi.fn().mockReturnValue(mockSchema),
-        toXml: vi.fn().mockReturnValue(emptySchemaXml()),
-      };
+      const processorWithMock = processorWith({
+        executor: throwingExecutor("Execution failed"),
+        modelManager: mockModelManager(mockSchema),
+      });
 
-      const mockExecutor: MockExecutor = {
-        execute: vi.fn(() => {
-          throw new Error("Execution failed");
-        }),
-      };
+      const result1 = processorWithMock.execute(addTestElement(), emptySchemaXml());
+      const result2 = processorWithMock.execute(addTestElement(), emptySchemaXml());
 
-      const processorWithMock = new CommandProcessor(
-        undefined,
-        mockExecutor as CommandExecutor,
-        mockModelManager as SchemaModelManager
-      );
-
-      const command: AddElementCommand = {
-        type: "addElement",
-        payload: {
-          parentId: "/schema",
-          elementName: "test",
-          elementType: "string",
-        },
-      };
-
-      // Execute first command that will fail
-      const result1 = processorWithMock.execute(command, emptySchemaXml());
       expect(result1.success).toBe(false);
-
-      // Execute second command - should be allowed since lock was released
-      const result2 = processorWithMock.execute(command, emptySchemaXml());
       expectFailure(result2);
       expect(result2.error).toContain("Execution failed");
-
-      // Should not be the concurrency error
       expect(result2.error).not.toContain("Another command is currently being executed");
-    });
-  });
-
-  describe("Error Kind Classification", () => {
-    test("should set errorKind to 'validation' for validation failures", () => {
-      const command: AddElementCommand = {
-        type: "addElement",
-        payload: {
-          parentId: "",
-          elementName: "test",
-          elementType: "string",
-        },
-      };
-
-      const result = processor.execute(command, emptySchemaXml());
-
-      expectValidationFailure(result);
-    });
-
-    test("should set errorKind to 'validation' for unknown command type", () => {
-      const result = processor.execute(INVALID_COMMAND, emptySchemaXml());
-
-      expect(result.success).toBe(false);
-      expectValidationFailure(result);
-    });
-
-    test("should set errorKind to 'validation' for concurrent execution rejection", () => {
-      const mockModelManager: MockModelManager = {
-        loadFromXml: vi.fn(),
-        getSchema: vi.fn().mockReturnValue(mockSchema),
-        setSchema: vi.fn(),
-        cloneSchema: vi.fn().mockReturnValue(mockSchema),
-        toXml: vi.fn().mockReturnValue(emptySchemaXml()),
-      };
-
-      const processorWithMock = new CommandProcessor(
-        undefined,
-        undefined,
-        mockModelManager as SchemaModelManager
-      );
-
-      const command: AddElementCommand = {
-        type: "addElement",
-        payload: {
-          parentId: "/schema",
-          elementName: "test",
-          elementType: "string",
-        },
-      };
-
-      // Simulate in-progress execution
-      Object.assign(processorWithMock, { isExecuting: true });
-
-      const result = processorWithMock.execute(command, emptySchemaXml());
-
-      expectValidationFailure(result);
-
-      Object.assign(processorWithMock, { isExecuting: false });
-    });
-
-    test("should set errorKind to 'runtime' and include stack when executor throws", () => {
-      const mockExecutor: MockExecutor = {
-        execute: vi.fn(() => {
-          throw new Error("Executor crashed unexpectedly");
-        }),
-      };
-
-      const processorWithMock = new CommandProcessor(
-        undefined,
-        mockExecutor as CommandExecutor
-      );
-
-      const command: AddElementCommand = {
-        type: "addElement",
-        payload: {
-          parentId: "/schema",
-          elementName: "test",
-          elementType: "string",
-        },
-      };
-
-      const result = processorWithMock.execute(command, emptySchemaXml());
-
-      expectRuntimeFailure(result);
-      expect(result.error).toContain("Executor crashed unexpectedly");
-      expect(typeof result.stack).toBe("string");
-    });
-
-    test("should set errorKind to 'runtime' and include stack when schema load throws", () => {
-      const mockModelManager: MockModelManager = {
-        loadFromXml: vi.fn(() => {
-          throw new Error("XML parse error");
-        }),
-        getSchema: vi.fn(),
-        setSchema: vi.fn(),
-        cloneSchema: vi.fn(),
-        toXml: vi.fn(),
-      };
-
-      const processorWithMock = new CommandProcessor(
-        undefined,
-        undefined,
-        mockModelManager as SchemaModelManager
-      );
-
-      const command: AddElementCommand = {
-        type: "addElement",
-        payload: {
-          parentId: "/schema",
-          elementName: "test",
-          elementType: "string",
-        },
-      };
-
-      const result = processorWithMock.execute(command, emptySchemaXml());
-
-      expectRuntimeFailure(result);
-      expect(result.error).toContain("XML parse error");
-      expect(typeof result.stack).toBe("string");
-    });
-
-    test("should not set errorKind on successful execution", () => {
-      const mockModelManager: MockModelManager = {
-        loadFromXml: vi.fn(),
-        getSchema: vi.fn().mockReturnValue(mockSchema),
-        setSchema: vi.fn(),
-        cloneSchema: vi.fn().mockReturnValue(mockSchema),
-        toXml: vi.fn().mockReturnValue(emptySchemaXml()),
-      };
-
-      const mockExecutor: MockExecutor = {
-        execute: vi.fn<CommandExecutor["execute"]>((cmd, s) => {
-          s.version = "1.0";
-        }),
-      };
-
-      const processorWithMock = new CommandProcessor(
-        undefined,
-        mockExecutor as CommandExecutor,
-        mockModelManager as SchemaModelManager
-      );
-
-      const command: AddElementCommand = {
-        type: "addElement",
-        payload: {
-          parentId: "/schema",
-          elementName: "test",
-          elementType: "string",
-        },
-      };
-
-      const result = processorWithMock.execute(command, emptySchemaXml());
-
-      expect(result.success).toBe(true);
     });
   });
 });

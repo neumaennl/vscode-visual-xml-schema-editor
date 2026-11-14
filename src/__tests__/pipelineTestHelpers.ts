@@ -15,7 +15,7 @@ import type {
   CommandExecutionSuccess,
   CommandExecutionValidationFailure,
 } from "../commandProcessor.js";
-import { schema } from "../../shared/types.js";
+import { schema, topLevelElement } from "../../shared/types.js";
 import type { SchemaCommand } from "../../shared/types.js";
 import { DERIVATIONS, derivedComplexTypeT, schemaXmlWith } from "../../shared/__tests__/schemaTestHelpers.js";
 
@@ -146,4 +146,20 @@ export function runCommandExpectValidationFailure(
   const failure = result as CommandExecutionValidationFailure;
   expect(failure.errorKind).toBe("validation");
   expect(failure.error).toBe(expectedError);
+}
+
+/**
+ * Returns the top-level element with the given name and asserts that it exists.
+ *
+ * @param schemaObj - The schema
+ * @param name - The name of the element
+ * @returns The element
+ */
+export function findTopLevelElement(schemaObj: schema, name: string): topLevelElement {
+  const element = schemaObj.element?.find((e) => e.name === name);
+  expect(element).toBeDefined();
+  if (!element) {
+    throw new Error(`Element ${name} not found`);
+  }
+  return element;
 }

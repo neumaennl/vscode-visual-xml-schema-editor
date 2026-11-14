@@ -384,56 +384,13 @@ describe("getNodeName", () => {
 });
 
 describe("Round-trip conversion", () => {
-  test("should generate and parse consistently for top-level element", () => {
-    const params = {
-      nodeType: SchemaNodeType.Element,
-      name: "person",
-    };
-    const id = generateSchemaId(params);
-    const parsed = parseSchemaId(id);
-    expect(parsed.nodeType).toBe(params.nodeType);
-    expect(parsed.name).toBe(params.name);
-  });
-
-  test("should generate and parse consistently for child element", () => {
-    const params = {
-      nodeType: SchemaNodeType.Element,
-      name: "address",
-      parentId: "/element:person",
-      position: 0,
-    };
-    const id = generateSchemaId(params);
-    const parsed = parseSchemaId(id);
-    expect(parsed.nodeType).toBe(params.nodeType);
-    expect(parsed.name).toBe(params.name);
-    expect(parsed.position).toBe(params.position);
-    expect(parsed.parentId).toBe(params.parentId);
-  });
-
-  test("should generate and parse consistently with namespace", () => {
-    const params = {
-      nodeType: SchemaNodeType.ComplexType,
-      name: "PersonType",
-      namespace: "http://example.com/types",
-    };
-    const id = generateSchemaId(params);
-    const parsed = parseSchemaId(id);
-    expect(parsed.nodeType).toBe(params.nodeType);
-    expect(parsed.name).toBe(params.name);
-    expect(parsed.namespace).toBe(params.namespace);
-  });
-
-  test("should generate and parse consistently for anonymous type", () => {
-    const params = {
-      nodeType: SchemaNodeType.AnonymousComplexType,
-      parentId: "/element:person",
-      position: 0,
-    };
-    const id = generateSchemaId(params);
-    const parsed = parseSchemaId(id);
-    expect(parsed.nodeType).toBe(params.nodeType);
-    expect(parsed.position).toBe(params.position);
-    expect(parsed.parentId).toBe(params.parentId);
+  test.each([
+    ["a top-level element", { nodeType: SchemaNodeType.Element, name: "person" }],
+    ["a child element", { nodeType: SchemaNodeType.Element, name: "address", parentId: "/element:person", position: 0 }],
+    ["a namespace", { nodeType: SchemaNodeType.ComplexType, name: "PersonType", namespace: "http://example.com/types" }],
+    ["an anonymous type", { nodeType: SchemaNodeType.AnonymousComplexType, parentId: "/element:person", position: 0 }],
+  ])("should generate and parse consistently for %s", (_case, params) => {
+    expect(parseSchemaId(generateSchemaId(params))).toMatchObject(params);
   });
 });
 

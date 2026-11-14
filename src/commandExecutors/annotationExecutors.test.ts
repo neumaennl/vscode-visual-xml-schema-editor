@@ -21,6 +21,7 @@ import {
   AddDocumentationCommand,
   RemoveDocumentationCommand,
   ModifyDocumentationCommand,
+  schema,
 } from "../../shared/types.js";
 import {
   executeAddAnnotation,
@@ -30,13 +31,78 @@ import {
   executeRemoveDocumentation,
   executeModifyDocumentation,
 } from "./annotationExecutors.js";
-import {
-  parseDocumentationId,
-  parseSchemaAnnotationId,
-  parseSchemaDocumentationId,
-} from "../commandUtils.js";
 import { emptySchema, schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
 import { readTestSchema } from "../__tests__/resourceTestHelpers.js";
+
+/**
+ * Returns the values of documentation or appinfo entries.
+ *
+ * @param entries - The entries
+ * @returns Their values, in document order
+ */
+function valuesOf(entries: Array<{ value?: string }> | undefined): Array<string | undefined> {
+  return (entries ?? []).map((entry) => entry.value);
+}
+
+/**
+ * Executes an addAnnotation command.
+ *
+ * @param schemaObj - The schema to change
+ * @param payload - The payload of the command
+ */
+function addAnnotation(schemaObj: schema, payload: AddAnnotationCommand["payload"]): void {
+  executeAddAnnotation({ type: "addAnnotation", payload }, schemaObj);
+}
+
+/**
+ * Executes an addDocumentation command.
+ *
+ * @param schemaObj - The schema to change
+ * @param payload - The payload of the command
+ */
+function addDocumentation(schemaObj: schema, payload: AddDocumentationCommand["payload"]): void {
+  executeAddDocumentation({ type: "addDocumentation", payload }, schemaObj);
+}
+
+/**
+ * Executes a modifyAnnotation command.
+ *
+ * @param schemaObj - The schema to change
+ * @param payload - The payload of the command
+ */
+function modifyAnnotation(schemaObj: schema, payload: ModifyAnnotationCommand["payload"]): void {
+  executeModifyAnnotation({ type: "modifyAnnotation", payload }, schemaObj);
+}
+
+/**
+ * Executes a modifyDocumentation command.
+ *
+ * @param schemaObj - The schema to change
+ * @param payload - The payload of the command
+ */
+function modifyDocumentation(schemaObj: schema, payload: ModifyDocumentationCommand["payload"]): void {
+  executeModifyDocumentation({ type: "modifyDocumentation", payload }, schemaObj);
+}
+
+/**
+ * Executes a removeAnnotation command.
+ *
+ * @param schemaObj - The schema to change
+ * @param payload - The payload of the command
+ */
+function removeAnnotation(schemaObj: schema, payload: RemoveAnnotationCommand["payload"]): void {
+  executeRemoveAnnotation({ type: "removeAnnotation", payload }, schemaObj);
+}
+
+/**
+ * Executes a removeDocumentation command.
+ *
+ * @param schemaObj - The schema to change
+ * @param payload - The payload of the command
+ */
+function removeDocumentation(schemaObj: schema, payload: RemoveDocumentationCommand["payload"]): void {
+  executeRemoveDocumentation({ type: "removeDocumentation", payload }, schemaObj);
+}
 
 // ─── Shared XML fixtures ────────────────────────────────────────────────────
 
@@ -52,110 +118,29 @@ const TWO_DOCUMENTATIONS_XSD = "person-element-with-two-documentations.xsd";
 /** A bare element — no annotation. */
 const PERSON_ELEMENT = `<xs:element name="person" type="xs:string"/>`;
 
-// ─── parseDocumentationId ────────────────────────────────────────────────────
-
-describe("parseDocumentationId", () => {
-  test("parses a simple element path with index 0", () => {
-    const result = parseDocumentationId("/element:person/documentation[0]");
-    expect(result.elementId).toBe("/element:person");
-    expect(result.documentationIndex).toBe(0);
-  });
-
-  test("parses a nested path with index 2", () => {
-    const result = parseDocumentationId(
-      "/element:person/anonymousComplexType[0]/documentation[2]"
-    );
-    expect(result.elementId).toBe("/element:person/anonymousComplexType[0]");
-    expect(result.documentationIndex).toBe(2);
-  });
-
-  test("throws for an ID without documentation suffix", () => {
-    expect(() => parseDocumentationId("/element:person")).toThrow(
-      "Invalid documentationId format"
-    );
-  });
-
-  test("throws for a bare non-path string", () => {
-    expect(() => parseDocumentationId("doc1")).toThrow(
-      "Invalid documentationId format"
-    );
-  });
-});
-
 // ─── executeAddAnnotation ────────────────────────────────────────────────────
 
 describe("executeAddAnnotation", () => {
-  test("creates an annotation with no children when no optional fields are given", () => {
+  test.each([
+    ["no children when no optional fields are given", {}, [], []],
+    ["a documentation child", { documentation: "A person." }, ["A person."], []],
+    ["an appinfo child", { appInfo: "app-info" }, [], ["app-info"]],
+    ["both documentation and appinfo children", { documentation: "doc", appInfo: "info" }, ["doc"], ["info"]],
+  ])("creates an annotation with %s", (_case, fields, documentation, appinfo) => {
     const schemaObj = schemaWith(PERSON_ELEMENT);
-    const command: AddAnnotationCommand = {
-      type: "addAnnotation",
-      payload: { targetId: "/element:person" },
-    };
 
-    executeAddAnnotation(command, schemaObj);
+    addAnnotation(schemaObj, { targetId: "/element:person", ...fields });
 
-    const elem = (schemaObj.element ?? [])[0];
-    expect(elem.annotation).toBeDefined();
-    expect(elem.annotation?.documentation ?? []).toHaveLength(0);
-    expect(elem.annotation?.appinfo ?? []).toHaveLength(0);
-  });
-
-  test("creates an annotation with a documentation child", () => {
-    const schemaObj = schemaWith(PERSON_ELEMENT);
-    const command: AddAnnotationCommand = {
-      type: "addAnnotation",
-      payload: { targetId: "/element:person", documentation: "A person." },
-    };
-
-    executeAddAnnotation(command, schemaObj);
-
-    const elem = (schemaObj.element ?? [])[0];
-    const documentations = elem.annotation?.documentation ?? [];
-    expect(documentations).toHaveLength(1);
-    expect(documentations[0].value).toBe("A person.");
-  });
-
-  test("creates an annotation with an appinfo child", () => {
-    const schemaObj = schemaWith(PERSON_ELEMENT);
-    const command: AddAnnotationCommand = {
-      type: "addAnnotation",
-      payload: { targetId: "/element:person", appInfo: "app-info" },
-    };
-
-    executeAddAnnotation(command, schemaObj);
-
-    const elem = (schemaObj.element ?? [])[0];
-    const infos = elem.annotation?.appinfo ?? [];
-    expect(infos).toHaveLength(1);
-    expect(infos[0].value).toBe("app-info");
-  });
-
-  test("creates an annotation with both documentation and appinfo children", () => {
-    const schemaObj = schemaWith(PERSON_ELEMENT);
-    const command: AddAnnotationCommand = {
-      type: "addAnnotation",
-      payload: {
-        targetId: "/element:person",
-        documentation: "doc",
-        appInfo: "info",
-      },
-    };
-
-    executeAddAnnotation(command, schemaObj);
-
-    const elem = (schemaObj.element ?? [])[0];
-    expect((elem.annotation?.documentation ?? [])[0].value).toBe("doc");
-    expect((elem.annotation?.appinfo ?? [])[0].value).toBe("info");
+    const annotation = schemaObj.element?.[0].annotation;
+    expect(annotation).toBeDefined();
+    expect(valuesOf(annotation?.documentation)).toEqual(documentation);
+    expect(valuesOf(annotation?.appinfo)).toEqual(appinfo);
   });
 
   test("works on a complexType target", () => {
     const schemaObj = schemaWith(`<xs:complexType name="PersonType"/>`);
-    const command: AddAnnotationCommand = {
-      type: "addAnnotation",
-      payload: { targetId: "/complexType:PersonType", documentation: "A type." },
-    };
 
-    executeAddAnnotation(command, schemaObj);
+    addAnnotation(schemaObj, { targetId: "/complexType:PersonType", documentation: "A type." });
 
     const types = schemaObj.complexType ?? [];
     expect(types[0].annotation).toBeDefined();
@@ -168,12 +153,8 @@ describe("executeAddAnnotation", () => {
 describe("executeRemoveAnnotation", () => {
   test("removes an existing annotation", () => {
     const schemaObj = readTestSchema(DOCUMENTED_PERSON_XSD);
-    const command: RemoveAnnotationCommand = {
-      type: "removeAnnotation",
-      payload: { annotationId: "/element:person" },
-    };
 
-    executeRemoveAnnotation(command, schemaObj);
+    removeAnnotation(schemaObj, { annotationId: "/element:person" });
 
     const elem = (schemaObj.element ?? [])[0];
     expect(elem.annotation).toBeUndefined();
@@ -186,12 +167,8 @@ describe("executeRemoveAnnotation", () => {
 describe("executeModifyAnnotation", () => {
   test("updates documentation text of an existing annotation", () => {
     const schemaObj = readTestSchema(DOCUMENTED_PERSON_XSD);
-    const command: ModifyAnnotationCommand = {
-      type: "modifyAnnotation",
-      payload: { annotationId: "/element:person", documentation: "Updated." },
-    };
 
-    executeModifyAnnotation(command, schemaObj);
+    modifyAnnotation(schemaObj, { annotationId: "/element:person", documentation: "Updated." });
 
     const elem = (schemaObj.element ?? [])[0];
     expect((elem.annotation?.documentation ?? [])[0].value).toBe("Updated.");
@@ -199,17 +176,11 @@ describe("executeModifyAnnotation", () => {
 
   test("replaces all documentation children with a single new element", () => {
     const schemaObj = readTestSchema(TWO_DOCUMENTATIONS_XSD);
-    const command: ModifyAnnotationCommand = {
-      type: "modifyAnnotation",
-      payload: { annotationId: "/element:person", documentation: "Replaced." },
-    };
 
-    executeModifyAnnotation(command, schemaObj);
+    modifyAnnotation(schemaObj, { annotationId: "/element:person", documentation: "Replaced." });
 
     const elem = (schemaObj.element ?? [])[0];
-    const documentations = elem.annotation?.documentation ?? [];
-    expect(documentations).toHaveLength(1);
-    expect(documentations[0].value).toBe("Replaced.");
+    expect(valuesOf(elem.annotation?.documentation)).toEqual(["Replaced."]);
   });
 
   test("creates a documentation child when annotation has none, preserving appinfo", () => {
@@ -219,21 +190,13 @@ describe("executeModifyAnnotation", () => {
     <xs:appinfo>app</xs:appinfo>
   </xs:annotation>
 </xs:element>`);
-    const command: ModifyAnnotationCommand = {
-      type: "modifyAnnotation",
-      payload: { annotationId: "/element:person", documentation: "New doc." },
-    };
 
-    executeModifyAnnotation(command, schemaObj);
+    modifyAnnotation(schemaObj, { annotationId: "/element:person", documentation: "New doc." });
 
     const elem = (schemaObj.element ?? [])[0];
-    const documentations = elem.annotation?.documentation ?? [];
-    expect(documentations).toHaveLength(1);
-    expect(documentations[0].value).toBe("New doc.");
+    expect(valuesOf(elem.annotation?.documentation)).toEqual(["New doc."]);
     // Existing appinfo must be preserved
-    const infos = elem.annotation?.appinfo ?? [];
-    expect(infos).toHaveLength(1);
-    expect(infos[0].value).toBe("app");
+    expect(valuesOf(elem.annotation?.appinfo)).toEqual(["app"]);
   });
 
   test("updates appinfo text", () => {
@@ -243,12 +206,8 @@ describe("executeModifyAnnotation", () => {
     <xs:appinfo>app-specific</xs:appinfo>
   </xs:annotation>
 </xs:element>`);
-    const command: ModifyAnnotationCommand = {
-      type: "modifyAnnotation",
-      payload: { annotationId: "/element:person", appInfo: "new-app-info" },
-    };
 
-    executeModifyAnnotation(command, schemaObj);
+    modifyAnnotation(schemaObj, { annotationId: "/element:person", appInfo: "new-app-info" });
 
     const elem = (schemaObj.element ?? [])[0];
     expect((elem.annotation?.appinfo ?? [])[0].value).toBe("new-app-info");
@@ -256,16 +215,10 @@ describe("executeModifyAnnotation", () => {
 
   test("adds an appinfo child when annotation has none", () => {
     const schemaObj = readTestSchema(DOCUMENTED_PERSON_XSD);
-    const command: ModifyAnnotationCommand = {
-      type: "modifyAnnotation",
-      payload: { annotationId: "/element:person", appInfo: "new-info" },
-    };
 
-    executeModifyAnnotation(command, schemaObj);
+    modifyAnnotation(schemaObj, { annotationId: "/element:person", appInfo: "new-info" });
 
-    const infos = (schemaObj.element ?? [])[0].annotation?.appinfo ?? [];
-    expect(infos).toHaveLength(1);
-    expect(infos[0].value).toBe("new-info");
+    expect(valuesOf((schemaObj.element ?? [])[0].annotation?.appinfo)).toEqual(["new-info"]);
   });
 
 });
@@ -275,28 +228,18 @@ describe("executeModifyAnnotation", () => {
 describe("executeAddDocumentation", () => {
   test("creates an annotation and appends a documentation element", () => {
     const schemaObj = schemaWith(PERSON_ELEMENT);
-    const command: AddDocumentationCommand = {
-      type: "addDocumentation",
-      payload: { targetId: "/element:person", content: "A person." },
-    };
 
-    executeAddDocumentation(command, schemaObj);
+    addDocumentation(schemaObj, { targetId: "/element:person", content: "A person." });
 
     const elem = (schemaObj.element ?? [])[0];
     expect(elem.annotation).toBeDefined();
-    const documentations = elem.annotation?.documentation ?? [];
-    expect(documentations).toHaveLength(1);
-    expect(documentations[0].value).toBe("A person.");
+    expect(valuesOf(elem.annotation?.documentation)).toEqual(["A person."]);
   });
 
   test("appends a second documentation element to an existing annotation", () => {
     const schemaObj = readTestSchema(DOCUMENTED_PERSON_XSD);
-    const command: AddDocumentationCommand = {
-      type: "addDocumentation",
-      payload: { targetId: "/element:person", content: "Second.", lang: "en" },
-    };
 
-    executeAddDocumentation(command, schemaObj);
+    addDocumentation(schemaObj, { targetId: "/element:person", content: "Second.", lang: "en" });
 
     const documentations = (schemaObj.element ?? [])[0].annotation?.documentation ?? [];
     expect(documentations).toHaveLength(2);
@@ -306,12 +249,8 @@ describe("executeAddDocumentation", () => {
 
   test("stores the xml:lang attribute in _anyAttributes", () => {
     const schemaObj = schemaWith(PERSON_ELEMENT);
-    const command: AddDocumentationCommand = {
-      type: "addDocumentation",
-      payload: { targetId: "/element:person", content: "Hallo.", lang: "de" },
-    };
 
-    executeAddDocumentation(command, schemaObj);
+    addDocumentation(schemaObj, { targetId: "/element:person", content: "Hallo.", lang: "de" });
 
     const documentations = (schemaObj.element ?? [])[0].annotation?.documentation ?? [];
     expect(documentations[0]._anyAttributes?.["xml:lang"]).toBe("de");
@@ -319,12 +258,8 @@ describe("executeAddDocumentation", () => {
 
   test("does not add a lang attribute when lang is not supplied", () => {
     const schemaObj = schemaWith(PERSON_ELEMENT);
-    const command: AddDocumentationCommand = {
-      type: "addDocumentation",
-      payload: { targetId: "/element:person", content: "No lang." },
-    };
 
-    executeAddDocumentation(command, schemaObj);
+    addDocumentation(schemaObj, { targetId: "/element:person", content: "No lang." });
 
     const documentations = (schemaObj.element ?? [])[0].annotation?.documentation ?? [];
     expect(documentations[0]._anyAttributes?.["xml:lang"]).toBeUndefined();
@@ -337,12 +272,8 @@ describe("executeAddDocumentation", () => {
 describe("executeRemoveDocumentation", () => {
   test("removes the only documentation element and clears the documentation array", () => {
     const schemaObj = readTestSchema(DOCUMENTED_PERSON_XSD);
-    const command: RemoveDocumentationCommand = {
-      type: "removeDocumentation",
-      payload: { documentationId: "/element:person/documentation[0]" },
-    };
 
-    executeRemoveDocumentation(command, schemaObj);
+    removeDocumentation(schemaObj, { documentationId: "/element:person/documentation[0]" });
 
     const elem = (schemaObj.element ?? [])[0];
     // annotation stays but documentation array is cleared
@@ -352,12 +283,8 @@ describe("executeRemoveDocumentation", () => {
 
   test("removes the first of two documentation elements leaving the second", () => {
     const schemaObj = readTestSchema(TWO_DOCUMENTATIONS_XSD);
-    const command: RemoveDocumentationCommand = {
-      type: "removeDocumentation",
-      payload: { documentationId: "/element:person/documentation[0]" },
-    };
 
-    executeRemoveDocumentation(command, schemaObj);
+    removeDocumentation(schemaObj, { documentationId: "/element:person/documentation[0]" });
 
     const documentations = (schemaObj.element ?? [])[0].annotation?.documentation ?? [];
     expect(documentations).toHaveLength(1);
@@ -366,12 +293,8 @@ describe("executeRemoveDocumentation", () => {
 
   test("removes the second of two documentation elements leaving the first", () => {
     const schemaObj = readTestSchema(TWO_DOCUMENTATIONS_XSD);
-    const command: RemoveDocumentationCommand = {
-      type: "removeDocumentation",
-      payload: { documentationId: "/element:person/documentation[1]" },
-    };
 
-    executeRemoveDocumentation(command, schemaObj);
+    removeDocumentation(schemaObj, { documentationId: "/element:person/documentation[1]" });
 
     const documentations = (schemaObj.element ?? [])[0].annotation?.documentation ?? [];
     expect(documentations).toHaveLength(1);
@@ -397,15 +320,11 @@ describe("executeRemoveDocumentation", () => {
 describe("executeModifyDocumentation", () => {
   test("updates the content of an existing documentation element", () => {
     const schemaObj = readTestSchema(DOCUMENTED_PERSON_XSD);
-    const command: ModifyDocumentationCommand = {
-      type: "modifyDocumentation",
-      payload: {
-        documentationId: "/element:person/documentation[0]",
-        content: "Updated.",
-      },
-    };
 
-    executeModifyDocumentation(command, schemaObj);
+    modifyDocumentation(schemaObj, {
+      documentationId: "/element:person/documentation[0]",
+      content: "Updated.",
+    });
 
     const documentations = (schemaObj.element ?? [])[0].annotation?.documentation ?? [];
     expect(documentations[0].value).toBe("Updated.");
@@ -413,15 +332,11 @@ describe("executeModifyDocumentation", () => {
 
   test("sets the xml:lang attribute", () => {
     const schemaObj = readTestSchema(DOCUMENTED_PERSON_XSD);
-    const command: ModifyDocumentationCommand = {
-      type: "modifyDocumentation",
-      payload: {
-        documentationId: "/element:person/documentation[0]",
-        lang: "fr",
-      },
-    };
 
-    executeModifyDocumentation(command, schemaObj);
+    modifyDocumentation(schemaObj, {
+      documentationId: "/element:person/documentation[0]",
+      lang: "fr",
+    });
 
     const documentations = (schemaObj.element ?? [])[0].annotation?.documentation ?? [];
     expect(documentations[0]._anyAttributes?.["xml:lang"]).toBe("fr");
@@ -429,15 +344,11 @@ describe("executeModifyDocumentation", () => {
 
   test("removes the xml:lang attribute when lang is set to empty string", () => {
     const schemaObj = readTestSchema(TWO_DOCUMENTATIONS_XSD);
-    const command: ModifyDocumentationCommand = {
-      type: "modifyDocumentation",
-      payload: {
-        documentationId: "/element:person/documentation[0]",
-        lang: "",
-      },
-    };
 
-    executeModifyDocumentation(command, schemaObj);
+    modifyDocumentation(schemaObj, {
+      documentationId: "/element:person/documentation[0]",
+      lang: "",
+    });
 
     const documentations = (schemaObj.element ?? [])[0].annotation?.documentation ?? [];
     expect(documentations[0]._anyAttributes?.["xml:lang"]).toBeUndefined();
@@ -447,16 +358,12 @@ describe("executeModifyDocumentation", () => {
 
   test("updates content and lang simultaneously", () => {
     const schemaObj = readTestSchema(DOCUMENTED_PERSON_XSD);
-    const command: ModifyDocumentationCommand = {
-      type: "modifyDocumentation",
-      payload: {
-        documentationId: "/element:person/documentation[0]",
-        content: "Aktualisiert.",
-        lang: "de",
-      },
-    };
 
-    executeModifyDocumentation(command, schemaObj);
+    modifyDocumentation(schemaObj, {
+      documentationId: "/element:person/documentation[0]",
+      content: "Aktualisiert.",
+      lang: "de",
+    });
 
     const documentations = (schemaObj.element ?? [])[0].annotation?.documentation ?? [];
     expect(documentations[0].value).toBe("Aktualisiert.");
@@ -465,15 +372,11 @@ describe("executeModifyDocumentation", () => {
 
   test("modifies the second of two documentation elements leaving the first unchanged", () => {
     const schemaObj = readTestSchema(TWO_DOCUMENTATIONS_XSD);
-    const command: ModifyDocumentationCommand = {
-      type: "modifyDocumentation",
-      payload: {
-        documentationId: "/element:person/documentation[1]",
-        content: "German updated.",
-      },
-    };
 
-    executeModifyDocumentation(command, schemaObj);
+    modifyDocumentation(schemaObj, {
+      documentationId: "/element:person/documentation[1]",
+      content: "German updated.",
+    });
 
     const documentations = (schemaObj.element ?? [])[0].annotation?.documentation ?? [];
     expect(documentations[0].value).toBe("English");
@@ -494,60 +397,6 @@ describe("executeModifyDocumentation", () => {
 
 });
 
-// ─── parseSchemaAnnotationId / parseSchemaDocumentationId ───────────────────
-
-describe("parseSchemaAnnotationId", () => {
-  test("parses '/schema/annotation[0]'", () => {
-    expect(parseSchemaAnnotationId("/schema/annotation[0]")).toBe(0);
-  });
-
-  test("parses '/schema/annotation[2]'", () => {
-    expect(parseSchemaAnnotationId("/schema/annotation[2]")).toBe(2);
-  });
-
-  test("returns null for a non-canonical 'schema/annotation[0]' path", () => {
-    expect(parseSchemaAnnotationId("schema/annotation[0]")).toBeNull();
-  });
-
-  test("returns null for a non-schema path", () => {
-    expect(parseSchemaAnnotationId("/element:person")).toBeNull();
-  });
-
-  test("returns null for a plain 'schema'", () => {
-    expect(parseSchemaAnnotationId("schema")).toBeNull();
-  });
-});
-
-describe("parseSchemaDocumentationId", () => {
-  test("parses '/schema/annotation[0]/documentation[1]'", () => {
-    const result = parseSchemaDocumentationId(
-      "/schema/annotation[0]/documentation[1]"
-    );
-    expect(result).toEqual({ annotationIndex: 0, documentationIndex: 1 });
-  });
-
-  test("parses '/schema/annotation[2]/documentation[3]'", () => {
-    const result = parseSchemaDocumentationId(
-      "/schema/annotation[2]/documentation[3]"
-    );
-    expect(result).toEqual({ annotationIndex: 2, documentationIndex: 3 });
-  });
-
-  test("returns null for a plain '/schema/documentation[0]'", () => {
-    expect(parseSchemaDocumentationId("/schema/documentation[0]")).toBeNull();
-  });
-
-  test("returns null for a non-canonical 'schema/annotation[0]/documentation[1]' path", () => {
-    expect(parseSchemaDocumentationId("schema/annotation[0]/documentation[1]")).toBeNull();
-  });
-
-  test("returns null for an element path", () => {
-    expect(
-      parseSchemaDocumentationId("/element:person/documentation[0]")
-    ).toBeNull();
-  });
-});
-
 // ─── Schema-root annotation operations ──────────────────────────────────────
 
 /** A single annotation on the schema element. */
@@ -558,12 +407,8 @@ const SCHEMA_ANNOTATION = `<xs:annotation>
 describe("executeAddAnnotation — schema root", () => {
   test("appends a new annotation to an empty schema", () => {
     const schemaObj = emptySchema();
-    const command: AddAnnotationCommand = {
-      type: "addAnnotation",
-      payload: { targetId: "/schema", documentation: "My schema." },
-    };
 
-    executeAddAnnotation(command, schemaObj);
+    addAnnotation(schemaObj, { targetId: "/schema", documentation: "My schema." });
 
     const annotations = schemaObj.annotation ?? [];
     expect(annotations).toHaveLength(1);
@@ -572,12 +417,8 @@ describe("executeAddAnnotation — schema root", () => {
 
   test("appends a second annotation when one already exists", () => {
     const schemaObj = schemaWith(SCHEMA_ANNOTATION);
-    const command: AddAnnotationCommand = {
-      type: "addAnnotation",
-      payload: { targetId: "/schema", documentation: "Second annotation." },
-    };
 
-    executeAddAnnotation(command, schemaObj);
+    addAnnotation(schemaObj, { targetId: "/schema", documentation: "Second annotation." });
 
     const annotations = schemaObj.annotation ?? [];
     expect(annotations).toHaveLength(2);
@@ -588,12 +429,8 @@ describe("executeAddAnnotation — schema root", () => {
 
   test("adds an annotation with both documentation and appinfo", () => {
     const schemaObj = emptySchema();
-    const command: AddAnnotationCommand = {
-      type: "addAnnotation",
-      payload: { targetId: "/schema", documentation: "desc", appInfo: "info" },
-    };
 
-    executeAddAnnotation(command, schemaObj);
+    addAnnotation(schemaObj, { targetId: "/schema", documentation: "desc", appInfo: "info" });
 
     const annotation = (schemaObj.annotation ?? [])[0];
     expect((annotation.documentation ?? [])[0].value).toBe("desc");
@@ -604,12 +441,8 @@ describe("executeAddAnnotation — schema root", () => {
 describe("executeRemoveAnnotation — schema root", () => {
   test("removes the first schema annotation by index", () => {
     const schemaObj = readTestSchema(TWO_ANNOTATIONS_XSD);
-    const command: RemoveAnnotationCommand = {
-      type: "removeAnnotation",
-      payload: { annotationId: "/schema/annotation[0]" },
-    };
 
-    executeRemoveAnnotation(command, schemaObj);
+    removeAnnotation(schemaObj, { annotationId: "/schema/annotation[0]" });
 
     const annotations = schemaObj.annotation ?? [];
     expect(annotations).toHaveLength(1);
@@ -618,12 +451,8 @@ describe("executeRemoveAnnotation — schema root", () => {
 
   test("removes the second schema annotation by index", () => {
     const schemaObj = readTestSchema(TWO_ANNOTATIONS_XSD);
-    const command: RemoveAnnotationCommand = {
-      type: "removeAnnotation",
-      payload: { annotationId: "/schema/annotation[1]" },
-    };
 
-    executeRemoveAnnotation(command, schemaObj);
+    removeAnnotation(schemaObj, { annotationId: "/schema/annotation[1]" });
 
     const annotations = schemaObj.annotation ?? [];
     expect(annotations).toHaveLength(1);
@@ -632,12 +461,8 @@ describe("executeRemoveAnnotation — schema root", () => {
 
   test("removes the only annotation, leaving annotation as undefined", () => {
     const schemaObj = schemaWith(SCHEMA_ANNOTATION);
-    const command: RemoveAnnotationCommand = {
-      type: "removeAnnotation",
-      payload: { annotationId: "/schema/annotation[0]" },
-    };
 
-    executeRemoveAnnotation(command, schemaObj);
+    removeAnnotation(schemaObj, { annotationId: "/schema/annotation[0]" });
 
     expect(schemaObj.annotation).toBeUndefined();
   });
@@ -647,15 +472,11 @@ describe("executeRemoveAnnotation — schema root", () => {
 describe("executeModifyAnnotation — schema root", () => {
   test("updates documentation on the first schema annotation", () => {
     const schemaObj = schemaWith(SCHEMA_ANNOTATION);
-    const command: ModifyAnnotationCommand = {
-      type: "modifyAnnotation",
-      payload: {
-        annotationId: "/schema/annotation[0]",
-        documentation: "Updated.",
-      },
-    };
 
-    executeModifyAnnotation(command, schemaObj);
+    modifyAnnotation(schemaObj, {
+      annotationId: "/schema/annotation[0]",
+      documentation: "Updated.",
+    });
 
     const annotations = schemaObj.annotation ?? [];
     expect((annotations[0].documentation ?? [])[0].value).toBe("Updated.");
@@ -663,15 +484,11 @@ describe("executeModifyAnnotation — schema root", () => {
 
   test("updates documentation on the second schema annotation", () => {
     const schemaObj = readTestSchema(TWO_ANNOTATIONS_XSD);
-    const command: ModifyAnnotationCommand = {
-      type: "modifyAnnotation",
-      payload: {
-        annotationId: "/schema/annotation[1]",
-        documentation: "Second updated.",
-      },
-    };
 
-    executeModifyAnnotation(command, schemaObj);
+    modifyAnnotation(schemaObj, {
+      annotationId: "/schema/annotation[1]",
+      documentation: "Second updated.",
+    });
 
     const annotations = schemaObj.annotation ?? [];
     expect((annotations[1].documentation ?? [])[0].value).toBe("Second updated.");
@@ -684,28 +501,18 @@ describe("executeModifyAnnotation — schema root", () => {
 describe("executeAddDocumentation — schema root", () => {
   test("creates a schema annotation and adds a documentation element (targetId: '/schema')", () => {
     const schemaObj = emptySchema();
-    const command: AddDocumentationCommand = {
-      type: "addDocumentation",
-      payload: { targetId: "/schema", content: "Schema doc." },
-    };
 
-    executeAddDocumentation(command, schemaObj);
+    addDocumentation(schemaObj, { targetId: "/schema", content: "Schema doc." });
 
     const annotations = schemaObj.annotation ?? [];
     expect(annotations).toHaveLength(1);
-    const documentations = annotations[0].documentation ?? [];
-    expect(documentations).toHaveLength(1);
-    expect(documentations[0].value).toBe("Schema doc.");
+    expect(valuesOf(annotations[0].documentation)).toEqual(["Schema doc."]);
   });
 
   test("appends to the first existing annotation (targetId: '/schema')", () => {
     const schemaObj = schemaWith(SCHEMA_ANNOTATION);
-    const command: AddDocumentationCommand = {
-      type: "addDocumentation",
-      payload: { targetId: "/schema", content: "Appended.", lang: "en" },
-    };
 
-    executeAddDocumentation(command, schemaObj);
+    addDocumentation(schemaObj, { targetId: "/schema", content: "Appended.", lang: "en" });
 
     const documentations = (schemaObj.annotation ?? [])[0].documentation ?? [];
     expect(documentations).toHaveLength(2);
@@ -715,15 +522,11 @@ describe("executeAddDocumentation — schema root", () => {
 
   test("appends to a specific schema annotation (targetId: '/schema/annotation[N]')", () => {
     const schemaObj = readTestSchema(TWO_ANNOTATIONS_XSD);
-    const command: AddDocumentationCommand = {
-      type: "addDocumentation",
-      payload: {
-        targetId: "/schema/annotation[1]",
-        content: "Into second annotation.",
-      },
-    };
 
-    executeAddDocumentation(command, schemaObj);
+    addDocumentation(schemaObj, {
+      targetId: "/schema/annotation[1]",
+      content: "Into second annotation.",
+    });
 
     const annotations = schemaObj.annotation ?? [];
     const documentations = annotations[1].documentation ?? [];
@@ -761,9 +564,7 @@ describe("executeRemoveDocumentation — schema root", () => {
     );
 
     const annotation = (schemaObj.annotation ?? [])[0];
-    const documentations = annotation.documentation ?? [];
-    expect(documentations).toHaveLength(1);
-    expect(documentations[0].value).toBe("Second doc.");
+    expect(valuesOf(annotation.documentation)).toEqual(["Second doc."]);
   });
 
   test("removes a documentation element via '/schema/documentation[N]' shorthand", () => {

@@ -18,6 +18,36 @@ import {
 import { emptySchema, schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
 import { readTestSchema } from "../__tests__/resourceTestHelpers.js";
 
+/**
+ * Executes an addGroup command.
+ *
+ * @param schemaObj - The schema to change
+ * @param payload - The payload of the command
+ */
+function addGroup(schemaObj: schema, payload: AddGroupCommand["payload"]): void {
+  executeAddGroup({ type: "addGroup", payload }, schemaObj);
+}
+
+/**
+ * Executes a modifyGroup command.
+ *
+ * @param schemaObj - The schema to change
+ * @param payload - The payload of the command
+ */
+function modifyGroup(schemaObj: schema, payload: ModifyGroupCommand["payload"]): void {
+  executeModifyGroup({ type: "modifyGroup", payload }, schemaObj);
+}
+
+/**
+ * Executes a removeGroup command.
+ *
+ * @param schemaObj - The schema to change
+ * @param payload - The payload of the command
+ */
+function removeGroup(schemaObj: schema, payload: RemoveGroupCommand["payload"]): void {
+  executeRemoveGroup({ type: "removeGroup", payload }, schemaObj);
+}
+
 /** The file with a complexType `PersonType` with the local element `name`. */
 const PERSON_TYPE_WITH_NAME_XSD = "person-type-with-name-element.xsd";
 
@@ -32,80 +62,38 @@ const PERSON_TYPE_WITH_GROUP_REF = `<xs:group name="PersonGroup"><xs:sequence/><
   </xs:sequence>
 </xs:complexType>`;
 
+/**
+ * Returns the documentation texts of the first group reference in the sequence of the first complexType.
+ *
+ * @param schemaObj - The schema object
+ * @returns The texts
+ */
+function firstGroupRefDocumentation(schemaObj: schema): Array<string | undefined> {
+  const ref = schemaObj.complexType?.[0].sequence?.group?.[0];
+  return (ref?.annotation?.documentation ?? []).map((d) => d.value);
+}
+
 describe("Group Executors", () => {
   describe("executeAddGroup", () => {
-    test("should add a group with a sequence content model", () => {
+    test.each(["sequence", "choice", "all"] as const)("should add a group with a %s content model", (model) => {
       const schemaObj = emptySchema();
 
-      const command: AddGroupCommand = {
-        type: "addGroup",
-        payload: {
-          groupName: "PersonGroup",
-          contentModel: "sequence",
-        },
-      };
-
-      executeAddGroup(command, schemaObj);
+      addGroup(schemaObj, { groupName: "PersonGroup", contentModel: model });
 
       expect(schemaObj.group).toHaveLength(1);
       const grp = schemaObj.group![0];
       expect(grp.name).toBe("PersonGroup");
-      expect(grp.sequence).toBeDefined();
-      expect(grp.choice).toBeUndefined();
-      expect(grp.all).toBeUndefined();
-    });
-
-    test("should add a group with a choice content model", () => {
-      const schemaObj = emptySchema();
-
-      const command: AddGroupCommand = {
-        type: "addGroup",
-        payload: {
-          groupName: "ShapeGroup",
-          contentModel: "choice",
-        },
-      };
-
-      executeAddGroup(command, schemaObj);
-
-      const grp = schemaObj.group![0];
-      expect(grp.choice).toBeDefined();
-      expect(grp.sequence).toBeUndefined();
-      expect(grp.all).toBeUndefined();
-    });
-
-    test("should add a group with an all content model", () => {
-      const schemaObj = emptySchema();
-
-      const command: AddGroupCommand = {
-        type: "addGroup",
-        payload: {
-          groupName: "AddressGroup",
-          contentModel: "all",
-        },
-      };
-
-      executeAddGroup(command, schemaObj);
-
-      const grp = schemaObj.group![0];
-      expect(grp.all).toBeDefined();
-      expect(grp.sequence).toBeUndefined();
-      expect(grp.choice).toBeUndefined();
+      expect((["sequence", "choice", "all"] as const).filter((m) => grp[m] !== undefined)).toEqual([model]);
     });
 
     test("should add a group with documentation", () => {
       const schemaObj = emptySchema();
 
-      const command: AddGroupCommand = {
-        type: "addGroup",
-        payload: {
-          groupName: "DocGroup",
-          contentModel: "sequence",
-          documentation: "A documented group",
-        },
-      };
-
-      executeAddGroup(command, schemaObj);
+      addGroup(schemaObj, {
+        groupName: "DocGroup",
+        contentModel: "sequence",
+        documentation: "A documented group",
+      });
 
       const grp = schemaObj.group![0];
       expect(grp.annotation).toBeDefined();
@@ -117,15 +105,10 @@ describe("Group Executors", () => {
   <xs:sequence/>
 </xs:group>`);
 
-      const command: AddGroupCommand = {
-        type: "addGroup",
-        payload: {
-          groupName: "NewGroup",
-          contentModel: "choice",
-        },
-      };
-
-      executeAddGroup(command, schemaObj);
+      addGroup(schemaObj, {
+        groupName: "NewGroup",
+        contentModel: "choice",
+      });
 
       expect(schemaObj.group ?? []).toHaveLength(2);
       expect((schemaObj.group ?? [])[1].name).toBe("NewGroup");
@@ -134,19 +117,12 @@ describe("Group Executors", () => {
     test("should produce valid XSD output (round-trip)", () => {
       const schemaObj = emptySchema();
 
-      const command: AddGroupCommand = {
-        type: "addGroup",
-        payload: {
-          groupName: "MyGroup",
-          contentModel: "sequence",
-        },
-      };
+      addGroup(schemaObj, {
+        groupName: "MyGroup",
+        contentModel: "sequence",
+      });
 
-      executeAddGroup(command, schemaObj);
-
-      const xml = marshal(schemaObj);
-      const reparsed = unmarshal(schema, xml);
-      const groups = reparsed.group ?? [];
+      const groups = unmarshal(schema, marshal(schemaObj)).group ?? [];
       expect(groups).toHaveLength(1);
       expect(groups[0].name).toBe("MyGroup");
       expect(groups[0].sequence).toBeDefined();
@@ -159,14 +135,9 @@ describe("Group Executors", () => {
   <xs:sequence/>
 </xs:group>`);
 
-      const command: RemoveGroupCommand = {
-        type: "removeGroup",
-        payload: {
-          groupId: "/group:PersonGroup",
-        },
-      };
-
-      executeRemoveGroup(command, schemaObj);
+      removeGroup(schemaObj, {
+        groupId: "/group:PersonGroup",
+      });
 
       expect(schemaObj.group).toBeUndefined();
     });
@@ -179,14 +150,9 @@ describe("Group Executors", () => {
   <xs:choice/>
 </xs:group>`);
 
-      const command: RemoveGroupCommand = {
-        type: "removeGroup",
-        payload: {
-          groupId: "/group:GroupA",
-        },
-      };
-
-      executeRemoveGroup(command, schemaObj);
+      removeGroup(schemaObj, {
+        groupId: "/group:GroupA",
+      });
 
       expect(schemaObj.group ?? []).toHaveLength(1);
       expect((schemaObj.group ?? [])[0].name).toBe("GroupB");
@@ -195,14 +161,9 @@ describe("Group Executors", () => {
     test("should remove a compositor group from a complexType", () => {
       const schemaObj = readTestSchema(PERSON_TYPE_WITH_NAME_XSD);
 
-      const command: RemoveGroupCommand = {
-        type: "removeGroup",
-        payload: {
-          groupId: "/complexType:PersonType/group:sequence[0]",
-        },
-      };
-
-      executeRemoveGroup(command, schemaObj);
+      removeGroup(schemaObj, {
+        groupId: "/complexType:PersonType/group:sequence[0]",
+      });
 
       expect((schemaObj.complexType ?? [])[0].sequence).toBeUndefined();
     });
@@ -215,15 +176,10 @@ describe("Group Executors", () => {
   <xs:sequence/>
 </xs:group>`);
 
-      const command: ModifyGroupCommand = {
-        type: "modifyGroup",
-        payload: {
-          groupId: "/group:OldName",
-          groupName: "NewName",
-        },
-      };
-
-      executeModifyGroup(command, schemaObj);
+      modifyGroup(schemaObj, {
+        groupId: "/group:OldName",
+        groupName: "NewName",
+      });
 
       const grp = (schemaObj.group ?? [])[0];
       expect(grp.name).toBe("NewName");
@@ -237,15 +193,10 @@ describe("Group Executors", () => {
   <xs:group ref="OldName"/>
 </xs:complexType>`);
 
-      const command: ModifyGroupCommand = {
-        type: "modifyGroup",
-        payload: {
-          groupId: "/group:OldName",
-          groupName: "NewName",
-        },
-      };
-
-      executeModifyGroup(command, schemaObj);
+      modifyGroup(schemaObj, {
+        groupId: "/group:OldName",
+        groupName: "NewName",
+      });
 
       expect((schemaObj.group ?? [])[0].name).toBe("NewName");
       expect((schemaObj.complexType ?? [])[0].group!.ref).toBe("NewName");
@@ -256,15 +207,10 @@ describe("Group Executors", () => {
   <xs:sequence/>
 </xs:group>`);
 
-      const command: ModifyGroupCommand = {
-        type: "modifyGroup",
-        payload: {
-          groupId: "/group:MyGroup",
-          contentModel: "choice",
-        },
-      };
-
-      executeModifyGroup(command, schemaObj);
+      modifyGroup(schemaObj, {
+        groupId: "/group:MyGroup",
+        contentModel: "choice",
+      });
 
       const grp = (schemaObj.group ?? [])[0];
       expect(grp.choice).toBeDefined();
@@ -277,15 +223,10 @@ describe("Group Executors", () => {
   <xs:sequence/>
 </xs:group>`);
 
-      const command: ModifyGroupCommand = {
-        type: "modifyGroup",
-        payload: {
-          groupId: "/group:DocGroup",
-          documentation: "Updated documentation",
-        },
-      };
-
-      executeModifyGroup(command, schemaObj);
+      modifyGroup(schemaObj, {
+        groupId: "/group:DocGroup",
+        documentation: "Updated documentation",
+      });
 
       const grp = (schemaObj.group ?? [])[0];
       expect(grp.annotation).toBeDefined();
@@ -299,17 +240,12 @@ describe("Group Executors", () => {
   <xs:sequence/>
 </xs:group>`);
 
-      const command: ModifyGroupCommand = {
-        type: "modifyGroup",
-        payload: {
-          groupId: "/group:OriginalGroup",
-          groupName: "UpdatedGroup",
-          contentModel: "all",
-          documentation: "New doc",
-        },
-      };
-
-      executeModifyGroup(command, schemaObj);
+      modifyGroup(schemaObj, {
+        groupId: "/group:OriginalGroup",
+        groupName: "UpdatedGroup",
+        contentModel: "all",
+        documentation: "New doc",
+      });
 
       const grp = (schemaObj.group ?? [])[0];
       expect(grp.name).toBe("UpdatedGroup");
@@ -323,15 +259,10 @@ describe("Group Executors", () => {
   <xs:sequence/>
 </xs:group>`);
 
-      const command: ModifyGroupCommand = {
-        type: "modifyGroup",
-        payload: {
-          groupId: "/group:StableGroup",
-          // No changes provided
-        },
-      };
-
-      executeModifyGroup(command, schemaObj);
+      modifyGroup(schemaObj, {
+        groupId: "/group:StableGroup",
+        // No changes provided
+      });
 
       const grp = (schemaObj.group ?? [])[0];
       expect(grp.name).toBe("StableGroup");
@@ -341,16 +272,11 @@ describe("Group Executors", () => {
     test("should modify occurrence constraints on a compositor group", () => {
       const schemaObj = readTestSchema(PERSON_TYPE_WITH_NAME_XSD);
 
-      const command: ModifyGroupCommand = {
-        type: "modifyGroup",
-        payload: {
-          groupId: "/complexType:PersonType/group:sequence[0]",
-          minOccurs: 0,
-          maxOccurs: "unbounded",
-        },
-      };
-
-      executeModifyGroup(command, schemaObj);
+      modifyGroup(schemaObj, {
+        groupId: "/complexType:PersonType/group:sequence[0]",
+        minOccurs: 0,
+        maxOccurs: "unbounded",
+      });
 
       const sequence = (schemaObj.complexType ?? [])[0].sequence;
       expect(sequence?.minOccurs).toBe(0);
@@ -363,15 +289,10 @@ describe("Group Executors", () => {
       test("should add a group reference to a sequence", () => {
         const schemaObj = readTestSchema(TWO_GROUPS_AND_PERSON_XSD);
 
-        const command: AddGroupCommand = {
-          type: "addGroup",
-          payload: {
-            ref: "PersonGroup",
-            parentId: "/complexType:PersonType/group:sequence[0]",
-          },
-        };
-
-        executeAddGroup(command, schemaObj);
+        addGroup(schemaObj, {
+          ref: "PersonGroup",
+          parentId: "/complexType:PersonType/group:sequence[0]",
+        });
 
         const ct = (schemaObj.complexType ?? [])[0];
         const refs = ct.sequence!.group ?? [];
@@ -382,17 +303,12 @@ describe("Group Executors", () => {
       test("should add a group reference with minOccurs and maxOccurs", () => {
         const schemaObj = readTestSchema(TWO_GROUPS_AND_PERSON_XSD);
 
-        const command: AddGroupCommand = {
-          type: "addGroup",
-          payload: {
-            ref: "PersonGroup",
-            parentId: "/complexType:PersonType/group:sequence[0]",
-            minOccurs: 0,
-            maxOccurs: "unbounded",
-          },
-        };
-
-        executeAddGroup(command, schemaObj);
+        addGroup(schemaObj, {
+          ref: "PersonGroup",
+          parentId: "/complexType:PersonType/group:sequence[0]",
+          minOccurs: 0,
+          maxOccurs: "unbounded",
+        });
 
         const ref = ((schemaObj.complexType ?? [])[0].sequence!.group ?? [])[0];
         expect(ref.ref).toBe("PersonGroup");
@@ -421,15 +337,10 @@ describe("Group Executors", () => {
       test("should add a direct group reference on a complexType", () => {
         const schemaObj = readTestSchema(TWO_GROUPS_AND_PERSON_XSD);
 
-        const command: AddGroupCommand = {
-          type: "addGroup",
-          payload: {
-            ref: "PersonGroup",
-            parentId: "/complexType:PersonType",
-          },
-        };
-
-        executeAddGroup(command, schemaObj);
+        addGroup(schemaObj, {
+          ref: "PersonGroup",
+          parentId: "/complexType:PersonType",
+        });
 
         const ct = (schemaObj.complexType ?? [])[0];
         expect(ct.group).toBeDefined();
@@ -439,20 +350,13 @@ describe("Group Executors", () => {
       test("should add a group reference with documentation annotation", () => {
         const schemaObj = readTestSchema(TWO_GROUPS_AND_PERSON_XSD);
 
-        const command: AddGroupCommand = {
-          type: "addGroup",
-          payload: {
-            ref: "PersonGroup",
-            parentId: "/complexType:PersonType/group:sequence[0]",
-            documentation: "A person group ref annotation",
-          },
-        };
+        addGroup(schemaObj, {
+          ref: "PersonGroup",
+          parentId: "/complexType:PersonType/group:sequence[0]",
+          documentation: "A person group ref annotation",
+        });
 
-        executeAddGroup(command, schemaObj);
-
-        const ref = ((schemaObj.complexType ?? [])[0].sequence!.group ?? [])[0];
-        expect(ref.annotation).toBeDefined();
-        expect(ref.annotation!.documentation![0].value).toBe("A person group ref annotation");
+expect(firstGroupRefDocumentation(schemaObj)).toEqual(["A person group ref annotation"]);
       });
 
     });
@@ -461,12 +365,7 @@ describe("Group Executors", () => {
       test("should remove a group reference from a sequence", () => {
         const schemaObj = schemaWith(PERSON_TYPE_WITH_GROUP_REF);
 
-        const command: RemoveGroupCommand = {
-          type: "removeGroup",
-          payload: { groupId: "/complexType:PersonType/group:sequence[0]/groupRef:PersonGroup[0]" },
-        };
-
-        executeRemoveGroup(command, schemaObj);
+        removeGroup(schemaObj, { groupId: "/complexType:PersonType/group:sequence[0]/groupRef:PersonGroup[0]" });
 
         const refs = (schemaObj.complexType ?? [])[0].sequence?.group ?? [];
         expect(refs).toHaveLength(0);
@@ -475,12 +374,7 @@ describe("Group Executors", () => {
       test("should remove only the matching group reference, leaving others intact", () => {
         const schemaObj = readTestSchema("person-type-with-two-group-refs-in-sequence.xsd");
 
-        const command: RemoveGroupCommand = {
-          type: "removeGroup",
-          payload: { groupId: "/complexType:PersonType/group:sequence[0]/groupRef:PersonGroup[0]" },
-        };
-
-        executeRemoveGroup(command, schemaObj);
+        removeGroup(schemaObj, { groupId: "/complexType:PersonType/group:sequence[0]/groupRef:PersonGroup[0]" });
 
         const refs = (schemaObj.complexType ?? [])[0].sequence!.group ?? [];
         expect(refs).toHaveLength(1);
@@ -490,12 +384,7 @@ describe("Group Executors", () => {
       test("should remove a direct group ref from a complexType", () => {
         const schemaObj = readTestSchema("person-type-with-group-ref.xsd");
 
-        const command: RemoveGroupCommand = {
-          type: "removeGroup",
-          payload: { groupId: "/complexType:PersonType/groupRef:PersonGroup[0]" },
-        };
-
-        executeRemoveGroup(command, schemaObj);
+        removeGroup(schemaObj, { groupId: "/complexType:PersonType/groupRef:PersonGroup[0]" });
 
         const ct = (schemaObj.complexType ?? [])[0];
         expect(ct.group).toBeUndefined();
@@ -506,15 +395,10 @@ describe("Group Executors", () => {
       test("should change the ref target of a group reference", () => {
         const schemaObj = schemaWith(PERSON_TYPE_WITH_GROUP_REF);
 
-        const command: ModifyGroupCommand = {
-          type: "modifyGroup",
-          payload: {
-            groupId: "/complexType:PersonType/group:sequence[0]/groupRef:PersonGroup[0]",
-            ref: "AddressGroup",
-          },
-        };
-
-        executeModifyGroup(command, schemaObj);
+        modifyGroup(schemaObj, {
+          groupId: "/complexType:PersonType/group:sequence[0]/groupRef:PersonGroup[0]",
+          ref: "AddressGroup",
+        });
 
         const refs = (schemaObj.complexType ?? [])[0].sequence!.group ?? [];
         expect(refs[0].ref).toBe("AddressGroup");
@@ -523,16 +407,11 @@ describe("Group Executors", () => {
       test("should update minOccurs and maxOccurs on a group reference", () => {
         const schemaObj = schemaWith(PERSON_TYPE_WITH_GROUP_REF);
 
-        const command: ModifyGroupCommand = {
-          type: "modifyGroup",
-          payload: {
-            groupId: "/complexType:PersonType/group:sequence[0]/groupRef:PersonGroup[0]",
-            minOccurs: 0,
-            maxOccurs: "unbounded",
-          },
-        };
-
-        executeModifyGroup(command, schemaObj);
+        modifyGroup(schemaObj, {
+          groupId: "/complexType:PersonType/group:sequence[0]/groupRef:PersonGroup[0]",
+          minOccurs: 0,
+          maxOccurs: "unbounded",
+        });
 
         const ref = ((schemaObj.complexType ?? [])[0].sequence!.group ?? [])[0];
         expect(ref.minOccurs).toBe(0);
@@ -542,33 +421,21 @@ describe("Group Executors", () => {
       test("should set documentation annotation on a group reference", () => {
         const schemaObj = schemaWith(PERSON_TYPE_WITH_GROUP_REF);
 
-        const command: ModifyGroupCommand = {
-          type: "modifyGroup",
-          payload: {
-            groupId: "/complexType:PersonType/group:sequence[0]/groupRef:PersonGroup[0]",
-            documentation: "Updated ref annotation",
-          },
-        };
+        modifyGroup(schemaObj, {
+          groupId: "/complexType:PersonType/group:sequence[0]/groupRef:PersonGroup[0]",
+          documentation: "Updated ref annotation",
+        });
 
-        executeModifyGroup(command, schemaObj);
-
-        const ref = ((schemaObj.complexType ?? [])[0].sequence!.group ?? [])[0];
-        expect(ref.annotation).toBeDefined();
-        expect(ref.annotation!.documentation![0].value).toBe("Updated ref annotation");
+expect(firstGroupRefDocumentation(schemaObj)).toEqual(["Updated ref annotation"]);
       });
 
       test("should modify a direct group ref on a complexType", () => {
         const schemaObj = readTestSchema("person-type-with-one-of-two-groups.xsd");
 
-        const command: ModifyGroupCommand = {
-          type: "modifyGroup",
-          payload: {
-            groupId: "/complexType:PersonType/groupRef:PersonGroup[0]",
-            ref: "AddressGroup",
-          },
-        };
-
-        executeModifyGroup(command, schemaObj);
+        modifyGroup(schemaObj, {
+          groupId: "/complexType:PersonType/groupRef:PersonGroup[0]",
+          ref: "AddressGroup",
+        });
 
         const ct = (schemaObj.complexType ?? [])[0];
         expect(ct.group!.ref).toBe("AddressGroup");

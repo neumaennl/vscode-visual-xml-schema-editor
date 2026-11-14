@@ -37,10 +37,6 @@ function setActiveEditor(fsPath: string | undefined): void {
 
 describe("Extension", () => {
   let mockContext: vscode.ExtensionContext;
-  const registerCommandMock =
-    vscode.commands.registerCommand as MockedFunction<
-      typeof vscode.commands.registerCommand
-    >;
 
   beforeEach(() => {
     // Clear all mocks before each test
@@ -87,16 +83,7 @@ describe("Extension", () => {
 
   describe("openEditor command", () => {
     test("should open file with custom editor when URI is provided", async () => {
-      activate(mockContext);
-
-      // Get the registered command handler
-      const commandHandler = registerCommandMock.mock.calls.find(
-        ([command]) => command === "visualXmlSchemaEditor.openEditor"
-      )?.[1];
-
-      if (!commandHandler) {
-        throw new Error("openEditor command handler not registered");
-      }
+      const commandHandler = activateAndGetOpenEditorHandler(mockContext);
 
       // Call command with XSD URI
       const testUri = vscode.Uri.file("/test/file.xsd");
@@ -110,15 +97,7 @@ describe("Extension", () => {
     });
 
     test("should show error when non-XSD file is provided", async () => {
-      activate(mockContext);
-
-      const commandHandler = registerCommandMock.mock.calls.find(
-        ([command]) => command === "visualXmlSchemaEditor.openEditor"
-      )?.[1];
-
-      if (!commandHandler) {
-        throw new Error("openEditor command handler not registered");
-      }
+      const commandHandler = activateAndGetOpenEditorHandler(mockContext);
 
       const testUri = vscode.Uri.file("/test/file.txt");
       await commandHandler(testUri);

@@ -433,35 +433,17 @@ describe("SimpleType Executors", () => {
       expect(elements(reparsed)[0].simpleType!.restriction!.base).toBe("xs:integer");
     });
 
-    test("replaces an existing type attribute when adding an anonymous simpleType", () => {
-      const schemaObj = schemaWith(`<xs:element name="status" type="xs:string"/>`);
+    test.each([
+      ["type attribute", `<xs:element name="status" type="xs:string"/>`, "type_"],
+      ["anonymous complexType", `<xs:element name="status"><xs:complexType><xs:sequence/></xs:complexType></xs:element>`, "complexType"],
+    ] as const)("replaces an existing %s when adding an anonymous simpleType", (_case, element, replaced) => {
+      const schemaObj = schemaWith(element);
 
-      addSimpleType(schemaObj, {
-        parentId: "/element:status",
-        baseType: "xs:token",
-      });
+      addSimpleType(schemaObj, { parentId: "/element:status", baseType: "xs:token" });
 
-      const element = elements(schemaObj)[0];
-      expect(element.type_).toBeUndefined();
-      expect(element.simpleType?.restriction?.base).toBe("xs:token");
-    });
-
-    test("replaces an existing anonymous complexType when adding an anonymous simpleType", () => {
-      const schemaObj = schemaWith(`
-  <xs:element name="status">
-    <xs:complexType>
-      <xs:sequence/>
-    </xs:complexType>
-  </xs:element>`);
-
-      addSimpleType(schemaObj, {
-        parentId: "/element:status",
-        baseType: "xs:token",
-      });
-
-      const element = elements(schemaObj)[0];
-      expect(element.complexType).toBeUndefined();
-      expect(element.simpleType?.restriction?.base).toBe("xs:token");
+      const result = elements(schemaObj)[0];
+      expect(result[replaced]).toBeUndefined();
+      expect(result.simpleType?.restriction?.base).toBe("xs:token");
     });
 
     const removeAnonymousSimpleTypeCases = [

@@ -5,9 +5,7 @@
 import { schema } from "../../shared/types.js";
 import {
   AddImportCommand,
-  RemoveImportCommand,
   ModifyImportCommand,
-  AddIncludeCommand,
   RemoveIncludeCommand,
   ModifyIncludeCommand,
   ModifySchemaNamespacesCommand,
@@ -223,39 +221,20 @@ describe("validateAddImport", () => {
 
   describe("validateRemoveImport", () => {
     test("should reject removeImport with missing importId", () => {
-      const command: RemoveImportCommand = {
-        type: "removeImport",
-        payload: {
-          importId: "",
-        },
-      };
-
-      const result = validateRemoveImport(command, schemaObj);
+      const result = validateRemoveImport({ type: "removeImport", payload: { importId: "" } }, schemaObj);
       expectInvalid(result);
       expect(result.error).toBe("Import ID cannot be empty");
     });
 
     test("should reject removeImport when import does not exist", () => {
-      const command: RemoveImportCommand = {
-        type: "removeImport",
-        payload: {
-          importId: "/import[0]",
-        },
-      };
-
-      const result = validateRemoveImport(command, schemaObj);
+      const result = validateRemoveImport({ type: "removeImport", payload: { importId: "/import[0]" } }, schemaObj);
       expectInvalid(result);
       expect(result.error).toContain("Import not found");
     });
 
     test("should accept removeImport when import exists and is not referenced", () => {
       const schemaWithImport = schemaWith(NS1_IMPORT);
-      const command: RemoveImportCommand = {
-        type: "removeImport",
-        payload: { importId: "/import[0]" },
-      };
-
-      const result = validateRemoveImport(command, schemaWithImport);
+      const result = validateRemoveImport({ type: "removeImport", payload: { importId: "/import[0]" } }, schemaWithImport);
       expect(result.valid).toBe(true);
     });
 
@@ -263,12 +242,7 @@ describe("validateAddImport", () => {
       const prefixes = { ext: "http://example.com/ext" };
       const schemaWithRef = schemaWith(`<xs:import namespace="http://example.com/ext" schemaLocation="ext.xsd"/>
 <xs:element name="foo" type="ext:MyType"/>`, prefixes);
-      const command: RemoveImportCommand = {
-        type: "removeImport",
-        payload: { importId: "/import[0]" },
-      };
-
-      const result = validateRemoveImport(command, schemaWithRef);
+      const result = validateRemoveImport({ type: "removeImport", payload: { importId: "/import[0]" } }, schemaWithRef);
       expectInvalid(result);
       expect(result.error).toContain("still referenced");
     });
@@ -277,12 +251,7 @@ describe("validateAddImport", () => {
       // This verifies that the full recursive traversal catches references
       // that were missed by the old shallow implementation.
       const schemaWithDeepRef = readTestSchema("import-with-type-used-in-nested-choice.xsd");
-      const command: RemoveImportCommand = {
-        type: "removeImport",
-        payload: { importId: "/import[0]" },
-      };
-
-      const result = validateRemoveImport(command, schemaWithDeepRef);
+      const result = validateRemoveImport({ type: "removeImport", payload: { importId: "/import[0]" } }, schemaWithDeepRef);
       expectInvalid(result);
       expect(result.error).toContain("still referenced");
     });
@@ -290,11 +259,7 @@ describe("validateAddImport", () => {
     test("should reject removeImport when importId points to a non-import node type", () => {
       const s = schemaWith(`<xs:include schemaLocation="other.xsd"/>`);
       // /include[0] has the wrong node type — must be rejected
-      const command: RemoveImportCommand = {
-        type: "removeImport",
-        payload: { importId: "/include[0]" },
-      };
-      const result = validateRemoveImport(command, s);
+      const result = validateRemoveImport({ type: "removeImport", payload: { importId: "/include[0]" } }, s);
       expectInvalid(result);
       expect(result.error).toContain("does not refer to an import node");
     });
@@ -302,27 +267,13 @@ describe("validateAddImport", () => {
 
   describe("validateModifyImport", () => {
     test("should reject modifyImport with missing importId", () => {
-      const command: ModifyImportCommand = {
-        type: "modifyImport",
-        payload: {
-          importId: "",
-        },
-      };
-
-      const result = validateModifyImport(command, schemaObj);
+      const result = validateModifyImport({ type: "modifyImport", payload: { importId: "" } }, schemaObj);
       expectInvalid(result);
       expect(result.error).toBe("Import ID cannot be empty");
     });
 
     test("should reject modifyImport when import does not exist", () => {
-      const command: ModifyImportCommand = {
-        type: "modifyImport",
-        payload: {
-          importId: "/import[0]",
-        },
-      };
-
-      const result = validateModifyImport(command, schemaObj);
+      const result = validateModifyImport({ type: "modifyImport", payload: { importId: "/import[0]" } }, schemaObj);
       expectInvalid(result);
       expect(result.error).toContain("Import not found");
     });
@@ -447,58 +398,31 @@ describe("Include Validators", () => {
 
   describe("validateAddInclude", () => {
     test("should reject addInclude with missing schemaLocation", () => {
-      const command: AddIncludeCommand = {
-        type: "addInclude",
-        payload: {
-          schemaLocation: "",
-        },
-      };
-
-      const result = validateAddInclude(command, schemaObj);
+      const result = validateAddInclude({ type: "addInclude", payload: { schemaLocation: "" } }, schemaObj);
       expectInvalid(result);
       expect(result.error).toBe("Schema location cannot be empty");
     });
 
     test("should reject addInclude with whitespace-only schemaLocation", () => {
-      const command: AddIncludeCommand = {
-        type: "addInclude",
-        payload: { schemaLocation: "   " },
-      };
-
-      const result = validateAddInclude(command, schemaObj);
+      const result = validateAddInclude({ type: "addInclude", payload: { schemaLocation: "   " } }, schemaObj);
       expectInvalid(result);
       expect(result.error).toBe("Schema location cannot be empty");
     });
 
     test("should reject addInclude when schemaLocation contains whitespace", () => {
-      const command: AddIncludeCommand = {
-        type: "addInclude",
-        payload: { schemaLocation: "my schema.xsd" },
-      };
-
-      const result = validateAddInclude(command, schemaObj);
+      const result = validateAddInclude({ type: "addInclude", payload: { schemaLocation: "my schema.xsd" } }, schemaObj);
       expectInvalid(result);
       expect(result.error).toBe("Schema location must be a valid path or URI without whitespace");
     });
 
     test("should accept addInclude with valid schemaLocation", () => {
-      const command: AddIncludeCommand = {
-        type: "addInclude",
-        payload: { schemaLocation: "other.xsd" },
-      };
-
-      const result = validateAddInclude(command, schemaObj);
+      const result = validateAddInclude({ type: "addInclude", payload: { schemaLocation: "other.xsd" } }, schemaObj);
       expect(result.valid).toBe(true);
     });
 
     test("should reject addInclude when the same schemaLocation already exists", () => {
       const schemaWithInclude = schemaWithIncludes("other.xsd");
-      const command: AddIncludeCommand = {
-        type: "addInclude",
-        payload: { schemaLocation: "other.xsd" },
-      };
-
-      const result = validateAddInclude(command, schemaWithInclude);
+      const result = validateAddInclude({ type: "addInclude", payload: { schemaLocation: "other.xsd" } }, schemaWithInclude);
       expectInvalid(result);
       expect(result.error).toBe("An include for schema location 'other.xsd' already exists");
     });
@@ -506,36 +430,19 @@ describe("Include Validators", () => {
 
   describe("validateRemoveInclude", () => {
     test("should reject removeInclude with missing includeId", () => {
-      const command: RemoveIncludeCommand = {
-        type: "removeInclude",
-        payload: {
-          includeId: "",
-        },
-      };
-
-      const result = validateRemoveInclude(command, schemaObj);
+      const result = validateRemoveInclude({ type: "removeInclude", payload: { includeId: "" } }, schemaObj);
       expectInvalid(result);
       expect(result.error).toBe("Include ID cannot be empty");
     });
 
     test("should reject removeInclude with malformed includeId", () => {
-      const command: RemoveIncludeCommand = {
-        type: "removeInclude",
-        payload: { includeId: "include0" },
-      };
-
-      const result = validateRemoveInclude(command, schemaObj);
+      const result = validateRemoveInclude({ type: "removeInclude", payload: { includeId: "include0" } }, schemaObj);
       expectInvalid(result);
       expect(result.error).toMatch(/Invalid include ID/);
     });
 
     test("should reject removeInclude when include does not exist at position", () => {
-      const command: RemoveIncludeCommand = {
-        type: "removeInclude",
-        payload: { includeId: "/include[0]" },
-      };
-
-      const result = validateRemoveInclude(command, schemaObj);
+      const result = validateRemoveInclude({ type: "removeInclude", payload: { includeId: "/include[0]" } }, schemaObj);
       expectInvalid(result);
       expect(result.error).toBe("Include not found: /include[0]");
     });
@@ -555,12 +462,7 @@ describe("Include Validators", () => {
 
     test("should accept removeInclude with valid includeId", () => {
       const schemaWithInclude = schemaWithIncludes("other.xsd");
-      const command: RemoveIncludeCommand = {
-        type: "removeInclude",
-        payload: { includeId: "/include[0]" },
-      };
-
-      const result = validateRemoveInclude(command, schemaWithInclude);
+      const result = validateRemoveInclude({ type: "removeInclude", payload: { includeId: "/include[0]" } }, schemaWithInclude);
       expect(result.valid).toBe(true);
     });
   });

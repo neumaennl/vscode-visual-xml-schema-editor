@@ -11,6 +11,8 @@
  *   - "/schema/documentation[N]" — N-th doc of the first annotation (shorthand).
  */
 
+import { attributeGroupRef } from "../shared/types.js";
+
 /**
  * Parses a schema-annotation ID of the form "/schema/annotation[N]".
  * @returns The 0-based annotation index, or null if the format does not match.
@@ -57,4 +59,26 @@ export function parseDocumentationId(documentationId: string): {
     );
   }
   return { elementId: match[1], documentationIndex: parseInt(match[2], 10) };
+}
+
+/**
+ * Finds the attribute group reference that the name and position of an attributeGroupRef ID identify
+ * among the attribute group references of its parent.
+ *
+ * @param refs - The attribute group references of the parent
+ * @param name - The ref of the reference, if the ID has one
+ * @param position - The position among the references, if the ID has one
+ * @returns The reference, or `undefined` if none matches or the ID has neither a name nor a position
+ */
+export function findAttributeGroupRef(
+  refs: attributeGroupRef[],
+  name: string | undefined,
+  position: number | undefined
+): attributeGroupRef | undefined {
+  if (position !== undefined) {
+    // Undefined if the position is out of range; the ID parser only accepts digits, so it is never negative
+    const ref = refs.at(position);
+    return name === undefined || ref?.ref === name ? ref : undefined;
+  }
+  return name === undefined ? undefined : refs.find((r) => r.ref === name);
 }

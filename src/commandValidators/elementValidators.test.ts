@@ -446,7 +446,7 @@ describe("Element Validators", () => {
 
       const result = validateModifyElement(command, renamedSchema);
       expectInvalid(result);
-      expect(result.error).toBe("Element not found: person");
+      expect(result.error).toBe("Element not found with name: person");
     });
 
     test("should reject modifyElement with minOccurs > maxOccurs", () => {

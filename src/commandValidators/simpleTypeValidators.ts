@@ -10,15 +10,9 @@ import {
   RestrictionFacets,
   SimpleTypeDerivationKind,
 } from "../../shared/types.js";
-import {
-  ValidationResult,
-  isValidXmlName,
-  validateAnonymousTypeParent,
-  validateElementType,
-} from "./validationUtils.js";
-import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
+import { ValidationResult, isValidXmlName, validateElementType } from "./validationUtils.js";
 import { isSchemaRoot } from "../../shared/schemaUtils.js";
-import { locateNodeById } from "../schemaNavigator.js";
+import { locateType, validateInlineTypeParent, validateNewTypeName } from "./commonValidators.js";
 
 /** Container types that may hold an anonymous simpleType inline. */
 const INLINE_SIMPLE_TYPE_PARENT_TYPES = ["topLevelElement", "localElement", "topLevelAttribute", "attribute"];
@@ -173,118 +167,39 @@ export function validateAddSimpleType(
 
   if (!isSchemaRoot(parentId)) {
     // Anonymous simpleType inside an element or attribute — isSchemaRoot guarantees parentId is a non-empty string here
-    const location = locateNodeById(schemaObj, parentId as string);
-    if (!location.found) {
-      return { valid: false, error: `Parent not found: ${parentId}` };
+    const parentResult = validateInlineTypeParent(parentId as string, schemaObj, "simpleType", INLINE_SIMPLE_TYPE_PARENT_TYPES);
+    if (!parentResult.valid) {
+      return parentResult;
     }
-    if (!INLINE_SIMPLE_TYPE_PARENT_TYPES.includes(location.parentType)) {
-      return {
-        valid: false,
-        error: `Parent of type '${location.parentType}' cannot contain a simpleType`,
-      };
-    }
-    const holder = location.parent as { ref?: string; type_?: string; simpleType?: unknown };
-    if (holder.ref) {
-      return {
-        valid: false,
-        error: `'${parentId}' has a ref attribute and cannot carry an inline simpleType`,
-      };
-    }
-    if (holder.simpleType) {
-      return { valid: false, error: `'${parentId}' already has an anonymous simpleType` };
-    }
-    const bodyValidation = validateSimpleTypeBody(command.payload, schemaObj);
-    if (!bodyValidation.valid) {
-      return bodyValidation;
-    }
-    return { valid: true };
-  }
-
-  // Top-level named simpleType
-  if (!isValidXmlName(typeName ?? "")) {
+  } else if (!isValidXmlName(typeName ?? "")) {
     return { valid: false, error: "Type name must be a valid XML name" };
-  }
-
-  if ((schemaObj.simpleType ?? []).some(st => st.name === typeName)) {
+  } else if ((schemaObj.simpleType ?? []).some(st => st.name === typeName)) {
     return { valid: false, error: `Simple type '${typeName}' already exists in schema` };
   }
-  const bodyValidation = validateSimpleTypeBody(command.payload, schemaObj);
-  if (!bodyValidation.valid) {
-    return bodyValidation;
-  }
-  return { valid: true };
+  return validateSimpleTypeBody(command.payload, schemaObj);
 }
 
 export function validateRemoveSimpleType(
   command: RemoveSimpleTypeCommand,
   schemaObj: schema
 ): ValidationResult {
-  if (!command.payload.typeId.trim()) {
-    return { valid: false, error: "Type ID cannot be empty" };
-  }
-
-  const parsed = parseSchemaId(command.payload.typeId);
-
-  if (parsed.nodeType === SchemaNodeType.AnonymousSimpleType) {
-    const result = validateAnonymousTypeParent(command.payload.typeId, parsed.parentId, schemaObj, "simpleType");
-    return result.success ? { valid: true } : result.error;
-  }
-
   // TODO Phase 2: Check if type is being used by other elements/types
-  // Top-level named simpleType: check it exists
-  if (!(schemaObj.simpleType ?? []).some(st => st.name === parsed.name)) {
-    return { valid: false, error: `SimpleType not found: ${parsed.name}` };
-  }
-  return { valid: true };
+  const located = locateType(command.payload.typeId, schemaObj, "simpleType", schemaObj.simpleType);
+  return located.valid ? { valid: true } : located;
 }
 
 export function validateModifySimpleType(
   command: ModifySimpleTypeCommand,
   schemaObj: schema
 ): ValidationResult {
-  if (!command.payload.typeId.trim()) {
-    return { valid: false, error: "Type ID cannot be empty" };
+  const { typeId, typeName } = command.payload;
+  const located = locateType(typeId, schemaObj, "simpleType", schemaObj.simpleType);
+  if (!located.valid) {
+    return located;
   }
-  if (command.payload.typeName !== undefined && !isValidXmlName(command.payload.typeName)) {
-    return { valid: false, error: "Type name must be a valid XML name" };
+  const nameResult = validateNewTypeName(typeName, located, "simpleType");
+  if (!nameResult.valid) {
+    return nameResult;
   }
-
-  const parsed = parseSchemaId(command.payload.typeId);
-
-  if (parsed.nodeType === SchemaNodeType.AnonymousSimpleType) {
-    const result = validateAnonymousTypeParent(command.payload.typeId, parsed.parentId, schemaObj, "simpleType");
-    if (!result.success) return result.error;
-    // validateAnonymousTypeParent() has checked that the parent has an anonymous simpleType
-    const existingSimpleType = (result.location.parent as { simpleType: { restriction?: unknown; list?: unknown; union?: unknown } }).simpleType;
-    const bodyValidation = validateSimpleTypeBody(
-      command.payload,
-      schemaObj,
-      bodyKindOf(existingSimpleType)
-    );
-    if (!bodyValidation.valid) {
-      return bodyValidation;
-    }
-    if (command.payload.typeName !== undefined) {
-      return {
-        valid: false,
-        error: "Cannot provide 'typeName' when modifying an anonymous simpleType",
-      };
-    }
-    return { valid: true };
-  }
-
-  const existingSimpleType = (schemaObj.simpleType ?? []).find(st => st.name === parsed.name);
-  if (!existingSimpleType) {
-    return { valid: false, error: `Simple type '${parsed.name}' not found in schema` };
-  }
-
-  const bodyValidation = validateSimpleTypeBody(
-    command.payload,
-    schemaObj,
-    bodyKindOf(existingSimpleType)
-  );
-  if (!bodyValidation.valid) {
-    return bodyValidation;
-  }
-  return { valid: true };
+  return validateSimpleTypeBody(command.payload, schemaObj, bodyKindOf(located.type));
 }

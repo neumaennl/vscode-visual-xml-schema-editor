@@ -8,15 +8,9 @@ import {
   RemoveComplexTypeCommand,
   ModifyComplexTypeCommand,
 } from "../../shared/types.js";
-import {
-  ValidationResult,
-  isValidXmlName,
-  validateAnonymousTypeParent,
-  validateElementType,
-} from "./validationUtils.js";
-import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
+import { ValidationResult, isValidXmlName, validateElementType } from "./validationUtils.js";
 import { isSchemaRoot } from "../../shared/schemaUtils.js";
-import { locateNodeById } from "../schemaNavigator.js";
+import { locateType, validateInlineTypeParent, validateNewTypeName } from "./commonValidators.js";
 
 /**
  * Valid content models for ComplexType elements.
@@ -162,44 +156,13 @@ export function validateAddComplexType(
   schemaObj: schema
 ): ValidationResult {
   const { parentId, typeName, contentModel, derivationKind } = command.payload;
+  const isTopLevel = isSchemaRoot(parentId);
 
-  if (!isSchemaRoot(parentId)) {
+  if (!isTopLevel) {
     // Anonymous complexType inside an element — isSchemaRoot guarantees parentId is a non-empty string here
-    const location = locateNodeById(schemaObj, parentId as string);
-    if (!location.found) {
-      return { valid: false, error: `Parent not found: ${parentId}` };
-    }
-    if (!INLINE_COMPLEX_TYPE_PARENT_TYPES.includes(location.parentType)) {
-      return {
-        valid: false,
-        error: `Parent of type '${location.parentType}' cannot contain a complexType`,
-      };
-    }
-    const holder = location.parent as { ref?: string; type_?: string; complexType?: unknown };
-    // In XSD, nodes with a ref attribute are references to existing declarations rather
-    // than local declarations of their own, so they cannot define an inline type here.
-    // By contrast, nodes with a type_ attribute are still local declarations and may be
-    // converted from an explicit type reference to an inline anonymous type.
-    if (holder.ref) {
-      return {
-        valid: false,
-        error: `'${parentId}' has a ref attribute and cannot carry an inline complexType`,
-      };
-    }
-    if (holder.complexType) {
-      return { valid: false, error: `'${parentId}' already has an anonymous complexType` };
-    }
-    const contentModelResult = validateContentModel(contentModel, VALID_COMPLEX_TYPE_CONTENT_MODELS);
-    if (!contentModelResult.valid) return contentModelResult;
-    const derivationKindResult = validateDerivationKind(derivationKind);
-    if (!derivationKindResult.valid) return derivationKindResult;
-    const derivationResult = validateComplexTypeDerivation(command.payload, undefined, schemaObj);
-    if (!derivationResult.valid) return derivationResult;
-    return { valid: true };
-  }
-
-  // Top-level named complexType
-  if (!isValidXmlName(typeName ?? "")) {
+    const parentResult = validateInlineTypeParent(parentId as string, schemaObj, "complexType", INLINE_COMPLEX_TYPE_PARENT_TYPES);
+    if (!parentResult.valid) return parentResult;
+  } else if (!isValidXmlName(typeName ?? "")) {
     return { valid: false, error: "Type name must be a valid XML name" };
   }
   const contentModelResult = validateContentModel(contentModel, VALID_COMPLEX_TYPE_CONTENT_MODELS);
@@ -208,7 +171,7 @@ export function validateAddComplexType(
   if (!derivationKindResult.valid) return derivationKindResult;
   const derivationResult = validateComplexTypeDerivation(command.payload, undefined, schemaObj);
   if (!derivationResult.valid) return derivationResult;
-  if ((schemaObj.complexType ?? []).some((ct) => ct.name === typeName)) {
+  if (isTopLevel && (schemaObj.complexType ?? []).some((ct) => ct.name === typeName)) {
     return {
       valid: false,
       error: `Complex type '${typeName}' already exists in schema`,
@@ -221,69 +184,27 @@ export function validateRemoveComplexType(
   command: RemoveComplexTypeCommand,
   schemaObj: schema
 ): ValidationResult {
-  if (!command.payload.typeId.trim()) {
-    return { valid: false, error: "Type ID cannot be empty" };
-  }
-
-  const parsed = parseSchemaId(command.payload.typeId);
-
-  if (parsed.nodeType === SchemaNodeType.AnonymousComplexType) {
-    const result = validateAnonymousTypeParent(command.payload.typeId, parsed.parentId, schemaObj, "complexType");
-    return result.success ? { valid: true } : result.error;
-  }
-
-  if (!(schemaObj.complexType ?? []).some((ct) => ct.name === parsed.name)) {
-    return { valid: false, error: `Complex type '${parsed.name}' not found in schema` };
-  }
-  return { valid: true };
+  const located = locateType(command.payload.typeId, schemaObj, "complexType", schemaObj.complexType);
+  return located.valid ? { valid: true } : located;
 }
 
 export function validateModifyComplexType(
   command: ModifyComplexTypeCommand,
   schemaObj: schema
 ): ValidationResult {
-  if (!command.payload.typeId.trim()) {
-    return { valid: false, error: "Type ID cannot be empty" };
-  }
+  const { typeId, typeName, contentModel, derivationKind } = command.payload;
+  const located = locateType(typeId, schemaObj, "complexType", schemaObj.complexType);
+  if (!located.valid) return located;
 
-  const parsed = parseSchemaId(command.payload.typeId);
-
-  if (parsed.nodeType === SchemaNodeType.AnonymousComplexType) {
-    const result = validateAnonymousTypeParent(command.payload.typeId, parsed.parentId, schemaObj, "complexType");
-    if (!result.success) return result.error;
-    if (command.payload.typeName !== undefined) {
-      return {
-        valid: false,
-        error: "Cannot provide 'typeName' when modifying an anonymous complexType",
-      };
-    }
-    if (command.payload.contentModel !== undefined) {
-      const contentModelResult = validateContentModel(command.payload.contentModel, VALID_COMPLEX_TYPE_CONTENT_MODELS);
-      if (!contentModelResult.valid) return contentModelResult;
-    }
-    const derivationKindResult = validateDerivationKind(command.payload.derivationKind);
-    if (!derivationKindResult.valid) return derivationKindResult;
-    const existing = (result.location.parent as { complexType: ExistingComplexType }).complexType;
-    const contentChangeResult = validateComplexTypeContentChange(command.payload, existing, command.payload.typeId);
-    if (!contentChangeResult.valid) return contentChangeResult;
-    return validateComplexTypeDerivation(command.payload, existing, schemaObj);
-  }
-
-  if (command.payload.typeName !== undefined && !isValidXmlName(command.payload.typeName)) {
-    return { valid: false, error: "Type name must be a valid XML name" };
-  }
-  if (command.payload.contentModel !== undefined) {
-    const contentModelResult = validateContentModel(command.payload.contentModel, VALID_COMPLEX_TYPE_CONTENT_MODELS);
+  const nameResult = validateNewTypeName(typeName, located, "complexType");
+  if (!nameResult.valid) return nameResult;
+  if (contentModel !== undefined) {
+    const contentModelResult = validateContentModel(contentModel, VALID_COMPLEX_TYPE_CONTENT_MODELS);
     if (!contentModelResult.valid) return contentModelResult;
   }
-  const derivationKindResult = validateDerivationKind(command.payload.derivationKind);
+  const derivationKindResult = validateDerivationKind(derivationKind);
   if (!derivationKindResult.valid) return derivationKindResult;
-  const existing = (schemaObj.complexType ?? []).find((ct) => ct.name === parsed.name);
-  if (!existing) {
-    return { valid: false, error: `Complex type '${parsed.name}' not found in schema` };
-  }
-  const contentChangeResult = validateComplexTypeContentChange(command.payload, existing, command.payload.typeId);
+  const contentChangeResult = validateComplexTypeContentChange(command.payload, located.type, typeId);
   if (!contentChangeResult.valid) return contentChangeResult;
-  return validateComplexTypeDerivation(command.payload, existing, schemaObj);
+  return validateComplexTypeDerivation(command.payload, located.type, schemaObj);
 }
-

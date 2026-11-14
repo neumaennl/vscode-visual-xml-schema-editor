@@ -39,33 +39,40 @@ function isValidSchemaLocation(value: string): boolean {
 }
 
 /**
- * Parses an importId and validates it refers to an existing import entry.
+ * Parses the ID of an import or include and validates that it refers to an existing entry.
  *
  * Returns `{ valid: true, position }` with the resolved zero-based index on
  * success, or `{ valid: false, error }` when the ID is malformed or out of
- * range.  Callers that need the position (e.g. to look up the import entry)
+ * range.  Callers that need the position (e.g. to look up the entry)
  * can use it directly without calling `parseSchemaId` a second time.
+ *
+ * @param id - The ID of the import or include
+ * @param kind - Whether the ID identifies an import or an include
+ * @param entries - The imports or includes of the schema
+ * @returns The position of the entry, or the validation failure
  */
-function validateImportId(
-  importId: string,
-  schemaObj: schema
+function validateModuleId(
+  id: string,
+  kind: "import" | "include",
+  entries: object[] | undefined
 ): { valid: false; error: string } | { valid: true; position: number } {
   let parsed;
   try {
-    parsed = parseSchemaId(importId);
+    parsed = parseSchemaId(id);
   } catch {
-    return { valid: false, error: `Invalid import ID: ${importId}` };
+    return { valid: false, error: `Invalid ${kind} ID: ${id}` };
   }
   const index = parsed.position;
-  if (parsed.nodeType !== SchemaNodeType.Import) {
+  const expectedNodeType = kind === "import" ? SchemaNodeType.Import : SchemaNodeType.Include;
+  if (parsed.nodeType !== expectedNodeType) {
     return {
       valid: false,
-      error: `'${importId}' does not refer to an import node (got '${parsed.nodeType}')`,
+      error: `'${id}' does not refer to an ${kind} node (got '${parsed.nodeType}')`,
     };
   }
-  const imports = schemaObj.import_ ?? [];
-  if (index === undefined || index < 0 || index >= imports.length) {
-    return { valid: false, error: `Import not found: ${importId}` };
+  if (index === undefined || index < 0 || index >= (entries ?? []).length) {
+    const label = kind === "import" ? "Import" : "Include";
+    return { valid: false, error: `${label} not found: ${id}` };
   }
   return { valid: true, position: index };
 }
@@ -187,7 +194,7 @@ export function validateRemoveImport(
   if (!command.payload.importId.trim()) {
     return { valid: false, error: "Import ID cannot be empty" };
   }
-  const idResult = validateImportId(command.payload.importId, schemaObj);
+  const idResult = validateModuleId(command.payload.importId, "import", schemaObj.import_);
   if (!idResult.valid) return idResult;
 
   // Check if the import's namespace prefix is still referenced in the schema
@@ -212,7 +219,7 @@ export function validateModifyImport(
   if (!importId.trim()) {
     return { valid: false, error: "Import ID cannot be empty" };
   }
-  const idResult = validateImportId(importId, schemaObj);
+  const idResult = validateModuleId(importId, "import", schemaObj.import_);
   if (!idResult.valid) return idResult;
 
   const imports = schemaObj.import_ ?? [];
@@ -281,38 +288,6 @@ export function validateModifyImport(
 
 // ===== Include Command Validation =====
 
-/**
- * Parses an includeId and validates it refers to an existing include entry.
- *
- * Returns `{ valid: true, position }` with the resolved zero-based index on
- * success, or `{ valid: false, error }` when the ID is malformed or out of
- * range.  Callers that need the position can use it directly without calling
- * `parseSchemaId` a second time.
- */
-function validateIncludeId(
-  includeId: string,
-  schemaObj: schema
-): { valid: false; error: string } | { valid: true; position: number } {
-  let parsed;
-  try {
-    parsed = parseSchemaId(includeId);
-  } catch {
-    return { valid: false, error: `Invalid include ID: ${includeId}` };
-  }
-  const index = parsed.position;
-  if (parsed.nodeType !== SchemaNodeType.Include) {
-    return {
-      valid: false,
-      error: `'${includeId}' does not refer to an include node (got '${parsed.nodeType}')`,
-    };
-  }
-  const includes = schemaObj.include ?? [];
-  if (index === undefined || index < 0 || index >= includes.length) {
-    return { valid: false, error: `Include not found: ${includeId}` };
-  }
-  return { valid: true, position: index };
-}
-
 export function validateAddInclude(
   command: AddIncludeCommand,
   schemaObj: schema
@@ -338,7 +313,7 @@ export function validateRemoveInclude(
   if (!command.payload.includeId.trim()) {
     return { valid: false, error: "Include ID cannot be empty" };
   }
-  const idResult = validateIncludeId(command.payload.includeId, schemaObj);
+  const idResult = validateModuleId(command.payload.includeId, "include", schemaObj.include);
   if (!idResult.valid) return idResult;
 
   return { valid: true };
@@ -353,7 +328,7 @@ export function validateModifyInclude(
   if (!includeId.trim()) {
     return { valid: false, error: "Include ID cannot be empty" };
   }
-  const idResult = validateIncludeId(includeId, schemaObj);
+  const idResult = validateModuleId(includeId, "include", schemaObj.include);
   if (!idResult.valid) return idResult;
 
   const locationResult = validateSchemaLocation(schemaLocation);

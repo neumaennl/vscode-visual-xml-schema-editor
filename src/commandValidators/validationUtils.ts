@@ -338,7 +338,7 @@ export function validateAnonymousTypeParent(
   parentId: string | undefined,
   schemaObj: schema,
   prop: string
-): { success: false; error: ValidationResult } | { success: true; location: Extract<NodeLocation, { found: true }> } {
+): { success: false; error: ValidationFailure } | { success: true; location: Extract<NodeLocation, { found: true }> } {
   if (!parentId) {
     return { success: false, error: { valid: false, error: `Invalid anonymous ${prop} ID: ${typeId}` } };
   }

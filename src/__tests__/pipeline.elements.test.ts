@@ -170,7 +170,7 @@ describe("Integration: Element pipeline", () => {
         payload: { elementId: "/element:missing", elementName: "other" },
       };
 
-      runCommandExpectValidationFailure(SCHEMA_WITH_ELEMENTS, cmd, "Element not found: missing");
+      runCommandExpectValidationFailure(SCHEMA_WITH_ELEMENTS, cmd, "Element not found with name: missing");
     });
 
     test("returns validation error when new name is invalid", () => {

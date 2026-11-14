@@ -4,8 +4,8 @@ title: Architecture
 description: How the extension host, the webview and the shared code work together to provide a visual editor for XML Schema (XSD) files, what xmlbind-ts is responsible for and what the editor is, and the design decisions behind the command-based design.
 tags: [architecture, extension-host, webview, shared, design-decisions]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-11T18:50:29Z }
-verified: { by: human:neumaennl, at: 2026-11-11T19:10:51Z }
+generated: { by: human:neumaennl, at: 2026-11-14T16:13:09Z }
+verified: { by: human:neumaennl, at: 2026-11-14T16:42:44Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -141,6 +141,7 @@ src/                      Extension host
   commandProcessor.ts     Orchestrates parse → validate → execute → serialize
   commandValidator.ts     Dispatch to commandValidators/
   commandExecutor.ts      Dispatch to commandExecutors/
+  commandHandlers.ts      Finds the validator or executor of a command
   schemaModelManager.ts   Holds the schema object; marshal/unmarshal/clone
   schemaNavigator.ts      Resolves IDs to nodes in the schema object
   commandValidators/      Validation rules per schema construct

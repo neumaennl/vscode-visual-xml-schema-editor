@@ -22,7 +22,7 @@ import {
   ModifyDocumentationCommand,
   annotationType,
 } from "../../shared/types.js";
-import { ValidationResult } from "./validationUtils.js";
+import { ValidationFailure, ValidationResult } from "./validationUtils.js";
 import { locateNodeById } from "../schemaNavigator.js";
 import { isSchemaRoot } from "../../shared/schemaUtils.js";
 import {
@@ -47,128 +47,139 @@ function hasAnnotationProperty(
  *
  * @param schemaObj - The schema
  * @param nodeId - The ID of the component
- * @returns The component, or `undefined` if it does not exist or does not support annotations
+ * @returns The component, or the validation failure if it does not exist or does not support annotations
  */
-function locateAnnotatable(schemaObj: schema, nodeId: string): { annotation?: annotationType } | undefined {
+function locateAnnotatable(
+  schemaObj: schema,
+  nodeId: string
+): ValidationFailure | { valid: true; target: { annotation?: annotationType } } {
   const location = locateNodeById(schemaObj, nodeId);
-  return location.found && hasAnnotationProperty(location.parent) ? location.parent : undefined;
+  if (!location.found || !hasAnnotationProperty(location.parent)) {
+    return { valid: false, error: `Target node not found or does not support annotations: ${nodeId}` };
+  }
+  return { valid: true, target: location.parent };
+}
+
+/**
+ * Locates the annotation of the non-schema component that `nodeId` identifies.
+ *
+ * @param schemaObj - The schema
+ * @param nodeId - The ID of the component
+ * @returns The annotation, or the validation failure if the component does not exist, does not support
+ * annotations or has none
+ */
+function locateAnnotation(schemaObj: schema, nodeId: string): ValidationFailure | { valid: true; annotation: annotationType } {
+  const located = locateAnnotatable(schemaObj, nodeId);
+  if (!located.valid) {
+    return located;
+  }
+  if (!located.target.annotation) {
+    return { valid: false, error: `No annotation found on node: ${nodeId}` };
+  }
+  return { valid: true, annotation: located.target.annotation };
 }
 
 // ===== Annotation Command Validation =====
+
+/**
+ * Validates the target of addAnnotation or addDocumentation: the schema root, which can hold several
+ * annotations and gets one for new documentation if needed, or a component that supports annotations.
+ *
+ * @param targetId - The ID of the target
+ * @param schemaObj - The schema
+ * @param checkComponent - Further checks of a target that is a component
+ * @returns The validation result
+ */
+function validateAddTarget(
+  targetId: string,
+  schemaObj: schema,
+  checkComponent: (target: { annotation?: annotationType }) => ValidationResult
+): ValidationResult {
+  if (!targetId.trim()) {
+    return { valid: false, error: "Target ID cannot be empty" };
+  }
+  if (isSchemaRoot(targetId)) {
+    return { valid: true };
+  }
+  const located = locateAnnotatable(schemaObj, targetId);
+  return located.valid ? checkComponent(located.target) : located;
+}
 
 export function validateAddAnnotation(
   command: AddAnnotationCommand,
   schemaObj: schema
 ): ValidationResult {
-  if (!command.payload.targetId.trim()) {
-    return { valid: false, error: "Target ID cannot be empty" };
-  }
+  const targetId = command.payload.targetId;
+  return validateAddTarget(targetId, schemaObj, (target) =>
+    target.annotation
+      ? { valid: false, error: `Node already has an annotation: ${targetId}. Use modifyAnnotation to update it.` }
+      : { valid: true }
+  );
+}
 
-  if (isSchemaRoot(command.payload.targetId)) {
-    // Schema root allows multiple xs:annotation children — always valid
-    return { valid: true };
-  }
-
-  const target = locateAnnotatable(schemaObj, command.payload.targetId);
-  if (!target) {
+/**
+ * Validates that an annotation index of the schema root refers to an existing annotation. The ID
+ * parsers only accept digits, so the index is never negative.
+ *
+ * @param annotationIndex - The index from the ID
+ * @param schemaObj - The schema
+ * @param id - The ID, for the error message
+ * @returns The validation result
+ */
+function validateSchemaAnnotationIndex(annotationIndex: number, schemaObj: schema, id: string): ValidationResult {
+  const count = schemaObj.annotation?.length ?? 0;
+  if (annotationIndex >= count) {
     return {
       valid: false,
-      error: `Target node not found or does not support annotations: ${command.payload.targetId}`,
-    };
-  }
-  if (target.annotation) {
-    return {
-      valid: false,
-      error: `Node already has an annotation: ${command.payload.targetId}. Use modifyAnnotation to update it.`,
+      error: `Annotation index ${annotationIndex} out of bounds (length ${count}): ${id}`,
     };
   }
   return { valid: true };
+}
+
+/**
+ * Validates the ID of an existing annotation: `/schema/annotation[N]` for an annotation of the schema
+ * root, or the ID of an annotated component. Used by validateRemoveAnnotation and
+ * validateModifyAnnotation.
+ *
+ * @param annotationId - The annotation ID
+ * @param schemaObj - The schema
+ * @param action - What the command does with the annotation, for the error message
+ * @returns The validation result
+ */
+function validateAnnotationId(annotationId: string, schemaObj: schema, action: "remove" | "modify"): ValidationResult {
+  if (!annotationId.trim()) {
+    return { valid: false, error: "Annotation ID cannot be empty" };
+  }
+
+  if (isSchemaRoot(annotationId)) {
+    return {
+      valid: false,
+      error: `Use "/schema/annotation[N]" to ${action} a specific schema-root annotation: ${annotationId}`,
+    };
+  }
+
+  const schemaAnnotationIndex = parseSchemaAnnotationId(annotationId);
+  if (schemaAnnotationIndex !== null) {
+    return validateSchemaAnnotationIndex(schemaAnnotationIndex, schemaObj, annotationId);
+  }
+
+  const located = locateAnnotation(schemaObj, annotationId);
+  return located.valid ? { valid: true } : located;
 }
 
 export function validateRemoveAnnotation(
   command: RemoveAnnotationCommand,
   schemaObj: schema
 ): ValidationResult {
-  if (!command.payload.annotationId.trim()) {
-    return { valid: false, error: "Annotation ID cannot be empty" };
-  }
-
-  if (isSchemaRoot(command.payload.annotationId)) {
-    return {
-      valid: false,
-      error: `Use "/schema/annotation[N]" to remove a specific schema-root annotation: ${command.payload.annotationId}`,
-    };
-  }
-
-  const schemaAnnotationIndex = parseSchemaAnnotationId(command.payload.annotationId);
-  if (schemaAnnotationIndex !== null) {
-    const annotations = schemaObj.annotation ?? [];
-    if (schemaAnnotationIndex < 0 || schemaAnnotationIndex >= annotations.length) {
-      return {
-        valid: false,
-        error: `Annotation index ${schemaAnnotationIndex} out of bounds (length ${annotations.length}): ${command.payload.annotationId}`,
-      };
-    }
-    return { valid: true };
-  }
-
-  const target = locateAnnotatable(schemaObj, command.payload.annotationId);
-  if (!target) {
-    return {
-      valid: false,
-      error: `Target node not found or does not support annotations: ${command.payload.annotationId}`,
-    };
-  }
-  if (!target.annotation) {
-    return {
-      valid: false,
-      error: `No annotation found on node: ${command.payload.annotationId}`,
-    };
-  }
-  return { valid: true };
+  return validateAnnotationId(command.payload.annotationId, schemaObj, "remove");
 }
 
 export function validateModifyAnnotation(
   command: ModifyAnnotationCommand,
   schemaObj: schema
 ): ValidationResult {
-  if (!command.payload.annotationId.trim()) {
-    return { valid: false, error: "Annotation ID cannot be empty" };
-  }
-
-  if (isSchemaRoot(command.payload.annotationId)) {
-    return {
-      valid: false,
-      error: `Use "/schema/annotation[N]" to modify a specific schema-root annotation: ${command.payload.annotationId}`,
-    };
-  }
-
-  const schemaAnnotationIndex = parseSchemaAnnotationId(command.payload.annotationId);
-  if (schemaAnnotationIndex !== null) {
-    const annotations = schemaObj.annotation ?? [];
-    if (schemaAnnotationIndex < 0 || schemaAnnotationIndex >= annotations.length) {
-      return {
-        valid: false,
-        error: `Annotation index ${schemaAnnotationIndex} out of bounds (length ${annotations.length}): ${command.payload.annotationId}`,
-      };
-    }
-    return { valid: true };
-  }
-
-  const target = locateAnnotatable(schemaObj, command.payload.annotationId);
-  if (!target) {
-    return {
-      valid: false,
-      error: `Target node not found or does not support annotations: ${command.payload.annotationId}`,
-    };
-  }
-  if (!target.annotation) {
-    return {
-      valid: false,
-      error: `No annotation found on node: ${command.payload.annotationId}`,
-    };
-  }
-  return { valid: true };
+  return validateAnnotationId(command.payload.annotationId, schemaObj, "modify");
 }
 
 // ===== Documentation Command Validation =====
@@ -177,34 +188,12 @@ export function validateAddDocumentation(
   command: AddDocumentationCommand,
   schemaObj: schema
 ): ValidationResult {
-  if (!command.payload.targetId.trim()) {
-    return { valid: false, error: "Target ID cannot be empty" };
-  }
-
-  if (isSchemaRoot(command.payload.targetId)) {
-    // Schema root always accepts addDocumentation (creates annotation if needed)
-    return { valid: true };
-  }
-
-  const schemaAnnotationIndex = parseSchemaAnnotationId(command.payload.targetId);
+  const targetId = command.payload.targetId;
+  const schemaAnnotationIndex = parseSchemaAnnotationId(targetId);
   if (schemaAnnotationIndex !== null) {
-    const annotations = schemaObj.annotation ?? [];
-    if (schemaAnnotationIndex >= annotations.length) {
-      return {
-        valid: false,
-        error: `Annotation index ${schemaAnnotationIndex} out of bounds (length ${annotations.length}): ${command.payload.targetId}`,
-      };
-    }
-    return { valid: true };
+    return validateSchemaAnnotationIndex(schemaAnnotationIndex, schemaObj, targetId);
   }
-
-  if (!locateAnnotatable(schemaObj, command.payload.targetId)) {
-    return {
-      valid: false,
-      error: `Target node not found or does not support annotations: ${command.payload.targetId}`,
-    };
-  }
-  return { valid: true };
+  return validateAddTarget(targetId, schemaObj, () => ({ valid: true }));
 }
 
 /**
@@ -224,13 +213,11 @@ function validateDocumentationId(documentationId: string, schemaObj: schema): Va
   // "/schema/annotation[N]/documentation[M]" format
   const schemaDocumentationId = parseSchemaDocumentationId(documentationId);
   if (schemaDocumentationId) {
-    const annotations = schemaObj.annotation ?? [];
-    if (schemaDocumentationId.annotationIndex >= annotations.length) {
-      return {
-        valid: false,
-        error: `Annotation index ${schemaDocumentationId.annotationIndex} out of bounds (length ${annotations.length}): ${documentationId}`,
-      };
+    const indexResult = validateSchemaAnnotationIndex(schemaDocumentationId.annotationIndex, schemaObj, documentationId);
+    if (!indexResult.valid) {
+      return indexResult;
     }
+    const annotations = schemaObj.annotation ?? [];
     const documentations = annotations[schemaDocumentationId.annotationIndex].documentation ?? [];
     return validateDocumentationIndex(schemaDocumentationId.documentationIndex, documentations.length, documentationId);
   }
@@ -254,17 +241,11 @@ function validateDocumentationId(documentationId: string, schemaObj: schema): Va
     return validateDocumentationIndex(documentationIndex, documentations.length, documentationId);
   }
 
-  const target = locateAnnotatable(schemaObj, elementId);
-  if (!target) {
-    return {
-      valid: false,
-      error: `Target node not found or does not support annotations: ${elementId}`,
-    };
+  const located = locateAnnotation(schemaObj, elementId);
+  if (!located.valid) {
+    return located;
   }
-  if (!target.annotation) {
-    return { valid: false, error: `No annotation found on node: ${elementId}` };
-  }
-  const documentations = target.annotation.documentation ?? [];
+  const documentations = located.annotation.documentation ?? [];
   return validateDocumentationIndex(documentationIndex, documentations.length, documentationId);
 }
 

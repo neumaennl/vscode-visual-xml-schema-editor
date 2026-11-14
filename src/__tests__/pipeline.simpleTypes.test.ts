@@ -169,7 +169,7 @@ describe("Integration: SimpleType pipeline", () => {
         payload: { typeId: "/simpleType:NonExistent" },
       };
 
-      runCommandExpectValidationFailure(SCHEMA_WITH_SIMPLETYPE, cmd, "SimpleType not found: NonExistent");
+      runCommandExpectValidationFailure(SCHEMA_WITH_SIMPLETYPE, cmd, "Simple type 'NonExistent' not found in schema");
     });
   });
 

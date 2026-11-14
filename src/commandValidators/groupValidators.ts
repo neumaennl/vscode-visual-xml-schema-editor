@@ -10,12 +10,15 @@ import {
   groupRef,
 } from "../../shared/types.js";
 import {
+  ValidationFailure,
   ValidationResult,
   isValidXmlName,
   validateOccurrences,
 } from "./validationUtils.js";
 import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
 import { locateNodeById } from "../schemaNavigator.js";
+import { parseRequiredId, validateDefinitionExists, validateDefinitionRemoval, validateReference } from "./commonValidators.js";
+import { isReferencedInContent, SearchedCompositor } from "./referenceSearch.js";
 
 /**
  * Valid content models for Group elements.
@@ -30,123 +33,37 @@ export const VALID_GROUP_CONTENT_MODELS = [
 // ===== Group Reference Helpers =====
 
 /**
- * Structural type for a compositor (sequence, choice or all) that can contain group
- * references, nested compositors and local elements whose inline `complexType` may
- * also reference named groups. Matches `explicitGroup`, `simpleExplicitGroup` and `all`.
- */
-type CompositorLike = {
-  group?: groupRef[];
-  element?: Array<{ complexType?: ComplexTypeParticleHolder }>;
-  choice?: CompositorLike[];
-  sequence?: CompositorLike[];
-};
-
-/**
- * Structural type for objects whose content model is a sequence, choice or all:
- * complexTypes, complexContent extensions and restrictions, and named groups.
- */
-type ContentModelHolder = {
-  sequence?: CompositorLike;
-  choice?: CompositorLike;
-  all?: CompositorLike;
-};
-
-/**
- * Structural type for objects that directly hold a group ref or compositors.
- * Matches `topLevelComplexType` and `localComplexType`, whose complexContent
- * extension or restriction can hold the same.
- */
-type ComplexTypeParticleHolder = ContentModelHolder & {
-  group?: groupRef;
-  complexContent?: {
-    extension?: ContentModelHolder & { group?: groupRef };
-    restriction?: ContentModelHolder & { group?: groupRef };
-  };
-};
-
-/**
- * Returns true if the named group is referenced in a compositor: directly, in a nested
- * compositor, or in the inline complexType of a local element at any depth.
- *
- * @param name - The name of the group
- * @param compositor - The compositor to search
- * @returns Whether a reference was found
- */
-function groupRefExistsInCompositor(name: string, compositor: CompositorLike): boolean {
-  if ((compositor.group ?? []).some((ref) => ref.ref === name)) return true;
-  if (
-    (compositor.element ?? []).some(
-      (el) => el.complexType !== undefined && groupRefExistsInHolder(name, el.complexType)
-    )
-  ) {
-    return true;
-  }
-  return [...compositor.choice ?? [], ...compositor.sequence ?? []].some((sub) =>
-    groupRefExistsInCompositor(name, sub)
-  );
-}
-
-/**
- * Returns true if the named group is referenced in the sequence, choice or all of a
- * content model.
- *
- * @param name - The name of the group
- * @param holder - The object whose content model is searched
- * @returns Whether a reference was found
- */
-function groupRefExistsInContentModel(name: string, holder: ContentModelHolder): boolean {
-  return [holder.sequence, holder.choice, holder.all].some(
-    (compositor) => compositor !== undefined && groupRefExistsInCompositor(name, compositor)
-  );
-}
-
-/**
- * Returns true if the named group is referenced by a complexType: directly, in its
- * content model, or in the same places of its complexContent extension or restriction.
- *
- * @param name - The name of the group
- * @param holder - The complexType to search
- * @returns Whether a reference was found
- */
-function groupRefExistsInHolder(name: string, holder: ComplexTypeParticleHolder): boolean {
-  const { extension, restriction } = holder.complexContent ?? {};
-  return [holder, extension, restriction].some(
-    (part) => part !== undefined && (part.group?.ref === name || groupRefExistsInContentModel(name, part))
-  );
-}
-
-/**
- * Returns true if any schema construct references the named group.
- *
- * Checks:
- * - Top-level complexType definitions (direct, in their content model or via complexContent)
- * - Inline complexTypes on top-level element definitions
- * - Other top-level group definitions (groups can reference groups)
- *
- * Inline complexTypes of local elements are searched at any depth.
+ * Returns true if any schema construct references the named group: a complexType or the extension or
+ * restriction of its content, or a compositor, at any depth (see {@link isReferencedInContent}).
  *
  * @param name - The name of the group
  * @param schemaObj - The schema to search
  * @returns Whether a reference was found
  */
 function isGroupReferenced(name: string, schemaObj: schema): boolean {
-  if ((schemaObj.complexType ?? []).some((ct) => groupRefExistsInHolder(name, ct))) return true;
-  if (
-    (schemaObj.element ?? []).some(
-      (el) => el.complexType !== undefined && groupRefExistsInHolder(name, el.complexType)
-    )
-  ) {
-    return true;
-  }
-  return (schemaObj.group ?? []).some((grp) => groupRefExistsInContentModel(name, grp));
+  return isReferencedInContent(schemaObj, {
+    inContent: (content) => content.group?.ref === name,
+    inCompositor: (compositor) => (compositor.group ?? []).some((ref) => ref.ref === name),
+  });
+}
+
+/**
+ * Validates the reference to a group definition.
+ *
+ * @param ref - The value of `ref`
+ * @param schemaObj - The schema
+ * @returns The validation result
+ */
+function validateGroupReference(ref: string, schemaObj: schema): ValidationResult {
+  return validateReference(ref, schemaObj.group, "Group", `Referenced group does not exist: ${ref}`);
 }
 
 /** Structural type for a complexType node that can hold a direct particle. */
 type ComplexTypeWithParticles = {
   group?: groupRef;
-  sequence?: CompositorLike;
-  choice?: CompositorLike;
-  all?: CompositorLike;
+  sequence?: SearchedCompositor;
+  choice?: SearchedCompositor;
+  all?: SearchedCompositor;
 };
 
 /** Returns true if the parent type is a complexType (top-level or local). */
@@ -214,17 +131,9 @@ export function validateAddGroup(
     if (!parentId?.trim()) {
       return { valid: false, error: "Parent ID is required for group references" };
     }
-    if (!isValidXmlName(command.payload.ref)) {
-      return { valid: false, error: "Group ref must be a valid XML name" };
-    }
-    const groupExists = (schemaObj.group ?? []).some(
-      (g) => g.name === command.payload.ref
-    );
-    if (!groupExists) {
-      return {
-        valid: false,
-        error: `Referenced group does not exist: ${command.payload.ref}`,
-      };
+    const referenceResult = validateGroupReference(command.payload.ref, schemaObj);
+    if (!referenceResult.valid) {
+      return referenceResult;
     }
     // Validate minOccurs/maxOccurs when provided
     if (
@@ -293,39 +202,129 @@ export function validateAddGroup(
   return { valid: true };
 }
 
+/**
+ * What a group ID identifies: a compositor (`…/group:sequence[N]`) with the ID of its parent, a group
+ * reference, or a group definition with its name.
+ */
+type GroupTarget =
+  | { target: "compositor"; compositorParentId: string }
+  | { target: "reference" }
+  | { target: "definition"; name: string | undefined };
+
+/**
+ * Validates that the group that a group ID identifies exists. Used by both validateRemoveGroup and
+ * validateModifyGroup.
+ *
+ * @param groupId - The ID of a compositor, a group reference or a group definition
+ * @param schemaObj - The schema
+ * @returns What the ID identifies, or the validation failure
+ */
+function locateGroup(
+  groupId: string,
+  schemaObj: schema
+): ValidationFailure | ({ valid: true } & GroupTarget) {
+  const parsedId = parseRequiredId(groupId, "Group");
+  if (!parsedId.valid) {
+    return parsedId;
+  }
+  const parsed = parsedId.parsed;
+
+  if (parsed.nodeType === SchemaNodeType.Group && parsed.parentId) {
+    if (!locateNodeById(schemaObj, groupId).found) {
+      return { valid: false, error: `Group not found: ${groupId}` };
+    }
+    return { valid: true, target: "compositor", compositorParentId: parsed.parentId };
+  }
+  if (parsed.nodeType === SchemaNodeType.GroupRef) {
+    const refResult = validateGroupRefExists(groupId, schemaObj);
+    return refResult.valid ? { valid: true, target: "reference" } : refResult;
+  }
+  const definitionResult = validateDefinitionExists(schemaObj.group, parsed.name, `Group not found: ${groupId}`);
+  return definitionResult.valid ? { valid: true, target: "definition", name: parsed.name } : definitionResult;
+}
+
 export function validateRemoveGroup(
   command: RemoveGroupCommand,
   schemaObj: schema
 ): ValidationResult {
-  if (!command.payload.groupId.trim()) {
-    return { valid: false, error: "Group ID cannot be empty" };
-  }
-  const parsed = parseSchemaId(command.payload.groupId);
+  return validateDefinitionRemoval(locateGroup(command.payload.groupId, schemaObj), "Group", (name) =>
+    isGroupReferenced(name, schemaObj)
+  );
+}
 
-  if (parsed.nodeType === SchemaNodeType.Group && parsed.parentId) {
-    const location = locateNodeById(schemaObj, command.payload.groupId);
-    if (!location.found) {
-      return { valid: false, error: `Group not found: ${command.payload.groupId}` };
-    }
-    return { valid: true };
-  }
-
-  if (parsed.nodeType === SchemaNodeType.GroupRef) {
-    return validateGroupRefExists(command.payload.groupId, schemaObj);
-  }
-
-  // Definition mode: validate the definition exists and is not referenced
-  const found = (schemaObj.group ?? []).some((g) => g.name === parsed.name);
-  if (!found) {
+/**
+ * Validates the changes of a modifyGroup command to a compositor.
+ *
+ * @param payload - The payload of the command
+ * @param compositorParentId - The ID of the parent of the compositor
+ * @returns The validation result
+ */
+function validateCompositorChange(payload: ModifyGroupCommand["payload"], compositorParentId: string): ValidationResult {
+  if (payload.groupName !== undefined || payload.contentModel !== undefined || payload.ref !== undefined) {
     return {
       valid: false,
-      error: `Group not found: ${command.payload.groupId}`,
+      error: "Compositor groups only support minOccurs, maxOccurs, or documentation updates",
     };
   }
-  if (parsed.name && isGroupReferenced(parsed.name, schemaObj)) {
+  // XML Schema allows no occurrences on the compositor of a group definition
+  const parentOfCompositor = parseSchemaId(compositorParentId);
+  if (
+    (payload.minOccurs !== undefined || payload.maxOccurs !== undefined) &&
+    parentOfCompositor.nodeType === SchemaNodeType.Group &&
+    !parentOfCompositor.parentId
+  ) {
     return {
       valid: false,
-      error: `Group is still referenced and cannot be removed: ${parsed.name}`,
+      error: "The compositor of a group definition cannot have minOccurs or maxOccurs",
+    };
+  }
+  return validateOccurrences(payload.minOccurs, payload.maxOccurs);
+}
+
+/**
+ * Validates the changes of a modifyGroup command to a group reference. Documentation is allowed on
+ * group references, through their annotation.
+ *
+ * @param payload - The payload of the command
+ * @param schemaObj - The schema
+ * @returns The validation result
+ */
+function validateReferenceChange(payload: ModifyGroupCommand["payload"], schemaObj: schema): ValidationResult {
+  if (payload.groupName !== undefined || payload.contentModel !== undefined) {
+    return {
+      valid: false,
+      error: "Cannot use groupName or contentModel when modifying a group reference — use ref, minOccurs, maxOccurs, or documentation instead",
+    };
+  }
+  if (payload.ref !== undefined) {
+    const referenceResult = validateGroupReference(payload.ref, schemaObj);
+    if (!referenceResult.valid) {
+      return referenceResult;
+    }
+  }
+  return validateOccurrences(payload.minOccurs, payload.maxOccurs);
+}
+
+/**
+ * Validates the changes of a modifyGroup command to a group definition.
+ *
+ * @param payload - The payload of the command
+ * @returns The validation result
+ */
+function validateDefinitionChange(payload: ModifyGroupCommand["payload"]): ValidationResult {
+  if (payload.ref !== undefined || payload.minOccurs !== undefined || payload.maxOccurs !== undefined) {
+    return {
+      valid: false,
+      error: "Cannot use ref, minOccurs, or maxOccurs when modifying a group definition — use groupName, contentModel, or documentation instead",
+    };
+  }
+  if (payload.groupName !== undefined && !isValidXmlName(payload.groupName)) {
+    return { valid: false, error: "Group name must be a valid XML name" };
+  }
+  if (payload.contentModel !== undefined && !VALID_GROUP_CONTENT_MODELS.includes(payload.contentModel)) {
+    return {
+      valid: false,
+      error: `Content model must be one of: ${VALID_GROUP_CONTENT_MODELS.join(", ")}`,
     };
   }
   return { valid: true };
@@ -335,124 +334,16 @@ export function validateModifyGroup(
   command: ModifyGroupCommand,
   schemaObj: schema
 ): ValidationResult {
-  if (!command.payload.groupId.trim()) {
-    return { valid: false, error: "Group ID cannot be empty" };
+  const located = locateGroup(command.payload.groupId, schemaObj);
+  if (!located.valid) {
+    return located;
   }
-  const parsed = parseSchemaId(command.payload.groupId);
-
-  if (parsed.nodeType === SchemaNodeType.Group && parsed.parentId) {
-    if (
-      command.payload.groupName !== undefined ||
-      command.payload.contentModel !== undefined ||
-      command.payload.ref !== undefined
-    ) {
-      return {
-        valid: false,
-        error: "Compositor groups only support minOccurs, maxOccurs, or documentation updates",
-      };
-    }
-    const location = locateNodeById(schemaObj, command.payload.groupId);
-    if (!location.found) {
-      return { valid: false, error: `Group not found: ${command.payload.groupId}` };
-    }
-    if (
-      command.payload.minOccurs !== undefined ||
-      command.payload.maxOccurs !== undefined
-    ) {
-      // XML Schema allows no occurrences on the compositor of a group definition
-      const parentOfCompositor = parseSchemaId(parsed.parentId);
-      if (parentOfCompositor.nodeType === SchemaNodeType.Group && !parentOfCompositor.parentId) {
-        return {
-          valid: false,
-          error: "The compositor of a group definition cannot have minOccurs or maxOccurs",
-        };
-      }
-      const occurrenceValidation: ValidationResult = validateOccurrences(
-        command.payload.minOccurs,
-        command.payload.maxOccurs
-      );
-      if (!occurrenceValidation.valid) {
-        return occurrenceValidation;
-      }
-    }
-    return { valid: true };
+  switch (located.target) {
+    case "compositor":
+      return validateCompositorChange(command.payload, located.compositorParentId);
+    case "reference":
+      return validateReferenceChange(command.payload, schemaObj);
+    case "definition":
+      return validateDefinitionChange(command.payload);
   }
-
-  if (parsed.nodeType === SchemaNodeType.GroupRef) {
-    // Reference mode: validate the parent exists; validate new ref if provided
-    // Reject definition-mode-only fields (documentation IS allowed on group refs via annotation)
-    if (
-      command.payload.groupName !== undefined ||
-      command.payload.contentModel !== undefined
-    ) {
-      return {
-        valid: false,
-        error: "Cannot use groupName or contentModel when modifying a group reference — use ref, minOccurs, maxOccurs, or documentation instead",
-      };
-    }
-    const refResult = validateGroupRefExists(command.payload.groupId, schemaObj);
-    if (!refResult.valid) {
-      return refResult;
-    }
-    if (command.payload.ref !== undefined) {
-      if (!isValidXmlName(command.payload.ref)) {
-        return { valid: false, error: "Group ref must be a valid XML name" };
-      }
-      const groupExists = (schemaObj.group ?? []).some(
-        (g) => g.name === command.payload.ref
-      );
-      if (!groupExists) {
-        return {
-          valid: false,
-          error: `Referenced group does not exist: ${command.payload.ref}`,
-        };
-      }
-    }
-    if (
-      command.payload.minOccurs !== undefined ||
-      command.payload.maxOccurs !== undefined
-    ) {
-      const occurrenceValidation: ValidationResult = validateOccurrences(
-        command.payload.minOccurs,
-        command.payload.maxOccurs
-      );
-      if (!occurrenceValidation.valid) {
-        return occurrenceValidation;
-      }
-    }
-    return { valid: true };
-  }
-
-  // Definition mode: validate the definition exists
-  // Reject reference-mode fields
-  if (
-    command.payload.ref !== undefined ||
-    command.payload.minOccurs !== undefined ||
-    command.payload.maxOccurs !== undefined
-  ) {
-    return {
-      valid: false,
-      error: "Cannot use ref, minOccurs, or maxOccurs when modifying a group definition — use groupName, contentModel, or documentation instead",
-    };
-  }
-  const found = (schemaObj.group ?? []).some((g) => g.name === parsed.name);
-  if (!found) {
-    return {
-      valid: false,
-      error: `Group not found: ${command.payload.groupId}`,
-    };
-  }
-  if (command.payload.groupName !== undefined && !isValidXmlName(command.payload.groupName)) {
-    return { valid: false, error: "Group name must be a valid XML name" };
-  }
-  if (
-    command.payload.contentModel !== undefined &&
-    !VALID_GROUP_CONTENT_MODELS.includes(command.payload.contentModel)
-  ) {
-    return {
-      valid: false,
-      error: `Content model must be one of: ${VALID_GROUP_CONTENT_MODELS.join(", ")}`,
-    };
-  }
-  return { valid: true };
 }

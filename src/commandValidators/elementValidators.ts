@@ -7,8 +7,6 @@ import {
   AddElementCommand,
   RemoveElementCommand,
   ModifyElementCommand,
-  explicitGroup,
-  all,
 } from "../../shared/types.js";
 import {
   ValidationResult,
@@ -16,52 +14,30 @@ import {
   validateOccurrences,
   validateElementType,
 } from "./validationUtils.js";
-import { locateNodeById } from "../schemaNavigator.js";
-import { parseSchemaId, SCHEMA_ROOT_ID } from "../../shared/idStrategy.js";
+import { ChildKind, NamedChild, locateChild, validateNewChild, validateReference } from "./commonValidators.js";
 
 /** Parent types that can contain child elements. */
 const VALID_ELEMENT_PARENTS = ["schema", "sequence", "choice", "all"] as const;
 
 /**
- * Returns the array of local elements from the given parent container.
- * Works for schema, explicitGroup (sequence/choice), and all.
+ * Local and top-level elements, for {@link locateChild} and {@link validateNewChild}. The schema and
+ * all its valid parents (sequence, choice and all) hold them in `element`.
  */
-function getChildElements(
-  parent: unknown,
-  parentType: string
-): Array<{ name?: string; ref?: string }> {
-  if (parentType === "schema") {
-    return (parent as schema).element ?? [];
-  }
-  if (parentType === "sequence" || parentType === "choice") {
-    return (parent as explicitGroup).element ?? [];
-  }
-  if (parentType === "all") {
-    return (parent as all).element ?? [];
-  }
-  return [];
-}
+const ELEMENTS: ChildKind = {
+  label: "Element",
+  validParents: VALID_ELEMENT_PARENTS,
+  getChildren: (parent) => (parent as { element?: NamedChild[] }).element ?? [],
+};
 
 /**
- * Looks up a child element by name or position within a parent container.
- * Returns the element, or undefined if not found.
+ * Validates the reference of an element to a top-level element.
+ *
+ * @param ref - The value of `ref`
+ * @param schemaObj - The schema
+ * @returns The validation result
  */
-function findChildElement(
-  parent: unknown,
-  parentType: string,
-  name?: string,
-  position?: number
-): { name?: string; ref?: string } | undefined {
-  const elements = getChildElements(parent, parentType);
-  if (position !== undefined) {
-    return elements[position];
-  }
-  if (name !== undefined) {
-    return elements.find(
-      (el) => el.name === name || el.ref === name
-    );
-  }
-  return undefined;
+function validateElementReference(ref: string, schemaObj: schema): ValidationResult {
+  return validateReference(ref, schemaObj.element, "Element", `Referenced element '${ref}' does not exist in schema`);
 }
 
 export function validateAddElement(
@@ -80,13 +56,9 @@ export function validateAddElement(
     if (elementName !== undefined || elementType !== undefined) {
       return { valid: false, error: "A reference element cannot have a name or type" };
     }
-    if (!isValidXmlName(ref)) {
-      return { valid: false, error: "Element ref must be a valid XML name" };
-    }
-    // Validate that the referenced element exists as a top-level element
-    const topLevelElements = schemaObj.element ?? [];
-    if (!topLevelElements.some(el => el.name === ref)) {
-      return { valid: false, error: `Referenced element '${ref}' does not exist in schema` };
+    const referenceResult = validateElementReference(ref, schemaObj);
+    if (!referenceResult.valid) {
+      return referenceResult;
     }
   } else {
     // Named element: name is required; type is optional (omit when the element will carry
@@ -102,30 +74,9 @@ export function validateAddElement(
     }
   }
 
-  // Validate that parentId exists in the schema
-  const location = locateNodeById(schemaObj, parentId);
-  if (!location.found) {
-    return { valid: false, error: `Parent node not found: ${parentId}` };
-  }
-  const parentType = location.parentType;
-
-  // Validate parent type supports elements
-  if (!VALID_ELEMENT_PARENTS.includes(parentType as (typeof VALID_ELEMENT_PARENTS)[number])) {
-    return { valid: false, error: `Cannot add element to parent of type: ${parentType}` };
-  }
-
-  // Top-level elements cannot be references
-  if (ref !== undefined && parentType === "schema") {
-    return { valid: false, error: "Top-level elements cannot be references" };
-  }
-
-  // Check for duplicate element names/refs
-  const existing = getChildElements(location.parent, parentType);
-  if (elementName && existing.some(el => el.name === elementName || el.ref === elementName)) {
-    return { valid: false, error: `Cannot add element: duplicate element name '${elementName}' in ${parentType === "schema" ? "schema" : parentType}` };
-  }
-  if (ref && existing.some(el => el.ref === ref || el.name === ref)) {
-    return { valid: false, error: `Cannot add element: duplicate element reference '${ref}' in ${parentType}` };
+  const parentResult = validateNewChild(schemaObj, parentId, ELEMENTS, elementName, ref);
+  if (!parentResult.valid) {
+    return parentResult;
   }
 
   // Validate occurrences
@@ -136,34 +87,8 @@ export function validateRemoveElement(
   command: RemoveElementCommand,
   schemaObj: schema
 ): ValidationResult {
-  // Validate elementId is not empty
-  if (!command.payload.elementId.trim()) {
-    return { valid: false, error: "Element ID cannot be empty" };
-  }
-
-  const parsed = parseSchemaId(command.payload.elementId);
-  const parentId = parsed.parentId || SCHEMA_ROOT_ID;
-  const location = locateNodeById(schemaObj, parentId);
-
-  if (!location.found) {
-    return { valid: false, error: `Parent node not found for element: ${command.payload.elementId}` };
-  }
-  const parentType = location.parentType;
-
-  if (!VALID_ELEMENT_PARENTS.includes(parentType as (typeof VALID_ELEMENT_PARENTS)[number])) {
-    return { valid: false, error: `Cannot remove element from parent of type: ${parentType}` };
-  }
-
-  // Check element exists
-  const el = findChildElement(location.parent, parentType, parsed.name, parsed.position);
-  if (!el) {
-    const spec = parsed.position !== undefined
-      ? `at position: ${parsed.position}`
-      : `with name: ${parsed.name}`;
-    return { valid: false, error: `Element not found ${spec}` };
-  }
-
-  return { valid: true };
+  const located = locateChild(schemaObj, command.payload.elementId, ELEMENTS, "remove element from");
+  return located.valid ? { valid: true } : located;
 }
 
 export function validateModifyElement(
@@ -172,42 +97,20 @@ export function validateModifyElement(
 ): ValidationResult {
   const { elementId, elementName, elementType, ref, minOccurs, maxOccurs, default_, fixed } = command.payload;
 
-  // Validate elementId is not empty
-  if (!elementId.trim()) {
-    return { valid: false, error: "Element ID cannot be empty" };
+  const located = locateChild(schemaObj, elementId, ELEMENTS, "modify element in");
+  if (!located.valid) {
+    return located;
   }
-
-  const parsed = parseSchemaId(elementId);
-  const parentId = parsed.parentId || SCHEMA_ROOT_ID;
-  const location = locateNodeById(schemaObj, parentId);
-
-  if (!location.found) {
-    return { valid: false, error: `Parent node not found for element: ${elementId}` };
-  }
-  const parentType = location.parentType;
-
-  if (!VALID_ELEMENT_PARENTS.includes(parentType as (typeof VALID_ELEMENT_PARENTS)[number])) {
-    return { valid: false, error: `Cannot modify element in parent of type: ${parentType}` };
-  }
-
-  // Check element exists
-  const el = findChildElement(location.parent, parentType, parsed.name, parsed.position);
-  if (!el) {
-    return { valid: false, error: `Element not found: ${parsed.name ?? `at position ${parsed.position}`}` };
-  }
+  const el = located.child;
 
   if (ref !== undefined) {
     // Reference: name and type are forbidden
     if (elementName !== undefined || elementType !== undefined) {
       return { valid: false, error: "Cannot set both ref and name/type on an element" };
     }
-    if (!isValidXmlName(ref)) {
-      return { valid: false, error: "Element ref must be a valid XML name" };
-    }
-    // Validate that the referenced element exists as a top-level element
-    const topLevelElements = schemaObj.element ?? [];
-    if (!topLevelElements.some(el => el.name === ref)) {
-      return { valid: false, error: `Referenced element '${ref}' does not exist in schema` };
+    const referenceResult = validateElementReference(ref, schemaObj);
+    if (!referenceResult.valid) {
+      return referenceResult;
     }
   } else {
     // Validate element name if provided

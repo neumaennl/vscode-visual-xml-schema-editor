@@ -19,6 +19,7 @@ import { assumeRemoved, assumeValidated, locateValidated } from "./assumeValidat
 import { createAnnotation } from "./annotationUtils.js";
 import { renameLocalAttributeGroupRefInSchema } from "./schemaLocalRenamer.js";
 import { getAttributeContainer } from "../../shared/schemaUtils.js";
+import { findAttributeGroupRef } from "../commandUtils.js";
 
 // ===== Helper functions =====
 
@@ -34,26 +35,6 @@ function addAttrGroupRefToParent(
   const refs = holder.attributeGroup ?? [];
   refs.push(agRef);
   holder.attributeGroup = refs;
-}
-
-/**
- * Finds an attributeGroupRef in a parent's array by ref name and optional position.
- */
-function findAttrGroupRef(
-  refs: attributeGroupRef[],
-  name: string | undefined,
-  position: number | undefined
-): attributeGroupRef | undefined {
-  if (name !== undefined && position !== undefined) {
-    return refs.find((r, idx) => r.ref === name && idx === position);
-  }
-  if (name !== undefined) {
-    return refs.find((r) => r.ref === name);
-  }
-  if (position !== undefined) {
-    return refs[position];
-  }
-  return undefined;
 }
 
 /**
@@ -187,7 +168,7 @@ export function executeModifyAttributeGroup(
     const location = locateValidated(schemaObj, assumeValidated(parsed.parentId, `Parent of ${groupId}`));
     const holder = getAttributeContainer(location.parent);
     const target = assumeValidated(
-      findAttrGroupRef(holder.attributeGroup ?? [], parsed.name, parsed.position),
+      findAttributeGroupRef(holder.attributeGroup ?? [], parsed.name, parsed.position),
       `Attribute group reference ${groupId}`
     );
     if (ref !== undefined) {

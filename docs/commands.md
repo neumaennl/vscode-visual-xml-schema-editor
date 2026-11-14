@@ -4,8 +4,8 @@ title: Commands
 description: The edit commands - payload fields, the rules the validators enforce, what the executors change in the schema, and where the webview sends them.
 tags: [commands, payload, validation, reference]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-12T11:54:16Z }
-verified: { by: human:neumaennl, at: 2026-11-12T12:00:05Z }
+generated: { by: human:neumaennl, at: 2026-11-14T16:13:09Z }
+verified: { by: human:neumaennl, at: 2026-11-14T16:42:44Z }
 sources:
   - id: commands
     resource: ../shared/commands/index.ts
@@ -284,7 +284,8 @@ The element prefix `xs:` is missing in the output because serialization drops it
 | `shared/commands/index.ts` | Re-exports the areas and defines the `SchemaCommand` union |
 | `shared/messages.ts` | The messages that carry the commands (see [Messaging](messaging.md)) |
 | `shared/types.ts` | Re-exports the generated classes, the commands and the messages |
-| `src/commandValidators/` | One validator per command, grouped by area, and `validationUtils.ts` |
+| `src/commandHandlers.ts` | `findCommandHandler()`, which finds the validator or executor of a command by its name |
+| `src/commandValidators/` | One validator per command, grouped by area; the checks that validators of several areas share in `commonValidators.ts`, the search for references to groups and attribute groups in `referenceSearch.ts`, and `validationUtils.ts` |
 | `src/commandExecutors/` | One executor per command, grouped by area, and the shared rename and prefix helpers (`schemaLocalRenamer.ts`, `schemaQNameRewriter.ts`, `schemaPrefixChecker.ts`), which all use the walk over every QName of the schema in `schemaQNameReferences.ts` |
 
 Each command type has a string literal as `type`, so `SchemaCommand` is a discriminated union: a `switch` on `command.type` narrows the payload to the right type. The type tests in `shared/commands/commandTypes.test-d.ts` check the required fields, the allowed values of `maxOccurs` and that the union rejects unknown types and mismatched payloads (see [Testing](testing.md#kinds-of-tests)); the behaviour is tested next to the validators and executors.[^commands]
@@ -292,13 +293,13 @@ Each command type has a string literal as `type`, so `SchemaCommand` is a discri
 **Adding a command** touches these places:
 
 1. Payload and command type in the matching file in `shared/commands/`, and the command in the `SchemaCommand` union in `shared/commands/index.ts`. Required fields and restricted values of the payload get cases in `commandTypes.test-d.ts`.
-2. A validator in `src/commandValidators/` and its case in `src/commandValidator.ts`.
-3. An executor in `src/commandExecutors/` and its case in `src/commandExecutor.ts`.
+2. A validator `validate<Type>` in a module of `src/commandValidators/`, such as `validateAddElement` for `addElement`. `src/commandValidator.ts` takes all functions of the modules it imports; a new module is added there.
+3. An executor `execute<Type>` in a module of `src/commandExecutors/`, which `src/commandExecutor.ts` takes in the same way.
 4. The place in `webview-src/` that creates and sends the command.
 5. Tests for the validator and the executor next to them, a pipeline test in `src/__tests__/` if the command needs one, and the command in the agreement test `test/integration/commandAgreement.test.ts`, with a schema in `src/__tests__/test-resources` that contains its node.
 6. A row in the [Overview](#overview) and a section in this reference.
 
-The switches in `commandValidator.ts` and `commandExecutor.ts` have one case per command type and a `default` branch, so TypeScript does not report a missing case. A command missing in the validator fails validation with "Unknown command type", one missing in the executor fails at runtime with the same message.
+`ValidatorFunctions` in `commandValidator.ts` and `ExecutorFunctions` in `commandExecutor.ts` require one function per command type, named after the type, so TypeScript reports a command without a validator or an executor. `findCommandHandler()` finds the function by the name; a command of an unknown type, which only a message at runtime can contain, fails validation with "Unknown command type", and the executor throws the same message.
 
 [^commands]: [Command types](../shared/commands/index.ts)
 

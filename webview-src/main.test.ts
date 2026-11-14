@@ -67,6 +67,20 @@ describe("SchemaEditorApp", () => {
     });
   });
 
+  /**
+   * Loads the module and returns a function that sends a message to the message listener it registers.
+   *
+   * @returns The function that sends a message with a command and its data
+   */
+  async function loadMain(): Promise<(command: string, data: unknown) => void> {
+    const addEventListenerSpy = vi.spyOn(window, "addEventListener");
+    await import("./main");
+    const messageHandler = addEventListenerSpy.mock.calls.find((call) => call[0] === "message")?.[1] as EventListener;
+    return (command, data) => {
+      messageHandler(new MessageEvent("message", { data: { command, data } }));
+    };
+  }
+
   test("should initialize and setup message listener", async () => {
     const addEventListenerSpy = vi.spyOn(window, "addEventListener");
 
@@ -79,94 +93,36 @@ describe("SchemaEditorApp", () => {
   });
 
   test("should handle updateSchema message", async () => {
-    const addEventListenerSpy = vi.spyOn(window, "addEventListener");
+    const send = await loadMain();
 
-    await import("./main");
-
-    // Get the message handler
-    const messageHandler = addEventListenerSpy.mock.calls.find(
-      (call) => call[0] === "message"
-    )?.[1] as EventListener;
-
-    expect(messageHandler).toBeDefined();
-
-    // Simulate updateSchema message
-    const mockSchema = { element: [{ name: "test" }] };
-    const event = new MessageEvent("message", {
-      data: { command: "updateSchema", data: mockSchema },
-    });
-
-    messageHandler(event);
+    send("updateSchema", { element: [{ name: "test" }] });
 
     // Verify state is saved
     expect(mockSetState).toHaveBeenCalled();
   });
 
-  test("should handle error message", async () => {
-    const addEventListenerSpy = vi.spyOn(window, "addEventListener");
-
-    await import("./main");
-
-    const messageHandler = addEventListenerSpy.mock.calls.find(
-      (call) => call[0] === "message"
-    )?.[1] as EventListener;
-
-    const event = new MessageEvent("message", {
-      data: { command: "error", data: { message: "Test error" } },
-    });
-
-    messageHandler(event);
-
-    // Error is now shown in the notification bar, not the canvas
-    const notificationBar = document.getElementById("notification-bar");
-    const notificationMessage = document.getElementById("notification-message");
-    expect(notificationBar?.hasAttribute("hidden")).toBe(false);
-    expect(notificationMessage?.textContent).toContain("Test error");
-  });
-
-  test("should keep an error visible until dismissed", async () => {
+  test.each([
+    ["show", 0],
+    ["keep visible until dismissed", 30000],
+  ])("should %s an error in the notification bar", async (_case, elapsed) => {
     vi.useFakeTimers();
-    const addEventListenerSpy = vi.spyOn(window, "addEventListener");
+    const send = await loadMain();
 
-    await import("./main");
+    send("error", { message: "Test error" });
+    vi.advanceTimersByTime(elapsed);
 
-    const messageHandler = addEventListenerSpy.mock.calls.find(
-      (call) => call[0] === "message"
-    )?.[1] as EventListener;
-
-    const event = new MessageEvent("message", {
-      data: { command: "error", data: { message: "Persistent error" } },
-    });
-
-    messageHandler(event);
-    vi.advanceTimersByTime(30000);
-
-    const notificationBar = document.getElementById("notification-bar");
-    const notificationMessage = document.getElementById("notification-message");
-    expect(notificationBar?.hasAttribute("hidden")).toBe(false);
-    expect(notificationMessage?.textContent).toContain("Persistent error");
+    expect(document.getElementById("notification-bar")?.hasAttribute("hidden")).toBe(false);
+    expect(document.getElementById("notification-message")?.textContent).toContain("Test error");
   });
 
   test("should dismiss the notification when the dismiss button is clicked", async () => {
-    const addEventListenerSpy = vi.spyOn(window, "addEventListener");
+    const send = await loadMain();
 
-    await import("./main");
-
-    const messageHandler = addEventListenerSpy.mock.calls.find(
-      (call) => call[0] === "message"
-    )?.[1] as EventListener;
-
-    const event = new MessageEvent("message", {
-      data: { command: "error", data: { message: "Dismiss me" } },
-    });
-
-    messageHandler(event);
+    send("error", { message: "Dismiss me" });
     document.getElementById("notification-dismiss")?.click();
 
-    const notificationBar = document.getElementById("notification-bar");
-    expect(notificationBar?.hasAttribute("hidden")).toBe(true);
+    expect(document.getElementById("notification-bar")?.hasAttribute("hidden")).toBe(true);
   });
-
   test("should setup zoom controls", async () => {
     const addEventListenerSpy = vi.spyOn(HTMLElement.prototype, "addEventListener");
 
@@ -202,20 +158,10 @@ describe("SchemaEditorApp", () => {
   });
 
   test("should handle unknown message commands", async () => {
-    const addEventListenerSpy = vi.spyOn(window, "addEventListener");
-
-    await import("./main");
-
-    const messageHandler = addEventListenerSpy.mock.calls.find(
-      (call) => call[0] === "message"
-    )?.[1] as EventListener;
-
-    const event = new MessageEvent("message", {
-      data: { command: "unknownCommand", data: {} },
-    });
+    const send = await loadMain();
 
     expect(() => {
-      messageHandler(event);
+      send("unknownCommand", {});
     }).not.toThrow();
   });
 
@@ -228,20 +174,9 @@ describe("SchemaEditorApp", () => {
   });
 
   test("should highlight the selected node when it is clicked", async () => {
-    const addEventListenerSpy = vi.spyOn(window, "addEventListener");
+    const send = await loadMain();
 
-    await import("./main");
-
-    const messageHandler = addEventListenerSpy.mock.calls.find(
-      (call) => call[0] === "message"
-    )?.[1] as EventListener;
-
-    const mockSchema = { element: [{ name: "test" }] };
-    const event = new MessageEvent("message", {
-      data: { command: "updateSchema", data: mockSchema },
-    });
-
-    messageHandler(event);
+    send("updateSchema", { element: [{ name: "test" }] });
 
     const node = document.querySelector("[data-item-id]");
     expect(node).toBeTruthy();

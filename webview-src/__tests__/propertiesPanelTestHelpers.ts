@@ -1,6 +1,12 @@
 /**
- * Helpers that find the fields of the properties panel by their labels.
+ * Helpers that create the properties panel and find its fields by their labels.
  */
+
+import { PropertiesPanel } from "../propertiesPanel/propertiesPanel";
+import { Diagram } from "../diagram/Diagram";
+import type { DiagramItem } from "../diagram/DiagramItem";
+import type { SchemaCommand } from "../../shared/types";
+import type { Mock } from "vitest";
 
 /**
  * Returns the first label of the container whose text is the given label with a colon.
@@ -93,4 +99,59 @@ export function hasLabel(container: HTMLElement, label: string): boolean {
  */
 export function findButton(container: HTMLElement, text: string): HTMLButtonElement | undefined {
   return Array.from(container.querySelectorAll("button")).find((btn) => btn.textContent === text);
+}
+
+/**
+ * Enters a value into the field with the given label and leaves the field, which commits the value.
+ *
+ * @param container - The element that holds the panel
+ * @param label - The label without the colon
+ * @param value - The new value
+ */
+export function editInput(container: HTMLElement, label: string, value: string): void {
+  const input = getInputByLabel(container, label);
+  input.value = value;
+  input.dispatchEvent(new Event("blur"));
+}
+
+/** A properties panel in its container, and a diagram for the items it displays. */
+export interface PanelSetup {
+  container: HTMLDivElement;
+  panel: PropertiesPanel;
+  diagram: Diagram;
+}
+
+/**
+ * Creates a properties panel in a new container, and a new diagram.
+ *
+ * @param dispatchCommand - The function that receives the commands of the panel
+ * @returns The container, the panel and the diagram
+ */
+export function createPanel(dispatchCommand?: ConstructorParameters<typeof PropertiesPanel>[1]): PanelSetup {
+  const container = document.createElement("div");
+  return { container, panel: new PropertiesPanel(container, dispatchCommand), diagram: new Diagram() };
+}
+
+/** A panel that displays an item, and the mock that receives its commands. */
+export interface DisplayedItem {
+  panel: PropertiesPanel;
+  dispatch: Mock<(command: SchemaCommand) => void>;
+}
+
+/**
+ * Displays the item in a new panel in the container, whose commands go to a mock, and opens a tab.
+ *
+ * @param container - The element that holds the panel
+ * @param item - The item to display
+ * @param tab - The text of the tab to open, or `undefined` to stay on the General tab
+ * @returns The panel and the mock
+ */
+export function displayItem(container: HTMLDivElement, item: DiagramItem, tab?: string): DisplayedItem {
+  const dispatch = vi.fn<(command: SchemaCommand) => void>();
+  const panel = new PropertiesPanel(container, dispatch);
+  panel.display(item);
+  if (tab !== undefined) {
+    findButton(container, tab)?.click();
+  }
+  return { panel, dispatch };
 }

@@ -2,31 +2,35 @@
  * Unit tests for the namespace fields of the schema of the properties panel.
  */
 
-import { PropertiesPanel } from "./propertiesPanel";
 import { DiagramItem } from "../diagram/DiagramItem";
-import { Diagram } from "../diagram/Diagram";
 import { DiagramItemType } from "../diagram/DiagramTypes";
 import { SCHEMA_ROOT_ID } from "../../shared/idStrategy";
-import { getInputByLabel } from "../__tests__/propertiesPanelTestHelpers";
+import { getInputByLabel, createPanel, displayItem, editInput } from "../__tests__/propertiesPanelTestHelpers";
+
+/** The namespace declarations of the schema, whose prefix `tns` is the target namespace. */
+const ORIGINAL_PREFIXES = { xs: "http://www.w3.org/2001/XMLSchema", tns: "http://example.com/original" };
+
+/** The command that changes the target namespace and its declaration to `http://example.com/updated`. */
+const UPDATE_TO_UPDATED_NAMESPACE = {
+  type: "modifySchemaNamespaces",
+  payload: {
+    targetNamespace: "http://example.com/updated",
+    namespacePrefixes: { ...ORIGINAL_PREFIXES, tns: "http://example.com/updated" },
+    previousNamespacePrefixes: ORIGINAL_PREFIXES,
+  },
+};
 
 describe("PropertiesPanel: the namespace fields of the schema", () => {
-  let container: HTMLDivElement;
-  let panel: PropertiesPanel;
-  let diagram: Diagram;
+  let { container, panel, diagram } = createPanel();
 
   beforeEach(() => {
-    container = document.createElement("div");
-    panel = new PropertiesPanel(container);
-    diagram = new Diagram();
+    ({ container, panel, diagram } = createPanel());
   });
 
   test("shows editable targetNamespace and namespace declarations for the schema node", () => {
     const schemaRoot = new DiagramItem(SCHEMA_ROOT_ID, "schema", DiagramItemType.group, diagram);
     diagram.schemaTargetNamespace = "http://example.com/original";
-    diagram.schemaNamespacePrefixes = {
-      xs: "http://www.w3.org/2001/XMLSchema",
-      tns: "http://example.com/original",
-    };
+    diagram.schemaNamespacePrefixes = { ...ORIGINAL_PREFIXES };
 
     panel.display(schemaRoot);
 
@@ -35,49 +39,24 @@ describe("PropertiesPanel: the namespace fields of the schema", () => {
   });
 
   test("updates the matching namespace declaration when targetNamespace changes", () => {
-    const dispatch = vi.fn();
-    panel = new PropertiesPanel(container, dispatch);
     const schemaRoot = new DiagramItem(SCHEMA_ROOT_ID, "schema", DiagramItemType.group, diagram);
     diagram.schemaTargetNamespace = "http://example.com/original";
-    diagram.schemaNamespacePrefixes = {
-      xs: "http://www.w3.org/2001/XMLSchema",
-      tns: "http://example.com/original",
-    };
+    diagram.schemaNamespacePrefixes = { ...ORIGINAL_PREFIXES };
     diagram.currentSchemaPrefix = "tns";
 
-    panel.display(schemaRoot);
+    const { dispatch } = displayItem(container, schemaRoot);
 
-    const input = getInputByLabel(container, "targetNamespace");
-    input.value = "http://example.com/updated";
-    input.dispatchEvent(new Event("blur"));
+    editInput(container, "targetNamespace", "http://example.com/updated");
 
-    expect(dispatch).toHaveBeenCalledWith({
-      type: "modifySchemaNamespaces",
-      payload: {
-        targetNamespace: "http://example.com/updated",
-        namespacePrefixes: {
-          xs: "http://www.w3.org/2001/XMLSchema",
-          tns: "http://example.com/updated",
-        },
-        previousNamespacePrefixes: {
-          xs: "http://www.w3.org/2001/XMLSchema",
-          tns: "http://example.com/original",
-        },
-      },
-    });
+    expect(dispatch).toHaveBeenCalledWith(UPDATE_TO_UPDATED_NAMESPACE);
   });
 
   test("updates targetNamespace when the corresponding namespace declaration URI changes", () => {
-    const dispatch = vi.fn();
-    panel = new PropertiesPanel(container, dispatch);
     const schemaRoot = new DiagramItem(SCHEMA_ROOT_ID, "schema", DiagramItemType.group, diagram);
     diagram.schemaTargetNamespace = "http://example.com/original";
-    diagram.schemaNamespacePrefixes = {
-      xs: "http://www.w3.org/2001/XMLSchema",
-      tns: "http://example.com/original",
-    };
+    diagram.schemaNamespacePrefixes = { ...ORIGINAL_PREFIXES };
 
-    panel.display(schemaRoot);
+    const { dispatch } = displayItem(container, schemaRoot);
 
     const targetNamespaceRow = Array.from(container.querySelectorAll(".property-namespace-row")).find(
       (row) => {
@@ -92,19 +71,6 @@ describe("PropertiesPanel: the namespace fields of the schema", () => {
     namespaceUriInput.value = "http://example.com/updated";
     namespaceUriInput.dispatchEvent(new Event("blur"));
 
-    expect(dispatch).toHaveBeenCalledWith({
-      type: "modifySchemaNamespaces",
-      payload: {
-        targetNamespace: "http://example.com/updated",
-        namespacePrefixes: {
-          xs: "http://www.w3.org/2001/XMLSchema",
-          tns: "http://example.com/updated",
-        },
-        previousNamespacePrefixes: {
-          xs: "http://www.w3.org/2001/XMLSchema",
-          tns: "http://example.com/original",
-        },
-      },
-    });
+    expect(dispatch).toHaveBeenCalledWith(UPDATE_TO_UPDATED_NAMESPACE);
   });
 });

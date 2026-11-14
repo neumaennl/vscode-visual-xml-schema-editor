@@ -3,14 +3,9 @@
  */
 
 import { DiagramBuilder } from "../diagram/DiagramBuilder";
-import {
-  schema,
-  topLevelElement,
-  topLevelComplexType,
-  topLevelSimpleType,
-  topLevelAttribute,
-  namedGroup,
-} from "../../shared/types";
+import type { DiagramItem } from "../diagram/DiagramItem";
+import { schema } from "../../shared/types";
+import { schemaWith } from "../../shared/__tests__/schemaTestHelpers";
 
 /**
  * Creates a valid schema object for testing.
@@ -28,6 +23,16 @@ describe("DiagramBuilder", () => {
   beforeEach(() => {
     builder = new DiagramBuilder();
   });
+
+  /**
+   * Builds the diagram of a schema with the given content and returns the nodes below the schema root.
+   *
+   * @param content - The content of the schema
+   * @returns The top-level nodes
+   */
+  function topLevelNodes(content: string): DiagramItem[] {
+    return builder.buildFromSchema(schemaWith(content)).rootElements[0].childElements;
+  }
 
   describe("buildFromSchema", () => {
     test("should create diagram with schema root node", () => {
@@ -66,24 +71,9 @@ describe("DiagramBuilder", () => {
     });
 
     test("should process schema elements", () => {
-      const element1 = new topLevelElement();
-      element1.name = "Person";
-      element1.type_ = "PersonType";
-      
-      const element2 = new topLevelElement();
-      element2.name = "Address";
-      element2.type_ = "AddressType";
-      
-      const schemaObj = createTestSchema({
-        element: [element1, element2],
-      });
+      const nodes = topLevelNodes(`<xs:element name="Person" type="PersonType"/><xs:element name="Address" type="AddressType"/>`);
 
-      const diagram = builder.buildFromSchema(schemaObj);
-
-      const schemaNode = diagram.rootElements[0];
-      expect(schemaNode.childElements).toHaveLength(2);
-      expect(schemaNode.childElements[0].name).toBe("Person");
-      expect(schemaNode.childElements[1].name).toBe("Address");
+      expect(nodes.map((node) => node.name)).toEqual(["Person", "Address"]);
     });
 
     test("stores the targetNamespace prefix on the diagram when available", () => {
@@ -105,214 +95,73 @@ describe("DiagramBuilder", () => {
       });
     });
 
-    test("should process complex types", () => {
-      const complexType = new topLevelComplexType();
-      complexType.name = "PersonType";
-      
-      const schemaObj = createTestSchema({
-        complexType: [complexType],
-      });
+    test.each([
+      ["a complex type", `<xs:complexType name="PersonType"/>`, "complexType"],
+      ["a simple type", `<xs:simpleType name="EmailType"><xs:restriction base="xs:string"/></xs:simpleType>`, "simpleType (restricts xs:string)"],
+    ])("should process %s", (_case, content, type) => {
+      const nodes = topLevelNodes(content);
 
-      const diagram = builder.buildFromSchema(schemaObj);
-
-      const schemaNode = diagram.rootElements[0];
-      expect(schemaNode.childElements).toHaveLength(1);
-      expect(schemaNode.childElements[0].type).toBe("complexType");
+      expect(nodes).toHaveLength(1);
+      expect(nodes[0].type).toBe(type);
     });
 
-    test("should add placeholder when no children found", () => {
-      const schemaObj = createTestSchema();
+    test.each([
+      ["no children are found", ""],
+      ["the schema has only top-level attributes, which are not rendered as separate nodes", `<xs:attribute name="id" type="xs:string"/>`],
+    ])("should add placeholder when %s", (_case, content) => {
+      const nodes = topLevelNodes(content);
 
-      const diagram = builder.buildFromSchema(schemaObj);
-
-      const schemaNode = diagram.rootElements[0];
-      expect(schemaNode.childElements).toHaveLength(1);
-      expect(schemaNode.childElements[0].name).toBe("No elements found");
-    });
-
-    test("should process simple types", () => {
-      const simpleType = new topLevelSimpleType();
-      simpleType.name = "EmailType";
-      simpleType.restriction = { base: "string" };
-      
-      const schemaObj = createTestSchema({
-        simpleType: [simpleType],
-      });
-
-      const diagram = builder.buildFromSchema(schemaObj);
-
-      const schemaNode = diagram.rootElements[0];
-      expect(schemaNode.childElements).toHaveLength(1);
-      expect(schemaNode.childElements[0].type).toContain("simpleType");
+      expect(nodes.map((node) => node.name)).toEqual(["No elements found"]);
     });
 
     test("should process multiple simple types", () => {
-      const simpleType1 = new topLevelSimpleType();
-      simpleType1.name = "Type1";
-      simpleType1.restriction = { base: "string" };
-      
-      const simpleType2 = new topLevelSimpleType();
-      simpleType2.name = "Type2";
-      simpleType2.restriction = { base: "int" };
-      
-      const schemaObj = createTestSchema({
-        simpleType: [simpleType1, simpleType2],
-      });
+      const nodes = topLevelNodes(
+        `<xs:simpleType name="Type1"><xs:restriction base="xs:string"/></xs:simpleType>` +
+          `<xs:simpleType name="Type2"><xs:restriction base="xs:int"/></xs:simpleType>`
+      );
 
-      const diagram = builder.buildFromSchema(schemaObj);
-
-      const schemaNode = diagram.rootElements[0];
-      expect(schemaNode.childElements).toHaveLength(2);
+      expect(nodes).toHaveLength(2);
     });
 
     test("should render named groups as top-level diagram nodes", () => {
-      const group = new namedGroup();
-      group.name = "PersonGroup";
-      group.sequence = { element: [{ name: "name", type_: "xs:string" }] };
+      const nodes = topLevelNodes(`<xs:group name="PersonGroup"><xs:sequence><xs:element name="name" type="xs:string"/></xs:sequence></xs:group>`);
 
-      const schemaObj = createTestSchema({
-        group: [group],
-      });
-
-      const diagram = builder.buildFromSchema(schemaObj);
-
-      const schemaNode = diagram.rootElements[0];
-      expect(schemaNode.childElements).toHaveLength(1);
-      expect(schemaNode.childElements[0].id).toBe("/group:PersonGroup");
-      expect(schemaNode.childElements[0].childElements[0].id).toBe("/group:PersonGroup/group:sequence[0]");
+      expect(nodes).toHaveLength(1);
+      expect(nodes[0].id).toBe("/group:PersonGroup");
+      expect(nodes[0].childElements[0].id).toBe("/group:PersonGroup/group:sequence[0]");
     });
 
     test("should render group references inside named groups", () => {
-      const group = new namedGroup();
-      group.name = "ContainerGroup";
-      group.sequence = { group: [{ ref: "SharedGroup" }] };
+      const nodes = topLevelNodes(`<xs:group name="ContainerGroup"><xs:sequence><xs:group ref="SharedGroup"/></xs:sequence></xs:group>`);
 
-      const schemaObj = createTestSchema({
-        group: [group],
-      });
-
-      const diagram = builder.buildFromSchema(schemaObj);
-
-      const sequence = diagram.rootElements[0].childElements[0].childElements[0];
-      expect(sequence.childElements[0].id).toBe(
-        "/group:ContainerGroup/group:sequence[0]/groupRef:SharedGroup[0]"
-      );
+      const sequence = nodes[0].childElements[0];
+      expect(sequence.childElements[0].id).toBe("/group:ContainerGroup/group:sequence[0]/groupRef:SharedGroup[0]");
     });
 
-    test("should process elements with inline complex types", () => {
-      const element = new topLevelElement();
-      element.name = "Person";
-      // Using type assertion for nested complex structures from generated schema
-      element.complexType = {
-        sequence: {
-          element: [{ name: "name", type_: "string" }],
-        },
-      };
-      
-      const schemaObj = createTestSchema({
-        element: [element],
-      });
+    test.each([
+      ["an inline complex type", `<xs:element name="Person"><xs:complexType><xs:sequence><xs:element name="name" type="xs:string"/></xs:sequence></xs:complexType></xs:element>`, true],
+      ["an inline simple type", `<xs:element name="Person"><xs:simpleType><xs:restriction base="xs:int"/></xs:simpleType></xs:element>`, false],
+      ["a named type", `<xs:element name="Person" type="xs:string"/>`, false],
+    ])("should process elements with %s and set hasAnonymousComplexType for inline complex types", (_case, content, hasAnonymousComplexType) => {
+      const nodes = topLevelNodes(content);
 
-      const diagram = builder.buildFromSchema(schemaObj);
-
-      const schemaNode = diagram.rootElements[0];
-      expect(schemaNode.childElements).toHaveLength(1);
-    });
-
-    test("should process elements with inline simple types", () => {
-      const element = new topLevelElement();
-      element.name = "Age";
-      // Using type assertion for nested structures from generated schema
-      element.simpleType = {
-        restriction: { base: "int" },
-      };
-      
-      const schemaObj = createTestSchema({
-        element: [element],
-      });
-
-      const diagram = builder.buildFromSchema(schemaObj);
-
-      const schemaNode = diagram.rootElements[0];
-      expect(schemaNode.childElements).toHaveLength(1);
+      expect(nodes).toHaveLength(1);
+      expect(nodes[0].name).toBe("Person");
+      expect(nodes[0].hasAnonymousComplexType).toBe(hasAnonymousComplexType);
     });
 
     test("should handle schema without targetNamespace", () => {
-      const element = new topLevelElement();
-      element.name = "Test";
-      
-      const schemaObj = createTestSchema({
-        element: [element],
-      });
+      const diagram = builder.buildFromSchema(schemaWith(`<xs:element name="Test"/>`));
 
-      const diagram = builder.buildFromSchema(schemaObj);
-
-      const schemaNode = diagram.rootElements[0];
-      expect(schemaNode.name).toContain("Schema:");
+      expect(diagram.rootElements[0].name).toContain("Schema:");
     });
 
     test("should expose top-level attributes on schema root properties", () => {
-      const attr1 = new topLevelAttribute();
-      attr1.name = "lang";
-      attr1.type_ = "xs:string";
+      const diagram = builder.buildFromSchema(
+        schemaWith(`<xs:attribute name="lang" type="xs:string"/><xs:attribute name="version" type="xs:string"/>`)
+      );
 
-      const attr2 = new topLevelAttribute();
-      attr2.name = "version";
-      attr2.type_ = "xs:string";
-
-      const schemaObj = createTestSchema({
-        attribute: [attr1, attr2],
-      });
-
-      const diagram = builder.buildFromSchema(schemaObj);
-
-      const schemaNode = diagram.rootElements[0];
-      expect(schemaNode.attributes).toHaveLength(2);
-      expect(schemaNode.attributes[0].name).toBe("lang");
-      expect(schemaNode.attributes[1].name).toBe("version");
-    });
-
-    test("should not render top-level attributes as separate diagram nodes", () => {
-      const attr = new topLevelAttribute();
-      attr.name = "id";
-      attr.type_ = "xs:string";
-
-      const schemaObj = createTestSchema({ attribute: [attr] });
-
-      const diagram = builder.buildFromSchema(schemaObj);
-
-      const schemaNode = diagram.rootElements[0];
-      expect(schemaNode.childElements).toHaveLength(1);
-      expect(schemaNode.childElements[0].name).toBe("No elements found");
-    });
-
-    test("should set hasAnonymousComplexType on elements with inline complex types", () => {
-      const element = new topLevelElement();
-      element.name = "Person";
-      element.complexType = {
-        sequence: {
-          element: [{ name: "name", type_: "string" }],
-        },
-      };
-
-      const schemaObj = createTestSchema({ element: [element] });
-      const diagram = builder.buildFromSchema(schemaObj);
-
-      const personNode = diagram.rootElements[0].childElements[0];
-      expect(personNode.name).toBe("Person");
-      expect(personNode.hasAnonymousComplexType).toBe(true);
-    });
-
-    test("should not set hasAnonymousComplexType on elements without inline complex type", () => {
-      const element = new topLevelElement();
-      element.name = "Person";
-      element.type_ = "xs:string";
-
-      const schemaObj = createTestSchema({ element: [element] });
-      const diagram = builder.buildFromSchema(schemaObj);
-
-      const personNode = diagram.rootElements[0].childElements[0];
-      expect(personNode.hasAnonymousComplexType).toBe(false);
+      expect(diagram.rootElements[0].attributes.map((attribute) => attribute.name)).toEqual(["lang", "version"]);
     });
   });
 });

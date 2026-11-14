@@ -1,6 +1,7 @@
 # Knowledge Bundle Update Log
 
 ## 2026-11-14
+* **Update**: [Testing](testing.md#mocks-and-helpers) describes the new helpers of the properties panel tests: `createPanel()`, `displayItem()` and `editInput()` in `propertiesPanelTestHelpers.ts`. The webview tests no longer contain duplicated code ([#439](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/439)).
 * **Update**: [Testing](testing.md#mocks): the rule "Mock only the boundaries" is now "Mock at the boundary of the unit": a unit test may mock what its module imports; integration tests mock only what lies outside the extension.
 * **Update**: [Testing](testing.md#mocks-and-helpers) describes `findTopLevelElement()` of the pipeline helpers and the new `src/__tests__/referenceTestHelpers.ts`, which the group and attribute group validator tests share ([#439](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/439)).
 * **Update**: New rule in the [Development guidelines](development-guidelines.md#code-quality): a conditional expression spans at most three lines, a longer one is written as `if`/`else`; [Build and packaging](build-and-packaging.md#lint) describes the local ESLint rule `style/max-ternary-lines` that checks it.

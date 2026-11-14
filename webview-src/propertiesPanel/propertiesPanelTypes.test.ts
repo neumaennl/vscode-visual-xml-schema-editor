@@ -2,35 +2,49 @@
  * Unit tests for the type fields of the properties panel.
  */
 
-import { PropertiesPanel } from "./propertiesPanel";
 import { DiagramItem } from "../diagram/DiagramItem";
-import { Diagram } from "../diagram/Diagram";
 import { DiagramItemType } from "../diagram/DiagramTypes";
 import { SCHEMA_ROOT_ID, SchemaNodeType, generateSchemaId } from "../../shared/idStrategy";
-import { getInputByLabel, hasLabel } from "../__tests__/propertiesPanelTestHelpers";
+import { getInputByLabel, hasLabel, createPanel, displayItem, editInput } from "../__tests__/propertiesPanelTestHelpers";
 
 describe("PropertiesPanel: the type fields", () => {
-  let container: HTMLDivElement;
-  let panel: PropertiesPanel;
-  let diagram: Diagram;
+  let { container, panel, diagram } = createPanel();
 
   beforeEach(() => {
-    container = document.createElement("div");
-    panel = new PropertiesPanel(container);
-    diagram = new Diagram();
+    ({ container, panel, diagram } = createPanel());
   });
 
+  /**
+   * Adds a complex type `CustomerType` to the diagram, whose schema has the prefix `tns`, and returns an element
+   * `customer` of type `xs:string`.
+   *
+   * @returns The element
+   */
+  function customerWithCustomerType(): DiagramItem {
+    diagram.currentSchemaPrefix = "tns";
+    const schemaRoot = new DiagramItem(SCHEMA_ROOT_ID, "schema", DiagramItemType.group, diagram);
+    const customerType = new DiagramItem(
+      generateSchemaId({ nodeType: SchemaNodeType.ComplexType, name: "CustomerType" }),
+      "CustomerType",
+      DiagramItemType.type,
+      diagram
+    );
+    customerType.type = "complexType";
+    schemaRoot.addChild(customerType);
+    diagram.addRootElement(schemaRoot);
+
+    const item = new DiagramItem("/element:customer", "customer", DiagramItemType.element, diagram);
+    item.type = "xs:string";
+    return item;
+  }
+
   test("edits simple type base types through a dedicated Base Type field", () => {
-    const dispatch = vi.fn();
-    panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem("/simpleType:TokenType", "TokenType", DiagramItemType.type, diagram);
     item.type = "simpleType (restricts xs:string)";
 
-    panel.display(item);
+    const { dispatch } = displayItem(container, item);
 
-    const input = getInputByLabel(container, "Base Type");
-    input.value = "xs:token";
-    input.dispatchEvent(new Event("blur"));
+    editInput(container, "Base Type", "xs:token");
 
     expect(dispatch).toHaveBeenCalledWith({
       type: "modifySimpleType",
@@ -42,8 +56,6 @@ describe("PropertiesPanel: the type fields", () => {
   });
 
   test("does not dispatch a second command when Base Type blur is unchanged after stale simpleType rename replay", () => {
-    const dispatch = vi.fn();
-    panel = new PropertiesPanel(container, dispatch);
 
     const initial = new DiagramItem(
       "/simpleType:lengthRestricitionType",
@@ -52,11 +64,9 @@ describe("PropertiesPanel: the type fields", () => {
       diagram
     );
     initial.type = "simpleType (restricts xs:string)";
-    panel.display(initial);
+    const { panel: shownPanel, dispatch } = displayItem(container, initial);
 
-    const nameInput = getInputByLabel(container, "Name");
-    nameInput.value = "lengthRestrictionType";
-    nameInput.dispatchEvent(new Event("blur"));
+    editInput(container, "Name", "lengthRestrictionType");
 
     // Simulate stale re-display that still references the old node id/name
     // while keeping the same Base Type value.
@@ -67,11 +77,9 @@ describe("PropertiesPanel: the type fields", () => {
       diagram
     );
     stale.type = "simpleType (restricts xs:string)";
-    panel.display(stale);
+    shownPanel.display(stale);
 
-    const baseTypeInput = getInputByLabel(container, "Base Type");
-    baseTypeInput.value = "xs:string";
-    baseTypeInput.dispatchEvent(new Event("blur"));
+    editInput(container, "Base Type", "xs:string");
 
     expect(dispatch).toHaveBeenCalledTimes(1);
     expect(dispatch).toHaveBeenCalledWith({
@@ -106,20 +114,7 @@ describe("PropertiesPanel: the type fields", () => {
   });
 
   test("offers known schema types as suggestions while keeping type inputs free-form", () => {
-    const schemaRoot = new DiagramItem(SCHEMA_ROOT_ID, "schema", DiagramItemType.group, diagram);
-    diagram.currentSchemaPrefix = "tns";
-    const customerType = new DiagramItem(
-      generateSchemaId({ nodeType: SchemaNodeType.ComplexType, name: "CustomerType" }),
-      "CustomerType",
-      DiagramItemType.type,
-      diagram
-    );
-    customerType.type = "complexType";
-    schemaRoot.addChild(customerType);
-    diagram.addRootElement(schemaRoot);
-
-    const item = new DiagramItem("/element:customer", "customer", DiagramItemType.element, diagram);
-    item.type = "xs:string";
+    const item = customerWithCustomerType();
 
     panel.display(item);
 
@@ -135,28 +130,11 @@ describe("PropertiesPanel: the type fields", () => {
   });
 
   test("uses targetNamespace prefix for local type references when available", () => {
-    const dispatch = vi.fn();
-    panel = new PropertiesPanel(container, dispatch);
-    diagram.currentSchemaPrefix = "tns";
-    const schemaRoot = new DiagramItem(SCHEMA_ROOT_ID, "schema", DiagramItemType.group, diagram);
-    const customerType = new DiagramItem(
-      generateSchemaId({ nodeType: SchemaNodeType.ComplexType, name: "CustomerType" }),
-      "CustomerType",
-      DiagramItemType.type,
-      diagram
-    );
-    customerType.type = "complexType";
-    schemaRoot.addChild(customerType);
-    diagram.addRootElement(schemaRoot);
+    const item = customerWithCustomerType();
 
-    const item = new DiagramItem("/element:customer", "customer", DiagramItemType.element, diagram);
-    item.type = "xs:string";
+    const { dispatch } = displayItem(container, item);
 
-    panel.display(item);
-
-    const input = getInputByLabel(container, "Type");
-    input.value = "CustomerType";
-    input.dispatchEvent(new Event("blur"));
+    editInput(container, "Type", "CustomerType");
 
     expect(dispatch).toHaveBeenCalledWith({
       type: "modifyElement",
@@ -168,20 +146,16 @@ describe("PropertiesPanel: the type fields", () => {
   });
 
   test("lets elements with inline complex types replace them with an explicit type", () => {
-    const dispatch = vi.fn();
-    panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem("/element:person", "person", DiagramItemType.element, diagram);
     item.type = "complexType";
     item.hasAnonymousComplexType = true;
 
-    panel.display(item);
+    const { dispatch } = displayItem(container, item);
 
     expect(container.textContent).toContain("Inline complexType");
     expect(hasLabel(container, "Base Type")).toBe(true);
 
-    const replacementInput = getInputByLabel(container, "Replacement Type");
-    replacementInput.value = "CustomerType";
-    replacementInput.dispatchEvent(new Event("blur"));
+    editInput(container, "Replacement Type", "CustomerType");
 
     expect(dispatch).toHaveBeenCalledWith({
       type: "modifyElement",
@@ -193,13 +167,11 @@ describe("PropertiesPanel: the type fields", () => {
   });
 
   test("lets elements with inline simple types replace them with an explicit type", () => {
-    const dispatch = vi.fn();
-    panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem("/element:code", "code", DiagramItemType.element, diagram);
     item.type = "<anonymous simpleType> (restricts xs:string)";
     item.isSimpleContent = true;
 
-    panel.display(item);
+    const { dispatch } = displayItem(container, item);
 
     expect(container.textContent).toContain("Inline simpleType (restricts xs:string)");
     expect(hasLabel(container, "Base Type")).toBe(true);
@@ -219,17 +191,13 @@ describe("PropertiesPanel: the type fields", () => {
   });
 
   test("edits inline simple type base types from the selected element", () => {
-    const dispatch = vi.fn();
-    panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem("/element:code", "code", DiagramItemType.element, diagram);
     item.type = "<anonymous simpleType> (restricts xs:string)";
     item.isSimpleContent = true;
 
-    panel.display(item);
+    const { dispatch } = displayItem(container, item);
 
-    const input = getInputByLabel(container, "Base Type");
-    input.value = "xs:token";
-    input.dispatchEvent(new Event("blur"));
+    editInput(container, "Base Type", "xs:token");
 
     expect(dispatch).toHaveBeenCalledWith({
       type: "modifySimpleType",
@@ -245,17 +213,13 @@ describe("PropertiesPanel: the type fields", () => {
   });
 
   test("edits inline complex type extension bases from the selected element", () => {
-    const dispatch = vi.fn();
-    panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem("/element:person", "person", DiagramItemType.element, diagram);
     item.type = "<anonymous complexType> (extends BasePersonType)";
     item.hasAnonymousComplexType = true;
 
-    panel.display(item);
+    const { dispatch } = displayItem(container, item);
 
-    const input = getInputByLabel(container, "Base Type");
-    input.value = "EmployeeType";
-    input.dispatchEvent(new Event("blur"));
+    editInput(container, "Base Type", "EmployeeType");
 
     expect(dispatch).toHaveBeenCalledWith({
       type: "modifyComplexType",

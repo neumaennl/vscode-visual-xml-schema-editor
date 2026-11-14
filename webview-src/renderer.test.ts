@@ -16,6 +16,22 @@ const DEFAULT_DIAGRAM_OPTIONS: DiagramOptions = {
   showType: false,
 };
 
+/** A schema with one element `Test` of type `string`. */
+const TEST_SCHEMA = { element: [{ name: "Test", type_: "string" }] };
+
+/**
+ * Creates a drag event whose data is the given construct.
+ *
+ * @param type - The type of the event, such as `drop` or `dragover`
+ * @param construct - The construct that the data transfer holds
+ * @returns The event
+ */
+function dragEvent(type: string, construct: string): DragEvent {
+  const event = new Event(type, { bubbles: true }) as DragEvent;
+  Object.defineProperty(event, "dataTransfer", { value: { getData: (_mime: string) => construct } });
+  return event;
+}
+
 describe("DiagramRenderer", () => {
   let mockCanvas: SVGSVGElement;
   let renderer: DiagramRenderer;
@@ -27,6 +43,16 @@ describe("DiagramRenderer", () => {
     renderer = new DiagramRenderer(mockCanvas, viewState);
     setActiveDraggedPaletteSchemaConstruct(null);
   });
+
+  /**
+   * Renders the test schema and returns the group of its element.
+   *
+   * @returns The group of the element `Test`
+   */
+  function renderTestElement(): SVGGElement {
+    renderer.renderSchema(TEST_SCHEMA, DEFAULT_DIAGRAM_OPTIONS, vi.fn());
+    return mockCanvas.querySelector("[data-item-id]") as SVGGElement;
+  }
 
   describe("constructor", () => {
     test("should initialize renderer with canvas", () => {
@@ -154,58 +180,12 @@ describe("DiagramRenderer", () => {
       setupGetBBoxMock();
     });
 
-    test("should apply showDocumentation option to diagram", () => {
-      const mockSchema = {
-        element: [{ name: "Test", type_: "string" }],
-      };
-      const onNodeClick = vi.fn();
-      const options: DiagramOptions = {
-        showDocumentation: true,
-        alwaysShowOccurrence: false,
-        showType: false,
-      };
-      
-      renderer.renderSchema(mockSchema, options, onNodeClick);
-      
-      const diagram = renderer.getCurrentDiagram();
-      expect(diagram).not.toBeNull();
-      expect(diagram?.showDocumentation).toBe(true);
-    });
+    test.each(["showDocumentation", "alwaysShowOccurrence", "showType"] as const)("should apply %s option to diagram", (option) => {
+      renderer.renderSchema(TEST_SCHEMA, { ...DEFAULT_DIAGRAM_OPTIONS, [option]: true }, vi.fn());
 
-    test("should apply alwaysShowOccurrence option to diagram", () => {
-      const mockSchema = {
-        element: [{ name: "Test", type_: "string" }],
-      };
-      const onNodeClick = vi.fn();
-      const options: DiagramOptions = {
-        showDocumentation: false,
-        alwaysShowOccurrence: true,
-        showType: false,
-      };
-      
-      renderer.renderSchema(mockSchema, options, onNodeClick);
-      
       const diagram = renderer.getCurrentDiagram();
       expect(diagram).not.toBeNull();
-      expect(diagram?.alwaysShowOccurrence).toBe(true);
-    });
-
-    test("should apply showType option to diagram", () => {
-      const mockSchema = {
-        element: [{ name: "Test", type_: "string" }],
-      };
-      const onNodeClick = vi.fn();
-      const options: DiagramOptions = {
-        showDocumentation: false,
-        alwaysShowOccurrence: false,
-        showType: true,
-      };
-      
-      renderer.renderSchema(mockSchema, options, onNodeClick);
-      
-      const diagram = renderer.getCurrentDiagram();
-      expect(diagram).not.toBeNull();
-      expect(diagram?.showType).toBe(true);
+      expect(diagram?.[option]).toBe(true);
     });
   });
 
@@ -215,26 +195,12 @@ describe("DiagramRenderer", () => {
     });
 
     test("should invoke node drop handler with item and construct", () => {
-      const onNodeClick = vi.fn();
       const onNodeDrop = vi.fn();
       renderer.setDropHandler(onNodeDrop);
-
-      const mockSchema = {
-        element: [{ name: "Test", type_: "string" }],
-      };
-      renderer.renderSchema(mockSchema, DEFAULT_DIAGRAM_OPTIONS, onNodeClick);
-
-      const itemElement = mockCanvas.querySelector(
-        "[data-item-id]"
-      ) as SVGGElement;
+      const itemElement = renderTestElement();
       expect(itemElement).toBeTruthy();
 
-      const dropEvent = new Event("drop", { bubbles: true }) as DragEvent;
-      Object.defineProperty(dropEvent, "dataTransfer", {
-        value: {
-          getData: (_mime: string) => "element",
-        },
-      });
+      const dropEvent = dragEvent("drop", "element");
 
       itemElement.dispatchEvent(dropEvent);
 
@@ -242,25 +208,11 @@ describe("DiagramRenderer", () => {
     });
 
     test("should not invoke node drop handler when drop validator rejects the target", () => {
-      const onNodeClick = vi.fn();
       const onNodeDrop = vi.fn();
       renderer.setDropHandler(onNodeDrop);
       renderer.setNodeDropValidator(() => false);
-
-      const mockSchema = {
-        element: [{ name: "Test", type_: "string" }],
-      };
-      renderer.renderSchema(mockSchema, DEFAULT_DIAGRAM_OPTIONS, onNodeClick);
-
-      const itemElement = mockCanvas.querySelector(
-        "[data-item-id]"
-      ) as SVGGElement;
-      const dropEvent = new Event("drop", { bubbles: true }) as DragEvent;
-      Object.defineProperty(dropEvent, "dataTransfer", {
-        value: {
-          getData: (_mime: string) => "attribute",
-        },
-      });
+      const itemElement = renderTestElement();
+      const dropEvent = dragEvent("drop", "attribute");
 
       itemElement.dispatchEvent(dropEvent);
 
@@ -268,24 +220,10 @@ describe("DiagramRenderer", () => {
     });
 
     test("should not add drag-over class when drop validator rejects the target", () => {
-      const onNodeClick = vi.fn();
       renderer.setNodeDropValidator(() => false);
-
-      const mockSchema = {
-        element: [{ name: "Test", type_: "string" }],
-      };
-      renderer.renderSchema(mockSchema, DEFAULT_DIAGRAM_OPTIONS, onNodeClick);
-
-      const itemElement = mockCanvas.querySelector(
-        "[data-item-id]"
-      ) as SVGGElement;
+      const itemElement = renderTestElement();
       const itemChild = itemElement.querySelector("*") as Element;
-      const dragOverEvent = new Event("dragover", { bubbles: true }) as DragEvent;
-      Object.defineProperty(dragOverEvent, "dataTransfer", {
-        value: {
-          getData: (_mime: string) => "attribute",
-        },
-      });
+      const dragOverEvent = dragEvent("dragover", "attribute");
 
       itemChild.dispatchEvent(dragOverEvent);
 
@@ -293,24 +231,10 @@ describe("DiagramRenderer", () => {
     });
 
     test("should add drag-over class using active dragged-construct fallback", () => {
-      const onNodeClick = vi.fn();
       renderer.setNodeDropValidator((_node, construct) => construct === "element");
-
-      const mockSchema = {
-        element: [{ name: "Test", type_: "string" }],
-      };
-      renderer.renderSchema(mockSchema, DEFAULT_DIAGRAM_OPTIONS, onNodeClick);
-
-      const itemElement = mockCanvas.querySelector(
-        "[data-item-id]"
-      ) as SVGGElement;
+      const itemElement = renderTestElement();
       const itemChild = itemElement.querySelector("*") as Element;
-      const dragOverEvent = new Event("dragover", { bubbles: true }) as DragEvent;
-      Object.defineProperty(dragOverEvent, "dataTransfer", {
-        value: {
-          getData: (_mime: string) => "",
-        },
-      });
+      const dragOverEvent = dragEvent("dragover", "");
       setActiveDraggedPaletteSchemaConstruct(PaletteSchemaConstruct.Element);
 
       itemChild.dispatchEvent(dragOverEvent);
@@ -319,15 +243,7 @@ describe("DiagramRenderer", () => {
     });
 
     test("should keep drag-over class when pointer is still inside item group", () => {
-      const onNodeClick = vi.fn();
-      const mockSchema = {
-        element: [{ name: "Test", type_: "string" }],
-      };
-      renderer.renderSchema(mockSchema, DEFAULT_DIAGRAM_OPTIONS, onNodeClick);
-
-      const itemElement = mockCanvas.querySelector(
-        "[data-item-id]"
-      ) as SVGGElement;
+      const itemElement = renderTestElement();
       const itemChild = itemElement.querySelector("*") as Element;
       itemElement.classList.add("drag-over");
 

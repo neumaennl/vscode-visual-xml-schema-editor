@@ -4,10 +4,9 @@
 
 import { PropertiesPanel } from "./propertiesPanel";
 import { DiagramItem } from "../diagram/DiagramItem";
-import { Diagram } from "../diagram/Diagram";
 import { DiagramItemType } from "../diagram/DiagramTypes";
 import { SCHEMA_ROOT_ID } from "../../shared/idStrategy";
-import { findButton } from "../__tests__/propertiesPanelTestHelpers";
+import { findButton, createPanel, displayItem } from "../__tests__/propertiesPanelTestHelpers";
 import { diagramItem } from "../__tests__/diagramTestHelpers";
 import { schemaWith } from "../../shared/__tests__/schemaTestHelpers";
 
@@ -29,14 +28,10 @@ const TWO_SCHEMA_ANNOTATIONS = [
 ];
 
 describe("PropertiesPanel: the Docs tab", () => {
-  let container: HTMLDivElement;
-  let panel: PropertiesPanel;
-  let diagram: Diagram;
+  let { container, panel, diagram } = createPanel();
 
   beforeEach(() => {
-    container = document.createElement("div");
-    panel = new PropertiesPanel(container);
-    diagram = new Diagram();
+    ({ container, panel, diagram } = createPanel());
   });
 
   test("shows structured docs fields in docs tab", () => {
@@ -81,8 +76,6 @@ describe("PropertiesPanel: the Docs tab", () => {
   });
 
   test("preserves multi-line documentation in the docs tab", () => {
-    const dispatch = vi.fn();
-    panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem("/element:person", "person", DiagramItemType.element, diagram);
     item.documentationAnnotations = [
       {
@@ -96,9 +89,7 @@ describe("PropertiesPanel: the Docs tab", () => {
       },
     ];
 
-    panel.display(item);
-    const docsTab = findButton(container, "Docs");
-    docsTab?.click();
+    const { dispatch } = displayItem(container, item, "Docs");
 
     const textarea = container.querySelector("textarea") as HTMLTextAreaElement;
     expect(textarea.value).toBe("Annotation one\nAnnotation two\nAnnotation three");
@@ -114,8 +105,6 @@ describe("PropertiesPanel: the Docs tab", () => {
   });
 
   test("dispatches documentation command from docs tab", () => {
-    const dispatch = vi.fn();
-    panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem("/element:person", "person", DiagramItemType.element, diagram);
     item.documentationAnnotations = [
       {
@@ -124,9 +113,7 @@ describe("PropertiesPanel: the Docs tab", () => {
       },
     ];
 
-    panel.display(item);
-    const docsTab = findButton(container, "Docs");
-    docsTab?.click();
+    const { dispatch } = displayItem(container, item, "Docs");
 
     const textarea = container.querySelector("textarea") as HTMLTextAreaElement;
     textarea.value = "Updated docs";
@@ -167,18 +154,11 @@ describe("PropertiesPanel: the Docs tab", () => {
   );
 
   test("adds schema-root documentation through the structured docs flow", () => {
-    const dispatch = vi.fn();
-    panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem(SCHEMA_ROOT_ID, "schema", DiagramItemType.group, diagram);
 
-    panel.display(item);
-    const docsTab = findButton(container, "Docs");
-    docsTab?.click();
+    const { dispatch } = displayItem(container, item, "Docs");
 
-    const addDocumentationButton = Array.from(container.querySelectorAll("button")).find(
-      (btn) => btn.textContent.includes("Add documentation")
-    );
-    addDocumentationButton?.click();
+    findButton(container, "Add documentation")?.click();
 
     expect(dispatch).toHaveBeenCalledWith({
       type: "addDocumentation",
@@ -190,25 +170,18 @@ describe("PropertiesPanel: the Docs tab", () => {
   });
 
   test("renders structured annotations and supports adding/removing documentation entries", () => {
-    const dispatch = vi.fn();
-    panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem(SCHEMA_ROOT_ID, "schema", DiagramItemType.group, diagram);
     item.documentationAnnotations = TWO_SCHEMA_ANNOTATIONS;
     item.documentation = "First doc\nSecond doc\nThird doc";
 
-    panel.display(item);
-    const docsTab = findButton(container, "Docs");
-    docsTab?.click();
+    const { dispatch } = displayItem(container, item, "Docs");
 
     const textareas = Array.from(container.querySelectorAll("textarea"));
     expect(textareas).toHaveLength(3);
     expect(container.textContent).toContain("Annotation 1");
     expect(container.textContent).toContain("Annotation 2");
 
-    const addDocumentationButton = Array.from(container.querySelectorAll("button")).find(
-      (btn) => btn.textContent.includes("Add documentation")
-    );
-    addDocumentationButton?.click();
+    findButton(container, "Add documentation")?.click();
 
     expect(dispatch).toHaveBeenCalledWith({
         type: "addDocumentation",
@@ -230,8 +203,6 @@ describe("PropertiesPanel: the Docs tab", () => {
   });
 
   test("lets the schema add additional annotation sections in the docs tab", () => {
-    const dispatch = vi.fn();
-    panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem(SCHEMA_ROOT_ID, "schema", DiagramItemType.group, diagram);
     item.documentationAnnotations = [
       {
@@ -242,9 +213,7 @@ describe("PropertiesPanel: the Docs tab", () => {
       },
     ];
 
-    panel.display(item);
-    const docsTab = findButton(container, "Docs");
-    docsTab?.click();
+    const { dispatch } = displayItem(container, item, "Docs");
 
     const addAnnotationButton = Array.from(container.querySelectorAll("button")).find(
       (btn) => btn.textContent.includes("Add annotation")

@@ -119,44 +119,21 @@ describe("DiagramItem", () => {
       expect(bounds.height).toBe(50);
     });
 
-    test("should include child bounds when showChildElements is true", () => {
+    test.each([
+      ["include child bounds when showChildElements is true", true, { x: 0, y: 0, width: 150, height: 150 }], // 50 + 100
+      ["not include child bounds when showChildElements is false", false, { x: 0, y: 0, width: 100, height: 100 }],
+    ])("should %s", (_case, showChildElements, expected) => {
       const parent = new DiagramItem("parent", "Parent", DiagramItemType.element);
       parent.location = { x: 0, y: 0 };
       parent.size = { width: 100, height: 100 };
-      parent.showChildElements = true;
+      parent.showChildElements = showChildElements;
 
       const child = new DiagramItem("child", "Child", DiagramItemType.element);
       child.location = { x: 50, y: 50 };
       child.size = { width: 100, height: 100 };
       parent.addChild(child);
 
-      const bounds = parent.calculateBoundingBox();
-
-      // Should expand to include child at (50,50) with size (100,100)
-      expect(bounds.x).toBe(0);
-      expect(bounds.y).toBe(0);
-      expect(bounds.width).toBe(150); // 50 + 100
-      expect(bounds.height).toBe(150); // 50 + 100
-    });
-
-    test("should not include child bounds when showChildElements is false", () => {
-      const parent = new DiagramItem("parent", "Parent", DiagramItemType.element);
-      parent.location = { x: 0, y: 0 };
-      parent.size = { width: 100, height: 100 };
-      parent.showChildElements = false;
-
-      const child = new DiagramItem("child", "Child", DiagramItemType.element);
-      child.location = { x: 200, y: 200 };
-      child.size = { width: 100, height: 100 };
-      parent.addChild(child);
-
-      const bounds = parent.calculateBoundingBox();
-
-      // Should only include parent bounds
-      expect(bounds.x).toBe(0);
-      expect(bounds.y).toBe(0);
-      expect(bounds.width).toBe(100);
-      expect(bounds.height).toBe(100);
+      expect(parent.calculateBoundingBox()).toEqual(expected);
     });
 
     test("should handle nested children", () => {

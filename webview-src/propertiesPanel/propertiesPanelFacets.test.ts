@@ -6,9 +6,8 @@ import type { Mock } from "vitest";
 import type { SchemaCommand } from "../../shared/types";
 import { PropertiesPanel } from "./propertiesPanel";
 import { DiagramItem } from "../diagram/DiagramItem";
-import { Diagram } from "../diagram/Diagram";
 import { DiagramItemType } from "../diagram/DiagramTypes";
-import { findButton, getChipValuesByLabel, getInputByLabel, hasLabel } from "../__tests__/propertiesPanelTestHelpers";
+import { findButton, getChipValuesByLabel, getInputByLabel, hasLabel, createPanel, displayItem } from "../__tests__/propertiesPanelTestHelpers";
 
 /** The restriction facets that the panel sends as `undefined` when they are not set. */
 const NO_FACETS = {
@@ -48,14 +47,10 @@ function createDataTransfer(): Pick<
 }
 
 describe("PropertiesPanel: the Facets tab", () => {
-  let container: HTMLDivElement;
-  let panel: PropertiesPanel;
-  let diagram: Diagram;
+  let { container, panel, diagram } = createPanel();
 
   beforeEach(() => {
-    container = document.createElement("div");
-    panel = new PropertiesPanel(container);
-    diagram = new Diagram();
+    ({ container, panel, diagram } = createPanel());
   });
 
   test("shows facet fields when facet tab is selected", () => {
@@ -79,8 +74,6 @@ describe("PropertiesPanel: the Facets tab", () => {
   });
 
   test("reorders enumeration values via drag and drop", () => {
-    const dispatch = vi.fn();
-    panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem(
       "/simpleType:TokenType",
       "TokenType",
@@ -90,9 +83,7 @@ describe("PropertiesPanel: the Facets tab", () => {
     item.type = "simpleType (restricts xs:string)";
     item.restrictions = { enumeration: ["A", "B", "C"] };
 
-    panel.display(item);
-    const facetsTab = findButton(container, "Facets");
-    facetsTab?.click();
+    const { dispatch } = displayItem(container, item, "Facets");
 
     const chips = Array.from(container.querySelectorAll(".property-value-chip"));
     expect(chips.map((chip) => chip.textContent)).toEqual(["A", "B", "C"]);
@@ -137,14 +128,11 @@ describe("PropertiesPanel: the Facets tab", () => {
   });
 
   test("ignores drops on a chip that do not come from its list", () => {
-    const dispatch = vi.fn();
-    panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem("/simpleType:TokenType", "TokenType", DiagramItemType.type, diagram);
     item.type = "simpleType (restricts xs:string)";
     item.restrictions = { enumeration: ["A", "B"] };
 
-    panel.display(item);
-    findButton(container, "Facets")?.click();
+    const { dispatch } = displayItem(container, item, "Facets");
     const drop = new Event("drop", { bubbles: true, cancelable: true });
     Object.defineProperty(drop, "dataTransfer", { value: createDataTransfer() });
     container.querySelector(".property-value-chip")?.dispatchEvent(drop);
@@ -154,8 +142,6 @@ describe("PropertiesPanel: the Facets tab", () => {
   });
 
   test("dispatches modifySimpleType when facets are edited", () => {
-    const dispatch = vi.fn();
-    panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem(
       "/simpleType:TokenType",
       "TokenType",
@@ -168,9 +154,7 @@ describe("PropertiesPanel: the Facets tab", () => {
       pattern: ["[A-Z]"],
     };
 
-    panel.display(item);
-    const facetsTab = findButton(container, "Facets");
-    facetsTab?.click();
+    const { dispatch } = displayItem(container, item, "Facets");
 
     const addValueButton = findButton(container, "+ value");
     addValueButton?.click();
@@ -192,14 +176,11 @@ describe("PropertiesPanel: the Facets tab", () => {
   });
 
   test("keeps all patterns when another facet is edited", () => {
-    const dispatch = vi.fn();
-    panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem("/simpleType:CodeType", "CodeType", DiagramItemType.type, diagram);
     item.type = "simpleType (restricts xs:string)";
     item.restrictions = { pattern: ["[A-Z]{3}", "[0-9]{3}"], maxLength: 8 };
 
-    panel.display(item);
-    findButton(container, "Facets")?.click();
+    const { dispatch } = displayItem(container, item, "Facets");
     const maxLength = getInputByLabel(container, "Max Length");
     maxLength.value = "3";
     maxLength.dispatchEvent(new Event("blur"));
@@ -374,15 +355,12 @@ describe("PropertiesPanel: the Facets tab", () => {
   });
 
   test("edits the facets of a restriction with an inline base type", () => {
-    const dispatch = vi.fn();
-    panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem("/simpleType:ShortCode", "ShortCode", DiagramItemType.type, diagram);
     item.type = "simpleType";
     item.simpleTypeDerivationKind = "restriction";
     item.restrictions = { maxLength: 8 };
 
-    panel.display(item);
-    findButton(container, "Facets")?.click();
+    const { dispatch } = displayItem(container, item, "Facets");
     const maxLength = getInputByLabel(container, "Max Length");
     maxLength.value = "4";
     maxLength.dispatchEvent(new Event("blur"));
@@ -394,14 +372,11 @@ describe("PropertiesPanel: the Facets tab", () => {
   });
 
   test("removes a facet while retaining another restriction facet", () => {
-    const dispatch = vi.fn();
-    panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem("/simpleType:TokenType", "TokenType", DiagramItemType.type, diagram);
     item.type = "simpleType (restricts xs:string)";
     item.restrictions = { enumeration: ["A"], pattern: ["[A-Z]"] };
 
-    panel.display(item);
-    Array.from(container.querySelectorAll("button")).find((button) => button.textContent === "Facets")?.click();
+    const { dispatch } = displayItem(container, item, "Facets");
     const removePattern = container.querySelector("button[title='Remove Pattern facet']") as HTMLButtonElement;
     removePattern.click();
 

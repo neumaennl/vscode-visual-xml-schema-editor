@@ -2,22 +2,16 @@
  * Unit tests for the PropertiesPanel class: the header, the General tab and the general behavior of the panel.
  */
 
-import { PropertiesPanel } from "./propertiesPanel";
 import { DiagramItem } from "../diagram/DiagramItem";
-import { Diagram } from "../diagram/Diagram";
 import { DiagramItemType } from "../diagram/DiagramTypes";
 import { SCHEMA_ROOT_ID } from "../../shared/idStrategy";
-import { findButton, getInputByLabel, hasLabel } from "../__tests__/propertiesPanelTestHelpers";
+import { findButton, getInputByLabel, hasLabel, createPanel, editInput, displayItem } from "../__tests__/propertiesPanelTestHelpers";
 
 describe("PropertiesPanel", () => {
-  let container: HTMLDivElement;
-  let panel: PropertiesPanel;
-  let diagram: Diagram;
+  let { container, panel, diagram } = createPanel();
 
   beforeEach(() => {
-    container = document.createElement("div");
-    panel = new PropertiesPanel(container);
-    diagram = new Diagram();
+    ({ container, panel, diagram } = createPanel());
   });
 
   test("renders tabs and general values for selected node", () => {
@@ -46,11 +40,8 @@ describe("PropertiesPanel", () => {
   });
 
   test("dispatches removeElement when the header delete button is clicked", () => {
-    const dispatch = vi.fn();
-    panel = new PropertiesPanel(container, dispatch);
-    const item = new DiagramItem("/element:person", "person", DiagramItemType.element, diagram);
+    const { dispatch } = displayItem(container, new DiagramItem("/element:person", "person", DiagramItemType.element, diagram));
 
-    panel.display(item);
     const deleteButton = container.querySelector("button[title='Delete node']") as HTMLButtonElement;
     expect(deleteButton.classList.contains("property-docs-action-icon-only")).toBe(true);
     deleteButton.click();
@@ -62,16 +53,10 @@ describe("PropertiesPanel", () => {
   });
 
   test("dispatches removeGroup when deleting a compositor group", () => {
-    const dispatch = vi.fn();
-    panel = new PropertiesPanel(container, dispatch);
-    const item = new DiagramItem(
-      "/complexType:PersonType/group:sequence[0]",
-      "sequence",
-      DiagramItemType.group,
-      diagram
+    const { dispatch } = displayItem(container, 
+      new DiagramItem("/complexType:PersonType/group:sequence[0]", "sequence", DiagramItemType.group, diagram)
     );
 
-    panel.display(item);
     const deleteButton = container.querySelector("button[title='Delete node']") as HTMLButtonElement;
     deleteButton.click();
 
@@ -125,52 +110,24 @@ describe("PropertiesPanel", () => {
     expect(hasLabel(container, "Children")).toBe(false);
   });
 
-  test("dispatches modifyElement when name is changed", () => {
-    const dispatch = vi.fn();
-    panel = new PropertiesPanel(container, dispatch);
-    const item = new DiagramItem("/element:person", "person", DiagramItemType.element, diagram);
+  test.each([
+    ["dispatches modifyElement when the name is changed", "customer", [[{ type: "modifyElement", payload: { elementId: "/element:person", elementName: "customer" } }]]],
+    ["does not dispatch a rename command when the name is unchanged", " person ", []],
+  ])("%s", (_case, name, calls) => {
+    const { dispatch } = displayItem(container, new DiagramItem("/element:person", "person", DiagramItemType.element, diagram));
 
-    panel.display(item);
-    const input = getInputByLabel(container, "Name");
-    input.value = "customer";
-    input.dispatchEvent(new Event("blur"));
+    editInput(container, "Name", name);
 
-    expect(dispatch).toHaveBeenCalledWith({
-      type: "modifyElement",
-      payload: { elementId: "/element:person", elementName: "customer" },
-    });
-  });
-
-  test("does not dispatch a rename command when the name is unchanged", () => {
-    const dispatch = vi.fn();
-    panel = new PropertiesPanel(container, dispatch);
-    const item = new DiagramItem("/element:person", "person", DiagramItemType.element, diagram);
-
-    panel.display(item);
-    const input = getInputByLabel(container, "Name");
-    input.value = " person ";
-    input.dispatchEvent(new Event("blur"));
-
-    expect(dispatch).not.toHaveBeenCalled();
+    expect(dispatch.mock.calls).toEqual(calls);
   });
 
   test("does not dispatch duplicate rename commands for the same node/name replay", () => {
-    const dispatch = vi.fn();
-    panel = new PropertiesPanel(container, dispatch);
-
-    const initialItem = new DiagramItem("/element:person", "person", DiagramItemType.element, diagram);
-    panel.display(initialItem);
-
-    const firstInput = getInputByLabel(container, "Name");
-    firstInput.value = "customer";
-    firstInput.dispatchEvent(new Event("blur"));
+    const { panel: shownPanel, dispatch } = displayItem(container, new DiagramItem("/element:person", "person", DiagramItemType.element, diagram));
+    editInput(container, "Name", "customer");
 
     // Simulate stale re-display that still references the old node id/name.
-    const staleItem = new DiagramItem("/element:person", "person", DiagramItemType.element, diagram);
-    panel.display(staleItem);
-    const replayInput = getInputByLabel(container, "Name");
-    replayInput.value = "customer";
-    replayInput.dispatchEvent(new Event("blur"));
+    shownPanel.display(new DiagramItem("/element:person", "person", DiagramItemType.element, diagram));
+    editInput(container, "Name", "customer");
 
     expect(dispatch).toHaveBeenCalledTimes(1);
     expect(dispatch).toHaveBeenCalledWith({
@@ -198,26 +155,32 @@ describe("PropertiesPanel", () => {
     expect(container.textContent).toContain("sequence");
   });
 
-  test("dispatches modifyElement when minOccurs is changed", () => {
-    const dispatch = vi.fn();
-    panel = new PropertiesPanel(container, dispatch);
-    const item = new DiagramItem("/element:root/element:item[0]", "item", DiagramItemType.element, diagram);
+  test.each([
+    ["modifyElement", "a local element", "/element:root/element:item[0]", DiagramItemType.element, { elementId: "/element:root/element:item[0]" }],
+    ["modifyGroup", "a compositor", "/complexType:PersonType/group:sequence[0]", DiagramItemType.group, { groupId: "/complexType:PersonType/group:sequence[0]" }],
+  ])("dispatches %s when minOccurs of %s is changed", (type, _case, id, itemType, target) => {
+    const item = new DiagramItem(id, "item", itemType, diagram);
     item.minOccurrence = 1;
     item.maxOccurrence = 3;
+    const { dispatch } = displayItem(container, item);
 
-    panel.display(item);
-    const input = getInputByLabel(container, "minOccurs");
-    input.value = "0";
-    input.dispatchEvent(new Event("blur"));
+    editInput(container, "minOccurs", "0");
 
     expect(dispatch).toHaveBeenCalledWith({
-      type: "modifyElement",
-      payload: { elementId: "/element:root/element:item[0]", minOccurs: 0, maxOccurs: 3 },
+      type,
+      payload: { ...target, minOccurs: 0, maxOccurs: 3 },
     });
   });
 
-  test("does not show occurrence fields for top-level elements", () => {
-    const item = new DiagramItem("/element:item", "item", DiagramItemType.element, diagram);
+  test.each([
+    ["top-level elements", "/element:item", DiagramItemType.element],
+    ["schema nodes", SCHEMA_ROOT_ID, DiagramItemType.group],
+    ["the actual schema root item", SCHEMA_ROOT_ID, DiagramItemType.element],
+    ["complexType nodes", "/complexType:PersonType", DiagramItemType.type],
+    ["the compositor of a group definition", "/group:PersonGroup/group:sequence[0]", DiagramItemType.group],
+    ["simpleType nodes", "/simpleType:CodeType", DiagramItemType.type],
+  ])("does not show cardinality fields for %s", (_case, id, itemType) => {
+    const item = new DiagramItem(id, "item", itemType, diagram);
     item.minOccurrence = 0;
     item.maxOccurrence = 7;
 
@@ -228,86 +191,11 @@ describe("PropertiesPanel", () => {
     expect(hasLabel(container, "Cardinality")).toBe(false);
   });
 
-  test("does not show cardinality fields for schema nodes", () => {
-    const item = new DiagramItem(SCHEMA_ROOT_ID, "schema", DiagramItemType.group, diagram);
-
-    panel.display(item);
-
-    expect(hasLabel(container, "minOccurs")).toBe(false);
-    expect(hasLabel(container, "maxOccurs")).toBe(false);
-    expect(hasLabel(container, "Cardinality")).toBe(false);
-  });
-
-  test("does not show cardinality fields for the actual schema root item", () => {
-    const item = new DiagramItem(SCHEMA_ROOT_ID, "schema", DiagramItemType.element, diagram);
-
-    panel.display(item);
-
-    expect(hasLabel(container, "minOccurs")).toBe(false);
-    expect(hasLabel(container, "maxOccurs")).toBe(false);
-    expect(hasLabel(container, "Cardinality")).toBe(false);
-  });
-
-  test("does not show cardinality fields for complexType nodes", () => {
-    const item = new DiagramItem("/complexType:PersonType", "PersonType", DiagramItemType.type, diagram);
-
-    panel.display(item);
-
-    expect(hasLabel(container, "minOccurs")).toBe(false);
-    expect(hasLabel(container, "maxOccurs")).toBe(false);
-    expect(hasLabel(container, "Cardinality")).toBe(false);
-  });
-
-  test("does not show cardinality fields for the compositor of a group definition", () => {
-    const item = new DiagramItem("/group:PersonGroup/group:sequence[0]", "sequence", DiagramItemType.group, diagram);
-
-    panel.display(item);
-
-    expect(hasLabel(container, "minOccurs")).toBe(false);
-    expect(hasLabel(container, "maxOccurs")).toBe(false);
-  });
-
-  test("does not show cardinality fields for simpleType nodes", () => {
-    const item = new DiagramItem("/simpleType:CodeType", "CodeType", DiagramItemType.type, diagram);
-
-    panel.display(item);
-
-    expect(hasLabel(container, "minOccurs")).toBe(false);
-    expect(hasLabel(container, "maxOccurs")).toBe(false);
-    expect(hasLabel(container, "Cardinality")).toBe(false);
-  });
-
-  test("dispatches modifyGroup when group cardinality is changed", () => {
-    const dispatch = vi.fn();
-    panel = new PropertiesPanel(container, dispatch);
-    const item = new DiagramItem(
-      "/complexType:PersonType/group:sequence[0]",
-      "sequence",
-      DiagramItemType.group,
-      diagram
-    );
-    item.minOccurrence = 1;
-    item.maxOccurrence = 3;
-
-    panel.display(item);
-    const input = getInputByLabel(container, "minOccurs");
-    input.value = "0";
-    input.dispatchEvent(new Event("blur"));
-
-    expect(dispatch).toHaveBeenCalledWith({
-      type: "modifyGroup",
-      payload: { groupId: "/complexType:PersonType/group:sequence[0]", minOccurs: 0, maxOccurs: 3 },
-    });
-  });
-
   test("dispatches modifyComplexType when complexType constraints are changed", () => {
-    const dispatch = vi.fn();
-    panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem("/complexType:PersonType", "PersonType", DiagramItemType.type, diagram);
     item.isAbstract = false;
     item.isMixed = false;
-
-    panel.display(item);
+    const { dispatch } = displayItem(container, item);
 
     const abstractRow = Array.from(container.querySelectorAll(".property-toggle-row")).find(
       (row) => row.querySelector(".property-toggle-label")?.textContent === "Abstract"
@@ -334,16 +222,11 @@ describe("PropertiesPanel", () => {
   });
 
   test("keeps edited draft values visible when switching tabs", () => {
-    const dispatch = vi.fn();
-    panel = new PropertiesPanel(container, dispatch);
     const item = new DiagramItem("/element:root/element:item[0]", "item", DiagramItemType.element, diagram);
     item.minOccurrence = 1;
     item.maxOccurrence = 3;
-
-    panel.display(item);
-    const input = getInputByLabel(container, "maxOccurs");
-    input.value = "7";
-    input.dispatchEvent(new Event("blur"));
+    displayItem(container, item);
+    editInput(container, "maxOccurs", "7");
 
     const xmlTab = findButton(container, "XML");
     xmlTab?.click();

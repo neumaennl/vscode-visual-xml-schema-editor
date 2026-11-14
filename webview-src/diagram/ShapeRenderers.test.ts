@@ -81,34 +81,21 @@ describe("ShapeRenderers", () => {
   });
 
   describe("renderGroupShape", () => {
-    test("should render an octagon for single occurrence", () => {
-      const rect: Rectangle = { x: 10, y: 10, width: 100, height: 50 };
+    test.each([
+      ["an octagon for single occurrence", 1, DiagramItemGroupType.Sequence, 1],
+      ["a shadow for multiple occurrences", -1, DiagramItemGroupType.Choice, 2], // Shadow + main
+    ])("should render %s", (_case, maxOccurrence, groupType, minPolygons) => {
       const item = new DiagramItem("id4", "Test", DiagramItemType.group);
-      item.maxOccurrence = 1;
+      item.maxOccurrence = maxOccurrence;
       item.diagram = mockDiagram;
-      item.groupType = DiagramItemGroupType.Sequence;
+      item.groupType = groupType;
 
-      renderGroupShape(rect, "fill:green", "stroke:black", item, mockGroup);
+      renderGroupShape({ x: 10, y: 10, width: 100, height: 50 }, "fill:green", "stroke:black", item, mockGroup);
 
       const polygons = mockGroup.querySelectorAll("polygon");
-      expect(polygons.length).toBeGreaterThanOrEqual(1);
-
-      // Check that octagon has 8 points
-      const points = polygons[0].getAttribute("points")?.split(" ");
-      expect(points?.length).toBe(8);
-    });
-
-    test("should render shadow for multiple occurrences", () => {
-      const rect: Rectangle = { x: 10, y: 10, width: 100, height: 50 };
-      const item = new DiagramItem("id5", "Test", DiagramItemType.group);
-      item.maxOccurrence = -1;
-      item.diagram = mockDiagram;
-      item.groupType = DiagramItemGroupType.Choice;
-
-      renderGroupShape(rect, "fill:green", "stroke:black", item, mockGroup);
-
-      const polygons = mockGroup.querySelectorAll("polygon");
-      expect(polygons.length).toBeGreaterThanOrEqual(2); // Shadow + main
+      expect(polygons.length).toBeGreaterThanOrEqual(minPolygons);
+      // The octagon has 8 points
+      expect(polygons[polygons.length - 1].getAttribute("points")?.split(" ")).toHaveLength(8);
     });
   });
 
@@ -178,46 +165,19 @@ describe("ShapeRenderers", () => {
   });
 
   describe("renderGroupTypeIndicator", () => {
-    test("should render sequence indicator with dots and line", () => {
-      const rect: Rectangle = { x: 10, y: 10, width: 100, height: 50 };
+    test.each([
+      ["sequence", DiagramItemGroupType.Sequence, 1], // One horizontal line
+      ["choice", DiagramItemGroupType.Choice, 6], // The line and the trident
+      ["all", DiagramItemGroupType.All, 8], // The lines and the tridents
+    ])("should render %s indicator with three dots and its lines", (_case, groupType, lineCount) => {
       const item = new DiagramItem("id13", "Test", DiagramItemType.group);
       item.diagram = mockDiagram;
-      item.groupType = DiagramItemGroupType.Sequence;
+      item.groupType = groupType;
 
-      renderGroupTypeIndicator(item, rect, mockGroup);
+      renderGroupTypeIndicator(item, { x: 10, y: 10, width: 100, height: 50 }, mockGroup);
 
-      const circles = mockGroup.querySelectorAll("circle");
-      const lines = mockGroup.querySelectorAll("line");
-      expect(circles.length).toBe(3); // Three dots
-      expect(lines.length).toBe(1); // One horizontal line
-    });
-
-    test("should render choice indicator with dots and lines", () => {
-      const rect: Rectangle = { x: 10, y: 10, width: 100, height: 50 };
-      const item = new DiagramItem("id14", "Test", DiagramItemType.group);
-      item.diagram = mockDiagram;
-      item.groupType = DiagramItemGroupType.Choice;
-
-      renderGroupTypeIndicator(item, rect, mockGroup);
-
-      const circles = mockGroup.querySelectorAll("circle");
-      const lines = mockGroup.querySelectorAll("line");
-      expect(circles.length).toBe(3); // Three dots
-      expect(lines.length).toBe(6); // Multiple lines for choice pattern
-    });
-
-    test("should render all indicator with dots and lines", () => {
-      const rect: Rectangle = { x: 10, y: 10, width: 100, height: 50 };
-      const item = new DiagramItem("id15", "Test", DiagramItemType.group);
-      item.diagram = mockDiagram;
-      item.groupType = DiagramItemGroupType.All;
-
-      renderGroupTypeIndicator(item, rect, mockGroup);
-
-      const circles = mockGroup.querySelectorAll("circle");
-      const lines = mockGroup.querySelectorAll("line");
-      expect(circles.length).toBe(3); // Three dots
-      expect(lines.length).toBe(8); // Multiple lines for all pattern
+      expect(mockGroup.querySelectorAll("circle")).toHaveLength(3);
+      expect(mockGroup.querySelectorAll("line")).toHaveLength(lineCount);
     });
 
     test("should render centered on rectangle", () => {

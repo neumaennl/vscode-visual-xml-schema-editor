@@ -28,6 +28,40 @@ describe("DiagramSvgRenderer", () => {
     document.body.removeChild(svg);
   });
 
+  /**
+   * Adds a root item to the diagram, renders the diagram and returns the group of the item.
+   *
+   * @param id - The ID of the item
+   * @param name - The name of the item
+   * @param itemType - The kind of the item
+   * @param properties - Further properties of the item; the element box defaults to 100 × 50 at (10, 10)
+   * @returns The group of the item, or `null` if it was not rendered
+   */
+  function renderRootItem(id: string, name: string, itemType: DiagramItemType, properties: Partial<DiagramItem> = {}): Element | null {
+    const item = new DiagramItem(id, name, itemType, diagram);
+    item.elementBox = { x: 10, y: 10, width: 100, height: 50 };
+    Object.assign(item, properties);
+    diagram.addRootElement(item);
+    renderer.render(diagram);
+    return svg.querySelector(`[data-item-id="${id}"]`);
+  }
+
+  /**
+   * Adds a root item `parent` with a child `child` to the diagram and renders the diagram.
+   *
+   * @param properties - Further properties of the parent
+   */
+  function renderParentWithChild(properties: Partial<DiagramItem>): void {
+    const parent = new DiagramItem("parent", "Parent", DiagramItemType.element, diagram);
+    const child = new DiagramItem("child", "Child", DiagramItemType.element, diagram);
+    parent.elementBox = { x: 0, y: 0, width: 100, height: 50 };
+    child.elementBox = { x: 150, y: 0, width: 100, height: 50 };
+    parent.addChild(child);
+    Object.assign(parent, properties);
+    diagram.addRootElement(parent);
+    renderer.render(diagram);
+  }
+
   describe("constructor", () => {
     test("should create renderer with SVG element", () => {
       expect(renderer).toBeDefined();
@@ -91,201 +125,64 @@ describe("DiagramSvgRenderer", () => {
   });
 
   describe("renderItem", () => {
-    test("should render element item", () => {
-      const item = new DiagramItem("elem", "Element", DiagramItemType.element, diagram);
-      item.elementBox = { x: 10, y: 10, width: 100, height: 50 };
-      diagram.addRootElement(item);
+    test.each([
+      ["element", DiagramItemType.element, "rect"],
+      ["group", DiagramItemType.group, "polygon"],
+      ["type", DiagramItemType.type, "polygon"],
+    ])("should render a %s item with its shape", (name, itemType, shape) => {
+      const itemElement = renderRootItem(name, name, itemType);
 
-      renderer.render(diagram);
-
-      const itemElement = svg.querySelector('[data-item-id="elem"]');
-      expect(itemElement).toBeTruthy();
       expect(itemElement?.classList.contains("diagram-item")).toBe(true);
+      expect(itemElement?.querySelector(shape)).toBeTruthy();
     });
 
     test("should render group item with tooltip", () => {
-      const item = new DiagramItem("grp", "Group", DiagramItemType.group, diagram);
-      item.elementBox = { x: 10, y: 10, width: 40, height: 20 };
-      diagram.addRootElement(item);
+      const itemElement = renderRootItem("grp", "Group", DiagramItemType.group, { elementBox: { x: 10, y: 10, width: 40, height: 20 } });
 
-      renderer.render(diagram);
-
-      const itemElement = svg.querySelector('[data-item-id="grp"]');
-      const title = itemElement?.querySelector("title");
-      expect(title).toBeTruthy();
-      expect(title?.textContent).toBe("Group");
+      expect(itemElement?.querySelector("title")?.textContent).toBe("Group");
     });
 
-    test("should render type item", () => {
-      const item = new DiagramItem("type", "Type", DiagramItemType.type, diagram);
-      item.elementBox = { x: 10, y: 10, width: 100, height: 50 };
-      diagram.addRootElement(item);
+    test.each([true, false])("should render children only when showChildElements is true (%s)", (showChildElements) => {
+      renderParentWithChild({ showChildElements });
 
-      renderer.render(diagram);
-
-      const itemElement = svg.querySelector('[data-item-id="type"]');
-      expect(itemElement).toBeTruthy();
-    });
-
-    test("should render children when showChildElements is true", () => {
-      const parent = new DiagramItem("parent", "Parent", DiagramItemType.element, diagram);
-      const child = new DiagramItem("child", "Child", DiagramItemType.element, diagram);
-      parent.elementBox = { x: 0, y: 0, width: 100, height: 50 };
-      child.elementBox = { x: 150, y: 0, width: 100, height: 50 };
-      parent.addChild(child);
-      parent.showChildElements = true;
-      diagram.addRootElement(parent);
-
-      renderer.render(diagram);
-
-      const parentElement = svg.querySelector('[data-item-id="parent"]');
-      const childElement = svg.querySelector('[data-item-id="child"]');
-      expect(parentElement).toBeTruthy();
-      expect(childElement).toBeTruthy();
-    });
-
-    test("should not render children when showChildElements is false", () => {
-      const parent = new DiagramItem("parent", "Parent", DiagramItemType.element, diagram);
-      const child = new DiagramItem("child", "Child", DiagramItemType.element, diagram);
-      parent.elementBox = { x: 0, y: 0, width: 100, height: 50 };
-      child.elementBox = { x: 150, y: 0, width: 100, height: 50 };
-      parent.addChild(child);
-      parent.showChildElements = false;
-      diagram.addRootElement(parent);
-
-      renderer.render(diagram);
-
-      const parentElement = svg.querySelector('[data-item-id="parent"]');
-      const childElement = svg.querySelector('[data-item-id="child"]');
-      expect(parentElement).toBeTruthy();
-      expect(childElement).toBeFalsy();
+      expect(svg.querySelector('[data-item-id="parent"]')).toBeTruthy();
+      expect(svg.querySelector('[data-item-id="child"]') !== null).toBe(showChildElements);
     });
 
     test("should render expand button when item has children", () => {
-      const parent = new DiagramItem("parent", "Parent", DiagramItemType.element, diagram);
-      const child = new DiagramItem("child", "Child", DiagramItemType.element, diagram);
-      parent.elementBox = { x: 0, y: 0, width: 100, height: 50 };
-      parent.childExpandButtonBox = { x: 110, y: 20, width: 12, height: 12 };
-      parent.addChild(child);
-      diagram.addRootElement(parent);
+      renderParentWithChild({ childExpandButtonBox: { x: 110, y: 20, width: 12, height: 12 } });
 
-      renderer.render(diagram);
-
-      const expandButton = svg.querySelector('[data-item-id="parent"] .expand-button');
-      expect(expandButton).toBeTruthy();
-    });
-  });
-
-  describe("item shapes", () => {
-    test("should render element with rectangle shape", () => {
-      const item = new DiagramItem("elem", "Element", DiagramItemType.element, diagram);
-      item.elementBox = { x: 10, y: 10, width: 100, height: 50 };
-      diagram.addRootElement(item);
-
-      renderer.render(diagram);
-
-      const rect = svg.querySelector('[data-item-id="elem"] rect');
-      expect(rect).toBeTruthy();
-    });
-
-    test("should render group with octagon shape", () => {
-      const item = new DiagramItem("grp", "Group", DiagramItemType.group, diagram);
-      item.elementBox = { x: 10, y: 10, width: 40, height: 20 };
-      diagram.addRootElement(item);
-
-      renderer.render(diagram);
-
-      const polygon = svg.querySelector('[data-item-id="grp"] polygon');
-      expect(polygon).toBeTruthy();
-    });
-
-    test("should render type with beveled rectangle", () => {
-      const item = new DiagramItem("type", "Type", DiagramItemType.type, diagram);
-      item.elementBox = { x: 10, y: 10, width: 100, height: 50 };
-      diagram.addRootElement(item);
-
-      renderer.render(diagram);
-
-      const polygon = svg.querySelector('[data-item-id="type"] polygon');
-      expect(polygon).toBeTruthy();
+      expect(svg.querySelector('[data-item-id="parent"] .expand-button')).toBeTruthy();
     });
   });
 
   describe("text rendering", () => {
-    test("should render item text", () => {
-      const item = new DiagramItem("elem", "TestElement", DiagramItemType.element, diagram);
-      item.elementBox = { x: 10, y: 10, width: 100, height: 50 };
-      diagram.addRootElement(item);
+    test.each([
+      ["item text", false, {}],
+      ["occurrence text when not default", false, { minOccurrence: 0, maxOccurrence: -1 }],
+      ["documentation when showDocumentation is true", true, { documentation: "Test documentation", documentationBox: { x: 10, y: 70, width: 200, height: 60 } }],
+    ])("should render %s", (_case, showDocumentation, properties) => {
+      diagram.showDocumentation = showDocumentation;
 
-      renderer.render(diagram);
+      const itemElement = renderRootItem("elem", "TestElement", DiagramItemType.element, properties);
 
-      const text = svg.querySelector('[data-item-id="elem"] text');
-      expect(text).toBeTruthy();
-    });
-
-    test("should render occurrence text when not default", () => {
-      const item = new DiagramItem("elem", "Element", DiagramItemType.element, diagram);
-      item.elementBox = { x: 10, y: 10, width: 100, height: 50 };
-      item.minOccurrence = 0;
-      item.maxOccurrence = -1; // unbounded
-      diagram.addRootElement(item);
-
-      renderer.render(diagram);
-
-      const texts = svg.querySelectorAll('[data-item-id="elem"] text');
-      expect(texts.length).toBeGreaterThan(0);
-    });
-
-    test("should render documentation when showDocumentation is true", () => {
-      diagram.showDocumentation = true;
-      const item = new DiagramItem("elem", "Element", DiagramItemType.element, diagram);
-      item.elementBox = { x: 10, y: 10, width: 100, height: 50 };
-      item.documentation = "Test documentation";
-      item.documentationBox = { x: 10, y: 70, width: 200, height: 60 };
-      diagram.addRootElement(item);
-
-      renderer.render(diagram);
-
-      const texts = svg.querySelectorAll('[data-item-id="elem"] text');
-      expect(texts.length).toBeGreaterThan(0);
+      expect(itemElement?.querySelectorAll("text").length).toBeGreaterThan(0);
     });
 
     test("should render text for top-level named groups", () => {
-      const item = new DiagramItem(
-        generateSchemaId({ nodeType: SchemaNodeType.Group, name: "PersonGroup" }),
-        "PersonGroup",
-        DiagramItemType.group,
-        diagram
-      );
-      item.elementBox = { x: 10, y: 10, width: 120, height: 40 };
-      diagram.addRootElement(item);
+      const id = generateSchemaId({ nodeType: SchemaNodeType.Group, name: "PersonGroup" });
 
-      renderer.render(diagram);
+      const itemElement = renderRootItem(id, "PersonGroup", DiagramItemType.group, { elementBox: { x: 10, y: 10, width: 120, height: 40 } });
 
-      const texts = svg.querySelectorAll(`[data-item-id="${item.id}"] text`);
-      expect(texts.length).toBeGreaterThan(0);
-      expect(texts[0].textContent).toContain("PersonGroup");
+      expect(itemElement?.querySelector("text")?.textContent).toContain("PersonGroup");
     });
 
     test("should not render text for compositor groups", () => {
-      const item = new DiagramItem(
-        generateSchemaId({
-          nodeType: SchemaNodeType.Group,
-          name: "sequence",
-          parentId: "/complexType:PersonType",
-          position: 0,
-        }),
-        "sequence",
-        DiagramItemType.group,
-        diagram
-      );
-      item.elementBox = { x: 10, y: 10, width: 40, height: 20 };
-      diagram.addRootElement(item);
+      const id = generateSchemaId({ nodeType: SchemaNodeType.Group, name: "sequence", parentId: "/complexType:PersonType", position: 0 });
 
-      renderer.render(diagram);
+      const itemElement = renderRootItem(id, "sequence", DiagramItemType.group, { elementBox: { x: 10, y: 10, width: 40, height: 20 } });
 
-      const texts = svg.querySelectorAll(`[data-item-id="${item.id}"] text`);
-      expect(texts.length).toBe(0);
+      expect(itemElement?.querySelectorAll("text")).toHaveLength(0);
     });
   });
 });

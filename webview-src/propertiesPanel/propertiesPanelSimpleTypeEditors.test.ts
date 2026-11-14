@@ -8,7 +8,7 @@ import type { SchemaCommand } from "../../shared/types";
 import { PropertiesPanel } from "./propertiesPanel";
 import type { DiagramItem } from "../diagram/DiagramItem";
 import { diagramItem } from "../__tests__/diagramTestHelpers";
-import { getInputByLabel, getSelectByLabel, getSelectsByLabel, hasLabel } from "../__tests__/propertiesPanelTestHelpers";
+import { getInputByLabel, getSelectByLabel, getSelectsByLabel, hasLabel, editInput } from "../__tests__/propertiesPanelTestHelpers";
 import { schemaWith } from "../../shared/__tests__/schemaTestHelpers";
 
 /** Named and anonymous list, union and restriction types. */
@@ -55,9 +55,7 @@ describe("PropertiesPanel: the editors of list and union simple types", () => {
   test("edits the item type of a list", () => {
     display("/simpleType:Tokens");
 
-    const input = getInputByLabel(container, "Item Type");
-    input.value = "xs:string";
-    input.dispatchEvent(new Event("blur"));
+    editInput(container, "Item Type", "xs:string");
 
     expect(dispatch).toHaveBeenCalledWith({
       type: "modifySimpleType",
@@ -146,9 +144,7 @@ describe("PropertiesPanel: the editors of list and union simple types", () => {
   test("edits the anonymous list type of an element", () => {
     display("/element:tags");
 
-    const input = getInputByLabel(container, "Item Type");
-    input.value = "xs:string";
-    input.dispatchEvent(new Event("blur"));
+    editInput(container, "Item Type", "xs:string");
 
     expect(dispatch).toHaveBeenCalledWith({
       type: "modifySimpleType",

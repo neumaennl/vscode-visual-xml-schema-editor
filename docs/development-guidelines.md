@@ -4,8 +4,8 @@ title: Development guidelines
 description: Rules for everyone who changes the extension - code size, code quality and ESLint, TypeScript and naming, VS Code and Node versions, TSDoc, tests, documentation and the knowledge bundle, issues, what to check before committing, and commits.
 tags: [guidelines, conventions, code-quality, typescript, documentation, workflow]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-11T19:16:50Z }
-verified: { by: human:neumaennl, at: 2026-11-11T19:19:10Z }
+generated: { by: human:neumaennl, at: 2026-11-14T18:31:31Z }
+verified: { by: human:neumaennl, at: 2026-11-14T18:43:31Z }
 sources:
   - id: eslint
     resource: ../eslint.config.mjs
@@ -41,6 +41,7 @@ ESLint checks the limits for tests (`max-lines` and the local rule `tests/max-li
 # Code quality
 
 - Avoid duplicated code. Move it into a shared function, class or module.
+- A conditional expression (`a ? b : c`) spans at most three lines. Write a longer one, for example one with array or object literals in its branches or a nested one, as `if`/`else`. The local ESLint rule `style/max-ternary-lines` checks this.[^eslint]
 - `npm run lint` must report no errors, and as few warnings as possible. `npm run lint:fix` fixes what it can. The rules are described in [Build and packaging](build-and-packaging.md#lint).[^eslint]
 - Disable an ESLint rule only as a last resort, with an `eslint-disable-next-line` comment that gives the reason.
 - Have the changes reviewed by Copilot code review and handle its comments. If you do not follow a comment, give the reason.

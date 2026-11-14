@@ -2,9 +2,8 @@
  * Command-building helpers for simpleType editing in the properties panel.
  */
 
-import { RestrictionFacets } from "../../shared/commands/schemaTypes";
 import { SchemaCommand } from "../../shared/types";
-import { DiagramItem } from "../diagram";
+import { DiagramItem, parseDerivationBaseType, toRestrictionFacets } from "../diagram";
 import { normalizeTypeReferenceForCurrentSchema, resolveSimpleTypeId } from "./propertiesPanelCommands";
 
 /**
@@ -14,16 +13,9 @@ import { normalizeTypeReferenceForCurrentSchema, resolveSimpleTypeId } from "./p
  * @returns The extracted base type or undefined when none can be inferred
  */
 export function extractBaseType(typeText: string): string | undefined {
-  if (!typeText) {
-    return undefined;
-  }
-  const restricted = typeText.match(/\(restricts ([^)]+)\)/);
-  if (restricted?.[1]) {
-    return restricted[1].trim();
-  }
-  const extended = typeText.match(/\(extends ([^)]+)\)/);
-  if (extended?.[1]) {
-    return extended[1].trim();
+  const baseType = parseDerivationBaseType(typeText);
+  if (baseType) {
+    return baseType;
   }
   if (typeText.startsWith("xs:")) {
     return typeText.trim();
@@ -125,11 +117,10 @@ export function createSimpleTypeKindCommand(
       };
     }
     case "union": {
-      const memberTypes = node.simpleTypeUnionMemberTypes?.length
-        ? node.simpleTypeUnionMemberTypes
-        : inferredBaseType
-          ? [inferredBaseType]
-          : undefined;
+      let memberTypes = node.simpleTypeUnionMemberTypes;
+      if (!memberTypes?.length) {
+        memberTypes = inferredBaseType ? [inferredBaseType] : undefined;
+      }
       if (!memberTypes?.length) {
         return null;
       }
@@ -145,26 +136,7 @@ export function createSimpleTypeKindCommand(
       if (!inferredBaseType && !node.restrictions) {
         return null;
       }
-      const restrictions: RestrictionFacets | undefined = node.restrictions
-        ? {
-            enumeration: node.restrictions.enumeration,
-            pattern: node.restrictions.pattern,
-            length: node.restrictions.length,
-            minLength: node.restrictions.minLength,
-            maxLength: node.restrictions.maxLength,
-            minInclusive: node.restrictions.minInclusive,
-            maxInclusive: node.restrictions.maxInclusive,
-            minExclusive: node.restrictions.minExclusive,
-            maxExclusive: node.restrictions.maxExclusive,
-            totalDigits: node.restrictions.totalDigits,
-            fractionDigits: node.restrictions.fractionDigits,
-            whiteSpace: node.restrictions.whiteSpace as
-              | "preserve"
-              | "replace"
-              | "collapse"
-              | undefined,
-          }
-        : undefined;
+      const restrictions = toRestrictionFacets(node.restrictions);
       return {
         type: "modifySimpleType",
         payload: {

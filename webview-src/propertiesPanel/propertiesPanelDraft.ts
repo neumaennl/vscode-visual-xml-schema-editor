@@ -16,20 +16,10 @@ export type RestrictionSnapshot = NonNullable<DiagramItem["restrictions"]>;
  * @returns True when at least one editable facet is present
  */
 export function hasEditableFacetValues(restrictions: RestrictionSnapshot): boolean {
-  return (
-    !!restrictions.enumeration?.length ||
-    !!restrictions.pattern?.length ||
-    restrictions.length !== undefined ||
-    restrictions.minLength !== undefined ||
-    restrictions.maxLength !== undefined ||
-    restrictions.minInclusive !== undefined ||
-    restrictions.maxInclusive !== undefined ||
-    restrictions.minExclusive !== undefined ||
-    restrictions.maxExclusive !== undefined ||
-    restrictions.totalDigits !== undefined ||
-    restrictions.fractionDigits !== undefined ||
-    restrictions.whiteSpace !== undefined
-  );
+  return (Object.keys(restrictions) as Array<keyof RestrictionSnapshot>).some((key) => {
+    const value = restrictions[key];
+    return Array.isArray(value) ? value.length > 0 : value !== undefined;
+  });
 }
 
 /**
@@ -41,58 +31,30 @@ export function hasEditableFacetValues(restrictions: RestrictionSnapshot): boole
  * @returns A cloned draft node instance
  */
 export function createDraftNode(node: DiagramItem): DiagramItem {
-  const draft = new DiagramItem(node.id, node.name, node.itemType, node.diagram);
-  draft.type = node.type;
-  draft.groupType = node.groupType;
-  draft.parent = node.parent;
-  draft.childElements = [...node.childElements];
-  draft.inheritFrom = node.inheritFrom;
-  draft.minOccurrence = node.minOccurrence;
-  draft.maxOccurrence = node.maxOccurrence;
-  draft.showChildElements = node.showChildElements;
-  draft.hasChildElements = node.hasChildElements;
-  draft.isReference = node.isReference;
-  draft.isSimpleContent = node.isSimpleContent;
-  draft.isAbstract = node.isAbstract;
-  draft.isNillable = node.isNillable;
-  draft.isMixed = node.isMixed;
-  draft.hasAnonymousComplexType = node.hasAnonymousComplexType;
-  draft.complexDerivationKind = node.complexDerivationKind;
-  draft.simpleTypeDerivationKind = node.simpleTypeDerivationKind;
-  draft.simpleTypeListItemType = node.simpleTypeListItemType;
-  draft.simpleTypeUnionMemberTypes = node.simpleTypeUnionMemberTypes
-    ? [...node.simpleTypeUnionMemberTypes]
-    : undefined;
-  draft.location = { ...node.location };
-  draft.size = { ...node.size };
-  draft.elementBox = { ...node.elementBox };
-  draft.documentationBox = { ...node.documentationBox };
-  draft.childExpandButtonBox = { ...node.childExpandButtonBox };
-  draft.boundingBox = { ...node.boundingBox };
-  draft.documentation = node.documentation;
-  draft.documentationAnnotations = node.documentationAnnotations.map((annotation) => ({
-    id: annotation.id,
-    documentationEntries: annotation.documentationEntries.map((entry) => ({ ...entry })),
-  }));
-  draft.namespace = node.namespace;
-  draft.attributes = node.attributes.map((attribute) => ({ ...attribute }));
-  draft.elementDefault = node.elementDefault;
-  draft.elementFixed = node.elementFixed;
-  draft.restrictions = node.restrictions
-    ? {
-        enumeration: node.restrictions.enumeration ? [...node.restrictions.enumeration] : undefined,
-        pattern: node.restrictions.pattern ? [...node.restrictions.pattern] : undefined,
-        length: node.restrictions.length,
-        minLength: node.restrictions.minLength,
-        maxLength: node.restrictions.maxLength,
-        minInclusive: node.restrictions.minInclusive,
-        maxInclusive: node.restrictions.maxInclusive,
-        minExclusive: node.restrictions.minExclusive,
-        maxExclusive: node.restrictions.maxExclusive,
-        totalDigits: node.restrictions.totalDigits,
-        fractionDigits: node.restrictions.fractionDigits,
-        whiteSpace: node.restrictions.whiteSpace,
-      }
-    : undefined;
-  return draft;
+  // Copy every field, then copy the objects and arrays that the panel changes
+  const draft = Object.assign(new DiagramItem(node.id, node.name, node.itemType, node.diagram), node);
+  let restrictions: RestrictionSnapshot | undefined;
+  if (node.restrictions) {
+    restrictions = {
+      ...node.restrictions,
+      enumeration: node.restrictions.enumeration ? [...node.restrictions.enumeration] : undefined,
+      pattern: node.restrictions.pattern ? [...node.restrictions.pattern] : undefined,
+    };
+  }
+  return Object.assign(draft, {
+    childElements: [...node.childElements],
+    simpleTypeUnionMemberTypes: node.simpleTypeUnionMemberTypes ? [...node.simpleTypeUnionMemberTypes] : undefined,
+    location: { ...node.location },
+    size: { ...node.size },
+    elementBox: { ...node.elementBox },
+    documentationBox: { ...node.documentationBox },
+    childExpandButtonBox: { ...node.childExpandButtonBox },
+    boundingBox: { ...node.boundingBox },
+    documentationAnnotations: node.documentationAnnotations.map((annotation) => ({
+      id: annotation.id,
+      documentationEntries: annotation.documentationEntries.map((entry) => ({ ...entry })),
+    })),
+    attributes: node.attributes.map((attribute) => ({ ...attribute })),
+    restrictions,
+  });
 }

@@ -7,6 +7,7 @@ import { Diagram } from "./Diagram";
 import { DiagramItem } from "./DiagramItem";
 import { DiagramItemType } from "./DiagramTypes";
 import {
+  annotationType,
   topLevelElement,
   topLevelComplexType,
   topLevelSimpleType,
@@ -21,6 +22,31 @@ import {
 } from "./DiagramBuilderHelpers";
 
 /**
+ * Creates the diagram item of a named top-level component, with its ID, name and documentation.
+ *
+ * @param component - The component
+ * @param nodeType - The node type of the component in its ID
+ * @param itemType - The type of the diagram item
+ * @param diagram - The diagram instance to associate with the item
+ * @returns The created diagram item, or null if the component has no name
+ */
+export function createTopLevelNode(
+  component: { name?: string; annotation?: annotationType },
+  nodeType: SchemaNodeType,
+  itemType: DiagramItemType,
+  diagram: Diagram
+): DiagramItem | null {
+  if (!component.name) {
+    return null;
+  }
+  const name = component.name.toString();
+  const item = new DiagramItem(generateSchemaId({ nodeType, name }), name, itemType, diagram);
+  item.documentationAnnotations = extractDocumentationAnnotations(item.id, component.annotation);
+  item.documentation = extractDocumentation(component.annotation) ?? "";
+  return item;
+}
+
+/**
  * Creates a diagram item node from an element definition in the schema.
  * Extracts element properties such as name, type, namespace, and occurrence constraints.
  * 
@@ -32,28 +58,15 @@ export function createElementNode(
   element: topLevelElement,
   diagram: Diagram
 ): DiagramItem | null {
-  if (!element.name) {
+  const item = createTopLevelNode(element, SchemaNodeType.Element, DiagramItemType.element, diagram);
+  if (!item) {
     return null;
   }
-
-  const item = new DiagramItem(
-    generateSchemaId({
-      nodeType: SchemaNodeType.Element,
-      name: element.name.toString(),
-    }),
-    element.name.toString(),
-    DiagramItemType.element,
-    diagram
-  );
 
   // Extract type information
   if (element.type_) {
     item.type = element.type_.toString();
   }
-
-  // Extract documentation
-  item.documentationAnnotations = extractDocumentationAnnotations(item.id, element.annotation);
-  item.documentation = extractDocumentation(element.annotation) ?? "";
 
   // Extract element-level boolean and value constraints
   item.isNillable = element.nillable === true;
@@ -79,29 +92,12 @@ export function createComplexTypeNode(
   complexType: topLevelComplexType,
   diagram: Diagram
 ): DiagramItem | null {
-  if (!complexType.name) {
-    return null;
-  }
-
-  const item = new DiagramItem(
-    generateSchemaId({
-      nodeType: SchemaNodeType.ComplexType,
-      name: complexType.name.toString(),
-    }),
-    complexType.name.toString(),
-    DiagramItemType.type,
-    diagram
-  );
-
-  item.type = "complexType";
-  item.isAbstract = complexType.abstract === true;
-  item.isMixed = complexType.mixed === true;
-
-  // Extract documentation
-  item.documentationAnnotations = extractDocumentationAnnotations(item.id, complexType.annotation);
-  item.documentation = extractDocumentation(complexType.annotation) ?? "";
-
-  return item;
+  const item = createTopLevelNode(complexType, SchemaNodeType.ComplexType, DiagramItemType.type, diagram);
+  return item && Object.assign(item, {
+    type: "complexType",
+    isAbstract: complexType.abstract === true,
+    isMixed: complexType.mixed === true,
+  });
 }
 
 /**
@@ -116,26 +112,6 @@ export function createSimpleTypeNode(
   simpleType: topLevelSimpleType,
   diagram: Diagram
 ): DiagramItem | null {
-  if (!simpleType.name) {
-    return null;
-  }
-
-  const item = new DiagramItem(
-    generateSchemaId({
-      nodeType: SchemaNodeType.SimpleType,
-      name: simpleType.name.toString(),
-    }),
-    simpleType.name.toString(),
-    DiagramItemType.type,
-    diagram
-  );
-
-  item.type = "simpleType";
-  item.isSimpleContent = true;
-
-  // Extract documentation
-  item.documentationAnnotations = extractDocumentationAnnotations(item.id, simpleType.annotation);
-  item.documentation = extractDocumentation(simpleType.annotation) ?? "";
-
-  return item;
+  const item = createTopLevelNode(simpleType, SchemaNodeType.SimpleType, DiagramItemType.type, diagram);
+  return item && Object.assign(item, { type: "simpleType", isSimpleContent: true });
 }

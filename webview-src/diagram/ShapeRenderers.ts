@@ -51,27 +51,8 @@ export function renderGroupShape(
   item: DiagramItem,
   group: SVGElement
 ): void {
-  const bevel = Math.round(rect.height * 0.3);
-  const points: Point[] = [
-    { x: rect.x + bevel, y: rect.y },
-    { x: rect.x + rect.width - bevel, y: rect.y },
-    { x: rect.x + rect.width, y: rect.y + bevel },
-    { x: rect.x + rect.width, y: rect.y + rect.height - bevel },
-    { x: rect.x + rect.width - bevel, y: rect.y + rect.height },
-    { x: rect.x + bevel, y: rect.y + rect.height },
-    { x: rect.x, y: rect.y + rect.height - bevel },
-    { x: rect.x, y: rect.y + bevel },
-  ];
-
-  if (item.maxOccurrence !== 1) {
-    // Multiple occurrences - draw shadow
-    const shadowPoints = points.map((p) => ({
-      x: p.x + SHADOW_OFFSET,
-      y: p.y + SHADOW_OFFSET,
-    }));
-    svgPolygon(group, shadowPoints, fill, stroke);
-  }
-  svgPolygon(group, points, fill, stroke);
+  const points = beveledRectangle(rect, Math.round(rect.height * 0.3), true);
+  renderPolygonWithShadow(group, points, fill, stroke, item);
 
   // Draw group type indicator only for compositor groups (sequence/choice/all)
   if (isCompositorGroup(item)) {
@@ -95,26 +76,8 @@ export function renderTypeShape(
   group: SVGElement
 ): void {
   const bevel = Math.round(rect.height * 0.2);
-  const points: Point[] = [
-    { x: rect.x + bevel, y: rect.y },
-    { x: rect.x + rect.width, y: rect.y },
-    { x: rect.x + rect.width, y: rect.y + rect.height },
-    { x: rect.x + bevel, y: rect.y + rect.height },
-    { x: rect.x, y: rect.y + rect.height - bevel },
-    { x: rect.x, y: rect.y + bevel },
-  ];
-
-  if (item.maxOccurrence !== 1) {
-    // Multiple occurrences - draw shadow
-    const shadowPoints = points.map((p) => ({
-      x: p.x + SHADOW_OFFSET,
-      y: p.y + SHADOW_OFFSET,
-    }));
-    svgPolygon(group, shadowPoints, fill, stroke);
-  }
-
-  // Draw main shape
-  svgPolygon(group, points, fill, stroke);
+  const points = beveledRectangle(rect, bevel, false);
+  renderPolygonWithShadow(group, points, fill, stroke, item);
 
   // For simple types, fill the beveled area with the stroke color
   if (item.isSimpleContent) {
@@ -173,82 +136,135 @@ export function renderGroupTypeIndicator(
       break;
     }
 
-    case DiagramItemGroupType.Choice: {
-      // Choice indicator with lines and three dots
-      const yMiddle = centerY;
-      const yUp = yMiddle - 4;
-      const yDown = yMiddle + 4;
-      const xMiddle = centerX;
-      const xLeft2 = xMiddle - 4;
-      const xLeft1 = xLeft2 - 4;
-      const xLeft0 = xLeft1 - 4;
-      const xRight0 = xMiddle + 4;
-      const xRight1 = xRight0 + 4;
-      const xRight2 = xRight1 + 4;
-
-      // Left side lines
-      svgLine(group, foregroundPen, xLeft0, yMiddle, xLeft1, yMiddle);
-      svgLine(group, foregroundPen, xLeft1, yMiddle, xLeft2, yUp);
-
-      // Right side lines
-      svgLine(group, foregroundPen, xRight0, yUp, xRight1, yUp);
-      svgLine(group, foregroundPen, xRight0, yMiddle, xRight2, yMiddle);
-      svgLine(group, foregroundPen, xRight0, yDown, xRight1, yDown);
-      svgLine(group, foregroundPen, xRight1, yUp, xRight1, yDown);
-
-      // Three dots
-      const choiceDotSize = 2;
-      svgCircle(group, xMiddle, yUp, choiceDotSize, foregroundBrush);
-      svgCircle(group, xMiddle, yMiddle, choiceDotSize, foregroundBrush);
-      svgCircle(group, xMiddle, yDown, choiceDotSize, foregroundBrush);
+    case DiagramItemGroupType.Choice:
+      // Choice indicator: a bent line on the left, the dots and a fork on the right
+      renderForkIndicator(group, foregroundPen, foregroundBrush, centerX, centerY, "choice");
       break;
-    }
 
-    case DiagramItemGroupType.All: {
-      // All indicator with lines and three dots (similar to choice but with different line pattern)
-      const allYMiddle = centerY;
-      const allYUp = allYMiddle - 4;
-      const allYDown = allYMiddle + 4;
-      const allXMiddle = centerX;
-      const allXLeft2 = allXMiddle - 4;
-      const allXLeft1 = allXLeft2 - 4;
-      const allXLeft0 = allXLeft1 - 4;
-      const allXRight0 = allXMiddle + 4;
-      const allXRight1 = allXRight0 + 4;
-      const allXRight2 = allXRight1 + 4;
-
-      // Left side lines
-      svgLine(group, foregroundPen, allXLeft2, allYUp, allXLeft1, allYUp);
-      svgLine(
-        group,
-        foregroundPen,
-        allXLeft2,
-        allYMiddle,
-        allXLeft0,
-        allYMiddle
-      );
-      svgLine(group, foregroundPen, allXLeft2, allYDown, allXLeft1, allYDown);
-      svgLine(group, foregroundPen, allXLeft1, allYUp, allXLeft1, allYDown);
-
-      // Right side lines
-      svgLine(group, foregroundPen, allXRight0, allYUp, allXRight1, allYUp);
-      svgLine(
-        group,
-        foregroundPen,
-        allXRight0,
-        allYMiddle,
-        allXRight2,
-        allYMiddle
-      );
-      svgLine(group, foregroundPen, allXRight0, allYDown, allXRight1, allYDown);
-      svgLine(group, foregroundPen, allXRight1, allYUp, allXRight1, allYDown);
-
-      // Three dots
-      const allDotSize = 2;
-      svgCircle(group, allXMiddle, allYUp, allDotSize, foregroundBrush);
-      svgCircle(group, allXMiddle, allYMiddle, allDotSize, foregroundBrush);
-      svgCircle(group, allXMiddle, allYDown, allDotSize, foregroundBrush);
+    case DiagramItemGroupType.All:
+      // All indicator: the dots between two forks
+      renderForkIndicator(group, foregroundPen, foregroundBrush, centerX, centerY, "all");
       break;
-    }
   }
+}
+
+/**
+ * Draws a polygon, with a shadow behind it if the item can occur more than once.
+ *
+ * @param group - Parent SVG group element
+ * @param points - The corners of the polygon
+ * @param fill - Fill style string
+ * @param stroke - Stroke style string
+ * @param item - Diagram item being rendered
+ */
+function renderPolygonWithShadow(group: SVGElement, points: Point[], fill: string, stroke: string, item: DiagramItem): void {
+  if (item.maxOccurrence !== 1) {
+    const shadowPoints = points.map((p) => ({ x: p.x + SHADOW_OFFSET, y: p.y + SHADOW_OFFSET }));
+    svgPolygon(group, shadowPoints, fill, stroke);
+  }
+  svgPolygon(group, points, fill, stroke);
+}
+
+/**
+ * Draws the indicator of a choice or an all: three dots in a column, with a three-pronged fork on the
+ * right whose prongs point to the dots. An all has a mirrored fork on the left as well; a choice has a
+ * line on the left that bends up to the upper dot.
+ *
+ * @param group - Parent SVG group element
+ * @param pen - The stroke of the lines
+ * @param brush - The fill of the dots
+ * @param centerX - The x coordinate of the center of the indicator
+ * @param centerY - The y coordinate of the center of the indicator
+ * @param kind - Whether a choice or an all is drawn
+ */
+function renderForkIndicator(
+  group: SVGElement,
+  pen: string,
+  brush: string,
+  centerX: number,
+  centerY: number,
+  kind: "choice" | "all"
+): void {
+  const yUp = centerY - 4;
+  const yDown = centerY + 4;
+
+  if (kind === "choice") {
+    svgLine(group, pen, centerX - 12, centerY, centerX - 8, centerY);
+    svgLine(group, pen, centerX - 8, centerY, centerX - 4, yUp);
+  } else {
+    renderFork(group, pen, centerX - 4, centerX - 8, centerX - 12, yUp, centerY, yDown);
+  }
+  renderFork(group, pen, centerX + 4, centerX + 8, centerX + 12, yUp, centerY, yDown);
+
+  const dotSize = 2;
+  for (const y of [yUp, centerY, yDown]) {
+    svgCircle(group, centerX, y, dotSize, brush);
+  }
+}
+
+/**
+ * Draws a three-pronged fork whose prongs point to the dots of an indicator: a stem that leads away from
+ * the dots, a crossbar, and three prongs from the crossbar towards the dots. The middle prong and the
+ * stem are one line. The left fork of an all mirrors the right one.
+ *
+ * @param group - Parent SVG group element
+ * @param pen - The stroke of the lines
+ * @param xProngTips - The x coordinate where the prongs end, next to the dots
+ * @param xCrossbar - The x coordinate of the crossbar that joins the prongs
+ * @param xStemEnd - The x coordinate where the stem ends, away from the dots
+ * @param yUp - The y coordinate of the upper prong
+ * @param yMiddle - The y coordinate of the middle prong and the stem
+ * @param yDown - The y coordinate of the lower prong
+ */
+function renderFork(
+  group: SVGElement,
+  pen: string,
+  xProngTips: number,
+  xCrossbar: number,
+  xStemEnd: number,
+  yUp: number,
+  yMiddle: number,
+  yDown: number
+): void {
+  svgLine(group, pen, xProngTips, yUp, xCrossbar, yUp);
+  svgLine(group, pen, xProngTips, yMiddle, xStemEnd, yMiddle);
+  svgLine(group, pen, xProngTips, yDown, xCrossbar, yDown);
+  svgLine(group, pen, xCrossbar, yUp, xCrossbar, yDown);
+}
+
+/**
+ * Returns the corners of a rectangle whose left corners, and optionally its right corners, are beveled,
+ * clockwise from the top left.
+ *
+ * @param rect - The rectangle
+ * @param bevel - The size of the bevels
+ * @param bevelRight - Whether the right corners are beveled too
+ * @returns The corners
+ */
+function beveledRectangle(rect: Rectangle, bevel: number, bevelRight: boolean): Point[] {
+  const left = rect.x;
+  const top = rect.y;
+  const right = rect.x + rect.width;
+  const bottom = rect.y + rect.height;
+  let rightSide: Point[];
+  if (bevelRight) {
+    rightSide = [
+      { x: right - bevel, y: top },
+      { x: right, y: top + bevel },
+      { x: right, y: bottom - bevel },
+      { x: right - bevel, y: bottom },
+    ];
+  } else {
+    rightSide = [
+      { x: right, y: top },
+      { x: right, y: bottom },
+    ];
+  }
+  return [
+    { x: left + bevel, y: top },
+    ...rightSide,
+    { x: left + bevel, y: bottom },
+    { x: left, y: bottom - bevel },
+    { x: left, y: top + bevel },
+  ];
 }

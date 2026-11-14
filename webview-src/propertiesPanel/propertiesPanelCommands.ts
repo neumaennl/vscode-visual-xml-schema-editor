@@ -236,24 +236,38 @@ export function createDeleteNodeCommand(node: DiagramItem): SchemaCommand | null
 }
 
 /**
+ * Returns the commit callback of a type field: it calls `apply` only when the new type differs from the
+ * current one, both normalized for the current schema (see {@link normalizeTypeReferenceForCurrentSchema}).
+ *
+ * @param node - Diagram item whose type field this is
+ * @param current - The current type
+ * @param apply - Applies the change; gets the normalized and the entered new type
+ * @param allowEmpty - Whether an empty type is applied too, which removes the type
+ * @returns The commit callback
+ */
+export function onTypeChange(
+  node: DiagramItem,
+  current: string,
+  apply: (normalizedNext: string, next: string) => void,
+  allowEmpty = false
+): (next: string) => void {
+  return (next) => {
+    const normalizedNext = normalizeTypeReferenceForCurrentSchema(node, next);
+    if ((!normalizedNext && !allowEmpty) || normalizedNext === normalizeTypeReferenceForCurrentSchema(node, current)) {
+      return;
+    }
+    apply(normalizedNext, next);
+  };
+}
+
+/**
  * Resolves the schema ID of the simple type represented by the given node.
  *
  * @param node - Diagram item to inspect
  * @returns The simple-type schema ID or null when no simple type applies
  */
 export function resolveSimpleTypeId(node: DiagramItem): string | null {
-  const nodeType = getNodeType(node);
-  if (nodeType === SchemaNodeType.SimpleType || nodeType === SchemaNodeType.AnonymousSimpleType) {
-    return node.id;
-  }
-  if (nodeType === SchemaNodeType.Element && node.isSimpleContent) {
-    return generateSchemaId({
-      nodeType: SchemaNodeType.AnonymousSimpleType,
-      parentId: node.id,
-      position: 0,
-    });
-  }
-  return null;
+  return resolveTypeId(node, SchemaNodeType.SimpleType, SchemaNodeType.AnonymousSimpleType, node.isSimpleContent);
 }
 
 /**
@@ -263,16 +277,31 @@ export function resolveSimpleTypeId(node: DiagramItem): string | null {
  * @returns The complex-type schema ID or null when no complex type applies
  */
 export function resolveComplexTypeId(node: DiagramItem): string | null {
+  return resolveTypeId(node, SchemaNodeType.ComplexType, SchemaNodeType.AnonymousComplexType, node.hasAnonymousComplexType);
+}
+
+/**
+ * Resolves the schema ID of the type that a node represents: the node itself if it is a type of the
+ * kind, or the anonymous type of an element that has one.
+ *
+ * @param node - Diagram item to inspect
+ * @param namedType - The node type of a named type of the kind
+ * @param anonymousType - The node type of an anonymous type of the kind
+ * @param hasInlineType - Whether the node, if it is an element, has an anonymous type of the kind
+ * @returns The type's schema ID, or null when no type of the kind applies
+ */
+function resolveTypeId(
+  node: DiagramItem,
+  namedType: SchemaNodeType,
+  anonymousType: SchemaNodeType,
+  hasInlineType: boolean
+): string | null {
   const nodeType = getNodeType(node);
-  if (nodeType === SchemaNodeType.ComplexType || nodeType === SchemaNodeType.AnonymousComplexType) {
+  if (nodeType === namedType || nodeType === anonymousType) {
     return node.id;
   }
-  if (nodeType === SchemaNodeType.Element && node.hasAnonymousComplexType) {
-    return generateSchemaId({
-      nodeType: SchemaNodeType.AnonymousComplexType,
-      parentId: node.id,
-      position: 0,
-    });
+  if (nodeType === SchemaNodeType.Element && hasInlineType) {
+    return generateSchemaId({ nodeType: anonymousType, parentId: node.id, position: 0 });
   }
   return null;
 }

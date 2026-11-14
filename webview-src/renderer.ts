@@ -111,19 +111,11 @@ export class DiagramRenderer {
       // Restore expand state
       this.restoreExpandState(expandState);
 
-      // Calculate layout
       this.layout.layout(this.currentDiagram);
-
-      // Render to SVG
       this.svgRenderer.render(this.currentDiagram);
-
-      // Apply view transformations
       this.updateView(this.viewState);
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      this.showError(`Schema rendering error: ${message}`);
-      console.error("Schema rendering error:", error);
-      throw error;
+      this.reportError("Schema rendering error", error);
     }
   }
 
@@ -135,20 +127,26 @@ export class DiagramRenderer {
     if (!this.currentDiagram) return;
 
     try {
-      // Recalculate layout
       this.layout.layout(this.currentDiagram);
-
-      // Re-render to SVG
       this.svgRenderer.render(this.currentDiagram);
-
-      // Apply view transformations
       this.updateView(this.viewState);
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      this.showError(`Diagram refresh error: ${message}`);
-      console.error("Diagram refresh error:", error);
-      throw error;
+      this.reportError("Diagram refresh error", error);
     }
+  }
+
+  /**
+   * Shows an error in the canvas, logs it and throws it again.
+   *
+   * @param context - What failed, such as `Schema rendering error`
+   * @param error - The error
+   * @throws The error
+   */
+  private reportError(context: string, error: unknown): never {
+    const message = error instanceof Error ? error.message : String(error);
+    this.showError(`${context}: ${message}`);
+    console.error(`${context}:`, error);
+    throw error;
   }
 
   /**

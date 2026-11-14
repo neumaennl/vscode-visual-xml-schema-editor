@@ -4,6 +4,7 @@
  */
 
 import { DiagramItem } from "./DiagramItem";
+import type { RestrictionFacets } from "../../shared/types";
 import type {
   DiagramAnnotationEntry,
   DiagramDocumentationEntry,
@@ -144,4 +145,34 @@ export function extractAttributes(item: DiagramItem, source: ElementWithAttribut
       fixedValue: attr.fixed,
     });
   }
+}
+
+/**
+ * Reads the base type from the type label of a diagram item, such as `simpleType (restricts xs:string)`
+ * or `complexType with complexContent (extends Base)`.
+ *
+ * @param typeText - The type label
+ * @returns The base type, or undefined if the label names none
+ */
+export function parseDerivationBaseType(typeText: string): string | undefined {
+  const match = /\((?:restricts|extends) ([^)]+)\)/.exec(typeText);
+  return match?.[1].trim();
+}
+
+/**
+ * Converts the facets of a diagram item to the form that the simple type commands take. The diagram
+ * reads the whiteSpace facet as a string; a value that the schema does not allow is left out.
+ *
+ * @param restrictions - The facets of the diagram item
+ * @returns The facets, or undefined if the item has none
+ */
+export function toRestrictionFacets(restrictions: DiagramItem["restrictions"]): RestrictionFacets | undefined {
+  if (!restrictions) {
+    return undefined;
+  }
+  const whiteSpace = restrictions.whiteSpace;
+  return {
+    ...restrictions,
+    whiteSpace: whiteSpace === "preserve" || whiteSpace === "replace" || whiteSpace === "collapse" ? whiteSpace : undefined,
+  };
 }

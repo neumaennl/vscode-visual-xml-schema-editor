@@ -67,19 +67,7 @@ export function processAnonymousComplexType(
     parent.isMixed = true;
   }
 
-  // Merge documentation from the anonymous type if parent has none
-  if (!parent.documentation) {
-    const anonymousComplexTypeId = generateSchemaId({
-      nodeType: SchemaNodeType.AnonymousComplexType,
-      parentId: parent.id,
-      position: 0,
-    });
-    parent.documentationAnnotations = extractDocumentationAnnotations(
-      anonymousComplexTypeId,
-      complexType.annotation
-    );
-    parent.documentation = extractDocumentation(complexType.annotation) ?? "";
-  }
+  mergeAnonymousTypeDocumentation(parent, SchemaNodeType.AnonymousComplexType, complexType.annotation);
 
   // Process the complex type structure directly on the parent
   processComplexType(parent, complexType);
@@ -99,37 +87,69 @@ export function processAnonymousSimpleType(
   // Mark the parent as having simple content
   parent.isSimpleContent = true;
 
-  // Merge documentation from the anonymous type if parent has none
-  if (!parent.documentation) {
-    const anonymousSimpleTypeId = generateSchemaId({
-      nodeType: SchemaNodeType.AnonymousSimpleType,
-      parentId: parent.id,
-      position: 0,
-    });
-    parent.documentationAnnotations = extractDocumentationAnnotations(
-      anonymousSimpleTypeId,
-      simpleType.annotation
-    );
-    parent.documentation = extractDocumentation(simpleType.annotation) ?? "";
-  }
+  mergeAnonymousTypeDocumentation(parent, SchemaNodeType.AnonymousSimpleType, simpleType.annotation);
 
   // Set type before processing restriction so += works correctly
   if (!parent.type) {
     parent.type = "<anonymous simpleType>";
   }
 
-  // Process restriction/list/union if present to extract derivation details
+  processSimpleTypeBody(parent, simpleType);
+}
+
+/**
+ * Processes the anonymous inline complexType or simpleType of an element, top-level or local.
+ *
+ * @param item - Diagram item of the element
+ * @param element - The element
+ */
+export function processAnonymousTypes(
+  item: DiagramItem,
+  element: { complexType?: ComplexTypeLike; simpleType?: SimpleTypeLike }
+): void {
+  if (element.complexType) {
+    processAnonymousComplexType(item, element.complexType);
+  }
+  if (element.simpleType) {
+    processAnonymousSimpleType(item, element.simpleType);
+  }
+}
+
+/**
+ * Processes the restriction, list or union of a simpleType to extract its derivation.
+ *
+ * @param item - Diagram item of the simpleType, or of the element that holds it inline
+ * @param simpleType - The simpleType
+ */
+export function processSimpleTypeBody(item: DiagramItem, simpleType: SimpleTypeLike): void {
   if (simpleType.restriction) {
-    processRestriction(parent, simpleType.restriction);
+    processRestriction(item, simpleType.restriction);
+  } else if (simpleType.list) {
+    processList(item, simpleType.list);
+  } else if (simpleType.union) {
+    processUnion(item, simpleType.union);
+  }
+}
+
+/**
+ * Gives an element the documentation of its anonymous type if it has none of its own. The annotations
+ * keep the ID of the anonymous type, so that editing them changes the type's annotation.
+ *
+ * @param parent - Diagram item of the element
+ * @param nodeType - The node type of the anonymous type
+ * @param annotation - The annotation of the anonymous type
+ */
+function mergeAnonymousTypeDocumentation(
+  parent: DiagramItem,
+  nodeType: SchemaNodeType.AnonymousComplexType | SchemaNodeType.AnonymousSimpleType,
+  annotation: Parameters<typeof extractDocumentation>[0]
+): void {
+  if (parent.documentation) {
     return;
   }
-  if (simpleType.list) {
-    processList(parent, simpleType.list);
-    return;
-  }
-  if (simpleType.union) {
-    processUnion(parent, simpleType.union);
-  }
+  const anonymousTypeId = generateSchemaId({ nodeType, parentId: parent.id, position: 0 });
+  parent.documentationAnnotations = extractDocumentationAnnotations(anonymousTypeId, annotation);
+  parent.documentation = extractDocumentation(annotation) ?? "";
 }
 
 /**
@@ -146,54 +166,60 @@ export function processComplexType(
   // Process attributes, which live in the extension or restriction of complex or simple content
   extractAttributes(parent, getAttributeContainer(complexType));
 
-  // Process complexContent
   if (complexType.complexContent) {
     parent.type += " with complexContent";
-
-    if (complexType.complexContent.extension) {
-      parent.complexDerivationKind = "extension";
-      processExtension(parent, complexType.complexContent.extension);
-    }
-
-    if (complexType.complexContent.restriction) {
-      parent.complexDerivationKind = "restriction";
-      processRestriction(parent, complexType.complexContent.restriction);
-    }
+    processDerivation(parent, complexType.complexContent);
   }
-
-  // Process simpleContent
   if (complexType.simpleContent) {
     parent.isSimpleContent = true;
     parent.type += " with simpleContent";
-
-    if (complexType.simpleContent.extension) {
-      parent.complexDerivationKind = "extension";
-      processExtension(parent, complexType.simpleContent.extension);
-    }
-
-    if (complexType.simpleContent.restriction) {
-      parent.complexDerivationKind = "restriction";
-      processRestriction(parent, complexType.simpleContent.restriction);
-    }
+    processDerivation(parent, complexType.simpleContent);
   }
+  processParticles(parent, complexType);
+}
 
-  // Process sequence
-  if (complexType.sequence) {
-    processSequence(parent, complexType.sequence);
+/**
+ * Processes the extension or restriction of the complexContent or simpleContent of a complex type.
+ *
+ * @param parent - Diagram item of the complex type
+ * @param content - The complexContent or simpleContent
+ */
+function processDerivation(
+  parent: DiagramItem,
+  content: { extension?: ContentTypeLike; restriction?: ContentTypeLike }
+): void {
+  if (content.extension) {
+    parent.complexDerivationKind = "extension";
+    processExtension(parent, content.extension);
   }
-
-  // Process choice
-  if (complexType.choice) {
-    processChoice(parent, complexType.choice);
+  if (content.restriction) {
+    parent.complexDerivationKind = "restriction";
+    processRestriction(parent, content.restriction);
   }
+}
 
-  // Process all
-  if (complexType.all) {
-    processAll(parent, complexType.all);
+/**
+ * Processes the particle of a complex type or of an extension: its sequence, choice, all or group
+ * reference.
+ *
+ * @param parent - Diagram item to add the children to
+ * @param holder - The complex type or extension
+ */
+function processParticles(
+  parent: DiagramItem,
+  holder: Pick<ContentTypeLike, "sequence" | "choice" | "all" | "group">
+): void {
+  if (holder.sequence) {
+    processSequence(parent, holder.sequence);
   }
-
-  if (complexType.group) {
-    processGroupRef(parent, complexType.group, 0);
+  if (holder.choice) {
+    processChoice(parent, holder.choice);
+  }
+  if (holder.all) {
+    processAll(parent, holder.all);
+  }
+  if (holder.group) {
+    processGroupRef(parent, holder.group, 0);
   }
 }
 
@@ -349,28 +375,14 @@ function processGroup(
 
     // Local elements inside groups can also carry inline anonymous types.
     // Process them so UI state (e.g. base-type editing) matches top-level elements.
-    const localElementLike = elem as localElement;
-    if (localElementLike.complexType) {
-      processAnonymousComplexType(item, localElementLike.complexType);
-    }
-    if (localElementLike.simpleType) {
-      processAnonymousSimpleType(item, localElementLike.simpleType);
-    }
+    processAnonymousTypes(item, elem);
 
     groupItem.addChild(item);
   });
 
-  ((groupDef as { group?: groupRef[] }).group ?? []).forEach((groupRefItem, groupRefPosition) => {
-    processGroupRef(groupItem, groupRefItem, groupRefPosition);
-  });
-
-  ((groupDef as { choice?: explicitGroup[] }).choice ?? []).forEach((choice, choicePosition) => {
-    processChoice(groupItem, choice, choicePosition);
-  });
-
-  ((groupDef as { sequence?: explicitGroup[] }).sequence ?? []).forEach((sequence, sequencePosition) => {
-    processSequence(groupItem, sequence, sequencePosition);
-  });
+  ((groupDef as { group?: groupRef[] }).group ?? []).forEach((ref, index) => processGroupRef(groupItem, ref, index));
+  ((groupDef as { choice?: explicitGroup[] }).choice ?? []).forEach((choice, index) => processChoice(groupItem, choice, index));
+  ((groupDef as { sequence?: explicitGroup[] }).sequence ?? []).forEach((seq, index) => processSequence(groupItem, seq, index));
 
   parent.addChild(groupItem);
 }
@@ -436,23 +448,6 @@ export function processExtension(
     parent.type += ` (extends ${extension.base})`;
   }
 
-  // Process sequence in extension
-  if (extension.sequence) {
-    processSequence(parent, extension.sequence);
-  }
-
-  // Process choice in extension
-  if (extension.choice) {
-    processChoice(parent, extension.choice);
-  }
-
-  // Process all in extension
-  if (extension.all) {
-    processAll(parent, extension.all);
-  }
-
-  if (extension.group) {
-    processGroupRef(parent, extension.group, 0);
-  }
+  processParticles(parent, extension);
 }
 

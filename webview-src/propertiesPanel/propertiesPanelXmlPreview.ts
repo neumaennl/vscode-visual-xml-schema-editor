@@ -18,6 +18,16 @@ const MAX_PREVIEW_CHILDREN_PER_NODE = 50;
 
 type XmlAttr = [name: string, value: string];
 
+/**
+ * Returns the attributes that have a value.
+ *
+ * @param attributes - Names with optional values
+ * @returns The attributes with a value, in the same order
+ */
+function optionalAttributes(attributes: Array<[name: string, value: string | undefined]>): XmlAttr[] {
+  return attributes.filter((attribute): attribute is XmlAttr => attribute[1] !== undefined);
+}
+
 function escapeXml(value: string): string {
   return value
     .replace(/&/g, "&amp;")
@@ -105,19 +115,15 @@ function renderAnnotations(node: DiagramItem, level: number): string[] {
 
 function renderAttributeNodes(node: DiagramItem, level: number): string[] {
   return node.attributes.map((attribute) => {
-    const attrs: XmlAttr[] = [["name", attribute.name]];
-    if (attribute.type) {
-      attrs.push(["type", attribute.type]);
-    }
-    if (attribute.use) {
-      attrs.push(["use", attribute.use]);
-    }
-    if (attribute.defaultValue !== undefined) {
-      attrs.push(["default", attribute.defaultValue]);
-    }
-    if (attribute.fixedValue !== undefined) {
-      attrs.push(["fixed", attribute.fixedValue]);
-    }
+    const attrs: XmlAttr[] = [
+      ["name", attribute.name],
+      ...optionalAttributes([
+        ["type", attribute.type || undefined],
+        ["use", attribute.use || undefined],
+        ["default", attribute.defaultValue],
+        ["fixed", attribute.fixedValue],
+      ]),
+    ];
     return renderTag("xs:attribute", attrs, [], level);
   });
 }
@@ -224,18 +230,14 @@ function renderElementNode(node: DiagramItem, nodeType: SchemaNodeType | null, l
     attributes.push(["type", node.type]);
   }
 
-  if (node.isNillable) {
-    attributes.push(["nillable", "true"]);
-  }
-  if (node.isAbstract) {
-    attributes.push(["abstract", "true"]);
-  }
-  if (node.elementDefault !== undefined) {
-    attributes.push(["default", node.elementDefault]);
-  }
-  if (node.elementFixed !== undefined) {
-    attributes.push(["fixed", node.elementFixed]);
-  }
+  attributes.push(
+    ...optionalAttributes([
+      ["nillable", node.isNillable ? "true" : undefined],
+      ["abstract", node.isAbstract ? "true" : undefined],
+      ["default", node.elementDefault],
+      ["fixed", node.elementFixed],
+    ])
+  );
 
   const includeOccurs = !(nodeType === SchemaNodeType.Element && isTopLevelElement(node));
   if (includeOccurs) {

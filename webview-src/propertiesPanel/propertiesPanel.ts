@@ -23,6 +23,7 @@ import {
   createAttributeList,
   createEditableField,
   createPropertiesPanelHeader,
+  createInputColumn,
   createSectionHeader,
   createToggleRow,
 } from "./propertiesPanelDom";
@@ -256,48 +257,20 @@ export class PropertiesPanel {
     const row = document.createElement("div");
     row.className = "property-row-2col";
 
-    const minCol = document.createElement("div");
-    minCol.className = "property-col";
-    const minLabel = document.createElement("label");
-    minLabel.textContent = "minOccurs:";
-    const minInput = document.createElement("input");
-    minInput.type = "text";
-    minInput.className = "property-input";
-    minInput.value = String(node.minOccurrence);
-    const commitMin = (): void => {
-      const val = Number(minInput.value);
+    const minCol = createInputColumn("minOccurs:", String(node.minOccurrence), (text) => {
+      const val = Number(text);
       if (!Number.isNaN(val)) {
         dispatchOccurrence(val, node.maxOccurrence === -1 ? "unbounded" : node.maxOccurrence);
       }
-    };
-    minInput.addEventListener("blur", commitMin);
-    minInput.addEventListener("keydown", (e: KeyboardEvent) => {
-      if (e.key === "Enter") { e.preventDefault(); minInput.blur(); }
     });
-    minCol.appendChild(minLabel);
-    minCol.appendChild(minInput);
-
-    const maxCol = document.createElement("div");
-    maxCol.className = "property-col";
-    const maxLabel = document.createElement("label");
-    maxLabel.textContent = "maxOccurs:";
-    const maxInput = document.createElement("input");
-    maxInput.type = "text";
-    maxInput.className = "property-input";
-    maxInput.value = node.maxOccurrence === -1 ? "unbounded" : String(node.maxOccurrence);
-    const commitMax = (): void => {
-      const raw = maxInput.value.trim();
+    const maxValue = node.maxOccurrence === -1 ? "unbounded" : String(node.maxOccurrence);
+    const maxCol = createInputColumn("maxOccurs:", maxValue, (text) => {
+      const raw = text.trim();
       const maxOccurs = raw === "unbounded" ? "unbounded" : Number(raw);
       if (maxOccurs === "unbounded" || !Number.isNaN(maxOccurs)) {
         dispatchOccurrence(node.minOccurrence, maxOccurs);
       }
-    };
-    maxInput.addEventListener("blur", commitMax);
-    maxInput.addEventListener("keydown", (e: KeyboardEvent) => {
-      if (e.key === "Enter") { e.preventDefault(); maxInput.blur(); }
     });
-    maxCol.appendChild(maxLabel);
-    maxCol.appendChild(maxInput);
 
     row.appendChild(minCol);
     row.appendChild(maxCol);

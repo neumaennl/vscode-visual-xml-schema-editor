@@ -13,9 +13,6 @@ import { DiagramItem } from "./DiagramItem";
 import { DiagramItemType } from "./DiagramTypes";
 import {
   schema,
-  topLevelElement,
-  topLevelComplexType,
-  topLevelSimpleType,
   namedGroup,
 } from "../../shared/types";
 import {
@@ -27,6 +24,7 @@ import {
   createElementNode,
   createComplexTypeNode,
   createSimpleTypeNode,
+  createTopLevelNode,
 } from "./TypeNodeCreators";
 import {
   extractDocumentation,
@@ -34,12 +32,9 @@ import {
 } from "./DiagramBuilderHelpers";
 import {
   processChildCollection,
-  processAnonymousComplexType,
-  processAnonymousSimpleType,
+  processAnonymousTypes,
   processComplexType,
-  processRestriction,
-  processList,
-  processUnion,
+  processSimpleTypeBody,
   processSequence,
   processChoice,
   processAll,
@@ -96,30 +91,12 @@ export class DiagramBuilder {
         fixedValue: attr.fixed,
       }));
 
-    // Process schema child elements
-    processChildCollection(
-      schemaNode,
-      schemaObj.element,
-      (elem) => this.createElementWithChildren(elem)
-    );
-
-    processChildCollection(
-      schemaNode,
-      schemaObj.complexType,
-      (ct) => this.createComplexType(ct)
-    );
-
-    processChildCollection(
-      schemaNode,
-      schemaObj.simpleType,
-      (st) => this.createSimpleType(st)
-    );
-
-    processChildCollection(
-      schemaNode,
-      schemaObj.group,
-      (grp) => this.createNamedGroup(grp)
-    );
+    // Process the top-level components with their content
+    const diagram = this.diagram;
+    processChildCollection(schemaNode, schemaObj.element, (elem) => createElementNode(elem, diagram), processAnonymousTypes);
+    processChildCollection(schemaNode, schemaObj.complexType, (ct) => createComplexTypeNode(ct, diagram), processComplexType);
+    processChildCollection(schemaNode, schemaObj.simpleType, (st) => createSimpleTypeNode(st, diagram), processSimpleTypeBody);
+    processChildCollection(schemaNode, schemaObj.group, (grp) => this.createNamedGroup(grp));
 
     // If no children were added, add a placeholder
     if (schemaNode.childElements.length === 0) {
@@ -157,95 +134,11 @@ export class DiagramBuilder {
     return undefined;
   }
 
-  /**
-   * Creates an element node including its child types.
-   * Wraps createElementNode and processes inline complex/simple types.
-   * 
-   * @param element - Element definition from schema
-   * @returns The created diagram item or null if element is invalid
-   */
-  private createElementWithChildren(element: topLevelElement): DiagramItem | null {
-    const item = createElementNode(element, this.diagram);
-    if (!item) {
-      return null;
-    }
-
-    // Process anonymous inline complex type
-    if (element.complexType) {
-      processAnonymousComplexType(item, element.complexType);
-    }
-
-    // Process anonymous inline simple type
-    if (element.simpleType) {
-      processAnonymousSimpleType(item, element.simpleType);
-    }
-
-    return item;
-  }
-
-  /**
-   * Creates a complex type node with full structure.
-   * Wraps createComplexTypeNode and processes type content.
-   * 
-   * @param complexType - Complex type definition from schema
-   * @returns The created diagram item or null if type is invalid
-   */
-  private createComplexType(complexType: topLevelComplexType): DiagramItem | null {
-    const item = createComplexTypeNode(complexType, this.diagram);
-    if (!item) {
-      return null;
-    }
-
-    processComplexType(item, complexType);
-
-    return item;
-  }
-
-  /**
-   * Creates a simple type node with restrictions.
-   * Wraps createSimpleTypeNode and processes restrictions.
-   * 
-   * @param simpleType - Simple type definition from schema
-   * @returns The created diagram item or null if type is invalid
-   */
-  private createSimpleType(simpleType: topLevelSimpleType): DiagramItem | null {
-    const item = createSimpleTypeNode(simpleType, this.diagram);
-    if (!item) {
-      return null;
-    }
-
-    // Process restriction/list/union if present to extract derivation details
-    if (simpleType.restriction) {
-      processRestriction(item, simpleType.restriction);
-      return item;
-    }
-    if (simpleType.list) {
-      processList(item, simpleType.list);
-      return item;
-    }
-    if (simpleType.union) {
-      processUnion(item, simpleType.union);
-    }
-
-    return item;
-  }
-
   private createNamedGroup(group: namedGroup): DiagramItem | null {
-    if (!group.name) {
+    const item = createTopLevelNode(group, SchemaNodeType.Group, DiagramItemType.group, this.diagram);
+    if (!item) {
       return null;
     }
-
-    const item = new DiagramItem(
-      generateSchemaId({
-        nodeType: SchemaNodeType.Group,
-        name: group.name.toString(),
-      }),
-      group.name.toString(),
-      DiagramItemType.group,
-      this.diagram
-    );
-    item.documentationAnnotations = extractDocumentationAnnotations(item.id, group.annotation);
-    item.documentation = extractDocumentation(group.annotation) ?? "";
 
     if (group.sequence) {
       processSequence(item, group.sequence, 0);

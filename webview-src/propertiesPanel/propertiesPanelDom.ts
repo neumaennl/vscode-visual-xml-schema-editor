@@ -223,6 +223,57 @@ export function createToggleRow(
 }
 
 /**
+ * Creates a text input that commits its value when it loses the focus; Enter commits it as well.
+ *
+ * @param value - Initial value
+ * @param onCommit - Callback invoked with the committed value
+ * @returns The input
+ */
+export function createCommitInput(value: string, onCommit: (next: string) => void): HTMLInputElement {
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "property-input";
+  input.value = value;
+  input.addEventListener("blur", () => onCommit(input.value));
+  input.addEventListener("keydown", (event: KeyboardEvent) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      input.blur();
+    }
+  });
+  return input;
+}
+
+/**
+ * Creates a column of a two-column property row: a label above a text input that commits its value
+ * like {@link createCommitInput}.
+ *
+ * @param label - The label
+ * @param value - Initial value
+ * @param onCommit - Callback invoked with the committed value
+ * @param placeholder - Optional placeholder of the input
+ * @returns The column
+ */
+export function createInputColumn(
+  label: string,
+  value: string,
+  onCommit: (next: string) => void,
+  placeholder?: string
+): HTMLElement {
+  const column = document.createElement("div");
+  column.className = "property-col";
+  const labelEl = document.createElement("label");
+  labelEl.textContent = label;
+  const input = createCommitInput(value, onCommit);
+  if (placeholder !== undefined) {
+    input.placeholder = placeholder;
+  }
+  column.appendChild(labelEl);
+  column.appendChild(input);
+  return column;
+}
+
+/**
  * Creates a labeled text input row for editable property values.
  *
  * @param label - Field label to show in the property row
@@ -256,17 +307,7 @@ export function createEditableField(
     labelEl.textContent = `${label}:`;
   }
 
-  const input = document.createElement("input");
-  input.type = "text";
-  input.className = "property-input";
-  input.value = value;
-  input.addEventListener("blur", () => onCommit(input.value));
-  input.addEventListener("keydown", (event: KeyboardEvent) => {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      input.blur();
-    }
-  });
+  const input = createCommitInput(value, onCommit);
 
   propertyDiv.appendChild(labelEl);
   propertyDiv.appendChild(input);

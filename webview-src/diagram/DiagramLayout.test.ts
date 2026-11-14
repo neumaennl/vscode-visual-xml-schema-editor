@@ -73,8 +73,8 @@ describe("DiagramLayout", () => {
       expect(item.size.height).toBe(40);
     });
 
-    test("should size group items correctly", () => {
-      const item = new DiagramItem("group", "Group", DiagramItemType.group, diagram);
+    test("should size compositor items correctly", () => {
+      const item = new DiagramItem("/complexType:T/group:sequence[0]", "sequence", DiagramItemType.group, diagram);
       diagram.addRootElement(item);
 
       layout.layout(diagram);

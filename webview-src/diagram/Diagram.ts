@@ -8,6 +8,7 @@ import { DiagramItem } from "./DiagramItem";
 import {
   Size,
   Rectangle,
+  enclosingRectangle,
   DiagramStyle,
   defaultDiagramStyle,
 } from "./DiagramTypes";
@@ -84,24 +85,12 @@ export class Diagram {
       return this.boundingBox;
     }
 
-    let minX = Number.MAX_VALUE;
-    let minY = Number.MAX_VALUE;
-    let maxX = Number.MIN_VALUE;
-    let maxY = Number.MIN_VALUE;
-
-    for (const root of this.rootElements) {
-      const bounds = root.calculateBoundingBox();
-      minX = Math.min(minX, bounds.x);
-      minY = Math.min(minY, bounds.y);
-      maxX = Math.max(maxX, bounds.x + bounds.width);
-      maxY = Math.max(maxY, bounds.y + bounds.height);
-    }
-
+    const bounds = enclosingRectangle(this.rootElements.map((root) => root.calculateBoundingBox()));
     this.boundingBox = {
-      x: minX - this.padding.width,
-      y: minY - this.padding.height,
-      width: maxX - minX + 2 * this.padding.width,
-      height: maxY - minY + 2 * this.padding.height,
+      x: bounds.x - this.padding.width,
+      y: bounds.y - this.padding.height,
+      width: bounds.width + 2 * this.padding.width,
+      height: bounds.height + 2 * this.padding.height,
     };
 
     return this.boundingBox;

@@ -49,6 +49,20 @@ export interface Rectangle {
 }
 
 /**
+ * Returns the smallest rectangle that contains all the given rectangles.
+ *
+ * @param rectangles - The rectangles; at least one
+ * @returns The enclosing rectangle
+ */
+export function enclosingRectangle(rectangles: Rectangle[]): Rectangle {
+  const minX = Math.min(...rectangles.map((r) => r.x));
+  const minY = Math.min(...rectangles.map((r) => r.y));
+  const maxX = Math.max(...rectangles.map((r) => r.x + r.width));
+  const maxY = Math.max(...rectangles.map((r) => r.y + r.height));
+  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+}
+
+/**
  * A single xs:documentation node shown in the diagram/properties-panel layer.
  * Keeps the schema ID so the UI can edit or remove the exact node later.
  */

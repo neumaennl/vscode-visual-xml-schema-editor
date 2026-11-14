@@ -12,6 +12,8 @@ import {
   processAll,
   processAnonymousComplexType,
   extractRestrictionFacets,
+  processAnonymousTypes,
+  processSimpleTypeBody,
 } from "../diagram/SchemaProcessors";
 import { DiagramItem } from "../diagram/DiagramItem";
 import { Diagram } from "../diagram/Diagram";
@@ -25,6 +27,37 @@ describe("SchemaProcessors", () => {
   beforeEach(() => {
     diagram = new Diagram();
     item = new DiagramItem("test-1", "TestItem", DiagramItemType.element, diagram);
+  });
+
+  describe("processAnonymousTypes", () => {
+    test("processes an anonymous complexType or simpleType and ignores an element without one", () => {
+      const schemaObj = schemaWith(`<xs:element name="c"><xs:complexType mixed="true"/></xs:element>
+<xs:element name="s"><xs:simpleType><xs:restriction base="xs:string"/></xs:simpleType></xs:element>
+<xs:element name="n" type="xs:string"/>`);
+      const [complexElement, simpleElement, namedElement] = schemaObj.element ?? [];
+      const items = [complexElement, simpleElement, namedElement].map((element) => {
+        const elementItem = new DiagramItem(`/element:${element.name}`, element.name, DiagramItemType.element, diagram);
+        processAnonymousTypes(elementItem, element);
+        return elementItem;
+      });
+      expect(items.map((i) => [i.hasAnonymousComplexType, i.isMixed, i.isSimpleContent])).toEqual([
+        [true, true, false],
+        [false, false, true],
+        [false, false, false],
+      ]);
+    });
+  });
+
+  describe("processSimpleTypeBody", () => {
+    test.each([
+      ["restriction", `<xs:restriction base="xs:string"/>`],
+      ["list", `<xs:list itemType="xs:int"/>`],
+      ["union", `<xs:union memberTypes="xs:int xs:string"/>`],
+    ])("processes a %s", (kind, body) => {
+      const simpleType = schemaWith(`<xs:simpleType name="S">${body}</xs:simpleType>`).simpleType?.[0];
+      processSimpleTypeBody(item, simpleType ?? {});
+      expect(item.simpleTypeDerivationKind ?? "restriction").toBe(kind);
+    });
   });
 
   describe("processExtension", () => {

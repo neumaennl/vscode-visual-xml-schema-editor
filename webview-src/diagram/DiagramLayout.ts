@@ -5,8 +5,8 @@
 
 import { Diagram } from "./Diagram";
 import { DiagramItem } from "./DiagramItem";
+import { isCompositorGroup } from "./groupUtils";
 import { DiagramItemType } from "./DiagramTypes";
-import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy";
 
 export class DiagramLayout {
   // Default dimensions
@@ -88,7 +88,7 @@ export class DiagramLayout {
         break;
 
       case DiagramItemType.group:
-        if (this.isCompositorGroup(item)) {
+        if (isCompositorGroup(item)) {
           item.size = {
             width: this.GROUP_WIDTH,
             height: this.GROUP_HEIGHT,
@@ -116,20 +116,6 @@ export class DiagramLayout {
     }
   }
 
-  private isCompositorGroup(item: DiagramItem): boolean {
-    try {
-      const parsed = parseSchemaId(item.id);
-      return (
-        parsed.nodeType === SchemaNodeType.Group &&
-        parsed.parentId !== undefined &&
-        (parsed.name === "sequence" ||
-          parsed.name === "choice" ||
-          parsed.name === "all")
-      );
-    } catch {
-      return true;
-    }
-  }
 
   /**
    * Layout children of an item

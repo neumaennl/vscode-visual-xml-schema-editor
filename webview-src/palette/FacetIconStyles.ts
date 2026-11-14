@@ -56,3 +56,13 @@ export const FACET_ICON_STYLES: Record<FacetPaletteConstruct, FacetIconStyle> = 
 export function getFacetIconStyle(facet: FacetPaletteConstruct): FacetIconStyle {
   return FACET_ICON_STYLES[facet];
 }
+
+/**
+ * Checks whether a palette construct is a facet.
+ *
+ * @param construct - The palette construct
+ * @returns True for the facets, which have an icon style
+ */
+export function isFacetPaletteConstruct(construct: PaletteSchemaConstruct): construct is FacetPaletteConstruct {
+  return Object.hasOwn(FACET_ICON_STYLES, construct);
+}

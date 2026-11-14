@@ -7,6 +7,8 @@ import {
   extractDocumentationAnnotations,
   extractOccurrenceConstraints,
   extractAttributes,
+  parseDerivationBaseType,
+  toRestrictionFacets,
 } from "./DiagramBuilderHelpers";
 import { DiagramItem } from "./DiagramItem";
 import { Diagram } from "./Diagram";
@@ -190,6 +192,36 @@ describe("DiagramBuilderHelpers", () => {
       extractAttributes(item, source);
       expect(item.attributes).toHaveLength(1);
       expect(item.attributes[0].use).toBeUndefined();
+    });
+  });
+
+  describe("parseDerivationBaseType", () => {
+    test.each([
+      ["simpleType (restricts xs:string)", "xs:string"],
+      ["complexType with complexContent (extends  Base )", "Base"],
+      ["<anonymous simpleType> (restricts tns:Code)", "tns:Code"],
+      ["xs:string", undefined],
+      ["", undefined],
+    ])("reads %j", (typeText, expected) => {
+      expect(parseDerivationBaseType(typeText)).toBe(expected);
+    });
+  });
+
+  describe("toRestrictionFacets", () => {
+    test("returns undefined without facets", () => {
+      expect(toRestrictionFacets(undefined)).toBeUndefined();
+    });
+
+    test("keeps the facets and a valid whiteSpace value", () => {
+      expect(toRestrictionFacets({ pattern: ["a+"], length: 3, whiteSpace: "collapse" })).toEqual({
+        pattern: ["a+"],
+        length: 3,
+        whiteSpace: "collapse",
+      });
+    });
+
+    test("leaves out a whiteSpace value that the schema does not allow", () => {
+      expect(toRestrictionFacets({ whiteSpace: "trim" })?.whiteSpace).toBeUndefined();
     });
   });
 });

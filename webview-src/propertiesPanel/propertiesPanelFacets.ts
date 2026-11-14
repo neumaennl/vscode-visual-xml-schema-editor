@@ -4,14 +4,11 @@
  */
 
 import { SchemaCommand } from "../../shared/types";
-import { DiagramItem } from "../diagram";
+import { DiagramItem, toRestrictionFacets } from "../diagram";
 import { createEditableField } from "./propertiesPanelDom";
 import { resolveSimpleTypeId } from "./propertiesPanelCommands";
 import { hasEditableFacetValues, RestrictionSnapshot } from "./propertiesPanelDraft";
-import {
-  getFacetIconStyle,
-  type FacetIconStyle,
-} from "../palette/FacetIconStyles";
+import { getFacetIconStyle, type FacetPaletteConstruct } from "../palette/FacetIconStyles";
 import { PaletteSchemaConstruct } from "../palette/PaletteSchemaConstruct";
 import { appendFacetRemoveButton, renderValueListFacet } from "./propertiesPanelFacetLists";
 
@@ -20,26 +17,24 @@ type NumericRestrictionKey = "length" | "minLength" | "maxLength" | "totalDigits
 /** String boundary facet keys editable in the Facets tab. */
 type StringRestrictionKey = "minInclusive" | "maxInclusive" | "minExclusive" | "maxExclusive";
 
-const NUMERIC_FACET_ASSIGNERS: Record<
-  NumericRestrictionKey,
-  (draft: RestrictionSnapshot, value: number | undefined) => void
-> = {
-  length: (draft, value) => { draft.length = value; },
-  minLength: (draft, value) => { draft.minLength = value; },
-  maxLength: (draft, value) => { draft.maxLength = value; },
-  totalDigits: (draft, value) => { draft.totalDigits = value; },
-  fractionDigits: (draft, value) => { draft.fractionDigits = value; },
-};
+/** A single-value facet of the Facets tab: a number or a string. */
+type ValueFacet = { label: string; construct: FacetPaletteConstruct } & (
+  | { key: NumericRestrictionKey; numeric: true }
+  | { key: StringRestrictionKey; numeric: false }
+);
 
-const STRING_FACET_ASSIGNERS: Record<
-  StringRestrictionKey,
-  (draft: RestrictionSnapshot, value: string | undefined) => void
-> = {
-  minInclusive: (draft, value) => { draft.minInclusive = value; },
-  maxInclusive: (draft, value) => { draft.maxInclusive = value; },
-  minExclusive: (draft, value) => { draft.minExclusive = value; },
-  maxExclusive: (draft, value) => { draft.maxExclusive = value; },
-};
+/** The single-value facets of the Facets tab, in the order they are shown. */
+const VALUE_FACETS: ValueFacet[] = [
+  { label: "Length", key: "length", construct: PaletteSchemaConstruct.Length, numeric: true },
+  { label: "Min Length", key: "minLength", construct: PaletteSchemaConstruct.MinLength, numeric: true },
+  { label: "Max Length", key: "maxLength", construct: PaletteSchemaConstruct.MaxLength, numeric: true },
+  { label: "Min Inclusive", key: "minInclusive", construct: PaletteSchemaConstruct.MinInclusive, numeric: false },
+  { label: "Max Inclusive", key: "maxInclusive", construct: PaletteSchemaConstruct.MaxInclusive, numeric: false },
+  { label: "Min Exclusive", key: "minExclusive", construct: PaletteSchemaConstruct.MinExclusive, numeric: false },
+  { label: "Max Exclusive", key: "maxExclusive", construct: PaletteSchemaConstruct.MaxExclusive, numeric: false },
+  { label: "Total Digits", key: "totalDigits", construct: PaletteSchemaConstruct.TotalDigits, numeric: true },
+  { label: "Fraction Digits", key: "fractionDigits", construct: PaletteSchemaConstruct.FractionDigits, numeric: true },
+];
 
 /**
  * Renders the Facets tab for a simple type or inline simple type.
@@ -74,18 +69,9 @@ export function renderFacetsTab(
   }
   const buildAndDispatch = (updater: (next: RestrictionSnapshot) => void): void => {
     const nextRestrictions: RestrictionSnapshot = {
+      ...restrictions,
       enumeration: restrictions.enumeration ? [...restrictions.enumeration] : undefined,
       pattern: restrictions.pattern ? [...restrictions.pattern] : undefined,
-      length: restrictions.length,
-      minLength: restrictions.minLength,
-      maxLength: restrictions.maxLength,
-      minInclusive: restrictions.minInclusive,
-      maxInclusive: restrictions.maxInclusive,
-      minExclusive: restrictions.minExclusive,
-      maxExclusive: restrictions.maxExclusive,
-      totalDigits: restrictions.totalDigits,
-      fractionDigits: restrictions.fractionDigits,
-      whiteSpace: restrictions.whiteSpace,
     };
     updater(nextRestrictions);
     node.restrictions = nextRestrictions;
@@ -93,28 +79,7 @@ export function renderFacetsTab(
     // Without a base type, the restriction keeps its base, which may be an inline simple type
     dispatchCommand({
       type: "modifySimpleType",
-      payload: {
-        typeId: simpleTypeId,
-        restrictions: {
-          enumeration: nextRestrictions.enumeration,
-          pattern: nextRestrictions.pattern,
-          length: nextRestrictions.length,
-          minLength: nextRestrictions.minLength,
-          maxLength: nextRestrictions.maxLength,
-          minInclusive: nextRestrictions.minInclusive,
-          maxInclusive: nextRestrictions.maxInclusive,
-          minExclusive: nextRestrictions.minExclusive,
-          maxExclusive: nextRestrictions.maxExclusive,
-          totalDigits: nextRestrictions.totalDigits,
-          fractionDigits: nextRestrictions.fractionDigits,
-          whiteSpace:
-            nextRestrictions.whiteSpace === "preserve" ||
-            nextRestrictions.whiteSpace === "replace" ||
-            nextRestrictions.whiteSpace === "collapse"
-              ? nextRestrictions.whiteSpace
-              : undefined,
-        },
-      },
+      payload: { typeId: simpleTypeId, restrictions: toRestrictionFacets(nextRestrictions) },
     });
   };
   const canRemoveFacet = countDefinedFacets(restrictions) > 1;
@@ -141,87 +106,9 @@ export function renderFacetsTab(
     );
   }
 
-  appendOptionalNumericFacet(
-    root,
-    "Length",
-    restrictions.length,
-    NUMERIC_FACET_ASSIGNERS.length,
-    buildAndDispatch,
-    getFacetIconStyle(PaletteSchemaConstruct.Length),
-    canRemoveFacet
-  );
-  appendOptionalNumericFacet(
-    root,
-    "Min Length",
-    restrictions.minLength,
-    NUMERIC_FACET_ASSIGNERS.minLength,
-    buildAndDispatch,
-    getFacetIconStyle(PaletteSchemaConstruct.MinLength),
-    canRemoveFacet
-  );
-  appendOptionalNumericFacet(
-    root,
-    "Max Length",
-    restrictions.maxLength,
-    NUMERIC_FACET_ASSIGNERS.maxLength,
-    buildAndDispatch,
-    getFacetIconStyle(PaletteSchemaConstruct.MaxLength),
-    canRemoveFacet
-  );
-  appendOptionalStringFacet(
-    root,
-    "Min Inclusive",
-    restrictions.minInclusive,
-    STRING_FACET_ASSIGNERS.minInclusive,
-    buildAndDispatch,
-    getFacetIconStyle(PaletteSchemaConstruct.MinInclusive),
-    canRemoveFacet
-  );
-  appendOptionalStringFacet(
-    root,
-    "Max Inclusive",
-    restrictions.maxInclusive,
-    STRING_FACET_ASSIGNERS.maxInclusive,
-    buildAndDispatch,
-    getFacetIconStyle(PaletteSchemaConstruct.MaxInclusive),
-    canRemoveFacet
-  );
-  appendOptionalStringFacet(
-    root,
-    "Min Exclusive",
-    restrictions.minExclusive,
-    STRING_FACET_ASSIGNERS.minExclusive,
-    buildAndDispatch,
-    getFacetIconStyle(PaletteSchemaConstruct.MinExclusive),
-    canRemoveFacet
-  );
-  appendOptionalStringFacet(
-    root,
-    "Max Exclusive",
-    restrictions.maxExclusive,
-    STRING_FACET_ASSIGNERS.maxExclusive,
-    buildAndDispatch,
-    getFacetIconStyle(PaletteSchemaConstruct.MaxExclusive),
-    canRemoveFacet
-  );
-  appendOptionalNumericFacet(
-    root,
-    "Total Digits",
-    restrictions.totalDigits,
-    NUMERIC_FACET_ASSIGNERS.totalDigits,
-    buildAndDispatch,
-    getFacetIconStyle(PaletteSchemaConstruct.TotalDigits),
-    canRemoveFacet
-  );
-  appendOptionalNumericFacet(
-    root,
-    "Fraction Digits",
-    restrictions.fractionDigits,
-    NUMERIC_FACET_ASSIGNERS.fractionDigits,
-    buildAndDispatch,
-    getFacetIconStyle(PaletteSchemaConstruct.FractionDigits),
-    canRemoveFacet
-  );
+  for (const facet of VALUE_FACETS) {
+    appendOptionalValueFacet(root, facet, restrictions[facet.key], buildAndDispatch, canRemoveFacet);
+  }
 
   if (restrictions.whiteSpace !== undefined) {
     const field = createEditableField("White Space", restrictions.whiteSpace, (next) => {
@@ -243,51 +130,44 @@ export function renderFacetsTab(
   return root;
 }
 
-function appendOptionalNumericFacet(
+/**
+ * Adds the editable field of a single-value facet, if the facet has a value. An empty value removes the
+ * facet.
+ *
+ * @param root - The tab
+ * @param facet - The facet
+ * @param value - The value of the facet
+ * @param buildAndDispatch - Applies a change to the facets and dispatches it
+ * @param canRemove - Whether the facet may be removed
+ */
+function appendOptionalValueFacet(
   root: HTMLElement,
-  label: string,
-  value: number | undefined,
-  assign: (draft: RestrictionSnapshot, value: number | undefined) => void,
+  facet: ValueFacet,
+  value: number | string | undefined,
   buildAndDispatch: (updater: (next: RestrictionSnapshot) => void) => void,
-  icon: FacetIconStyle,
   canRemove: boolean
 ): void {
   if (value === undefined) {
     return;
   }
-  const field = createEditableField(label, value.toString(), (next) => {
-      buildAndDispatch((draft) => {
-        const trimmed = next.trim();
-        assign(draft, trimmed ? Number(trimmed) : undefined);
-      });
-    }, undefined, icon);
-  root.appendChild(
-    appendFacetRemoveButton(field, label, canRemove, () => {
-      buildAndDispatch((draft) => { assign(draft, undefined); });
-    })
+  const assign = (draft: RestrictionSnapshot, text: string): void => {
+    const trimmed = text.trim();
+    if (facet.numeric) {
+      draft[facet.key] = trimmed ? Number(trimmed) : undefined;
+    } else {
+      draft[facet.key] = trimmed || undefined;
+    }
+  };
+  const field = createEditableField(
+    facet.label,
+    value.toString(),
+    (next) => buildAndDispatch((draft) => assign(draft, next)),
+    undefined,
+    getFacetIconStyle(facet.construct)
   );
-}
-
-function appendOptionalStringFacet(
-  root: HTMLElement,
-  label: string,
-  value: string | undefined,
-  assign: (draft: RestrictionSnapshot, value: string | undefined) => void,
-  buildAndDispatch: (updater: (next: RestrictionSnapshot) => void) => void,
-  icon: FacetIconStyle,
-  canRemove: boolean
-): void {
-  if (value === undefined) {
-    return;
-  }
-  const field = createEditableField(label, value, (next) => {
-      buildAndDispatch((draft) => {
-        assign(draft, next.trim() || undefined);
-      });
-    }, undefined, icon);
   root.appendChild(
-    appendFacetRemoveButton(field, label, canRemove, () => {
-      buildAndDispatch((draft) => { assign(draft, undefined); });
+    appendFacetRemoveButton(field, facet.label, canRemove, () => {
+      buildAndDispatch((draft) => { draft[facet.key] = undefined; });
     })
   );
 }

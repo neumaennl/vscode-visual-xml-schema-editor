@@ -81,62 +81,6 @@ describe("DiagramItem", () => {
     });
   });
 
-  describe("scalePoint", () => {
-    test("should return unscaled point when no diagram", () => {
-      const item = new DiagramItem("id1", "Test", DiagramItemType.element);
-      const point = { x: 10, y: 20 };
-      const result = item.scalePoint(point);
-
-      expect(result).toEqual(point);
-    });
-
-    test("should scale point by diagram scale", () => {
-      const diagram = new Diagram();
-      diagram.scale = 2.0;
-      const item = new DiagramItem("id1", "Test", DiagramItemType.element, diagram);
-      const point = { x: 10, y: 20 };
-
-      const result = item.scalePoint(point);
-
-      expect(result.x).toBe(20);
-      expect(result.y).toBe(40);
-    });
-
-    test("should round scaled coordinates", () => {
-      const diagram = new Diagram();
-      diagram.scale = 1.5;
-      const item = new DiagramItem("id1", "Test", DiagramItemType.element, diagram);
-      const point = { x: 10, y: 20 };
-
-      const result = item.scalePoint(point);
-
-      expect(result.x).toBe(15);
-      expect(result.y).toBe(30);
-    });
-  });
-
-  describe("scaleSize", () => {
-    test("should return unscaled size when no diagram", () => {
-      const item = new DiagramItem("id1", "Test", DiagramItemType.element);
-      const size = { width: 100, height: 50 };
-      const result = item.scaleSize(size);
-
-      expect(result).toEqual(size);
-    });
-
-    test("should scale size by diagram scale", () => {
-      const diagram = new Diagram();
-      diagram.scale = 2.0;
-      const item = new DiagramItem("id1", "Test", DiagramItemType.element, diagram);
-      const size = { width: 100, height: 50 };
-
-      const result = item.scaleSize(size);
-
-      expect(result.width).toBe(200);
-      expect(result.height).toBe(100);
-    });
-  });
-
   describe("scaleRectangle", () => {
     test("should return unscaled rectangle when no diagram", () => {
       const item = new DiagramItem("id1", "Test", DiagramItemType.element);

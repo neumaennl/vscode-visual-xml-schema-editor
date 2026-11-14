@@ -14,6 +14,15 @@ import type { ContentTypeLike } from "./DiagramTypes";
  */
 type RestrictionTypeLike = restrictionType | restrictionType_1 | ContentTypeLike;
 
+/** The facets that can have several values, which are all kept. */
+const LIST_FACETS = ["enumeration", "pattern"] as const;
+
+/** The facets that have one value; only the first element is read. */
+const SINGLE_VALUE_FACETS = [
+  "length", "minLength", "maxLength", "minInclusive", "maxInclusive", "minExclusive", "maxExclusive",
+  "totalDigits", "fractionDigits", "whiteSpace",
+] as const;
+
 /**
  * Checks whether a restriction-like structure contains simple-type facets.
  *
@@ -48,77 +57,21 @@ export function extractRestrictionFacets(parent: DiagramItem, restriction: Restr
     return;
   }
 
-  const enumeration = restriction.enumeration ?? [];
-  const pattern = restriction.pattern ?? [];
-  const length = restriction.length ?? [];
-  const minLength = restriction.minLength ?? [];
-  const maxLength = restriction.maxLength ?? [];
-  const minInclusive = restriction.minInclusive ?? [];
-  const maxInclusive = restriction.maxInclusive ?? [];
-  const minExclusive = restriction.minExclusive ?? [];
-  const maxExclusive = restriction.maxExclusive ?? [];
-  const totalDigits = restriction.totalDigits ?? [];
-  const fractionDigits = restriction.fractionDigits ?? [];
-  const whiteSpace = restriction.whiteSpace ?? [];
-
-  const facetArrays = [
-    enumeration,
-    pattern,
-    length,
-    minLength,
-    maxLength,
-    minInclusive,
-    maxInclusive,
-    minExclusive,
-    maxExclusive,
-    totalDigits,
-    fractionDigits,
-    whiteSpace,
-  ];
-
-  if (!facetArrays.some((arr) => arr.length > 0)) {
-    return;
+  const restrictions: Record<string, string | number | string[]> = {};
+  for (const key of LIST_FACETS) {
+    const values = (restriction[key] ?? []).map((f) => f.value);
+    if (values.length > 0) {
+      restrictions[key] = values;
+    }
   }
-
-  if (!parent.restrictions) {
-    parent.restrictions = {};
+  for (const key of SINGLE_VALUE_FACETS) {
+    const first = restriction[key]?.[0];
+    if (first) {
+      restrictions[key] = first.value;
+    }
   }
-
-  if (enumeration.length > 0) {
-    parent.restrictions.enumeration = enumeration.map((e) => e.value);
-  }
-  if (pattern.length > 0) {
-    parent.restrictions.pattern = pattern.map((p) => p.value);
-  }
-  if (length.length > 0) {
-    parent.restrictions.length = length[0].value;
-  }
-  if (minLength.length > 0) {
-    parent.restrictions.minLength = minLength[0].value;
-  }
-  if (maxLength.length > 0) {
-    parent.restrictions.maxLength = maxLength[0].value;
-  }
-  if (minInclusive.length > 0) {
-    parent.restrictions.minInclusive = minInclusive[0].value;
-  }
-  if (maxInclusive.length > 0) {
-    parent.restrictions.maxInclusive = maxInclusive[0].value;
-  }
-  if (minExclusive.length > 0) {
-    parent.restrictions.minExclusive = minExclusive[0].value;
-  }
-  if (maxExclusive.length > 0) {
-    parent.restrictions.maxExclusive = maxExclusive[0].value;
-  }
-  if (totalDigits.length > 0) {
-    parent.restrictions.totalDigits = totalDigits[0].value;
-  }
-  if (fractionDigits.length > 0) {
-    parent.restrictions.fractionDigits = fractionDigits[0].value;
-  }
-  if (whiteSpace.length > 0) {
-    parent.restrictions.whiteSpace = whiteSpace[0].value;
+  if (Object.keys(restrictions).length > 0) {
+    parent.restrictions = { ...parent.restrictions, ...restrictions };
   }
 }
 

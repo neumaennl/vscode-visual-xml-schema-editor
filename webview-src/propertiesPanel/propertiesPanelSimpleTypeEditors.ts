@@ -7,7 +7,7 @@ import { SchemaCommand } from "../../shared/types";
 import { SchemaNodeType } from "../../shared/idStrategy";
 import { DiagramItem } from "../diagram";
 import { createEditableField } from "./propertiesPanelDom";
-import { normalizeTypeReferenceForCurrentSchema } from "./propertiesPanelCommands";
+import { normalizeTypeReferenceForCurrentSchema, onTypeChange } from "./propertiesPanelCommands";
 import {
   createSimpleTypeKindCommand,
   createSimpleTypeListCommand,
@@ -143,33 +143,53 @@ export function renderSimpleTypeKindSelector(
   root.appendChild(field);
 }
 
-export function renderSimpleTypeListEditor(
-  root: HTMLElement,
-  node: DiagramItem,
-  hasInlineSimpleType: boolean,
-  typeSuggestions: string[],
-  dispatchCommand: (command: SchemaCommand) => void,
-  addPropertyToContainer: (container: HTMLElement, name: string, value: string) => void
-): void {
-  const itemType = node.simpleTypeListItemType ?? "";
-  if (hasInlineSimpleType) {
-    addPropertyToContainer(root, "Type", getReadOnlyTypeValue(node, itemType));
+/** What the list and union editors of a simpleType need. */
+export interface SimpleTypeEditorContext {
+  /** The tab */
+  root: HTMLElement;
+  /** The simpleType, or the element with the inline simpleType */
+  node: DiagramItem;
+  /** Whether the node is an element with an inline simpleType */
+  hasInlineSimpleType: boolean;
+  /** Type names offered in the type fields */
+  typeSuggestions: string[];
+  /** Callback used to emit schema commands */
+  dispatchCommand: (command: SchemaCommand) => void;
+  /** Helper used for read-only property rows */
+  addPropertyToContainer: (container: HTMLElement, name: string, value: string) => void;
+}
+
+/**
+ * Shows the type of an element with an inline simpleType as a read-only row.
+ *
+ * @param context - The editor context
+ * @param typeValue - The type to show
+ */
+function showInlineSimpleType(context: SimpleTypeEditorContext, typeValue: string | undefined): void {
+  if (context.hasInlineSimpleType) {
+    context.addPropertyToContainer(context.root, "Type", getReadOnlyTypeValue(context.node, typeValue));
   }
+}
+
+/**
+ * Renders the list-specific simpleType editor.
+ *
+ * @param context - The editor context
+ */
+export function renderSimpleTypeListEditor(context: SimpleTypeEditorContext): void {
+  const { root, node, hasInlineSimpleType, typeSuggestions, dispatchCommand } = context;
+  const itemType = node.simpleTypeListItemType ?? "";
+  showInlineSimpleType(context, itemType);
 
   root.appendChild(
-    createEditableField("Item Type", itemType, (next) => {
-      const normalizedNext = normalizeTypeReferenceForCurrentSchema(node, next);
-      const normalizedCurrent = normalizeTypeReferenceForCurrentSchema(node, itemType);
-      if (!normalizedNext || normalizedNext === normalizedCurrent) {
-        return;
-      }
+    createEditableField("Item Type", itemType, onTypeChange(node, itemType, (normalizedNext) => {
       const command = createSimpleTypeListCommand(node, normalizedNext);
       if (!command) {
         return;
       }
       showListBody(node, normalizedNext, hasInlineSimpleType);
       dispatchCommand(command);
-    }, typeSuggestions)
+    }), typeSuggestions)
   );
 
   if (hasInlineSimpleType) {
@@ -180,21 +200,13 @@ export function renderSimpleTypeListEditor(
 /**
  * Renders the union-specific simpleType editor.
  */
-export function renderSimpleTypeUnionEditor(
-  root: HTMLElement,
-  node: DiagramItem,
-  hasInlineSimpleType: boolean,
-  typeSuggestions: string[],
-  dispatchCommand: (command: SchemaCommand) => void,
-  addPropertyToContainer: (container: HTMLElement, name: string, value: string) => void
-): void {
+export function renderSimpleTypeUnionEditor(context: SimpleTypeEditorContext): void {
+  const { root, node, hasInlineSimpleType, typeSuggestions, dispatchCommand } = context;
   const initialMemberTypes = node.simpleTypeUnionMemberTypes
     ? [...node.simpleTypeUnionMemberTypes]
     : [];
   const memberTypes = initialMemberTypes.length > 0 ? initialMemberTypes : [""];
-  if (hasInlineSimpleType) {
-    addPropertyToContainer(root, "Type", getReadOnlyTypeValue(node, node.type));
-  }
+  showInlineSimpleType(context, node.type);
 
   const unionEditor = document.createElement("div");
   unionEditor.className = "property";
@@ -309,7 +321,16 @@ export function renderSimpleTypeUnionEditor(
   }
 }
 
-function renderInlineSimpleTypeReplacement(
+/**
+ * Renders the field that replaces the inline simpleType of an element with a named type.
+ *
+ * @param root - The tab
+ * @param node - The element
+ * @param baseType - The current base type of the inline simpleType
+ * @param typeSuggestions - Type names offered in the field
+ * @param dispatchCommand - Callback used to emit schema commands
+ */
+export function renderInlineSimpleTypeReplacement(
   root: HTMLElement,
   node: DiagramItem,
   baseType: string,
@@ -320,12 +341,7 @@ function renderInlineSimpleTypeReplacement(
     createEditableField(
       "Replacement Type",
       baseType,
-      (next) => {
-        const normalizedNext = normalizeTypeReferenceForCurrentSchema(node, next);
-        const normalizedCurrent = normalizeTypeReferenceForCurrentSchema(node, baseType);
-        if (!normalizedNext || normalizedNext === normalizedCurrent) {
-          return;
-        }
+      onTypeChange(node, baseType, (normalizedNext) => {
         const command: SchemaCommand = {
           type: "modifyElement",
           payload: {
@@ -337,7 +353,7 @@ function renderInlineSimpleTypeReplacement(
         node.hasAnonymousComplexType = false;
         node.isSimpleContent = false;
         dispatchCommand(command);
-      },
+      }),
       typeSuggestions
     )
   );

@@ -6,6 +6,7 @@ import {
   createElementNode,
   createComplexTypeNode,
   createSimpleTypeNode,
+  createTopLevelNode,
 } from "./TypeNodeCreators";
 import { Diagram } from "./Diagram";
 import { DiagramItemType } from "./DiagramTypes";
@@ -13,13 +14,33 @@ import {
   topLevelElement,
   topLevelComplexType,
   topLevelSimpleType,
+  annotationType,
+  documentationType,
 } from "../../shared/types";
+import { SchemaNodeType } from "../../shared/idStrategy";
 
 describe("TypeNodeCreators", () => {
   let diagram: Diagram;
 
   beforeEach(() => {
     diagram = new Diagram();
+  });
+
+  describe("createTopLevelNode", () => {
+    test("returns null for a component without name", () => {
+      expect(createTopLevelNode({}, SchemaNodeType.Group, DiagramItemType.group, diagram)).toBeNull();
+    });
+
+    test("creates the item with its ID, name and documentation", () => {
+      const annotation = new annotationType();
+      annotation.documentation = [Object.assign(new documentationType(), { value: "About G" })];
+      const item = createTopLevelNode({ name: "G", annotation }, SchemaNodeType.Group, DiagramItemType.group, diagram);
+      expect(item?.id).toBe("/group:G");
+      expect(item?.name).toBe("G");
+      expect(item?.itemType).toBe(DiagramItemType.group);
+      expect(item?.diagram).toBe(diagram);
+      expect(item?.documentation).toBe("About G");
+    });
   });
 
   describe("createElementNode", () => {

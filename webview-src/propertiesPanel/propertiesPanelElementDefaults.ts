@@ -4,7 +4,7 @@
 
 import { SchemaCommand } from "../../shared/types";
 import { DiagramItem } from "../diagram";
-import { createSectionHeader } from "./propertiesPanelDom";
+import { createInputColumn, createSectionHeader } from "./propertiesPanelDom";
 
 /**
  * Renders the DEFAULT & FIXED section for element nodes.
@@ -24,51 +24,15 @@ export function renderElementDefaultFixedSection(
   const row = document.createElement("div");
   row.className = "property-row-2col";
 
-  const defaultCol = document.createElement("div");
-  defaultCol.className = "property-col";
-  const defaultLabel = document.createElement("label");
-  defaultLabel.textContent = "default";
-  const defaultInput = document.createElement("input");
-  defaultInput.type = "text";
-  defaultInput.className = "property-input";
-  defaultInput.value = node.elementDefault ?? "";
-  defaultInput.placeholder = "—";
-  defaultInput.addEventListener("blur", () => {
-    const val = defaultInput.value;
+  // An empty value removes the default or fixed value
+  const defaultCol = createInputColumn("default", node.elementDefault ?? "", (val) => {
     node.elementDefault = val || undefined;
-    dispatchCommand({
-      type: "modifyElement",
-      payload: { elementId: node.id, default_: val },
-    });
-  });
-  defaultInput.addEventListener("keydown", (e: KeyboardEvent) => {
-    if (e.key === "Enter") { e.preventDefault(); defaultInput.blur(); }
-  });
-  defaultCol.appendChild(defaultLabel);
-  defaultCol.appendChild(defaultInput);
-
-  const fixedCol = document.createElement("div");
-  fixedCol.className = "property-col";
-  const fixedLabel = document.createElement("label");
-  fixedLabel.textContent = "fixed";
-  const fixedInput = document.createElement("input");
-  fixedInput.type = "text";
-  fixedInput.className = "property-input";
-  fixedInput.value = node.elementFixed ?? "";
-  fixedInput.placeholder = "—";
-  fixedInput.addEventListener("blur", () => {
-    const val = fixedInput.value;
+    dispatchCommand({ type: "modifyElement", payload: { elementId: node.id, default_: val } });
+  }, "—");
+  const fixedCol = createInputColumn("fixed", node.elementFixed ?? "", (val) => {
     node.elementFixed = val || undefined;
-    dispatchCommand({
-      type: "modifyElement",
-      payload: { elementId: node.id, fixed: val },
-    });
-  });
-  fixedInput.addEventListener("keydown", (e: KeyboardEvent) => {
-    if (e.key === "Enter") { e.preventDefault(); fixedInput.blur(); }
-  });
-  fixedCol.appendChild(fixedLabel);
-  fixedCol.appendChild(fixedInput);
+    dispatchCommand({ type: "modifyElement", payload: { elementId: node.id, fixed: val } });
+  }, "—");
 
   row.appendChild(defaultCol);
   row.appendChild(fixedCol);

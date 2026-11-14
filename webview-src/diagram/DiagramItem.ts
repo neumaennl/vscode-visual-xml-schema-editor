@@ -12,6 +12,7 @@ import {
   Point,
   Size,
   Rectangle,
+  enclosingRectangle,
 } from "./DiagramTypes";
 import type { Diagram } from "./Diagram";
 
@@ -31,6 +32,7 @@ export class DiagramItem {
   public maxOccurrence: number = 1; // -1 for unbounded
 
   // Display properties
+  // jscpd:ignore-start -- distinct flags of the same type, not duplicated logic
   public showChildElements: boolean = false;
   public hasChildElements: boolean = false;
   public isReference: boolean = false;
@@ -39,6 +41,7 @@ export class DiagramItem {
   public isNillable: boolean = false;
   public isMixed: boolean = false;
   public hasAnonymousComplexType: boolean = false;
+  // jscpd:ignore-end
   public complexDerivationKind?: DiagramComplexDerivationKind;
   public simpleTypeDerivationKind?: DiagramSimpleTypeDerivationKind;
   public simpleTypeListItemType?: string;
@@ -128,65 +131,19 @@ export class DiagramItem {
   }
 
   /**
-   * Scale a point
-   */
-  public scalePoint(point: Point): Point {
-    if (!this.diagram) return point;
-    return {
-      x: Math.round(point.x * this.diagram.scale),
-      y: Math.round(point.y * this.diagram.scale),
-    };
-  }
-
-  /**
-   * Scale a size
-   */
-  public scaleSize(size: Size): Size {
-    if (!this.diagram) return size;
-    return {
-      width: Math.round(size.width * this.diagram.scale),
-      height: Math.round(size.height * this.diagram.scale),
-    };
-  }
-
-  /**
-   * Scale a rectangle
+   * Scale a rectangle (see {@link Diagram.scaleRectangle})
    */
   public scaleRectangle(rect: Rectangle): Rectangle {
-    if (!this.diagram) return rect;
-    return {
-      x: Math.round(rect.x * this.diagram.scale),
-      y: Math.round(rect.y * this.diagram.scale),
-      width: Math.round(rect.width * this.diagram.scale),
-      height: Math.round(rect.height * this.diagram.scale),
-    };
+    return this.diagram ? this.diagram.scaleRectangle(rect) : rect;
   }
 
   /**
    * Calculate the bounding box including all children
    */
   public calculateBoundingBox(): Rectangle {
-    let minX = this.location.x;
-    let minY = this.location.y;
-    let maxX = this.location.x + this.size.width;
-    let maxY = this.location.y + this.size.height;
-
-    if (this.showChildElements) {
-      for (const child of this.childElements) {
-        const childBounds = child.calculateBoundingBox();
-        minX = Math.min(minX, childBounds.x);
-        minY = Math.min(minY, childBounds.y);
-        maxX = Math.max(maxX, childBounds.x + childBounds.width);
-        maxY = Math.max(maxY, childBounds.y + childBounds.height);
-      }
-    }
-
-    this.boundingBox = {
-      x: minX,
-      y: minY,
-      width: maxX - minX,
-      height: maxY - minY,
-    };
+    const own: Rectangle = { ...this.location, ...this.size };
+    const children = this.showChildElements ? this.childElements.map((child) => child.calculateBoundingBox()) : [];
+    this.boundingBox = enclosingRectangle([own, ...children]);
 
     return this.boundingBox;
   }

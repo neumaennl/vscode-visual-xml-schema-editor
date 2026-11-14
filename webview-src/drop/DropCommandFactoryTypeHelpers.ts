@@ -1,6 +1,6 @@
 import { RestrictionFacets, SchemaCommand } from "../../shared/types";
 import { generateSchemaId, SchemaNodeType } from "../../shared/idStrategy";
-import { DiagramItem, DiagramItemType } from "../diagram";
+import { DiagramItem, DiagramItemType, parseDerivationBaseType, toRestrictionFacets } from "../diagram";
 import type { FacetPaletteConstruct } from "../palette/FacetIconStyles";
 import { PaletteSchemaConstruct } from "../palette/PaletteSchemaConstruct";
 
@@ -54,7 +54,7 @@ export function createFacetNodeDropCommand(
   if (!isRestrictionSimpleType(item)) {
     return null;
   }
-  const existingFacets = getRestrictionFacets(item);
+  const existingFacets = toRestrictionFacets(item.restrictions) ?? {};
   const facet = createDefaultFacet(construct, existingFacets);
   if (!facet) {
     return null;
@@ -76,23 +76,6 @@ function isRestrictionSimpleType(item: DiagramItem): boolean {
     item.simpleTypeDerivationKind !== "union" &&
     item.type.includes("restricts")
   );
-}
-
-function getRestrictionFacets(item: DiagramItem): RestrictionFacets {
-  return {
-    enumeration: item.restrictions?.enumeration,
-    pattern: item.restrictions?.pattern,
-    length: item.restrictions?.length,
-    minLength: item.restrictions?.minLength,
-    maxLength: item.restrictions?.maxLength,
-    minInclusive: item.restrictions?.minInclusive,
-    maxInclusive: item.restrictions?.maxInclusive,
-    minExclusive: item.restrictions?.minExclusive,
-    maxExclusive: item.restrictions?.maxExclusive,
-    totalDigits: item.restrictions?.totalDigits,
-    fractionDigits: item.restrictions?.fractionDigits,
-    whiteSpace: item.restrictions?.whiteSpace as RestrictionFacets["whiteSpace"],
-  };
 }
 
 /** The pattern of the first dropped pattern facet; it accepts every value without line breaks. */
@@ -161,13 +144,9 @@ function createUniqueEnumerationValue(existingValues: readonly string[]): string
 }
 
 function extractDisplayedBaseType(typeText: string): string | null {
-  const restricted = typeText.match(/\(restricts ([^)]+)\)/);
-  if (restricted?.[1]) {
-    return restricted[1].trim();
-  }
-  const extended = typeText.match(/\(extends ([^)]+)\)/);
-  if (extended?.[1]) {
-    return extended[1].trim();
+  const baseType = parseDerivationBaseType(typeText);
+  if (baseType) {
+    return baseType;
   }
   const trimmed = typeText.trim();
   return trimmed && !isPseudoTypeLabel(trimmed) ? trimmed : null;

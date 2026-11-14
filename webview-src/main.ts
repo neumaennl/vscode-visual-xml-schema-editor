@@ -288,20 +288,24 @@ class SchemaEditorApp {
     const canvas = document.getElementById("schema-canvas");
     if (!canvas) return;
 
-    // Get center of canvas
-    const centerX = canvas.clientWidth / 2;
-    const centerY = canvas.clientHeight / 2;
+    this.zoomAt(canvas.clientWidth / 2, canvas.clientHeight / 2, delta);
+  }
 
-    // Calculate point in diagram space before zoom
-    const pointX = (centerX - this.viewState.panX) / this.viewState.zoom;
-    const pointY = (centerY - this.viewState.panY) / this.viewState.zoom;
+  /**
+   * Zooms the view and keeps a point of the canvas in the same position.
+   *
+   * @param canvasX - The x coordinate of the point, relative to the canvas
+   * @param canvasY - The y coordinate of the point, relative to the canvas
+   * @param delta - Zoom factor (e.g., 1.2 for zoom in, 0.8 for zoom out)
+   */
+  private zoomAt(canvasX: number, canvasY: number, delta: number): void {
+    // The point in diagram space before the zoom
+    const pointX = (canvasX - this.viewState.panX) / this.viewState.zoom;
+    const pointY = (canvasY - this.viewState.panY) / this.viewState.zoom;
 
-    // Apply zoom
     this.viewState.zoom *= delta;
-
-    // Adjust pan to keep the center point in the same position
-    this.viewState.panX = centerX - pointX * this.viewState.zoom;
-    this.viewState.panY = centerY - pointY * this.viewState.zoom;
+    this.viewState.panX = canvasX - pointX * this.viewState.zoom;
+    this.viewState.panY = canvasY - pointY * this.viewState.zoom;
 
     this.renderer.updateView(this.viewState);
     this.saveState();
@@ -368,20 +372,8 @@ class SchemaEditorApp {
       const mouseX = e.clientX - rect.left;
       const mouseY = e.clientY - rect.top;
 
-      // Calculate point in diagram space before zoom
-      const pointX = (mouseX - this.viewState.panX) / this.viewState.zoom;
-      const pointY = (mouseY - this.viewState.panY) / this.viewState.zoom;
-
-      // Apply zoom
-      const delta = e.deltaY > 0 ? 0.9 : 1.1;
-      this.viewState.zoom *= delta;
-
-      // Adjust pan to keep the point under the mouse in the same position
-      this.viewState.panX = mouseX - pointX * this.viewState.zoom;
-      this.viewState.panY = mouseY - pointY * this.viewState.zoom;
-
-      this.renderer.updateView(this.viewState);
-      this.saveState();
+      // Keep the point under the mouse in the same position
+      this.zoomAt(mouseX, mouseY, e.deltaY > 0 ? 0.9 : 1.1);
     });
   }
 

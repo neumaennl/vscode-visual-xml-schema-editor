@@ -355,23 +355,7 @@ export function createDocsTab(
       })
     );
 
-    if (isSchemaDocsTarget(node)) {
-      root.appendChild(
-        createActionButton("add", "Add annotation", () => {
-          const nextAnnotationIndex = node.documentationAnnotations.length;
-           dispatchCommand({
-             type: "addAnnotation",
-             payload: { targetId: SCHEMA_ROOT_ID },
-           });
-           node.documentationAnnotations = normalizeAnnotationEntries(SCHEMA_ROOT_ID, [
-             ...node.documentationAnnotations,
-             { id: `${SCHEMA_ROOT_ID}/annotation[${nextAnnotationIndex}]`, documentationEntries: [] },
-           ]);
-          rerender();
-        })
-      );
-    }
-
+    appendAddSchemaAnnotationButton(root, node, dispatchCommand, rerender);
     return root;
   }
 
@@ -385,22 +369,37 @@ export function createDocsTab(
     );
   });
 
-  if (isSchemaDocsTarget(node)) {
-    root.appendChild(
-      createActionButton("add", "Add annotation", () => {
-        const nextAnnotationIndex = node.documentationAnnotations.length;
-        dispatchCommand({
-          type: "addAnnotation",
-          payload: { targetId: SCHEMA_ROOT_ID },
-        });
-        node.documentationAnnotations = normalizeAnnotationEntries(SCHEMA_ROOT_ID, [
-          ...node.documentationAnnotations,
-          { id: `${SCHEMA_ROOT_ID}/annotation[${nextAnnotationIndex}]`, documentationEntries: [] },
-        ]);
-        rerender();
-      })
-    );
-  }
-
+  appendAddSchemaAnnotationButton(root, node, dispatchCommand, rerender);
   return root;
+}
+
+/**
+ * Adds the button that adds an annotation to the schema root, which can have several. Other nodes
+ * have at most one annotation and get no such button.
+ *
+ * @param root - The Docs tab
+ * @param node - The diagram node being edited
+ * @param dispatchCommand - Callback used to emit schema commands
+ * @param rerender - Renders the tab again
+ */
+function appendAddSchemaAnnotationButton(
+  root: HTMLElement,
+  node: DiagramItem,
+  dispatchCommand: (command: SchemaCommand) => void,
+  rerender: () => void
+): void {
+  if (!isSchemaDocsTarget(node)) {
+    return;
+  }
+  root.appendChild(
+    createActionButton("add", "Add annotation", () => {
+      const nextAnnotationIndex = node.documentationAnnotations.length;
+      dispatchCommand({ type: "addAnnotation", payload: { targetId: SCHEMA_ROOT_ID } });
+      node.documentationAnnotations = normalizeAnnotationEntries(SCHEMA_ROOT_ID, [
+        ...node.documentationAnnotations,
+        { id: `${SCHEMA_ROOT_ID}/annotation[${nextAnnotationIndex}]`, documentationEntries: [] },
+      ]);
+      rerender();
+    })
+  );
 }

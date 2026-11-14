@@ -41,20 +41,35 @@ export function appendFacetRemoveButton(
   onRemove: () => void
 ): HTMLElement {
   field.classList.add("property-facet");
+  field.appendChild(
+    createRemoveButton("property-facet-remove property-docs-action-icon-only", `${label} facet`, canRemove, onRemove)
+  );
+  return field;
+}
+
+/**
+ * Creates a button with a close icon that removes a facet or a value. The last facet cannot be removed,
+ * and the title of the disabled button says why.
+ *
+ * @param className - The CSS classes of the button
+ * @param name - What the button removes, for its label and title
+ * @param canRemove - Whether removing is allowed
+ * @param onRemove - Called when the button is clicked
+ * @returns The button
+ */
+function createRemoveButton(className: string, name: string, canRemove: boolean, onRemove: () => void): HTMLButtonElement {
   const button = document.createElement("button");
   button.type = "button";
-  button.className = "property-facet-remove property-docs-action-icon-only";
+  button.className = className;
   button.disabled = !canRemove;
-  button.setAttribute("aria-label", `Remove ${label} facet`);
-  button.title = canRemove ? `Remove ${label} facet` : LAST_FACET_TITLE;
-
+  button.setAttribute("aria-label", `Remove ${name}`);
+  button.title = canRemove ? `Remove ${name}` : LAST_FACET_TITLE;
   const icon = document.createElement("span");
   icon.className = "codicon codicon-close";
   icon.setAttribute("aria-hidden", "true");
   button.appendChild(icon);
   button.addEventListener("click", onRemove);
-  field.appendChild(button);
-  return field;
+  return button;
 }
 
 /**
@@ -203,18 +218,7 @@ function createValueChip(
   valueButton.addEventListener("click", onEdit);
   chip.appendChild(valueButton);
 
-  const removeButton = document.createElement("button");
-  removeButton.type = "button";
-  removeButton.className = "property-value-chip-remove";
-  removeButton.setAttribute("aria-label", `Remove ${value}`);
-  removeButton.disabled = !canRemove;
-  removeButton.title = canRemove ? `Remove ${value}` : LAST_FACET_TITLE;
-  const icon = document.createElement("span");
-  icon.className = "codicon codicon-close";
-  icon.setAttribute("aria-hidden", "true");
-  removeButton.appendChild(icon);
-  removeButton.addEventListener("click", onRemove);
-  chip.appendChild(removeButton);
+  chip.appendChild(createRemoveButton("property-value-chip-remove", value, canRemove, onRemove));
   return chip;
 }
 

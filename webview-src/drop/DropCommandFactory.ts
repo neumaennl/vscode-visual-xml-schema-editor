@@ -2,6 +2,7 @@ import { schema, SchemaCommand } from "../../shared/types";
 import { DiagramItem, DiagramItemType } from "../diagram";
 import { generateSchemaId, parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy";
 import { PaletteSchemaConstruct } from "../palette/PaletteSchemaConstruct";
+import { isFacetPaletteConstruct } from "../palette/FacetIconStyles";
 import { createFacetNodeDropCommand, getAnonymousComplexTypeId, getAnonymousSimpleTypeId, getExtensionBaseType, getRestrictionBaseType, isComplexTypeNode, isSimpleTypeNode } from "./DropCommandFactoryTypeHelpers";
 
 /**
@@ -71,15 +72,6 @@ export class DropCommandFactory {
             attributeType: "xs:string",
           },
         };
-      case PaletteSchemaConstruct.SimpleType:
-        return {
-          type: "addSimpleType",
-          payload: {
-            parentId: SCHEMA_ROOT_ID,
-            typeName: this.nextName("SimpleType", reserveNames),
-            baseType: "xs:string",
-          },
-        };
       case PaletteSchemaConstruct.ComplexType:
         return {
           type: "addComplexType",
@@ -89,6 +81,7 @@ export class DropCommandFactory {
             contentModel: "sequence",
           },
         };
+      case PaletteSchemaConstruct.SimpleType:
       case PaletteSchemaConstruct.Restriction:
         return {
           type: "addSimpleType",
@@ -141,19 +134,20 @@ export class DropCommandFactory {
     construct: PaletteSchemaConstruct,
     reserveNames: boolean
   ): SchemaCommand | null {
+    if (isFacetPaletteConstruct(construct)) {
+      return createFacetNodeDropCommand(item, construct);
+    }
     switch (construct) {
       case PaletteSchemaConstruct.Element:
         return this.createElementNodeDropCommand(item, reserveNames);
       case PaletteSchemaConstruct.Attribute:
         return this.createAttributeNodeDropCommand(item, reserveNames);
       case PaletteSchemaConstruct.SimpleType:
-        return this.createSimpleTypeNodeDropCommand(item, reserveNames);
       case PaletteSchemaConstruct.ComplexType:
-        return this.createComplexTypeNodeDropCommand(item, reserveNames);
+        return this.createTypeNodeDropCommand(item, reserveNames, construct);
       case PaletteSchemaConstruct.Restriction:
-        return this.createRestrictionNodeDropCommand(item, reserveNames);
       case PaletteSchemaConstruct.Extension:
-        return this.createExtensionNodeDropCommand(item, reserveNames);
+        return this.createDerivationNodeDropCommand(item, reserveNames, construct);
       case PaletteSchemaConstruct.Group:
         return this.createGroupNodeDropCommand(item, reserveNames);
       case PaletteSchemaConstruct.Sequence:
@@ -162,19 +156,6 @@ export class DropCommandFactory {
         return this.createCompositorNodeDropCommand(item, "choice");
       case PaletteSchemaConstruct.All:
         return this.createCompositorNodeDropCommand(item, "all");
-      case PaletteSchemaConstruct.MinExclusive:
-      case PaletteSchemaConstruct.MinInclusive:
-      case PaletteSchemaConstruct.MaxExclusive:
-      case PaletteSchemaConstruct.MaxInclusive:
-      case PaletteSchemaConstruct.TotalDigits:
-      case PaletteSchemaConstruct.FractionDigits:
-      case PaletteSchemaConstruct.Length:
-      case PaletteSchemaConstruct.MinLength:
-      case PaletteSchemaConstruct.MaxLength:
-      case PaletteSchemaConstruct.Enumeration:
-      case PaletteSchemaConstruct.WhiteSpace:
-      case PaletteSchemaConstruct.Pattern:
-        return createFacetNodeDropCommand(item, construct);
       default:
         return null;
     }
@@ -253,43 +234,32 @@ export class DropCommandFactory {
     return null;
   }
 
-  private createSimpleTypeNodeDropCommand(
+  /**
+   * Creates the command that adds a simpleType or complexType: a top-level type on the schema root, or an
+   * anonymous type in an element.
+   *
+   * @param item - Drop target node
+   * @param reserveNames - Whether the new name is reserved
+   * @param construct - SimpleType or ComplexType
+   * @returns Command or null if the target cannot hold the type
+   */
+  private createTypeNodeDropCommand(
     item: DiagramItem,
-    reserveNames: boolean
+    reserveNames: boolean,
+    construct: PaletteSchemaConstruct.SimpleType | PaletteSchemaConstruct.ComplexType
   ): SchemaCommand | null {
-    if (this.isSchemaRoot(item) || item.itemType === DiagramItemType.element) {
-      return {
-        type: "addSimpleType",
-        payload: {
-          parentId: item.id,
-          ...(this.isSchemaRoot(item)
-            ? { typeName: this.nextName("SimpleType", reserveNames) }
-            : {}),
-          baseType: "xs:string",
-        },
-      };
+    const isRoot = this.isSchemaRoot(item);
+    if (!isRoot && item.itemType !== DiagramItemType.element) {
+      return null;
     }
-    return null;
+    if (construct === PaletteSchemaConstruct.SimpleType) {
+      const typeName = isRoot ? { typeName: this.nextName("SimpleType", reserveNames) } : {};
+      return { type: "addSimpleType", payload: { parentId: item.id, ...typeName, baseType: "xs:string" } };
+    }
+    const typeName = isRoot ? { typeName: this.nextName("ComplexType", reserveNames) } : {};
+    return { type: "addComplexType", payload: { parentId: item.id, ...typeName, contentModel: "sequence" } };
   }
 
-  private createComplexTypeNodeDropCommand(
-    item: DiagramItem,
-    reserveNames: boolean
-  ): SchemaCommand | null {
-    if (this.isSchemaRoot(item) || item.itemType === DiagramItemType.element) {
-      return {
-        type: "addComplexType",
-        payload: {
-          parentId: item.id,
-          ...(this.isSchemaRoot(item)
-            ? { typeName: this.nextName("ComplexType", reserveNames) }
-            : {}),
-          contentModel: "sequence",
-        },
-      };
-    }
-    return null;
-  }
 
   private createGroupNodeDropCommand(
     item: DiagramItem,
@@ -353,106 +323,48 @@ export class DropCommandFactory {
     return null;
   }
 
-  private createRestrictionNodeDropCommand(
+  /**
+   * Creates the command for a dropped restriction or extension:
+   * - on the schema root, a new top-level type;
+   * - on an element with an anonymous complexType, or on a complexType, a new derivation of that type;
+   * - on another element, a new anonymous simpleType (restriction) or complexType (extension);
+   * - on a simpleType, a new base type (restriction only).
+   *
+   * @param item - Drop target node
+   * @param reserveNames - Whether a new name is reserved
+   * @param construct - Restriction or Extension
+   * @returns Command or null if unsupported
+   */
+  private createDerivationNodeDropCommand(
     item: DiagramItem,
-    reserveNames: boolean
+    reserveNames: boolean,
+    construct: PaletteSchemaConstruct.Restriction | PaletteSchemaConstruct.Extension
   ): SchemaCommand | null {
     if (this.isSchemaRoot(item)) {
-      return this.createTopLevelDropCommandInternal(
-        PaletteSchemaConstruct.Restriction,
-        reserveNames
-      );
+      return this.createTopLevelDropCommandInternal(construct, reserveNames);
     }
-    if (item.itemType === DiagramItemType.element) {
-      if (item.hasAnonymousComplexType) {
-        return {
-          type: "modifyComplexType",
-          payload: {
-            typeId: getAnonymousComplexTypeId(item),
-            baseType: getRestrictionBaseType(item),
-            derivationKind: "restriction",
-          },
-        };
-      }
-      if (item.isSimpleContent) {
-        return {
-          type: "modifySimpleType",
-          payload: {
-            typeId: getAnonymousSimpleTypeId(item),
-            baseType: getRestrictionBaseType(item),
-          },
-        };
-      }
-      return {
-        type: "addSimpleType",
-        payload: {
-          parentId: item.id,
-          baseType: getRestrictionBaseType(item),
-        },
-      };
-    }
-    if (isSimpleTypeNode(item)) {
-      return {
-        type: "modifySimpleType",
-        payload: {
-          typeId: item.id,
-          baseType: getRestrictionBaseType(item),
-        },
-      };
-    }
-    if (isComplexTypeNode(item)) {
-      return {
-        type: "modifyComplexType",
-        payload: {
-          typeId: item.id,
-          baseType: getRestrictionBaseType(item),
-          derivationKind: "restriction",
-        },
-      };
-    }
-    return null;
-  }
+    const isRestriction = construct === PaletteSchemaConstruct.Restriction;
+    const derivationKind = isRestriction ? "restriction" : "extension";
+    const baseType = isRestriction ? getRestrictionBaseType(item) : getExtensionBaseType(item);
+    const isElement = item.itemType === DiagramItemType.element;
 
-  private createExtensionNodeDropCommand(
-    item: DiagramItem,
-    reserveNames: boolean
-  ): SchemaCommand | null {
-    if (this.isSchemaRoot(item)) {
-      return this.createTopLevelDropCommandInternal(
-        PaletteSchemaConstruct.Extension,
-        reserveNames
-      );
+    if ((isElement && item.hasAnonymousComplexType) || (!isElement && isComplexTypeNode(item))) {
+      const typeId = isElement ? getAnonymousComplexTypeId(item) : item.id;
+      return { type: "modifyComplexType", payload: { typeId, baseType, derivationKind } };
     }
-    if (item.itemType === DiagramItemType.element) {
-      if (item.hasAnonymousComplexType) {
-        return {
-          type: "modifyComplexType",
-          payload: {
-            typeId: getAnonymousComplexTypeId(item),
-            baseType: getExtensionBaseType(item),
-            derivationKind: "extension",
-          },
-        };
-      }
+    if (isElement && !isRestriction) {
       return {
         type: "addComplexType",
-        payload: {
-          parentId: item.id,
-          contentModel: "sequence",
-          baseType: getExtensionBaseType(item),
-          derivationKind: "extension",
-        },
+        payload: { parentId: item.id, contentModel: "sequence", baseType, derivationKind },
       };
     }
-    if (isComplexTypeNode(item)) {
-      return {
-        type: "modifyComplexType",
-        payload: {
-          typeId: item.id,
-          baseType: getExtensionBaseType(item),
-          derivationKind: "extension",
-        },
-      };
+    if (isElement) {
+      return item.isSimpleContent
+        ? { type: "modifySimpleType", payload: { typeId: getAnonymousSimpleTypeId(item), baseType } }
+        : { type: "addSimpleType", payload: { parentId: item.id, baseType } };
+    }
+    if (isRestriction && isSimpleTypeNode(item)) {
+      return { type: "modifySimpleType", payload: { typeId: item.id, baseType } };
     }
     return null;
   }

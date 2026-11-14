@@ -11,7 +11,7 @@ import {
   createComplexBaseTypeCommand,
   createTypeCommand,
   getNodeType,
-  normalizeTypeReferenceForCurrentSchema,
+  onTypeChange,
 } from "./propertiesPanelCommands";
 import { extractBaseType } from "./propertiesPanelSimpleTypeCommands";
 import {
@@ -28,6 +28,7 @@ import {
   renderSimpleTypeKindSelector,
   renderSimpleTypeListEditor,
   renderSimpleTypeUnionEditor,
+  renderInlineSimpleTypeReplacement,
 } from "./propertiesPanelSimpleTypeEditors";
 
 /**
@@ -64,14 +65,7 @@ export function renderTypeProperty(
     isSimpleTypeNode(nodeType, hasInlineSimpleType) &&
     simpleTypeDerivationKind === "list"
   ) {
-    renderSimpleTypeListEditor(
-      root,
-      node,
-      hasInlineSimpleType,
-      typeSuggestions,
-      dispatchCommand,
-      addPropertyToContainer
-    );
+    renderSimpleTypeListEditor({ root, node, hasInlineSimpleType, typeSuggestions, dispatchCommand, addPropertyToContainer });
     return;
   }
 
@@ -79,14 +73,7 @@ export function renderTypeProperty(
     isSimpleTypeNode(nodeType, hasInlineSimpleType) &&
     simpleTypeDerivationKind === "union"
   ) {
-    renderSimpleTypeUnionEditor(
-      root,
-      node,
-      hasInlineSimpleType,
-      typeSuggestions,
-      dispatchCommand,
-      addPropertyToContainer
-    );
+    renderSimpleTypeUnionEditor({ root, node, hasInlineSimpleType, typeSuggestions, dispatchCommand, addPropertyToContainer });
     return;
   }
 
@@ -142,18 +129,13 @@ export function renderTypeProperty(
   const typeCommand = createTypeCommand(node, node.type);
   if (typeCommand) {
     root.appendChild(
-      createEditableField("Type", node.type, (next) => {
-        const normalizedNext = normalizeTypeReferenceForCurrentSchema(node, next);
-        const normalizedCurrent = normalizeTypeReferenceForCurrentSchema(node, node.type);
-        if (normalizedNext === normalizedCurrent) {
-          return;
-        }
+      createEditableField("Type", node.type, onTypeChange(node, node.type, (normalizedNext, next) => {
         const command = createTypeCommand(node, next);
         if (command) {
           node.type = normalizedNext;
           dispatchCommand(command);
         }
-      }, typeSuggestions)
+      }, true), typeSuggestions)
     );
     return;
   }
@@ -208,12 +190,7 @@ function renderSimpleBaseTypeEditor(
     createEditableField(
       "Base Type",
       baseType,
-      (next) => {
-        const normalizedNext = normalizeTypeReferenceForCurrentSchema(node, next);
-        const normalizedCurrent = normalizeTypeReferenceForCurrentSchema(node, baseType);
-        if (normalizedNext === normalizedCurrent) {
-          return;
-        }
+      onTypeChange(node, baseType, (normalizedNext, next) => {
         const command = createTypeCommand(node, next);
         if (!command) {
           return;
@@ -222,47 +199,13 @@ function renderSimpleBaseTypeEditor(
           ? `<anonymous simpleType> (restricts ${normalizedNext})`
           : `simpleType (restricts ${normalizedNext})`;
         dispatchCommand(command);
-      },
+      }, true),
       typeSuggestions
     )
   );
   if (hasInlineSimpleType) {
     renderInlineSimpleTypeReplacement(root, node, baseType, typeSuggestions, dispatchCommand);
   }
-}
-
-function renderInlineSimpleTypeReplacement(
-  root: HTMLElement,
-  node: DiagramItem,
-  baseType: string,
-  typeSuggestions: string[],
-  dispatchCommand: (command: SchemaCommand) => void
-): void {
-  root.appendChild(
-    createEditableField(
-      "Replacement Type",
-      baseType,
-      (next) => {
-        const normalizedNext = normalizeTypeReferenceForCurrentSchema(node, next);
-        const normalizedCurrent = normalizeTypeReferenceForCurrentSchema(node, baseType);
-        if (!normalizedNext || normalizedNext === normalizedCurrent) {
-          return;
-        }
-        const command: SchemaCommand = {
-          type: "modifyElement",
-          payload: {
-            elementId: node.id,
-            elementType: normalizedNext,
-          },
-        };
-        node.type = normalizedNext;
-        node.hasAnonymousComplexType = false;
-        node.isSimpleContent = false;
-        dispatchCommand(command);
-      },
-      typeSuggestions
-    )
-  );
 }
 
 function renderComplexBaseTypeEditor(
@@ -279,12 +222,7 @@ function renderComplexBaseTypeEditor(
     createEditableField(
       "Base Type",
       baseType ?? "",
-      (next) => {
-        const normalizedNext = normalizeTypeReferenceForCurrentSchema(node, next);
-        const normalizedCurrent = normalizeTypeReferenceForCurrentSchema(node, baseType ?? "");
-        if (normalizedNext === normalizedCurrent) {
-          return;
-        }
+      onTypeChange(node, baseType ?? "", (normalizedNext, next) => {
         const command = createComplexBaseTypeCommand(node, next);
         if (!command) {
           return;
@@ -294,7 +232,7 @@ function renderComplexBaseTypeEditor(
         const relation = getDerivationRelation(derivationKind);
         node.type = normalizedNext ? `${prefix} (${relation} ${normalizedNext})` : prefix;
         dispatchCommand(command);
-      },
+      }, true),
       typeSuggestions
     )
   );
@@ -314,12 +252,7 @@ function renderComplexReplacementType(
     createEditableField(
       "Replacement Type",
       baseType ?? "",
-      (next) => {
-        const normalizedNext = normalizeTypeReferenceForCurrentSchema(node, next);
-        const normalizedCurrent = normalizeTypeReferenceForCurrentSchema(node, baseType ?? "");
-        if (!normalizedNext || normalizedNext === normalizedCurrent) {
-          return;
-        }
+      onTypeChange(node, baseType ?? "", (normalizedNext) => {
         const command = createTypeCommand(node, normalizedNext);
         if (!command) {
           return;
@@ -329,7 +262,7 @@ function renderComplexReplacementType(
         node.isSimpleContent = false;
         node.complexDerivationKind = undefined;
         dispatchCommand(command);
-      },
+      }),
       typeSuggestions
     )
   );
@@ -349,12 +282,7 @@ function renderInlineAnonymousTypeReplacement(
     createEditableField(
       "Replacement Type",
       baseType ?? "",
-      (next) => {
-        const normalizedNext = normalizeTypeReferenceForCurrentSchema(node, next);
-        const normalizedCurrent = normalizeTypeReferenceForCurrentSchema(node, baseType ?? "");
-        if (normalizedNext === normalizedCurrent) {
-          return;
-        }
+      onTypeChange(node, baseType ?? "", (normalizedNext, next) => {
         const command = createTypeCommand(node, next);
         if (!command) {
           return;
@@ -364,7 +292,7 @@ function renderInlineAnonymousTypeReplacement(
         node.isSimpleContent = false;
         node.complexDerivationKind = undefined;
         dispatchCommand(command);
-      },
+      }, true),
       typeSuggestions
     )
   );

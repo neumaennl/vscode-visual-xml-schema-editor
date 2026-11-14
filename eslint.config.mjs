@@ -41,6 +41,31 @@ const maxLinesPerTest = {
   },
 };
 
+/** The most lines that a conditional expression (`a ? b : c`) may span. */
+const MAX_TERNARY_LINES = 3;
+
+/**
+ * Limits conditional expressions to a few lines; a longer one is easier to read as `if`/`else`
+ * (see "Code quality" in docs/development-guidelines.md).
+ */
+const maxTernaryLines = {
+  meta: {
+    type: 'suggestion',
+    messages: { tooLong: 'Conditional expression spans {{lines}} lines. Maximum allowed is {{max}}; use if/else instead.' },
+    schema: [],
+  },
+  create(context) {
+    return {
+      ConditionalExpression(node) {
+        const lines = node.loc.end.line - node.loc.start.line + 1;
+        if (lines > MAX_TERNARY_LINES) {
+          context.report({ node, messageId: 'tooLong', data: { lines, max: MAX_TERNARY_LINES } });
+        }
+      },
+    };
+  },
+};
+
 export default [
   // Global ignores
   {
@@ -104,9 +129,12 @@ export default [
     },
     plugins: {
       '@typescript-eslint': tseslint,
+      style: { rules: { 'max-ternary-lines': maxTernaryLines } },
     },
     rules: {
       ...tseslint.configs.recommended.rules,
+      // Long conditional expressions are written as if/else (see "Code quality" in docs/development-guidelines.md)
+      'style/max-ternary-lines': 'error',
       ...tseslint.configs['recommended-requiring-type-checking'].rules,
       '@typescript-eslint/no-unused-vars': [
         'error',

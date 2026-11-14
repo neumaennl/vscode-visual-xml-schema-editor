@@ -5,8 +5,6 @@
 
 import {
   schema,
-  topLevelElement,
-  localElement,
   topLevelComplexType,
   localComplexType,
   namedGroup,
@@ -14,8 +12,8 @@ import {
   simpleExplicitGroup,
   all as allGroup,
   allType,
-  topLevelAttribute,
   attribute,
+  localSimpleType,
 } from "../shared/types.js";
 import { parseSchemaId, SchemaNodeType } from "../shared/idStrategy.js";
 import { getContentContainer, isSchemaRoot } from "../shared/schemaUtils.js";
@@ -174,14 +172,11 @@ function navigateToChild(
     return navigateFromSchema(parent as schema, nodeType, name, position);
   } else if (
     parentType === "topLevelElement" ||
-    parentType === "localElement"
+    parentType === "localElement" ||
+    parentType === "topLevelAttribute" ||
+    parentType === "attribute"
   ) {
-    return navigateFromElement(
-      parent as topLevelElement | localElement,
-      nodeType,
-      name,
-      position
-    );
+    return navigateToAnonymousType(parent as AnonymousTypeHolder, nodeType);
   } else if (
     parentType === "topLevelComplexType" ||
     parentType === "localComplexType"
@@ -195,16 +190,6 @@ function navigateToChild(
   } else if (parentType === "namedGroup") {
     return navigateFromNamedGroup(parent as namedGroup, nodeType, name, position);
   } else if (
-    parentType === "topLevelAttribute" ||
-    parentType === "attribute"
-  ) {
-    return navigateFromAttribute(
-      parent as topLevelAttribute | attribute,
-      nodeType,
-      name,
-      position
-    );
-  } else if (
     parentType === "sequence" ||
     parentType === "choice" ||
     parentType === "all"
@@ -215,6 +200,18 @@ function navigateToChild(
   return { found: false };
 }
 
+/** The property of the schema that holds each kind of top-level component, and the type of the node. */
+const TOP_LEVEL_KINDS: Partial<
+  Record<SchemaNodeType, { property: "element" | "complexType" | "simpleType" | "group" | "attributeGroup" | "attribute"; nodeType: string }>
+> = {
+  [SchemaNodeType.Element]: { property: "element", nodeType: "topLevelElement" },
+  [SchemaNodeType.ComplexType]: { property: "complexType", nodeType: "topLevelComplexType" },
+  [SchemaNodeType.SimpleType]: { property: "simpleType", nodeType: "topLevelSimpleType" },
+  [SchemaNodeType.Group]: { property: "group", nodeType: "namedGroup" },
+  [SchemaNodeType.AttributeGroup]: { property: "attributeGroup", nodeType: "namedAttributeGroup" },
+  [SchemaNodeType.Attribute]: { property: "attribute", nodeType: "topLevelAttribute" },
+};
+
 /**
  * Navigate from schema root to a child.
  */
@@ -224,66 +221,28 @@ function navigateFromSchema(
   name?: string,
   position?: number
 ): NavigationResult {
-  if (nodeType === SchemaNodeType.Element) {
-    const elements = schemaObj.element ?? [];
-    const element = findByNameOrPosition(elements, name, position);
-    if (element) {
-      return { found: true, node: element, nodeType: "topLevelElement" };
-    }
-  } else if (nodeType === SchemaNodeType.ComplexType) {
-    const types = schemaObj.complexType ?? [];
-    const type = findByNameOrPosition(types, name, position);
-    if (type) {
-      return { found: true, node: type, nodeType: "topLevelComplexType" };
-    }
-  } else if (nodeType === SchemaNodeType.SimpleType) {
-    const types = schemaObj.simpleType ?? [];
-    const type = findByNameOrPosition(types, name, position);
-    if (type) {
-      return { found: true, node: type, nodeType: "topLevelSimpleType" };
-    }
-  } else if (nodeType === SchemaNodeType.Group) {
-    const groups = schemaObj.group ?? [];
-    const group = findByNameOrPosition(groups, name, position);
-    if (group) {
-      return { found: true, node: group, nodeType: "namedGroup" };
-    }
-  } else if (nodeType === SchemaNodeType.AttributeGroup) {
-    const attrGroups = schemaObj.attributeGroup ?? [];
-    const attrGroup = findByNameOrPosition(attrGroups, name, position);
-    if (attrGroup) {
-      return { found: true, node: attrGroup, nodeType: "namedAttributeGroup" };
-    }
-  } else if (nodeType === SchemaNodeType.Attribute) {
-    const attrs = schemaObj.attribute ?? [];
-    const attr = findByNameOrPosition(attrs, name, position);
-    if (attr) {
-      return { found: true, node: attr, nodeType: "topLevelAttribute" };
-    }
+  const kind = TOP_LEVEL_KINDS[nodeType];
+  if (!kind) {
+    return { found: false };
   }
-
-  return { found: false };
+  const components: Array<{ name?: string }> = schemaObj[kind.property] ?? [];
+  const node = findByNameOrPosition(components, name, position);
+  return node ? { found: true, node, nodeType: kind.nodeType } : { found: false };
 }
 
-/**
- * Navigate from an element to a child.
- */
-function navigateFromElement(
-  element: topLevelElement | localElement,
-  nodeType: SchemaNodeType,
-  _name?: string,
-  _position?: number
-): NavigationResult {
-  if (nodeType === SchemaNodeType.AnonymousComplexType) {
-    if (element.complexType) {
-      return { found: true, node: element.complexType, nodeType: "localComplexType" };
-    }
-  } else if (nodeType === SchemaNodeType.AnonymousSimpleType) {
-    if (element.simpleType) {
-      return { found: true, node: element.simpleType, nodeType: "localSimpleType" };
-    }
-  }
+/** An element or attribute, which can hold an anonymous type; attributes only hold simple types. */
+type AnonymousTypeHolder = { complexType?: localComplexType; simpleType?: localSimpleType };
 
+/**
+ * Navigate from an element or attribute to its anonymous complexType or simpleType.
+ */
+function navigateToAnonymousType(holder: AnonymousTypeHolder, nodeType: SchemaNodeType): NavigationResult {
+  if (nodeType === SchemaNodeType.AnonymousComplexType && holder.complexType) {
+    return { found: true, node: holder.complexType, nodeType: "localComplexType" };
+  }
+  if (nodeType === SchemaNodeType.AnonymousSimpleType && holder.simpleType) {
+    return { found: true, node: holder.simpleType, nodeType: "localSimpleType" };
+  }
   return { found: false };
 }
 
@@ -353,24 +312,6 @@ function resolveComplexTypeGroup(
   groupKind: "sequence" | "choice" | "all"
 ): explicitGroup | allGroup | undefined {
   return getContentContainer<ComplexTypeContent>(complexType)[groupKind];
-}
-
-/**
- * Navigate from an attribute to a child (anonymousSimpleType).
- */
-function navigateFromAttribute(
-  attr: topLevelAttribute | attribute,
-  nodeType: SchemaNodeType,
-  _name?: string,
-  _position?: number
-): NavigationResult {
-  if (nodeType === SchemaNodeType.AnonymousSimpleType) {
-    if (attr.simpleType) {
-      return { found: true, node: attr.simpleType, nodeType: "localSimpleType" };
-    }
-  }
-
-  return { found: false };
 }
 
 function navigateFromNamedGroup(

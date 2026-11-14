@@ -244,39 +244,21 @@ function parseNodeSegment(segment: string): {
   namespace?: string;
   position?: number;
 } {
-  // Check for position indicator [N]
+  // Split off a position indicator [N]
   const positionMatch = segment.match(/^([^[]+)\[(\d+)\]$/);
-  if (positionMatch) {
-    const [, typeOrTypeName, posStr] = positionMatch;
-    const position = parseInt(posStr, 10);
+  const typeAndName = positionMatch ? positionMatch[1] : segment;
+  const position = positionMatch ? { position: parseInt(positionMatch[2], 10) } : {};
 
-    // Check if it has a name (type:name format)
-    // Need to be careful because namespace URLs can contain ':'
-    const colonIndex = findTypeNameSeparator(typeOrTypeName);
-    if (colonIndex > 0) {
-      const nodeType = typeOrTypeName.substring(
-        0,
-        colonIndex
-      ) as SchemaNodeType;
-      const nameWithNs = typeOrTypeName.substring(colonIndex + 1);
-      const { name, namespace } = parseQualifiedName(nameWithNs);
-      return { nodeType, name, namespace, position };
-    } else {
-      return { nodeType: typeOrTypeName as SchemaNodeType, position };
-    }
-  }
-
-  // Check for type:name format
-  const colonIndex = findTypeNameSeparator(segment);
+  // Check for type:name format; namespace URLs can contain ':', so the separator needs care
+  const colonIndex = findTypeNameSeparator(typeAndName);
   if (colonIndex > 0) {
-    const nodeType = segment.substring(0, colonIndex) as SchemaNodeType;
-    const nameWithNs = segment.substring(colonIndex + 1);
-    const { name, namespace } = parseQualifiedName(nameWithNs);
-    return { nodeType, name, namespace };
+    const nodeType = typeAndName.substring(0, colonIndex) as SchemaNodeType;
+    const { name, namespace } = parseQualifiedName(typeAndName.substring(colonIndex + 1));
+    return { nodeType, name, namespace, ...position };
   }
 
   // Just a type
-  return { nodeType: segment as SchemaNodeType };
+  return { nodeType: typeAndName as SchemaNodeType, ...position };
 }
 
 /**

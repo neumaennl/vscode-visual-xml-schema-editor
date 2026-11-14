@@ -4,8 +4,8 @@ title: Commands
 description: The edit commands - payload fields, the rules the validators enforce, what the executors change in the schema, and where the webview sends them.
 tags: [commands, payload, validation, reference]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-14T16:13:09Z }
-verified: { by: human:neumaennl, at: 2026-11-14T16:42:44Z }
+generated: { by: human:neumaennl, at: 2026-11-14T17:03:55Z }
+verified: { by: human:neumaennl, at: 2026-11-14T17:23:45Z }
 sources:
   - id: commands
     resource: ../shared/commands/index.ts
@@ -280,19 +280,19 @@ The element prefix `xs:` is missing in the output because serialization drops it
 | File | Content |
 |---|---|
 | `shared/commands/base.ts` | `BaseCommand` and `CommandResponse` |
-| `shared/commands/element.ts`, `attribute.ts`, `schemaTypes.ts`, `group.ts`, `metadata.ts`, `module.ts` | Payloads and command types, one file per area |
-| `shared/commands/index.ts` | Re-exports the areas and defines the `SchemaCommand` union |
+| `shared/commands/element.ts`, `attribute.ts`, `schemaTypes.ts`, `group.ts`, `metadata.ts`, `module.ts` | Payloads, command types and the union of the commands of each kind of component, such as `ElementCommand`, one file per area |
+| `shared/commands/index.ts` | Re-exports the areas and defines the `SchemaCommand` union, which combines the unions of the areas |
 | `shared/messages.ts` | The messages that carry the commands (see [Messaging](messaging.md)) |
 | `shared/types.ts` | Re-exports the generated classes, the commands and the messages |
 | `src/commandHandlers.ts` | `findCommandHandler()`, which finds the validator or executor of a command by its name |
 | `src/commandValidators/` | One validator per command, grouped by area; the checks that validators of several areas share in `commonValidators.ts`, the search for references to groups and attribute groups in `referenceSearch.ts`, and `validationUtils.ts` |
-| `src/commandExecutors/` | One executor per command, grouped by area, and the shared rename and prefix helpers (`schemaLocalRenamer.ts`, `schemaQNameRewriter.ts`, `schemaPrefixChecker.ts`), which all use the walk over every QName of the schema in `schemaQNameReferences.ts` |
+| `src/commandExecutors/` | One executor per command, grouped by area, and the shared rename and prefix helpers (`schemaLocalRenamer.ts`, `schemaQNameRewriter.ts`, `schemaPrefixChecker.ts`), which all use the walk over every QName of the schema in `schemaQNameReferences.ts`; helpers for optional properties and arrays (`nodeProperties.ts`), for anonymous and top-level types (`typeTargets.ts`) and for documentation (`annotationUtils.ts`) |
 
 Each command type has a string literal as `type`, so `SchemaCommand` is a discriminated union: a `switch` on `command.type` narrows the payload to the right type. The type tests in `shared/commands/commandTypes.test-d.ts` check the required fields, the allowed values of `maxOccurs` and that the union rejects unknown types and mismatched payloads (see [Testing](testing.md#kinds-of-tests)); the behaviour is tested next to the validators and executors.[^commands]
 
 **Adding a command** touches these places:
 
-1. Payload and command type in the matching file in `shared/commands/`, and the command in the `SchemaCommand` union in `shared/commands/index.ts`. Required fields and restricted values of the payload get cases in `commandTypes.test-d.ts`.
+1. Payload and command type in the matching file in `shared/commands/`, and the command in the union of its kind of component in that file, such as `ElementCommand`, which the `SchemaCommand` union in `shared/commands/index.ts` contains. Required fields and restricted values of the payload get cases in `commandTypes.test-d.ts`.
 2. A validator `validate<Type>` in a module of `src/commandValidators/`, such as `validateAddElement` for `addElement`. `src/commandValidator.ts` takes all functions of the modules it imports; a new module is added there.
 3. An executor `execute<Type>` in a module of `src/commandExecutors/`, which `src/commandExecutor.ts` takes in the same way.
 4. The place in `webview-src/` that creates and sends the command.

@@ -190,3 +190,9 @@ export interface ModifyAttributeGroupCommand extends BaseCommand<ModifyAttribute
   type: "modifyAttributeGroup";
   payload: ModifyAttributeGroupPayload;
 }
+
+/** The commands that add, remove and modify a group. */
+export type GroupCommand = AddGroupCommand | RemoveGroupCommand | ModifyGroupCommand;
+
+/** The commands that add, remove and modify an attribute group. */
+export type AttributeGroupCommand = AddAttributeGroupCommand | RemoveAttributeGroupCommand | ModifyAttributeGroupCommand;

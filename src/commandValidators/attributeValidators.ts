@@ -7,6 +7,7 @@ import {
   AddAttributeCommand,
   RemoveAttributeCommand,
   ModifyAttributeCommand,
+  AttributeFields,
 } from "../../shared/types.js";
 import { ValidationResult, isValidXmlName } from "./validationUtils.js";
 import { getAttributeContainer } from "../../shared/schemaUtils.js";
@@ -24,9 +25,6 @@ const ATTRIBUTES: ChildKind = {
   validParents: VALID_ATTR_PARENTS,
   getChildren: (parent) => getAttributeContainer(parent).attribute ?? [],
 };
-
-/** The fields of an addAttribute or modifyAttribute command that {@link validateAttributeKind} checks. */
-type AttributeFields = Pick<AddAttributeCommand["payload"], "attributeName" | "attributeType" | "ref" | "defaultValue" | "fixedValue">;
 
 /**
  * Validates the fields that depend on whether an attribute is a reference: a reference has no name,

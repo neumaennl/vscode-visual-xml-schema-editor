@@ -14,84 +14,27 @@ export * from "./group.js";
 export * from "./metadata.js";
 export * from "./module.js";
 
-// Import command types for union
-import {
-  AddElementCommand,
-  RemoveElementCommand,
-  ModifyElementCommand,
-} from "./element.js";
-import {
-  AddAttributeCommand,
-  RemoveAttributeCommand,
-  ModifyAttributeCommand,
-} from "./attribute.js";
-import {
-  AddSimpleTypeCommand,
-  RemoveSimpleTypeCommand,
-  ModifySimpleTypeCommand,
-  AddComplexTypeCommand,
-  RemoveComplexTypeCommand,
-  ModifyComplexTypeCommand,
-} from "./schemaTypes.js";
-import {
-  AddGroupCommand,
-  RemoveGroupCommand,
-  ModifyGroupCommand,
-  AddAttributeGroupCommand,
-  RemoveAttributeGroupCommand,
-  ModifyAttributeGroupCommand,
-} from "./group.js";
-import {
-  AddAnnotationCommand,
-  RemoveAnnotationCommand,
-  ModifyAnnotationCommand,
-  AddDocumentationCommand,
-  RemoveDocumentationCommand,
-  ModifyDocumentationCommand,
-} from "./metadata.js";
-import {
-  AddImportCommand,
-  RemoveImportCommand,
-  ModifyImportCommand,
-  AddIncludeCommand,
-  RemoveIncludeCommand,
-  ModifyIncludeCommand,
-  ModifySchemaNamespacesCommand,
-} from "./module.js";
+// Import the commands of each area for the union
+import type { ElementCommand } from "./element.js";
+import type { AttributeCommand } from "./attribute.js";
+import type { SimpleTypeCommand, ComplexTypeCommand } from "./schemaTypes.js";
+import type { GroupCommand, AttributeGroupCommand } from "./group.js";
+import type { AnnotationCommand, DocumentationCommand } from "./metadata.js";
+import type { ImportCommand, IncludeCommand, ModifySchemaNamespacesCommand } from "./module.js";
 
 /**
  * Union type of all possible commands.
  * This allows for type-safe command handling with discriminated unions.
  */
 export type SchemaCommand =
-  | AddElementCommand
-  | RemoveElementCommand
-  | ModifyElementCommand
-  | AddAttributeCommand
-  | RemoveAttributeCommand
-  | ModifyAttributeCommand
-  | AddSimpleTypeCommand
-  | RemoveSimpleTypeCommand
-  | ModifySimpleTypeCommand
-  | AddComplexTypeCommand
-  | RemoveComplexTypeCommand
-  | ModifyComplexTypeCommand
-  | AddGroupCommand
-  | RemoveGroupCommand
-  | ModifyGroupCommand
-  | AddAttributeGroupCommand
-  | RemoveAttributeGroupCommand
-  | ModifyAttributeGroupCommand
-  | AddAnnotationCommand
-  | RemoveAnnotationCommand
-  | ModifyAnnotationCommand
-  | AddDocumentationCommand
-  | RemoveDocumentationCommand
-  | ModifyDocumentationCommand
-  | AddImportCommand
-  | RemoveImportCommand
-  | ModifyImportCommand
-  | AddIncludeCommand
-  | RemoveIncludeCommand
-  | ModifyIncludeCommand
+  | ElementCommand
+  | AttributeCommand
+  | SimpleTypeCommand
+  | ComplexTypeCommand
+  | GroupCommand
+  | AttributeGroupCommand
+  | AnnotationCommand
+  | DocumentationCommand
+  | ImportCommand
+  | IncludeCommand
   | ModifySchemaNamespacesCommand;

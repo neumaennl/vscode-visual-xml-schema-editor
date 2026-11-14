@@ -116,3 +116,9 @@ export interface ModifyDocumentationCommand extends BaseCommand<ModifyDocumentat
   type: "modifyDocumentation";
   payload: ModifyDocumentationPayload;
 }
+
+/** The commands that add, remove and modify an annotation. */
+export type AnnotationCommand = AddAnnotationCommand | RemoveAnnotationCommand | ModifyAnnotationCommand;
+
+/** The commands that add, remove and modify documentation. */
+export type DocumentationCommand = AddDocumentationCommand | RemoveDocumentationCommand | ModifyDocumentationCommand;

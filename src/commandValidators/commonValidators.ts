@@ -7,6 +7,7 @@
 import { schema } from "../../shared/types.js";
 import { parseSchemaId, ParsedSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy.js";
 import { locateNodeById } from "../schemaNavigator.js";
+import { findIdentifiedChild } from "../commandUtils.js";
 import { ValidationFailure, ValidationResult, isValidXmlName, validateAnonymousTypeParent } from "./validationUtils.js";
 
 /** A top-level component, as far as the checks look at it. */
@@ -182,10 +183,7 @@ export function locateChild(
   }
 
   const children = kind.getChildren(location.parent);
-  const child =
-    parsed.position !== undefined
-      ? children[parsed.position]
-      : children.find((c) => parsed.name !== undefined && (c.name === parsed.name || c.ref === parsed.name));
+  const child = findIdentifiedChild(children, parsed.name, parsed.position);
   if (!child) {
     const spec = parsed.position !== undefined ? `at position: ${parsed.position}` : `with name: ${parsed.name}`;
     return { valid: false, error: `${kind.label} not found ${spec}` };

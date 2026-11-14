@@ -219,3 +219,9 @@ export interface ModifyComplexTypeCommand extends BaseCommand<ModifyComplexTypeP
   type: "modifyComplexType";
   payload: ModifyComplexTypePayload;
 }
+
+/** The commands that add, remove and modify a simple type. */
+export type SimpleTypeCommand = AddSimpleTypeCommand | RemoveSimpleTypeCommand | ModifySimpleTypeCommand;
+
+/** The commands that add, remove and modify a complex type. */
+export type ComplexTypeCommand = AddComplexTypeCommand | RemoveComplexTypeCommand | ModifyComplexTypeCommand;

@@ -115,6 +115,32 @@ function documentationAt(documentations: documentationType[], index: number, id:
 }
 
 /**
+ * Locates the annotation and the index of the documentation entry that a documentation ID identifies:
+ * `/schema/annotation[N]/documentation[M]`, the shorthand `/schema/documentation[M]` for the first
+ * annotation of the schema, or `<component ID>/documentation[M]`. Used by removeDocumentation and
+ * modifyDocumentation.
+ *
+ * @param schemaObj - The schema
+ * @param documentationId - The documentation ID
+ * @returns The annotation and the index of the entry in it
+ * @throws Error if the annotation does not exist, which the validator rules out
+ */
+function locateDocumentation(schemaObj: schema, documentationId: string): { annotation: annotationType; index: number } {
+  const schemaDocumentationId = parseSchemaDocumentationId(documentationId);
+  if (schemaDocumentationId) {
+    return {
+      annotation: schemaAnnotationAt(schemaObj.annotation ?? [], schemaDocumentationId.annotationIndex, documentationId),
+      index: schemaDocumentationId.documentationIndex,
+    };
+  }
+  const { elementId, documentationIndex } = parseDocumentationId(documentationId);
+  const annotation = isSchemaRoot(elementId)
+    ? schemaAnnotationAt(schemaObj.annotation ?? [], 0, documentationId)
+    : assumeValidated(findAnnotatableNode(schemaObj, elementId).annotation, `Annotation of ${elementId}`);
+  return { annotation, index: documentationIndex };
+}
+
+/**
  * Ensures the given non-schema node has an annotation element, creating one if absent.
  */
 function ensureAnnotation(node: AnnotatableNode): annotationType {
@@ -324,36 +350,10 @@ export function executeRemoveDocumentation(
   schemaObj: schema
 ): void {
   const { documentationId } = command.payload;
-
-  // "/schema/annotation[N]/documentation[M]" format
-  const schemaDocumentationId = parseSchemaDocumentationId(documentationId);
-  if (schemaDocumentationId) {
-    const annotation = schemaAnnotationAt(schemaObj.annotation ?? [], schemaDocumentationId.annotationIndex, documentationId);
-    const documentations = annotation.documentation ?? [];
-    documentationAt(documentations, schemaDocumentationId.documentationIndex, documentationId);
-    documentations.splice(schemaDocumentationId.documentationIndex, 1);
-    annotation.documentation = documentations.length > 0 ? documentations : undefined;
-    return;
-  }
-
-  // "elementPath/documentation[N]" format
-  const { elementId, documentationIndex } = parseDocumentationId(documentationId);
-
-  if (isSchemaRoot(elementId)) {
-    // "/schema/documentation[N]" shorthand — targets the first schema annotation
-    const annotation = schemaAnnotationAt(schemaObj.annotation ?? [], 0, documentationId);
-    const documentations = annotation.documentation ?? [];
-    documentationAt(documentations, documentationIndex, documentationId);
-    documentations.splice(documentationIndex, 1);
-    annotation.documentation = documentations.length > 0 ? documentations : undefined;
-    return;
-  }
-
-  const node = findAnnotatableNode(schemaObj, elementId);
-  const annotation = assumeValidated(node.annotation, `Annotation of ${elementId}`);
+  const { annotation, index } = locateDocumentation(schemaObj, documentationId);
   const documentations = annotation.documentation ?? [];
-  documentationAt(documentations, documentationIndex, documentationId);
-  documentations.splice(documentationIndex, 1);
+  documentationAt(documentations, index, documentationId);
+  documentations.splice(index, 1);
   annotation.documentation = documentations.length > 0 ? documentations : undefined;
 }
 
@@ -379,33 +379,9 @@ export function executeModifyDocumentation(
   schemaObj: schema
 ): void {
   const { documentationId, content, lang } = command.payload;
-
-  // "/schema/annotation[N]/documentation[M]" format
-  const schemaDocumentationId = parseSchemaDocumentationId(documentationId);
-  if (schemaDocumentationId) {
-    const annotation = schemaAnnotationAt(schemaObj.annotation ?? [], schemaDocumentationId.annotationIndex, documentationId);
-    const documentations = annotation.documentation ?? [];
-    applyDocumentationModifications(documentationAt(documentations, schemaDocumentationId.documentationIndex, documentationId), content, lang);
-    annotation.documentation = documentations;
-    return;
-  }
-
-  // "elementPath/documentation[N]" format
-  const { elementId, documentationIndex } = parseDocumentationId(documentationId);
-
-  if (isSchemaRoot(elementId)) {
-    // "/schema/documentation[N]" shorthand — targets the first schema annotation
-    const annotation = schemaAnnotationAt(schemaObj.annotation ?? [], 0, documentationId);
-    const documentations = annotation.documentation ?? [];
-    applyDocumentationModifications(documentationAt(documentations, documentationIndex, documentationId), content, lang);
-    annotation.documentation = documentations;
-    return;
-  }
-
-  const node = findAnnotatableNode(schemaObj, elementId);
-  const annotation = assumeValidated(node.annotation, `Annotation of ${elementId}`);
+  const { annotation, index } = locateDocumentation(schemaObj, documentationId);
   const documentations = annotation.documentation ?? [];
-  applyDocumentationModifications(documentationAt(documentations, documentationIndex, documentationId), content, lang);
+  applyDocumentationModifications(documentationAt(documentations, index, documentationId), content, lang);
   annotation.documentation = documentations;
 }
 

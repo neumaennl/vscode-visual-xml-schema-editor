@@ -24,13 +24,11 @@ import {
   whiteSpaceType,
   patternType,
   annotationType,
-  documentationType,
 } from "../../shared/types.js";
 import { isSchemaRoot } from "../../shared/schemaUtils.js";
-import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
-import { assumeRemoved, assumeValidated, locateValidated } from "./assumeValidated.js";
-import { createAnnotation } from "./annotationUtils.js";
-import { renameLocalTypeInSchema } from "./schemaLocalRenamer.js";
+import { assumeValidated } from "./assumeValidated.js";
+import { locateModifiedType, placeNewType, removeType } from "./typeTargets.js";
+import { createAnnotation, setDocumentation } from "./annotationUtils.js";
 
 /**
  * Executes an addSimpleType command.
@@ -45,59 +43,15 @@ export function executeAddSimpleType(
   command: AddSimpleTypeCommand,
   schemaObj: schema
 ): void {
-  const {
-    parentId,
-    typeName,
-    baseType,
-    listItemType,
-    unionMemberTypes,
-    restrictions,
-    documentation,
-  } = command.payload;
-
-  if (!isSchemaRoot(parentId)) {
-    // Anonymous simpleType inside an element or attribute — isSchemaRoot guarantees parentId is a non-empty string here
-    const location = locateValidated(schemaObj, parentId as string);
-    // Both elements and attributes share the same localSimpleType inline child structure
-    const holder = location.parent as {
-      type_?: string;
-      simpleType?: localSimpleType;
-      complexType?: unknown;
-    };
-    const anonType = new localSimpleType();
-    const anonBody = {
-      baseType,
-      listItemType,
-      unionMemberTypes,
-      restrictions,
-    };
-    applySimpleTypeBody(anonType, anonBody, assumeValidated(derivationKindOf(anonBody), "Simple type body"));
-    if (documentation) {
-      anonType.annotation = createAnnotation(documentation);
-    }
-    holder.type_ = undefined;
-    holder.complexType = undefined;
-    holder.simpleType = anonType;
-    return;
-  }
-
-  // Top-level named simpleType
-  const simpleType = new topLevelSimpleType();
-  simpleType.name = assumeValidated(typeName, "Type name");
-  const namedBody = {
-    baseType,
-    listItemType,
-    unionMemberTypes,
-    restrictions,
-  };
-  applySimpleTypeBody(simpleType, namedBody, assumeValidated(derivationKindOf(namedBody), "Simple type body"));
+  const { parentId, typeName, documentation, ...body } = command.payload;
+  const simpleType = isSchemaRoot(parentId)
+    ? Object.assign(new topLevelSimpleType(), { name: assumeValidated(typeName, "Type name") })
+    : new localSimpleType();
+  applySimpleTypeBody(simpleType, body, assumeValidated(derivationKindOf(body), "Simple type body"));
   if (documentation) {
     simpleType.annotation = createAnnotation(documentation);
   }
-
-  const simpleTypes = schemaObj.simpleType ?? [];
-  simpleTypes.push(simpleType);
-  schemaObj.simpleType = simpleTypes;
+  placeNewType(schemaObj, parentId, "simpleType", simpleType);
 }
 
 /**
@@ -113,25 +67,7 @@ export function executeRemoveSimpleType(
   command: RemoveSimpleTypeCommand,
   schemaObj: schema
 ): void {
-  const { typeId } = command.payload;
-  const parsed = parseSchemaId(typeId);
-
-  if (parsed.nodeType === SchemaNodeType.AnonymousSimpleType) {
-    const location = locateValidated(schemaObj, assumeValidated(parsed.parentId, `Parent of ${typeId}`));
-    const holder = location.parent as { simpleType?: localSimpleType };
-    assumeValidated(holder.simpleType, `Simple type ${typeId}`);
-    holder.simpleType = undefined;
-    return;
-  }
-
-  // Top-level named simpleType
-  const simpleTypes = schemaObj.simpleType ?? [];
-  const filtered = assumeRemoved(
-    simpleTypes,
-    simpleTypes.filter((st) => st.name !== parsed.name),
-    `Simple type ${typeId}`
-  );
-  schemaObj.simpleType = filtered.length > 0 ? filtered : undefined;
+  removeType(schemaObj, command.payload.typeId, "simpleType");
 }
 
 /**
@@ -147,46 +83,9 @@ export function executeModifySimpleType(
   command: ModifySimpleTypeCommand,
   schemaObj: schema
 ): void {
-  const {
-    typeId,
-    typeName,
-    baseType,
-    listItemType,
-    unionMemberTypes,
-    restrictions,
-    documentation,
-  } = command.payload;
-  const parsed = parseSchemaId(typeId);
-
-  if (parsed.nodeType === SchemaNodeType.AnonymousSimpleType) {
-    const location = locateValidated(schemaObj, assumeValidated(parsed.parentId, `Parent of ${typeId}`));
-    const holder = location.parent as { simpleType?: localSimpleType };
-    updateTypeContents(assumeValidated(holder.simpleType, `Simple type ${typeId}`), {
-      baseType,
-      listItemType,
-      unionMemberTypes,
-      restrictions,
-      documentation,
-    });
-    return;
-  }
-
-  // Top-level named simpleType
-  const simpleType = assumeValidated(
-    (schemaObj.simpleType ?? []).find((st) => st.name === parsed.name),
-    `Simple type ${typeId}`
-  );
-  if (typeName !== undefined) {
-    renameLocalTypeInSchema(simpleType.name, typeName, schemaObj);
-    simpleType.name = typeName;
-  }
-  updateTypeContents(simpleType, {
-    baseType,
-    listItemType,
-    unionMemberTypes,
-    restrictions,
-    documentation,
-  });
+  const { typeId, typeName, ...updates } = command.payload;
+  const { type } = locateModifiedType<topLevelSimpleType | localSimpleType>(schemaObj, typeId, "simpleType", typeName);
+  updateTypeContents(type, updates);
 }
 
 // ===== Helper Functions =====
@@ -243,12 +142,7 @@ function updateTypeContents(
   }
 
   if (documentation !== undefined) {
-    if (!simpleType.annotation) {
-      simpleType.annotation = new annotationType();
-    }
-    const doc = new documentationType();
-    doc.value = documentation;
-    simpleType.annotation.documentation = [doc];
+    setDocumentation(simpleType, documentation);
   }
 }
 
@@ -330,6 +224,22 @@ function applySimpleTypeBody(
   simpleType.union = undefined;
 }
 
+/** The class of the elements of each facet of a restriction. */
+const FACET_CLASSES = {
+  minInclusive: facet,
+  maxInclusive: facet,
+  minExclusive: facet,
+  maxExclusive: facet,
+  length: numFacet,
+  minLength: numFacet,
+  maxLength: numFacet,
+  totalDigits: totalDigitsType,
+  fractionDigits: numFacet,
+  enumeration: noFixedFacet,
+  whiteSpace: whiteSpaceType,
+  pattern: patternType,
+} satisfies Record<keyof RestrictionFacets, new () => object>;
+
 /**
  * Applies restriction facets to a restrictionType object.
  * Any previously set facets are cleared and replaced with the provided ones.
@@ -341,81 +251,11 @@ function applyRestrictionFacets(
   restriction: restrictionType,
   facets: RestrictionFacets
 ): void {
-  restriction.minInclusive = undefined;
-  restriction.maxInclusive = undefined;
-  restriction.minExclusive = undefined;
-  restriction.maxExclusive = undefined;
-  restriction.length = undefined;
-  restriction.minLength = undefined;
-  restriction.maxLength = undefined;
-  restriction.totalDigits = undefined;
-  restriction.fractionDigits = undefined;
-  restriction.enumeration = undefined;
-  restriction.whiteSpace = undefined;
-  restriction.pattern = undefined;
-
-  if (facets.minInclusive !== undefined) {
-    const f = new facet();
-    f.value = facets.minInclusive;
-    restriction.minInclusive = [f];
-  }
-  if (facets.maxInclusive !== undefined) {
-    const f = new facet();
-    f.value = facets.maxInclusive;
-    restriction.maxInclusive = [f];
-  }
-  if (facets.minExclusive !== undefined) {
-    const f = new facet();
-    f.value = facets.minExclusive;
-    restriction.minExclusive = [f];
-  }
-  if (facets.maxExclusive !== undefined) {
-    const f = new facet();
-    f.value = facets.maxExclusive;
-    restriction.maxExclusive = [f];
-  }
-  if (facets.length !== undefined) {
-    const nf = new numFacet();
-    nf.value = facets.length;
-    restriction.length = [nf];
-  }
-  if (facets.minLength !== undefined) {
-    const nf = new numFacet();
-    nf.value = facets.minLength;
-    restriction.minLength = [nf];
-  }
-  if (facets.maxLength !== undefined) {
-    const nf = new numFacet();
-    nf.value = facets.maxLength;
-    restriction.maxLength = [nf];
-  }
-  if (facets.totalDigits !== undefined) {
-    const td = new totalDigitsType();
-    td.value = facets.totalDigits;
-    restriction.totalDigits = [td];
-  }
-  if (facets.fractionDigits !== undefined) {
-    const nf = new numFacet();
-    nf.value = facets.fractionDigits;
-    restriction.fractionDigits = [nf];
-  }
-  if (facets.enumeration !== undefined) {
-    restriction.enumeration = facets.enumeration.map((val) => {
-      const nff = new noFixedFacet();
-      nff.value = val;
-      return nff;
-    });
-  }
-  if (facets.whiteSpace !== undefined) {
-    const ws = new whiteSpaceType();
-    ws.value = facets.whiteSpace;
-    restriction.whiteSpace = [ws];
-  }
-  if (facets.pattern !== undefined) {
-    restriction.pattern = facets.pattern.map((val) => {
-      const pt = new patternType();
-      pt.value = val;
-      return pt;
-    });
+  // Facets with a list of values (enumeration, pattern) get one element per value
+  const facetElements = restriction as Record<keyof RestrictionFacets, object[] | undefined>;
+  for (const key of Object.keys(FACET_CLASSES) as Array<keyof RestrictionFacets>) {
+    const value = facets[key];
+    const values = value === undefined ? undefined : Array.isArray(value) ? value : [value];
+    facetElements[key] = values?.map((v) => Object.assign(new FACET_CLASSES[key](), { value: v }));
   }
 }

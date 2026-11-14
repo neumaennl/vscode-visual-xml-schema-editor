@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-12T12:01:26Z }
-verified: { by: human:neumaennl, at: 2026-11-12T12:07:29Z }
+generated: { by: human:neumaennl, at: 2026-11-14T17:03:55Z }
+verified: { by: human:neumaennl, at: 2026-11-14T17:23:45Z }
 ---
 
 # Purpose
@@ -451,15 +451,14 @@ Effort:
 
 ## Top-level lookups are duplicated instead of shared
 
-- **Location:** `src/schemaModelManager.ts`, `src/commandValidators/`, `src/commandExecutors/`, `src/schemaNavigator.ts`, `webview-src/diagram/DiagramBuilder.ts`, `webview-src/drop/DropCommandFactory.ts`
+- **Location:** `src/commandValidators/`, `src/commandExecutors/`, `src/schemaNavigator.ts`, `webview-src/diagram/DiagramBuilder.ts`, `webview-src/drop/DropCommandFactory.ts`
 - **Severity:** Low
 - **Effort:** L
-- **Description:** `SchemaModelManager` has query methods (`findElement()`, `findComplexType()`, `findGroup()`, the `getAll*()` methods, `getTargetNamespace()`, `getImports()`, `getIncludes()`, `isLoaded()`, `clear()`), but they are only called from tests. They work on the schema stored in the manager, while validators and executors get a cloned schema object, and the webview cannot use code from `src/`. So the same lookups are written out again and again:
-  - About 40 places look up a top-level component by name with `(schemaObj.<kind> ?? []).some(…)` or `.find(…)`.
-  - The group and attribute group validators iterate over all top-level kinds one by one.
+- **Description:** There are no shared functions that look up top-level components in a schema object. `SchemaModelManager` had query methods, but only tests called them, so [#439](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/439) removed them: they worked on the schema stored in the manager, while validators and executors get a cloned schema object, and the webview cannot use code from `src/`. #439 also merged the lookups that were copies of each other within the validators, the executors and the navigator. The parts still look up components on their own:
+  - More than ten places in the validators and executors look up a top-level component by name with `(schemaObj.<kind> ?? []).some(…)` or `.find(…)`, and the navigator has a table of the top-level kinds.
   - `DiagramBuilder` and `DropCommandFactory` collect the same lists in the webview.
 
-  The fix is to replace the manager's query methods with pure functions in `shared/` that take the schema object as a parameter (for example `findTopLevel(schemaObj, kind, name)`, `getTopLevel(schemaObj, kind)` and `forEachTopLevelComponent(schemaObj, callback)`), use them everywhere, and remove the unused methods. Once duplicates are [detected automatically](#duplicated-code-is-not-detected-automatically), the fix also lowers the threshold of that check.
+  The fix is pure functions in `shared/` that take the schema object as a parameter (for example `findTopLevel(schemaObj, kind, name)`, `getTopLevel(schemaObj, kind)` and `forEachTopLevelComponent(schemaObj, callback)`), used everywhere.
 - **GitHub issue:** none
 
 ## Duplicated and dead code

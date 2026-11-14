@@ -4,8 +4,8 @@ title: Schema model
 description: The object model of an XSD file - classes generated from the XSD meta-schema, XML binding with xmlbind-ts, and the path-based IDs that identify schema nodes.
 tags: [schema-model, data-model, xmlbind-ts, code-generation, ids, navigation]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-11T19:21:21Z }
-verified: { by: human:neumaennl, at: 2026-11-11T19:24:43Z }
+generated: { by: human:neumaennl, at: 2026-11-14T17:03:55Z }
+verified: { by: human:neumaennl, at: 2026-11-14T17:23:45Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -103,7 +103,7 @@ The binding only runs in the extension host. The webview uses the generated clas
 - `loadFromXml()` unmarshals the document text; `getSchema()` and `setSchema()` read and replace the object.
 - `toXml()` marshals the object.
 - `cloneSchema()` creates a deep copy by marshalling and unmarshalling, so the copy is a set of real class instances with all binding metadata. `CommandProcessor` executes commands on such a copy, so a failing command leaves the original untouched.[^command-processor]
-- The query methods (`findElement()`, `getAllComplexTypes()`, `getImports()` and similar) are only used in tests. They work on the schema stored in the manager, while validators and executors get a cloned schema object, and the webview cannot use code from `src/`. Validators, executors, the navigator and the webview therefore repeat these lookups themselves (see [Known issues](known-issues.md#top-level-lookups-are-duplicated-instead-of-shared)).
+- It has no methods to look up components. Validators and executors get a cloned schema object, and the webview cannot use code from `src/`, so they, the navigator and the webview look up components themselves (see [Known issues](known-issues.md#top-level-lookups-are-duplicated-instead-of-shared)).
 
 # Node IDs
 

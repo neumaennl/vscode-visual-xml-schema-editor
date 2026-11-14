@@ -93,3 +93,6 @@ export interface ModifyElementCommand extends BaseCommand<ModifyElementPayload> 
   type: "modifyElement";
   payload: ModifyElementPayload;
 }
+
+/** The commands that add, remove and modify an element. */
+export type ElementCommand = AddElementCommand | RemoveElementCommand | ModifyElementCommand;

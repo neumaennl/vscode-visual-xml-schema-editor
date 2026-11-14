@@ -14,12 +14,12 @@ import {
   allType,
   simpleExplicitGroup,
   annotationType,
-  documentationType,
   groupRef,
 } from "../../shared/types.js";
 import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
-import { assumeRemoved, assumeValidated, assumptionFailed, locateValidated } from "./assumeValidated.js";
-import { createAnnotation } from "./annotationUtils.js";
+import { assumeValidated, assumptionFailed, locateValidated } from "./assumeValidated.js";
+import { appendTo, assignDefined, removeFrom } from "./nodeProperties.js";
+import { createAnnotation, setDocumentation } from "./annotationUtils.js";
 import { renameLocalGroupRefInSchema } from "./schemaLocalRenamer.js";
 
 // ===== Element Group Executors =====
@@ -60,9 +60,7 @@ export function executeAddGroup(
   }
   applyGroupContentModel(grp, assumeValidated(contentModel, "Content model"));
 
-  const groups = schemaObj.group ?? [];
-  groups.push(grp);
-  schemaObj.group = groups;
+  appendTo(schemaObj, "group", grp);
 }
 
 /**
@@ -98,9 +96,7 @@ export function executeRemoveGroup(
   }
 
   // Definition mode: remove top-level named group
-  const groups = schemaObj.group ?? [];
-  const filtered = assumeRemoved(groups, groups.filter((g) => g.name !== parsed.name), `Group ${groupId}`);
-  schemaObj.group = filtered.length > 0 ? filtered : undefined;
+  removeFrom(schemaObj, "group", (g) => g.name === parsed.name, `Group ${groupId}`);
 }
 
 /**
@@ -129,19 +125,9 @@ export function executeModifyGroup(
       maxOccurs?: number | "unbounded";
       annotation?: annotationType;
     };
-    if (minOccurs !== undefined) {
-      compositor.minOccurs = minOccurs;
-    }
-    if (maxOccurs !== undefined) {
-      compositor.maxOccurs = maxOccurs;
-    }
+    assignDefined(compositor, { minOccurs, maxOccurs });
     if (documentation !== undefined) {
-      if (!compositor.annotation) {
-        compositor.annotation = new annotationType();
-      }
-      const doc = new documentationType();
-      doc.value = documentation;
-      compositor.annotation.documentation = [doc];
+      setDocumentation(compositor, documentation);
     }
     return;
   }
@@ -153,22 +139,9 @@ export function executeModifyGroup(
       findGroupRefInParent(location.parent, location.parentType, parsed.name, parsed.position),
       `Group reference ${groupId}`
     );
-    if (ref !== undefined) {
-      target.ref = ref;
-    }
-    if (minOccurs !== undefined) {
-      target.minOccurs = minOccurs;
-    }
-    if (maxOccurs !== undefined) {
-      target.maxOccurs = maxOccurs;
-    }
+    assignDefined(target, { ref, minOccurs, maxOccurs });
     if (documentation !== undefined) {
-      if (!target.annotation) {
-        target.annotation = new annotationType();
-      }
-      const doc = new documentationType();
-      doc.value = documentation;
-      target.annotation.documentation = [doc];
+      setDocumentation(target, documentation);
     }
     return;
   }
@@ -181,12 +154,7 @@ export function executeModifyGroup(
     grp.name = groupName;
   }
   if (documentation !== undefined) {
-    if (!grp.annotation) {
-      grp.annotation = new annotationType();
-    }
-    const doc = new documentationType();
-    doc.value = documentation;
-    grp.annotation.documentation = [doc];
+    setDocumentation(grp, documentation);
   }
   if (contentModel !== undefined) {
     applyGroupContentModel(grp, contentModel);
@@ -217,14 +185,7 @@ function buildGroupRef(
   maxOccurs?: number | "unbounded",
   documentation?: string
 ): groupRef {
-  const grpRef = new groupRef();
-  grpRef.ref = ref;
-  if (minOccurs !== undefined) {
-    grpRef.minOccurs = minOccurs;
-  }
-  if (maxOccurs !== undefined) {
-    grpRef.maxOccurs = maxOccurs;
-  }
+  const grpRef = assignDefined(new groupRef(), { ref, minOccurs, maxOccurs });
   if (documentation) {
     grpRef.annotation = createAnnotation(documentation);
   }
@@ -242,10 +203,7 @@ function addGroupRefToParent(
   grpRef: groupRef
 ): void {
   if (parentType === "sequence" || parentType === "choice") {
-    const compositor = parent as CompositorWithGroupRefs;
-    const refs = compositor.group ?? [];
-    refs.push(grpRef);
-    compositor.group = refs;
+    appendTo(parent as CompositorWithGroupRefs, "group", grpRef);
   } else if (
     parentType === "topLevelComplexType" ||
     parentType === "localComplexType"
@@ -269,12 +227,13 @@ function removeGroupRefFromParent(
   groupId: string
 ): void {
   if (parentType === "sequence" || parentType === "choice") {
-    const compositor = parent as CompositorWithGroupRefs;
-    const refs = compositor.group ?? [];
     // The validator ensures that the ID has the ref and the position of the reference
-    const remaining = refs.filter((r, index) => !(r.ref === name && index === position));
-    const filtered = assumeRemoved(refs, remaining, `Group reference ${groupId}`);
-    compositor.group = filtered.length > 0 ? filtered : undefined;
+    removeFrom(
+      parent as CompositorWithGroupRefs,
+      "group",
+      (r, index) => r.ref === name && index === position,
+      `Group reference ${groupId}`
+    );
   } else if (
     parentType === "topLevelComplexType" ||
     parentType === "localComplexType"

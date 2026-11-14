@@ -82,3 +82,63 @@ export function findAttributeGroupRef(
   }
   return name === undefined ? undefined : refs.find((r) => r.ref === name);
 }
+
+/**
+ * Returns true if a local element or attribute is the one that the name and position of its ID
+ * identify. The position is more specific and wins; otherwise the name matches the name or the ref.
+ *
+ * @param child - The element or attribute
+ * @param index - Its position among the children of its kind of its parent
+ * @param name - The name from the ID, if it has one
+ * @param position - The position from the ID, if it has one
+ * @returns Whether the child matches; never if the ID has neither a name nor a position
+ */
+export function isIdentifiedChild(
+  child: { name?: string; ref?: string },
+  index: number,
+  name: string | undefined,
+  position: number | undefined
+): boolean {
+  if (position !== undefined) {
+    return index === position;
+  }
+  return name !== undefined && (child.name === name || child.ref === name);
+}
+
+/**
+ * Finds the local element or attribute that the name and position of its ID identify (see
+ * {@link isIdentifiedChild}).
+ *
+ * @param children - The children of one kind of the parent
+ * @param name - The name from the ID, if it has one
+ * @param position - The position from the ID, if it has one
+ * @returns The child, or `undefined` if none matches
+ */
+export function findIdentifiedChild<T extends { name?: string; ref?: string }>(
+  children: T[],
+  name: string | undefined,
+  position: number | undefined
+): T | undefined {
+  return children.find((child, index) => isIdentifiedChild(child, index, name, position));
+}
+
+/**
+ * Identifies a local element or attribute by the name and position of its ID, for the executors (see
+ * {@link isIdentifiedChild}).
+ *
+ * @param label - The kind of child for messages, capitalized, such as `"Element"`
+ * @param name - The name from the ID, if it has one
+ * @param position - The position from the ID, if it has one
+ * @returns A predicate that matches the child, and a description such as `Element person` or
+ * `Element at position 2`
+ */
+export function identifyChild(
+  label: string,
+  name: string | undefined,
+  position: number | undefined
+): { matches: (child: { name?: string; ref?: string }, index: number) => boolean; what: string } {
+  return {
+    matches: (child, index) => isIdentifiedChild(child, index, name, position),
+    what: name !== undefined ? `${label} ${name}` : `${label} at position ${position}`,
+  };
+}

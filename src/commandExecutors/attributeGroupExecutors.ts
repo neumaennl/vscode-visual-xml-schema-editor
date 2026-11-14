@@ -11,57 +11,34 @@ import {
   ModifyAttributeGroupCommand,
   namedAttributeGroup,
   attributeGroupRef,
-  annotationType,
-  documentationType,
 } from "../../shared/types.js";
 import { parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy.js";
-import { assumeRemoved, assumeValidated, locateValidated } from "./assumeValidated.js";
-import { createAnnotation } from "./annotationUtils.js";
+import { assumeValidated, locateValidated } from "./assumeValidated.js";
+import { createAnnotation, setDocumentation } from "./annotationUtils.js";
 import { renameLocalAttributeGroupRefInSchema } from "./schemaLocalRenamer.js";
-import { getAttributeContainer } from "../../shared/schemaUtils.js";
+import { AttributeContainer, getAttributeContainer } from "../../shared/schemaUtils.js";
 import { findAttributeGroupRef } from "../commandUtils.js";
+import { appendTo, removeFrom } from "./nodeProperties.js";
 
 // ===== Helper functions =====
 
 /**
- * Adds an attributeGroupRef to a parent node's `attributeGroup` array. In a complex type with
- * complex or simple content, the reference is added to its extension or restriction.
+ * Locates the attribute group reference that an ID of the form
+ * `/complexType:X/attributeGroupRef:Name[0]` identifies. In a complex type with complex or simple
+ * content, the references are those of its extension or restriction.
+ *
+ * @param schemaObj - The schema
+ * @param groupId - The ID of the reference
+ * @returns The node that holds the references, and the reference if it exists
  */
-function addAttrGroupRefToParent(
-  parent: unknown,
-  agRef: attributeGroupRef
-): void {
-  const holder = getAttributeContainer(parent);
-  const refs = holder.attributeGroup ?? [];
-  refs.push(agRef);
-  holder.attributeGroup = refs;
-}
-
-/**
- * Returns a new array with the first matching attributeGroupRef removed.
- */
-function filterAttrGroupRef(
-  refs: attributeGroupRef[],
-  name: string | undefined,
-  position: number | undefined
-): attributeGroupRef[] {
-  if (name !== undefined && position !== undefined) {
-    return refs.filter((r, idx) => !(r.ref === name && idx === position));
-  }
-  if (name !== undefined) {
-    let removed = false;
-    return refs.filter((r) => {
-      if (!removed && r.ref === name) {
-        removed = true;
-        return false;
-      }
-      return true;
-    });
-  }
-  if (position !== undefined) {
-    return refs.filter((_, idx) => idx !== position);
-  }
-  return refs;
+function locateAttrGroupRef(
+  schemaObj: schema,
+  groupId: string
+): { holder: AttributeContainer; target: attributeGroupRef | undefined } {
+  const parsed = parseSchemaId(groupId);
+  const location = locateValidated(schemaObj, assumeValidated(parsed.parentId, `Parent of ${groupId}`));
+  const holder = getAttributeContainer(location.parent);
+  return { holder, target: findAttributeGroupRef(holder.attributeGroup ?? [], parsed.name, parsed.position) };
 }
 
 // ===== Attribute Group Executors =====
@@ -92,7 +69,8 @@ export function executeAddAttributeGroup(
     if (documentation) {
       agRef.annotation = createAnnotation(documentation);
     }
-    addAttrGroupRefToParent(location.parent, agRef);
+    // In a complex type with complex or simple content, the reference goes to its extension or restriction
+    appendTo(getAttributeContainer(location.parent), "attributeGroup", agRef);
     return;
   }
 
@@ -102,9 +80,7 @@ export function executeAddAttributeGroup(
   if (documentation) {
     attrGroup.annotation = createAnnotation(documentation);
   }
-  const groups = schemaObj.attributeGroup ?? [];
-  groups.push(attrGroup);
-  schemaObj.attributeGroup = groups;
+  appendTo(schemaObj, "attributeGroup", attrGroup);
 }
 
 /**
@@ -127,22 +103,13 @@ export function executeRemoveAttributeGroup(
 
   if (parsed.nodeType === SchemaNodeType.AttributeGroupRef) {
     // Reference mode: remove xs:attributeGroup ref="..." from its parent
-    const location = locateValidated(schemaObj, assumeValidated(parsed.parentId, `Parent of ${groupId}`));
-    const holder = getAttributeContainer(location.parent);
-    const refs = holder.attributeGroup ?? [];
-    const filtered = assumeRemoved(
-      refs,
-      filterAttrGroupRef(refs, parsed.name, parsed.position),
-      `Attribute group reference ${groupId}`
-    );
-    holder.attributeGroup = filtered.length > 0 ? filtered : undefined;
+    const { holder, target } = locateAttrGroupRef(schemaObj, groupId);
+    removeFrom(holder, "attributeGroup", (r) => r === target, `Attribute group reference ${groupId}`);
     return;
   }
 
   // Definition mode: remove top-level named attribute group
-  const groups = schemaObj.attributeGroup ?? [];
-  const filtered = assumeRemoved(groups, groups.filter((g) => g.name !== parsed.name), `Attribute group ${groupId}`);
-  schemaObj.attributeGroup = filtered.length > 0 ? filtered : undefined;
+  removeFrom(schemaObj, "attributeGroup", (g) => g.name === parsed.name, `Attribute group ${groupId}`);
 }
 
 /**
@@ -165,22 +132,12 @@ export function executeModifyAttributeGroup(
 
   if (parsed.nodeType === SchemaNodeType.AttributeGroupRef) {
     // Reference mode: modify xs:attributeGroup ref="..." in its parent
-    const location = locateValidated(schemaObj, assumeValidated(parsed.parentId, `Parent of ${groupId}`));
-    const holder = getAttributeContainer(location.parent);
-    const target = assumeValidated(
-      findAttributeGroupRef(holder.attributeGroup ?? [], parsed.name, parsed.position),
-      `Attribute group reference ${groupId}`
-    );
+    const target = assumeValidated(locateAttrGroupRef(schemaObj, groupId).target, `Attribute group reference ${groupId}`);
     if (ref !== undefined) {
       target.ref = ref;
     }
     if (documentation !== undefined) {
-      if (!target.annotation) {
-        target.annotation = new annotationType();
-      }
-      const doc = new documentationType();
-      doc.value = documentation;
-      target.annotation.documentation = [doc];
+      setDocumentation(target, documentation);
     }
     return;
   }
@@ -195,11 +152,6 @@ export function executeModifyAttributeGroup(
     attrGroup.name = groupName;
   }
   if (documentation !== undefined) {
-    if (!attrGroup.annotation) {
-      attrGroup.annotation = new annotationType();
-    }
-    const doc = new documentationType();
-    doc.value = documentation;
-    attrGroup.annotation.documentation = [doc];
+    setDocumentation(attrGroup, documentation);
   }
 }

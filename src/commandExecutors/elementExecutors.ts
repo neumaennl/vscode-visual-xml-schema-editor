@@ -8,17 +8,23 @@ import {
   AddElementCommand,
   RemoveElementCommand,
   ModifyElementCommand,
+  ModifyElementPayload,
   topLevelElement,
   localElement,
   narrowMaxMin,
-  annotationType,
-  documentationType,
-  explicitGroup,
-  all,
 } from "../../shared/types.js";
-import { assumeRemoved, assumeValidated, assumptionFailed, locateValidated } from "./assumeValidated.js";
+import { assumeValidated, assumptionFailed, locateValidated } from "./assumeValidated.js";
 import { parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy.js";
 import { renameLocalElementRefInSchema } from "./schemaLocalRenamer.js";
+import { createAnnotation, setDocumentation } from "./annotationUtils.js";
+import { appendTo, removeFrom } from "./nodeProperties.js";
+import { identifyChild } from "../commandUtils.js";
+
+/** An element of any kind: top-level in the schema, local in a sequence or choice, or local in an all. */
+type AnyElement = topLevelElement | localElement | narrowMaxMin;
+
+/** The changes of a modifyElement command. */
+type ElementChanges = Omit<ModifyElementPayload, "elementId">;
 
 /**
  * Executes an addElement command.
@@ -31,26 +37,9 @@ export function executeAddElement(
   command: AddElementCommand,
   schemaObj: schema
 ): void {
-  const { parentId, elementName, elementType, ref, minOccurs, maxOccurs, documentation } =
-    command.payload;
-
-  // Locate the parent node
-  const location = locateValidated(schemaObj, parentId);
-
-  // Create the new element
-  const newElement = createNewElement(
-    elementName,
-    elementType,
-    ref,
-    minOccurs,
-    maxOccurs,
-    documentation,
-    location.parentType === "schema",
-    location.parentType === "all"
-  );
-
-  // Add the element to the appropriate parent
-  addElementToParent(location.parent, location.parentType, newElement);
+  const location = locateValidated(schemaObj, command.payload.parentId);
+  const newElement = createNewElement(command.payload, location.parentType);
+  appendTo(elementsOf(location.parent, location.parentType), "element", newElement);
 }
 
 /**
@@ -64,17 +53,10 @@ export function executeRemoveElement(
   command: RemoveElementCommand,
   schemaObj: schema
 ): void {
-  const { elementId } = command.payload;
-
-  // Parse the element ID to get information about the element
-  const parsed = parseSchemaId(elementId);
-  
-  // Determine the parent location
-  const parentId = parsed.parentId || SCHEMA_ROOT_ID;
-  const location = locateValidated(schemaObj, parentId);
-
-  // Remove the element from its parent container
-  removeElementFromParent(location.parent, location.parentType, parsed.name, parsed.position);
+  const parsed = parseSchemaId(command.payload.elementId);
+  const location = locateValidated(schemaObj, parsed.parentId || SCHEMA_ROOT_ID);
+  const child = identifyChild("Element", parsed.name, parsed.position);
+  removeFrom(elementsOf(location.parent, location.parentType), "element", child.matches, child.what);
 }
 
 /**
@@ -88,416 +70,122 @@ export function executeModifyElement(
   command: ModifyElementCommand,
   schemaObj: schema
 ): void {
-  const { elementId, elementName, elementType, ref, minOccurs, maxOccurs, documentation, nillable, abstract: isAbstract, default_, fixed } =
-    command.payload;
-
-  // Parse the element ID to get information about the element
+  const { elementId, ...changes } = command.payload;
   const parsed = parseSchemaId(elementId);
-  
-  // Determine the parent location from the parsed ID
-  const parentId = parsed.parentId || SCHEMA_ROOT_ID;
-  const location = locateValidated(schemaObj, parentId);
+  const location = locateValidated(schemaObj, parsed.parentId || SCHEMA_ROOT_ID);
 
   // When a top-level element is renamed, update all element refs and
   // substitutionGroup references pointing to the old name.
   if (
-    elementName !== undefined &&
+    changes.elementName !== undefined &&
     parsed.nodeType === SchemaNodeType.Element &&
     !parsed.parentId &&
     parsed.name
   ) {
-    renameLocalElementRefInSchema(parsed.name, elementName, schemaObj);
+    renameLocalElementRefInSchema(parsed.name, changes.elementName, schemaObj);
   }
 
-  // Find and modify the element in its parent container
-  modifyElementInParent(
-    location.parent,
-    location.parentType,
-    parsed.name,
-    parsed.position,
-    elementName,
-    elementType,
-    ref,
-    minOccurs,
-    maxOccurs,
-    documentation,
-    nillable,
-    isAbstract,
-    default_,
-    fixed
-  );
+  const child = identifyChild("Element", parsed.name, parsed.position);
+  const element = assumeValidated((elementsOf(location.parent, location.parentType).element ?? []).find(child.matches), child.what);
+  updateElementProperties(element, changes, location.parentType);
 }
 
 // ===== Helper Functions =====
 
 /**
- * Creates a new element (either top-level, local, or reference).
+ * Returns a parent that holds elements, in the property `element`: the schema, a sequence, a choice or
+ * an all.
  *
- * @param name - Element name (undefined when using ref)
- * @param type - Element type (undefined when using ref)
- * @param ref - Reference to a top-level element (mutually exclusive with name/type)
- * @param minOccurs - Minimum occurrences (optional)
- * @param maxOccurs - Maximum occurrences (optional)
- * @param documentation - Documentation text (optional)
- * @param isTopLevel - Whether this is a top-level element
- * @param isInAllGroup - Whether this element is in an 'all' group
+ * @param parent - Parent container object
+ * @param parentType - Type of the parent container
+ * @returns The parent as a holder of elements
+ * @throws Error if the parent cannot hold elements
+ */
+function elementsOf(parent: unknown, parentType: string): { element?: AnyElement[] } {
+  if (!["schema", "sequence", "choice", "all"].includes(parentType)) {
+    return assumptionFailed(`Parent of type '${parentType}' for an element`);
+  }
+  return parent as { element?: AnyElement[] };
+}
+
+/**
+ * Creates a new element: top-level in the schema, `narrowMaxMin` in an all, whose occurrences are
+ * strings, and a local element otherwise. A reference only gets its ref and occurrences.
+ *
+ * @param payload - The payload of the addElement command
+ * @param parentType - Type of the parent container
  * @returns New element instance
  */
-function createNewElement(
-  name: string | undefined,
-  type: string | undefined,
-  ref: string | undefined,
-  minOccurs?: number,
-  maxOccurs?: number | "unbounded",
-  documentation?: string,
-  isTopLevel: boolean = false,
-  isInAllGroup: boolean = false
-): topLevelElement | localElement | narrowMaxMin {
-  let element: topLevelElement | localElement | narrowMaxMin;
-  
-  if (isTopLevel) {
-    element = new topLevelElement();
-  } else if (isInAllGroup) {
-    // For 'all' groups, we need to use narrowMaxMin which has string-typed occurrences
-    element = new narrowMaxMin();
-  } else {
-    element = new localElement();
-  }
+function createNewElement(payload: AddElementCommand["payload"], parentType: string): AnyElement {
+  const { elementName, elementType, ref, minOccurs, maxOccurs, documentation } = payload;
+  const element =
+    parentType === "schema" ? new topLevelElement() : parentType === "all" ? new narrowMaxMin() : new localElement();
 
   if (ref !== undefined) {
-    // Reference element: only set ref (and occurrences)
     (element as localElement).ref = ref;
   } else {
-    element.name = name;
-    element.type_ = type;
+    element.name = elementName;
+    element.type_ = elementType;
   }
-
-  // For local elements and narrowMaxMin, set minOccurs and maxOccurs
-  if (!isTopLevel) {
-    if (isInAllGroup) {
-      const allElement = element as narrowMaxMin;
-      if (minOccurs !== undefined) {
-        allElement.minOccurs = String(minOccurs);
-      }
-      if (maxOccurs !== undefined) {
-        allElement.maxOccurs = String(maxOccurs);
-      }
-    } else {
-      const localElem = element as localElement;
-      if (minOccurs !== undefined) {
-        localElem.minOccurs = minOccurs;
-      }
-      if (maxOccurs !== undefined) {
-        localElem.maxOccurs = maxOccurs;
-      }
-    }
-  }
-
-  // Add documentation if provided
+  setOccurrences(element, parentType, minOccurs, maxOccurs);
   if (documentation) {
-    const annotation = new annotationType();
-    const doc = new documentationType();
-    doc.value = documentation;
-    annotation.documentation = [doc];
-    element.annotation = annotation;
+    element.annotation = createAnnotation(documentation);
   }
-
   return element;
 }
 
 /**
- * Adds an element to its parent container.
+ * Sets the occurrences of a local element; top-level elements have none. The elements of an all
+ * hold them as strings.
  *
- * @param parent - Parent container object
+ * @param element - The element
  * @param parentType - Type of the parent container
- * @param element - Element to add
- * @throws Error if the parent cannot hold elements
+ * @param minOccurs - The new minimum occurrences, if any
+ * @param maxOccurs - The new maximum occurrences, if any
  */
-function addElementToParent(
-  parent: unknown,
+function setOccurrences(
+  element: AnyElement,
   parentType: string,
-  element: topLevelElement | localElement | narrowMaxMin
+  minOccurs: number | undefined,
+  maxOccurs: number | "unbounded" | undefined
 ): void {
   if (parentType === "schema") {
-    const schemaObj = parent as schema;
-    const elements = schemaObj.element ?? [];
-    
-    elements.push(element as topLevelElement);
-    schemaObj.element = elements;
-  } else if (
-    parentType === "sequence" ||
-    parentType === "choice"
-  ) {
-    const group = parent as explicitGroup;
-    const elements = group.element ?? [];
-    const localElem = element as localElement;
-    
-    elements.push(localElem);
-    group.element = elements;
-  } else if (parentType === "all") {
-    const allGroup = parent as all;
-    const elements = allGroup.element ?? [];
-    const allElem = element as narrowMaxMin;
-    
-    elements.push(allElem);
-    allGroup.element = elements;
-  } else {
-    assumptionFailed(`Parent of type '${parentType}' for an element`);
+    return;
   }
-}
-
-/**
- * Removes an element from its parent container.
- *
- * @param parent - Parent container object
- * @param parentType - Type of the parent container
- * @param elementName - Name of the element to remove (optional)
- * @param position - Position of the element to remove (optional)
- * @throws Error if element not found
- */
-function removeElementFromParent(
-  parent: unknown,
-  parentType: string,
-  elementName?: string,
-  position?: number
-): void {
-  if (parentType === "schema") {
-    const schemaObj = parent as schema;
-    const elements = schemaObj.element ?? [];
-    const filtered = assumeRemoved(
-      elements,
-      filterElement(elements, elementName, position),
-      describeElement(elementName, position)
-    );
-    schemaObj.element = filtered.length > 0 ? filtered : undefined;
-  } else if (
-    parentType === "sequence" ||
-    parentType === "choice"
-  ) {
-    const group = parent as explicitGroup;
-    const elements = group.element ?? [];
-    const filtered = assumeRemoved(
-      elements,
-      filterElement(elements, elementName, position),
-      describeElement(elementName, position)
-    );
-    group.element = filtered.length > 0 ? filtered : undefined;
-  } else if (parentType === "all") {
-    const allGroup = parent as all;
-    const elements = allGroup.element ?? [];
-    const filtered = assumeRemoved(
-      elements,
-      filterElement(elements, elementName, position),
-      describeElement(elementName, position)
-    );
-    allGroup.element = filtered.length > 0 ? filtered : undefined;
-  } else {
-    assumptionFailed(`Parent of type '${parentType}' for an element`);
+  if (parentType === "all") {
+    const allElement = element as narrowMaxMin;
+    if (minOccurs !== undefined) {
+      allElement.minOccurs = String(minOccurs);
+    }
+    if (maxOccurs !== undefined) {
+      allElement.maxOccurs = String(maxOccurs);
+    }
+    return;
   }
-}
-
-/**
- * Filters out an element from an array by name/ref or position.
- * Matches elements whose `name` OR `ref` equals the given elementName.
- *
- * @param elements - Array of elements
- * @param elementName - Name or ref value of the element to filter (optional)
- * @param position - Position of the element to filter (optional)
- * @returns Filtered array
- */
-function filterElement<T extends { name?: string; ref?: string }>(
-  elements: T[],
-  elementName?: string,
-  position?: number
-): T[] {
-  // When both are provided, position takes precedence (more specific)
-  if (position !== undefined) {
-    // Filter by position
-    return elements.filter((_, idx) => idx !== position);
-  } else if (elementName !== undefined) {
-    // Filter by name or ref (a referenced element uses ref as its identifier)
-    const filtered = elements.filter(
-      el => el.name !== elementName && el.ref !== elementName
-    );
-    return filtered;
+  const localElem = element as localElement;
+  if (minOccurs !== undefined) {
+    localElem.minOccurs = minOccurs;
   }
-  return elements;
-}
-
-/**
- * Modifies an element in its parent container.
- *
- * @param parent - Parent container object
- * @param parentType - Type of the parent container
- * @param targetName - Name or ref value of the element to modify (optional)
- * @param targetPosition - Position of the element to modify (optional)
- * @param newName - New name for the element (optional). When set, clears ref.
- * @param newType - New type for the element (optional)
- * @param newRef - New ref for the element (optional). When set, clears name and type.
- * @param newMinOccurs - New minimum occurrences (optional)
- * @param newMaxOccurs - New maximum occurrences (optional)
- * @param newDocumentation - New documentation (optional)
- * @param newNillable - New nillable flag (optional)
- * @param newAbstract - New abstract flag; only applies to top-level elements (optional)
- * @param newDefault - New default value (optional; empty string clears it)
- * @param newFixed - New fixed value (optional; empty string clears it)
- * @throws Error if element not found
- */
-function modifyElementInParent(
-  parent: unknown,
-  parentType: string,
-  targetName?: string,
-  targetPosition?: number,
-  newName?: string,
-  newType?: string,
-  newRef?: string,
-  newMinOccurs?: number,
-  newMaxOccurs?: number | "unbounded",
-  newDocumentation?: string,
-  newNillable?: boolean,
-  newAbstract?: boolean,
-  newDefault?: string,
-  newFixed?: string
-): void {
-  if (parentType === "schema") {
-    const schemaObj = parent as schema;
-    const elements = schemaObj.element ?? [];
-    const element = assumeValidated(
-      findElement(elements, targetName, targetPosition),
-      describeElement(targetName, targetPosition)
-    );
-    updateElementProperties(
-      element,
-      newName,
-      newType,
-      newRef,
-      undefined, // top-level elements don't have occurrences
-      undefined,
-      newDocumentation,
-      false,
-      newNillable,
-      newAbstract,
-      newDefault,
-      newFixed
-    );
-  } else if (
-    parentType === "sequence" ||
-    parentType === "choice"
-  ) {
-    const group = parent as explicitGroup;
-    const elements = group.element ?? [];
-    const element = assumeValidated(
-      findElement(elements, targetName, targetPosition),
-      describeElement(targetName, targetPosition)
-    );
-    updateElementProperties(
-      element,
-      newName,
-      newType,
-      newRef,
-      newMinOccurs,
-      newMaxOccurs,
-      newDocumentation,
-      false,
-      newNillable,
-      undefined, // abstract not applicable to local elements
-      newDefault,
-      newFixed
-    );
-  } else if (parentType === "all") {
-    const allGroup = parent as all;
-    const elements = allGroup.element ?? [];
-    const element = assumeValidated(
-      findElement(elements, targetName, targetPosition),
-      describeElement(targetName, targetPosition)
-    );
-    updateElementProperties(
-      element,
-      newName,
-      newType,
-      newRef,
-      newMinOccurs,
-      newMaxOccurs,
-      newDocumentation,
-      true,
-      newNillable,
-      undefined, // abstract not applicable to local elements
-      newDefault,
-      newFixed
-    );
-  } else {
-    assumptionFailed(`Parent of type '${parentType}' for an element`);
+  if (maxOccurs !== undefined) {
+    localElem.maxOccurs = maxOccurs;
   }
-}
-
-/**
- * Describes an element by its name or position, for error messages.
- *
- * @param name - The name or ref value of the element (optional)
- * @param position - The position of the element (optional)
- * @returns For example `Element person` or `Element at position 2`
- */
-function describeElement(name?: string, position?: number): string {
-  return name !== undefined ? `Element ${name}` : `Element at position ${position}`;
-}
-
-/**
- * Finds an element in an array by name/ref or position.
- * Matches elements whose `name` OR `ref` equals the given elementName.
- *
- * @param elements - Array of elements
- * @param elementName - Name or ref value of the element to find (optional)
- * @param position - Position of the element to find (optional)
- * @returns Found element or undefined
- */
-function findElement<T extends { name?: string; ref?: string }>(
-  elements: T[],
-  elementName?: string,
-  position?: number
-): T | undefined {
-  // When both are provided, position takes precedence (more specific)
-  if (position !== undefined) {
-    return elements[position];
-  } else if (elementName !== undefined) {
-    return elements.find(el => el.name === elementName || el.ref === elementName);
-  }
-  return undefined;
 }
 
 /**
  * Updates element properties based on provided values.
- * When `newRef` is set, clears `name` and `type_`. When `newName` is set, clears `ref`.
+ * When `ref` is set, clears `name` and `type_`. When `elementName` is set, clears `ref`.
  *
  * @param element - Element to update
- * @param newName - New name (optional). When set, clears ref.
- * @param newType - New type (optional)
- * @param newRef - New ref (optional). When set, clears name and type.
- * @param newMinOccurs - New minimum occurrences (optional)
- * @param newMaxOccurs - New maximum occurrences (optional)
- * @param newDocumentation - New documentation (optional)
- * @param isInAllGroup - Whether this element is in an 'all' group
- * @param newNillable - New nillable flag (optional)
- * @param newAbstract - New abstract flag; only written to top-level elements (optional)
- * @param newDefault - New default value (optional; empty string clears it)
- * @param newFixed - New fixed value (optional; empty string clears it)
+ * @param changes - The changes of the modifyElement command; `abstract` only applies to top-level
+ * elements and the occurrences only to local ones, and an empty `default_` or `fixed` clears it
+ * @param parentType - Type of the parent container
  */
-function updateElementProperties(
-  element: topLevelElement | localElement | narrowMaxMin,
-  newName?: string,
-  newType?: string,
-  newRef?: string,
-  newMinOccurs?: number,
-  newMaxOccurs?: number | "unbounded",
-  newDocumentation?: string,
-  isInAllGroup: boolean = false,
-  newNillable?: boolean,
-  newAbstract?: boolean,
-  newDefault?: string,
-  newFixed?: string
-): void {
-  if (newRef !== undefined) {
+function updateElementProperties(element: AnyElement, changes: ElementChanges, parentType: string): void {
+  const { elementName, elementType, ref, minOccurs, maxOccurs, documentation, nillable, abstract: isAbstract, default_, fixed } =
+    changes;
+  if (ref !== undefined) {
     // Switching to a reference: clear name and type
-    (element as localElement).ref = newRef;
+    (element as localElement).ref = ref;
     element.name = undefined;
     element.type_ = undefined;
     (element as localElement | topLevelElement).simpleType = undefined;
@@ -508,72 +196,46 @@ function updateElementProperties(
     (element as localElement).nillable = undefined;
   } else {
     // Update name (clearing ref when switching to named)
-    if (newName !== undefined) {
-      element.name = newName;
+    if (elementName !== undefined) {
+      element.name = elementName;
       (element as localElement).ref = undefined;
     }
-    if (newType !== undefined) {
-      element.type_ = newType;
+    if (elementType !== undefined) {
+      element.type_ = elementType;
       (element as localElement | topLevelElement).simpleType = undefined;
       (element as localElement | topLevelElement).complexType = undefined;
     }
   }
 
-  // Update occurrences if provided (only for local elements and narrowMaxMin)
-  if (newMinOccurs !== undefined || newMaxOccurs !== undefined) {
-    if (isInAllGroup) {
-      const allElement = element as narrowMaxMin;
-      if (newMinOccurs !== undefined) {
-        allElement.minOccurs = String(newMinOccurs);
-      }
-      if (newMaxOccurs !== undefined) {
-        allElement.maxOccurs = String(newMaxOccurs);
-      }
-    } else if ('minOccurs' in element) {
-      const localElem = element as localElement;
-      if (newMinOccurs !== undefined) {
-        localElem.minOccurs = newMinOccurs;
-      }
-      if (newMaxOccurs !== undefined) {
-        localElem.maxOccurs = newMaxOccurs;
-      }
-    }
-  }
+  setOccurrences(element, parentType, minOccurs, maxOccurs);
 
   // Update nillable flag
-  if (newNillable !== undefined) {
-    (element as topLevelElement | localElement).nillable = newNillable ? true : undefined;
+  if (nillable !== undefined) {
+    (element as topLevelElement | localElement).nillable = nillable ? true : undefined;
   }
 
   // Update abstract flag (top-level elements only)
-  if (newAbstract !== undefined && 'abstract' in element) {
-    element.abstract = newAbstract ? true : undefined;
+  if (isAbstract !== undefined && parentType === "schema") {
+    (element as topLevelElement).abstract = isAbstract ? true : undefined;
   }
 
   // Update default and fixed value; an empty string removes the value
   const valueHolder = element as topLevelElement | localElement;
-  if (newDefault !== undefined) {
-    valueHolder.default_ = newDefault || undefined;
+  if (default_ !== undefined) {
+    valueHolder.default_ = default_ || undefined;
   }
-  if (newFixed !== undefined) {
-    valueHolder.fixed = newFixed || undefined;
+  if (fixed !== undefined) {
+    valueHolder.fixed = fixed || undefined;
   }
   // An element has at most one of them, so a new value of one removes the other
-  if (newDefault) {
+  if (default_) {
     valueHolder.fixed = undefined;
   }
-  if (newFixed) {
+  if (fixed) {
     valueHolder.default_ = undefined;
   }
 
-  // Update documentation if provided
-  if (newDocumentation !== undefined) {
-    if (!element.annotation) {
-      element.annotation = new annotationType();
-    }
-    
-    const doc = new documentationType();
-    doc.value = newDocumentation;
-    element.annotation.documentation = [doc];
+  if (documentation !== undefined) {
+    setDocumentation(element, documentation);
   }
 }

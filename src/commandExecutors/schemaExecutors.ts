@@ -40,18 +40,19 @@ import { rewritePrefixInSchema } from "./schemaQNameRewriter.js";
 // ===== Helpers =====
 
 /**
- * Resolves an import ID (e.g. "/import[0]") to the corresponding importType
- * entry and its index.
+ * Resolves the ID of an import or include (e.g. "/import[0]" or "/include[0]") to the entry and its
+ * index.
  *
- * @throws Error if there is no import at the position, which the validator rules out
+ * @param id - The ID of the import or include
+ * @param entries - The imports or includes of the schema
+ * @param label - `Import` or `Include`, for the error message
+ * @returns The entries, the index and the entry
+ * @throws Error if there is no entry at the position, which the validator rules out
  */
-function resolveImport(
-  importId: string,
-  schemaObj: schema
-): { imports: importType[]; index: number; entry: importType } {
-  const imports = schemaObj.import_ ?? [];
-  const index = assumeValidated(parseSchemaId(importId).position, `Position of ${importId}`);
-  return { imports, index, entry: assumeValidated(imports[index] as importType | undefined, `Import ${importId}`) };
+function resolveModuleEntry<T>(id: string, entries: T[] | undefined, label: string): { entries: T[]; index: number; entry: T } {
+  const all = entries ?? [];
+  const index = assumeValidated(parseSchemaId(id).position, `Position of ${id}`);
+  return { entries: all, index, entry: assumeValidated(all[index] as T | undefined, `${label} ${id}`) };
 }
 
 /**
@@ -138,7 +139,7 @@ export function executeRemoveImport(
   schemaObj: schema
 ): void {
   const { importId } = command.payload;
-  const { imports, index, entry } = resolveImport(importId, schemaObj);
+  const { entries: imports, index, entry } = resolveModuleEntry(importId, schemaObj.import_, "Import");
   const removedNamespace = entry.namespace;
   imports.splice(index, 1);
   schemaObj.import_ = imports.length > 0 ? imports : undefined;
@@ -175,7 +176,7 @@ export function executeModifyImport(
   const namespace = command.payload.namespace?.trim();
   const schemaLocation = command.payload.schemaLocation?.trim();
   const prefix = command.payload.prefix?.trim();
-  const { entry: importEntry } = resolveImport(importId, schemaObj);
+  const { entry: importEntry } = resolveModuleEntry(importId, schemaObj.import_, "Import");
   const oldNamespace = importEntry.namespace;
 
   if (namespace !== undefined) {
@@ -215,21 +216,6 @@ export function executeModifyImport(
 // ===== Include Executors =====
 
 /**
- * Resolves an include ID (e.g. "/include[0]") to the corresponding includeType
- * entry and its index.
- *
- * @throws Error if there is no include at the position, which the validator rules out
- */
-function resolveInclude(
-  includeId: string,
-  schemaObj: schema
-): { includes: includeType[]; index: number; entry: includeType } {
-  const includes = schemaObj.include ?? [];
-  const index = assumeValidated(parseSchemaId(includeId).position, `Position of ${includeId}`);
-  return { includes, index, entry: assumeValidated(includes[index] as includeType | undefined, `Include ${includeId}`) };
-}
-
-/**
  * Executes an addInclude command.
  *
  * Appends a new xs:include declaration with the given schemaLocation to the
@@ -263,7 +249,7 @@ export function executeRemoveInclude(
   schemaObj: schema
 ): void {
   const { includeId } = command.payload;
-  const { includes, index } = resolveInclude(includeId, schemaObj);
+  const { entries: includes, index } = resolveModuleEntry(includeId, schemaObj.include, "Include");
   includes.splice(index, 1);
   schemaObj.include = includes.length > 0 ? includes : undefined;
 }
@@ -283,7 +269,7 @@ export function executeModifyInclude(
 ): void {
   const { includeId } = command.payload;
   const schemaLocation = command.payload.schemaLocation.trim();
-  resolveInclude(includeId, schemaObj).entry.schemaLocation = schemaLocation;
+  resolveModuleEntry(includeId, schemaObj.include, "Include").entry.schemaLocation = schemaLocation;
 }
 
 function normalizeNamespacePrefixes(

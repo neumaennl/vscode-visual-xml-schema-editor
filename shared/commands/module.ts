@@ -160,3 +160,9 @@ export interface ModifySchemaNamespacesCommand extends BaseCommand<ModifySchemaN
   type: "modifySchemaNamespaces";
   payload: ModifySchemaNamespacesPayload;
 }
+
+/** The commands that add, remove and modify an import. */
+export type ImportCommand = AddImportCommand | RemoveImportCommand | ModifyImportCommand;
+
+/** The commands that add, remove and modify an include. */
+export type IncludeCommand = AddIncludeCommand | RemoveIncludeCommand | ModifyIncludeCommand;

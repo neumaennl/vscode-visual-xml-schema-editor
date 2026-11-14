@@ -23,16 +23,15 @@ import {
   all,
   groupRef,
   annotationType,
-  documentationType,
   attribute,
   attributeGroupRef,
   wildcard,
 } from "../../shared/types.js";
 import { getContentContainer, getContentDerivation, isSchemaRoot } from "../../shared/schemaUtils.js";
-import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
-import { assumeRemoved, assumeValidated, locateValidated } from "./assumeValidated.js";
-import { createAnnotation } from "./annotationUtils.js";
-import { renameLocalTypeInSchema } from "./schemaLocalRenamer.js";
+import { assumeValidated } from "./assumeValidated.js";
+import { assignDefined } from "./nodeProperties.js";
+import { locateModifiedType, placeNewType, removeType } from "./typeTargets.js";
+import { createAnnotation, setDocumentation } from "./annotationUtils.js";
 
 /** Structural type shared by topLevelComplexType and localComplexType for content operations. */
 type ComplexTypeHolder = {
@@ -75,46 +74,15 @@ export function executeAddComplexType(
 ): void {
   const { parentId, typeName, contentModel, abstract: isAbstract, baseType, derivationKind, mixed, documentation } =
     command.payload;
-
-  if (!isSchemaRoot(parentId)) {
-    // Anonymous complexType inside an element — isSchemaRoot guarantees parentId is a non-empty string here
-    const location = locateValidated(schemaObj, parentId as string);
-    const holder = location.parent as {
-      type_?: string;
-      complexType?: localComplexType;
-      simpleType?: unknown;
-    };
-    const anonType = new localComplexType();
-    if (mixed !== undefined) {
-      anonType.mixed = mixed;
-    }
-    if (documentation) {
-      anonType.annotation = createAnnotation(documentation);
-    }
-    applyContentStructure(anonType, contentModel, baseType, derivationKind);
-    holder.type_ = undefined;
-    holder.simpleType = undefined;
-    holder.complexType = anonType;
-    return;
-  }
-
-  // Top-level named complexType
-  const ct = new topLevelComplexType();
-  ct.name = assumeValidated(typeName, "Type name");
-  if (isAbstract !== undefined) {
-    ct.abstract = isAbstract;
-  }
-  if (mixed !== undefined) {
-    ct.mixed = mixed;
-  }
+  const ct = isSchemaRoot(parentId)
+    ? assignDefined(new topLevelComplexType(), { name: assumeValidated(typeName, "Type name"), abstract: isAbstract })
+    : new localComplexType();
+  assignDefined(ct, { mixed });
   if (documentation) {
     ct.annotation = createAnnotation(documentation);
   }
   applyContentStructure(ct, contentModel, baseType, derivationKind);
-
-  const complexTypes = schemaObj.complexType ?? [];
-  complexTypes.push(ct);
-  schemaObj.complexType = complexTypes;
+  placeNewType(schemaObj, parentId, "complexType", ct);
 }
 
 /**
@@ -130,25 +98,7 @@ export function executeRemoveComplexType(
   command: RemoveComplexTypeCommand,
   schemaObj: schema
 ): void {
-  const { typeId } = command.payload;
-  const parsed = parseSchemaId(typeId);
-
-  if (parsed.nodeType === SchemaNodeType.AnonymousComplexType) {
-    const location = locateValidated(schemaObj, assumeValidated(parsed.parentId, `Parent of ${typeId}`));
-    const holder = location.parent as { complexType?: localComplexType };
-    assumeValidated(holder.complexType, `Complex type ${typeId}`);
-    holder.complexType = undefined;
-    return;
-  }
-
-  // Top-level named complexType
-  const complexTypes = schemaObj.complexType ?? [];
-  const filtered = assumeRemoved(
-    complexTypes,
-    complexTypes.filter((ct) => ct.name !== parsed.name),
-    `Complex type ${typeId}`
-  );
-  schemaObj.complexType = filtered.length > 0 ? filtered : undefined;
+  removeType(schemaObj, command.payload.typeId, "complexType");
 }
 
 /**
@@ -164,37 +114,18 @@ export function executeModifyComplexType(
   command: ModifyComplexTypeCommand,
   schemaObj: schema
 ): void {
-  const { typeId, typeName, contentModel, abstract: isAbstract, baseType, derivationKind, mixed, documentation } =
-    command.payload;
-  const parsed = parseSchemaId(typeId);
-
-  if (parsed.nodeType === SchemaNodeType.AnonymousComplexType) {
-    const location = locateValidated(schemaObj, assumeValidated(parsed.parentId, `Parent of ${typeId}`));
-    const holder = location.parent as { complexType?: localComplexType };
-    updateComplexTypeContents(assumeValidated(holder.complexType, `Complex type ${typeId}`), {
-      mixed,
-      contentModel,
-      baseType,
-      derivationKind,
-      documentation,
-    });
-    return;
-  }
-
-  // Top-level named complexType
-  const ct = assumeValidated(
-    (schemaObj.complexType ?? []).find((t) => t.name === parsed.name),
-    `Complex type ${typeId}`
+  const { typeId, typeName, abstract: isAbstract, ...updates } = command.payload;
+  const { type, topLevel } = locateModifiedType<topLevelComplexType | localComplexType>(
+    schemaObj,
+    typeId,
+    "complexType",
+    typeName
   );
-
-  if (typeName !== undefined) {
-    renameLocalTypeInSchema(ct.name, typeName, schemaObj);
-    ct.name = typeName;
+  // Only top-level complex types can be abstract
+  if (topLevel) {
+    assignDefined(type as topLevelComplexType, { abstract: isAbstract });
   }
-  if (isAbstract !== undefined) {
-    ct.abstract = isAbstract;
-  }
-  updateComplexTypeContents(ct, { mixed, contentModel, baseType, derivationKind, documentation });
+  updateComplexTypeContents(type, updates);
 }
 
 // ===== Helper Functions =====
@@ -221,12 +152,7 @@ function updateComplexTypeContents(
     ct.mixed = mixed;
   }
   if (documentation !== undefined) {
-    if (!ct.annotation) {
-      ct.annotation = new annotationType();
-    }
-    const doc = new documentationType();
-    doc.value = documentation;
-    ct.annotation.documentation = [doc];
+    setDocumentation(ct, documentation);
   }
   if (contentModel !== undefined || baseType !== undefined || derivationKind !== undefined) {
     const effectiveBase = baseType !== undefined ? baseType : getBaseType(ct);

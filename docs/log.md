@@ -1,6 +1,7 @@
 # Knowledge Bundle Update Log
 
 ## 2026-11-14
+* **Update**: [Commands](commands.md): each area file in `shared/commands/` defines the union of the commands of its kind of component, such as `ElementCommand`, and `SchemaCommand` combines them; adding a command puts it into the union of its area. The executors share helpers in `nodeProperties.ts`, `typeTargets.ts` and `annotationUtils.ts` ([#439](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/439)). [Schema model](schema-model.md#schemamodelmanager) and [Known issues](known-issues.md#top-level-lookups-are-duplicated-instead-of-shared): `SchemaModelManager` no longer has query methods, which only tests used; the known issue describes the lookups that are left.
 * **Update**: [Commands](commands.md) and [Architecture](architecture.md#source-layout): `commandValidator.ts` and `commandExecutor.ts` find the validator or executor of a command by its name with `findCommandHandler()` in the new `src/commandHandlers.ts` instead of a `switch`, so TypeScript now reports a command without a validator or an executor; the checks that validators of several areas share are in `src/commandValidators/commonValidators.ts` and `referenceSearch.ts` ([#439](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/439)).
 
 ## 2026-11-12

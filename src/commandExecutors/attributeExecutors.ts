@@ -8,15 +8,16 @@ import {
   AddAttributeCommand,
   RemoveAttributeCommand,
   ModifyAttributeCommand,
+  AttributeFields,
   attribute,
   topLevelAttribute,
-  annotationType,
-  documentationType,
 } from "../../shared/types.js";
-import { assumeRemoved, assumeValidated, assumptionFailed, locateValidated } from "./assumeValidated.js";
+import { assumeValidated, assumptionFailed, locateValidated } from "./assumeValidated.js";
 import { parseSchemaId, SCHEMA_ROOT_ID } from "../../shared/idStrategy.js";
-import { createAnnotation } from "./annotationUtils.js";
-import { getAttributeContainer } from "../../shared/schemaUtils.js";
+import { createAnnotation, setDocumentation } from "./annotationUtils.js";
+import { AttributeContainer, getAttributeContainer } from "../../shared/schemaUtils.js";
+import { appendTo, removeFrom } from "./nodeProperties.js";
+import { identifyChild } from "../commandUtils.js";
 
 /**
  * Executes an addAttribute command.
@@ -31,23 +32,9 @@ export function executeAddAttribute(
   command: AddAttributeCommand,
   schemaObj: schema
 ): void {
-  const {
-    parentId, attributeName, attributeType, ref, required, defaultValue, fixedValue, documentation,
-  } = command.payload;
-
-  const location = locateValidated(schemaObj, parentId);
-
-  addAttributeToParent(
-    location.parent,
-    location.parentType,
-    attributeName,
-    attributeType,
-    ref,
-    required,
-    defaultValue,
-    fixedValue,
-    documentation
-  );
+  const location = locateValidated(schemaObj, command.payload.parentId);
+  const container = attributesOf(location.parent, location.parentType);
+  appendTo(container, "attribute", createNewAttribute(command.payload, location.parentType === "schema"));
 }
 
 /**
@@ -62,13 +49,10 @@ export function executeRemoveAttribute(
   command: RemoveAttributeCommand,
   schemaObj: schema
 ): void {
-  const { attributeId } = command.payload;
-
-  const parsed = parseSchemaId(attributeId);
-  const parentId = parsed.parentId ?? SCHEMA_ROOT_ID;
-  const location = locateValidated(schemaObj, parentId);
-
-  removeAttributeFromParent(location.parent, location.parentType, parsed.name, parsed.position);
+  const parsed = parseSchemaId(command.payload.attributeId);
+  const location = locateValidated(schemaObj, parsed.parentId ?? SCHEMA_ROOT_ID);
+  const child = identifyChild("Attribute", parsed.name, parsed.position);
+  removeFrom(attributesOf(location.parent, location.parentType), "attribute", child.matches, child.what);
 }
 
 /**
@@ -83,326 +67,111 @@ export function executeModifyAttribute(
   command: ModifyAttributeCommand,
   schemaObj: schema
 ): void {
-  const {
-    attributeId, attributeName, attributeType, ref, required, defaultValue, fixedValue, documentation,
-  } = command.payload;
-
-  const parsed = parseSchemaId(attributeId);
-  const parentId = parsed.parentId ?? SCHEMA_ROOT_ID;
-  const location = locateValidated(schemaObj, parentId);
-
-  modifyAttributeInParent(
-    location.parent,
-    location.parentType,
-    parsed.name,
-    parsed.position,
-    attributeName,
-    attributeType,
-    ref,
-    required,
-    defaultValue,
-    fixedValue,
-    documentation
-  );
+  const parsed = parseSchemaId(command.payload.attributeId);
+  const location = locateValidated(schemaObj, parsed.parentId ?? SCHEMA_ROOT_ID);
+  const attributes: Array<topLevelAttribute | attribute> = attributesOf(location.parent, location.parentType).attribute ?? [];
+  const child = identifyChild("Attribute", parsed.name, parsed.position);
+  const attr = assumeValidated(attributes.find(child.matches), child.what);
+  updateAttributeProperties(attr, command.payload);
 }
 
 // ===== Helper Functions =====
 
 /**
- * Adds an attribute to a parent container. The attributes of a complex type with complex or simple
- * content live in its extension or restriction (see {@link getAttributeContainer}).
- * Supply either `name`+`type` (named attribute) or `ref` (reference attribute).
+ * Returns the node that holds the attributes of a parent: the schema, or a complex type or the
+ * extension or restriction of its content (see {@link getAttributeContainer}).
  *
  * @param parent - Parent container object
  * @param parentType - Type of the parent container
- * @param name - Attribute name (undefined when using ref)
- * @param type - Attribute type (undefined when using ref)
- * @param ref - Reference to a top-level attribute (mutually exclusive with name/type)
- * @param required - Whether the attribute is required (optional, only for complex types)
- * @param defaultValue - Default value (optional, not valid with ref)
- * @param fixedValue - Fixed value (optional, not valid with ref)
- * @param documentation - Documentation text (optional)
- * @throws Error if parent type is unsupported or duplicate attribute name/ref exists
+ * @returns The node that holds the attributes
+ * @throws Error if the parent cannot hold attributes
  */
-function addAttributeToParent(
-  parent: unknown,
-  parentType: string,
-  name: string | undefined,
-  type: string | undefined,
-  ref: string | undefined,
-  required?: boolean,
-  defaultValue?: string,
-  fixedValue?: string,
-  documentation?: string
-): void {
-  if (parentType === "schema") {
-    const schemaObj = parent as schema;
-    const attributes = schemaObj.attribute ?? [];
-    const newAttr = new topLevelAttribute();
-    newAttr.name = assumeValidated(name, "Attribute name");
-    newAttr.type_ = type;
-    if (defaultValue !== undefined) {
-      newAttr.default_ = defaultValue;
-    }
-    if (fixedValue !== undefined) {
-      newAttr.fixed = fixedValue;
-    }
-    if (documentation) {
-      newAttr.annotation = createAnnotation(documentation);
-    }
-    attributes.push(newAttr);
-    schemaObj.attribute = attributes;
-  } else if (parentType === "topLevelComplexType" || parentType === "localComplexType") {
-    const container = getAttributeContainer(parent);
-    const attributes = container.attribute ?? [];
+function attributesOf(parent: unknown, parentType: string): AttributeContainer {
+  if (!["schema", "topLevelComplexType", "localComplexType"].includes(parentType)) {
+    return assumptionFailed(`Parent of type '${parentType}' for an attribute`);
+  }
+  return getAttributeContainer(parent);
+}
 
+/**
+ * Creates a new attribute: a named top-level attribute in the schema, or a local attribute, named or
+ * a reference. Only local attributes have `use`, set from `required`.
+ *
+ * @param fields - The fields of the addAttribute command; the validator allows no default or fixed
+ * value on a reference
+ * @param isTopLevel - Whether the attribute is added to the schema
+ * @returns New attribute instance
+ */
+function createNewAttribute(fields: AttributeFields, isTopLevel: boolean): topLevelAttribute | attribute {
+  const { attributeName, attributeType, ref, required, defaultValue, fixedValue, documentation } = fields;
+  let newAttr: topLevelAttribute | attribute;
+  if (isTopLevel) {
+    newAttr = new topLevelAttribute();
+    newAttr.name = assumeValidated(attributeName, "Attribute name");
+    newAttr.type_ = attributeType;
+  } else {
+    const local = new attribute();
     if (ref !== undefined) {
-      // Reference attribute
-      const newAttr = new attribute();
-      newAttr.ref = ref;
-      if (required !== undefined) {
-        newAttr.use = required ? "required" : "optional";
-      }
-      if (documentation) {
-        newAttr.annotation = createAnnotation(documentation);
-      }
-      attributes.push(newAttr);
+      local.ref = ref;
     } else {
-      // Named attribute
-      const newAttr = new attribute();
-      newAttr.name = name;
-      newAttr.type_ = type;
-      if (required !== undefined) {
-        newAttr.use = required ? "required" : "optional";
-      }
-      if (defaultValue !== undefined) {
-        newAttr.default_ = defaultValue;
-      }
-      if (fixedValue !== undefined) {
-        newAttr.fixed = fixedValue;
-      }
-      if (documentation) {
-        newAttr.annotation = createAnnotation(documentation);
-      }
-      attributes.push(newAttr);
+      local.name = attributeName;
+      local.type_ = attributeType;
     }
-
-    container.attribute = attributes;
-  } else {
-    assumptionFailed(`Parent of type '${parentType}' for an attribute`);
+    if (required !== undefined) {
+      local.use = required ? "required" : "optional";
+    }
+    newAttr = local;
   }
-}
-
-/**
- * Removes an attribute from its parent container.
- *
- * @param parent - Parent container object
- * @param parentType - Type of the parent container
- * @param attributeName - Name of the attribute to remove (optional)
- * @param position - Position of the attribute to remove (optional)
- * @throws Error if parent type is unsupported or attribute not found
- */
-function removeAttributeFromParent(
-  parent: unknown,
-  parentType: string,
-  attributeName?: string,
-  position?: number
-): void {
-  if (parentType === "schema") {
-    const schemaObj = parent as schema;
-    const attributes = schemaObj.attribute ?? [];
-    const filtered = assumeRemoved(
-      attributes,
-      filterAttributes(attributes, attributeName, position),
-      describeAttribute(attributeName, position)
-    );
-    schemaObj.attribute = filtered.length > 0 ? filtered : undefined;
-  } else if (parentType === "topLevelComplexType" || parentType === "localComplexType") {
-    const container = getAttributeContainer(parent);
-    const attributes = container.attribute ?? [];
-    const filtered = assumeRemoved(
-      attributes,
-      filterAttributes(attributes, attributeName, position),
-      describeAttribute(attributeName, position)
-    );
-    container.attribute = filtered.length > 0 ? filtered : undefined;
-  } else {
-    assumptionFailed(`Parent of type '${parentType}' for an attribute`);
+  if (defaultValue !== undefined) {
+    newAttr.default_ = defaultValue;
   }
-}
-
-/**
- * Modifies an attribute in its parent container.
- *
- * @param parent - Parent container object
- * @param parentType - Type of the parent container
- * @param targetName - Name or ref value of the attribute to modify (optional)
- * @param targetPosition - Position of the attribute to modify (optional)
- * @param newName - New name (optional). When set, clears ref.
- * @param newType - New type (optional)
- * @param newRef - New ref (optional). When set, clears name and type.
- * @param newRequired - New required status (optional)
- * @param newDefaultValue - New default value (optional)
- * @param newFixedValue - New fixed value (optional)
- * @param newDocumentation - New documentation (optional)
- * @throws Error if parent type is unsupported or attribute not found
- */
-function modifyAttributeInParent(
-  parent: unknown,
-  parentType: string,
-  targetName?: string,
-  targetPosition?: number,
-  newName?: string,
-  newType?: string,
-  newRef?: string,
-  newRequired?: boolean,
-  newDefaultValue?: string,
-  newFixedValue?: string,
-  newDocumentation?: string
-): void {
-  const attributes = getAttributesFromParent(parent, parentType);
-  const attr = assumeValidated(
-    findAttribute(attributes, targetName, targetPosition),
-    describeAttribute(targetName, targetPosition)
-  );
-  updateAttributeProperties(attr, newName, newType, newRef, newRequired, newDefaultValue, newFixedValue, newDocumentation);
-}
-
-/**
- * Returns the attribute array from a parent container.
- *
- * @param parent - Parent container object
- * @param parentType - Type of the parent container
- * @returns Array of attributes from the parent
- * @throws Error if parent type is unsupported
- */
-function getAttributesFromParent(
-  parent: unknown,
-  parentType: string
-): Array<topLevelAttribute | attribute> {
-  if (parentType === "schema") {
-    return (parent as schema).attribute ?? [];
-  } else if (parentType === "topLevelComplexType" || parentType === "localComplexType") {
-    return getAttributeContainer(parent).attribute ?? [];
+  if (fixedValue !== undefined) {
+    newAttr.fixed = fixedValue;
   }
-  return assumptionFailed(`Parent of type '${parentType}' for an attribute`);
-}
-
-/**
- * Describes an attribute by its name or position, for error messages.
- *
- * @param name - The name or ref value of the attribute (optional)
- * @param position - The position of the attribute (optional)
- * @returns For example `Attribute lang` or `Attribute at position 2`
- */
-function describeAttribute(name?: string, position?: number): string {
-  return name !== undefined ? `Attribute ${name}` : `Attribute at position ${position}`;
-}
-
-/**
- * Filters an attribute array, removing the element matching by name/ref or position.
- * Matches attributes whose `name` OR `ref` equals the given attributeName.
- *
- * @param attributes - Array of attributes
- * @param attributeName - Name or ref value to filter (optional)
- * @param position - Position to filter (optional)
- * @returns Filtered array
- */
-function filterAttributes<T extends { name?: string; ref?: string }>(
-  attributes: T[],
-  attributeName?: string,
-  position?: number
-): T[] {
-  if (position !== undefined) {
-    return attributes.filter((_, idx) => idx !== position);
-  } else if (attributeName !== undefined) {
-    const filtered = attributes.filter(
-      (a) => a.name !== attributeName && a.ref !== attributeName
-    );
-    return filtered;
+  if (documentation) {
+    newAttr.annotation = createAnnotation(documentation);
   }
-  return attributes;
-}
-
-/**
- * Finds an attribute in an array by name/ref or position.
- * Matches attributes whose `name` OR `ref` equals the given attributeName.
- *
- * @param attributes - Array of attributes
- * @param attributeName - Name or ref value to find (optional)
- * @param position - Position to find (optional)
- * @returns Found attribute or undefined
- */
-function findAttribute<T extends { name?: string; ref?: string }>(
-  attributes: T[],
-  attributeName?: string,
-  position?: number
-): T | undefined {
-  if (position !== undefined) {
-    return attributes[position];
-  } else if (attributeName !== undefined) {
-    return attributes.find((a) => a.name === attributeName || a.ref === attributeName);
-  }
-  return undefined;
+  return newAttr;
 }
 
 /**
  * Updates properties on an attribute (works for both top-level and local attributes).
- * When `newRef` is set, clears `name` and `type_`. When `newName` is set, clears `ref`.
+ * When `ref` is set, clears `name` and `type_`. When `attributeName` is set, clears `ref`.
  * The `use` property (required/optional) is only applied when the attribute supports it.
  *
  * @param attr - The attribute to update
- * @param newName - New name (optional). When set, clears ref.
- * @param newType - New type (optional)
- * @param newRef - New ref (optional). When set, clears name and type.
- * @param newRequired - New required status (optional, only for local attributes)
- * @param newDefaultValue - New default value (optional)
- * @param newFixedValue - New fixed value (optional)
- * @param newDocumentation - New documentation (optional)
+ * @param changes - The changes of the modifyAttribute command
  */
-function updateAttributeProperties(
-  attr: topLevelAttribute | attribute,
-  newName?: string,
-  newType?: string,
-  newRef?: string,
-  newRequired?: boolean,
-  newDefaultValue?: string,
-  newFixedValue?: string,
-  newDocumentation?: string
-): void {
-  if (newRef !== undefined) {
+function updateAttributeProperties(attr: topLevelAttribute | attribute, changes: AttributeFields): void {
+  const { attributeName, attributeType, ref, required, defaultValue, fixedValue, documentation } = changes;
+  if (ref !== undefined) {
     // Switching to a reference: clear name and type
-    (attr as attribute).ref = newRef;
+    (attr as attribute).ref = ref;
     attr.name = undefined;
     attr.type_ = undefined;
   } else {
     // Update name (clearing ref when switching to named)
-    if (newName !== undefined) {
-      attr.name = newName;
+    if (attributeName !== undefined) {
+      attr.name = attributeName;
       (attr as attribute).ref = undefined;
     }
-    if (newType !== undefined) {
-      attr.type_ = newType;
+    if (attributeType !== undefined) {
+      attr.type_ = attributeType;
     }
   }
   // 'use' only exists on local attributes (attribute class), not on topLevelAttribute
-  if (newRequired !== undefined && "use" in attr) {
-    (attr).use = newRequired ? "required" : "optional";
+  if (required !== undefined && "use" in attr) {
+    (attr).use = required ? "required" : "optional";
   }
-  if (newDefaultValue !== undefined) {
-    attr.default_ = newDefaultValue;
+  if (defaultValue !== undefined) {
+    attr.default_ = defaultValue;
     attr.fixed = undefined;
   }
-  if (newFixedValue !== undefined) {
-    attr.fixed = newFixedValue;
+  if (fixedValue !== undefined) {
+    attr.fixed = fixedValue;
     attr.default_ = undefined;
   }
-  if (newDocumentation !== undefined) {
-    if (!attr.annotation) {
-      attr.annotation = new annotationType();
-    }
-    const doc = new documentationType();
-    doc.value = newDocumentation;
-    attr.annotation.documentation = [doc];
+  if (documentation !== undefined) {
+    setDocumentation(attr, documentation);
   }
 }

@@ -1,11 +1,11 @@
 ---
 type: Build Process
 title: Build and packaging
-description: How the extension is built, run, linted, packaged and checked - the build outputs and tsconfig files, the npm scripts, the scripts in TypeScript, running it in VS Code, the VSIX and its check, the generated schema classes, dependencies and the Node version, ESLint, CI, and planned changes.
-tags: [build, packaging, vsix, vite, typescript, eslint, ci, dependencies]
+description: How the extension is built, run, linted, packaged and checked - the build outputs and tsconfig files, the npm scripts, the scripts in TypeScript, running it in VS Code, the VSIX and its check, the generated schema classes, dependencies and the Node version, ESLint and the check for duplicated code, CI, and planned changes.
+tags: [build, packaging, vsix, vite, typescript, eslint, jscpd, ci, dependencies]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-14T18:31:31Z }
-verified: { by: human:neumaennl, at: 2026-11-14T18:43:31Z }
+generated: { by: human:neumaennl, at: 2026-11-14T21:48:08Z }
+verified: { by: human:neumaennl, at: 2026-11-14T22:07:09Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -64,6 +64,9 @@ sources:
   - id: eslint
     resource: ../eslint.config.mjs
     title: ESLint configuration
+  - id: jscpd
+    resource: ../.jscpd.json
+    title: jscpd configuration
   - id: ci
     resource: ../.github/workflows/ci.yml
     title: CI workflow
@@ -123,7 +126,7 @@ The whole package is an ES module (`"type": "module"`), so Node and Vite load `v
 | `npm run compile` | `compile-extension` (`tsc -p ./tsconfig.extension.json`) and then `compile-webview` (`tsc --noEmit -p tsconfig.webview.json` and `vite build --mode production`). |
 | `npm run watch` | Runs `watch-extension` (`tsc -watch`) and `watch-webview` (`vite build --watch --mode development`) side by side with `concurrently`. |
 | `npm run clean` | Deletes `out/` and `webview/`. |
-| `npm run lint`, `npm run lint:fix` | Runs ESLint on the repository, or fixes what it can. |
+| `npm run lint`, `npm run lint:fix` | Runs ESLint and jscpd on the repository (see [Lint](#lint)), or fixes what ESLint can. |
 | `npm run package` | Builds the VSIX with `vsce package`; `vscode:prepublish` runs `npm run compile` first. |
 | `npm run package:verify` | Checks the VSIX (see [Packaging](#packaging)). |
 | `npm run vscode:update`, `npm run vscode:check` | Change the lowest supported VS Code version and the versions derived from it, or check that they match (see [VS Code and Node versions](#vs-code-and-node-versions)). |
@@ -198,6 +201,16 @@ The script reads the GitHub API, `raw.githubusercontent.com` (VS Code's `.npmrc`
 
 # Lint
 
+`npm run lint` runs ESLint and the copy-paste detector jscpd in parallel, with `concurrently`:[^manifest]
+
+- both tools always run to the end, so one run reports all problems;
+- the run fails if one of them fails;
+- `--group` prints the output of each tool as one block, labeled `[eslint]` and `[jscpd]`.
+
+To run one tool alone, use `npx eslint .` or `npx jscpd`. They read the same configuration as `npm run lint`. `npm run lint:fix` runs only ESLint, because jscpd cannot fix anything.
+
+## ESLint
+
 `eslint.config.mjs` is a flat configuration:[^eslint]
 
 - It ignores `out/`, `dist/`, `webview/`, `.vscode-test/`, `node_modules/`, type declarations and generated code.
@@ -207,13 +220,27 @@ The script reads the GitHub API, `raw.githubusercontent.com` (VS Code's `.npmrc`
 - `no-restricted-imports` enforces the [project boundaries](development-guidelines.md#project-boundaries): code in `shared/` may not import from `src/`, `webview-src/`, `test/` or `scripts/`, code in `src/` not from `webview-src/`, `test/` or `scripts/`, code in `webview-src/` not from `src/`, `test/` or `scripts/`, and code in `scripts/` not from `src/`, `webview-src/`, `shared/` or `test/`. The integration tests in `test/integration/` are not restricted.
 - Test files and mocks additionally use the recommended rules of `@vitest/eslint-plugin` and the Vitest globals (see [Testing](testing.md#conventions)), and `vitest/consistent-test-it` requires `test()` instead of `it()`. `max-lines` limits test files to 1000 lines, and the local rule `tests/max-lines-per-test`, defined in `eslint.config.mjs`, limits single tests to 50 lines (see [Code size](development-guidelines.md#code-size)). The tests in the extension host in `test/extension-host/` use Mocha instead and get the Mocha and browser globals.
 
+## Duplicated code
+
+jscpd checks the TypeScript and JavaScript files of the whole repository, including the tests. It skips what `.gitignore` excludes, such as `out/`, `webview/`, `coverage/` and `node_modules/`, and the generated schema classes in `shared/generated/`. Its settings are the same as in [xmlbind-ts](https://github.com/neumaennl/xmlbind-ts/blob/main/docs/build-and-release.md#duplicated-code):[^jscpd]
+
+- **Size.** A clone is a block of at least 50 tokens and 5 lines that appears more than once. Tokens are keywords, names, operators, punctuation and literals; whitespace and comments do not count. 50 tokens are about 5 to 7 lines of code. Below that, jscpd mostly finds repetition that is fine, such as the setup of tests.
+- **Names.** Names are ignored, so a copy with renamed variables is found. Each name must stand for one name in the other block: `a = b + c` matches `x = y + z`, but not `x = x + x`.
+- **Literals.** Strings and numbers are compared. Code that differs only in them is not a clone, such as the cases of a `switch` or tests with different data.
+- **Failing.** Every clone fails the run. There is no threshold of duplicated lines, because a percentage changes as the code grows.
+- **No files.** A run that finds no files fails, so that a broken configuration does not pass unnoticed.
+
+jscpd only finds code that is written the same way. Logic that the extension and the webview each implement in their own way is not found (see [Duplicated and dead code](known-issues.md#duplicated-and-dead-code)).
+
+Code that has to stay duplicated is put between `// jscpd:ignore-start` and `// jscpd:ignore-end`, with a comment that gives the reason (see [Code quality](development-guidelines.md#code-quality)). The only such block is the list of flags in `DiagramItem`, which are distinct fields of the same type.
+
 # CI
 
 The workflow `ci.yml` runs on pushes to `main` and on every pull request, whatever its target branch, on Ubuntu with the Node version from `.nvmrc`. A new push to a pull request cancels the run for the previous one; runs for pushes each have a concurrency group of their own, so none of them is cancelled or held back:[^ci]
 
 1. `npm run vscode:check`, which fails if `@types/vscode`, `@types/node`, `.nvmrc` or the ECMAScript edition of the configurations don't match `engines.vscode` (see [VS Code and Node versions](#vs-code-and-node-versions)).
 2. `npm ci`, with `NODE_AUTH_TOKEN` and the auth line that `actions/setup-node` writes for GitHub Packages.
-3. `npm run lint`.
+3. `npm run lint`, which runs ESLint and jscpd.
 4. `npm run package`, the only build: `vscode:prepublish` deletes `out/` and `webview/` and compiles both parts, including the type check of the webview. Then `npm run package:verify`.
 5. `npm run typecheck`, and the Vitest tests with coverage (`npx vitest run --coverage`), which fail if a coverage metric is below the threshold in `vitest.config.ts` (see [Testing](testing.md#coverage)). Vitest runs on the sources and needs no build; `npm test` is not used, because its `pretest` would compile again (see [Testing](testing.md#ci)).
 6. The [tests in the extension host](testing.md#tests-in-the-extension-host) on the build from step 4: `npm run stage:extension-host` compiles only the tests and assembles `.vscode-test/`, and `xvfb-run -a npx vscode-test --reporter json` runs them, with a virtual display because the runner has none. `npm run test:extension-host` is not used, because its `pretest` would compile the extension again. Mocha's `json` reporter writes `test-results/extension-host.json`, the output file set in `.vscode-test.mjs`. Mocha runs only one reporter at a time, so the test names are then missing from the log. `.vscode-test.mjs` sets no reporter itself, because one there would override `--reporter` from the command line; so `npm run test:extension-host` uses Mocha's default reporter, and the Testing view uses the Extension Test Runner's own. `actions/cache` keeps the downloaded VS Code (`.vscode-test/vscode-linux-x64-<version>/`) under a key with the version from `engines.vscode`, so CI downloads it only when the version changes, or when GitHub has removed the cache after seven days without use.
@@ -262,6 +289,8 @@ The [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-sc
 [^vscode-test-config]: Configuration of vscode-test
 
 [^eslint]: ESLint configuration
+
+[^jscpd]: jscpd configuration
 
 [^ci]: CI workflow
 

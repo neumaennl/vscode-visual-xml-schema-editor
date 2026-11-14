@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-14T17:50:33Z }
-verified: { by: human:neumaennl, at: 2026-11-14T18:43:31Z }
+generated: { by: human:neumaennl, at: 2026-11-14T21:48:08Z }
+verified: { by: human:neumaennl, at: 2026-11-14T22:07:09Z }
 ---
 
 # Purpose
@@ -401,14 +401,6 @@ Effort:
 - **Description:** `@vscode/test-cli` 0.0.15 depends on Mocha 11, which brings `serialize-javascript` 6 ([GHSA-5c6j-r48x-rmvq](https://github.com/advisories/GHSA-5c6j-r48x-rmvq), high: code execution through crafted input; [GHSA-qj8w-gfj5-8c6v](https://github.com/advisories/GHSA-qj8w-gfj5-8c6v), moderate: denial of service) and `diff` 7 ([GHSA-73rr-hh4g-fpgx](https://github.com/advisories/GHSA-73rr-hh4g-fpgx), low: denial of service). `npm audit` reports them. They are development dependencies that only run the [tests in the extension host](testing.md#tests-in-the-extension-host) on this repository's own test files, and they are not part of the VSIX. `@vscode/test-cli` declares overrides for both packages itself, but npm ignores the overrides of dependencies, and its switch to Mocha 12 is merged ([microsoft/vscode-test-cli#118](https://github.com/microsoft/vscode-test-cli/pull/118)) but not released yet. The decision is to wait for that release instead of overriding the versions here. When it is out, update `@vscode/test-cli`, check `npm audit` and remove this entry.
 - **GitHub issue:** none
 
-## Duplicated code is not detected automatically
-
-- **Location:** `shared/`, `src/`, `webview-src/`, `scripts/`, `package.json`, `.github/workflows/ci.yml`
-- **Severity:** Low
-- **Effort:** S
-- **Description:** The [development guidelines](development-guidelines.md#code-quality) ask to avoid duplicated code, but only reviews check this, and duplicates got through (see [Duplicated and dead code](#duplicated-and-dead-code) and [Top-level lookups are duplicated instead of shared](#top-level-lookups-are-duplicated-instead-of-shared)). The coverage report cannot find duplicates, because V8 coverage only records which code runs. A copy-paste detector such as [jscpd](https://github.com/kucherenko/jscpd) can check the code in `npm run lint` and in CI and fail the run above a threshold of duplicated lines, starting at the current level. It also finds code that the extension and the webview each implement on their own.
-- **GitHub issue:** [#439](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/439)
-
 ## The editor corrects the line breaks of the output
 
 - **Location:** `src/schemaModelManager.ts` (`fixOutputLineBreaks()`), `xmlbind-ts` (`marshal`)
@@ -441,6 +433,17 @@ Effort:
 - **Description:** The properties panel builds its commands in two ways. `propertiesPanelCommands.ts` and `propertiesPanelSimpleTypeCommands.ts` have functions that take a node and return a command, such as `createRenameNodeComand()` and `createTypeCommand()`. Twenty other commands are written out inside the event handlers that render the fields and update the draft copy: seven in `propertiesPanel.ts` (cardinality, nillable, abstract, mixed), seven in `propertiesPanelDocs.ts` and one or two in each of the other files listed. These can only be tested through the DOM, and changes to a command or to the values it reads (for example [#360](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/360), see [Diagram items copy values from the schema objects](#diagram-items-copy-values-from-the-schema-objects)) have to be found in all of these places. `propertiesPanel.ts` has 484 lines, close to the limit of 500 in the [development guidelines](development-guidelines.md#code-size). The fix is to move the construction of these commands into functions in the command modules and to leave only the draft update and the dispatch in the handlers.
 - **GitHub issue:** [#156](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/156)
 
+## Properties panel tabs are tested only through the whole panel
+
+- **Location:** `webview-src/propertiesPanel/propertiesPanelDocs.test.ts`, `propertiesPanelFacets.test.ts`, `propertiesPanelSchemaNamespaces.test.ts`, `propertiesPanelSimpleTypeEditors.test.ts`, `propertiesPanelTypes.test.ts`, `propertiesPanelXmlPreview.test.ts`
+- **Severity:** Low
+- **Effort:** M
+- **Description:** The [testing conventions](testing.md#kinds-of-tests) say that a unit test sits next to its module and tests that module. Five test files of the properties panel sit next to a tab module but do not import it; their 57 tests create a `PropertiesPanel`, display a diagram item and work with the DOM of the whole panel, so they are integration tests of the panel. `propertiesPanelXmlPreview.test.ts` tests `buildXmlPreview()` directly, but one of its tests also goes through the `PropertiesPanel`. Six modules of the panel have no test file at all and are only covered by these panel tests: `propertiesPanelDraft.ts`, `propertiesPanelElementDefaults.ts`, `propertiesPanelFacetLists.ts`, `propertiesPanelSimpleTypeCommands.ts`, `propertiesPanelTypeCatalog.ts` and `propertiesPanelTypeHelpers.ts`. A failing test therefore does not point to the module that is broken, and a module can lose its coverage when the panel changes how it uses it. The [testing conventions](testing.md#kinds-of-tests) do not yet say explicitly that a unit test must reach its module directly. The fix has three steps:
+  1. Add that rule to the testing conventions.
+  2. Move the panel tests to `webview-src/__tests__/` as integration tests of the properties panel, so that their place matches what they test.
+  3. Write unit tests that call the modules directly, such as `createDocsTab()`, `renderFacetsTab()`, `renderTypeProperty()`, `createSimpleTypeListCommand()` or `getTypeEditHint()`, with the panel modules each module imports mocked where needed. Moving the construction of commands out of the event handlers ([#156](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/156), see [Properties panel builds commands in its event handlers](#properties-panel-builds-commands-in-its-event-handlers)) makes the commands testable without the DOM.
+- **GitHub issue:** [#449](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/449)
+
 ## Code exceeds the size limits
 
 - **Location:** `src/commandValidators/groupValidators.ts`, `src/commandExecutors/elementExecutors.ts`, `webview-src/renderer.ts`, `webview-src/diagram/SchemaProcessors.ts`, `webview-src/propertiesPanel/propertiesPanelDocs.ts`, `propertiesPanelFacets.ts`, `propertiesPanelSimpleTypeEditors.ts`, `propertiesPanelTypes.ts`
@@ -466,12 +469,11 @@ Effort:
 - **Location:** whole repository
 - **Severity:** Low
 - **Effort:** L
-- **Description:** The [development guidelines](development-guidelines.md#code-quality) ask to avoid code duplication, but the code base likely contains a fair amount of duplicated and dead code that was not caught in reviews. The [leftovers of the removed top-level drop target](#leftovers-of-the-removed-top-level-drop-target) and the [duplicated top-level lookups](#top-level-lookups-are-duplicated-instead-of-shared) are examples. A systematic cleanup by an agent is planned. Besides duplicates within one part, the agent should look explicitly for code that the extension (`src/`) and the webview (`webview-src/`) each implement on their own, and move it to `shared/`, which both use; for example the rules where an element or attribute may be placed, which both sides check (see [Architecture](architecture.md#principles)), and the top-level lookups in `DiagramBuilder` and `DropCommandFactory`. Examples found in the diagram code (see [Diagram rendering](diagram-rendering.md)):
+- **Description:** The [development guidelines](development-guidelines.md#code-quality) ask to avoid code duplication, but the code base likely contains dead code, and duplicated logic that is written in different ways, which was not caught in reviews. `npm run lint` reports code that is copied, also with changed names (see [Build and packaging](build-and-packaging.md#duplicated-code)), and [#439](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/439) removed all such copies; it does not find logic that is written differently, or dead code. The [leftovers of the removed top-level drop target](#leftovers-of-the-removed-top-level-drop-target) and the [duplicated top-level lookups](#top-level-lookups-are-duplicated-instead-of-shared) are examples. A systematic cleanup by an agent is planned. Besides duplicated logic within one part, the agent should look explicitly for code that the extension (`src/`) and the webview (`webview-src/`) each implement on their own, and move it to `shared/`, which both use; for example the rules where an element or attribute may be placed, which both sides check (see [Architecture](architecture.md#principles)), and the top-level lookups in `DiagramBuilder` and `DropCommandFactory`. Examples found in the diagram code (see [Diagram rendering](diagram-rendering.md)):
   - `DiagramLayout.relayoutItem()` and `DiagramItem.getTextDocumentation()` are only called from tests, `DiagramBuilder.elementMap` is only cleared, and `DiagramItem.inheritFrom` is never set.
   - `DiagramItemType.reference` is never assigned; only the layout and a test handle it, and the renderer draws no shape for it.
   - `Diagram.size` is not used, and `Diagram.scale` is always 1, so `scaleRectangle()` of `Diagram` and `DiagramItem` and `DiagramItem.scaleInt()` change nothing.
 
-  Once duplicates are [detected automatically](#duplicated-code-is-not-detected-automatically), the first report of that check is input for the cleanup, and every removed duplicate lowers its threshold.
 - **GitHub issue:** none
 
 ## Diagram items copy values from the schema objects

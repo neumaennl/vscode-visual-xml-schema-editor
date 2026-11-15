@@ -14,7 +14,7 @@ describe("PropertiesPanel", () => {
     ({ container, panel, diagram } = createPanel());
   });
 
-  test("renders tabs and general values for selected node", () => {
+  test("should render tabs and general values for selected node", () => {
     const item = new DiagramItem("test-1", "TestItem", DiagramItemType.element, diagram);
     item.type = "xs:string";
 
@@ -28,7 +28,7 @@ describe("PropertiesPanel", () => {
     expect(getInputByLabel(container, "Type").value).toBe("xs:string");
   });
 
-  test("renders a node-type header above the tab bar", () => {
+  test("should render a node-type header above the tab bar", () => {
     const item = new DiagramItem("/element:person", "person", DiagramItemType.element, diagram);
 
     panel.display(item);
@@ -39,7 +39,7 @@ describe("PropertiesPanel", () => {
     expect(header.nextElementSibling?.classList.contains("property-tabs")).toBe(true);
   });
 
-  test("dispatches removeElement when the header delete button is clicked", () => {
+  test("should dispatch removeElement when the header delete button is clicked", () => {
     const { dispatch } = displayItem(container, new DiagramItem("/element:person", "person", DiagramItemType.element, diagram));
 
     const deleteButton = container.querySelector("button[title='Delete node']") as HTMLButtonElement;
@@ -52,7 +52,7 @@ describe("PropertiesPanel", () => {
     });
   });
 
-  test("dispatches removeGroup when deleting a compositor group", () => {
+  test("should dispatch removeGroup when deleting a compositor group", () => {
     const { dispatch } = displayItem(container, 
       new DiagramItem("/complexType:PersonType/group:sequence[0]", "sequence", DiagramItemType.group, diagram)
     );
@@ -66,7 +66,7 @@ describe("PropertiesPanel", () => {
     });
   });
 
-  test("does not render a header delete button for schema nodes", () => {
+  test("should not render a header delete button for schema nodes", () => {
     const schemaRoot = new DiagramItem(SCHEMA_ROOT_ID, "schema", DiagramItemType.group, diagram);
 
     panel.display(schemaRoot);
@@ -74,7 +74,7 @@ describe("PropertiesPanel", () => {
     expect(container.querySelector("button[title='Delete node']")).toBeNull();
   });
 
-  test("renders attributes safely without innerHTML interpolation", () => {
+  test("should render attributes safely without innerHTML interpolation", () => {
     const item = new DiagramItem("test-1", "TestItem", DiagramItemType.element, diagram);
     item.attributes = [
       { name: "<unsafe>", type: "string", use: "required" },
@@ -91,7 +91,7 @@ describe("PropertiesPanel", () => {
     ["schema", SCHEMA_ROOT_ID, DiagramItemType.group],
     ["element", "/element:person", DiagramItemType.element],
     ["complex type", "/complexType:PersonType", DiagramItemType.type],
-  ])("renders an Attributes section for a %s with attributes", (_, id, itemType) => {
+  ])("should render an Attributes section for a %s with attributes", (_, id, itemType) => {
     const item = new DiagramItem(id, "TestItem", itemType, diagram);
     item.attributes = [{ name: "status", type: "xs:string" }];
 
@@ -101,7 +101,7 @@ describe("PropertiesPanel", () => {
     expect(container.textContent).toContain("status");
   });
 
-  test("does not render the child count", () => {
+  test("should not render the child count", () => {
     const item = new DiagramItem("/element:person", "person", DiagramItemType.element, diagram);
     item.childElements = [new DiagramItem("/element:person/element:name", "name", DiagramItemType.element, diagram)];
 
@@ -111,9 +111,9 @@ describe("PropertiesPanel", () => {
   });
 
   test.each([
-    ["dispatches modifyElement when the name is changed", "customer", [[{ type: "modifyElement", payload: { elementId: "/element:person", elementName: "customer" } }]]],
-    ["does not dispatch a rename command when the name is unchanged", " person ", []],
-  ])("%s", (_case, name, calls) => {
+    ["dispatch modifyElement when the name is changed", "customer", [[{ type: "modifyElement", payload: { elementId: "/element:person", elementName: "customer" } }]]],
+    ["not dispatch a rename command when the name is unchanged", " person ", []],
+  ])("should %s", (_case, name, calls) => {
     const { dispatch } = displayItem(container, new DiagramItem("/element:person", "person", DiagramItemType.element, diagram));
 
     editInput(container, "Name", name);
@@ -121,7 +121,7 @@ describe("PropertiesPanel", () => {
     expect(dispatch.mock.calls).toEqual(calls);
   });
 
-  test("does not dispatch duplicate rename commands for the same node/name replay", () => {
+  test("should not dispatch duplicate rename commands for the same node/name replay", () => {
     const { panel: shownPanel, dispatch } = displayItem(container, new DiagramItem("/element:person", "person", DiagramItemType.element, diagram));
     editInput(container, "Name", "customer");
 
@@ -136,7 +136,7 @@ describe("PropertiesPanel", () => {
     });
   });
 
-  test("shows non-editable name for compositor groups", () => {
+  test("should show non-editable name for compositor groups", () => {
     const item = new DiagramItem(
       "/complexType:PersonType/group:sequence[0]",
       "sequence",
@@ -158,7 +158,7 @@ describe("PropertiesPanel", () => {
   test.each([
     ["modifyElement", "a local element", "/element:root/element:item[0]", DiagramItemType.element, { elementId: "/element:root/element:item[0]" }],
     ["modifyGroup", "a compositor", "/complexType:PersonType/group:sequence[0]", DiagramItemType.group, { groupId: "/complexType:PersonType/group:sequence[0]" }],
-  ])("dispatches %s when minOccurs of %s is changed", (type, _case, id, itemType, target) => {
+  ])("should dispatch %s when minOccurs of %s is changed", (type, _case, id, itemType, target) => {
     const item = new DiagramItem(id, "item", itemType, diagram);
     item.minOccurrence = 1;
     item.maxOccurrence = 3;
@@ -179,7 +179,7 @@ describe("PropertiesPanel", () => {
     ["complexType nodes", "/complexType:PersonType", DiagramItemType.type],
     ["the compositor of a group definition", "/group:PersonGroup/group:sequence[0]", DiagramItemType.group],
     ["simpleType nodes", "/simpleType:CodeType", DiagramItemType.type],
-  ])("does not show cardinality fields for %s", (_case, id, itemType) => {
+  ])("should not show cardinality fields for %s", (_case, id, itemType) => {
     const item = new DiagramItem(id, "item", itemType, diagram);
     item.minOccurrence = 0;
     item.maxOccurrence = 7;
@@ -191,7 +191,7 @@ describe("PropertiesPanel", () => {
     expect(hasLabel(container, "Cardinality")).toBe(false);
   });
 
-  test("dispatches modifyComplexType when complexType constraints are changed", () => {
+  test("should dispatch modifyComplexType when complexType constraints are changed", () => {
     const item = new DiagramItem("/complexType:PersonType", "PersonType", DiagramItemType.type, diagram);
     item.isAbstract = false;
     item.isMixed = false;
@@ -221,7 +221,7 @@ describe("PropertiesPanel", () => {
     });
   });
 
-  test("keeps edited draft values visible when switching tabs", () => {
+  test("should keep edited draft values visible when switching tabs", () => {
     const item = new DiagramItem("/element:root/element:item[0]", "item", DiagramItemType.element, diagram);
     item.minOccurrence = 1;
     item.maxOccurrence = 3;
@@ -245,7 +245,7 @@ describe("PropertiesPanel", () => {
     expect(getInputByLabel(container, "maxOccurs").value).toBe("7");
   });
 
-  test("clear removes all rendered content", () => {
+  test("should remove all rendered content on clear", () => {
     const item = new DiagramItem("test-1", "TestItem", DiagramItemType.element, diagram);
     panel.display(item);
 

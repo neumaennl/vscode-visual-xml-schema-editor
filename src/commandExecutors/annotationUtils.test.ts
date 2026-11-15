@@ -6,19 +6,19 @@ import { createAnnotation, setDocumentation } from "./annotationUtils.js";
 import { annotationType, appinfo, documentationType } from "../../shared/types.js";
 
 describe("createAnnotation", () => {
-  test("creates an annotation with one documentation entry", () => {
+  test("should create an annotation with one documentation entry", () => {
     expect(createAnnotation("text").documentation?.map((doc) => doc.value)).toEqual(["text"]);
   });
 });
 
 describe("setDocumentation", () => {
-  test("creates the annotation of a node without one", () => {
+  test("should create the annotation of a node without one", () => {
     const node: { annotation?: annotationType } = {};
     setDocumentation(node, "text");
     expect(node.annotation?.documentation?.map((doc) => doc.value)).toEqual(["text"]);
   });
 
-  test("replaces all documentation entries and keeps the other content of the annotation", () => {
+  test("should replace all documentation entries and keeps the other content of the annotation", () => {
     const annotation = createAnnotation("old");
     annotation.documentation?.push(Object.assign(new documentationType(), { value: "older" }));
     annotation.appinfo = [new appinfo()];

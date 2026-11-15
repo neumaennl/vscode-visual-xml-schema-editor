@@ -20,19 +20,19 @@ function itemWithPrefix(id: string, itemType = DiagramItemType.element): Diagram
 }
 
 describe("onTypeChange", () => {
-  test("applies a changed type with the normalized and the entered value", () => {
+  test("should apply a changed type with the normalized and the entered value", () => {
     const apply = vi.fn();
     onTypeChange(itemWithPrefix("/element:a"), "xs:string", apply)(" xs:int ");
     expect(apply).toHaveBeenCalledWith("xs:int", " xs:int ");
   });
 
-  test("ignores a type that only differs before normalization", () => {
+  test("should ignore a type that only differs before normalization", () => {
     const apply = vi.fn();
     onTypeChange(itemWithPrefix("/element:a"), "xs:int", apply)("  xs:int ");
     expect(apply).not.toHaveBeenCalled();
   });
 
-  test("ignores an empty type unless it is allowed", () => {
+  test("should ignore an empty type unless it is allowed", () => {
     const apply = vi.fn();
     onTypeChange(itemWithPrefix("/element:a"), "xs:string", apply)("  ");
     expect(apply).not.toHaveBeenCalled();
@@ -42,12 +42,12 @@ describe("onTypeChange", () => {
 });
 
 describe("resolveSimpleTypeId and resolveComplexTypeId", () => {
-  test("return the ID of a type node", () => {
+  test("should return the ID of a type node", () => {
     expect(resolveSimpleTypeId(itemWithPrefix("/simpleType:S", DiagramItemType.type))).toBe("/simpleType:S");
     expect(resolveComplexTypeId(itemWithPrefix("/complexType:T", DiagramItemType.type))).toBe("/complexType:T");
   });
 
-  test("return the ID of the anonymous type of an element that has one", () => {
+  test("should return the ID of the anonymous type of an element that has one", () => {
     const element = itemWithPrefix("/element:a");
     element.isSimpleContent = true;
     expect(resolveSimpleTypeId(element)).toBe("/element:a/anonymousSimpleType[0]");

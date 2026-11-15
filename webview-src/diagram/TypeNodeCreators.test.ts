@@ -27,11 +27,11 @@ describe("TypeNodeCreators", () => {
   });
 
   describe("createTopLevelNode", () => {
-    test("returns null for a component without name", () => {
+    test("should return null for a component without name", () => {
       expect(createTopLevelNode({}, SchemaNodeType.Group, DiagramItemType.group, diagram)).toBeNull();
     });
 
-    test("creates the item with its ID, name and documentation", () => {
+    test("should create the item with its ID, name and documentation", () => {
       const annotation = new annotationType();
       annotation.documentation = [Object.assign(new documentationType(), { value: "About G" })];
       const item = createTopLevelNode({ name: "G", annotation }, SchemaNodeType.Group, DiagramItemType.group, diagram);

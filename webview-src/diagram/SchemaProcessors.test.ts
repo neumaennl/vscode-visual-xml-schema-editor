@@ -30,7 +30,7 @@ describe("SchemaProcessors", () => {
   });
 
   describe("processAnonymousTypes", () => {
-    test("processes an anonymous complexType or simpleType and ignores an element without one", () => {
+    test("should process an anonymous complexType or simpleType and ignores an element without one", () => {
       const schemaObj = schemaWith(`<xs:element name="c"><xs:complexType mixed="true"/></xs:element>
 <xs:element name="s"><xs:simpleType><xs:restriction base="xs:string"/></xs:simpleType></xs:element>
 <xs:element name="n" type="xs:string"/>`);
@@ -53,7 +53,7 @@ describe("SchemaProcessors", () => {
       ["restriction", `<xs:restriction base="xs:string"/>`],
       ["list", `<xs:list itemType="xs:int"/>`],
       ["union", `<xs:union memberTypes="xs:int xs:string"/>`],
-    ])("processes a %s", (kind, body) => {
+    ])("should process a %s", (kind, body) => {
       const simpleType = schemaWith(`<xs:simpleType name="S">${body}</xs:simpleType>`).simpleType?.[0];
       processSimpleTypeBody(item, simpleType ?? {});
       expect(item.simpleTypeDerivationKind ?? "restriction").toBe(kind);
@@ -393,7 +393,7 @@ describe("SchemaProcessors", () => {
       expect(seq.id).toBe("/element:person/anonymousComplexType[0]/group:sequence[0]");
     });
 
-    test("child element IDs inside a group should use the correct group parent", () => {
+    test("should give child elements inside a group IDs with the correct group parent", () => {
       const ctItem = new DiagramItem(
         "/complexType:PersonType",
         "PersonType",

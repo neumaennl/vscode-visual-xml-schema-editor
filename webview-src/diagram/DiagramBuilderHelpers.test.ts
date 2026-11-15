@@ -60,7 +60,7 @@ describe("DiagramBuilderHelpers", () => {
       );
     });
 
-    test("preserves annotation/documentation structure and IDs for the properties panel", () => {
+    test("should preserve annotation/documentation structure and IDs for the properties panel", () => {
       const annotations = [
         {
           documentation: [{ value: "First annotation" }, { value: "Second entry" }],
@@ -202,17 +202,17 @@ describe("DiagramBuilderHelpers", () => {
       ["<anonymous simpleType> (restricts tns:Code)", "tns:Code"],
       ["xs:string", undefined],
       ["", undefined],
-    ])("reads %j", (typeText, expected) => {
+    ])("should read %j", (typeText, expected) => {
       expect(parseDerivationBaseType(typeText)).toBe(expected);
     });
   });
 
   describe("toRestrictionFacets", () => {
-    test("returns undefined without facets", () => {
+    test("should return undefined without facets", () => {
       expect(toRestrictionFacets(undefined)).toBeUndefined();
     });
 
-    test("keeps the facets and a valid whiteSpace value", () => {
+    test("should keep the facets and a valid whiteSpace value", () => {
       expect(toRestrictionFacets({ pattern: ["a+"], length: 3, whiteSpace: "collapse" })).toEqual({
         pattern: ["a+"],
         length: 3,
@@ -220,7 +220,7 @@ describe("DiagramBuilderHelpers", () => {
       });
     });
 
-    test("leaves out a whiteSpace value that the schema does not allow", () => {
+    test("should leave out a whiteSpace value that the schema does not allow", () => {
       expect(toRestrictionFacets({ whiteSpace: "trim" })?.whiteSpace).toBeUndefined();
     });
   });

@@ -28,7 +28,7 @@ describe("Integration: Attribute pipeline", () => {
   // ─── addAttribute ──────────────────────────────────────────────────────────
 
   describe("addAttribute", () => {
-    test("adds an attribute to an existing complexType", () => {
+    test("should add an attribute to an existing complexType", () => {
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_COMPLEXTYPE, {
         type: "addAttribute",
         payload: {
@@ -43,7 +43,7 @@ describe("Integration: Attribute pipeline", () => {
       expect(attrs.some((a) => a.name === "email" && a.type_ === "xs:string")).toBe(true);
     });
 
-    test("adds a required attribute", () => {
+    test("should add a required attribute", () => {
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_COMPLEXTYPE, {
         type: "addAttribute",
         payload: {
@@ -69,7 +69,7 @@ describe("Integration: Attribute pipeline", () => {
       expectLinesInOrder(updatedXml, ["<xs:attribute ", "<xs:anyAttribute/>"]);
     });
 
-    test("returns validation error when attribute name is invalid", () => {
+    test("should return validation error when attribute name is invalid", () => {
       runCommandExpectValidationFailure(SCHEMA_WITH_COMPLEXTYPE, {
         type: "addAttribute",
         payload: {
@@ -80,7 +80,7 @@ describe("Integration: Attribute pipeline", () => {
       }, "Attribute name must be a valid XML name");
     });
 
-    test("returns validation error when parent does not exist", () => {
+    test("should return validation error when parent does not exist", () => {
       runCommandExpectValidationFailure(emptySchemaXml(), {
         type: "addAttribute",
         payload: {
@@ -95,7 +95,7 @@ describe("Integration: Attribute pipeline", () => {
   // ─── removeAttribute ───────────────────────────────────────────────────────
 
   describe("removeAttribute", () => {
-    test("removes an existing attribute from a complexType", () => {
+    test("should remove an existing attribute from a complexType", () => {
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_TWO_ATTRS, {
         type: "removeAttribute",
         payload: { attributeId: "/complexType:PersonType/attribute:id[0]" },
@@ -107,7 +107,7 @@ describe("Integration: Attribute pipeline", () => {
       expect(attrs.some((a) => a.name === "status")).toBe(true);
     });
 
-    test("returns validation error when attribute ID is out of range", () => {
+    test("should return validation error when attribute ID is out of range", () => {
       runCommandExpectValidationFailure(SCHEMA_WITH_COMPLEXTYPE, {
         type: "removeAttribute",
         payload: { attributeId: "/complexType:PersonType/attribute:id[99]" },
@@ -116,7 +116,7 @@ describe("Integration: Attribute pipeline", () => {
   });
 
   describe("modifyAttribute", () => {
-    test("renames an attribute", () => {
+    test("should rename an attribute", () => {
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_COMPLEXTYPE, {
         type: "modifyAttribute",
         payload: {
@@ -131,7 +131,7 @@ describe("Integration: Attribute pipeline", () => {
       expect(attrs.some((a) => a.name === "id")).toBe(false);
     });
 
-    test("changes the type of an attribute", () => {
+    test("should change the type of an attribute", () => {
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_COMPLEXTYPE, {
         type: "modifyAttribute",
         payload: {
@@ -147,7 +147,7 @@ describe("Integration: Attribute pipeline", () => {
       expect(id!.type_).toBe("xs:integer");
     });
 
-    test("returns validation error when attribute ID is out of range", () => {
+    test("should return validation error when attribute ID is out of range", () => {
       runCommandExpectValidationFailure(SCHEMA_WITH_COMPLEXTYPE, {
         type: "modifyAttribute",
         payload: {

@@ -61,7 +61,7 @@ describe("Integration: WorkspaceEdit via SchemaEditorProvider", () => {
   });
 
   describe("success path", () => {
-    test("creates a WorkspaceEdit and replies with commandResult { success: true }", async () => {
+    test("should create a WorkspaceEdit and replies with commandResult { success: true }", async () => {
       const editor = stubEditor(SIMPLE_SCHEMA_XML);
       const handler = resolveAndGetHandler(editor);
 
@@ -97,7 +97,7 @@ describe("Integration: WorkspaceEdit via SchemaEditorProvider", () => {
   });
 
   describe("validation failure path", () => {
-    test("routes validation errors to commandResult { success: false }", async () => {
+    test("should route validation errors to commandResult { success: false }", async () => {
       const editor = stubEditor(SIMPLE_SCHEMA_XML);
       const handler = resolveAndGetHandler(editor);
 
@@ -120,7 +120,7 @@ describe("Integration: WorkspaceEdit via SchemaEditorProvider", () => {
   });
 
   describe("undo/redo semantics", () => {
-    test("applies edits via WorkspaceEdit (VS Code owns undo/redo stack)", async () => {
+    test("should apply edits via WorkspaceEdit (VS Code owns undo/redo stack)", async () => {
       const editor = stubEditor(SIMPLE_SCHEMA_XML);
       const handler = resolveAndGetHandler(editor);
 

@@ -71,7 +71,7 @@ describe("CommandValidator", () => {
     validator = new CommandValidator(validators);
   });
 
-  test("has a mock for every validator function", () => {
+  test("should have a mock for every validator function", () => {
     expect(mockValidators.size).toBe(31);
   });
 

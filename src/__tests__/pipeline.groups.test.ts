@@ -46,7 +46,7 @@ describe("Integration: Group pipeline", () => {
   // ─── addGroup ──────────────────────────────────────────────────────────────
 
   describe("addGroup", () => {
-    test("adds a top-level named group with a sequence content model", () => {
+    test("should add a top-level named group with a sequence content model", () => {
       const result = runCommandExpectSuccessSchema(emptySchemaXml(), {
         type: "addGroup",
         payload: { groupName: "AddressGroup", contentModel: "sequence" },
@@ -59,7 +59,7 @@ describe("Integration: Group pipeline", () => {
       expect(addressGroup!.choice).toBeUndefined();
     });
 
-    test("adds a group with a choice content model", () => {
+    test("should add a group with a choice content model", () => {
       const result = runCommandExpectSuccessSchema(emptySchemaXml(), {
         type: "addGroup",
         payload: { groupName: "ChoiceGroup", contentModel: "choice" },
@@ -71,14 +71,14 @@ describe("Integration: Group pipeline", () => {
       expect(choiceGroup!.sequence).toBeUndefined();
     });
 
-    test("returns validation error for duplicate group name", () => {
+    test("should return validation error for duplicate group name", () => {
       runCommandExpectValidationFailure(SCHEMA_WITH_GROUP, {
         type: "addGroup",
         payload: { groupName: "ContactGroup", contentModel: "sequence" },
       }, "Group name already exists: ContactGroup");
     });
 
-    test("returns validation error when group name is invalid", () => {
+    test("should return validation error when group name is invalid", () => {
       runCommandExpectValidationFailure(emptySchemaXml(), {
         type: "addGroup",
         payload: { groupName: "bad group", contentModel: "sequence" },
@@ -89,7 +89,7 @@ describe("Integration: Group pipeline", () => {
   // ─── removeGroup ───────────────────────────────────────────────────────────
 
   describe("removeGroup", () => {
-    test("removes an existing top-level group", () => {
+    test("should remove an existing top-level group", () => {
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_GROUP, {
         type: "removeGroup",
         payload: { groupId: "/group:ContactGroup" },
@@ -99,14 +99,14 @@ describe("Integration: Group pipeline", () => {
       expect(groups.some((g) => g.name === "ContactGroup")).toBe(false);
     });
 
-    test("returns validation error when group ID does not exist", () => {
+    test("should return validation error when group ID does not exist", () => {
       runCommandExpectValidationFailure(SCHEMA_WITH_GROUP, {
         type: "removeGroup",
         payload: { groupId: "/group:NoSuchGroup" },
       }, "Group not found: /group:NoSuchGroup");
     });
 
-    test("removes a compositor nested in another compositor", () => {
+    test("should remove a compositor nested in another compositor", () => {
       const result = runCommandExpectSuccessSchema(
         schemaXmlWith(`<xs:complexType name="T">
   <xs:sequence><xs:choice><xs:element name="a" type="xs:string"/></xs:choice></xs:sequence>
@@ -123,7 +123,7 @@ describe("Integration: Group pipeline", () => {
   // ─── modifyGroup ───────────────────────────────────────────────────────────
 
   describe("modifyGroup", () => {
-    test("renames an existing group", () => {
+    test("should rename an existing group", () => {
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_GROUP, {
         type: "modifyGroup",
         payload: { groupId: "/group:ContactGroup", groupName: "CommunicationGroup" },
@@ -134,7 +134,7 @@ describe("Integration: Group pipeline", () => {
       expect(groups.some((g) => g.name === "ContactGroup")).toBe(false);
     });
 
-    test("renames the references to a group in the anonymous complex type of an element", () => {
+    test("should rename the references to a group in the anonymous complex type of an element", () => {
       const xml = schemaXmlWith(`<xs:group name="ContactGroup"><xs:sequence/></xs:group>
 <xs:element name="person"><xs:complexType><xs:sequence><xs:group ref="ContactGroup"/></xs:sequence></xs:complexType></xs:element>`);
       const result = runCommandExpectSuccessSchema(xml, {
@@ -146,14 +146,14 @@ describe("Integration: Group pipeline", () => {
       expect(person?.complexType?.sequence?.group?.[0]?.ref).toBe("CommunicationGroup");
     });
 
-    test("returns validation error when group ID does not exist", () => {
+    test("should return validation error when group ID does not exist", () => {
       runCommandExpectValidationFailure(SCHEMA_WITH_GROUP, {
         type: "modifyGroup",
         payload: { groupId: "/group:Ghost", groupName: "Other" },
       }, "Group not found: /group:Ghost");
     });
 
-    test("returns validation error for occurrences on the compositor of a group definition", () => {
+    test("should return validation error for occurrences on the compositor of a group definition", () => {
       runCommandExpectValidationFailure(
         SCHEMA_WITH_GROUP,
         { type: "modifyGroup", payload: { groupId: "/group:ContactGroup/group:sequence[0]", minOccurs: 0 } },
@@ -167,7 +167,7 @@ describe("Integration: AttributeGroup pipeline", () => {
   // ─── addAttributeGroup ─────────────────────────────────────────────────────
 
   describe("addAttributeGroup", () => {
-    test("adds a top-level named attributeGroup", () => {
+    test("should add a top-level named attributeGroup", () => {
       const result = runCommandExpectSuccessSchema(emptySchemaXml(), {
         type: "addAttributeGroup",
         payload: { groupName: "AuditAttributes" },
@@ -177,14 +177,14 @@ describe("Integration: AttributeGroup pipeline", () => {
       expect(groups.some((g) => g.name === "AuditAttributes")).toBe(true);
     });
 
-    test("returns validation error for duplicate attributeGroup name", () => {
+    test("should return validation error for duplicate attributeGroup name", () => {
       runCommandExpectValidationFailure(SCHEMA_WITH_ATTRIBUTEGROUP, {
         type: "addAttributeGroup",
         payload: { groupName: "CommonAttrs" },
       }, "Attribute group name already exists: CommonAttrs");
     });
 
-    test("returns validation error when group name is invalid", () => {
+    test("should return validation error when group name is invalid", () => {
       runCommandExpectValidationFailure(emptySchemaXml(), {
         type: "addAttributeGroup",
         payload: { groupName: "bad name" },
@@ -201,7 +201,7 @@ describe("Integration: AttributeGroup pipeline", () => {
   });
 
   describe("removeAttributeGroup", () => {
-    test("removes an existing top-level attributeGroup", () => {
+    test("should remove an existing top-level attributeGroup", () => {
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_ATTRIBUTEGROUP, {
         type: "removeAttributeGroup",
         payload: { groupId: "/attributeGroup:CommonAttrs" },
@@ -211,7 +211,7 @@ describe("Integration: AttributeGroup pipeline", () => {
       expect(groups.some((g) => g.name === "CommonAttrs")).toBe(false);
     });
 
-    test("returns validation error when group ID does not exist", () => {
+    test("should return validation error when group ID does not exist", () => {
       runCommandExpectValidationFailure(SCHEMA_WITH_ATTRIBUTEGROUP, {
         type: "removeAttributeGroup",
         payload: { groupId: "/attributeGroup:Missing" },
@@ -222,7 +222,7 @@ describe("Integration: AttributeGroup pipeline", () => {
   // ─── modifyAttributeGroup ──────────────────────────────────────────────────
 
   describe("modifyAttributeGroup", () => {
-    test("renames an existing attributeGroup", () => {
+    test("should rename an existing attributeGroup", () => {
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_ATTRIBUTEGROUP, {
         type: "modifyAttributeGroup",
         payload: { groupId: "/attributeGroup:CommonAttrs", groupName: "SharedAttrs" },
@@ -233,7 +233,7 @@ describe("Integration: AttributeGroup pipeline", () => {
       expect(groups.some((g) => g.name === "CommonAttrs")).toBe(false);
     });
 
-    test("returns validation error when group ID does not exist", () => {
+    test("should return validation error when group ID does not exist", () => {
       runCommandExpectValidationFailure(SCHEMA_WITH_ATTRIBUTEGROUP, {
         type: "modifyAttributeGroup",
         payload: { groupId: "/attributeGroup:NoSuch", groupName: "Other" },
@@ -244,7 +244,7 @@ describe("Integration: AttributeGroup pipeline", () => {
   // ─── particles ─────────────────────────────────────────────────────────────
 
   describe("group particles", () => {
-    test("adds a group reference to an anonymous complex type", () => {
+    test("should add a group reference to an anonymous complex type", () => {
       const result = runCommandExpectSuccessSchema(GROUP_PARTICLES, {
         type: "addGroup",
         payload: { parentId: "/element:empty/anonymousComplexType[0]", ref: "Contact" },
@@ -253,7 +253,7 @@ describe("Integration: AttributeGroup pipeline", () => {
       expect(result.element?.find((el) => el.name === "empty")?.complexType?.group?.ref).toBe("Contact");
     });
 
-    test("removes a group reference from an anonymous complex type", () => {
+    test("should remove a group reference from an anonymous complex type", () => {
       const result = runCommandExpectSuccessSchema(GROUP_PARTICLES, { type: "removeGroup", payload: { groupId: PERSON_GROUP_REF_ID } });
 
       expect(result.element?.find((el) => el.name === "person")?.complexType?.group).toBeUndefined();
@@ -271,13 +271,13 @@ describe("Integration: AttributeGroup pipeline", () => {
         groupId: "/complexType:Choices/group:sequence[0]",
         read: (s: schema): annotationType | undefined => s.complexType?.[0]?.sequence?.annotation,
       },
-    ])("replaces the documentation of $node", ({ groupId, read }) => {
+    ])("should replace the documentation of $node", ({ groupId, read }) => {
       const result = runCommandExpectSuccessSchema(GROUP_PARTICLES, { type: "modifyGroup", payload: { groupId, documentation: "New" } });
 
       expect(read(result)?.documentation?.map((doc) => doc.value)).toEqual(["New"]);
     });
 
-    test("removes one of two compositors nested in a sequence", () => {
+    test("should remove one of two compositors nested in a sequence", () => {
       const result = runCommandExpectSuccessSchema(GROUP_PARTICLES, {
         type: "removeGroup",
         payload: { groupId: "/complexType:Choices/group:sequence[0]/group:choice[1]" },
@@ -286,7 +286,7 @@ describe("Integration: AttributeGroup pipeline", () => {
       expect(result.complexType?.[0]?.sequence?.choice).toHaveLength(1);
     });
 
-    test("removes the compositor of a complexContent restriction", () => {
+    test("should remove the compositor of a complexContent restriction", () => {
       const result = runCommandExpectSuccessSchema(GROUP_PARTICLES, { type: "removeGroup", payload: { groupId: "/complexType:Restricted/group:sequence[0]" } });
 
       expect(result.complexType?.[1]?.complexContent?.restriction?.sequence).toBeUndefined();

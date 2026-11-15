@@ -43,7 +43,7 @@ describe("schemaLocalRenamer", () => {
       oldName: "elementRef",
       read: (s: schema): string | undefined => anonymousType(s)?.sequence?.element?.[0]?.ref,
     },
-  ])("$rename.name renames the reference to $oldName in an anonymous complex type", ({ rename, oldName, read }) => {
+  ])("should rename the reference to $oldName in an anonymous complex type with $rename.name", ({ rename, oldName, read }) => {
     const schemaObj = readTestSchema(QNAME_IN_EVERY_PLACE);
 
     rename(oldName, "Renamed", schemaObj);
@@ -52,7 +52,7 @@ describe("schemaLocalRenamer", () => {
   });
 
   describe("renameLocalTypeInSchema", () => {
-    test("renames unqualified type references throughout the schema", () => {
+    test("should rename unqualified type references throughout the schema", () => {
       const schemaObj = readTestSchema("types-referencing-base-type.xsd");
 
       renameLocalTypeInSchema("BaseType", "RenamedType", schemaObj);
@@ -63,7 +63,7 @@ describe("schemaLocalRenamer", () => {
       expect((schemaObj.simpleType ?? [])[1].restriction!.base).toBe("RenamedType");
     });
 
-    test("leaves prefixed type references untouched", () => {
+    test("should leave prefixed type references untouched", () => {
       const schemaObj = schemaWith(`
   <xs:element name="status" type="BaseType"/>
   <xs:element name="external" type="ext:BaseType"/>`);
@@ -75,7 +75,7 @@ describe("schemaLocalRenamer", () => {
       expect(elements[1].type_).toBe("ext:BaseType");
     });
 
-    test("renames references that use the current schema targetNamespace prefix", () => {
+    test("should rename references that use the current schema targetNamespace prefix", () => {
       const schemaObj = schemaWith(`
   <xs:simpleType name="BaseType"><xs:restriction base="xs:string"/></xs:simpleType>
   <xs:element name="status" type="tns:BaseType"/>
@@ -103,7 +103,7 @@ describe("schemaLocalRenamer", () => {
   });
 
   describe("renameLocalGroupRefInSchema", () => {
-    test("renames matching group refs in complex types and named groups", () => {
+    test("should rename matching group refs in complex types and named groups", () => {
       const schemaObj = schemaWith(`
   <xs:complexType name="Wrapper"><xs:group ref="OldGroup"/></xs:complexType>
   <xs:group name="Container"><xs:sequence><xs:group ref="OldGroup"/></xs:sequence></xs:group>`);
@@ -114,7 +114,7 @@ describe("schemaLocalRenamer", () => {
       expect(((schemaObj.group ?? [])[0].sequence!.group ?? [])[0].ref).toBe("NewGroup");
     });
 
-    test("renames targetNamespace-prefixed group refs", () => {
+    test("should rename targetNamespace-prefixed group refs", () => {
       const schemaObj = schemaWith(`
   <xs:complexType name="Wrapper"><xs:group ref="tns:OldGroup"/></xs:complexType>`);
       schemaObj.targetNamespace = "http://example.com/ns";
@@ -130,7 +130,7 @@ describe("schemaLocalRenamer", () => {
   });
 
   describe("renameLocalAttributeGroupRefInSchema", () => {
-    test("renames matching attributeGroup refs across holders", () => {
+    test("should rename matching attributeGroup refs across holders", () => {
       const schemaObj = schemaWith(`
   <xs:complexType name="Wrapper"><xs:attributeGroup ref="OldAttrs"/></xs:complexType>
   <xs:attributeGroup name="Shared"><xs:attributeGroup ref="OldAttrs"/></xs:attributeGroup>`);
@@ -141,7 +141,7 @@ describe("schemaLocalRenamer", () => {
       expect(((schemaObj.attributeGroup ?? [])[0].attributeGroup ?? [])[0].ref).toBe("NewAttrs");
     });
 
-    test("renames targetNamespace-prefixed attributeGroup refs", () => {
+    test("should rename targetNamespace-prefixed attributeGroup refs", () => {
       const schemaObj = schemaWith(`
   <xs:complexType name="Wrapper"><xs:attributeGroup ref="tns:OldAttrs"/></xs:complexType>`);
       schemaObj.targetNamespace = "http://example.com/ns";
@@ -157,7 +157,7 @@ describe("schemaLocalRenamer", () => {
   });
 
   describe("renameLocalElementRefInSchema", () => {
-    test("renames matching element refs and substitution groups", () => {
+    test("should rename matching element refs and substitution groups", () => {
       const schemaObj = schemaWith(`
   <xs:element name="head"/>
   <xs:element name="child" substitutionGroup="head"/>
@@ -175,7 +175,7 @@ describe("schemaLocalRenamer", () => {
       expect(((schemaObj.group ?? [])[0].choice!.element ?? [])[0].ref).toBe("renamedHead");
     });
 
-    test("renames targetNamespace-prefixed element refs and substitution groups", () => {
+    test("should rename targetNamespace-prefixed element refs and substitution groups", () => {
       const schemaObj = schemaWith(`
   <xs:element name="head"/>
   <xs:element name="child" substitutionGroup="tns:head"/>

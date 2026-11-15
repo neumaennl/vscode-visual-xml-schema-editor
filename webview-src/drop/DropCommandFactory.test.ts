@@ -82,11 +82,11 @@ describe("DropCommandFactory", () => {
       [C.Restriction, { type: "addSimpleType", payload: { parentId: "/schema", typeName: "SimpleType1", baseType: "xs:string" } }],
       [C.Extension, { type: "addComplexType", payload: { parentId: "/schema", typeName: "ComplexType1", baseType: "xs:anyType" } }],
       [C.Group, { type: "addGroup", payload: { groupName: "Group1" } }],
-    ])("creates the command for %s", (construct, expected) => {
+    ])("should create the command for %s", (construct, expected) => {
       expect(factory.createTopLevelDropCommand(construct)).toMatchObject(expected);
     });
 
-    test("returns null for unsupported top-level construct", () => {
+    test("should return null for unsupported top-level construct", () => {
       expect(factory.createTopLevelDropCommand(C.Any)).toBeNull();
     });
   });
@@ -173,11 +173,11 @@ describe("DropCommandFactory", () => {
         C.Extension,
         { type: "modifyComplexType", payload: { typeId: "/complexType:ChoiceType", baseType: "xs:anyType", derivationKind: "extension" } },
       ],
-    ])("creates %s", (_case, item, construct, expected) => {
+    ])("should create %s", (_case, item, construct, expected) => {
       expect(factory.createNodeDropCommand(item, construct)).toMatchObject(expected);
     });
 
-    test.each(DERIVATIONS)("creates an attribute on a named complexType with %s %s", (content, derivation) => {
+    test.each(DERIVATIONS)("should create an attribute on a named complexType with %s %s", (content, derivation) => {
       const item = diagramItem(schemaWith(derivedComplexTypeT(content, derivation)), "/complexType:T");
 
       const cmd = factory.createNodeDropCommand(item, C.Attribute);
@@ -190,7 +190,7 @@ describe("DropCommandFactory", () => {
       ["a simpleType that replaces the inline complexType of an element", PERSON_WITH_COMPLEX_TYPE, C.SimpleType, "addSimpleType"],
       ["a complexType on an element", PERSON, C.ComplexType, "addComplexType"],
       ["a complexType that replaces the inline simpleType of an element", PERSON_WITH_SIMPLE_TYPE, C.ComplexType, "addComplexType"],
-    ])("creates %s, with the element as parent and without typeName", (_case, item, construct, type) => {
+    ])("should create %s, with the element as parent and without typeName", (_case, item, construct, type) => {
       const cmd = factory.createNodeDropCommand(item, construct);
 
       expect(cmd).toMatchObject({ type, payload: { parentId: "/element:person" } });
@@ -214,7 +214,7 @@ describe("DropCommandFactory", () => {
         type: "modifyGroup",
         payload: { groupId: "/group:PeopleGroup", contentModel: "choice" },
       }],
-    ])("sets the content model for %s", (_case, item, construct, expected) => {
+    ])("should set the content model for %s", (_case, item, construct, expected) => {
       expect(factory.createNodeDropCommand(item, construct)).toEqual(expected);
     });
 
@@ -236,14 +236,14 @@ describe("DropCommandFactory", () => {
         makeItem("/simpleType:Values", DiagramItemType.type, { type: `simpleType (${kind})`, simpleTypeDerivationKind: kind }),
         C.Enumeration,
       ]),
-    ])("rejects %s", (_case, item, construct) => {
+    ])("should reject %s", (_case, item, construct) => {
       expect(factory.createNodeDropCommand(item, construct)).toBeNull();
       expect(factory.canDropOnNode(item, construct)).toBe(false);
     });
   });
 
   describe("createNodeDropCommand — facets", () => {
-    test("adds a default facet to a restriction simpleType", () => {
+    test("should add a default facet to a restriction simpleType", () => {
       const item = makeItem("/simpleType:Status", DiagramItemType.type, {
         type: "simpleType (restricts xs:string)",
         simpleTypeDerivationKind: "restriction",
@@ -276,16 +276,16 @@ describe("DropCommandFactory", () => {
     });
 
     test.each([
-      ["keeps all patterns when another facet is dropped", ["[A-Z]{3}", "[0-9]{3}"], C.MaxLength, { pattern: ["[A-Z]{3}", "[0-9]{3}"], maxLength: 1 }],
-      ["appends a default pattern to no pattern", [], C.Pattern, { pattern: [".*"] }],
-      ["appends a default pattern to one pattern", ["[A-Z]{3}"], C.Pattern, { pattern: ["[A-Z]{3}", "[^a-zA-Z0-9\\s]*"] }],
+      ["keep all patterns when another facet is dropped", ["[A-Z]{3}", "[0-9]{3}"], C.MaxLength, { pattern: ["[A-Z]{3}", "[0-9]{3}"], maxLength: 1 }],
+      ["append a default pattern to no pattern", [], C.Pattern, { pattern: [".*"] }],
+      ["append a default pattern to one pattern", ["[A-Z]{3}"], C.Pattern, { pattern: ["[A-Z]{3}", "[^a-zA-Z0-9\\s]*"] }],
       [
-        "appends a default pattern to two patterns",
+        "append a default pattern to two patterns",
         ["[A-Z]{3}", "[^a-zA-Z0-9\\s]*"],
         C.Pattern,
         { pattern: ["[A-Z]{3}", "[^a-zA-Z0-9\\s]*", "[^a-zA-Z0-9\\s]*"] },
       ],
-    ])("%s", (_case, existing, construct, restrictions) => {
+    ])("should %s", (_case, existing, construct, restrictions) => {
       const patterns = existing.map((value) => `<xs:pattern value="${value}"/>`).join("");
       const item = diagramItem(
         schemaWith(`<xs:simpleType name="Code"><xs:restriction base="xs:string">${patterns}</xs:restriction></xs:simpleType>`),
@@ -303,7 +303,7 @@ describe("DropCommandFactory", () => {
       { existing: ["a", "b"], expected: ["a", "b", "value"] },
       { existing: ["value", "value2"], expected: ["value", "value2", "value3"] },
       { existing: ["value", "value3"], expected: ["value", "value3", "value2"] },
-    ])("appends a unique enumeration value to $existing", ({ existing, expected }) => {
+    ])("should append a unique enumeration value to $existing", ({ existing, expected }) => {
       const enumerations = existing.map((value) => `<xs:enumeration value="${value}"/>`).join("");
       const schemaObj = schemaWith(
         `<xs:simpleType name="Status"><xs:restriction base="xs:string">${enumerations}</xs:restriction></xs:simpleType>`
@@ -318,7 +318,7 @@ describe("DropCommandFactory", () => {
       });
     });
 
-    test("appends an enumeration value to the anonymous simpleType of an element", () => {
+    test("should append an enumeration value to the anonymous simpleType of an element", () => {
       const schemaObj = schemaWith(
         `<xs:element name="code"><xs:simpleType><xs:restriction base="xs:string">` +
           `<xs:enumeration value="a"/><xs:enumeration value="value"/>` +
@@ -339,7 +339,7 @@ describe("DropCommandFactory", () => {
   });
 
   describe("name generation and schema updates", () => {
-    test("avoids top-level name collisions from schema", () => {
+    test("should avoid top-level name collisions from schema", () => {
       factory.updateNamesFromSchema({
         element: [{ name: "Element1" }, { name: "Element2" }],
         attribute: [{ name: "Attribute1" }],
@@ -353,7 +353,7 @@ describe("DropCommandFactory", () => {
       expect(names).toEqual(["Element3", "Attribute2", "SimpleType2", "ComplexType2", "Group2"]);
     });
 
-    test("resets cached names on updateSchema", () => {
+    test("should reset cached names on updateSchema", () => {
       factory.updateNamesFromSchema({ element: [{ name: "Element1" }] });
       expect(generatedName(factory, C.Element)).toBe("Element2");
 
@@ -364,7 +364,7 @@ describe("DropCommandFactory", () => {
     test.each([
       ["without clashes", [], "Element1"],
       ["after clashes", ["Element1"], "Element2"],
-    ])("does not consume generated names during repeated canDrop validation %s", (_case, existing, expected) => {
+    ])("should not consume generated names during repeated canDrop validation %s", (_case, existing, expected) => {
       factory.updateNamesFromSchema({ element: existing.map((name) => ({ name })) });
 
       // Simulate repeated dragover checks.
@@ -377,7 +377,7 @@ describe("DropCommandFactory", () => {
   });
 
   describe("canDropOnNode", () => {
-    test("matches createNodeDropCommand validity for supported drops", () => {
+    test("should match createNodeDropCommand validity for supported drops", () => {
       expect(factory.canDropOnNode(ROOT, C.Group)).toBe(true);
       expect(factory.createNodeDropCommand(ROOT, C.Group)).not.toBeNull();
     });

@@ -4,8 +4,8 @@ title: Build and packaging
 description: How the extension is built, run, linted, packaged and checked - the build outputs and tsconfig files, the npm scripts, the scripts in TypeScript, running it in VS Code, the VSIX and its check, the generated schema classes, dependencies and the Node version, ESLint and the check for duplicated code, CI, and planned changes.
 tags: [build, packaging, vsix, vite, typescript, eslint, jscpd, ci, dependencies]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-14T21:48:08Z }
-verified: { by: human:neumaennl, at: 2026-11-14T22:07:09Z }
+generated: { by: human:neumaennl, at: 2026-11-15T19:57:28Z }
+verified: { by: human:neumaennl, at: 2026-11-15T20:17:04Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -218,7 +218,7 @@ To run one tool alone, use `npx eslint .` or `npx jscpd`. They read the same con
 - TypeScript files are checked with the type information from the tsconfig files listed in [Build outputs](#build-outputs), with the recommended rules of `typescript-eslint` including those that need type information. Return types must be declared, `any` is an error, checks that the types make unnecessary are errors (`no-unnecessary-condition`, for example `x ?? []` on an array that is never `undefined`), non-null assertions are warnings, and `unknown` in type assertions and variable annotations is forbidden (`no-restricted-syntax`); an exception needs an `eslint-disable-next-line` comment with a reason.
 - The local rule `style/max-ternary-lines`, defined in `eslint.config.mjs`, reports conditional expressions that span more than three lines, which the guidelines ask to write as `if`/`else` (see [Code quality](development-guidelines.md#code-quality)).
 - `no-restricted-imports` enforces the [project boundaries](development-guidelines.md#project-boundaries): code in `shared/` may not import from `src/`, `webview-src/`, `test/` or `scripts/`, code in `src/` not from `webview-src/`, `test/` or `scripts/`, code in `webview-src/` not from `src/`, `test/` or `scripts/`, and code in `scripts/` not from `src/`, `webview-src/`, `shared/` or `test/`. The integration tests in `test/integration/` are not restricted.
-- Test files and mocks additionally use the recommended rules of `@vitest/eslint-plugin` and the Vitest globals (see [Testing](testing.md#conventions)), and `vitest/consistent-test-it` requires `test()` instead of `it()`. `max-lines` limits test files to 1000 lines, and the local rule `tests/max-lines-per-test`, defined in `eslint.config.mjs`, limits single tests to 50 lines (see [Code size](development-guidelines.md#code-size)). The tests in the extension host in `test/extension-host/` use Mocha instead and get the Mocha and browser globals.
+- Test files and mocks additionally use the recommended rules of `@vitest/eslint-plugin` and the Vitest globals (see [Testing](testing.md#conventions)), `vitest/consistent-test-it` requires `test()` instead of `it()`, and `vitest/valid-title` requires the names of tests to start with "should ". `max-lines` limits test files to 1000 lines, and the local rule `tests/max-lines-per-test`, defined in `eslint.config.mjs`, limits single tests to 50 lines (see [Code size](development-guidelines.md#code-size)). The tests in the extension host in `test/extension-host/` use Mocha instead and get the Mocha and browser globals.
 
 ## Duplicated code
 

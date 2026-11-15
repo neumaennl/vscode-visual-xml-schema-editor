@@ -169,7 +169,7 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
       seqElements = orderType.sequence?.element ?? [];
     });
 
-    test("adds the top-level element order of type OrderType", () => {
+    test("should add the top-level element order of type OrderType", () => {
       // Two top-level elements: example and order
       const topElements = result.element ?? [];
       expect(topElements.length).toBe(2);
@@ -178,7 +178,7 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
       expect(orderElement!.type_).toBe("OrderType");
     });
 
-    test("adds OrderType with a sequence of four elements", () => {
+    test("should add OrderType with a sequence of four elements", () => {
       // Three named complexTypes: choiceType, loggingType, OrderType
       expect((result.complexType ?? []).length).toBe(3);
       expect(orderType).toBeDefined();
@@ -187,7 +187,7 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
       expect(seqElements.length).toBe(4);
     });
 
-    test("adds orderId and qty with their types, occurrences and documentation", () => {
+    test("should add orderId and qty with their types, occurrences and documentation", () => {
       // orderId: xs:string, 1..1, with documentation
       const orderIdEl = seqElements.find((e) => e.name === "orderId");
       expect(orderIdEl).toBeDefined();
@@ -206,7 +206,7 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
       expect(qtyEl!.maxOccurs).toBe(1);
     });
 
-    test("adds items with an anonymous complexType that holds item", () => {
+    test("should add items with an anonymous complexType that holds item", () => {
       // items: no type attribute, 1..unbounded, with anonymous complexType
       const itemsEl = seqElements.find((e) => e.name === "items");
       expect(itemsEl).toBeDefined();
@@ -227,7 +227,7 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
       expect(itemEl!.maxOccurs).toBe("unbounded");
     });
 
-    test("adds the reference to example and the attribute currency", () => {
+    test("should add the reference to example and the attribute currency", () => {
       // example ref element, minOccurs=0
       const exampleRef = seqElements.find((e) => e.ref === "example");
       expect(exampleRef).toBeDefined();
@@ -241,7 +241,7 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
     });
   });
 
-  test("rejects adding a duplicate element into OrderType sequence", () => {
+  test("should reject adding a duplicate element into OrderType sequence", () => {
     // Build a schema that already has orderId in OrderType/sequence
     let xml = orderTypeWithElement("orderId", "xs:string");
 
@@ -260,7 +260,7 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
     );
   });
 
-  test("replaces an element type attribute when adding an anonymous complexType", () => {
+  test("should replace an element type attribute when adding an anonymous complexType", () => {
     // qty starts with a type attribute and is then converted to an inline complexType
     let xml = orderTypeWithElement("qty", "xs:integer");
 
@@ -280,7 +280,7 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
     expect(qtyEl!.complexType?.sequence).toBeDefined();
   });
 
-  test("chains addElement without type, then addSimpleType with enumeration restrictions", () => {
+  test("should chain addElement without type, then addSimpleType with enumeration restrictions", () => {
     // Build schema with OrderType, then add a status element with anonymous simpleType
     let xml = orderTypeWithElement("status");
 
@@ -315,7 +315,7 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
     expect(values).toContain("delivered");
   });
 
-  test("correctly wires an element reference to an existing element and verifies ref round-trip", () => {
+  test("should wire an element reference to an existing element and keep the ref in a round trip", () => {
     // Start from example.xsd and add a complexType that references the existing
     // top-level "example" element via a ref (checking that the element remains
     // unreferenced by type_, only by ref).

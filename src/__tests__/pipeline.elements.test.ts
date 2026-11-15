@@ -37,7 +37,7 @@ describe("Integration: Element pipeline", () => {
   // ─── addElement ────────────────────────────────────────────────────────────
 
   describe("addElement", () => {
-    test("adds a top-level element to an empty schema", () => {
+    test("should add a top-level element to an empty schema", () => {
       const result = runCommandExpectSuccessSchema(emptySchemaXml(), {
         type: "addElement",
         payload: { parentId: "/schema", elementName: "order", elementType: "xs:string" },
@@ -49,7 +49,7 @@ describe("Integration: Element pipeline", () => {
       expect(elements[0].type_).toBe("xs:string");
     });
 
-    test("adds a second top-level element without disturbing the first", () => {
+    test("should add a second top-level element without disturbing the first", () => {
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_ELEMENTS, {
         type: "addElement",
         payload: { parentId: "/schema", elementName: "product", elementType: "xs:integer" },
@@ -61,7 +61,7 @@ describe("Integration: Element pipeline", () => {
       expect(elements.some((e) => e.name === "product")).toBe(true);
     });
 
-    test("adds a top-level element with documentation", () => {
+    test("should add a top-level element with documentation", () => {
       const result = runCommandExpectSuccessSchema(emptySchemaXml(), {
         type: "addElement",
         payload: {
@@ -76,14 +76,14 @@ describe("Integration: Element pipeline", () => {
       expect(documentations[0].value).toBe("An invoice record");
     });
 
-    test("returns validation error when element name is invalid", () => {
+    test("should return validation error when element name is invalid", () => {
       runCommandExpectValidationFailure(emptySchemaXml(), {
         type: "addElement",
         payload: { parentId: "/schema", elementName: "123invalid", elementType: "xs:string" },
       }, "Element name must be a valid XML name");
     });
 
-    test("returns validation error for duplicate element name", () => {
+    test("should return validation error for duplicate element name", () => {
       runCommandExpectValidationFailure(SCHEMA_WITH_ELEMENTS, {
         type: "addElement",
         payload: { parentId: "/schema", elementName: "person", elementType: "xs:string" },
@@ -94,7 +94,7 @@ describe("Integration: Element pipeline", () => {
   // ─── removeElement ─────────────────────────────────────────────────────────
 
   describe("removeElement", () => {
-    test("removes an existing top-level element", () => {
+    test("should remove an existing top-level element", () => {
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_ELEMENTS, {
         type: "removeElement",
         payload: { elementId: "/element:person" },
@@ -105,7 +105,7 @@ describe("Integration: Element pipeline", () => {
       expect(elements.some((e) => e.name === "company")).toBe(true);
     });
 
-    test("returns validation error when element ID does not exist", () => {
+    test("should return validation error when element ID does not exist", () => {
       runCommandExpectValidationFailure(SCHEMA_WITH_ELEMENTS, {
         type: "removeElement",
         payload: { elementId: "/element:nonexistent" },
@@ -116,7 +116,7 @@ describe("Integration: Element pipeline", () => {
   // ─── modifyElement ─────────────────────────────────────────────────────────
 
   describe("modifyElement", () => {
-    test("renames an existing top-level element", () => {
+    test("should rename an existing top-level element", () => {
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_ELEMENTS, {
         type: "modifyElement",
         payload: { elementId: "/element:person", elementName: "individual" },
@@ -127,7 +127,7 @@ describe("Integration: Element pipeline", () => {
       expect(elements.some((e) => e.name === "person")).toBe(false);
     });
 
-    test("changes the type of an existing element", () => {
+    test("should change the type of an existing element", () => {
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_ELEMENTS, {
         type: "modifyElement",
         payload: { elementId: "/element:person", elementType: "xs:integer" },
@@ -136,14 +136,14 @@ describe("Integration: Element pipeline", () => {
       expect(person.type_).toBe("xs:integer");
     });
 
-    test("returns validation error when element ID does not exist", () => {
+    test("should return validation error when element ID does not exist", () => {
       runCommandExpectValidationFailure(SCHEMA_WITH_ELEMENTS, {
         type: "modifyElement",
         payload: { elementId: "/element:missing", elementName: "other" },
       }, "Element not found with name: missing");
     });
 
-    test("returns validation error when new name is invalid", () => {
+    test("should return validation error when new name is invalid", () => {
       runCommandExpectValidationFailure(SCHEMA_WITH_ELEMENTS, {
         type: "modifyElement",
         payload: { elementId: "/element:person", elementName: "bad name" },
@@ -162,19 +162,19 @@ describe("Integration: Element pipeline", () => {
       { change: { default_: "" }, expected: { default_: undefined, fixed: "none" } },
       { change: { fixed: "other" }, expected: { fixed: "other" } },
       { change: { fixed: "" }, expected: { fixed: undefined } },
-    ])("sets $change on a top-level element", ({ change, expected }) => {
+    ])("should set $change on a top-level element", ({ change, expected }) => {
       const result = runCommandExpectSuccessSchema(ELEMENT_AND_ALL_GROUP, { type: "modifyElement", payload: { elementId: "/element:item", ...change } });
 
       expect(result.element?.[0]).toMatchObject(expected);
     });
 
-    test("removes the default value when the fixed value is set", () => {
+    test("should remove the default value when the fixed value is set", () => {
       const result = runCommandExpectSuccessSchema(ELEMENT_AND_ALL_GROUP, { type: "modifyElement", payload: { elementId: CODE_ID, fixed: "B" } });
 
       expect(result.complexType?.[1]?.sequence?.element?.[0]).toMatchObject({ fixed: "B", default_: undefined });
     });
 
-    test("removes default, fixed and nillable when an element becomes a reference", () => {
+    test("should remove default, fixed and nillable when an element becomes a reference", () => {
       const result = runCommandExpectSuccessSchema(ELEMENT_AND_ALL_GROUP, { type: "modifyElement", payload: { elementId: CODE_ID, ref: "item" } });
 
       expect(result.complexType?.[1]?.sequence?.element?.[0]).toMatchObject({
@@ -196,11 +196,11 @@ describe("Integration: Element pipeline", () => {
         payload: { elementId: CODE_ID, ref: "item", default_: "a" },
         error: "A reference element cannot have a default or fixed value",
       },
-    ])("returns validation error for $rule", ({ payload, error }) => {
+    ])("should return validation error for $rule", ({ payload, error }) => {
       runCommandExpectValidationFailure(ELEMENT_AND_ALL_GROUP, { type: "modifyElement", payload }, error);
     });
 
-    test("adds an element to an all group with occurrences", () => {
+    test("should add an element to an all group with occurrences", () => {
       const result = runCommandExpectSuccessSchema(ELEMENT_AND_ALL_GROUP, {
         type: "addElement",
         payload: { parentId: ALL_GROUP_ID, elementName: "retries", elementType: "xs:int", minOccurs: 0, maxOccurs: 1 },
@@ -211,7 +211,7 @@ describe("Integration: Element pipeline", () => {
       expect(retries).toMatchObject({ minOccurs: "0", maxOccurs: "1" });
     });
 
-    test("changes the occurrences of an element in an all group", () => {
+    test("should change the occurrences of an element in an all group", () => {
       const result = runCommandExpectSuccessSchema(ELEMENT_AND_ALL_GROUP, {
         type: "modifyElement",
         payload: { elementId: `${ALL_GROUP_ID}/element:timeout[0]`, minOccurs: 0, maxOccurs: 1 },

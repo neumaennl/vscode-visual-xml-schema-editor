@@ -170,11 +170,11 @@ describe("buildXmlPreview", () => {
       id: "/complexType:WithRef/group:sequence[0]/groupRef:Contact[0]",
       fragment: ['<xs:group ref="Contact" minOccurs="0"/>'],
     },
-  ])("shows $id with its attributes, annotations, facets and one level of children", ({ id, fragment }) => {
+  ])("should show $id with its attributes, annotations, facets and one level of children", ({ id, fragment }) => {
     expect(buildXmlPreview(diagramItem(schemaWith(PREVIEW_NODES), id))).toBe(fragment.join("\n"));
   });
 
-  test("shows the namespaces of the schema and declares the xs prefix that the fragment uses", () => {
+  test("should show the namespaces of the schema and declares the xs prefix that the fragment uses", () => {
     const schemaObj = unmarshal(
       schema,
       `<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="urn:default" targetNamespace="urn:target">
@@ -191,7 +191,7 @@ describe("buildXmlPreview", () => {
     );
   });
 
-  test("shows at most 50 children and marks the rest as truncated", () => {
+  test("should show at most 50 children and marks the rest as truncated", () => {
     const elements = Array.from({ length: 51 }, (_, index) => `<xs:element name="e${index}" type="xs:string"/>`);
     const sequenceId = "/complexType:Many/group:sequence[0]";
 

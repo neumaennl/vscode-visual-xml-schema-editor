@@ -5,14 +5,14 @@
 import { createCommitInput, createInputColumn } from "./propertiesPanelDom";
 
 describe("createCommitInput", () => {
-  test("creates a text input with the value", () => {
+  test("should create a text input with the value", () => {
     const input = createCommitInput("value", vi.fn());
     expect(input.type).toBe("text");
     expect(input.className).toBe("property-input");
     expect(input.value).toBe("value");
   });
 
-  test("commits the value when the input loses the focus", () => {
+  test("should commit the value when the input loses the focus", () => {
     const onCommit = vi.fn();
     const input = createCommitInput("old", onCommit);
     input.value = "new";
@@ -20,7 +20,7 @@ describe("createCommitInput", () => {
     expect(onCommit).toHaveBeenCalledWith("new");
   });
 
-  test("leaves the input with Enter, which commits the value", () => {
+  test("should leave the input with Enter, which commits the value", () => {
     const onCommit = vi.fn();
     const input = createCommitInput("old", onCommit);
     document.body.appendChild(input);
@@ -32,7 +32,7 @@ describe("createCommitInput", () => {
     input.remove();
   });
 
-  test("ignores other keys", () => {
+  test("should ignore other keys", () => {
     const onCommit = vi.fn();
     const input = createCommitInput("old", onCommit);
     input.dispatchEvent(new KeyboardEvent("keydown", { key: "a" }));
@@ -41,7 +41,7 @@ describe("createCommitInput", () => {
 });
 
 describe("createInputColumn", () => {
-  test("creates a column with a label and a committing input", () => {
+  test("should create a column with a label and a committing input", () => {
     const onCommit = vi.fn();
     const column = createInputColumn("default", "x", onCommit, "—");
     expect(column.className).toBe("property-col");
@@ -52,7 +52,7 @@ describe("createInputColumn", () => {
     expect(onCommit).toHaveBeenCalledWith("x");
   });
 
-  test("has no placeholder unless one is given", () => {
+  test("should have no placeholder unless one is given", () => {
     expect(createInputColumn("min", "1", vi.fn()).querySelector("input")?.placeholder).toBe("");
   });
 });

@@ -15,7 +15,7 @@ const command: SchemaCommand = {
 };
 
 describe("findCommandHandler", () => {
-  test("finds the handler named after the prefix and the command type", () => {
+  test("should find the handler named after the prefix and the command type", () => {
     const handlers = { handleRemoveElement: handler } as Partial<Handlers> as Handlers;
 
     const found = findCommandHandler<"handle", string>(handlers, "handle", command);
@@ -24,13 +24,13 @@ describe("findCommandHandler", () => {
     expect(found?.(command, new schema())).toBe("handled");
   });
 
-  test("returns undefined for a command type without a handler", () => {
+  test("should return undefined for a command type without a handler", () => {
     const handlers = { handleAddElement: handler } as Partial<Handlers> as Handlers;
 
     expect(findCommandHandler<"handle", string>(handlers, "handle", command)).toBeUndefined();
   });
 
-  test("ignores inherited properties", () => {
+  test("should ignore inherited properties", () => {
     const handlers = Object.create({ handleRemoveElement: handler }) as Handlers;
 
     expect(findCommandHandler<"handle", string>(handlers, "handle", command)).toBeUndefined();

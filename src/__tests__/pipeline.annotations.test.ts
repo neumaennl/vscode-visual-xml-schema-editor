@@ -37,7 +37,7 @@ describe("Integration: Annotation pipeline", () => {
   // ─── addAnnotation ─────────────────────────────────────────────────────────
 
   describe("addAnnotation", () => {
-    test("adds an annotation with documentation to a top-level element", () => {
+    test("should add an annotation with documentation to a top-level element", () => {
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_ELEMENTS, {
         type: "addAnnotation",
         payload: { targetId: "/element:person", documentation: "A person record" },
@@ -48,7 +48,7 @@ describe("Integration: Annotation pipeline", () => {
       expect(documentations[0].value).toBe("A person record");
     });
 
-    test("adds a schema-level annotation", () => {
+    test("should add a schema-level annotation", () => {
       const result = runCommandExpectSuccessSchema(emptySchemaXml(), {
         type: "addAnnotation",
         payload: { targetId: "/schema", documentation: "My schema" },
@@ -60,7 +60,7 @@ describe("Integration: Annotation pipeline", () => {
       expect(documentations[0].value).toBe("My schema");
     });
 
-    test("inserts a schema-level annotation before top-level declarations", () => {
+    test("should insert a schema-level annotation before top-level declarations", () => {
       const schemaWithTopLevelDeclaration = schemaXmlWith(`<xs:element name="person" type="xs:string"/>`);
       const updatedXml = runCommandExpectSuccess(schemaWithTopLevelDeclaration, {
         type: "addAnnotation",
@@ -69,7 +69,7 @@ describe("Integration: Annotation pipeline", () => {
       expectLinesInOrder(updatedXml, ["<xs:annotation>", "<xs:element "]);
     });
 
-    test("inserts node annotations before compositor/content children", () => {
+    test("should insert node annotations before compositor/content children", () => {
       const schemaWithComplexType = schemaXmlWith(`<xs:complexType name="PersonType">
   <xs:sequence/>
 </xs:complexType>`);
@@ -108,7 +108,7 @@ describe("Integration: Annotation pipeline", () => {
       ]);
     });
 
-    test("returns validation error when target element does not exist", () => {
+    test("should return validation error when target element does not exist", () => {
       runCommandExpectValidationFailure(SCHEMA_WITH_ELEMENTS, {
         type: "addAnnotation",
         payload: { targetId: "/element:nonexistent", documentation: "desc" },
@@ -119,7 +119,7 @@ describe("Integration: Annotation pipeline", () => {
   // ─── removeAnnotation ──────────────────────────────────────────────────────
 
   describe("removeAnnotation", () => {
-    test("removes the annotation from an annotated element", () => {
+    test("should remove the annotation from an annotated element", () => {
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_ANNOTATION, {
         type: "removeAnnotation",
         payload: { annotationId: "/element:person" },
@@ -128,14 +128,14 @@ describe("Integration: Annotation pipeline", () => {
       expect(person.annotation).toBeUndefined();
     });
 
-    test("returns validation error when the element has no annotation", () => {
+    test("should return validation error when the element has no annotation", () => {
       runCommandExpectValidationFailure(SCHEMA_WITH_ELEMENTS, {
         type: "removeAnnotation",
         payload: { annotationId: "/element:person" },
       }, "No annotation found on node: /element:person");
     });
 
-    test("keeps remaining schema annotations before top-level declarations after deletion", () => {
+    test("should keep remaining schema annotations before top-level declarations after deletion", () => {
       const schemaWithTopLevelElement = schemaXmlWith(`<xs:element name="root" type="xs:string"/>`);
 
       const afterFirstDocumentation = runCommandExpectSuccess(schemaWithTopLevelElement, {
@@ -170,7 +170,7 @@ describe("Integration: Annotation pipeline", () => {
   // ─── modifyAnnotation ──────────────────────────────────────────────────────
 
   describe("modifyAnnotation", () => {
-    test("replaces the documentation text on an annotated element", () => {
+    test("should replace the documentation text on an annotated element", () => {
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_ANNOTATION, {
         type: "modifyAnnotation",
         payload: {
@@ -183,7 +183,7 @@ describe("Integration: Annotation pipeline", () => {
       expect(documentations[0].value).toBe("Updated description");
     });
 
-    test("returns validation error when element does not exist", () => {
+    test("should return validation error when element does not exist", () => {
       runCommandExpectValidationFailure(SCHEMA_WITH_ANNOTATION, {
         type: "modifyAnnotation",
         payload: { annotationId: "/element:noElement", documentation: "text" },
@@ -196,7 +196,7 @@ describe("Integration: Documentation pipeline", () => {
   // ─── addDocumentation ──────────────────────────────────────────────────────
 
   describe("addDocumentation", () => {
-    test("adds a documentation node to an existing annotation", () => {
+    test("should add a documentation node to an existing annotation", () => {
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_ANNOTATION, {
         type: "addDocumentation",
         payload: {
@@ -238,7 +238,7 @@ describe("Integration: Documentation pipeline", () => {
       ]);
     });
 
-    test("returns validation error when target element does not exist", () => {
+    test("should return validation error when target element does not exist", () => {
       runCommandExpectValidationFailure(SCHEMA_WITH_ANNOTATION, {
         type: "addDocumentation",
         payload: {
@@ -252,7 +252,7 @@ describe("Integration: Documentation pipeline", () => {
   // ─── removeDocumentation ───────────────────────────────────────────────────
 
   describe("removeDocumentation", () => {
-    test("removes the first documentation node from an annotation", () => {
+    test("should remove the first documentation node from an annotation", () => {
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_ANNOTATION, {
         type: "removeDocumentation",
         payload: { documentationId: "/element:person/documentation[0]" },
@@ -262,7 +262,7 @@ describe("Integration: Documentation pipeline", () => {
       expect(documentations.some((d) => d.value === "A person element")).toBe(false);
     });
 
-    test("returns validation error when documentation index is out of bounds", () => {
+    test("should return validation error when documentation index is out of bounds", () => {
       runCommandExpectValidationFailure(SCHEMA_WITH_ANNOTATION, {
         type: "removeDocumentation",
         payload: { documentationId: "/element:person/documentation[5]" },
@@ -273,7 +273,7 @@ describe("Integration: Documentation pipeline", () => {
   // ─── modifyDocumentation ───────────────────────────────────────────────────
 
   describe("modifyDocumentation", () => {
-    test("updates the content of a documentation node", () => {
+    test("should update the content of a documentation node", () => {
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_ANNOTATION, {
         type: "modifyDocumentation",
         payload: {
@@ -286,7 +286,7 @@ describe("Integration: Documentation pipeline", () => {
       expect(documentations[0].value).toBe("New documentation text");
     });
 
-    test("returns validation error when documentation index is out of bounds", () => {
+    test("should return validation error when documentation index is out of bounds", () => {
       runCommandExpectValidationFailure(SCHEMA_WITH_ANNOTATION, {
         type: "modifyDocumentation",
         payload: {

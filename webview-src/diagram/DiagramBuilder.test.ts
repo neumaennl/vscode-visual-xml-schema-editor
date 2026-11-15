@@ -76,7 +76,7 @@ describe("DiagramBuilder", () => {
       expect(nodes.map((node) => node.name)).toEqual(["Person", "Address"]);
     });
 
-    test("stores the targetNamespace prefix on the diagram when available", () => {
+    test("should store the targetNamespace prefix on the diagram when available", () => {
       const schemaObj = createTestSchema({
         targetNamespace: "http://example.com/ns",
         _namespacePrefixes: {

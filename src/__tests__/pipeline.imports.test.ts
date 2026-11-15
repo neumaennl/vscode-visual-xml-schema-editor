@@ -43,7 +43,7 @@ describe("Integration: Import pipeline", () => {
   // ─── addImport ─────────────────────────────────────────────────────────────
 
   describe("addImport", () => {
-    test("adds an import with a namespace and schemaLocation", () => {
+    test("should add an import with a namespace and schemaLocation", () => {
       const result = runCommandExpectSuccessSchema(emptySchemaXml(), {
         type: "addImport",
         payload: {
@@ -56,7 +56,7 @@ describe("Integration: Import pipeline", () => {
       expect(imports.some((i) => i.namespace === "http://example.com/ext" && i.schemaLocation === "ext.xsd")).toBe(true);
     });
 
-    test("adds an import with an explicit prefix", () => {
+    test("should add an import with an explicit prefix", () => {
       const result = runCommandExpectSuccessSchema(emptySchemaXml(), {
         type: "addImport",
         payload: {
@@ -71,7 +71,7 @@ describe("Integration: Import pipeline", () => {
       expect(result._namespacePrefixes?.["ext"]).toBe("http://example.com/ext");
     });
 
-    test("auto-generates a prefix when none is provided", () => {
+    test("should auto-generate a prefix when none is provided", () => {
       const result = runCommandExpectSuccessSchema(emptySchemaXml(), {
         type: "addImport",
         payload: {
@@ -91,14 +91,14 @@ describe("Integration: Import pipeline", () => {
       expect(autoPrefix).toMatch(/^ns\d+$/);
     });
 
-    test("returns validation error for an invalid namespace URI", () => {
+    test("should return validation error for an invalid namespace URI", () => {
       runCommandExpectValidationFailure(emptySchemaXml(), {
         type: "addImport",
         payload: { namespace: "not a uri", schemaLocation: "x.xsd" },
       }, "Namespace must be a valid absolute URI");
     });
 
-    test("returns validation error for a duplicate namespace", () => {
+    test("should return validation error for a duplicate namespace", () => {
       runCommandExpectValidationFailure(SCHEMA_WITH_IMPORT, {
         type: "addImport",
         payload: {
@@ -108,7 +108,7 @@ describe("Integration: Import pipeline", () => {
       }, "An import for namespace 'http://example.com/ext' already exists");
     });
 
-    test("returns validation error for a reserved prefix 'xml'", () => {
+    test("should return validation error for a reserved prefix 'xml'", () => {
       runCommandExpectValidationFailure(emptySchemaXml(), {
         type: "addImport",
         payload: {
@@ -123,14 +123,14 @@ describe("Integration: Import pipeline", () => {
   // ─── removeImport ──────────────────────────────────────────────────────────
 
   describe("removeImport", () => {
-    test("removes the first import by position ID", () => {
+    test("should remove the first import by position ID", () => {
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_IMPORT, REMOVE_FIRST_IMPORT);
       const imports = result.import_ ?? [];
 
       expect(imports.some((i) => i.namespace === "http://example.com/ext")).toBe(false);
     });
 
-    test("removes a specific import from a multi-import schema", () => {
+    test("should remove a specific import from a multi-import schema", () => {
       const result = runCommandExpectSuccessSchema(SCHEMA_TWO_IMPORTS, REMOVE_FIRST_IMPORT);
       const imports = result.import_ ?? [];
 
@@ -138,7 +138,7 @@ describe("Integration: Import pipeline", () => {
       expect(imports.some((i) => i.namespace === "http://example.com/b")).toBe(true);
     });
 
-    test("returns validation error when the namespace is only used in the XPath of a key", () => {
+    test("should return validation error when the namespace is only used in the XPath of a key", () => {
       runCommandExpectValidationFailure(
         SCHEMA_WITH_PREFIX_IN_XPATH,
         REMOVE_FIRST_IMPORT,
@@ -146,7 +146,7 @@ describe("Integration: Import pipeline", () => {
       );
     });
 
-    test("returns validation error when import ID is out of range", () => {
+    test("should return validation error when import ID is out of range", () => {
       runCommandExpectValidationFailure(SCHEMA_WITH_IMPORT, {
         type: "removeImport",
         payload: { importId: "/import[5]" },
@@ -157,7 +157,7 @@ describe("Integration: Import pipeline", () => {
   // ─── modifyImport ──────────────────────────────────────────────────────────
 
   describe("modifyImport", () => {
-    test("changes the schemaLocation of an existing import", () => {
+    test("should change the schemaLocation of an existing import", () => {
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_IMPORT, {
         type: "modifyImport",
         payload: { importId: "/import[0]", schemaLocation: "updated-ext.xsd" },
@@ -169,7 +169,7 @@ describe("Integration: Import pipeline", () => {
       expect(ext!.schemaLocation).toBe("updated-ext.xsd");
     });
 
-    test("rewrites the prefix in the XPath of a key when the prefix is renamed", () => {
+    test("should rewrite the prefix in the XPath of a key when the prefix is renamed", () => {
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_PREFIX_IN_XPATH, {
         type: "modifyImport",
         payload: { importId: "/import[0]", oldPrefix: "ext", prefix: "neu" },
@@ -178,7 +178,7 @@ describe("Integration: Import pipeline", () => {
       expect(result.element?.[0]?.key?.[0]?.selector.xpath).toBe("neu:item");
     });
 
-    test("returns validation error when import ID is out of range", () => {
+    test("should return validation error when import ID is out of range", () => {
       runCommandExpectValidationFailure(SCHEMA_WITH_IMPORT, {
         type: "modifyImport",
         payload: { importId: "/import[99]", schemaLocation: "x.xsd" },
@@ -189,13 +189,13 @@ describe("Integration: Import pipeline", () => {
   // ─── imports without a namespace and prefix bindings ──────────────────────
 
   describe("namespaces of imports", () => {
-    test("removes an import without a namespace", () => {
+    test("should remove an import without a namespace", () => {
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_NO_NAMESPACE_IMPORT, REMOVE_FIRST_IMPORT);
 
       expect(result.import_ ?? []).toHaveLength(0);
     });
 
-    test("gives an import without a namespace a namespace", () => {
+    test("should give an import without a namespace a namespace", () => {
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_NO_NAMESPACE_IMPORT, {
         type: "modifyImport",
         payload: { importId: "/import[0]", namespace: "http://example.com/new" },
@@ -204,7 +204,7 @@ describe("Integration: Import pipeline", () => {
       expect(result.import_?.[0]?.namespace).toBe("http://example.com/new");
     });
 
-    test("returns validation error for a prefix for an import without a namespace", () => {
+    test("should return validation error for a prefix for an import without a namespace", () => {
       runCommandExpectValidationFailure(
         SCHEMA_WITH_NO_NAMESPACE_IMPORT,
         { type: "modifyImport", payload: { importId: "/import[0]", prefix: "none" } },
@@ -212,13 +212,13 @@ describe("Integration: Import pipeline", () => {
       );
     });
 
-    test("binds an additional prefix to the namespace of an import", () => {
+    test("should bind an additional prefix to the namespace of an import", () => {
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_EXT_IMPORT, { type: "modifyImport", payload: { importId: "/import[0]", prefix: "more" } });
 
       expect(result._namespacePrefixes).toMatchObject({ ext: "http://example.com/ext", more: "http://example.com/ext" });
     });
 
-    test("keeps the binding when a prefix is renamed to itself", () => {
+    test("should keep the binding when a prefix is renamed to itself", () => {
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_EXT_IMPORT, {
         type: "modifyImport",
         payload: { importId: "/import[0]", oldPrefix: "ext", prefix: "ext" },

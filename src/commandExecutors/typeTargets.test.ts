@@ -21,14 +21,14 @@ function createSchema(): schema {
 }
 
 describe("placeNewType", () => {
-  test("appends a top-level type to the schema", () => {
+  test("should append a top-level type to the schema", () => {
     const schemaObj = createSchema();
     const type = Object.assign(new topLevelSimpleType(), { name: "U" });
     placeNewType(schemaObj, "/schema", "simpleType", type);
     expect(schemaObj.simpleType?.map((t) => t.name)).toEqual(["S", "U"]);
   });
 
-  test("replaces the named type of an element with an anonymous one", () => {
+  test("should replace the named type of an element with an anonymous one", () => {
     const schemaObj = createSchema();
     const type = new localComplexType();
     placeNewType(schemaObj, "/element:named", "complexType", type);
@@ -37,7 +37,7 @@ describe("placeNewType", () => {
     expect(element?.complexType).toBe(type);
   });
 
-  test("replaces an anonymous type of the other kind", () => {
+  test("should replace an anonymous type of the other kind", () => {
     const schemaObj = createSchema();
     const type = new localSimpleType();
     placeNewType(schemaObj, "/element:anonymous", "simpleType", type);
@@ -48,13 +48,13 @@ describe("placeNewType", () => {
 });
 
 describe("removeType", () => {
-  test("removes an anonymous type from its element or attribute", () => {
+  test("should remove an anonymous type from its element or attribute", () => {
     const schemaObj = createSchema();
     removeType(schemaObj, "/attribute:attr/anonymousSimpleType[0]", "simpleType");
     expect(schemaObj.attribute?.[0].simpleType).toBeUndefined();
   });
 
-  test("removes a top-level type, and the array with the last one", () => {
+  test("should remove a top-level type, and the array with the last one", () => {
     const schemaObj = createSchema();
     removeType(schemaObj, "/complexType:T", "complexType");
     expect(schemaObj.complexType).toBeUndefined();
@@ -68,26 +68,26 @@ describe("removeType", () => {
       "complexType",
       "Complex type /element:named/anonymousComplexType[0] not found",
     ],
-  ] as const)("fails for %s", (_case, typeId, kind, error) => {
+  ] as const)("should fail for %s", (_case, typeId, kind, error) => {
     expect(() => removeType(createSchema(), typeId, kind)).toThrow(error);
   });
 });
 
 describe("locateModifiedType", () => {
-  test("locates an anonymous type", () => {
+  test("should locate an anonymous type", () => {
     const schemaObj = createSchema();
     const result = locateModifiedType<localComplexType>(schemaObj, "/element:anonymous/anonymousComplexType[0]", "complexType", undefined);
     expect(result).toEqual({ type: schemaObj.element?.[1].complexType, topLevel: false });
   });
 
-  test("locates a top-level type without changing it", () => {
+  test("should locate a top-level type without changing it", () => {
     const schemaObj = createSchema();
     const result = locateModifiedType<topLevelComplexType>(schemaObj, "/complexType:T", "complexType", undefined);
     expect(result.topLevel).toBe(true);
     expect(result.type.name).toBe("T");
   });
 
-  test("renames a top-level type and the references to it", () => {
+  test("should rename a top-level type and the references to it", () => {
     const schemaObj = createSchema();
     const result = locateModifiedType<topLevelSimpleType>(schemaObj, "/simpleType:S", "simpleType", "U");
     expect(result.type.name).toBe("U");

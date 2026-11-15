@@ -53,7 +53,7 @@ describe("isReferencedInContent", () => {
       `<xs:group name="H"><xs:sequence>${LOCAL_ELEMENT_REFERENCING_G}</xs:sequence></xs:group>`,
     ],
     ["a named group", `<xs:group name="H"><xs:choice><xs:group ref="G"/></xs:choice></xs:group>`],
-  ])("finds a group reference in %s", (_place, body) => {
+  ])("should find a group reference in %s", (_place, body) => {
     expect(isReferencedInContent(schemaWith(body), GROUP_G)).toBe(true);
   });
 
@@ -62,11 +62,11 @@ describe("isReferencedInContent", () => {
     ["a reference to another group", `<xs:complexType name="T"><xs:sequence><xs:group ref="H"/></xs:sequence></xs:complexType>`],
     ["a top-level element without inline complexType", `<xs:element name="e" type="xs:string"/>`],
     ["a local element without inline complexType", `<xs:group name="H"><xs:all><xs:element name="a" type="xs:string"/></xs:all></xs:group>`],
-  ])("finds no group reference in %s", (_case, body) => {
+  ])("should find no group reference in %s", (_case, body) => {
     expect(isReferencedInContent(schemaWith(body), GROUP_G)).toBe(false);
   });
 
-  test("searches objects created by commands, which lack the arrays that unmarshalling creates", () => {
+  test("should search objects created by commands, which lack the arrays that unmarshalling creates", () => {
     const created = new schema();
     expect(isReferencedInContent(created, GROUP_G)).toBe(false);
 
@@ -85,7 +85,7 @@ describe("isReferencedInContent", () => {
       "the inline complexType of a local element in an all",
       `<xs:complexType name="T"><xs:all><xs:element name="a"><xs:complexType><xs:attributeGroup ref="A"/></xs:complexType></xs:element></xs:all></xs:complexType>`,
     ],
-  ])("finds an attribute group reference in %s", (_place, body) => {
+  ])("should find an attribute group reference in %s", (_place, body) => {
     expect(isReferencedInContent(schemaWith(body), ATTRIBUTE_GROUP_A)).toBe(true);
   });
 });

@@ -18,7 +18,7 @@ describe("Integration: ComplexType pipeline", () => {
   // ─── addComplexType ────────────────────────────────────────────────────────
 
   describe("addComplexType", () => {
-    test("adds a top-level named complexType with a sequence content model", () => {
+    test("should add a top-level named complexType with a sequence content model", () => {
       const result = runCommandExpectSuccessSchema(emptySchemaXml(), {
         type: "addComplexType",
         payload: {
@@ -36,7 +36,7 @@ describe("Integration: ComplexType pipeline", () => {
       expect(orderType!.all).toBeUndefined();
     });
 
-    test("adds a complexType with a choice content model", () => {
+    test("should add a complexType with a choice content model", () => {
       const result = runCommandExpectSuccessSchema(emptySchemaXml(), {
         type: "addComplexType",
         payload: {
@@ -52,7 +52,7 @@ describe("Integration: ComplexType pipeline", () => {
       expect(choiceType!.sequence).toBeUndefined();
     });
 
-    test("adds a complexType with an all content model", () => {
+    test("should add a complexType with an all content model", () => {
       const result = runCommandExpectSuccessSchema(emptySchemaXml(), {
         type: "addComplexType",
         payload: {
@@ -68,7 +68,7 @@ describe("Integration: ComplexType pipeline", () => {
       expect(allType!.sequence).toBeUndefined();
     });
 
-    test("adds a complexType marked as abstract", () => {
+    test("should add a complexType marked as abstract", () => {
       const result = runCommandExpectSuccessSchema(emptySchemaXml(), {
         type: "addComplexType",
         payload: {
@@ -84,14 +84,14 @@ describe("Integration: ComplexType pipeline", () => {
       expect(String(baseType!.abstract)).toBe("true");
     });
 
-    test("returns validation error when type name is invalid", () => {
+    test("should return validation error when type name is invalid", () => {
       runCommandExpectValidationFailure(emptySchemaXml(), {
         type: "addComplexType",
         payload: { parentId: "/schema", typeName: "123Bad", contentModel: "sequence" },
       }, "Type name must be a valid XML name");
     });
 
-    test("returns validation error for duplicate complex type name", () => {
+    test("should return validation error for duplicate complex type name", () => {
       runCommandExpectValidationFailure(SCHEMA_WITH_COMPLEXTYPE, {
         type: "addComplexType",
         payload: { parentId: "/schema", typeName: "PersonType", contentModel: "sequence" },
@@ -102,7 +102,7 @@ describe("Integration: ComplexType pipeline", () => {
   // ─── removeComplexType ─────────────────────────────────────────────────────
 
   describe("removeComplexType", () => {
-    test("removes an existing top-level complexType", () => {
+    test("should remove an existing top-level complexType", () => {
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_COMPLEXTYPE, {
         type: "removeComplexType",
         payload: { typeId: "/complexType:PersonType" },
@@ -112,7 +112,7 @@ describe("Integration: ComplexType pipeline", () => {
       expect(types.some((t) => t.name === "PersonType")).toBe(false);
     });
 
-    test("returns validation error when type ID does not exist", () => {
+    test("should return validation error when type ID does not exist", () => {
       runCommandExpectValidationFailure(SCHEMA_WITH_COMPLEXTYPE, {
         type: "removeComplexType",
         payload: { typeId: "/complexType:NoSuchType" },
@@ -123,7 +123,7 @@ describe("Integration: ComplexType pipeline", () => {
   // ─── modifyComplexType ─────────────────────────────────────────────────────
 
   describe("modifyComplexType", () => {
-    test("renames an existing complexType", () => {
+    test("should rename an existing complexType", () => {
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_COMPLEXTYPE, {
         type: "modifyComplexType",
         payload: { typeId: "/complexType:PersonType", typeName: "IndividualType" },
@@ -134,7 +134,7 @@ describe("Integration: ComplexType pipeline", () => {
       expect(types.some((t) => t.name === "PersonType")).toBe(false);
     });
 
-    test("marks a complexType as abstract", () => {
+    test("should mark a complexType as abstract", () => {
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_COMPLEXTYPE, {
         type: "modifyComplexType",
         payload: { typeId: "/complexType:PersonType", abstract: true },
@@ -145,7 +145,7 @@ describe("Integration: ComplexType pipeline", () => {
       expect(String(personType!.abstract)).toBe("true");
     });
 
-    test("enables mixed content on a complexType", () => {
+    test("should enable mixed content on a complexType", () => {
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_COMPLEXTYPE, {
         type: "modifyComplexType",
         payload: { typeId: "/complexType:PersonType", mixed: true },
@@ -156,14 +156,14 @@ describe("Integration: ComplexType pipeline", () => {
       expect(String(personType!.mixed)).toBe("true");
     });
 
-    test("returns validation error when type ID does not exist", () => {
+    test("should return validation error when type ID does not exist", () => {
       runCommandExpectValidationFailure(SCHEMA_WITH_COMPLEXTYPE, {
         type: "modifyComplexType",
         payload: { typeId: "/complexType:Ghost", typeName: "Other" },
       }, "Complex type 'Ghost' not found in schema");
     });
 
-    test("wraps the group reference of a type without a compositor when it gets a base type", () => {
+    test("should wrap the group reference of a type without a compositor when it gets a base type", () => {
       const result = runCommandExpectSuccessSchema(readTestXml("person-type-with-group-ref.xsd"), {
         type: "modifyComplexType",
         payload: { typeId: "/complexType:PersonType", baseType: "xs:anyType" },
@@ -176,7 +176,7 @@ describe("Integration: ComplexType pipeline", () => {
       expect(personType?.complexContent?.extension?.group?.ref).toBe("PersonGroup");
     });
 
-    test("unwraps the group reference of a type without a compositor when its base type is removed", () => {
+    test("should unwrap the group reference of a type without a compositor when its base type is removed", () => {
       const withBase = runCommandExpectSuccess(readTestXml("person-type-with-group-ref.xsd"), {
         type: "modifyComplexType",
         payload: { typeId: "/complexType:PersonType", baseType: "xs:anyType" },

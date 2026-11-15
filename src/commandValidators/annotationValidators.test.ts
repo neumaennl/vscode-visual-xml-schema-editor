@@ -253,7 +253,7 @@ describe("IDs of the remove and modify commands", () => {
   test.each([
     ...eachValidator(ANNOTATION_ID_VALIDATORS, ANNOTATION_ID_CASES),
     ...eachValidator(DOCUMENTATION_ID_VALIDATORS, DOCUMENTATION_ID_CASES),
-  ])("%s should check %s", (_name, _case, source, id, expected, validate) => {
+  ])("should check the ID in %s: %s", (_name, _case, source, id, expected, validate) => {
     expectResult(validate(id, loadSchema(source)), expected);
   });
 });
@@ -262,7 +262,7 @@ describe("IDs of the remove and modify commands", () => {
 
 describe("Schema-root Annotation Validators", () => {
   describe("validateAddAnnotation — schema root", () => {
-    test("accepts targetId 'schema' even when schema already has annotations", () => {
+    test("should accept targetId 'schema' even when schema already has annotations", () => {
       const schemaObj = schemaWith(SCHEMA_ANNOTATION);
       const command: AddAnnotationCommand = {
         type: "addAnnotation",
@@ -273,7 +273,7 @@ describe("Schema-root Annotation Validators", () => {
       expect(result.valid).toBe(true);
     });
 
-    test("accepts targetId 'schema' on an empty schema", () => {
+    test("should accept targetId 'schema' on an empty schema", () => {
       const schemaObj = emptySchema();
       const command: AddAnnotationCommand = {
         type: "addAnnotation",
@@ -286,7 +286,7 @@ describe("Schema-root Annotation Validators", () => {
   });
 
   describe("validateAddDocumentation — schema root", () => {
-    test("accepts targetId 'schema' on an empty schema (creates annotation)", () => {
+    test("should accept targetId 'schema' on an empty schema (creates annotation)", () => {
       const schemaObj = emptySchema();
       const command: AddDocumentationCommand = {
         type: "addDocumentation",
@@ -297,7 +297,7 @@ describe("Schema-root Annotation Validators", () => {
       expect(result.valid).toBe(true);
     });
 
-    test("accepts targetId '/schema/annotation[N]' when annotation exists", () => {
+    test("should accept targetId '/schema/annotation[N]' when annotation exists", () => {
       const schemaObj = readTestSchema(TWO_ANNOTATIONS_XSD);
       const command: AddDocumentationCommand = {
         type: "addDocumentation",
@@ -308,7 +308,7 @@ describe("Schema-root Annotation Validators", () => {
       expect(result.valid).toBe(true);
     });
 
-    test("rejects when '/schema/annotation[N]' index is out of bounds", () => {
+    test("should reject when '/schema/annotation[N]' index is out of bounds", () => {
       const schemaObj = schemaWith(SCHEMA_ANNOTATION);
       const command: AddDocumentationCommand = {
         type: "addDocumentation",

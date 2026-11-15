@@ -33,7 +33,7 @@ function complexTypeWith(content: string): string {
 }
 
 describe("rewritePrefixInSchema", () => {
-  test("does nothing when the old prefix matches the new prefix", () => {
+  test("should do nothing when the old prefix matches the new prefix", () => {
     const schemaObj = schemaWith(ELEMENT_OF_EXT_TYPE, EXT_PREFIX);
 
     rewritePrefixInSchema("ext", "ext", schemaObj);
@@ -41,11 +41,11 @@ describe("rewritePrefixInSchema", () => {
     expect(schemaObj.element?.[0].type_).toBe("ext:FooType");
   });
 
-  test("does not throw on an empty schema", () => {
+  test("should not throw on an empty schema", () => {
     expect(() => rewritePrefixInSchema("old", "new", emptySchema())).not.toThrow();
   });
 
-  test("does not rewrite element @type values with a different prefix", () => {
+  test("should not rewrite element @type values with a different prefix", () => {
     const schemaObj = schemaWith(`${ELEMENT_OF_EXT_TYPE}<xs:element name="bar" type="xs:string"/>`, EXT_PREFIX);
 
     rewritePrefixInSchema("ext", "p", schemaObj);
@@ -131,7 +131,7 @@ describe("rewritePrefixInSchema", () => {
       `<xs:attributeGroup name="MyAttrGroup"><xs:attributeGroup ref="ext:InnerGroup"/></xs:attributeGroup>`,
       `ref="p:InnerGroup"`,
     ],
-  ])("rewrites %s", (_place, content, expected) => {
+  ])("should rewrite %s", (_place, content, expected) => {
     const schemaObj = schemaWith(content, EXT_PREFIX);
 
     rewritePrefixInSchema("ext", "p", schemaObj);

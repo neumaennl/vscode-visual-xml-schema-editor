@@ -54,26 +54,26 @@ suite("Extension in VS Code", () => {
     await vscode.commands.executeCommand("workbench.action.closeAllEditors");
   });
 
-  test("activates", async () => {
+  test("should activate", async () => {
     const extension = vscode.extensions.getExtension(EXTENSION_ID);
     assert.ok(extension, `${EXTENSION_ID} is not installed`);
     await extension.activate();
     assert.ok(extension.isActive);
   });
 
-  test("opens example.xsd in the custom editor", () => {
+  test("should open example.xsd in the custom editor", () => {
     const input = vscode.window.tabGroups.activeTabGroup.activeTab?.input;
     assert.ok(input instanceof vscode.TabInputCustom, "The active tab is not a custom editor");
     assert.equal(input.viewType, VIEW_TYPE);
     assert.equal(input.uri.toString(), uri.toString());
   });
 
-  test("applies the edit that the webview sends", async () => {
+  test("should apply the edit that the webview sends", async () => {
     const document = await edited;
     assert.ok(document.getText().includes(NEW_ELEMENT_NAME), "The new element is missing");
   });
 
-  test("reverts the edit with undo", async () => {
+  test("should revert the edit with undo", async () => {
     await edited;
     const undone = nextChange(uri);
     await vscode.commands.executeCommand("undo");

@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-15T11:01:30Z }
-verified: { by: human:neumaennl, at: 2026-11-15T11:04:58Z }
+generated: { by: human:neumaennl, at: 2026-11-15T17:29:59Z }
+verified: { by: human:neumaennl, at: 2026-11-15T17:40:45Z }
 ---
 
 # Purpose
@@ -35,6 +35,14 @@ Effort:
 - **L:** a day or more, or design decisions are needed.
 
 # Code
+
+## Replacement type changes an inline restriction of an inline type
+
+- **Location:** `webview-src/propertiesPanel/propertiesPanelTypes.ts` (`renderInlineAnonymousTypeReplacement()`), `webview-src/propertiesPanel/propertiesPanelCommands.ts` (`createTypeCommand()`)
+- **Severity:** High
+- **Effort:** S
+- **Description:** An element whose inline simple type has no single base type, such as `<xs:element name="short"><xs:simpleType><xs:restriction><xs:simpleType><xs:restriction base="xs:string"/></xs:simpleType></xs:restriction></xs:simpleType></xs:element>`, shows a "Replacement Type" field with the hint that a replacement type removes the inline simple type. Entering `xs:token` sends `modifySimpleType` with `baseType: "xs:token"` for `/element:short/anonymousSimpleType[0]` instead of `modifyElement` with `elementType`: the inline type stays, and its inline base type is replaced by `xs:token`. The draft in the panel shows the element with the type `xs:token` until the diagram is rebuilt. `createTypeCommand()` builds the base type command for every element with `isSimpleContent`; the replacement of inline lists, unions and restrictions with a base type uses `renderInlineSimpleTypeReplacement()`, which sends `modifyElement`. The fix is to send `modifyElement` there as well.
+- **GitHub issue:** none
 
 ## Node IDs are ambiguous and have many special cases
 
@@ -132,6 +140,14 @@ Effort:
 
   The fix is to check `hasAnonymousComplexType` wherever the flag is read as an inline simple type, or to split the flag. The facets of a restriction of simple content cannot be edited by any command yet (see [Complex types with simple content cannot be created or derived](#complex-types-with-simple-content-cannot-be-created-or-derived)).
 - **GitHub issue:** [#440](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/440)
+
+## Named complex types with simple content are shown as inline simple types
+
+- **Location:** `webview-src/propertiesPanel/propertiesPanelTypeHelpers.ts` (`getReadOnlyTypeValue()`), `webview-src/propertiesPanel/propertiesPanelTypes.ts` (`renderTypeProperty()`)
+- **Severity:** Medium
+- **Effort:** S
+- **Description:** The diagram builder sets `isSimpleContent` on a named complex type with `xs:simpleContent`, such as `<xs:complexType name="Price"><xs:simpleContent><xs:extension base="xs:decimal">…</xs:extension></xs:simpleContent></xs:complexType>`, labelled `complexType with simpleContent (extends xs:decimal)`. The General tab reads the flag as an inline simple type and shows "Type: Inline simpleType (restricts xs:decimal)", which is neither inline nor a restriction. It also offers a "Base Type" field, whose change sends `modifyComplexType` with a `baseType`, which the validator rejects for types with simple content (see [Complex types with simple content cannot be created or derived](#complex-types-with-simple-content-cannot-be-created-or-derived)). Elements with such an inline complex type have the same cause (see [Inline complex types with simple content are treated as inline simple types](#inline-complex-types-with-simple-content-are-treated-as-inline-simple-types)). The fix is to show the label of the diagram builder and the base type read-only for complex types with simple content.
+- **GitHub issue:** none
 
 ## Restricted complex content is shown without content
 
@@ -446,17 +462,6 @@ Effort:
 - **Effort:** M
 - **Description:** The properties panel builds its commands in two ways. `propertiesPanelCommands.ts` and `propertiesPanelSimpleTypeCommands.ts` have functions that take a node and return a command, such as `createRenameNodeComand()` and `createTypeCommand()`. Twenty other commands are written out inside the event handlers that render the fields and update the draft copy: seven in `propertiesPanel.ts` (cardinality, nillable, abstract, mixed), seven in `propertiesPanelDocs.ts` and one or two in each of the other files listed. These can only be tested through the DOM, and changes to a command or to the values it reads (for example [#360](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/360), see [Diagram items copy values from the schema objects](#diagram-items-copy-values-from-the-schema-objects)) have to be found in all of these places. `propertiesPanel.ts` has 484 lines, close to the limit of 500 in the [development guidelines](development-guidelines.md#code-size). The fix is to move the construction of these commands into functions in the command modules and to leave only the draft update and the dispatch in the handlers.
 - **GitHub issue:** [#156](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/156)
-
-## Properties panel tabs are tested only through the whole panel
-
-- **Location:** `webview-src/propertiesPanel/propertiesPanelDocs.test.ts`, `propertiesPanelFacets.test.ts`, `propertiesPanelSchemaNamespaces.test.ts`, `propertiesPanelSimpleTypeEditors.test.ts`, `propertiesPanelTypes.test.ts`, `propertiesPanelXmlPreview.test.ts`
-- **Severity:** Low
-- **Effort:** M
-- **Description:** The [testing conventions](testing.md#kinds-of-tests) say that a unit test sits next to its module and tests that module. Five test files of the properties panel sit next to a tab module but do not import it; their 57 tests create a `PropertiesPanel`, display a diagram item and work with the DOM of the whole panel, so they are integration tests of the panel. `propertiesPanelXmlPreview.test.ts` tests `buildXmlPreview()` directly, but one of its tests also goes through the `PropertiesPanel`. Six modules of the panel have no test file at all and are only covered by these panel tests: `propertiesPanelDraft.ts`, `propertiesPanelElementDefaults.ts`, `propertiesPanelFacetLists.ts`, `propertiesPanelSimpleTypeCommands.ts`, `propertiesPanelTypeCatalog.ts` and `propertiesPanelTypeHelpers.ts`. A failing test therefore does not point to the module that is broken, and a module can lose its coverage when the panel changes how it uses it. The [testing conventions](testing.md#kinds-of-tests) do not yet say explicitly that a unit test must reach its module directly. The fix has three steps:
-  1. Add that rule to the testing conventions.
-  2. Move the panel tests to `webview-src/__tests__/` as integration tests of the properties panel, so that their place matches what they test.
-  3. Write unit tests that call the modules directly, such as `createDocsTab()`, `renderFacetsTab()`, `renderTypeProperty()`, `createSimpleTypeListCommand()` or `getTypeEditHint()`, with the panel modules each module imports mocked where needed. Moving the construction of commands out of the event handlers ([#156](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/156), see [Properties panel builds commands in its event handlers](#properties-panel-builds-commands-in-its-event-handlers)) makes the commands testable without the DOM.
-- **GitHub issue:** [#449](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/449)
 
 ## Code exceeds the size limits
 

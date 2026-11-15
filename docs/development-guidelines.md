@@ -4,8 +4,8 @@ title: Development guidelines
 description: Rules for everyone who changes the extension - code size, code quality and ESLint, structure reviews, TypeScript and naming, VS Code and Node versions, TSDoc, tests, documentation and the knowledge bundle, issues, what to check before committing, and commits.
 tags: [guidelines, conventions, code-quality, typescript, documentation, workflow]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-15T11:01:30Z }
-verified: { by: human:neumaennl, at: 2026-11-15T11:04:58Z }
+generated: { by: human:neumaennl, at: 2026-11-15T11:51:53Z }
+verified: { by: human:neumaennl, at: 2026-11-15T11:58:06Z }
 sources:
   - id: eslint
     resource: ../eslint.config.mjs
@@ -103,7 +103,7 @@ Every function has an up-to-date TSDoc comment: what it does, each parameter wit
 
 # Tests
 
-New and changed code is tested. All rules for tests, mocks and test helpers are in [Testing](testing.md#conventions).
+New and changed code is tested. A unit test tests the module it sits next to and calls it directly; a test that reaches a module only through another module is an integration test (see [Kinds of tests](testing.md#kinds-of-tests)). All rules for tests, mocks and test helpers are in [Testing](testing.md#conventions).
 
 # Documentation
 

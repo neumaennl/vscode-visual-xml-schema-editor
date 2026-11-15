@@ -1,237 +1,228 @@
 /**
- * Unit tests for the type fields of the properties panel.
+ * Unit tests for the type fields of the General tab of the properties panel: the type, the base type
+ * and the replacement type of inline types.
  */
 
-import { DiagramItem } from "../diagram/DiagramItem";
-import { DiagramItemType } from "../diagram/DiagramTypes";
-import { SCHEMA_ROOT_ID, SchemaNodeType, generateSchemaId } from "../../shared/idStrategy";
-import { getInputByLabel, hasLabel, createPanel, displayItem, editInput } from "../__tests__/propertiesPanelTestHelpers";
+import type { Mock } from "vitest";
+import { renderTypeProperty } from "./propertiesPanelTypes";
+import { addPropertyToContainer } from "./propertiesPanelDom";
+import type { SchemaCommand } from "../../shared/types";
+import type { DiagramItem } from "../diagram";
+import { editInput, getInputByLabel, getLabels, getTextByLabel } from "../__tests__/propertiesPanelTestHelpers";
+import { diagramItem, muteDiagramBuilderLog } from "../__tests__/diagramTestHelpers";
+import { unmarshal } from "@neumaennl/xmlbind-ts";
+import { schema } from "../../shared/types";
 
-describe("PropertiesPanel: the type fields", () => {
-  let { container, panel, diagram } = createPanel();
+/**
+ * Named simple and complex types, and elements with a named type and with inline types, in a schema
+ * whose target namespace has the prefix `tns`.
+ */
+const TYPES_XML = `<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tns="urn:test" targetNamespace="urn:test">
+  <xs:simpleType name="Code"><xs:restriction base="xs:string"/></xs:simpleType>
+  <xs:simpleType name="Codes"><xs:list itemType="xs:token"/></xs:simpleType>
+  <xs:simpleType name="Mixed"><xs:union memberTypes="xs:int xs:token"/></xs:simpleType>
+  <xs:simpleType name="Short"><xs:restriction><xs:simpleType><xs:restriction base="xs:string"/></xs:simpleType></xs:restriction></xs:simpleType>
+  <xs:complexType name="Base"/>
+  <xs:complexType name="Derived"><xs:complexContent><xs:restriction base="tns:Base"/></xs:complexContent></xs:complexType>
+  <xs:group name="Contact"><xs:sequence/></xs:group>
+  <xs:element name="code" type="xs:string"/>
+  <xs:element name="size"><xs:simpleType><xs:restriction base="xs:int"/></xs:simpleType></xs:element>
+  <xs:element name="short"><xs:simpleType><xs:restriction><xs:simpleType><xs:restriction base="xs:string"/></xs:simpleType></xs:restriction></xs:simpleType></xs:element>
+  <xs:element name="note"><xs:complexType><xs:sequence/></xs:complexType></xs:element>
+  <xs:element name="extended"><xs:complexType><xs:complexContent><xs:extension base="tns:Base"/></xs:complexContent></xs:complexType></xs:element>
+</xs:schema>`;
 
-  beforeEach(() => {
-    ({ container, panel, diagram } = createPanel());
+/** The type names that the fields suggest. */
+const SUGGESTIONS = ["xs:string", "tns:Code"];
+
+/** The type fields of a node, the node, and the mock that receives their commands. */
+interface TypeFields {
+  root: HTMLElement;
+  node: DiagramItem;
+  dispatch: Mock<(command: SchemaCommand) => void>;
+}
+
+/**
+ * Renders the type fields of the diagram item with the given ID in the diagram of {@link TYPES_XML}.
+ *
+ * @param id - The ID of the item
+ * @returns The fields, the item and the mock
+ */
+function renderType(id: string): TypeFields {
+  const root = document.createElement("div");
+  const node = diagramItem(unmarshal(schema, TYPES_XML), id);
+  const dispatch = vi.fn<(command: SchemaCommand) => void>();
+  renderTypeProperty(root, node, SUGGESTIONS, dispatch, addPropertyToContainer);
+  return { root, node, dispatch };
+}
+
+describe("renderTypeProperty", () => {
+  muteDiagramBuilderLog();
+
+  test.each(["/schema", "/group:Contact", "/group:Contact/group:sequence[0]"])("should show no type fields for %s", (id) => {
+    expect(renderType(id).root.childElementCount).toBe(0);
   });
 
-  /**
-   * Adds a complex type `CustomerType` to the diagram, whose schema has the prefix `tns`, and returns an element
-   * `customer` of type `xs:string`.
-   *
-   * @returns The element
-   */
-  function customerWithCustomerType(): DiagramItem {
-    diagram.currentSchemaPrefix = "tns";
-    const schemaRoot = new DiagramItem(SCHEMA_ROOT_ID, "schema", DiagramItemType.group, diagram);
-    const customerType = new DiagramItem(
-      generateSchemaId({ nodeType: SchemaNodeType.ComplexType, name: "CustomerType" }),
-      "CustomerType",
-      DiagramItemType.type,
-      diagram
-    );
-    customerType.type = "complexType";
-    schemaRoot.addChild(customerType);
-    diagram.addRootElement(schemaRoot);
+  describe("elements with a named type", () => {
+    test("should show the type in a field with suggestions", () => {
+      const { root } = renderType("/element:code");
 
-    const item = new DiagramItem("/element:customer", "customer", DiagramItemType.element, diagram);
-    item.type = "xs:string";
-    return item;
-  }
+      const input = getInputByLabel(root, "Type");
+      expect(getLabels(root)).toEqual(["Type"]);
+      expect(input.value).toBe("xs:string");
+      const options = Array.from(root.querySelectorAll(`datalist#${input.getAttribute("list")} option`), (option) => (option as HTMLOptionElement).value);
+      expect(options).toEqual(SUGGESTIONS);
+    });
 
-  test("edits simple type base types through a dedicated Base Type field", () => {
-    const item = new DiagramItem("/simpleType:TokenType", "TokenType", DiagramItemType.type, diagram);
-    item.type = "simpleType (restricts xs:string)";
+    test.each([
+      { value: "xs:int", expected: "xs:int" },
+      { value: "Code", expected: "tns:Code" },
+    ])("should change the type to '$value' and add the prefix to a type of the schema", ({ value, expected }) => {
+      const { root, node, dispatch } = renderType("/element:code");
 
-    const { dispatch } = displayItem(container, item);
+      editInput(root, "Type", value);
 
-    editInput(container, "Base Type", "xs:token");
+      expect(dispatch).toHaveBeenCalledExactlyOnceWith({ type: "modifyElement", payload: { elementId: "/element:code", elementType: expected } });
+      expect(node.type).toBe(expected);
+    });
 
-    expect(dispatch).toHaveBeenCalledWith({
-      type: "modifySimpleType",
-      payload: {
-        typeId: "/simpleType:TokenType",
-        baseType: "xs:token",
-      },
+    test.each(["xs:string", " "])("should send nothing for the type '%s'", (value) => {
+      const { root, dispatch } = renderType("/element:code");
+
+      editInput(root, "Type", value);
+
+      expect(dispatch).not.toHaveBeenCalled();
     });
   });
 
-  test("does not dispatch a second command when Base Type blur is unchanged after stale simpleType rename replay", () => {
+  describe("simple types", () => {
+    test("should show the kind and the base type of a restriction", () => {
+      const { root } = renderType("/simpleType:Code");
 
-    const initial = new DiagramItem(
-      "/simpleType:lengthRestricitionType",
-      "lengthRestricitionType",
-      DiagramItemType.type,
-      diagram
-    );
-    initial.type = "simpleType (restricts xs:string)";
-    const { panel: shownPanel, dispatch } = displayItem(container, initial);
+      expect(getLabels(root)).toEqual(["Kind", "Base Type"]);
+      expect(getInputByLabel(root, "Base Type").value).toBe("xs:string");
+    });
 
-    editInput(container, "Name", "lengthRestrictionType");
+    test("should change the base type of a restriction", () => {
+      const { root, node, dispatch } = renderType("/simpleType:Code");
 
-    // Simulate stale re-display that still references the old node id/name
-    // while keeping the same Base Type value.
-    const stale = new DiagramItem(
-      "/simpleType:lengthRestricitionType",
-      "lengthRestricitionType",
-      DiagramItemType.type,
-      diagram
-    );
-    stale.type = "simpleType (restricts xs:string)";
-    shownPanel.display(stale);
+      editInput(root, "Base Type", "xs:token");
 
-    editInput(container, "Base Type", "xs:string");
+      expect(dispatch).toHaveBeenCalledExactlyOnceWith({ type: "modifySimpleType", payload: { typeId: "/simpleType:Code", baseType: "xs:token" } });
+      expect(node.type).toBe("simpleType (restricts xs:token)");
+    });
 
-    expect(dispatch).toHaveBeenCalledTimes(1);
-    expect(dispatch).toHaveBeenCalledWith({
-      type: "modifySimpleType",
-      payload: {
-        typeId: "/simpleType:lengthRestricitionType",
-        typeName: "lengthRestrictionType",
-      },
+    test.each(["xs:string", ""])("should send nothing for the base type '%s'", (value) => {
+      const { root, dispatch } = renderType("/simpleType:Code");
+
+      editInput(root, "Base Type", value);
+
+      expect(dispatch).not.toHaveBeenCalled();
+    });
+
+    test.each([
+      { id: "/simpleType:Codes", labels: ["Kind", "Item Type"] },
+      { id: "/simpleType:Mixed", labels: ["Kind", "Member Types"] },
+    ])("should show the editor of the kind of $id", ({ id, labels }) => {
+      expect(getLabels(renderType(id).root)).toEqual(labels);
+    });
+
+    test("should show the inline base type of a restriction read-only", () => {
+      const { root } = renderType("/simpleType:Short");
+
+      expect(getLabels(root)).toEqual(["Kind", "Base Type", "Type editing"]);
+      expect(getTextByLabel(root, "Base Type")).toBe("Inline simpleType");
+      expect(getTextByLabel(root, "Type editing")).toBe("This simpleType does not expose a single base type that can be edited here.");
     });
   });
 
-  test("keeps computed complex type summaries read-only", () => {
-    const item = new DiagramItem("/complexType:PersonType", "PersonType", DiagramItemType.type, diagram);
-    item.type = "complexType with simpleContent";
+  describe("elements with an inline simple type", () => {
+    test("should show the inline type, its base type and a replacement type", () => {
+      const { root } = renderType("/element:size");
 
-    panel.display(item);
+      expect(getLabels(root)).toEqual(["Kind", "Type", "Base Type", "Replacement Type"]);
+      expect(getTextByLabel(root, "Type")).toBe("Inline simpleType (restricts xs:int)");
+      expect(getInputByLabel(root, "Replacement Type").value).toBe("xs:int");
+    });
 
-    expect(container.textContent).toContain("complexType with simpleContent");
-    expect(container.querySelectorAll('input[type="text"]')).toHaveLength(1);
-    expect(hasLabel(container, "Base Type")).toBe(false);
-    expect(container.textContent).not.toContain("Replacement Type");
-  });
+    test("should change the base type of the inline type", () => {
+      const { root, node, dispatch } = renderType("/element:size");
 
-  test("keeps non-resolved simple type labels read-only", () => {
-    const item = new DiagramItem("/simpleType:TokenType", "TokenType", DiagramItemType.type, diagram);
-    item.type = "simpleType";
+      editInput(root, "Base Type", "xs:long");
 
-    panel.display(item);
+      expect(dispatch).toHaveBeenCalledExactlyOnceWith({
+        type: "modifySimpleType",
+        payload: { typeId: "/element:size/anonymousSimpleType[0]", baseType: "xs:long" },
+      });
+      expect(node.type).toBe("<anonymous simpleType> (restricts xs:long)");
+    });
 
-    expect(container.textContent).toContain("This simpleType does not expose a single base type");
-    expect(container.querySelectorAll("input")).toHaveLength(1);
-  });
+    test("should only offer a replacement type for an inline type without a base type", () => {
+      const { root } = renderType("/element:short");
 
-  test("offers known schema types as suggestions while keeping type inputs free-form", () => {
-    const item = customerWithCustomerType();
-
-    panel.display(item);
-
-    const input = getInputByLabel(container, "Type");
-    const listId = input.getAttribute("list");
-    expect(listId).toBeTruthy();
-    const options = Array.from(container.querySelectorAll(`datalist#${listId} option`)).map(
-      (option) => (option as HTMLOptionElement).value
-    );
-    expect(options).toContain("xs:string");
-    expect(options).toContain("CustomerType");
-    expect(options).toContain("tns:CustomerType");
-  });
-
-  test("uses targetNamespace prefix for local type references when available", () => {
-    const item = customerWithCustomerType();
-
-    const { dispatch } = displayItem(container, item);
-
-    editInput(container, "Type", "CustomerType");
-
-    expect(dispatch).toHaveBeenCalledWith({
-      type: "modifyElement",
-      payload: {
-        elementId: "/element:customer",
-        elementType: "tns:CustomerType",
-      },
+      expect(getLabels(root)).toEqual(["Kind", "Type", "Replacement Type", "Type editing"]);
+      expect(getTextByLabel(root, "Type")).toBe("Inline simpleType");
+      expect(getTextByLabel(root, "Type editing")).toBe("Setting a replacement type removes the current inline simpleType from this element.");
     });
   });
 
-  test("lets elements with inline complex types replace them with an explicit type", () => {
-    const item = new DiagramItem("/element:person", "person", DiagramItemType.element, diagram);
-    item.type = "complexType";
-    item.hasAnonymousComplexType = true;
+  describe("complex types", () => {
+    test("should show a complex type without a base type read-only", () => {
+      const { root } = renderType("/complexType:Base");
 
-    const { dispatch } = displayItem(container, item);
+      expect(getLabels(root)).toEqual(["Type"]);
+      expect(getTextByLabel(root, "Type")).toBe("complexType");
+    });
 
-    expect(container.textContent).toContain("Inline complexType");
-    expect(hasLabel(container, "Base Type")).toBe(true);
+    test.each([
+      { value: "tns:Other", baseType: "tns:Other" },
+      { value: "", baseType: "" },
+    ])("should change the base type of a derived complex type to '$value' and keep the derivation", ({ value, baseType }) => {
+      const { root, dispatch } = renderType("/complexType:Derived");
 
-    editInput(container, "Replacement Type", "CustomerType");
+      expect(getInputByLabel(root, "Base Type").value).toBe("tns:Base");
+      editInput(root, "Base Type", value);
 
-    expect(dispatch).toHaveBeenCalledWith({
-      type: "modifyElement",
-      payload: {
-        elementId: "/element:person",
-        elementType: "CustomerType",
-      },
+      expect(dispatch).toHaveBeenCalledExactlyOnceWith({
+        type: "modifyComplexType",
+        payload: { typeId: "/complexType:Derived", baseType, derivationKind: "restriction" },
+      });
     });
   });
 
-  test("lets elements with inline simple types replace them with an explicit type", () => {
-    const item = new DiagramItem("/element:code", "code", DiagramItemType.element, diagram);
-    item.type = "<anonymous simpleType> (restricts xs:string)";
-    item.isSimpleContent = true;
+  describe("elements with an inline complex type", () => {
+    test.each([
+      { id: "/element:note", type: "Inline complexType", baseType: "" },
+      { id: "/element:extended", type: "Inline complexType (extends tns:Base)", baseType: "tns:Base" },
+    ])("should show the inline type of $id, its base type and a replacement type", ({ id, type, baseType }) => {
+      const { root } = renderType(id);
 
-    const { dispatch } = displayItem(container, item);
-
-    expect(container.textContent).toContain("Inline simpleType (restricts xs:string)");
-    expect(hasLabel(container, "Base Type")).toBe(true);
-
-    const replacementInput = getInputByLabel(container, "Replacement Type");
-    expect(replacementInput.value).toBe("xs:string");
-    replacementInput.value = "CustomerCodeType";
-    replacementInput.dispatchEvent(new Event("blur"));
-
-    expect(dispatch).toHaveBeenCalledWith({
-      type: "modifyElement",
-      payload: {
-        elementId: "/element:code",
-        elementType: "CustomerCodeType",
-      },
+      expect(getLabels(root)).toEqual(["Type", "Base Type", "Replacement Type"]);
+      expect(getTextByLabel(root, "Type")).toBe(type);
+      expect(getInputByLabel(root, "Base Type").value).toBe(baseType);
     });
-  });
 
-  test("edits inline simple type base types from the selected element", () => {
-    const item = new DiagramItem("/element:code", "code", DiagramItemType.element, diagram);
-    item.type = "<anonymous simpleType> (restricts xs:string)";
-    item.isSimpleContent = true;
+    test("should derive the inline type from a base type", () => {
+      const { root, node, dispatch } = renderType("/element:note");
 
-    const { dispatch } = displayItem(container, item);
+      editInput(root, "Base Type", "Base");
 
-    editInput(container, "Base Type", "xs:token");
-
-    expect(dispatch).toHaveBeenCalledWith({
-      type: "modifySimpleType",
-      payload: {
-        typeId: generateSchemaId({
-          nodeType: SchemaNodeType.AnonymousSimpleType,
-          parentId: "/element:code",
-          position: 0,
-        }),
-        baseType: "xs:token",
-      },
+      expect(dispatch).toHaveBeenCalledExactlyOnceWith({
+        type: "modifyComplexType",
+        payload: { typeId: "/element:note/anonymousComplexType[0]", baseType: "tns:Base", derivationKind: "extension" },
+      });
+      expect(node.type).toBe("<anonymous complexType> (extends tns:Base)");
     });
-  });
 
-  test("edits inline complex type extension bases from the selected element", () => {
-    const item = new DiagramItem("/element:person", "person", DiagramItemType.element, diagram);
-    item.type = "<anonymous complexType> (extends BasePersonType)";
-    item.hasAnonymousComplexType = true;
+    test("should replace the inline type with a named type", () => {
+      const { root, node, dispatch } = renderType("/element:extended");
 
-    const { dispatch } = displayItem(container, item);
+      editInput(root, "Replacement Type", "tns:Derived");
 
-    editInput(container, "Base Type", "EmployeeType");
-
-    expect(dispatch).toHaveBeenCalledWith({
-      type: "modifyComplexType",
-      payload: {
-        typeId: generateSchemaId({
-          nodeType: SchemaNodeType.AnonymousComplexType,
-          parentId: "/element:person",
-          position: 0,
-        }),
-        baseType: "EmployeeType",
-        derivationKind: "extension",
-      },
+      expect(dispatch).toHaveBeenCalledExactlyOnceWith({ type: "modifyElement", payload: { elementId: "/element:extended", elementType: "tns:Derived" } });
+      expect(node.type).toBe("tns:Derived");
+      expect(node.hasAnonymousComplexType).toBe(false);
+      expect(node.complexDerivationKind).toBeUndefined();
     });
   });
 });

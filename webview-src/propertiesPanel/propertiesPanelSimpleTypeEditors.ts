@@ -70,6 +70,10 @@ function showUnionBody(node: DiagramItem, memberTypes: string[], hasInlineSimple
 
 /**
  * Returns whether a node should be treated as a simpleType in the properties panel.
+ *
+ * @param nodeType - The schema node type of the node
+ * @param hasInlineSimpleType - Whether the node is an element with an inline simpleType
+ * @returns True for simple types and elements with an inline simpleType
  */
 export function isSimpleTypeNode(nodeType: SchemaNodeType | null, hasInlineSimpleType: boolean): boolean {
   return (
@@ -80,7 +84,14 @@ export function isSimpleTypeNode(nodeType: SchemaNodeType | null, hasInlineSimpl
 }
 
 /**
- * Renders the list-specific simpleType editor.
+ * Renders the select that switches a simpleType between restriction, list and union. The new body is
+ * derived from the current one and shown on the draft node; when nothing can be derived, the select
+ * goes back to the current kind.
+ *
+ * @param root - The tab
+ * @param node - The simpleType, or the element with the inline simpleType
+ * @param hasInlineSimpleType - Whether the node is an element with an inline simpleType
+ * @param dispatchCommand - Callback used to emit schema commands
  */
 export function renderSimpleTypeKindSelector(
   root: HTMLElement,
@@ -160,14 +171,13 @@ export interface SimpleTypeEditorContext {
 }
 
 /**
- * Shows the type of an element with an inline simpleType as a read-only row.
+ * Shows the type of an element with an inline list or union as a read-only row.
  *
  * @param context - The editor context
- * @param typeValue - The type to show
  */
-function showInlineSimpleType(context: SimpleTypeEditorContext, typeValue: string | undefined): void {
+function showInlineSimpleType(context: SimpleTypeEditorContext): void {
   if (context.hasInlineSimpleType) {
-    context.addPropertyToContainer(context.root, "Type", getReadOnlyTypeValue(context.node, typeValue));
+    context.addPropertyToContainer(context.root, "Type", getReadOnlyTypeValue(context.node, undefined));
   }
 }
 
@@ -179,7 +189,7 @@ function showInlineSimpleType(context: SimpleTypeEditorContext, typeValue: strin
 export function renderSimpleTypeListEditor(context: SimpleTypeEditorContext): void {
   const { root, node, hasInlineSimpleType, typeSuggestions, dispatchCommand } = context;
   const itemType = node.simpleTypeListItemType ?? "";
-  showInlineSimpleType(context, itemType);
+  showInlineSimpleType(context);
 
   root.appendChild(
     createEditableField("Item Type", itemType, onTypeChange(node, itemType, (normalizedNext) => {
@@ -198,7 +208,11 @@ export function renderSimpleTypeListEditor(context: SimpleTypeEditorContext): vo
 }
 
 /**
- * Renders the union-specific simpleType editor.
+ * Renders the union-specific simpleType editor: a select for each member type, buttons that remove
+ * and add member types and, for an inline simpleType, a replacement type. A union without member types
+ * is not sent.
+ *
+ * @param context - The editor context
  */
 export function renderSimpleTypeUnionEditor(context: SimpleTypeEditorContext): void {
   const { root, node, hasInlineSimpleType, typeSuggestions, dispatchCommand } = context;
@@ -206,7 +220,7 @@ export function renderSimpleTypeUnionEditor(context: SimpleTypeEditorContext): v
     ? [...node.simpleTypeUnionMemberTypes]
     : [];
   const memberTypes = initialMemberTypes.length > 0 ? initialMemberTypes : [""];
-  showInlineSimpleType(context, node.type);
+  showInlineSimpleType(context);
 
   const unionEditor = document.createElement("div");
   unionEditor.className = "property";

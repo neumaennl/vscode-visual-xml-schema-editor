@@ -38,3 +38,17 @@ export function diagramItem(schemaObj: schema, id: string): DiagramItem {
   }
   return item;
 }
+
+/**
+ * Mutes the log of the diagram builder, which logs every schema it builds, in the tests of the
+ * `describe` block that calls it, and restores `console.log` after each test.
+ */
+export function muteDiagramBuilderLog(): void {
+  beforeEach(() => {
+    vi.spyOn(console, "log").mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+}

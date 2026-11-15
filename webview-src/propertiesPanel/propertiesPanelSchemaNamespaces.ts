@@ -3,7 +3,7 @@
  */
 
 import { SchemaCommand } from "../../shared/types";
-import { DiagramItem } from "../diagram";
+import { Diagram, DiagramItem } from "../diagram";
 import {
   addPropertyWithElementToContainer,
   createEditableField,
@@ -21,6 +21,7 @@ type NamespacePrefixes = Record<string, string>;
  * @param node - Currently selected schema diagram item
  * @param dispatchCommand - Callback used to emit schema commands
  * @param rerender - Callback used to refresh the properties panel after edits
+ * @throws {Error} If the schema node belongs to no diagram, which holds the namespaces
  */
 export function renderSchemaNamespaceProperties(
   root: HTMLElement,
@@ -28,7 +29,12 @@ export function renderSchemaNamespaceProperties(
   dispatchCommand: CommandDispatcher,
   rerender: () => void
 ): void {
-  const { targetNamespace, namespacePrefixes } = getSchemaNamespaceState(node);
+  const { diagram } = node;
+  if (!diagram) {
+    throw new Error("The schema node belongs to no diagram");
+  }
+  const targetNamespace = diagram.schemaTargetNamespace;
+  const namespacePrefixes = { ...diagram.schemaNamespacePrefixes };
 
   root.appendChild(
     createEditableField("targetNamespace", targetNamespace, (next) => {
@@ -40,10 +46,10 @@ export function renderSchemaNamespaceProperties(
         previousTargetNamespace,
         nextTargetNamespace,
         nextNamespacePrefixes,
-        node.diagram?.currentSchemaPrefix
+        diagram.currentSchemaPrefix
       );
       applySchemaNamespaceDraftState(
-        node,
+        diagram,
         nextTargetNamespace,
         nextNamespacePrefixes,
         previousNamespacePrefixes,
@@ -62,7 +68,7 @@ export function renderSchemaNamespaceProperties(
   for (const [prefix, namespaceUri] of entries) {
     namespacesContainer.appendChild(
       createNamespaceRow(
-        node,
+        diagram,
         prefix,
         namespaceUri,
         targetNamespace,
@@ -83,7 +89,7 @@ export function renderSchemaNamespaceProperties(
     const nextPrefix = generateUniqueNamespacePrefix(nextNamespacePrefixes);
     nextNamespacePrefixes[nextPrefix] = "urn:example:namespace";
     applySchemaNamespaceDraftState(
-      node,
+      diagram,
       targetNamespace,
       nextNamespacePrefixes,
       previousNamespacePrefixes,
@@ -96,8 +102,22 @@ export function renderSchemaNamespaceProperties(
   addPropertyWithElementToContainer(root, "Namespaces", namespacesContainer);
 }
 
+/**
+ * Creates the row of a namespace declaration: a prefix and a URI field, which commit when they are
+ * left, and a button that removes the declaration. Changing or removing the declaration of the target
+ * namespace changes or removes the target namespace too; a reserved prefix is rejected.
+ *
+ * @param diagram - The diagram of the schema
+ * @param prefix - The prefix of the declaration
+ * @param namespaceUri - The URI of the declaration
+ * @param targetNamespace - The current target namespace
+ * @param namespacePrefixes - All current namespace declarations
+ * @param dispatchCommand - Callback used to emit schema commands
+ * @param rerender - Callback used to refresh the properties panel after edits
+ * @returns The row
+ */
 function createNamespaceRow(
-  node: DiagramItem,
+  diagram: Diagram,
   prefix: string,
   namespaceUri: string,
   targetNamespace: string,
@@ -138,7 +158,7 @@ function createNamespaceRow(
         ? nextNamespaceUri
         : targetNamespace;
     applySchemaNamespaceDraftState(
-      node,
+      diagram,
       nextTargetNamespace,
       nextNamespacePrefixes,
       previousNamespacePrefixes,
@@ -174,7 +194,7 @@ function createNamespaceRow(
         ? ""
         : targetNamespace;
     applySchemaNamespaceDraftState(
-      node,
+      diagram,
       nextTargetNamespace,
       nextNamespacePrefixes,
       previousNamespacePrefixes,
@@ -187,19 +207,26 @@ function createNamespaceRow(
   return row;
 }
 
+/**
+ * Applies new namespaces to the diagram and sends them. Declarations without a URI and with a reserved
+ * prefix are left out. A target namespace without a declaration is rejected and the fields are shown
+ * again unchanged.
+ *
+ * @param diagram - The diagram of the schema
+ * @param targetNamespace - The new target namespace
+ * @param namespacePrefixes - The new namespace declarations
+ * @param previousNamespacePrefixes - The namespace declarations before the change
+ * @param dispatchCommand - Callback used to emit schema commands
+ * @param rerender - Callback used to refresh the properties panel after edits
+ */
 function applySchemaNamespaceDraftState(
-  node: DiagramItem,
+  diagram: Diagram,
   targetNamespace: string,
   namespacePrefixes: NamespacePrefixes,
   previousNamespacePrefixes: NamespacePrefixes,
   dispatchCommand: CommandDispatcher,
   rerender: () => void
 ): void {
-  if (!node.diagram) {
-    rerender();
-    return;
-  }
-
   const normalizedNamespacePrefixes = normalizeNamespacePrefixes(namespacePrefixes);
   const normalizedTargetNamespace = targetNamespace.trim();
   if (
@@ -212,13 +239,13 @@ function applySchemaNamespaceDraftState(
     return;
   }
 
-  node.diagram.schemaTargetNamespace = normalizedTargetNamespace;
-  node.diagram.schemaNamespacePrefixes = normalizedNamespacePrefixes;
+  diagram.schemaTargetNamespace = normalizedTargetNamespace;
+  diagram.schemaNamespacePrefixes = normalizedNamespacePrefixes;
   const nextSchemaPrefix = findTargetNamespacePrefix(
     normalizedNamespacePrefixes,
     normalizedTargetNamespace
   );
-  node.diagram.currentSchemaPrefix = nextSchemaPrefix;
+  diagram.currentSchemaPrefix = nextSchemaPrefix;
 
   dispatchCommand({
     type: "modifySchemaNamespaces",
@@ -231,19 +258,16 @@ function applySchemaNamespaceDraftState(
   rerender();
 }
 
-function getSchemaNamespaceState(node: DiagramItem): {
-  targetNamespace: string;
-  namespacePrefixes: NamespacePrefixes;
-} {
-  if (!node.diagram) {
-    return { targetNamespace: "", namespacePrefixes: {} };
-  }
-  return {
-    targetNamespace: node.diagram.schemaTargetNamespace,
-    namespacePrefixes: { ...node.diagram.schemaNamespacePrefixes },
-  };
-}
-
+/**
+ * Changes the declaration of the target namespace to a new target namespace, in place. Without a
+ * declaration, the new target namespace gets one with the preferred prefix, `tns` or a new prefix.
+ * Removing the target namespace removes its declaration.
+ *
+ * @param previousTargetNamespace - The current target namespace
+ * @param nextTargetNamespace - The new target namespace, empty to remove it
+ * @param namespacePrefixes - The namespace declarations, which are changed
+ * @param preferredPrefix - The prefix of the target namespace in the diagram, if it has one
+ */
 function syncTargetNamespaceWithDeclarations(
   previousTargetNamespace: string,
   nextTargetNamespace: string,
@@ -273,6 +297,14 @@ function syncTargetNamespaceWithDeclarations(
   namespacePrefixes[nextPrefix] = nextTargetNamespace;
 }
 
+/**
+ * Finds the prefix of the target namespace, preferring the given prefix if it declares it.
+ *
+ * @param namespacePrefixes - The namespace declarations
+ * @param targetNamespace - The target namespace
+ * @param preferredPrefix - The prefix to prefer
+ * @returns The prefix, or undefined when there is no target namespace or no declaration of it
+ */
 function findTargetNamespacePrefix(
   namespacePrefixes: Record<string, string>,
   targetNamespace: string,
@@ -293,6 +325,12 @@ function findTargetNamespacePrefix(
   )?.[0];
 }
 
+/**
+ * Returns the first prefix `ns0`, `ns1`, … that is not declared yet.
+ *
+ * @param namespacePrefixes - The namespace declarations
+ * @returns The prefix
+ */
 function generateUniqueNamespacePrefix(namespacePrefixes: Record<string, string>): string {
   let index = 0;
   while (Object.prototype.hasOwnProperty.call(namespacePrefixes, `ns${index}`)) {
@@ -301,6 +339,13 @@ function generateUniqueNamespacePrefix(namespacePrefixes: Record<string, string>
   return `ns${index}`;
 }
 
+/**
+ * Trims the prefixes and URIs of namespace declarations and leaves out declarations without a URI and
+ * with a reserved prefix.
+ *
+ * @param namespacePrefixes - The namespace declarations
+ * @returns The normalized declarations
+ */
 function normalizeNamespacePrefixes(
   namespacePrefixes: NamespacePrefixes
 ): NamespacePrefixes {

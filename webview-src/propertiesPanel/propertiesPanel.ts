@@ -79,6 +79,10 @@ export class PropertiesPanel {
     this.render();
   }
 
+  /**
+   * Renders the header, the tab bar and the active tab of the draft node, or clears the panel
+   * without a node. Falls back to the General tab when the node has no Facets tab.
+   */
   private render(): void {
     if (!this.selectedNode || !this.draftNode) {
       this.clear();
@@ -102,6 +106,11 @@ export class PropertiesPanel {
     this.container.appendChild(this.renderTabContent(this.draftNode));
   }
 
+  /**
+   * Creates the tab bar with a button for each tab of the draft node; clicking one shows its tab.
+   *
+   * @returns The tab bar
+   */
   private createTabBar(): HTMLElement {
     const tabBar = document.createElement("div");
     tabBar.className = "property-tabs";
@@ -127,6 +136,11 @@ export class PropertiesPanel {
     return tabBar;
   }
 
+  /**
+   * Returns the tabs of the draft node: General, Facets for restrictions, Docs and XML.
+   *
+   * @returns The IDs and labels of the tabs, in display order
+   */
   private getAvailableTabs(): Array<{ id: PropertyTab; label: string }> {
     const tabs: Array<{ id: PropertyTab; label: string }> = [{ id: "general", label: "General" }];
     if (this.draftNode && this.canShowFacetsTab(this.draftNode)) {
@@ -136,6 +150,12 @@ export class PropertiesPanel {
     return tabs;
   }
 
+  /**
+   * Renders the active tab.
+   *
+   * @param node - The draft node
+   * @returns The content of the tab
+   */
   private renderTabContent(node: DiagramItem): HTMLElement {
     switch (this.activeTab) {
       case "facets":
@@ -150,6 +170,13 @@ export class PropertiesPanel {
     }
   }
 
+  /**
+   * Renders the General tab: the name, the type fields, the namespaces of the schema, the cardinality,
+   * the constraints, the default and fixed values, the namespace and the attributes, as far as the node has them.
+   *
+   * @param node - The draft node
+   * @returns The content of the tab
+   */
   private renderGeneralTab(node: DiagramItem): HTMLElement {
     const root = document.createElement("div");
     root.className = "property-tab-content";
@@ -222,6 +249,13 @@ export class PropertiesPanel {
     return root;
   }
 
+  /**
+   * Renders the CARDINALITY section: minOccurs and maxOccurs fields and presets for common
+   * occurrences, which send the occurrence of the node.
+   *
+   * @param node - The draft node
+   * @returns The section
+   */
   private renderCardinalitySection(node: DiagramItem): HTMLElement {
     const section = document.createElement("div");
     section.className = "property-section";
@@ -308,6 +342,13 @@ export class PropertiesPanel {
     return section;
   }
 
+  /**
+   * Renders the CONSTRAINTS section: the nillable, abstract and mixed content toggles that apply to
+   * the element or complex type.
+   *
+   * @param node - The draft node
+   * @returns The section
+   */
   private renderConstraintsSection(node: DiagramItem): HTMLElement {
     const section = document.createElement("div");
     section.className = "property-section";
@@ -385,6 +426,12 @@ export class PropertiesPanel {
     return section;
   }
 
+  /**
+   * Tells whether the node has constraints to edit, which elements and complex types have.
+   *
+   * @param node - The draft node
+   * @returns True for elements and complex types
+   */
   private canShowConstraintsSection(node: DiagramItem): boolean {
     const nodeType = getNodeType(node);
     return (
@@ -393,10 +440,23 @@ export class PropertiesPanel {
     );
   }
 
+  /**
+   * Renders the Facets tab.
+   *
+   * @param node - The draft node
+   * @returns The content of the tab
+   */
   private renderFacetsTab(node: DiagramItem): HTMLElement {
     return renderFacetsTab(node, this.dispatchCommand, addPropertyToContainer);
   }
 
+  /**
+   * Tells whether the node has a Facets tab: a simple type, or an element with an inline simple
+   * type, that is a restriction.
+   *
+   * @param node - The draft node
+   * @returns True when the node has facets to edit
+   */
   private canShowFacetsTab(node: DiagramItem): boolean {
     if (resolveSimpleTypeId(node) === null) {
       return false;
@@ -407,6 +467,12 @@ export class PropertiesPanel {
     return true;
   }
 
+  /**
+   * Returns the type names that the type fields suggest: the built-in XSD types and the types of the
+   * current schema, with and without the prefix of its target namespace.
+   *
+   * @returns The type names
+   */
   private getTypeSuggestions(): string[] {
     const collected = new Set(BUILTIN_TYPE_SUGGESTIONS);
     const sourceNode = this.selectedNode ?? this.draftNode;
@@ -424,10 +490,23 @@ export class PropertiesPanel {
 
     return Array.from(collected);
   }
+
+  /**
+   * Renders the Docs tab, which renders the panel again after it adds or removes entries.
+   *
+   * @param node - The draft node
+   * @returns The content of the tab
+   */
   private renderDocsTab(node: DiagramItem): HTMLElement {
     return createDocsTab(node, this.dispatchCommand, () => this.render());
   }
 
+  /**
+   * Renders the XML tab: a read-only XSD fragment of the node with a hint that it is a preview.
+   *
+   * @param node - The draft node
+   * @returns The content of the tab
+   */
   private renderXmlTab(node: DiagramItem): HTMLElement {
     const root = document.createElement("div");
     root.className = "property-tab-content property-tab-content-xml";

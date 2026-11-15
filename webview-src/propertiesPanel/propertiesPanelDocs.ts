@@ -132,6 +132,7 @@ function updateDocumentationEntriesAtIndex(
  * @param label - Button label
  * @param onClick - Click handler to invoke
  * @param isDestructive - Whether the action removes data
+ * @param showLabel - Whether the label is shown next to the icon; otherwise it is only the tooltip and the accessible name
  * @returns The configured button element
  */
 function createActionButton(
@@ -314,6 +315,8 @@ function createAnnotationSection(
  * @param dispatchCommand - Callback used to emit schema-edit commands
  * @param rerender - Callback that re-renders the PropertiesPanel after structural edits
  * @returns The rendered Docs-tab container
+ * @throws {Error} If the node has no documentation and no node that documentation can be added to;
+ *   every node of the diagram has one
  */
 export function createDocsTab(
   node: DiagramItem,
@@ -326,10 +329,7 @@ export function createDocsTab(
   if (node.documentationAnnotations.length === 0) {
     const targetId = resolveDocumentationTargetId(node);
     if (!targetId) {
-      const message = document.createElement("p");
-      message.textContent = "Documentation cannot be edited for this node.";
-      root.appendChild(message);
-      return root;
+      throw new Error(`Documentation cannot be added to ${node.id}`);
     }
 
     root.appendChild(

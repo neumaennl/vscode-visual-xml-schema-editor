@@ -1,14 +1,12 @@
 /**
- * Unit tests for the XML tab of the properties panel and the XSD fragment it shows.
+ * Unit tests for the XSD fragment that the XML tab of the properties panel shows.
  *
  * The fragment shows the attributes, annotations and facets of the node and one level of its
  * children, and may differ from the exact schema XML (see docs/ux-concept.md). The tests build the
  * diagram from real schemas, so the nodes look like the ones the user selects.
  */
 
-import { PropertiesPanel } from "./propertiesPanel";
 import { buildXmlPreview } from "./propertiesPanelXmlPreview";
-import { findButton } from "../__tests__/propertiesPanelTestHelpers";
 import { diagramItem } from "../__tests__/diagramTestHelpers";
 import { unmarshal } from "@neumaennl/xmlbind-ts";
 import { schema } from "../../shared/types";
@@ -43,20 +41,10 @@ const PREVIEW_NODES = `<xs:element name="code" type="xs:string" nillable="true" 
 <xs:complexType name="WithRef"><xs:sequence><xs:group ref="Contact" minOccurs="0"/></xs:sequence></xs:complexType>
 <xs:element name="pair"><xs:complexType><xs:attribute name="key" type="xs:string"/></xs:complexType></xs:element>`;
 
-describe("PropertiesPanel: the XML tab", () => {
+describe("buildXmlPreview", () => {
   beforeEach(() => {
     // The diagram builder logs every schema it builds
     vi.spyOn(console, "log").mockImplementation(() => undefined);
-  });
-
-  test("shows the XSD fragment of the selected node", () => {
-    const container = document.createElement("div");
-    const item = diagramItem(schemaWith(PREVIEW_NODES), "/element:code");
-
-    new PropertiesPanel(container).display(item);
-    findButton(container, "XML")?.click();
-
-    expect(container.querySelector("pre")?.textContent).toBe(buildXmlPreview(item));
   });
 
   test.each([

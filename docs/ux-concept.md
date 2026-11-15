@@ -4,8 +4,8 @@ title: UX concept
 description: The interaction model of the editor - which surface adds, edits and deletes what, how facets work, and how the properties panel behaves - with a list of what the current editor does not implement yet.
 tags: [ux, editor, palette, properties-panel, facets, context-menu, toolbar]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-11T19:28:57Z }
-verified: { by: human:neumaennl, at: 2026-11-11T19:31:18Z }
+generated: { by: human:neumaennl, at: 2026-11-15T17:30:13Z }
+verified: { by: human:neumaennl, at: 2026-11-15T17:40:45Z }
 sources:
   - id: palette-items
     resource: ../webview-src/palette/PaletteItems.ts
@@ -152,7 +152,7 @@ The panel header has a delete button for the selected node.[^panel-commands]
 
 - Each documentation entry is a text field that commits on blur or Enter, like all other fields. There is no save button.
 - Documentation entries can be added and removed, each with its language (`xml:lang`). The schema root can have several annotations, which can be added and removed; other nodes show only their first annotation.
-- Nodes without a target for documentation show "Documentation cannot be edited for this node."[^panel-docs]
+- New documentation goes to the node itself, or for an element with an anonymous type to that type, where the diagram builder also reads it. Every node of the diagram has such a target.[^panel-docs]
 
 ## XML
 

@@ -28,6 +28,12 @@ function optionalAttributes(attributes: Array<[name: string, value: string | und
   return attributes.filter((attribute): attribute is XmlAttr => attribute[1] !== undefined);
 }
 
+/**
+ * Escapes the characters that XML does not allow in attribute values and text.
+ *
+ * @param value - The text
+ * @returns The escaped text
+ */
 function escapeXml(value: string): string {
   return value
     .replace(/&/g, "&amp;")
@@ -37,10 +43,22 @@ function escapeXml(value: string): string {
     .replace(/'/g, "&apos;");
 }
 
+/**
+ * Returns the indentation of a line.
+ *
+ * @param level - The indentation level
+ * @returns The spaces
+ */
 function pad(level: number): string {
   return INDENT.repeat(level);
 }
 
+/**
+ * Writes attributes as they follow the name of a tag, each with a leading space.
+ *
+ * @param attributes - The attributes
+ * @returns The attributes, or an empty string without attributes
+ */
 function toAttrString(attributes: XmlAttr[]): string {
   if (attributes.length === 0) {
     return "";
@@ -48,6 +66,15 @@ function toAttrString(attributes: XmlAttr[]): string {
   return attributes.map(([name, value]) => ` ${name}="${escapeXml(value)}"`).join("");
 }
 
+/**
+ * Writes an element with its attributes and children, or as an empty tag without children.
+ *
+ * @param tagName - The name of the element
+ * @param attributes - The attributes
+ * @param children - The lines of the children, already indented
+ * @param level - The indentation level
+ * @returns The lines of the element
+ */
 function renderTag(tagName: string, attributes: XmlAttr[], children: string[], level: number): string {
   const prefix = pad(level);
   const attrText = toAttrString(attributes);
@@ -57,10 +84,25 @@ function renderTag(tagName: string, attributes: XmlAttr[], children: string[], l
   return `${prefix}<${tagName}${attrText}>\n${children.join("\n")}\n${prefix}</${tagName}>`;
 }
 
+/**
+ * Writes the comment that marks children the preview leaves out.
+ *
+ * @param level - The indentation level
+ * @returns The line
+ */
 function renderTruncationMarker(level: number): string {
   return `${pad(level)}${TRUNCATION_MARKER}`;
 }
 
+/**
+ * Writes the children of a node, at most {@link MAX_PREVIEW_CHILDREN_PER_NODE} and only
+ * {@link MAX_PREVIEW_DESCENDANT_DEPTH} levels below the selected node; the rest is marked as truncated.
+ *
+ * @param children - The children
+ * @param level - The indentation level
+ * @param depth - How many levels below the selected node the node is
+ * @returns The lines of the children
+ */
 function renderChildNodes(children: DiagramItem[], level: number, depth: number): string[] {
   if (children.length === 0) {
     return [];
@@ -79,10 +121,23 @@ function renderChildNodes(children: DiagramItem[], level: number, depth: number)
   return rendered;
 }
 
+/**
+ * Writes the value of `maxOccurs`, which the diagram stores as -1 for `unbounded`.
+ *
+ * @param maxOccurs - The value of the diagram item
+ * @returns The value of the attribute
+ */
 function formatMaxOccurs(maxOccurs: number): string {
   return maxOccurs === -1 ? "unbounded" : String(maxOccurs);
 }
 
+/**
+ * Adds `minOccurs` and `maxOccurs` to attributes, by default only when they differ from 1.
+ *
+ * @param attributes - The attributes, which are changed
+ * @param node - The node with the occurrence
+ * @param includeDefaults - Whether to add them when they are 1, too
+ */
 function appendOccurrenceAttributes(attributes: XmlAttr[], node: DiagramItem, includeDefaults: boolean): void {
   if (includeDefaults || node.minOccurrence !== 1) {
     attributes.push(["minOccurs", String(node.minOccurrence)]);
@@ -92,6 +147,14 @@ function appendOccurrenceAttributes(attributes: XmlAttr[], node: DiagramItem, in
   }
 }
 
+/**
+ * Writes an `xs:documentation` element on one line.
+ *
+ * @param content - The text of the documentation
+ * @param lang - The language (`xml:lang`), if it has one
+ * @param level - The indentation level
+ * @returns The line
+ */
 function renderDocumentationNode(content: string, lang: string | undefined, level: number): string {
   const attrs: XmlAttr[] = [];
   if (lang) {
@@ -104,6 +167,13 @@ function renderDocumentationNode(content: string, lang: string | undefined, leve
   return `${prefix}<xs:documentation${toAttrString(attrs)}>${escapeXml(content)}</xs:documentation>`;
 }
 
+/**
+ * Writes the `xs:annotation` elements of a node with their documentation.
+ *
+ * @param node - The node
+ * @param level - The indentation level
+ * @returns The lines of the annotations
+ */
 function renderAnnotations(node: DiagramItem, level: number): string[] {
   return node.documentationAnnotations.map((annotation) => {
     const documentationChildren = annotation.documentationEntries.map((entry) =>
@@ -113,6 +183,13 @@ function renderAnnotations(node: DiagramItem, level: number): string[] {
   });
 }
 
+/**
+ * Writes the `xs:attribute` elements of a node.
+ *
+ * @param node - The node
+ * @param level - The indentation level
+ * @returns The lines of the attributes
+ */
 function renderAttributeNodes(node: DiagramItem, level: number): string[] {
   return node.attributes.map((attribute) => {
     const attrs: XmlAttr[] = [
@@ -128,6 +205,13 @@ function renderAttributeNodes(node: DiagramItem, level: number): string[] {
   });
 }
 
+/**
+ * Writes the facets of a restriction: the enumeration values and patterns, then the other facets.
+ *
+ * @param node - The node with the restriction
+ * @param level - The indentation level
+ * @returns The lines of the facets
+ */
 function renderRestrictionFacets(node: DiagramItem, level: number): string[] {
   const restrictions = node.restrictions;
   if (!restrictions) {
@@ -166,6 +250,14 @@ function renderRestrictionFacets(node: DiagramItem, level: number): string[] {
   return facets;
 }
 
+/**
+ * Writes the body of a simple type: an `xs:list`, an `xs:union`, or an `xs:restriction` with its
+ * base type and facets.
+ *
+ * @param node - The simple type, or the element with the inline simple type
+ * @param level - The indentation level
+ * @returns The lines of the body, empty when the type has neither a base type nor facets
+ */
 function renderSimpleTypeChildren(node: DiagramItem, level: number): string[] {
   const typeLabel = node.type.trim();
   const hasDerivedSummary = !!node.simpleTypeDerivationKind || typeLabel.includes("(");
@@ -200,6 +292,15 @@ function renderSimpleTypeChildren(node: DiagramItem, level: number): string[] {
   return [renderTag("xs:restriction", restrictionAttributes, facets, level)];
 }
 
+/**
+ * Writes the content of a complex type: a derivation in `xs:simpleContent` or `xs:complexContent`
+ * with its children and attributes, or the children and attributes themselves.
+ *
+ * @param node - The complex type, or the element with the inline complex type
+ * @param level - The indentation level
+ * @param depth - How many levels below the selected node the node is
+ * @returns The lines of the content
+ */
 function renderComplexTypeBody(node: DiagramItem, level: number, depth: number): string[] {
   const baseType = extractBaseType(node.type);
   if (baseType && node.complexDerivationKind) {
@@ -223,6 +324,15 @@ function renderComplexTypeBody(node: DiagramItem, level: number, depth: number):
   return [...renderChildNodes(node.childElements, level, depth), ...renderAttributeNodes(node, level)];
 }
 
+/**
+ * Writes an `xs:element` with its attributes, annotations and inline type or children.
+ *
+ * @param node - The element
+ * @param nodeType - The schema node type of the element
+ * @param level - The indentation level
+ * @param depth - How many levels below the selected node the node is
+ * @returns The lines of the element
+ */
 function renderElementNode(node: DiagramItem, nodeType: SchemaNodeType | null, level: number, depth: number): string {
   const attributes: XmlAttr[] = [["name", node.name]];
 
@@ -263,6 +373,15 @@ function renderElementNode(node: DiagramItem, nodeType: SchemaNodeType | null, l
   return renderTag("xs:element", attributes, children, level);
 }
 
+/**
+ * Writes a group reference, a named group, or a compositor (`xs:sequence`, `xs:choice` or `xs:all`).
+ *
+ * @param node - The group, group reference or compositor
+ * @param nodeType - The schema node type of the node
+ * @param level - The indentation level
+ * @param depth - How many levels below the selected node the node is
+ * @returns The lines of the node
+ */
 function renderGroupNode(node: DiagramItem, nodeType: SchemaNodeType | null, level: number, depth: number): string {
   if (nodeType === SchemaNodeType.GroupRef || node.isReference) {
     const attrs: XmlAttr[] = [["ref", node.name]];
@@ -300,11 +419,26 @@ function renderGroupNode(node: DiagramItem, nodeType: SchemaNodeType | null, lev
   return renderTag(`xs:${compositor}`, attrs, children, level);
 }
 
+/**
+ * Writes a named `xs:simpleType` with its annotations and body.
+ *
+ * @param node - The simple type
+ * @param level - The indentation level
+ * @returns The lines of the type
+ */
 function renderSimpleTypeNode(node: DiagramItem, level: number): string {
   const children = [...renderAnnotations(node, level + 1), ...renderSimpleTypeChildren(node, level + 1)];
   return renderTag("xs:simpleType", [["name", node.name]], children, level);
 }
 
+/**
+ * Writes a named `xs:complexType` with its attributes, annotations and content.
+ *
+ * @param node - The complex type
+ * @param level - The indentation level
+ * @param depth - How many levels below the selected node the node is
+ * @returns The lines of the type
+ */
 function renderComplexTypeNode(node: DiagramItem, level: number, depth: number): string {
   const attrs: XmlAttr[] = [["name", node.name]];
   if (node.isAbstract) {
@@ -322,6 +456,15 @@ function renderComplexTypeNode(node: DiagramItem, level: number, depth: number):
   return renderTag("xs:complexType", attrs, children, level);
 }
 
+/**
+ * Writes the `xs:schema` element with the namespace declarations of the diagram, which always
+ * declare the `xs` prefix that the fragment uses, the target namespace, the annotations and the children.
+ *
+ * @param node - The schema node
+ * @param level - The indentation level
+ * @param depth - How many levels below the selected node the node is
+ * @returns The lines of the schema
+ */
 function renderSchemaNode(node: DiagramItem, level: number, depth: number): string {
   const attrs: XmlAttr[] = [];
 
@@ -351,6 +494,11 @@ function renderSchemaNode(node: DiagramItem, level: number, depth: number): stri
  * Renders a diagram item. The diagram builder creates items for the schema, elements, groups and
  * compositors, group references, and named simple and complex types; anonymous types are part of
  * their element.
+ *
+ * @param node - The diagram item
+ * @param level - The indentation level
+ * @param depth - How many levels below the selected node the node is
+ * @returns The lines of the item
  */
 function renderNode(node: DiagramItem, level: number, depth: number): string {
   const nodeType = getNodeType(node);
@@ -380,6 +528,9 @@ function renderNode(node: DiagramItem, level: number, depth: number): string {
 
 /**
  * Builds an XML fragment representing the currently selected diagram node.
+ *
+ * @param node - The selected diagram item
+ * @returns The fragment
  */
 export function buildXmlPreview(node: DiagramItem): string {
   return renderNode(node, 0, 0);

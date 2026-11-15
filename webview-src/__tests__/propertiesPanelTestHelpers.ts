@@ -80,6 +80,31 @@ export function getChipValuesByLabel(container: HTMLElement, label: string): str
 }
 
 /**
+ * Returns the text of the read-only field with the given label and fails the test if there is none.
+ *
+ * @param container - The element that holds the panel
+ * @param label - The label without the colon
+ * @returns The text of the field
+ */
+export function getTextByLabel(container: HTMLElement, label: string): string {
+  const match = findLabel(container, label);
+  expect(match).toBeDefined();
+  const text = match?.parentElement?.querySelector(":scope > span");
+  expect(text).toBeInstanceOf(HTMLSpanElement);
+  return text?.textContent ?? "";
+}
+
+/**
+ * Returns the labels of the fields of the container, without the colons.
+ *
+ * @param container - The element that holds the panel
+ * @returns The labels, in document order
+ */
+export function getLabels(container: HTMLElement): string[] {
+  return Array.from(container.querySelectorAll("label"), (label) => label.textContent.replace(/:$/, ""));
+}
+
+/**
  * Tells whether the container has a field with the given label.
  *
  * @param container - The element that holds the panel

@@ -50,6 +50,10 @@ export function collectLocalSchemaTypeNames(node: DiagramItem): ReadonlySet<stri
 /**
  * Normalizes a type reference entered in the properties panel.
  * For local schema types, this prefixes with the schema targetNamespace prefix when available.
+ *
+ * @param node - Diagram item whose schema the type belongs to
+ * @param nextType - The entered type reference
+ * @returns The trimmed reference, with the prefix of the target namespace for a type of the schema
  */
 export function normalizeTypeReferenceForCurrentSchema(
   node: DiagramItem,

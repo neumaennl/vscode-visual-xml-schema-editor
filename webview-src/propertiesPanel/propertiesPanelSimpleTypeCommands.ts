@@ -3,7 +3,7 @@
  */
 
 import { SchemaCommand } from "../../shared/types";
-import { DiagramItem, parseDerivationBaseType, toRestrictionFacets } from "../diagram";
+import { DiagramItem, parseDerivationBaseType } from "../diagram";
 import { normalizeTypeReferenceForCurrentSchema, resolveSimpleTypeId } from "./propertiesPanelCommands";
 
 /**
@@ -83,68 +83,34 @@ export function createSimpleTypeUnionCommand(
 }
 
 /**
- * Builds a simpleType derivation-kind switch command for the selected node.
+ * Builds the command that switches a simple type to another derivation kind. The new body is derived
+ * from the current one: from the item type of a list, the first member type of a union or the base
+ * type of a restriction. The properties panel only calls it with a kind other than the current one,
+ * so a list or a union has no facets to keep.
  *
  * @param node - Diagram item being edited
- * @param nextKind - The new simpleType derivation kind
- * @returns A schema command or null when the node/kind is not editable
+ * @param nextKind - The new simpleType derivation kind, which differs from the current one
+ * @returns A schema command, or null when the node has no simple type or no type to derive the new body from
  */
 export function createSimpleTypeKindCommand(
   node: DiagramItem,
   nextKind: "restriction" | "list" | "union"
 ): SchemaCommand | null {
   const simpleTypeId = resolveSimpleTypeId(node);
-  if (!simpleTypeId) {
-    return null;
-  }
-
-  const inferredBaseType =
+  const baseType =
     node.simpleTypeListItemType ||
     node.simpleTypeUnionMemberTypes?.[0] ||
     extractBaseType(node.type);
+  if (!simpleTypeId || !baseType) {
+    return null;
+  }
 
   switch (nextKind) {
-    case "list": {
-      if (!inferredBaseType) {
-        return null;
-      }
-      return {
-        type: "modifySimpleType",
-        payload: {
-          typeId: simpleTypeId,
-          listItemType: inferredBaseType,
-        },
-      };
-    }
-    case "union": {
-      let memberTypes = node.simpleTypeUnionMemberTypes;
-      if (!memberTypes?.length) {
-        memberTypes = inferredBaseType ? [inferredBaseType] : undefined;
-      }
-      if (!memberTypes?.length) {
-        return null;
-      }
-      return {
-        type: "modifySimpleType",
-        payload: {
-          typeId: simpleTypeId,
-          unionMemberTypes: memberTypes,
-        },
-      };
-    }
-    case "restriction": {
-      if (!inferredBaseType && !node.restrictions) {
-        return null;
-      }
-      const restrictions = toRestrictionFacets(node.restrictions);
-      return {
-        type: "modifySimpleType",
-        payload: {
-          typeId: simpleTypeId,
-          baseType: inferredBaseType ?? "",
-          ...(restrictions ? { restrictions } : {}),
-        },
-      };
-    }
+    case "list":
+      return { type: "modifySimpleType", payload: { typeId: simpleTypeId, listItemType: baseType } };
+    case "union":
+      return { type: "modifySimpleType", payload: { typeId: simpleTypeId, unionMemberTypes: [baseType] } };
+    case "restriction":
+      return { type: "modifySimpleType", payload: { typeId: simpleTypeId, baseType } };
   }
 }

@@ -43,6 +43,7 @@ const VALUE_FACETS: ValueFacet[] = [
  * @param dispatchCommand - Callback used to emit schema commands
  * @param addPropertyToContainer - Helper used for read-only property rows
  * @returns The rendered tab element
+ * @throws {Error} If the node has no simple type; the panel only offers the tab for simple types
  */
 export function renderFacetsTab(
   node: DiagramItem,
@@ -55,8 +56,7 @@ export function renderFacetsTab(
   const restrictions = node.restrictions;
   const simpleTypeId = resolveSimpleTypeId(node);
   if (!simpleTypeId) {
-    addPropertyToContainer(root, "Facets", "Facets can only be edited for simple types");
-    return root;
+    throw new Error(`The Facets tab is only shown for simple types, not for ${node.id}`);
   }
 
   if (!restrictions || !hasEditableFacetValues(restrictions)) {
@@ -172,6 +172,12 @@ function appendOptionalValueFacet(
   );
 }
 
+/**
+ * Counts the facets of a restriction that have a value; an empty list of values counts as no facet.
+ *
+ * @param restrictions - The facets
+ * @returns The number of facets with a value
+ */
 function countDefinedFacets(restrictions: RestrictionSnapshot): number {
   // Object.values() drops undefined from the types of optional properties, but the draft sets them to undefined
   const values: Array<RestrictionSnapshot[keyof RestrictionSnapshot]> = Object.values(restrictions);

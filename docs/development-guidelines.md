@@ -1,11 +1,11 @@
 ---
 type: Guideline
 title: Development guidelines
-description: Rules for everyone who changes the extension - code size, code quality and ESLint, TypeScript and naming, VS Code and Node versions, TSDoc, tests, documentation and the knowledge bundle, issues, what to check before committing, and commits.
+description: Rules for everyone who changes the extension - code size, code quality and ESLint, structure reviews, TypeScript and naming, VS Code and Node versions, TSDoc, tests, documentation and the knowledge bundle, issues, what to check before committing, and commits.
 tags: [guidelines, conventions, code-quality, typescript, documentation, workflow]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-14T22:13:38Z }
-verified: { by: human:neumaennl, at: 2026-11-14T22:14:45Z }
+generated: { by: human:neumaennl, at: 2026-11-15T11:01:30Z }
+verified: { by: human:neumaennl, at: 2026-11-15T11:04:58Z }
 sources:
   - id: eslint
     resource: ../eslint.config.mjs
@@ -50,6 +50,21 @@ ESLint checks the limits for tests (`max-lines` and the local rule `tests/max-li
 - Exclude duplicated code from jscpd only as a last resort. Put `// jscpd:ignore-start` and `// jscpd:ignore-end` around it, with a comment that gives the reason.
 - Have the changes reviewed by Copilot code review and handle its comments. If you do not follow a comment, give the reason.
 - After changes made because of review comments, request another review. Merge a pull request only when the last review has no findings, or when each remaining finding is dismissed for a good reason, given as a reply to the comment.
+
+# Structure reviews
+
+Reviews of single changes don't show whether the structure of the code as a whole still fits. So the structure is reviewed at fixed points:
+
+- at the end of each phase of the roadmap;
+- before each large redesign, as part of planning it.
+
+A review checks:
+- the responsibilities of the parts;
+- the direction of the dependencies;
+- the [Principles](architecture.md#principles);
+- code that the extension host and the webview each write on their own.
+
+The reports of the duplicate check and the unused-code check are inputs. The review updates [Architecture](architecture.md) and records its decisions as ADRs. What doesn't fit becomes a known issue.
 
 # TypeScript
 

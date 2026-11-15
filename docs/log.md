@@ -1,5 +1,9 @@
 # Knowledge Bundle Update Log
 
+## 2026-11-15
+* **Update**: [Development guidelines](development-guidelines.md#structure-reviews): new section "Structure reviews": the structure of the code is reviewed at the end of each phase and before each large redesign ([#448](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/448)).
+* **Update**: [Known issues](known-issues.md#unused-code-is-not-detected-automatically): new entry "Unused code is not detected automatically", which "Duplicated and dead code" links ([#447](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/447)).
+
 ## 2026-11-14
 * **Update**: [Development guidelines](development-guidelines.md#commits): the commits of work approved step by step stay separate if each has a purpose of its own and the maintainer agrees; the last one then closes the issue.
 * **Update**: [Build and packaging](build-and-packaging.md#lint) describes that `npm run lint` runs ESLint and jscpd in parallel with `concurrently`, and the settings of jscpd in a new section [Duplicated code](build-and-packaging.md#duplicated-code); CI runs both. The [development guidelines](development-guidelines.md#code-quality) say that `npm run lint` reports duplicated code, also in tests, and how to exclude code from the check. [Known issues](known-issues.md): removed "Duplicated code is not detected automatically" ([#439](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/439)); "Duplicated and dead code" now covers dead code and duplicated logic that is written differently, which jscpd cannot find.

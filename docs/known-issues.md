@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-15T17:29:59Z }
-verified: { by: human:neumaennl, at: 2026-11-15T17:40:45Z }
+generated: { by: human:neumaennl, at: 2026-11-15T20:24:38Z }
+verified: { by: human:neumaennl, at: 2026-11-15T20:28:10Z }
 ---
 
 # Purpose
@@ -42,7 +42,7 @@ Effort:
 - **Severity:** High
 - **Effort:** S
 - **Description:** An element whose inline simple type has no single base type, such as `<xs:element name="short"><xs:simpleType><xs:restriction><xs:simpleType><xs:restriction base="xs:string"/></xs:simpleType></xs:restriction></xs:simpleType></xs:element>`, shows a "Replacement Type" field with the hint that a replacement type removes the inline simple type. Entering `xs:token` sends `modifySimpleType` with `baseType: "xs:token"` for `/element:short/anonymousSimpleType[0]` instead of `modifyElement` with `elementType`: the inline type stays, and its inline base type is replaced by `xs:token`. The draft in the panel shows the element with the type `xs:token` until the diagram is rebuilt. `createTypeCommand()` builds the base type command for every element with `isSimpleContent`; the replacement of inline lists, unions and restrictions with a base type uses `renderInlineSimpleTypeReplacement()`, which sends `modifyElement`. The fix is to send `modifyElement` there as well.
-- **GitHub issue:** none
+- **GitHub issue:** [#450](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/450)
 
 ## Node IDs are ambiguous and have many special cases
 
@@ -147,7 +147,7 @@ Effort:
 - **Severity:** Medium
 - **Effort:** S
 - **Description:** The diagram builder sets `isSimpleContent` on a named complex type with `xs:simpleContent`, such as `<xs:complexType name="Price"><xs:simpleContent><xs:extension base="xs:decimal">…</xs:extension></xs:simpleContent></xs:complexType>`, labelled `complexType with simpleContent (extends xs:decimal)`. The General tab reads the flag as an inline simple type and shows "Type: Inline simpleType (restricts xs:decimal)", which is neither inline nor a restriction. It also offers a "Base Type" field, whose change sends `modifyComplexType` with a `baseType`, which the validator rejects for types with simple content (see [Complex types with simple content cannot be created or derived](#complex-types-with-simple-content-cannot-be-created-or-derived)). Elements with such an inline complex type have the same cause (see [Inline complex types with simple content are treated as inline simple types](#inline-complex-types-with-simple-content-are-treated-as-inline-simple-types)). The fix is to show the label of the diagram builder and the base type read-only for complex types with simple content.
-- **GitHub issue:** none
+- **GitHub issue:** [#451](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/451)
 
 ## Restricted complex content is shown without content
 

@@ -71,7 +71,7 @@ const PERSON_TYPE_WITH_GROUP_REF = `<xs:group name="PersonGroup"><xs:sequence/><
  * @returns The texts
  */
 function firstGroupRefDocumentation(schemaObj: schema): Array<string | undefined> {
-  const ref = schemaObj.complexType?.[0].sequence?.group?.[0];
+  const ref = schemaObj.complexType?.[0]!.sequence?.group?.[0];
   return (ref?.annotation?.documentation ?? []).map((d) => d.value);
 }
 
@@ -83,7 +83,7 @@ describe("Group Executors", () => {
       addGroup(schemaObj, { groupName: "PersonGroup", contentModel: model });
 
       expect(schemaObj.group).toHaveLength(1);
-      const grp = schemaObj.group![0];
+      const grp = schemaObj.group![0]!;
       expect(grp.name).toBe("PersonGroup");
       expect((["sequence", "choice", "all"] as const).filter((m) => grp[m] !== undefined)).toEqual([model]);
     });
@@ -97,9 +97,9 @@ describe("Group Executors", () => {
         documentation: "A documented group",
       });
 
-      const grp = schemaObj.group![0];
+      const grp = schemaObj.group![0]!;
       expect(grp.annotation).toBeDefined();
-      expect(grp.annotation!.documentation![0].value).toBe("A documented group");
+      expect(grp.annotation!.documentation![0]!.value).toBe("A documented group");
     });
 
     test("should append to existing groups", () => {
@@ -113,7 +113,7 @@ describe("Group Executors", () => {
       });
 
       expect(schemaObj.group ?? []).toHaveLength(2);
-      expect((schemaObj.group ?? [])[1].name).toBe("NewGroup");
+      expect((schemaObj.group ?? [])[1]!.name).toBe("NewGroup");
     });
 
     test("should produce valid XSD output (round-trip)", () => {
@@ -126,8 +126,8 @@ describe("Group Executors", () => {
 
       const groups = unmarshal(schema, marshal(schemaObj)).group ?? [];
       expect(groups).toHaveLength(1);
-      expect(groups[0].name).toBe("MyGroup");
-      expect(groups[0].sequence).toBeDefined();
+      expect(groups[0]!.name).toBe("MyGroup");
+      expect(groups[0]!.sequence).toBeDefined();
     });
   });
 
@@ -157,7 +157,7 @@ describe("Group Executors", () => {
       });
 
       expect(schemaObj.group ?? []).toHaveLength(1);
-      expect((schemaObj.group ?? [])[0].name).toBe("GroupB");
+      expect((schemaObj.group ?? [])[0]!.name).toBe("GroupB");
     });
 
     test("should remove a compositor group from a complexType", () => {
@@ -167,7 +167,7 @@ describe("Group Executors", () => {
         groupId: "/complexType:PersonType/group:sequence[0]",
       });
 
-      expect((schemaObj.complexType ?? [])[0].sequence).toBeUndefined();
+      expect((schemaObj.complexType ?? [])[0]!.sequence).toBeUndefined();
     });
 
   });
@@ -183,7 +183,7 @@ describe("Group Executors", () => {
         groupName: "NewName",
       });
 
-      const grp = (schemaObj.group ?? [])[0];
+      const grp = (schemaObj.group ?? [])[0]!;
       expect(grp.name).toBe("NewName");
     });
 
@@ -200,8 +200,8 @@ describe("Group Executors", () => {
         groupName: "NewName",
       });
 
-      expect((schemaObj.group ?? [])[0].name).toBe("NewName");
-      expect((schemaObj.complexType ?? [])[0].group!.ref).toBe("NewName");
+      expect((schemaObj.group ?? [])[0]!.name).toBe("NewName");
+      expect((schemaObj.complexType ?? [])[0]!.group!.ref).toBe("NewName");
     });
 
     test("should change the content model of a group", () => {
@@ -214,7 +214,7 @@ describe("Group Executors", () => {
         contentModel: "choice",
       });
 
-      const grp = (schemaObj.group ?? [])[0];
+      const grp = (schemaObj.group ?? [])[0]!;
       expect(grp.choice).toBeDefined();
       expect(grp.sequence).toBeUndefined();
       expect(grp.all).toBeUndefined();
@@ -230,9 +230,9 @@ describe("Group Executors", () => {
         documentation: "Updated documentation",
       });
 
-      const grp = (schemaObj.group ?? [])[0];
+      const grp = (schemaObj.group ?? [])[0]!;
       expect(grp.annotation).toBeDefined();
-      expect(grp.annotation!.documentation![0].value).toBe(
+      expect(grp.annotation!.documentation![0]!.value).toBe(
         "Updated documentation"
       );
     });
@@ -249,11 +249,11 @@ describe("Group Executors", () => {
         documentation: "New doc",
       });
 
-      const grp = (schemaObj.group ?? [])[0];
+      const grp = (schemaObj.group ?? [])[0]!;
       expect(grp.name).toBe("UpdatedGroup");
       expect(grp.all).toBeDefined();
       expect(grp.sequence).toBeUndefined();
-      expect(grp.annotation!.documentation![0].value).toBe("New doc");
+      expect(grp.annotation!.documentation![0]!.value).toBe("New doc");
     });
 
     test("should leave unchanged properties untouched", () => {
@@ -266,7 +266,7 @@ describe("Group Executors", () => {
         // No changes provided
       });
 
-      const grp = (schemaObj.group ?? [])[0];
+      const grp = (schemaObj.group ?? [])[0]!;
       expect(grp.name).toBe("StableGroup");
       expect(grp.sequence).toBeDefined();
     });
@@ -280,7 +280,7 @@ describe("Group Executors", () => {
         maxOccurs: "unbounded",
       });
 
-      const sequence = (schemaObj.complexType ?? [])[0].sequence;
+      const sequence = (schemaObj.complexType ?? [])[0]!.sequence;
       expect(sequence?.minOccurs).toBe(0);
       expect(sequence?.maxOccurs).toBe("unbounded");
     });
@@ -296,10 +296,10 @@ describe("Group Executors", () => {
           parentId: "/complexType:PersonType/group:sequence[0]",
         });
 
-        const ct = (schemaObj.complexType ?? [])[0];
+        const ct = (schemaObj.complexType ?? [])[0]!;
         const refs = ct.sequence!.group ?? [];
         expect(refs).toHaveLength(1);
-        expect(refs[0].ref).toBe("PersonGroup");
+        expect(refs[0]!.ref).toBe("PersonGroup");
       });
 
       test("should add a group reference with minOccurs and maxOccurs", () => {
@@ -312,7 +312,7 @@ describe("Group Executors", () => {
           maxOccurs: "unbounded",
         });
 
-        const ref = ((schemaObj.complexType ?? [])[0].sequence!.group ?? [])[0];
+        const ref = ((schemaObj.complexType ?? [])[0]!.sequence!.group ?? [])[0]!;
         expect(ref.ref).toBe("PersonGroup");
         expect(ref.minOccurs).toBe(0);
         expect(ref.maxOccurs).toBe("unbounded");
@@ -330,10 +330,10 @@ describe("Group Executors", () => {
           schemaObj
         );
 
-        const refs = (schemaObj.complexType ?? [])[0].sequence!.group ?? [];
+        const refs = (schemaObj.complexType ?? [])[0]!.sequence!.group ?? [];
         expect(refs).toHaveLength(2);
-        expect(refs[0].ref).toBe("PersonGroup");
-        expect(refs[1].ref).toBe("AddressGroup");
+        expect(refs[0]!.ref).toBe("PersonGroup");
+        expect(refs[1]!.ref).toBe("AddressGroup");
       });
 
       test("should add a direct group reference on a complexType", () => {
@@ -344,7 +344,7 @@ describe("Group Executors", () => {
           parentId: "/complexType:PersonType",
         });
 
-        const ct = (schemaObj.complexType ?? [])[0];
+        const ct = (schemaObj.complexType ?? [])[0]!;
         expect(ct.group).toBeDefined();
         expect(ct.group!.ref).toBe("PersonGroup");
       });
@@ -369,7 +369,7 @@ expect(firstGroupRefDocumentation(schemaObj)).toEqual(["A person group ref annot
 
         removeGroup(schemaObj, { groupId: "/complexType:PersonType/group:sequence[0]/groupRef:PersonGroup[0]" });
 
-        const refs = (schemaObj.complexType ?? [])[0].sequence?.group ?? [];
+        const refs = (schemaObj.complexType ?? [])[0]!.sequence?.group ?? [];
         expect(refs).toHaveLength(0);
       });
 
@@ -378,9 +378,9 @@ expect(firstGroupRefDocumentation(schemaObj)).toEqual(["A person group ref annot
 
         removeGroup(schemaObj, { groupId: "/complexType:PersonType/group:sequence[0]/groupRef:PersonGroup[0]" });
 
-        const refs = (schemaObj.complexType ?? [])[0].sequence!.group ?? [];
+        const refs = (schemaObj.complexType ?? [])[0]!.sequence!.group ?? [];
         expect(refs).toHaveLength(1);
-        expect(refs[0].ref).toBe("AddressGroup");
+        expect(refs[0]!.ref).toBe("AddressGroup");
       });
 
       test("should remove a direct group ref from a complexType", () => {
@@ -388,7 +388,7 @@ expect(firstGroupRefDocumentation(schemaObj)).toEqual(["A person group ref annot
 
         removeGroup(schemaObj, { groupId: "/complexType:PersonType/groupRef:PersonGroup[0]" });
 
-        const ct = (schemaObj.complexType ?? [])[0];
+        const ct = (schemaObj.complexType ?? [])[0]!;
         expect(ct.group).toBeUndefined();
       });
     });
@@ -402,8 +402,8 @@ expect(firstGroupRefDocumentation(schemaObj)).toEqual(["A person group ref annot
           ref: "AddressGroup",
         });
 
-        const refs = (schemaObj.complexType ?? [])[0].sequence!.group ?? [];
-        expect(refs[0].ref).toBe("AddressGroup");
+        const refs = (schemaObj.complexType ?? [])[0]!.sequence!.group ?? [];
+        expect(refs[0]!.ref).toBe("AddressGroup");
       });
 
       test("should update minOccurs and maxOccurs on a group reference", () => {
@@ -415,7 +415,7 @@ expect(firstGroupRefDocumentation(schemaObj)).toEqual(["A person group ref annot
           maxOccurs: "unbounded",
         });
 
-        const ref = ((schemaObj.complexType ?? [])[0].sequence!.group ?? [])[0];
+        const ref = ((schemaObj.complexType ?? [])[0]!.sequence!.group ?? [])[0]!;
         expect(ref.minOccurs).toBe(0);
         expect(ref.maxOccurs).toBe("unbounded");
       });
@@ -439,7 +439,7 @@ expect(firstGroupRefDocumentation(schemaObj)).toEqual(["Updated ref annotation"]
           ref: "AddressGroup",
         });
 
-        const ct = (schemaObj.complexType ?? [])[0];
+        const ct = (schemaObj.complexType ?? [])[0]!;
         expect(ct.group!.ref).toBe("AddressGroup");
       });
     });

@@ -4,8 +4,8 @@ title: Development guidelines
 description: Rules for everyone who changes the extension - code size, code quality and ESLint, structure reviews, TypeScript and naming, VS Code and Node versions, TSDoc, tests, documentation and the knowledge bundle, issues, what to check before committing, and commits.
 tags: [guidelines, conventions, code-quality, typescript, documentation, workflow]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-16T16:07:40Z }
-verified: { by: human:neumaennl, at: 2026-11-16T16:23:50Z }
+generated: { by: human:neumaennl, at: 2026-11-16T16:34:30Z }
+verified: { by: human:neumaennl, at: 2026-11-16T19:10:57Z }
 sources:
   - id: eslint
     resource: ../eslint.config.mjs
@@ -70,6 +70,7 @@ The reports of the duplicate check and the unused-code check are inputs. The rev
 
 - The TypeScript configuration is `strict`. `any` is not allowed (ESLint reports it as an error).[^tsconfig][^eslint]
 - Unused variables, imports, parameters and private class members are errors (ESLint), and so is unreachable code (TypeScript). Prefix a parameter that must exist but is not used with `_`.[^tsconfig][^eslint]
+- An index access, such as `items[0]` or `prefixes[prefix]`, may return `undefined` (`noUncheckedIndexedAccess`). Check the value, or avoid the index with `for…of`, `forEach()`, `find()` or `at()`. Groups of a regular expression are read with `requireGroup()` from `shared/regexUtils.ts`. In tests, a non-null assertion (`items[0]!`) is fine, because a wrong assumption makes the test fail.[^tsconfig]
 - Define interfaces or types for all data structures. Commands and messages are discriminated unions (see [Commands](commands.md) and [Messaging](messaging.md)).
 - Names: PascalCase for classes, interfaces and types; camelCase for functions, methods and variables; UPPER_CASE for module-level constants. Names say what something is or does.
 - Length of names: clarity comes first, but keep them short. Aim for less than 15 characters; 25 to 30 is the upper limit. `createElement` is better than `createElementWithChildren`; `createElementNodeWithProcessingOfAnonymousTypes` is too long, `cen` too cryptic.

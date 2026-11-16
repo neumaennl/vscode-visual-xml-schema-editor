@@ -69,6 +69,7 @@ export function stubEditor(xml: string): EditorStubs {
  *
  * @param editor - The provider and the stubs from {@link stubEditor}
  * @returns The message handler
+ * @throws An {@link Error} if the provider registered no message handler
  */
 export function resolveAndGetHandler(editor: EditorStubs): (msg: unknown) => void {
   const { provider, document, webviewPanel } = editor;
@@ -77,7 +78,10 @@ export function resolveAndGetHandler(editor: EditorStubs): (msg: unknown) => voi
   type ListenerFn = (msg: unknown) => void;
   type OnReceiveMock = MockedFunction<(listener: ListenerFn) => vscode.Disposable>;
   const onReceiveMock = webviewPanel.webview.onDidReceiveMessage as OnReceiveMock;
-  const handler = onReceiveMock.mock.calls[0][0];
+  const handler = onReceiveMock.mock.calls[0]?.[0];
+  if (!handler) {
+    throw new Error("The provider registered no message handler");
+  }
   vi.clearAllMocks();
   return handler;
 }

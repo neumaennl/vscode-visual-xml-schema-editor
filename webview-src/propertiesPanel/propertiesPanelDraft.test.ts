@@ -57,8 +57,8 @@ describe("createDraftNode", () => {
 
     const draft = createDraftNode(node);
     draft.childElements.pop();
-    draft.attributes[0].name = "changed";
-    draft.documentationAnnotations[0].documentationEntries[0].content = "changed";
+    draft.attributes[0]!.name = "changed";
+    draft.documentationAnnotations[0]!.documentationEntries[0]!.content = "changed";
     draft.location.x += 10;
     draft.boundingBox.width += 10;
 

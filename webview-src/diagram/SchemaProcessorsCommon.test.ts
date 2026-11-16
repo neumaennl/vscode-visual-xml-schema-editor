@@ -37,6 +37,6 @@ describe("processChildCollection", () => {
     });
     processChildCollection(parent, ["a", ""], itemFor, processContent);
     expect(processContent).toHaveBeenCalledTimes(1);
-    expect(parent.childElements[0].type).toBe("type of a");
+    expect(parent.childElements[0]!.type).toBe("type of a");
   });
 });

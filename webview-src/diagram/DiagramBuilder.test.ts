@@ -34,7 +34,7 @@ describe("DiagramBuilder", () => {
    * @returns The top-level nodes
    */
   function topLevelNodes(content: string): DiagramItem[] {
-    return builder.buildFromSchema(schemaWith(content)).rootElements[0].childElements;
+    return builder.buildFromSchema(schemaWith(content)).rootElements[0]!.childElements;
   }
 
   describe("buildFromSchema", () => {
@@ -46,8 +46,8 @@ describe("DiagramBuilder", () => {
       const diagram = builder.buildFromSchema(schemaObj);
 
       expect(diagram.rootElements).toHaveLength(1);
-      expect(diagram.rootElements[0].name).toContain("Schema:");
-      expect(diagram.rootElements[0].name).toContain("http://example.com/ns");
+      expect(diagram.rootElements[0]!.name).toContain("Schema:");
+      expect(diagram.rootElements[0]!.name).toContain("http://example.com/ns");
     });
 
     test("should expose schema-root documentation as structured annotation entries", () => {
@@ -61,7 +61,7 @@ describe("DiagramBuilder", () => {
 
       const diagram = builder.buildFromSchema(schemaObj);
 
-      expect(diagram.rootElements[0].documentationAnnotations).toEqual([
+      expect(diagram.rootElements[0]!.documentationAnnotations).toEqual([
         {
           id: "/schema/annotation[0]",
           documentationEntries: [
@@ -70,7 +70,7 @@ describe("DiagramBuilder", () => {
           ],
         },
       ]);
-      expect(diagram.rootElements[0].documentation).toBe("Schema doc 1\nSchema doc 2");
+      expect(diagram.rootElements[0]!.documentation).toBe("Schema doc 1\nSchema doc 2");
     });
 
     test("should process schema elements", () => {
@@ -105,7 +105,7 @@ describe("DiagramBuilder", () => {
       const nodes = topLevelNodes(content);
 
       expect(nodes).toHaveLength(1);
-      expect(nodes[0].type).toBe(type);
+      expect(nodes[0]!.type).toBe(type);
     });
 
     test.each([
@@ -130,15 +130,15 @@ describe("DiagramBuilder", () => {
       const nodes = topLevelNodes(`<xs:group name="PersonGroup"><xs:sequence><xs:element name="name" type="xs:string"/></xs:sequence></xs:group>`);
 
       expect(nodes).toHaveLength(1);
-      expect(nodes[0].id).toBe("/group:PersonGroup");
-      expect(nodes[0].childElements[0].id).toBe("/group:PersonGroup/group:sequence[0]");
+      expect(nodes[0]!.id).toBe("/group:PersonGroup");
+      expect(nodes[0]!.childElements[0]!.id).toBe("/group:PersonGroup/group:sequence[0]");
     });
 
     test("should render group references inside named groups", () => {
       const nodes = topLevelNodes(`<xs:group name="ContainerGroup"><xs:sequence><xs:group ref="SharedGroup"/></xs:sequence></xs:group>`);
 
-      const sequence = nodes[0].childElements[0];
-      expect(sequence.childElements[0].id).toBe("/group:ContainerGroup/group:sequence[0]/groupRef:SharedGroup[0]");
+      const sequence = nodes[0]!.childElements[0]!;
+      expect(sequence.childElements[0]!.id).toBe("/group:ContainerGroup/group:sequence[0]/groupRef:SharedGroup[0]");
     });
 
     test.each([
@@ -149,14 +149,14 @@ describe("DiagramBuilder", () => {
       const nodes = topLevelNodes(content);
 
       expect(nodes).toHaveLength(1);
-      expect(nodes[0].name).toBe("Person");
-      expect(nodes[0].hasAnonymousComplexType).toBe(hasAnonymousComplexType);
+      expect(nodes[0]!.name).toBe("Person");
+      expect(nodes[0]!.hasAnonymousComplexType).toBe(hasAnonymousComplexType);
     });
 
     test("should handle schema without targetNamespace", () => {
       const diagram = builder.buildFromSchema(schemaWith(`<xs:element name="Test"/>`));
 
-      expect(diagram.rootElements[0].name).toContain("Schema:");
+      expect(diagram.rootElements[0]!.name).toContain("Schema:");
     });
 
     test("should expose top-level attributes on schema root properties", () => {
@@ -164,7 +164,7 @@ describe("DiagramBuilder", () => {
         schemaWith(`<xs:attribute name="lang" type="xs:string"/><xs:attribute name="version" type="xs:string"/>`)
       );
 
-      expect(diagram.rootElements[0].attributes.map((attribute) => attribute.name)).toEqual(["lang", "version"]);
+      expect(diagram.rootElements[0]!.attributes.map((attribute) => attribute.name)).toEqual(["lang", "version"]);
     });
   });
 });

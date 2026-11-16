@@ -185,7 +185,7 @@ describe("vscode-releases", () => {
 
       expect(fetchMock).toHaveBeenCalledTimes(2);
       expect(releases).toHaveLength(101);
-      expect(releases[0].version).toBe("1.200.0");
+      expect(releases[0]!.version).toBe("1.200.0");
     });
 
     test("should send a GitHub token if one is set", async () => {

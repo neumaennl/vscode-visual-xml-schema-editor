@@ -13,6 +13,7 @@ import type {
 } from "./DiagramTypes";
 import type { annotationType } from "../../shared/generated/annotationType";
 import { SCHEMA_ROOT_ID } from "../../shared/idStrategy";
+import { requireGroup } from "../../shared/regexUtils";
 
 /**
  * Builds the schema ID for an `xs:annotation` node owned by the given schema component.
@@ -156,7 +157,7 @@ export function extractAttributes(item: DiagramItem, source: ElementWithAttribut
  */
 export function parseDerivationBaseType(typeText: string): string | undefined {
   const match = /\((?:restricts|extends) ([^)]+)\)/.exec(typeText);
-  return match?.[1].trim();
+  return match ? requireGroup(match, 1).trim() : undefined;
 }
 
 /**

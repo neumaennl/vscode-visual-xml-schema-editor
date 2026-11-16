@@ -141,7 +141,9 @@ export class DiagramSvgRenderer {
    * @param group - The SVG group to append lines to
    */
   private renderChildLines(item: DiagramItem, group: SVGElement): void {
-    if (item.childElements.length === 0) return;
+    const firstChild = item.childElements[0];
+    const lastChild = item.childElements.at(-1);
+    if (!firstChild || !lastChild) return;
 
     const foregroundPen = `stroke:${item.getStyle().lineColor};stroke-width:1;stroke-linecap:round`;
     const parentMidY = item.scaleInt(item.location.y + item.size.height / 2);
@@ -150,9 +152,9 @@ export class DiagramSvgRenderer {
     // Expand button is at parent.x + parent.width + 5, with width 12, plus 5px spacing = +22
     const expandButtonOffset = 22;
 
-    if (item.childElements.length === 1) {
+    if (firstChild === lastChild) {
       // Single child - direct line
-      const child = item.childElements[0];
+      const child = firstChild;
       const childMidY = item.scaleInt(child.location.y + child.size.height / 2);
 
       const parentLineStartX = item.scaleInt(
@@ -194,9 +196,6 @@ export class DiagramSvgRenderer {
       );
     } else {
       // Multiple children - vertical connector with horizontal connectors to each child
-      const firstChild = item.childElements[0];
-      const lastChild = item.childElements[item.childElements.length - 1];
-
       const parentLineStartX = item.scaleInt(
         item.location.x + item.size.width + expandButtonOffset
       );

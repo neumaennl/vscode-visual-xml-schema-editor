@@ -77,9 +77,9 @@ function createDocumentation(content: string, lang?: string): documentationType 
  * @returns The first annotation of the schema
  */
 function getOrCreateFirstSchemaAnnotation(schemaObj: schema): annotationType {
-  const annotations = schemaObj.annotation ?? [];
-  if (annotations.length > 0) {
-    return annotations[0];
+  const first = schemaObj.annotation?.[0];
+  if (first) {
+    return first;
   }
   const annotation = new annotationType();
   schemaObj.annotation = [annotation];
@@ -112,7 +112,7 @@ function findAnnotatableNode(schemaObj: schema, nodeId: string): AnnotatableNode
  * @throws An {@link Error} if there is no annotation at the index
  */
 function schemaAnnotationAt(annotations: annotationType[], index: number, id: string): annotationType {
-  return assumeValidated(annotations[index] as annotationType | undefined, `Annotation ${index} of the schema (${id})`);
+  return assumeValidated(annotations[index], `Annotation ${index} of the schema (${id})`);
 }
 
 /**
@@ -125,7 +125,7 @@ function schemaAnnotationAt(annotations: annotationType[], index: number, id: st
  * @throws An {@link Error} if there is no entry at the index
  */
 function documentationAt(documentations: documentationType[], index: number, id: string): documentationType {
-  return assumeValidated(documentations[index] as documentationType | undefined, `Documentation ${id}`);
+  return assumeValidated(documentations[index], `Documentation ${id}`);
 }
 
 /**
@@ -185,10 +185,9 @@ function applyAnnotationModifications(
   }
 
   if (appInfo !== undefined) {
-    const infos = annotation.appinfo ?? [];
-    if (infos.length > 0) {
-      infos[0].value = appInfo;
-      annotation.appinfo = infos;
+    const first = annotation.appinfo?.[0];
+    if (first) {
+      first.value = appInfo;
     } else {
       const info = new appinfoType();
       info.value = appInfo;
@@ -265,7 +264,7 @@ export function executeRemoveAnnotation(
   const schemaAnnotationIndex = parseSchemaAnnotationId(annotationId);
   if (schemaAnnotationIndex !== null) {
     const annotations = schemaObj.annotation ?? [];
-    assumeValidated(annotations[schemaAnnotationIndex] as annotationType | undefined, `Annotation ${annotationId}`);
+    assumeValidated(annotations[schemaAnnotationIndex], `Annotation ${annotationId}`);
     annotations.splice(schemaAnnotationIndex, 1);
     schemaObj.annotation = annotations.length > 0 ? annotations : undefined;
     return;

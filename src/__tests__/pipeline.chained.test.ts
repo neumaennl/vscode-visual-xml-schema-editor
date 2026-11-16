@@ -236,8 +236,8 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
       // currency attribute on OrderType
       const attrs = orderType.attribute ?? [];
       expect(attrs.length).toBe(1);
-      expect(attrs[0].name).toBe("currency");
-      expect(attrs[0].type_).toBe("xs:string");
+      expect(attrs[0]!.name).toBe("currency");
+      expect(attrs[0]!.type_).toBe("xs:string");
     });
   });
 
@@ -344,10 +344,10 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
 
     const refEls = wrapperType!.sequence!.element ?? [];
     expect(refEls.length).toBe(1);
-    expect(refEls[0].ref).toBe("example");
-    expect(refEls[0].name).toBeUndefined();
-    expect(refEls[0].type_).toBeUndefined();
-    expect(refEls[0].minOccurs).toBe(0);
-    expect(refEls[0].maxOccurs).toBe("unbounded");
+    expect(refEls[0]!.ref).toBe("example");
+    expect(refEls[0]!.name).toBeUndefined();
+    expect(refEls[0]!.type_).toBeUndefined();
+    expect(refEls[0]!.minOccurs).toBe(0);
+    expect(refEls[0]!.maxOccurs).toBe("unbounded");
   });
 });

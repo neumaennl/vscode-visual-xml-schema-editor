@@ -82,7 +82,7 @@ describe("forEachQNameReference", () => {
     forEachQNameReference(schemaObj, (reference) => {
       if (reference.value.startsWith("tns:Member")) members.push(reference);
     });
-    members[1].replace("tns:Other");
+    members[1]!.replace("tns:Other");
 
     const union = schemaObj.simpleType?.find((st) => st.name === "Union")?.union;
     expect(union?.memberTypes).toBe("tns:MemberA tns:Other");

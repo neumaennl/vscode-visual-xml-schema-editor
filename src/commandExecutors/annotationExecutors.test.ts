@@ -131,7 +131,7 @@ describe("executeAddAnnotation", () => {
 
     addAnnotation(schemaObj, { targetId: "/element:person", ...fields });
 
-    const annotation = schemaObj.element?.[0].annotation;
+    const annotation = schemaObj.element?.[0]!.annotation;
     expect(annotation).toBeDefined();
     expect(valuesOf(annotation?.documentation)).toEqual(documentation);
     expect(valuesOf(annotation?.appinfo)).toEqual(appinfo);
@@ -143,8 +143,8 @@ describe("executeAddAnnotation", () => {
     addAnnotation(schemaObj, { targetId: "/complexType:PersonType", documentation: "A type." });
 
     const types = schemaObj.complexType ?? [];
-    expect(types[0].annotation).toBeDefined();
-    expect((types[0].annotation?.documentation ?? [])[0].value).toBe("A type.");
+    expect(types[0]!.annotation).toBeDefined();
+    expect((types[0]!.annotation?.documentation ?? [])[0]!.value).toBe("A type.");
   });
 });
 
@@ -156,7 +156,7 @@ describe("executeRemoveAnnotation", () => {
 
     removeAnnotation(schemaObj, { annotationId: "/element:person" });
 
-    const elem = (schemaObj.element ?? [])[0];
+    const elem = (schemaObj.element ?? [])[0]!;
     expect(elem.annotation).toBeUndefined();
   });
 
@@ -170,8 +170,8 @@ describe("executeModifyAnnotation", () => {
 
     modifyAnnotation(schemaObj, { annotationId: "/element:person", documentation: "Updated." });
 
-    const elem = (schemaObj.element ?? [])[0];
-    expect((elem.annotation?.documentation ?? [])[0].value).toBe("Updated.");
+    const elem = (schemaObj.element ?? [])[0]!;
+    expect((elem.annotation?.documentation ?? [])[0]!.value).toBe("Updated.");
   });
 
   test("should replace all documentation children with a single new element", () => {
@@ -179,7 +179,7 @@ describe("executeModifyAnnotation", () => {
 
     modifyAnnotation(schemaObj, { annotationId: "/element:person", documentation: "Replaced." });
 
-    const elem = (schemaObj.element ?? [])[0];
+    const elem = (schemaObj.element ?? [])[0]!;
     expect(valuesOf(elem.annotation?.documentation)).toEqual(["Replaced."]);
   });
 
@@ -193,7 +193,7 @@ describe("executeModifyAnnotation", () => {
 
     modifyAnnotation(schemaObj, { annotationId: "/element:person", documentation: "New doc." });
 
-    const elem = (schemaObj.element ?? [])[0];
+    const elem = (schemaObj.element ?? [])[0]!;
     expect(valuesOf(elem.annotation?.documentation)).toEqual(["New doc."]);
     // Existing appinfo must be preserved
     expect(valuesOf(elem.annotation?.appinfo)).toEqual(["app"]);
@@ -209,8 +209,8 @@ describe("executeModifyAnnotation", () => {
 
     modifyAnnotation(schemaObj, { annotationId: "/element:person", appInfo: "new-app-info" });
 
-    const elem = (schemaObj.element ?? [])[0];
-    expect((elem.annotation?.appinfo ?? [])[0].value).toBe("new-app-info");
+    const elem = (schemaObj.element ?? [])[0]!;
+    expect((elem.annotation?.appinfo ?? [])[0]!.value).toBe("new-app-info");
   });
 
   test("should add an appinfo child when annotation has none", () => {
@@ -218,7 +218,7 @@ describe("executeModifyAnnotation", () => {
 
     modifyAnnotation(schemaObj, { annotationId: "/element:person", appInfo: "new-info" });
 
-    expect(valuesOf((schemaObj.element ?? [])[0].annotation?.appinfo)).toEqual(["new-info"]);
+    expect(valuesOf((schemaObj.element ?? [])[0]!.annotation?.appinfo)).toEqual(["new-info"]);
   });
 
 });
@@ -231,7 +231,7 @@ describe("executeAddDocumentation", () => {
 
     addDocumentation(schemaObj, { targetId: "/element:person", content: "A person." });
 
-    const elem = (schemaObj.element ?? [])[0];
+    const elem = (schemaObj.element ?? [])[0]!;
     expect(elem.annotation).toBeDefined();
     expect(valuesOf(elem.annotation?.documentation)).toEqual(["A person."]);
   });
@@ -241,10 +241,10 @@ describe("executeAddDocumentation", () => {
 
     addDocumentation(schemaObj, { targetId: "/element:person", content: "Second.", lang: "en" });
 
-    const documentations = (schemaObj.element ?? [])[0].annotation?.documentation ?? [];
+    const documentations = (schemaObj.element ?? [])[0]!.annotation?.documentation ?? [];
     expect(documentations).toHaveLength(2);
-    expect(documentations[1].value).toBe("Second.");
-    expect(documentations[1]._anyAttributes?.["xml:lang"]).toBe("en");
+    expect(documentations[1]!.value).toBe("Second.");
+    expect(documentations[1]!._anyAttributes?.["xml:lang"]).toBe("en");
   });
 
   test("should store the xml:lang attribute in _anyAttributes", () => {
@@ -252,8 +252,8 @@ describe("executeAddDocumentation", () => {
 
     addDocumentation(schemaObj, { targetId: "/element:person", content: "Hallo.", lang: "de" });
 
-    const documentations = (schemaObj.element ?? [])[0].annotation?.documentation ?? [];
-    expect(documentations[0]._anyAttributes?.["xml:lang"]).toBe("de");
+    const documentations = (schemaObj.element ?? [])[0]!.annotation?.documentation ?? [];
+    expect(documentations[0]!._anyAttributes?.["xml:lang"]).toBe("de");
   });
 
   test("should not add a lang attribute when lang is not supplied", () => {
@@ -261,8 +261,8 @@ describe("executeAddDocumentation", () => {
 
     addDocumentation(schemaObj, { targetId: "/element:person", content: "No lang." });
 
-    const documentations = (schemaObj.element ?? [])[0].annotation?.documentation ?? [];
-    expect(documentations[0]._anyAttributes?.["xml:lang"]).toBeUndefined();
+    const documentations = (schemaObj.element ?? [])[0]!.annotation?.documentation ?? [];
+    expect(documentations[0]!._anyAttributes?.["xml:lang"]).toBeUndefined();
   });
 
 });
@@ -275,7 +275,7 @@ describe("executeRemoveDocumentation", () => {
 
     removeDocumentation(schemaObj, { documentationId: "/element:person/documentation[0]" });
 
-    const elem = (schemaObj.element ?? [])[0];
+    const elem = (schemaObj.element ?? [])[0]!;
     // annotation stays but documentation array is cleared
     expect(elem.annotation).toBeDefined();
     expect(elem.annotation?.documentation).toBeUndefined();
@@ -286,9 +286,9 @@ describe("executeRemoveDocumentation", () => {
 
     removeDocumentation(schemaObj, { documentationId: "/element:person/documentation[0]" });
 
-    const documentations = (schemaObj.element ?? [])[0].annotation?.documentation ?? [];
+    const documentations = (schemaObj.element ?? [])[0]!.annotation?.documentation ?? [];
     expect(documentations).toHaveLength(1);
-    expect(documentations[0]._anyAttributes?.["xml:lang"]).toBe("de");
+    expect(documentations[0]!._anyAttributes?.["xml:lang"]).toBe("de");
   });
 
   test("should remove the second of two documentation elements leaving the first", () => {
@@ -296,9 +296,9 @@ describe("executeRemoveDocumentation", () => {
 
     removeDocumentation(schemaObj, { documentationId: "/element:person/documentation[1]" });
 
-    const documentations = (schemaObj.element ?? [])[0].annotation?.documentation ?? [];
+    const documentations = (schemaObj.element ?? [])[0]!.annotation?.documentation ?? [];
     expect(documentations).toHaveLength(1);
-    expect(documentations[0]._anyAttributes?.["xml:lang"]).toBe("en");
+    expect(documentations[0]!._anyAttributes?.["xml:lang"]).toBe("en");
   });
 
   test("should throw for an invalid documentationId format", () => {
@@ -326,8 +326,8 @@ describe("executeModifyDocumentation", () => {
       content: "Updated.",
     });
 
-    const documentations = (schemaObj.element ?? [])[0].annotation?.documentation ?? [];
-    expect(documentations[0].value).toBe("Updated.");
+    const documentations = (schemaObj.element ?? [])[0]!.annotation?.documentation ?? [];
+    expect(documentations[0]!.value).toBe("Updated.");
   });
 
   test("should set the xml:lang attribute", () => {
@@ -338,8 +338,8 @@ describe("executeModifyDocumentation", () => {
       lang: "fr",
     });
 
-    const documentations = (schemaObj.element ?? [])[0].annotation?.documentation ?? [];
-    expect(documentations[0]._anyAttributes?.["xml:lang"]).toBe("fr");
+    const documentations = (schemaObj.element ?? [])[0]!.annotation?.documentation ?? [];
+    expect(documentations[0]!._anyAttributes?.["xml:lang"]).toBe("fr");
   });
 
   test("should remove the xml:lang attribute when lang is set to empty string", () => {
@@ -350,10 +350,10 @@ describe("executeModifyDocumentation", () => {
       lang: "",
     });
 
-    const documentations = (schemaObj.element ?? [])[0].annotation?.documentation ?? [];
-    expect(documentations[0]._anyAttributes?.["xml:lang"]).toBeUndefined();
+    const documentations = (schemaObj.element ?? [])[0]!.annotation?.documentation ?? [];
+    expect(documentations[0]!._anyAttributes?.["xml:lang"]).toBeUndefined();
     // second documentation is unchanged
-    expect(documentations[1]._anyAttributes?.["xml:lang"]).toBe("de");
+    expect(documentations[1]!._anyAttributes?.["xml:lang"]).toBe("de");
   });
 
   test("should update content and lang simultaneously", () => {
@@ -365,9 +365,9 @@ describe("executeModifyDocumentation", () => {
       lang: "de",
     });
 
-    const documentations = (schemaObj.element ?? [])[0].annotation?.documentation ?? [];
-    expect(documentations[0].value).toBe("Aktualisiert.");
-    expect(documentations[0]._anyAttributes?.["xml:lang"]).toBe("de");
+    const documentations = (schemaObj.element ?? [])[0]!.annotation?.documentation ?? [];
+    expect(documentations[0]!.value).toBe("Aktualisiert.");
+    expect(documentations[0]!._anyAttributes?.["xml:lang"]).toBe("de");
   });
 
   test("should modify the second of two documentation elements leaving the first unchanged", () => {
@@ -378,9 +378,9 @@ describe("executeModifyDocumentation", () => {
       content: "German updated.",
     });
 
-    const documentations = (schemaObj.element ?? [])[0].annotation?.documentation ?? [];
-    expect(documentations[0].value).toBe("English");
-    expect(documentations[1].value).toBe("German updated.");
+    const documentations = (schemaObj.element ?? [])[0]!.annotation?.documentation ?? [];
+    expect(documentations[0]!.value).toBe("English");
+    expect(documentations[1]!.value).toBe("German updated.");
   });
 
   test("should throw for an invalid documentationId format", () => {
@@ -412,7 +412,7 @@ describe("executeAddAnnotation — schema root", () => {
 
     const annotations = schemaObj.annotation ?? [];
     expect(annotations).toHaveLength(1);
-    expect((annotations[0].documentation ?? [])[0].value).toBe("My schema.");
+    expect((annotations[0]!.documentation ?? [])[0]!.value).toBe("My schema.");
   });
 
   test("should append a second annotation when one already exists", () => {
@@ -422,9 +422,9 @@ describe("executeAddAnnotation — schema root", () => {
 
     const annotations = schemaObj.annotation ?? [];
     expect(annotations).toHaveLength(2);
-    expect((annotations[1].documentation ?? [])[0].value).toBe("Second annotation.");
+    expect((annotations[1]!.documentation ?? [])[0]!.value).toBe("Second annotation.");
     // First annotation is preserved
-    expect((annotations[0].documentation ?? [])[0].value).toBe("Schema description.");
+    expect((annotations[0]!.documentation ?? [])[0]!.value).toBe("Schema description.");
   });
 
   test("should add an annotation with both documentation and appinfo", () => {
@@ -432,9 +432,9 @@ describe("executeAddAnnotation — schema root", () => {
 
     addAnnotation(schemaObj, { targetId: "/schema", documentation: "desc", appInfo: "info" });
 
-    const annotation = (schemaObj.annotation ?? [])[0];
-    expect((annotation.documentation ?? [])[0].value).toBe("desc");
-    expect((annotation.appinfo ?? [])[0].value).toBe("info");
+    const annotation = (schemaObj.annotation ?? [])[0]!;
+    expect((annotation.documentation ?? [])[0]!.value).toBe("desc");
+    expect((annotation.appinfo ?? [])[0]!.value).toBe("info");
   });
 });
 
@@ -446,7 +446,7 @@ describe("executeRemoveAnnotation — schema root", () => {
 
     const annotations = schemaObj.annotation ?? [];
     expect(annotations).toHaveLength(1);
-    expect((annotations[0].documentation ?? [])[0].value).toBe("Second.");
+    expect((annotations[0]!.documentation ?? [])[0]!.value).toBe("Second.");
   });
 
   test("should remove the second schema annotation by index", () => {
@@ -456,7 +456,7 @@ describe("executeRemoveAnnotation — schema root", () => {
 
     const annotations = schemaObj.annotation ?? [];
     expect(annotations).toHaveLength(1);
-    expect((annotations[0].documentation ?? [])[0].value).toBe("First.");
+    expect((annotations[0]!.documentation ?? [])[0]!.value).toBe("First.");
   });
 
   test("should remove the only annotation, leaving annotation as undefined", () => {
@@ -479,7 +479,7 @@ describe("executeModifyAnnotation — schema root", () => {
     });
 
     const annotations = schemaObj.annotation ?? [];
-    expect((annotations[0].documentation ?? [])[0].value).toBe("Updated.");
+    expect((annotations[0]!.documentation ?? [])[0]!.value).toBe("Updated.");
   });
 
   test("should update documentation on the second schema annotation", () => {
@@ -491,9 +491,9 @@ describe("executeModifyAnnotation — schema root", () => {
     });
 
     const annotations = schemaObj.annotation ?? [];
-    expect((annotations[1].documentation ?? [])[0].value).toBe("Second updated.");
+    expect((annotations[1]!.documentation ?? [])[0]!.value).toBe("Second updated.");
     // First annotation untouched
-    expect((annotations[0].documentation ?? [])[0].value).toBe("First.");
+    expect((annotations[0]!.documentation ?? [])[0]!.value).toBe("First.");
   });
 
 });
@@ -506,7 +506,7 @@ describe("executeAddDocumentation — schema root", () => {
 
     const annotations = schemaObj.annotation ?? [];
     expect(annotations).toHaveLength(1);
-    expect(valuesOf(annotations[0].documentation)).toEqual(["Schema doc."]);
+    expect(valuesOf(annotations[0]!.documentation)).toEqual(["Schema doc."]);
   });
 
   test("should append to the first existing annotation (targetId: '/schema')", () => {
@@ -514,10 +514,10 @@ describe("executeAddDocumentation — schema root", () => {
 
     addDocumentation(schemaObj, { targetId: "/schema", content: "Appended.", lang: "en" });
 
-    const documentations = (schemaObj.annotation ?? [])[0].documentation ?? [];
+    const documentations = (schemaObj.annotation ?? [])[0]!.documentation ?? [];
     expect(documentations).toHaveLength(2);
-    expect(documentations[1].value).toBe("Appended.");
-    expect(documentations[1]._anyAttributes?.["xml:lang"]).toBe("en");
+    expect(documentations[1]!.value).toBe("Appended.");
+    expect(documentations[1]!._anyAttributes?.["xml:lang"]).toBe("en");
   });
 
   test("should append to a specific schema annotation (targetId: '/schema/annotation[N]')", () => {
@@ -529,11 +529,11 @@ describe("executeAddDocumentation — schema root", () => {
     });
 
     const annotations = schemaObj.annotation ?? [];
-    const documentations = annotations[1].documentation ?? [];
+    const documentations = annotations[1]!.documentation ?? [];
     expect(documentations).toHaveLength(2);
-    expect(documentations[1].value).toBe("Into second annotation.");
+    expect(documentations[1]!.value).toBe("Into second annotation.");
     // First annotation untouched
-    expect(annotations[0].documentation ?? []).toHaveLength(1);
+    expect(annotations[0]!.documentation ?? []).toHaveLength(1);
   });
 
 });
@@ -563,7 +563,7 @@ describe("executeRemoveDocumentation — schema root", () => {
       schemaObj
     );
 
-    const annotation = (schemaObj.annotation ?? [])[0];
+    const annotation = (schemaObj.annotation ?? [])[0]!;
     expect(valuesOf(annotation.documentation)).toEqual(["Second doc."]);
   });
 
@@ -577,7 +577,7 @@ describe("executeRemoveDocumentation — schema root", () => {
       schemaObj
     );
 
-    const annotation = (schemaObj.annotation ?? [])[0];
+    const annotation = (schemaObj.annotation ?? [])[0]!;
     // When the last documentation is removed, the property should be undefined
     expect(annotation.documentation).toBeUndefined();
   });
@@ -599,7 +599,7 @@ describe("executeModifyDocumentation — schema root", () => {
       schemaObj
     );
 
-    const doc = ((schemaObj.annotation ?? [])[0].documentation ?? [])[0];
+    const doc = ((schemaObj.annotation ?? [])[0]!.documentation ?? [])[0]!;
     expect(doc.value).toBe("Modified.");
     expect(doc._anyAttributes?.["xml:lang"]).toBe("en");
   });
@@ -617,7 +617,7 @@ describe("executeModifyDocumentation — schema root", () => {
       schemaObj
     );
 
-    const doc = ((schemaObj.annotation ?? [])[0].documentation ?? [])[0];
+    const doc = ((schemaObj.annotation ?? [])[0]!.documentation ?? [])[0]!;
     expect(doc.value).toBe("Modified via shorthand.");
   });
 });

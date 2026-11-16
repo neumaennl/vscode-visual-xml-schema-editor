@@ -88,7 +88,7 @@ function orderSequenceElements(schemaObj: schema): localElement[] {
  * @returns The elements, in document order
  */
 function personSequenceElements(schemaObj: schema): localElement[] {
-  return schemaObj.element?.[0].complexType?.sequence?.element ?? [];
+  return schemaObj.element?.[0]!.complexType?.sequence?.element ?? [];
 }
 
 describe("Element Executors", () => {
@@ -101,7 +101,7 @@ describe("Element Executors", () => {
 
       expect(schemaObj.element).toHaveLength(2);
       expect(schemaObj.element?.[0]).toMatchObject({ name: "person", type_: "string" });
-      expect(schemaObj.element?.[1].name).toBe("company");
+      expect(schemaObj.element?.[1]!.name).toBe("company");
     });
 
     test("should add top-level element with documentation", () => {
@@ -109,7 +109,7 @@ describe("Element Executors", () => {
 
       addElement(schemaObj, { parentId: "/schema", elementName: "person", elementType: "string", documentation: "Represents a person" });
 
-      expect(schemaObj.element?.[0].annotation?.documentation?.map((d) => d.value)).toEqual(["Represents a person"]);
+      expect(schemaObj.element?.[0]!.annotation?.documentation?.map((d) => d.value)).toEqual(["Represents a person"]);
     });
 
     test("should add element to a sequence in a complex type", () => {
@@ -125,9 +125,9 @@ describe("Element Executors", () => {
 
       addElement(schemaObj, { parentId: "/complexType:WorkerType/group:sequence[0]", elementName: "department", elementType: "xs:string" });
 
-      const elements = schemaObj.complexType?.[0].complexContent?.extension?.sequence?.element ?? [];
+      const elements = schemaObj.complexType?.[0]!.complexContent?.extension?.sequence?.element ?? [];
       expect(elements).toHaveLength(2);
-      expect(elements[1].name).toBe("department");
+      expect(elements[1]!.name).toBe("department");
     });
 
     test.each([
@@ -218,9 +218,9 @@ describe("Element Executors", () => {
       modifyElement(schemaObj, { elementId: "/element:person", elementName: "customer" });
 
       const elements = schemaObj.element ?? [];
-      expect(elements[0].name).toBe("customer");
-      expect(elements[1].substitutionGroup).toBe("customer");
-      expect(schemaObj.complexType?.[0].sequence?.element?.[0].ref).toBe("customer");
+      expect(elements[0]!.name).toBe("customer");
+      expect(elements[1]!.substitutionGroup).toBe("customer");
+      expect(schemaObj.complexType?.[0]!.sequence?.element?.[0]!.ref).toBe("customer");
     });
 
     test("should add documentation to element", () => {
@@ -228,7 +228,7 @@ describe("Element Executors", () => {
 
       modifyElement(schemaObj, { elementId: "/element:person", documentation: "Employee information" });
 
-      expect(schemaObj.element?.[0].annotation?.documentation?.[0].value).toBe("Employee information");
+      expect(schemaObj.element?.[0]!.annotation?.documentation?.[0]!.value).toBe("Employee information");
     });
 
     test.each([

@@ -252,8 +252,8 @@ function validateDocumentationId(documentationId: string, schemaObj: schema): Va
     if (!indexResult.valid) {
       return indexResult;
     }
-    const annotations = schemaObj.annotation ?? [];
-    const documentations = annotations[schemaDocumentationId.annotationIndex].documentation ?? [];
+    // validateSchemaAnnotationIndex() has checked that the annotation exists
+    const documentations = schemaObj.annotation?.[schemaDocumentationId.annotationIndex]?.documentation ?? [];
     return validateDocumentationIndex(schemaDocumentationId.documentationIndex, documentations.length, documentationId);
   }
 
@@ -268,11 +268,11 @@ function validateDocumentationId(documentationId: string, schemaObj: schema): Va
 
   // "/schema/documentation[N]" shorthand — targets first schema annotation
   if (isSchemaRoot(elementId)) {
-    const annotations = schemaObj.annotation ?? [];
-    if (annotations.length === 0) {
+    const firstAnnotation = schemaObj.annotation?.[0];
+    if (!firstAnnotation) {
       return { valid: false, error: `No annotation found on schema root` };
     }
-    const documentations = annotations[0].documentation ?? [];
+    const documentations = firstAnnotation.documentation ?? [];
     return validateDocumentationIndex(documentationIndex, documentations.length, documentationId);
   }
 

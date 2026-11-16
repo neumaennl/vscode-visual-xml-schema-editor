@@ -125,13 +125,13 @@ describe("SimpleType Executors", () => {
 
       addSimpleType(schemaObj, { typeName: "NameType", baseType: "xs:string" });
 
-      const added = simpleTypes(schemaObj)[0];
+      const added = simpleTypes(schemaObj)[0]!;
       expect(added.name).toBe("NameType");
       expect(added.restriction!.base).toBe("xs:string");
 
       const reparsed = unmarshal(schema, marshal(schemaObj));
-      expect(simpleTypes(reparsed)[0].name).toBe("NameType");
-      expect(simpleTypes(reparsed)[0].restriction!.base).toBe("xs:string");
+      expect(simpleTypes(reparsed)[0]!.name).toBe("NameType");
+      expect(simpleTypes(reparsed)[0]!.restriction!.base).toBe("xs:string");
     });
 
     test("should add documentation and appends after existing top-level simple types", () => {
@@ -147,9 +147,9 @@ describe("SimpleType Executors", () => {
       });
 
       expect(simpleTypes(schemaObj)).toHaveLength(2);
-      expect(simpleTypes(schemaObj)[0].name).toBe("ExistingType");
-      expect(simpleTypes(schemaObj)[1].name).toBe("AgeType");
-      expect(simpleTypes(schemaObj)[1].annotation!.documentation![0].value).toBe(
+      expect(simpleTypes(schemaObj)[0]!.name).toBe("ExistingType");
+      expect(simpleTypes(schemaObj)[1]!.name).toBe("AgeType");
+      expect(simpleTypes(schemaObj)[1]!.annotation!.documentation![0]!.value).toBe(
         "Represents a person's age"
       );
     });
@@ -168,8 +168,8 @@ describe("SimpleType Executors", () => {
         baseType: "xs:integer",
         restrictions: { minInclusive: "0", maxInclusive: "120" },
         expectRestriction: (restriction): void => {
-          expect(restriction.minInclusive![0].value).toBe("0");
-          expect(restriction.maxInclusive![0].value).toBe("120");
+          expect(restriction.minInclusive![0]!.value).toBe("0");
+          expect(restriction.maxInclusive![0]!.value).toBe("120");
         },
       },
       {
@@ -178,8 +178,8 @@ describe("SimpleType Executors", () => {
         baseType: "xs:decimal",
         restrictions: { minExclusive: "0", maxExclusive: "100" },
         expectRestriction: (restriction): void => {
-          expect(restriction.minExclusive![0].value).toBe("0");
-          expect(restriction.maxExclusive![0].value).toBe("100");
+          expect(restriction.minExclusive![0]!.value).toBe("0");
+          expect(restriction.maxExclusive![0]!.value).toBe("100");
         },
       },
       {
@@ -188,9 +188,9 @@ describe("SimpleType Executors", () => {
         baseType: "xs:string",
         restrictions: { length: 5, minLength: 1, maxLength: 255 },
         expectRestriction: (restriction): void => {
-          expect(restriction.length![0].value).toBe(5);
-          expect(restriction.minLength![0].value).toBe(1);
-          expect(restriction.maxLength![0].value).toBe(255);
+          expect(restriction.length![0]!.value).toBe(5);
+          expect(restriction.minLength![0]!.value).toBe(1);
+          expect(restriction.maxLength![0]!.value).toBe(255);
         },
       },
       {
@@ -199,8 +199,8 @@ describe("SimpleType Executors", () => {
         baseType: "xs:decimal",
         restrictions: { totalDigits: 8, fractionDigits: 2 },
         expectRestriction: (restriction): void => {
-          expect(restriction.totalDigits![0].value).toBe(8);
-          expect(restriction.fractionDigits![0].value).toBe(2);
+          expect(restriction.totalDigits![0]!.value).toBe(8);
+          expect(restriction.fractionDigits![0]!.value).toBe(2);
         },
       },
       {
@@ -228,7 +228,7 @@ describe("SimpleType Executors", () => {
         baseType: "xs:string",
         restrictions: { whiteSpace: "collapse" },
         expectRestriction: (restriction): void => {
-          expect(restriction.whiteSpace![0].value).toBe("collapse");
+          expect(restriction.whiteSpace![0]!.value).toBe("collapse");
         },
       },
     ];
@@ -238,7 +238,7 @@ describe("SimpleType Executors", () => {
 
       addSimpleType(schemaObj, { typeName, baseType, restrictions });
 
-      const restriction = simpleTypes(schemaObj)[0].restriction;
+      const restriction = simpleTypes(schemaObj)[0]!.restriction;
       expect(restriction?.base).toBe(baseType);
       expectRestriction(restriction!);
     });
@@ -251,7 +251,7 @@ describe("SimpleType Executors", () => {
         listItemType: "xs:token",
       });
 
-      const added = simpleTypes(schemaObj)[0];
+      const added = simpleTypes(schemaObj)[0]!;
       expect(added.name).toBe("TokenListType");
       expect(added.list?.itemType).toBe("xs:token");
       expect(added.restriction).toBeUndefined();
@@ -266,7 +266,7 @@ describe("SimpleType Executors", () => {
         unionMemberTypes: ["xs:string", "xs:integer"],
       });
 
-      const added = simpleTypes(schemaObj)[0];
+      const added = simpleTypes(schemaObj)[0]!;
       expect(added.name).toBe("TextOrNumberType");
       expect(added.union?.memberTypes).toBe("xs:string xs:integer");
       expect(added.restriction).toBeUndefined();
@@ -283,7 +283,7 @@ describe("SimpleType Executors", () => {
       removeSimpleType(schemaObj, { typeId: "/simpleType:AgeType" });
 
       expect(simpleTypes(schemaObj)).toHaveLength(1);
-      expect(simpleTypes(schemaObj)[0].name).toBe("NameType");
+      expect(simpleTypes(schemaObj)[0]!.name).toBe("NameType");
     });
 
     test("should remove the last remaining top-level simpleType", () => {
@@ -301,7 +301,7 @@ describe("SimpleType Executors", () => {
 
       modifySimpleType(schemaObj, { typeId: "/simpleType:AgeType", typeName: "PersonAgeType" });
 
-      expect(simpleTypes(schemaObj)[0].name).toBe("PersonAgeType");
+      expect(simpleTypes(schemaObj)[0]!.name).toBe("PersonAgeType");
     });
 
     test("should update the base type and documentation", () => {
@@ -313,9 +313,9 @@ describe("SimpleType Executors", () => {
         documentation: "A person's age in years",
       });
 
-      const simpleType = simpleTypes(schemaObj)[0];
+      const simpleType = simpleTypes(schemaObj)[0]!;
       expect(simpleType.restriction!.base).toBe("xs:positiveInteger");
-      expect(simpleType.annotation!.documentation![0].value).toBe("A person's age in years");
+      expect(simpleType.annotation!.documentation![0]!.value).toBe("A person's age in years");
     });
 
     const modifySimpleTypeFacetCases: Array<{
@@ -329,8 +329,8 @@ describe("SimpleType Executors", () => {
         source: AGE_TYPE_WITH_MIN,
         payload: { restrictions: { minInclusive: "0", maxInclusive: "150" } },
         expectRestriction: (restriction): void => {
-          expect(restriction.minInclusive![0].value).toBe("0");
-          expect(restriction.maxInclusive![0].value).toBe("150");
+          expect(restriction.minInclusive![0]!.value).toBe("0");
+          expect(restriction.maxInclusive![0]!.value).toBe("150");
         },
       },
       {
@@ -365,11 +365,11 @@ describe("SimpleType Executors", () => {
 
     test.each(modifySimpleTypeFacetCases)("should $name", ({ source, payload, expectRestriction }) => {
       const schemaObj = schemaWith(source);
-      const typeName = simpleTypes(schemaObj)[0].name;
+      const typeName = simpleTypes(schemaObj)[0]!.name;
 
       modifySimpleType(schemaObj, { typeId: `/simpleType:${typeName}`, ...payload });
 
-      const restriction = simpleTypes(schemaObj)[0].restriction;
+      const restriction = simpleTypes(schemaObj)[0]!.restriction;
       expect(restriction).toBeDefined();
       expectRestriction(restriction!);
     });
@@ -384,9 +384,9 @@ describe("SimpleType Executors", () => {
         restrictions: { pattern: ["[A-Z]{3}", "[0-9]{3}"], maxLength: 3 },
       });
 
-      const restriction = simpleTypes(unmarshal(schema, marshal(schemaObj)))[0].restriction!;
+      const restriction = simpleTypes(unmarshal(schema, marshal(schemaObj)))[0]!.restriction!;
       expect(restriction.pattern!.map((value) => value.value)).toEqual(["[A-Z]{3}", "[0-9]{3}"]);
-      expect(restriction.maxLength![0].value).toBe(3);
+      expect(restriction.maxLength![0]!.value).toBe(3);
     });
 
     test("should switch an existing restriction simpleType to list", () => {
@@ -399,7 +399,7 @@ describe("SimpleType Executors", () => {
         listItemType: "xs:token",
       });
 
-      const simpleType = simpleTypes(schemaObj)[0];
+      const simpleType = simpleTypes(schemaObj)[0]!;
       expect(simpleType.list?.itemType).toBe("xs:token");
       expect(simpleType.restriction).toBeUndefined();
       expect(simpleType.union).toBeUndefined();
@@ -415,7 +415,7 @@ describe("SimpleType Executors", () => {
         unionMemberTypes: ["xs:string", "xs:integer"],
       });
 
-      const simpleType = simpleTypes(schemaObj)[0];
+      const simpleType = simpleTypes(schemaObj)[0]!;
       expect(simpleType.union?.memberTypes).toBe("xs:string xs:integer");
       expect(simpleType.restriction).toBeUndefined();
       expect(simpleType.list).toBeUndefined();
@@ -428,20 +428,20 @@ describe("SimpleType Executors", () => {
         label: "top-level element",
         source: AGE_ELEMENT,
         parentId: "/element:age",
-        getSimpleType: (schemaObj: schema): localSimpleType => elements(schemaObj)[0].simpleType!,
+        getSimpleType: (schemaObj: schema): localSimpleType => elements(schemaObj)[0]!.simpleType!,
       },
       {
         label: "top-level attribute",
         source: `<xs:attribute name="color"/>`,
         parentId: "/attribute:color",
-        getSimpleType: (schemaObj: schema): localSimpleType => attributes(schemaObj)[0].simpleType!,
+        getSimpleType: (schemaObj: schema): localSimpleType => attributes(schemaObj)[0]!.simpleType!,
       },
       {
         label: "attribute inside complexType",
         source: `<xs:complexType name="PersonType"><xs:attribute name="gender"/></xs:complexType>`,
         parentId: "/complexType:PersonType/attribute:gender",
         getSimpleType: (schemaObj: schema): localSimpleType =>
-          (complexTypes(schemaObj)[0].attribute ?? [])[0].simpleType!,
+          (complexTypes(schemaObj)[0]!.attribute ?? [])[0]!.simpleType!,
       },
     ];
 
@@ -469,12 +469,12 @@ describe("SimpleType Executors", () => {
         documentation: "Allowed age values",
       });
 
-      const element = elements(schemaObj)[0];
-      expect(element.simpleType!.annotation!.documentation![0].value).toBe("Allowed age values");
-      expect(element.simpleType!.restriction!.maxInclusive![0].value).toBe("120");
+      const element = elements(schemaObj)[0]!;
+      expect(element.simpleType!.annotation!.documentation![0]!.value).toBe("Allowed age values");
+      expect(element.simpleType!.restriction!.maxInclusive![0]!.value).toBe("120");
 
       const reparsed = unmarshal(schema, marshal(schemaObj));
-      expect(elements(reparsed)[0].simpleType!.restriction!.base).toBe("xs:integer");
+      expect(elements(reparsed)[0]!.simpleType!.restriction!.base).toBe("xs:integer");
     });
 
     test.each([
@@ -485,7 +485,7 @@ describe("SimpleType Executors", () => {
 
       addSimpleType(schemaObj, { parentId: "/element:status", baseType: "xs:token" });
 
-      const result = elements(schemaObj)[0];
+      const result = elements(schemaObj)[0]!;
       expect(result[replaced]).toBeUndefined();
       expect(result.simpleType?.restriction?.base).toBe("xs:token");
     });
@@ -495,13 +495,13 @@ describe("SimpleType Executors", () => {
         label: "element",
         source: `<xs:element name="age"><xs:simpleType><xs:restriction base="xs:integer"/></xs:simpleType></xs:element>`,
         typeId: "/element:age/anonymousSimpleType[0]",
-        getHolder: (schemaObj: schema): topLevelElement => elements(schemaObj)[0],
+        getHolder: (schemaObj: schema): topLevelElement => elements(schemaObj)[0]!,
       },
       {
         label: "attribute",
         source: `<xs:attribute name="color"><xs:simpleType><xs:restriction base="xs:string"><xs:enumeration value="red"/></xs:restriction></xs:simpleType></xs:attribute>`,
         typeId: "/attribute:color/anonymousSimpleType[0]",
-        getHolder: (schemaObj: schema): topLevelAttribute => attributes(schemaObj)[0],
+        getHolder: (schemaObj: schema): topLevelAttribute => attributes(schemaObj)[0]!,
       },
     ];
 
@@ -521,13 +521,13 @@ describe("SimpleType Executors", () => {
         label: "element",
         source: `<xs:element name="age"><xs:simpleType><xs:restriction base="xs:integer"><xs:minInclusive value="0"/></xs:restriction></xs:simpleType></xs:element>`,
         typeId: "/element:age/anonymousSimpleType[0]",
-        getSimpleType: (schemaObj: schema): localSimpleType => elements(schemaObj)[0].simpleType!,
+        getSimpleType: (schemaObj: schema): localSimpleType => elements(schemaObj)[0]!.simpleType!,
       },
       {
         label: "attribute",
         source: `<xs:attribute name="score"><xs:simpleType><xs:restriction base="xs:integer"/></xs:simpleType></xs:attribute>`,
         typeId: "/attribute:score/anonymousSimpleType[0]",
-        getSimpleType: (schemaObj: schema): localSimpleType => attributes(schemaObj)[0].simpleType!,
+        getSimpleType: (schemaObj: schema): localSimpleType => attributes(schemaObj)[0]!.simpleType!,
       },
     ];
 
@@ -544,8 +544,8 @@ describe("SimpleType Executors", () => {
 
         const simpleType = getSimpleType(schemaObj);
         expect(simpleType.restriction!.base).toBe("xs:positiveInteger");
-        expect(simpleType.restriction!.minInclusive![0].value).toBe("1");
-        expect(simpleType.restriction!.maxInclusive![0].value).toBe("100");
+        expect(simpleType.restriction!.minInclusive![0]!.value).toBe("1");
+        expect(simpleType.restriction!.maxInclusive![0]!.value).toBe("100");
       }
     );
 
@@ -560,7 +560,7 @@ describe("SimpleType Executors", () => {
         documentation: "Age in years",
       });
 
-      expect(elements(schemaObj)[0].simpleType!.annotation!.documentation![0].value).toBe("Age in years");
+      expect(elements(schemaObj)[0]!.simpleType!.annotation!.documentation![0]!.value).toBe("Age in years");
     });
   });
 
@@ -571,7 +571,7 @@ describe("SimpleType Executors", () => {
         source: `
   <xs:simpleType name="StatusType"><xs:restriction base="xs:string"/></xs:simpleType>
   <xs:element name="status" type="StatusType"/>`,
-        expectReferences: (schemaObj: schema): void => { expect(elements(schemaObj)[0].type_).toBe("StateType"); },
+        expectReferences: (schemaObj: schema): void => { expect(elements(schemaObj)[0]!.type_).toBe("StateType"); },
       },
       {
         name: "attribute/@type",
@@ -580,7 +580,7 @@ describe("SimpleType Executors", () => {
   <xs:attribute name="code" type="CodeType"/>`,
         oldName: "CodeType",
         newName: "IdentifierType",
-        expectReferences: (schemaObj: schema): void => { expect(attributes(schemaObj)[0].type_).toBe("IdentifierType"); },
+        expectReferences: (schemaObj: schema): void => { expect(attributes(schemaObj)[0]!.type_).toBe("IdentifierType"); },
       },
       {
         name: "restriction/@base",
@@ -603,8 +603,8 @@ describe("SimpleType Executors", () => {
   <xs:element name="b" type="xs:StatusType"/>`,
         expectReferences: (schemaObj: schema): void => {
           const [first, second] = elements(schemaObj);
-          expect(first.type_).toBe("StateType");
-          expect(second.type_).toBe("xs:StatusType");
+          expect(first!.type_).toBe("StateType");
+          expect(second!.type_).toBe("xs:StatusType");
         },
       },
       {
@@ -620,7 +620,7 @@ describe("SimpleType Executors", () => {
           };
         },
         expectReferences: (schemaObj: schema): void => {
-          expect(elements(schemaObj)[0].type_).toBe("tns:StateType");
+          expect(elements(schemaObj)[0]!.type_).toBe("tns:StateType");
         },
       },
     ];

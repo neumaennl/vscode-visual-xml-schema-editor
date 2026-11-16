@@ -97,8 +97,8 @@ describe("CommandExecutor", () => {
       // Verify the element was modified
       expect(testSchema.element).toBeDefined();
       const elements = Array.isArray(testSchema.element) ? testSchema.element : [testSchema.element];
-      expect(elements[0].name).toBe("modifiedElement");
-      expect(elements[0].type_).toBe("int");
+      expect(elements[0]!.name).toBe("modifiedElement");
+      expect(elements[0]!.type_).toBe("int");
     });
 
     test("should delegate addAttribute execution successfully", () => {
@@ -147,7 +147,7 @@ describe("CommandExecutor", () => {
       executor.execute(command, mockSchema);
 
       expect(mockSchema.complexType).toBeDefined();
-      expect(mockSchema.complexType![0].name).toBe("testComplexType");
+      expect(mockSchema.complexType![0]!.name).toBe("testComplexType");
     });
 
     test("should delegate addGroup execution and add the group to the schema", () => {
@@ -162,7 +162,7 @@ describe("CommandExecutor", () => {
       executor.execute(command, mockSchema);
 
       expect(mockSchema.group).toBeDefined();
-      expect(mockSchema.group![0].name).toBe("testGroup");
+      expect(mockSchema.group![0]!.name).toBe("testGroup");
     });
 
     test("should delegate addAttributeGroup execution and add the group to the schema", () => {
@@ -176,7 +176,7 @@ describe("CommandExecutor", () => {
       executor.execute(command, mockSchema);
 
       expect(mockSchema.attributeGroup).toBeDefined();
-      expect((mockSchema.attributeGroup ?? [])[0].name).toBe("testAttrGroup");
+      expect((mockSchema.attributeGroup ?? [])[0]!.name).toBe("testAttrGroup");
     });
 
     test("should delegate addAnnotation execution successfully", () => {
@@ -194,7 +194,7 @@ describe("CommandExecutor", () => {
       }).not.toThrow();
 
       expect(mockSchema.annotation ?? []).toHaveLength(1);
-      expect(((mockSchema.annotation ?? [])[0].documentation ?? [])[0].value).toBe(
+      expect(((mockSchema.annotation ?? [])[0]!.documentation ?? [])[0]!.value).toBe(
         "Test schema annotation"
       );
     });
@@ -216,7 +216,7 @@ describe("CommandExecutor", () => {
 
       const documentations = (mockSchema.annotation ?? [])[0]?.documentation ?? [];
       expect(documentations).toHaveLength(1);
-      expect(documentations[0].value).toBe("Test schema documentation");
+      expect(documentations[0]!.value).toBe("Test schema documentation");
     });
 
     test("should delegate addImport execution successfully", () => {
@@ -248,7 +248,7 @@ describe("CommandExecutor", () => {
       }).not.toThrow();
 
       expect(mockSchema.include ?? []).toHaveLength(1);
-      expect((mockSchema.include ?? [])[0].schemaLocation).toBe("included.xsd");
+      expect((mockSchema.include ?? [])[0]!.schemaLocation).toBe("included.xsd");
     });
   });
 });

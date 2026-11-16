@@ -45,8 +45,8 @@ describe("Integration: Element pipeline", () => {
       const elements = result.element ?? [];
 
       expect(elements).toHaveLength(1);
-      expect(elements[0].name).toBe("order");
-      expect(elements[0].type_).toBe("xs:string");
+      expect(elements[0]!.name).toBe("order");
+      expect(elements[0]!.type_).toBe("xs:string");
     });
 
     test("should add a second top-level element without disturbing the first", () => {
@@ -73,7 +73,7 @@ describe("Integration: Element pipeline", () => {
       });
       const invoice = findTopLevelElement(result, "invoice");
       const documentations = invoice.annotation?.documentation ?? [];
-      expect(documentations[0].value).toBe("An invoice record");
+      expect(documentations[0]!.value).toBe("An invoice record");
     });
 
     test("should return validation error when element name is invalid", () => {

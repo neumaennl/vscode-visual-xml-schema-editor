@@ -248,11 +248,11 @@ describe("renderValueListFacet", () => {
       const chips = Array.from(root.querySelectorAll(".property-value-chip"));
       const dataTransfer = createDataTransfer();
 
-      dispatchDrag(chips[0].querySelector(".property-value-chip-grip")!, "dragstart", dataTransfer);
-      const dragOver = dispatchDrag(chips[2], "dragover", dataTransfer);
+      dispatchDrag(chips[0]!.querySelector(".property-value-chip-grip")!, "dragstart", dataTransfer);
+      const dragOver = dispatchDrag(chips[2]!, "dragover", dataTransfer);
       expect(dragOver.defaultPrevented).toBe(true);
-      expect(chips[2].classList).toContain("property-value-chip-drag-over");
-      dispatchDrag(chips[2], "drop", dataTransfer);
+      expect(chips[2]!.classList).toContain("property-value-chip-drag-over");
+      dispatchDrag(chips[2]!, "drop", dataTransfer);
 
       expect(draft.enumeration).toEqual(["B", "C", "A"]);
       expect(chipValues(root)).toEqual(["B", "C", "A"]);
@@ -261,15 +261,15 @@ describe("renderValueListFacet", () => {
     test("should mark the dragged chip until the drag ends", () => {
       const { root } = renderValueList("enumeration", ["A", "B"]);
       const [first, second] = Array.from(root.querySelectorAll(".property-value-chip"));
-      const grip = first.querySelector(".property-value-chip-grip")!;
+      const grip = first!.querySelector(".property-value-chip-grip")!;
 
       dispatchDrag(grip, "dragstart");
-      dispatchDrag(second, "dragover");
-      expect(first.classList).toContain("property-value-chip-dragging");
+      dispatchDrag(second!, "dragover");
+      expect(first!.classList).toContain("property-value-chip-dragging");
       dispatchDrag(grip, "dragend");
 
-      expect(first.classList).not.toContain("property-value-chip-dragging");
-      expect(second.classList).not.toContain("property-value-chip-drag-over");
+      expect(first!.classList).not.toContain("property-value-chip-dragging");
+      expect(second!.classList).not.toContain("property-value-chip-drag-over");
     });
 
     test("should ignore a drop that does not come from a chip of the list", () => {

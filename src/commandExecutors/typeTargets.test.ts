@@ -52,7 +52,7 @@ describe("removeType", () => {
   test("should remove an anonymous type from its element or attribute", () => {
     const schemaObj = createSchema();
     removeType(schemaObj, "/attribute:attr/anonymousSimpleType[0]", "simpleType");
-    expect(schemaObj.attribute?.[0].simpleType).toBeUndefined();
+    expect(schemaObj.attribute?.[0]!.simpleType).toBeUndefined();
   });
 
   test("should remove a top-level type, and the array with the last one", () => {
@@ -78,7 +78,7 @@ describe("locateModifiedType", () => {
   test("should locate an anonymous type", () => {
     const schemaObj = createSchema();
     const result = locateModifiedType(schemaObj, "/element:anonymous/anonymousComplexType[0]", "complexType", undefined);
-    expect(result).toEqual({ type: schemaObj.element?.[1].complexType, topLevel: false });
+    expect(result).toEqual({ type: schemaObj.element?.[1]!.complexType, topLevel: false });
   });
 
   test("should locate a top-level type without changing it", () => {
@@ -92,6 +92,6 @@ describe("locateModifiedType", () => {
     const schemaObj = createSchema();
     const result = locateModifiedType(schemaObj, "/simpleType:S", "simpleType", "U");
     expect(result.type).toMatchObject({ name: "U" });
-    expect(schemaObj.element?.[0].type_).toBe("U");
+    expect(schemaObj.element?.[0]!.type_).toBe("U");
   });
 });

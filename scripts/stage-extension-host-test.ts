@@ -43,6 +43,6 @@ export function stage(root = "."): void {
   writeFileSync(join(workspace, ".vscode", "settings.json"), JSON.stringify(WORKSPACE_SETTINGS, null, 2));
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href) {
   stage();
 }

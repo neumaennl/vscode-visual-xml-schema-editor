@@ -36,7 +36,7 @@ describe("isIdentifiedChild", () => {
     ["a different name", "c", undefined, 0, false],
     ["neither a name nor a position", undefined, undefined, 0, false],
   ])("should match by %s", (_case, name, position, index, expected) => {
-    expect(isIdentifiedChild(CHILDREN[index], index, name, position)).toBe(expected);
+    expect(isIdentifiedChild(CHILDREN[index]!, index, name, position)).toBe(expected);
   });
 });
 

@@ -106,17 +106,17 @@ describe("createDocsTab", () => {
     test.each(["Remove annotation", "Remove documentation"])("should show '%s' as an icon with a tooltip", (label) => {
       const [button] = buttonsLabeled(renderDocs(DOCUMENTED, "/element:person").tab, label);
 
-      expect(button.classList).toContain("property-docs-action-icon-only");
-      expect(button.classList).toContain("property-docs-action-destructive");
-      expect(button.title).toBe(label);
-      expect(button.textContent).toBe("");
+      expect(button!.classList).toContain("property-docs-action-icon-only");
+      expect(button!.classList).toContain("property-docs-action-destructive");
+      expect(button!.title).toBe(label);
+      expect(button!.textContent).toBe("");
     });
 
     test("should show 'Add documentation' with its text", () => {
       const [button] = buttonsLabeled(renderDocs(DOCUMENTED, "/element:person").tab, "Add documentation");
 
-      expect(button.classList).not.toContain("property-docs-action-icon-only");
-      expect(button.textContent).toBe("Add documentation");
+      expect(button!.classList).not.toContain("property-docs-action-icon-only");
+      expect(button!.textContent).toBe("Add documentation");
     });
   });
 
@@ -132,7 +132,7 @@ describe("createDocsTab", () => {
         type: "modifyDocumentation",
         payload: { documentationId: "/element:person/documentation[0]", content: "Line one\nLine two" },
       });
-      expect(node.documentationAnnotations[0].documentationEntries[0].content).toBe("Line one\nLine two");
+      expect(node.documentationAnnotations[0]!.documentationEntries[0]!.content).toBe("Line one\nLine two");
       expect(node.documentation).toBe("Line one\nLine two");
       expect(rerender).not.toHaveBeenCalled();
     });
@@ -142,15 +142,15 @@ describe("createDocsTab", () => {
       { id: "/element:person", annotation: 0, targetId: "/element:person" },
     ])("should add a documentation entry to the annotation $targetId", ({ id, annotation, targetId }) => {
       const { tab, node, dispatch, rerender } = renderDocs(DOCUMENTED, id);
-      const entryCount = node.documentationAnnotations[annotation].documentationEntries.length;
+      const entryCount = node.documentationAnnotations[annotation]!.documentationEntries.length;
 
-      buttonsLabeled(tab, "Add documentation")[annotation].click();
+      buttonsLabeled(tab, "Add documentation")[annotation]!.click();
 
       expect(dispatch).toHaveBeenCalledExactlyOnceWith({
         type: "addDocumentation",
         payload: { targetId, content: "New documentation" },
       });
-      expect(node.documentationAnnotations[annotation].documentationEntries.at(-1)).toEqual({
+      expect(node.documentationAnnotations[annotation]!.documentationEntries.at(-1)).toEqual({
         id: `${targetId}/documentation[${entryCount}]`,
         content: "New documentation",
       });
@@ -161,13 +161,13 @@ describe("createDocsTab", () => {
     test("should remove a documentation entry and number the remaining entries again", () => {
       const { tab, node, dispatch, rerender } = renderDocs(DOCUMENTED, "/schema");
 
-      buttonsLabeled(tab, "Remove documentation")[0].click();
+      buttonsLabeled(tab, "Remove documentation")[0]!.click();
 
       expect(dispatch).toHaveBeenCalledExactlyOnceWith({
         type: "removeDocumentation",
         payload: { documentationId: "/schema/annotation[0]/documentation[0]" },
       });
-      expect(node.documentationAnnotations[0].documentationEntries).toEqual([
+      expect(node.documentationAnnotations[0]!.documentationEntries).toEqual([
         { id: "/schema/annotation[0]/documentation[0]", content: "Second doc" },
       ]);
       expect(node.documentation).toBe("Second doc\nThird doc");
@@ -179,7 +179,7 @@ describe("createDocsTab", () => {
     test("should remove an annotation of the schema and number the remaining annotations again", () => {
       const { tab, node, dispatch, rerender } = renderDocs(DOCUMENTED, "/schema");
 
-      buttonsLabeled(tab, "Remove annotation")[0].click();
+      buttonsLabeled(tab, "Remove annotation")[0]!.click();
 
       expect(dispatch).toHaveBeenCalledExactlyOnceWith({
         type: "removeAnnotation",
@@ -199,7 +199,7 @@ describe("createDocsTab", () => {
     test("should remove the annotation of another node", () => {
       const { tab, node, dispatch } = renderDocs(DOCUMENTED, "/element:person");
 
-      buttonsLabeled(tab, "Remove annotation")[0].click();
+      buttonsLabeled(tab, "Remove annotation")[0]!.click();
 
       expect(dispatch).toHaveBeenCalledExactlyOnceWith({
         type: "removeAnnotation",
@@ -212,7 +212,7 @@ describe("createDocsTab", () => {
     test("should add an empty annotation to the schema", () => {
       const { tab, node, dispatch, rerender } = renderDocs(DOCUMENTED, "/schema");
 
-      buttonsLabeled(tab, "Add annotation")[0].click();
+      buttonsLabeled(tab, "Add annotation")[0]!.click();
 
       expect(dispatch).toHaveBeenCalledExactlyOnceWith({ type: "addAnnotation", payload: { targetId: "/schema" } });
       expect(node.documentationAnnotations.at(-1)).toEqual({ id: "/schema/annotation[3]", documentationEntries: [] });
@@ -238,7 +238,7 @@ describe("createDocsTab", () => {
     ])("should send documentation for $id to $targetId", ({ id, targetId }) => {
       const { tab, dispatch } = renderDocs(UNDOCUMENTED, id);
 
-      buttonsLabeled(tab, "Add documentation")[0].click();
+      buttonsLabeled(tab, "Add documentation")[0]!.click();
 
       expect(dispatch).toHaveBeenCalledExactlyOnceWith({
         type: "addDocumentation",
@@ -249,7 +249,7 @@ describe("createDocsTab", () => {
     test("should add the annotation with the documentation entry to the draft", () => {
       const { tab, node, rerender } = renderDocs(UNDOCUMENTED, "/element:plain");
 
-      buttonsLabeled(tab, "Add documentation")[0].click();
+      buttonsLabeled(tab, "Add documentation")[0]!.click();
 
       expect(node.documentationAnnotations).toEqual([
         {

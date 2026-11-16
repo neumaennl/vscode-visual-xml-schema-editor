@@ -165,7 +165,7 @@ describe("Attribute Executors", () => {
 
       addAttribute(schemaObj, { parentId: "/complexType:PersonType", ref: "lang", documentation: "Language of the content" });
 
-      expect(personTypeAttributes(schemaObj)[0].ref).toBe("lang");
+      expect(personTypeAttributes(schemaObj)[0]!.ref).toBe("lang");
       expect(documentationOf(personTypeAttributes(schemaObj)[0])).toEqual(["Language of the content"]);
     });
 
@@ -178,7 +178,7 @@ describe("Attribute Executors", () => {
         attributeType: "xs:string",
       });
 
-      expect(schemaObj.element?.[0].complexType?.attribute?.map((a) => a.name)).toEqual(["status"]);
+      expect(schemaObj.element?.[0]!.complexType?.attribute?.map((a) => a.name)).toEqual(["status"]);
     });
   });
 
@@ -221,7 +221,7 @@ describe("Attribute Executors", () => {
 
       removeAttribute(schemaObj, "/element:person/anonymousComplexType[0]/attribute:id");
 
-      expect(schemaObj.element?.[0].complexType?.attribute).toBeUndefined();
+      expect(schemaObj.element?.[0]!.complexType?.attribute).toBeUndefined();
     });
   });
 
@@ -270,7 +270,7 @@ describe("Attribute Executors", () => {
 
       modifyAttribute(schemaObj, { attributeId: "/complexType:PersonType/attribute:id", documentation: "New" });
 
-      const attr = personTypeAttributes(schemaObj)[0];
+      const attr = personTypeAttributes(schemaObj)[0]!;
       expect(documentationOf(attr)).toEqual(["New"]);
       expect(attr.annotation?.appinfo ?? []).toHaveLength(1);
     });
@@ -280,7 +280,7 @@ describe("Attribute Executors", () => {
 
       modifyAttribute(schemaObj, { attributeId: "/attribute:lang", attributeName: "language" });
 
-      expect(schemaObj.attribute?.[0].name).toBe("language");
+      expect(schemaObj.attribute?.[0]!.name).toBe("language");
     });
 
     test("should modify a named attribute to become a reference", () => {
@@ -378,7 +378,7 @@ ${personTypeWith(`<xs:attribute name="locale" type="xs:string"/>`)}`);
 
         modifyAttribute(schemaObj, { attributeId: "/complexType:T/attribute:id", attributeType: "xs:string" });
 
-        expect(complexTypeNamed(schemaObj, "T")[content]?.[derivation]?.attribute?.[0].type_).toBe("xs:string");
+        expect(complexTypeNamed(schemaObj, "T")[content]?.[derivation]?.attribute?.[0]!.type_).toBe("xs:string");
       }
     );
 
@@ -393,7 +393,7 @@ ${personTypeWith(`<xs:attribute name="locale" type="xs:string"/>`)}`);
         attributeType: "xs:string",
       });
 
-      const complexType = unmarshal(schema, marshal(schemaObj)).element![0].complexType!;
+      const complexType = unmarshal(schema, marshal(schemaObj)).element![0]!.complexType!;
       expect(complexType.complexContent?.extension?.attribute?.map((a) => a.name)).toEqual(["lang"]);
       expect(complexType.attribute ?? []).toEqual([]);
     });

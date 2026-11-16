@@ -38,7 +38,7 @@ describe("rewritePrefixInSchema", () => {
 
     rewritePrefixInSchema("ext", "ext", schemaObj);
 
-    expect(schemaObj.element?.[0].type_).toBe("ext:FooType");
+    expect(schemaObj.element?.[0]!.type_).toBe("ext:FooType");
   });
 
   test("should not throw on an empty schema", () => {
@@ -50,7 +50,7 @@ describe("rewritePrefixInSchema", () => {
 
     rewritePrefixInSchema("ext", "p", schemaObj);
 
-    expect(schemaObj.element?.[1].type_).toBe("xs:string");
+    expect(schemaObj.element?.[1]!.type_).toBe("xs:string");
   });
 
   test.each([

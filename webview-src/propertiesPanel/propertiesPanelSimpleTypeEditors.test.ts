@@ -217,7 +217,7 @@ describe("propertiesPanelSimpleTypeEditors", () => {
 
       const selects = getSelectsByLabel(root, "Member Types");
       expect(selects.map((select) => select.value)).toEqual(["xs:int", "xs:decimal"]);
-      expect(Array.from(selects[0].options, (option) => option.value)).toEqual(["", ...SUGGESTIONS, "xs:int", "xs:decimal"]);
+      expect(Array.from(selects[0]!.options, (option) => option.value)).toEqual(["", ...SUGGESTIONS, "xs:int", "xs:decimal"]);
     });
 
     test.each([
@@ -226,7 +226,7 @@ describe("propertiesPanelSimpleTypeEditors", () => {
     ])("should change a member type of the union of $id", ({ id, typeId, type }) => {
       const { root, node, dispatch } = renderBodyEditor(id, renderSimpleTypeUnionEditor);
 
-      choose(getSelectsByLabel(root, "Member Types")[1], "xs:double");
+      choose(getSelectsByLabel(root, "Member Types")[1]!, "xs:double");
 
       expect(dispatch).toHaveBeenCalledExactlyOnceWith({ type: "modifySimpleType", payload: { typeId, unionMemberTypes: ["xs:int", "xs:double"] } });
       expect(node.type).toBe(type);
@@ -235,7 +235,7 @@ describe("propertiesPanelSimpleTypeEditors", () => {
     test("should send nothing when a member type is selected again", () => {
       const { root, dispatch } = renderBodyEditor("/simpleType:Number", renderSimpleTypeUnionEditor);
 
-      choose(getSelectsByLabel(root, "Member Types")[1], "xs:decimal");
+      choose(getSelectsByLabel(root, "Member Types")[1]!, "xs:decimal");
 
       expect(dispatch).not.toHaveBeenCalled();
     });
@@ -243,8 +243,8 @@ describe("propertiesPanelSimpleTypeEditors", () => {
     test("should remove member types, but send no union without members", () => {
       const { root, dispatch } = renderBodyEditor("/simpleType:Number", renderSimpleTypeUnionEditor);
 
-      removeMemberButtons(root)[0].click();
-      removeMemberButtons(root)[0].click();
+      removeMemberButtons(root)[0]!.click();
+      removeMemberButtons(root)[0]!.click();
 
       expect(dispatch).toHaveBeenCalledExactlyOnceWith({
         type: "modifySimpleType",

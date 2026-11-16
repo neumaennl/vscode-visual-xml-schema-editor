@@ -11,6 +11,8 @@
  * 5. Handle elements without explicit IDs
  */
 
+import { requireGroup } from "./regexUtils.js";
+
 /**
  * Type of schema node for ID generation.
  */
@@ -182,7 +184,10 @@ export function parseSchemaId(id: string): ParsedSchemaId {
   const path = segments;
 
   // Parse the last segment (the actual node)
-  const lastSegment = segments[segments.length - 1];
+  const lastSegment = segments.at(-1);
+  if (lastSegment === undefined) {
+    throw new Error(`Invalid schema ID format: no node after /: ${id}`);
+  }
   const nodeInfo = parseNodeSegment(lastSegment);
 
   // Build parent ID if there are parent segments
@@ -259,8 +264,8 @@ function parseNodeSegment(segment: string): {
 } {
   // Split off a position indicator [N]
   const positionMatch = /^([^[]+)\[(\d+)\]$/.exec(segment);
-  const typeAndName = positionMatch ? positionMatch[1] : segment;
-  const position = positionMatch ? { position: parseInt(positionMatch[2], 10) } : {};
+  const typeAndName = positionMatch ? requireGroup(positionMatch, 1) : segment;
+  const position = positionMatch ? { position: parseInt(requireGroup(positionMatch, 2), 10) } : {};
 
   // Check for type:name format; namespace URLs can contain ':', so the separator needs care
   const colonIndex = findTypeNameSeparator(typeAndName);
@@ -309,7 +314,7 @@ function parseQualifiedName(qualifiedName: string): {
 } {
   const nsMatch = /^\{([^}]+)\}(.+)$/.exec(qualifiedName);
   if (nsMatch) {
-    return { namespace: nsMatch[1], name: nsMatch[2] };
+    return { namespace: requireGroup(nsMatch, 1), name: requireGroup(nsMatch, 2) };
   }
   return { name: qualifiedName };
 }

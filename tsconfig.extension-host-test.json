@@ -17,6 +17,7 @@
     ],
     "strict": true,
     "allowUnreachableCode": false,
+    "noUncheckedIndexedAccess": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },

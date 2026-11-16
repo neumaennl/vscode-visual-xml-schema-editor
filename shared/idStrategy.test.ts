@@ -264,6 +264,10 @@ describe("parseSchemaId", () => {
     test("should throw error for empty string", () => {
       expect(() => parseSchemaId("")).toThrow("Invalid schema ID format");
     });
+
+    test("should throw error for an ID without a node after the slash", () => {
+      expect(() => parseSchemaId("/")).toThrow("Invalid schema ID format: no node after /: /");
+    });
   });
 });
 

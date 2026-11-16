@@ -48,21 +48,20 @@ function isValidSchemaLocation(value: string): boolean {
 /**
  * Parses the ID of an import or include and validates that it refers to an existing entry.
  *
- * Returns `{ valid: true, position }` with the resolved zero-based index on
- * success, or `{ valid: false, error }` when the ID is malformed or out of
- * range.  Callers that need the position (e.g. to look up the entry)
- * can use it directly without calling `parseSchemaId` a second time.
+ * Returns `{ valid: true, position, entry }` with the resolved zero-based index and the entry on
+ * success, or `{ valid: false, error }` when the ID is malformed or out of range, so that callers
+ * need neither `parseSchemaId` nor the index a second time.
  *
  * @param id - The ID of the import or include
  * @param kind - Whether the ID identifies an import or an include
  * @param entries - The imports or includes of the schema
- * @returns The position of the entry, or the validation failure
+ * @returns The position and the entry, or the validation failure
  */
-function validateModuleId(
+function validateModuleId<T extends object>(
   id: string,
   kind: "import" | "include",
-  entries: object[] | undefined
-): { valid: false; error: string } | { valid: true; position: number } {
+  entries: T[] | undefined
+): { valid: false; error: string } | { valid: true; position: number; entry: T } {
   let parsed;
   try {
     parsed = parseSchemaId(id);
@@ -77,11 +76,12 @@ function validateModuleId(
       error: `'${id}' does not refer to an ${kind} node (got '${parsed.nodeType}')`,
     };
   }
-  if (index === undefined || index < 0 || index >= (entries ?? []).length) {
+  const entry = index === undefined ? undefined : entries?.[index];
+  if (index === undefined || entry === undefined) {
     const label = kind === "import" ? "Import" : "Include";
     return { valid: false, error: `${label} not found: ${id}` };
   }
-  return { valid: true, position: index };
+  return { valid: true, position: index, entry };
 }
 
 /**
@@ -195,11 +195,10 @@ export function validateAddImport(
     const prefixResult = validatePrefix(prefix);
     if (!prefixResult.valid) return prefixResult;
     // Check prefix uniqueness: only reject when bound to a different namespace
-    if (schemaObj._namespacePrefixes && Object.prototype.hasOwnProperty.call(schemaObj._namespacePrefixes, prefix)) {
-      const existingNs = schemaObj._namespacePrefixes[prefix];
-      if (existingNs !== namespace.trim()) {
-        return { valid: false, error: `Prefix '${prefix}' is already in use by namespace '${existingNs}'` };
-      }
+    const prefixes = schemaObj._namespacePrefixes ?? {};
+    const existingNs = Object.hasOwn(prefixes, prefix) ? prefixes[prefix] : undefined;
+    if (existingNs !== undefined && existingNs !== namespace.trim()) {
+      return { valid: false, error: `Prefix '${prefix}' is already in use by namespace '${existingNs}'` };
     }
   }
 
@@ -225,8 +224,7 @@ export function validateRemoveImport(
   if (!idResult.valid) return idResult;
 
   // Check if the import's namespace prefix is still referenced in the schema
-  const imports = schemaObj.import_ ?? [];
-  const { namespace } = imports[idResult.position];
+  const { namespace } = idResult.entry;
   if (namespace !== undefined && isNamespaceReferenced(namespace, schemaObj)) {
     return {
       valid: false,
@@ -265,7 +263,7 @@ export function validateModifyImport(
     const namespaceResult = validateImportNamespace(namespace);
     if (!namespaceResult.valid) return namespaceResult;
     // Check that changing the namespace won't create a duplicate
-    const currentNamespace = imports[position].namespace;
+    const currentNamespace = idResult.entry.namespace;
     if (namespace.trim() !== currentNamespace) {
       if (imports.some((imp, i) => i !== position && imp.namespace === namespace.trim())) {
         return { valid: false, error: `An import for namespace '${namespace.trim()}' already exists` };
@@ -284,7 +282,7 @@ export function validateModifyImport(
       return { valid: false, error: "'oldPrefix' requires 'prefix' to be provided" };
     }
     // oldPrefix must currently be registered for this import's namespace
-    const currentNamespace = imports[position].namespace;
+    const currentNamespace = idResult.entry.namespace;
     const registeredNs = schemaObj._namespacePrefixes?.[oldPrefix];
     if (registeredNs === undefined) {
       return { valid: false, error: `Prefix '${oldPrefix}' is not registered in this schema` };
@@ -306,13 +304,13 @@ export function validateModifyImport(
     // Check prefix uniqueness: the new prefix must not already be registered
     // for a *different* namespace.  It is fine (no-op) if it is already
     // registered for the same namespace that this import is being modified to.
-    const targetNamespace = (namespace?.trim()) ?? imports[position].namespace;
+    const targetNamespace = (namespace?.trim()) ?? idResult.entry.namespace;
     // A prefix binds a namespace, so an import without one cannot get a prefix
     if (!targetNamespace) {
       return { valid: false, error: `Cannot bind prefix '${prefix}' to an import without a namespace` };
     }
     if (schemaObj._namespacePrefixes) {
-      const existingNs = schemaObj._namespacePrefixes[prefix] as string | undefined;
+      const existingNs = schemaObj._namespacePrefixes[prefix];
       if (existingNs !== undefined && existingNs !== targetNamespace) {
         return { valid: false, error: `Prefix '${prefix}' is already in use` };
       }

@@ -12,6 +12,7 @@
  */
 
 import type { attributeGroupRef } from "../shared/types.js";
+import { requireGroup } from "../shared/regexUtils.js";
 
 /**
  * Parses a schema-annotation ID of the form `"/schema/annotation[N]"`.
@@ -21,7 +22,7 @@ import type { attributeGroupRef } from "../shared/types.js";
  */
 export function parseSchemaAnnotationId(id: string): number | null {
   const match = /^\/schema\/annotation\[(\d+)\]$/.exec(id);
-  return match ? parseInt(match[1], 10) : null;
+  return match ? parseInt(requireGroup(match, 1), 10) : null;
 }
 
 /**
@@ -35,9 +36,10 @@ export function parseSchemaDocumentationId(
   id: string
 ): { annotationIndex: number; documentationIndex: number } | null {
   const match = /^\/schema\/annotation\[(\d+)\]\/documentation\[(\d+)\]$/.exec(id);
-  return match
-    ? { annotationIndex: parseInt(match[1], 10), documentationIndex: parseInt(match[2], 10) }
-    : null;
+  if (!match) {
+    return null;
+  }
+  return { annotationIndex: parseInt(requireGroup(match, 1), 10), documentationIndex: parseInt(requireGroup(match, 2), 10) };
 }
 
 /**
@@ -61,7 +63,7 @@ export function parseDocumentationId(documentationId: string): {
       `Invalid documentationId format — expected "{elementPath}/documentation[N]": ${documentationId}`
     );
   }
-  return { elementId: match[1], documentationIndex: parseInt(match[2], 10) };
+  return { elementId: requireGroup(match, 1), documentationIndex: parseInt(requireGroup(match, 2), 10) };
 }
 
 /**

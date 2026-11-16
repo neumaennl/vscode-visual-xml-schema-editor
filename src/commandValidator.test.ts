@@ -105,7 +105,7 @@ describe("CommandValidator", () => {
     );
 
     test("should return validator error when validator returns invalid", () => {
-      const command = DELEGATED_COMMANDS[0];
+      const command = DELEGATED_COMMANDS[0]!;
       mockValidators.get("validateAddElement")?.mockReturnValueOnce({ valid: false, error: "Element name cannot be empty" });
 
       const result = validator.validate(command, mockSchema);
@@ -118,7 +118,7 @@ describe("CommandValidator", () => {
 
   describe("default constructor behavior", () => {
     test("should use actual validators when no mocks are provided", () => {
-      const result = new CommandValidator().validate(DELEGATED_COMMANDS[0], mockSchema);
+      const result = new CommandValidator().validate(DELEGATED_COMMANDS[0]!, mockSchema);
 
       expect(result.valid).toBe(true);
     });

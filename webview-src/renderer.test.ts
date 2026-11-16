@@ -71,7 +71,7 @@ describe("DiagramRenderer", () => {
       const newViewState = { zoom: 2, panX: 10, panY: 20 };
       renderer.updateView(newViewState);
       
-      const mainGroup = mockCanvas.getElementsByTagName("g")[0];
+      const mainGroup = mockCanvas.getElementsByTagName("g")[0]!;
       const transform = mainGroup.getAttribute("transform");
       expect(transform).toBeTruthy();
       expect(transform).toContain("translate");

@@ -69,7 +69,7 @@ describe("Integration: WorkspaceEdit via SchemaEditorProvider", () => {
 
       // WorkspaceEdit must have been created and applied
       expect(vscode.WorkspaceEdit).toHaveBeenCalled();
-      const editInstance = (vscode.WorkspaceEdit as Mock).mock.results[0].value as {
+      const editInstance = (vscode.WorkspaceEdit as Mock).mock.results[0]!.value as {
         replace: Mock<(uri: vscode.Uri, range: vscode.Range, text: string) => void>;
       };
       expect(editInstance.replace).toHaveBeenCalledWith(
@@ -78,7 +78,7 @@ describe("Integration: WorkspaceEdit via SchemaEditorProvider", () => {
         expect.any(String)
       );
       // Verify the written XML parses correctly and contains the new element
-      const writtenXml = editInstance.replace.mock.calls[0][2];
+      const writtenXml = editInstance.replace.mock.calls[0]![2];
       const parsedSchema = unmarshal(schema, writtenXml);
       expect((parsedSchema.element ?? []).some((e) => e.name === "order")).toBe(true);
       expect(vscode.workspace.applyEdit).toHaveBeenCalled();

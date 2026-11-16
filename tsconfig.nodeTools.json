@@ -12,6 +12,7 @@
     ],
     "strict": true,
     "allowUnreachableCode": false,
+    "noUncheckedIndexedAccess": true,
     "noEmit": true,
     "allowImportingTsExtensions": true,
     "erasableSyntaxOnly": true,

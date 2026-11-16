@@ -37,7 +37,7 @@ describe("Integration: Attribute pipeline", () => {
           attributeType: "xs:string",
         },
       });
-      const ct = (result.complexType ?? [])[0];
+      const ct = (result.complexType ?? [])[0]!;
       const attrs = ct.attribute ?? [];
 
       expect(attrs.some((a) => a.name === "email" && a.type_ === "xs:string")).toBe(true);
@@ -53,7 +53,7 @@ describe("Integration: Attribute pipeline", () => {
           required: true,
         },
       });
-      const ct = (result.complexType ?? [])[0];
+      const ct = (result.complexType ?? [])[0]!;
       const attrs = ct.attribute ?? [];
       const code = attrs.find((a) => a.name === "code");
 
@@ -100,7 +100,7 @@ describe("Integration: Attribute pipeline", () => {
         type: "removeAttribute",
         payload: { attributeId: "/complexType:PersonType/attribute:id[0]" },
       });
-      const ct = (result.complexType ?? [])[0];
+      const ct = (result.complexType ?? [])[0]!;
       const attrs = ct.attribute ?? [];
 
       expect(attrs.some((a) => a.name === "id")).toBe(false);
@@ -124,7 +124,7 @@ describe("Integration: Attribute pipeline", () => {
           attributeName: "identifier",
         },
       });
-      const ct = (result.complexType ?? [])[0];
+      const ct = (result.complexType ?? [])[0]!;
       const attrs = ct.attribute ?? [];
 
       expect(attrs.some((a) => a.name === "identifier")).toBe(true);
@@ -139,7 +139,7 @@ describe("Integration: Attribute pipeline", () => {
           attributeType: "xs:integer",
         },
       });
-      const ct = (result.complexType ?? [])[0];
+      const ct = (result.complexType ?? [])[0]!;
       const attrs = ct.attribute ?? [];
       const id = attrs.find((a) => a.name === "id");
 

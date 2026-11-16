@@ -300,11 +300,11 @@ function addReorderHandlers(
  */
 function moveValue(values: readonly string[], sourceIndex: number, targetIndex: number): string[] | null {
   const isValid = (index: number): boolean => Number.isInteger(index) && index >= 0 && index < values.length;
-  if (!isValid(sourceIndex) || !isValid(targetIndex) || sourceIndex === targetIndex) {
+  const moved = values[sourceIndex];
+  if (moved === undefined || !isValid(sourceIndex) || !isValid(targetIndex) || sourceIndex === targetIndex) {
     return null;
   }
-  const next = [...values];
-  const [moved] = next.splice(sourceIndex, 1);
+  const next = values.filter((_, index) => index !== sourceIndex);
   next.splice(targetIndex, 0, moved);
   return next;
 }

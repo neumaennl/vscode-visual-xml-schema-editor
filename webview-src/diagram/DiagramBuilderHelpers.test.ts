@@ -132,8 +132,8 @@ describe("DiagramBuilderHelpers", () => {
       };
       extractAttributes(item, source);
       expect(item.attributes).toHaveLength(1);
-      expect(item.attributes[0].name).toBe("id");
-      expect(item.attributes[0].type).toBe("string");
+      expect(item.attributes[0]!.name).toBe("id");
+      expect(item.attributes[0]!.type).toBe("string");
     });
 
     test("should handle null/undefined source", () => {
@@ -153,7 +153,7 @@ describe("DiagramBuilderHelpers", () => {
       };
       extractAttributes(item, source);
       expect(item.attributes).toHaveLength(1);
-      expect(item.attributes[0].name).toBe("validAttr");
+      expect(item.attributes[0]!.name).toBe("validAttr");
     });
 
     test("should extract multiple attributes", () => {
@@ -177,7 +177,7 @@ describe("DiagramBuilderHelpers", () => {
       };
       extractAttributes(item, source);
       expect(item.attributes).toHaveLength(1);
-      expect(item.attributes[0].type).toBe("inner simpleType or ref");
+      expect(item.attributes[0]!.type).toBe("inner simpleType or ref");
     });
 
     test("should handle attribute without use", () => {
@@ -191,7 +191,7 @@ describe("DiagramBuilderHelpers", () => {
       };
       extractAttributes(item, source);
       expect(item.attributes).toHaveLength(1);
-      expect(item.attributes[0].use).toBeUndefined();
+      expect(item.attributes[0]!.use).toBeUndefined();
     });
   });
 

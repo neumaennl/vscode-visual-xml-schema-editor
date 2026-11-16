@@ -109,8 +109,8 @@ describe("AttributeGroup Executors", () => {
         addAttributeGroup(schemaObj, { groupName: "CommonAttrs" });
 
         expect(schemaObj.attributeGroup).toHaveLength(1);
-        expect(schemaObj.attributeGroup![0].name).toBe("CommonAttrs");
-        expect(schemaObj.attributeGroup![0].annotation).toBeUndefined();
+        expect(schemaObj.attributeGroup![0]!.name).toBe("CommonAttrs");
+        expect(schemaObj.attributeGroup![0]!.annotation).toBeUndefined();
       });
 
       test("should add an attribute group with documentation", () => {
@@ -118,9 +118,9 @@ describe("AttributeGroup Executors", () => {
 
         addAttributeGroup(schemaObj, { groupName: "DocAttrs", documentation: "Documented group" });
 
-        const ag = schemaObj.attributeGroup![0];
+        const ag = schemaObj.attributeGroup![0]!;
         expect(ag.name).toBe("DocAttrs");
-        expect(ag.annotation?.documentation?.[0].value).toBe("Documented group");
+        expect(ag.annotation?.documentation?.[0]!.value).toBe("Documented group");
       });
 
       test("should append to existing attribute groups", () => {
@@ -129,7 +129,7 @@ describe("AttributeGroup Executors", () => {
         addAttributeGroup(schemaObj, { groupName: "SecondAttrs" });
 
         expect(schemaObj.attributeGroup).toHaveLength(2);
-        expect(schemaObj.attributeGroup![1].name).toBe("SecondAttrs");
+        expect(schemaObj.attributeGroup![1]!.name).toBe("SecondAttrs");
       });
 
       test("should produce valid XSD output (round-trip)", () => {
@@ -140,7 +140,7 @@ describe("AttributeGroup Executors", () => {
         const xml = marshal(schemaObj);
         const reparsed = unmarshal(schema, xml);
         expect(reparsed.attributeGroup ?? []).toHaveLength(1);
-        expect((reparsed.attributeGroup ?? [])[0].name).toBe("RoundTripAttrs");
+        expect((reparsed.attributeGroup ?? [])[0]!.name).toBe("RoundTripAttrs");
       });
     });
 
@@ -151,9 +151,9 @@ describe("AttributeGroup Executors", () => {
 
         addAttributeGroup(schemaObj, { ref: "CommonAttrs", parentId: "/complexType:PersonType" });
 
-        const ct = (schemaObj.complexType ?? [])[0];
+        const ct = (schemaObj.complexType ?? [])[0]!;
         expect(ct.attributeGroup ?? []).toHaveLength(1);
-        expect((ct.attributeGroup ?? [])[0].ref).toBe("CommonAttrs");
+        expect((ct.attributeGroup ?? [])[0]!.ref).toBe("CommonAttrs");
       });
 
       test("should add an attribute group ref with documentation", () => {
@@ -166,10 +166,10 @@ describe("AttributeGroup Executors", () => {
           documentation: "Ref docs",
         });
 
-        const ct = (schemaObj.complexType ?? [])[0];
-        const agRef = (ct.attributeGroup ?? [])[0];
+        const ct = (schemaObj.complexType ?? [])[0]!;
+        const agRef = (ct.attributeGroup ?? [])[0]!;
         expect(agRef.ref).toBe("CommonAttrs");
-        expect(agRef.annotation?.documentation?.[0].value).toBe("Ref docs");
+        expect(agRef.annotation?.documentation?.[0]!.value).toBe("Ref docs");
       });
 
       test("should add multiple attribute group refs to the same complexType", () => {
@@ -186,9 +186,9 @@ describe("AttributeGroup Executors", () => {
           schemaObj
         );
 
-        const ct = (schemaObj.complexType ?? [])[0];
+        const ct = (schemaObj.complexType ?? [])[0]!;
         expect(ct.attributeGroup ?? []).toHaveLength(2);
-        expect((ct.attributeGroup ?? [])[1].ref).toBe("AttrsB");
+        expect((ct.attributeGroup ?? [])[1]!.ref).toBe("AttrsB");
       });
 
       test("should add an attribute group ref to a namedAttributeGroup", () => {
@@ -201,7 +201,7 @@ describe("AttributeGroup Executors", () => {
           (g) => g.name === "ExtendedAttrs"
         );
         expect(extGroup?.attributeGroup ?? []).toHaveLength(1);
-        expect((extGroup?.attributeGroup ?? [])[0].ref).toBe("BaseAttrs");
+        expect((extGroup?.attributeGroup ?? [])[0]!.ref).toBe("BaseAttrs");
       });
 
     });
@@ -224,7 +224,7 @@ describe("AttributeGroup Executors", () => {
         removeAttributeGroup(schemaObj, { groupId: "/attributeGroup:GroupA" });
 
         expect(schemaObj.attributeGroup ?? []).toHaveLength(1);
-        expect((schemaObj.attributeGroup ?? [])[0].name).toBe("GroupB");
+        expect((schemaObj.attributeGroup ?? [])[0]!.name).toBe("GroupB");
       });
 
     });
@@ -235,7 +235,7 @@ describe("AttributeGroup Executors", () => {
 
         removeAttributeGroup(schemaObj, { groupId: "/complexType:PersonType/attributeGroupRef:CommonAttrs[0]" });
 
-        const ct = (schemaObj.complexType ?? [])[0];
+        const ct = (schemaObj.complexType ?? [])[0]!;
         expect(ct.attributeGroup).toBeUndefined();
       });
 
@@ -249,9 +249,9 @@ describe("AttributeGroup Executors", () => {
 
         removeAttributeGroup(schemaObj, { groupId: "/complexType:PersonType/attributeGroupRef:AttrsA[0]" });
 
-        const ct = (schemaObj.complexType ?? [])[0];
+        const ct = (schemaObj.complexType ?? [])[0]!;
         expect(ct.attributeGroup ?? []).toHaveLength(1);
-        expect((ct.attributeGroup ?? [])[0].ref).toBe("AttrsB");
+        expect((ct.attributeGroup ?? [])[0]!.ref).toBe("AttrsB");
       });
 
       test("should remove an attribute group ref from a namedAttributeGroup", () => {
@@ -278,7 +278,7 @@ describe("AttributeGroup Executors", () => {
 
         modifyAttributeGroup(schemaObj, { groupId: "/attributeGroup:OldName", groupName: "NewName" });
 
-        expect((schemaObj.attributeGroup ?? [])[0].name).toBe("NewName");
+        expect((schemaObj.attributeGroup ?? [])[0]!.name).toBe("NewName");
       });
 
       test("should update documentation of an attribute group", () => {
@@ -289,8 +289,8 @@ describe("AttributeGroup Executors", () => {
           documentation: "New documentation",
         });
 
-        const ag = (schemaObj.attributeGroup ?? [])[0];
-        expect(ag.annotation?.documentation?.[0].value).toBe("New documentation");
+        const ag = (schemaObj.attributeGroup ?? [])[0]!;
+        expect(ag.annotation?.documentation?.[0]!.value).toBe("New documentation");
       });
 
       test("should update name and documentation together", () => {
@@ -302,9 +302,9 @@ describe("AttributeGroup Executors", () => {
           documentation: "Updated docs",
         });
 
-        const ag = (schemaObj.attributeGroup ?? [])[0];
+        const ag = (schemaObj.attributeGroup ?? [])[0]!;
         expect(ag.name).toBe("UpdatedGroup");
-        expect(ag.annotation?.documentation?.[0].value).toBe("Updated docs");
+        expect(ag.annotation?.documentation?.[0]!.value).toBe("Updated docs");
       });
 
       test("should leave unchanged properties untouched", () => {
@@ -312,7 +312,7 @@ describe("AttributeGroup Executors", () => {
 
         modifyAttributeGroup(schemaObj, { groupId: "/attributeGroup:StableGroup" });
 
-        expect((schemaObj.attributeGroup ?? [])[0].name).toBe("StableGroup");
+        expect((schemaObj.attributeGroup ?? [])[0]!.name).toBe("StableGroup");
       });
     });
 
@@ -325,8 +325,8 @@ describe("AttributeGroup Executors", () => {
           ref: "AttrsB",
         });
 
-        const ct = (schemaObj.complexType ?? [])[0];
-        expect((ct.attributeGroup ?? [])[0].ref).toBe("AttrsB");
+        const ct = (schemaObj.complexType ?? [])[0]!;
+        expect((ct.attributeGroup ?? [])[0]!.ref).toBe("AttrsB");
       });
 
       test("should set documentation annotation on an attribute group reference", () => {
@@ -337,9 +337,9 @@ describe("AttributeGroup Executors", () => {
           documentation: "Ref annotation",
         });
 
-        const ct = (schemaObj.complexType ?? [])[0];
-        const agRef = (ct.attributeGroup ?? [])[0];
-        expect(agRef.annotation?.documentation?.[0].value).toBe("Ref annotation");
+        const ct = (schemaObj.complexType ?? [])[0]!;
+        const agRef = (ct.attributeGroup ?? [])[0]!;
+        expect(agRef.annotation?.documentation?.[0]!.value).toBe("Ref annotation");
       });
 
     });
@@ -431,7 +431,7 @@ describe("AttributeGroup Executors", () => {
         schemaObj
       );
 
-      const complexType = unmarshal(schema, marshal(schemaObj)).element![0].complexType!;
+      const complexType = unmarshal(schema, marshal(schemaObj)).element![0]!.complexType!;
       expect(complexType.complexContent?.extension?.attributeGroup?.map((r) => r.ref)).toEqual(["CommonAttrs"]);
       expect(complexType.attributeGroup ?? []).toEqual([]);
     });
@@ -443,7 +443,7 @@ describe("AttributeGroup Executors", () => {
 
       modifyAttributeGroup(schemaObj, { groupId: "/attributeGroup:CommonAttrs", documentation: "New" });
 
-      expectNewDocumentationAndKeptAppinfo(schemaObj.attributeGroup?.[0].annotation);
+      expectNewDocumentationAndKeptAppinfo(schemaObj.attributeGroup?.[0]!.annotation);
     });
 
     test("should replace the documentation of a reference and keep its appinfo", () => {
@@ -454,7 +454,7 @@ describe("AttributeGroup Executors", () => {
       modifyAttributeGroup(schemaObj, { groupId: "/complexType:T/attributeGroupRef:CommonAttrs[0]", documentation: "New" });
 
       const t = (schemaObj.complexType ?? []).find((ct) => ct.name === "T");
-      expectNewDocumentationAndKeptAppinfo(t?.attributeGroup?.[0].annotation);
+      expectNewDocumentationAndKeptAppinfo(t?.attributeGroup?.[0]!.annotation);
     });
 
   });

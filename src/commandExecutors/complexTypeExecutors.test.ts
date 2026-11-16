@@ -95,7 +95,7 @@ function topLevelElements(schemaObj: schema): NonNullable<schema["element"]> {
  * @param base - The expected base type
  */
 function expectAnonymousExtensionOf(schemaObj: schema, base: string): void {
-  const extension = topLevelElements(schemaObj)[0].complexType?.complexContent?.extension;
+  const extension = topLevelElements(schemaObj)[0]!.complexType?.complexContent?.extension;
   expect(extension?.base).toBe(base);
   expect(extension?.sequence).toBeDefined();
 }
@@ -107,7 +107,7 @@ describe("ComplexType Executors", () => {
 
       addComplexType(schemaObj, { typeName: "PersonType", contentModel: model });
 
-      const complexType = topLevelComplexTypes(schemaObj)[0];
+      const complexType = topLevelComplexTypes(schemaObj)[0]!;
       expect(complexType.name).toBe("PersonType");
       expect((["sequence", "choice", "all"] as const).filter((m) => complexType[m] !== undefined)).toEqual([model]);
       expect(complexType.complexContent).toBeUndefined();
@@ -122,7 +122,7 @@ describe("ComplexType Executors", () => {
         abstract: true,
       });
 
-      expect(topLevelComplexTypes(schemaObj)[0].abstract).toBe(true);
+      expect(topLevelComplexTypes(schemaObj)[0]!.abstract).toBe(true);
     });
 
     test("should set mixed on a new complexType", () => {
@@ -134,7 +134,7 @@ describe("ComplexType Executors", () => {
         mixed: true,
       });
 
-      expect(topLevelComplexTypes(schemaObj)[0].mixed).toBe(true);
+      expect(topLevelComplexTypes(schemaObj)[0]!.mixed).toBe(true);
     });
 
     test("should add documentation to a new complexType", () => {
@@ -146,7 +146,7 @@ describe("ComplexType Executors", () => {
         documentation: "Describes a person.",
       });
 
-      expect(topLevelComplexTypes(schemaObj)[0].annotation!.documentation![0].value).toBe(
+      expect(topLevelComplexTypes(schemaObj)[0]!.annotation!.documentation![0]!.value).toBe(
         "Describes a person."
       );
     });
@@ -160,7 +160,7 @@ describe("ComplexType Executors", () => {
         baseType: "PersonType",
       });
 
-      const complexType = topLevelComplexTypes(schemaObj)[0];
+      const complexType = topLevelComplexTypes(schemaObj)[0]!;
       expect(complexType.complexContent!.extension!.base).toBe("PersonType");
       expect(complexType.complexContent!.extension!.sequence).toBeDefined();
       expect(complexType.sequence).toBeUndefined();
@@ -175,7 +175,7 @@ describe("ComplexType Executors", () => {
         baseType: "BaseType",
       });
 
-      const extension = topLevelComplexTypes(schemaObj)[0].complexContent!.extension!;
+      const extension = topLevelComplexTypes(schemaObj)[0]!.complexContent!.extension!;
       expect(extension.base).toBe("BaseType");
       expect(extension.choice).toBeDefined();
       expect(extension.sequence).toBeUndefined();
@@ -188,7 +188,7 @@ describe("ComplexType Executors", () => {
       addComplexType(schemaObj, { typeName: "NewType", contentModel: "choice" });
 
       expect(topLevelComplexTypes(schemaObj)).toHaveLength(2);
-      expect(topLevelComplexTypes(schemaObj)[1].name).toBe("NewType");
+      expect(topLevelComplexTypes(schemaObj)[1]!.name).toBe("NewType");
     });
 
     test("should round-trip a new complexType through XML", () => {
@@ -197,7 +197,7 @@ describe("ComplexType Executors", () => {
       addComplexType(schemaObj, { typeName: "PersonType", contentModel: "sequence" });
 
       const reparsed = unmarshal(schema, marshal(schemaObj));
-      const complexType = topLevelComplexTypes(reparsed)[0];
+      const complexType = topLevelComplexTypes(reparsed)[0]!;
       expect(complexType.name).toBe("PersonType");
       expect(complexType.sequence).toBeDefined();
     });
@@ -212,7 +212,7 @@ describe("ComplexType Executors", () => {
       removeComplexType(schemaObj, { typeId: "/complexType:TypeA" });
 
       expect(topLevelComplexTypes(schemaObj)).toHaveLength(1);
-      expect(topLevelComplexTypes(schemaObj)[0].name).toBe("TypeB");
+      expect(topLevelComplexTypes(schemaObj)[0]!.name).toBe("TypeB");
     });
 
     test("should remove the last remaining top-level complexType", () => {
@@ -232,8 +232,8 @@ describe("ComplexType Executors", () => {
 
       modifyComplexType(schemaObj, { typeId: "/complexType:RichType", typeName: "RicherType" });
 
-      expect(topLevelComplexTypes(schemaObj)[0].name).toBe("RicherType");
-      expect(topLevelComplexTypes(schemaObj)[0].abstract).toBeTruthy();
+      expect(topLevelComplexTypes(schemaObj)[0]!.name).toBe("RicherType");
+      expect(topLevelComplexTypes(schemaObj)[0]!.abstract).toBeTruthy();
     });
 
     test("should update the abstract flag", () => {
@@ -242,7 +242,7 @@ describe("ComplexType Executors", () => {
 
       modifyComplexType(schemaObj, { typeId: "/complexType:BaseType", abstract: true });
 
-      expect(topLevelComplexTypes(schemaObj)[0].abstract).toBe(true);
+      expect(topLevelComplexTypes(schemaObj)[0]!.abstract).toBe(true);
     });
 
     test("should update the mixed flag", () => {
@@ -251,7 +251,7 @@ describe("ComplexType Executors", () => {
 
       modifyComplexType(schemaObj, { typeId: "/complexType:TextType", mixed: true });
 
-      expect(topLevelComplexTypes(schemaObj)[0].mixed).toBe(true);
+      expect(topLevelComplexTypes(schemaObj)[0]!.mixed).toBe(true);
     });
 
     test("should update documentation", () => {
@@ -263,7 +263,7 @@ describe("ComplexType Executors", () => {
         documentation: "Updated documentation.",
       });
 
-      expect(topLevelComplexTypes(schemaObj)[0].annotation!.documentation![0].value).toBe(
+      expect(topLevelComplexTypes(schemaObj)[0]!.annotation!.documentation![0]!.value).toBe(
         "Updated documentation."
       );
     });
@@ -274,7 +274,7 @@ describe("ComplexType Executors", () => {
 
       modifyComplexType(schemaObj, { typeId: "/complexType:FlexType", contentModel: "choice" });
 
-      const complexType = topLevelComplexTypes(schemaObj)[0];
+      const complexType = topLevelComplexTypes(schemaObj)[0]!;
       expect(complexType.choice).toBeDefined();
       expect(complexType.sequence).toBeUndefined();
     });
@@ -285,7 +285,7 @@ describe("ComplexType Executors", () => {
 
       modifyComplexType(schemaObj, { typeId: "/complexType:AllType", contentModel: "all" });
 
-      const complexType = topLevelComplexTypes(schemaObj)[0];
+      const complexType = topLevelComplexTypes(schemaObj)[0]!;
       expect(complexType.all).toBeDefined();
       expect(complexType.sequence).toBeUndefined();
     });
@@ -296,7 +296,7 @@ describe("ComplexType Executors", () => {
 
       modifyComplexType(schemaObj, { typeId: "/complexType:EmployeeType", baseType: "PersonType" });
 
-      const extension = topLevelComplexTypes(schemaObj)[0].complexContent!.extension!;
+      const extension = topLevelComplexTypes(schemaObj)[0]!.complexContent!.extension!;
       expect(extension.base).toBe("PersonType");
       expect(extension.sequence).toBeDefined();
     });
@@ -313,9 +313,9 @@ describe("ComplexType Executors", () => {
         derivationKind: "extension",
       });
 
-      const extension = topLevelComplexTypes(schemaObj)[0].complexContent!.extension!;
+      const extension = topLevelComplexTypes(schemaObj)[0]!.complexContent!.extension!;
       expect(extension.base).toBe("PersonType");
-      expect((extension.sequence?.element ?? [])[0].name).toBe("name");
+      expect(extension.sequence?.element?.[0]?.name).toBe("name");
     });
 
     test("should switch a complexType to a restriction without dropping its existing compositor content", () => {
@@ -334,10 +334,10 @@ describe("ComplexType Executors", () => {
         derivationKind: "restriction",
       });
 
-      const restriction = topLevelComplexTypes(schemaObj)[0].complexContent!.restriction!;
+      const restriction = topLevelComplexTypes(schemaObj)[0]!.complexContent!.restriction!;
       expect(restriction.base).toBe("WorkerType");
-      expect((restriction.sequence?.element ?? [])[0].name).toBe("name");
-      expect(topLevelComplexTypes(schemaObj)[0].complexContent!.extension).toBeUndefined();
+      expect(restriction.sequence?.element?.[0]?.name).toBe("name");
+      expect(topLevelComplexTypes(schemaObj)[0]!.complexContent!.extension).toBeUndefined();
     });
 
     test("should switch a restricting complexType to an extension and keeps its base and content", () => {
@@ -345,7 +345,7 @@ describe("ComplexType Executors", () => {
 
       modifyComplexType(schemaObj, { typeId: "/complexType:ManagerType", derivationKind: "extension" });
 
-      const complexContent = topLevelComplexTypes(schemaObj)[0].complexContent!;
+      const complexContent = topLevelComplexTypes(schemaObj)[0]!.complexContent!;
       expect(complexContent.restriction).toBeUndefined();
       expect(complexContent.extension?.base).toBe("EmployeeType");
       expect((complexContent.extension?.sequence?.element ?? []).map((element) => element.name)).toEqual(["name"]);
@@ -357,7 +357,7 @@ describe("ComplexType Executors", () => {
 
       modifyComplexType(schemaObj, { typeId: "/complexType:ManagerType", contentModel: "choice" });
 
-      const complexContent = topLevelComplexTypes(schemaObj)[0].complexContent!;
+      const complexContent = topLevelComplexTypes(schemaObj)[0]!.complexContent!;
       expect(complexContent.extension).toBeUndefined();
       expect(complexContent.restriction?.base).toBe("EmployeeType");
       expect(complexContent.restriction?.choice).toBeDefined();
@@ -370,7 +370,7 @@ describe("ComplexType Executors", () => {
 
       modifyComplexType(schemaObj, { typeId: "/complexType:EmployeeType", baseType: "WorkerType" });
 
-      expect(topLevelComplexTypes(schemaObj)[0].complexContent!.extension!.base).toBe("WorkerType");
+      expect(topLevelComplexTypes(schemaObj)[0]!.complexContent!.extension!.base).toBe("WorkerType");
     });
 
     test("should remove an existing base type when set to an empty string", () => {
@@ -378,7 +378,7 @@ describe("ComplexType Executors", () => {
 
       modifyComplexType(schemaObj, { typeId: "/complexType:EmployeeType", baseType: "" });
 
-      const complexType = topLevelComplexTypes(schemaObj)[0];
+      const complexType = topLevelComplexTypes(schemaObj)[0]!;
       expect(complexType.complexContent).toBeUndefined();
       expect(complexType.sequence).toBeDefined();
     });
@@ -393,7 +393,7 @@ describe("ComplexType Executors", () => {
         contentModel: "sequence",
       });
 
-      const complexType = topLevelElements(schemaObj)[0].complexType!;
+      const complexType = topLevelElements(schemaObj)[0]!.complexType!;
       expect(complexType.sequence).toBeDefined();
       expect(complexType.choice).toBeUndefined();
     });
@@ -407,7 +407,7 @@ describe("ComplexType Executors", () => {
         mixed: true,
       });
 
-      const complexType = topLevelElements(schemaObj)[0].complexType!;
+      const complexType = topLevelElements(schemaObj)[0]!.complexType!;
       expect(complexType.choice).toBeDefined();
       expect(complexType.mixed).toBe(true);
     });
@@ -432,7 +432,7 @@ describe("ComplexType Executors", () => {
 
       addComplexType(schemaObj, { parentId: "/element:person", contentModel: "sequence" });
 
-      const result = topLevelElements(schemaObj)[0];
+      const result = topLevelElements(schemaObj)[0]!;
       expect(result[replaced]).toBeUndefined();
       expect(result.complexType?.sequence).toBeDefined();
     });
@@ -446,7 +446,7 @@ describe("ComplexType Executors", () => {
         documentation: "Represents an order.",
       });
 
-      expect(topLevelElements(schemaObj)[0].complexType!.annotation!.documentation![0].value).toBe(
+      expect(topLevelElements(schemaObj)[0]!.complexType!.annotation!.documentation![0]!.value).toBe(
         "Represents an order."
       );
     });
@@ -460,7 +460,7 @@ describe("ComplexType Executors", () => {
       });
 
       const reparsed = unmarshal(schema, marshal(schemaObj));
-      expect(topLevelElements(reparsed)[0].complexType!.sequence).toBeDefined();
+      expect(topLevelElements(reparsed)[0]!.complexType!.sequence).toBeDefined();
     });
 
     test("should remove an anonymous complexType from an element", () => {
@@ -471,7 +471,7 @@ describe("ComplexType Executors", () => {
 
       removeComplexType(schemaObj, { typeId: "/element:person/anonymousComplexType[0]" });
 
-      expect(topLevelElements(schemaObj)[0].complexType).toBeUndefined();
+      expect(topLevelElements(schemaObj)[0]!.complexType).toBeUndefined();
     });
 
     test("should change the content model on an anonymous complexType", () => {
@@ -483,7 +483,7 @@ describe("ComplexType Executors", () => {
         contentModel: "choice",
       });
 
-      const complexType = topLevelElements(schemaObj)[0].complexType!;
+      const complexType = topLevelElements(schemaObj)[0]!.complexType!;
       expect(complexType.choice).toBeDefined();
       expect(complexType.sequence).toBeUndefined();
     });
@@ -497,7 +497,7 @@ describe("ComplexType Executors", () => {
         mixed: true,
       });
 
-      expect(topLevelElements(schemaObj)[0].complexType!.mixed).toBe(true);
+      expect(topLevelElements(schemaObj)[0]!.complexType!.mixed).toBe(true);
     });
 
     test("should add a base type to an anonymous complexType", () => {
@@ -526,9 +526,9 @@ describe("ComplexType Executors", () => {
         derivationKind: "restriction",
       });
 
-      const restriction = topLevelElements(schemaObj)[0].complexType!.complexContent!.restriction!;
+      const restriction = topLevelElements(schemaObj)[0]!.complexType!.complexContent!.restriction!;
       expect(restriction.base).toBe("PersonType");
-      expect((restriction.sequence?.element ?? [])[0].name).toBe("name");
+      expect(restriction.sequence?.element?.[0]?.name).toBe("name");
     });
 
     test("should update documentation on an anonymous complexType", () => {
@@ -540,7 +540,7 @@ describe("ComplexType Executors", () => {
         documentation: "Represents an order.",
       });
 
-      expect(topLevelElements(schemaObj)[0].complexType!.annotation!.documentation![0].value).toBe(
+      expect(topLevelElements(schemaObj)[0]!.complexType!.annotation!.documentation![0]!.value).toBe(
         "Represents an order."
       );
     });
@@ -557,8 +557,8 @@ describe("ComplexType Executors", () => {
         typeName: "HumanType",
       });
 
-      expect(topLevelComplexTypes(schemaObj)[0].name).toBe("HumanType");
-      expect(topLevelElements(schemaObj)[0].type_).toBe("HumanType");
+      expect(topLevelComplexTypes(schemaObj)[0]!.name).toBe("HumanType");
+      expect(topLevelElements(schemaObj)[0]!.type_).toBe("HumanType");
     });
 
     test("should rename extension/@base references when a top-level complexType is renamed", () => {

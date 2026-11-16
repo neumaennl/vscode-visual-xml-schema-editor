@@ -54,7 +54,7 @@ import { rewritePrefixInSchema } from "./schemaQNameRewriter.js";
 function resolveModuleEntry<T>(id: string, entries: T[] | undefined, label: string): { entries: T[]; index: number; entry: T } {
   const all = entries ?? [];
   const index = assumeValidated(parseSchemaId(id).position, `Position of ${id}`);
-  return { entries: all, index, entry: assumeValidated(all[index] as T | undefined, `${label} ${id}`) };
+  return { entries: all, index, entry: assumeValidated(all[index], `${label} ${id}`) };
 }
 
 /**

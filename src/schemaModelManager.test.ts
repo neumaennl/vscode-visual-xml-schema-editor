@@ -41,7 +41,7 @@ describe("SchemaModelManager", () => {
       expect(manager.getSchema()).not.toBeNull();
       expect(manager.getSchema()?.targetNamespace).toBe("http://example.com/test");
       expect(manager.getSchema()?.element).toHaveLength(1);
-      expect(manager.getSchema()?.element?.[0].name).toBe("root");
+      expect(manager.getSchema()?.element?.[0]!.name).toBe("root");
     });
 
     test("should throw error for invalid XML", () => {
@@ -193,7 +193,7 @@ describe("SchemaModelManager", () => {
       
       const clonedElements = cloned.element ?? [];
       expect(clonedElements).toHaveLength(1);
-      expect(clonedElements[0].name).toBe("root");
+      expect(clonedElements[0]!.name).toBe("root");
     });
 
     test("should throw error when schema not loaded", () => {
@@ -215,12 +215,12 @@ describe("SchemaModelManager", () => {
 
       // Modify the cloned schema
       const clonedElements = cloned.element ?? [];
-      clonedElements[0].name = "modified";
+      clonedElements[0]!.name = "modified";
 
       // Original should be unchanged
       const originalElements = original?.element ?? [];
-      expect(originalElements[0].name).toBe("root");
-      expect(clonedElements[0].name).toBe("modified");
+      expect(originalElements[0]!.name).toBe("root");
+      expect(clonedElements[0]!.name).toBe("modified");
     });
   });
 });

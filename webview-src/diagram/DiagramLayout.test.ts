@@ -115,21 +115,21 @@ describe("DiagramLayout", () => {
     test("should layout children when expanded", () => {
       const { parent, children } = layoutParentWithChildren(true);
 
-      expect(children[0].location.x).toBeGreaterThan(parent.location.x);
-      expect(children[0].size.width).toBeGreaterThan(0);
+      expect(children[0]!.location.x).toBeGreaterThan(parent.location.x);
+      expect(children[0]!.size.width).toBeGreaterThan(0);
     });
 
     test("should not layout children when collapsed", () => {
       const { children } = layoutParentWithChildren(false);
 
       // Child should have default location
-      expect(children[0].location).toEqual({ x: 0, y: 0 });
+      expect(children[0]!.location).toEqual({ x: 0, y: 0 });
     });
 
     test("should layout multiple children vertically", () => {
       const { children } = layoutParentWithChildren(true, 2);
 
-      expect(children[1].location.y).toBeGreaterThan(children[0].location.y);
+      expect(children[1]!.location.y).toBeGreaterThan(children[0]!.location.y);
     });
   });
 

@@ -44,10 +44,10 @@ describe("ShapeRenderers", () => {
 
       const rectangles = mockGroup.querySelectorAll("rect");
       expect(rectangles.length).toBe(1);
-      expect(rectangles[0].getAttribute("x")).toBe("10");
-      expect(rectangles[0].getAttribute("y")).toBe("10");
-      expect(rectangles[0].getAttribute("width")).toBe("100");
-      expect(rectangles[0].getAttribute("height")).toBe("50");
+      expect(rectangles[0]!.getAttribute("x")).toBe("10");
+      expect(rectangles[0]!.getAttribute("y")).toBe("10");
+      expect(rectangles[0]!.getAttribute("width")).toBe("100");
+      expect(rectangles[0]!.getAttribute("height")).toBe("50");
     });
 
     test("should render shadow for multiple occurrences", () => {
@@ -61,12 +61,12 @@ describe("ShapeRenderers", () => {
       expect(rectangles.length).toBe(2); // Shadow + main rectangle
 
       // Check shadow rectangle (offset by 3)
-      expect(rectangles[0].getAttribute("x")).toBe("13");
-      expect(rectangles[0].getAttribute("y")).toBe("13");
+      expect(rectangles[0]!.getAttribute("x")).toBe("13");
+      expect(rectangles[0]!.getAttribute("y")).toBe("13");
 
       // Check main rectangle
-      expect(rectangles[1].getAttribute("x")).toBe("10");
-      expect(rectangles[1].getAttribute("y")).toBe("10");
+      expect(rectangles[1]!.getAttribute("x")).toBe("10");
+      expect(rectangles[1]!.getAttribute("y")).toBe("10");
     });
 
     test("should render shadow for maxOccurrence > 1", () => {
@@ -96,7 +96,7 @@ describe("ShapeRenderers", () => {
       const polygons = mockGroup.querySelectorAll("polygon");
       expect(polygons.length).toBeGreaterThanOrEqual(minPolygons);
       // The octagon has 8 points
-      expect(polygons[polygons.length - 1].getAttribute("points")?.split(" ")).toHaveLength(8);
+      expect(polygons[polygons.length - 1]!.getAttribute("points")?.split(" ")).toHaveLength(8);
     });
   });
 
@@ -113,7 +113,7 @@ describe("ShapeRenderers", () => {
       expect(polygons.length).toBe(1);
 
       // Check that beveled rectangle has 6 points
-      const points = polygons[0].getAttribute("points")?.split(" ");
+      const points = polygons[0]!.getAttribute("points")?.split(" ");
       expect(points?.length).toBe(6);
     });
 
@@ -141,7 +141,7 @@ describe("ShapeRenderers", () => {
       expect(polygons.length).toBe(2); // Main shape + bevel fill
 
       // Check that bevel fill uses stroke color
-      const bevelFill = polygons[1];
+      const bevelFill = polygons[1]!;
       expect(bevelFill.getAttribute("style")).toContain("fill:#ff0000");
     });
 
@@ -160,7 +160,7 @@ describe("ShapeRenderers", () => {
       );
 
       const polygons = mockGroup.querySelectorAll("polygon");
-      const bevelFill = polygons[1];
+      const bevelFill = polygons[1]!;
       expect(bevelFill.getAttribute("style")).toContain("fill:#0000ff");
     });
   });

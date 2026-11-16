@@ -38,7 +38,7 @@ async function sendAddElement(editor: EditorStubs, parentId: string): Promise<vo
 function sentError(editor: EditorStubs): ErrorMessage {
   expect(editor.postMessage).toHaveBeenCalledWith(expect.objectContaining({ command: "error" }));
   expect(editor.postMessage).not.toHaveBeenCalledWith(expect.objectContaining({ command: "commandResult" }));
-  return (editor.postMessage as MockedFunction<(msg: ErrorMessage) => Promise<boolean>>).mock.calls[0][0];
+  return (editor.postMessage as MockedFunction<(msg: ErrorMessage) => Promise<boolean>>).mock.calls[0]![0];
 }
 
 describe("SchemaEditorProvider", () => {

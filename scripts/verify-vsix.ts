@@ -82,7 +82,7 @@ export async function verifyVsix(vsix: string): Promise<string> {
   }
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const vsix = process.argv[2] ?? readdirSync(".").find((f) => f.endsWith(".vsix"));
   if (!vsix) {
     console.error("No .vsix found. Run `npm run package` first.");
@@ -92,7 +92,8 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
     console.log(`✓ ${vsix}: ${await verifyVsix(vsix)} loads and exports activate()`);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error(`✗ ${vsix}: ${message.split("\n")[0]}`);
+    const [firstLine = ""] = message.split("\n");
+    console.error(`✗ ${vsix}: ${firstLine}`);
     process.exitCode = 1;
   }
 }

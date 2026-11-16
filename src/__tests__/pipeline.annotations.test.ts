@@ -45,7 +45,7 @@ describe("Integration: Annotation pipeline", () => {
       const person = findTopLevelElement(result, "person");
       expect(person.annotation).toBeDefined();
       const documentations = person.annotation!.documentation ?? [];
-      expect(documentations[0].value).toBe("A person record");
+      expect(documentations[0]!.value).toBe("A person record");
     });
 
     test("should add a schema-level annotation", () => {
@@ -56,8 +56,8 @@ describe("Integration: Annotation pipeline", () => {
       const annotations = result.annotation ?? [];
 
       expect(annotations.length).toBe(1);
-      const documentations = annotations[0].documentation ?? [];
-      expect(documentations[0].value).toBe("My schema");
+      const documentations = annotations[0]!.documentation ?? [];
+      expect(documentations[0]!.value).toBe("My schema");
     });
 
     test("should insert a schema-level annotation before top-level declarations", () => {
@@ -180,7 +180,7 @@ describe("Integration: Annotation pipeline", () => {
       });
       const person = findTopLevelElement(result, "person");
       const documentations = person.annotation!.documentation ?? [];
-      expect(documentations[0].value).toBe("Updated description");
+      expect(documentations[0]!.value).toBe("Updated description");
     });
 
     test("should return validation error when element does not exist", () => {
@@ -283,7 +283,7 @@ describe("Integration: Documentation pipeline", () => {
       });
       const person = findTopLevelElement(result, "person");
       const documentations = person.annotation!.documentation ?? [];
-      expect(documentations[0].value).toBe("New documentation text");
+      expect(documentations[0]!.value).toBe("New documentation text");
     });
 
     test("should return validation error when documentation index is out of bounds", () => {

@@ -36,8 +36,8 @@ describe("SchemaProcessors", () => {
 <xs:element name="n" type="xs:string"/>`);
       const [complexElement, simpleElement, namedElement] = schemaObj.element ?? [];
       const items = [complexElement, simpleElement, namedElement].map((element) => {
-        const elementItem = new DiagramItem(`/element:${element.name}`, element.name, DiagramItemType.element, diagram);
-        processAnonymousTypes(elementItem, element);
+        const elementItem = new DiagramItem(`/element:${element!.name}`, element!.name, DiagramItemType.element, diagram);
+        processAnonymousTypes(elementItem, element!);
         return elementItem;
       });
       expect(items.map((i) => [i.hasAnonymousComplexType, i.isMixed, i.isSimpleContent])).toEqual([
@@ -322,7 +322,7 @@ describe("SchemaProcessors", () => {
     test.each(DERIVATIONS)("should read the attributes of the %s %s", (content, derivation) => {
       const complexType = schemaWith(
         derivedComplexTypeT(content, derivation, `<xs:attribute name="id" type="xs:integer"/>`)
-      ).complexType![0];
+      ).complexType![0]!;
 
       processComplexType(item, complexType);
 
@@ -342,7 +342,7 @@ describe("SchemaProcessors", () => {
       processSequence(ctItem, { element: [{ name: "name", type_: "xs:string" }] });
 
       expect(ctItem.childElements).toHaveLength(1);
-      const seq = ctItem.childElements[0];
+      const seq = ctItem.childElements[0]!;
       expect(seq.groupType).toBe(DiagramItemGroupType.Sequence);
       expect(seq.id).toBe("/complexType:PersonType/group:sequence[0]");
     });
@@ -357,7 +357,7 @@ describe("SchemaProcessors", () => {
 
       processChoice(ctItem, { element: [{ name: "opt", type_: "xs:string" }] });
 
-      const choice = ctItem.childElements[0];
+      const choice = ctItem.childElements[0]!;
       expect(choice.groupType).toBe(DiagramItemGroupType.Choice);
       expect(choice.id).toBe("/complexType:ChoiceType/group:choice[0]");
     });
@@ -372,7 +372,7 @@ describe("SchemaProcessors", () => {
 
       processAll(ctItem, { element: [{ name: "field", type_: "xs:string" }] });
 
-      const allGroup = ctItem.childElements[0];
+      const allGroup = ctItem.childElements[0]!;
       expect(allGroup.groupType).toBe(DiagramItemGroupType.All);
       expect(allGroup.id).toBe("/complexType:AllType/group:all[0]");
     });
@@ -389,7 +389,7 @@ describe("SchemaProcessors", () => {
 
       processSequence(elemItem, { element: [{ name: "name", type_: "xs:string" }] });
 
-      const seq = elemItem.childElements[0];
+      const seq = elemItem.childElements[0]!;
       expect(seq.id).toBe("/element:person/anonymousComplexType[0]/group:sequence[0]");
     });
 
@@ -408,11 +408,11 @@ describe("SchemaProcessors", () => {
         ],
       });
 
-      const seq = ctItem.childElements[0];
-      expect(seq.childElements[0].id).toBe(
+      const seq = ctItem.childElements[0]!;
+      expect(seq.childElements[0]!.id).toBe(
         "/complexType:PersonType/group:sequence[0]/element:first[0]"
       );
-      expect(seq.childElements[1].id).toBe(
+      expect(seq.childElements[1]!.id).toBe(
         "/complexType:PersonType/group:sequence[0]/element:last[1]"
       );
     });
@@ -427,7 +427,7 @@ describe("SchemaProcessors", () => {
 
       processSequence(ctItem, { element: [] });
       expect(ctItem.childElements).toHaveLength(1);
-      expect(ctItem.childElements[0].groupType).toBe(DiagramItemGroupType.Sequence);
+      expect(ctItem.childElements[0]!.groupType).toBe(DiagramItemGroupType.Sequence);
     });
 
     test("should mark local group elements with inline anonymous complexType and extension base", () => {
@@ -454,8 +454,8 @@ describe("SchemaProcessors", () => {
         ],
       });
 
-      const sequence = ctItem.childElements[0];
-      const meta = sequence.childElements[0];
+      const sequence = ctItem.childElements[0]!;
+      const meta = sequence.childElements[0]!;
       expect(meta.name).toBe("meta");
       expect(meta.hasAnonymousComplexType).toBe(true);
       expect(meta.complexDerivationKind).toBe("extension");
@@ -474,14 +474,14 @@ describe("SchemaProcessors", () => {
         group: [{ ref: "SharedGroup", minOccurs: 0, maxOccurs: "unbounded" }],
       });
 
-      const sequence = ctItem.childElements[0];
+      const sequence = ctItem.childElements[0]!;
       expect(sequence.childElements).toHaveLength(1);
-      expect(sequence.childElements[0].id).toBe(
+      expect(sequence.childElements[0]!.id).toBe(
         "/complexType:PersonType/group:sequence[0]/groupRef:SharedGroup[0]"
       );
-      expect(sequence.childElements[0].minOccurrence).toBe(0);
-      expect(sequence.childElements[0].maxOccurrence).toBe(-1);
-      expect(sequence.childElements[0].isReference).toBe(true);
+      expect(sequence.childElements[0]!.minOccurrence).toBe(0);
+      expect(sequence.childElements[0]!.maxOccurrence).toBe(-1);
+      expect(sequence.childElements[0]!.isReference).toBe(true);
     });
 
     test("should render nested compositors using schema positions", () => {
@@ -497,8 +497,8 @@ describe("SchemaProcessors", () => {
         choice: [{ element: [{ name: "second", type_: "xs:string" }] }],
       });
 
-      const sequence = ctItem.childElements[0];
-      expect(sequence.childElements[1].id).toBe(
+      const sequence = ctItem.childElements[0]!;
+      expect(sequence.childElements[1]!.id).toBe(
         "/complexType:PersonType/group:sequence[0]/group:choice[0]"
       );
     });
@@ -517,7 +517,7 @@ describe("SchemaProcessors", () => {
         },
       });
 
-      const sequence = ctItem.childElements[0];
+      const sequence = ctItem.childElements[0]!;
       expect(sequence.documentation).toBe("Sequence docs");
       expect(sequence.documentationAnnotations).toEqual([
         {
@@ -547,7 +547,7 @@ describe("SchemaProcessors", () => {
         sequence: { element: [{ name: "name", type_: "xs:string" }] },
       });
 
-      const seq = elemItem.childElements[0];
+      const seq = elemItem.childElements[0]!;
       expect(seq.id).toBe("/element:person/anonymousComplexType[0]/group:sequence[0]");
     });
   });

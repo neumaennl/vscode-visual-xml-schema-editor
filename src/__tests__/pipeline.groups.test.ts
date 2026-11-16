@@ -113,7 +113,7 @@ describe("Integration: Group pipeline", () => {
 </xs:complexType>`),
         { type: "removeGroup", payload: { groupId: "/complexType:T/group:sequence[0]/group:choice[0]" } }
       );
-      const sequence = (result.complexType ?? [])[0].sequence;
+      const sequence = (result.complexType ?? [])[0]!.sequence;
 
       expect(sequence).toBeDefined();
       expect(sequence?.choice ?? []).toHaveLength(0);

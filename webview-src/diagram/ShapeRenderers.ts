@@ -89,7 +89,7 @@ export function renderTypeShape(
       { x: rect.x, y: rect.y + rect.height - bevel },
     ];
     // Extract stroke color from stroke style string
-    const strokeColor = stroke.replace(/^stroke:/, "").split(";")[0];
+    const [strokeColor = ""] = stroke.replace(/^stroke:/, "").split(";");
     svgPolygon(group, bevelFillPoints, `fill:${strokeColor}`, "stroke:none");
   }
 }

@@ -145,16 +145,19 @@ function visitMemberTypes(node: SchemaNode, value: string, visit: (reference: QN
  */
 function visitXPath(node: SchemaNode, value: string, visit: (reference: QNameReference) => void): void {
   const parts = splitXPath(value);
-  for (let index = 1; index < parts.length; index += 2) {
+  parts.forEach((part, index) => {
+    if (index % 2 === 0) {
+      return;
+    }
     visit({
       kind: "xpath",
-      value: parts[index],
+      value: part,
       replace: (newValue) => {
         parts[index] = newValue;
         Reflect.set(node, "xpath", parts.join(""));
       },
     });
-  }
+  });
 }
 
 /**
@@ -171,21 +174,24 @@ function visitXPath(node: SchemaNode, value: string, visit: (reference: QNameRef
  * ```
  */
 function splitXPath(xpath: string): string[] {
-  const parts = [""];
+  const parts: string[] = [];
+  let between = "";
   let index = 0;
   while (index < xpath.length) {
     const nameEnd = endOfName(xpath, index);
     const localEnd = xpath.charAt(nameEnd) === ":" ? endOfLocalPart(xpath, nameEnd + 1) : undefined;
     if (nameEnd > index && localEnd !== undefined) {
-      parts.push(xpath.slice(index, localEnd), "");
+      parts.push(between, xpath.slice(index, localEnd));
+      between = "";
       index = localEnd;
     } else {
       // Not a prefixed name: copy the name, or a single other character, to the text in between
       const end = Math.max(nameEnd, index + 1);
-      parts[parts.length - 1] += xpath.slice(index, end);
+      between += xpath.slice(index, end);
       index = end;
     }
   }
+  parts.push(between);
   return parts;
 }
 

@@ -64,8 +64,8 @@ const LABELS: Record<keyof ExpectedValues, string> = {
  * @returns The table
  */
 export function formatTable(header: string[], rows: string[][]): string {
-  const widths = header.map((h, i) => Math.max(h.length, ...rows.map((r) => r[i].length)));
-  const line = (cells: string[]): string => cells.map((c, i) => c.padEnd(widths[i])).join("  ").trimEnd();
+  const widths = header.map((h, i) => Math.max(h.length, ...rows.map((r) => r[i]?.length ?? 0)));
+  const line = (cells: string[]): string => cells.map((c, i) => c.padEnd(widths[i] ?? 0)).join("  ").trimEnd();
   return [line(header), line(widths.map((w) => "-".repeat(w))), ...rows.map(line)].join("\n");
 }
 
@@ -80,8 +80,8 @@ function readCurrent(dir: string): Manifest & { actual: ExpectedValues } {
   const pkg = JSON.parse(text) as PackageJson;
   const actual = {
     engines: pkg.engines.vscode,
-    typesVscode: pkg.devDependencies["@types/vscode"],
-    typesNode: pkg.devDependencies["@types/node"],
+    typesVscode: pkg.devDependencies["@types/vscode"] ?? "(missing)",
+    typesNode: pkg.devDependencies["@types/node"] ?? "(missing)",
     nvmrc: readFileSync(join(dir, ".nvmrc"), "utf8").trim(),
   };
   return { pkg, crlf: text.includes("\r\n"), actual };
@@ -130,7 +130,7 @@ export async function choose(rows: ReleaseRow[], dates: Record<string, string>, 
   const header = ["VS Code", "Released", "Electron", "Node", "@types/vscode", "@types/node", "ECMAScript", "Node end of life"];
   const cells = rows.map((r) => [
     r.vscode === current ? `${r.vscode} (current)` : r.vscode,
-    dates[r.vscode],
+    dates[r.vscode] ?? "-",
     r.electron,
     r.node,
     r.typesVscode ?? "-",
@@ -270,8 +270,9 @@ export async function update(requested: string | undefined, dir = "."): Promise<
   const currentMinor = parseVersion(actual.engines)[1];
   const fromMinor = Math.min(currentMinor, requested ? parseVersion(requested)[1] : Infinity);
   const [shared, releases] = await Promise.all([loadSharedData(), listReleases(fromMinor)]);
-  const electrons = await Promise.all(releases.map((r) => electronOf(r.version)));
-  const derived = releases.map((r, i) => deriveVersions(r.version, { ...shared, electron: electrons[i] }));
+  const derived = await Promise.all(
+    releases.map(async (r) => deriveVersions(r.version, { ...shared, electron: await electronOf(r.version) }))
+  );
   const nodeMajor = (r: DerivedVersions): number => parseVersion(r.node)[0];
   const editions = await loadEditions(derived.map(nodeMajor));
   const rows: ReleaseRow[] = derived.map((r) => ({ ...r, edition: editions.get(nodeMajor(r)) }));
@@ -302,7 +303,7 @@ export async function main(args: string[]): Promise<number> {
   return 2;
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main(process.argv.slice(2)).then(
     (code) => process.exit(code),
     (error: unknown) => {

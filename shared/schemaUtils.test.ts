@@ -37,14 +37,14 @@ describe("schemaUtils", () => {
 
   describe("getAttributeContainer and getContentDerivation", () => {
     test.each(DERIVATIONS)("should return the %s %s of a complex type", (content, derivation) => {
-      const complexType = schemaWith(derivedComplexTypeT(content, derivation)).complexType![0];
+      const complexType = schemaWith(derivedComplexTypeT(content, derivation)).complexType![0]!;
 
       expect(getAttributeContainer(complexType)).toBe(complexType[content]![derivation]);
       expect(getContentDerivation(complexType)).toBe(complexType[content]![derivation]);
     });
 
     test("should return a complex type without complex or simple content itself, and no derivation", () => {
-      const complexType = schemaWith(`<xs:complexType name="T"><xs:sequence/></xs:complexType>`).complexType![0];
+      const complexType = schemaWith(`<xs:complexType name="T"><xs:sequence/></xs:complexType>`).complexType![0]!;
 
       expect(getAttributeContainer(complexType)).toBe(complexType);
       expect(getContentDerivation(complexType)).toBeUndefined();

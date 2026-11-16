@@ -17,6 +17,7 @@ import type {
 } from "../shared/types.js";
 import { parseSchemaId, SchemaNodeType, toNodeType } from "../shared/idStrategy.js";
 import { getContentContainer, isSchemaRoot } from "../shared/schemaUtils.js";
+import { requireGroup } from "../shared/regexUtils.js";
 
 /**
  * Result of a node location operation: the node and its type if it was found, otherwise an error.
@@ -133,8 +134,8 @@ function parseSegment(segment: string): SegmentInfo {
   // Check for position indicator [N]
   const positionMatch = /^([^[]+)\[(\d+)\]$/.exec(segment);
   if (positionMatch) {
-    const [, typeOrTypeName, posStr] = positionMatch;
-    const position = parseInt(posStr, 10);
+    const typeOrTypeName = requireGroup(positionMatch, 1);
+    const position = parseInt(requireGroup(positionMatch, 2), 10);
 
     // Check if it has a name (type:name format)
     const colonIndex = typeOrTypeName.indexOf(":");
@@ -393,14 +394,14 @@ function navigateFromGroup(
   }
 
   if (nodeType === SchemaNodeType.Group && name === "choice") {
-    const choice = ((group as { choice?: explicitGroup[] }).choice ?? [])[position ?? 0] as explicitGroup | undefined;
+    const choice = ((group as { choice?: explicitGroup[] }).choice ?? [])[position ?? 0];
     if (choice) {
       return { found: true, node: choice, nodeType: "choice" };
     }
   }
 
   if (nodeType === SchemaNodeType.Group && name === "sequence") {
-    const sequence = ((group as { sequence?: explicitGroup[] }).sequence ?? [])[position ?? 0] as explicitGroup | undefined;
+    const sequence = ((group as { sequence?: explicitGroup[] }).sequence ?? [])[position ?? 0];
     if (sequence) {
       return { found: true, node: sequence, nodeType: "sequence" };
     }

@@ -30,6 +30,7 @@ interface EditionRule {
 
 const TSCONFIG = /^tsconfig.*\.json$/;
 const ESLINT_CONFIG = "eslint.config.mjs";
+// Each pattern has three groups: the text before the value of a setting, the value, and the text after it.
 const TARGET = /("target"\s*:\s*")(es\d{4})(")/gi;
 const LIB = /("lib"\s*:\s*\[)([^\]]*)(\])/gi;
 const LIB_ENTRY = /(")(es\d{4})(")/gi;
@@ -47,14 +48,30 @@ function matches(regex: RegExp, text: string): RegExpExecArray[] {
 }
 
 /**
- * Replaces the second group of every match, keeping the groups before and after it.
+ * Returns the value of the setting that a match found, the second of its three groups.
+ *
+ * @param match - The match of one of the patterns
+ * @returns The value, such as `es2024`
+ * @throws An {@link Error} if the group did not take part in the match
+ */
+function settingValueOf(match: RegExpExecArray): string {
+  const value = match[2];
+  if (value === undefined) {
+    throw new Error(`The pattern has no second group: ${match[0]}`);
+  }
+  return value;
+}
+
+/**
+ * Replaces the value of the setting in every match, the second of its three groups, and keeps the text
+ * before and after it.
  *
  * @param text - The text
- * @param regex - A regular expression with three groups, with the flag `g`
- * @param value - Returns the replacement of the second group from its old content
+ * @param regex - One of the patterns, with the flag `g`
+ * @param value - Returns the new value from the old one
  * @returns The changed text
  */
-function replaceMiddle(text: string, regex: RegExp, value: (old: string) => string): string {
+function replaceSettingValue(text: string, regex: RegExp, value: (old: string) => string): string {
   return text.replace(regex, (_match, before: string, old: string, after: string) => `${before}${value(old)}${after}`);
 }
 
@@ -62,20 +79,20 @@ const RULES: EditionRule[] = [
   {
     applies: (file) => TSCONFIG.test(file),
     find: (text) => [
-      ...matches(TARGET, text).map((m) => ({ setting: "target", value: m[2].toUpperCase() })),
-      ...matches(LIB, text).flatMap((lib) => matches(LIB_ENTRY, lib[2]).map((m) => ({ setting: "lib", value: m[2].toUpperCase() }))),
+      ...matches(TARGET, text).map((m) => ({ setting: "target", value: settingValueOf(m).toUpperCase() })),
+      ...matches(LIB, text).flatMap((lib) => matches(LIB_ENTRY, settingValueOf(lib)).map((m) => ({ setting: "lib", value: settingValueOf(m).toUpperCase() }))),
     ],
     replace: (text, edition) =>
-      replaceMiddle(
-        replaceMiddle(text, TARGET, () => edition),
+      replaceSettingValue(
+        replaceSettingValue(text, TARGET, () => edition),
         LIB,
-        (entries) => replaceMiddle(entries, LIB_ENTRY, () => edition),
+        (entries) => replaceSettingValue(entries, LIB_ENTRY, () => edition),
       ),
   },
   {
     applies: (file) => file === ESLINT_CONFIG,
-    find: (text) => matches(ECMA_VERSION, text).map((m) => ({ setting: "ecmaVersion", value: `ES${m[2]}` })),
-    replace: (text, edition) => replaceMiddle(text, ECMA_VERSION, () => edition.slice(2)),
+    find: (text) => matches(ECMA_VERSION, text).map((m) => ({ setting: "ecmaVersion", value: `ES${settingValueOf(m)}` })),
+    replace: (text, edition) => replaceSettingValue(text, ECMA_VERSION, () => edition.slice(2)),
   },
 ];
 

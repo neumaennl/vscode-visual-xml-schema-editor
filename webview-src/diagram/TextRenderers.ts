@@ -121,8 +121,8 @@ export function renderDocumentation(
   const lines = item.documentation.split("\n").slice(0, 3);
   const lineHeight = item.getStyle().documentationFontSize;
 
-  for (let i = 0; i < lines.length; i++) {
-    const text = lines[i].substring(0, MAX_DOC_LINE_LENGTH); // Truncate long lines
+  lines.forEach((line, i) => {
+    const text = line.substring(0, MAX_DOC_LINE_LENGTH); // Truncate long lines
     svgText(
       group,
       text,
@@ -130,7 +130,7 @@ export function renderDocumentation(
       scaledBox.y + lineHeight + i * lineHeight,
       `font-family:${item.getStyle().fontFamily};font-size:${lineHeight}pt;fill:${item.getStyle().foregroundColor};text-anchor:start`
     );
-  }
+  });
 }
 
 /**

@@ -166,8 +166,8 @@ describe("executeAddImport", () => {
 
     const imports = schemaObj.import_ ?? [];
     expect(imports).toHaveLength(1);
-    expect(imports[0].namespace).toBe("http://example.com/ns1");
-    expect(imports[0].schemaLocation).toBe("schema1.xsd");
+    expect(imports[0]!.namespace).toBe("http://example.com/ns1");
+    expect(imports[0]!.schemaLocation).toBe("schema1.xsd");
   });
 
   test("should append a second import without removing existing ones", () => {
@@ -183,8 +183,8 @@ describe("executeAddImport", () => {
 
     const imports = schemaObj.import_ ?? [];
     expect(imports).toHaveLength(2);
-    expect(imports[0].namespace).toBe("http://example.com/ns1");
-    expect(imports[1].namespace).toBe("http://example.com/ns2");
+    expect(imports[0]!.namespace).toBe("http://example.com/ns1");
+    expect(imports[1]!.namespace).toBe("http://example.com/ns2");
   });
 
   test("should produce a schema that survives a marshal/unmarshal round-trip", () => {
@@ -201,8 +201,8 @@ describe("executeAddImport", () => {
     const roundTripped = unmarshal(schema, xml);
     const imports = roundTripped.import_ ?? [];
     expect(imports).toHaveLength(1);
-    expect(imports[0].namespace).toBe("http://example.com/types");
-    expect(imports[0].schemaLocation).toBe("types.xsd");
+    expect(imports[0]!.namespace).toBe("http://example.com/types");
+    expect(imports[0]!.schemaLocation).toBe("types.xsd");
     // The prefix binding must survive the round-trip as an xmlns: declaration
     expect(roundTripped._namespacePrefixes?.ext).toBe("http://example.com/types");
   });
@@ -255,7 +255,7 @@ describe("executeAddImport", () => {
     );
     expect(nsEntries).toHaveLength(2);
     // The two auto-generated prefixes must be distinct
-    expect(nsEntries[0][0]).not.toBe(nsEntries[1][0]);
+    expect(nsEntries[0]![0]).not.toBe(nsEntries[1]![0]);
   });
 });
 
@@ -285,7 +285,7 @@ describe("executeRemoveImport", () => {
 
     const imports = schemaObj.import_ ?? [];
     expect(imports).toHaveLength(1);
-    expect(imports[0].namespace).toBe("http://example.com/ns2");
+    expect(imports[0]!.namespace).toBe("http://example.com/ns2");
   });
 
   test("should remove the last import when multiple imports exist", () => {
@@ -298,7 +298,7 @@ describe("executeRemoveImport", () => {
 
     const imports = schemaObj.import_ ?? [];
     expect(imports).toHaveLength(1);
-    expect(imports[0].namespace).toBe("http://example.com/ns1");
+    expect(imports[0]!.namespace).toBe("http://example.com/ns1");
   });
 
   test("should remove the namespace prefix registration when removing an import", () => {
@@ -334,8 +334,8 @@ describe("executeModifyImport", () => {
     });
 
     const imports = schemaObj.import_ ?? [];
-    expect(imports[0].namespace).toBe("http://example.com/new-ns");
-    expect(imports[0].schemaLocation).toBe("schema.xsd");
+    expect(imports[0]!.namespace).toBe("http://example.com/new-ns");
+    expect(imports[0]!.schemaLocation).toBe("schema.xsd");
   });
 
   test("should update schemaLocation only", () => {
@@ -350,8 +350,8 @@ describe("executeModifyImport", () => {
     });
 
     const imports = schemaObj.import_ ?? [];
-    expect(imports[0].namespace).toBe("http://example.com/ns");
-    expect(imports[0].schemaLocation).toBe("new-schema.xsd");
+    expect(imports[0]!.namespace).toBe("http://example.com/ns");
+    expect(imports[0]!.schemaLocation).toBe("new-schema.xsd");
   });
 
   test("should update both namespace and schemaLocation", () => {
@@ -367,8 +367,8 @@ describe("executeModifyImport", () => {
     });
 
     const imports = schemaObj.import_ ?? [];
-    expect(imports[0].namespace).toBe("http://example.com/new-ns");
-    expect(imports[0].schemaLocation).toBe("new-schema.xsd");
+    expect(imports[0]!.namespace).toBe("http://example.com/new-ns");
+    expect(imports[0]!.schemaLocation).toBe("new-schema.xsd");
   });
 
   test("should modify only the import at the specified position", () => {
@@ -383,8 +383,8 @@ describe("executeModifyImport", () => {
     });
 
     const imports = schemaObj.import_ ?? [];
-    expect(imports[0].namespace).toBe("http://example.com/ns1");
-    expect(imports[1].namespace).toBe("http://example.com/modified");
+    expect(imports[0]!.namespace).toBe("http://example.com/ns1");
+    expect(imports[1]!.namespace).toBe("http://example.com/modified");
   });
 
   test("should not change any property when payload has no optional fields", () => {
@@ -396,8 +396,8 @@ describe("executeModifyImport", () => {
     modifyImport(schemaObj, { importId: "/import[0]" });
 
     const imports = schemaObj.import_ ?? [];
-    expect(imports[0].namespace).toBe("http://example.com/ns");
-    expect(imports[0].schemaLocation).toBe("schema.xsd");
+    expect(imports[0]!.namespace).toBe("http://example.com/ns");
+    expect(imports[0]!.schemaLocation).toBe("schema.xsd");
   });
 
   test("should update _namespacePrefixes entry when namespace changes", () => {
@@ -450,9 +450,9 @@ describe("executeModifyImport", () => {
     }, schemaObj);
 
     const elems = schemaObj.element ?? [];
-    expect(elems[0].type_).toBe("newext:FooType");
+    expect(elems[0]!.type_).toBe("newext:FooType");
     // unrelated element (xs: prefix) must be unchanged
-    expect(elems[1].type_).toBe("xs:string");
+    expect(elems[1]!.type_).toBe("xs:string");
   });
 
   test("should rewrite element @ref references when prefix is renamed", () => {
@@ -474,7 +474,7 @@ describe("executeModifyImport", () => {
       payload: { importId: "/import[0]", oldPrefix: "ext", prefix: "ex" },
     }, schemaObj);
 
-    expect(schemaObj.complexType[0].sequence!.element![0].ref).toBe("ex:ExternalElement");
+    expect(schemaObj.complexType[0]!.sequence!.element![0]!.ref).toBe("ex:ExternalElement");
   });
 
   test("should rewrite complexContent extension @base when prefix is renamed", () => {
@@ -495,7 +495,7 @@ describe("executeModifyImport", () => {
       payload: { importId: "/import[0]", oldPrefix: "ext", prefix: "external" },
     }, schemaObj);
 
-    expect(schemaObj.complexType[0].complexContent!.extension!.base).toBe("external:BaseType");
+    expect(schemaObj.complexType[0]!.complexContent!.extension!.base).toBe("external:BaseType");
   });
 
   test("should rewrite simpleType restriction @base when prefix is renamed", () => {
@@ -514,7 +514,7 @@ describe("executeModifyImport", () => {
       payload: { importId: "/import[0]", oldPrefix: "ext", prefix: "p" },
     }, schemaObj);
 
-    expect(schemaObj.simpleType[0].restriction!.base).toBe("p:ExternalSimpleType");
+    expect(schemaObj.simpleType[0]!.restriction!.base).toBe("p:ExternalSimpleType");
   });
 
   test("should rewrite union memberTypes when prefix is renamed", () => {
@@ -533,7 +533,7 @@ describe("executeModifyImport", () => {
       payload: { importId: "/import[0]", oldPrefix: "ext", prefix: "p" },
     }, schemaObj);
 
-    expect(schemaObj.simpleType[0].union!.memberTypes).toBe("p:TypeA xs:string p:TypeB");
+    expect(schemaObj.simpleType[0]!.union!.memberTypes).toBe("p:TypeA xs:string p:TypeB");
   });
 
   test("should leave QName references unchanged when prefix is NOT renamed", () => {
@@ -548,7 +548,7 @@ describe("executeModifyImport", () => {
     }, schemaObj);
 
     // type_ must still use "ext:" prefix
-    expect((schemaObj.element ?? [])[0].type_).toBe("ext:FooType");
+    expect((schemaObj.element ?? [])[0]!.type_).toBe("ext:FooType");
     // but the prefix now points to the new namespace
     expect(schemaObj._namespacePrefixes?.ext).toBe("http://example.com/new-ns");
   });
@@ -595,7 +595,7 @@ describe("executeAddInclude", () => {
 
     const includes = schemaObj.include ?? [];
     expect(includes).toHaveLength(1);
-    expect(includes[0].schemaLocation).toBe("other.xsd");
+    expect(includes[0]!.schemaLocation).toBe("other.xsd");
   });
 
   test("should append a second include without removing existing ones", () => {
@@ -605,8 +605,8 @@ describe("executeAddInclude", () => {
 
     const includes = schemaObj.include ?? [];
     expect(includes).toHaveLength(2);
-    expect(includes[0].schemaLocation).toBe("first.xsd");
-    expect(includes[1].schemaLocation).toBe("second.xsd");
+    expect(includes[0]!.schemaLocation).toBe("first.xsd");
+    expect(includes[1]!.schemaLocation).toBe("second.xsd");
   });
 
   test("should trim leading/trailing whitespace from schemaLocation", () => {
@@ -614,7 +614,7 @@ describe("executeAddInclude", () => {
 
     addInclude(schemaObj, { schemaLocation: "  trimmed.xsd  " });
 
-    expect((schemaObj.include ?? [])[0].schemaLocation).toBe("trimmed.xsd");
+    expect((schemaObj.include ?? [])[0]!.schemaLocation).toBe("trimmed.xsd");
   });
 
   test("should produce a schema that survives a marshal/unmarshal round-trip", () => {
@@ -624,7 +624,7 @@ describe("executeAddInclude", () => {
 
     const includes = unmarshal(schema, marshal(schemaObj)).include ?? [];
     expect(includes).toHaveLength(1);
-    expect(includes[0].schemaLocation).toBe("included.xsd");
+    expect(includes[0]!.schemaLocation).toBe("included.xsd");
   });
 });
 
@@ -648,7 +648,7 @@ describe("executeRemoveInclude", () => {
 
     const includes = schemaObj.include ?? [];
     expect(includes).toHaveLength(1);
-    expect(includes[0].schemaLocation).toBe("second.xsd");
+    expect(includes[0]!.schemaLocation).toBe("second.xsd");
   });
 
   test("should remove the last include when multiple includes exist", () => {
@@ -658,7 +658,7 @@ describe("executeRemoveInclude", () => {
 
     const includes = schemaObj.include ?? [];
     expect(includes).toHaveLength(1);
-    expect(includes[0].schemaLocation).toBe("first.xsd");
+    expect(includes[0]!.schemaLocation).toBe("first.xsd");
   });
 });
 
@@ -672,7 +672,7 @@ describe("executeModifyInclude", () => {
 
     modifyInclude(schemaObj, { includeId: "/include[0]", schemaLocation: "new.xsd" });
 
-    expect((schemaObj.include ?? [])[0].schemaLocation).toBe("new.xsd");
+    expect((schemaObj.include ?? [])[0]!.schemaLocation).toBe("new.xsd");
   });
 
   test("should modify only the include at the specified position", () => {
@@ -681,8 +681,8 @@ describe("executeModifyInclude", () => {
     modifyInclude(schemaObj, { includeId: "/include[1]", schemaLocation: "modified.xsd" });
 
     const includes = schemaObj.include ?? [];
-    expect(includes[0].schemaLocation).toBe("first.xsd");
-    expect(includes[1].schemaLocation).toBe("modified.xsd");
+    expect(includes[0]!.schemaLocation).toBe("first.xsd");
+    expect(includes[1]!.schemaLocation).toBe("modified.xsd");
   });
 
   test("should trim whitespace from schemaLocation when modifying", () => {
@@ -690,7 +690,7 @@ describe("executeModifyInclude", () => {
 
     modifyInclude(schemaObj, { includeId: "/include[0]", schemaLocation: "  trimmed.xsd  " });
 
-    expect((schemaObj.include ?? [])[0].schemaLocation).toBe("trimmed.xsd");
+    expect((schemaObj.include ?? [])[0]!.schemaLocation).toBe("trimmed.xsd");
   });
 });
 
@@ -745,7 +745,7 @@ describe("executeModifySchemaNamespaces", () => {
       xs: "http://www.w3.org/2001/XMLSchema",
       new: "http://example.com/ns",
     });
-    expect(schemaObj.element[0].type_).toBe("new:PersonType");
+    expect(schemaObj.element[0]!.type_).toBe("new:PersonType");
   });
 
   test("should remove targetNamespace and declarations when payload is empty", () => {

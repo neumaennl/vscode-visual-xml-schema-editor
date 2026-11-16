@@ -22,10 +22,9 @@ export function expectInOrderOnLine(
 ): void {
   let searchStartIndex = 0;
 
-  for (let i = 0; i < expectedStrings.length; i++) {
-    const expectedStr = expectedStrings[i];
+  expectedStrings.forEach((expectedStr, i) => {
     const index = line.indexOf(expectedStr, searchStartIndex);
-    const previous = i > 0 ? expectedStrings[i - 1] : "(start of line)";
+    const previous = expectedStrings[i - 1] ?? "(start of line)";
     expect(
       index,
       `Expected string "${expectedStr}" not found after "${previous}" on the same line. ` +
@@ -34,7 +33,7 @@ export function expectInOrderOnLine(
 
     // The next string must come after this one
     searchStartIndex = index + expectedStr.length;
-  }
+  });
 }
 
 /**
@@ -58,10 +57,9 @@ export function expectLinesInOrder(
   const lines = text.split('\n');
   let currentLineIndex = 0;
 
-  for (let i = 0; i < expectedStrings.length; i++) {
-    const expectedStr = expectedStrings[i];
+  expectedStrings.forEach((expectedStr, i) => {
     const lineIndex = lines.findIndex((line, index) => index >= currentLineIndex && line.includes(expectedStr));
-    const previous = i > 0 ? expectedStrings[i - 1] : "(start of text)";
+    const previous = expectedStrings[i - 1] ?? "(start of text)";
     const searchContext = lines.slice(Math.max(0, currentLineIndex - 2), currentLineIndex + 3).join('\n');
     expect(
       lineIndex,
@@ -72,5 +70,5 @@ export function expectLinesInOrder(
 
     // The next string must be on a later line
     currentLineIndex = lineIndex + 1;
-  }
+  });
 }

@@ -13,6 +13,7 @@
     ],
     "noEmit": true,
     "strict": true,
+    "allowUnreachableCode": false,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,

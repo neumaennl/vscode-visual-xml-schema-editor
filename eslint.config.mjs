@@ -1,4 +1,5 @@
-import eslint from '@eslint/js';
+import { defineConfig, globalIgnores } from 'eslint/config';
+import js from '@eslint/js';
 import tseslint from '@typescript-eslint/eslint-plugin';
 import tsparser from '@typescript-eslint/parser';
 import vitest from '@vitest/eslint-plugin';
@@ -66,36 +67,38 @@ const maxTernaryLines = {
   },
 };
 
-export default [
-  // Global ignores
+export default defineConfig([
+  globalIgnores([
+    'out/',
+    'webview/',
+    'coverage/',
+    'test-results/',
+    '.vscode-test/',
+    'node_modules/',
+    '**/generated/**',
+  ]),
+  // Allow only .ts and .mjs files: the package is an ES module, so .js would be ambiguous, and .cjs,
+  // .mts and .cts are not needed. Without this block, ESLint would skip .mts and .cts files, because
+  // no other block matches them.
   {
-    ignores: [
-      'out/',
-      'dist/',
-      'webview/',
-      '.vscode-test/',
-      'node_modules/',
-      '**/*.d.ts',
-      '**/generated/**',
-    ],
-  },
-  // Disallow .js and .cjs files (project uses ESM with .mjs and TypeScript)
-  {
-    files: ['**/*.js', '**/*.cjs'],
+    files: ['**/*.js', '**/*.cjs', '**/*.mts', '**/*.cts'],
+    languageOptions: {
+      parser: tsparser,
+    },
     rules: {
       'no-restricted-syntax': [
         'error',
         {
           selector: 'Program',
-          message: 'JavaScript (.js) and CommonJS (.cjs) files are not allowed. Use TypeScript (.ts) or ES modules (.mjs) instead.',
+          message: 'Only TypeScript (.ts) and ES module (.mjs) files are allowed; .js, .cjs, .mts and .cts files are not.',
         },
       ],
     },
   },
-  // JavaScript configuration files (eslint.config.mjs)
+  // JavaScript modules, such as this file and .vscode-test.mjs
   {
-    files: ['*.mjs'],
-    ...eslint.configs.recommended,
+    files: ['**/*.mjs'],
+    extends: [js.configs.recommended],
     languageOptions: {
       ecmaVersion: 2024,
       sourceType: 'module',
@@ -104,38 +107,33 @@ export default [
       },
     },
   },
-  // TypeScript files configuration
+  // TypeScript, with the recommended rules of ESLint and those of typescript-eslint that need type
+  // information. The project service takes it from the projects that tsconfig.json references.
   {
     files: ['**/*.ts'],
+    extends: [js.configs.recommended, tseslint.configs['flat/recommended-type-checked']],
     languageOptions: {
       parser: tsparser,
+      ecmaVersion: 2024,
+      sourceType: 'module',
       parserOptions: {
-        ecmaVersion: 2024,
-        sourceType: 'module',
-        project: [
-          './tsconfig.extension.json',
-          './tsconfig.webview.json',
-          './tsconfig.extension-test.json',
-          './tsconfig.webview-test.json',
-          './tsconfig.shared-test.json',
-          './tsconfig.integration-test.json',
-          './tsconfig.nodeTools.json',
-          './tsconfig.extension-host-test.json',
-        ],
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
       },
       globals: {
         ...globals.node,
       },
     },
     plugins: {
-      '@typescript-eslint': tseslint,
       style: { rules: { 'max-ternary-lines': maxTernaryLines } },
     },
     rules: {
-      ...tseslint.configs.recommended.rules,
       // Long conditional expressions are written as if/else (see "Code quality" in docs/development-guidelines.md)
       'style/max-ternary-lines': 'error',
-      ...tseslint.configs['recommended-requiring-type-checking'].rules,
+      // Unused code within a file is found by ESLint, not by TypeScript's noUnusedLocals. The rules of
+      // typescript-eslint replace those of ESLint: they understand types, and the rule for private
+      // members also finds members declared with TypeScript's `private`, not only `#private` ones.
+      'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': [
         'error',
         {
@@ -143,9 +141,9 @@ export default [
           varsIgnorePattern: '^_',
         },
       ],
+      'no-unused-private-class-members': 'off',
+      '@typescript-eslint/no-unused-private-class-members': 'error',
       '@typescript-eslint/explicit-function-return-type': 'error',
-      // Disabled to allow type inference at module boundaries
-      '@typescript-eslint/explicit-module-boundary-types': 'off',
       '@typescript-eslint/no-explicit-any': 'error',
       // Reports checks that the types make unnecessary, such as `x ?? []` on an array that is never undefined
       '@typescript-eslint/no-unnecessary-condition': 'error',
@@ -162,16 +160,14 @@ export default [
           message: 'Avoid `unknown` in type assertions and variable-type annotations. If unavoidable, add eslint-disable-next-line with a justification.',
         },
       ],
-      // Disabled to allow console logging in VS Code extension
-      'no-console': 'off',
     },
   },
   // Test files configuration (must come before webview config to avoid conflicts)
   {
     files: ['**/*.test.ts', '**/*.test-d.ts', '**/__mocks__/**/*.ts'],
     ignores: ['test/extension-host/**'],
+    extends: [vitest.configs.recommended],
     plugins: {
-      vitest,
       tests: { rules: { 'max-lines-per-test': maxLinesPerTest } },
     },
     languageOptions: {
@@ -181,7 +177,6 @@ export default [
       },
     },
     rules: {
-      ...vitest.configs.recommended.rules,
       // Size limits for tests (see "Code size" in docs/development-guidelines.md)
       'max-lines': ['error', { max: 1000 }],
       'tests/max-lines-per-test': 'error',
@@ -213,6 +208,8 @@ export default [
       // Test names describe the intended behavior: test("should …") (see "Files and structure" in docs/testing.md).
       // The other options of the recommended setting stay as they are.
       'vitest/valid-title': ['error', { mustMatch: { test: '^should ' } }],
+      // Vitest provides its API as globals (globals: true in vitest.config.ts).
+      'vitest/no-importing-vitest-globals': 'error',
       // Disabled in tests where we have more control over the test environment
       '@typescript-eslint/no-non-null-assertion': 'off',
       // vitest/unbound-method replaces @typescript-eslint/unbound-method in tests;
@@ -265,4 +262,4 @@ export default [
       },
     },
   },
-];
+]);

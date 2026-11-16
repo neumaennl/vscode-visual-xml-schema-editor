@@ -404,14 +404,6 @@ class SchemaEditorApp {
   }
 
   /**
-   * Display an informational message
-   * @param message - Message to display
-   */
-  private showMessage(message: string): void {
-    this.renderer.showMessage(message);
-  }
-
-  /**
    * Save the current application state to VS Code
    */
   private saveState(): void {

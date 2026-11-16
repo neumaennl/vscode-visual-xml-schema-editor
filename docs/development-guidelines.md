@@ -3,9 +3,8 @@ type: Guideline
 title: Development guidelines
 description: Rules for everyone who changes the extension - code size, code quality and ESLint, structure reviews, TypeScript and naming, VS Code and Node versions, TSDoc, tests, documentation and the knowledge bundle, issues, what to check before committing, and commits.
 tags: [guidelines, conventions, code-quality, typescript, documentation, workflow]
-status: stable
-generated: { by: human:neumaennl, at: 2026-11-15T11:51:53Z }
-verified: { by: human:neumaennl, at: 2026-11-15T11:58:06Z }
+status: draft
+generated: { by: human:neumaennl, at: 2026-11-16T09:56:20Z }
 sources:
   - id: eslint
     resource: ../eslint.config.mjs
@@ -69,6 +68,7 @@ The reports of the duplicate check and the unused-code check are inputs. The rev
 # TypeScript
 
 - The TypeScript configuration is `strict`. `any` is not allowed (ESLint reports it as an error).[^tsconfig][^eslint]
+- Unused variables, imports, parameters and private class members are errors (ESLint), and so is unreachable code (TypeScript). Prefix a parameter that must exist but is not used with `_`.[^tsconfig][^eslint]
 - Define interfaces or types for all data structures. Commands and messages are discriminated unions (see [Commands](commands.md) and [Messaging](messaging.md)).
 - Names: PascalCase for classes, interfaces and types; camelCase for functions, methods and variables; UPPER_CASE for module-level constants. Names say what something is or does.
 - Length of names: clarity comes first, but keep them short. Aim for less than 15 characters; 25 to 30 is the upper limit. `createElement` is better than `createElementWithChildren`; `createElementNodeWithProcessingOfAnonymousTypes` is too long, `cen` too cryptic.

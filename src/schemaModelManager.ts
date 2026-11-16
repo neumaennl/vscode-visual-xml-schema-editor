@@ -58,7 +58,8 @@ export class SchemaModelManager {
       this.schemaState = unmarshal(schema, xmlContent);
     } catch (error) {
       throw new Error(
-        `Failed to load schema from XML: ${(error as Error).message}`
+        `Failed to load schema from XML: ${(error as Error).message}`,
+        { cause: error }
       );
     }
   }
@@ -96,7 +97,8 @@ export class SchemaModelManager {
       return fixOutputLineBreaks(marshal(this.schemaState));
     } catch (error) {
       throw new Error(
-        `Failed to marshal schema to XML: ${(error as Error).message}`
+        `Failed to marshal schema to XML: ${(error as Error).message}`,
+        { cause: error }
       );
     }
   }
@@ -118,7 +120,8 @@ export class SchemaModelManager {
       return unmarshal(schema, xml);
     } catch (error) {
       throw new Error(
-        `Failed to clone schema: ${(error as Error).message}`
+        `Failed to clone schema: ${(error as Error).message}`,
+        { cause: error }
       );
     }
   }

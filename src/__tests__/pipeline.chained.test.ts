@@ -243,7 +243,7 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
 
   test("should reject adding a duplicate element into OrderType sequence", () => {
     // Build a schema that already has orderId in OrderType/sequence
-    let xml = orderTypeWithElement("orderId", "xs:string");
+    const xml = orderTypeWithElement("orderId", "xs:string");
 
     // Attempt to add orderId again
     runCommandExpectValidationFailure(

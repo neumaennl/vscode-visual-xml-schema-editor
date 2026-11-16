@@ -3,9 +3,8 @@ type: Known Issues
 title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
-status: stable
-generated: { by: human:neumaennl, at: 2026-11-15T20:24:38Z }
-verified: { by: human:neumaennl, at: 2026-11-15T20:28:10Z }
+status: draft
+generated: { by: human:neumaennl, at: 2026-11-16T09:56:20Z }
 ---
 
 # Purpose
@@ -430,9 +429,9 @@ Effort:
 - **Location:** `shared/`, `src/`, `webview-src/`, `scripts/`, `package.json`, `.github/workflows/ci.yml`
 - **Severity:** Low
 - **Effort:** S
-- **Description:** ESLint and TypeScript only find unused code within one file: unused variables, imports and parameters. Nothing finds code that is unused across files:
+- **Description:** ESLint only finds unused code within one file: unused variables, imports, parameters and private class members (see [Build and packaging](build-and-packaging.md#eslint)). Nothing finds code that is unused across files:
   - exports that no module imports, and files that nothing imports;
-  - class members and enum members that are never used;
+  - public class members and enum members that are never used;
   - code that only tests call;
   - dependencies in `package.json` that no code uses.
 

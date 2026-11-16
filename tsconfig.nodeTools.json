@@ -11,11 +11,11 @@
       "vitest/globals"
     ],
     "strict": true,
+    "allowUnreachableCode": false,
     "noEmit": true,
     "allowImportingTsExtensions": true,
     "erasableSyntaxOnly": true,
     "verbatimModuleSyntax": true,
-    "noUnusedLocals": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },

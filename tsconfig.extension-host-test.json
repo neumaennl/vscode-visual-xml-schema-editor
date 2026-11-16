@@ -16,7 +16,7 @@
       "vscode"
     ],
     "strict": true,
-    "noUnusedLocals": true,
+    "allowUnreachableCode": false,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },

@@ -53,6 +53,19 @@ describe("SchemaModelManager", () => {
       }).toThrow("Failed to load schema from XML");
     });
 
+    test("should keep the parse error as the cause", () => {
+      const manager = new SchemaModelManager();
+      let thrown: Error | undefined;
+
+      try {
+        manager.loadFromXml("not valid xml");
+      } catch (error) {
+        thrown = error as Error;
+      }
+
+      expect(thrown?.cause).toBeInstanceOf(Error);
+    });
+
     test("should replace existing schema when loading new one", () => {
       const manager = new SchemaModelManager();
       const xml1 = `<?xml version="1.0" encoding="UTF-8"?>

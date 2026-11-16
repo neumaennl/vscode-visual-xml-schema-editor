@@ -13,8 +13,8 @@
       "vscode"
     ],
     "strict": true,
+    "allowUnreachableCode": false,
     "esModuleInterop": true,
-    "noUnusedLocals": true,
     "noImplicitOverride": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,

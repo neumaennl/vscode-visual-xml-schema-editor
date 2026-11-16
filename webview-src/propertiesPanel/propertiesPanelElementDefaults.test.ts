@@ -24,7 +24,7 @@ function inputOf(section: HTMLElement, label: string): HTMLInputElement {
   );
   const input = column?.querySelector("input");
   expect(input).toBeInstanceOf(HTMLInputElement);
-  return input as HTMLInputElement;
+  return input!;
 }
 
 describe("renderElementDefaultFixedSection", () => {

@@ -173,7 +173,7 @@ export function validateAddAttributeGroup(
         "Cannot combine groupName with parentId — use ref for references, groupName for definitions",
     };
   }
-  if (!isValidXmlName(groupName ?? "")) {
+  if (groupName === undefined || !isValidXmlName(groupName)) {
     return {
       valid: false,
       error: "Attribute group name must be a valid XML name",

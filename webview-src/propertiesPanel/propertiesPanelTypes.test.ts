@@ -70,7 +70,7 @@ describe("renderTypeProperty", () => {
       const input = getInputByLabel(root, "Type");
       expect(getLabels(root)).toEqual(["Type"]);
       expect(input.value).toBe("xs:string");
-      const options = Array.from(root.querySelectorAll(`datalist#${input.getAttribute("list")} option`), (option) => (option as HTMLOptionElement).value);
+      const options = Array.from(root.querySelectorAll(`datalist#${input.getAttribute("list")!} option`), (option) => (option as HTMLOptionElement).value);
       expect(options).toEqual(SUGGESTIONS);
     });
 

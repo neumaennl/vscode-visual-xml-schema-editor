@@ -256,7 +256,7 @@ describe("propertiesPanelSimpleTypeEditors", () => {
     test("should add an empty member type without sending a command", () => {
       const { root, dispatch } = renderBodyEditor("/simpleType:Number", renderSimpleTypeUnionEditor);
 
-      (Array.from(root.querySelectorAll("button")).find((button) => button.textContent === "Add member type") as HTMLButtonElement).click();
+      (Array.from(root.querySelectorAll("button")).find((button) => button.textContent === "Add member type")!).click();
 
       expect(getSelectsByLabel(root, "Member Types").map((select) => select.value)).toEqual(["xs:int", "xs:decimal", ""]);
       expect(dispatch).not.toHaveBeenCalled();

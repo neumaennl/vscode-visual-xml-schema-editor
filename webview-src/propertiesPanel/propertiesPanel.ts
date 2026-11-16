@@ -192,8 +192,7 @@ export class PropertiesPanel {
             return;
           }
           if (
-            this.pendingRename &&
-            this.pendingRename.sourceId === node.id &&
+            this.pendingRename?.sourceId === node.id &&
             this.pendingRename.newName === trimmedName
           ) {
             return;

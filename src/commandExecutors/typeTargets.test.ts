@@ -3,7 +3,7 @@
  */
 
 import { locateModifiedType, placeNewType, removeType } from "./typeTargets.js";
-import type { schema, topLevelComplexType } from "../../shared/types.js";
+import type { schema } from "../../shared/types.js";
 import { localComplexType, localSimpleType, topLevelSimpleType } from "../../shared/types.js";
 import { schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
 
@@ -77,21 +77,21 @@ describe("removeType", () => {
 describe("locateModifiedType", () => {
   test("should locate an anonymous type", () => {
     const schemaObj = createSchema();
-    const result = locateModifiedType<localComplexType>(schemaObj, "/element:anonymous/anonymousComplexType[0]", "complexType", undefined);
+    const result = locateModifiedType(schemaObj, "/element:anonymous/anonymousComplexType[0]", "complexType", undefined);
     expect(result).toEqual({ type: schemaObj.element?.[1].complexType, topLevel: false });
   });
 
   test("should locate a top-level type without changing it", () => {
     const schemaObj = createSchema();
-    const result = locateModifiedType<topLevelComplexType>(schemaObj, "/complexType:T", "complexType", undefined);
+    const result = locateModifiedType(schemaObj, "/complexType:T", "complexType", undefined);
     expect(result.topLevel).toBe(true);
-    expect(result.type.name).toBe("T");
+    expect(result.type).toMatchObject({ name: "T" });
   });
 
   test("should rename a top-level type and the references to it", () => {
     const schemaObj = createSchema();
-    const result = locateModifiedType<topLevelSimpleType>(schemaObj, "/simpleType:S", "simpleType", "U");
-    expect(result.type.name).toBe("U");
+    const result = locateModifiedType(schemaObj, "/simpleType:S", "simpleType", "U");
+    expect(result.type).toMatchObject({ name: "U" });
     expect(schemaObj.element?.[0].type_).toBe("U");
   });
 });

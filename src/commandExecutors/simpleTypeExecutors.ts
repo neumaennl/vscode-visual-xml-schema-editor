@@ -86,7 +86,7 @@ export function executeModifySimpleType(
   schemaObj: schema
 ): void {
   const { typeId, typeName, ...updates } = command.payload;
-  const { type } = locateModifiedType<topLevelSimpleType | localSimpleType>(schemaObj, typeId, "simpleType", typeName);
+  const { type } = locateModifiedType(schemaObj, typeId, "simpleType", typeName);
   updateTypeContents(type, updates);
 }
 
@@ -187,9 +187,7 @@ function applySimpleTypeBody(
   const { baseType, listItemType, unionMemberTypes, restrictions } = updates;
 
   if (derivationKind === "list") {
-    if (!simpleType.list) {
-      simpleType.list = new listType();
-    }
+    simpleType.list ??= new listType();
     simpleType.list.itemType = assumeValidated(listItemType, "List item type").trim();
     simpleType.list.simpleType = undefined;
     simpleType.restriction = undefined;
@@ -198,9 +196,7 @@ function applySimpleTypeBody(
   }
 
   if (derivationKind === "union") {
-    if (!simpleType.union) {
-      simpleType.union = new unionType();
-    }
+    simpleType.union ??= new unionType();
     simpleType.union.memberTypes = assumeValidated(unionMemberTypes, "Union member types")
       .map((memberType) => memberType.trim())
       .join(" ");

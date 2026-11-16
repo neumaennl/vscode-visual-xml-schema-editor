@@ -57,7 +57,7 @@ function chipValues(root: HTMLElement): string[] {
 function buttonLabeled(root: HTMLElement, label: string): HTMLButtonElement {
   const button = Array.from(root.querySelectorAll("button")).find((candidate) => candidate.getAttribute("aria-label") === label);
   expect(button).toBeInstanceOf(HTMLButtonElement);
-  return button as HTMLButtonElement;
+  return button!;
 }
 
 /**
@@ -69,7 +69,7 @@ function buttonLabeled(root: HTMLElement, label: string): HTMLButtonElement {
  *   the field also loses the focus, which must not commit the value.
  */
 function enterValue(root: HTMLElement, value: string, key?: "Enter" | "Escape"): void {
-  const input = root.querySelector(".property-value-input") as HTMLInputElement;
+  const input = root.querySelector<HTMLInputElement>(".property-value-input")!;
   expect(document.activeElement).toBe(input);
   input.value = value;
   if (key) {
@@ -134,7 +134,7 @@ describe("renderValueListFacet", () => {
     test("should add the entered value", () => {
       const { root, draft } = renderValueList("pattern", ["[A-Z]{3}"]);
 
-      (root.querySelector(".property-value-add-button") as HTMLButtonElement).click();
+      (root.querySelector<HTMLButtonElement>(".property-value-add-button")!).click();
       enterValue(root, "[0-9]{3}");
 
       expect(draft.pattern).toEqual(["[A-Z]{3}", "[0-9]{3}"]);
@@ -148,7 +148,7 @@ describe("renderValueListFacet", () => {
     ])("should add nothing for $case", ({ value, key }) => {
       const { root, buildAndDispatch } = renderValueList("pattern", ["[A-Z]{3}"]);
 
-      (root.querySelector(".property-value-add-button") as HTMLButtonElement).click();
+      (root.querySelector<HTMLButtonElement>(".property-value-add-button")!).click();
       enterValue(root, value, key);
 
       expect(buildAndDispatch).not.toHaveBeenCalled();
@@ -166,7 +166,7 @@ describe("renderValueListFacet", () => {
       const { root, draft } = renderValueList("pattern", ["[A-Z]{3}", "[0-9]{3}"]);
 
       buttonLabeled(root, "Edit [0-9]{3}").click();
-      expect((root.querySelector(".property-value-input") as HTMLInputElement).value).toBe("[0-9]{3}");
+      expect((root.querySelector<HTMLInputElement>(".property-value-input")!).value).toBe("[0-9]{3}");
       enterValue(root, next, key);
 
       expect(draft.pattern).toEqual(expected);
@@ -248,7 +248,7 @@ describe("renderValueListFacet", () => {
       const chips = Array.from(root.querySelectorAll(".property-value-chip"));
       const dataTransfer = createDataTransfer();
 
-      dispatchDrag(chips[0].querySelector(".property-value-chip-grip") as Element, "dragstart", dataTransfer);
+      dispatchDrag(chips[0].querySelector(".property-value-chip-grip")!, "dragstart", dataTransfer);
       const dragOver = dispatchDrag(chips[2], "dragover", dataTransfer);
       expect(dragOver.defaultPrevented).toBe(true);
       expect(chips[2].classList).toContain("property-value-chip-drag-over");
@@ -261,7 +261,7 @@ describe("renderValueListFacet", () => {
     test("should mark the dragged chip until the drag ends", () => {
       const { root } = renderValueList("enumeration", ["A", "B"]);
       const [first, second] = Array.from(root.querySelectorAll(".property-value-chip"));
-      const grip = first.querySelector(".property-value-chip-grip") as Element;
+      const grip = first.querySelector(".property-value-chip-grip")!;
 
       dispatchDrag(grip, "dragstart");
       dispatchDrag(second, "dragover");
@@ -274,7 +274,7 @@ describe("renderValueListFacet", () => {
 
     test("should ignore a drop that does not come from a chip of the list", () => {
       const { root, buildAndDispatch } = renderValueList("enumeration", ["A", "B"]);
-      const chip = root.querySelector(".property-value-chip") as Element;
+      const chip = root.querySelector(".property-value-chip")!;
 
       expect(dispatchDrag(chip, "dragover").defaultPrevented).toBe(false);
       expect(dispatchDrag(chip, "drop").defaultPrevented).toBe(false);
@@ -284,9 +284,9 @@ describe("renderValueListFacet", () => {
 
     test("should change nothing when a chip is dropped on itself", () => {
       const { root, buildAndDispatch } = renderValueList("enumeration", ["A", "B"]);
-      const chip = root.querySelector(".property-value-chip") as Element;
+      const chip = root.querySelector(".property-value-chip")!;
 
-      dispatchDrag(chip.querySelector(".property-value-chip-grip") as Element, "dragstart");
+      dispatchDrag(chip.querySelector(".property-value-chip-grip")!, "dragstart");
       dispatchDrag(chip, "drop");
 
       expect(buildAndDispatch).not.toHaveBeenCalled();
@@ -298,7 +298,7 @@ describe("appendFacetRemoveButton", () => {
   test("should add a button that removes the facet", () => {
     const onRemove = vi.fn<() => void>();
     const field = appendFacetRemoveButton(document.createElement("div"), "Max Length", true, onRemove);
-    const button = field.querySelector("button") as HTMLButtonElement;
+    const button = field.querySelector("button")!;
 
     button.click();
 
@@ -310,7 +310,7 @@ describe("appendFacetRemoveButton", () => {
 
   test("should disable the button of the last facet and say why", () => {
     const field = appendFacetRemoveButton(document.createElement("div"), "Max Length", false, vi.fn());
-    const button = field.querySelector("button") as HTMLButtonElement;
+    const button = field.querySelector("button")!;
 
     expect(button.disabled).toBe(true);
     expect(button.title).toBe(LAST_FACET_TITLE);

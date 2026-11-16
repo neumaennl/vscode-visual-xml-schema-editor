@@ -31,7 +31,7 @@ export function renderText(
 
   // Truncate text to fit in box with some padding
   const maxWidth = scaledBox.width - 10; // 5px padding on each side
-  const fontSize = item.diagram?.style.fontSize || 10;
+  const fontSize = item.getStyle().fontSize;
   const truncatedText = truncateText(displayText, maxWidth, fontSize, svg);
 
   svgText(
@@ -39,7 +39,7 @@ export function renderText(
     truncatedText,
     centerX,
     centerY,
-    `font-family:${item.diagram?.style.fontFamily};font-size:${item.diagram?.style.fontSize}pt;fill:${item.diagram?.style.foregroundColor};font-weight:bold;text-anchor:middle;dominant-baseline:central`,
+    `font-family:${item.getStyle().fontFamily};font-size:${item.getStyle().fontSize}pt;fill:${item.getStyle().foregroundColor};font-weight:bold;text-anchor:middle;dominant-baseline:central`,
     truncatedText !== displayText ? displayText : undefined // Show full text as tooltip if truncated
   );
 }
@@ -119,7 +119,7 @@ export function renderDocumentation(
 
   // Simple documentation rendering - just show first line
   const lines = item.documentation.split("\n").slice(0, 3);
-  const lineHeight = item.diagram?.style.documentationFontSize || 9;
+  const lineHeight = item.getStyle().documentationFontSize;
 
   for (let i = 0; i < lines.length; i++) {
     const text = lines[i].substring(0, MAX_DOC_LINE_LENGTH); // Truncate long lines
@@ -128,7 +128,7 @@ export function renderDocumentation(
       text,
       scaledBox.x + 5,
       scaledBox.y + lineHeight + i * lineHeight,
-      `font-family:${item.diagram?.style.fontFamily};font-size:${lineHeight}pt;fill:${item.diagram?.style.foregroundColor};text-anchor:start`
+      `font-family:${item.getStyle().fontFamily};font-size:${lineHeight}pt;fill:${item.getStyle().foregroundColor};text-anchor:start`
     );
   }
 }
@@ -157,6 +157,6 @@ export function renderOccurrence(item: DiagramItem, group: SVGElement): void {
     occurText,
     scaledBox.x + scaledBox.width + 5,
     scaledBox.y + scaledBox.height - 5,
-    `font-family:${item.diagram?.style.fontFamily};font-size:${item.diagram?.style.smallFontSize}pt;fill:${item.diagram?.style.foregroundColor};text-anchor:start`
+    `font-family:${item.getStyle().fontFamily};font-size:${item.getStyle().smallFontSize}pt;fill:${item.getStyle().foregroundColor};text-anchor:start`
   );
 }

@@ -307,7 +307,7 @@ export class DiagramRenderer {
    */
   private getDraggedPaletteSchemaConstruct(event: DragEvent): string {
     const fromDataTransfer = event.dataTransfer?.getData(PALETTE_MIME_TYPE) ?? "";
-    return fromDataTransfer || getActiveDraggedPaletteSchemaConstruct() || "";
+    return fromDataTransfer || (getActiveDraggedPaletteSchemaConstruct() ?? "");
   }
 
   /**

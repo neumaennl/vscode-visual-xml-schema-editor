@@ -42,7 +42,7 @@ export class DiagramSvgRenderer {
     this.svg = svg;
     // Use provided container group or create our own
     this.mainGroup =
-      containerGroup ||
+      containerGroup ??
       document.createElementNS("http://www.w3.org/2000/svg", "g");
     if (!containerGroup) {
       this.svg.appendChild(this.mainGroup);
@@ -139,7 +139,7 @@ export class DiagramSvgRenderer {
   private renderChildLines(item: DiagramItem, group: SVGElement): void {
     if (item.childElements.length === 0) return;
 
-    const foregroundPen = `stroke:${item.diagram?.style.lineColor};stroke-width:1;stroke-linecap:round`;
+    const foregroundPen = `stroke:${item.getStyle().lineColor};stroke-width:1;stroke-linecap:round`;
     const parentMidY = item.scaleInt(item.location.y + item.size.height / 2);
     
     // Calculate where the horizontal line from parent should start (after expand button)
@@ -252,8 +252,8 @@ export class DiagramSvgRenderer {
   private renderShape(item: DiagramItem, group: SVGElement): void {
     const scaledBox = item.scaleRectangle(item.elementBox);
     // Use semi-transparent background so it works with any theme
-    const backgroundBrush = `fill:${item.diagram?.style.backgroundColor}`;
-    const foregroundPen = `stroke:${item.diagram?.style.lineColor};stroke-width:2`;
+    const backgroundBrush = `fill:${item.getStyle().backgroundColor}`;
+    const foregroundPen = `stroke:${item.getStyle().lineColor};stroke-width:2`;
       const dashed = item.minOccurrence === 0 ? ";stroke-dasharray:5,3" : "";
 
     switch (item.itemType) {
@@ -286,6 +286,10 @@ export class DiagramSvgRenderer {
           group
         );
         break;
+
+      case DiagramItemType.reference:
+        // Never assigned, so nothing to draw (see "Duplicated and dead code" in docs/known-issues.md)
+        break;
     }
   }
 
@@ -296,8 +300,8 @@ export class DiagramSvgRenderer {
    */
   private renderExpandButton(item: DiagramItem, group: SVGElement): void {
     const scaledBox = item.scaleRectangle(item.childExpandButtonBox);
-    const foregroundPen = `stroke:${item.diagram?.style.lineColor};stroke-width:1`;
-    const backgroundBrush = `fill:${item.diagram?.style.backgroundColor}`;
+    const foregroundPen = `stroke:${item.getStyle().lineColor};stroke-width:1`;
+    const backgroundBrush = `fill:${item.getStyle().backgroundColor}`;
 
     // Create a dedicated group for the button
     const buttonGroup = document.createElementNS(
@@ -346,7 +350,7 @@ export class DiagramSvgRenderer {
    */
   private renderReferenceArrow(item: DiagramItem, group: SVGElement): void {
     const scaledBox = item.scaleRectangle(item.elementBox);
-    const arrowPen = `stroke:${item.diagram?.style.lineColor};stroke-width:2`;
+    const arrowPen = `stroke:${item.getStyle().lineColor};stroke-width:2`;
     const baseX = scaledBox.x + 1;
     const baseY = scaledBox.y + scaledBox.height - 1;
     const targetX = baseX + 3;
@@ -364,7 +368,7 @@ export class DiagramSvgRenderer {
     svgPolygon(
       group,
       points,
-      `fill:${item.diagram?.style.foregroundColor}`,
+      `fill:${item.getStyle().foregroundColor}`,
       ""
     );
   }

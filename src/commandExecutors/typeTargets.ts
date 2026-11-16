@@ -3,7 +3,13 @@
  * elements and attributes hold inline, and top-level types in the schema.
  */
 
-import type { schema } from "../../shared/types.js";
+import type {
+  localComplexType,
+  localSimpleType,
+  schema,
+  topLevelComplexType,
+  topLevelSimpleType,
+} from "../../shared/types.js";
 import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
 import { isSchemaRoot } from "../../shared/schemaUtils.js";
 import { assumeValidated, locateValidated } from "./assumeValidated.js";
@@ -12,6 +18,12 @@ import { renameLocalTypeInSchema } from "./schemaLocalRenamer.js";
 
 /** The two kinds of types, named like the property that holds them in the schema or in their parent. */
 export type TypeKind = "simpleType" | "complexType";
+
+/** The types of each kind, top-level or anonymous. */
+interface TypesOfKind {
+  simpleType: topLevelSimpleType | localSimpleType;
+  complexType: topLevelComplexType | localComplexType;
+}
 
 /** An element or attribute that can hold an anonymous type instead of a named one. */
 interface TypeHolder { type_?: string; simpleType?: object; complexType?: object }
@@ -59,12 +71,11 @@ function locateAnonymousTypeHolder(schemaObj: schema, typeId: string, kind: Type
  * @param type - The new type; a top-level type has its name already
  */
 export function placeNewType(schemaObj: schema, parentId: string | undefined, kind: TypeKind, type: object): void {
-  if (isSchemaRoot(parentId)) {
+  if (parentId === undefined || isSchemaRoot(parentId)) {
     appendTo(schemaObj as TypesOfSchema, kind, type as { name: string });
     return;
   }
-  // isSchemaRoot() guarantees that parentId is a non-empty string here
-  const holder = locateValidated(schemaObj, parentId as string).parent as TypeHolder;
+  const holder = locateValidated(schemaObj, parentId).parent as TypeHolder;
   holder.type_ = undefined;
   holder.simpleType = undefined;
   holder.complexType = undefined;
@@ -98,15 +109,15 @@ export function removeType(schemaObj: schema, typeId: string, kind: TypeKind): v
  * @param typeName - The new name, if the command changes it
  * @returns The type, and whether it is a top-level type
  */
-export function locateModifiedType<T>(
+export function locateModifiedType<K extends TypeKind>(
   schemaObj: schema,
   typeId: string,
-  kind: TypeKind,
+  kind: K,
   typeName: string | undefined
-): { type: T; topLevel: boolean } {
+): { type: TypesOfKind[K]; topLevel: boolean } {
   const holder = locateAnonymousTypeHolder(schemaObj, typeId, kind);
   if (holder) {
-    return { type: holder[kind] as T, topLevel: false };
+    return { type: holder[kind] as TypesOfKind[K], topLevel: false };
   }
   const name = parseSchemaId(typeId).name;
   const type = assumeValidated(
@@ -117,5 +128,5 @@ export function locateModifiedType<T>(
     renameLocalTypeInSchema(type.name, typeName, schemaObj);
     type.name = typeName;
   }
-  return { type: type as T, topLevel: true };
+  return { type, topLevel: true };
 }

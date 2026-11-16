@@ -305,8 +305,8 @@ export async function main(args: string[]): Promise<number> {
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   main(process.argv.slice(2)).then(
     (code) => process.exit(code),
-    (error: Error) => {
-      console.error(error.message);
+    (error: unknown) => {
+      console.error(error instanceof Error ? error.message : String(error));
       process.exit(1);
     },
   );

@@ -157,7 +157,7 @@ describe("renderFacetsTab", () => {
     test("should send a changed list of enumeration values with the other facets", () => {
       const { tab, node, dispatch } = renderFacets("/simpleType:Code");
 
-      (tab.querySelector("button[aria-label='Remove A']") as HTMLButtonElement).click();
+      (tab.querySelector<HTMLButtonElement>("button[aria-label='Remove A']")!).click();
 
       expect(dispatch).toHaveBeenCalledExactlyOnceWith({
         type: "modifySimpleType",

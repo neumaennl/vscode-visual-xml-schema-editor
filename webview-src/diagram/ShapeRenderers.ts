@@ -105,8 +105,8 @@ export function renderGroupTypeIndicator(
   rect: Rectangle,
   group: SVGElement
 ): void {
-  const foregroundPen = `stroke:${item.diagram?.style.lineColor};stroke-width:1`;
-  const foregroundBrush = `fill:${item.diagram?.style.foregroundColor}`;
+  const foregroundPen = `stroke:${item.getStyle().lineColor};stroke-width:1`;
+  const foregroundBrush = `fill:${item.getStyle().foregroundColor}`;
   const centerX = rect.x + rect.width / 2;
   const centerY = rect.y + rect.height / 2;
 

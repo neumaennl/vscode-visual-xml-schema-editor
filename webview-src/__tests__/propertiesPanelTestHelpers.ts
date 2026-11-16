@@ -30,8 +30,10 @@ export function getInputByLabel(container: HTMLElement, label: string): HTMLInpu
   const match = findLabel(container, label);
   expect(match).toBeDefined();
   const input = match?.parentElement?.querySelector("input");
-  expect(input).toBeInstanceOf(HTMLInputElement);
-  return input as HTMLInputElement;
+  if (!input) {
+    throw new Error(`The field ${label} has no input`);
+  }
+  return input;
 }
 
 /**
@@ -45,8 +47,10 @@ export function getSelectByLabel(container: HTMLElement, label: string): HTMLSel
   const match = findLabel(container, label);
   expect(match).toBeDefined();
   const select = match?.parentElement?.querySelector("select");
-  expect(select).toBeInstanceOf(HTMLSelectElement);
-  return select as HTMLSelectElement;
+  if (!select) {
+    throw new Error(`The field ${label} has no select`);
+  }
+  return select;
 }
 
 /**

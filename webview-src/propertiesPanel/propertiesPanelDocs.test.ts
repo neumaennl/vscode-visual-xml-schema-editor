@@ -123,7 +123,7 @@ describe("createDocsTab", () => {
   describe("editing the documentation", () => {
     test("should change a documentation entry of the draft when its field is left, and send it", () => {
       const { tab, node, dispatch, rerender } = renderDocs(DOCUMENTED, "/element:person");
-      const textArea = tab.querySelector("textarea") as HTMLTextAreaElement;
+      const textArea = tab.querySelector("textarea")!;
 
       textArea.value = "Line one\nLine two";
       textArea.dispatchEvent(new FocusEvent("blur"));

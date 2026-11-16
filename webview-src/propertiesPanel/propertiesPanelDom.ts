@@ -75,7 +75,7 @@ export function createAttributeList(node: DiagramItem): HTMLElement {
 
     const use = document.createElement("span");
     use.className = "attr-use";
-    use.textContent = `(${attr.use || "optional"})`;
+    use.textContent = `(${attr.use ?? "optional"})`;
     li.appendChild(use);
 
     if (attr.defaultValue) {

@@ -117,7 +117,7 @@ export function executeModifyComplexType(
   schemaObj: schema
 ): void {
   const { typeId, typeName, abstract: isAbstract, ...updates } = command.payload;
-  const { type, topLevel } = locateModifiedType<topLevelComplexType | localComplexType>(
+  const { type, topLevel } = locateModifiedType(
     schemaObj,
     typeId,
     "complexType",
@@ -157,7 +157,7 @@ function updateComplexTypeContents(
     setDocumentation(ct, documentation);
   }
   if (contentModel !== undefined || baseType !== undefined || derivationKind !== undefined) {
-    const effectiveBase = baseType !== undefined ? baseType : getBaseType(ct);
+    const effectiveBase = baseType ?? getBaseType(ct);
     // Without a compositor, the content (a group reference, attributes or nothing) is moved as it is
     const effectiveModel = contentModel ?? getContentModel(ct);
     const effectiveDerivationKind = derivationKind ?? getDerivationKind(ct) ?? "extension";

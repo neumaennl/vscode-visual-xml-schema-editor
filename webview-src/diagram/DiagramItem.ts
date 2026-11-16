@@ -12,8 +12,10 @@ import type {
   Size,
   Rectangle,
 } from "./DiagramTypes";
+import type { DiagramStyle } from "./DiagramTypes";
 import {
   DiagramItemGroupType,
+  defaultDiagramStyle,
   enclosingRectangle,
 } from "./DiagramTypes";
 import type { Diagram } from "./Diagram";
@@ -122,6 +124,13 @@ export class DiagramItem {
    */
   public getTextDocumentation(): string {
     return this.documentation;
+  }
+
+  /**
+   * Get the style of the diagram, or the default style if the item belongs to no diagram
+   */
+  public getStyle(): DiagramStyle {
+    return this.diagram?.style ?? defaultDiagramStyle;
   }
 
   /**

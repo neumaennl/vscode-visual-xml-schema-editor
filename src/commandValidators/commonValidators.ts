@@ -175,7 +175,7 @@ export function locateChild(
     return parsedId;
   }
   const parsed = parsedId.parsed;
-  const location = locateNodeById(schemaObj, parsed.parentId || SCHEMA_ROOT_ID);
+  const location = locateNodeById(schemaObj, parsed.parentId ?? SCHEMA_ROOT_ID);
   if (!location.found) {
     return { valid: false, error: `Parent node not found for ${kind.label.toLowerCase()}: ${id}` };
   }
@@ -187,7 +187,7 @@ export function locateChild(
   const children = kind.getChildren(location.parent);
   const child = findIdentifiedChild(children, parsed.name, parsed.position);
   if (!child) {
-    const spec = parsed.position !== undefined ? `at position: ${parsed.position}` : `with name: ${parsed.name}`;
+    const spec = parsed.position !== undefined ? `at position: ${parsed.position}` : `with name: ${parsed.name ?? "(none)"}`;
     return { valid: false, error: `${kind.label} not found ${spec}` };
   }
   return { valid: true, child };
@@ -268,7 +268,7 @@ export function locateType<T>(
   const type = (topLevelTypes ?? []).find((t) => t.name === parsed.name);
   if (!type) {
     const label = kind === "simpleType" ? "Simple type" : "Complex type";
-    return { valid: false, error: `${label} '${parsed.name}' not found in schema` };
+    return { valid: false, error: `${label} '${parsed.name ?? "(none)"}' not found in schema` };
   }
   return { valid: true, type, anonymous: false };
 }

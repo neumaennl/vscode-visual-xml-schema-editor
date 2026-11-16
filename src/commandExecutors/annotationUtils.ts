@@ -27,9 +27,7 @@ export function createAnnotation(text: string): annotationType {
  * @param text - The documentation text
  */
 export function setDocumentation(node: { annotation?: annotationType }, text: string): void {
-  if (!node.annotation) {
-    node.annotation = new annotationType();
-  }
+  node.annotation ??= new annotationType();
   const doc = new documentationType();
   doc.value = text;
   node.annotation.documentation = [doc];

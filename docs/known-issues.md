@@ -4,7 +4,7 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: draft
-generated: { by: human:neumaennl, at: 2026-11-16T09:56:20Z }
+generated: { by: human:neumaennl, at: 2026-11-16T12:38:37Z }
 ---
 
 # Purpose
@@ -437,6 +437,22 @@ Effort:
 
   Such code got through (see [Duplicated and dead code](#duplicated-and-dead-code)). Examples are `DiagramItemType.reference`, `Diagram.size` and `DiagramLayout.relayoutItem()`, which only tests call. A tool such as [knip](https://knip.dev) checks the whole project. In production mode, it ignores the tests, so it also finds code that only tests use. It can run in `npm run lint` and in CI, like ESLint and jscpd.
 - **GitHub issue:** [#447](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/447)
+
+## Code is not formatted automatically
+
+- **Location:** `package.json`, `.github/workflows/ci.yml`, all code
+- **Severity:** Low
+- **Effort:** S
+- **Description:** No formatter keeps the layout of the code consistent. People, agents and `npm run lint:fix` each leave their own: the automatic fixes of the strict and stylistic rules of `typescript-eslint` wrote `Foo} from` in 40 files and put callbacks on one line, which had to be corrected by hand. Quote styles are mixed as well (`eslint.config.mjs` uses single quotes, the TypeScript files double quotes). A formatter such as Prettier, checked by `npm run lint`, would settle the layout; xmlbind-ts gets the same settings ([xmlbind-ts#315](https://github.com/neumaennl/xmlbind-ts/issues/315)).
+- **GitHub issue:** [#454](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/454)
+
+## Node types in IDs are not checked
+
+- **Location:** `shared/idStrategy.ts` (`toNodeType()`), `src/schemaNavigator.ts`
+- **Severity:** Low
+- **Effort:** S
+- **Description:** When an ID is parsed, the text of its node type, such as `element` in `/element:a`, is taken as a `SchemaNodeType` without a check. `toNodeType()` does this with a type assertion and an `eslint-disable` comment. An ID with an unknown type, such as `/foo:bar`, gets a node type that does not exist; the lookup then finds nothing, and the error says the node was not found instead of naming the unknown type. A check against the values of `SchemaNodeType` would remove the assertion: `parseSchemaId()` would throw for an unknown type, and `parseRequiredId()` and the navigator would turn that into a clear error. The IDs are redesigned in [#417](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/417) (see [Node IDs are ambiguous and have many special cases](#node-ids-are-ambiguous-and-have-many-special-cases)), so the check belongs into the new parser.
+- **GitHub issue:** none (part of [#417](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/417))
 
 ## Every message from the webview is a schema command
 

@@ -66,7 +66,7 @@ export function extractDocumentationAnnotations(
     const documentationEntries: DiagramDocumentationEntry[] = (entry.documentation ?? []).map(
       (doc, documentationIndex) => ({
         id: buildDocumentationId(annotationId, documentationIndex),
-        content: doc.value?.toString() || "",
+        content: doc.value ?? "",
         lang: doc._anyAttributes?.["xml:lang"],
       })
     );
@@ -95,7 +95,7 @@ export function extractDocumentation(
   if (documentations.length === 0) {
     return hasDocumentationField ? "" : undefined;
   }
-  return documentations.map((doc) => doc.value?.toString() || "").join("\n");
+  return documentations.map((doc) => doc.value ?? "").join("\n");
 }
 
 /**
@@ -139,7 +139,7 @@ export function extractAttributes(item: DiagramItem, source: ElementWithAttribut
 
     item.attributes.push({
       name: attr.name,
-      type: attr.type_ || "inner simpleType or ref",
+      type: attr.type_ ?? "inner simpleType or ref",
       use: attr.use,
       defaultValue: attr.default_,
       fixedValue: attr.fixed,

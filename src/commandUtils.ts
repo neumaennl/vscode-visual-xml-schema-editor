@@ -137,6 +137,6 @@ export function identifyChild(
 ): { matches: (child: { name?: string; ref?: string }, index: number) => boolean; what: string } {
   return {
     matches: (child, index) => isIdentifiedChild(child, index, name, position),
-    what: name !== undefined ? `${label} ${name}` : `${label} at position ${position}`,
+    what: name !== undefined ? `${label} ${name}` : `${label} at position ${position ?? "(none)"}`,
   };
 }

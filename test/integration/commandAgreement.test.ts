@@ -63,7 +63,7 @@ function commandsForNode(id: string): SchemaCommand[] {
       ];
       // Only named simpleTypes can be renamed
       if (nodeType === SchemaNodeType.SimpleType) {
-        commands.push({ type: "modifySimpleType", payload: { typeId: id, typeName: `Renamed${name}` } });
+        commands.push({ type: "modifySimpleType", payload: { typeId: id, typeName: `Renamed${name!}` } });
       }
       return commands;
     }

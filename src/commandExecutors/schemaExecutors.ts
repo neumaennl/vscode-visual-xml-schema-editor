@@ -81,11 +81,9 @@ function generateUniquePrefix(schemaObj: schema): string {
  */
 function removePrefixForNamespace(namespaceUri: string, schemaObj: schema): void {
   if (!schemaObj._namespacePrefixes) return;
-  for (const [pfx, ns] of Object.entries(schemaObj._namespacePrefixes)) {
-    if (ns === namespaceUri) {
-      delete schemaObj._namespacePrefixes[pfx];
-    }
-  }
+  schemaObj._namespacePrefixes = Object.fromEntries(
+    Object.entries(schemaObj._namespacePrefixes).filter(([, ns]) => ns !== namespaceUri)
+  );
 }
 
 // ===== Import Executors =====
@@ -118,9 +116,7 @@ export function executeAddImport(
 
   // Always ensure a prefix is registered so types can be referenced
   const registeredPrefix = prefix ?? generateUniquePrefix(schemaObj);
-  if (!schemaObj._namespacePrefixes) {
-    schemaObj._namespacePrefixes = {};
-  }
+  schemaObj._namespacePrefixes ??= {};
   schemaObj._namespacePrefixes[registeredPrefix] = namespace;
 }
 
@@ -198,14 +194,13 @@ export function executeModifyImport(
   }
 
   if (prefix !== undefined) {
-    if (!schemaObj._namespacePrefixes) {
-      schemaObj._namespacePrefixes = {};
-    }
+    schemaObj._namespacePrefixes ??= {};
     const targetNamespace = assumeValidated(namespace ?? oldNamespace, `Namespace of ${importId}`);
     if (oldPrefix !== undefined) {
       // Explicit rename: remove the named old prefix, register the new one,
       // and rewrite all QName references from oldPrefix to prefix.
-      delete schemaObj._namespacePrefixes[oldPrefix];
+      const { [oldPrefix]: _removed, ...otherPrefixes } = schemaObj._namespacePrefixes;
+      schemaObj._namespacePrefixes = otherPrefixes;
       if (oldPrefix !== prefix) {
         rewritePrefixInSchema(oldPrefix, prefix, schemaObj);
       }
@@ -338,6 +333,7 @@ export function executeModifySchemaNamespaces(
   schemaObj._namespacePrefixes =
     Object.keys(normalizedNamespacePrefixes).length > 0 ? normalizedNamespacePrefixes : undefined;
 
-  const normalizedTargetNamespace = command.payload.targetNamespace?.trim();
-  schemaObj.targetNamespace = normalizedTargetNamespace ? normalizedTargetNamespace : undefined;
+  // An empty target namespace removes the attribute
+  const normalizedTargetNamespace = command.payload.targetNamespace?.trim() ?? "";
+  schemaObj.targetNamespace = normalizedTargetNamespace || undefined;
 }

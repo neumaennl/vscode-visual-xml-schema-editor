@@ -42,7 +42,7 @@ describe("PropertiesPanel", () => {
   test("should dispatch removeElement when the header delete button is clicked", () => {
     const { dispatch } = displayItem(container, new DiagramItem("/element:person", "person", DiagramItemType.element, diagram));
 
-    const deleteButton = container.querySelector("button[title='Delete node']") as HTMLButtonElement;
+    const deleteButton = container.querySelector<HTMLButtonElement>("button[title='Delete node']")!;
     expect(deleteButton.classList.contains("property-docs-action-icon-only")).toBe(true);
     deleteButton.click();
 
@@ -57,7 +57,7 @@ describe("PropertiesPanel", () => {
       new DiagramItem("/complexType:PersonType/group:sequence[0]", "sequence", DiagramItemType.group, diagram)
     );
 
-    const deleteButton = container.querySelector("button[title='Delete node']") as HTMLButtonElement;
+    const deleteButton = container.querySelector<HTMLButtonElement>("button[title='Delete node']")!;
     deleteButton.click();
 
     expect(dispatch).toHaveBeenCalledWith({
@@ -200,14 +200,14 @@ describe("PropertiesPanel", () => {
     const abstractRow = Array.from(container.querySelectorAll(".property-toggle-row")).find(
       (row) => row.querySelector(".property-toggle-label")?.textContent === "Abstract"
     );
-    const abstractInput = abstractRow?.querySelector("input") as HTMLInputElement;
+    const abstractInput = abstractRow!.querySelector("input")!;
     abstractInput.checked = true;
     abstractInput.dispatchEvent(new Event("change"));
 
     const mixedRow = Array.from(container.querySelectorAll(".property-toggle-row")).find(
       (row) => row.querySelector(".property-toggle-label")?.textContent === "Mixed content"
     );
-    const mixedInput = mixedRow?.querySelector("input") as HTMLInputElement;
+    const mixedInput = mixedRow!.querySelector("input")!;
     mixedInput.checked = true;
     mixedInput.dispatchEvent(new Event("change"));
 

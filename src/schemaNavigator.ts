@@ -15,7 +15,7 @@ import type {
   attribute,
   localSimpleType,
 } from "../shared/types.js";
-import { parseSchemaId, SchemaNodeType } from "../shared/idStrategy.js";
+import { parseSchemaId, SchemaNodeType, toNodeType } from "../shared/idStrategy.js";
 import { getContentContainer, isSchemaRoot } from "../shared/schemaUtils.js";
 
 /**
@@ -76,8 +76,7 @@ export function locateNodeById(
     let currentNode: unknown = schemaObj;
     let currentType = "schema";
 
-    for (let i = 0; i < segments.length; i++) {
-      const segment = segments[i];
+    for (const segment of segments) {
       const segmentInfo = parseSegment(segment);
       
       const result = navigateToChild(
@@ -137,24 +136,24 @@ function parseSegment(segment: string): SegmentInfo {
     // Check if it has a name (type:name format)
     const colonIndex = typeOrTypeName.indexOf(":");
     if (colonIndex > 0) {
-      const nodeType = typeOrTypeName.substring(0, colonIndex) as SchemaNodeType;
+      const nodeType = toNodeType(typeOrTypeName.substring(0, colonIndex));
       const name = typeOrTypeName.substring(colonIndex + 1);
       return { nodeType, name, position };
     } else {
-      return { nodeType: typeOrTypeName as SchemaNodeType, position };
+      return { nodeType: toNodeType(typeOrTypeName), position };
     }
   }
 
   // Check for type:name format
   const colonIndex = segment.indexOf(":");
   if (colonIndex > 0) {
-    const nodeType = segment.substring(0, colonIndex) as SchemaNodeType;
+    const nodeType = toNodeType(segment.substring(0, colonIndex));
     const name = segment.substring(colonIndex + 1);
     return { nodeType, name };
   }
 
   // Just a type
-  return { nodeType: segment as SchemaNodeType };
+  return { nodeType: toNodeType(segment) };
 }
 
 /**

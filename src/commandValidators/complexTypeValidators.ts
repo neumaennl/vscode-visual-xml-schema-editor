@@ -159,11 +159,11 @@ export function validateAddComplexType(
   const { parentId, typeName, contentModel, derivationKind } = command.payload;
   const isTopLevel = isSchemaRoot(parentId);
 
-  if (!isTopLevel) {
-    // Anonymous complexType inside an element — isSchemaRoot guarantees parentId is a non-empty string here
-    const parentResult = validateInlineTypeParent(parentId as string, schemaObj, "complexType", INLINE_COMPLEX_TYPE_PARENT_TYPES);
+  if (parentId !== undefined && !isTopLevel) {
+    // Anonymous complexType inside an element
+    const parentResult = validateInlineTypeParent(parentId, schemaObj, "complexType", INLINE_COMPLEX_TYPE_PARENT_TYPES);
     if (!parentResult.valid) return parentResult;
-  } else if (!isValidXmlName(typeName ?? "")) {
+  } else if (typeName === undefined || !isValidXmlName(typeName)) {
     return { valid: false, error: "Type name must be a valid XML name" };
   }
   const contentModelResult = validateContentModel(contentModel, VALID_COMPLEX_TYPE_CONTENT_MODELS);
@@ -172,7 +172,7 @@ export function validateAddComplexType(
   if (!derivationKindResult.valid) return derivationKindResult;
   const derivationResult = validateComplexTypeDerivation(command.payload, undefined, schemaObj);
   if (!derivationResult.valid) return derivationResult;
-  if (isTopLevel && (schemaObj.complexType ?? []).some((ct) => ct.name === typeName)) {
+  if (isTopLevel && typeName !== undefined && (schemaObj.complexType ?? []).some((ct) => ct.name === typeName)) {
     return {
       valid: false,
       error: `Complex type '${typeName}' already exists in schema`,

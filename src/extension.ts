@@ -60,4 +60,6 @@ export function activate(context: vscode.ExtensionContext): void {
  * Deactivates the extension.
  * Called when the extension is being shut down.
  */
-export function deactivate(): void {}
+export function deactivate(): void {
+  // Nothing to clean up: VS Code disposes what activate() added to context.subscriptions
+}

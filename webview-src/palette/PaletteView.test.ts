@@ -29,7 +29,7 @@ describe("PaletteView", () => {
     const view = new PaletteView(container, paletteGroups);
     view.render();
 
-    const input = container.querySelector("#palette-search") as HTMLInputElement;
+    const input = container.querySelector<HTMLInputElement>("#palette-search")!;
     input.value = "complex";
     input.dispatchEvent(new Event("input"));
 
@@ -41,9 +41,7 @@ describe("PaletteView", () => {
     const view = new PaletteView(container, paletteGroups);
     view.render();
 
-    const row = container.querySelector(
-      '[data-testid="palette-item-element"]'
-    ) as HTMLDivElement;
+    const row = container.querySelector<HTMLDivElement>('[data-testid="palette-item-element"]')!;
 
     const setData = vi.fn();
     const event = new Event("dragstart", { bubbles: true }) as DragEvent;
@@ -64,9 +62,7 @@ describe("PaletteView", () => {
     const view = new PaletteView(container, paletteGroups);
     view.render();
 
-    const row = container.querySelector(
-      '[data-testid="palette-item-element"]'
-    ) as HTMLDivElement;
+    const row = container.querySelector<HTMLDivElement>('[data-testid="palette-item-element"]')!;
 
     setActiveDraggedPaletteSchemaConstruct(PaletteSchemaConstruct.Element);
     row.dispatchEvent(new Event("dragend", { bubbles: true }));

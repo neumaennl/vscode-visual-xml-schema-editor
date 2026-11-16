@@ -4,7 +4,7 @@
 
 import { DiagramItem } from "./DiagramItem";
 import { Diagram } from "./Diagram";
-import { DiagramItemType } from "./DiagramTypes";
+import { DiagramItemType, defaultDiagramStyle } from "./DiagramTypes";
 
 describe("DiagramItem", () => {
   describe("constructor", () => {
@@ -55,6 +55,22 @@ describe("DiagramItem", () => {
       item.documentation = "Test documentation";
 
       expect(item.getTextDocumentation()).toBe("Test documentation");
+    });
+  });
+
+  describe("getStyle", () => {
+    test("should return the style of the diagram", () => {
+      const diagram = new Diagram();
+      diagram.style = { ...diagram.style, fontSize: 14 };
+      const item = new DiagramItem("id", "name", DiagramItemType.element, diagram);
+
+      expect(item.getStyle()).toBe(diagram.style);
+    });
+
+    test("should return the default style without a diagram", () => {
+      const item = new DiagramItem("id", "name", DiagramItemType.element);
+
+      expect(item.getStyle()).toBe(defaultDiagramStyle);
     });
   });
 

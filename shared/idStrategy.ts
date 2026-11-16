@@ -197,6 +197,20 @@ export function parseSchemaId(id: string): ParsedSchemaId {
 }
 
 /**
+ * Reads the type of a node from a segment of an ID. IDs are built by {@link generateSchemaId}, so the
+ * text is the value of a {@link SchemaNodeType}. It is not checked here: the lookup of a node with an
+ * unknown type finds nothing and reports that (see "Node types in IDs are not checked" in
+ * docs/known-issues.md).
+ *
+ * @param text - The type part of the segment, such as `element`
+ * @returns The text as a node type
+ */
+export function toNodeType(text: string): SchemaNodeType {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-assignment -- not checked on purpose, see above
+  return text as SchemaNodeType;
+}
+
+/**
  * Splits a path string by '/' but not when '/' is inside namespace braces {...}.
  *
  * @param path - The path to split
@@ -207,8 +221,7 @@ function splitPath(path: string): string[] {
   let currentSegment = "";
   let inBraces = false;
 
-  for (let i = 0; i < path.length; i++) {
-    const char = path[i];
+  for (const char of path) {
     if (char === "{") {
       inBraces = true;
       currentSegment += char;
@@ -252,13 +265,13 @@ function parseNodeSegment(segment: string): {
   // Check for type:name format; namespace URLs can contain ':', so the separator needs care
   const colonIndex = findTypeNameSeparator(typeAndName);
   if (colonIndex > 0) {
-    const nodeType = typeAndName.substring(0, colonIndex) as SchemaNodeType;
+    const nodeType = toNodeType(typeAndName.substring(0, colonIndex));
     const { name, namespace } = parseQualifiedName(typeAndName.substring(colonIndex + 1));
     return { nodeType, name, namespace, ...position };
   }
 
   // Just a type
-  return { nodeType: typeAndName as SchemaNodeType, ...position };
+  return { nodeType: toNodeType(typeAndName), ...position };
 }
 
 /**

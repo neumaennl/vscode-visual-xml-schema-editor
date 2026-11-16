@@ -181,7 +181,8 @@ export function validateAddGroup(
       error: "Cannot combine groupName/contentModel with parentId, minOccurs, or maxOccurs — use ref for group references",
     };
   }
-  if (!isValidXmlName(command.payload.groupName ?? "")) {
+  const { groupName } = command.payload;
+  if (groupName === undefined || !isValidXmlName(groupName)) {
     return { valid: false, error: "Group name must be a valid XML name" };
   }
   if (!command.payload.contentModel) {
@@ -194,12 +195,12 @@ export function validateAddGroup(
     };
   }
   const exists = (schemaObj.group ?? []).some(
-    (g) => g.name === command.payload.groupName
+    (g) => g.name === groupName
   );
   if (exists) {
     return {
       valid: false,
-      error: `Group name already exists: ${command.payload.groupName}`,
+      error: `Group name already exists: ${groupName}`,
     };
   }
   return { valid: true };

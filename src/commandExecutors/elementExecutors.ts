@@ -56,7 +56,7 @@ export function executeRemoveElement(
   schemaObj: schema
 ): void {
   const parsed = parseSchemaId(command.payload.elementId);
-  const location = locateValidated(schemaObj, parsed.parentId || SCHEMA_ROOT_ID);
+  const location = locateValidated(schemaObj, parsed.parentId ?? SCHEMA_ROOT_ID);
   const child = identifyChild("Element", parsed.name, parsed.position);
   removeFrom(elementsOf(location.parent, location.parentType), "element", child.matches, child.what);
 }
@@ -74,7 +74,7 @@ export function executeModifyElement(
 ): void {
   const { elementId, ...changes } = command.payload;
   const parsed = parseSchemaId(elementId);
-  const location = locateValidated(schemaObj, parsed.parentId || SCHEMA_ROOT_ID);
+  const location = locateValidated(schemaObj, parsed.parentId ?? SCHEMA_ROOT_ID);
 
   // When a top-level element is renamed, update all element refs and
   // substitutionGroup references pointing to the old name.

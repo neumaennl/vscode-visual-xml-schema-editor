@@ -39,7 +39,7 @@ export function createTopLevelNode(
   if (!component.name) {
     return null;
   }
-  const name = component.name.toString();
+  const name = component.name;
   const item = new DiagramItem(generateSchemaId({ nodeType, name }), name, itemType, diagram);
   item.documentationAnnotations = extractDocumentationAnnotations(item.id, component.annotation);
   item.documentation = extractDocumentation(component.annotation) ?? "";
@@ -65,7 +65,7 @@ export function createElementNode(
 
   // Extract type information
   if (element.type_) {
-    item.type = element.type_.toString();
+    item.type = element.type_;
   }
 
   // Extract element-level boolean and value constraints

@@ -313,7 +313,7 @@ function processGroup(
   groupItem.documentation = extractDocumentation(groupDef.annotation) ?? "";
   const occurrenceGroupDef = groupDef as { minOccurs?: number; maxOccurs?: number | "unbounded" };
   if (occurrenceGroupDef.minOccurs !== undefined) {
-    const parsedMin = Number(occurrenceGroupDef.minOccurs);
+    const parsedMin = occurrenceGroupDef.minOccurs;
     if (!Number.isNaN(parsedMin)) {
       groupItem.minOccurrence = parsedMin;
     }
@@ -322,7 +322,7 @@ function processGroup(
     if (occurrenceGroupDef.maxOccurs === "unbounded") {
       groupItem.maxOccurrence = -1;
     } else {
-      const parsedMax = Number(occurrenceGroupDef.maxOccurs);
+      const parsedMax = occurrenceGroupDef.maxOccurs;
       if (!Number.isNaN(parsedMax)) {
         groupItem.maxOccurrence = parsedMax;
       }
@@ -337,11 +337,11 @@ function processGroup(
     const item = new DiagramItem(
       generateSchemaId({
         nodeType: SchemaNodeType.Element,
-        name: elem.name || "unnamed",
+        name: elem.name ?? "unnamed",
         parentId: groupItem.id,
         position: elemPosition,
       }),
-      elem.name || "unnamed",
+      elem.name ?? "unnamed",
       DiagramItemType.element,
       parent.diagram
     );

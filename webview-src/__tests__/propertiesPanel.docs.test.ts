@@ -18,7 +18,7 @@ describe("PropertiesPanel: the Docs tab", () => {
   test("should show the documentation of the selected node and send its changes", () => {
     const container = document.createElement("div");
     const { dispatch } = displayItem(container, diagramItem(schemaWith(ELEMENTS), "/element:person"), "Docs");
-    const textArea = container.querySelector("textarea") as HTMLTextAreaElement;
+    const textArea = container.querySelector("textarea")!;
 
     expect(textArea.value).toBe("Person doc");
     textArea.value = "Updated docs";

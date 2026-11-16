@@ -7,7 +7,7 @@ import { PaletteSchemaConstruct } from "./PaletteSchemaConstruct";
 
 describe("isFacetPaletteConstruct", () => {
   test("should accept every construct with a facet icon style", () => {
-    for (const construct of Object.keys(FACET_ICON_STYLES) as PaletteSchemaConstruct[]) {
+    for (const construct of Object.values(PaletteSchemaConstruct).filter((value) => value in FACET_ICON_STYLES)) {
       expect(isFacetPaletteConstruct(construct)).toBe(true);
     }
   });

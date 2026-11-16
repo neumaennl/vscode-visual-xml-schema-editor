@@ -87,7 +87,7 @@ function validateModuleId(
  * of all QName-valued fields (element/@type, complexType @base, simpleType
  * restriction/@base, union/@memberTypes, group/@ref, attributeGroup/@ref, etc.)
  */
-function isNamespaceReferenced(namespace: string | undefined, schemaObj: schema): boolean {
+function isNamespaceReferenced(namespace: string, schemaObj: schema): boolean {
   if (!namespace || !schemaObj._namespacePrefixes) return false;
   const prefixesForNs = new Set(
     Object.entries(schemaObj._namespacePrefixes)
@@ -200,11 +200,11 @@ export function validateRemoveImport(
 
   // Check if the import's namespace prefix is still referenced in the schema
   const imports = schemaObj.import_ ?? [];
-  const targetImport = imports[idResult.position];
-  if (isNamespaceReferenced(targetImport.namespace, schemaObj)) {
+  const { namespace } = imports[idResult.position];
+  if (namespace !== undefined && isNamespaceReferenced(namespace, schemaObj)) {
     return {
       valid: false,
-      error: `Cannot remove import: namespace '${targetImport.namespace}' is still referenced in the schema`,
+      error: `Cannot remove import: namespace '${namespace}' is still referenced in the schema`,
     };
   }
 
@@ -257,7 +257,7 @@ export function validateModifyImport(
     if (registeredNs !== currentNamespace) {
       return {
         valid: false,
-        error: `Prefix '${oldPrefix}' is not registered for namespace '${currentNamespace}'`,
+        error: `Prefix '${oldPrefix}' is not registered for namespace '${currentNamespace ?? "(none)"}'`,
       };
     }
   }

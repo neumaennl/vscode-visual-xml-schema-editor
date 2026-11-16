@@ -146,9 +146,7 @@ function locateDocumentation(schemaObj: schema, documentationId: string): { anno
  * Ensures the given non-schema node has an annotation element, creating one if absent.
  */
 function ensureAnnotation(node: AnnotatableNode): annotationType {
-  if (!node.annotation) {
-    node.annotation = new annotationType();
-  }
+  node.annotation ??= new annotationType();
   return node.annotation;
 }
 
@@ -405,9 +403,7 @@ function applyDocumentationModifications(
         delete doc._anyAttributes["xml:lang"];
       }
     } else {
-      if (!doc._anyAttributes) {
-        doc._anyAttributes = {};
-      }
+      doc._anyAttributes ??= {};
       doc._anyAttributes["xml:lang"] = lang;
     }
   }

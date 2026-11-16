@@ -107,11 +107,17 @@ export default defineConfig([
       },
     },
   },
-  // TypeScript, with the recommended rules of ESLint and those of typescript-eslint that need type
-  // information. The project service takes it from the projects that tsconfig.json references.
+  // TypeScript, with the recommended rules of ESLint and the strict and stylistic rules of
+  // typescript-eslint that need type information. The project service takes it from the projects
+  // that tsconfig.json references. Among the rules, no-unnecessary-condition reports checks that the
+  // types make unnecessary, such as `x ?? []` on an array that is never undefined.
   {
     files: ['**/*.ts'],
-    extends: [js.configs.recommended, tseslint.configs['flat/recommended-type-checked']],
+    extends: [
+      js.configs.recommended,
+      tseslint.configs['flat/strict-type-checked'],
+      tseslint.configs['flat/stylistic-type-checked'],
+    ],
     languageOptions: {
       parser: tsparser,
       ecmaVersion: 2024,
@@ -143,11 +149,26 @@ export default defineConfig([
       ],
       'no-unused-private-class-members': 'off',
       '@typescript-eslint/no-unused-private-class-members': 'error',
+      // Numbers in messages are fine; other types, such as undefined, are not. The options of the
+      // strict preset are repeated, because options given here replace them.
+      '@typescript-eslint/restrict-template-expressions': [
+        'error',
+        {
+          allowAny: false,
+          allowBoolean: false,
+          allowNever: false,
+          allowNullish: false,
+          allowNumber: true,
+          allowRegExp: false,
+        },
+      ],
       '@typescript-eslint/explicit-function-return-type': 'error',
-      '@typescript-eslint/no-explicit-any': 'error',
-      // Reports checks that the types make unnecessary, such as `x ?? []` on an array that is never undefined
-      '@typescript-eslint/no-unnecessary-condition': 'error',
-      '@typescript-eslint/no-non-null-assertion': 'warn',
+      // A `default` branch counts as handling the other cases; a switch without one must list them all.
+      '@typescript-eslint/switch-exhaustiveness-check': ['error', { considerDefaultExhaustiveForUnions: true }],
+      '@typescript-eslint/consistent-type-imports': 'error',
+      // T[] for simple element types, Array<…> and ReadonlyArray<…> for complex ones, which would need
+      // parentheses otherwise, such as Array<keyof T> instead of (keyof T)[].
+      '@typescript-eslint/array-type': ['error', { default: 'array-simple' }],
       // Disallow `unknown` in type assertions (`x as unknown`) and in variable-type
       // annotations (`const x: unknown`). Both are escape hatches that bypass type
       // safety. Function-parameter and interface-field annotations are not targeted
@@ -212,10 +233,20 @@ export default defineConfig([
       'vitest/no-importing-vitest-globals': 'error',
       // Disabled in tests where we have more control over the test environment
       '@typescript-eslint/no-non-null-assertion': 'off',
+      // Empty mock implementations, such as mockImplementation(() => {}), are intended.
+      '@typescript-eslint/no-empty-function': ['error', { allow: ['arrowFunctions'] }],
       // vitest/unbound-method replaces @typescript-eslint/unbound-method in tests;
       // it correctly handles mock functions that don't rely on `this` binding.
       'vitest/unbound-method': 'error',
       '@typescript-eslint/unbound-method': 'off',
+    },
+  },
+  // Type tests check that a payload without a required field no longer fits, such as
+  // Omit<RemoveElementPayload, "elementId">. For a payload with one field, that type is {} on purpose.
+  {
+    files: ['**/*.test-d.ts'],
+    rules: {
+      '@typescript-eslint/no-generated-empty-object-type': 'off',
     },
   },
   // Tests in the extension host: Mocha (TDD interface) and the mock webview, which runs in the browser

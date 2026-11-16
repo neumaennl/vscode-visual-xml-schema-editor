@@ -73,7 +73,7 @@ export class DiagramBuilder {
     console.log("DiagramBuilder - Building from schema:", schemaObj);
 
     // Create a root node representing the schema
-    const targetNs = schemaObj.targetNamespace?.toString() || "no namespace";
+    const targetNs = schemaObj.targetNamespace ?? "no namespace";
     const schemaNode = new DiagramItem(
       SCHEMA_ROOT_ID,
       `Schema: ${targetNs}`,
@@ -85,8 +85,8 @@ export class DiagramBuilder {
     schemaNode.attributes = (schemaObj.attribute ?? [])
       .filter((attr) => !!attr.name)
       .map((attr) => ({
-        name: String(attr.name),
-        type: attr.type_ || "inner simpleType or ref",
+        name: attr.name,
+        type: attr.type_ ?? "inner simpleType or ref",
         defaultValue: attr.default_,
         fixedValue: attr.fixed,
       }));

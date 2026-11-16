@@ -60,9 +60,9 @@ function declarationRow(root: HTMLElement, prefix: string): { prefix: HTMLInputE
   );
   expect(row).toBeDefined();
   return {
-    prefix: row?.querySelector("input[placeholder='prefix']") as HTMLInputElement,
-    uri: row?.querySelector("input[placeholder='namespace URI']") as HTMLInputElement,
-    remove: row?.querySelector("button") as HTMLButtonElement,
+    prefix: row!.querySelector<HTMLInputElement>("input[placeholder='prefix']")!,
+    uri: row!.querySelector<HTMLInputElement>("input[placeholder='namespace URI']")!,
+    remove: row!.querySelector("button")!,
   };
 }
 
@@ -223,7 +223,7 @@ describe("renderSchemaNamespaceProperties", () => {
     test("should add a declaration with a new prefix", () => {
       const { root, dispatch } = renderNamespaces();
 
-      (Array.from(root.querySelectorAll("button")).find((button) => button.textContent === "Add namespace") as HTMLButtonElement).click();
+      (Array.from(root.querySelectorAll("button")).find((button) => button.textContent === "Add namespace")!).click();
 
       expect(dispatch).toHaveBeenCalledExactlyOnceWith(
         namespacesCommand("urn:original", { ...DECLARATIONS, ns0: "urn:example:namespace" })

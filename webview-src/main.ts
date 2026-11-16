@@ -68,8 +68,8 @@ class SchemaEditorApp {
     // Restore state if available
     const state = this.vscode.getState();
     if (state) {
-      this.viewState = state.viewState || this.viewState;
-      this.diagramOptions = state.diagramOptions || this.diagramOptions;
+      this.viewState = state.viewState ?? this.viewState;
+      this.diagramOptions = state.diagramOptions ?? this.diagramOptions;
       if (state.schema) {
         this.currentSchema = state.schema;
         this.dropCommandFactory.updateNamesFromSchema(state.schema);
@@ -124,6 +124,10 @@ class SchemaEditorApp {
             this.refreshSelection();
             break;
           }
+
+          case "schemaModified":
+            // Never sent (see "Message `schemaModified` is unused" in docs/known-issues.md)
+            break;
         }
       }
     );

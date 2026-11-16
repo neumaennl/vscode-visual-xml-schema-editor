@@ -99,8 +99,8 @@ export function createSimpleTypeKindCommand(
 ): SchemaCommand | null {
   const simpleTypeId = resolveSimpleTypeId(node);
   const baseType =
-    node.simpleTypeListItemType ||
-    node.simpleTypeUnionMemberTypes?.[0] ||
+    (node.simpleTypeListItemType ?? "") ||
+    (node.simpleTypeUnionMemberTypes?.[0] ?? "") ||
     extractBaseType(node.type);
   if (!simpleTypeId || !baseType) {
     return null;

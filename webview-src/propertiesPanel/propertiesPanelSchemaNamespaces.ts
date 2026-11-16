@@ -40,12 +40,10 @@ export function renderSchemaNamespaceProperties(
     createEditableField("targetNamespace", targetNamespace, (next) => {
       const nextTargetNamespace = next.trim();
       const previousNamespacePrefixes = { ...namespacePrefixes };
-      const nextNamespacePrefixes = { ...namespacePrefixes };
-      const previousTargetNamespace = targetNamespace;
-      syncTargetNamespaceWithDeclarations(
-        previousTargetNamespace,
+      const nextNamespacePrefixes = syncTargetNamespaceWithDeclarations(
+        targetNamespace,
         nextTargetNamespace,
-        nextNamespacePrefixes,
+        namespacePrefixes,
         diagram.currentSchemaPrefix
       );
       applySchemaNamespaceDraftState(
@@ -148,8 +146,7 @@ function createNamespaceRow(
       return;
     }
     const previousNamespacePrefixes = { ...namespacePrefixes };
-    const nextNamespacePrefixes = { ...namespacePrefixes };
-    delete nextNamespacePrefixes[prefix];
+    const { [prefix]: _removed, ...nextNamespacePrefixes } = namespacePrefixes;
     if (nextNamespaceUri) {
       nextNamespacePrefixes[nextPrefix] = nextNamespaceUri;
     }
@@ -187,8 +184,7 @@ function createNamespaceRow(
   removeButton.textContent = "Remove";
   removeButton.addEventListener("click", () => {
     const previousNamespacePrefixes = { ...namespacePrefixes };
-    const nextNamespacePrefixes = { ...namespacePrefixes };
-    delete nextNamespacePrefixes[prefix];
+    const { [prefix]: _removed, ...nextNamespacePrefixes } = namespacePrefixes;
     const nextTargetNamespace =
       targetNamespace && namespacePrefixes[prefix] === targetNamespace
         ? ""
@@ -259,21 +255,22 @@ function applySchemaNamespaceDraftState(
 }
 
 /**
- * Changes the declaration of the target namespace to a new target namespace, in place. Without a
+ * Changes the declaration of the target namespace to a new target namespace. Without a
  * declaration, the new target namespace gets one with the preferred prefix, `tns` or a new prefix.
  * Removing the target namespace removes its declaration.
  *
  * @param previousTargetNamespace - The current target namespace
  * @param nextTargetNamespace - The new target namespace, empty to remove it
- * @param namespacePrefixes - The namespace declarations, which are changed
+ * @param namespacePrefixes - The namespace declarations, which stay unchanged
  * @param preferredPrefix - The prefix of the target namespace in the diagram, if it has one
+ * @returns The changed namespace declarations
  */
 function syncTargetNamespaceWithDeclarations(
   previousTargetNamespace: string,
   nextTargetNamespace: string,
   namespacePrefixes: Record<string, string>,
   preferredPrefix?: string
-): void {
+): Record<string, string> {
   const previousPrefix = findTargetNamespacePrefix(
     namespacePrefixes,
     previousTargetNamespace,
@@ -281,20 +278,20 @@ function syncTargetNamespaceWithDeclarations(
   );
   if (previousPrefix !== undefined) {
     if (nextTargetNamespace) {
-      namespacePrefixes[previousPrefix] = nextTargetNamespace;
-    } else {
-      delete namespacePrefixes[previousPrefix];
+      return { ...namespacePrefixes, [previousPrefix]: nextTargetNamespace };
     }
-    return;
+    const { [previousPrefix]: _removed, ...otherPrefixes } = namespacePrefixes;
+    return otherPrefixes;
   }
   if (!nextTargetNamespace) {
-    return;
+    return { ...namespacePrefixes };
   }
-  const candidatePrefix = preferredPrefix?.trim() || "tns";
+  // An empty prefix gets the default as well
+  const candidatePrefix = (preferredPrefix?.trim() ?? "") || "tns";
   const nextPrefix = namespacePrefixes[candidatePrefix]
     ? generateUniqueNamespacePrefix(namespacePrefixes)
     : candidatePrefix;
-  namespacePrefixes[nextPrefix] = nextTargetNamespace;
+  return { ...namespacePrefixes, [nextPrefix]: nextTargetNamespace };
 }
 
 /**

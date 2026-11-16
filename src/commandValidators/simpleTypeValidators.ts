@@ -166,13 +166,13 @@ export function validateAddSimpleType(
 ): ValidationResult {
   const { parentId, typeName } = command.payload;
 
-  if (!isSchemaRoot(parentId)) {
-    // Anonymous simpleType inside an element or attribute — isSchemaRoot guarantees parentId is a non-empty string here
-    const parentResult = validateInlineTypeParent(parentId as string, schemaObj, "simpleType", INLINE_SIMPLE_TYPE_PARENT_TYPES);
+  if (parentId !== undefined && !isSchemaRoot(parentId)) {
+    // Anonymous simpleType inside an element or attribute
+    const parentResult = validateInlineTypeParent(parentId, schemaObj, "simpleType", INLINE_SIMPLE_TYPE_PARENT_TYPES);
     if (!parentResult.valid) {
       return parentResult;
     }
-  } else if (!isValidXmlName(typeName ?? "")) {
+  } else if (typeName === undefined || !isValidXmlName(typeName)) {
     return { valid: false, error: "Type name must be a valid XML name" };
   } else if ((schemaObj.simpleType ?? []).some(st => st.name === typeName)) {
     return { valid: false, error: `Simple type '${typeName}' already exists in schema` };

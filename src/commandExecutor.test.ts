@@ -5,7 +5,7 @@
 
 import { CommandExecutor } from "./commandExecutor.js";
 import type { SchemaCommand } from "../shared/types.js";
-import { schema, topLevelElement } from "../shared/types.js";
+import { formChoice, schema, topLevelElement } from "../shared/types.js";
 
 describe("CommandExecutor", () => {
   let executor: CommandExecutor;
@@ -16,9 +16,9 @@ describe("CommandExecutor", () => {
     mockSchema = {
       targetNamespace: "http://example.com/schema",
       version: "1.0",
-      elementFormDefault: "qualified",
-      attributeFormDefault: "unqualified",
-    } as schema;
+      elementFormDefault: formChoice.qualified,
+      attributeFormDefault: formChoice.unqualified,
+    };
   });
 
   describe("execute() method", () => {

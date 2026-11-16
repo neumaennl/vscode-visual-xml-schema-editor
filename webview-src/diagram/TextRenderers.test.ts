@@ -59,7 +59,7 @@ describe("TextRenderers", () => {
   function makeItem(properties: Partial<DiagramItem>, diagramOptions: Partial<Diagram> = {}): DiagramItem {
     const item = new DiagramItem("test-id", "Test", DiagramItemType.element);
     Object.assign(item, properties);
-    item.diagram = { ...mockDiagram, ...diagramOptions } as Diagram;
+    item.diagram = Object.assign({}, mockDiagram, diagramOptions);
     item.scaleRectangle = (rect: Rectangle): Rectangle => rect;
     return item;
   }

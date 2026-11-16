@@ -59,11 +59,6 @@ export class Diagram {
   public style: DiagramStyle = { ...defaultDiagramStyle };
 
   /**
-   * Creates a new Diagram instance.
-   */
-  constructor() {}
-
-  /**
    * Adds a root element to the diagram.
    * Typically used to add the schema root node.
    * 

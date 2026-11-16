@@ -77,11 +77,11 @@ export function renderTypeProperty(
     return;
   }
 
-  if (shouldRenderSimpleBaseTypeEditor(nodeType, hasInlineSimpleType, baseType)) {
+  if (baseType && shouldRenderSimpleBaseTypeEditor(nodeType, hasInlineSimpleType)) {
     renderSimpleBaseTypeEditor(
       root,
       node,
-      baseType as string,
+      baseType,
       hasInlineSimpleType,
       typeSuggestions,
       dispatchCommand,
@@ -149,24 +149,21 @@ export function renderTypeProperty(
 }
 
 /**
- * Tells whether the node gets an editable Base Type field for a simple type: a simple type, or an
- * element with an inline simple type, that restricts a single named base type.
+ * Tells whether the node gets an editable Base Type field for a simple type, if it restricts a single
+ * named base type: a simple type, or an element with an inline simple type.
  *
  * @param nodeType - The schema node type of the node
  * @param hasInlineSimpleType - Whether the node is an element with an inline simple type
- * @param baseType - The base type of the restriction, if it has one
- * @returns True when the field is shown
+ * @returns True when the field is shown for a restriction of a named base type
  */
 function shouldRenderSimpleBaseTypeEditor(
   nodeType: SchemaNodeType | null,
-  hasInlineSimpleType: boolean,
-  baseType: string | undefined
+  hasInlineSimpleType: boolean
 ): boolean {
   return (
-    (nodeType === SchemaNodeType.SimpleType ||
-      nodeType === SchemaNodeType.AnonymousSimpleType ||
-      hasInlineSimpleType) &&
-    !!baseType
+    nodeType === SchemaNodeType.SimpleType ||
+    nodeType === SchemaNodeType.AnonymousSimpleType ||
+    hasInlineSimpleType
   );
 }
 

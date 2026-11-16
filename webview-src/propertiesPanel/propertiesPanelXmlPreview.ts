@@ -196,7 +196,7 @@ function renderAttributeNodes(node: DiagramItem, level: number): string[] {
       ["name", attribute.name],
       ...optionalAttributes([
         ["type", attribute.type || undefined],
-        ["use", attribute.use || undefined],
+        ["use", attribute.use],
         ["default", attribute.defaultValue],
         ["fixed", attribute.fixedValue],
       ]),

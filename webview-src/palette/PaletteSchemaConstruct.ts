@@ -37,5 +37,5 @@ export enum PaletteSchemaConstruct {
 export function isPaletteSchemaConstruct(
   value: string
 ): value is PaletteSchemaConstruct {
-  return Object.values(PaletteSchemaConstruct).includes(value as PaletteSchemaConstruct);
+  return (Object.values(PaletteSchemaConstruct) as string[]).includes(value);
 }

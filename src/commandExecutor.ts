@@ -56,7 +56,7 @@ export class CommandExecutor {
    * @throws Error if command type is unknown or execution fails
    */
   public execute(command: SchemaCommand, schemaObj: schema): void {
-    const executor = findCommandHandler<"execute", void>(this.executors, "execute", command);
+    const executor = findCommandHandler(this.executors, "execute", command);
     if (!executor) {
       throw new Error(`Unknown command type: ${command.type}`);
     }

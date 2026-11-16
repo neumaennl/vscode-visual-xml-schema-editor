@@ -51,7 +51,7 @@ describe("DiagramRenderer", () => {
    */
   function renderTestElement(): SVGGElement {
     renderer.renderSchema(TEST_SCHEMA, DEFAULT_DIAGRAM_OPTIONS, vi.fn());
-    return mockCanvas.querySelector("[data-item-id]") as SVGGElement;
+    return mockCanvas.querySelector<SVGGElement>("[data-item-id]")!;
   }
 
   describe("constructor", () => {
@@ -222,7 +222,7 @@ describe("DiagramRenderer", () => {
     test("should not add drag-over class when drop validator rejects the target", () => {
       renderer.setNodeDropValidator(() => false);
       const itemElement = renderTestElement();
-      const itemChild = itemElement.querySelector("*") as Element;
+      const itemChild = itemElement.querySelector("*")!;
       const dragOverEvent = dragEvent("dragover", "attribute");
 
       itemChild.dispatchEvent(dragOverEvent);
@@ -233,7 +233,7 @@ describe("DiagramRenderer", () => {
     test("should add drag-over class using active dragged-construct fallback", () => {
       renderer.setNodeDropValidator((_node, construct) => construct === "element");
       const itemElement = renderTestElement();
-      const itemChild = itemElement.querySelector("*") as Element;
+      const itemChild = itemElement.querySelector("*")!;
       const dragOverEvent = dragEvent("dragover", "");
       setActiveDraggedPaletteSchemaConstruct(PaletteSchemaConstruct.Element);
 
@@ -244,7 +244,7 @@ describe("DiagramRenderer", () => {
 
     test("should keep drag-over class when pointer is still inside item group", () => {
       const itemElement = renderTestElement();
-      const itemChild = itemElement.querySelector("*") as Element;
+      const itemChild = itemElement.querySelector("*")!;
       itemElement.classList.add("drag-over");
 
       // jsdom has no elementFromPoint()

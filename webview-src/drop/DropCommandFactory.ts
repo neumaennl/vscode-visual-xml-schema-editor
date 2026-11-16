@@ -50,6 +50,13 @@ export class DropCommandFactory {
     return this.createTopLevelDropCommandInternal(construct, true);
   }
 
+  /**
+   * Creates the command that adds a new top-level component of the dropped kind.
+   *
+   * @param construct - Palette schema construct
+   * @param reserveNames - Whether the new name is reserved, so that the next drop gets another one
+   * @returns Command or null if the construct cannot be added at the top level
+   */
   private createTopLevelDropCommandInternal(
     construct: PaletteSchemaConstruct,
     reserveNames: boolean
@@ -130,6 +137,14 @@ export class DropCommandFactory {
     return this.createNodeDropCommandInternal(item, construct, true);
   }
 
+  /**
+   * Creates the command for a drop on a node, depending on the dropped construct.
+   *
+   * @param item - Drop target node
+   * @param construct - Palette schema construct
+   * @param reserveNames - Whether a new name is reserved, so that the next drop gets another one
+   * @returns Command or null if the target cannot take the construct
+   */
   private createNodeDropCommandInternal(
     item: DiagramItem,
     construct: PaletteSchemaConstruct,
@@ -166,6 +181,7 @@ export class DropCommandFactory {
    * Generate deterministic default names for newly created schema objects.
    *
    * @param prefix - Name prefix
+   * @param reserveName - Whether the name is reserved, so that the next call returns another one
    * @returns Generated name
    */
   private nextName(prefix: string, reserveName: boolean): string {
@@ -180,6 +196,13 @@ export class DropCommandFactory {
     return candidate;
   }
 
+  /**
+   * Creates the command that adds an element to the schema root or to a compositor.
+   *
+   * @param item - Drop target node
+   * @param reserveNames - Whether the new name is reserved
+   * @returns Command or null if the target cannot hold elements
+   */
   private createElementNodeDropCommand(
     item: DiagramItem,
     reserveNames: boolean
@@ -200,6 +223,14 @@ export class DropCommandFactory {
     return null;
   }
 
+  /**
+   * Creates the command that adds an attribute to the schema root, to a complexType, or to the anonymous
+   * complexType of an element.
+   *
+   * @param item - Drop target node
+   * @param reserveNames - Whether the new name is reserved
+   * @returns Command or null if the target cannot hold attributes
+   */
   private createAttributeNodeDropCommand(
     item: DiagramItem,
     reserveNames: boolean
@@ -262,6 +293,13 @@ export class DropCommandFactory {
   }
 
 
+  /**
+   * Creates the command that adds a named group, which only the schema root can hold.
+   *
+   * @param item - Drop target node
+   * @param reserveNames - Whether the new name is reserved
+   * @returns Command or null if the target is not the schema root
+   */
   private createGroupNodeDropCommand(
     item: DiagramItem,
     reserveNames: boolean
@@ -278,6 +316,14 @@ export class DropCommandFactory {
     return null;
   }
 
+  /**
+   * Creates the command that sets the compositor of a complexType, of the anonymous complexType of an
+   * element (which gets one if it has none), or of a named group.
+   *
+   * @param item - Drop target node
+   * @param contentModel - The dropped compositor
+   * @returns Command or null if the target cannot hold a compositor
+   */
   private createCompositorNodeDropCommand(
     item: DiagramItem,
     contentModel: "sequence" | "choice" | "all"
@@ -370,10 +416,22 @@ export class DropCommandFactory {
     return null;
   }
 
+  /**
+   * Tells whether the item is the schema root.
+   *
+   * @param item - The diagram item
+   * @returns True for the schema root
+   */
   private isSchemaRoot(item: DiagramItem): boolean {
     return item.id === SCHEMA_ROOT_ID;
   }
 
+  /**
+   * Tells whether the item is a named group definition, not a group reference or a compositor.
+   *
+   * @param item - The diagram item
+   * @returns True for a top-level named group
+   */
   private isNamedGroupDefinition(item: DiagramItem): boolean {
     if (item.itemType !== DiagramItemType.group) {
       return false;

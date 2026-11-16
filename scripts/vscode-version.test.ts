@@ -18,7 +18,12 @@ const PACKAGE_JSON = {
   devDependencies: { "@types/node": "~24.13.0", "@types/vscode": "~1.125.0" },
 };
 
-/** A TypeScript configuration with the given ECMAScript edition. */
+/**
+ * A TypeScript configuration with the given ECMAScript edition.
+ *
+ * @param edition - The edition, such as `ES2024`
+ * @returns The text of the configuration
+ */
 const tsconfig = (edition: string): string => `{ "compilerOptions": { "target": "${edition}", "lib": ["${edition}", "DOM"] } }\n`;
 
 const ORIGINAL_IS_TTY = Object.getOwnPropertyDescriptor(process.stdin, "isTTY") ?? { value: undefined, configurable: true };
@@ -49,7 +54,7 @@ function read(name: string): string {
 
 /**
  * Answers the lookups of VS Code 1.125.0, 1.141.0 and 1.150.0, their Electron and
- * Node versions, and the @tsconfig/bases configuration of Node 24 (not of Node 26).
+ * Node versions, and the `@tsconfig/bases` configuration of Node 24 (not of Node 26).
  */
 function stubReleases(): void {
   stubFetch({

@@ -3,8 +3,9 @@ type: Guideline
 title: Development guidelines
 description: Rules for everyone who changes the extension - code size, code quality and ESLint, structure reviews, TypeScript and naming, VS Code and Node versions, TSDoc, tests, documentation and the knowledge bundle, issues, what to check before committing, and commits.
 tags: [guidelines, conventions, code-quality, typescript, documentation, workflow]
-status: draft
-generated: { by: human:neumaennl, at: 2026-11-16T09:56:20Z }
+status: stable
+generated: { by: human:neumaennl, at: 2026-11-16T14:46:57Z }
+verified: { by: human:neumaennl, at: 2026-11-16T15:27:35Z }
 sources:
   - id: eslint
     resource: ../eslint.config.mjs
@@ -88,7 +89,7 @@ The reports of the duplicate check and the unused-code check are inputs. The rev
 
 # TSDoc
 
-Every function has an up-to-date TSDoc comment: what it does, each parameter with `@param`, the return value with `@returns` (functions without a return value have none), and the errors it throws with `@throws`. Complex functions also get an `@example`.
+Every function, method and class has an up-to-date TSDoc comment: what it does, each parameter with `@param name - description`, the return value with `@returns` (functions without a return value have none), and the errors it throws with `@throws An {@link Error} if …`. Complex functions also get an `@example`.
 
 ```typescript
 /**
@@ -97,9 +98,14 @@ Every function has an up-to-date TSDoc comment: what it does, each parameter wit
  * @param element - The XML schema element to process
  * @param parentId - The ID of the parent diagram item
  * @returns A new DiagramItem for the element, or null if it is invalid
- * @throws {SchemaParseError} If the element structure is invalid
+ * @throws A {@link SchemaParseError} if the element structure is invalid
  */
 ```
+
+- Code in comments is written as code: identifiers, IDs such as `/element:name`, expressions, XML, QNames such as `xs:string`, and file paths. This matters even more for package names that start with `@`, such as `@types/node`, and for text with `{`, `}` or `>`, such as `{namespace}name`, because TSDoc would read them as tags or HTML.
+- `@throws` does not start with `{`: TypeScript, and so the hover of editors, reads a `{` right after `@throws` as the type of the error, and breaks `{@link Error}` there into two tags.
+- TSDoc has no dotted parameter names such as `@param options.name`. Describe the fields of a destructured parameter at its type, with a comment per field.
+- ESLint checks the syntax with `eslint-plugin-tsdoc`, and with `eslint-plugin-jsdoc` that the comments and their tags exist (see [Build and packaging](build-and-packaging.md#eslint)).[^eslint]
 
 # Tests
 

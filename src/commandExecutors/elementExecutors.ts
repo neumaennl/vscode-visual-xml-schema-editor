@@ -33,7 +33,7 @@ type ElementChanges = Omit<ModifyElementPayload, "elementId">;
  *
  * @param command - The addElement command to execute
  * @param schemaObj - The schema object to modify
- * @throws Error if parent node not found or element cannot be added
+ * @throws An {@link Error} if parent node not found or element cannot be added
  */
 export function executeAddElement(
   command: AddElementCommand,
@@ -49,7 +49,7 @@ export function executeAddElement(
  *
  * @param command - The removeElement command to execute
  * @param schemaObj - The schema object to modify
- * @throws Error if parent node or element not found
+ * @throws An {@link Error} if parent node or element not found
  */
 export function executeRemoveElement(
   command: RemoveElementCommand,
@@ -66,7 +66,7 @@ export function executeRemoveElement(
  *
  * @param command - The modifyElement command to execute
  * @param schemaObj - The schema object to modify
- * @throws Error if parent node or element not found
+ * @throws An {@link Error} if parent node or element not found
  */
 export function executeModifyElement(
   command: ModifyElementCommand,
@@ -101,7 +101,7 @@ export function executeModifyElement(
  * @param parent - Parent container object
  * @param parentType - Type of the parent container
  * @returns The parent as a holder of elements
- * @throws Error if the parent cannot hold elements
+ * @throws An {@link Error} if the parent cannot hold elements
  */
 function elementsOf(parent: unknown, parentType: string): { element?: AnyElement[] } {
   if (!["schema", "sequence", "choice", "all"].includes(parentType)) {

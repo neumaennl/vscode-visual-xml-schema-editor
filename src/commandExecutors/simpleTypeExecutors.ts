@@ -39,7 +39,7 @@ import { createAnnotation, setDocumentation } from "./annotationUtils.js";
  *
  * @param command - The addSimpleType command to execute
  * @param schemaObj - The schema object to modify
- * @throws Error if the parent element or attribute is not found (anonymous case)
+ * @throws An {@link Error} if the parent element or attribute is not found (anonymous case)
  */
 export function executeAddSimpleType(
   command: AddSimpleTypeCommand,
@@ -63,7 +63,7 @@ export function executeAddSimpleType(
  *
  * @param command - The removeSimpleType command to execute
  * @param schemaObj - The schema object to modify
- * @throws Error if the type or its parent is not found
+ * @throws An {@link Error} if the type or its parent is not found
  */
 export function executeRemoveSimpleType(
   command: RemoveSimpleTypeCommand,
@@ -79,7 +79,7 @@ export function executeRemoveSimpleType(
  *
  * @param command - The modifySimpleType command to execute
  * @param schemaObj - The schema object to modify
- * @throws Error if the type or its parent is not found
+ * @throws An {@link Error} if the type or its parent is not found
  */
 export function executeModifySimpleType(
   command: ModifySimpleTypeCommand,
@@ -110,13 +110,12 @@ function buildRestriction(base: string, facets?: RestrictionFacets): restriction
 }
 
 /**
- * Updates the restriction and/or annotation of any simpleType object.
+ * Updates the body (restriction, list or union) and/or annotation of any simpleType object.
  * Works for both `topLevelSimpleType` and `localSimpleType`.
  *
  * @param simpleType - The simpleType object to update
- * @param baseType - New base type (optional)
- * @param restrictions - New restriction facets (optional)
- * @param documentation - New documentation text (optional)
+ * @param updates - The new base type, list item type, union member types, restriction facets and
+ *   documentation; each is optional, and without the body fields the body stays as it is
  */
 function updateTypeContents(
   simpleType: { restriction?: restrictionType; list?: listType; union?: unionType; annotation?: annotationType },

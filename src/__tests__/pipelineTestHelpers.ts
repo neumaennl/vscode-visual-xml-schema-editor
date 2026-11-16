@@ -154,6 +154,7 @@ export function runCommandExpectValidationFailure(
  * @param schemaObj - The schema
  * @param name - The name of the element
  * @returns The element
+ * @throws An {@link Error} if the schema has no such element
  */
 export function findTopLevelElement(schemaObj: schema, name: string): topLevelElement {
   const element = schemaObj.element?.find((e) => e.name === name);

@@ -9,6 +9,9 @@ import type { ValidationResult, ValidationFailure } from "../commandValidators/v
  * Asserts that a ValidationResult represents a failure and narrows its type to
  * ValidationFailure, enabling access to the required `.error` property.
  * Throws a plain Error (surfaced as a test failure) when `valid` is true.
+ *
+ * @param result - The validation result
+ * @throws An {@link Error} if the result is valid
  */
 export function expectInvalid(
   result: ValidationResult

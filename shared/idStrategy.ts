@@ -85,11 +85,11 @@ export interface ParsedSchemaId {
  * Generates a unique, stable ID for a schema node.
  *
  * ID Format: XPath-like path structure
- * - Top-level named elements: /element:elementName
- * - Top-level types: /complexType:typeName or /simpleType:typeName
- * - Child elements: /element:parent/element:child[position]
- * - Anonymous types: /element:parent/anonymousComplexType[0]
- * - With namespace: /element:{namespace}elementName
+ * - Top-level named elements: `/element:elementName`
+ * - Top-level types: `/complexType:typeName` or `/simpleType:typeName`
+ * - Child elements: `/element:parent/element:child[position]`
+ * - Anonymous types: `/element:parent/anonymousComplexType[0]`
+ * - With namespace: `/element:{namespace}elementName`
  *
  * @param params - Parameters for ID generation
  * @returns Generated unique ID string
@@ -158,7 +158,7 @@ export const SCHEMA_ROOT_ID = generateSchemaId({ nodeType: SchemaNodeType.Schema
  *
  * @param id - The ID string to parse
  * @returns Parsed ID components
- * @throws {Error} If the ID format is invalid
+ * @throws An {@link Error} if the ID format is invalid
  *
  * @example
  * ```typescript
@@ -211,7 +211,7 @@ export function toNodeType(text: string): SchemaNodeType {
 }
 
 /**
- * Splits a path string by '/' but not when '/' is inside namespace braces {...}.
+ * Splits a path string by '/' but not when '/' is inside namespace braces `{...}`.
  *
  * @param path - The path to split
  * @returns Array of path segments
@@ -276,7 +276,7 @@ function parseNodeSegment(segment: string): {
 
 /**
  * Finds the colon that separates the type from the name.
- * Handles namespaced names like "element:{http://...}name" correctly.
+ * Handles namespaced names like `element:{http://...}name` correctly.
  *
  * @param segment - The segment to search
  * @returns Index of the separator colon, or -1 if not found
@@ -300,7 +300,7 @@ function findTypeNameSeparator(segment: string): number {
 /**
  * Parses a qualified name that may include a namespace.
  *
- * @param qualifiedName - Name potentially in {namespace}localName format
+ * @param qualifiedName - Name potentially in `{namespace}localName` format
  * @returns Parsed name and namespace
  */
 function parseQualifiedName(qualifiedName: string): {

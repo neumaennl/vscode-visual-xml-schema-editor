@@ -10,6 +10,14 @@ import { PaletteSchemaConstruct } from "../palette/PaletteSchemaConstruct";
 import { diagramItem } from "../__tests__/diagramTestHelpers";
 import { DERIVATIONS, derivedComplexTypeT, schemaWith } from "../../shared/__tests__/schemaTestHelpers";
 
+/**
+ * Creates a diagram item whose name is the last part of its ID.
+ *
+ * @param id - The ID of the item
+ * @param itemType - The kind of item
+ * @param overrides - The fields to set on the item
+ * @returns The item
+ */
 function makeItem(
   id: string,
   itemType: DiagramItemType,

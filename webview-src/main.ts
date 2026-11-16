@@ -17,6 +17,10 @@ import { isPaletteSchemaConstruct } from "./palette/PaletteSchemaConstruct";
 
 declare function acquireVsCodeApi<State>(): VSCodeAPI<State>;
 
+/**
+ * The webview application: connects the diagram, the properties panel and the palette with the
+ * extension host, and keeps the state of the webview.
+ */
 class SchemaEditorApp {
   private vscode: VSCodeAPI<WebviewState>;
   private renderer: DiagramRenderer;
@@ -31,6 +35,8 @@ class SchemaEditorApp {
 
   /**
    * Create and initialize the schema editor application
+   *
+   * @throws An {@link Error} if the page has no SVG canvas
    */
   constructor() {
     this.vscode = acquireVsCodeApi<WebviewState>();
@@ -208,6 +214,10 @@ class SchemaEditorApp {
     }
   }
 
+  /**
+   * Shows the selected node again after the diagram was rebuilt, or clears the selection if the node is
+   * gone.
+   */
   private refreshSelection(): void {
     if (!this.selectedNodeId) {
       return;

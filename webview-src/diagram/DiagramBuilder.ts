@@ -118,6 +118,12 @@ export class DiagramBuilder {
     return this.diagram;
   }
 
+  /**
+   * Finds a prefix that the schema declares for its target namespace.
+   *
+   * @param schemaObj - The schema
+   * @returns The first non-empty prefix of the target namespace, or undefined if there is none
+   */
   private resolveTargetNamespacePrefix(schemaObj: schema): string | undefined {
     const targetNamespace = schemaObj.targetNamespace?.toString();
     if (!targetNamespace || !schemaObj._namespacePrefixes) {
@@ -134,6 +140,12 @@ export class DiagramBuilder {
     return undefined;
   }
 
+  /**
+   * Creates the diagram item of a named group with its compositor.
+   *
+   * @param group - The named group
+   * @returns The item, or null if the group has no name
+   */
   private createNamedGroup(group: namedGroup): DiagramItem | null {
     const item = createTopLevelNode(group, SchemaNodeType.Group, DiagramItemType.group, this.diagram);
     if (!item) {

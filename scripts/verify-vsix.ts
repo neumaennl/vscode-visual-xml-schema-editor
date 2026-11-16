@@ -45,7 +45,7 @@ function addVscodeStub(dir: string): void {
  *
  * @param vsix - The VSIX file
  * @param dir - The folder to extract into
- * @throws {Error} If the file cannot be extracted
+ * @throws An {@link Error} if the file cannot be extracted
  */
 function extract(vsix: string, dir: string): void {
   if (process.platform === "win32") {
@@ -63,7 +63,7 @@ function extract(vsix: string, dir: string): void {
  *
  * @param vsix - The VSIX file
  * @returns The entry point of the extension (`main` in its `package.json`)
- * @throws {Error} If the VSIX cannot be extracted, the entry point fails to load, or it does not export `activate()`
+ * @throws An {@link Error} if the VSIX cannot be extracted, the entry point fails to load, or it does not export `activate()`
  */
 export async function verifyVsix(vsix: string): Promise<string> {
   const dir = mkdtempSync(join(tmpdir(), "vsix-verify-"));

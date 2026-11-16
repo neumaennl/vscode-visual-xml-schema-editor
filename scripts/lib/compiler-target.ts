@@ -80,7 +80,7 @@ const RULES: EditionRule[] = [
 ];
 
 /**
- * Returns the URL of the @tsconfig/bases configuration for a Node major version.
+ * Returns the URL of the `@tsconfig/bases` configuration for a Node major version.
  *
  * @param major - The major version of Node
  * @returns The URL
@@ -90,12 +90,12 @@ export function baseUrl(major: number): string {
 }
 
 /**
- * Takes the ECMAScript edition from the `target` of a @tsconfig/bases configuration.
+ * Takes the ECMAScript edition from the `target` of a `@tsconfig/bases` configuration.
  *
  * @param text - The configuration
  * @param url - Where it comes from, for messages
  * @returns The edition in upper case, for example `ES2024`
- * @throws {Error} If the text is not JSON or its target is not an edition `ESxxxx`
+ * @throws An {@link Error} if the text is not JSON or its target is not an edition `ESxxxx`
  */
 export function parseBaseEdition(text: string, url: string): string {
   let config: { compilerOptions?: { target?: unknown } };
@@ -112,11 +112,11 @@ export function parseBaseEdition(text: string, url: string): string {
 }
 
 /**
- * Downloads the ECMAScript edition of the @tsconfig/bases configuration for a Node major version.
+ * Downloads the ECMAScript edition of the `@tsconfig/bases` configuration for a Node major version.
  *
  * @param major - The major version of Node
  * @returns The edition, or undefined if there is no configuration for the version
- * @throws {Error} If the request fails for another reason or the configuration has no edition
+ * @throws An {@link Error} if the request fails for another reason or the configuration has no edition
  */
 export async function loadEdition(major: number): Promise<string | undefined> {
   const url = baseUrl(major);
@@ -168,7 +168,7 @@ export function findEditions(dir: string): EditionUse[] {
  *
  * @param path - The path of the configuration
  * @returns The edition, for example `ES2024`
- * @throws {Error} If the configuration has no target `ESxxxx`
+ * @throws An {@link Error} if the configuration has no target `ESxxxx`
  */
 export function readTarget(path: string): string {
   const target = matches(TARGET, readFileSync(path, "utf8"))[0]?.[2];
@@ -183,7 +183,7 @@ export function readTarget(path: string): string {
  *
  * @param dir - The root folder of the project
  * @param major - The major version of Node
- * @param edition - Its edition from @tsconfig/bases, or undefined if there is none
+ * @param edition - Its edition from `@tsconfig/bases`, or undefined if there is none
  * @returns One message per problem, empty if all places name the edition
  */
 export function editionProblems(dir: string, major: number, edition: string | undefined): string[] {

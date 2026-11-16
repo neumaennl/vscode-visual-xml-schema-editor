@@ -36,6 +36,10 @@ const INLINE_COMPLEX_TYPE_PARENT_TYPES = ["topLevelElement", "localElement"];
 /**
  * Validates a content model value against the provided list of valid models.
  * Returns a validation error if the model is missing or unsupported.
+ *
+ * @param contentModel - The content model of the command
+ * @param validModels - The content models that the command allows
+ * @returns The validation result
  */
 function validateContentModel(
   contentModel: string | undefined,
@@ -152,6 +156,14 @@ function validateComplexTypeContentChange(
   return { valid: true };
 }
 
+/**
+ * Validates an addComplexType command: an anonymous type needs an element as parent, a top-level type a
+ * new valid name. The content model, the derivation kind and the derivation must be valid.
+ *
+ * @param command - The command
+ * @param schemaObj - The schema
+ * @returns The validation result
+ */
 export function validateAddComplexType(
   command: AddComplexTypeCommand,
   schemaObj: schema
@@ -181,6 +193,13 @@ export function validateAddComplexType(
   return { valid: true };
 }
 
+/**
+ * Validates a removeComplexType command: the type must exist.
+ *
+ * @param command - The command
+ * @param schemaObj - The schema
+ * @returns The validation result
+ */
 export function validateRemoveComplexType(
   command: RemoveComplexTypeCommand,
   schemaObj: schema
@@ -189,6 +208,14 @@ export function validateRemoveComplexType(
   return located.valid ? { valid: true } : located;
 }
 
+/**
+ * Validates a modifyComplexType command: the type must exist, a new name must be valid and unused, and
+ * the new content model, derivation kind and derivation must be valid and fit the current content.
+ *
+ * @param command - The command
+ * @param schemaObj - The schema
+ * @returns The validation result
+ */
 export function validateModifyComplexType(
   command: ModifyComplexTypeCommand,
   schemaObj: schema

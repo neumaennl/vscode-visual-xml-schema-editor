@@ -15,7 +15,7 @@ const TIMEOUT_MS = 10_000;
  *
  * @param uri - The document
  * @returns The document after the change
- * @throws {Error} If the document does not change within the timeout
+ * @throws An {@link Error} if the document does not change within the timeout
  */
 function nextChange(uri: vscode.Uri): Promise<vscode.TextDocument> {
   return new Promise((resolve, reject) => {

@@ -37,22 +37,52 @@ const MANAGER_TYPE = `<xs:complexType name="ManagerType">
   </xs:complexContent>
 </xs:complexType>`;
 
+/**
+ * Executes a addComplexType command with the given payload.
+ *
+ * @param schemaObj - The schema, which is changed
+ * @param payload - The payload of the command
+ */
 function addComplexType(schemaObj: schema, payload: AddComplexTypeCommand["payload"]): void {
   executeAddComplexType({ type: "addComplexType", payload }, schemaObj);
 }
 
+/**
+ * Executes a removeComplexType command with the given payload.
+ *
+ * @param schemaObj - The schema, which is changed
+ * @param payload - The payload of the command
+ */
 function removeComplexType(schemaObj: schema, payload: RemoveComplexTypeCommand["payload"]): void {
   executeRemoveComplexType({ type: "removeComplexType", payload }, schemaObj);
 }
 
+/**
+ * Executes a modifyComplexType command with the given payload.
+ *
+ * @param schemaObj - The schema, which is changed
+ * @param payload - The payload of the command
+ */
 function modifyComplexType(schemaObj: schema, payload: ModifyComplexTypeCommand["payload"]): void {
   executeModifyComplexType({ type: "modifyComplexType", payload }, schemaObj);
 }
 
+/**
+ * Returns the top-level complex types of the schema.
+ *
+ * @param schemaObj - The schema
+ * @returns The top-level complex types, or an empty array if there are none
+ */
 function topLevelComplexTypes(schemaObj: schema): NonNullable<schema["complexType"]> {
   return schemaObj.complexType ?? [];
 }
 
+/**
+ * Returns the top-level elements of the schema.
+ *
+ * @param schemaObj - The schema
+ * @returns The top-level elements, or an empty array if there are none
+ */
 function topLevelElements(schemaObj: schema): NonNullable<schema["element"]> {
   return schemaObj.element ?? [];
 }

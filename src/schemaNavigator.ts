@@ -125,6 +125,9 @@ interface SegmentInfo {
 
 /**
  * Parse a path segment to extract node type, name, and position.
+ *
+ * @param segment - A segment of a node ID, such as `element:name[0]`
+ * @returns The node type, and the name and position if the segment has them
  */
 function parseSegment(segment: string): SegmentInfo {
   // Check for position indicator [N]
@@ -158,6 +161,11 @@ function parseSegment(segment: string): SegmentInfo {
 
 /**
  * Navigate to a child node from a parent.
+ *
+ * @param parent - The schema object of the parent node
+ * @param parentType - The kind of the parent, such as `schema` or `sequence`
+ * @param segmentInfo - The child, as parsed from its segment of the ID
+ * @returns The child and its kind, or `found: false` if the parent has no such child
  */
 function navigateToChild(
   parent: unknown,
@@ -213,6 +221,12 @@ const TOP_LEVEL_KINDS: Partial<
 
 /**
  * Navigate from schema root to a child.
+ *
+ * @param schemaObj - The schema
+ * @param nodeType - The node type of the top-level component
+ * @param name - The name of the component
+ * @param position - The position of the component among those of its kind, used if there is no name
+ * @returns The component and its kind, or `found: false` if the schema has no such component
  */
 function navigateFromSchema(
   schemaObj: schema,
@@ -234,6 +248,10 @@ interface AnonymousTypeHolder { complexType?: localComplexType; simpleType?: loc
 
 /**
  * Navigate from an element or attribute to its anonymous complexType or simpleType.
+ *
+ * @param holder - The element or attribute
+ * @param nodeType - `AnonymousComplexType` or `AnonymousSimpleType`
+ * @returns The anonymous type and its kind, or `found: false` if the holder has no such type
  */
 function navigateToAnonymousType(holder: AnonymousTypeHolder, nodeType: SchemaNodeType): NavigationResult {
   if (nodeType === SchemaNodeType.AnonymousComplexType && holder.complexType) {
@@ -246,7 +264,13 @@ function navigateToAnonymousType(holder: AnonymousTypeHolder, nodeType: SchemaNo
 }
 
 /**
- * Navigate from a complex type to a child (sequence, choice, all).
+ * Navigate from a complex type to a child (sequence, choice, all, or an attribute).
+ *
+ * @param complexType - The complex type
+ * @param nodeType - The node type of the child
+ * @param name - The kind of compositor (`sequence`, `choice` or `all`), or the name of an attribute
+ * @param position - The position of an attribute, used if there is no name
+ * @returns The child and its kind, or `found: false` if the complex type has no such child
  */
 function navigateFromComplexType(
   complexType: topLevelComplexType | localComplexType,
@@ -305,6 +329,10 @@ interface ComplexTypeContent {
 /**
  * Returns the compositor of the given kind of a complex type, which lives in the extension or restriction
  * of its content if it has complex content (see {@link getContentContainer}).
+ *
+ * @param complexType - The complex type
+ * @param groupKind - The kind of compositor
+ * @returns The compositor, or undefined if the complex type has none of this kind
  */
 function resolveComplexTypeGroup(
   complexType: topLevelComplexType | localComplexType,
@@ -313,6 +341,15 @@ function resolveComplexTypeGroup(
   return getContentContainer<ComplexTypeContent>(complexType)[groupKind];
 }
 
+/**
+ * Navigate from a named group to its compositor.
+ *
+ * @param group - The named group
+ * @param nodeType - The node type of the child; only `Group` is found
+ * @param name - The kind of compositor: `sequence`, `choice` or `all`
+ * @param _position - Not used: a named group has one compositor, which its kind identifies
+ * @returns The compositor and its kind, or `found: false` if the group has no such compositor
+ */
 function navigateFromNamedGroup(
   group: namedGroup,
   nodeType: SchemaNodeType,
@@ -333,7 +370,13 @@ function navigateFromNamedGroup(
 }
 
 /**
- * Navigate from a group (sequence/choice/all) to a child element.
+ * Navigate from a group (sequence/choice/all) to a child element or a nested choice or sequence.
+ *
+ * @param group - The compositor
+ * @param nodeType - The node type of the child
+ * @param name - The name of an element, or the kind of a nested compositor (`choice` or `sequence`)
+ * @param position - The position of an element, used if there is no name, or of a nested compositor
+ * @returns The child and its kind, or `found: false` if the compositor has no such child
  */
 function navigateFromGroup(
   group: explicitGroup | simpleExplicitGroup | allGroup | allType,
@@ -369,6 +412,11 @@ function navigateFromGroup(
 /**
  * Find an item by name or position in an array.
  * Also matches items whose `ref` equals the given name, enabling navigation to reference nodes.
+ *
+ * @param items - The items
+ * @param name - The name or `ref` of the item
+ * @param position - The position of the item, used if there is no name
+ * @returns The first matching item, or undefined if there is none or neither name nor position is given
  */
 function findByNameOrPosition<T extends { name?: string; ref?: string }>(
   items: T[],

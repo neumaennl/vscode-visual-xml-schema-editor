@@ -3,6 +3,8 @@ import js from '@eslint/js';
 import tseslint from '@typescript-eslint/eslint-plugin';
 import tsparser from '@typescript-eslint/parser';
 import vitest from '@vitest/eslint-plugin';
+import jsdoc from 'eslint-plugin-jsdoc';
+import tsdoc from 'eslint-plugin-tsdoc';
 import globals from 'globals';
 
 /** The most lines that the callback of a single test may have. */
@@ -131,11 +133,41 @@ export default defineConfig([
       },
     },
     plugins: {
+      jsdoc,
+      tsdoc,
       style: { rules: { 'max-ternary-lines': maxTernaryLines } },
+    },
+    settings: {
+      jsdoc: { mode: 'typescript' },
     },
     rules: {
       // Long conditional expressions are written as if/else (see "Code quality" in docs/development-guidelines.md)
       'style/max-ternary-lines': 'error',
+      // TSDoc (see "TSDoc" in docs/development-guidelines.md): tsdoc/syntax checks the syntax of the
+      // comments, the rules of jsdoc check that functions, methods and classes have them, with every
+      // parameter, the return value and the errors thrown.
+      'tsdoc/syntax': 'error',
+      'jsdoc/require-jsdoc': [
+        'error',
+        {
+          publicOnly: false,
+          require: {
+            ArrowFunctionExpression: false,
+            ClassDeclaration: true,
+            FunctionDeclaration: true,
+            FunctionExpression: false,
+            MethodDefinition: true,
+          },
+        },
+      ],
+      // Destructured parameters are described at their type, because TSDoc has no dotted parameter
+      // names such as `options.name`.
+      'jsdoc/require-param': ['error', { checkDestructured: false }],
+      'jsdoc/check-param-names': ['error', { checkDestructured: false }],
+      'jsdoc/require-param-description': 'error',
+      'jsdoc/require-returns': 'error',
+      'jsdoc/require-returns-check': 'error',
+      'jsdoc/require-throws': 'error',
       // Unused code within a file is found by ESLint, not by TypeScript's noUnusedLocals. The rules of
       // typescript-eslint replace those of ESLint: they understand types, and the rule for private
       // members also finds members declared with TypeScript's `private`, not only `#private` ones.

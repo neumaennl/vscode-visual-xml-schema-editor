@@ -15,7 +15,7 @@ import { locateNodeById } from "../schemaNavigator.js";
  * @param value - The value
  * @param what - What the value is, for the error message, for example `Element /element:person`
  * @returns The value
- * @throws Error if the value is `undefined` or `null`
+ * @throws An {@link Error} if the value is `undefined` or `null`
  */
 export function assumeValidated<T>(value: T | null | undefined, what: string): T {
   if (value === undefined || value === null) {
@@ -42,7 +42,7 @@ export function assumptionFailed(what: string): never {
  * @param remaining - The items after the removal
  * @param what - What was removed, for the error message
  * @returns The remaining items
- * @throws Error if nothing was removed
+ * @throws An {@link Error} if nothing was removed
  */
 export function assumeRemoved<T>(items: T[], remaining: T[], what: string): T[] {
   if (remaining.length === items.length) {
@@ -57,7 +57,7 @@ export function assumeRemoved<T>(items: T[], remaining: T[], what: string): T[] 
  * @param schemaObj - The schema object
  * @param nodeId - The ID of the node
  * @returns The node and its type
- * @throws Error if the node is not found
+ * @throws An {@link Error} if the node is not found
  */
 export function locateValidated(schemaObj: schema, nodeId: string): { parent: unknown; parentType: string } {
   const location = locateNodeById(schemaObj, nodeId);

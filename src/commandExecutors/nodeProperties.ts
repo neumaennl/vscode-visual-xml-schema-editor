@@ -34,7 +34,7 @@ export function appendTo<N, K extends ArrayKeys<N>>(node: N, key: K, item: ItemO
  * @param key - The name of the array property
  * @param isRemoved - Returns true for the items to remove
  * @param what - What is removed, for the error message
- * @throws Error if no item was removed
+ * @throws An {@link Error} if no item was removed
  */
 export function removeFrom<N, K extends ArrayKeys<N>>(
   node: N,

@@ -106,7 +106,7 @@ export function validateMaxOccurs(
 }
 
 /**
- * Validates that minOccurs <= maxOccurs when both are provided.
+ * Validates that `minOccurs <= maxOccurs` when both are provided.
  *
  * @param minOccurs - The minOccurs value
  * @param maxOccurs - The maxOccurs value
@@ -216,7 +216,7 @@ const BUILT_IN_XSD_TYPE_NAMES = new Set([
 
 /**
  * Extracts the local name from a potentially prefixed type name.
- * For example: "xs:string" -> "string", "string" -> "string"
+ * For example: `"xs:string"` → `"string"`, `"string"` → `"string"`
  *
  * @param typeName - The type name (possibly with namespace prefix)
  * @returns The local name without prefix
@@ -228,7 +228,7 @@ function getLocalTypeName(typeName: string): string {
 
 /**
  * Extracts the prefix from a potentially prefixed type name.
- * For example: "xs:string" -> "xs", "string" -> undefined
+ * For example: `"xs:string"` → `"xs"`, `"string"` → `undefined`
  *
  * @param typeName - The type name (possibly with namespace prefix)
  * @returns The prefix without the colon, or undefined if no prefix

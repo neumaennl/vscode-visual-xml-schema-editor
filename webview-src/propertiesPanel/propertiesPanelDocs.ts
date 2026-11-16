@@ -315,7 +315,7 @@ function createAnnotationSection(
  * @param dispatchCommand - Callback used to emit schema-edit commands
  * @param rerender - Callback that re-renders the PropertiesPanel after structural edits
  * @returns The rendered Docs-tab container
- * @throws {Error} If the node has no documentation and no node that documentation can be added to;
+ * @throws An {@link Error} if the node has no documentation and no node that documentation can be added to;
  *   every node of the diagram has one
  */
 export function createDocsTab(

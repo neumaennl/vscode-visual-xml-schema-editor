@@ -5,7 +5,7 @@
  * - annotationId / targetId for non-schema nodes: XPath-like path
  *   (e.g. "/element:person").
  * - annotationId for schema-root annotations: "/schema/annotation[N]"
- * - documentationId for non-schema nodes: "{elementPath}/documentation[N]"
+ * - documentationId for non-schema nodes: `{elementPath}/documentation[N]`
  * - documentationId for schema-root annotations:
  *     "/schema/annotation[N]/documentation[M]" or "/schema/documentation[N]"
  *

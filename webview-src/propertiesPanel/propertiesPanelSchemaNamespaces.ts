@@ -21,7 +21,7 @@ type NamespacePrefixes = Record<string, string>;
  * @param node - Currently selected schema diagram item
  * @param dispatchCommand - Callback used to emit schema commands
  * @param rerender - Callback used to refresh the properties panel after edits
- * @throws {Error} If the schema node belongs to no diagram, which holds the namespaces
+ * @throws An {@link Error} if the schema node belongs to no diagram, which holds the namespaces
  */
 export function renderSchemaNamespaceProperties(
   root: HTMLElement,

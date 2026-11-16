@@ -49,7 +49,7 @@ import { rewritePrefixInSchema } from "./schemaQNameRewriter.js";
  * @param entries - The imports or includes of the schema
  * @param label - `Import` or `Include`, for the error message
  * @returns The entries, the index and the entry
- * @throws Error if there is no entry at the position, which the validator rules out
+ * @throws An {@link Error} if there is no entry at the position, which the validator rules out
  */
 function resolveModuleEntry<T>(id: string, entries: T[] | undefined, label: string): { entries: T[]; index: number; entry: T } {
   const all = entries ?? [];
@@ -60,6 +60,9 @@ function resolveModuleEntry<T>(id: string, entries: T[] | undefined, label: stri
 /**
  * Generates a unique namespace prefix that is not already present in
  * schema._namespacePrefixes. Candidates are "ns0", "ns1", "ns2", …
+ *
+ * @param schemaObj - The schema
+ * @returns The first free prefix
  */
 function generateUniquePrefix(schemaObj: schema): string {
   const existing = new Set(Object.keys(schemaObj._namespacePrefixes ?? {}));
@@ -78,6 +81,9 @@ function generateUniquePrefix(schemaObj: schema): string {
  * from XML that declares redundant namespace bindings, or when prefix entries
  * are left over from previous modify operations. Removing all of them ensures
  * no dangling prefix points to a namespace that is no longer imported.
+ *
+ * @param namespaceUri - The namespace URI
+ * @param schemaObj - The schema
  */
 function removePrefixForNamespace(namespaceUri: string, schemaObj: schema): void {
   if (!schemaObj._namespacePrefixes) return;
@@ -269,6 +275,12 @@ export function executeModifyInclude(
   resolveModuleEntry(includeId, schemaObj.include, "Include").entry.schemaLocation = schemaLocation;
 }
 
+/**
+ * Trims the prefixes and namespace URIs of namespace declarations and leaves out those without a URI.
+ *
+ * @param namespacePrefixes - The declarations, prefix → namespace URI
+ * @returns The trimmed declarations
+ */
 function normalizeNamespacePrefixes(
   namespacePrefixes: Record<string, string>
 ): Record<string, string> {
@@ -284,6 +296,14 @@ function normalizeNamespacePrefixes(
   return normalized;
 }
 
+/**
+ * Finds the prefixes that were renamed: a removed prefix whose namespace an added prefix now declares.
+ * Each added prefix is used for one rename at most.
+ *
+ * @param previousNamespacePrefixes - The declarations before the change
+ * @param nextNamespacePrefixes - The declarations after the change
+ * @returns The renames, old prefix and new prefix
+ */
 function detectPrefixRenames(
   previousNamespacePrefixes: Record<string, string>,
   nextNamespacePrefixes: Record<string, string>
@@ -312,6 +332,13 @@ function detectPrefixRenames(
   return renames;
 }
 
+/**
+ * Executes a modifySchemaNamespaces command: replaces the namespace declarations and the target
+ * namespace of the schema, and rewrites the QNames whose prefix was renamed.
+ *
+ * @param command - The command
+ * @param schemaObj - The schema
+ */
 export function executeModifySchemaNamespaces(
   command: ModifySchemaNamespacesCommand,
   schemaObj: schema

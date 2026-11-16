@@ -143,6 +143,10 @@ export interface DiagramStyle {
 
   /**
    * Get computed value of a CSS variable from the document root
+   *
+   * @param name - The name of the variable, such as `--vscode-font-family`
+   * @param fallback - The value without a document or without the variable
+   * @returns The value of the variable, or the fallback
    */
   function getCssVar(name: string, fallback: string): string {
     if (typeof document !== "undefined") {

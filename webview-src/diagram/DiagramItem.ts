@@ -20,6 +20,10 @@ import {
 } from "./DiagramTypes";
 import type { Diagram } from "./Diagram";
 
+/**
+ * A node of the diagram: an element, group, type or the schema, with what the diagram shows of it, its
+ * layout and its children.
+ */
 export class DiagramItem {
   // Identity and hierarchy
   public id: string;
@@ -98,6 +102,14 @@ export class DiagramItem {
   // Reference to diagram for accessing settings
   public diagram: Diagram | null = null;
 
+  /**
+   * Creates a diagram item.
+   *
+   * @param id - The ID of the schema node
+   * @param name - The name that the diagram shows
+   * @param itemType - The kind of item
+   * @param diagram - The diagram that the item belongs to, if any
+   */
   constructor(
     id: string,
     name: string,
@@ -112,6 +124,8 @@ export class DiagramItem {
 
   /**
    * Add a child element to this diagram item
+   *
+   * @param child - The child
    */
   public addChild(child: DiagramItem): void {
     child.parent = this;
@@ -121,6 +135,8 @@ export class DiagramItem {
 
   /**
    * Get text documentation, handling multi-language if needed
+   *
+   * @returns The documentation text
    */
   public getTextDocumentation(): string {
     return this.documentation;
@@ -128,6 +144,8 @@ export class DiagramItem {
 
   /**
    * Get the style of the diagram, or the default style if the item belongs to no diagram
+   *
+   * @returns The style
    */
   public getStyle(): DiagramStyle {
     return this.diagram?.style ?? defaultDiagramStyle;
@@ -135,6 +153,9 @@ export class DiagramItem {
 
   /**
    * Scale a number based on diagram scale
+   *
+   * @param value - The value at scale 1
+   * @returns The scaled and rounded value, or the value itself without a diagram
    */
   public scaleInt(value: number): number {
     if (!this.diagram) return value;
@@ -143,6 +164,9 @@ export class DiagramItem {
 
   /**
    * Scale a rectangle (see {@link Diagram.scaleRectangle})
+   *
+   * @param rect - The rectangle at scale 1
+   * @returns The scaled rectangle, or the rectangle itself without a diagram
    */
   public scaleRectangle(rect: Rectangle): Rectangle {
     return this.diagram ? this.diagram.scaleRectangle(rect) : rect;
@@ -150,6 +174,8 @@ export class DiagramItem {
 
   /**
    * Calculate the bounding box including all children
+   *
+   * @returns The bounding box of the item and its shown children, which is also stored in `boundingBox`
    */
   public calculateBoundingBox(): Rectangle {
     const own: Rectangle = { ...this.location, ...this.size };

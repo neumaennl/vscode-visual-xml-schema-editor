@@ -113,6 +113,9 @@ export function renderValueListFacet(
   /**
    * Finishes editing a value: an empty value removes it, an unchanged value, a value the list already
    * contains or a cancelled edit keeps the old value.
+   *
+   * @param index - The index of the edited value
+   * @param next - The new value, or null if the edit was cancelled
    */
   const finishEditing = (index: number, next: string | null): void => {
     editedIndex = null;

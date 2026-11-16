@@ -6,9 +6,9 @@
  *
  * Tests that:
  * - Successful commands create a WorkspaceEdit, call applyEdit, and reply with
- *   commandResult { success: true }. The XML written into the edit is verified by
+ *   `commandResult { success: true }`. The XML written into the edit is verified by
  *   unmarshalling it and inspecting schema object properties.
- * - Validation failures of the real validator are routed to commandResult { success: false, error }.
+ * - Validation failures of the real validator are routed to `commandResult { success: false, error }`.
  *
  * How the provider routes runtime errors and failed edits is tested with a controlled
  * CommandProcessor result in webviewProvider.test.ts.

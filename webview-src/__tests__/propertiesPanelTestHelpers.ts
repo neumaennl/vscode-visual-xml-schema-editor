@@ -25,6 +25,7 @@ function findLabel(container: HTMLElement, label: string): HTMLLabelElement | un
  * @param container - The element that holds the panel
  * @param label - The label without the colon
  * @returns The input
+ * @throws An {@link Error} if the field has no input
  */
 export function getInputByLabel(container: HTMLElement, label: string): HTMLInputElement {
   const match = findLabel(container, label);
@@ -42,6 +43,7 @@ export function getInputByLabel(container: HTMLElement, label: string): HTMLInpu
  * @param container - The element that holds the panel
  * @param label - The label without the colon
  * @returns The select
+ * @throws An {@link Error} if the field has no select
  */
 export function getSelectByLabel(container: HTMLElement, label: string): HTMLSelectElement {
   const match = findLabel(container, label);

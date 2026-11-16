@@ -55,6 +55,10 @@ interface AnnotatableNode {
  * Creates a new documentationType from content and an optional language tag.
  * The xml:lang attribute (from the XML namespace) is stored via the
  * _anyAttributes map as "xml:lang".
+ *
+ * @param content - The text of the documentation
+ * @param lang - The language tag, if any
+ * @returns The documentation element
  */
 function createDocumentation(content: string, lang?: string): documentationType {
   const doc = new documentationType();
@@ -68,6 +72,9 @@ function createDocumentation(content: string, lang?: string): documentationType 
 /**
  * Returns the first xs:annotation on the schema root, creating one if the
  * schema has none yet.
+ *
+ * @param schemaObj - The schema
+ * @returns The first annotation of the schema
  */
 function getOrCreateFirstSchemaAnnotation(schemaObj: schema): annotationType {
   const annotations = schemaObj.annotation ?? [];
@@ -85,6 +92,11 @@ function getOrCreateFirstSchemaAnnotation(schemaObj: schema): annotationType {
  * Assumes that the validator has already confirmed the node exists and
  * supports annotations. The cast to `AnnotatableNode` is safe when the
  * validator contract is satisfied.
+ *
+ * @param schemaObj - The schema
+ * @param nodeId - The ID of the component
+ * @returns The component
+ * @throws An {@link Error} if the ID does not lead to a node, which the validator rules out
  */
 function findAnnotatableNode(schemaObj: schema, nodeId: string): AnnotatableNode {
   return locateValidated(schemaObj, nodeId).parent as AnnotatableNode;
@@ -97,7 +109,7 @@ function findAnnotatableNode(schemaObj: schema, nodeId: string): AnnotatableNode
  * @param index - The index of the annotation
  * @param id - The ID in the command, for the error message
  * @returns The annotation
- * @throws Error if there is no annotation at the index
+ * @throws An {@link Error} if there is no annotation at the index
  */
 function schemaAnnotationAt(annotations: annotationType[], index: number, id: string): annotationType {
   return assumeValidated(annotations[index] as annotationType | undefined, `Annotation ${index} of the schema (${id})`);
@@ -110,7 +122,7 @@ function schemaAnnotationAt(annotations: annotationType[], index: number, id: st
  * @param index - The index of the entry
  * @param id - The ID in the command, for the error message
  * @returns The documentation entry
- * @throws Error if there is no entry at the index
+ * @throws An {@link Error} if there is no entry at the index
  */
 function documentationAt(documentations: documentationType[], index: number, id: string): documentationType {
   return assumeValidated(documentations[index] as documentationType | undefined, `Documentation ${id}`);
@@ -125,7 +137,7 @@ function documentationAt(documentations: documentationType[], index: number, id:
  * @param schemaObj - The schema
  * @param documentationId - The documentation ID
  * @returns The annotation and the index of the entry in it
- * @throws Error if the annotation does not exist, which the validator rules out
+ * @throws An {@link Error} if the annotation does not exist, which the validator rules out
  */
 function locateDocumentation(schemaObj: schema, documentationId: string): { annotation: annotationType; index: number } {
   const schemaDocumentationId = parseSchemaDocumentationId(documentationId);
@@ -144,6 +156,9 @@ function locateDocumentation(schemaObj: schema, documentationId: string): { anno
 
 /**
  * Ensures the given non-schema node has an annotation element, creating one if absent.
+ *
+ * @param node - The node
+ * @returns The annotation of the node
  */
 function ensureAnnotation(node: AnnotatableNode): annotationType {
   node.annotation ??= new annotationType();
@@ -153,7 +168,12 @@ function ensureAnnotation(node: AnnotatableNode): annotationType {
 /**
  * Shared logic for modifying documentation and appinfo on a single annotationType.
  * When `documentation` is provided, all existing xs:documentation children are
- * replaced with a single new element containing the supplied text.
+ * replaced with a single new element containing the supplied text. When `appInfo` is provided, it
+ * replaces the text of the first xs:appinfo, or becomes the first one.
+ *
+ * @param annotation - The annotation to change
+ * @param documentation - The new documentation text, if it changes
+ * @param appInfo - The new appinfo text, if it changes
  */
 function applyAnnotationModifications(
   annotation: annotationType,
@@ -233,7 +253,7 @@ export function executeAddAnnotation(
  *
  * @param command - The removeAnnotation command to execute
  * @param schemaObj - The schema object to modify
- * @throws Error if the node is not found, has no annotation, or the index is
+ * @throws An {@link Error} if the node is not found, has no annotation, or the index is
  *   out of bounds
  */
 export function executeRemoveAnnotation(
@@ -268,7 +288,7 @@ export function executeRemoveAnnotation(
  *
  * @param command - The modifyAnnotation command to execute
  * @param schemaObj - The schema object to modify
- * @throws Error if the node is not found, has no annotation, or the index is
+ * @throws An {@link Error} if the node is not found, has no annotation, or the index is
  *   out of bounds
  */
 export function executeModifyAnnotation(
@@ -303,7 +323,7 @@ export function executeModifyAnnotation(
  *
  * @param command - The addDocumentation command to execute
  * @param schemaObj - The schema object to modify
- * @throws Error if the target node is not found or does not support annotations
+ * @throws An {@link Error} if the target node is not found or does not support annotations
  */
 export function executeAddDocumentation(
   command: AddDocumentationCommand,
@@ -343,7 +363,7 @@ export function executeAddDocumentation(
  *
  * @param command - The removeDocumentation command to execute
  * @param schemaObj - The schema object to modify
- * @throws Error if the node, annotation, or documentation element is not found
+ * @throws An {@link Error} if the node, annotation, or documentation element is not found
  */
 export function executeRemoveDocumentation(
   command: RemoveDocumentationCommand,
@@ -372,7 +392,7 @@ export function executeRemoveDocumentation(
  *
  * @param command - The modifyDocumentation command to execute
  * @param schemaObj - The schema object to modify
- * @throws Error if the node, annotation, or documentation element is not found
+ * @throws An {@link Error} if the node, annotation, or documentation element is not found
  */
 export function executeModifyDocumentation(
   command: ModifyDocumentationCommand,
@@ -388,6 +408,10 @@ export function executeModifyDocumentation(
 /**
  * Applies content and/or lang changes to a single xs:documentation element.
  * Pass `lang: ""` to remove the xml:lang attribute.
+ *
+ * @param doc - The documentation element
+ * @param content - The new text, if it changes
+ * @param lang - The new language tag, if it changes; empty to remove it
  */
 function applyDocumentationModifications(
   doc: documentationType,

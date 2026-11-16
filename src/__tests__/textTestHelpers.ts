@@ -8,7 +8,7 @@
  *
  * @param line - The line of text to search in
  * @param expectedStrings - The strings, in the order in which they must appear
- * @throws AssertionError if a string is not found after the previous one
+ * @throws An {@link AssertionError} if a string is not found after the previous one
  *
  * @example
  * ```typescript
@@ -43,7 +43,7 @@ export function expectInOrderOnLine(
  *
  * @param text - The multi-line text to search in
  * @param expectedStrings - The strings, in the order in which their lines must appear
- * @throws AssertionError if a string is not found on a line after the line of the previous one
+ * @throws An {@link AssertionError} if a string is not found on a line after the line of the previous one
  *
  * @example
  * ```typescript

@@ -4,7 +4,7 @@
  *
  * Current Implementation (Phase 1 - Syntactic Validation):
  * - XML name syntax validation for all name fields
- * - Occurrence constraints validation (minOccurs >= 0, maxOccurs logic, consistency)
+ * - Occurrence constraints validation (`minOccurs >= 0`, maxOccurs logic, consistency)
  * - Content model validation for complexType and group commands
  * - Required field validation (non-empty strings where appropriate)
  *

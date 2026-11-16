@@ -69,7 +69,12 @@ interface ComplexTypeWithParticles {
   all?: SearchedCompositor;
 }
 
-/** Returns true if the parent type is a complexType (top-level or local). */
+/**
+ * Returns true if the parent type is a complexType (top-level or local).
+ *
+ * @param parentType - The kind of the parent, as the navigator reports it
+ * @returns True for a complexType
+ */
 function isComplexTypeParent(parentType: string): boolean {
   return parentType === "topLevelComplexType" || parentType === "localComplexType";
 }
@@ -111,13 +116,27 @@ function validateGroupRefExists(groupId: string, schemaObj: schema): ValidationR
   return { valid: true };
 }
 
-/** Returns true if the complexType node already carries one of the four mutually exclusive particles. */
+/**
+ * Returns true if the complexType node already carries one of the four mutually exclusive particles.
+ *
+ * @param ct - The complexType
+ * @returns True if it has a group reference, sequence, choice or all
+ */
 function complexTypeHasParticle(ct: ComplexTypeWithParticles): boolean {
   return ct.group !== undefined || ct.sequence !== undefined || ct.choice !== undefined || ct.all !== undefined;
 }
 
 // ===== Group Command Validation =====
 
+/**
+ * Validates an addGroup command. A group reference needs a parent that can hold it (a sequence,
+ * choice, or complexType without a particle), refers to a named group and has consistent occurrences.
+ * A group definition has a new valid name and a valid content model, and no parent or occurrences.
+ *
+ * @param command - The command
+ * @param schemaObj - The schema
+ * @returns The validation result
+ */
 export function validateAddGroup(
   command: AddGroupCommand,
   schemaObj: schema
@@ -247,6 +266,14 @@ function locateGroup(
   return definitionResult.valid ? { valid: true, target: "definition", name: parsed.name } : definitionResult;
 }
 
+/**
+ * Validates a removeGroup command: the group definition, reference or compositor must exist, and a
+ * definition must not be referenced any more.
+ *
+ * @param command - The command
+ * @param schemaObj - The schema
+ * @returns The validation result
+ */
 export function validateRemoveGroup(
   command: RemoveGroupCommand,
   schemaObj: schema
@@ -334,6 +361,14 @@ function validateDefinitionChange(payload: ModifyGroupCommand["payload"]): Valid
   return { valid: true };
 }
 
+/**
+ * Validates a modifyGroup command: what the ID identifies must exist, and the changes must fit it, a
+ * compositor, a group reference or a group definition.
+ *
+ * @param command - The command
+ * @param schemaObj - The schema
+ * @returns The validation result
+ */
 export function validateModifyGroup(
   command: ModifyGroupCommand,
   schemaObj: schema

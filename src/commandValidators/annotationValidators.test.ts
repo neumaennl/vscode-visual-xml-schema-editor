@@ -78,6 +78,7 @@ function eachValidator<C extends unknown[], V>(validators: Array<[string, V]>, c
   return validators.flatMap(([name, validate]) => cases.map((c): [string, ...C, V] => [name, ...c, validate]));
 }
 
+// eslint-disable-next-line jsdoc/require-param, jsdoc/require-returns -- the plugin applies the comment below to the callbacks in the array, which need none
 /** The validators of removeAnnotation and modifyAnnotation, which check the annotation ID the same way. */
 const ANNOTATION_ID_VALIDATORS: Array<[string, (annotationId: string, schemaObj: schema) => ValidationResult]> = [
   ["removeAnnotation", (annotationId, s): ValidationResult => validateRemoveAnnotation({ type: "removeAnnotation", payload: { annotationId } }, s)],
@@ -99,6 +100,7 @@ const ANNOTATION_ID_CASES: Array<[string, string, string, Expected]> = [
   ["the bare schema-root ID '/schema'", SCHEMA_ANNOTATION, "/schema", { error: "/schema/annotation[N]" }],
 ];
 
+// eslint-disable-next-line jsdoc/require-param, jsdoc/require-returns -- the plugin applies the comment below to the callbacks in the array, which need none
 /** The validators of removeDocumentation and modifyDocumentation, which check the documentation ID the same way. */
 const DOCUMENTATION_ID_VALIDATORS: Array<[string, (documentationId: string, schemaObj: schema) => ValidationResult]> = [
   ["removeDocumentation", (documentationId, s): ValidationResult => validateRemoveDocumentation({ type: "removeDocumentation", payload: { documentationId } }, s)],

@@ -18,6 +18,12 @@ import { locateType, validateInlineTypeParent, validateNewTypeName } from "./com
 /** Container types that may hold an anonymous simpleType inline. */
 const INLINE_SIMPLE_TYPE_PARENT_TYPES = ["topLevelElement", "localElement", "topLevelAttribute", "attribute"];
 
+/**
+ * Tells whether the facets contain at least one value; an empty list counts as no value.
+ *
+ * @param restrictions - The facets of the payload
+ * @returns True if a facet has a value
+ */
 function hasRestrictionFacetValues(restrictions: RestrictionFacets): boolean {
   return Object.values(restrictions).some((value) => {
     if (value === undefined || value === null) {
@@ -86,6 +92,16 @@ function bodyKindOf(simpleType: { restriction?: unknown; list?: unknown; union?:
   return undefined;
 }
 
+/**
+ * Validates the body of a simple type: exactly one of restriction, list or union. A restriction needs a
+ * valid base type, unless it keeps the base of an existing restriction, and valid facets; a list needs
+ * an existing item type; a union needs existing member types.
+ *
+ * @param payload - The fields of the command that describe the body
+ * @param schemaObj - The schema
+ * @param existingBodyKind - The body of the type that the command changes; a new type has none
+ * @returns The validation result; a change without a body is valid for an existing type
+ */
 function validateSimpleTypeBody(
   payload: {
     baseType?: string;
@@ -160,6 +176,14 @@ function validateSimpleTypeBody(
   return { valid: true };
 }
 
+/**
+ * Validates an addSimpleType command: an anonymous type needs an element or attribute as parent, a
+ * top-level type a new valid name, and the body must be valid.
+ *
+ * @param command - The command
+ * @param schemaObj - The schema
+ * @returns The validation result
+ */
 export function validateAddSimpleType(
   command: AddSimpleTypeCommand,
   schemaObj: schema
@@ -180,6 +204,13 @@ export function validateAddSimpleType(
   return validateSimpleTypeBody(command.payload, schemaObj);
 }
 
+/**
+ * Validates a removeSimpleType command: the type must exist.
+ *
+ * @param command - The command
+ * @param schemaObj - The schema
+ * @returns The validation result
+ */
 export function validateRemoveSimpleType(
   command: RemoveSimpleTypeCommand,
   schemaObj: schema
@@ -189,6 +220,14 @@ export function validateRemoveSimpleType(
   return located.valid ? { valid: true } : located;
 }
 
+/**
+ * Validates a modifySimpleType command: the type must exist, a new name must be valid and unused, and a
+ * new body must be valid.
+ *
+ * @param command - The command
+ * @param schemaObj - The schema
+ * @returns The validation result
+ */
 export function validateModifySimpleType(
   command: ModifySimpleTypeCommand,
   schemaObj: schema

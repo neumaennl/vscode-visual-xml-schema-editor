@@ -68,7 +68,7 @@ interface ComplexTypeContentState {
  *
  * @param command - The addComplexType command to execute
  * @param schemaObj - The schema object to modify
- * @throws Error if the parent element is not found (anonymous case)
+ * @throws An {@link Error} if the parent element is not found (anonymous case)
  */
 export function executeAddComplexType(
   command: AddComplexTypeCommand,
@@ -94,7 +94,7 @@ export function executeAddComplexType(
  *
  * @param command - The removeComplexType command to execute
  * @param schemaObj - The schema object to modify
- * @throws Error if the type or its parent is not found
+ * @throws An {@link Error} if the type or its parent is not found
  */
 export function executeRemoveComplexType(
   command: RemoveComplexTypeCommand,
@@ -110,7 +110,7 @@ export function executeRemoveComplexType(
  *
  * @param command - The modifyComplexType command to execute
  * @param schemaObj - The schema object to modify
- * @throws Error if the type or its parent is not found
+ * @throws An {@link Error} if the type or its parent is not found
  */
 export function executeModifyComplexType(
   command: ModifyComplexTypeCommand,
@@ -173,6 +173,7 @@ function updateComplexTypeContents(
  * @param contentModel - The content model to apply, or `undefined` for a type without a compositor
  * @param baseType - Optional base type; when truthy wraps the compositor in
  *   a complexContent/extension element
+ * @param derivationKind - Whether the complexContent wrapper is an extension or a restriction
  */
 function applyContentStructure(
   ct: ComplexTypeHolder,
@@ -257,6 +258,13 @@ function getDerivationKind(ct: ComplexTypeHolder): ComplexTypeDerivationKind | u
   return undefined;
 }
 
+/**
+ * Copies the content of a complexType, from the type itself or from its complexContent extension or
+ * restriction, so that the structure can be rebuilt without losing it.
+ *
+ * @param ct - The complexType
+ * @returns The compositor, group reference and attributes of the content
+ */
 function captureContentState(ct: ComplexTypeHolder): ComplexTypeContentState {
   // Content may live directly on the complexType or inside an existing
   // complexContent/extension|restriction wrapper. Capture whichever structure
@@ -270,6 +278,14 @@ function captureContentState(ct: ComplexTypeHolder): ComplexTypeContentState {
   return { sequence, choice, all, group, attribute, attributeGroup, anyAttribute };
 }
 
+/**
+ * Puts captured content into a rebuilt content structure. The compositor of the given kind is kept, or
+ * created if the type had another one; the group reference and the attributes are kept as they are.
+ *
+ * @param target - The complexType or its new extension or restriction
+ * @param contentModel - The compositor of the rebuilt structure, or undefined for none
+ * @param existingContent - The content captured before the rebuild
+ */
 function restoreContentState(
   target: ComplexTypeContentState,
   contentModel: ContentModel | undefined,

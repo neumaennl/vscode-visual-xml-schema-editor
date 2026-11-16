@@ -51,7 +51,7 @@ export class SchemaModelManager {
    * Loads schema from XML string.
    * 
    * @param xmlContent - The XML content to parse
-   * @throws Error if parsing fails
+   * @throws An {@link Error} if parsing fails
    */
   public loadFromXml(xmlContent: string): void {
     try {
@@ -86,7 +86,7 @@ export class SchemaModelManager {
    * Marshals the current schema to XML.
    * 
    * @returns The XML string representation of the schema, ending with a line break
-   * @throws Error if schema is not loaded or marshalling fails
+   * @throws An {@link Error} if schema is not loaded or marshalling fails
    */
   public toXml(): string {
     if (!this.schemaState) {
@@ -108,7 +108,7 @@ export class SchemaModelManager {
    * Uses marshal/unmarshal to preserve xmlbind metadata.
    * 
    * @returns A deep copy of the schema
-   * @throws Error if schema is not loaded or cloning fails
+   * @throws An {@link Error} if schema is not loaded or cloning fails
    */
   public cloneSchema(): schema {
     if (!this.schemaState) {

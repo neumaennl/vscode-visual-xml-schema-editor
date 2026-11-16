@@ -23,7 +23,7 @@ const WORKSPACE_SETTINGS = { "workbench.secondarySideBar.defaultVisibility": "hi
  * other contents of `.vscode-test/`, such as the downloaded VS Code, are kept.
  *
  * @param root - The repository root
- * @throws {Error} If a source file is missing, for example because nothing was compiled yet
+ * @throws An {@link Error} if a source file is missing, for example because nothing was compiled yet
  */
 export function stage(root = "."): void {
   const testDir = join(root, ".vscode-test");

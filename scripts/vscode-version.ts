@@ -222,7 +222,7 @@ function printSteps(version: string): void {
  * @param requested - The new minimum VS Code version, or undefined to ask
  * @param dir - The folder with `package.json`, `.nvmrc` and the configurations
  * @returns The written values and whether to run the steps
- * @throws {Error} If the version is not a release in the table or its Node version has no ECMAScript edition
+ * @throws An {@link Error} if the version is not a release in the table or its Node version has no ECMAScript edition
  */
 async function apply(
   rows: ReleaseRow[],
@@ -260,7 +260,7 @@ async function apply(
  * @param requested - The new minimum VS Code version, or undefined to ask
  * @param dir - The folder with `package.json`, `.nvmrc` and the configurations
  * @returns The exit code
- * @throws {Error} If no version is given and there is no terminal to ask
+ * @throws An {@link Error} if no version is given and there is no terminal to ask
  */
 export async function update(requested: string | undefined, dir = "."): Promise<number> {
   if (!requested && !process.stdin.isTTY) {

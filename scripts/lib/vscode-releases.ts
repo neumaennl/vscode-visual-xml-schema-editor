@@ -65,7 +65,7 @@ const SOURCES = {
  *
  * @param text - The version or version range
  * @returns Major, minor and patch
- * @throws {Error} If the text is not a version
+ * @throws An {@link Error} if the text is not a version
  */
 export function parseVersion(text: string): Version {
   const match = /^[\^~v]?(\d+)\.(\d+)\.(\d+)$/.exec(text.trim());
@@ -124,7 +124,7 @@ export function parseElectronTarget(npmrc: string): string | undefined {
  * @param vscode - The VS Code version, for example `1.125.0`
  * @param data - The lookup data and the Electron version of the release
  * @returns The derived versions
- * @throws {Error} If the Node version of the Electron release is unknown
+ * @throws An {@link Error} if the Node version of the Electron release is unknown
  */
 export function deriveVersions(vscode: string, data: SharedData & { electron: string }): DerivedVersions {
   const node = data.electronNode[data.electron];
@@ -148,7 +148,7 @@ export function deriveVersions(vscode: string, data: SharedData & { electron: st
  *
  * @param derived - The derived versions
  * @returns The expected values
- * @throws {Error} If no matching `@types` package exists
+ * @throws An {@link Error} if no matching `@types` package exists
  */
 export function expectedValues(derived: DerivedVersions): ExpectedValues {
   if (!derived.typesVscode || !derived.typesNode) {
@@ -169,7 +169,7 @@ export function expectedValues(derived: DerivedVersions): ExpectedValues {
  * @param url - The URL
  * @param headers - Additional request headers
  * @returns The response
- * @throws {Error} If the request fails
+ * @throws An {@link Error} if the request fails
  */
 async function request(url: string, headers: Record<string, string> = {}): Promise<Response> {
   const response = await fetch(url, { headers });
@@ -185,7 +185,7 @@ async function request(url: string, headers: Record<string, string> = {}): Promi
  * @param url - The URL
  * @param headers - Additional request headers
  * @returns The parsed body
- * @throws {Error} If the request fails
+ * @throws An {@link Error} if the request fails
  */
 async function downloadJson<T>(url: string, headers: Record<string, string> = {}): Promise<T> {
   return (await (await request(url, headers)).json()) as T;
@@ -196,7 +196,7 @@ async function downloadJson<T>(url: string, headers: Record<string, string> = {}
  *
  * @param url - The URL
  * @returns The body
- * @throws {Error} If the request fails
+ * @throws An {@link Error} if the request fails
  */
 async function downloadText(url: string): Promise<string> {
   return (await request(url)).text();
@@ -235,7 +235,7 @@ export async function loadSharedData(): Promise<SharedData> {
  *
  * @param vscode - The VS Code version (a tag in `microsoft/vscode`)
  * @returns The Electron version
- * @throws {Error} If the tag has no `.npmrc` with a target
+ * @throws An {@link Error} if the tag has no `.npmrc` with a target
  */
 export async function electronOf(vscode: string): Promise<string> {
   const electron = parseElectronTarget(await downloadText(SOURCES.vscodeFile(vscode, ".npmrc")));

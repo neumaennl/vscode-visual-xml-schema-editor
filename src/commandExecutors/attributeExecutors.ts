@@ -29,7 +29,7 @@ import { identifyChild } from "../commandUtils.js";
  *
  * @param command - The addAttribute command to execute
  * @param schemaObj - The schema object to modify
- * @throws Error if parent node not found or duplicate attribute name exists
+ * @throws An {@link Error} if parent node not found or duplicate attribute name exists
  */
 export function executeAddAttribute(
   command: AddAttributeCommand,
@@ -46,7 +46,7 @@ export function executeAddAttribute(
  *
  * @param command - The removeAttribute command to execute
  * @param schemaObj - The schema object to modify
- * @throws Error if parent or attribute not found
+ * @throws An {@link Error} if parent or attribute not found
  */
 export function executeRemoveAttribute(
   command: RemoveAttributeCommand,
@@ -64,7 +64,7 @@ export function executeRemoveAttribute(
  *
  * @param command - The modifyAttribute command to execute
  * @param schemaObj - The schema object to modify
- * @throws Error if parent or attribute not found
+ * @throws An {@link Error} if parent or attribute not found
  */
 export function executeModifyAttribute(
   command: ModifyAttributeCommand,
@@ -87,7 +87,7 @@ export function executeModifyAttribute(
  * @param parent - Parent container object
  * @param parentType - Type of the parent container
  * @returns The node that holds the attributes
- * @throws Error if the parent cannot hold attributes
+ * @throws An {@link Error} if the parent cannot hold attributes
  */
 function attributesOf(parent: unknown, parentType: string): AttributeContainer {
   if (!["schema", "topLevelComplexType", "localComplexType"].includes(parentType)) {

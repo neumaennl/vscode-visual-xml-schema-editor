@@ -10,6 +10,9 @@ import { schemaWith } from "../../shared/__tests__/schemaTestHelpers";
 /**
  * Creates a valid schema object for testing.
  * Properly typed to match the schema class structure.
+ *
+ * @param overrides - The fields to set on the schema
+ * @returns The schema
  */
 function createTestSchema(overrides: Partial<schema> = {}): schema {
   const testSchema = new schema();

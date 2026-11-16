@@ -11,7 +11,7 @@ import type { MockedFunction } from "vitest";
  *
  * @param context - The extension context to activate with
  * @returns The command handler
- * @throws {Error} If the command was not registered
+ * @throws An {@link Error} if the command was not registered
  */
 function activateAndGetOpenEditorHandler(context: vscode.ExtensionContext): (uri?: vscode.Uri) => Promise<void> {
   activate(context);

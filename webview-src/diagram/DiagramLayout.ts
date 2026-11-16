@@ -8,6 +8,10 @@ import type { DiagramItem } from "./DiagramItem";
 import { isCompositorGroup } from "./groupUtils";
 import { DiagramItemType } from "./DiagramTypes";
 
+/**
+ * Places the items of a diagram: sizes, positions, the boxes for the shape, the expand button and the
+ * documentation, and the bounding boxes.
+ */
 export class DiagramLayout {
   // Default dimensions
   private readonly ELEMENT_WIDTH = 120;
@@ -21,6 +25,8 @@ export class DiagramLayout {
 
   /**
    * Calculate layout for entire diagram
+   *
+   * @param diagram - The diagram, whose items are changed
    */
   public layout(diagram: Diagram): void {
     // Layout each root element
@@ -37,6 +43,8 @@ export class DiagramLayout {
 
   /**
    * Layout a single diagram item and its children
+   *
+   * @param item - The item, whose location is already set
    */
   private layoutItem(item: DiagramItem): void {
     // Calculate size based on item type
@@ -76,6 +84,8 @@ export class DiagramLayout {
 
   /**
    * Calculate size of item based on type and content
+   *
+   * @param item - The item
    */
   private calculateSize(item: DiagramItem): void {
     switch (item.itemType) {
@@ -119,6 +129,8 @@ export class DiagramLayout {
 
   /**
    * Layout children of an item
+   *
+   * @param parent - The item whose children are placed to its right
    */
   private layoutChildren(parent: DiagramItem): void {
     // Position children relative to parent's width + expand button + spacing
@@ -146,6 +158,8 @@ export class DiagramLayout {
 
   /**
    * Calculate documentation box size and position
+   *
+   * @param item - The item
    */
   private calculateDocumentationBox(item: DiagramItem): void {
     if (!item.documentation) {
@@ -170,6 +184,8 @@ export class DiagramLayout {
 
   /**
    * Recalculate layout when an item is expanded or collapsed
+   *
+   * @param item - The item that was expanded or collapsed
    */
   public relayoutItem(item: DiagramItem): void {
     this.layoutItem(item);

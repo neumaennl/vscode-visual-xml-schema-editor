@@ -32,30 +32,72 @@ const AGE_TYPE_WITH_MIN = `<xs:simpleType name="AgeType"><xs:restriction base="x
 /** A top-level element `age` without a type. */
 const AGE_ELEMENT = `<xs:element name="age"/>`;
 
+/**
+ * Executes a addSimpleType command with the given payload.
+ *
+ * @param schemaObj - The schema, which is changed
+ * @param payload - The payload of the command
+ */
 function addSimpleType(schemaObj: schema, payload: AddSimpleTypeCommand["payload"]): void {
   executeAddSimpleType({ type: "addSimpleType", payload }, schemaObj);
 }
 
+/**
+ * Executes a removeSimpleType command with the given payload.
+ *
+ * @param schemaObj - The schema, which is changed
+ * @param payload - The payload of the command
+ */
 function removeSimpleType(schemaObj: schema, payload: RemoveSimpleTypeCommand["payload"]): void {
   executeRemoveSimpleType({ type: "removeSimpleType", payload }, schemaObj);
 }
 
+/**
+ * Executes a modifySimpleType command with the given payload.
+ *
+ * @param schemaObj - The schema, which is changed
+ * @param payload - The payload of the command
+ */
 function modifySimpleType(schemaObj: schema, payload: ModifySimpleTypeCommand["payload"]): void {
   executeModifySimpleType({ type: "modifySimpleType", payload }, schemaObj);
 }
 
+/**
+ * Returns the top-level simple types of the schema.
+ *
+ * @param schemaObj - The schema
+ * @returns The top-level simple types, or an empty array if there are none
+ */
 function simpleTypes(schemaObj: schema): NonNullable<schema["simpleType"]> {
   return schemaObj.simpleType ?? [];
 }
 
+/**
+ * Returns the top-level elements of the schema.
+ *
+ * @param schemaObj - The schema
+ * @returns The top-level elements, or an empty array if there are none
+ */
 function elements(schemaObj: schema): NonNullable<schema["element"]> {
   return schemaObj.element ?? [];
 }
 
+/**
+ * Returns the top-level attributes of the schema.
+ *
+ * @param schemaObj - The schema
+ * @returns The top-level attributes, or an empty array if there are none
+ */
 function attributes(schemaObj: schema): NonNullable<schema["attribute"]> {
   return schemaObj.attribute ?? [];
 }
 
+/**
+ * Returns the top-level complex types of the schema.
+ *
+ * @param schemaObj - The schema
+ * @returns The top-level complex types, or an empty array if there are none
+ */
 function complexTypes(schemaObj: schema): NonNullable<schema["complexType"]> {
   return schemaObj.complexType ?? [];
 }

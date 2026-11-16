@@ -54,6 +54,14 @@ export interface ReferenceMatcher {
   inCompositor(compositor: SearchedCompositor): boolean;
 }
 
+/**
+ * Returns true if the matcher finds a reference in a compositor, in the inline complexTypes of its
+ * elements or in its nested compositors.
+ *
+ * @param matcher - Decides where a reference is found
+ * @param compositor - The compositor to search
+ * @returns Whether a reference was found
+ */
 function isInCompositor(matcher: ReferenceMatcher, compositor: SearchedCompositor): boolean {
   return (
     matcher.inCompositor(compositor) ||
@@ -62,12 +70,27 @@ function isInCompositor(matcher: ReferenceMatcher, compositor: SearchedComposito
   );
 }
 
+/**
+ * Returns true if the matcher finds a reference in the sequence, choice or all of a holder.
+ *
+ * @param matcher - Decides where a reference is found
+ * @param holder - A complex type content or a named group
+ * @returns Whether a reference was found
+ */
 function isInContentModel(matcher: ReferenceMatcher, holder: SearchedContentModel): boolean {
   return [holder.sequence, holder.choice, holder.all].some(
     (compositor) => compositor !== undefined && isInCompositor(matcher, compositor)
   );
 }
 
+/**
+ * Returns true if the matcher finds a reference in a complex type, in its extension or restriction if
+ * it has complex or simple content.
+ *
+ * @param matcher - Decides where a reference is found
+ * @param complexType - The complex type to search
+ * @returns Whether a reference was found
+ */
 function isInComplexType(matcher: ReferenceMatcher, complexType: SearchedComplexType): boolean {
   const content = getContentContainer(complexType);
   return matcher.inContent(content) || isInContentModel(matcher, content);

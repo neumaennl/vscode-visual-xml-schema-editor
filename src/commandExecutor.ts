@@ -53,7 +53,7 @@ export class CommandExecutor {
    *
    * @param command - The command to execute
    * @param schemaObj - The schema object to modify
-   * @throws Error if command type is unknown or execution fails
+   * @throws An {@link Error} if command type is unknown or execution fails
    */
   public execute(command: SchemaCommand, schemaObj: schema): void {
     const executor = findCommandHandler(this.executors, "execute", command);

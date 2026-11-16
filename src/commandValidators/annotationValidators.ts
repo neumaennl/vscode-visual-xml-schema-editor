@@ -34,7 +34,12 @@ import {
 // ===== Internal helpers =====
 
 
-/** Type guard: returns true when `node` exposes an `annotation` property. */
+/**
+ * Type guard: returns true when `node` exposes an `annotation` property.
+ *
+ * @param node - The schema object of a node
+ * @returns True if the node can hold an annotation
+ */
 function hasAnnotationProperty(
   node: unknown
 ): node is { annotation?: annotationType } {
@@ -105,6 +110,14 @@ function validateAddTarget(
   return located.valid ? checkComponent(located.target) : located;
 }
 
+/**
+ * Validates an addAnnotation command: the target is the schema root, which can hold several
+ * annotations, or an existing component that supports annotations and has none yet.
+ *
+ * @param command - The command
+ * @param schemaObj - The schema
+ * @returns The validation result
+ */
 export function validateAddAnnotation(
   command: AddAnnotationCommand,
   schemaObj: schema
@@ -168,6 +181,13 @@ function validateAnnotationId(annotationId: string, schemaObj: schema, action: "
   return located.valid ? { valid: true } : located;
 }
 
+/**
+ * Validates a removeAnnotation command: the annotation must exist (see {@link validateAnnotationId}).
+ *
+ * @param command - The command
+ * @param schemaObj - The schema
+ * @returns The validation result
+ */
 export function validateRemoveAnnotation(
   command: RemoveAnnotationCommand,
   schemaObj: schema
@@ -175,6 +195,13 @@ export function validateRemoveAnnotation(
   return validateAnnotationId(command.payload.annotationId, schemaObj, "remove");
 }
 
+/**
+ * Validates a modifyAnnotation command: the annotation must exist (see {@link validateAnnotationId}).
+ *
+ * @param command - The command
+ * @param schemaObj - The schema
+ * @returns The validation result
+ */
 export function validateModifyAnnotation(
   command: ModifyAnnotationCommand,
   schemaObj: schema
@@ -184,6 +211,14 @@ export function validateModifyAnnotation(
 
 // ===== Documentation Command Validation =====
 
+/**
+ * Validates an addDocumentation command: the target is an existing annotation of the schema root, the
+ * schema root, or an existing component that supports annotations.
+ *
+ * @param command - The command
+ * @param schemaObj - The schema
+ * @returns The validation result
+ */
 export function validateAddDocumentation(
   command: AddDocumentationCommand,
   schemaObj: schema
@@ -268,6 +303,14 @@ function validateDocumentationIndex(documentationIndex: number, count: number, d
   return { valid: true };
 }
 
+/**
+ * Validates a removeDocumentation command: the documentation must exist (see
+ * {@link validateDocumentationId}).
+ *
+ * @param command - The command
+ * @param schemaObj - The schema
+ * @returns The validation result
+ */
 export function validateRemoveDocumentation(
   command: RemoveDocumentationCommand,
   schemaObj: schema
@@ -275,6 +318,14 @@ export function validateRemoveDocumentation(
   return validateDocumentationId(command.payload.documentationId, schemaObj);
 }
 
+/**
+ * Validates a modifyDocumentation command: the documentation must exist (see
+ * {@link validateDocumentationId}).
+ *
+ * @param command - The command
+ * @param schemaObj - The schema
+ * @returns The validation result
+ */
 export function validateModifyDocumentation(
   command: ModifyDocumentationCommand,
   schemaObj: schema

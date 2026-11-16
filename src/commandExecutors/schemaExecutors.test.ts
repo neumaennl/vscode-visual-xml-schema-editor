@@ -118,7 +118,14 @@ function removeInclude(schemaObj: schema, payload: RemoveIncludeCommand["payload
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Helper: schema with one import and the given prefix already registered. */
+/**
+ * Helper: schema with one import and the given prefix already registered.
+ *
+ * @param namespace - The namespace of the import
+ * @param schemaLocation - The schema location of the import
+ * @param prefix - The prefix of the namespace
+ * @returns The schema
+ */
 function schemaWithPrefixedImport(namespace: string, schemaLocation: string, prefix: string): schema {
   const schemaObj = emptySchema();
   executeAddImport({
@@ -128,6 +135,12 @@ function schemaWithPrefixedImport(namespace: string, schemaLocation: string, pre
   return schemaObj;
 }
 
+/**
+ * Creates a schema with the given imports, read from XML, and the prefixes of those that have one.
+ *
+ * @param imports - The imports
+ * @returns The schema
+ */
 function schemaWithImports(
   ...imports: Array<{ namespace: string; schemaLocation: string; prefix?: string }>
 ): schema {

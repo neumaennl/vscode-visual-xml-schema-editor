@@ -45,7 +45,7 @@ const VALUE_FACETS: ValueFacet[] = [
  * @param dispatchCommand - Callback used to emit schema commands
  * @param addPropertyToContainer - Helper used for read-only property rows
  * @returns The rendered tab element
- * @throws {Error} If the node has no simple type; the panel only offers the tab for simple types
+ * @throws An {@link Error} if the node has no simple type; the panel only offers the tab for simple types
  */
 export function renderFacetsTab(
   node: DiagramItem,

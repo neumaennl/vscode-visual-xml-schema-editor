@@ -244,6 +244,8 @@ let activeDraggedPaletteSchemaConstruct: PaletteSchemaConstruct | null = null;
  *
  * Some dragover environments do not expose custom MIME payload values via
  * dataTransfer.getData(), so this state is used as a fallback.
+ *
+ * @param kind - The dragged construct, or null when the drag ends
  */
 export function setActiveDraggedPaletteSchemaConstruct(kind: PaletteSchemaConstruct | null): void {
   activeDraggedPaletteSchemaConstruct = kind;
@@ -251,6 +253,8 @@ export function setActiveDraggedPaletteSchemaConstruct(kind: PaletteSchemaConstr
 
 /**
  * Get the currently dragged XML schema construct from the palette, if any.
+ *
+ * @returns The dragged construct, or null if nothing from the palette is dragged
  */
 export function getActiveDraggedPaletteSchemaConstruct(): PaletteSchemaConstruct | null {
   return activeDraggedPaletteSchemaConstruct;

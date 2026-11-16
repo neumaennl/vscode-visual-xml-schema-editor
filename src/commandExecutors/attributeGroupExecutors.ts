@@ -56,7 +56,7 @@ function locateAttrGroupRef(
  *
  * @param command - The addAttributeGroup command to execute
  * @param schemaObj - The schema object to modify
- * @throws Error if the parent node is not found (reference mode) or unsupported
+ * @throws An {@link Error} if the parent node is not found (reference mode) or unsupported
  */
 export function executeAddAttributeGroup(
   command: AddAttributeGroupCommand,
@@ -95,7 +95,7 @@ export function executeAddAttributeGroup(
  *
  * @param command - The removeAttributeGroup command to execute
  * @param schemaObj - The schema object to modify
- * @throws Error if the attribute group or its parent is not found
+ * @throws An {@link Error} if the attribute group or its parent is not found
  */
 export function executeRemoveAttributeGroup(
   command: RemoveAttributeGroupCommand,
@@ -124,7 +124,7 @@ export function executeRemoveAttributeGroup(
  *
  * @param command - The modifyAttributeGroup command to execute
  * @param schemaObj - The schema object to modify
- * @throws Error if the attribute group or its parent is not found
+ * @throws An {@link Error} if the attribute group or its parent is not found
  */
 export function executeModifyAttributeGroup(
   command: ModifyAttributeGroupCommand,

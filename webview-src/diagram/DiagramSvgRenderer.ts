@@ -28,6 +28,10 @@ import {
   renderOccurrence,
 } from "./TextRenderers";
 
+/**
+ * Draws diagram items into an SVG element: shapes, texts, documentation, occurrences, expand buttons
+ * and the lines between parents and children.
+ */
 export class DiagramSvgRenderer {
   private svg: SVGSVGElement;
   private mainGroup: SVGGElement;

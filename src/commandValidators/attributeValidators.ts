@@ -64,6 +64,14 @@ function validateAttributeKind(
   return { valid: true };
 }
 
+/**
+ * Validates an addAttribute command: the parent ID must not be empty, the fields must fit a reference
+ * or a named attribute, and the parent must be able to hold the attribute without a duplicate.
+ *
+ * @param command - The command
+ * @param schemaObj - The schema
+ * @returns The validation result
+ */
 export function validateAddAttribute(
   command: AddAttributeCommand,
   schemaObj: schema
@@ -82,6 +90,13 @@ export function validateAddAttribute(
   return validateNewChild(schemaObj, parentId, ATTRIBUTES, attributeName, ref);
 }
 
+/**
+ * Validates a removeAttribute command: the attribute must exist in a parent that holds attributes.
+ *
+ * @param command - The command
+ * @param schemaObj - The schema
+ * @returns The validation result
+ */
 export function validateRemoveAttribute(
   command: RemoveAttributeCommand,
   schemaObj: schema
@@ -90,6 +105,14 @@ export function validateRemoveAttribute(
   return located.valid ? { valid: true } : located;
 }
 
+/**
+ * Validates a modifyAttribute command: the attribute must exist, and the new fields must fit a
+ * reference or a named attribute.
+ *
+ * @param command - The command
+ * @param schemaObj - The schema
+ * @returns The validation result
+ */
 export function validateModifyAttribute(
   command: ModifyAttributeCommand,
   schemaObj: schema

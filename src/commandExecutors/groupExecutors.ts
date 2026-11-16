@@ -36,7 +36,7 @@ import { renameLocalGroupRefInSchema } from "./schemaLocalRenamer.js";
  *
  * @param command - The addGroup command to execute
  * @param schemaObj - The schema object to modify
- * @throws Error if the parent node is not found (reference mode) or unsupported
+ * @throws An {@link Error} if the parent node is not found (reference mode) or unsupported
  */
 export function executeAddGroup(
   command: AddGroupCommand,
@@ -74,7 +74,7 @@ export function executeAddGroup(
  *
  * @param command - The removeGroup command to execute
  * @param schemaObj - The schema object to modify
- * @throws Error if the group or its parent is not found
+ * @throws An {@link Error} if the group or its parent is not found
  */
 export function executeRemoveGroup(
   command: RemoveGroupCommand,
@@ -110,7 +110,7 @@ export function executeRemoveGroup(
  *
  * @param command - The modifyGroup command to execute
  * @param schemaObj - The schema object to modify
- * @throws Error if the group or its parent is not found
+ * @throws An {@link Error} if the group or its parent is not found
  */
 export function executeModifyGroup(
   command: ModifyGroupCommand,
@@ -180,6 +180,12 @@ interface ComplexTypeWithGroupRef { group?: groupRef }
 
 /**
  * Builds a new groupRef instance with the given properties.
+ *
+ * @param ref - The name of the referenced group
+ * @param minOccurs - The minimum number of occurrences, if set
+ * @param maxOccurs - The maximum number of occurrences, if set
+ * @param documentation - The documentation of the reference, if any
+ * @returns The group reference
  */
 function buildGroupRef(
   ref: string,
@@ -197,7 +203,10 @@ function buildGroupRef(
 /**
  * Adds a groupRef to a compositor (sequence/choice) or complexType parent.
  *
- * @throws Error if the parent cannot hold group references
+ * @param parent - The parent
+ * @param parentType - The kind of the parent, as the navigator reports it
+ * @param grpRef - The group reference to add
+ * @throws An {@link Error} if the parent cannot hold group references
  */
 function addGroupRefToParent(
   parent: unknown,
@@ -219,7 +228,12 @@ function addGroupRefToParent(
 /**
  * Removes a groupRef from a compositor (sequence/choice) or complexType parent.
  *
- * @throws Error if the reference is not found or the parent cannot hold group references
+ * @param parent - The parent
+ * @param parentType - The kind of the parent, as the navigator reports it
+ * @param name - The ref of the reference, from its ID
+ * @param position - The position of the reference in a compositor, from its ID
+ * @param groupId - The ID of the reference, for the error message
+ * @throws An {@link Error} if the reference is not found or the parent cannot hold group references
  */
 function removeGroupRefFromParent(
   parent: unknown,
@@ -251,6 +265,10 @@ function removeGroupRefFromParent(
 /**
  * Finds a groupRef in a compositor (sequence/choice) or complexType parent.
  *
+ * @param parent - The parent
+ * @param parentType - The kind of the parent, as the navigator reports it
+ * @param name - The ref of the reference, from its ID
+ * @param position - The position of the reference in a compositor, from its ID
  * @returns The found groupRef or undefined
  */
 function findGroupRefInParent(
@@ -290,7 +308,7 @@ interface CompositorHolder {
  * @param parent - The node that holds the compositor
  * @param groupKind - The kind of the compositor: `sequence`, `choice` or `all`
  * @param targetGroup - The compositor to remove
- * @throws Error if the parent does not hold the compositor
+ * @throws An {@link Error} if the parent does not hold the compositor
  */
 function removeCompositorGroupFromParent(
   parent: unknown,

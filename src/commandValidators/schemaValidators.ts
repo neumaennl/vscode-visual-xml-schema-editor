@@ -23,6 +23,9 @@ import { isAnyPrefixReferencedInSchema } from "../commandExecutors/schemaPrefixC
  * Returns true if `value` looks like a valid absolute URI.
  * Accepts common schemes (http, https, urn, ftp, file) as well as any other
  * scheme following the pattern "<letters>:..." to stay flexible.
+ *
+ * @param value - The value to check
+ * @returns True if the value is an absolute URI
  */
 function isAbsoluteUri(value: string): boolean {
   return /^[a-zA-Z][a-zA-Z0-9+\-.]*:[^\s]+$/.test(value);
@@ -32,6 +35,9 @@ function isAbsoluteUri(value: string): boolean {
  * Returns true if `value` looks like a valid relative or absolute file path /
  * URI suitable for use as a schemaLocation.
  * Rejects values that contain whitespace or are clearly malformed.
+ *
+ * @param value - The value to check
+ * @returns True if the value is not empty and contains no whitespace
  */
 function isValidSchemaLocation(value: string): boolean {
   // Must be non-empty and contain no whitespace
@@ -84,8 +90,12 @@ function validateModuleId(
  *
  * Collects all prefixes bound to the namespace and delegates to
  * {@link isAnyPrefixReferencedInSchema} for a single full recursive traversal
- * of all QName-valued fields (element/@type, complexType @base, simpleType
- * restriction/@base, union/@memberTypes, group/@ref, attributeGroup/@ref, etc.)
+ * of all QName-valued fields (`element/@type`, `complexType/@base`,
+ * `restriction/@base`, `union/@memberTypes`, `group/@ref`, `attributeGroup/@ref`, etc.)
+ *
+ * @param namespace - The namespace URI
+ * @param schemaObj - The schema
+ * @returns True if a prefix of the namespace is used in the schema
  */
 function isNamespaceReferenced(namespace: string, schemaObj: schema): boolean {
   if (!namespace || !schemaObj._namespacePrefixes) return false;
@@ -151,6 +161,14 @@ function validateSchemaLocation(schemaLocation: string): ValidationResult {
 
 // ===== Import Command Validation =====
 
+/**
+ * Validates an addImport command: the namespace and schema location must be valid, the schema must not
+ * import the namespace yet, and a given prefix must be valid and not bound to another namespace.
+ *
+ * @param command - The command
+ * @param schemaObj - The schema
+ * @returns The validation result
+ */
 export function validateAddImport(
   command: AddImportCommand,
   schemaObj: schema
@@ -188,6 +206,14 @@ export function validateAddImport(
   return { valid: true };
 }
 
+/**
+ * Validates a removeImport command: the import must exist, and no QName in the schema may still use a
+ * prefix of its namespace.
+ *
+ * @param command - The command
+ * @param schemaObj - The schema
+ * @returns The validation result
+ */
 export function validateRemoveImport(
   command: RemoveImportCommand,
   schemaObj: schema
@@ -211,6 +237,15 @@ export function validateRemoveImport(
   return { valid: true };
 }
 
+/**
+ * Validates a modifyImport command: the import must exist, a new namespace must be valid and not
+ * imported yet, and a new schema location must be valid. `oldPrefix` needs `prefix` and must be bound
+ * to the namespace of the import; the new prefix must be valid and not bound to another namespace.
+ *
+ * @param command - The command
+ * @param schemaObj - The schema
+ * @returns The validation result
+ */
 export function validateModifyImport(
   command: ModifyImportCommand,
   schemaObj: schema
@@ -289,6 +324,13 @@ export function validateModifyImport(
 
 // ===== Include Command Validation =====
 
+/**
+ * Validates an addInclude command: the schema location must be valid and not included yet.
+ *
+ * @param command - The command
+ * @param schemaObj - The schema
+ * @returns The validation result
+ */
 export function validateAddInclude(
   command: AddIncludeCommand,
   schemaObj: schema
@@ -307,6 +349,13 @@ export function validateAddInclude(
   return { valid: true };
 }
 
+/**
+ * Validates a removeInclude command: the include must exist.
+ *
+ * @param command - The command
+ * @param schemaObj - The schema
+ * @returns The validation result
+ */
 export function validateRemoveInclude(
   command: RemoveIncludeCommand,
   schemaObj: schema
@@ -320,6 +369,14 @@ export function validateRemoveInclude(
   return { valid: true };
 }
 
+/**
+ * Validates a modifyInclude command: the include must exist, and the new schema location must be valid
+ * and not used by another include.
+ *
+ * @param command - The command
+ * @param schemaObj - The schema
+ * @returns The validation result
+ */
 export function validateModifyInclude(
   command: ModifyIncludeCommand,
   schemaObj: schema
@@ -354,6 +411,15 @@ export function validateModifyInclude(
   return { valid: true };
 }
 
+/**
+ * Validates a modifySchemaNamespaces command: the target namespace and every declared namespace must be
+ * absolute URIs, every prefix must be valid, and a target namespace must be one of the declared
+ * namespaces.
+ *
+ * @param command - The command
+ * @param _schemaObj - Not used: the command replaces all declarations, so nothing depends on the schema
+ * @returns The validation result
+ */
 export function validateModifySchemaNamespaces(
   command: ModifySchemaNamespacesCommand,
   _schemaObj: schema

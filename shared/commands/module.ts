@@ -144,7 +144,7 @@ export interface ModifySchemaNamespacesPayload {
    */
   targetNamespace?: string;
   /**
-   * Complete namespace prefix mapping for schema declarations (prefix -> namespace URI).
+   * Complete namespace prefix mapping for schema declarations (prefix → namespace URI).
    */
   namespacePrefixes: Record<string, string>;
   /**

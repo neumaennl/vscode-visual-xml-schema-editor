@@ -16,6 +16,10 @@ import {
   setActiveDraggedPaletteSchemaConstruct,
 } from "./palette/PaletteItems";
 
+/**
+ * Draws the diagram into the SVG canvas, and handles panning, zooming, selection, expanding and
+ * collapsing, and dropping palette items on nodes.
+ */
 export class DiagramRenderer {
   private canvas: SVGSVGElement;
   private mainGroup: SVGGElement;
@@ -273,6 +277,9 @@ export class DiagramRenderer {
    * Resolve drop context for a diagram node under the current drag event.
    *
    * Returns null when event target is not a diagram item.
+   *
+   * @param event - The drag event
+   * @returns The node's SVG group, the item, the dragged construct and whether it can be dropped there
    */
   private getNodeDropContext(event: DragEvent): {
     itemGroup: Element;
@@ -304,6 +311,9 @@ export class DiagramRenderer {
   /**
    * Resolve dragged XML schema construct from DataTransfer, with fallback to
    * module-level drag state for environments where dragover getData is empty.
+   *
+   * @param event - The drag event
+   * @returns The dragged construct, or an empty string if nothing from the palette is dragged
    */
   private getDraggedPaletteSchemaConstruct(event: DragEvent): string {
     const fromDataTransfer = event.dataTransfer?.getData(PALETTE_MIME_TYPE) ?? "";
@@ -420,7 +430,9 @@ export class DiagramRenderer {
   /**
    * Fit the rendered diagram content into the canvas viewport
    * keeping a small padding around all sides.
+   *
    * @param padding - Padding in screen pixels
+   * @returns The new view state, or the current one if the canvas or the content has no size
    */
   public fitToCanvas(padding = 24): ViewState {
     const bbox = this.mainGroup.getBBox();

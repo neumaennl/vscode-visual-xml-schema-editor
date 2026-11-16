@@ -231,6 +231,8 @@ function processParticles(
  *
  * @param parent - Parent diagram item to add the sequence to
  * @param sequence - Sequence definition from schema
+ * @param positionOverride - The position of the compositor in its parent's ID; without it, the compositors
+ *   of the same kind that the parent already has are counted
  */
 export function processSequence(
   parent: DiagramItem,
@@ -246,6 +248,8 @@ export function processSequence(
  *
  * @param parent - Parent diagram item to add the choice to
  * @param choice - Choice definition from schema
+ * @param positionOverride - The position of the compositor in its parent's ID; without it, the compositors
+ *   of the same kind that the parent already has are counted
  */
 export function processChoice(
   parent: DiagramItem,
@@ -261,6 +265,8 @@ export function processChoice(
  *
  * @param parent - Parent diagram item to add the all group to
  * @param all - All group definition from schema
+ * @param positionOverride - The position of the compositor in its parent's ID; without it, the compositors
+ *   of the same kind that the parent already has are counted
  */
 export function processAll(parent: DiagramItem, all: all | allType, positionOverride?: number): void {
   processGroup(parent, all, "all", DiagramItemGroupType.All, positionOverride);
@@ -274,6 +280,8 @@ export function processAll(parent: DiagramItem, all: all | allType, positionOver
  * @param groupDef - Group definition from schema
  * @param groupName - Name of the group type for display
  * @param groupType - Type of the group (Sequence, Choice, or All)
+ * @param positionOverride - The position of the compositor in its parent's ID; without it, the compositors
+ *   of the same kind that the parent already has are counted
  */
 function processGroup(
   parent: DiagramItem,
@@ -389,6 +397,13 @@ function processGroup(
   parent.addChild(groupItem);
 }
 
+/**
+ * Returns the ID that compositors and group references use as parent: the anonymous complexType of an
+ * element that has one, otherwise the parent itself.
+ *
+ * @param parent - The diagram item that holds the compositor or group reference
+ * @returns The parent ID for the child's ID
+ */
 function resolveEffectiveGroupParentId(parent: DiagramItem): string {
   if (parent.itemType === DiagramItemType.element && parent.hasAnonymousComplexType) {
     return generateSchemaId({

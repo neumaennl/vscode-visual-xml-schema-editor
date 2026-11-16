@@ -37,24 +37,23 @@ import {
 } from "../../shared/types.js";
 import { parseSchemaId } from "../../shared/idStrategy.js";
 import { assumeValidated } from "./assumeValidated.js";
+import { removeFrom } from "./nodeProperties.js";
 import { rewritePrefixInSchema } from "./schemaQNameRewriter.js";
 
 // ===== Helpers =====
 
 /**
- * Resolves the ID of an import or include (e.g. `"/import[0]"` or `"/include[0]"`) to the entry and its
- * index.
+ * Finds the import or include that an ID such as `"/import[0]"` or `"/include[0]"` identifies.
  *
  * @param id - The ID of the import or include
  * @param entries - The imports or includes of the schema
  * @param label - `Import` or `Include`, for the error message
- * @returns The entries, the index and the entry
+ * @returns The entry
  * @throws An {@link Error} if there is no entry at the position, which the validator rules out
  */
-function resolveModuleEntry<T>(id: string, entries: T[] | undefined, label: string): { entries: T[]; index: number; entry: T } {
-  const all = entries ?? [];
+function findModuleEntry<T>(id: string, entries: T[] | undefined, label: string): T {
   const index = assumeValidated(parseSchemaId(id).position, `Position of ${id}`);
-  return { entries: all, index, entry: assumeValidated(all[index], `${label} ${id}`) };
+  return assumeValidated(entries?.[index], `${label} ${id}`);
 }
 
 /**
@@ -143,10 +142,9 @@ export function executeRemoveImport(
   schemaObj: schema
 ): void {
   const { importId } = command.payload;
-  const { entries: imports, index, entry } = resolveModuleEntry(importId, schemaObj.import_, "Import");
-  const removedNamespace = entry.namespace;
-  imports.splice(index, 1);
-  schemaObj.import_ = imports.length > 0 ? imports : undefined;
+  const removed = findModuleEntry(importId, schemaObj.import_, "Import");
+  removeFrom(schemaObj, "import_", (entry) => entry === removed, `Import ${importId}`);
+  const removedNamespace = removed.namespace;
 
   if (removedNamespace) {
     removePrefixForNamespace(removedNamespace, schemaObj);
@@ -180,7 +178,7 @@ export function executeModifyImport(
   const namespace = command.payload.namespace?.trim();
   const schemaLocation = command.payload.schemaLocation?.trim();
   const prefix = command.payload.prefix?.trim();
-  const { entry: importEntry } = resolveModuleEntry(importId, schemaObj.import_, "Import");
+  const importEntry = findModuleEntry(importId, schemaObj.import_, "Import");
   const oldNamespace = importEntry.namespace;
 
   if (namespace !== undefined) {
@@ -252,9 +250,8 @@ export function executeRemoveInclude(
   schemaObj: schema
 ): void {
   const { includeId } = command.payload;
-  const { entries: includes, index } = resolveModuleEntry(includeId, schemaObj.include, "Include");
-  includes.splice(index, 1);
-  schemaObj.include = includes.length > 0 ? includes : undefined;
+  const removed = findModuleEntry(includeId, schemaObj.include, "Include");
+  removeFrom(schemaObj, "include", (entry) => entry === removed, `Include ${includeId}`);
 }
 
 /**
@@ -272,7 +269,7 @@ export function executeModifyInclude(
 ): void {
   const { includeId } = command.payload;
   const schemaLocation = command.payload.schemaLocation.trim();
-  resolveModuleEntry(includeId, schemaObj.include, "Include").entry.schemaLocation = schemaLocation;
+  findModuleEntry(includeId, schemaObj.include, "Include").schemaLocation = schemaLocation;
 }
 
 /**

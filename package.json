@@ -122,6 +122,6 @@
     "vitest": "^5.0.3"
   },
   "dependencies": {
-    "@neumaennl/xmlbind-ts": "^2.3.0"
+    "@neumaennl/xmlbind-ts": "^2.4.0"
   }
 }

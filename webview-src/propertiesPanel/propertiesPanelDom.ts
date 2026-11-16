@@ -122,6 +122,20 @@ export function createSectionHeader(icon: string, label: string): HTMLElement {
 }
 
 /**
+ * Creates a section of the General tab with its header.
+ *
+ * @param icon - VS Code codicon name (without the `"codicon-"` prefix)
+ * @param label - Uppercase section label text
+ * @returns The section, which already contains the header
+ */
+export function createSection(icon: string, label: string): HTMLElement {
+  const section = document.createElement("div");
+  section.className = "property-section";
+  section.appendChild(createSectionHeader(icon, label));
+  return section;
+}
+
+/**
  * Creates the properties-panel header shown above the tabs.
  *
  * @param nodeTypeLabel - User-facing label of the selected node type

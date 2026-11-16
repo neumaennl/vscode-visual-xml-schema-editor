@@ -102,7 +102,7 @@ export class DiagramRenderer {
 
     try {
       // Save expand state before rebuilding
-      const expandState = this.saveExpandState();
+      const expandState = this.currentDiagram?.getExpandState();
 
       // Build diagram from schema
       const builder = new DiagramBuilder();
@@ -115,7 +115,9 @@ export class DiagramRenderer {
       this.currentDiagram.showType = diagramOptions.showType;
 
       // Restore expand state
-      this.restoreExpandState(expandState);
+      if (expandState) {
+        this.currentDiagram.restoreExpandState(expandState);
+      }
 
       this.layout.layout(this.currentDiagram);
       this.svgRenderer.render(this.currentDiagram);
@@ -327,68 +329,7 @@ export class DiagramRenderer {
    */
   private findItemById(itemId: string | null): DiagramItem | null {
     if (!itemId || !this.currentDiagram) return null;
-
-    const searchInItem = (item: DiagramItem): DiagramItem | null => {
-      if (item.id === itemId) return item;
-
-      for (const child of item.childElements) {
-        const found = searchInItem(child);
-        if (found) return found;
-      }
-
-      return null;
-    };
-
-    for (const root of this.currentDiagram.rootElements) {
-      const found = searchInItem(root);
-      if (found) return found;
-    }
-
-    return null;
-  }
-
-  /**
-   * Save the expand/collapse state of all items in the diagram
-   * @returns A map of item IDs to their expand state
-   */
-  private saveExpandState(): Map<string, boolean> {
-    const state = new Map<string, boolean>();
-    if (!this.currentDiagram) return state;
-
-    const saveItemState = (item: DiagramItem): void => {
-      state.set(item.id, item.showChildElements);
-      for (const child of item.childElements) {
-        saveItemState(child);
-      }
-    };
-
-    for (const root of this.currentDiagram.rootElements) {
-      saveItemState(root);
-    }
-
-    return state;
-  }
-
-  /**
-   * Restore the expand/collapse state of all items in the diagram
-   * @param state - Map of item IDs to their expand state
-   */
-  private restoreExpandState(state: Map<string, boolean>): void {
-    if (!this.currentDiagram) return;
-
-    const restoreItemState = (item: DiagramItem): void => {
-      if (state.has(item.id)) {
-        const savedState = state.get(item.id);
-        item.showChildElements = savedState ?? item.showChildElements;
-      }
-      for (const child of item.childElements) {
-        restoreItemState(child);
-      }
-    };
-
-    for (const root of this.currentDiagram.rootElements) {
-      restoreItemState(root);
-    }
+    return this.currentDiagram.findItem(itemId);
   }
 
   /**

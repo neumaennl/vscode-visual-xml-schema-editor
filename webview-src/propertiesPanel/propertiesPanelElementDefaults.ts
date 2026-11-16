@@ -4,7 +4,7 @@
 
 import type { SchemaCommand } from "../../shared/types";
 import type { DiagramItem } from "../diagram";
-import { createInputColumn, createSectionHeader } from "./propertiesPanelDom";
+import { createInputColumn, createSection } from "./propertiesPanelDom";
 
 /**
  * Renders the DEFAULT & FIXED section for element nodes.
@@ -17,9 +17,7 @@ export function renderElementDefaultFixedSection(
   node: DiagramItem,
   dispatchCommand: (command: SchemaCommand) => void
 ): HTMLElement {
-  const section = document.createElement("div");
-  section.className = "property-section";
-  section.appendChild(createSectionHeader("wand", "DEFAULT & FIXED"));
+  const section = createSection("wand", "DEFAULT & FIXED");
 
   const row = document.createElement("div");
   row.className = "property-row-2col";

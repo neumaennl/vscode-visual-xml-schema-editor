@@ -14,9 +14,8 @@ import {
   createDeleteNodeCommand,
   createRenameNodeComand,
   resolveSimpleTypeId,
-  isTopLevelElement,
 } from "./propertiesPanelCommands";
-import { SchemaNodeType, generateSchemaId } from "../../shared/idStrategy";
+import { SchemaNodeType } from "../../shared/idStrategy";
 import { createDraftNode } from "./propertiesPanelDraft";
 import {
   addPropertyToContainer,
@@ -24,8 +23,8 @@ import {
   createEditableField,
   createPropertiesPanelHeader,
   createInputColumn,
+  createSection,
   createSectionHeader,
-  createToggleRow,
 } from "./propertiesPanelDom";
 import { createDocsTab } from "./propertiesPanelDocs";
 import { renderFacetsTab } from "./propertiesPanelFacets";
@@ -33,6 +32,7 @@ import { renderSchemaNamespaceProperties } from "./propertiesPanelSchemaNamespac
 import { BUILTIN_TYPE_SUGGESTIONS } from "./propertiesPanelTypeCatalog";
 import { renderTypeProperty } from "./propertiesPanelTypes";
 import { renderElementDefaultFixedSection } from "./propertiesPanelElementDefaults";
+import { canShowConstraintsSection, renderConstraintsSection } from "./propertiesPanelConstraints";
 import { buildXmlPreview } from "./propertiesPanelXmlPreview";
 
 type PropertyTab = "general" | "facets" | "docs" | "xml";
@@ -225,8 +225,8 @@ export class PropertiesPanel {
       root.appendChild(this.renderCardinalitySection(node));
     }
 
-    if (this.canShowConstraintsSection(node)) {
-      root.appendChild(this.renderConstraintsSection(node));
+    if (canShowConstraintsSection(node)) {
+      root.appendChild(renderConstraintsSection(node, this.dispatchCommand));
     }
 
     if (getNodeType(node) === SchemaNodeType.Element) {
@@ -238,9 +238,7 @@ export class PropertiesPanel {
     }
 
     if (node.attributes.length > 0) {
-      const attributesSection = document.createElement("div");
-      attributesSection.className = "property-section";
-      attributesSection.appendChild(createSectionHeader("mention", "ATTRIBUTES"));
+      const attributesSection = createSection("mention", "ATTRIBUTES");
       attributesSection.appendChild(createAttributeList(node));
       root.appendChild(attributesSection);
     }
@@ -256,9 +254,7 @@ export class PropertiesPanel {
    * @returns The section
    */
   private renderCardinalitySection(node: DiagramItem): HTMLElement {
-    const section = document.createElement("div");
-    section.className = "property-section";
-    section.appendChild(createSectionHeader("symbol-numeric", "CARDINALITY"));
+    const section = createSection("symbol-numeric", "CARDINALITY");
 
     const dispatchOccurrence = (minOccurs: number, maxOccurs: number | "unbounded"): void => {
       node.minOccurrence = minOccurs;
@@ -339,104 +335,6 @@ export class PropertiesPanel {
 
     section.appendChild(presetsRow);
     return section;
-  }
-
-  /**
-   * Renders the CONSTRAINTS section: the nillable, abstract and mixed content toggles that apply to
-   * the element or complex type.
-   *
-   * @param node - The draft node
-   * @returns The section
-   */
-  private renderConstraintsSection(node: DiagramItem): HTMLElement {
-    const section = document.createElement("div");
-    section.className = "property-section";
-    section.appendChild(createSectionHeader("lock", "CONSTRAINTS"));
-
-    const nodeType = getNodeType(node);
-    if (nodeType === SchemaNodeType.Element) {
-      // Nillable toggle (all elements)
-      section.appendChild(
-        createToggleRow("Nillable", node.isNillable, (next) => {
-          node.isNillable = next;
-          this.dispatchCommand({
-            type: "modifyElement",
-            payload: { elementId: node.id, nillable: next },
-          });
-        })
-      );
-
-      // Abstract toggle (top-level elements only)
-      if (isTopLevelElement(node)) {
-        section.appendChild(
-          createToggleRow("Abstract", node.isAbstract, (next) => {
-            node.isAbstract = next;
-            this.dispatchCommand({
-              type: "modifyElement",
-              payload: { elementId: node.id, abstract: next },
-            });
-          })
-        );
-      }
-
-      // Mixed content toggle (element with anonymous complex type)
-      if (node.hasAnonymousComplexType) {
-        const anonComplexTypeId = generateSchemaId({
-          nodeType: SchemaNodeType.AnonymousComplexType,
-          parentId: node.id,
-          position: 0,
-        });
-        section.appendChild(
-          createToggleRow("Mixed content", node.isMixed, (next) => {
-            node.isMixed = next;
-            this.dispatchCommand({
-              type: "modifyComplexType",
-              payload: { typeId: anonComplexTypeId, mixed: next },
-            });
-          })
-        );
-      }
-    }
-
-    if (nodeType === SchemaNodeType.ComplexType) {
-      section.appendChild(
-        createToggleRow("Abstract", node.isAbstract, (next) => {
-          node.isAbstract = next;
-          this.dispatchCommand({
-            type: "modifyComplexType",
-            payload: { typeId: node.id, abstract: next },
-          });
-        })
-      );
-    }
-
-    if (nodeType === SchemaNodeType.ComplexType) {
-      section.appendChild(
-        createToggleRow("Mixed content", node.isMixed, (next) => {
-          node.isMixed = next;
-          this.dispatchCommand({
-            type: "modifyComplexType",
-            payload: { typeId: node.id, mixed: next },
-          });
-        })
-      );
-    }
-
-    return section;
-  }
-
-  /**
-   * Tells whether the node has constraints to edit, which elements and complex types have.
-   *
-   * @param node - The draft node
-   * @returns True for elements and complex types
-   */
-  private canShowConstraintsSection(node: DiagramItem): boolean {
-    const nodeType = getNodeType(node);
-    return (
-      nodeType === SchemaNodeType.Element ||
-      nodeType === SchemaNodeType.ComplexType
-    );
   }
 
   /**

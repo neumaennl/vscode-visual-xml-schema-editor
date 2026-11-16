@@ -94,6 +94,61 @@ export class Diagram {
   }
 
   /**
+   * Finds the item with the given ID among the root elements and their descendants.
+   *
+   * @param itemId - The ID of the item
+   * @returns The first item with the ID, in document order, or null if there is none
+   */
+  public findItem(itemId: string): DiagramItem | null {
+    for (const item of this.items()) {
+      if (item.id === itemId) {
+        return item;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Records which items show their children, so that a rebuilt diagram can show the same.
+   *
+   * @returns Whether each item shows its children, by item ID
+   */
+  public getExpandState(): Map<string, boolean> {
+    const state = new Map<string, boolean>();
+    for (const item of this.items()) {
+      state.set(item.id, item.showChildElements);
+    }
+    return state;
+  }
+
+  /**
+   * Shows or hides the children of the items as recorded by {@link Diagram.getExpandState}. Items that
+   * the state does not contain keep their setting.
+   *
+   * @param state - Whether each item shows its children, by item ID
+   */
+  public restoreExpandState(state: ReadonlyMap<string, boolean>): void {
+    for (const item of this.items()) {
+      item.showChildElements = state.get(item.id) ?? item.showChildElements;
+    }
+  }
+
+  /**
+   * Walks through the root elements and their descendants, each parent before its children.
+   *
+   * @returns The items of the diagram
+   */
+  private *items(): Generator<DiagramItem> {
+    const pending = [...this.rootElements].reverse();
+    let item = pending.pop();
+    while (item) {
+      yield item;
+      pending.push(...[...item.childElements].reverse());
+      item = pending.pop();
+    }
+  }
+
+  /**
    * Scales a rectangle based on the diagram's scale factor.
    * Applies the diagram scale to all rectangle dimensions and rounds to integers.
    * 

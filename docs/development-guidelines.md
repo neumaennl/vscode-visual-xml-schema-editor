@@ -4,8 +4,8 @@ title: Development guidelines
 description: Rules for everyone who changes the extension - code size, code quality and ESLint, structure reviews, TypeScript and naming, VS Code and Node versions, TSDoc, tests, documentation and the knowledge bundle, issues, what to check before committing, and commits.
 tags: [guidelines, conventions, code-quality, typescript, documentation, workflow]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-16T14:46:57Z }
-verified: { by: human:neumaennl, at: 2026-11-16T15:27:35Z }
+generated: { by: human:neumaennl, at: 2026-11-16T16:07:40Z }
+verified: { by: human:neumaennl, at: 2026-11-16T16:23:50Z }
 sources:
   - id: eslint
     resource: ../eslint.config.mjs
@@ -39,7 +39,7 @@ Topics that have their own document are only linked here: the structure of the c
 - A function has at most 120 lines. Split longer functions into smaller helpers with one responsibility each.
 - Tests have their own limits: a test file has at most 1000 lines, and a single test (the callback of `test()` or `test.each()`) at most 50 lines. The `describe` callbacks that hold the tests have no limit. A test file still tests one module: when it grows beyond the limit, the module probably has more than one responsibility and is split, or tests that differ only in their input are combined with `test.each()`. Long tests move their data into constants and their repeated steps into helpers (see [Testing](testing.md#files-and-structure)).
 
-ESLint checks the limits for tests (`max-lines` and the local rule `tests/max-lines-per-test` in `eslint.config.mjs`), but not yet for the other code, some of which exceeds them (see [Code exceeds the size limits](known-issues.md#code-exceeds-the-size-limits)).
+ESLint checks the limits: `max-lines` and `max-lines-per-function` for the code, including test helpers and mocks, and for test files `max-lines` and the local rule `tests/max-lines-per-test` in `eslint.config.mjs` (see [Build and packaging](build-and-packaging.md#eslint)).[^eslint]
 
 # Code quality
 

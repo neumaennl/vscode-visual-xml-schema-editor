@@ -168,6 +168,9 @@ export default defineConfig([
       'jsdoc/require-returns': 'error',
       'jsdoc/require-returns-check': 'error',
       'jsdoc/require-throws': 'error',
+      // Size limits (see "Code size" in docs/development-guidelines.md). Blank lines and comments count as well.
+      'max-lines': ['error', { max: 500 }],
+      'max-lines-per-function': ['error', { max: 120 }],
       // Unused code within a file is found by ESLint, not by TypeScript's noUnusedLocals. The rules of
       // typescript-eslint replace those of ESLint: they understand types, and the rule for private
       // members also finds members declared with TypeScript's `private`, not only `#private` ones.
@@ -220,9 +223,6 @@ export default defineConfig([
     files: ['**/*.test.ts', '**/*.test-d.ts', '**/__mocks__/**/*.ts'],
     ignores: ['test/extension-host/**'],
     extends: [vitest.configs.recommended],
-    plugins: {
-      tests: { rules: { 'max-lines-per-test': maxLinesPerTest } },
-    },
     languageOptions: {
       globals: {
         ...globals.vitest,
@@ -230,9 +230,6 @@ export default defineConfig([
       },
     },
     rules: {
-      // Size limits for tests (see "Code size" in docs/development-guidelines.md)
-      'max-lines': ['error', { max: 1000 }],
-      'tests/max-lines-per-test': 'error',
       // Recognise custom assertion helpers as assertion-containing functions
       'vitest/expect-expect': [
         'warn',
@@ -279,6 +276,21 @@ export default defineConfig([
     files: ['**/*.test-d.ts'],
     rules: {
       '@typescript-eslint/no-generated-empty-object-type': 'off',
+    },
+  },
+  // Size limits of all test files, those of Vitest and those in the extension host (see "Code size" in
+  // docs/development-guidelines.md). max-lines-per-function would count the describe() and suite()
+  // callbacks that hold the tests, so the local rule tests/max-lines-per-test limits the single tests
+  // instead. Test helpers and mocks keep the limits of other code.
+  {
+    files: ['**/*.test.ts', '**/*.test-d.ts'],
+    plugins: {
+      tests: { rules: { 'max-lines-per-test': maxLinesPerTest } },
+    },
+    rules: {
+      'max-lines': ['error', { max: 1000 }],
+      'max-lines-per-function': 'off',
+      'tests/max-lines-per-test': 'error',
     },
   },
   // Tests in the extension host: Mocha (TDD interface) and the mock webview, which runs in the browser

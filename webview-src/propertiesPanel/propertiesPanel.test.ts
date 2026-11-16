@@ -191,36 +191,6 @@ describe("PropertiesPanel", () => {
     expect(hasLabel(container, "Cardinality")).toBe(false);
   });
 
-  test("should dispatch modifyComplexType when complexType constraints are changed", () => {
-    const item = new DiagramItem("/complexType:PersonType", "PersonType", DiagramItemType.type, diagram);
-    item.isAbstract = false;
-    item.isMixed = false;
-    const { dispatch } = displayItem(container, item);
-
-    const abstractRow = Array.from(container.querySelectorAll(".property-toggle-row")).find(
-      (row) => row.querySelector(".property-toggle-label")?.textContent === "Abstract"
-    );
-    const abstractInput = abstractRow!.querySelector("input")!;
-    abstractInput.checked = true;
-    abstractInput.dispatchEvent(new Event("change"));
-
-    const mixedRow = Array.from(container.querySelectorAll(".property-toggle-row")).find(
-      (row) => row.querySelector(".property-toggle-label")?.textContent === "Mixed content"
-    );
-    const mixedInput = mixedRow!.querySelector("input")!;
-    mixedInput.checked = true;
-    mixedInput.dispatchEvent(new Event("change"));
-
-    expect(dispatch).toHaveBeenNthCalledWith(1, {
-      type: "modifyComplexType",
-      payload: { typeId: "/complexType:PersonType", abstract: true },
-    });
-    expect(dispatch).toHaveBeenNthCalledWith(2, {
-      type: "modifyComplexType",
-      payload: { typeId: "/complexType:PersonType", mixed: true },
-    });
-  });
-
   test("should keep edited draft values visible when switching tabs", () => {
     const item = new DiagramItem("/element:root/element:item[0]", "item", DiagramItemType.element, diagram);
     item.minOccurrence = 1;

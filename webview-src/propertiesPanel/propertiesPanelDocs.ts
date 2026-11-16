@@ -6,7 +6,7 @@
 
 import type { SchemaCommand } from "../../shared/types";
 import type { DiagramItem } from "../diagram";
-import type { DiagramAnnotationEntry } from "../diagram/DiagramTypes";
+import type { DiagramAnnotationEntry, DiagramDocumentationEntry } from "../diagram/DiagramTypes";
 import { resolveDocumentationTargetId } from "./propertiesPanelCommands";
 import { createEditableTextArea } from "./propertiesPanelDom";
 import { buildAnnotationId, buildDocumentationId } from "../diagram/DiagramBuilderHelpers";
@@ -169,6 +169,84 @@ function createActionButton(
   return button;
 }
 
+/** What the controls of an annotation section work on. */
+interface AnnotationSectionContext {
+  /** Draft node currently being edited */
+  node: DiagramItem;
+  /** Annotation entry of the section */
+  annotation: DiagramAnnotationEntry;
+  /** Position of the annotation within the draft node */
+  annotationIndex: number;
+  /** Callback used to emit schema-edit commands */
+  dispatchCommand: (command: SchemaCommand) => void;
+  /** Callback that re-renders the `PropertiesPanel` after structural edits */
+  rerender: () => void;
+}
+
+/**
+ * Renders a documentation entry of an annotation section: its label, a button that removes it, and a
+ * text area that changes its text.
+ *
+ * @param context - The annotation section that holds the entry
+ * @param entry - The documentation entry
+ * @param documentationIndex - Position of the entry within the annotation
+ * @returns The rendered entry element
+ */
+function createDocumentationEntry(
+  context: AnnotationSectionContext,
+  entry: DiagramDocumentationEntry,
+  documentationIndex: number
+): HTMLElement {
+  const { node, annotation, annotationIndex, dispatchCommand, rerender } = context;
+  const entryWrapper = document.createElement("div");
+  entryWrapper.className = "property-docs-entry";
+
+  const header = document.createElement("div");
+  header.className = "property-docs-entry-header";
+
+  const label = document.createElement("label");
+  label.textContent = `Documentation ${documentationIndex + 1}:`;
+  header.appendChild(label);
+
+  header.appendChild(
+    createActionButton(
+      "trash",
+      "Remove documentation",
+      () => {
+        dispatchCommand({
+          type: "removeDocumentation",
+          payload: { documentationId: entry.id },
+        });
+        const nextAnnotations = updateDocumentationEntriesAtIndex(
+          node.documentationAnnotations,
+          annotationIndex,
+          (entries) => entries.filter((_, entryIndex) => entryIndex !== documentationIndex)
+        );
+        node.documentationAnnotations = normalizeAnnotationEntries(
+          getNormalizationOwnerId(node, annotation),
+          nextAnnotations
+        );
+        syncDocumentationText(node);
+        rerender();
+      },
+      true,
+      false
+    )
+  );
+  entryWrapper.appendChild(header);
+
+  const textArea = createEditableTextArea(entry.content, (next) => {
+    entry.content = next;
+    syncDocumentationText(node);
+    dispatchCommand({
+      type: "modifyDocumentation",
+      payload: { documentationId: entry.id, content: next },
+    });
+  });
+  entryWrapper.appendChild(textArea);
+  return entryWrapper;
+}
+
 /**
  * Renders a single structured annotation section, including its documentation
  * entries plus add/remove controls for both documentation nodes and the annotation.
@@ -225,55 +303,9 @@ function createAnnotationSection(
     section.appendChild(emptyState);
   }
 
+  const context = { node, annotation, annotationIndex, dispatchCommand, rerender };
   annotation.documentationEntries.forEach((entry, documentationIndex) => {
-    const entryWrapper = document.createElement("div");
-    entryWrapper.className = "property-docs-entry";
-
-    const header = document.createElement("div");
-    header.className = "property-docs-entry-header";
-
-    const label = document.createElement("label");
-    label.textContent = `Documentation ${documentationIndex + 1}:`;
-    header.appendChild(label);
-
-    header.appendChild(
-      createActionButton(
-        "trash",
-        "Remove documentation",
-        () => {
-          dispatchCommand({
-            type: "removeDocumentation",
-            payload: { documentationId: entry.id },
-          });
-          const nextAnnotations = updateDocumentationEntriesAtIndex(
-            node.documentationAnnotations,
-            annotationIndex,
-            (entries) => entries.filter((_, entryIndex) => entryIndex !== documentationIndex)
-          );
-          node.documentationAnnotations = normalizeAnnotationEntries(
-            getNormalizationOwnerId(node, annotation),
-            nextAnnotations
-          );
-          syncDocumentationText(node);
-          rerender();
-        },
-        true,
-        false
-      )
-    );
-    entryWrapper.appendChild(header);
-
-    const textArea = createEditableTextArea(entry.content, (next) => {
-      entry.content = next;
-      syncDocumentationText(node);
-      dispatchCommand({
-        type: "modifyDocumentation",
-        payload: { documentationId: entry.id, content: next },
-      });
-    });
-    entryWrapper.appendChild(textArea);
-
-    section.appendChild(entryWrapper);
+    section.appendChild(createDocumentationEntry(context, entry, documentationIndex));
   });
 
   section.appendChild(

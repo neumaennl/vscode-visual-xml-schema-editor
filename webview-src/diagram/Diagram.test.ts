@@ -45,6 +45,67 @@ describe("Diagram", () => {
     });
   });
 
+  /**
+   * Adds a root `schema` with the children `a` and `b`, and `c` below `a`, to the diagram.
+   *
+   * @returns The items, by name
+   */
+  function addTree(): Record<"schema" | "a" | "b" | "c", DiagramItem> {
+    const items = {
+      schema: new DiagramItem("schema", "schema", DiagramItemType.element),
+      a: new DiagramItem("a", "a", DiagramItemType.element),
+      b: new DiagramItem("b", "b", DiagramItemType.element),
+      c: new DiagramItem("c", "c", DiagramItemType.element),
+    };
+    items.schema.addChild(items.a);
+    items.schema.addChild(items.b);
+    items.a.addChild(items.c);
+    diagram.addRootElement(items.schema);
+    return items;
+  }
+
+  describe("findItem", () => {
+    test("should find the root and items at any depth", () => {
+      const items = addTree();
+
+      expect(diagram.findItem("schema")).toBe(items.schema);
+      expect(diagram.findItem("b")).toBe(items.b);
+      expect(diagram.findItem("c")).toBe(items.c);
+    });
+
+    test("should return null for an unknown ID", () => {
+      addTree();
+
+      expect(diagram.findItem("missing")).toBeNull();
+    });
+
+    test("should return the first item in document order if two have the same ID", () => {
+      const items = addTree();
+      items.b.addChild(new DiagramItem("c", "second c", DiagramItemType.element));
+
+      expect(diagram.findItem("c")).toBe(items.c);
+    });
+  });
+
+  describe("getExpandState and restoreExpandState", () => {
+    test("should record whether each item shows its children", () => {
+      const items = addTree();
+      items.schema.showChildElements = true;
+      items.a.showChildElements = true;
+
+      expect(Object.fromEntries(diagram.getExpandState())).toEqual({ schema: true, a: true, b: false, c: false });
+    });
+
+    test("should restore the recorded state and keep items that it does not contain", () => {
+      const items = addTree();
+      items.b.showChildElements = true;
+
+      diagram.restoreExpandState(new Map([["schema", true], ["a", true]]));
+
+      expect([items.schema, items.a, items.b, items.c].map((item) => item.showChildElements)).toEqual([true, true, true, false]);
+    });
+  });
+
   describe("calculateBoundingBox", () => {
     test("should return empty box for no root elements", () => {
       const box = diagram.calculateBoundingBox();

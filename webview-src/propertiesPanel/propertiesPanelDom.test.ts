@@ -1,8 +1,8 @@
 /**
- * Unit tests for the input helpers of `propertiesPanelDom`.
+ * Unit tests for the input and section helpers of `propertiesPanelDom`.
  */
 
-import { createCommitInput, createInputColumn } from "./propertiesPanelDom";
+import { createCommitInput, createInputColumn, createSection } from "./propertiesPanelDom";
 
 describe("createCommitInput", () => {
   test("should create a text input with the value", () => {
@@ -54,5 +54,16 @@ describe("createInputColumn", () => {
 
   test("should have no placeholder unless one is given", () => {
     expect(createInputColumn("min", "1", vi.fn()).querySelector("input")?.placeholder).toBe("");
+  });
+});
+
+describe("createSection", () => {
+  test("should create a section that starts with a header with the icon and the label", () => {
+    const section = createSection("lock", "CONSTRAINTS");
+
+    expect(section.className).toBe("property-section");
+    expect(section.children).toHaveLength(1);
+    expect(section.querySelector(".property-section-header .codicon-lock")).not.toBeNull();
+    expect(section.querySelector(".property-section-header-label")?.textContent).toBe("CONSTRAINTS");
   });
 });

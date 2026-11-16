@@ -1,5 +1,5 @@
 /**
- * Unit tests for the helpers of DiagramTypes.
+ * Unit tests for the helpers of `DiagramTypes`.
  */
 
 import { enclosingRectangle } from "./DiagramTypes";

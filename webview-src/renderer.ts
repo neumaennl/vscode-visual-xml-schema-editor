@@ -56,7 +56,7 @@ export class DiagramRenderer {
   }
 
   /**
-   * Create a new DiagramRenderer
+   * Create a new `DiagramRenderer`
    * @param canvas - The SVG canvas element to render into
    * @param viewState - Initial view state (zoom and pan)
    */
@@ -309,8 +309,8 @@ export class DiagramRenderer {
   }
 
   /**
-   * Resolve dragged XML schema construct from DataTransfer, with fallback to
-   * module-level drag state for environments where dragover getData is empty.
+   * Resolve dragged XML schema construct from `DataTransfer`, with fallback to
+   * module-level drag state for environments where dragover `getData` is empty.
    *
    * @param event - The drag event
    * @returns The dragged construct, or an empty string if nothing from the palette is dragged

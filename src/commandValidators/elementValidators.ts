@@ -44,7 +44,7 @@ function validateElementReference(ref: string, schemaObj: schema): ValidationRes
 }
 
 /**
- * Validates an addElement command: a reference has no name or type and refers to a top-level element;
+ * Validates an `addElement` command: a reference has no name or type and refers to a top-level element;
  * another element has a valid name and an existing type, if it has one. The parent must be able to hold
  * the element without a duplicate, and the occurrences must be consistent.
  *
@@ -96,7 +96,7 @@ export function validateAddElement(
 }
 
 /**
- * Validates a removeElement command: the element must exist in a parent that holds elements.
+ * Validates a `removeElement` command: the element must exist in a parent that holds elements.
  *
  * @param command - The command
  * @param schemaObj - The schema
@@ -111,7 +111,7 @@ export function validateRemoveElement(
 }
 
 /**
- * Validates a modifyElement command: the element must exist; a new ref excludes a name or type and
+ * Validates a `modifyElement` command: the element must exist; a new ref excludes a name or type and
  * must refer to a top-level element, a new name must be valid and a new type must exist. An element has
  * at most one of default and fixed, a reference neither, and the occurrences must be consistent.
  *

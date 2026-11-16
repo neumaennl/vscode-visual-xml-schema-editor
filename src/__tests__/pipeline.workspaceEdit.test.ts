@@ -1,21 +1,21 @@
 /**
- * Integration tests: WorkspaceEdit creation via SchemaEditorProvider.
+ * Integration tests: `WorkspaceEdit` creation via `SchemaEditorProvider`.
  *
- * Verifies the full webviewProvider pipeline:
- *   executeCommand message → CommandProcessor → WorkspaceEdit → applyEdit → commandResult
+ * Verifies the full `webviewProvider` pipeline:
+ *   `executeCommand` message → `CommandProcessor` → `WorkspaceEdit` → `applyEdit` → `commandResult`
  *
  * Tests that:
- * - Successful commands create a WorkspaceEdit, call applyEdit, and reply with
+ * - Successful commands create a `WorkspaceEdit`, call `applyEdit`, and reply with
  *   `commandResult { success: true }`. The XML written into the edit is verified by
  *   unmarshalling it and inspecting schema object properties.
  * - Validation failures of the real validator are routed to `commandResult { success: false, error }`.
  *
  * How the provider routes runtime errors and failed edits is tested with a controlled
- * CommandProcessor result in webviewProvider.test.ts.
+ * `CommandProcessor` result in `webviewProvider.test.ts`.
  *
  * Undo/redo semantics: every successful schema edit is applied via
- * WorkspaceEdit, which is VS Code's standard mechanism for undoable edits.
- * The test environment mocks applyEdit; real undo/redo therefore runs inside
+ * `WorkspaceEdit`, which is VS Code's standard mechanism for undoable edits.
+ * The test environment mocks `applyEdit`; real undo/redo therefore runs inside
  * VS Code, not in the tests.
  */
 
@@ -35,7 +35,7 @@ const flushMicrotasks = (): Promise<void> =>
   new Promise<void>((resolve) => setTimeout(resolve, 0));
 
 /**
- * Sends an executeCommand message that adds the top-level element with the given name, and waits for it.
+ * Sends an `executeCommand` message that adds the top-level element with the given name, and waits for it.
  *
  * @param handler - The message handler of the provider
  * @param elementName - The name of the new element

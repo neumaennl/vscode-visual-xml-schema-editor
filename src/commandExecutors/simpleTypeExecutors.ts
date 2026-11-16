@@ -33,11 +33,11 @@ import { locateModifiedType, placeNewType, removeType } from "./typeTargets.js";
 import { createAnnotation, setDocumentation } from "./annotationUtils.js";
 
 /**
- * Executes an addSimpleType command.
+ * Executes an `addSimpleType` command.
  * When `payload.parentId` points to an element or attribute, creates an anonymous simpleType
  * inside that node. Otherwise creates a top-level named simpleType.
  *
- * @param command - The addSimpleType command to execute
+ * @param command - The `addSimpleType` command to execute
  * @param schemaObj - The schema object to modify
  * @throws An {@link Error} if the parent element or attribute is not found (anonymous case)
  */
@@ -57,11 +57,11 @@ export function executeAddSimpleType(
 }
 
 /**
- * Executes a removeSimpleType command.
- * Detects whether the typeId refers to an anonymous simpleType in an element or attribute
- * (nodeType "anonymousSimpleType") or a top-level type and removes it accordingly.
+ * Executes a `removeSimpleType` command.
+ * Detects whether the `typeId` refers to an anonymous simpleType in an element or attribute
+ * (node type `anonymousSimpleType`) or a top-level type and removes it accordingly.
  *
- * @param command - The removeSimpleType command to execute
+ * @param command - The `removeSimpleType` command to execute
  * @param schemaObj - The schema object to modify
  * @throws An {@link Error} if the type or its parent is not found
  */
@@ -73,11 +73,11 @@ export function executeRemoveSimpleType(
 }
 
 /**
- * Executes a modifySimpleType command.
- * Detects whether the typeId refers to an anonymous simpleType in an element or attribute
+ * Executes a `modifySimpleType` command.
+ * Detects whether the `typeId` refers to an anonymous simpleType in an element or attribute
  * or a top-level type and updates it accordingly.
  *
- * @param command - The modifySimpleType command to execute
+ * @param command - The `modifySimpleType` command to execute
  * @param schemaObj - The schema object to modify
  * @throws An {@link Error} if the type or its parent is not found
  */
@@ -93,11 +93,11 @@ export function executeModifySimpleType(
 // ===== Helper Functions =====
 
 /**
- * Builds a new restrictionType with the given base and optional facets.
+ * Builds a new `restrictionType` with the given base and optional facets.
  *
  * @param base - The base type name
  * @param facets - Optional restriction facets to apply
- * @returns A new restrictionType instance
+ * @returns A new `restrictionType` instance
  */
 function buildRestriction(base: string, facets?: RestrictionFacets): restrictionType {
   const restriction = new restrictionType();
@@ -238,7 +238,7 @@ const FACET_CLASSES = {
 } satisfies Record<keyof RestrictionFacets, new () => object>;
 
 /**
- * Applies restriction facets to a restrictionType object.
+ * Applies restriction facets to a `restrictionType` object.
  * Any previously set facets are cleared and replaced with the provided ones.
  *
  * @param restriction - The restriction object to update

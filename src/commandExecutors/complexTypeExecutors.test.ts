@@ -38,7 +38,7 @@ const MANAGER_TYPE = `<xs:complexType name="ManagerType">
 </xs:complexType>`;
 
 /**
- * Executes a addComplexType command with the given payload.
+ * Executes a `addComplexType` command with the given payload.
  *
  * @param schemaObj - The schema, which is changed
  * @param payload - The payload of the command
@@ -48,7 +48,7 @@ function addComplexType(schemaObj: schema, payload: AddComplexTypeCommand["paylo
 }
 
 /**
- * Executes a removeComplexType command with the given payload.
+ * Executes a `removeComplexType` command with the given payload.
  *
  * @param schemaObj - The schema, which is changed
  * @param payload - The payload of the command
@@ -58,7 +58,7 @@ function removeComplexType(schemaObj: schema, payload: RemoveComplexTypeCommand[
 }
 
 /**
- * Executes a modifyComplexType command with the given payload.
+ * Executes a `modifyComplexType` command with the given payload.
  *
  * @param schemaObj - The schema, which is changed
  * @param payload - The payload of the command

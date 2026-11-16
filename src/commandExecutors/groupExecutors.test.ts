@@ -21,7 +21,7 @@ import { emptySchema, schemaWith } from "../../shared/__tests__/schemaTestHelper
 import { readTestSchema } from "../__tests__/resourceTestHelpers.js";
 
 /**
- * Executes an addGroup command.
+ * Executes an `addGroup` command.
  *
  * @param schemaObj - The schema to change
  * @param payload - The payload of the command
@@ -31,7 +31,7 @@ function addGroup(schemaObj: schema, payload: AddGroupCommand["payload"]): void 
 }
 
 /**
- * Executes a modifyGroup command.
+ * Executes a `modifyGroup` command.
  *
  * @param schemaObj - The schema to change
  * @param payload - The payload of the command
@@ -41,7 +41,7 @@ function modifyGroup(schemaObj: schema, payload: ModifyGroupCommand["payload"]):
 }
 
 /**
- * Executes a removeGroup command.
+ * Executes a `removeGroup` command.
  *
  * @param schemaObj - The schema to change
  * @param payload - The payload of the command

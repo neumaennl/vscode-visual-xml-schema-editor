@@ -2,7 +2,7 @@
  * Integration tests: how serializing the schema after a command treats namespaces.
  *
  * A command rewrites the whole document with `marshal` from `xmlbind-ts` (see
- * docs/persistence.md, "What serialization changes"). These tests check that the
+ * `docs/persistence.md`, "What serialization changes"). These tests check that the
  * namespace declarations and element prefixes of the source document survive, so
  * that unprefixed QName values keep their meaning.
  */

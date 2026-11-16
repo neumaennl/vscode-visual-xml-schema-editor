@@ -1,5 +1,5 @@
 /**
- * Unit tests for processChildCollection.
+ * Unit tests for `processChildCollection`.
  */
 
 import { processChildCollection } from "./SchemaProcessorsCommon";

@@ -1,7 +1,7 @@
 /**
  * Integration tests: import add / remove / modify pipeline.
  *
- * Exercises the full extension-side editing pipeline for xs:import commands,
+ * Exercises the full extension-side editing pipeline for `xs:import` commands,
  * including namespace prefix handling and QName rewriting.
  * Success-path assertions are made against the unmarshalled schema object.
  */

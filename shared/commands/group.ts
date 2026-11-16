@@ -113,7 +113,7 @@ export interface ModifyGroupCommand extends BaseCommand<ModifyGroupPayload> {
  * - **Definition** (`groupName`): creates a top-level `xs:attributeGroup name="..."`.
  *   Always created at the schema root; `parentId` must not be provided in this mode.
  * - **Reference** (`ref` + `parentId`): creates `xs:attributeGroup ref="..."` inside the
- *   complexType or namedAttributeGroup identified by `parentId`.
+ *   complexType or `namedAttributeGroup` identified by `parentId`.
  */
 export interface AddAttributeGroupPayload {
   /**
@@ -130,7 +130,7 @@ export interface AddAttributeGroupPayload {
    */
   ref?: string;
   /**
-   * ID of the parent complexType or namedAttributeGroup.
+   * ID of the parent complexType or `namedAttributeGroup`.
    * Required when creating a reference. Must be omitted for definitions.
    */
   parentId?: string;

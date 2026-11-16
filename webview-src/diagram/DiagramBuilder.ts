@@ -1,11 +1,11 @@
 /**
- * DiagramBuilder creates a Diagram from an unmarshalled XSD schema.
+ * `DiagramBuilder` creates a Diagram from an unmarshalled XSD schema.
  * Ported and adapted from XSD Diagram project.
  * 
  * This class orchestrates the building process by delegating to specialized modules:
- * - TypeNodeCreators: Creates diagram nodes from schema type definitions
- * - SchemaProcessors: Processes schema structures and builds hierarchies
- * - DiagramBuilderHelpers: Provides utility functions for common operations
+ * - `TypeNodeCreators`: Creates diagram nodes from schema type definitions
+ * - `SchemaProcessors`: Processes schema structures and builds hierarchies
+ * - `DiagramBuilderHelpers`: Provides utility functions for common operations
  */
 
 import { Diagram } from "./Diagram";
@@ -49,7 +49,7 @@ export class DiagramBuilder {
   private elementMap = new Map<string, DiagramItem>();
 
   /**
-   * Creates a new DiagramBuilder.
+   * Creates a new `DiagramBuilder`.
    */
   constructor() {
     this.diagram = new Diagram();

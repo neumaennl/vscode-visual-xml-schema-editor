@@ -1,5 +1,5 @@
 /**
- * DOM-construction helpers for the PropertiesPanel UI.
+ * DOM-construction helpers for the `PropertiesPanel` UI.
  * This module centralizes small, reusable DOM fragments so the panel controller
  * can focus on state and command dispatch instead of element boilerplate.
  */
@@ -100,7 +100,7 @@ export function createAttributeList(node: DiagramItem): HTMLElement {
  * Creates a section header with an icon and uppercase label, matching the
  * style used in the CARDINALITY / CONSTRAINTS / DEFAULT & FIXED sections.
  *
- * @param icon - VS Code codicon name (without the "codicon-" prefix)
+ * @param icon - VS Code codicon name (without the `"codicon-"` prefix)
  * @param label - Uppercase section label text
  * @returns A DOM element containing the styled section header
  */

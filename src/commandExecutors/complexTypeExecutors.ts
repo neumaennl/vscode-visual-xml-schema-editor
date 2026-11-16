@@ -35,7 +35,7 @@ import { assignDefined } from "./nodeProperties.js";
 import { locateModifiedType, placeNewType, removeType } from "./typeTargets.js";
 import { createAnnotation, setDocumentation } from "./annotationUtils.js";
 
-/** Structural type shared by topLevelComplexType and localComplexType for content operations. */
+/** Structural type shared by `topLevelComplexType` and `localComplexType` for content operations. */
 interface ComplexTypeHolder {
   mixed?: boolean;
   annotation?: annotationType;
@@ -60,13 +60,13 @@ interface ComplexTypeContentState {
 }
 
 /**
- * Executes an addComplexType command.
+ * Executes an `addComplexType` command.
  * When `payload.parentId` points to an element (not schema root), creates an anonymous
  * complexType inside that element. Otherwise creates a top-level named complexType.
  * When `baseType` is provided the content model is nested inside a
  * `complexContent > extension` wrapper.
  *
- * @param command - The addComplexType command to execute
+ * @param command - The `addComplexType` command to execute
  * @param schemaObj - The schema object to modify
  * @throws An {@link Error} if the parent element is not found (anonymous case)
  */
@@ -88,11 +88,11 @@ export function executeAddComplexType(
 }
 
 /**
- * Executes a removeComplexType command.
- * Detects whether the typeId refers to an anonymous complexType in an element
- * (nodeType "anonymousComplexType") or a top-level type and removes it accordingly.
+ * Executes a `removeComplexType` command.
+ * Detects whether the `typeId` refers to an anonymous complexType in an element
+ * (node type `anonymousComplexType`) or a top-level type and removes it accordingly.
  *
- * @param command - The removeComplexType command to execute
+ * @param command - The `removeComplexType` command to execute
  * @param schemaObj - The schema object to modify
  * @throws An {@link Error} if the type or its parent is not found
  */
@@ -104,11 +104,11 @@ export function executeRemoveComplexType(
 }
 
 /**
- * Executes a modifyComplexType command.
- * Detects whether the typeId refers to an anonymous complexType in an element
+ * Executes a `modifyComplexType` command.
+ * Detects whether the `typeId` refers to an anonymous complexType in an element
  * or a top-level type and updates it accordingly.
  *
- * @param command - The modifyComplexType command to execute
+ * @param command - The `modifyComplexType` command to execute
  * @param schemaObj - The schema object to modify
  * @throws An {@link Error} if the type or its parent is not found
  */
@@ -172,7 +172,7 @@ function updateComplexTypeContents(
  * @param ct - The complexType holder to update
  * @param contentModel - The content model to apply, or `undefined` for a type without a compositor
  * @param baseType - Optional base type; when truthy wraps the compositor in
- *   a complexContent/extension element
+ *   a `complexContent`/`extension` element
  * @param derivationKind - Whether the complexContent wrapper is an extension or a restriction
  */
 function applyContentStructure(
@@ -225,7 +225,7 @@ function getBaseType(ct: ComplexTypeHolder): string | undefined {
  * (see {@link getContentContainer}).
  *
  * @param ct - The complexType holder to inspect
- * @returns The current ContentModel or undefined if none is set
+ * @returns The current `ContentModel` or undefined if none is set
  */
 function getContentModel(ct: ComplexTypeHolder): ContentModel | undefined {
   const content = getContentContainer<ComplexTypeContentState>(ct);

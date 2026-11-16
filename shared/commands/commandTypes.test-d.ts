@@ -1,7 +1,7 @@
 /**
  * Type tests for the commands. The compiler checks them; they are not run.
  * They check the rules of the types that the validators and executors rely on:
- * required fields, the allowed values of maxOccurs and the discriminated union.
+ * required fields, the allowed values of `maxOccurs` and the discriminated union.
  */
 
 import type {

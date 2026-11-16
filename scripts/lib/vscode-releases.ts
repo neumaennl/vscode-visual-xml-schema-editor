@@ -95,7 +95,9 @@ function compareVersions(a: Version, b: Version): number {
  * @param maxMinor - The highest allowed minor version
  * @returns The highest matching version, if any
  * @example
+ * ```typescript
  * highestAtOrBelow(["24.12.2", "24.13.1", "24.19.1"], 24, 15); // "24.13.1"
+ * ```
  */
 export function highestAtOrBelow(versions: string[], major: number, maxMinor: number): string | undefined {
   return versions

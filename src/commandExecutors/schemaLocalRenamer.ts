@@ -16,7 +16,7 @@ import { forEachQNameReference } from "./schemaQNameReferences.js";
 
 /**
  * Renames the references of one kind from `oldName` to `newName`: the unqualified ones and those
- * that use one of the schema's own targetNamespace prefixes.
+ * that use one of the schema's own `targetNamespace` prefixes.
  *
  * @param kind - What the references refer to
  * @param oldName - The current (old) local name
@@ -46,7 +46,7 @@ function renameReferences(kind: QNameKind, oldName: string, newName: string, sch
  * `union/@memberTypes` (space-separated token list).
  *
  * This updates both unqualified references and QName references that use one of
- * the schema's own targetNamespace prefixes.
+ * the schema's own `targetNamespace` prefixes.
  *
  * @param oldName - The current (old) local type name
  * @param newName - The replacement type name

@@ -1,5 +1,5 @@
 /**
- * DiagramLayout calculates positions and sizes for diagram items
+ * `DiagramLayout` calculates positions and sizes for diagram items
  * Ported and adapted from XSD Diagram project
  */
 

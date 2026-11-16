@@ -1,6 +1,6 @@
 /**
  * Central export point for all command types.
- * This module consolidates all command definitions and exports the SchemaCommand union type.
+ * This module consolidates all command definitions and exports the `SchemaCommand` union type.
  */
 
 // Re-export base types

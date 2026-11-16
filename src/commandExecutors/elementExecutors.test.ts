@@ -42,7 +42,7 @@ function personWithSequence(elements: string): string {
 }
 
 /**
- * Executes an addElement command.
+ * Executes an `addElement` command.
  *
  * @param schemaObj - The schema to change
  * @param payload - The payload of the command
@@ -52,7 +52,7 @@ function addElement(schemaObj: schema, payload: AddElementPayload): void {
 }
 
 /**
- * Executes a removeElement command.
+ * Executes a `removeElement` command.
  *
  * @param schemaObj - The schema to change
  * @param elementId - The ID of the element to remove
@@ -62,7 +62,7 @@ function removeElement(schemaObj: schema, elementId: string): void {
 }
 
 /**
- * Executes a modifyElement command.
+ * Executes a `modifyElement` command.
  *
  * @param schemaObj - The schema to change
  * @param payload - The payload of the command

@@ -272,7 +272,7 @@ export class DropCommandFactory {
    *
    * @param item - Drop target node
    * @param reserveNames - Whether the new name is reserved
-   * @param construct - SimpleType or ComplexType
+   * @param construct - `SimpleType` or `ComplexType`
    * @returns Command or null if the target cannot hold the type
    */
   private createTypeNodeDropCommand(

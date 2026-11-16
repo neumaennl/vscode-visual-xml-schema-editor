@@ -1,5 +1,5 @@
 /**
- * Command-building helpers for PropertiesPanel interactions.
+ * Command-building helpers for `PropertiesPanel` interactions.
  * This module translates edited diagram-node values into shared schema commands
  * while hiding ID-resolution details from the panel UI code.
  */
@@ -49,7 +49,7 @@ export function collectLocalSchemaTypeNames(node: DiagramItem): ReadonlySet<stri
 
 /**
  * Normalizes a type reference entered in the properties panel.
- * For local schema types, this prefixes with the schema targetNamespace prefix when available.
+ * For local schema types, this prefixes with the schema `targetNamespace` prefix when available.
  *
  * @param node - Diagram item whose schema the type belongs to
  * @param nextType - The entered type reference
@@ -149,7 +149,7 @@ export function isTopLevelElement(node: DiagramItem): boolean {
  * Returns whether occurrence fields should be editable for the given node.
  *
  * @param node - Diagram item to inspect
- * @returns True when minOccurs/maxOccurs may be edited
+ * @returns True when `minOccurs`/`maxOccurs` may be edited
  */
 export function canEditCardinality(node: DiagramItem): boolean {
   const nodeType = getNodeType(node);

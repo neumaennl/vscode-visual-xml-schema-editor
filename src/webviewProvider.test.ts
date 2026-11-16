@@ -1,5 +1,5 @@
 /**
- * Unit tests for SchemaEditorProvider.
+ * Unit tests for `SchemaEditorProvider`.
  */
 
 import * as vscode from "vscode";
@@ -15,7 +15,7 @@ import type { Mock, MockedFunction } from "vitest";
 interface ErrorMessage { command: string; data: { message: string; code: string; stack?: string } }
 
 /**
- * Sends an executeCommand message that adds the element `x` to the given parent, and waits for the
+ * Sends an `executeCommand` message that adds the element `x` to the given parent, and waits for the
  * provider to handle it.
  *
  * @param editor - The stubbed editor
@@ -30,7 +30,7 @@ async function sendAddElement(editor: EditorStubs, parentId: string): Promise<vo
 }
 
 /**
- * Asserts that the provider sent an error message and no commandResult, and returns the error message.
+ * Asserts that the provider sent an error message and no `commandResult`, and returns the error message.
  *
  * @param editor - The stubbed editor
  * @returns The first message sent, the error message

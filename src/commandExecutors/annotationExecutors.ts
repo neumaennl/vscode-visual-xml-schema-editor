@@ -3,17 +3,17 @@
  * Implements add, remove, and modify operations for annotations and documentation.
  *
  * ID Conventions:
- * - annotationId / targetId for non-schema nodes: XPath-like path to the annotated
- *   schema component (e.g. "/element:person", "/complexType:PersonType").
- * - annotationId for the schema root (which supports multiple xs:annotation children):
- *   "/schema/annotation[N]" — identifies the N-th (0-based) annotation on the schema.
- * - documentationId for non-schema nodes: annotated-element path + "/documentation[N]"
- *   (e.g. "/element:person/documentation[0]").
- * - documentationId for schema-root annotations:
- *   - "/schema/annotation[N]/documentation[M]" — M-th doc of the N-th schema annotation.
- *   - "/schema/documentation[N]" — N-th doc of the first (index-0) schema annotation.
+ * - `annotationId` / `targetId` for non-schema nodes: XPath-like path to the annotated
+ *   schema component (e.g. `"/element:person"`, `"/complexType:PersonType"`).
+ * - `annotationId` for the schema root (which supports multiple `xs:annotation` children):
+ *   `"/schema/annotation[N]"` — identifies the N-th (0-based) annotation on the schema.
+ * - `documentationId` for non-schema nodes: annotated-element path + `"/documentation[N]"`
+ *   (e.g. `"/element:person/documentation[0]"`).
+ * - `documentationId` for schema-root annotations:
+ *   - `"/schema/annotation[N]/documentation[M]"` — M-th doc of the N-th schema annotation.
+ *   - `"/schema/documentation[N]"` — N-th doc of the first (index-0) schema annotation.
  *
- * Note on references: xs:annotation, xs:documentation and xs:appinfo do NOT
+ * Note on references: `xs:annotation`, `xs:documentation` and `xs:appinfo` do NOT
  * support a `ref` attribute in the XSD specification. They are always inline
  * elements and cannot be referenced from elsewhere in the schema.
  */
@@ -44,7 +44,7 @@ export { parseDocumentationId, parseSchemaAnnotationId, parseSchemaDocumentation
 
 // ===== Structural types =====
 
-/** Any non-schema component that can carry a single xs:annotation child. */
+/** Any non-schema component that can carry a single `xs:annotation` child. */
 interface AnnotatableNode {
   annotation?: annotationType;
 }
@@ -52,9 +52,9 @@ interface AnnotatableNode {
 // ===== Helper functions =====
 
 /**
- * Creates a new documentationType from content and an optional language tag.
- * The xml:lang attribute (from the XML namespace) is stored via the
- * _anyAttributes map as "xml:lang".
+ * Creates a new `documentationType` from content and an optional language tag.
+ * The `xml:lang` attribute (from the XML namespace) is stored via the
+ * `_anyAttributes` map as `"xml:lang"`.
  *
  * @param content - The text of the documentation
  * @param lang - The language tag, if any
@@ -70,7 +70,7 @@ function createDocumentation(content: string, lang?: string): documentationType 
 }
 
 /**
- * Returns the first xs:annotation on the schema root, creating one if the
+ * Returns the first `xs:annotation` on the schema root, creating one if the
  * schema has none yet.
  *
  * @param schemaObj - The schema
@@ -131,8 +131,8 @@ function documentationAt(documentations: documentationType[], index: number, id:
 /**
  * Locates the annotation and the index of the documentation entry that a documentation ID identifies:
  * `/schema/annotation[N]/documentation[M]`, the shorthand `/schema/documentation[M]` for the first
- * annotation of the schema, or `<component ID>/documentation[M]`. Used by removeDocumentation and
- * modifyDocumentation.
+ * annotation of the schema, or `<component ID>/documentation[M]`. Used by `removeDocumentation` and
+ * `modifyDocumentation`.
  *
  * @param schemaObj - The schema
  * @param documentationId - The documentation ID
@@ -166,10 +166,10 @@ function ensureAnnotation(node: AnnotatableNode): annotationType {
 }
 
 /**
- * Shared logic for modifying documentation and appinfo on a single annotationType.
- * When `documentation` is provided, all existing xs:documentation children are
+ * Shared logic for modifying documentation and appinfo on a single `annotationType`.
+ * When `documentation` is provided, all existing `xs:documentation` children are
  * replaced with a single new element containing the supplied text. When `appInfo` is provided, it
- * replaces the text of the first xs:appinfo, or becomes the first one.
+ * replaces the text of the first `xs:appinfo`, or becomes the first one.
  *
  * @param annotation - The annotation to change
  * @param documentation - The new documentation text, if it changes
@@ -200,20 +200,20 @@ function applyAnnotationModifications(
 // ===== Annotation Executors =====
 
 /**
- * Executes an addAnnotation command.
+ * Executes an `addAnnotation` command.
  *
- * For the schema root (`targetId: "/schema"`): appends a new xs:annotation to
+ * For the schema root (`targetId: "/schema"`): appends a new `xs:annotation` to
  * the schema's annotation array. The schema may hold multiple annotations so
  * no duplicate check is performed.
  *
- * For all other annotatable components: creates a new xs:annotation element
+ * For all other annotatable components: creates a new `xs:annotation` element
  * and assigns it to the component, replacing any existing annotation.
  *
  * This executor assumes that commands have been pre-validated. It does not
  * perform additional runtime checks for target existence, annotatability, or
  * duplicate annotations.
  *
- * @param command - The addAnnotation command to execute
+ * @param command - The `addAnnotation` command to execute
  * @param schemaObj - The schema object to modify
  */
 export function executeAddAnnotation(
@@ -243,15 +243,15 @@ export function executeAddAnnotation(
 }
 
 /**
- * Executes a removeAnnotation command.
+ * Executes a `removeAnnotation` command.
  *
  * For the schema root use `annotationId: "/schema/annotation[N]"` to remove
  * the N-th annotation from the schema's annotation array.
  *
  * For all other annotatable components, `annotationId` is the node path
- * (e.g. "/element:person").
+ * (e.g. `"/element:person"`).
  *
- * @param command - The removeAnnotation command to execute
+ * @param command - The `removeAnnotation` command to execute
  * @param schemaObj - The schema object to modify
  * @throws An {@link Error} if the node is not found, has no annotation, or the index is
  *   out of bounds
@@ -277,16 +277,16 @@ export function executeRemoveAnnotation(
 }
 
 /**
- * Executes a modifyAnnotation command.
+ * Executes a `modifyAnnotation` command.
  *
  * For the schema root use `annotationId: "/schema/annotation[N]"` to modify
  * the N-th annotation.
  *
- * When `documentation` is provided, all existing xs:documentation children
+ * When `documentation` is provided, all existing `xs:documentation` children
  * are replaced with a single new element containing the supplied text.
- * When `appInfo` is provided the first xs:appinfo child is created-or-updated.
+ * When `appInfo` is provided the first `xs:appinfo` child is created-or-updated.
  *
- * @param command - The modifyAnnotation command to execute
+ * @param command - The `modifyAnnotation` command to execute
  * @param schemaObj - The schema object to modify
  * @throws An {@link Error} if the node is not found, has no annotation, or the index is
  *   out of bounds
@@ -311,9 +311,9 @@ export function executeModifyAnnotation(
 // ===== Documentation Executors =====
 
 /**
- * Executes an addDocumentation command.
+ * Executes an `addDocumentation` command.
  *
- * Appends a new xs:documentation element (with optional xml:lang) to the
+ * Appends a new `xs:documentation` element (with optional `xml:lang`) to the
  * annotation on the target component:
  * - `targetId: "/schema"` — adds to the first schema annotation (creating it
  *   if the schema has none).
@@ -321,7 +321,7 @@ export function executeModifyAnnotation(
  * - Any other path — adds to the single annotation of that component,
  *   creating the annotation if absent.
  *
- * @param command - The addDocumentation command to execute
+ * @param command - The `addDocumentation` command to execute
  * @param schemaObj - The schema object to modify
  * @throws An {@link Error} if the target node is not found or does not support annotations
  */
@@ -351,7 +351,7 @@ export function executeAddDocumentation(
 }
 
 /**
- * Executes a removeDocumentation command.
+ * Executes a `removeDocumentation` command.
  *
  * Accepted `documentationId` formats:
  * - `"/schema/annotation[N]/documentation[M]"` — removes the M-th doc from
@@ -361,7 +361,7 @@ export function executeAddDocumentation(
  * - `"{elementPath}/documentation[N]"` — removes from the single annotation
  *   of any other schema component.
  *
- * @param command - The removeDocumentation command to execute
+ * @param command - The `removeDocumentation` command to execute
  * @param schemaObj - The schema object to modify
  * @throws An {@link Error} if the node, annotation, or documentation element is not found
  */
@@ -378,7 +378,7 @@ export function executeRemoveDocumentation(
 }
 
 /**
- * Executes a modifyDocumentation command.
+ * Executes a `modifyDocumentation` command.
  *
  * Accepted `documentationId` formats:
  * - `"/schema/annotation[N]/documentation[M]"` — updates the M-th doc of the
@@ -388,9 +388,9 @@ export function executeRemoveDocumentation(
  * - `"{elementPath}/documentation[N]"` — updates the doc of any other
  *   schema component.
  *
- * Pass `lang: ""` to remove the xml:lang attribute.
+ * Pass `lang: ""` to remove the `xml:lang` attribute.
  *
- * @param command - The modifyDocumentation command to execute
+ * @param command - The `modifyDocumentation` command to execute
  * @param schemaObj - The schema object to modify
  * @throws An {@link Error} if the node, annotation, or documentation element is not found
  */
@@ -406,8 +406,8 @@ export function executeModifyDocumentation(
 }
 
 /**
- * Applies content and/or lang changes to a single xs:documentation element.
- * Pass `lang: ""` to remove the xml:lang attribute.
+ * Applies content and/or lang changes to a single `xs:documentation` element.
+ * Pass `lang: ""` to remove the `xml:lang` attribute.
  *
  * @param doc - The documentation element
  * @param content - The new text, if it changes

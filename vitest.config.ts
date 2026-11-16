@@ -8,7 +8,7 @@ const vscodeMock = { find: /^vscode$/, replacement: `${root}src/__mocks__/vscode
 
 /**
  * In GitHub Actions: annotations at the lines of failing tests. The job summary comes
- * from the report step in ci.yml, so Vitest's own summary is off.
+ * from the report step in `ci.yml`, so Vitest's own summary is off.
  */
 const githubActionsReporter: ["github-actions", { jobSummary: { enabled: boolean } }] = [
   "github-actions",

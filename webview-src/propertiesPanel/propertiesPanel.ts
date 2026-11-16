@@ -50,7 +50,7 @@ export class PropertiesPanel {
   private readonly dispatchCommand: CommandDispatcher;
 
   /**
-   * Creates a new PropertiesPanel.
+   * Creates a new `PropertiesPanel`.
    *
    * @param container - The HTML div element to render the properties into
    * @param dispatchCommand - Callback used to emit schema commands
@@ -249,7 +249,7 @@ export class PropertiesPanel {
   }
 
   /**
-   * Renders the CARDINALITY section: minOccurs and maxOccurs fields and presets for common
+   * Renders the CARDINALITY section: `minOccurs` and `maxOccurs` fields and presets for common
    * occurrences, which send the occurrence of the node.
    *
    * @param node - The draft node

@@ -1,5 +1,5 @@
 /**
- * Stubs of the VS Code objects that SchemaEditorProvider needs, for the tests of the provider.
+ * Stubs of the VS Code objects that `SchemaEditorProvider` needs, for the tests of the provider.
  */
 
 import * as vscode from "vscode";

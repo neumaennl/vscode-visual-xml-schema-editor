@@ -1,6 +1,6 @@
 /**
- * SvgHelpers provides utility functions for creating SVG elements
- * Extracted from DiagramSvgRenderer to reduce file size
+ * `SvgHelpers` provides utility functions for creating SVG elements
+ * Extracted from `DiagramSvgRenderer` to reduce file size
  */
 
 import type { Point, Rectangle } from "./DiagramTypes";

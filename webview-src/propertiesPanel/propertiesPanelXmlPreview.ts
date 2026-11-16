@@ -1,5 +1,5 @@
 /**
- * XML-preview helpers for the PropertiesPanel XML tab.
+ * XML-preview helpers for the `PropertiesPanel` XML tab.
  * Converts a selected diagram node into an XSD fragment string.
  */
 

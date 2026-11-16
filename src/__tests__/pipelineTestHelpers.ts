@@ -2,9 +2,9 @@
  * Shared test helpers and XML fixtures for integration tests.
  *
  * Integration tests exercise the full extension-side editing pipeline:
- *   CommandProcessor.execute() → CommandValidator → CommandExecutor → SchemaModelManager
+ *   `CommandProcessor.execute()` → `CommandValidator` → `CommandExecutor` → `SchemaModelManager`
  *
- * Helpers here are intentionally thin wrappers around CommandProcessor so
+ * Helpers here are intentionally thin wrappers around `CommandProcessor` so
  * tests stay focused on behaviour rather than boilerplate.
  */
 
@@ -81,11 +81,11 @@ export const COMPLEX_TYPES_WITH_ANY_ATTRIBUTE: ReadonlyArray<readonly [string, s
 // ─── Pipeline Helpers ─────────────────────────────────────────────────────────
 
 /**
- * Runs a command through a fresh CommandProcessor and returns the raw result.
+ * Runs a command through a fresh `CommandProcessor` and returns the raw result.
  *
  * @param xml - Current schema XML content
  * @param command - The schema editing command to execute
- * @returns The full CommandExecutionResult (success or failure)
+ * @returns The full `CommandExecutionResult` (success or failure)
  */
 export function runCommand(xml: string, command: SchemaCommand): CommandExecutionResult {
   return new CommandProcessor().execute(command, xml);

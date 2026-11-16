@@ -1,5 +1,5 @@
 /**
- * Typed lookup of the handler for a schema command, shared by CommandValidator and CommandExecutor.
+ * Typed lookup of the handler for a schema command, shared by `CommandValidator` and `CommandExecutor`.
  */
 
 import type { SchemaCommand, schema } from "../shared/types.js";

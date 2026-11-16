@@ -14,7 +14,7 @@ export interface PaletteItem {
   id: PaletteSchemaConstruct;
   /** User-facing display name. */
   name: string;
-  /** VS Code codicon name (without the "codicon-" prefix). */
+  /** VS Code codicon name (without the `"codicon-"` prefix). */
   icon: string;
   /** Accent color used by the icon. */
   color: string;
@@ -243,7 +243,7 @@ let activeDraggedPaletteSchemaConstruct: PaletteSchemaConstruct | null = null;
  * Track the currently dragged XML schema construct from the palette.
  *
  * Some dragover environments do not expose custom MIME payload values via
- * dataTransfer.getData(), so this state is used as a fallback.
+ * `dataTransfer.getData()`, so this state is used as a fallback.
  *
  * @param kind - The dragged construct, or null when the drag ends
  */

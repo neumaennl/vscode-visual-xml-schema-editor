@@ -1,7 +1,7 @@
 /**
  * Validators for attributeGroup commands.
  * Handles both top-level attribute group definitions and
- * attribute group references (xs:attributeGroup ref="...").
+ * attribute group references (`xs:attributeGroup ref="..."`).
  */
 
 import type {
@@ -62,10 +62,10 @@ function validateAttrGroupReference(ref: string, schemaObj: schema): ValidationR
 }
 
 /**
- * Validates that the attribute group reference that an attributeGroupRef ID identifies exists. Used by
- * both validateRemoveAttributeGroup and validateModifyAttributeGroup.
+ * Validates that the attribute group reference that an `attributeGroupRef` ID identifies exists. Used by
+ * both `validateRemoveAttributeGroup` and `validateModifyAttributeGroup`.
  *
- * @param groupId - The attributeGroupRef ID
+ * @param groupId - The `attributeGroupRef` ID
  * @param schemaObj - The schema
  * @returns The validation result
  */
@@ -90,7 +90,7 @@ type AttributeGroupTarget = { target: "reference" } | { target: "definition"; na
 
 /**
  * Validates that the attribute group reference or definition that an ID identifies exists. Used by
- * both validateRemoveAttributeGroup and validateModifyAttributeGroup.
+ * both `validateRemoveAttributeGroup` and `validateModifyAttributeGroup`.
  *
  * @param groupId - The ID of an attribute group reference (`/complexType:X/attributeGroupRef:Name[0]`)
  * or definition (`/attributeGroup:Name`)
@@ -114,14 +114,14 @@ function locateAttributeGroup(groupId: string, schemaObj: schema): ValidationFai
 // ===== AttributeGroup Command Validators =====
 
 /**
- * Validates an addAttributeGroup command.
+ * Validates an `addAttributeGroup` command.
  *
  * Two mutually exclusive modes:
  * - **Definition mode** (`groupName` only): validates XML name uniqueness.
  * - **Reference mode** (`ref` + `parentId`): validates the ref name, that the referenced
  *   group exists, and that the parent node exists.
  *
- * @param command - The addAttributeGroup command to validate
+ * @param command - The `addAttributeGroup` command to validate
  * @param schemaObj - The schema object to validate against
  * @returns Validation result
  */
@@ -192,13 +192,13 @@ export function validateAddAttributeGroup(
 }
 
 /**
- * Validates a removeAttributeGroup command.
+ * Validates a `removeAttributeGroup` command.
  *
  * The `groupId` determines the mode:
  * - **Definition** (`/attributeGroup:Name`): validates existence and no remaining references.
  * - **Reference** (`/complexType:X/attributeGroupRef:Name[0]`): validates parent existence.
  *
- * @param command - The removeAttributeGroup command to validate
+ * @param command - The `removeAttributeGroup` command to validate
  * @param schemaObj - The schema object to validate against
  * @returns Validation result
  */
@@ -212,7 +212,7 @@ export function validateRemoveAttributeGroup(
 }
 
 /**
- * Validates a modifyAttributeGroup command.
+ * Validates a `modifyAttributeGroup` command.
  *
  * The `groupId` determines the mode:
  * - **Definition** (`/attributeGroup:Name`): validates existence; rejects `ref` field.
@@ -220,7 +220,7 @@ export function validateRemoveAttributeGroup(
  * - **Reference** (`/complexType:X/attributeGroupRef:Name[0]`): validates parent existence;
  *   rejects `groupName` field. If `ref` provided, validates the referenced group exists.
  *
- * @param command - The modifyAttributeGroup command to validate
+ * @param command - The `modifyAttributeGroup` command to validate
  * @param schemaObj - The schema object to validate against
  * @returns Validation result
  */

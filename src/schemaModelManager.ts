@@ -1,5 +1,5 @@
 /**
- * SchemaModelManager: Manages schema state and orchestrates updates.
+ * `SchemaModelManager`: Manages schema state and orchestrates updates.
  * 
  * This class maintains the authoritative schema state and provides:
  * - Schema loading and state management
@@ -37,7 +37,7 @@ export class SchemaModelManager {
   private schemaState: schema | null = null;
 
   /**
-   * Creates a new SchemaModelManager.
+   * Creates a new `SchemaModelManager`.
    * 
    * @param initialSchema - Optional initial schema to load
    */

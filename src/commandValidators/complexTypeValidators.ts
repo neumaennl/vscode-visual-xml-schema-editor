@@ -14,9 +14,9 @@ import { isSchemaRoot } from "../../shared/schemaUtils.js";
 import { locateType, validateInlineTypeParent, validateNewTypeName } from "./commonValidators.js";
 
 /**
- * Valid content models for ComplexType elements.
+ * Valid content models for `ComplexType` elements.
  * Only compositor models are supported in Phase 1 (sequence, choice, all).
- * Note: ContentModel type in shared/commands/schemaTypes.ts defines: "sequence" | "choice" | "all"
+ * Note: `ContentModel` type in `shared/commands/schemaTypes.ts` defines: `"sequence"` | `"choice"` | `"all"`
  */
 export const VALID_COMPLEX_TYPE_CONTENT_MODELS = [
   "sequence",
@@ -157,7 +157,7 @@ function validateComplexTypeContentChange(
 }
 
 /**
- * Validates an addComplexType command: an anonymous type needs an element as parent, a top-level type a
+ * Validates an `addComplexType` command: an anonymous type needs an element as parent, a top-level type a
  * new valid name. The content model, the derivation kind and the derivation must be valid.
  *
  * @param command - The command
@@ -194,7 +194,7 @@ export function validateAddComplexType(
 }
 
 /**
- * Validates a removeComplexType command: the type must exist.
+ * Validates a `removeComplexType` command: the type must exist.
  *
  * @param command - The command
  * @param schemaObj - The schema
@@ -209,7 +209,7 @@ export function validateRemoveComplexType(
 }
 
 /**
- * Validates a modifyComplexType command: the type must exist, a new name must be valid and unused, and
+ * Validates a `modifyComplexType` command: the type must exist, a new name must be valid and unused, and
  * the new content model, derivation kind and derivation must be valid and fit the current content.
  *
  * @param command - The command

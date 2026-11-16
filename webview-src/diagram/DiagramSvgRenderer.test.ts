@@ -1,5 +1,5 @@
 /**
- * Tests for DiagramSvgRenderer class
+ * Tests for `DiagramSvgRenderer` class
  */
 
 import { DiagramSvgRenderer } from "./DiagramSvgRenderer";

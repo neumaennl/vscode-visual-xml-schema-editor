@@ -22,7 +22,7 @@ import { isAnyPrefixReferencedInSchema } from "../commandExecutors/schemaPrefixC
 /**
  * Returns true if `value` looks like a valid absolute URI.
  * Accepts common schemes (http, https, urn, ftp, file) as well as any other
- * scheme following the pattern "<letters>:..." to stay flexible.
+ * scheme following the pattern `"<letters>:..."` to stay flexible.
  *
  * @param value - The value to check
  * @returns True if the value is an absolute URI
@@ -33,7 +33,7 @@ function isAbsoluteUri(value: string): boolean {
 
 /**
  * Returns true if `value` looks like a valid relative or absolute file path /
- * URI suitable for use as a schemaLocation.
+ * URI suitable for use as a `schemaLocation`.
  * Rejects values that contain whitespace or are clearly malformed.
  *
  * @param value - The value to check
@@ -86,7 +86,7 @@ function validateModuleId(
 
 /**
  * Returns true if the given namespace URI has at least one prefix registered
- * in _namespacePrefixes AND that prefix is referenced anywhere in the schema.
+ * in `_namespacePrefixes` AND that prefix is referenced anywhere in the schema.
  *
  * Collects all prefixes bound to the namespace and delegates to
  * {@link isAnyPrefixReferencedInSchema} for a single full recursive traversal
@@ -162,7 +162,7 @@ function validateSchemaLocation(schemaLocation: string): ValidationResult {
 // ===== Import Command Validation =====
 
 /**
- * Validates an addImport command: the namespace and schema location must be valid, the schema must not
+ * Validates an `addImport` command: the namespace and schema location must be valid, the schema must not
  * import the namespace yet, and a given prefix must be valid and not bound to another namespace.
  *
  * @param command - The command
@@ -207,7 +207,7 @@ export function validateAddImport(
 }
 
 /**
- * Validates a removeImport command: the import must exist, and no QName in the schema may still use a
+ * Validates a `removeImport` command: the import must exist, and no QName in the schema may still use a
  * prefix of its namespace.
  *
  * @param command - The command
@@ -238,7 +238,7 @@ export function validateRemoveImport(
 }
 
 /**
- * Validates a modifyImport command: the import must exist, a new namespace must be valid and not
+ * Validates a `modifyImport` command: the import must exist, a new namespace must be valid and not
  * imported yet, and a new schema location must be valid. `oldPrefix` needs `prefix` and must be bound
  * to the namespace of the import; the new prefix must be valid and not bound to another namespace.
  *
@@ -325,7 +325,7 @@ export function validateModifyImport(
 // ===== Include Command Validation =====
 
 /**
- * Validates an addInclude command: the schema location must be valid and not included yet.
+ * Validates an `addInclude` command: the schema location must be valid and not included yet.
  *
  * @param command - The command
  * @param schemaObj - The schema
@@ -350,7 +350,7 @@ export function validateAddInclude(
 }
 
 /**
- * Validates a removeInclude command: the include must exist.
+ * Validates a `removeInclude` command: the include must exist.
  *
  * @param command - The command
  * @param schemaObj - The schema
@@ -370,7 +370,7 @@ export function validateRemoveInclude(
 }
 
 /**
- * Validates a modifyInclude command: the include must exist, and the new schema location must be valid
+ * Validates a `modifyInclude` command: the include must exist, and the new schema location must be valid
  * and not used by another include.
  *
  * @param command - The command
@@ -412,7 +412,7 @@ export function validateModifyInclude(
 }
 
 /**
- * Validates a modifySchemaNamespaces command: the target namespace and every declared namespace must be
+ * Validates a `modifySchemaNamespaces` command: the target namespace and every declared namespace must be
  * absolute URIs, every prefix must be valid, and a target namespace must be one of the declared
  * namespaces.
  *

@@ -1,5 +1,5 @@
 /**
- * Unit tests for findCommandHandler.
+ * Unit tests for `findCommandHandler`.
  */
 
 import type { CommandHandlers } from "./commandHandlers.js";

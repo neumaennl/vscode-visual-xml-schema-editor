@@ -1,6 +1,6 @@
 /**
  * Single source of truth for facet icon/color styling.
- * Shared by the palette (PaletteItems.ts) and the properties panel's Facets tab
+ * Shared by the palette (`PaletteItems.ts`) and the properties panel's Facets tab
  * so a facet always looks the same in both places.
  */
 
@@ -8,7 +8,7 @@ import { PaletteSchemaConstruct } from "./PaletteSchemaConstruct";
 
 /** Codicon name/color pair used to render a facet's icon. */
 export interface FacetIconStyle {
-  /** VS Code codicon name (without the "codicon-" prefix). */
+  /** VS Code codicon name (without the `"codicon-"` prefix). */
   icon: string;
   /** Accent color used by the icon. */
   color: string;

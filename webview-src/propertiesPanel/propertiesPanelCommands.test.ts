@@ -1,5 +1,5 @@
 /**
- * Unit tests for the type helpers of propertiesPanelCommands.
+ * Unit tests for the type helpers of `propertiesPanelCommands`.
  */
 
 import { onTypeChange, resolveComplexTypeId, resolveSimpleTypeId } from "./propertiesPanelCommands";

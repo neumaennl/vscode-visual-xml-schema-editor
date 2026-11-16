@@ -25,13 +25,13 @@ import { identifyChild } from "../commandUtils.js";
 /** An element of any kind: top-level in the schema, local in a sequence or choice, or local in an all. */
 type AnyElement = topLevelElement | localElement | narrowMaxMin;
 
-/** The changes of a modifyElement command. */
+/** The changes of a `modifyElement` command. */
 type ElementChanges = Omit<ModifyElementPayload, "elementId">;
 
 /**
- * Executes an addElement command.
+ * Executes an `addElement` command.
  *
- * @param command - The addElement command to execute
+ * @param command - The `addElement` command to execute
  * @param schemaObj - The schema object to modify
  * @throws An {@link Error} if parent node not found or element cannot be added
  */
@@ -45,9 +45,9 @@ export function executeAddElement(
 }
 
 /**
- * Executes a removeElement command.
+ * Executes a `removeElement` command.
  *
- * @param command - The removeElement command to execute
+ * @param command - The `removeElement` command to execute
  * @param schemaObj - The schema object to modify
  * @throws An {@link Error} if parent node or element not found
  */
@@ -62,9 +62,9 @@ export function executeRemoveElement(
 }
 
 /**
- * Executes a modifyElement command.
+ * Executes a `modifyElement` command.
  *
- * @param command - The modifyElement command to execute
+ * @param command - The `modifyElement` command to execute
  * @param schemaObj - The schema object to modify
  * @throws An {@link Error} if parent node or element not found
  */
@@ -114,7 +114,7 @@ function elementsOf(parent: unknown, parentType: string): { element?: AnyElement
  * Creates a new element: top-level in the schema, `narrowMaxMin` in an all, whose occurrences are
  * strings, and a local element otherwise. A reference only gets its ref and occurrences.
  *
- * @param payload - The payload of the addElement command
+ * @param payload - The payload of the `addElement` command
  * @param parentType - Type of the parent container
  * @returns New element instance
  */
@@ -178,7 +178,7 @@ function setOccurrences(
  * When `ref` is set, clears `name` and `type_`. When `elementName` is set, clears `ref`.
  *
  * @param element - Element to update
- * @param changes - The changes of the modifyElement command; `abstract` only applies to top-level
+ * @param changes - The changes of the `modifyElement` command; `abstract` only applies to top-level
  * elements and the occurrences only to local ones, and an empty `default_` or `fixed` clears it
  * @param parentType - Type of the parent container
  */

@@ -1,5 +1,5 @@
 /**
- * Unit tests for SchemaNavigator module.
+ * Unit tests for `SchemaNavigator` module.
  * Tests the node location and navigation logic.
  */
 

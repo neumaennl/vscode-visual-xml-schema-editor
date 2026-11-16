@@ -1,6 +1,6 @@
 /**
- * Unit tests for CommandExecutor class.
- * Tests the execute() method delegation logic and error handling.
+ * Unit tests for `CommandExecutor` class.
+ * Tests the `execute()` method delegation logic and error handling.
  */
 
 import { CommandExecutor } from "./commandExecutor.js";

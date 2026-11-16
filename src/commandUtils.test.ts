@@ -1,5 +1,5 @@
 /**
- * Unit tests for commandUtils: the parsing of annotation and documentation IDs, and the lookups of
+ * Unit tests for `commandUtils`: the parsing of annotation and documentation IDs, and the lookups of
  * children and attribute group references.
  */
 

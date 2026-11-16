@@ -1,5 +1,5 @@
 /**
- * Unit tests for DropCommandFactory.
+ * Unit tests for `DropCommandFactory`.
  * Verifies that drag-and-drop actions produce the correct schema commands.
  */
 

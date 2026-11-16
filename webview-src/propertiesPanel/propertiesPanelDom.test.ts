@@ -1,5 +1,5 @@
 /**
- * Unit tests for the input helpers of propertiesPanelDom.
+ * Unit tests for the input helpers of `propertiesPanelDom`.
  */
 
 import { createCommitInput, createInputColumn } from "./propertiesPanelDom";

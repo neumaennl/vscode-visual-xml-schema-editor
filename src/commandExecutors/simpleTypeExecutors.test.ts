@@ -33,7 +33,7 @@ const AGE_TYPE_WITH_MIN = `<xs:simpleType name="AgeType"><xs:restriction base="x
 const AGE_ELEMENT = `<xs:element name="age"/>`;
 
 /**
- * Executes a addSimpleType command with the given payload.
+ * Executes a `addSimpleType` command with the given payload.
  *
  * @param schemaObj - The schema, which is changed
  * @param payload - The payload of the command
@@ -43,7 +43,7 @@ function addSimpleType(schemaObj: schema, payload: AddSimpleTypeCommand["payload
 }
 
 /**
- * Executes a removeSimpleType command with the given payload.
+ * Executes a `removeSimpleType` command with the given payload.
  *
  * @param schemaObj - The schema, which is changed
  * @param payload - The payload of the command
@@ -53,7 +53,7 @@ function removeSimpleType(schemaObj: schema, payload: RemoveSimpleTypeCommand["p
 }
 
 /**
- * Executes a modifySimpleType command with the given payload.
+ * Executes a `modifySimpleType` command with the given payload.
  *
  * @param schemaObj - The schema, which is changed
  * @param payload - The payload of the command

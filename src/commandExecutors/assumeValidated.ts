@@ -1,7 +1,7 @@
 /**
  * Assumptions that the executors make about a command that the validator has accepted.
  * The validator checks everything an executor relies on, so the executors do not check it again
- * (see docs/architecture/003-validators-check-executors-assume.md). Where the types need such an
+ * (see `docs/architecture/003-validators-check-executors-assume.md`). Where the types need such an
  * assumption, these helpers state it: if it does not hold, the validator and the executor
  * disagree, and the command fails with an error that says so instead of doing nothing.
  */

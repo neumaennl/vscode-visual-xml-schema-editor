@@ -177,7 +177,7 @@ function validateSimpleTypeBody(
 }
 
 /**
- * Validates an addSimpleType command: an anonymous type needs an element or attribute as parent, a
+ * Validates an `addSimpleType` command: an anonymous type needs an element or attribute as parent, a
  * top-level type a new valid name, and the body must be valid.
  *
  * @param command - The command
@@ -205,7 +205,7 @@ export function validateAddSimpleType(
 }
 
 /**
- * Validates a removeSimpleType command: the type must exist.
+ * Validates a `removeSimpleType` command: the type must exist.
  *
  * @param command - The command
  * @param schemaObj - The schema
@@ -221,7 +221,7 @@ export function validateRemoveSimpleType(
 }
 
 /**
- * Validates a modifySimpleType command: the type must exist, a new name must be valid and unused, and a
+ * Validates a `modifySimpleType` command: the type must exist, a new name must be valid and unused, and a
  * new body must be valid.
  *
  * @param command - The command

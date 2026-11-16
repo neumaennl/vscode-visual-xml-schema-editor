@@ -6,7 +6,7 @@ import { verifyVsix } from "./verify-vsix.ts";
 const TEST_RESOURCES = join(import.meta.dirname, "__tests__", "test-resources");
 
 /**
- * Lists the temporary folders that verifyVsix() creates.
+ * Lists the temporary folders that `verifyVsix()` creates.
  *
  * @returns The names of the folders
  */

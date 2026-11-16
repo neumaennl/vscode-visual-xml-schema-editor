@@ -1,9 +1,9 @@
 /**
- * Unit tests for rewritePrefixInSchema.
+ * Unit tests for `rewritePrefixInSchema`.
  *
- * These tests call rewritePrefixInSchema directly to verify that each QName-valued
+ * These tests call `rewritePrefixInSchema` directly to verify that each QName-valued
  * field is rewritten in isolation. Integration coverage (rewriting triggered via
- * executeModifyImport) lives in schemaExecutors.test.ts.
+ * `executeModifyImport`) lives in `schemaExecutors.test.ts`.
  */
 
 import { marshal } from "@neumaennl/xmlbind-ts";

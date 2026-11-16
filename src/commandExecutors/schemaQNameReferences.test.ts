@@ -1,5 +1,5 @@
 /**
- * Unit tests for forEachQNameReference(), the walk over every QName of a schema.
+ * Unit tests for `forEachQNameReference()`, the walk over every QName of a schema.
  */
 
 import { readdirSync, readFileSync } from "node:fs";

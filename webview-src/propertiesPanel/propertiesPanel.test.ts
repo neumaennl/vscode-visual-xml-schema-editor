@@ -1,5 +1,5 @@
 /**
- * Unit tests for the PropertiesPanel class: the header, the General tab and the general behavior of the panel.
+ * Unit tests for the `PropertiesPanel` class: the header, the General tab and the general behavior of the panel.
  */
 
 import { DiagramItem } from "../diagram/DiagramItem";

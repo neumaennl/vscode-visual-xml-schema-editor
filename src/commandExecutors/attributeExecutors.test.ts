@@ -57,7 +57,7 @@ function personTypeWith(attributes: string): string {
 }
 
 /**
- * Executes an addAttribute command.
+ * Executes an `addAttribute` command.
  *
  * @param schemaObj - The schema to change
  * @param payload - The payload of the command
@@ -67,7 +67,7 @@ function addAttribute(schemaObj: schema, payload: AddAttributePayload): void {
 }
 
 /**
- * Executes a removeAttribute command.
+ * Executes a `removeAttribute` command.
  *
  * @param schemaObj - The schema to change
  * @param attributeId - The ID of the attribute to remove
@@ -77,7 +77,7 @@ function removeAttribute(schemaObj: schema, attributeId: string): void {
 }
 
 /**
- * Executes a modifyAttribute command.
+ * Executes a `modifyAttribute` command.
  *
  * @param schemaObj - The schema to change
  * @param payload - The payload of the command

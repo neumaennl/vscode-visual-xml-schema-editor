@@ -1,5 +1,5 @@
 /**
- * Unit tests for SchemaModelManager.
+ * Unit tests for `SchemaModelManager`.
  * Tests schema loading, marshalling/unmarshalling and cloning.
  */
 

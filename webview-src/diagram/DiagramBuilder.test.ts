@@ -1,5 +1,5 @@
 /**
- * Unit tests for DiagramBuilder class.
+ * Unit tests for `DiagramBuilder` class.
  */
 
 import { DiagramBuilder } from "../diagram/DiagramBuilder";

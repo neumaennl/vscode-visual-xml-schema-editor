@@ -2,7 +2,7 @@
  * Integration tests: the validators and the executors agree.
  *
  * The validator checks everything an executor relies on, and the executor does not check it again
- * (see docs/architecture/003-validators-check-executors-assume.md). This test checks that they agree
+ * (see `docs/architecture/003-validators-check-executors-assume.md`). This test checks that they agree
  * for the commands that the webview can send: it builds the diagram of every test schema, which gives
  * the IDs of all nodes, creates commands for them, and applies every command that the validator
  * accepts. The executor must neither throw nor leave the schema unchanged.

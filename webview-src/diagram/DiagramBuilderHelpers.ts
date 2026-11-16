@@ -1,5 +1,5 @@
 /**
- * Helper utility functions for DiagramBuilder.
+ * Helper utility functions for `DiagramBuilder`.
  * Contains common operations like ID generation and extraction of schema metadata.
  */
 
@@ -15,7 +15,7 @@ import type { annotationType } from "../../shared/generated/annotationType";
 import { SCHEMA_ROOT_ID } from "../../shared/idStrategy";
 
 /**
- * Builds the schema ID for an xs:annotation node owned by the given schema component.
+ * Builds the schema ID for an `xs:annotation` node owned by the given schema component.
  *
  * @param ownerId - Schema ID of the annotated component, or the schema-root ID for schema annotations
  * @param annotationIndex - Zero-based annotation index
@@ -26,9 +26,9 @@ export function buildAnnotationId(ownerId: string, annotationIndex: number): str
 }
 
 /**
- * Builds the schema ID for an xs:documentation node within an annotation.
+ * Builds the schema ID for an `xs:documentation` node within an annotation.
  *
- * @param annotationId - Schema ID of the owning xs:annotation node
+ * @param annotationId - Schema ID of the owning `xs:annotation` node
  * @param documentationIndex - Zero-based documentation index
  * @returns The schema ID of the documentation node
  */
@@ -49,7 +49,7 @@ function annotationsOf(annotation: annotationType | annotationType[] | undefined
 }
 
 /**
- * Extracts xs:annotation / xs:documentation structure from an XSD annotation field.
+ * Extracts `xs:annotation` / `xs:documentation` structure from an XSD annotation field.
  * The returned entries keep their schema IDs so the properties panel can edit or remove
  * the exact annotation/documentation nodes later without flattening the structure.
  *
@@ -99,11 +99,11 @@ export function extractDocumentation(
 }
 
 /**
- * Extracts occurrence constraints (minOccurs/maxOccurs) from a schema element.
+ * Extracts occurrence constraints (`minOccurs`/`maxOccurs`) from a schema element.
  * Updates the diagram item with parsed occurrence values.
  * 
  * @param item - Diagram item to update with occurrence constraints
- * @param source - Source object with minOccurs/maxOccurs properties
+ * @param source - Source object with `minOccurs`/`maxOccurs` properties
  */
 export function extractOccurrenceConstraints(
   item: DiagramItem,
@@ -161,7 +161,7 @@ export function parseDerivationBaseType(typeText: string): string | undefined {
 
 /**
  * Converts the facets of a diagram item to the form that the simple type commands take. The diagram
- * reads the whiteSpace facet as a string; a value that the schema does not allow is left out.
+ * reads the `whiteSpace` facet as a string; a value that the schema does not allow is left out.
  *
  * @param restrictions - The facets of the diagram item
  * @returns The facets, or undefined if the item has none

@@ -9,7 +9,7 @@ import { annotationType, documentationType } from "../../shared/types.js";
  * Creates an annotation containing a single documentation entry.
  *
  * @param text - The documentation text
- * @returns A new annotationType instance with the text
+ * @returns A new `annotationType` instance with the text
  */
 export function createAnnotation(text: string): annotationType {
   const annotation = new annotationType();

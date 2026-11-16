@@ -23,11 +23,11 @@ import { appendTo, removeFrom } from "./nodeProperties.js";
 import { identifyChild } from "../commandUtils.js";
 
 /**
- * Executes an addAttribute command.
- * Adds a new attribute to a schema, topLevelComplexType, or localComplexType. In a complex type with
+ * Executes an `addAttribute` command.
+ * Adds a new attribute to a schema, `topLevelComplexType`, or `localComplexType`. In a complex type with
  * complex or simple content, the attribute is added to its extension or restriction.
  *
- * @param command - The addAttribute command to execute
+ * @param command - The `addAttribute` command to execute
  * @param schemaObj - The schema object to modify
  * @throws An {@link Error} if parent node not found or duplicate attribute name exists
  */
@@ -41,10 +41,10 @@ export function executeAddAttribute(
 }
 
 /**
- * Executes a removeAttribute command.
+ * Executes a `removeAttribute` command.
  * Removes an attribute by its ID from its parent container.
  *
- * @param command - The removeAttribute command to execute
+ * @param command - The `removeAttribute` command to execute
  * @param schemaObj - The schema object to modify
  * @throws An {@link Error} if parent or attribute not found
  */
@@ -59,10 +59,10 @@ export function executeRemoveAttribute(
 }
 
 /**
- * Executes a modifyAttribute command.
+ * Executes a `modifyAttribute` command.
  * Updates properties of an existing attribute identified by its ID.
  *
- * @param command - The modifyAttribute command to execute
+ * @param command - The `modifyAttribute` command to execute
  * @param schemaObj - The schema object to modify
  * @throws An {@link Error} if parent or attribute not found
  */
@@ -100,7 +100,7 @@ function attributesOf(parent: unknown, parentType: string): AttributeContainer {
  * Creates a new attribute: a named top-level attribute in the schema, or a local attribute, named or
  * a reference. Only local attributes have `use`, set from `required`.
  *
- * @param fields - The fields of the addAttribute command; the validator allows no default or fixed
+ * @param fields - The fields of the `addAttribute` command; the validator allows no default or fixed
  * value on a reference
  * @param isTopLevel - Whether the attribute is added to the schema
  * @returns New attribute instance
@@ -143,7 +143,7 @@ function createNewAttribute(fields: AttributeFields, isTopLevel: boolean): topLe
  * The `use` property (required/optional) is only applied when the attribute supports it.
  *
  * @param attr - The attribute to update
- * @param changes - The changes of the modifyAttribute command
+ * @param changes - The changes of the `modifyAttribute` command
  */
 function updateAttributeProperties(attr: topLevelAttribute | attribute, changes: AttributeFields): void {
   const { attributeName, attributeType, ref, required, defaultValue, fixedValue, documentation } = changes;

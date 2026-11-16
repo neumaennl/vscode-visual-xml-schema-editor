@@ -2,12 +2,12 @@
  * Validators for annotation commands (Annotation and Documentation).
  *
  * ID conventions supported:
- * - For non-schema annotatable nodes: nodeId (e.g. "/element:person")
+ * - For non-schema annotatable nodes: `nodeId` (e.g. `"/element:person"`)
  * - For schema-root annotations (multiple allowed):
- *   annotationId = "/schema/annotation[N]"
- *   documentationId = "/schema/annotation[N]/documentation[M]" or "/schema/documentation[N]"
+ *   `annotationId` = `"/schema/annotation[N]"`
+ *   `documentationId` = `"/schema/annotation[N]/documentation[M]"` or `"/schema/documentation[N]"`
  *
- * Note on references: xs:annotation, xs:documentation, and xs:appinfo do NOT
+ * Note on references: `xs:annotation`, `xs:documentation`, and `xs:appinfo` do NOT
  * support a `ref` attribute in the XSD specification. They are always inline
  * elements, so no reference validation is needed or implemented.
  */
@@ -87,7 +87,7 @@ function locateAnnotation(schemaObj: schema, nodeId: string): ValidationFailure 
 // ===== Annotation Command Validation =====
 
 /**
- * Validates the target of addAnnotation or addDocumentation: the schema root, which can hold several
+ * Validates the target of `addAnnotation` or `addDocumentation`: the schema root, which can hold several
  * annotations and gets one for new documentation if needed, or a component that supports annotations.
  *
  * @param targetId - The ID of the target
@@ -111,7 +111,7 @@ function validateAddTarget(
 }
 
 /**
- * Validates an addAnnotation command: the target is the schema root, which can hold several
+ * Validates an `addAnnotation` command: the target is the schema root, which can hold several
  * annotations, or an existing component that supports annotations and has none yet.
  *
  * @param command - The command
@@ -152,8 +152,8 @@ function validateSchemaAnnotationIndex(annotationIndex: number, schemaObj: schem
 
 /**
  * Validates the ID of an existing annotation: `/schema/annotation[N]` for an annotation of the schema
- * root, or the ID of an annotated component. Used by validateRemoveAnnotation and
- * validateModifyAnnotation.
+ * root, or the ID of an annotated component. Used by `validateRemoveAnnotation` and
+ * `validateModifyAnnotation`.
  *
  * @param annotationId - The annotation ID
  * @param schemaObj - The schema
@@ -182,7 +182,7 @@ function validateAnnotationId(annotationId: string, schemaObj: schema, action: "
 }
 
 /**
- * Validates a removeAnnotation command: the annotation must exist (see {@link validateAnnotationId}).
+ * Validates a `removeAnnotation` command: the annotation must exist (see {@link validateAnnotationId}).
  *
  * @param command - The command
  * @param schemaObj - The schema
@@ -196,7 +196,7 @@ export function validateRemoveAnnotation(
 }
 
 /**
- * Validates a modifyAnnotation command: the annotation must exist (see {@link validateAnnotationId}).
+ * Validates a `modifyAnnotation` command: the annotation must exist (see {@link validateAnnotationId}).
  *
  * @param command - The command
  * @param schemaObj - The schema
@@ -212,7 +212,7 @@ export function validateModifyAnnotation(
 // ===== Documentation Command Validation =====
 
 /**
- * Validates an addDocumentation command: the target is an existing annotation of the schema root, the
+ * Validates an `addDocumentation` command: the target is an existing annotation of the schema root, the
  * schema root, or an existing component that supports annotations.
  *
  * @param command - The command
@@ -234,7 +234,7 @@ export function validateAddDocumentation(
 /**
  * Validates a documentation ID: `/schema/annotation[N]/documentation[M]`, the shorthand
  * `/schema/documentation[M]` for the first schema annotation, or `<component ID>/documentation[M]`.
- * Used by both validateRemoveDocumentation and validateModifyDocumentation.
+ * Used by both `validateRemoveDocumentation` and `validateModifyDocumentation`.
  *
  * @param documentationId - The documentation ID
  * @param schemaObj - The schema
@@ -304,7 +304,7 @@ function validateDocumentationIndex(documentationIndex: number, count: number, d
 }
 
 /**
- * Validates a removeDocumentation command: the documentation must exist (see
+ * Validates a `removeDocumentation` command: the documentation must exist (see
  * {@link validateDocumentationId}).
  *
  * @param command - The command
@@ -319,7 +319,7 @@ export function validateRemoveDocumentation(
 }
 
 /**
- * Validates a modifyDocumentation command: the documentation must exist (see
+ * Validates a `modifyDocumentation` command: the documentation must exist (see
  * {@link validateDocumentationId}).
  *
  * @param command - The command

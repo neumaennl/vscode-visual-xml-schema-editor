@@ -1,5 +1,5 @@
 /**
- * DiagramItem represents a single element/group/type in the diagram
+ * `DiagramItem` represents a single element/group/type in the diagram
  * Ported from XSD Diagram project
  */
 

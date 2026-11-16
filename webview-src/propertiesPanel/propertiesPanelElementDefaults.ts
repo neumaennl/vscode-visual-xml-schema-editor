@@ -1,5 +1,5 @@
 /**
- * Default/fixed section rendering helpers for element nodes in the PropertiesPanel.
+ * Default/fixed section rendering helpers for element nodes in the `PropertiesPanel`.
  */
 
 import type { SchemaCommand } from "../../shared/types";

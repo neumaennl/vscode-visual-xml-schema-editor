@@ -1,5 +1,5 @@
 /**
- * Tests for DiagramLayout class
+ * Tests for `DiagramLayout` class
  */
 
 import { DiagramLayout } from "./DiagramLayout";

@@ -1,6 +1,6 @@
 /**
- * DiagramSvgRenderer renders diagram items to SVG
- * Ported from XSD Diagram project (DiagramSvgRenderer.cs)
+ * `DiagramSvgRenderer` renders diagram items to SVG
+ * Ported from XSD Diagram project (`DiagramSvgRenderer.cs`)
  */
 
 import type { Diagram } from "./Diagram";
@@ -38,7 +38,7 @@ export class DiagramSvgRenderer {
   private contentGroup: SVGGElement;
 
   /**
-   * Create a new DiagramSvgRenderer
+   * Create a new `DiagramSvgRenderer`
    * @param svg - The SVG element to render into
    * @param containerGroup - Optional existing container group, or create a new one
    */

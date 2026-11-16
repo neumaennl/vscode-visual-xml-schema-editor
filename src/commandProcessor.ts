@@ -1,5 +1,5 @@
 /**
- * CommandProcessor: Central dispatcher for all editing commands.
+ * `CommandProcessor`: Central dispatcher for all editing commands.
  * Implements validation, execution, and rollback logic for schema transformations.
  */
 
@@ -62,7 +62,7 @@ export type CommandExecutionResult =
   | CommandExecutionFailure;
 
 /**
- * CommandProcessor manages the execution of schema editing commands.
+ * `CommandProcessor` manages the execution of schema editing commands.
  * Ensures validation, transactionality, and rollback support.
  * Prevents concurrent command executions to maintain state consistency.
  */
@@ -73,7 +73,7 @@ export class CommandProcessor {
   private isExecuting = false;
 
   /**
-   * Creates a new CommandProcessor.
+   * Creates a new `CommandProcessor`.
    *
    * @param validator - Command validator instance (optional, creates default if not provided)
    * @param executor - Command executor instance (optional, creates default if not provided)

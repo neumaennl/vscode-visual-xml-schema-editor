@@ -2,14 +2,14 @@
  * Unit tests for annotation and documentation executors.
  *
  * ID Conventions used throughout these tests:
- * - annotationId / targetId for non-schema nodes: XPath-like path
- *   (e.g. "/element:person").
- * - annotationId for schema-root annotations: "/schema/annotation[N]"
- * - documentationId for non-schema nodes: `{elementPath}/documentation[N]`
- * - documentationId for schema-root annotations:
- *     "/schema/annotation[N]/documentation[M]" or "/schema/documentation[N]"
+ * - `annotationId` / `targetId` for non-schema nodes: XPath-like path
+ *   (e.g. `"/element:person"`).
+ * - `annotationId` for schema-root annotations: `"/schema/annotation[N]"`
+ * - `documentationId` for non-schema nodes: `{elementPath}/documentation[N]`
+ * - `documentationId` for schema-root annotations:
+ *     `"/schema/annotation[N]/documentation[M]"` or `"/schema/documentation[N]"`
  *
- * Note on references: xs:annotation, xs:documentation, and xs:appinfo have no
+ * Note on references: `xs:annotation`, `xs:documentation`, and `xs:appinfo` have no
  * `ref` attribute in the XSD specification. No reference support is implemented
  * or tested here.
  */
@@ -45,7 +45,7 @@ function valuesOf(entries: Array<{ value?: string }> | undefined): Array<string 
 }
 
 /**
- * Executes an addAnnotation command.
+ * Executes an `addAnnotation` command.
  *
  * @param schemaObj - The schema to change
  * @param payload - The payload of the command
@@ -55,7 +55,7 @@ function addAnnotation(schemaObj: schema, payload: AddAnnotationCommand["payload
 }
 
 /**
- * Executes an addDocumentation command.
+ * Executes an `addDocumentation` command.
  *
  * @param schemaObj - The schema to change
  * @param payload - The payload of the command
@@ -65,7 +65,7 @@ function addDocumentation(schemaObj: schema, payload: AddDocumentationCommand["p
 }
 
 /**
- * Executes a modifyAnnotation command.
+ * Executes a `modifyAnnotation` command.
  *
  * @param schemaObj - The schema to change
  * @param payload - The payload of the command
@@ -75,7 +75,7 @@ function modifyAnnotation(schemaObj: schema, payload: ModifyAnnotationCommand["p
 }
 
 /**
- * Executes a modifyDocumentation command.
+ * Executes a `modifyDocumentation` command.
  *
  * @param schemaObj - The schema to change
  * @param payload - The payload of the command
@@ -85,7 +85,7 @@ function modifyDocumentation(schemaObj: schema, payload: ModifyDocumentationComm
 }
 
 /**
- * Executes a removeAnnotation command.
+ * Executes a `removeAnnotation` command.
  *
  * @param schemaObj - The schema to change
  * @param payload - The payload of the command
@@ -95,7 +95,7 @@ function removeAnnotation(schemaObj: schema, payload: RemoveAnnotationCommand["p
 }
 
 /**
- * Executes a removeDocumentation command.
+ * Executes a `removeDocumentation` command.
  *
  * @param schemaObj - The schema to change
  * @param payload - The payload of the command

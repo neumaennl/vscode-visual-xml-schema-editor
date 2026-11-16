@@ -6,8 +6,8 @@
 import type { BaseCommand } from "./base.js";
 
 /**
- * The fields of an attribute that addAttribute sets and modifyAttribute changes. An attribute is either
- * named, with `attributeName` and `attributeType`, or a reference with `ref`. modifyAttribute only
+ * The fields of an attribute that `addAttribute` sets and `modifyAttribute` changes. An attribute is either
+ * named, with `attributeName` and `attributeType`, or a reference with `ref`. `modifyAttribute` only
  * changes the fields that the payload contains.
  */
 export interface AttributeFields {
@@ -16,7 +16,7 @@ export interface AttributeFields {
   /** Type of the attribute. Required for a new attribute that is not a reference; when modified, clears ref. */
   attributeType?: string;
   /**
-   * Reference to an existing top-level attribute. Mutually exclusive with attributeName/attributeType;
+   * Reference to an existing top-level attribute. Mutually exclusive with `attributeName`/`attributeType`;
    * when modified, clears name and type.
    */
   ref?: string;

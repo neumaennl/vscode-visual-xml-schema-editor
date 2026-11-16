@@ -24,7 +24,7 @@ import { emptySchema, schemaWith, schemaWithAttrGroups, DERIVATIONS, derivedComp
 import { readTestSchema } from "../__tests__/resourceTestHelpers.js";
 
 /**
- * Executes an addAttributeGroup command.
+ * Executes an `addAttributeGroup` command.
  *
  * @param schemaObj - The schema to change
  * @param payload - The payload of the command
@@ -34,7 +34,7 @@ function addAttributeGroup(schemaObj: schema, payload: AddAttributeGroupCommand[
 }
 
 /**
- * Executes a modifyAttributeGroup command.
+ * Executes a `modifyAttributeGroup` command.
  *
  * @param schemaObj - The schema to change
  * @param payload - The payload of the command
@@ -44,7 +44,7 @@ function modifyAttributeGroup(schemaObj: schema, payload: ModifyAttributeGroupCo
 }
 
 /**
- * Executes a removeAttributeGroup command.
+ * Executes a `removeAttributeGroup` command.
  *
  * @param schemaObj - The schema to change
  * @param payload - The payload of the command

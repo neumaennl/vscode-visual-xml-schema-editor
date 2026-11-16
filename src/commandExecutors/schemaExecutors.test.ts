@@ -1,13 +1,13 @@
 /**
  * Unit tests for schema import executors.
- * Tests add, remove, and modify operations for xs:import declarations.
+ * Tests add, remove, and modify operations for `xs:import` declarations.
  *
  * Import ID Convention:
- * - Imports are addressed by zero-based position: /import[0], /import[1], …
+ * - Imports are addressed by zero-based position: `/import[0]`, `/import[1]`, …
  *
  * Prefix Convention:
- * - executeAddImport always registers a namespace prefix in _namespacePrefixes.
- * - If the caller omits `prefix`, a unique prefix is auto-generated (e.g. "ns0").
+ * - `executeAddImport` always registers a namespace prefix in `_namespacePrefixes`.
+ * - If the caller omits `prefix`, a unique prefix is auto-generated (e.g. `"ns0"`).
  */
 
 import { unmarshal, marshal } from "@neumaennl/xmlbind-ts";
@@ -45,7 +45,7 @@ import {
 import { emptySchema, schemaWith, schemaWithIncludes } from "../../shared/__tests__/schemaTestHelpers.js";
 
 /**
- * Executes an addImport command.
+ * Executes an `addImport` command.
  *
  * @param schemaObj - The schema to change
  * @param payload - The payload of the command
@@ -55,7 +55,7 @@ function addImport(schemaObj: schema, payload: AddImportCommand["payload"]): voi
 }
 
 /**
- * Executes an addInclude command.
+ * Executes an `addInclude` command.
  *
  * @param schemaObj - The schema to change
  * @param payload - The payload of the command
@@ -65,7 +65,7 @@ function addInclude(schemaObj: schema, payload: AddIncludeCommand["payload"]): v
 }
 
 /**
- * Executes a modifyImport command.
+ * Executes a `modifyImport` command.
  *
  * @param schemaObj - The schema to change
  * @param payload - The payload of the command
@@ -75,7 +75,7 @@ function modifyImport(schemaObj: schema, payload: ModifyImportCommand["payload"]
 }
 
 /**
- * Executes a modifyInclude command.
+ * Executes a `modifyInclude` command.
  *
  * @param schemaObj - The schema to change
  * @param payload - The payload of the command
@@ -85,7 +85,7 @@ function modifyInclude(schemaObj: schema, payload: ModifyIncludeCommand["payload
 }
 
 /**
- * Executes a modifySchemaNamespaces command.
+ * Executes a `modifySchemaNamespaces` command.
  *
  * @param schemaObj - The schema to change
  * @param payload - The payload of the command
@@ -95,7 +95,7 @@ function modifySchemaNamespaces(schemaObj: schema, payload: ModifySchemaNamespac
 }
 
 /**
- * Executes a removeImport command.
+ * Executes a `removeImport` command.
  *
  * @param schemaObj - The schema to change
  * @param payload - The payload of the command
@@ -105,7 +105,7 @@ function removeImport(schemaObj: schema, payload: RemoveImportCommand["payload"]
 }
 
 /**
- * Executes a removeInclude command.
+ * Executes a `removeInclude` command.
  *
  * @param schemaObj - The schema to change
  * @param payload - The payload of the command

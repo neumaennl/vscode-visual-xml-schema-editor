@@ -80,11 +80,11 @@ function isComplexTypeParent(parentType: string): boolean {
 }
 
 /**
- * Validates that the group reference that a groupRef ID identifies exists. The webview identifies a
+ * Validates that the group reference that a `groupRef` ID identifies exists. The webview identifies a
  * group reference by its ref and its position among the group references of its parent
- * (`…/groupRef:Name[N]`); used by both validateRemoveGroup and validateModifyGroup.
+ * (`…/groupRef:Name[N]`); used by both `validateRemoveGroup` and `validateModifyGroup`.
  *
- * @param groupId - The groupRef ID
+ * @param groupId - The `groupRef` ID
  * @param schemaObj - The schema
  * @returns The validation result
  */
@@ -129,7 +129,7 @@ function complexTypeHasParticle(ct: ComplexTypeWithParticles): boolean {
 // ===== Group Command Validation =====
 
 /**
- * Validates an addGroup command. A group reference needs a parent that can hold it (a sequence,
+ * Validates an `addGroup` command. A group reference needs a parent that can hold it (a sequence,
  * choice, or complexType without a particle), refers to a named group and has consistent occurrences.
  * A group definition has a new valid name and a valid content model, and no parent or occurrences.
  *
@@ -235,8 +235,8 @@ type GroupTarget =
   | { target: "definition"; name: string | undefined };
 
 /**
- * Validates that the group that a group ID identifies exists. Used by both validateRemoveGroup and
- * validateModifyGroup.
+ * Validates that the group that a group ID identifies exists. Used by both `validateRemoveGroup` and
+ * `validateModifyGroup`.
  *
  * @param groupId - The ID of a compositor, a group reference or a group definition
  * @param schemaObj - The schema
@@ -267,7 +267,7 @@ function locateGroup(
 }
 
 /**
- * Validates a removeGroup command: the group definition, reference or compositor must exist, and a
+ * Validates a `removeGroup` command: the group definition, reference or compositor must exist, and a
  * definition must not be referenced any more.
  *
  * @param command - The command
@@ -284,7 +284,7 @@ export function validateRemoveGroup(
 }
 
 /**
- * Validates the changes of a modifyGroup command to a compositor.
+ * Validates the changes of a `modifyGroup` command to a compositor.
  *
  * @param payload - The payload of the command
  * @param compositorParentId - The ID of the parent of the compositor
@@ -313,7 +313,7 @@ function validateCompositorChange(payload: ModifyGroupCommand["payload"], compos
 }
 
 /**
- * Validates the changes of a modifyGroup command to a group reference. Documentation is allowed on
+ * Validates the changes of a `modifyGroup` command to a group reference. Documentation is allowed on
  * group references, through their annotation.
  *
  * @param payload - The payload of the command
@@ -337,7 +337,7 @@ function validateReferenceChange(payload: ModifyGroupCommand["payload"], schemaO
 }
 
 /**
- * Validates the changes of a modifyGroup command to a group definition.
+ * Validates the changes of a `modifyGroup` command to a group definition.
  *
  * @param payload - The payload of the command
  * @returns The validation result
@@ -362,7 +362,7 @@ function validateDefinitionChange(payload: ModifyGroupCommand["payload"]): Valid
 }
 
 /**
- * Validates a modifyGroup command: what the ID identifies must exist, and the changes must fit it, a
+ * Validates a `modifyGroup` command: what the ID identifies must exist, and the changes must fit it, a
  * compositor, a group reference or a group definition.
  *
  * @param command - The command

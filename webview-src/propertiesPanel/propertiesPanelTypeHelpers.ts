@@ -125,7 +125,7 @@ export function getTypeEditHint(
  * Returns the verb that describes a complex derivation in the type summary.
  *
  * @param derivationKind - The derivation kind of the complex type
- * @returns "restricts" for a restriction, "extends" for an extension
+ * @returns `"restricts"` for a restriction, `"extends"` for an extension
  */
 export function getDerivationRelation(derivationKind: DiagramComplexDerivationKind): string {
   return derivationKind === "restriction" ? "restricts" : "extends";

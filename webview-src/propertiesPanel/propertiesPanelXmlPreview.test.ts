@@ -2,7 +2,7 @@
  * Unit tests for the XSD fragment that the XML tab of the properties panel shows.
  *
  * The fragment shows the attributes, annotations and facets of the node and one level of its
- * children, and may differ from the exact schema XML (see docs/ux-concept.md). The tests build the
+ * children, and may differ from the exact schema XML (see `docs/ux-concept.md`). The tests build the
  * diagram from real schemas, so the nodes look like the ones the user selects.
  */
 

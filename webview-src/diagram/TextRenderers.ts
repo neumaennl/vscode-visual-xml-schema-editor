@@ -1,6 +1,6 @@
 /**
- * TextRenderers provides methods for rendering text elements in diagrams
- * Extracted from DiagramSvgRenderer to reduce file size
+ * `TextRenderers` provides methods for rendering text elements in diagrams
+ * Extracted from `DiagramSvgRenderer` to reduce file size
  */
 
 import type { DiagramItem } from "./DiagramItem";
@@ -134,7 +134,7 @@ export function renderDocumentation(
 }
 
 /**
- * Render occurrence constraint text (e.g., "1..∞")
+ * Render occurrence constraint text (e.g., `"1..∞"`)
  * @param item - The diagram item with occurrence constraints
  * @param group - The SVG group to append text to
  */

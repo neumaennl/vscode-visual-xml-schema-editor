@@ -15,10 +15,10 @@ export interface AddImportPayload {
   schemaLocation: string;
   /**
    * Namespace prefix to register on the schema root element
-   * (e.g. "ext" to declare `xmlns:ext="..."`).
+   * (e.g. `"ext"` to declare `xmlns:ext="..."`).
    * A prefix is required to reference types from the imported namespace
    * (e.g. `type="ext:TypeName"`).
-   * If omitted, a unique prefix is auto-generated (e.g. "ns0", "ns1", …).
+   * If omitted, a unique prefix is auto-generated (e.g. `"ns0"`, `"ns1"`, …).
    * Must be a valid XML NCName and unique within the schema when provided.
    */
   prefix?: string;
@@ -135,12 +135,12 @@ export interface ModifyIncludeCommand extends BaseCommand<ModifyIncludePayload> 
 }
 
 /**
- * Payload for modifying schema root namespace declarations and targetNamespace.
+ * Payload for modifying schema root namespace declarations and `targetNamespace`.
  */
 export interface ModifySchemaNamespacesPayload {
   /**
-   * New targetNamespace URI.
-   * Use an empty string to remove targetNamespace.
+   * New `targetNamespace` URI.
+   * Use an empty string to remove `targetNamespace`.
    */
   targetNamespace?: string;
   /**
@@ -154,7 +154,7 @@ export interface ModifySchemaNamespacesPayload {
 }
 
 /**
- * Command to modify schema root namespace declarations and targetNamespace.
+ * Command to modify schema root namespace declarations and `targetNamespace`.
  */
 export interface ModifySchemaNamespacesCommand extends BaseCommand<ModifySchemaNamespacesPayload> {
   type: "modifySchemaNamespaces";

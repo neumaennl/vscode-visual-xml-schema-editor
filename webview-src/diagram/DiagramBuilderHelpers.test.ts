@@ -1,5 +1,5 @@
 /**
- * Unit tests for DiagramBuilderHelpers module.
+ * Unit tests for `DiagramBuilderHelpers` module.
  */
 
 import {

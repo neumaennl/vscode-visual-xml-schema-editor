@@ -3,17 +3,17 @@
  * Implements add, remove, and modify operations for schema imports and includes.
  *
  * Import ID Convention:
- * - Imports are addressed by position using XPath-like IDs: /import[N]
+ * - Imports are addressed by position using XPath-like IDs: `/import[N]`
  *   where N is the zero-based index in the schema's import array.
  *
  * Include ID Convention:
- * - Includes are addressed by position using XPath-like IDs: /include[N]
+ * - Includes are addressed by position using XPath-like IDs: `/include[N]`
  *   where N is the zero-based index in the schema's include array.
  *
  * Prefix Convention:
  * - Each import may have an associated namespace prefix registered in
- *   schema._namespacePrefixes (maps prefix → namespace URI).
- * - Executors maintain _namespacePrefixes in sync with import_ when a prefix
+ *   `schema._namespacePrefixes` (maps prefix → namespace URI).
+ * - Executors maintain `_namespacePrefixes` in sync with `import_` when a prefix
  *   is provided or when an import is removed.
  * - When a prefix is renamed, ALL QName references using the old prefix are
  *   updated throughout the schema (see {@link rewritePrefixInSchema}).
@@ -42,7 +42,7 @@ import { rewritePrefixInSchema } from "./schemaQNameRewriter.js";
 // ===== Helpers =====
 
 /**
- * Resolves the ID of an import or include (e.g. "/import[0]" or "/include[0]") to the entry and its
+ * Resolves the ID of an import or include (e.g. `"/import[0]"` or `"/include[0]"`) to the entry and its
  * index.
  *
  * @param id - The ID of the import or include
@@ -59,7 +59,7 @@ function resolveModuleEntry<T>(id: string, entries: T[] | undefined, label: stri
 
 /**
  * Generates a unique namespace prefix that is not already present in
- * schema._namespacePrefixes. Candidates are "ns0", "ns1", "ns2", …
+ * `schema._namespacePrefixes`. Candidates are `"ns0"`, `"ns1"`, `"ns2"`, …
  *
  * @param schemaObj - The schema
  * @returns The first free prefix
@@ -74,7 +74,7 @@ function generateUniquePrefix(schemaObj: schema): string {
 }
 
 /**
- * Removes all prefix registrations in schema._namespacePrefixes whose value
+ * Removes all prefix registrations in `schema._namespacePrefixes` whose value
  * equals the given namespace URI.
  *
  * Multiple prefixes for the same namespace can exist when a schema is loaded
@@ -95,17 +95,17 @@ function removePrefixForNamespace(namespaceUri: string, schemaObj: schema): void
 // ===== Import Executors =====
 
 /**
- * Executes an addImport command.
+ * Executes an `addImport` command.
  *
- * Appends a new xs:import declaration with the given namespace and
- * schemaLocation to the schema's import array.
+ * Appends a new `xs:import` declaration with the given namespace and
+ * `schemaLocation` to the schema's import array.
  *
- * A namespace prefix is always registered in schema._namespacePrefixes so
+ * A namespace prefix is always registered in `schema._namespacePrefixes` so
  * that elements can reference types from the imported namespace using that
  * prefix (e.g. `type="prefix:TypeName"`). If `prefix` is not provided, a
- * unique prefix is auto-generated (e.g. "ns0", "ns1", …).
+ * unique prefix is auto-generated (e.g. `"ns0"`, `"ns1"`, …).
  *
- * @param command - The addImport command to execute
+ * @param command - The `addImport` command to execute
  * @param schemaObj - The schema object to modify
  */
 export function executeAddImport(
@@ -127,15 +127,15 @@ export function executeAddImport(
 }
 
 /**
- * Executes a removeImport command.
+ * Executes a `removeImport` command.
  *
- * Removes the xs:import at the position encoded in `importId`
- * (e.g. "/import[0]" removes the first import).
+ * Removes the `xs:import` at the position encoded in `importId`
+ * (e.g. `"/import[0]"` removes the first import).
  *
- * Also removes all namespace prefix registrations in schema._namespacePrefixes
+ * Also removes all namespace prefix registrations in `schema._namespacePrefixes`
  * that point to the removed import's namespace URI.
  *
- * @param command - The removeImport command to execute
+ * @param command - The `removeImport` command to execute
  * @param schemaObj - The schema object to modify
  */
 export function executeRemoveImport(
@@ -154,10 +154,10 @@ export function executeRemoveImport(
 }
 
 /**
- * Executes a modifyImport command.
+ * Executes a `modifyImport` command.
  *
- * Updates the namespace and/or schemaLocation of the xs:import at the
- * position encoded in `importId` (e.g. "/import[0]" targets the first import).
+ * Updates the namespace and/or `schemaLocation` of the `xs:import` at the
+ * position encoded in `importId` (e.g. `"/import[0]"` targets the first import).
  * Only the properties present in the payload are changed.
  *
  * Namespace prefix management:
@@ -169,7 +169,7 @@ export function executeRemoveImport(
  *   old prefix key is removed, the new prefix is registered, and all QName
  *   references using `oldPrefix:localName` are rewritten to `prefix:localName`.
  *
- * @param command - The modifyImport command to execute
+ * @param command - The `modifyImport` command to execute
  * @param schemaObj - The schema object to modify
  */
 export function executeModifyImport(
@@ -219,13 +219,13 @@ export function executeModifyImport(
 // ===== Include Executors =====
 
 /**
- * Executes an addInclude command.
+ * Executes an `addInclude` command.
  *
- * Appends a new xs:include declaration with the given schemaLocation to the
- * schema's include array.  xs:include is used for same-namespace schemas;
- * it carries only a schemaLocation attribute (no namespace attribute).
+ * Appends a new `xs:include` declaration with the given `schemaLocation` to the
+ * schema's include array.  `xs:include` is used for same-namespace schemas;
+ * it carries only a `schemaLocation` attribute (no namespace attribute).
  *
- * @param command - The addInclude command to execute
+ * @param command - The `addInclude` command to execute
  * @param schemaObj - The schema object to modify
  */
 export function executeAddInclude(
@@ -239,12 +239,12 @@ export function executeAddInclude(
 }
 
 /**
- * Executes a removeInclude command.
+ * Executes a `removeInclude` command.
  *
- * Removes the xs:include at the position encoded in `includeId`
- * (e.g. "/include[0]" removes the first include).
+ * Removes the `xs:include` at the position encoded in `includeId`
+ * (e.g. `"/include[0]"` removes the first include).
  *
- * @param command - The removeInclude command to execute
+ * @param command - The `removeInclude` command to execute
  * @param schemaObj - The schema object to modify
  */
 export function executeRemoveInclude(
@@ -258,12 +258,12 @@ export function executeRemoveInclude(
 }
 
 /**
- * Executes a modifyInclude command.
+ * Executes a `modifyInclude` command.
  *
- * Updates the schemaLocation of the xs:include at the position encoded in
- * `includeId` (e.g. "/include[0]" targets the first include).
+ * Updates the `schemaLocation` of the `xs:include` at the position encoded in
+ * `includeId` (e.g. `"/include[0]"` targets the first include).
  *
- * @param command - The modifyInclude command to execute
+ * @param command - The `modifyInclude` command to execute
  * @param schemaObj - The schema object to modify
  */
 export function executeModifyInclude(
@@ -333,7 +333,7 @@ function detectPrefixRenames(
 }
 
 /**
- * Executes a modifySchemaNamespaces command: replaces the namespace declarations and the target
+ * Executes a `modifySchemaNamespaces` command: replaces the namespace declarations and the target
  * namespace of the schema, and rewrites the QNames whose prefix was renamed.
  *
  * @param command - The command

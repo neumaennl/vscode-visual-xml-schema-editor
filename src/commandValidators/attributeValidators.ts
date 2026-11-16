@@ -65,7 +65,7 @@ function validateAttributeKind(
 }
 
 /**
- * Validates an addAttribute command: the parent ID must not be empty, the fields must fit a reference
+ * Validates an `addAttribute` command: the parent ID must not be empty, the fields must fit a reference
  * or a named attribute, and the parent must be able to hold the attribute without a duplicate.
  *
  * @param command - The command
@@ -91,7 +91,7 @@ export function validateAddAttribute(
 }
 
 /**
- * Validates a removeAttribute command: the attribute must exist in a parent that holds attributes.
+ * Validates a `removeAttribute` command: the attribute must exist in a parent that holds attributes.
  *
  * @param command - The command
  * @param schemaObj - The schema
@@ -106,7 +106,7 @@ export function validateRemoveAttribute(
 }
 
 /**
- * Validates a modifyAttribute command: the attribute must exist, and the new fields must fit a
+ * Validates a `modifyAttribute` command: the attribute must exist, and the new fields must fit a
  * reference or a named attribute.
  *
  * @param command - The command

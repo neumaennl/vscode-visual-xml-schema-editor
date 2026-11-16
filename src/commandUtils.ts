@@ -2,19 +2,19 @@
  * Shared command-ID parsing utilities used by both executors and validators.
  *
  * ID Conventions:
- * - documentationId for non-schema nodes: `{elementPath}/documentation[N]`
- *   (e.g. "/element:person/documentation[0]").
- * - annotationId for schema-root annotations: "/schema/annotation[N]"
- *   (0-based index into the schema's xs:annotation array).
- * - documentationId for schema-root annotations:
- *   - "/schema/annotation[N]/documentation[M]" — M-th doc of the N-th annotation.
- *   - "/schema/documentation[N]" — N-th doc of the first annotation (shorthand).
+ * - `documentationId` for non-schema nodes: `{elementPath}/documentation[N]`
+ *   (e.g. `"/element:person/documentation[0]"`).
+ * - `annotationId` for schema-root annotations: `"/schema/annotation[N]"`
+ *   (0-based index into the schema's `xs:annotation` array).
+ * - `documentationId` for schema-root annotations:
+ *   - `"/schema/annotation[N]/documentation[M]"` — M-th doc of the N-th annotation.
+ *   - `"/schema/documentation[N]"` — N-th doc of the first annotation (shorthand).
  */
 
 import type { attributeGroupRef } from "../shared/types.js";
 
 /**
- * Parses a schema-annotation ID of the form "/schema/annotation[N]".
+ * Parses a schema-annotation ID of the form `"/schema/annotation[N]"`.
  *
  * @param id - The ID
  * @returns The 0-based annotation index, or null if the format does not match.
@@ -26,7 +26,7 @@ export function parseSchemaAnnotationId(id: string): number | null {
 
 /**
  * Parses a schema-level documentation ID of the form
- * "/schema/annotation[N]/documentation[M]".
+ * `"/schema/annotation[N]/documentation[M]"`.
  *
  * @param id - The ID
  * @returns Annotation and documentation indices, or null if the format does not match.
@@ -41,7 +41,7 @@ export function parseSchemaDocumentationId(
 }
 
 /**
- * Parses a documentationId of the form `{elementPath}/documentation[N]`.
+ * Parses a `documentationId` of the form `{elementPath}/documentation[N]`.
  *
  * @param documentationId - The ID
  * @returns The annotated-element path and the 0-based documentation index.
@@ -65,7 +65,7 @@ export function parseDocumentationId(documentationId: string): {
 }
 
 /**
- * Finds the attribute group reference that the name and position of an attributeGroupRef ID identify
+ * Finds the attribute group reference that the name and position of an `attributeGroupRef` ID identify
  * among the attribute group references of its parent.
  *
  * @param refs - The attribute group references of the parent

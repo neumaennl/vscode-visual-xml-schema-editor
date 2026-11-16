@@ -1,6 +1,6 @@
 /**
- * ShapeRenderers provides methods for rendering different diagram item shapes
- * Extracted from DiagramSvgRenderer to reduce file size
+ * `ShapeRenderers` provides methods for rendering different diagram item shapes
+ * Extracted from `DiagramSvgRenderer` to reduce file size
  */
 
 import type { DiagramItem } from "./DiagramItem";

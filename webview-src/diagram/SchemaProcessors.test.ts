@@ -1,5 +1,5 @@
 /**
- * Unit tests for SchemaProcessors module.
+ * Unit tests for `SchemaProcessors` module.
  */
 
 import {

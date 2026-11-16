@@ -45,8 +45,8 @@ export type SimpleTypeDerivationKind = "restriction" | "list" | "union";
  */
 export interface AddSimpleTypePayload {
   /**
-   * Parent element ID for anonymous simpleTypes (e.g. "/element:age").
-   * Omit or set to "schema" to create a top-level named simpleType.
+   * Parent element ID for anonymous simpleTypes (e.g. `"/element:age"`).
+   * Omit or set to `"schema"` to create a top-level named simpleType.
    */
   parentId?: string;
   /** Name of the simple type. Required for top-level types; ignored for anonymous. */
@@ -107,8 +107,8 @@ export interface ModifySimpleTypePayload {
   /**
    * Body definition for this simpleType.
    * The validator and executor infer the body kind from the fields present.
-   * Restriction bodies use baseType/restrictions, list bodies use listItemType,
-   * and union bodies use unionMemberTypes.
+   * Restriction bodies use `baseType`/`restrictions`, list bodies use `listItemType`,
+   * and union bodies use `unionMemberTypes`.
    */
   baseType?: string;
   /** New list item type (optional) */
@@ -146,8 +146,8 @@ export type ComplexTypeDerivationKind = "extension" | "restriction";
  */
 export interface AddComplexTypePayload {
   /**
-   * Parent element ID for anonymous complexTypes (e.g. "/element:person").
-   * Omit or set to "schema" to create a top-level named complexType.
+   * Parent element ID for anonymous complexTypes (e.g. `"/element:person"`).
+   * Omit or set to `"schema"` to create a top-level named complexType.
    */
   parentId?: string;
   /** Name of the complex type. Required for top-level types; ignored for anonymous. */

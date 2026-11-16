@@ -1,7 +1,7 @@
 /**
- * Unit tests for CommandProcessor core functionality.
+ * Unit tests for `CommandProcessor` core functionality.
  * Tests transactional behavior, error handling, and orchestration.
- * SchemaModelManager is mocked to focus on CommandProcessor logic.
+ * `SchemaModelManager` is mocked to focus on `CommandProcessor` logic.
  */
 
 import { CommandProcessor } from "./commandProcessor.js";
@@ -119,8 +119,8 @@ function topLevelElementNames(modelManager: SchemaModelManager): string[] {
 }
 
 /**
- * Asserts that a CommandExecutionResult represents a failure without a schema or XML, and narrows its
- * type to CommandExecutionFailure, enabling access to `.error` and `.errorKind`.
+ * Asserts that a `CommandExecutionResult` represents a failure without a schema or XML, and narrows its
+ * type to `CommandExecutionFailure`, enabling access to `.error` and `.errorKind`.
  *
  * @param result - The result of the command
  * @throws An {@link Error} if the command succeeded
@@ -136,8 +136,8 @@ function expectFailure(
 }
 
 /**
- * Asserts that a CommandExecutionResult represents a runtime failure with a stack and narrows its type
- * to CommandExecutionRuntimeFailure.
+ * Asserts that a `CommandExecutionResult` represents a runtime failure with a stack and narrows its type
+ * to `CommandExecutionRuntimeFailure`.
  *
  * @param result - The result of the command
  * @throws An {@link Error} if the command succeeded or failed validation
@@ -153,8 +153,8 @@ function expectRuntimeFailure(
 }
 
 /**
- * Asserts that a CommandExecutionResult represents a validation failure and narrows
- * its type to CommandExecutionValidationFailure.
+ * Asserts that a `CommandExecutionResult` represents a validation failure and narrows
+ * its type to `CommandExecutionValidationFailure`.
  *
  * @param result - The result of the command
  * @throws An {@link Error} if the command succeeded or failed at runtime

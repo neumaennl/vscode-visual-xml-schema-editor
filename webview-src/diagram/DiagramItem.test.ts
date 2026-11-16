@@ -1,5 +1,5 @@
 /**
- * Tests for DiagramItem class
+ * Tests for `DiagramItem` class
  */
 
 import { DiagramItem } from "./DiagramItem";

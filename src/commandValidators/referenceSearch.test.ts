@@ -1,5 +1,5 @@
 /**
- * Unit tests for isReferencedInContent.
+ * Unit tests for `isReferencedInContent`.
  */
 
 import type { ReferenceMatcher } from "./referenceSearch.js";

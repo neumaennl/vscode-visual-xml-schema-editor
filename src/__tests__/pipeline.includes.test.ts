@@ -1,7 +1,7 @@
 /**
  * Integration tests: include add / remove / modify pipeline.
  *
- * Exercises the full extension-side editing pipeline for xs:include commands.
+ * Exercises the full extension-side editing pipeline for `xs:include` commands.
  * Success-path assertions are made against the unmarshalled schema object.
  */
 

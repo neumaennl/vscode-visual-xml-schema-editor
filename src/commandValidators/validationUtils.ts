@@ -29,7 +29,7 @@ export type ValidationResult = ValidationSuccess | ValidationFailure;
  * @returns true if valid XML name, false otherwise
  *
  * TODO: This is a simplified pattern for Phase 1 that validates basic ASCII
- * XML names. It does not support namespace-prefixed names (e.g., xs:element)
+ * XML names. It does not support namespace-prefixed names (e.g., `xs:element`)
  * or Unicode characters beyond ASCII. XSD element/type names typically don't
  * use prefixes in schema definitions.
  */
@@ -44,9 +44,9 @@ export function isValidXmlName(name: string): boolean {
 }
 
 /**
- * Validates minOccurs value.
+ * Validates `minOccurs` value.
  *
- * @param minOccurs - The minOccurs value to validate
+ * @param minOccurs - The `minOccurs` value to validate
  * @returns Validation result
  */
 export function validateMinOccurs(
@@ -71,9 +71,9 @@ export function validateMinOccurs(
 }
 
 /**
- * Validates maxOccurs value.
+ * Validates `maxOccurs` value.
  *
- * @param maxOccurs - The maxOccurs value to validate
+ * @param maxOccurs - The `maxOccurs` value to validate
  * @returns Validation result
  */
 export function validateMaxOccurs(
@@ -108,8 +108,8 @@ export function validateMaxOccurs(
 /**
  * Validates that `minOccurs <= maxOccurs` when both are provided.
  *
- * @param minOccurs - The minOccurs value
- * @param maxOccurs - The maxOccurs value
+ * @param minOccurs - The `minOccurs` value
+ * @param maxOccurs - The `maxOccurs` value
  * @returns Validation result
  */
 export function validateOccurrenceConstraint(
@@ -128,10 +128,10 @@ export function validateOccurrenceConstraint(
 }
 
 /**
- * Validates all occurrence constraints (minOccurs, maxOccurs, and their relationship).
+ * Validates all occurrence constraints (`minOccurs`, `maxOccurs`, and their relationship).
  *
- * @param minOccurs - The minOccurs value
- * @param maxOccurs - The maxOccurs value
+ * @param minOccurs - The `minOccurs` value
+ * @param maxOccurs - The `maxOccurs` value
  * @returns Validation result
  */
 export function validateOccurrences(

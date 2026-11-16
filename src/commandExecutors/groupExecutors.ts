@@ -27,14 +27,14 @@ import { renameLocalGroupRefInSchema } from "./schemaLocalRenamer.js";
 // ===== Element Group Executors =====
 
 /**
- * Executes an addGroup command.
+ * Executes an `addGroup` command.
  *
  * Two modes depending on whether `payload.ref` is set:
  * - **Definition mode** (`groupName` + `contentModel`): creates a top-level named group.
  * - **Reference mode** (`ref` + `parentId`): creates `xs:group ref="..."` inside the
  *   compositor or complexType identified by `parentId`.
  *
- * @param command - The addGroup command to execute
+ * @param command - The `addGroup` command to execute
  * @param schemaObj - The schema object to modify
  * @throws An {@link Error} if the parent node is not found (reference mode) or unsupported
  */
@@ -66,13 +66,13 @@ export function executeAddGroup(
 }
 
 /**
- * Executes a removeGroup command.
+ * Executes a `removeGroup` command.
  *
  * The `groupId` is used for both:
  * - `/group:Name` — removes the top-level named group definition.
  * - `/complexType:X/group:sequence[0]/groupRef:Name[0]` — removes the group reference.
  *
- * @param command - The removeGroup command to execute
+ * @param command - The `removeGroup` command to execute
  * @param schemaObj - The schema object to modify
  * @throws An {@link Error} if the group or its parent is not found
  */
@@ -102,13 +102,13 @@ export function executeRemoveGroup(
 }
 
 /**
- * Executes a modifyGroup command.
+ * Executes a `modifyGroup` command.
  *
  * The `groupId` is used for both:
  * - `/group:Name` — modifies the top-level named group definition.
  * - `/complexType:X/group:sequence[0]/groupRef:Name[0]` — modifies the group reference.
  *
- * @param command - The modifyGroup command to execute
+ * @param command - The `modifyGroup` command to execute
  * @param schemaObj - The schema object to modify
  * @throws An {@link Error} if the group or its parent is not found
  */
@@ -165,7 +165,7 @@ export function executeModifyGroup(
 
 // ===== Element Group Helper Functions =====
 
-/** Structural type shared by namedGroup for content model operations. */
+/** Structural type shared by `namedGroup` for content model operations. */
 interface GroupHolder {
   all?: allType;
   choice?: simpleExplicitGroup;
@@ -179,7 +179,7 @@ interface CompositorWithGroupRefs { group?: groupRef[] }
 interface ComplexTypeWithGroupRef { group?: groupRef }
 
 /**
- * Builds a new groupRef instance with the given properties.
+ * Builds a new `groupRef` instance with the given properties.
  *
  * @param ref - The name of the referenced group
  * @param minOccurs - The minimum number of occurrences, if set
@@ -201,7 +201,7 @@ function buildGroupRef(
 }
 
 /**
- * Adds a groupRef to a compositor (sequence/choice) or complexType parent.
+ * Adds a `groupRef` to a compositor (sequence/choice) or complexType parent.
  *
  * @param parent - The parent
  * @param parentType - The kind of the parent, as the navigator reports it
@@ -226,7 +226,7 @@ function addGroupRefToParent(
 }
 
 /**
- * Removes a groupRef from a compositor (sequence/choice) or complexType parent.
+ * Removes a `groupRef` from a compositor (sequence/choice) or complexType parent.
  *
  * @param parent - The parent
  * @param parentType - The kind of the parent, as the navigator reports it
@@ -263,13 +263,13 @@ function removeGroupRefFromParent(
 }
 
 /**
- * Finds a groupRef in a compositor (sequence/choice) or complexType parent.
+ * Finds a `groupRef` in a compositor (sequence/choice) or complexType parent.
  *
  * @param parent - The parent
  * @param parentType - The kind of the parent, as the navigator reports it
  * @param name - The ref of the reference, from its ID
  * @param position - The position of the reference in a compositor, from its ID
- * @returns The found groupRef or undefined
+ * @returns The found `groupRef` or undefined
  */
 function findGroupRefInParent(
   parent: unknown,
@@ -340,7 +340,7 @@ function removeCompositorGroupFromParent(
 }
 
 /**
- * Sets the content model compositor on a namedGroup, clearing any previously
+ * Sets the content model compositor on a `namedGroup`, clearing any previously
  * set compositor first.
  *
  * @param grp - The group holder to update

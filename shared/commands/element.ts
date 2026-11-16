@@ -21,7 +21,7 @@ export interface AddElementPayload {
    * Optional – omit when the element will carry an inline anonymous type.
    */
   elementType?: string;
-  /** Reference to an existing top-level element. Mutually exclusive with elementName/elementType. */
+  /** Reference to an existing top-level element. Mutually exclusive with `elementName`/`elementType`. */
   ref?: string;
   /** Minimum occurrences (default: 1) */
   minOccurs?: number;
@@ -67,7 +67,7 @@ export interface ModifyElementPayload {
   elementType?: string;
   /**
    * New ref for the element (optional). When set, clears name and type.
-   * Mutually exclusive with elementName/elementType.
+   * Mutually exclusive with `elementName`/`elementType`.
    */
   ref?: string;
   /** New minimum occurrences (optional) */

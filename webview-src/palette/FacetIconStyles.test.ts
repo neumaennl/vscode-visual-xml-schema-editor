@@ -1,5 +1,5 @@
 /**
- * Unit tests for the facet helpers of FacetIconStyles.
+ * Unit tests for the facet helpers of `FacetIconStyles`.
  */
 
 import { FACET_ICON_STYLES, isFacetPaletteConstruct } from "./FacetIconStyles";

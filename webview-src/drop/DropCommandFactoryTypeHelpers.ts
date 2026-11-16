@@ -68,7 +68,7 @@ export function getRestrictionBaseType(item: DiagramItem): string {
 }
 
 /**
- * Resolves a displayed extension base type, defaulting to xs:anyType.
+ * Resolves a displayed extension base type, defaulting to `xs:anyType`.
  *
  * @param item - The diagram item
  * @returns The displayed base type, or `xs:anyType`

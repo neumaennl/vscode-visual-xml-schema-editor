@@ -43,10 +43,10 @@ export class Diagram {
   /** Whether to show type information */
   public showType = false;
 
-  /** Prefix bound to this schema's targetNamespace, when available */
+  /** Prefix bound to this schema's `targetNamespace`, when available */
   public currentSchemaPrefix?: string;
 
-  /** Schema-level targetNamespace (schema root metadata) */
+  /** Schema-level `targetNamespace` (schema root metadata) */
   public schemaTargetNamespace = "";
 
   /** Schema-level namespace declarations keyed by prefix */

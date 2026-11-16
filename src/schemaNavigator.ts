@@ -1,5 +1,5 @@
 /**
- * SchemaNavigator: Utilities for navigating and locating nodes in a schema.
+ * `SchemaNavigator`: Utilities for navigating and locating nodes in a schema.
  * Provides functions to find schema nodes by their XPath-like IDs.
  */
 

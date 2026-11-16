@@ -1,6 +1,6 @@
 /**
- * Unit tests for CommandValidator class.
- * Tests the validate() method delegation logic with mocked validators.
+ * Unit tests for `CommandValidator` class.
+ * Tests the `validate()` method delegation logic with mocked validators.
  * No knowledge of validator implementation - proper unit testing with DI.
  */
 

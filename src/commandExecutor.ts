@@ -1,5 +1,5 @@
 /**
- * CommandExecutor: Executes validated commands on the schema.
+ * `CommandExecutor`: Executes validated commands on the schema.
  * Implements execution logic by delegating to specialized executor modules.
  */
 
@@ -17,20 +17,20 @@ import * as annotationExecutors from "./commandExecutors/annotationExecutors.js"
 import * as schemaExecutors from "./commandExecutors/schemaExecutors.js";
 
 /**
- * The executor functions used by CommandExecutor, one per command type, such as
+ * The executor functions used by `CommandExecutor`, one per command type, such as
  * `executeAddElement` for `addElement`. Enables dependency injection for testing.
  */
 export type ExecutorFunctions = CommandHandlers<"execute", void>;
 
 /**
- * CommandExecutor class.
+ * `CommandExecutor` class.
  * Executes validated commands by delegating to specialized executor modules.
  */
 export class CommandExecutor {
   private readonly executors: ExecutorFunctions;
 
   /**
-   * Creates a new CommandExecutor.
+   * Creates a new `CommandExecutor`.
    *
    * @param executors - Executor functions (optional, uses actual executors if not provided)
    */

@@ -63,7 +63,7 @@ export function enclosingRectangle(rectangles: Rectangle[]): Rectangle {
 }
 
 /**
- * A single xs:documentation node shown in the diagram/properties-panel layer.
+ * A single `xs:documentation` node shown in the diagram/properties-panel layer.
  * Keeps the schema ID so the UI can edit or remove the exact node later.
  */
 export interface DiagramDocumentationEntry {
@@ -73,8 +73,8 @@ export interface DiagramDocumentationEntry {
 }
 
 /**
- * An xs:annotation node shown in the diagram/properties-panel layer.
- * Keeps the schema ID plus all contained xs:documentation nodes.
+ * An `xs:annotation` node shown in the diagram/properties-panel layer.
+ * Keeps the schema ID plus all contained `xs:documentation` nodes.
  */
 export interface DiagramAnnotationEntry {
   id: string;
@@ -83,7 +83,7 @@ export interface DiagramAnnotationEntry {
 
 /**
  * Interface for schema elements that have occurrence constraints.
- * This includes localElement, groupRef, and other elements that can appear
+ * This includes `localElement`, `groupRef`, and other elements that can appear
  * within complex types.
  */
 export interface ElementWithOccurrence {
@@ -101,13 +101,13 @@ export interface ElementWithAttributes {
 }
 
 /**
- * Union type for complex type structures (localComplexType, topLevelComplexType).
+ * Union type for complex type structures (`localComplexType`, `topLevelComplexType`).
  * These types share common structure for sequences, choices, all groups, and attributes.
  */
 export type ComplexTypeLike = localComplexType | topLevelComplexType;
 
 /**
- * Union type for simple type structures (localSimpleType, topLevelSimpleType).
+ * Union type for simple type structures (`localSimpleType`, `topLevelSimpleType`).
  * These types share common structure for restrictions.
  */
 export type SimpleTypeLike = localSimpleType | topLevelSimpleType;

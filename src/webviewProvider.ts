@@ -10,14 +10,14 @@ import { CommandProcessor } from "./commandProcessor.js";
 
 /**
  * Provider for the Visual XML Schema Editor custom text editor.
- * Implements VS Code's CustomTextEditorProvider interface to provide
+ * Implements VS Code's `CustomTextEditorProvider` interface to provide
  * a visual editing experience for XML Schema files.
  */
 export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
   private readonly commandProcessor: CommandProcessor;
 
   /**
-   * Creates a new SchemaEditorProvider.
+   * Creates a new `SchemaEditorProvider`.
    * 
    * @param context - The extension context provided by VS Code
    */
@@ -28,7 +28,7 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
   /**
    * Safely sends a message to the webview with error logging.
    * This prevents unhandled promise rejections and avoids infinite error loops
-   * when postMessage itself fails.
+   * when `postMessage` itself fails.
    * 
    * @param webview - The webview to send the message to
    * @param message - The message to send
@@ -181,7 +181,7 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
   }
 
   /**
-   * Executes a command using the CommandProcessor.
+   * Executes a command using the `CommandProcessor`.
    * Applies the resulting changes to the document if successful.
    * 
    * @param message - The execute command message from the webview

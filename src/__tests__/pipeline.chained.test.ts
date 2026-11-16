@@ -3,8 +3,8 @@
  *
  * Exercises realistic multi-command editing scenarios that go well beyond
  * single-handler unit tests. Each scenario chains several commands across
- * different handler groups (addComplexType → addElement → addComplexType
- * for anonymous types → addAttribute …) and verifies the final schema object
+ * different handler groups (`addComplexType` → `addElement` → `addComplexType`
+ * for anonymous types → `addAttribute` …) and verifies the final schema object
  * obtained by unmarshalling the resulting XML.
  *
  * The starting schema for the main scenario is the project's `example.xsd`.
@@ -148,14 +148,14 @@ function orderTypeWithElement(elementName: string, elementType?: string): string
 
 describe("Integration: chained editing pipeline on example.xsd", () => {
   /**
-   * Main scenario: build a complete OrderType with:
-   * - `orderId`  xs:string,  minOccurs=1, maxOccurs=1
-   * - `qty`      xs:integer, minOccurs=0, maxOccurs=1
-   * - `items`    no type   , minOccurs=1, maxOccurs="unbounded"
-   *              → anonymous complexType → sequence → item (lengthRestricitionType, 1..*)
-   * - `example`  (ref element), minOccurs=0
+   * Main scenario: build a complete `OrderType` with:
+   * - `orderId`  `xs:string`,  `minOccurs=1`, `maxOccurs=1`
+   * - `qty`      `xs:integer`, `minOccurs=0`, `maxOccurs=1`
+   * - `items`    no type   , `minOccurs=1`, `maxOccurs="unbounded"`
+   *              → anonymous complexType → sequence → item (`lengthRestricitionType`, 1..*)
+   * - `example`  (ref element), `minOccurs=0`
    * - `currency` attribute (xs:string)
-   * Plus a top-level `order` element of type OrderType.
+   * Plus a top-level `order` element of type `OrderType`.
    * Finally modifies `orderId` to carry inline documentation.
    */
   describe("builds OrderType with typed elements, an anonymous inner complexType, a reference, occurrence constraints, and an attribute", () => {

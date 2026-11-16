@@ -1,6 +1,6 @@
 /**
  * ID Strategy for schema elements.
- * Provides a robust identifier system for mapping between webview DiagramItems
+ * Provides a robust identifier system for mapping between webview `DiagramItems`
  * and extension schema nodes using XPath-like identifiers.
  *
  * Design Goals:
@@ -25,11 +25,11 @@ export enum SchemaNodeType {
   SimpleType = "simpleType",
   /** Element group definition */
   Group = "group",
-/** Schema node type for a group reference (xs:group ref="...") */
+/** Schema node type for a group reference (`xs:group ref="..."`) */
   GroupRef = "groupRef",
   /** Attribute group definition */
   AttributeGroup = "attributeGroup",
-  /** Schema node type for an attribute group reference (xs:attributeGroup ref="...") */
+  /** Schema node type for an attribute group reference (`xs:attributeGroup ref="..."`) */
   AttributeGroupRef = "attributeGroupRef",
   /** Attribute definition */
   Attribute = "attribute",
@@ -200,7 +200,7 @@ export function parseSchemaId(id: string): ParsedSchemaId {
  * Reads the type of a node from a segment of an ID. IDs are built by {@link generateSchemaId}, so the
  * text is the value of a {@link SchemaNodeType}. It is not checked here: the lookup of a node with an
  * unknown type finds nothing and reports that (see "Node types in IDs are not checked" in
- * docs/known-issues.md).
+ * `docs/known-issues.md`).
  *
  * @param text - The type part of the segment, such as `element`
  * @returns The text as a node type
@@ -248,7 +248,7 @@ function splitPath(path: string): string[] {
 /**
  * Parses a single node segment from an ID path.
  *
- * @param segment - The segment to parse (e.g., "element:person" or "anonymousComplexType[0]")
+ * @param segment - The segment to parse (e.g., `"element:person"` or `"anonymousComplexType[0]"`)
  * @returns Parsed node information
  */
 function parseNodeSegment(segment: string): {

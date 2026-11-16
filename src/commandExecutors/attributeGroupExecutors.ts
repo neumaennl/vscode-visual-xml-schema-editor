@@ -1,7 +1,7 @@
 /**
  * Executors for attributeGroup commands.
  * Implements add, remove, and modify operations for named attribute group
- * definitions and attribute group references (xs:attributeGroup ref="...").
+ * definitions and attribute group references (`xs:attributeGroup ref="..."`).
  */
 
 import type {
@@ -47,14 +47,14 @@ function locateAttrGroupRef(
 // ===== Attribute Group Executors =====
 
 /**
- * Executes an addAttributeGroup command.
+ * Executes an `addAttributeGroup` command.
  *
  * Two modes depending on whether `payload.ref` is set:
  * - **Definition mode** (`groupName`): creates a top-level named attribute group.
  * - **Reference mode** (`ref` + `parentId`): creates `xs:attributeGroup ref="..."`
- *   inside the complexType or namedAttributeGroup identified by `parentId`.
+ *   inside the complexType or `namedAttributeGroup` identified by `parentId`.
  *
- * @param command - The addAttributeGroup command to execute
+ * @param command - The `addAttributeGroup` command to execute
  * @param schemaObj - The schema object to modify
  * @throws An {@link Error} if the parent node is not found (reference mode) or unsupported
  */
@@ -87,13 +87,13 @@ export function executeAddAttributeGroup(
 }
 
 /**
- * Executes a removeAttributeGroup command.
+ * Executes a `removeAttributeGroup` command.
  *
  * The `groupId` is used for both:
  * - `/attributeGroup:Name` — removes the top-level named attribute group definition.
  * - `/complexType:X/attributeGroupRef:Name[0]` — removes the attribute group reference.
  *
- * @param command - The removeAttributeGroup command to execute
+ * @param command - The `removeAttributeGroup` command to execute
  * @param schemaObj - The schema object to modify
  * @throws An {@link Error} if the attribute group or its parent is not found
  */
@@ -116,13 +116,13 @@ export function executeRemoveAttributeGroup(
 }
 
 /**
- * Executes a modifyAttributeGroup command.
+ * Executes a `modifyAttributeGroup` command.
  *
  * The `groupId` is used for both:
  * - `/attributeGroup:Name` — modifies the top-level named attribute group definition.
  * - `/complexType:X/attributeGroupRef:Name[0]` — modifies the attribute group reference.
  *
- * @param command - The modifyAttributeGroup command to execute
+ * @param command - The `modifyAttributeGroup` command to execute
  * @param schemaObj - The schema object to modify
  * @throws An {@link Error} if the attribute group or its parent is not found
  */

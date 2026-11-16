@@ -1,5 +1,5 @@
 /**
- * Unit tests for TypeNodeCreators module.
+ * Unit tests for `TypeNodeCreators` module.
  */
 
 import {

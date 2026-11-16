@@ -1,5 +1,5 @@
 /**
- * Unit tests for DiagramRenderer class.
+ * Unit tests for `DiagramRenderer` class.
  */
 
 import { DiagramRenderer } from "./renderer";

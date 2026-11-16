@@ -2,7 +2,7 @@
  * Integration tests: element add / remove / modify pipeline.
  *
  * Exercises the full extension-side editing pipeline:
- *   CommandProcessor → CommandValidator → CommandExecutor → XML round-trip
+ *   `CommandProcessor` → `CommandValidator` → `CommandExecutor` → XML round-trip
  *
  * Verifies both success and failure (validation error) paths.
  * Success-path assertions are made against the unmarshalled schema object

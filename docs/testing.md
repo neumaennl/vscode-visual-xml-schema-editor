@@ -4,8 +4,8 @@ title: Testing
 description: How the extension is tested - running the tests and the type check, the five Vitest projects, mocks and helpers, conventions for tests, mocks, helper functions and helper classes, which tests to write for typical changes, coverage, CI, the smoke tests in the extension host with a mock webview, and how the current tests compare with the testing strategy of ADR 001.
 tags: [testing, vitest, mocks, coverage, ci, conventions]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-15T20:24:38Z }
-verified: { by: human:neumaennl, at: 2026-11-15T20:28:10Z }
+generated: { by: human:neumaennl, at: 2026-11-16T19:20:02Z }
+verified: { by: human:neumaennl, at: 2026-11-16T19:24:40Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -218,7 +218,7 @@ Existing tests that do not follow these conventions yet are listed in [Known iss
 - **One file.** A helper that only one test file uses is defined at the top of that file, after the imports, with a TSDoc comment.
 - **Several files.** A helper that more than one test file needs is moved to a helper module in the `__tests__` folder of the part and imported from there; it is not copied. A helper that tests of several projects need goes into `shared/__tests__/`, because tests may only import their own project and `shared/` (see [Project boundaries](development-guidelines.md#project-boundaries)). Helper modules are named `<topic>TestHelpers.ts`, for example `schemaTestHelpers.ts`. Files in `__tests__` are excluded from the build and from the coverage report, and production code never imports them.
 - **Fresh fixtures.** Helpers that build test data return a new object on every call (for example `schemaWith(body)`, which unmarshals a schema with the given content), so that one test cannot change the data of another. Constants are only used for strings, such as XML snippets.
-- **Assertion helpers.** A helper that contains the assertions of a test has a name that starts with `expect` or contains `Expect` (`expectValidationFailure()`, `runCommandExpectSuccess()`). Its name is added to `assertFunctionNames` of the rule `vitest/expect-expect` in `eslint.config.mjs`; otherwise ESLint warns that the tests that use it have no assertion.[^eslint]
+- **Assertion helpers.** A helper that contains the assertions of a test has a name that starts with `expect`, or with `runCommandExpect` for the pipeline helpers (`expectValidationFailure()`, `runCommandExpectSuccessSchema()`). The rule `vitest/expect-expect` in `eslint.config.mjs` counts calls of such functions as assertions; a helper with another name makes ESLint warn that the tests that use it have no assertion.[^eslint]
 
 ## Helper classes
 

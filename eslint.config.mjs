@@ -218,9 +218,9 @@ export default defineConfig([
       ],
     },
   },
-  // Test files configuration (must come before webview config to avoid conflicts)
+  // Vitest tests, their helpers and mocks (must come before webview config to avoid conflicts)
   {
-    files: ['**/*.test.ts', '**/*.test-d.ts', '**/__mocks__/**/*.ts'],
+    files: ['**/*.test.ts', '**/*.test-d.ts', '**/__tests__/**/*.ts', '**/__mocks__/**/*.ts'],
     ignores: ['test/extension-host/**'],
     extends: [vitest.configs.recommended],
     languageOptions: {
@@ -230,27 +230,11 @@ export default defineConfig([
       },
     },
     rules: {
-      // Recognise custom assertion helpers as assertion-containing functions
-      'vitest/expect-expect': [
-        'warn',
-        {
-          assertFunctionNames: [
-            'expect',
-            'expectTypeOf',
-            'expectFailure',
-            'expectValidationFailure',
-            'expectRuntimeFailure',
-            'expectInvalid',
-            'runCommandExpectValidationFailure',
-            'runCommandExpectSuccessSchema',
-            'expectLinesInOrder',
-            'expectInOrderOnLine',
-            'expectAnonymousExtensionOf',
-            'expectResult',
-            'expectNewDocumentationAndKeptAppinfo',
-          ],
-        },
-      ],
+      // Assertion helpers start with expect or contain Expect (see "Mocks and helpers" in docs/testing.md)
+      'vitest/expect-expect': ['warn', { assertFunctionNames: ['expect*', 'runCommandExpect*'] }],
+      // Vitest takes a message as second argument of expect(); the other options of the recommended
+      // setting stay as they are.
+      'vitest/valid-expect': ['error', { maxArgs: 2 }],
       // Test cases use test(), as in the extension host, where Mocha's TDD interface has no it().
       // The defaults require it() inside describe(). Setting fn alone would be enough, because
       // withinDescribe then takes its value, but both are set to make the intent obvious.
@@ -260,8 +244,6 @@ export default defineConfig([
       'vitest/valid-title': ['error', { mustMatch: { test: '^should ' } }],
       // Vitest provides its API as globals (globals: true in vitest.config.ts).
       'vitest/no-importing-vitest-globals': 'error',
-      // Disabled in tests where we have more control over the test environment
-      '@typescript-eslint/no-non-null-assertion': 'off',
       // Empty mock implementations, such as mockImplementation(() => {}), are intended.
       '@typescript-eslint/no-empty-function': ['error', { allow: ['arrowFunctions'] }],
       // vitest/unbound-method replaces @typescript-eslint/unbound-method in tests;
@@ -278,8 +260,8 @@ export default defineConfig([
       '@typescript-eslint/no-generated-empty-object-type': 'off',
     },
   },
-  // Size limits of all test files, those of Vitest and those in the extension host (see "Code size" in
-  // docs/development-guidelines.md). max-lines-per-function would count the describe() and suite()
+  // Size limits and non-null assertions of all test files, those of Vitest and those in the extension host
+  // (see "Code size" in docs/development-guidelines.md). max-lines-per-function would count the describe() and suite()
   // callbacks that hold the tests, so the local rule tests/max-lines-per-test limits the single tests
   // instead. Test helpers and mocks keep the limits of other code.
   {
@@ -291,6 +273,9 @@ export default defineConfig([
       'max-lines': ['error', { max: 1000 }],
       'max-lines-per-function': 'off',
       'tests/max-lines-per-test': 'error',
+      // A test may assert with ! that a value exists: if it does not, the test fails (see "TypeScript" in
+      // docs/development-guidelines.md). Test helpers and mocks check their values like other code.
+      '@typescript-eslint/no-non-null-assertion': 'off',
     },
   },
   // Tests in the extension host: Mocha (TDD interface) and the mock webview, which runs in the browser

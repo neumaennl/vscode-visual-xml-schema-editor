@@ -15,8 +15,8 @@ import type {
   CommandExecutionSuccess,
   CommandExecutionValidationFailure,
 } from "../commandProcessor.js";
-import { schema, topLevelElement } from "../../shared/types.js";
-import type { SchemaCommand } from "../../shared/types.js";
+import { schema } from "../../shared/types.js";
+import type { SchemaCommand , topLevelElement } from "../../shared/types.js";
 import { DERIVATIONS, derivedComplexTypeT, schemaXmlWith } from "../../shared/__tests__/schemaTestHelpers.js";
 
 // ─── XML Fixtures ────────────────────────────────────────────────────────────

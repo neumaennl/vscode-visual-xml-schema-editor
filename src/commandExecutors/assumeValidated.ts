@@ -6,7 +6,7 @@
  * disagree, and the command fails with an error that says so instead of doing nothing.
  */
 
-import { schema } from "../../shared/types.js";
+import type { schema } from "../../shared/types.js";
 import { locateNodeById } from "../schemaNavigator.js";
 
 /**

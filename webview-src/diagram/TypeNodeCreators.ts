@@ -3,10 +3,10 @@
  * Handles creation of element, complex type, and simple type nodes.
  */
 
-import { Diagram } from "./Diagram";
+import type { Diagram } from "./Diagram";
 import { DiagramItem } from "./DiagramItem";
 import { DiagramItemType } from "./DiagramTypes";
-import {
+import type {
   annotationType,
   topLevelElement,
   topLevelComplexType,

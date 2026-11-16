@@ -2,7 +2,7 @@
  * Unit tests for the complex type validators.
  */
 
-import {
+import type {
   schema,
   AddComplexTypeCommand,
   RemoveComplexTypeCommand,
@@ -15,7 +15,7 @@ import {
   validateRemoveComplexType,
   validateModifyComplexType,
 } from "./complexTypeValidators.js";
-import { ValidationResult } from "./validationUtils.js";
+import type { ValidationResult } from "./validationUtils.js";
 import { expectInvalid } from "../__tests__/validationTestHelpers.js";
 import { emptySchema, schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
 import { readTestSchema } from "../__tests__/resourceTestHelpers.js";

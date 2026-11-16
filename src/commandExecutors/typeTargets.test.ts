@@ -3,7 +3,8 @@
  */
 
 import { locateModifiedType, placeNewType, removeType } from "./typeTargets.js";
-import { localComplexType, localSimpleType, schema, topLevelComplexType, topLevelSimpleType } from "../../shared/types.js";
+import type { schema, topLevelComplexType } from "../../shared/types.js";
+import { localComplexType, localSimpleType, topLevelSimpleType } from "../../shared/types.js";
 import { schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
 
 /**
@@ -69,7 +70,7 @@ describe("removeType", () => {
       "Complex type /element:named/anonymousComplexType[0] not found",
     ],
   ] as const)("should fail for %s", (_case, typeId, kind, error) => {
-    expect(() => removeType(createSchema(), typeId, kind)).toThrow(error);
+    expect(() => { removeType(createSchema(), typeId, kind); }).toThrow(error);
   });
 });
 

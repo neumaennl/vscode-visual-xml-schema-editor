@@ -3,7 +3,7 @@
  * user can select.
  */
 
-import { schema } from "../../shared/types";
+import type { schema } from "../../shared/types";
 import { DiagramBuilder } from "../diagram/DiagramBuilder";
 import type { DiagramItem } from "../diagram/DiagramItem";
 

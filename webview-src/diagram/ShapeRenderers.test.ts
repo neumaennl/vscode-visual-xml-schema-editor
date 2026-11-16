@@ -9,8 +9,9 @@ import {
   renderGroupTypeIndicator,
 } from "./ShapeRenderers";
 import { DiagramItem } from "./DiagramItem";
-import { DiagramItemGroupType, DiagramItemType, Rectangle } from "./DiagramTypes";
-import { Diagram } from "./Diagram";
+import type { Rectangle } from "./DiagramTypes";
+import { DiagramItemGroupType, DiagramItemType } from "./DiagramTypes";
+import type { Diagram } from "./Diagram";
 
 describe("ShapeRenderers", () => {
   let mockGroup: SVGElement;

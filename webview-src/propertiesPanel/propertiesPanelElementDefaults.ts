@@ -2,8 +2,8 @@
  * Default/fixed section rendering helpers for element nodes in the PropertiesPanel.
  */
 
-import { SchemaCommand } from "../../shared/types";
-import { DiagramItem } from "../diagram";
+import type { SchemaCommand } from "../../shared/types";
+import type { DiagramItem } from "../diagram";
 import { createInputColumn, createSectionHeader } from "./propertiesPanelDom";
 
 /**

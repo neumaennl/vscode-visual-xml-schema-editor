@@ -1,12 +1,14 @@
-import { schema } from "../shared/types";
-import { ViewState, RenderedNode } from "./webviewTypes";
-import { DiagramOptions } from "../shared/messages";
+import type { schema } from "../shared/types";
+import type { ViewState, RenderedNode } from "./webviewTypes";
+import type { DiagramOptions } from "../shared/messages";
+import type {
+  Diagram,
+  DiagramItem,
+} from "./diagram";
 import {
   DiagramBuilder,
   DiagramLayout,
-  DiagramSvgRenderer,
-  Diagram,
-  DiagramItem,
+  DiagramSvgRenderer
 } from "./diagram";
 import {
   getActiveDraggedPaletteSchemaConstruct,
@@ -18,7 +20,7 @@ export class DiagramRenderer {
   private canvas: SVGSVGElement;
   private mainGroup: SVGGElement;
   private viewState: ViewState;
-  private renderedNodes: Map<string, RenderedNode> = new Map();
+  private renderedNodes = new Map<string, RenderedNode>();
   private currentDiagram: Diagram | null = null;
   private svgRenderer: DiagramSvgRenderer;
   private layout: DiagramLayout;
@@ -420,7 +422,7 @@ export class DiagramRenderer {
    * keeping a small padding around all sides.
    * @param padding - Padding in screen pixels
    */
-  public fitToCanvas(padding: number = 24): ViewState {
+  public fitToCanvas(padding = 24): ViewState {
     const bbox = this.mainGroup.getBBox();
     const canvasWidth =
       this.canvas.clientWidth || this.canvas.viewBox.baseVal.width || 0;

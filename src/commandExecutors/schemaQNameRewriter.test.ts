@@ -42,7 +42,7 @@ describe("rewritePrefixInSchema", () => {
   });
 
   test("should not throw on an empty schema", () => {
-    expect(() => rewritePrefixInSchema("old", "new", emptySchema())).not.toThrow();
+    expect(() => { rewritePrefixInSchema("old", "new", emptySchema()); }).not.toThrow();
   });
 
   test("should not rewrite element @type values with a different prefix", () => {

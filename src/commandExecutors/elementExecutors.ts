@@ -3,12 +3,14 @@
  * Implements add, remove, and modify operations for schema elements.
  */
 
-import {
+import type {
   schema,
   AddElementCommand,
   RemoveElementCommand,
   ModifyElementCommand,
   ModifyElementPayload,
+} from "../../shared/types.js";
+import {
   topLevelElement,
   localElement,
   narrowMaxMin,

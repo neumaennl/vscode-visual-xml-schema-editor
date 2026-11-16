@@ -2,9 +2,11 @@
  * Unit tests for the checks that validators of several areas share.
  */
 
-import {
+import type {
   ChildKind,
   NamedChild,
+} from "./commonValidators.js";
+import {
   locateChild,
   locateType,
   parseRequiredId,

@@ -117,7 +117,7 @@ describe("renderSchemaNamespaceProperties", () => {
   test("should reject a schema node without a diagram, which the diagram builder does not create", () => {
     const node = new DiagramItem("/schema", "schema", DiagramItemType.element);
 
-    expect(() => renderSchemaNamespaceProperties(document.createElement("div"), node, vi.fn(), vi.fn())).toThrow(
+    expect(() => { renderSchemaNamespaceProperties(document.createElement("div"), node, vi.fn(), vi.fn()); }).toThrow(
       "The schema node belongs to no diagram"
     );
   });
@@ -180,8 +180,8 @@ describe("renderSchemaNamespaceProperties", () => {
     });
 
     test.each([
-      { case: "an emptied URI", change: (root: HTMLElement): void => commit(declarationRow(root, "other").uri, " ") },
-      { case: "the remove button", change: (root: HTMLElement): void => declarationRow(root, "other").remove.click() },
+      { case: "an emptied URI", change: (root: HTMLElement): void => { commit(declarationRow(root, "other").uri, " "); } },
+      { case: "the remove button", change: (root: HTMLElement): void => { declarationRow(root, "other").remove.click(); } },
     ])("should remove a declaration with $case", ({ change }) => {
       const { root, dispatch } = renderNamespaces();
 

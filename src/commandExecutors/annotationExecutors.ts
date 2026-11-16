@@ -18,7 +18,7 @@
  * elements and cannot be referenced from elsewhere in the schema.
  */
 
-import {
+import type {
   schema,
   AddAnnotationCommand,
   RemoveAnnotationCommand,
@@ -26,6 +26,8 @@ import {
   AddDocumentationCommand,
   RemoveDocumentationCommand,
   ModifyDocumentationCommand,
+} from "../../shared/types.js";
+import {
   annotationType,
   documentationType,
   appinfoType,

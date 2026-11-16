@@ -31,7 +31,7 @@ function renderValueList(facet: ValueListFacet, values: string[], canRemove = tr
   const root = document.createElement("div");
   document.body.appendChild(root);
   const draft: RestrictionSnapshot = {};
-  const buildAndDispatch = vi.fn((updater: (next: RestrictionSnapshot) => void) => updater(draft));
+  const buildAndDispatch = vi.fn((updater: (next: RestrictionSnapshot) => void) => { updater(draft); });
   const onRemove = vi.fn<() => void>();
   renderValueListFacet(root, facet, values, buildAndDispatch, canRemove, onRemove);
   return { root, draft, buildAndDispatch, onRemove };

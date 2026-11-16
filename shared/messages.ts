@@ -3,9 +3,9 @@
  * Defines the bidirectional message format for command execution and updates.
  */
 
-import { CommandResponse } from "./commands/base.js";
-import { SchemaCommand } from "./commands/index.js";
-import { schema } from "./generated/index.js";
+import type { CommandResponse } from "./commands/base.js";
+import type { SchemaCommand } from "./commands/index.js";
+import type { schema } from "./generated/index.js";
 
 /**
  * Base interface for messages between extension and webview.

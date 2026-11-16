@@ -7,25 +7,27 @@
  * extension, and documentation.
  */
 
-import {
+import type {
   schema,
   AddComplexTypeCommand,
   RemoveComplexTypeCommand,
   ModifyComplexTypeCommand,
   ContentModel,
   ComplexTypeDerivationKind,
+  groupRef,
+  annotationType,
+  attribute,
+  attributeGroupRef,
+  wildcard,
+} from "../../shared/types.js";
+import {
   topLevelComplexType,
   localComplexType,
   complexContentType,
   complexRestrictionType,
   extensionType,
   explicitGroup,
-  all,
-  groupRef,
-  annotationType,
-  attribute,
-  attributeGroupRef,
-  wildcard,
+  all
 } from "../../shared/types.js";
 import { getContentContainer, getContentDerivation, isSchemaRoot } from "../../shared/schemaUtils.js";
 import { assumeValidated } from "./assumeValidated.js";
@@ -34,7 +36,7 @@ import { locateModifiedType, placeNewType, removeType } from "./typeTargets.js";
 import { createAnnotation, setDocumentation } from "./annotationUtils.js";
 
 /** Structural type shared by topLevelComplexType and localComplexType for content operations. */
-type ComplexTypeHolder = {
+interface ComplexTypeHolder {
   mixed?: boolean;
   annotation?: annotationType;
   group?: groupRef;
@@ -45,9 +47,9 @@ type ComplexTypeHolder = {
   attributeGroup?: attributeGroupRef[];
   anyAttribute?: wildcard;
   complexContent?: complexContentType;
-};
+}
 
-type ComplexTypeContentState = {
+interface ComplexTypeContentState {
   group?: groupRef;
   sequence?: explicitGroup;
   choice?: explicitGroup;
@@ -55,7 +57,7 @@ type ComplexTypeContentState = {
   attribute?: attribute[];
   attributeGroup?: attributeGroupRef[];
   anyAttribute?: wildcard;
-};
+}
 
 /**
  * Executes an addComplexType command.

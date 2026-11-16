@@ -23,7 +23,7 @@ interface EditionRule {
   /** Whether the rule applies to a file name. */
   applies: (file: string) => boolean;
   /** Lists the settings and editions in the text of a file. */
-  find: (text: string) => { setting: string; value: string }[];
+  find: (text: string) => Array<{ setting: string; value: string }>;
   /** Replaces every edition in the text of a file. */
   replace: (text: string, edition: string) => string;
 }
@@ -148,7 +148,7 @@ export async function loadEditions(majors: number[]): Promise<Map<number, string
  * @param dir - The root folder of the project
  * @returns The file names and their rules, sorted by name
  */
-function configFiles(dir: string): { file: string; rule: EditionRule }[] {
+function configFiles(dir: string): Array<{ file: string; rule: EditionRule }> {
   return readdirSync(dir)
     .sort().flatMap((file) => RULES.filter((rule) => rule.applies(file)).map((rule) => ({ file, rule })));
 }

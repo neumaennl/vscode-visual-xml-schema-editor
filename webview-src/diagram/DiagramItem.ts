@@ -3,15 +3,17 @@
  * Ported from XSD Diagram project
  */
 
-import {
+import type {
   DiagramItemType,
-  DiagramItemGroupType,
   DiagramComplexDerivationKind,
   DiagramSimpleTypeDerivationKind,
   DiagramAnnotationEntry,
   Point,
   Size,
   Rectangle,
+} from "./DiagramTypes";
+import {
+  DiagramItemGroupType,
   enclosingRectangle,
 } from "./DiagramTypes";
 import type { Diagram } from "./Diagram";
@@ -20,7 +22,7 @@ export class DiagramItem {
   // Identity and hierarchy
   public id: string;
   public name: string;
-  public type: string = "";
+  public type = "";
   public itemType: DiagramItemType;
   public groupType: DiagramItemGroupType = DiagramItemGroupType.Sequence;
   public parent: DiagramItem | null = null;
@@ -28,19 +30,19 @@ export class DiagramItem {
   public inheritFrom: DiagramItem | null = null;
 
   // Occurrence constraints
-  public minOccurrence: number = 1;
-  public maxOccurrence: number = 1; // -1 for unbounded
+  public minOccurrence = 1;
+  public maxOccurrence = 1; // -1 for unbounded
 
   // Display properties
   // jscpd:ignore-start -- distinct flags of the same type, not duplicated logic
-  public showChildElements: boolean = false;
-  public hasChildElements: boolean = false;
-  public isReference: boolean = false;
-  public isSimpleContent: boolean = false;
-  public isAbstract: boolean = false;
-  public isNillable: boolean = false;
-  public isMixed: boolean = false;
-  public hasAnonymousComplexType: boolean = false;
+  public showChildElements = false;
+  public hasChildElements = false;
+  public isReference = false;
+  public isSimpleContent = false;
+  public isAbstract = false;
+  public isNillable = false;
+  public isMixed = false;
+  public hasAnonymousComplexType = false;
   // jscpd:ignore-end
   public complexDerivationKind?: DiagramComplexDerivationKind;
   public simpleTypeDerivationKind?: DiagramSimpleTypeDerivationKind;
@@ -60,11 +62,11 @@ export class DiagramItem {
   public boundingBox: Rectangle = { x: 0, y: 0, width: 0, height: 0 };
 
   // Documentation
-  public documentation: string = "";
+  public documentation = "";
   public documentationAnnotations: DiagramAnnotationEntry[] = [];
 
   // Namespace
-  public namespace: string = "";
+  public namespace = "";
 
   // Attributes
   public attributes: Array<{

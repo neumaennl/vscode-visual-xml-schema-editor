@@ -2,7 +2,7 @@
  * Helpers for processing simple-type derivations such as restrictions, lists, and unions.
  */
 
-import { DiagramItem } from "./DiagramItem";
+import type { DiagramItem } from "./DiagramItem";
 import type { restrictionType } from "../../shared/generated/restrictionType";
 import type { restrictionType_1 } from "../../shared/generated/restrictionType_1";
 import type { listType } from "../../shared/generated/listType";

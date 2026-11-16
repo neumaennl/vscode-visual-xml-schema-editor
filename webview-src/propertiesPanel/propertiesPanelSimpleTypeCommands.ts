@@ -2,8 +2,9 @@
  * Command-building helpers for simpleType editing in the properties panel.
  */
 
-import { SchemaCommand } from "../../shared/types";
-import { DiagramItem, parseDerivationBaseType } from "../diagram";
+import type { SchemaCommand } from "../../shared/types";
+import type { DiagramItem } from "../diagram";
+import { parseDerivationBaseType } from "../diagram";
 import { normalizeTypeReferenceForCurrentSchema, resolveSimpleTypeId } from "./propertiesPanelCommands";
 
 /**

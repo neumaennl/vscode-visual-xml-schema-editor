@@ -42,7 +42,7 @@ describe("DiagramLayout", () => {
   function layoutParentWithChildren(showChildElements: boolean, childCount = 1): { parent: DiagramItem; children: DiagramItem[] } {
     const parent = new DiagramItem("parent", "Parent", DiagramItemType.element, diagram);
     const children = Array.from({ length: childCount }, (_, i) => new DiagramItem(`child${i}`, `Child${i}`, DiagramItemType.element, diagram));
-    children.forEach((child) => parent.addChild(child));
+    children.forEach((child) => { parent.addChild(child); });
     parent.showChildElements = showChildElements;
     diagram.addRootElement(parent);
     layout.layout(diagram);

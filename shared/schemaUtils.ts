@@ -4,7 +4,7 @@
  */
 
 import { SCHEMA_ROOT_ID } from "./idStrategy.js";
-import { attribute, attributeGroupRef, schema } from "./types.js";
+import type { attribute, attributeGroupRef, schema } from "./types.js";
 
 /**
  * Returns true when `parentId` designates the schema root rather than a
@@ -44,10 +44,10 @@ export function getCurrentSchemaPrefixes(schemaObj: schema): string[] {
 }
 
 /** The extension and restriction of the complex or simple content of a complex type. */
-type ContentDerivations<T> = {
+interface ContentDerivations<T> {
   complexContent?: { extension?: T; restriction?: T };
   simpleContent?: { extension?: T; restriction?: T };
-};
+}
 
 /** A complex type whose content may live in the extension or restriction of its complex or simple content. */
 export type ContentHolder<T> = T & ContentDerivations<T>;
@@ -82,10 +82,10 @@ export function getContentContainer<T>(node: ContentHolder<T>): T {
 }
 
 /** A node that holds attributes and attribute group references directly. */
-export type AttributeContainer = {
+export interface AttributeContainer {
   attribute?: attribute[];
   attributeGroup?: attributeGroupRef[];
-};
+}
 
 /**
  * Returns the node that holds the attributes and attribute group references of a complex type, a named

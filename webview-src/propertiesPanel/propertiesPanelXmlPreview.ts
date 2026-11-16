@@ -4,7 +4,7 @@
  */
 
 import { SCHEMA_ROOT_ID, parseSchemaId, SchemaNodeType } from "../../shared/idStrategy";
-import { DiagramItem } from "../diagram";
+import type { DiagramItem } from "../diagram";
 import { DiagramItemType } from "../diagram/DiagramTypes";
 import { getNodeType, isTopLevelElement } from "./propertiesPanelCommands";
 import { extractBaseType } from "./propertiesPanelSimpleTypeCommands";

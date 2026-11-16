@@ -3,9 +3,9 @@
  * Keeps the structured editor controls out of the general type-property module.
  */
 
-import { SchemaCommand } from "../../shared/types";
+import type { SchemaCommand } from "../../shared/types";
 import { SchemaNodeType } from "../../shared/idStrategy";
-import { DiagramItem } from "../diagram";
+import type { DiagramItem } from "../diagram";
 import { createEditableField } from "./propertiesPanelDom";
 import { normalizeTypeReferenceForCurrentSchema, onTypeChange } from "./propertiesPanelCommands";
 import {

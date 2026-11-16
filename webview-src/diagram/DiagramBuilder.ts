@@ -11,7 +11,7 @@
 import { Diagram } from "./Diagram";
 import { DiagramItem } from "./DiagramItem";
 import { DiagramItemType } from "./DiagramTypes";
-import {
+import type {
   schema,
   namedGroup,
 } from "../../shared/types";
@@ -46,7 +46,7 @@ import {
  */
 export class DiagramBuilder {
   private diagram: Diagram;
-  private elementMap: Map<string, DiagramItem> = new Map();
+  private elementMap = new Map<string, DiagramItem>();
 
   /**
    * Creates a new DiagramBuilder.

@@ -3,7 +3,7 @@
  */
 
 import { DiagramRenderer } from "./renderer";
-import { DiagramOptions } from "../shared/messages";
+import type { DiagramOptions } from "../shared/messages";
 import { setupGetBBoxMock } from "./__tests__/svgTestHelpers";
 import {
   setActiveDraggedPaletteSchemaConstruct,
@@ -270,7 +270,7 @@ describe("DiagramRenderer", () => {
 
   describe("showMessage", () => {
     test("should display message in canvas", () => {
-      renderer["showMessage"]("Test message");
+      renderer.showMessage("Test message");
       
       expect(mockCanvas.textContent).toContain("Test message");
     });
@@ -278,7 +278,7 @@ describe("DiagramRenderer", () => {
 
   describe("showError", () => {
     test("should display error in canvas", () => {
-      renderer["showError"]("Test error");
+      renderer.showError("Test error");
       
       expect(mockCanvas.textContent).toContain("Test error");
     });

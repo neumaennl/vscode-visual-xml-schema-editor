@@ -4,7 +4,8 @@
  */
 
 import { CommandExecutor } from "./commandExecutor.js";
-import { schema, SchemaCommand, topLevelElement } from "../shared/types.js";
+import type { SchemaCommand } from "../shared/types.js";
+import { schema, topLevelElement } from "../shared/types.js";
 
 describe("CommandExecutor", () => {
   let executor: CommandExecutor;

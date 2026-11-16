@@ -5,13 +5,15 @@
  */
 
 import { unmarshal, marshal } from "@neumaennl/xmlbind-ts";
-import {
-  schema,
+import type {
   topLevelComplexType,
   AddAttributeGroupCommand,
   RemoveAttributeGroupCommand,
   ModifyAttributeGroupCommand,
   annotationType,
+} from "../../shared/types.js";
+import {
+  schema
 } from "../../shared/types.js";
 import {
   executeAddAttributeGroup,
@@ -69,7 +71,7 @@ const ANNOTATION = `<xs:annotation><xs:appinfo>tool data</xs:appinfo><xs:documen
  * @param schemaObj - The schema object
  * @returns The referenced names, in document order
  */
-function refsOfT(schemaObj: schema): (string | undefined)[] {
+function refsOfT(schemaObj: schema): Array<string | undefined> {
   const t = (schemaObj.complexType ?? []).find((ct) => ct.name === "T");
   return (t?.attributeGroup ?? []).map((r) => r.ref);
 }

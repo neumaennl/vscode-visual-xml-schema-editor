@@ -1,6 +1,6 @@
 // Webview-specific types (only used in webview-src, not in extension)
-import { DiagramItem } from "./diagram";
-import { schema, WebviewMessage, DiagramOptions } from "../shared/types";
+import type { DiagramItem } from "./diagram";
+import type { schema, WebviewMessage, DiagramOptions } from "../shared/types";
 
 export interface VSCodeAPI<State = unknown> {
   postMessage(message: WebviewMessage): void;

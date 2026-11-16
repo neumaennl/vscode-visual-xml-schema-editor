@@ -4,12 +4,14 @@
  * Contains root elements, layout settings, and rendering style configuration.
  */
 
-import { DiagramItem } from "./DiagramItem";
-import {
+import type { DiagramItem } from "./DiagramItem";
+import type {
   Size,
   Rectangle,
-  enclosingRectangle,
   DiagramStyle,
+} from "./DiagramTypes";
+import {
+  enclosingRectangle,
   defaultDiagramStyle,
 } from "./DiagramTypes";
 
@@ -30,22 +32,22 @@ export class Diagram {
   public boundingBox: Rectangle = { x: 0, y: 0, width: 0, height: 0 };
   
   /** Scale factor for rendering (1.0 = 100%) */
-  public scale: number = 1.0;
+  public scale = 1.0;
   
   /** Whether to display documentation annotations */
-  public showDocumentation: boolean = false;
+  public showDocumentation = false;
   
   /** Whether to always show occurrence constraints */
-  public alwaysShowOccurrence: boolean = false;
+  public alwaysShowOccurrence = false;
   
   /** Whether to show type information */
-  public showType: boolean = false;
+  public showType = false;
 
   /** Prefix bound to this schema's targetNamespace, when available */
   public currentSchemaPrefix?: string;
 
   /** Schema-level targetNamespace (schema root metadata) */
-  public schemaTargetNamespace: string = "";
+  public schemaTargetNamespace = "";
 
   /** Schema-level namespace declarations keyed by prefix */
   public schemaNamespacePrefixes: Record<string, string> = {};

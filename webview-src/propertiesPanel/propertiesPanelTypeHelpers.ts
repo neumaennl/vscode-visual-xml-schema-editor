@@ -4,7 +4,7 @@
  */
 
 import { SchemaNodeType } from "../../shared/idStrategy";
-import { DiagramComplexDerivationKind, DiagramItem } from "../diagram";
+import type { DiagramComplexDerivationKind, DiagramItem } from "../diagram";
 
 /**
  * Tells whether the node is an element with an inline (anonymous) simple type.

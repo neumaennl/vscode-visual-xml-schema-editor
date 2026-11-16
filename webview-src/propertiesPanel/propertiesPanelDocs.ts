@@ -4,9 +4,9 @@
  * the draft diagram node in sync while dispatching granular metadata commands.
  */
 
-import { SchemaCommand } from "../../shared/types";
-import { DiagramItem } from "../diagram";
-import { DiagramAnnotationEntry } from "../diagram/DiagramTypes";
+import type { SchemaCommand } from "../../shared/types";
+import type { DiagramItem } from "../diagram";
+import type { DiagramAnnotationEntry } from "../diagram/DiagramTypes";
 import { resolveDocumentationTargetId } from "./propertiesPanelCommands";
 import { createEditableTextArea } from "./propertiesPanelDom";
 import { buildAnnotationId, buildDocumentationId } from "../diagram/DiagramBuilderHelpers";
@@ -139,8 +139,8 @@ function createActionButton(
   icon: "add" | "trash",
   label: string,
   onClick: () => void,
-  isDestructive: boolean = false,
-  showLabel: boolean = true
+  isDestructive = false,
+  showLabel = true
 ): HTMLButtonElement {
   const button = document.createElement("button");
   button.type = "button";

@@ -2,7 +2,7 @@
  * Validators for schema-level commands (Import and Include).
  */
 
-import {
+import type {
   schema,
   AddImportCommand,
   RemoveImportCommand,
@@ -13,7 +13,8 @@ import {
   ModifySchemaNamespacesCommand,
 } from "../../shared/types.js";
 import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
-import { isValidXmlName, ValidationResult } from "./validationUtils.js";
+import type { ValidationResult } from "./validationUtils.js";
+import { isValidXmlName } from "./validationUtils.js";
 import { isAnyPrefixReferencedInSchema } from "../commandExecutors/schemaPrefixChecker.js";
 
 // ===== Helpers =====

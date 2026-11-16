@@ -21,10 +21,8 @@
  *   performed here.
  */
 
-import {
+import type {
   schema,
-  importType,
-  includeType,
   AddImportCommand,
   RemoveImportCommand,
   ModifyImportCommand,
@@ -32,6 +30,10 @@ import {
   RemoveIncludeCommand,
   ModifyIncludeCommand,
   ModifySchemaNamespacesCommand,
+} from "../../shared/types.js";
+import {
+  importType,
+  includeType
 } from "../../shared/types.js";
 import { parseSchemaId } from "../../shared/idStrategy.js";
 import { assumeValidated } from "./assumeValidated.js";

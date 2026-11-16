@@ -245,7 +245,7 @@ function parseNodeSegment(segment: string): {
   position?: number;
 } {
   // Split off a position indicator [N]
-  const positionMatch = segment.match(/^([^[]+)\[(\d+)\]$/);
+  const positionMatch = /^([^[]+)\[(\d+)\]$/.exec(segment);
   const typeAndName = positionMatch ? positionMatch[1] : segment;
   const position = positionMatch ? { position: parseInt(positionMatch[2], 10) } : {};
 
@@ -294,7 +294,7 @@ function parseQualifiedName(qualifiedName: string): {
   name: string;
   namespace?: string;
 } {
-  const nsMatch = qualifiedName.match(/^\{([^}]+)\}(.+)$/);
+  const nsMatch = /^\{([^}]+)\}(.+)$/.exec(qualifiedName);
   if (nsMatch) {
     return { namespace: nsMatch[1], name: nsMatch[2] };
   }

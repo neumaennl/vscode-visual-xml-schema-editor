@@ -4,14 +4,16 @@
  * ID identifies.
  */
 
-import { schema } from "../../shared/types.js";
-import { parseSchemaId, ParsedSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy.js";
+import type { schema } from "../../shared/types.js";
+import type { ParsedSchemaId } from "../../shared/idStrategy.js";
+import { parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy.js";
 import { locateNodeById } from "../schemaNavigator.js";
 import { findIdentifiedChild } from "../commandUtils.js";
-import { ValidationFailure, ValidationResult, isValidXmlName, validateAnonymousTypeParent } from "./validationUtils.js";
+import type { ValidationFailure, ValidationResult } from "./validationUtils.js";
+import { isValidXmlName, validateAnonymousTypeParent } from "./validationUtils.js";
 
 /** A top-level component, as far as the checks look at it. */
-type NamedComponent = { name?: string };
+interface NamedComponent { name?: string }
 
 /**
  * Validates the `ref` of a reference: it must be a valid XML name and name one of the top-level
@@ -93,7 +95,7 @@ export function validateDefinitionRemoval(
 }
 
 /** A local element or attribute, as far as the checks look at it. */
-export type NamedChild = { name?: string; ref?: string };
+export interface NamedChild { name?: string; ref?: string }
 
 /** Elements or attributes, for {@link locateChild}. */
 export interface ChildKind {

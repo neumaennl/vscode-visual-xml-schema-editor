@@ -3,14 +3,14 @@
 import "./styles.css";
 import { DiagramRenderer } from "./renderer";
 import { PropertiesPanel } from "./propertiesPanel/propertiesPanel";
-import { schema } from "../shared/types";
-import {
+import type { schema } from "../shared/types";
+import type {
   VSCodeAPI,
   ViewState,
   WebviewState,
 } from "./webviewTypes";
-import { DiagramItem } from "./diagram";
-import { ExtensionMessage, DiagramOptions } from "../shared/messages";
+import type { DiagramItem } from "./diagram";
+import type { ExtensionMessage, DiagramOptions } from "../shared/messages";
 import { PaletteView } from "./palette/PaletteView";
 import { DropCommandFactory } from "./drop/DropCommandFactory";
 import { isPaletteSchemaConstruct } from "./palette/PaletteSchemaConstruct";
@@ -184,7 +184,7 @@ class SchemaEditorApp {
    */
   private onNodeClick(
     item: DiagramItem,
-    isExpandButton: boolean = false
+    isExpandButton = false
   ): void {
     if (isExpandButton) {
       // Toggle expand/collapse
@@ -387,7 +387,7 @@ class SchemaEditorApp {
       this.notificationBar = document.getElementById("notification-bar");
       document
         .getElementById("notification-dismiss")
-        ?.addEventListener("click", () => this.dismissNotification());
+        ?.addEventListener("click", () => { this.dismissNotification(); });
     }
     const msgEl = document.getElementById("notification-message");
     if (msgEl) {

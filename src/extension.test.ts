@@ -153,7 +153,7 @@ describe("Extension", () => {
 
   describe("deactivate", () => {
     test("should complete without errors", () => {
-      expect(() => deactivate()).not.toThrow();
+      expect(() => { deactivate(); }).not.toThrow();
     });
   });
 });

@@ -14,7 +14,7 @@
  * or tested here.
  */
 
-import {
+import type {
   AddAnnotationCommand,
   RemoveAnnotationCommand,
   ModifyAnnotationCommand,
@@ -308,7 +308,7 @@ describe("executeRemoveDocumentation", () => {
       payload: { documentationId: "/element:person" },
     };
 
-    expect(() => executeRemoveDocumentation(command, schemaObj)).toThrow(
+    expect(() => { executeRemoveDocumentation(command, schemaObj); }).toThrow(
       "Invalid documentationId format"
     );
   });
@@ -390,7 +390,7 @@ describe("executeModifyDocumentation", () => {
       payload: { documentationId: "doc-123", content: "x" },
     };
 
-    expect(() => executeModifyDocumentation(command, schemaObj)).toThrow(
+    expect(() => { executeModifyDocumentation(command, schemaObj); }).toThrow(
       "Invalid documentationId format"
     );
   });

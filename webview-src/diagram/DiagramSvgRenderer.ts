@@ -3,11 +3,13 @@
  * Ported from XSD Diagram project (DiagramSvgRenderer.cs)
  */
 
-import { Diagram } from "./Diagram";
-import { DiagramItem } from "./DiagramItem";
-import {
-  DiagramItemType,
+import type { Diagram } from "./Diagram";
+import type { DiagramItem } from "./DiagramItem";
+import type {
   Point,
+} from "./DiagramTypes";
+import {
+  DiagramItemType
 } from "./DiagramTypes";
 import { isCompositorGroup } from "./groupUtils";
 import {

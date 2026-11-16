@@ -4,14 +4,15 @@
  * attribute group references (xs:attributeGroup ref="...").
  */
 
-import {
+import type {
   schema,
   AddAttributeGroupCommand,
   RemoveAttributeGroupCommand,
   ModifyAttributeGroupCommand,
   attributeGroupRef,
 } from "../../shared/types.js";
-import { ValidationFailure, ValidationResult, isValidXmlName } from "./validationUtils.js";
+import type { ValidationFailure, ValidationResult } from "./validationUtils.js";
+import { isValidXmlName } from "./validationUtils.js";
 import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
 import { locateNodeById } from "../schemaNavigator.js";
 import { getAttributeContainer } from "../../shared/schemaUtils.js";

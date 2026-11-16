@@ -3,29 +3,30 @@
  * removed.
  */
 
-import { schema, groupRef, attributeGroupRef } from "../../shared/types.js";
-import { ContentHolder, getContentContainer } from "../../shared/schemaUtils.js";
+import type { schema, groupRef, attributeGroupRef } from "../../shared/types.js";
+import type { ContentHolder } from "../../shared/schemaUtils.js";
+import { getContentContainer } from "../../shared/schemaUtils.js";
 
 /**
  * Structural type for a compositor (sequence, choice or all): its group references, nested
  * compositors and local elements, whose inline complexTypes can hold references too.
  */
-export type SearchedCompositor = {
+export interface SearchedCompositor {
   group?: groupRef[];
   element?: Array<{ complexType?: SearchedComplexType }>;
   choice?: SearchedCompositor[];
   sequence?: SearchedCompositor[];
-};
+}
 
 /**
  * Structural type for objects whose content model is a sequence, choice or all: complexTypes, the
  * extensions and restrictions of their content, and named groups.
  */
-type SearchedContentModel = {
+interface SearchedContentModel {
   sequence?: SearchedCompositor;
   choice?: SearchedCompositor;
   all?: SearchedCompositor;
-};
+}
 
 /**
  * Structural type for the content of a complexType: the complexType itself, or the extension or

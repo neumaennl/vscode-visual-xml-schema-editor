@@ -2,7 +2,7 @@
  * Unit tests for annotation validators (Annotation and Documentation).
  */
 
-import {
+import type {
   schema,
   AddAnnotationCommand,
   AddDocumentationCommand,
@@ -15,7 +15,7 @@ import {
   validateRemoveDocumentation,
   validateModifyDocumentation,
 } from "./annotationValidators.js";
-import { ValidationResult } from "./validationUtils.js";
+import type { ValidationResult } from "./validationUtils.js";
 import { expectInvalid } from "../__tests__/validationTestHelpers.js";
 import { emptySchema, schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
 import { readTestSchema } from "../__tests__/resourceTestHelpers.js";

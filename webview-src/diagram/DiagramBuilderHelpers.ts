@@ -3,7 +3,7 @@
  * Contains common operations like ID generation and extraction of schema metadata.
  */
 
-import { DiagramItem } from "./DiagramItem";
+import type { DiagramItem } from "./DiagramItem";
 import type { RestrictionFacets } from "../../shared/types";
 import type {
   DiagramAnnotationEntry,

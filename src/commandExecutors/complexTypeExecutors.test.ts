@@ -4,10 +4,12 @@
  */
 
 import { marshal, unmarshal } from "@neumaennl/xmlbind-ts";
-import {
+import type {
   AddComplexTypeCommand,
   ModifyComplexTypeCommand,
   RemoveComplexTypeCommand,
+} from "../../shared/types.js";
+import {
   schema,
 } from "../../shared/types.js";
 import {

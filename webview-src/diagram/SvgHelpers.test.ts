@@ -9,7 +9,7 @@ import {
   svgCircle,
   svgText,
 } from "./SvgHelpers";
-import { Point, Rectangle } from "./DiagramTypes";
+import type { Point, Rectangle } from "./DiagramTypes";
 
 describe("SvgHelpers", () => {
   let mockGroup: SVGElement;

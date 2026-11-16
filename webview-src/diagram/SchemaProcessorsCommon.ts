@@ -2,7 +2,7 @@
  * Shared helpers for processing schema collections into diagram children.
  */
 
-import { DiagramItem } from "./DiagramItem";
+import type { DiagramItem } from "./DiagramItem";
 
 /**
  * Processes a collection of schema items and adds the resulting diagram nodes to a parent.

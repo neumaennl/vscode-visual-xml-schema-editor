@@ -2,8 +2,9 @@
  * Shared validation utilities for command validators.
  */
 
-import { schema } from "../../shared/types.js";
-import { locateNodeById, NodeLocation } from "../schemaNavigator.js";
+import type { schema } from "../../shared/types.js";
+import type { NodeLocation } from "../schemaNavigator.js";
+import { locateNodeById } from "../schemaNavigator.js";
 
 /** A validation check that passed. */
 export interface ValidationSuccess {

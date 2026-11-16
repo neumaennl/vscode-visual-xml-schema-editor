@@ -4,11 +4,13 @@
  */
 
 import { unmarshal, marshal } from "@neumaennl/xmlbind-ts";
-import {
-  schema,
+import type {
   AddGroupCommand,
   RemoveGroupCommand,
   ModifyGroupCommand,
+} from "../../shared/types.js";
+import {
+  schema
 } from "../../shared/types.js";
 import {
   executeAddGroup,

@@ -1,5 +1,6 @@
-import { schema, SchemaCommand } from "../../shared/types";
-import { DiagramItem, DiagramItemType } from "../diagram";
+import type { schema, SchemaCommand } from "../../shared/types";
+import type { DiagramItem } from "../diagram";
+import { DiagramItemType } from "../diagram";
 import { generateSchemaId, parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy";
 import { PaletteSchemaConstruct } from "../palette/PaletteSchemaConstruct";
 import { isFacetPaletteConstruct } from "../palette/FacetIconStyles";
@@ -391,7 +392,7 @@ export class DropCommandFactory {
    * @param nodes - Named schema collection
    */
   private addNamedNodesToSet(
-    nodes: { name?: string }[] | undefined
+    nodes: Array<{ name?: string }> | undefined
   ): void {
     (nodes ?? []).forEach((node) => {
       if (node.name) {

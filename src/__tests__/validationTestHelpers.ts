@@ -13,6 +13,6 @@ import type { ValidationResult, ValidationFailure } from "../commandValidators/v
 export function expectInvalid(
   result: ValidationResult
 ): asserts result is ValidationFailure {
-  if (result.valid !== false)
+  if (result.valid)
     throw new Error("Expected validation to fail but it passed");
 }

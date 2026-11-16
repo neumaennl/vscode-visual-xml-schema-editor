@@ -3,8 +3,9 @@
  * Implements execution logic by delegating to specialized executor modules.
  */
 
-import { SchemaCommand, schema } from "../shared/types.js";
-import { CommandHandlers, findCommandHandler } from "./commandHandlers.js";
+import type { SchemaCommand, schema } from "../shared/types.js";
+import type { CommandHandlers } from "./commandHandlers.js";
+import { findCommandHandler } from "./commandHandlers.js";
 
 // Import execution functions from specialized modules
 import * as elementExecutors from "./commandExecutors/elementExecutors.js";

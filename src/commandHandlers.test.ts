@@ -2,8 +2,10 @@
  * Unit tests for findCommandHandler.
  */
 
-import { findCommandHandler, CommandHandlers } from "./commandHandlers.js";
-import { schema, SchemaCommand } from "../shared/types.js";
+import type { CommandHandlers } from "./commandHandlers.js";
+import { findCommandHandler } from "./commandHandlers.js";
+import type { SchemaCommand } from "../shared/types.js";
+import { schema } from "../shared/types.js";
 
 type Handlers = CommandHandlers<"handle", string>;
 

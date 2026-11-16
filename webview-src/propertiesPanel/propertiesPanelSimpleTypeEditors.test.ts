@@ -67,9 +67,9 @@ function renderEditor(
  * @returns The editor
  */
 function renderBodyEditor(id: string, editor: typeof renderSimpleTypeListEditor): SimpleTypeEditor {
-  return renderEditor(id, (root, node, hasInlineSimpleType, dispatchCommand) =>
-    editor({ root, node, hasInlineSimpleType, typeSuggestions: SUGGESTIONS, dispatchCommand, addPropertyToContainer })
-  );
+  return renderEditor(id, (root, node, hasInlineSimpleType, dispatchCommand) => {
+    editor({ root, node, hasInlineSimpleType, typeSuggestions: SUGGESTIONS, dispatchCommand, addPropertyToContainer });
+  });
 }
 
 /**
@@ -284,9 +284,9 @@ describe("propertiesPanelSimpleTypeEditors", () => {
      * @returns The editor
      */
     function renderReplacement(): SimpleTypeEditor {
-      return renderEditor("/element:size", (root, node, _hasInlineSimpleType, dispatch) =>
-        renderInlineSimpleTypeReplacement(root, node, "xs:int", SUGGESTIONS, dispatch)
-      );
+      return renderEditor("/element:size", (root, node, _hasInlineSimpleType, dispatch) => {
+        renderInlineSimpleTypeReplacement(root, node, "xs:int", SUGGESTIONS, dispatch);
+      });
     }
 
     test("should replace the inline type with a named type", () => {

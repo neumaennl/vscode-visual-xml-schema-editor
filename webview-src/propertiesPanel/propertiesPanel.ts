@@ -3,9 +3,9 @@
  * Renders node properties such as name, type, cardinality, documentation, and attributes.
  */
 
-import { DiagramItem } from "../diagram";
+import type { DiagramItem } from "../diagram";
 import { DiagramItemType } from "../diagram/DiagramTypes";
-import { SchemaCommand } from "../../shared/types";
+import type { SchemaCommand } from "../../shared/types";
 import {
   collectLocalSchemaTypeNames,
   getNodeType,
@@ -99,7 +99,7 @@ export class PropertiesPanel {
       createPropertiesPanelHeader(
         getNodeTypeLabel(this.draftNode),
         this.draftNode.id,
-        deleteCommand ? () : void => this.dispatchCommand(deleteCommand) : undefined
+        deleteCommand ? () : void => { this.dispatchCommand(deleteCommand); } : undefined
       )
     );
     this.container.appendChild(this.createTabBar());
@@ -219,7 +219,7 @@ export class PropertiesPanel {
     );
 
     if (getNodeType(node) === SchemaNodeType.Schema) {
-      renderSchemaNamespaceProperties(root, node, this.dispatchCommand, () => this.render());
+      renderSchemaNamespaceProperties(root, node, this.dispatchCommand, () => { this.render(); });
     }
 
     if (canEditCardinality(node)) {
@@ -334,7 +334,7 @@ export class PropertiesPanel {
         ? "property-preset-btn property-preset-btn-active"
         : "property-preset-btn";
       btn.textContent = preset.label;
-      btn.addEventListener("click", () => dispatchOccurrence(preset.min, preset.max));
+      btn.addEventListener("click", () => { dispatchOccurrence(preset.min, preset.max); });
       presetsRow.appendChild(btn);
     }
 
@@ -498,7 +498,7 @@ export class PropertiesPanel {
    * @returns The content of the tab
    */
   private renderDocsTab(node: DiagramItem): HTMLElement {
-    return createDocsTab(node, this.dispatchCommand, () => this.render());
+    return createDocsTab(node, this.dispatchCommand, () => { this.render(); });
   }
 
   /**

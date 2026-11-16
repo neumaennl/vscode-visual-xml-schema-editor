@@ -4,16 +4,18 @@
  * covering both top-level group definitions and group references.
  */
 
-import {
+import type {
   schema,
   AddGroupCommand,
   RemoveGroupCommand,
   ModifyGroupCommand,
   ContentModel,
+  annotationType,
+} from "../../shared/types.js";
+import {
   namedGroup,
   allType,
   simpleExplicitGroup,
-  annotationType,
   groupRef,
 } from "../../shared/types.js";
 import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
@@ -164,17 +166,17 @@ export function executeModifyGroup(
 // ===== Element Group Helper Functions =====
 
 /** Structural type shared by namedGroup for content model operations. */
-type GroupHolder = {
+interface GroupHolder {
   all?: allType;
   choice?: simpleExplicitGroup;
   sequence?: simpleExplicitGroup;
-};
+}
 
 /** Structural type for a compositor (sequence or choice) that holds group refs. */
-type CompositorWithGroupRefs = { group?: groupRef[] };
+interface CompositorWithGroupRefs { group?: groupRef[] }
 
 /** Structural type for a complexType that can hold a direct group ref. */
-type ComplexTypeWithGroupRef = { group?: groupRef };
+interface ComplexTypeWithGroupRef { group?: groupRef }
 
 /**
  * Builds a new groupRef instance with the given properties.
@@ -275,12 +277,12 @@ function findGroupRefInParent(
  * Structural type for the holders of a compositor: a complex type (directly or in its complex content), a
  * group definition, or another compositor, which holds its nested compositors in arrays.
  */
-type CompositorHolder = {
+interface CompositorHolder {
   sequence?: unknown;
   choice?: unknown;
   all?: unknown;
   complexContent?: { extension?: CompositorHolder; restriction?: CompositorHolder };
-};
+}
 
 /**
  * Removes a compositor from the node that holds it.

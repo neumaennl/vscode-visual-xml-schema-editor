@@ -2,7 +2,7 @@
  * Typed lookup of the handler for a schema command, shared by CommandValidator and CommandExecutor.
  */
 
-import { SchemaCommand, schema } from "../shared/types.js";
+import type { SchemaCommand, schema } from "../shared/types.js";
 
 /** The value of `type` of a schema command, such as `"addElement"`. */
 export type CommandType = SchemaCommand["type"];

@@ -3,7 +3,7 @@
  * Implements validation, execution, and rollback logic for schema transformations.
  */
 
-import { SchemaCommand, schema } from "../shared/types.js";
+import type { SchemaCommand, schema } from "../shared/types.js";
 import { CommandValidator } from "./commandValidator.js";
 import { CommandExecutor } from "./commandExecutor.js";
 import { SchemaModelManager } from "./schemaModelManager.js";
@@ -70,7 +70,7 @@ export class CommandProcessor {
   private readonly validator: CommandValidator;
   private readonly executor: CommandExecutor;
   private readonly modelManager: SchemaModelManager;
-  private isExecuting: boolean = false;
+  private isExecuting = false;
 
   /**
    * Creates a new CommandProcessor.

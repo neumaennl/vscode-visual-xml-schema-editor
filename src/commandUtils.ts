@@ -11,14 +11,14 @@
  *   - "/schema/documentation[N]" — N-th doc of the first annotation (shorthand).
  */
 
-import { attributeGroupRef } from "../shared/types.js";
+import type { attributeGroupRef } from "../shared/types.js";
 
 /**
  * Parses a schema-annotation ID of the form "/schema/annotation[N]".
  * @returns The 0-based annotation index, or null if the format does not match.
  */
 export function parseSchemaAnnotationId(id: string): number | null {
-  const match = id.match(/^\/schema\/annotation\[(\d+)\]$/);
+  const match = /^\/schema\/annotation\[(\d+)\]$/.exec(id);
   return match ? parseInt(match[1], 10) : null;
 }
 
@@ -30,9 +30,7 @@ export function parseSchemaAnnotationId(id: string): number | null {
 export function parseSchemaDocumentationId(
   id: string
 ): { annotationIndex: number; documentationIndex: number } | null {
-  const match = id.match(
-    /^\/schema\/annotation\[(\d+)\]\/documentation\[(\d+)\]$/
-  );
+  const match = /^\/schema\/annotation\[(\d+)\]\/documentation\[(\d+)\]$/.exec(id);
   return match
     ? { annotationIndex: parseInt(match[1], 10), documentationIndex: parseInt(match[2], 10) }
     : null;
@@ -48,7 +46,7 @@ export function parseDocumentationId(documentationId: string): {
   elementId: string;
   documentationIndex: number;
 } {
-  const match = documentationId.match(/^(.+)\/documentation\[(\d+)\]$/);
+  const match = /^(.+)\/documentation\[(\d+)\]$/.exec(documentationId);
   // The greedy `.+` is intentional: with the `$` anchor the engine backtracks to
   // match the LAST `/documentation[N]` in the string, so the captured element
   // path is everything before that final suffix (including any intermediate

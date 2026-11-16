@@ -3,8 +3,8 @@
  * Ported and adapted from XSD Diagram project
  */
 
-import { Diagram } from "./Diagram";
-import { DiagramItem } from "./DiagramItem";
+import type { Diagram } from "./Diagram";
+import type { DiagramItem } from "./DiagramItem";
 import { isCompositorGroup } from "./groupUtils";
 import { DiagramItemType } from "./DiagramTypes";
 

@@ -9,8 +9,9 @@ import {
   renderOccurrence,
 } from "./TextRenderers";
 import { DiagramItem } from "./DiagramItem";
-import { Diagram } from "./Diagram";
-import { DiagramItemType, Rectangle } from "./DiagramTypes";
+import type { Diagram } from "./Diagram";
+import type { Rectangle } from "./DiagramTypes";
+import { DiagramItemType } from "./DiagramTypes";
 import { setupGetBBoxMock } from "../__tests__/svgTestHelpers";
 
 describe("TextRenderers", () => {

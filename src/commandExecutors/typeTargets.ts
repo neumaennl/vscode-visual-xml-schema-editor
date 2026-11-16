@@ -3,7 +3,7 @@
  * elements and attributes hold inline, and top-level types in the schema.
  */
 
-import { schema } from "../../shared/types.js";
+import type { schema } from "../../shared/types.js";
 import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
 import { isSchemaRoot } from "../../shared/schemaUtils.js";
 import { assumeValidated, locateValidated } from "./assumeValidated.js";
@@ -14,7 +14,7 @@ import { renameLocalTypeInSchema } from "./schemaLocalRenamer.js";
 export type TypeKind = "simpleType" | "complexType";
 
 /** An element or attribute that can hold an anonymous type instead of a named one. */
-type TypeHolder = { type_?: string; simpleType?: object; complexType?: object };
+interface TypeHolder { type_?: string; simpleType?: object; complexType?: object }
 
 /** The top-level types of the schema, as far as these helpers use them. */
 type TypesOfSchema = Record<TypeKind, Array<{ name: string }> | undefined>;

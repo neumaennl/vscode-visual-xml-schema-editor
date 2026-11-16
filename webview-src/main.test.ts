@@ -10,11 +10,11 @@ const mockPostMessage = vi.fn();
 const mockGetState = vi.fn();
 const mockSetState = vi.fn();
 
-type MockVsCodeApi = {
+interface MockVsCodeApi {
   postMessage: Mock;
   getState: Mock;
   setState: Mock;
-};
+}
 
 const globalWithAcquire = globalThis as typeof globalThis & {
   acquireVsCodeApi: Mock<() => MockVsCodeApi>;

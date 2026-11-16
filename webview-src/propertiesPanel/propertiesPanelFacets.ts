@@ -3,11 +3,13 @@
  * Keeps the facet-specific UI and command-building logic separate from the main panel class.
  */
 
-import { SchemaCommand } from "../../shared/types";
-import { DiagramItem, toRestrictionFacets } from "../diagram";
+import type { SchemaCommand } from "../../shared/types";
+import type { DiagramItem } from "../diagram";
+import { toRestrictionFacets } from "../diagram";
 import { createEditableField } from "./propertiesPanelDom";
 import { resolveSimpleTypeId } from "./propertiesPanelCommands";
-import { hasEditableFacetValues, RestrictionSnapshot } from "./propertiesPanelDraft";
+import type { RestrictionSnapshot } from "./propertiesPanelDraft";
+import { hasEditableFacetValues } from "./propertiesPanelDraft";
 import { getFacetIconStyle, type FacetPaletteConstruct } from "../palette/FacetIconStyles";
 import { PaletteSchemaConstruct } from "../palette/PaletteSchemaConstruct";
 import { appendFacetRemoveButton, renderValueListFacet } from "./propertiesPanelFacetLists";
@@ -91,7 +93,7 @@ export function renderFacetsTab(
       restrictions.enumeration,
       buildAndDispatch,
       canRemoveFacet,
-      () => buildAndDispatch((draft) => { draft.enumeration = undefined; })
+      () => { buildAndDispatch((draft) => { draft.enumeration = undefined; }); }
     );
   }
 
@@ -102,7 +104,7 @@ export function renderFacetsTab(
       restrictions.pattern,
       buildAndDispatch,
       canRemoveFacet,
-      () => buildAndDispatch((draft) => { draft.pattern = undefined; })
+      () => { buildAndDispatch((draft) => { draft.pattern = undefined; }); }
     );
   }
 
@@ -161,7 +163,7 @@ function appendOptionalValueFacet(
   const field = createEditableField(
     facet.label,
     value.toString(),
-    (next) => buildAndDispatch((draft) => assign(draft, next)),
+    (next) => { buildAndDispatch((draft) => { assign(draft, next); }); },
     undefined,
     getFacetIconStyle(facet.construct)
   );

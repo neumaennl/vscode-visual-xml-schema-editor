@@ -3,7 +3,7 @@
  * enumeration values and patterns. Both are shown as a list of chips.
  */
 
-import { RestrictionSnapshot } from "./propertiesPanelDraft";
+import type { RestrictionSnapshot } from "./propertiesPanelDraft";
 import { getFacetIconStyle, type FacetPaletteConstruct } from "../palette/FacetIconStyles";
 import { PaletteSchemaConstruct } from "../palette/PaletteSchemaConstruct";
 
@@ -131,7 +131,7 @@ export function renderValueListFacet(
     const canRemoveValue = values.length > 1 || canRemove;
     values.forEach((value, index) => {
       if (index === editedIndex) {
-        const input = createValueInput(value, `Edit ${value}`, (next) => finishEditing(index, next));
+        const input = createValueInput(value, `Edit ${value}`, (next) => { finishEditing(index, next); });
         list.appendChild(input);
         input.focus();
         input.select();
@@ -144,7 +144,7 @@ export function renderValueListFacet(
           editedIndex = index;
           render();
         },
-        () => update(values.filter((_, i) => i !== index))
+        () => { update(values.filter((_, i) => i !== index)); }
       );
       if (values.length > 1) {
         addReorderHandlers(chip, index, list, drag, (sourceIndex) => {
@@ -328,7 +328,7 @@ function createValueInput(value: string, label: string, onFinish: (value: string
       onFinish(value);
     }
   };
-  input.addEventListener("blur", () => finish(input.value.trim()));
+  input.addEventListener("blur", () => { finish(input.value.trim()); });
   input.addEventListener("keydown", (event: KeyboardEvent) => {
     if (event.key === "Enter") {
       event.preventDefault();

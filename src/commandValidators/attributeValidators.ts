@@ -2,16 +2,18 @@
  * Validators for attribute commands.
  */
 
-import {
+import type {
   schema,
   AddAttributeCommand,
   RemoveAttributeCommand,
   ModifyAttributeCommand,
   AttributeFields,
 } from "../../shared/types.js";
-import { ValidationResult, isValidXmlName } from "./validationUtils.js";
+import type { ValidationResult } from "./validationUtils.js";
+import { isValidXmlName } from "./validationUtils.js";
 import { getAttributeContainer } from "../../shared/schemaUtils.js";
-import { ChildKind, locateChild, validateNewChild, validateReference } from "./commonValidators.js";
+import type { ChildKind } from "./commonValidators.js";
+import { locateChild, validateNewChild, validateReference } from "./commonValidators.js";
 
 /** Parent types that can contain attributes. */
 const VALID_ATTR_PARENTS = ["schema", "topLevelComplexType", "localComplexType"] as const;

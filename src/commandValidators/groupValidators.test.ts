@@ -2,8 +2,8 @@
  * Unit tests for group validators.
  */
 
-import { schema } from "../../shared/types.js";
-import {
+import type { schema } from "../../shared/types.js";
+import type {
   AddGroupCommand,
   RemoveGroupCommand,
   ModifyGroupCommand,
@@ -55,7 +55,7 @@ const LOCAL_ELEMENT_WITH_REF = `<xs:element name="child"><xs:complexType><xs:seq
  * Places where XML Schema allows a reference to a group, as schema content in which
  * `REF` stands for the referenced group.
  */
-const REFERENCE_PLACES: [string, string][] = [
+const REFERENCE_PLACES: Array<[string, string]> = [
   [
     "the sequence of a complexType",
     `<xs:complexType name="T"><xs:sequence><xs:group ref="REF"/></xs:sequence></xs:complexType>`,

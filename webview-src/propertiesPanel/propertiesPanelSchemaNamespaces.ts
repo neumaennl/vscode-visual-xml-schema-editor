@@ -2,8 +2,8 @@
  * Schema-root namespace editing helpers for the properties panel.
  */
 
-import { SchemaCommand } from "../../shared/types";
-import { Diagram, DiagramItem } from "../diagram";
+import type { SchemaCommand } from "../../shared/types";
+import type { Diagram, DiagramItem } from "../diagram";
 import {
   addPropertyWithElementToContainer,
   createEditableField,

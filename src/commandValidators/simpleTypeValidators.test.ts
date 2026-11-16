@@ -2,7 +2,7 @@
  * Unit tests for the simple type validators.
  */
 
-import {
+import type {
   schema,
   AddSimpleTypeCommand,
   RemoveSimpleTypeCommand,
@@ -13,7 +13,7 @@ import {
   validateRemoveSimpleType,
   validateModifySimpleType,
 } from "./simpleTypeValidators.js";
-import { ValidationResult } from "./validationUtils.js";
+import type { ValidationResult } from "./validationUtils.js";
 import { expectInvalid } from "../__tests__/validationTestHelpers.js";
 import { emptySchema, schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
 

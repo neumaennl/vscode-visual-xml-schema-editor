@@ -4,15 +4,17 @@
  */
 
 import { marshal, unmarshal } from "@neumaennl/xmlbind-ts";
-import {
+import type {
   AddSimpleTypeCommand,
   ModifySimpleTypeCommand,
   RemoveSimpleTypeCommand,
   localSimpleType,
   RestrictionFacets,
-  schema,
   topLevelAttribute,
   topLevelElement,
+} from "../../shared/types.js";
+import {
+  schema
 } from "../../shared/types.js";
 import {
   executeAddSimpleType,
@@ -72,7 +74,7 @@ describe("SimpleType Executors", () => {
     test("should throw when a simpleType is added without any body details", () => {
       const schemaObj = emptySchema();
 
-      expect(() => addSimpleType(schemaObj, { typeName: "NameType" }))
+      expect(() => { addSimpleType(schemaObj, { typeName: "NameType" }); })
         .toThrow("Simple type body not found, although the validator accepted the command");
     });
 
@@ -527,7 +529,7 @@ describe("SimpleType Executors", () => {
         source: `
   <xs:simpleType name="StatusType"><xs:restriction base="xs:string"/></xs:simpleType>
   <xs:element name="status" type="StatusType"/>`,
-        expectReferences: (schemaObj: schema): void => expect(elements(schemaObj)[0].type_).toBe("StateType"),
+        expectReferences: (schemaObj: schema): void => { expect(elements(schemaObj)[0].type_).toBe("StateType"); },
       },
       {
         name: "attribute/@type",
@@ -536,7 +538,7 @@ describe("SimpleType Executors", () => {
   <xs:attribute name="code" type="CodeType"/>`,
         oldName: "CodeType",
         newName: "IdentifierType",
-        expectReferences: (schemaObj: schema): void => expect(attributes(schemaObj)[0].type_).toBe("IdentifierType"),
+        expectReferences: (schemaObj: schema): void => { expect(attributes(schemaObj)[0].type_).toBe("IdentifierType"); },
       },
       {
         name: "restriction/@base",
@@ -545,10 +547,11 @@ describe("SimpleType Executors", () => {
   <xs:simpleType name="DerivedType"><xs:restriction base="BaseType"><xs:maxLength value="50"/></xs:restriction></xs:simpleType>`,
         oldName: "BaseType",
         newName: "RootType",
-        expectReferences: (schemaObj: schema): void =>
+        expectReferences: (schemaObj: schema): void => {
           expect(
             simpleTypes(schemaObj).find((simpleType) => simpleType.name === "DerivedType")!.restriction!.base
-          ).toBe("RootType"),
+          ).toBe("RootType");
+        },
       },
       {
         name: "unprefixed references only",

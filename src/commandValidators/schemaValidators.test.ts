@@ -2,8 +2,8 @@
  * Unit tests for schema validators (Import and Include).
  */
 
-import { schema } from "../../shared/types.js";
-import {
+import type { schema } from "../../shared/types.js";
+import type {
   AddImportCommand,
   ModifyImportCommand,
   RemoveIncludeCommand,
@@ -19,7 +19,7 @@ import {
   validateModifyInclude,
   validateModifySchemaNamespaces,
 } from "./schemaValidators.js";
-import { ValidationResult } from "./validationUtils.js";
+import type { ValidationResult } from "./validationUtils.js";
 import { expectInvalid } from "../__tests__/validationTestHelpers.js";
 import { emptySchema, schemaWith, schemaWithIncludes } from "../../shared/__tests__/schemaTestHelpers.js";
 import { readTestSchema } from "../__tests__/resourceTestHelpers.js";

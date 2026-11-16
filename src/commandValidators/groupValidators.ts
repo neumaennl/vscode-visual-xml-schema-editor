@@ -2,23 +2,26 @@
  * Validators for group commands (Group and AttributeGroup).
  */
 
-import {
+import type {
   schema,
   AddGroupCommand,
   RemoveGroupCommand,
   ModifyGroupCommand,
   groupRef,
 } from "../../shared/types.js";
-import {
+import type {
   ValidationFailure,
   ValidationResult,
+} from "./validationUtils.js";
+import {
   isValidXmlName,
   validateOccurrences,
 } from "./validationUtils.js";
 import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
 import { locateNodeById } from "../schemaNavigator.js";
 import { parseRequiredId, validateDefinitionExists, validateDefinitionRemoval, validateReference } from "./commonValidators.js";
-import { isReferencedInContent, SearchedCompositor } from "./referenceSearch.js";
+import type { SearchedCompositor } from "./referenceSearch.js";
+import { isReferencedInContent } from "./referenceSearch.js";
 
 /**
  * Valid content models for Group elements.
@@ -59,12 +62,12 @@ function validateGroupReference(ref: string, schemaObj: schema): ValidationResul
 }
 
 /** Structural type for a complexType node that can hold a direct particle. */
-type ComplexTypeWithParticles = {
+interface ComplexTypeWithParticles {
   group?: groupRef;
   sequence?: SearchedCompositor;
   choice?: SearchedCompositor;
   all?: SearchedCompositor;
-};
+}
 
 /** Returns true if the parent type is a complexType (top-level or local). */
 function isComplexTypeParent(parentType: string): boolean {

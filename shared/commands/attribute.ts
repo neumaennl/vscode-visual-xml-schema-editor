@@ -3,7 +3,7 @@
  * Provides commands for adding, removing, and modifying attributes.
  */
 
-import { BaseCommand } from "./base.js";
+import type { BaseCommand } from "./base.js";
 
 /**
  * The fields of an attribute that addAttribute sets and modifyAttribute changes. An attribute is either

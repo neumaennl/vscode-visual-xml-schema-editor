@@ -99,7 +99,7 @@ export async function check(dir = "."): Promise<number> {
   const vscode = parseVersion(actual.engines).join(".");
   const derived = deriveVersions(vscode, { ...(await loadSharedData()), electron: await electronOf(vscode) });
   const expected = expectedValues(derived);
-  const keys = Object.keys(expected) as (keyof ExpectedValues)[];
+  const keys = Object.keys(expected) as Array<keyof ExpectedValues>;
   const nodeMajor = parseVersion(derived.node)[0];
   const problems = [
     ...keys.filter((key) => expected[key] !== actual[key]).map((key) => `${LABELS[key]}: is "${actual[key]}", expected "${expected[key]}"`),

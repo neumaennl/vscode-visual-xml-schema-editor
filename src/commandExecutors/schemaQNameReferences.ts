@@ -11,7 +11,7 @@
  * - {@link forEachQNameReference} — calls a visitor for every QName, which may replace it.
  */
 
-import { schema } from "../../shared/types.js";
+import type { schema } from "../../shared/types.js";
 
 /**
  * What a QName refers to, which decides the symbol space it is looked up in. `xpath` is a name in

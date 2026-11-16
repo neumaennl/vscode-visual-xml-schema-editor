@@ -24,9 +24,10 @@
  * - Ensure complex content model semantics (e.g., all can't contain choice)
  */
 
-import { SchemaCommand, schema } from "../shared/types.js";
-import { ValidationResult } from "./commandValidators/validationUtils.js";
-import { CommandHandlers, findCommandHandler } from "./commandHandlers.js";
+import type { SchemaCommand, schema } from "../shared/types.js";
+import type { ValidationResult } from "./commandValidators/validationUtils.js";
+import type { CommandHandlers } from "./commandHandlers.js";
+import { findCommandHandler } from "./commandHandlers.js";
 
 // Import validation functions from specialized modules for default usage
 import * as elementValidators from "./commandValidators/elementValidators.js";

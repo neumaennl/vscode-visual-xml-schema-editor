@@ -5,13 +5,16 @@
  * Supports both top-level named types and anonymous types embedded within elements or attributes.
  */
 
-import {
+import type {
   schema,
   AddSimpleTypeCommand,
   RemoveSimpleTypeCommand,
   ModifySimpleTypeCommand,
   RestrictionFacets,
   SimpleTypeDerivationKind,
+  annotationType,
+} from "../../shared/types.js";
+import {
   topLevelSimpleType,
   localSimpleType,
   restrictionType,
@@ -22,8 +25,7 @@ import {
   totalDigitsType,
   noFixedFacet,
   whiteSpaceType,
-  patternType,
-  annotationType,
+  patternType
 } from "../../shared/types.js";
 import { isSchemaRoot } from "../../shared/schemaUtils.js";
 import { assumeValidated } from "./assumeValidated.js";

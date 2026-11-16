@@ -2,13 +2,14 @@
  * Validators for complex type commands.
  */
 
-import {
+import type {
   schema,
   AddComplexTypeCommand,
   RemoveComplexTypeCommand,
   ModifyComplexTypeCommand,
 } from "../../shared/types.js";
-import { ValidationResult, isValidXmlName, validateElementType } from "./validationUtils.js";
+import type { ValidationResult } from "./validationUtils.js";
+import { isValidXmlName, validateElementType } from "./validationUtils.js";
 import { isSchemaRoot } from "../../shared/schemaUtils.js";
 import { locateType, validateInlineTypeParent, validateNewTypeName } from "./commonValidators.js";
 
@@ -77,14 +78,14 @@ function validateDerivationKind(
  * Structural type for the parts of an existing complex type that decide which changes of its
  * derivation and content are possible.
  */
-type ExistingComplexType = {
+interface ExistingComplexType {
   simpleContent?: unknown;
   group?: unknown;
   complexContent?: {
     extension?: { base?: string; group?: unknown };
     restriction?: { base?: string; group?: unknown };
   };
-};
+}
 
 /**
  * Validates the base type and the derivation kind of a new or changed complex type. A derivation kind

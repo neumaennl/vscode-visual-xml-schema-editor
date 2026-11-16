@@ -12,7 +12,7 @@ import type { Mock, MockedFunction } from "vitest";
 
 
 /** The error message that the provider sends to the webview. */
-type ErrorMessage = { command: string; data: { message: string; code: string; stack?: string } };
+interface ErrorMessage { command: string; data: { message: string; code: string; stack?: string } }
 
 /**
  * Sends an executeCommand message that adds the element `x` to the given parent, and waits for the

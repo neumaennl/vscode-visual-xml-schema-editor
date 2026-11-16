@@ -3,9 +3,9 @@
  * Keeps complex inline/replacement/base-type logic out of the main panel class.
  */
 
-import { SchemaCommand } from "../../shared/types";
+import type { SchemaCommand } from "../../shared/types";
 import { SchemaNodeType } from "../../shared/idStrategy";
-import { DiagramItem } from "../diagram";
+import type { DiagramItem } from "../diagram";
 import { createEditableField } from "./propertiesPanelDom";
 import {
   createComplexBaseTypeCommand,

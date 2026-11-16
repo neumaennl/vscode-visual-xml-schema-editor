@@ -6,7 +6,7 @@ import {
 } from "./schemaLocalRenamer.js";
 import { schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
 import { readTestSchema } from "../__tests__/resourceTestHelpers.js";
-import { localComplexType, schema } from "../../shared/types.js";
+import type { localComplexType, schema } from "../../shared/types.js";
 
 /** The schema with a QName in every place where XML Schema allows one. */
 const QNAME_IN_EVERY_PLACE = "qname-in-every-place.xsd";

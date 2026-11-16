@@ -4,13 +4,15 @@
  */
 
 import { DiagramItem } from "./DiagramItem";
-import {
-  DiagramItemType,
-  DiagramItemGroupType,
+import type {
   ComplexTypeLike,
   SimpleTypeLike,
   ContentTypeLike,
   GroupDefLike,
+} from "./DiagramTypes";
+import {
+  DiagramItemType,
+  DiagramItemGroupType
 } from "./DiagramTypes";
 import {
   generateSchemaId,
@@ -330,7 +332,7 @@ function processGroup(
   // Process elements within the group.
   // Import and use createElementNode from TypeNodeCreators would create a circular dependency,
   // so we create a lightweight element node inline with essential properties.
-  const elementsArray = (groupDef.element as (localElement | narrowMaxMin)[] | undefined) ?? [];
+  const elementsArray = (groupDef.element as Array<localElement | narrowMaxMin> | undefined) ?? [];
   elementsArray.forEach((elem, elemPosition) => {
     const item = new DiagramItem(
       generateSchemaId({
@@ -380,9 +382,9 @@ function processGroup(
     groupItem.addChild(item);
   });
 
-  ((groupDef as { group?: groupRef[] }).group ?? []).forEach((ref, index) => processGroupRef(groupItem, ref, index));
-  ((groupDef as { choice?: explicitGroup[] }).choice ?? []).forEach((choice, index) => processChoice(groupItem, choice, index));
-  ((groupDef as { sequence?: explicitGroup[] }).sequence ?? []).forEach((seq, index) => processSequence(groupItem, seq, index));
+  ((groupDef as { group?: groupRef[] }).group ?? []).forEach((ref, index) => { processGroupRef(groupItem, ref, index); });
+  ((groupDef as { choice?: explicitGroup[] }).choice ?? []).forEach((choice, index) => { processChoice(groupItem, choice, index); });
+  ((groupDef as { sequence?: explicitGroup[] }).sequence ?? []).forEach((seq, index) => { processSequence(groupItem, seq, index); });
 
   parent.addChild(groupItem);
 }

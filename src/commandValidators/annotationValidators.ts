@@ -12,7 +12,7 @@
  * elements, so no reference validation is needed or implemented.
  */
 
-import {
+import type {
   schema,
   AddAnnotationCommand,
   RemoveAnnotationCommand,
@@ -22,7 +22,7 @@ import {
   ModifyDocumentationCommand,
   annotationType,
 } from "../../shared/types.js";
-import { ValidationFailure, ValidationResult } from "./validationUtils.js";
+import type { ValidationFailure, ValidationResult } from "./validationUtils.js";
 import { locateNodeById } from "../schemaNavigator.js";
 import { isSchemaRoot } from "../../shared/schemaUtils.js";
 import {

@@ -9,9 +9,10 @@
  * - {@link renameLocalElementRefInSchema} — renames all element `@ref` and `@substitutionGroup` values.
  */
 
-import { schema } from "../../shared/types.js";
+import type { schema } from "../../shared/types.js";
 import { getCurrentSchemaPrefixes } from "../../shared/schemaUtils.js";
-import { forEachQNameReference, QNameKind } from "./schemaQNameReferences.js";
+import type { QNameKind } from "./schemaQNameReferences.js";
+import { forEachQNameReference } from "./schemaQNameReferences.js";
 
 /**
  * Renames the references of one kind from `oldName` to `newName`: the unqualified ones and those

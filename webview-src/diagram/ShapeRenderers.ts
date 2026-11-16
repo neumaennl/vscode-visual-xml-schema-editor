@@ -3,8 +3,9 @@
  * Extracted from DiagramSvgRenderer to reduce file size
  */
 
-import { DiagramItem } from "./DiagramItem";
-import { DiagramItemGroupType, Point, Rectangle } from "./DiagramTypes";
+import type { DiagramItem } from "./DiagramItem";
+import type { Point, Rectangle } from "./DiagramTypes";
+import { DiagramItemGroupType } from "./DiagramTypes";
 import { svgRectangle, svgPolygon, svgCircle, svgLine } from "./SvgHelpers";
 import { isCompositorGroup } from "./groupUtils";
 

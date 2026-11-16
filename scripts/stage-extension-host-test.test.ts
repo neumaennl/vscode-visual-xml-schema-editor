@@ -78,12 +78,12 @@ describe("stage", () => {
   test("should fail if the extension was not compiled", () => {
     rmSync(join(root, "out"), { recursive: true });
 
-    expect(() => stage(root)).toThrow(/ENOENT.*out/);
+    expect(() => { stage(root); }).toThrow(/ENOENT.*out/);
   });
 
   test("should fail if the tests were not compiled", () => {
     rmSync(join(root, ".vscode-test", "out"), { recursive: true });
 
-    expect(() => stage(root)).toThrow(/mockWebview\.js/);
+    expect(() => { stage(root); }).toThrow(/mockWebview\.js/);
   });
 });

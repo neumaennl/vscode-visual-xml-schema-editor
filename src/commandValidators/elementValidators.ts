@@ -2,19 +2,22 @@
  * Validators for element commands.
  */
 
-import {
+import type {
   schema,
   AddElementCommand,
   RemoveElementCommand,
   ModifyElementCommand,
 } from "../../shared/types.js";
-import {
+import type {
   ValidationResult,
+} from "./validationUtils.js";
+import {
   isValidXmlName,
   validateOccurrences,
   validateElementType,
 } from "./validationUtils.js";
-import { ChildKind, NamedChild, locateChild, validateNewChild, validateReference } from "./commonValidators.js";
+import type { ChildKind, NamedChild } from "./commonValidators.js";
+import { locateChild, validateNewChild, validateReference } from "./commonValidators.js";
 
 /** Parent types that can contain child elements. */
 const VALID_ELEMENT_PARENTS = ["schema", "sequence", "choice", "all"] as const;

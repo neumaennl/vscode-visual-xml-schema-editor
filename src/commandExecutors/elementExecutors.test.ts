@@ -4,7 +4,8 @@
  */
 
 import { unmarshal, marshal } from "@neumaennl/xmlbind-ts";
-import { schema, AddElementPayload, ModifyElementPayload, localElement } from "../../shared/types.js";
+import type { AddElementPayload, ModifyElementPayload, localElement } from "../../shared/types.js";
+import { schema } from "../../shared/types.js";
 import {
   executeAddElement,
   executeRemoveElement,

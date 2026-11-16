@@ -1,6 +1,7 @@
-import { RestrictionFacets, SchemaCommand } from "../../shared/types";
+import type { RestrictionFacets, SchemaCommand } from "../../shared/types";
 import { generateSchemaId, SchemaNodeType } from "../../shared/idStrategy";
-import { DiagramItem, DiagramItemType, parseDerivationBaseType, toRestrictionFacets } from "../diagram";
+import type { DiagramItem } from "../diagram";
+import { DiagramItemType, parseDerivationBaseType, toRestrictionFacets } from "../diagram";
 import type { FacetPaletteConstruct } from "../palette/FacetIconStyles";
 import { PaletteSchemaConstruct } from "../palette/PaletteSchemaConstruct";
 

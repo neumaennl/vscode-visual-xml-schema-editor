@@ -4,9 +4,9 @@
  * while hiding ID-resolution details from the panel UI code.
  */
 
-import { SchemaCommand } from "../../shared/types";
+import type { SchemaCommand } from "../../shared/types";
 import { SCHEMA_ROOT_ID, generateSchemaId, parseSchemaId, SchemaNodeType } from "../../shared/idStrategy";
-import { DiagramItem } from "../diagram";
+import type { DiagramItem } from "../diagram";
 import { DiagramItemType } from "../diagram/DiagramTypes";
 import { BUILT_IN_XSD_TYPE_LOCAL_NAME_SET } from "./propertiesPanelTypeCatalog";
 

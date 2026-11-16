@@ -3,7 +3,7 @@
  * Provides functions to find schema nodes by their XPath-like IDs.
  */
 
-import {
+import type {
   schema,
   topLevelComplexType,
   localComplexType,
@@ -129,7 +129,7 @@ interface SegmentInfo {
  */
 function parseSegment(segment: string): SegmentInfo {
   // Check for position indicator [N]
-  const positionMatch = segment.match(/^([^[]+)\[(\d+)\]$/);
+  const positionMatch = /^([^[]+)\[(\d+)\]$/.exec(segment);
   if (positionMatch) {
     const [, typeOrTypeName, posStr] = positionMatch;
     const position = parseInt(posStr, 10);
@@ -231,7 +231,7 @@ function navigateFromSchema(
 }
 
 /** An element or attribute, which can hold an anonymous type; attributes only hold simple types. */
-type AnonymousTypeHolder = { complexType?: localComplexType; simpleType?: localSimpleType };
+interface AnonymousTypeHolder { complexType?: localComplexType; simpleType?: localSimpleType }
 
 /**
  * Navigate from an element or attribute to its anonymous complexType or simpleType.
@@ -296,12 +296,12 @@ function navigateFromComplexType(
  * The content that a complex type, or the extension or restriction of its content, can hold. An
  * extension or restriction of simple content has attributes but no compositors.
  */
-type ComplexTypeContent = {
+interface ComplexTypeContent {
   sequence?: explicitGroup;
   choice?: explicitGroup;
   all?: allGroup;
   attribute?: attribute[];
-};
+}
 
 /**
  * Returns the compositor of the given kind of a complex type, which lives in the extension or restriction

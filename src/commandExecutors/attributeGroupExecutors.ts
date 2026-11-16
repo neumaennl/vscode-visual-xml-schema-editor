@@ -4,11 +4,13 @@
  * definitions and attribute group references (xs:attributeGroup ref="...").
  */
 
-import {
+import type {
   schema,
   AddAttributeGroupCommand,
   RemoveAttributeGroupCommand,
   ModifyAttributeGroupCommand,
+} from "../../shared/types.js";
+import {
   namedAttributeGroup,
   attributeGroupRef,
 } from "../../shared/types.js";
@@ -16,7 +18,8 @@ import { parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idSt
 import { assumeValidated, locateValidated } from "./assumeValidated.js";
 import { createAnnotation, setDocumentation } from "./annotationUtils.js";
 import { renameLocalAttributeGroupRefInSchema } from "./schemaLocalRenamer.js";
-import { AttributeContainer, getAttributeContainer } from "../../shared/schemaUtils.js";
+import type { AttributeContainer } from "../../shared/schemaUtils.js";
+import { getAttributeContainer } from "../../shared/schemaUtils.js";
 import { findAttributeGroupRef } from "../commandUtils.js";
 import { appendTo, removeFrom } from "./nodeProperties.js";
 

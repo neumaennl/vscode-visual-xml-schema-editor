@@ -35,12 +35,12 @@ export function activate(context: vscode.ExtensionContext): void {
 
         if (!fileUri) {
           const editor = vscode.window.activeTextEditor;
-          if (editor && editor.document.fileName.endsWith(".xsd")) {
+          if (editor?.document.fileName.endsWith(".xsd")) {
             fileUri = editor.document.uri;
           }
         }
 
-        if (fileUri && fileUri.fsPath.endsWith(".xsd")) {
+        if (fileUri?.fsPath.endsWith(".xsd")) {
           await vscode.commands.executeCommand(
             "vscode.openWith",
             fileUri,

@@ -3,7 +3,7 @@
  * Extracted from DiagramSvgRenderer to reduce file size
  */
 
-import { DiagramItem } from "./DiagramItem";
+import type { DiagramItem } from "./DiagramItem";
 import { svgText } from "./SvgHelpers";
 
 /** Maximum length for truncated documentation lines */

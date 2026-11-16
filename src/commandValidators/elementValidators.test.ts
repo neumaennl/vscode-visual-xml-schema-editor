@@ -4,7 +4,7 @@
 
 import { unmarshal } from "@neumaennl/xmlbind-ts";
 import { schema } from "../../shared/types.js";
-import {
+import type {
   AddElementCommand,
   RemoveElementCommand,
   ModifyElementCommand,

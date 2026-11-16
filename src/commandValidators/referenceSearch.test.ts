@@ -2,7 +2,8 @@
  * Unit tests for isReferencedInContent.
  */
 
-import { isReferencedInContent, ReferenceMatcher } from "./referenceSearch.js";
+import type { ReferenceMatcher } from "./referenceSearch.js";
+import { isReferencedInContent } from "./referenceSearch.js";
 import { schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
 import { schema, topLevelComplexType, explicitGroup } from "../../shared/types.js";
 

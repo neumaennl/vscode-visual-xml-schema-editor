@@ -1,7 +1,9 @@
-import {
-  PALETTE_MIME_TYPE,
+import type {
   PaletteGroup,
   PaletteItem,
+} from "./PaletteItems";
+import {
+  PALETTE_MIME_TYPE,
   paletteGroups,
   setActiveDraggedPaletteSchemaConstruct,
 } from "./PaletteItems";

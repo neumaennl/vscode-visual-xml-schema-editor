@@ -4,7 +4,7 @@
  * can focus on state and command dispatch instead of element boilerplate.
  */
 
-import { DiagramItem } from "../diagram";
+import type { DiagramItem } from "../diagram";
 import type { FacetIconStyle } from "../palette/FacetIconStyles";
 
 let nextDatalistId = 0;
@@ -209,7 +209,7 @@ export function createToggleRow(
   const checkbox = document.createElement("input");
   checkbox.type = "checkbox";
   checkbox.checked = checked;
-  checkbox.addEventListener("change", () => onChange(checkbox.checked));
+  checkbox.addEventListener("change", () => { onChange(checkbox.checked); });
 
   const slider = document.createElement("span");
   slider.className = "property-toggle-slider";
@@ -234,7 +234,7 @@ export function createCommitInput(value: string, onCommit: (next: string) => voi
   input.type = "text";
   input.className = "property-input";
   input.value = value;
-  input.addEventListener("blur", () => onCommit(input.value));
+  input.addEventListener("blur", () => { onCommit(input.value); });
   input.addEventListener("keydown", (event: KeyboardEvent) => {
     if (event.key === "Enter") {
       event.preventDefault();
@@ -344,6 +344,6 @@ export function createEditableTextArea(
   const textArea = document.createElement("textarea");
   textArea.className = "property-docs-input";
   textArea.value = value;
-  textArea.addEventListener("blur", () => onCommit(textArea.value));
+  textArea.addEventListener("blur", () => { onCommit(textArea.value); });
   return textArea;
 }

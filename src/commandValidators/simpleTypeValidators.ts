@@ -2,7 +2,7 @@
  * Validators for simple type commands.
  */
 
-import {
+import type {
   schema,
   AddSimpleTypeCommand,
   RemoveSimpleTypeCommand,
@@ -10,7 +10,8 @@ import {
   RestrictionFacets,
   SimpleTypeDerivationKind,
 } from "../../shared/types.js";
-import { ValidationResult, isValidXmlName, validateElementType } from "./validationUtils.js";
+import type { ValidationResult } from "./validationUtils.js";
+import { isValidXmlName, validateElementType } from "./validationUtils.js";
 import { isSchemaRoot } from "../../shared/schemaUtils.js";
 import { locateType, validateInlineTypeParent, validateNewTypeName } from "./commonValidators.js";
 
@@ -98,7 +99,7 @@ function validateSimpleTypeBody(
   const hasRestrictionBody = payload.baseType !== undefined || payload.restrictions !== undefined;
   const hasListBody = payload.listItemType !== undefined;
   const hasUnionBody = payload.unionMemberTypes !== undefined;
-  const bodyKinds = [hasRestrictionBody ? "restriction" : null, hasListBody ? "list" : null, hasUnionBody ? "union" : null].filter(Boolean) as Array<SimpleTypeDerivationKind>;
+  const bodyKinds = [hasRestrictionBody ? "restriction" : null, hasListBody ? "list" : null, hasUnionBody ? "union" : null].filter(Boolean) as SimpleTypeDerivationKind[];
 
   if (bodyKinds.length === 0) {
     return existingBodyKind

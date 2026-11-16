@@ -11,7 +11,8 @@ import type {
   CommandExecutionValidationFailure,
   CommandExecutionRuntimeFailure,
 } from "./commandProcessor.js";
-import { AddElementCommand, AddElementPayload, SchemaCommand, schema, topLevelElement } from "../shared/types.js";
+import type { AddElementCommand, AddElementPayload, SchemaCommand } from "../shared/types.js";
+import { schema, topLevelElement } from "../shared/types.js";
 import type { CommandValidator } from "./commandValidator.js";
 import type { CommandExecutor } from "./commandExecutor.js";
 import { SchemaModelManager } from "./schemaModelManager.js";
@@ -127,7 +128,7 @@ function expectFailure(
   expect(result.success).toBe(false);
   expect(result.schema).toBeNull();
   expect(result.xmlContent).toBeNull();
-  if (result.success !== false)
+  if (result.success)
     throw new Error("Expected command execution to fail");
 }
 

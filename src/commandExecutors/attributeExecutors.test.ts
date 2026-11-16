@@ -4,13 +4,15 @@
  */
 
 import { unmarshal, marshal } from "@neumaennl/xmlbind-ts";
-import {
-  schema,
+import type {
   attribute,
   topLevelAttribute,
   topLevelComplexType,
   AddAttributePayload,
   ModifyAttributePayload,
+} from "../../shared/types.js";
+import {
+  schema
 } from "../../shared/types.js";
 import {
   executeAddAttribute,

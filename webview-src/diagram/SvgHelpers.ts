@@ -3,7 +3,7 @@
  * Extracted from DiagramSvgRenderer to reduce file size
  */
 
-import { Point, Rectangle } from "./DiagramTypes";
+import type { Point, Rectangle } from "./DiagramTypes";
 
 /**
  * Create an SVG line element

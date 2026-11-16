@@ -1,5 +1,5 @@
 import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy";
-import { DiagramItem } from "./DiagramItem";
+import type { DiagramItem } from "./DiagramItem";
 
 export function isCompositorGroup(item: DiagramItem): boolean {
   try {

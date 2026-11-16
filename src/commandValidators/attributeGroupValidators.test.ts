@@ -4,8 +4,8 @@
  * definitions and attribute group references.
  */
 
-import { schema } from "../../shared/types.js";
-import {
+import type { schema } from "../../shared/types.js";
+import type {
   AddAttributeGroupCommand,
   RemoveAttributeGroupCommand,
   ModifyAttributeGroupCommand,
@@ -46,7 +46,7 @@ const TWO_REFS = `<xs:complexType name="PersonType">
  * Places where XML Schema allows a reference to an attribute group, as schema content in
  * which `REF` stands for the referenced group.
  */
-const REFERENCE_PLACES: [string, string][] = [
+const REFERENCE_PLACES: Array<[string, string]> = [
   [
     "a complexContent extension",
     `<xs:complexType name="Base"/>

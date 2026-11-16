@@ -68,7 +68,7 @@ describe("Integration: Import pipeline", () => {
       const imports = result.import_ ?? [];
 
       expect(imports.some((i) => i.namespace === "http://example.com/ext")).toBe(true);
-      expect(result._namespacePrefixes?.["ext"]).toBe("http://example.com/ext");
+      expect(result._namespacePrefixes?.ext).toBe("http://example.com/ext");
     });
 
     test("should auto-generate a prefix when none is provided", () => {

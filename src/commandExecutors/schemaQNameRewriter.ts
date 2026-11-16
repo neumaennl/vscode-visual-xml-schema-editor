@@ -7,7 +7,7 @@
  *   replaces every `oldPrefix:localName` occurrence with `newPrefix:localName`.
  */
 
-import { schema } from "../../shared/types.js";
+import type { schema } from "../../shared/types.js";
 import { forEachQNameReference } from "./schemaQNameReferences.js";
 
 /**

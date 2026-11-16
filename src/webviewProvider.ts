@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { unmarshal } from "@neumaennl/xmlbind-ts";
 import { schema } from "../shared/types.js";
-import {
+import type {
   ExecuteCommandMessage,
   WebviewMessage,
   DiagramOptions,

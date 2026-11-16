@@ -2,8 +2,8 @@
  * Unit tests for attribute validators.
  */
 
-import { schema } from "../../shared/types.js";
-import {
+import type { schema } from "../../shared/types.js";
+import type {
   AddAttributeCommand,
   RemoveAttributeCommand,
   ModifyAttributeCommand,

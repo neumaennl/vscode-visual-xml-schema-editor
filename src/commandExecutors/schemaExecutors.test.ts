@@ -11,9 +11,7 @@
  */
 
 import { unmarshal, marshal } from "@neumaennl/xmlbind-ts";
-import {
-  schema,
-  importType,
+import type {
   AddImportCommand,
   RemoveImportCommand,
   ModifyImportCommand,
@@ -21,6 +19,10 @@ import {
   RemoveIncludeCommand,
   ModifyIncludeCommand,
   ModifySchemaNamespacesCommand,
+} from "../../shared/types.js";
+import {
+  schema,
+  importType,
   topLevelComplexType,
   topLevelSimpleType,
   restrictionType,
@@ -189,7 +191,7 @@ describe("executeAddImport", () => {
     expect(imports[0].namespace).toBe("http://example.com/types");
     expect(imports[0].schemaLocation).toBe("types.xsd");
     // The prefix binding must survive the round-trip as an xmlns: declaration
-    expect(roundTripped._namespacePrefixes?.["ext"]).toBe("http://example.com/types");
+    expect(roundTripped._namespacePrefixes?.ext).toBe("http://example.com/types");
   });
 
   test("should register the explicit prefix in _namespacePrefixes", () => {
@@ -201,7 +203,7 @@ describe("executeAddImport", () => {
       prefix: "ext",
     });
 
-    expect(schemaObj._namespacePrefixes?.["ext"]).toBe("http://example.com/ns");
+    expect(schemaObj._namespacePrefixes?.ext).toBe("http://example.com/ns");
   });
 
   test("should auto-generate a prefix when none is provided", () => {
@@ -298,7 +300,7 @@ describe("executeRemoveImport", () => {
       payload: { importId: "/import[0]" },
     }, schemaObj);
 
-    expect(schemaObj._namespacePrefixes?.["ext"]).toBeUndefined();
+    expect(schemaObj._namespacePrefixes?.ext).toBeUndefined();
   });
 });
 
@@ -400,7 +402,7 @@ describe("executeModifyImport", () => {
       },
     }, schemaObj);
 
-    expect(schemaObj._namespacePrefixes?.["ext"]).toBe("http://example.com/new-ns");
+    expect(schemaObj._namespacePrefixes?.ext).toBe("http://example.com/new-ns");
   });
 
   test("should rename the prefix in _namespacePrefixes when prefix changes", () => {
@@ -419,8 +421,8 @@ describe("executeModifyImport", () => {
       },
     }, schemaObj);
 
-    expect(schemaObj._namespacePrefixes?.["oldpfx"]).toBeUndefined();
-    expect(schemaObj._namespacePrefixes?.["newpfx"]).toBe("http://example.com/ns");
+    expect(schemaObj._namespacePrefixes?.oldpfx).toBeUndefined();
+    expect(schemaObj._namespacePrefixes?.newpfx).toBe("http://example.com/ns");
   });
 
   test("should rewrite element type_ references when prefix is renamed", () => {
@@ -535,7 +537,7 @@ describe("executeModifyImport", () => {
     // type_ must still use "ext:" prefix
     expect((schemaObj.element ?? [])[0].type_).toBe("ext:FooType");
     // but the prefix now points to the new namespace
-    expect(schemaObj._namespacePrefixes?.["ext"]).toBe("http://example.com/new-ns");
+    expect(schemaObj._namespacePrefixes?.ext).toBe("http://example.com/new-ns");
   });
 
   test("should rename only the specific prefix, leaving any other prefix for the same namespace intact", () => {
@@ -557,10 +559,10 @@ describe("executeModifyImport", () => {
     }, s);
 
     // "ext" is renamed to "newpfx"
-    expect(s._namespacePrefixes["newpfx"]).toBe("http://example.com/ns");
-    expect(s._namespacePrefixes["ext"]).toBeUndefined();
+    expect(s._namespacePrefixes.newpfx).toBe("http://example.com/ns");
+    expect(s._namespacePrefixes.ext).toBeUndefined();
     // "ext2" (the other prefix for the same namespace) remains untouched
-    expect(s._namespacePrefixes["ext2"]).toBe("http://example.com/ns");
+    expect(s._namespacePrefixes.ext2).toBe("http://example.com/ns");
   });
 });
 

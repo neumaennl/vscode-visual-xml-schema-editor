@@ -3,7 +3,8 @@
  */
 
 import { createAnnotation, setDocumentation } from "./annotationUtils.js";
-import { annotationType, appinfo, documentationType } from "../../shared/types.js";
+import type { annotationType } from "../../shared/types.js";
+import { appinfo, documentationType } from "../../shared/types.js";
 
 describe("createAnnotation", () => {
   test("should create an annotation with one documentation entry", () => {

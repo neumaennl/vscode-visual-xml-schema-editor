@@ -33,7 +33,6 @@ export class DiagramItem {
   public groupType: DiagramItemGroupType = DiagramItemGroupType.Sequence;
   public parent: DiagramItem | null = null;
   public childElements: DiagramItem[] = [];
-  public inheritFrom: DiagramItem | null = null;
 
   // Occurrence constraints
   public minOccurrence = 1;

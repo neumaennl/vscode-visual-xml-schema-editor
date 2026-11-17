@@ -8,18 +8,6 @@ import { CommandValidator } from "./commandValidator.js";
 import { CommandExecutor } from "./commandExecutor.js";
 import { SchemaModelManager } from "./schemaModelManager.js";
 
-/**
- * Classifies the origin of a command execution failure.
- *
- * - `'validation'` – the command was rejected by the validator (bad input, wrong
- *   state, etc.).  The caller should report this as a `commandResult` message so
- *   the webview can surface actionable feedback to the user.
- * - `'runtime'` – an unexpected exception was thrown during execution (a bug or
- *   an unrecoverable system error).  The caller should report this as an `error`
- *   message that includes an optional stack trace so developers can diagnose it.
- */
-export type CommandErrorKind = "validation" | "runtime";
-
 /** Successful command execution. */
 export interface CommandExecutionSuccess {
   success: true;
@@ -29,7 +17,11 @@ export interface CommandExecutionSuccess {
   xmlContent: string;
 }
 
-/** Command was rejected by the validator (bad input or incompatible schema state). */
+/**
+ * Command was rejected by the validator (bad input or incompatible schema state).
+ * The caller reports it as a `commandResult` message, so that the webview can show
+ * actionable feedback to the user.
+ */
 export interface CommandExecutionValidationFailure {
   success: false;
   errorKind: "validation";
@@ -39,7 +31,11 @@ export interface CommandExecutionValidationFailure {
   xmlContent: null;
 }
 
-/** An unexpected exception was thrown during command execution. */
+/**
+ * An unexpected exception was thrown during command execution (a bug or an
+ * unrecoverable system error). The caller reports it as an `error` message with the
+ * stack trace, so that developers can diagnose it.
+ */
 export interface CommandExecutionRuntimeFailure {
   success: false;
   errorKind: "runtime";

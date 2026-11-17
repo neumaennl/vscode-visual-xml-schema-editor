@@ -8,11 +8,6 @@ export interface VSCodeAPI<State = unknown> {
   setState(state: State): void;
 }
 
-export interface Point {
-  x: number;
-  y: number;
-}
-
 export interface ViewState {
   zoom: number;
   panX: number;

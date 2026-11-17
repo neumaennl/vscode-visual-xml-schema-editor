@@ -22,9 +22,6 @@ export class Diagram {
   /** Root elements of the diagram (typically the schema node) */
   public rootElements: DiagramItem[] = [];
 
-  /** Overall size of the diagram canvas */
-  public size: Size = { width: 0, height: 0 };
-  
   /** Padding around the diagram content */
   public padding: Size = { width: 20, height: 20 };
   

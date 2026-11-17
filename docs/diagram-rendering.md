@@ -4,11 +4,8 @@ title: Diagram rendering
 description: How the schema object becomes the SVG diagram - the build, layout and render steps, which schema constructs become which nodes, the layout rules, the notation, the interaction, and the origin in xsddiagram.
 tags: [diagram, rendering, layout, svg, webview, xsddiagram]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-11T16:17:27Z }
-verified: { by: human:neumaennl, at: 2026-11-11T19:10:51Z }
-verified:
-  by: human:neumaennl
-  at: 2026-10-08T08:46:19Z
+generated: { by: human:neumaennl, at: 2026-11-17T11:10:00Z }
+verified: { by: human:neumaennl, at: 2026-11-17T11:18:25Z }
 sources:
   - id: renderer
     resource: ../webview-src/renderer.ts
@@ -85,7 +82,7 @@ flowchart LR
 
 A new schema or a changed diagram option calls `renderSchema()`, which runs all three steps. Before the build, it saves `showChildElements` of every item by ID; after the build, it sets it again on the items with the same ID. Since the IDs are paths (see [Schema model](schema-model.md#node-ids)), nodes stay expanded after an edit, unless the edit changes their path, for example by a rename. New items start collapsed, so a newly opened schema shows only the root node. Expanding or collapsing a node calls `refresh()`, which only lays out and renders the existing diagram again.[^renderer]
 
-There is no incremental update: every step works on the whole diagram. `DiagramLayout.relayoutItem()` was meant for partial updates but is not called (see [Known issues](known-issues.md#diagram-is-rebuilt-in-full-on-every-change)).
+There is no incremental update: every step works on the whole diagram (see [Known issues](known-issues.md#diagram-is-rebuilt-in-full-on-every-change)).
 
 If a step throws, the renderer writes "Error: …" as SVG text into the canvas and throws again; the app catches the error and shows it in the notification bar as well.[^webview-main] The SVG text stays after the next successful render (see [Known issues](known-issues.md#diagram-error-text-stays-after-a-successful-render)).
 

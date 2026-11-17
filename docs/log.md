@@ -1,5 +1,8 @@
 # Knowledge Bundle Update Log
 
+## 2026-11-17
+* **Update**: [Known issues](known-issues.md#duplicated-and-dead-code) and [Diagram rendering](diagram-rendering.md#pipeline): the unused `Diagram.size`, `DiagramItem.inheritFrom` and `DiagramLayout.relayoutItem()` were removed, so "Duplicated and dead code", "Unused code is not detected automatically", "Element references are not shown as references" and "Diagram is rebuilt in full on every change" no longer name them ([#447](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/447)).
+
 ## 2026-11-16
 * **Update**: [Build and packaging](build-and-packaging.md#eslint) and [Testing](testing.md#helper-functions): the test helpers in `__tests__` get the Vitest rules, as in xmlbind-ts; `vitest/valid-expect` allows a message in `expect()`, and `vitest/expect-expect` recognizes assertion helpers by the patterns `expect*` and `runCommandExpect*` instead of a list of names. Non-null assertions are allowed in test files only, now also in the extension host, and no longer in mocks ([#441](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/441)).
 * **Update**: [Development guidelines](development-guidelines.md#typescript) and [Build and packaging](build-and-packaging.md#eslint): all tsconfig files set `noUncheckedIndexedAccess`, as in xmlbind-ts, so that an index access may return `undefined`; groups of regular expressions are read with `requireGroup()` from the new `shared/regexUtils.ts`, which [Architecture](architecture.md#source-layout) lists. `parseSchemaId("/")` now throws instead of returning a node type `undefined` ([#441](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/441)).

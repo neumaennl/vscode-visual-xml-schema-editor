@@ -181,25 +181,4 @@ export class DiagramLayout {
       height: height,
     };
   }
-
-  /**
-   * Recalculate layout when an item is expanded or collapsed
-   *
-   * @param item - The item that was expanded or collapsed
-   */
-  public relayoutItem(item: DiagramItem): void {
-    this.layoutItem(item);
-
-    // Also need to relayout parent to adjust spacing
-    let current = item.parent;
-    while (current) {
-      current.calculateBoundingBox();
-      current = current.parent;
-    }
-
-    // Recalculate diagram bounding box
-    if (item.diagram) {
-      item.diagram.calculateBoundingBox();
-    }
-  }
 }

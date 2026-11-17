@@ -43,7 +43,7 @@ import { processChildCollection as processChildCollectionImpl } from "./SchemaPr
 
 export { processChildCollectionImpl as processChildCollection };
 export { extractRestrictionFacetsImpl as extractRestrictionFacets };
-export { processRestriction, processList, processUnion };
+export { processRestriction };
 
 /**
  * Processes an anonymous inline complex type within an element.
@@ -422,7 +422,7 @@ function resolveEffectiveGroupParentId(parent: DiagramItem): string {
  * @param groupReference - Group reference metadata from the schema.
  * @param position - Position of the reference among sibling children.
  */
-export function processGroupRef(
+function processGroupRef(
   parent: DiagramItem,
   groupReference: groupRef,
   position: number

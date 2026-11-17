@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-16T16:07:40Z }
-verified: { by: human:neumaennl, at: 2026-11-16T16:23:50Z }
+generated: { by: human:neumaennl, at: 2026-11-17T11:10:00Z }
+verified: { by: human:neumaennl, at: 2026-11-17T11:18:25Z }
 ---
 
 # Purpose
@@ -212,7 +212,7 @@ Effort:
 - **Location:** `webview-src/diagram/SchemaProcessors.ts`
 - **Severity:** Medium
 - **Effort:** M
-- **Description:** The diagram builder does not read the `ref` attribute of local elements. An `<xs:element ref="…"/>` is shown with the name "unnamed" and is not marked as a reference. `isReference` is only set for group references, and `DiagramItem.inheritFrom` is declared but never set. (That commands on such nodes fail is part of [Node IDs are ambiguous and have many special cases](#node-ids-are-ambiguous-and-have-many-special-cases).) See also [Diagram items copy values from the schema objects](#diagram-items-copy-values-from-the-schema-objects).
+- **Description:** The diagram builder does not read the `ref` attribute of local elements. An `<xs:element ref="…"/>` is shown with the name "unnamed" and is not marked as a reference. `isReference` is only set for group references. (That commands on such nodes fail is part of [Node IDs are ambiguous and have many special cases](#node-ids-are-ambiguous-and-have-many-special-cases).) See also [Diagram items copy values from the schema objects](#diagram-items-copy-values-from-the-schema-objects).
 - **GitHub issue:** [#276](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/276)
 
 ## Name validation is ASCII-only and rejects prefixed references
@@ -436,7 +436,7 @@ Effort:
   - code that only tests call;
   - dependencies in `package.json` that no code uses.
 
-  Such code got through (see [Duplicated and dead code](#duplicated-and-dead-code)). Examples are `DiagramItemType.reference`, `Diagram.size` and `DiagramLayout.relayoutItem()`, which only tests call. A tool such as [knip](https://knip.dev) checks the whole project. In production mode, it ignores the tests, so it also finds code that only tests use. It can run in `npm run lint` and in CI, like ESLint and jscpd.
+  Such code got through (see [Duplicated and dead code](#duplicated-and-dead-code)). Examples are `DiagramItem.getTextDocumentation()` and `DropCommandFactory.createTopLevelDropCommand()`, which only tests call. A tool such as [knip](https://knip.dev) checks the whole project. In production mode, it ignores the tests, so it also finds code that only tests use. It can run in `npm run lint` and in CI, like ESLint and jscpd.
 - **GitHub issue:** [#447](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/447)
 
 ## Code is not formatted automatically
@@ -497,9 +497,9 @@ Effort:
 - **Severity:** Low
 - **Effort:** L
 - **Description:** The [development guidelines](development-guidelines.md#code-quality) ask to avoid code duplication, but the code base likely contains dead code, and duplicated logic that is written in different ways, which was not caught in reviews. `npm run lint` reports code that is copied, also with changed names (see [Build and packaging](build-and-packaging.md#duplicated-code)), and [#439](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/439) removed all such copies; it does not find logic that is written differently, or dead code (see [Unused code is not detected automatically](#unused-code-is-not-detected-automatically)). The [leftovers of the removed top-level drop target](#leftovers-of-the-removed-top-level-drop-target) and the [duplicated top-level lookups](#top-level-lookups-are-duplicated-instead-of-shared) are examples. A systematic cleanup by an agent is planned. Besides duplicated logic within one part, the agent should look explicitly for code that the extension (`src/`) and the webview (`webview-src/`) each implement on their own, and move it to `shared/`, which both use; for example the rules where an element or attribute may be placed, which both sides check (see [Architecture](architecture.md#principles)), and the top-level lookups in `DiagramBuilder` and `DropCommandFactory`. Examples found in the diagram code (see [Diagram rendering](diagram-rendering.md)):
-  - `DiagramLayout.relayoutItem()` and `DiagramItem.getTextDocumentation()` are only called from tests, `DiagramBuilder.elementMap` is only cleared, and `DiagramItem.inheritFrom` is never set.
+  - `DiagramItem.getTextDocumentation()` is only called from tests, and `DiagramBuilder.elementMap` is only cleared.
   - `DiagramItemType.reference` is never assigned; only the layout and a test handle it, and the renderer draws no shape for it.
-  - `Diagram.size` is not used, and `Diagram.scale` is always 1, so `scaleRectangle()` of `Diagram` and `DiagramItem` and `DiagramItem.scaleInt()` change nothing.
+  - `Diagram.scale` is always 1, so `scaleRectangle()` of `Diagram` and `DiagramItem` and `DiagramItem.scaleInt()` change nothing.
 
 - **GitHub issue:** none
 
@@ -529,10 +529,10 @@ Effort:
 
 ## Diagram is rebuilt in full on every change
 
-- **Location:** `webview-src/renderer.ts` (`renderSchema()`, `refresh()`), `webview-src/main.ts` (`updateSchema`, `updateDiagramOptions`), `webview-src/diagram/DiagramLayout.ts` (`relayoutItem()`)
+- **Location:** `webview-src/renderer.ts` (`renderSchema()`, `refresh()`), `webview-src/main.ts` (`updateSchema`, `updateDiagramOptions`), `webview-src/diagram/DiagramLayout.ts`
 - **Severity:** Low
 - **Effort:** L
-- **Description:** Every change redraws the whole diagram. Each `updateSchema` builds all diagram items from the schema object again, calculates the layout of every item and replaces all SVG content, even if the edit changed a single attribute. Changing a diagram option does the same, although the options are only applied after the build and would need only a new layout. Expanding or collapsing a node calls `refresh()`, which keeps the items but calculates the layout of all items and redraws the whole SVG. `DiagramLayout.relayoutItem()` was written to recalculate the layout of one item and its ancestors, but it is never called (see [Duplicated and dead code](#duplicated-and-dead-code)). For large schemas this probably makes editing slow; this was not measured. Smaller improvements are to use `refresh()` for option changes and `relayoutItem()` for expanding and collapsing; real incremental updates would need the [ambiguous node IDs](#node-ids-are-ambiguous-and-have-many-special-cases) fixed first, so that items can be matched across builds (see [Diagram rendering](diagram-rendering.md#pipeline)).
+- **Description:** Every change redraws the whole diagram. Each `updateSchema` builds all diagram items from the schema object again, calculates the layout of every item and replaces all SVG content, even if the edit changed a single attribute. Changing a diagram option does the same, although the options are only applied after the build and would need only a new layout. Expanding or collapsing a node calls `refresh()`, which keeps the items but calculates the layout of all items and redraws the whole SVG. For large schemas this probably makes editing slow; this was not measured. Smaller improvements are to use `refresh()` for option changes and, for expanding and collapsing, to lay out only the item and its ancestors; real incremental updates would need the [ambiguous node IDs](#node-ids-are-ambiguous-and-have-many-special-cases) fixed first, so that items can be matched across builds (see [Diagram rendering](diagram-rendering.md#pipeline)).
 - **GitHub issue:** none
 
 ## The extension host is not bundled

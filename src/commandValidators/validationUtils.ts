@@ -112,7 +112,7 @@ export function validateMaxOccurs(
  * @param maxOccurs - The `maxOccurs` value
  * @returns Validation result
  */
-export function validateOccurrenceConstraint(
+function validateOccurrenceConstraint(
   minOccurs: number | undefined,
   maxOccurs: number | string | undefined
 ): ValidationResult {

@@ -1,11 +1,11 @@
 ---
 type: Build Process
 title: Build and packaging
-description: How the extension is built, run, linted, packaged and checked - the build outputs and tsconfig files, the npm scripts, the scripts in TypeScript, running it in VS Code, the VSIX and its check, the generated schema classes, dependencies and the Node version, ESLint and the check for duplicated code, CI, and planned changes.
-tags: [build, packaging, vsix, vite, typescript, eslint, jscpd, ci, dependencies]
+description: How the extension is built, run, linted, packaged and checked - the build outputs and tsconfig files, the npm scripts, the scripts in TypeScript, running it in VS Code, the VSIX and its check, the generated schema classes, dependencies and the Node version, ESLint and the checks for duplicated and unused code, CI, and planned changes.
+tags: [build, packaging, vsix, vite, typescript, eslint, jscpd, fallow, ci, dependencies]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-16T19:20:02Z }
-verified: { by: human:neumaennl, at: 2026-11-16T19:24:40Z }
+generated: { by: human:neumaennl, at: 2026-11-17T13:40:00Z }
+verified: { by: human:neumaennl, at: 2026-11-17T13:43:04Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -67,6 +67,9 @@ sources:
   - id: jscpd
     resource: ../.jscpd.json
     title: jscpd configuration
+  - id: fallow
+    resource: ../.fallowrc.jsonc
+    title: fallow configuration
   - id: ci
     resource: ../.github/workflows/ci.yml
     title: CI workflow
@@ -126,7 +129,7 @@ The whole package is an ES module (`"type": "module"`), so Node and Vite load `v
 | `npm run compile` | `compile-extension` (`tsc -p ./tsconfig.extension.json`) and then `compile-webview` (`tsc --noEmit -p tsconfig.webview.json` and `vite build --mode production`). |
 | `npm run watch` | Runs `watch-extension` (`tsc -watch`) and `watch-webview` (`vite build --watch --mode development`) side by side with `concurrently`. |
 | `npm run clean` | Deletes `out/` and `webview/`. |
-| `npm run lint`, `npm run lint:fix` | Runs ESLint and jscpd on the repository (see [Lint](#lint)), or fixes what ESLint can. |
+| `npm run lint`, `npm run lint:fix` | Runs ESLint, jscpd and fallow on the repository (see [Lint](#lint)), or fixes what ESLint can. |
 | `npm run package` | Builds the VSIX with `vsce package`; `vscode:prepublish` runs `npm run compile` first. |
 | `npm run package:verify` | Checks the VSIX (see [Packaging](#packaging)). |
 | `npm run vscode:update`, `npm run vscode:check` | Change the lowest supported VS Code version and the versions derived from it, or check that they match (see [VS Code and Node versions](#vs-code-and-node-versions)). |
@@ -155,7 +158,7 @@ The scripts are ES modules because the whole package is one (`"type": "module"`)
 What goes into the VSIX is controlled by `.vscodeignore`:[^vscodeignore]
 
 - The sources (`src/`, `shared/`, `webview-src/`), all `.ts` and `.map` files, the tests and mocks in `out/`, and the tests in the extension host (`test/`, `.vscode-test/`) are left out.
-- The repository and development files are left out: `.github/`, `scripts/`, `.vscode/`, `docs/`, `exampleFiles/`, `schema/`, `coverage/`, `test-results/`, `AGENTS.md`, `CONTRIBUTING.md`, the configuration files and old VSIX files.
+- The repository and development files are left out: `.github/`, `.drafts/` (local drafts that git does not track), `scripts/`, `.vscode/`, `docs/`, `exampleFiles/`, `schema/`, `coverage/`, `test-results/`, `AGENTS.md`, `CONTRIBUTING.md`, the configuration files and old VSIX files.
 - `README.md` and `LICENSE` are packaged. The README is the page of the extension in the Marketplace; `vsce` turns its relative links into links to the repository given in `repository` in `package.json`.
 - `node_modules/` is not listed. `vsce` adds the production dependencies (`dependencies` in `package.json`) and their dependencies, and leaves out the development dependencies. A runtime dependency must therefore be in `dependencies`, and `node_modules/` must not be excluded in `.vscodeignore`.
 
@@ -201,13 +204,19 @@ The script reads the GitHub API, `raw.githubusercontent.com` (VS Code's `.npmrc`
 
 # Lint
 
-`npm run lint` runs ESLint and the copy-paste detector jscpd in parallel, with `concurrently`:[^manifest]
+`npm run lint` runs these checks in parallel, with `concurrently`:[^manifest]
 
-- both tools always run to the end, so one run reports all problems;
+- ESLint;
+- the copy-paste detector jscpd (see [Duplicated code](#duplicated-code));
+- fallow, once for the whole project and once in production mode (see [Unused code](#unused-code)).
+
+How `concurrently` runs them:
+
+- all checks always run to the end, so one run reports all problems;
 - the run fails if one of them fails;
-- `--group` prints the output of each tool as one block, labeled `[eslint]` and `[jscpd]`.
+- `--group` prints the output of each check as one block, labeled `[eslint]`, `[jscpd]`, `[fallow]` and `[fallow-production]`.
 
-To run one tool alone, use `npx eslint .` or `npx jscpd`. They read the same configuration as `npm run lint`. `npm run lint:fix` runs only ESLint, because jscpd cannot fix anything.
+To run one check alone, use `npx eslint .`, `npx jscpd`, `npx fallow dead-code --no-cache --fail-on-issues` or `npx fallow dead-code --production --no-cache --fail-on-issues`. They read the same configuration as `npm run lint`. `npm run lint:fix` runs only ESLint, because jscpd and fallow fix nothing.
 
 ## ESLint
 
@@ -216,7 +225,7 @@ To run one tool alone, use `npx eslint .` or `npx jscpd`. They read the same con
 - It ignores the build outputs `out/` and `webview/`, the reports of the tests in `coverage/` and `test-results/`, `.vscode-test/`, `node_modules/` and generated code.
 - Only `.ts` and `.mjs` files are allowed; `.js`, `.cjs`, `.mts` and `.cts` files are errors. Without this rule, ESLint would skip `.mts` and `.cts` files without notice, because no other part of the configuration matches them. `eslint.config.mjs` and `.vscode-test.mjs` are the only JavaScript files; `.mjs` files in every folder are checked with the recommended JavaScript rules of ESLint; `vscode-test` cannot load a TypeScript configuration. All other code, including the scripts in `scripts/` and the configurations of Vite and Vitest, is TypeScript (`.ts`). ESLint cannot load a TypeScript configuration without the extra dependency `jiti` (Node would need an unstable flag), so `eslint.config.mjs` stays JavaScript for now; check again when ESLint can do it. The rule therefore does not forbid `.mjs` files yet.
 - TypeScript files are checked with the type information from the tsconfig files listed in [Build outputs](#build-outputs), with the recommended rules of ESLint and the strict and stylistic rules of `typescript-eslint`, including the ones that need type information (`strict-type-checked` and `stylistic-type-checked`). Among them, checks that the types make unnecessary are errors (`no-unnecessary-condition`, for example `x ?? []` on an array that is never `undefined`), and so are non-null assertions (`x!`), `||` where `??` is meant (`prefer-nullish-coalescing`) and promises that are neither awaited nor handled. In addition, return types must be declared, `any` is an error, types are imported with `import type` (`consistent-type-imports`), template literals may contain strings and numbers but not values such as `undefined` (`restrict-template-expressions`), a `switch` on a union or enum must handle every case, by listing it or with a `default` branch (`switch-exhaustiveness-check` with `considerDefaultExhaustiveForUnions`), and `unknown` in type assertions and variable annotations is forbidden (`no-restricted-syntax`); an exception needs an `eslint-disable-next-line` comment with a reason.
-- Unused code within a file is found by ESLint: unused variables, imports and parameters (`@typescript-eslint/no-unused-vars`; names that start with `_` are allowed) and private class members that are never used (`@typescript-eslint/no-unused-private-class-members`, which unlike the rule of ESLint also checks members declared with `private`). TypeScript reports unreachable code: all tsconfig files set `allowUnreachableCode: false`, and none sets `noUnusedLocals`, which would report the same as ESLint. They also set `noUncheckedIndexedAccess`, so that an index access may return `undefined`; this also gives `no-unnecessary-condition` the right types for checks such as `items[0]?.name`. Unused code across files is not found yet (see [Unused code is not detected automatically](known-issues.md#unused-code-is-not-detected-automatically)).
+- Unused code within a file is found by ESLint: unused variables, imports and parameters (`@typescript-eslint/no-unused-vars`; names that start with `_` are allowed) and private class members that are never used (`@typescript-eslint/no-unused-private-class-members`, which unlike the rule of ESLint also checks members declared with `private`). TypeScript reports unreachable code: all tsconfig files set `allowUnreachableCode: false`, and none sets `noUnusedLocals`, which would report the same as ESLint. They also set `noUncheckedIndexedAccess`, so that an index access may return `undefined`; this also gives `no-unnecessary-condition` the right types for checks such as `items[0]?.name`. Unused code across files is found by fallow (see [Unused code](#unused-code)).
 - The size limits of the [development guidelines](development-guidelines.md#code-size): `max-lines` allows 500 lines per file and `max-lines-per-function` 120 lines per function, blank lines and comments included. Test helpers and mocks have the same limits; test files have their own (see below).
 - TSDoc, as the [development guidelines](development-guidelines.md#tsdoc) ask: `tsdoc/syntax` of `eslint-plugin-tsdoc` checks the syntax of the comments, which includes the hyphen between the name and the description of a parameter; the rules of `eslint-plugin-jsdoc` check that function declarations, methods and classes have a comment, and that it describes every parameter, the return value and the errors thrown. Arrow functions and function expressions, mostly small local helpers and callbacks, need no comment. Destructured parameters are not checked, because TSDoc describes their fields at their type.
 - Some of the strict and stylistic rules change code in ways that are not obvious:
@@ -230,7 +239,7 @@ To run one tool alone, use `npx eslint .` or `npx jscpd`. They read the same con
 
 ## Duplicated code
 
-jscpd checks the TypeScript and JavaScript files of the whole repository, including the tests. It skips what `.gitignore` excludes, such as `out/`, `webview/`, `coverage/` and `node_modules/`, and the generated schema classes in `shared/generated/`. Its settings are the same as in [xmlbind-ts](https://github.com/neumaennl/xmlbind-ts/blob/main/docs/build-and-release.md#duplicated-code):[^jscpd]
+jscpd checks the TypeScript and JavaScript files of the whole repository, including the tests. It skips what `.gitignore` excludes, such as `out/`, `webview/`, `coverage/` and `node_modules/`, and the generated schema classes in `shared/generated/`. Its settings are the same as in [xmlbind-ts](https://github.com/neumaennl/xmlbind-ts/blob/reimplementation/docs/build-and-release.md#duplicated-code):[^jscpd]
 
 - **Size.** A clone is a block of at least 50 tokens and 5 lines that appears more than once. Tokens are keywords, names, operators, punctuation and literals; whitespace and comments do not count. 50 tokens are about 5 to 7 lines of code. Below that, jscpd mostly finds repetition that is fine, such as the setup of tests.
 - **Names.** Names are ignored, so a copy with renamed variables is found. Each name must stand for one name in the other block: `a = b + c` matches `x = y + z`, but not `x = x + x`.
@@ -242,13 +251,52 @@ jscpd only finds code that is written the same way. Logic that the extension and
 
 Code that has to stay duplicated is put between `// jscpd:ignore-start` and `// jscpd:ignore-end`, with a comment that gives the reason (see [Code quality](development-guidelines.md#code-quality)). The only such block is the list of flags in `DiagramItem`, which are distinct fields of the same type.
 
+fallow, which checks for [unused code](#unused-code), can find duplicates as well. The installed version cannot check that renamed names map one to one, and it does not compare the text of template literals. So jscpd stays until a released version of fallow can do both ([#460](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/460)).
+
+## Unused code
+
+ESLint and TypeScript only find unused code within one file (see [ESLint](#eslint)). [fallow](https://fallow.tools) checks the whole project.[^fallow] It finds:
+
+- files that nothing imports;
+- exports and types that no other module imports, also when the same file uses them;
+- public and static class members and enum members that nothing uses;
+- dependencies in `package.json` that no code uses, and packages that code uses but `package.json` does not list.
+
+fallow finds the entry points itself, in `package.json` and in the configurations of the tools, such as Vite and Vitest. It reads the code without type information. Its rules are the same as in [xmlbind-ts](https://github.com/neumaennl/xmlbind-ts/blob/reimplementation/docs/build-and-release.md#unused-code). `.fallowrc.jsonc` adds what fallow cannot find by itself, each with a comment that gives the reason:[^fallow]
+
+- It leaves out the generated schema classes in `shared/generated/`.
+- `src/extension.ts` is an entry point, because `package.json` names the compiled file in `out/`.
+- Files that only tests and tools use are support entry points: `.vscode-test.mjs`, the tests in the extension host and the mock webview in `test/extension-host/`, the `vscode` mock in `src/__mocks__/` and the type tests (`*.test-d.ts`). Vitest uses the last two through settings that fallow does not read.
+- Two dependencies count as used: `@vscode/codicons`, whose stylesheet `webviewProvider.ts` loads by path, and `@vscode/test-electron`, which `@vscode/test-cli` imports without declaring it.
+- `resolveCustomTextEditor()` counts as used in a class that implements `vscode.CustomTextEditorProvider`, because VS Code calls it.
+
+`npm run lint` runs fallow twice:
+
+- **`fallow dead-code`** checks the whole project, including the tests.
+- **`fallow dead-code --production`** leaves out the tests, the support entry points, the configurations of the tools and the devDependencies. It finds code that only tests use, such as an export that only a test imports, or a method that only tests call.
+
+Both runs use `--fail-on-issues`, so every finding fails the run, also the kinds that fallow only reports as warnings by default, such as an unused devDependency. There is no baseline. `--no-cache` keeps fallow from writing a cache into the checkout.
+
+`.fallowrc.jsonc` sets two rules:[^fallow]
+
+- `require-suppression-reason`: an ignore comment must give its reason after `--`, as in `// fallow-ignore-next-line unused-export -- <reason>`;
+- `stale-suppressions` as an error: an ignore comment that no longer suppresses anything fails the run, so it is removed when it is no longer needed.
+
+Its limits:
+
+- fallow does not check protected class members (see [Unused protected class members are not detected](known-issues.md#unused-protected-class-members-are-not-detected)). ESLint checks private members.
+- Without type information, fallow does not see that a member is used when it is called by a computed name, such as `obj[name]()`. Such a member needs an ignore comment with the reason.
+- Members with decorators are not checked, because a decorator can use them.
+- The production mode also leaves out the configurations of the build tools. `readTarget()` in `scripts/lib/compiler-target.ts`, which only `vite.config.ts` uses, therefore has an ignore comment.
+- fallow finds unused files, exports and members, not unused branches within a function, such as the cases of a `switch` that no caller reaches. The coverage report shows them (see [Testing](testing.md#coverage)), so compare it before and after a change that removes code.
+
 # CI
 
 The workflow `ci.yml` runs on pushes to `main` and on every pull request, whatever its target branch, on Ubuntu with the Node version from `.nvmrc`. A new push to a pull request cancels the run for the previous one; runs for pushes each have a concurrency group of their own, so none of them is cancelled or held back:[^ci]
 
 1. `npm run vscode:check`, which fails if `@types/vscode`, `@types/node`, `.nvmrc` or the ECMAScript edition of the configurations don't match `engines.vscode` (see [VS Code and Node versions](#vs-code-and-node-versions)).
 2. `npm ci`, with `NODE_AUTH_TOKEN` and the auth line that `actions/setup-node` writes for GitHub Packages.
-3. `npm run lint`, which runs ESLint and jscpd.
+3. `npm run lint`, which runs ESLint, jscpd and fallow.
 4. `npm run package`, the only build: `vscode:prepublish` deletes `out/` and `webview/` and compiles both parts, including the type check of the webview. Then `npm run package:verify`.
 5. `npm run typecheck`, and the Vitest tests with coverage (`npx vitest run --coverage`), which fail if a coverage metric is below the threshold in `vitest.config.ts` (see [Testing](testing.md#coverage)). Vitest runs on the sources and needs no build; `npm test` is not used, because its `pretest` would compile again (see [Testing](testing.md#ci)).
 6. The [tests in the extension host](testing.md#tests-in-the-extension-host) on the build from step 4: `npm run stage:extension-host` compiles only the tests and assembles `.vscode-test/`, and `xvfb-run -a npx vscode-test --reporter json` runs them, with a virtual display because the runner has none. `npm run test:extension-host` is not used, because its `pretest` would compile the extension again. Mocha's `json` reporter writes `test-results/extension-host.json`, the output file set in `.vscode-test.mjs`. Mocha runs only one reporter at a time, so the test names are then missing from the log. `.vscode-test.mjs` sets no reporter itself, because one there would override `--reporter` from the command line; so `npm run test:extension-host` uses Mocha's default reporter, and the Testing view uses the Extension Test Runner's own. `actions/cache` keeps the downloaded VS Code (`.vscode-test/vscode-linux-x64-<version>/`) under a key with the version from `engines.vscode`, so CI downloads it only when the version changes, or when GitHub has removed the cache after seven days without use.
@@ -299,6 +347,8 @@ The [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-sc
 [^eslint]: ESLint configuration
 
 [^jscpd]: jscpd configuration
+
+[^fallow]: fallow configuration
 
 [^ci]: CI workflow
 

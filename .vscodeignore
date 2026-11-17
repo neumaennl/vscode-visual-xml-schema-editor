@@ -11,6 +11,7 @@ out/**/*.test.js
 
 # Repository, docs and dev configuration
 .github/**
+.drafts/**
 scripts/**
 .vscode/**
 .vscode-test/**
@@ -27,6 +28,8 @@ test-results/**
 icon.svg
 *.vsix
 eslint.config.mjs
+.fallowrc.jsonc
+.jscpd.json
 .vscode-test.mjs
 vitest.config.ts
 vite.config.ts

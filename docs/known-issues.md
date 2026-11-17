@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-17T12:25:00Z }
-verified: { by: human:neumaennl, at: 2026-11-17T13:08:23Z }
+generated: { by: human:neumaennl, at: 2026-11-17T13:40:00Z }
+verified: { by: human:neumaennl, at: 2026-11-17T13:43:04Z }
 ---
 
 # Purpose
@@ -419,19 +419,13 @@ Effort:
 - **Description:** Since version 2.4.0, `marshal` starts its output with a line break unless it starts with the XML declaration, and no longer ends it with one ([xmlbind-ts](https://github.com/neumaennl/xmlbind-ts/blob/main/docs/known-issues.md#the-output-of-marshal-starts-with-a-line-break)). Every command would therefore remove the line break at the end of the file and put an empty line at the start of a schema without an XML declaration. `SchemaModelManager.toXml()` removes the leading line break and ends the output with exactly one (see [Persistence](persistence.md#what-serialization-changes)). Keeping the formatting of the source belongs to `xmlbind-ts` (see [Architecture](architecture.md#responsibilities-of-xmlbind-ts-and-the-editor)), and 2.x gets no more fixes, so the editor works around it until it moves to version 3, whose output has to keep the line breaks of the source; then `fixOutputLineBreaks()` is removed.
 - **GitHub issue:** [#444](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/444)
 
-## Unused code is not detected automatically
+## Unused protected class members are not detected
 
-- **Location:** `shared/`, `src/`, `webview-src/`, `scripts/`, `package.json`, `.github/workflows/ci.yml`
+- **Location:** `shared/`, `src/`, `webview-src/`, `scripts/`, `.fallowrc.jsonc`
 - **Severity:** Low
 - **Effort:** S
-- **Description:** ESLint only finds unused code within one file: unused variables, imports, parameters and private class members (see [Build and packaging](build-and-packaging.md#eslint)). Nothing finds code that is unused across files:
-  - exports that no module imports, and files that nothing imports;
-  - public class members and enum members that are never used;
-  - code that only tests call;
-  - dependencies in `package.json` that no code uses.
-
-  Such code got through (see [Duplicated and dead code](#duplicated-and-dead-code)). A tool such as [knip](https://knip.dev) checks the whole project. In production mode, it ignores the tests, so it also finds code that only tests use. It can run in `npm run lint` and in CI, like ESLint and jscpd.
-- **GitHub issue:** [#447](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/447)
+- **Description:** fallow finds unused public and static class members, but the installed version skips protected members (see [Build and packaging](build-and-packaging.md#unused-code)). ESLint only finds unused private members. So a protected member that nothing uses goes unnoticed. fallow has a rule for them, `unused-protected-class-members` ([fallow-rs/fallow#4624](https://github.com/fallow-rs/fallow/issues/4624)), but no released version contains it yet. When one does, update fallow, set the rule to `error` in `.fallowrc.jsonc`, remove the findings, and remove this entry.
+- **GitHub issue:** none
 
 ## Code is not formatted automatically
 
@@ -490,7 +484,7 @@ Effort:
 - **Location:** whole repository
 - **Severity:** Low
 - **Effort:** L
-- **Description:** The [development guidelines](development-guidelines.md#code-quality) ask to avoid code duplication, but the code base likely contains dead code, and duplicated logic that is written in different ways, which was not caught in reviews. `npm run lint` reports code that is copied, also with changed names (see [Build and packaging](build-and-packaging.md#duplicated-code)), and [#439](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/439) removed all such copies; it does not find logic that is written differently, or dead code (see [Unused code is not detected automatically](#unused-code-is-not-detected-automatically)). The [duplicated top-level lookups](#top-level-lookups-are-duplicated-instead-of-shared) are an example. A systematic cleanup by an agent is planned. Besides duplicated logic within one part, the agent should look explicitly for code that the extension (`src/`) and the webview (`webview-src/`) each implement on their own, and move it to `shared/`, which both use; for example the rules where an element or attribute may be placed, which both sides check (see [Architecture](architecture.md#principles)), and the top-level lookups in `DiagramBuilder` and `DropCommandFactory`. Examples found in the diagram code (see [Diagram rendering](diagram-rendering.md)):
+- **Description:** The [development guidelines](development-guidelines.md#code-quality) ask to avoid code duplication, but the code base likely contains dead code, and duplicated logic that is written in different ways, which was not caught in reviews. `npm run lint` reports code that is copied, also with changed names (see [Build and packaging](build-and-packaging.md#duplicated-code)), and [#439](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/439) removed all such copies; it does not find logic that is written differently. fallow finds code that is unused across files, but not unused branches within a function (see [Build and packaging](build-and-packaging.md#unused-code)). The [duplicated top-level lookups](#top-level-lookups-are-duplicated-instead-of-shared) are an example. A systematic cleanup by an agent is planned. Besides duplicated logic within one part, the agent should look explicitly for code that the extension (`src/`) and the webview (`webview-src/`) each implement on their own, and move it to `shared/`, which both use; for example the rules where an element or attribute may be placed, which both sides check (see [Architecture](architecture.md#principles)), and the top-level lookups in `DiagramBuilder` and `DropCommandFactory`. Examples found in the diagram code (see [Diagram rendering](diagram-rendering.md)):
   - `DiagramBuilder.elementMap` is only cleared.
   - `DiagramItemType.reference` is never assigned; only the layout and a test handle it, and the renderer draws no shape for it.
   - `Diagram.scale` is always 1, so `scaleRectangle()` of `Diagram` and `DiagramItem` and `DiagramItem.scaleInt()` change nothing.

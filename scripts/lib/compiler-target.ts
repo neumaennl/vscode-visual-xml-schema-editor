@@ -187,6 +187,7 @@ function findEditions(dir: string): EditionUse[] {
  * @returns The edition, for example `ES2024`
  * @throws An {@link Error} if the configuration has no target `ESxxxx`
  */
+// fallow-ignore-next-line unused-export -- vite.config.ts uses it, which the production mode leaves out
 export function readTarget(path: string): string {
   const target = matches(TARGET, readFileSync(path, "utf8"))[0]?.[2];
   if (!target) {

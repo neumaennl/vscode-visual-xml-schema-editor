@@ -4,8 +4,8 @@ title: Development guidelines
 description: Rules for everyone who changes the extension - code size, code quality and ESLint, structure reviews, TypeScript and naming, VS Code and Node versions, TSDoc, tests, documentation and the knowledge bundle, issues, what to check before committing, and commits.
 tags: [guidelines, conventions, code-quality, typescript, documentation, workflow]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-17T12:40:00Z }
-verified: { by: human:neumaennl, at: 2026-11-17T13:08:23Z }
+generated: { by: human:neumaennl, at: 2026-11-17T13:40:00Z }
+verified: { by: human:neumaennl, at: 2026-11-17T13:43:04Z }
 sources:
   - id: eslint
     resource: ../eslint.config.mjs
@@ -13,6 +13,9 @@ sources:
   - id: jscpd
     resource: ../.jscpd.json
     title: jscpd configuration
+  - id: fallow
+    resource: ../.fallowrc.jsonc
+    title: fallow configuration
   - id: tsconfig
     resource: ../tsconfig.extension.json
     title: TypeScript configuration of the extension host
@@ -44,11 +47,13 @@ ESLint checks the limits: `max-lines` and `max-lines-per-function` for the code,
 # Code quality
 
 - Avoid duplicated code. Move it into a shared function, class or module. `npm run lint` reports duplicated code with jscpd, also in tests and also when names were changed (see [Build and packaging](build-and-packaging.md#duplicated-code)).[^jscpd]
+- Remove code that nothing uses. `npm run lint` reports unused files, exports, class members and dependencies with fallow, also code that only tests use (see [Build and packaging](build-and-packaging.md#unused-code)).[^fallow]
 - Export only what other modules use. Tests use a module through its exports; do not export something only so that a test can call it.
 - A conditional expression (`a ? b : c`) spans at most three lines. Write a longer one, for example one with array or object literals in its branches or a nested one, as `if`/`else`. The local ESLint rule `style/max-ternary-lines` checks this.[^eslint]
 - `npm run lint` must report no errors, and as few warnings as possible. `npm run lint:fix` fixes what it can. The rules are described in [Build and packaging](build-and-packaging.md#lint).[^eslint]
 - Disable an ESLint rule only as a last resort, with an `eslint-disable-next-line` comment that gives the reason.
 - Exclude duplicated code from jscpd only as a last resort. Put `// jscpd:ignore-start` and `// jscpd:ignore-end` around it, with a comment that gives the reason.
+- Suppress a finding of fallow only as a last resort, with a `fallow-ignore-next-line` or `fallow-ignore-file` comment that gives the reason after `--`. fallow checks that the reason is there.[^fallow]
 - Have the changes reviewed by Copilot code review and handle its comments. If you do not follow a comment, give the reason.
 - After changes made because of review comments, request another review. Merge a pull request only when the last review has no findings, or when each remaining finding is dismissed for a good reason, given as a reply to the comment.
 
@@ -132,7 +137,7 @@ The documentation of the extension is the knowledge bundle in `docs/`, in the Op
 
 # Before committing
 
-1. `npm run lint` passes: ESLint reports no errors and jscpd no duplicated code.
+1. `npm run lint` passes: ESLint reports no errors, jscpd no duplicated code and fallow no unused code.
 2. `npm test` passes; it first compiles the extension and the webview and type-checks the tests and the scripts (`pretest`).[^manifest]
 3. After changes to activation, the registration of the custom editor or the message handling, `npm run test:extension-host` passes (see [Testing](testing.md#tests-in-the-extension-host)).
 4. The changes follow these guidelines.
@@ -149,6 +154,8 @@ The documentation of the extension is the knowledge bundle in `docs/`, in the Op
 [^eslint]: ESLint configuration
 
 [^jscpd]: jscpd configuration
+
+[^fallow]: fallow configuration
 
 [^tsconfig]: TypeScript configuration of the extension host
 

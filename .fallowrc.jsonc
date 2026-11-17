@@ -1,0 +1,39 @@
+{
+  // For editors only: autocomplete and checks of this file against the schema of the
+  // installed fallow version. fallow itself ignores it. It matters because fallow only
+  // warns about an unknown rule name and then ignores the rule.
+  "$schema": "./node_modules/fallow/schema.json",
+  // Generated from schema/XMLSchema.xsd; what the editor does not use stays as generated.
+  "ignorePatterns": ["shared/generated/**"],
+  // package.json names the compiled extension (out/src/extension.js), which fallow does
+  // not trace back to its source.
+  "entry": ["src/extension.ts"],
+  // Files that only tests and tools use, which fallow does not find by itself. The
+  // production mode leaves them out.
+  "supportEntry": [
+    // The configuration of vscode-test, which runs the tests in the extension host.
+    ".vscode-test.mjs",
+    // The tests in the extension host and the mock webview that the staging script copies.
+    "test/extension-host/**/*.ts",
+    // The vscode module of the Vitest tests, set as an alias in vitest.config.ts.
+    "src/__mocks__/*.ts",
+    // The type tests, which Vitest's typecheck runs.
+    "shared/**/*.test-d.ts"
+  ],
+  "ignoreDependencies": [
+    // webviewProvider.ts loads its stylesheet from node_modules by path.
+    "@vscode/codicons",
+    // @vscode/test-cli imports it at runtime but does not declare it as a dependency.
+    "@vscode/test-electron"
+  ],
+  "usedClassMembers": [
+    // VS Code calls it when it opens a schema in the custom editor.
+    { "implements": "vscode.CustomTextEditorProvider", "members": ["resolveCustomTextEditor"] }
+  ],
+  "rules": {
+    // An ignore comment must give its reason after "--".
+    "require-suppression-reason": "error",
+    // An ignore comment that no longer suppresses anything fails the run.
+    "stale-suppressions": "error"
+  }
+}

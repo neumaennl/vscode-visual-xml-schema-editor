@@ -1,11 +1,11 @@
 ---
 type: Guideline
 title: Development guidelines
-description: Rules for everyone who changes the extension - code size, code quality and ESLint, structure reviews, TypeScript and naming, VS Code and Node versions, TSDoc, tests, documentation and the knowledge bundle, issues, what to check before committing, and commits.
+description: Rules for everyone who changes the extension - code size, code quality, formatting and ESLint, structure reviews, TypeScript and naming, VS Code and Node versions, TSDoc, tests, documentation and the knowledge bundle, issues, what to check before committing, and commits.
 tags: [guidelines, conventions, code-quality, typescript, documentation, workflow]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-17T13:40:00Z }
-verified: { by: human:neumaennl, at: 2026-11-17T13:43:04Z }
+generated: { by: human:neumaennl, at: 2026-11-17T19:12:27Z }
+verified: { by: human:neumaennl, at: 2026-11-17T20:01:05Z }
 sources:
   - id: eslint
     resource: ../eslint.config.mjs
@@ -16,6 +16,9 @@ sources:
   - id: fallow
     resource: ../.fallowrc.jsonc
     title: fallow configuration
+  - id: prettier
+    resource: ../.prettierrc.json
+    title: Prettier configuration
   - id: tsconfig
     resource: ../tsconfig.extension.json
     title: TypeScript configuration of the extension host
@@ -42,7 +45,7 @@ Topics that have their own document are only linked here: the structure of the c
 - A function has at most 120 lines. Split longer functions into smaller helpers with one responsibility each.
 - Tests have their own limits: a test file has at most 1000 lines, and a single test (the callback of `test()` or `test.each()`) at most 50 lines. The `describe` callbacks that hold the tests have no limit. A test file still tests one module: when it grows beyond the limit, the module probably has more than one responsibility and is split, or tests that differ only in their input are combined with `test.each()`. Long tests move their data into constants and their repeated steps into helpers (see [Testing](testing.md#files-and-structure)).
 
-ESLint checks the limits: `max-lines` and `max-lines-per-function` for the code, including test helpers and mocks, and for test files `max-lines` and the local rule `tests/max-lines-per-test` in `eslint.config.mjs` (see [Build and packaging](build-and-packaging.md#eslint)).[^eslint]
+Blank lines, comments and the line breaks that Prettier adds count as well. ESLint checks the limits: `max-lines` and `max-lines-per-function` for the code, including test helpers and mocks, and for test files `max-lines` and the local rule `tests/max-lines-per-test` in `eslint.config.mjs` (see [Build and packaging](build-and-packaging.md#eslint)).[^eslint]
 
 # Code quality
 
@@ -50,6 +53,7 @@ ESLint checks the limits: `max-lines` and `max-lines-per-function` for the code,
 - Remove code that nothing uses. `npm run lint` reports unused files, exports, class members and dependencies with fallow, also code that only tests use (see [Build and packaging](build-and-packaging.md#unused-code)).[^fallow]
 - Export only what other modules use. Tests use a module through its exports; do not export something only so that a test can call it.
 - A conditional expression (`a ? b : c`) spans at most three lines. Write a longer one, for example one with array or object literals in its branches or a nested one, as `if`/`else`. The local ESLint rule `style/max-ternary-lines` checks this.[^eslint]
+- Prettier formats the code, the configuration files and the documentation. `npm run format` formats all files, and VS Code formats them on save; `npm run lint` checks the formatting (see [Build and packaging](build-and-packaging.md#formatting)).[^prettier]
 - `npm run lint` must report no errors, and as few warnings as possible. `npm run lint:fix` fixes what it can. The rules are described in [Build and packaging](build-and-packaging.md#lint).[^eslint]
 - Disable an ESLint rule only as a last resort, with an `eslint-disable-next-line` comment that gives the reason.
 - Exclude duplicated code from jscpd only as a last resort. Put `// jscpd:ignore-start` and `// jscpd:ignore-end` around it, with a comment that gives the reason.
@@ -123,7 +127,7 @@ New and changed code is tested. A unit test tests the module it sits next to and
 
 The documentation of the extension is the knowledge bundle in `docs/`, in the Open Knowledge Format; [the index](index.md) lists its documents.[^okf]
 
-- **Keep it current.** When a change affects what a document describes, update the document in the same change. Then set its `generated` to the person responsible for the content (`by: human:<GitHub user>`, also when an agent wrote the text) and the current time (UTC), set `status: draft` and remove `verified`, and add an entry to [the log](log.md), newest date first. When the maintainer has approved the document, set `status: stable` and add `verified` with `by: human:<GitHub user>` and the time.
+- **Keep it current.** When a change affects what a document describes, update the document in the same change. Then set its `generated` to the person responsible for the content (`by: human:<GitHub user>`, also when an agent wrote the text) and the current time (UTC), set `status: draft` and remove `verified`, and add an entry to [the log](log.md), newest date first. When the maintainer has approved the document, set `status: stable` and add `verified` with `by: human:<GitHub user>` and the time. A change that only reformats a document, such as running Prettier, does not change what it says: the document keeps its status, and one log entry records the reformatting of all documents.
 - **Known issues.** Record problems you find outside the current task in [Known issues](known-issues.md), sorted by severity and effort, and remove them when they are fixed. A change to the known issues is a change like any other.
 - **New documents** get front matter (`type`, `title`, a one-sentence `description`, `tags`, `status`, `generated`, `sources`), an entry in [the index](index.md) with the same description, and a log entry.
 - **Sources.** Each source has an `id`, a relative `resource` and a `title`. Important statements get a footnote `[^id]` whose text is the title of the source. Separate the footnote definitions with blank lines.
@@ -138,7 +142,7 @@ The documentation of the extension is the knowledge bundle in `docs/`, in the Op
 
 # Before committing
 
-1. `npm run lint` passes: ESLint reports no errors, jscpd no duplicated code and fallow no unused code.
+1. `npm run lint` passes: ESLint reports no errors, jscpd no duplicated code, fallow no unused code and Prettier no unformatted files, which `npm run format` fixes.
 2. `npm test` passes; it first compiles the extension and the webview and type-checks the tests and the scripts (`pretest`).[^manifest]
 3. After changes to activation, the registration of the custom editor or the message handling, `npm run test:extension-host` passes (see [Testing](testing.md#tests-in-the-extension-host)).
 4. The changes follow these guidelines.
@@ -157,6 +161,8 @@ The documentation of the extension is the knowledge bundle in `docs/`, in the Op
 [^jscpd]: jscpd configuration
 
 [^fallow]: fallow configuration
+
+[^prettier]: Prettier configuration
 
 [^tsconfig]: TypeScript configuration of the extension host
 

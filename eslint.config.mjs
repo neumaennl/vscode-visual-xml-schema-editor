@@ -71,6 +71,11 @@ const maxTernaryLines = {
   },
 };
 
+// Prettier formats the code; no rule here clashes with it (see "Formatting" in
+// docs/build-and-packaging.md). The command-line check of eslint-config-prettier
+// only names no-unexpected-multiline of the recommended rules, which it cannot
+// check automatically. It stays on, because it reports statements that a missing
+// semicolon joins with the next line.
 export default defineConfig([
   globalIgnores([
     "out/",

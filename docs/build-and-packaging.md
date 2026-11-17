@@ -1,11 +1,11 @@
 ---
 type: Build Process
 title: Build and packaging
-description: How the extension is built, run, linted, packaged and checked - the build outputs and tsconfig files, the npm scripts, the scripts in TypeScript, running it in VS Code, the VSIX and its check, the generated schema classes, dependencies and the Node version, ESLint and the checks for duplicated and unused code, CI, and planned changes.
-tags: [build, packaging, vsix, vite, typescript, eslint, jscpd, fallow, ci, dependencies]
+description: How the extension is built, run, linted, packaged and checked - the build outputs and tsconfig files, the npm scripts, the scripts in TypeScript, running it in VS Code, the VSIX and its check, the generated schema classes, dependencies and the Node version, ESLint, the checks for duplicated and unused code, the formatting with Prettier, CI, and planned changes.
+tags: [build, packaging, vsix, vite, typescript, eslint, jscpd, fallow, prettier, ci, dependencies]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-17T15:15:54Z }
-verified: { by: human:neumaennl, at: 2026-11-17T15:57:12Z }
+generated: { by: human:neumaennl, at: 2026-11-17T19:12:02Z }
+verified: { by: human:neumaennl, at: 2026-11-17T20:01:05Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -70,6 +70,9 @@ sources:
   - id: fallow
     resource: ../.fallowrc.jsonc
     title: fallow configuration
+  - id: prettier
+    resource: ../.prettierrc.json
+    title: Prettier configuration
   - id: ci
     resource: ../.github/workflows/ci.yml
     title: CI workflow
@@ -129,7 +132,8 @@ The whole package is an ES module (`"type": "module"`), so Node and Vite load `v
 | `npm run compile`                               | `compile-extension` (`tsc -p ./tsconfig.extension.json`) and then `compile-webview` (`tsc --noEmit -p tsconfig.webview.json` and `vite build --mode production`).     |
 | `npm run watch`                                 | Runs `watch-extension` (`tsc -watch`) and `watch-webview` (`vite build --watch --mode development`) side by side with `concurrently`.                                 |
 | `npm run clean`                                 | Deletes `out/` and `webview/`.                                                                                                                                        |
-| `npm run lint`, `npm run lint:fix`              | Runs ESLint, jscpd and fallow on the repository (see [Lint](#lint)), or fixes what ESLint can.                                                                        |
+| `npm run lint`, `npm run lint:fix`              | Runs ESLint, jscpd, fallow and the check of the formatting on the repository (see [Lint](#lint)), or fixes what ESLint can.                                           |
+| `npm run format`                                | Formats all files with Prettier (see [Formatting](#formatting)).                                                                                                      |
 | `npm run package`                               | Builds the VSIX with `vsce package`; `vscode:prepublish` runs `npm run compile` first.                                                                                |
 | `npm run package:verify`                        | Checks the VSIX (see [Packaging](#packaging)).                                                                                                                        |
 | `npm run vscode:update`, `npm run vscode:check` | Change the lowest supported VS Code version and the versions derived from it, or check that they match (see [VS Code and Node versions](#vs-code-and-node-versions)). |
@@ -158,7 +162,7 @@ The scripts are ES modules because the whole package is one (`"type": "module"`)
 What goes into the VSIX is controlled by `.vscodeignore`:[^vscodeignore]
 
 - The sources (`src/`, `shared/`, `webview-src/`), all `.ts` and `.map` files, the tests and mocks in `out/`, and the tests in the extension host (`test/`, `.vscode-test/`) are left out.
-- The repository and development files are left out: `.github/`, `.drafts/` (local drafts that git does not track), `scripts/`, `.vscode/`, `docs/`, `exampleFiles/`, `schema/`, `coverage/`, `test-results/`, `AGENTS.md`, `CONTRIBUTING.md`, the configuration files and old VSIX files.
+- The repository and development files are left out: `.github/`, `.drafts/` (local drafts that git does not track), `scripts/`, `.vscode/`, `docs/`, `exampleFiles/`, `schema/`, `coverage/`, `test-results/`, `AGENTS.md`, `CONTRIBUTING.md`, `.git-blame-ignore-revs`, the configuration files and old VSIX files.
 - `README.md` and `LICENSE` are packaged. The README is the page of the extension in the Marketplace; `vsce` turns its relative links into links to the repository given in `repository` in `package.json`.
 - `node_modules/` is not listed. `vsce` adds the production dependencies (`dependencies` in `package.json`) and their dependencies, and leaves out the development dependencies. A runtime dependency must therefore be in `dependencies`, and `node_modules/` must not be excluded in `.vscodeignore`.
 
@@ -168,7 +172,7 @@ What goes into the VSIX is controlled by `.vscodeignore`:[^vscodeignore]
 
 # Generated schema classes
 
-The classes in `shared/generated/` describe XML Schema itself and are used to read and write XSD files (see [Schema model](schema-model.md)). `npm run generate-classes-from-schema` creates them with `xsd2ts` from `@neumaennl/xmlbind-ts`, using `schema/XMLSchema.xsd`, after deleting the existing `.ts` files in that folder; the README there stays. They are not edited by hand; ESLint ignores them, and the coverage report leaves them out. `xsd2ts` writes the `.js` extension in relative imports, as ES modules require (`--no-import-extensions` would omit it). After an update of `xmlbind-ts`, they are generated again and committed.[^manifest][^eslint]
+The classes in `shared/generated/` describe XML Schema itself and are used to read and write XSD files (see [Schema model](schema-model.md)). `npm run generate-classes-from-schema` creates them with `xsd2ts` from `@neumaennl/xmlbind-ts`, using `schema/XMLSchema.xsd`, after deleting the existing `.ts` files in that folder; the README there stays. They are not edited by hand; ESLint, jscpd, fallow and Prettier ignore them, and the coverage report leaves them out. `xsd2ts` writes the `.js` extension in relative imports, as ES modules require (`--no-import-extensions` would omit it). After an update of `xmlbind-ts`, they are generated again and committed.[^manifest][^eslint]
 
 # Dependencies and Node
 
@@ -176,7 +180,7 @@ The classes in `shared/generated/` describe XML Schema itself and are used to re
 
 The TypeScript version is 6.0, the last release on TypeScript's JavaScript codebase. TypeScript 7 is not used yet, because `typescript-eslint` supports TypeScript only below 6.1; support is expected with TypeScript 7.1. Dependabot has been told to ignore TypeScript 7.0.x.[^manifest]
 
-Dependabot opens pull requests for npm packages and GitHub Actions every day and groups the ESLint packages, and `vitest` with `@vitest/coverage-*`, which requires exactly the same `vitest` version. It ignores minor and major updates of `@types/vscode` and `@types/node`, which follow the VS Code version (see below); patch updates within their `~` range are allowed. Dependabot reads its configuration only from the default branch `main`.[^dependabot]
+Dependabot opens pull requests for npm packages and GitHub Actions every day and groups the ESLint packages, and `vitest` with `@vitest/coverage-*`, which requires exactly the same `vitest` version. It ignores minor and major updates of `@types/vscode` and `@types/node`, which follow the VS Code version (see below); patch updates within their `~` range are allowed. Dependabot reads its configuration only from the default branch `main`. An update of Prettier can change the formatting (see [Formatting](#formatting)).[^dependabot]
 
 `@vscode/test-cli`, which runs the tests in the extension host, still brings Mocha 11 with known vulnerabilities in two of its dependencies; they stay until a release with Mocha 12 is out (see [the known issue](known-issues.md#mocha-brings-dependencies-with-known-vulnerabilities)).
 
@@ -208,15 +212,16 @@ The script reads the GitHub API, `raw.githubusercontent.com` (VS Code's `.npmrc`
 
 - ESLint;
 - the copy-paste detector jscpd (see [Duplicated code](#duplicated-code));
-- fallow, once for the whole project and once in production mode (see [Unused code](#unused-code)).
+- fallow, once for the whole project and once in production mode (see [Unused code](#unused-code));
+- Prettier, which checks the formatting with `prettier --check .` (see [Formatting](#formatting)).
 
 How `concurrently` runs them:
 
 - all checks always run to the end, so one run reports all problems;
 - the run fails if one of them fails;
-- `--group` prints the output of each check as one block, labeled `[eslint]`, `[jscpd]`, `[fallow]` and `[fallow-production]`.
+- `--group` prints the output of each check as one block, labeled `[eslint]`, `[jscpd]`, `[fallow]`, `[fallow-production]` and `[prettier]`.
 
-To run one check alone, use `npx eslint .`, `npx jscpd`, `npx fallow dead-code --no-cache --fail-on-issues` or `npx fallow dead-code --production --no-cache --fail-on-issues`. They read the same configuration as `npm run lint`. `npm run lint:fix` runs only ESLint, because jscpd and fallow fix nothing.
+To run one check alone, use `npx eslint .`, `npx jscpd`, `npx fallow dead-code --no-cache --fail-on-issues`, `npx fallow dead-code --production --no-cache --fail-on-issues` or `npx prettier --check .`. They read the same configuration as `npm run lint`. `npm run lint:fix` runs only ESLint, because jscpd and fallow fix nothing; `npm run format` fixes the formatting.
 
 ## ESLint
 
@@ -244,7 +249,7 @@ jscpd checks the TypeScript and JavaScript files of the whole repository, includ
 - **Size.** A clone is a block of at least 50 tokens and 5 lines that appears more than once. Tokens are keywords, names, operators, punctuation and literals; whitespace and comments do not count. 50 tokens are about 5 to 7 lines of code. Below that, jscpd mostly finds repetition that is fine, such as the setup of tests.
 - **Names.** Names are ignored, so a copy with renamed variables is found. Each name must stand for one name in the other block: `a = b + c` matches `x = y + z`, but not `x = x + x`.
 - **Literals.** Strings and numbers are compared. Code that differs only in them is not a clone, such as the cases of a `switch` or tests with different data.
-- **Imports.** Import statements are skipped (`ignorePattern`). Prettier puts each name of a long import on its own line, and since names are ignored, any two long imports would match.
+- **Imports.** Import statements are skipped (`ignorePattern`). [Prettier](#formatting) puts each name of a long import on its own line, and since names are ignored, any two long imports would match.
 - **Failing.** Every clone fails the run. There is no threshold of duplicated lines, because a percentage changes as the code grows.
 - **No files.** A run that finds no files fails, so that a broken configuration does not pass unnoticed.
 
@@ -291,13 +296,48 @@ Its limits:
 - The production mode also leaves out the configurations of the build tools. `readTarget()` in `scripts/lib/compiler-target.ts`, which only `vite.config.ts` uses, therefore has an ignore comment.
 - fallow finds unused files, exports and members, not unused branches within a function, such as the cases of a `switch` that no caller reaches. The coverage report shows them (see [Testing](testing.md#coverage)), so compare it before and after a change that removes code.
 
+## Formatting
+
+Prettier formats TypeScript, `.mjs`, JSON, JSONC, YAML and Markdown, with the same settings as [xmlbind-ts](https://github.com/neumaennl/xmlbind-ts/blob/reimplementation/docs/build-and-release.md#formatting).[^prettier]
+
+- `npm run format` formats all files.
+- `npm run lint` checks them with `prettier --check .`, so CI does too.
+- VS Code formats these files on save with the Prettier extension, which `.vscode/extensions.json` recommends.[^vscode-config] The settings name the languages one by one, so that VS Code does not format other files, such as XSD, with another formatter.
+
+The settings in `.prettierrc.json`:[^prettier]
+
+- Lines have at most 120 characters.
+- Trailing commas are written in arrays, objects, imports and exports, and type parameters (`"trailingComma": "es5"`). They are not written after the parameters of a function, because a comma there looks strange. Prettier cannot tell definitions from calls, so the arguments of a call get none either.
+- Everything else is Prettier's default: double quotes, semicolons, two spaces and LF line endings.
+
+Prettier skips what `.gitignore` excludes. `.prettierignore` adds three more:
+
+- `package-lock.json`, which npm writes;
+- `.drafts/`, for local drafts. It is excluded in `.git/info/exclude`, which Prettier does not read;
+- `shared/generated/`, the [generated schema classes](#generated-schema-classes). The next generation would undo their formatting.
+
+The version of Prettier is pinned, without `^`, because a patch release can format differently. When Dependabot updates it and CI reports unformatted files, run `npm run format` on its branch.
+
+No ESLint rule clashes with Prettier. This was checked with the command-line check of `eslint-config-prettier`, `npx eslint-config-prettier <file>`, for a file of each block of `eslint.config.mjs`: the configuration itself, the extension, the webview, the scripts, tests, type tests, mocks and the tests in the extension host; run it again when rules are added. It only names `no-unexpected-multiline`, which it cannot check automatically:
+
+- The rule reports statements that a missing semicolon joins with the next line. It stays on.
+- In rare cases, Prettier breaks a chain of calls before an index access such as `[i]`, and the rule reports that. Then split the expression into two statements.
+
+The size rules count lines, including the line breaks that Prettier adds (see [ESLint](#eslint)). Code that the formatting pushes past a limit is split like any other code that is too long. The same holds for jscpd: code that Prettier spreads over more lines can become a clone (see [Duplicated code](#duplicated-code)).
+
+`.git-blame-ignore-revs` lists the commits that only reformat the code, such as the one that formatted the whole repository with Prettier:
+
+- GitHub skips them in its blame view.
+- Locally, `git blame` skips them after `git config blame.ignoreRevsFile .git-blame-ignore-revs`.
+- The file names the commits by their hashes, so these commits must not be rewritten: a branch with them is merged without squashing or rebasing.
+
 # CI
 
 The workflow `ci.yml` runs on pushes to `main` and on every pull request, whatever its target branch, on Ubuntu with the Node version from `.nvmrc`. A new push to a pull request cancels the run for the previous one; runs for pushes each have a concurrency group of their own, so none of them is cancelled or held back:[^ci]
 
 1. `npm run vscode:check`, which fails if `@types/vscode`, `@types/node`, `.nvmrc` or the ECMAScript edition of the configurations don't match `engines.vscode` (see [VS Code and Node versions](#vs-code-and-node-versions)).
 2. `npm ci`, with `NODE_AUTH_TOKEN` and the auth line that `actions/setup-node` writes for GitHub Packages.
-3. `npm run lint`, which runs ESLint, jscpd and fallow.
+3. `npm run lint`, which runs ESLint, jscpd, fallow and Prettier.
 4. `npm run package`, the only build: `vscode:prepublish` deletes `out/` and `webview/` and compiles both parts, including the type check of the webview. Then `npm run package:verify`.
 5. `npm run typecheck`, and the Vitest tests with coverage (`npx vitest run --coverage`), which fail if a coverage metric is below the threshold in `vitest.config.ts` (see [Testing](testing.md#coverage)). Vitest runs on the sources and needs no build; `npm test` is not used, because its `pretest` would compile again (see [Testing](testing.md#ci)).
 6. The [tests in the extension host](testing.md#tests-in-the-extension-host) on the build from step 4: `npm run stage:extension-host` compiles only the tests and assembles `.vscode-test/`, and `xvfb-run -a npx vscode-test --reporter json` runs them, with a virtual display because the runner has none. `npm run test:extension-host` is not used, because its `pretest` would compile the extension again. Mocha's `json` reporter writes `test-results/extension-host.json`, the output file set in `.vscode-test.mjs`. Mocha runs only one reporter at a time, so the test names are then missing from the log. `.vscode-test.mjs` sets no reporter itself, because one there would override `--reporter` from the command line; so `npm run test:extension-host` uses Mocha's default reporter, and the Testing view uses the Extension Test Runner's own. `actions/cache` keeps the downloaded VS Code (`.vscode-test/vscode-linux-x64-<version>/`) under a key with the version from `engines.vscode`, so CI downloads it only when the version changes, or when GitHub has removed the cache after seven days without use.
@@ -350,6 +390,8 @@ The [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-sc
 [^jscpd]: jscpd configuration
 
 [^fallow]: fallow configuration
+
+[^prettier]: Prettier configuration
 
 [^ci]: CI workflow
 

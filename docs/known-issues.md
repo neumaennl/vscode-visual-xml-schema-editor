@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-17T13:40:00Z }
-verified: { by: human:neumaennl, at: 2026-11-17T13:43:04Z }
+generated: { by: human:neumaennl, at: 2026-11-17T19:12:27Z }
+verified: { by: human:neumaennl, at: 2026-11-17T20:01:05Z }
 ---
 
 # Purpose
@@ -431,14 +431,6 @@ Effort:
 - **Effort:** S
 - **Description:** fallow finds unused public and static class members, but the installed version skips protected members (see [Build and packaging](build-and-packaging.md#unused-code)). ESLint only finds unused private members. So a protected member that nothing uses goes unnoticed. fallow has a rule for them, `unused-protected-class-members` ([fallow-rs/fallow#4624](https://github.com/fallow-rs/fallow/issues/4624)), but no released version contains it yet. When one does, update fallow, set the rule to `error` in `.fallowrc.jsonc`, remove the findings, and remove this entry.
 - **GitHub issue:** none
-
-## Code is not formatted automatically
-
-- **Location:** `package.json`, `.github/workflows/ci.yml`, all code
-- **Severity:** Low
-- **Effort:** S
-- **Description:** No formatter keeps the layout of the code consistent. People, agents and `npm run lint:fix` each leave their own: the automatic fixes of the strict and stylistic rules of `typescript-eslint` wrote `Foo} from` in 40 files and put callbacks on one line, which had to be corrected by hand. Quote styles are mixed as well (`eslint.config.mjs` uses single quotes, the TypeScript files double quotes). A formatter such as Prettier, checked by `npm run lint`, would settle the layout; xmlbind-ts gets the same settings ([xmlbind-ts#315](https://github.com/neumaennl/xmlbind-ts/issues/315)).
-- **GitHub issue:** [#454](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/454)
 
 ## Node types in IDs are not checked
 

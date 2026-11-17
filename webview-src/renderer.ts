@@ -39,14 +39,6 @@ export class DiagramRenderer {
     | null = null;
 
   /**
-   * Get the current diagram (exposed for testing).
-   * @returns The current diagram or null if no diagram is loaded
-   */
-  public getCurrentDiagram(): Diagram | null {
-    return this.currentDiagram;
-  }
-
-  /**
    * Find a diagram item by its ID in the current diagram.
    * @param itemId - ID of the item to find
    * @returns The diagram item or null if not found

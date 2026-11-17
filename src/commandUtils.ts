@@ -98,7 +98,7 @@ export function findAttributeGroupRef(
  * @param position - The position from the ID, if it has one
  * @returns Whether the child matches; never if the ID has neither a name nor a position
  */
-export function isIdentifiedChild(
+function isIdentifiedChild(
   child: { name?: string; ref?: string },
   index: number,
   name: string | undefined,

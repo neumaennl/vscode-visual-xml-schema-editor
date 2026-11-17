@@ -1,6 +1,7 @@
 # Knowledge Bundle Update Log
 
 ## 2026-11-17
+* **Update**: [Development guidelines](development-guidelines.md#code-quality) and [Testing](testing.md#kinds-of-tests): a module exports only what other modules use; unit tests call what it exports. Code that only tests used was removed or is no longer exported, and its tests call the exported functions. [Known issues](known-issues.md): removed "Leftovers of the removed top-level drop target"; the palette hint now reads "Drag onto a node in the diagram". "Node IDs are ambiguous and have many special cases" says that the webview reads IDs with its own helpers, and the unused helpers of `idStrategy.ts` were removed ([#447](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/447)).
 * **Update**: [Known issues](known-issues.md#duplicated-and-dead-code) and [Diagram rendering](diagram-rendering.md#pipeline): the unused `Diagram.size`, `DiagramItem.inheritFrom` and `DiagramLayout.relayoutItem()` were removed, so "Duplicated and dead code", "Unused code is not detected automatically", "Element references are not shown as references" and "Diagram is rebuilt in full on every change" no longer name them ([#447](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/447)).
 
 ## 2026-11-16

@@ -6,7 +6,6 @@ import {
   renderElementShape,
   renderGroupShape,
   renderTypeShape,
-  renderGroupTypeIndicator,
 } from "./ShapeRenderers";
 import { DiagramItem } from "./DiagramItem";
 import type { Rectangle } from "./DiagramTypes";
@@ -165,29 +164,45 @@ describe("ShapeRenderers", () => {
     });
   });
 
-  describe("renderGroupTypeIndicator", () => {
+  describe("renderGroupShape of a compositor: group type indicator", () => {
+    /**
+     * Creates the diagram item of a compositor in a named complex type.
+     *
+     * @param name - The compositor, as named in its ID
+     * @param groupType - Its group type
+     * @returns The item
+     */
+    function compositor(name: string, groupType: DiagramItemGroupType): DiagramItem {
+      const item = new DiagramItem(`/complexType:T/group:${name}[0]`, name, DiagramItemType.group);
+      item.diagram = mockDiagram;
+      item.groupType = groupType;
+      return item;
+    }
+
     test.each([
       ["sequence", DiagramItemGroupType.Sequence, 1], // One horizontal line
       ["choice", DiagramItemGroupType.Choice, 6], // The line and the trident
       ["all", DiagramItemGroupType.All, 8], // The lines and the tridents
-    ])("should render %s indicator with three dots and its lines", (_case, groupType, lineCount) => {
-      const item = new DiagramItem("id13", "Test", DiagramItemType.group);
-      item.diagram = mockDiagram;
-      item.groupType = groupType;
-
-      renderGroupTypeIndicator(item, { x: 10, y: 10, width: 100, height: 50 }, mockGroup);
+    ])("should render %s indicator with three dots and its lines", (name, groupType, lineCount) => {
+      renderGroupShape({ x: 10, y: 10, width: 100, height: 50 }, "fill:green", "stroke:black", compositor(name, groupType), mockGroup);
 
       expect(mockGroup.querySelectorAll("circle")).toHaveLength(3);
       expect(mockGroup.querySelectorAll("line")).toHaveLength(lineCount);
     });
 
+    test("should render no indicator for a group that is not a compositor", () => {
+      const item = new DiagramItem("/group:G", "G", DiagramItemType.group);
+      item.diagram = mockDiagram;
+
+      renderGroupShape({ x: 10, y: 10, width: 100, height: 50 }, "fill:green", "stroke:black", item, mockGroup);
+
+      expect(mockGroup.querySelectorAll("circle")).toHaveLength(0);
+    });
+
     test("should render centered on rectangle", () => {
       const rect: Rectangle = { x: 50, y: 50, width: 100, height: 60 };
-      const item = new DiagramItem("id17", "Test", DiagramItemType.group);
-      item.diagram = mockDiagram;
-      item.groupType = DiagramItemGroupType.Sequence;
 
-      renderGroupTypeIndicator(item, rect, mockGroup);
+      renderGroupShape(rect, "fill:green", "stroke:black", compositor("sequence", DiagramItemGroupType.Sequence), mockGroup);
 
       // Check that elements are centered (centerX=100, centerY=80)
       const line = mockGroup.querySelector("line");

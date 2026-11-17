@@ -2,11 +2,22 @@
  * Unit tests for the input and section helpers of `propertiesPanelDom`.
  */
 
-import { createCommitInput, createInputColumn, createSection } from "./propertiesPanelDom";
+import { createInputColumn, createSection } from "./propertiesPanelDom";
 
-describe("createCommitInput", () => {
+/**
+ * Creates an input column and returns its input.
+ *
+ * @param value - Initial value
+ * @param onCommit - Callback invoked with the committed value
+ * @returns The input
+ */
+function columnInput(value: string, onCommit: (next: string) => void): HTMLInputElement {
+  return createInputColumn("label", value, onCommit).querySelector("input")!;
+}
+
+describe("createInputColumn: the committing input", () => {
   test("should create a text input with the value", () => {
-    const input = createCommitInput("value", vi.fn());
+    const input = columnInput("value", vi.fn());
     expect(input.type).toBe("text");
     expect(input.className).toBe("property-input");
     expect(input.value).toBe("value");
@@ -14,7 +25,7 @@ describe("createCommitInput", () => {
 
   test("should commit the value when the input loses the focus", () => {
     const onCommit = vi.fn();
-    const input = createCommitInput("old", onCommit);
+    const input = columnInput("old", onCommit);
     input.value = "new";
     input.dispatchEvent(new FocusEvent("blur"));
     expect(onCommit).toHaveBeenCalledWith("new");
@@ -22,7 +33,7 @@ describe("createCommitInput", () => {
 
   test("should leave the input with Enter, which commits the value", () => {
     const onCommit = vi.fn();
-    const input = createCommitInput("old", onCommit);
+    const input = columnInput("old", onCommit);
     document.body.appendChild(input);
     input.focus();
     const enter = new KeyboardEvent("keydown", { key: "Enter", cancelable: true });
@@ -34,7 +45,7 @@ describe("createCommitInput", () => {
 
   test("should ignore other keys", () => {
     const onCommit = vi.fn();
-    const input = createCommitInput("old", onCommit);
+    const input = columnInput("old", onCommit);
     input.dispatchEvent(new KeyboardEvent("keydown", { key: "a" }));
     expect(onCommit).not.toHaveBeenCalled();
   });

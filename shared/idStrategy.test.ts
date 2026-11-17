@@ -5,10 +5,6 @@
 import {
   generateSchemaId,
   parseSchemaId,
-  isTopLevelId,
-  getParentId,
-  getNodeType,
-  getNodeName,
   SchemaNodeType,
 } from "./idStrategy.js";
 
@@ -268,122 +264,6 @@ describe("parseSchemaId", () => {
     test("should throw error for an ID without a node after the slash", () => {
       expect(() => parseSchemaId("/")).toThrow("Invalid schema ID format: no node after /: /");
     });
-  });
-});
-
-describe("isTopLevelId", () => {
-  test("should return true for top-level element", () => {
-    expect(isTopLevelId("/element:person")).toBe(true);
-  });
-
-  test("should return true for top-level complexType", () => {
-    expect(isTopLevelId("/complexType:PersonType")).toBe(true);
-  });
-
-  test("should return false for child element", () => {
-    expect(isTopLevelId("/element:person/element:address[0]")).toBe(false);
-  });
-
-  test("should return false for nested element", () => {
-    expect(
-      isTopLevelId("/element:person/element:address[0]/element:street[0]")
-    ).toBe(false);
-  });
-
-  test("should return true for schema root", () => {
-    expect(isTopLevelId("/schema")).toBe(true);
-  });
-
-  test("should return true for top-level element with namespace", () => {
-    expect(isTopLevelId("/element:{http://example.com/schema}person")).toBe(
-      true
-    );
-  });
-
-  test("should return false for child element with namespace", () => {
-    expect(
-      isTopLevelId(
-        "/element:{http://example.com/schema}person/element:{http://example.com/schema}address[0]"
-      )
-    ).toBe(false);
-  });
-});
-
-describe("getParentId", () => {
-  test("should return undefined for top-level element", () => {
-    expect(getParentId("/element:person")).toBeUndefined();
-  });
-
-  test("should return parent ID for child element", () => {
-    expect(getParentId("/element:person/element:address[0]")).toBe(
-      "/element:person"
-    );
-  });
-
-  test("should return parent ID for deeply nested element", () => {
-    expect(
-      getParentId("/element:person/element:address[0]/element:street[0]")
-    ).toBe("/element:person/element:address[0]");
-  });
-
-  test("should return parent ID for anonymous type", () => {
-    expect(getParentId("/element:person/anonymousComplexType[0]")).toBe(
-      "/element:person"
-    );
-  });
-});
-
-describe("getNodeType", () => {
-  test("should return Element for element ID", () => {
-    expect(getNodeType("/element:person")).toBe(SchemaNodeType.Element);
-  });
-
-  test("should return ComplexType for complexType ID", () => {
-    expect(getNodeType("/complexType:PersonType")).toBe(
-      SchemaNodeType.ComplexType
-    );
-  });
-
-  test("should return SimpleType for simpleType ID", () => {
-    expect(getNodeType("/simpleType:EmailType")).toBe(
-      SchemaNodeType.SimpleType
-    );
-  });
-
-  test("should return correct type for child element", () => {
-    expect(getNodeType("/element:person/element:address[0]")).toBe(
-      SchemaNodeType.Element
-    );
-  });
-
-  test("should return correct type for anonymous type", () => {
-    expect(getNodeType("/element:person/anonymousComplexType[0]")).toBe(
-      SchemaNodeType.AnonymousComplexType
-    );
-  });
-});
-
-describe("getNodeName", () => {
-  test("should return name for named element", () => {
-    expect(getNodeName("/element:person")).toBe("person");
-  });
-
-  test("should return name for named complexType", () => {
-    expect(getNodeName("/complexType:PersonType")).toBe("PersonType");
-  });
-
-  test("should return undefined for anonymous type", () => {
-    expect(getNodeName("/element:person/anonymousComplexType[0]")).toBeUndefined();
-  });
-
-  test("should return name for child element", () => {
-    expect(getNodeName("/element:person/element:address[0]")).toBe("address");
-  });
-
-  test("should return name with namespace stripped", () => {
-    expect(getNodeName("/element:{http://example.com/schema}person")).toBe(
-      "person"
-    );
   });
 });
 

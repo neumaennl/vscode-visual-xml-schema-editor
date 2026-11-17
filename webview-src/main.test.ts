@@ -49,7 +49,6 @@ describe("SchemaEditorApp", () => {
           <button id="zoomOut"></button>
           <button id="fitView"></button>
           <div id="canvas-container">
-            <div id="top-level-drop-target"></div>
             <svg id="schema-canvas" width="800" height="600">
               <g id="content"></g>
             </svg>

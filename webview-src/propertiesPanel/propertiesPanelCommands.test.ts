@@ -2,7 +2,7 @@
  * Unit tests for the type helpers of `propertiesPanelCommands`.
  */
 
-import { onTypeChange, resolveComplexTypeId, resolveSimpleTypeId } from "./propertiesPanelCommands";
+import { createComplexBaseTypeCommand, onTypeChange, resolveSimpleTypeId } from "./propertiesPanelCommands";
 import { Diagram, DiagramItem, DiagramItemType } from "../diagram";
 
 /**
@@ -41,18 +41,29 @@ describe("onTypeChange", () => {
   });
 });
 
-describe("resolveSimpleTypeId and resolveComplexTypeId", () => {
+describe("resolveSimpleTypeId", () => {
   test("should return the ID of a type node", () => {
     expect(resolveSimpleTypeId(itemWithPrefix("/simpleType:S", DiagramItemType.type))).toBe("/simpleType:S");
-    expect(resolveComplexTypeId(itemWithPrefix("/complexType:T", DiagramItemType.type))).toBe("/complexType:T");
   });
 
   test("should return the ID of the anonymous type of an element that has one", () => {
     const element = itemWithPrefix("/element:a");
     element.isSimpleContent = true;
     expect(resolveSimpleTypeId(element)).toBe("/element:a/anonymousSimpleType[0]");
-    expect(resolveComplexTypeId(element)).toBeNull();
+  });
+});
+
+describe("createComplexBaseTypeCommand", () => {
+  test("should change the base type of a complex type node", () => {
+    const command = createComplexBaseTypeCommand(itemWithPrefix("/complexType:T", DiagramItemType.type), "B");
+    expect(command).toMatchObject({ type: "modifyComplexType", payload: { typeId: "/complexType:T", baseType: "B" } });
+  });
+
+  test("should change the base type of the anonymous complex type of an element that has one", () => {
+    const element = itemWithPrefix("/element:a");
+    element.isSimpleContent = true;
+    expect(createComplexBaseTypeCommand(element, "B")).toBeNull();
     element.hasAnonymousComplexType = true;
-    expect(resolveComplexTypeId(element)).toBe("/element:a/anonymousComplexType[0]");
+    expect(createComplexBaseTypeCommand(element, "B")).toMatchObject({ payload: { typeId: "/element:a/anonymousComplexType[0]" } });
   });
 });

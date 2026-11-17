@@ -1,7 +1,5 @@
 import {
   isValidXmlName,
-  validateMinOccurs,
-  validateMaxOccurs,
   validateOccurrences,
   validateElementType,
 } from "./validationUtils.js";
@@ -26,63 +24,29 @@ describe("validationUtils", () => {
     });
   });
 
-  describe("validateMinOccurs", () => {
-    test("should accept undefined minOccurs", () => {
-      const result = validateMinOccurs(undefined);
-      expect(result.valid).toBe(true);
-    });
-
-    test.each([0, 1, 10])("should accept the minOccurs %d", (value) => {
-      expect(validateMinOccurs(value).valid).toBe(true);
-    });
-
-    test("should reject negative minOccurs", () => {
-      const result = validateMinOccurs(-1);
-      expectInvalid(result);
-      expect(result.error).toBe("minOccurs must be a non-negative integer");
-    });
-
-    test("should reject non-integer minOccurs", () => {
-      const result = validateMinOccurs(1.5);
-      expectInvalid(result);
-      expect(result.error).toBe("minOccurs must be an integer");
-    });
-  });
-
-  describe("validateMaxOccurs", () => {
-    test("should accept undefined maxOccurs", () => {
-      const result = validateMaxOccurs(undefined);
-      expect(result.valid).toBe(true);
-    });
-
-    test("should accept 'unbounded' maxOccurs", () => {
-      const result = validateMaxOccurs("unbounded");
-      expect(result.valid).toBe(true);
-    });
-
-    test.each([0, 1, 10])("should accept the numeric maxOccurs %d", (value) => {
-      expect(validateMaxOccurs(value).valid).toBe(true);
-    });
-
-    test("should reject negative maxOccurs", () => {
-      const result = validateMaxOccurs(-1);
-      expectInvalid(result);
-      expect(result.error).toBe(
-        "maxOccurs must be a non-negative integer or 'unbounded'"
-      );
-    });
-
-    test("should reject non-integer maxOccurs", () => {
-      const result = validateMaxOccurs(1.5);
-      expectInvalid(result);
-      expect(result.error).toBe("maxOccurs must be an integer or 'unbounded'");
-    });
-  });
-
   describe("validateOccurrences", () => {
     test("should accept undefined minOccurs and maxOccurs", () => {
       const result = validateOccurrences(undefined, undefined);
       expect(result.valid).toBe(true);
+    });
+
+    test.each([0, 1, 10])("should accept the minOccurs %d without maxOccurs", (value) => {
+      expect(validateOccurrences(value, undefined).valid).toBe(true);
+    });
+
+    test.each([0, 1, 10, "unbounded"])("should accept the maxOccurs %s without minOccurs", (value) => {
+      expect(validateOccurrences(undefined, value).valid).toBe(true);
+    });
+
+    test.each([
+      [-1, undefined, "minOccurs must be a non-negative integer"],
+      [1.5, undefined, "minOccurs must be an integer"],
+      [undefined, -1, "maxOccurs must be a non-negative integer or 'unbounded'"],
+      [undefined, 1.5, "maxOccurs must be an integer or 'unbounded'"],
+    ])("should reject minOccurs %s and maxOccurs %s", (minOccurs, maxOccurs, error) => {
+      const result = validateOccurrences(minOccurs, maxOccurs);
+      expectInvalid(result);
+      expect(result.error).toBe(error);
     });
 
     test("should accept valid minOccurs and maxOccurs", () => {

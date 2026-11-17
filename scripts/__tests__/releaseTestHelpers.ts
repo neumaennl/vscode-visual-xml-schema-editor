@@ -45,3 +45,13 @@ export function release(tag: string, flags: { draft?: boolean; prerelease?: bool
 export function releasesPage(page: number): string {
   return `https://api.github.com/repos/microsoft/vscode/releases?per_page=100&page=${page}`;
 }
+
+/**
+ * Returns the URL of the `@tsconfig/bases` configuration for a Node major version.
+ *
+ * @param major - The major version of Node
+ * @returns The URL
+ */
+export function tsconfigBaseUrl(major: number): string {
+  return `https://raw.githubusercontent.com/tsconfig/bases/main/bases/node${major}.json`;
+}

@@ -99,7 +99,7 @@ function compareVersions(a: Version, b: Version): number {
  * highestAtOrBelow(["24.12.2", "24.13.1", "24.19.1"], 24, 15); // "24.13.1"
  * ```
  */
-export function highestAtOrBelow(versions: string[], major: number, maxMinor: number): string | undefined {
+function highestAtOrBelow(versions: string[], major: number, maxMinor: number): string | undefined {
   return versions
     .filter((v) => /^\d+\.\d+\.\d+$/.test(v))
     .map(parseVersion)
@@ -116,7 +116,7 @@ export function highestAtOrBelow(versions: string[], major: number, maxMinor: nu
  * @param npmrc - The content of the `.npmrc`
  * @returns The Electron version, if the file has a target
  */
-export function parseElectronTarget(npmrc: string): string | undefined {
+function parseElectronTarget(npmrc: string): string | undefined {
   return /^target\s*=\s*"?([\d.]+)"?\s*$/m.exec(npmrc)?.[1];
 }
 

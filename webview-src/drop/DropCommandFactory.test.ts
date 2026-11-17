@@ -32,14 +32,14 @@ function makeItem(
 const NAME_FIELDS = ["elementName", "attributeName", "typeName", "groupName"];
 
 /**
- * Creates the top-level drop command for a construct and returns the name it generated.
+ * Drops a construct on the schema root and returns the name that the command generated.
  *
  * @param factory - The factory
  * @param construct - The dropped construct
  * @returns The generated name, or undefined if the command has none
  */
 function generatedName(factory: DropCommandFactory, construct: PaletteSchemaConstruct): string | undefined {
-  const payload = (factory.createTopLevelDropCommand(construct) as { payload: Record<string, unknown> } | null)?.payload;
+  const payload = (factory.createNodeDropCommand(ROOT, construct) as { payload: Record<string, unknown> } | null)?.payload;
   const field = NAME_FIELDS.find((name) => typeof payload?.[name] === "string");
   return field === undefined ? undefined : (payload?.[field] as string);
 }
@@ -81,7 +81,7 @@ describe("DropCommandFactory", () => {
     factory = new DropCommandFactory();
   });
 
-  describe("createTopLevelDropCommand", () => {
+  describe("createNodeDropCommand on the schema root", () => {
     test.each([
       [C.Element, { type: "addElement", payload: { parentId: "/schema", elementName: "Element1" } }],
       [C.Attribute, { type: "addAttribute", payload: { parentId: "/schema", attributeName: "Attribute1" } }],
@@ -91,11 +91,11 @@ describe("DropCommandFactory", () => {
       [C.Extension, { type: "addComplexType", payload: { parentId: "/schema", typeName: "ComplexType1", baseType: "xs:anyType" } }],
       [C.Group, { type: "addGroup", payload: { groupName: "Group1" } }],
     ])("should create the command for %s", (construct, expected) => {
-      expect(factory.createTopLevelDropCommand(construct)).toMatchObject(expected);
+      expect(factory.createNodeDropCommand(ROOT, construct)).toMatchObject(expected);
     });
 
     test("should return null for unsupported top-level construct", () => {
-      expect(factory.createTopLevelDropCommand(C.Any)).toBeNull();
+      expect(factory.createNodeDropCommand(ROOT, C.Any)).toBeNull();
     });
   });
 

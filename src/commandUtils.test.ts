@@ -7,7 +7,6 @@ import {
   findAttributeGroupRef,
   findIdentifiedChild,
   identifyChild,
-  isIdentifiedChild,
   parseDocumentationId,
   parseSchemaAnnotationId,
   parseSchemaDocumentationId,
@@ -27,19 +26,6 @@ function refsOf(...refs: string[]): attributeGroupRef[] {
   return refs.map((ref) => Object.assign(new attributeGroupRef(), { ref }));
 }
 
-describe("isIdentifiedChild", () => {
-  test.each([
-    ["the position, which wins over the name", "x", 1, 1, true],
-    ["another position", "a", 1, 0, false],
-    ["the name", "a", undefined, 0, true],
-    ["the ref", "b", undefined, 1, true],
-    ["a different name", "c", undefined, 0, false],
-    ["neither a name nor a position", undefined, undefined, 0, false],
-  ])("should match by %s", (_case, name, position, index, expected) => {
-    expect(isIdentifiedChild(CHILDREN[index]!, index, name, position)).toBe(expected);
-  });
-});
-
 describe("findIdentifiedChild", () => {
   test("should find the first child with the name, or the child at the position", () => {
     expect(findIdentifiedChild(CHILDREN, "a", undefined)).toBe(CHILDREN[0]);
@@ -54,7 +40,18 @@ describe("identifyChild", () => {
     expect(identifyChild("Element", undefined, 2).what).toBe("Element at position 2");
   });
 
-  test("should match like isIdentifiedChild", () => {
+  test.each([
+    ["the position, which wins over the name", "x", 1, 1, true],
+    ["another position", "a", 1, 0, false],
+    ["the name", "a", undefined, 0, true],
+    ["the ref", "b", undefined, 1, true],
+    ["a different name", "c", undefined, 0, false],
+    ["neither a name nor a position", undefined, undefined, 0, false],
+  ])("should match by %s", (_case, name, position, index, expected) => {
+    expect(identifyChild("Element", name, position).matches(CHILDREN[index]!, index)).toBe(expected);
+  });
+
+  test("should match every child with the name", () => {
     expect(CHILDREN.filter(identifyChild("Element", "a", undefined).matches)).toEqual([CHILDREN[0], CHILDREN[2]]);
   });
 });

@@ -243,7 +243,7 @@ export function createToggleRow(
  * @param onCommit - Callback invoked with the committed value
  * @returns The input
  */
-export function createCommitInput(value: string, onCommit: (next: string) => void): HTMLInputElement {
+function createCommitInput(value: string, onCommit: (next: string) => void): HTMLInputElement {
   const input = document.createElement("input");
   input.type = "text";
   input.className = "property-input";

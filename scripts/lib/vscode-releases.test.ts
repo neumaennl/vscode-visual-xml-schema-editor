@@ -3,10 +3,8 @@ import {
   deriveVersions,
   electronOf,
   expectedValues,
-  highestAtOrBelow,
   listReleases,
   loadSharedData,
-  parseElectronTarget,
   parseVersion,
   type DerivedVersions,
 } from "./vscode-releases.ts";
@@ -34,31 +32,6 @@ describe("vscode-releases", () => {
     });
   });
 
-  describe("highestAtOrBelow", () => {
-    test("should return the highest version of the major version up to the minor version", () => {
-      expect(highestAtOrBelow(["24.12.2", "24.13.1", "24.13.6", "24.19.1"], 24, 15)).toBe("24.13.6");
-    });
-
-    test("should ignore pre-releases and other major versions", () => {
-      expect(highestAtOrBelow(["22.20.5", "24.13.0-beta", "24.12.2", "26.1.0"], 24, 15)).toBe("24.12.2");
-    });
-
-    test("should return undefined if no version matches", () => {
-      expect(highestAtOrBelow(["24.19.1"], 24, 15)).toBeUndefined();
-    });
-  });
-
-  describe("parseElectronTarget", () => {
-    test("should read a quoted or unquoted target", () => {
-      expect(parseElectronTarget('disturl="https://electronjs.org/headers"\ntarget="42.3.0"\n')).toBe("42.3.0");
-      expect(parseElectronTarget("target=39.8.8")).toBe("39.8.8");
-    });
-
-    test("should return undefined if the file has no target", () => {
-      expect(parseElectronTarget('runtime="electron"\n')).toBeUndefined();
-    });
-  });
-
   describe("deriveVersions", () => {
     const data = {
       electron: "42.3.0",
@@ -77,6 +50,18 @@ describe("vscode-releases", () => {
         typesNode: "24.13.6",
         nodeEnd: "2028-04-30",
       });
+    });
+
+    test("should take the highest @types version of the major version up to the minor version", () => {
+      const typesNode = ["24.12.2", "24.13.1", "24.13.6", "24.16.0", "24.19.1"];
+
+      expect(deriveVersions("1.125.0", { ...data, typesNode }).typesNode).toBe("24.13.6");
+    });
+
+    test("should ignore pre-releases and other major versions of the @types packages", () => {
+      const typesNode = ["22.20.5", "24.13.0-beta", "24.12.2", "26.1.0"];
+
+      expect(deriveVersions("1.125.0", { ...data, typesNode }).typesNode).toBe("24.12.2");
     });
 
     test("should leave out what has no match", () => {
@@ -136,8 +121,11 @@ describe("vscode-releases", () => {
   });
 
   describe("electronOf", () => {
-    test("should read the Electron version from the .npmrc of the release tag", async () => {
-      stubFetch({ "https://raw.githubusercontent.com/microsoft/vscode/1.125.0/.npmrc": 'target="42.3.0"\n' });
+    test.each([
+      ["quoted", 'disturl="https://electronjs.org/headers"\ntarget="42.3.0"\n'],
+      ["unquoted", "target=42.3.0"],
+    ])("should read the %s Electron version from the .npmrc of the release tag", async (_case, npmrc) => {
+      stubFetch({ "https://raw.githubusercontent.com/microsoft/vscode/1.125.0/.npmrc": npmrc });
 
       await expect(electronOf("1.125.0")).resolves.toBe("42.3.0");
     });

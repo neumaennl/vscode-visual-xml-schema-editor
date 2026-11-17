@@ -71,7 +71,7 @@ export class PaletteView {
 
     const hint = document.createElement("div");
     hint.className = "palette-hint";
-    hint.textContent = "Drag onto nodes or the top-level drop target";
+    hint.textContent = "Drag onto a node in the diagram";
     this.container.appendChild(hint);
 
     this.renderList();

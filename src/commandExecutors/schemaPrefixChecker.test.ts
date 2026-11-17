@@ -2,7 +2,7 @@
  * Unit tests for schema prefix reference checks.
  */
 
-import { isPrefixReferencedInSchema, isAnyPrefixReferencedInSchema } from "./schemaPrefixChecker.js";
+import { isAnyPrefixReferencedInSchema } from "./schemaPrefixChecker.js";
 import { emptySchema, schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
 
 /** A top-level element `foo` whose type has the prefix `ext`. */
@@ -11,9 +11,9 @@ const ELEMENT_OF_EXT_TYPE = `<xs:element name="foo" type="ext:FooType"/>`;
 /** A local simpleType that restricts `ext:BaseType`. */
 const SIMPLE_TYPE_OF_EXT_BASE = `<xs:simpleType><xs:restriction base="ext:BaseType"/></xs:simpleType>`;
 
-describe("isPrefixReferencedInSchema", () => {
+describe("isAnyPrefixReferencedInSchema", () => {
   test("should return false on an empty schema", () => {
-    expect(isPrefixReferencedInSchema("ext", emptySchema())).toBe(false);
+    expect(isAnyPrefixReferencedInSchema(new Set(["ext"]), emptySchema())).toBe(false);
   });
 
   test.each([
@@ -49,18 +49,16 @@ describe("isPrefixReferencedInSchema", () => {
   ])("should find the prefix in %s and no other prefix", (_place, content) => {
     const s = schemaWith(content);
 
-    expect(isPrefixReferencedInSchema("ext", s)).toBe(true);
-    expect(isPrefixReferencedInSchema("other", s)).toBe(false);
+    expect(isAnyPrefixReferencedInSchema(new Set(["ext"]), s)).toBe(true);
+    expect(isAnyPrefixReferencedInSchema(new Set(["other"]), s)).toBe(false);
   });
 
   test("should find every prefix of a union/@memberTypes", () => {
     const s = schemaWith(`<xs:simpleType name="Union"><xs:union memberTypes="xs:string ext:Type2"/></xs:simpleType>`);
 
-    expect(isPrefixReferencedInSchema("xs", s)).toBe(true);
+    expect(isAnyPrefixReferencedInSchema(new Set(["xs"]), s)).toBe(true);
   });
-});
 
-describe("isAnyPrefixReferencedInSchema", () => {
   test.each([
     ["false for an empty prefix set", ELEMENT_OF_EXT_TYPE, [], false],
     ["false when no prefix of the set is referenced", ELEMENT_OF_EXT_TYPE, ["ns1", "ns2"], false],
@@ -71,12 +69,5 @@ describe("isAnyPrefixReferencedInSchema", () => {
     ["false when no prefix of memberTypes is in the set", `<xs:simpleType name="T"><xs:union memberTypes="ns1:A ns2:B"/></xs:simpleType>`, ["ns3", "ns4"], false],
   ])("should return %s", (_case, content, prefixes, expected) => {
     expect(isAnyPrefixReferencedInSchema(new Set(prefixes), schemaWith(content))).toBe(expected);
-  });
-
-  test("should be consistent with isPrefixReferencedInSchema for a single prefix", () => {
-    const s = schemaWith(`<xs:complexType name="CT"><xs:complexContent><xs:extension base="ext:Base"/></xs:complexContent></xs:complexType>`);
-
-    expect(isAnyPrefixReferencedInSchema(new Set(["ext"]), s)).toBe(isPrefixReferencedInSchema("ext", s));
-    expect(isAnyPrefixReferencedInSchema(new Set(["other"]), s)).toBe(isPrefixReferencedInSchema("other", s));
   });
 });

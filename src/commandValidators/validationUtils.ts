@@ -49,7 +49,7 @@ export function isValidXmlName(name: string): boolean {
  * @param minOccurs - The `minOccurs` value to validate
  * @returns Validation result
  */
-export function validateMinOccurs(
+function validateMinOccurs(
   minOccurs: number | undefined
 ): ValidationResult {
   if (minOccurs === undefined) {
@@ -76,7 +76,7 @@ export function validateMinOccurs(
  * @param maxOccurs - The `maxOccurs` value to validate
  * @returns Validation result
  */
-export function validateMaxOccurs(
+function validateMaxOccurs(
   maxOccurs: number | string | undefined
 ): ValidationResult {
   if (maxOccurs === undefined) {

@@ -41,86 +41,37 @@ export class DropCommandFactory {
   }
 
   /**
-   * Create a command payload for a top-level drop.
+   * Creates the command for a restriction or extension dropped on the schema root: a new top-level
+   * simple type that restricts `xs:string`, or a new top-level complex type that extends `xs:anyType`.
    *
-   * @param construct - Palette schema construct
-   * @returns Command or null if unsupported
-   */
-  public createTopLevelDropCommand(construct: PaletteSchemaConstruct): SchemaCommand | null {
-    return this.createTopLevelDropCommandInternal(construct, true);
-  }
-
-  /**
-   * Creates the command that adds a new top-level component of the dropped kind.
-   *
-   * @param construct - Palette schema construct
+   * @param construct - Restriction or Extension
    * @param reserveNames - Whether the new name is reserved, so that the next drop gets another one
-   * @returns Command or null if the construct cannot be added at the top level
+   * @returns The command
    */
-  private createTopLevelDropCommandInternal(
-    construct: PaletteSchemaConstruct,
+  private createTopLevelDerivationCommand(
+    construct: PaletteSchemaConstruct.Restriction | PaletteSchemaConstruct.Extension,
     reserveNames: boolean
-  ): SchemaCommand | null {
-    switch (construct) {
-      case PaletteSchemaConstruct.Element:
-        return {
-          type: "addElement",
-          payload: {
-            parentId: SCHEMA_ROOT_ID,
-            elementName: this.nextName("Element", reserveNames),
-            elementType: "xs:string",
-          },
-        };
-      case PaletteSchemaConstruct.Attribute:
-        return {
-          type: "addAttribute",
-          payload: {
-            parentId: SCHEMA_ROOT_ID,
-            attributeName: this.nextName("Attribute", reserveNames),
-            attributeType: "xs:string",
-          },
-        };
-      case PaletteSchemaConstruct.ComplexType:
-        return {
-          type: "addComplexType",
-          payload: {
-            parentId: SCHEMA_ROOT_ID,
-            typeName: this.nextName("ComplexType", reserveNames),
-            contentModel: "sequence",
-          },
-        };
-      case PaletteSchemaConstruct.SimpleType:
-      case PaletteSchemaConstruct.Restriction:
-        return {
-          type: "addSimpleType",
-          payload: {
-            parentId: SCHEMA_ROOT_ID,
-            typeName: this.nextName("SimpleType", reserveNames),
-            baseType: "xs:string",
-          },
-        };
-      case PaletteSchemaConstruct.Extension:
-        return {
-          type: "addComplexType",
-          payload: {
-            parentId: SCHEMA_ROOT_ID,
-            typeName: this.nextName("ComplexType", reserveNames),
-            contentModel: "sequence",
-            baseType: "xs:anyType",
-            derivationKind: "extension",
-          },
-        };
-      case PaletteSchemaConstruct.Group:
-        return {
-          type: "addGroup",
-          payload: {
-            groupName: this.nextName("Group", reserveNames),
-            contentModel: "sequence",
-          },
-        };
-      default:
-        return null;
+  ): SchemaCommand {
+    if (construct === PaletteSchemaConstruct.Restriction) {
+      return {
+        type: "addSimpleType",
+        payload: {
+          parentId: SCHEMA_ROOT_ID,
+          typeName: this.nextName("SimpleType", reserveNames),
+          baseType: "xs:string",
+        },
+      };
     }
+    return {
+      type: "addComplexType",
+      payload: {
+        parentId: SCHEMA_ROOT_ID,
+        typeName: this.nextName("ComplexType", reserveNames),
+        contentModel: "sequence",
+        baseType: "xs:anyType",
+        derivationKind: "extension",
+      },
+    };
   }
 
   /**
@@ -388,7 +339,7 @@ export class DropCommandFactory {
     construct: PaletteSchemaConstruct.Restriction | PaletteSchemaConstruct.Extension
   ): SchemaCommand | null {
     if (this.isSchemaRoot(item)) {
-      return this.createTopLevelDropCommandInternal(construct, reserveNames);
+      return this.createTopLevelDerivationCommand(construct, reserveNames);
     }
     const isRestriction = construct === PaletteSchemaConstruct.Restriction;
     const derivationKind = isRestriction ? "restriction" : "extension";

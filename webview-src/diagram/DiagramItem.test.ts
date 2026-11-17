@@ -49,15 +49,6 @@ describe("DiagramItem", () => {
     });
   });
 
-  describe("getTextDocumentation", () => {
-    test("should return documentation text", () => {
-      const item = new DiagramItem("id1", "Test", DiagramItemType.element);
-      item.documentation = "Test documentation";
-
-      expect(item.getTextDocumentation()).toBe("Test documentation");
-    });
-  });
-
   describe("getStyle", () => {
     test("should return the style of the diagram", () => {
       const diagram = new Diagram();

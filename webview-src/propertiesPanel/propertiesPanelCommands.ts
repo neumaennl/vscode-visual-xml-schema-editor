@@ -280,7 +280,7 @@ export function resolveSimpleTypeId(node: DiagramItem): string | null {
  * @param node - Diagram item to inspect
  * @returns The complex-type schema ID or null when no complex type applies
  */
-export function resolveComplexTypeId(node: DiagramItem): string | null {
+function resolveComplexTypeId(node: DiagramItem): string | null {
   return resolveTypeId(node, SchemaNodeType.ComplexType, SchemaNodeType.AnonymousComplexType, node.hasAnonymousComplexType);
 }
 

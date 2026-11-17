@@ -33,17 +33,10 @@ import type { simpleExplicitGroup } from "../../shared/generated/simpleExplicitG
 import type { allType } from "../../shared/generated/allType";
 import type { groupRef } from "../../shared/generated/groupRef";
 import type { narrowMaxMin } from "../../shared/generated/narrowMaxMin";
-import {
-  extractRestrictionFacets as extractRestrictionFacetsImpl,
-  processList,
-  processRestriction,
-  processUnion,
-} from "./SchemaProcessorsSimpleTypes";
+import { processList, processRestriction, processUnion } from "./SchemaProcessorsSimpleTypes";
 import { processChildCollection as processChildCollectionImpl } from "./SchemaProcessorsCommon";
 
 export { processChildCollectionImpl as processChildCollection };
-export { extractRestrictionFacetsImpl as extractRestrictionFacets };
-export { processRestriction };
 
 /**
  * Processes an anonymous inline complex type within an element.
@@ -52,7 +45,7 @@ export { processRestriction };
  * @param parent - Parent element item containing the anonymous type
  * @param complexType - Anonymous complex type definition
  */
-export function processAnonymousComplexType(
+function processAnonymousComplexType(
   parent: DiagramItem,
   complexType: ComplexTypeLike
 ): void {
@@ -82,7 +75,7 @@ export function processAnonymousComplexType(
  * @param parent - Parent element item containing the anonymous type
  * @param simpleType - Anonymous simple type definition
  */
-export function processAnonymousSimpleType(
+function processAnonymousSimpleType(
   parent: DiagramItem,
   simpleType: SimpleTypeLike
 ): void {
@@ -456,7 +449,7 @@ function processGroupRef(
  * @param parent - Parent diagram item to extend
  * @param extension - Extension definition from schema
  */
-export function processExtension(
+function processExtension(
   parent: DiagramItem,
   extension: ContentTypeLike
 ): void {

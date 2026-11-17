@@ -52,7 +52,7 @@ function hasSimpleTypeFacets(restriction: RestrictionTypeLike): restriction is r
  * @param parent - Diagram item receiving the extracted restriction facets.
  * @param restriction - Restriction definition from the schema.
  */
-export function extractRestrictionFacets(parent: DiagramItem, restriction: RestrictionTypeLike): void {
+function extractRestrictionFacets(parent: DiagramItem, restriction: RestrictionTypeLike): void {
   if (!hasSimpleTypeFacets(restriction)) {
     return;
   }

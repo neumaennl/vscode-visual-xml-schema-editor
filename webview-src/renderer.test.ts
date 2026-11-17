@@ -9,6 +9,7 @@ import {
   setActiveDraggedPaletteSchemaConstruct,
 } from "./palette/PaletteItems";
 import { PaletteSchemaConstruct } from "./palette/PaletteSchemaConstruct";
+import { SCHEMA_ROOT_ID } from "../shared/idStrategy";
 
 const DEFAULT_DIAGRAM_OPTIONS: DiagramOptions = {
   showDocumentation: false,
@@ -183,8 +184,8 @@ describe("DiagramRenderer", () => {
     test.each(["showDocumentation", "alwaysShowOccurrence", "showType"] as const)("should apply %s option to diagram", (option) => {
       renderer.renderSchema(TEST_SCHEMA, { ...DEFAULT_DIAGRAM_OPTIONS, [option]: true }, vi.fn());
 
-      const diagram = renderer.getCurrentDiagram();
-      expect(diagram).not.toBeNull();
+      const diagram = renderer.getItemById(SCHEMA_ROOT_ID)?.diagram;
+      expect(diagram).toBeDefined();
       expect(diagram?.[option]).toBe(true);
     });
   });

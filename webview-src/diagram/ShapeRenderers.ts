@@ -100,7 +100,7 @@ export function renderTypeShape(
  * @param rect - Rectangle dimensions and position
  * @param group - Parent SVG group element
  */
-export function renderGroupTypeIndicator(
+function renderGroupTypeIndicator(
   item: DiagramItem,
   rect: Rectangle,
   group: SVGElement

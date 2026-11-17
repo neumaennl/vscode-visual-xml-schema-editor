@@ -49,7 +49,7 @@ export type ValidatorFunctions = CommandHandlers<"validate", ValidationResult>;
  * The validator functions of the validator modules, which `CommandValidator` uses unless others are
  * injected. The modules also export constants, which the lookup by name never finds.
  */
-export const defaultValidators: ValidatorFunctions = {
+const defaultValidators: ValidatorFunctions = {
   ...elementValidators,
   ...attributeValidators,
   ...simpleTypeValidators,

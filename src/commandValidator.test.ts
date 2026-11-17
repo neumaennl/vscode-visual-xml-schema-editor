@@ -5,7 +5,8 @@
  */
 
 import type { ValidatorFunctions } from "./commandValidator.js";
-import { CommandValidator, defaultValidators } from "./commandValidator.js";
+import { CommandValidator } from "./commandValidator.js";
+import type { CommandHandler } from "./commandHandlers.js";
 import type { SchemaCommand } from "../shared/types.js";
 import { schema } from "../shared/types.js";
 import type { ValidationResult } from "./commandValidators/validationUtils.js";
@@ -16,21 +17,21 @@ import type { Mock } from "vitest";
 type MockValidator = Mock<(command: SchemaCommand, schemaObj: schema) => ValidationResult>;
 
 /**
- * Replaces every validator function of {@link defaultValidators} with a mock that returns success.
+ * Creates a mock that returns success for the validator function of each of the
+ * {@link DELEGATED_COMMANDS}.
  *
  * @returns The validators to inject, and the mocks by the names of the validator functions
  */
 function createMockValidators(): { validators: ValidatorFunctions; mocks: Map<string, MockValidator> } {
-  const validators = { ...defaultValidators };
+  const validators: Record<string, CommandHandler<ValidationResult>> = {};
   const mocks = new Map<string, MockValidator>();
-  // The modules also export constants, whose names do not start with "validate"
-  const names = Object.keys(validators).filter((name) => name.startsWith("validate")) as Array<keyof ValidatorFunctions>;
-  for (const name of names) {
+  for (const command of DELEGATED_COMMANDS) {
     const mock = vi.fn<(command: SchemaCommand, schemaObj: schema) => ValidationResult>(() => ({ valid: true }));
-    validators[name] = mock;
-    mocks.set(name, mock);
+    validators[validatorNameOf(command)] = mock;
+    mocks.set(validatorNameOf(command), mock);
   }
-  return { validators, mocks };
+  // Only the validators that the tests reach; the commands of other types are never sent
+  return { validators: validators as ValidatorFunctions, mocks };
 }
 
 /**
@@ -71,10 +72,6 @@ describe("CommandValidator", () => {
     const { validators, mocks } = createMockValidators();
     mockValidators = mocks;
     validator = new CommandValidator(validators);
-  });
-
-  test("should have a mock for every validator function", () => {
-    expect(mockValidators.size).toBe(31);
   });
 
   describe("validate() method", () => {

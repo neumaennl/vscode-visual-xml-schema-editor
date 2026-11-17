@@ -2,9 +2,8 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createInterface } from "node:readline/promises";
-import { baseUrl } from "./lib/compiler-target.ts";
 import { installNode, runWith } from "./lib/node-setup.ts";
-import { release, releasesPage, stubFetch } from "./__tests__/releaseTestHelpers.ts";
+import { release, releasesPage, stubFetch, tsconfigBaseUrl } from "./__tests__/releaseTestHelpers.ts";
 import { check, choose, formatTable, main, update, writeValues } from "./vscode-version.ts";
 
 const asker = { question: vi.fn<(query: string) => Promise<string>>(), close: vi.fn() };
@@ -70,7 +69,7 @@ function stubReleases(): void {
     "https://raw.githubusercontent.com/microsoft/vscode/1.141.0/.npmrc": 'target="43.7.7"\n',
     "https://raw.githubusercontent.com/microsoft/vscode/1.150.0/.npmrc": 'target="45.1.0"\n',
     [releasesPage(1)]: [release("1.150.0"), release("1.141.0"), release("1.125.0")],
-    [baseUrl(24)]: '{ "compilerOptions": { "target": "es2024", "lib": ["es2024", "ESNext.Array"] } }',
+    [tsconfigBaseUrl(24)]: '{ "compilerOptions": { "target": "es2024", "lib": ["es2024", "ESNext.Array"] } }',
   });
 }
 

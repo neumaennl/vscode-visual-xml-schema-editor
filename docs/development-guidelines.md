@@ -4,8 +4,8 @@ title: Development guidelines
 description: Rules for everyone who changes the extension - code size, code quality and ESLint, structure reviews, TypeScript and naming, VS Code and Node versions, TSDoc, tests, documentation and the knowledge bundle, issues, what to check before committing, and commits.
 tags: [guidelines, conventions, code-quality, typescript, documentation, workflow]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-16T16:34:30Z }
-verified: { by: human:neumaennl, at: 2026-11-16T19:10:57Z }
+generated: { by: human:neumaennl, at: 2026-11-17T12:40:00Z }
+verified: { by: human:neumaennl, at: 2026-11-17T13:08:23Z }
 sources:
   - id: eslint
     resource: ../eslint.config.mjs
@@ -44,6 +44,7 @@ ESLint checks the limits: `max-lines` and `max-lines-per-function` for the code,
 # Code quality
 
 - Avoid duplicated code. Move it into a shared function, class or module. `npm run lint` reports duplicated code with jscpd, also in tests and also when names were changed (see [Build and packaging](build-and-packaging.md#duplicated-code)).[^jscpd]
+- Export only what other modules use. Tests use a module through its exports; do not export something only so that a test can call it.
 - A conditional expression (`a ? b : c`) spans at most three lines. Write a longer one, for example one with array or object literals in its branches or a nested one, as `if`/`else`. The local ESLint rule `style/max-ternary-lines` checks this.[^eslint]
 - `npm run lint` must report no errors, and as few warnings as possible. `npm run lint:fix` fixes what it can. The rules are described in [Build and packaging](build-and-packaging.md#lint).[^eslint]
 - Disable an ESLint rule only as a last resort, with an `eslint-disable-next-line` comment that gives the reason.

@@ -1,17 +1,8 @@
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { stubFetch } from "../__tests__/releaseTestHelpers.ts";
-import {
-  baseUrl,
-  editionProblems,
-  findEditions,
-  loadEdition,
-  loadEditions,
-  parseBaseEdition,
-  readTarget,
-  writeEdition,
-} from "./compiler-target.ts";
+import { stubFetch, tsconfigBaseUrl } from "../__tests__/releaseTestHelpers.ts";
+import { editionProblems, loadEdition, loadEditions, readTarget, writeEdition } from "./compiler-target.ts";
 
 const NODE24_BASE = {
   compilerOptions: { lib: ["es2024", "ESNext.Array", "ESNext.Promise"], module: "nodenext", target: "es2024" },
@@ -72,25 +63,21 @@ afterEach(() => {
 });
 
 describe("compiler-target", () => {
-  describe("parseBaseEdition", () => {
-    test("should return the target of the base in upper case", () => {
-      expect(parseBaseEdition(JSON.stringify(NODE24_BASE), "node24.json")).toBe("ES2024");
+  describe("loadEdition", () => {
+    test("should download the edition of the base for the Node major version in upper case", async () => {
+      stubFetch({ [tsconfigBaseUrl(24)]: JSON.stringify(NODE24_BASE) });
+
+      await expect(loadEdition(24)).resolves.toBe("ES2024");
     });
 
     test.each([
-      ["no JSON", "{ // comment", "node24.json: not valid JSON."],
-      ["no target", "{}", "node24.json: expected a target ESxxxx, found undefined."],
-      ["a target that is not an edition", '{ "compilerOptions": { "target": "esnext" } }', 'node24.json: expected a target ESxxxx, found "esnext".'],
-    ])("should throw for %s", (_case, text, message) => {
-      expect(() => parseBaseEdition(text, "node24.json")).toThrow(message);
-    });
-  });
+      ["no JSON", "{ // comment", "not valid JSON."],
+      ["no target", "{}", "expected a target ESxxxx, found undefined."],
+      ["a target that is not an edition", '{ "compilerOptions": { "target": "esnext" } }', 'expected a target ESxxxx, found "esnext".'],
+    ])("should throw for a base with %s", async (_case, text, message) => {
+      stubFetch({ [tsconfigBaseUrl(24)]: text });
 
-  describe("loadEdition", () => {
-    test("should download the edition of the base for the Node major version", async () => {
-      stubFetch({ [baseUrl(24)]: JSON.stringify(NODE24_BASE) });
-
-      await expect(loadEdition(24)).resolves.toBe("ES2024");
+      await expect(loadEdition(24)).rejects.toThrow(`${tsconfigBaseUrl(24)}: ${message}`);
     });
 
     test("should return undefined if there is no base for the version", async () => {
@@ -102,31 +89,18 @@ describe("compiler-target", () => {
     test("should throw if the request fails for another reason", async () => {
       vi.stubGlobal("fetch", vi.fn(() => Promise.resolve({ ok: false, status: 500 })));
 
-      await expect(loadEdition(24)).rejects.toThrow(`${baseUrl(24)}: HTTP 500`);
+      await expect(loadEdition(24)).rejects.toThrow(`${tsconfigBaseUrl(24)}: HTTP 500`);
     });
   });
 
   describe("loadEditions", () => {
     test("should download each major version once", async () => {
-      const fetchMock = stubFetch({ [baseUrl(24)]: JSON.stringify(NODE24_BASE) });
+      const fetchMock = stubFetch({ [tsconfigBaseUrl(24)]: JSON.stringify(NODE24_BASE) });
 
       const editions = await loadEditions([22, 24, 24]);
 
       expect(editions).toEqual(new Map([[22, undefined], [24, "ES2024"]]));
       expect(fetchMock).toHaveBeenCalledTimes(2);
-    });
-  });
-
-  describe("findEditions", () => {
-    test("should find target, the ESxxxx entries of lib and ecmaVersion in the configurations", () => {
-      expect(findEditions(dir)).toEqual([
-        { file: "eslint.config.mjs", setting: "ecmaVersion", value: "ES2020" },
-        { file: "eslint.config.mjs", setting: "ecmaVersion", value: "ES2020" },
-        { file: "tsconfig.extension.json", setting: "target", value: "ES2020" },
-        { file: "tsconfig.extension.json", setting: "lib", value: "ES2020" },
-        { file: "tsconfig.webview.json", setting: "target", value: "ES2020" },
-        { file: "tsconfig.webview.json", setting: "lib", value: "ES2020" },
-      ]);
     });
   });
 
@@ -141,6 +115,17 @@ describe("compiler-target", () => {
   });
 
   describe("editionProblems", () => {
+    test("should check target, the ESxxxx entries of lib and ecmaVersion in the configurations", () => {
+      expect(editionProblems(dir, 24, "ES2024")).toEqual([
+        "eslint.config.mjs: ecmaVersion is ES2020, expected ES2024",
+        "eslint.config.mjs: ecmaVersion is ES2020, expected ES2024",
+        "tsconfig.extension.json: target is ES2020, expected ES2024",
+        "tsconfig.extension.json: lib is ES2020, expected ES2024",
+        "tsconfig.webview.json: target is ES2020, expected ES2024",
+        "tsconfig.webview.json: lib is ES2020, expected ES2024",
+      ]);
+    });
+
     test("should name each place with another edition", () => {
       writeFileSync(join(dir, "eslint.config.mjs"), ESLINT_CONFIG.replace(/2020/g, "2024"));
       writeFileSync(join(dir, "tsconfig.extension.json"), EXTENSION_TSCONFIG.replace(/ES2020/g, "ES2024"));
@@ -165,7 +150,7 @@ describe("compiler-target", () => {
       expect(read("eslint.config.mjs")).toBe(ESLINT_CONFIG.replace(/2020/g, "2024"));
       expect(read("tsconfig.extension-test.json")).toBe(TEST_TSCONFIG);
       expect(read("package.json")).toBe('{ "target": "ES2020" }\n');
-      expect(findEditions(dir).every((use) => use.value === "ES2024")).toBe(true);
+      expect(editionProblems(dir, 24, "ES2024")).toEqual([]);
     });
   });
 });

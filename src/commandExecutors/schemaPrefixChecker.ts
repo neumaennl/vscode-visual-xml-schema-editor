@@ -1,26 +1,9 @@
 /**
- * Utilities for inspecting whether a namespace prefix (or set of prefixes)
- * is referenced anywhere in the schema tree.
- *
- * Exported functions:
- * - {@link isPrefixReferencedInSchema} — returns `true` if any QName uses the given prefix.
- * - {@link isAnyPrefixReferencedInSchema} — same but accepts a set of prefixes.
+ * Checks whether namespace prefixes are referenced anywhere in the schema tree.
  */
 
 import type { schema } from "../../shared/types.js";
 import { forEachQNameReference } from "./schemaQNameReferences.js";
-
-/**
- * Returns `true` if any QName-valued field in the schema uses the given
- * prefix (i.e. starts with `prefix:`).
- *
- * @param prefix - The namespace prefix to search for (without the colon)
- * @param schemaObj - The schema object to inspect
- * @returns `true` if at least one QName uses `prefix:`, `false` otherwise
- */
-export function isPrefixReferencedInSchema(prefix: string, schemaObj: schema): boolean {
-  return isAnyPrefixReferencedInSchema(new Set([prefix]), schemaObj);
-}
 
 /**
  * Returns `true` if any QName-valued field in the schema uses at least one of

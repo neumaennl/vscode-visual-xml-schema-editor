@@ -133,15 +133,6 @@ export class DiagramItem {
   }
 
   /**
-   * Get text documentation, handling multi-language if needed
-   *
-   * @returns The documentation text
-   */
-  public getTextDocumentation(): string {
-    return this.documentation;
-  }
-
-  /**
    * Get the style of the diagram, or the default style if the item belongs to no diagram
    *
    * @returns The style

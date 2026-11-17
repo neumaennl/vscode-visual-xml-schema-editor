@@ -4,7 +4,6 @@
 
 import {
   renderText,
-  truncateText,
   renderDocumentation,
   renderOccurrence,
 } from "./TextRenderers";
@@ -97,6 +96,24 @@ describe("TextRenderers", () => {
       expect(text?.querySelector("title")?.textContent).toBe(LONG_NAME);
     });
 
+    // The text may be 10 pixels narrower than the box
+    test.each([
+      ["a short text into a small box", "Long text", 40],
+      ["a text with ellipsis that is as long as fits", "0123456789ABCDEFGHIJKLMNOP", 110],
+    ])("should truncate %s", (_case, name, width) => {
+      renderText(makeItem({ name, elementBox: { x: 0, y: 0, width, height: 30 } }), mockGroup, mockSvg);
+
+      const text = mockGroup.querySelector("text")?.firstChild?.textContent ?? "";
+      expect(text.endsWith("...")).toBe(true);
+      expect(text.length).toBeLessThan(name.length + 3);
+    });
+
+    test("should render an empty name", () => {
+      renderText(makeItem({ name: "", elementBox: { x: 0, y: 0, width: 110, height: 30 } }), mockGroup, mockSvg);
+
+      expect(mockGroup.querySelector("text")?.textContent).toBe("");
+    });
+
     test("should not add tooltip when text is not truncated", () => {
       renderText(makeItem({ name: "Short", elementBox: { x: 0, y: 0, width: 200, height: 50 } }), mockGroup, mockSvg);
 
@@ -109,40 +126,6 @@ describe("TextRenderers", () => {
       const text = mockGroup.querySelector("text");
       expect(text?.getAttribute("x")).toBe("60"); // 10 + 100/2
       expect(text?.getAttribute("y")).toBe("45"); // 20 + 50/2
-    });
-  });
-
-  describe("truncateText", () => {
-    test("should return text as-is when it fits", () => {
-      const text = "Short";
-      const result = truncateText(text, 1000, 10, mockSvg);
-      expect(result).toBe("Short");
-    });
-
-    test("should truncate text with ellipsis when too long", () => {
-      const text = "This is a very long text that will not fit";
-      const result = truncateText(text, 50, 10, mockSvg);
-      expect(result).toContain("...");
-      expect(result.length).toBeLessThan(text.length);
-    });
-
-    test("should handle empty text", () => {
-      const result = truncateText("", 100, 10, mockSvg);
-      expect(result).toBe("");
-    });
-
-    test("should handle very small maxWidth", () => {
-      const text = "Long text";
-      const result = truncateText(text, 30, 10, mockSvg);
-      expect(result).toContain("...");
-      expect(result.length).toBeLessThan(text.length);
-    });
-
-    test("should use binary search to find optimal truncation point", () => {
-      const text = "0123456789ABCDEFGHIJKLMNOP";
-      const result = truncateText(text, 100, 10, mockSvg);
-      // Result should be truncated but as long as possible
-      expect(result.endsWith("...")).toBe(true);
     });
   });
 

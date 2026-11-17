@@ -52,7 +52,7 @@ export function renderText(
  * @param svg - The SVG element for text measurement
  * @returns Truncated text with ellipsis if needed
  */
-export function truncateText(
+function truncateText(
   text: string,
   maxWidth: number,
   fontSize: number,

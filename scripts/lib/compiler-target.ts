@@ -11,7 +11,7 @@ import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 /** A place in a configuration that names the ECMAScript edition. */
-export interface EditionUse {
+interface EditionUse {
   file: string;
   setting: string;
   /** The edition, for example `ES2024`. */
@@ -102,7 +102,7 @@ const RULES: EditionRule[] = [
  * @param major - The major version of Node
  * @returns The URL
  */
-export function baseUrl(major: number): string {
+function baseUrl(major: number): string {
   return `https://raw.githubusercontent.com/tsconfig/bases/main/bases/node${major}.json`;
 }
 
@@ -114,7 +114,7 @@ export function baseUrl(major: number): string {
  * @returns The edition in upper case, for example `ES2024`
  * @throws An {@link Error} if the text is not JSON or its target is not an edition `ESxxxx`
  */
-export function parseBaseEdition(text: string, url: string): string {
+function parseBaseEdition(text: string, url: string): string {
   let config: { compilerOptions?: { target?: unknown } };
   try {
     config = JSON.parse(text) as typeof config;
@@ -176,7 +176,7 @@ function configFiles(dir: string): Array<{ file: string; rule: EditionRule }> {
  * @param dir - The root folder of the project
  * @returns The places, in the order of the files and within a file
  */
-export function findEditions(dir: string): EditionUse[] {
+function findEditions(dir: string): EditionUse[] {
   return configFiles(dir).flatMap(({ file, rule }) => rule.find(readFileSync(join(dir, file), "utf8")).map((use) => ({ file, ...use })));
 }
 

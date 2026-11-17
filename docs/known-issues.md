@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-17T11:10:00Z }
-verified: { by: human:neumaennl, at: 2026-11-17T11:18:25Z }
+generated: { by: human:neumaennl, at: 2026-11-17T12:25:00Z }
+verified: { by: human:neumaennl, at: 2026-11-17T13:08:23Z }
 ---
 
 # Purpose
@@ -46,7 +46,7 @@ Effort:
 
 ## Node IDs are ambiguous and have many special cases
 
-- **Location:** `shared/idStrategy.ts`, `src/schemaNavigator.ts`, `src/commandValidators/`, `src/commandExecutors/`, `webview-src/diagram/` (ID generation)
+- **Location:** `shared/idStrategy.ts`, `src/schemaNavigator.ts`, `src/commandValidators/`, `src/commandExecutors/`, `webview-src/diagram/` (ID generation), `webview-src/propertiesPanel/propertiesPanelCommands.ts`
 - **Severity:** High
 - **Effort:** L
 - **Description:** The ID conventions go back to the original protocol design, written before the editor was implemented, and were adapted during implementation (see [Schema model](schema-model.md#node-ids)). Some of the resulting problems are bugs:
@@ -62,6 +62,8 @@ Effort:
   - Top-level components have a name and no position; local elements have both, but only one is used.
   - The last segment of annotations, imports, includes and references is resolved by the individual validators and executors instead of one resolver.
   - The doc comments of `parentId` in `shared/commands/schemaTypes.ts` say "Omit or set to 'schema'", but `isSchemaRoot()` only accepts `/schema`; `parentId: "schema"` fails with "Parent not found: schema".
+
+  The webview reads IDs with its own helpers, such as `getNodeType()` and `isTopLevelElement()` in `propertiesPanelCommands.ts`, instead of shared ones; `idStrategy.ts` had such helpers, but nothing used them, so they were removed.
 
   The goal is one consistent grammar, generated and resolved by a single implementation in `shared/`. Since IDs are not stored in the XSD file, a new format needs no migration. The redesign should be planned together with [Diagram items copy values from the schema objects](#diagram-items-copy-values-from-the-schema-objects), which also changes the diagram builder.
 - **GitHub issue:** [#348](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/348)
@@ -102,7 +104,7 @@ Effort:
 - **Location:** `src/commandValidators/schemaValidators.ts` (`validateModifySchemaNamespaces()`)
 - **Severity:** Medium
 - **Effort:** S
-- **Description:** `modifySchemaNamespaces` replaces the complete prefix map, so a prefix that is missing from the map is removed. The validator does not check whether QNames such as `type="tns:Address"` still use the removed prefix, and the schema is left with references that cannot be resolved. The properties panel sends this command when a namespace row is deleted. `removeImport` already rejects the removal of a namespace that is still referenced (`isPrefixReferencedInSchema()`); the same check is needed for prefixes that are removed and not renamed.
+- **Description:** `modifySchemaNamespaces` replaces the complete prefix map, so a prefix that is missing from the map is removed. The validator does not check whether QNames such as `type="tns:Address"` still use the removed prefix, and the schema is left with references that cannot be resolved. The properties panel sends this command when a namespace row is deleted. `removeImport` already rejects the removal of a namespace that is still referenced (`isAnyPrefixReferencedInSchema()`); the same check is needed for prefixes that are removed and not renamed.
 - **GitHub issue:** [#428](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/428)
 
 ## Documentation overlaps the next item
@@ -329,14 +331,6 @@ Effort:
 - **Description:** The extension runs on the Node version of the extension host, which `.nvmrc` records (see [VS Code and Node versions](build-and-packaging.md#vs-code-and-node-versions)). `npm run vscode:check` checks the values derived from the VS Code version, but not whether the runtime dependencies accept that Node version: `@neumaennl/xmlbind-ts` declares `engines.node` `>=24`, which fits the extension host's 24.15.0, but an upgrade that raises its minimum would go unnoticed. `xmlbind-ts` checks the same for its own dependencies with `npm run node:check`. The fix is a check after `npm ci` that reads `engines.node` of the runtime dependencies from `node_modules` and compares it with `.nvmrc`.
 - **GitHub issue:** none
 
-## Leftovers of the removed top-level drop target
-
-- **Location:** `webview-src/drop/DropCommandFactory.ts` (`createTopLevelDropCommand`), `webview-src/palette/PaletteView.ts`, `webview-src/main.test.ts`
-- **Severity:** Low
-- **Effort:** S
-- **Description:** A separate drop target for top-level constructs was implemented and later removed, because it added nothing over dropping on the schema root node. The public method `createTopLevelDropCommand` is still there but only called from tests, the palette hint still reads "Drag onto nodes or the top-level drop target", and the DOM fixture in `main.test.ts` still contains `#top-level-drop-target`. Top-level constructs are added by dropping on the schema root node (see [Drag and drop](drag-and-drop.md#drop-rules)). A refined version of the idea may come back with the work on large schemas ([#19](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/19), [#20](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/20)).
-- **GitHub issue:** none
-
 ## Palette drag and drop uses two ways to pass the dragged construct
 
 - **Location:** `webview-src/palette/PaletteItems.ts` (`PALETTE_MIME_TYPE`, `setActiveDraggedPaletteSchemaConstruct`), `webview-src/palette/PaletteView.ts`, `webview-src/renderer.ts` (`getDraggedPaletteSchemaConstruct`)
@@ -436,7 +430,7 @@ Effort:
   - code that only tests call;
   - dependencies in `package.json` that no code uses.
 
-  Such code got through (see [Duplicated and dead code](#duplicated-and-dead-code)). Examples are `DiagramItem.getTextDocumentation()` and `DropCommandFactory.createTopLevelDropCommand()`, which only tests call. A tool such as [knip](https://knip.dev) checks the whole project. In production mode, it ignores the tests, so it also finds code that only tests use. It can run in `npm run lint` and in CI, like ESLint and jscpd.
+  Such code got through (see [Duplicated and dead code](#duplicated-and-dead-code)). A tool such as [knip](https://knip.dev) checks the whole project. In production mode, it ignores the tests, so it also finds code that only tests use. It can run in `npm run lint` and in CI, like ESLint and jscpd.
 - **GitHub issue:** [#447](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/447)
 
 ## Code is not formatted automatically
@@ -496,8 +490,8 @@ Effort:
 - **Location:** whole repository
 - **Severity:** Low
 - **Effort:** L
-- **Description:** The [development guidelines](development-guidelines.md#code-quality) ask to avoid code duplication, but the code base likely contains dead code, and duplicated logic that is written in different ways, which was not caught in reviews. `npm run lint` reports code that is copied, also with changed names (see [Build and packaging](build-and-packaging.md#duplicated-code)), and [#439](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/439) removed all such copies; it does not find logic that is written differently, or dead code (see [Unused code is not detected automatically](#unused-code-is-not-detected-automatically)). The [leftovers of the removed top-level drop target](#leftovers-of-the-removed-top-level-drop-target) and the [duplicated top-level lookups](#top-level-lookups-are-duplicated-instead-of-shared) are examples. A systematic cleanup by an agent is planned. Besides duplicated logic within one part, the agent should look explicitly for code that the extension (`src/`) and the webview (`webview-src/`) each implement on their own, and move it to `shared/`, which both use; for example the rules where an element or attribute may be placed, which both sides check (see [Architecture](architecture.md#principles)), and the top-level lookups in `DiagramBuilder` and `DropCommandFactory`. Examples found in the diagram code (see [Diagram rendering](diagram-rendering.md)):
-  - `DiagramItem.getTextDocumentation()` is only called from tests, and `DiagramBuilder.elementMap` is only cleared.
+- **Description:** The [development guidelines](development-guidelines.md#code-quality) ask to avoid code duplication, but the code base likely contains dead code, and duplicated logic that is written in different ways, which was not caught in reviews. `npm run lint` reports code that is copied, also with changed names (see [Build and packaging](build-and-packaging.md#duplicated-code)), and [#439](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/439) removed all such copies; it does not find logic that is written differently, or dead code (see [Unused code is not detected automatically](#unused-code-is-not-detected-automatically)). The [duplicated top-level lookups](#top-level-lookups-are-duplicated-instead-of-shared) are an example. A systematic cleanup by an agent is planned. Besides duplicated logic within one part, the agent should look explicitly for code that the extension (`src/`) and the webview (`webview-src/`) each implement on their own, and move it to `shared/`, which both use; for example the rules where an element or attribute may be placed, which both sides check (see [Architecture](architecture.md#principles)), and the top-level lookups in `DiagramBuilder` and `DropCommandFactory`. Examples found in the diagram code (see [Diagram rendering](diagram-rendering.md)):
+  - `DiagramBuilder.elementMap` is only cleared.
   - `DiagramItemType.reference` is never assigned; only the layout and a test handle it, and the renderer draws no shape for it.
   - `Diagram.scale` is always 1, so `scaleRectangle()` of `Diagram` and `DiagramItem` and `DiagramItem.scaleInt()` change nothing.
 

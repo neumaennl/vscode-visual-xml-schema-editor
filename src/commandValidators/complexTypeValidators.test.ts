@@ -271,12 +271,15 @@ describe("ComplexType Validators", () => {
       expect(result.error).toBe("Type name must be a valid XML name");
     });
 
-    test("should reject modifyComplexType with invalid contentModel", () => {
-      // eslint-disable-next-line no-restricted-syntax -- `contentModel: "invalid"` outside the ContentModel union; cast needed to test validator rejection
-      const command = { type: "modifyComplexType", payload: { typeId: "/complexType:PersonType", contentModel: "invalid" } } as unknown as ModifyComplexTypeCommand;
+    test.each([
+      { field: "contentModel", expected: "Content model must be one of" },
+      { field: "derivationKind", expected: "Derivation kind must be one of" },
+    ])("should reject modifyComplexType with an invalid $field", ({ field, expected }) => {
+      // eslint-disable-next-line no-restricted-syntax -- the value "invalid" is outside the union of the field; cast needed to test validator rejection
+      const command = { type: "modifyComplexType", payload: { typeId: "/complexType:PersonType", [field]: "invalid" } } as unknown as ModifyComplexTypeCommand;
       const result = validateModifyComplexType(command, schemaWithPersonType);
       expectInvalid(result);
-      expect(result.error).toContain("Content model must be one of");
+      expect(result.error).toContain(expected);
     });
 
     test("should accept modifyComplexType with restriction derivation kind", () => {
@@ -290,17 +293,6 @@ describe("ComplexType Validators", () => {
       };
       const result = validateModifyComplexType(command, schemaWithPersonType);
       expect(result.valid).toBe(true);
-    });
-
-    test("should reject modifyComplexType with invalid derivation kind", () => {
-      // eslint-disable-next-line no-restricted-syntax -- `derivationKind: "invalid"` is outside the union; cast is needed to test validator rejection
-      const command = {
-        type: "modifyComplexType",
-        payload: { typeId: "/complexType:PersonType", derivationKind: "invalid" },
-      } as unknown as ModifyComplexTypeCommand;
-      const result = validateModifyComplexType(command, schemaWithPersonType);
-      expectInvalid(result);
-      expect(result.error).toContain("Derivation kind must be one of");
     });
 
     test.each([

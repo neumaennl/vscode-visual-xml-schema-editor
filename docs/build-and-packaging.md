@@ -4,8 +4,8 @@ title: Build and packaging
 description: How the extension is built, run, linted, packaged and checked - the build outputs and tsconfig files, the npm scripts, the scripts in TypeScript, running it in VS Code, the VSIX and its check, the generated schema classes, dependencies and the Node version, ESLint and the checks for duplicated and unused code, CI, and planned changes.
 tags: [build, packaging, vsix, vite, typescript, eslint, jscpd, fallow, ci, dependencies]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-17T13:40:00Z }
-verified: { by: human:neumaennl, at: 2026-11-17T13:43:04Z }
+generated: { by: human:neumaennl, at: 2026-11-17T15:15:54Z }
+verified: { by: human:neumaennl, at: 2026-11-17T15:57:12Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -239,17 +239,18 @@ To run one check alone, use `npx eslint .`, `npx jscpd`, `npx fallow dead-code -
 
 ## Duplicated code
 
-jscpd checks the TypeScript and JavaScript files of the whole repository, including the tests. It skips what `.gitignore` excludes, such as `out/`, `webview/`, `coverage/` and `node_modules/`, and the generated schema classes in `shared/generated/`. Its settings are the same as in [xmlbind-ts](https://github.com/neumaennl/xmlbind-ts/blob/reimplementation/docs/build-and-release.md#duplicated-code):[^jscpd]
+jscpd checks the TypeScript and JavaScript files of the whole repository, including the tests. It skips what `.gitignore` excludes, such as `out/`, `webview/`, `coverage/` and `node_modules/`, and the generated schema classes in `shared/generated/`. Its settings are the same as in [xmlbind-ts](https://github.com/neumaennl/xmlbind-ts/blob/reimplementation/docs/build-and-release.md#duplicated-code), except for imports:[^jscpd]
 
 - **Size.** A clone is a block of at least 50 tokens and 5 lines that appears more than once. Tokens are keywords, names, operators, punctuation and literals; whitespace and comments do not count. 50 tokens are about 5 to 7 lines of code. Below that, jscpd mostly finds repetition that is fine, such as the setup of tests.
 - **Names.** Names are ignored, so a copy with renamed variables is found. Each name must stand for one name in the other block: `a = b + c` matches `x = y + z`, but not `x = x + x`.
 - **Literals.** Strings and numbers are compared. Code that differs only in them is not a clone, such as the cases of a `switch` or tests with different data.
+- **Imports.** Import statements are skipped (`ignorePattern`). Prettier puts each name of a long import on its own line, and since names are ignored, any two long imports would match.
 - **Failing.** Every clone fails the run. There is no threshold of duplicated lines, because a percentage changes as the code grows.
 - **No files.** A run that finds no files fails, so that a broken configuration does not pass unnoticed.
 
 jscpd only finds code that is written the same way. Logic that the extension and the webview each implement in their own way is not found (see [Duplicated and dead code](known-issues.md#duplicated-and-dead-code)).
 
-Code that has to stay duplicated is put between `// jscpd:ignore-start` and `// jscpd:ignore-end`, with a comment that gives the reason (see [Code quality](development-guidelines.md#code-quality)). The only such block is the list of flags in `DiagramItem`, which are distinct fields of the same type.
+Code that has to stay duplicated is put between `// jscpd:ignore-start` and `// jscpd:ignore-end`, with a comment that gives the reason (see [Code quality](development-guidelines.md#code-quality)). There are two such blocks: the list of flags in `DiagramItem`, which are distinct fields of the same type, and the calls in `DiagramBuilder` that process the top-level components of each kind with one function.
 
 fallow, which checks for [unused code](#unused-code), can find duplicates as well. The installed version cannot check that renamed names map one to one, and it does not compare the text of template literals. So jscpd stays until a released version of fallow can do both ([#460](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/460)).
 

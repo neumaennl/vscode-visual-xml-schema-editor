@@ -8,15 +8,16 @@ import type {
 } from "./commonValidators.js";
 import {
   locateChild,
+  locateReferenceOrDefinition,
   locateType,
   parseRequiredId,
-  validateDefinitionExists,
   validateDefinitionRemoval,
   validateInlineTypeParent,
   validateNewChild,
   validateNewTypeName,
   validateReference,
 } from "./commonValidators.js";
+import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
 import { expectInvalid } from "../__tests__/validationTestHelpers.js";
 import { schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
 
@@ -56,11 +57,35 @@ describe("validateReference", () => {
   });
 });
 
-describe("validateDefinitionExists", () => {
-  test("should accept an existing name and rejects a missing one or missing components", () => {
-    expect(validateDefinitionExists(SCHEMA.simpleType, "S", "missing").valid).toBe(true);
-    expect(validateDefinitionExists(SCHEMA.simpleType, "X", "missing")).toEqual({ valid: false, error: "missing" });
-    expect(validateDefinitionExists(undefined, "S", "missing").valid).toBe(false);
+describe("locateReferenceOrDefinition", () => {
+  const locate = (
+    id: string,
+    referenceResult: { valid: true } | { valid: false; error: string } = { valid: true }
+  ): ReturnType<typeof locateReferenceOrDefinition> =>
+    locateReferenceOrDefinition(parseSchemaId(id), SchemaNodeType.GroupRef, () => referenceResult, SCHEMA.element, "missing");
+
+  test("should locate an existing reference", () => {
+    expect(locate("/complexType:T/groupRef:G[0]")).toEqual({ valid: true, target: "reference" });
+  });
+
+  test("should pass the failure of the reference check on", () => {
+    expect(locate("/complexType:T/groupRef:G[0]", { valid: false, error: "no ref" })).toEqual({
+      valid: false,
+      error: "no ref",
+    });
+  });
+
+  test("should locate an existing definition with its name without checking a reference", () => {
+    expect(locate("/element:a", { valid: false, error: "no ref" })).toEqual({ valid: true, target: "definition", name: "a" });
+  });
+
+  test("should reject a missing definition with the given error", () => {
+    expect(locate("/element:b")).toEqual({ valid: false, error: "missing" });
+  });
+
+  test("should reject a definition if the schema has none of the kind", () => {
+    const result = locateReferenceOrDefinition(parseSchemaId("/group:G"), SchemaNodeType.GroupRef, () => ({ valid: true }), undefined, "missing");
+    expect(result).toEqual({ valid: false, error: "missing" });
   });
 });
 

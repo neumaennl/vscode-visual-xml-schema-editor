@@ -54,6 +54,22 @@ function validateModify(payload: ModifySimpleTypeCommand["payload"]): Validation
   return validateModifySimpleType({ type: "modifySimpleType", payload }, schemaWith(SIMPLE_TYPE_PARENTS));
 }
 
+/**
+ * Expects that removing and modifying the anonymous simple type with the ID fail because it does not exist.
+ *
+ * @param typeId - ID of the missing anonymous simple type
+ * @param schemaObj - Schema without the type
+ */
+function expectNoAnonymousSimpleType(typeId: string, schemaObj: schema): void {
+  const removed = validateRemoveSimpleType({ type: "removeSimpleType", payload: { typeId } }, schemaObj);
+  const modified = validateModifySimpleType({ type: "modifySimpleType", payload: { typeId, baseType: "xs:string" } }, schemaObj);
+
+  expectInvalid(removed);
+  expect(removed.error).toContain("No anonymous simpleType found");
+  expectInvalid(modified);
+  expect(modified.error).toContain("No anonymous simpleType found");
+}
+
 describe("SimpleType Validators", () => {
   let emptySchemaObj: schema;
   let schemaWithAgeType: schema;
@@ -420,16 +436,7 @@ describe("SimpleType Validators", () => {
       });
 
       test("should reject removing or modifying a missing anonymous simpleType of an element", () => {
-        const removed = validateRemoveSimpleType({ type: "removeSimpleType", payload: { typeId: "/element:age/anonymousSimpleType[0]" } }, schemaWithElement);
-        const modified = validateModifySimpleType(
-          { type: "modifySimpleType", payload: { typeId: "/element:age/anonymousSimpleType[0]", baseType: "xs:string" } },
-          schemaWithElement
-        );
-
-        expectInvalid(removed);
-        expect(removed.error).toContain("No anonymous simpleType found");
-        expectInvalid(modified);
-        expect(modified.error).toContain("No anonymous simpleType found");
+        expectNoAnonymousSimpleType("/element:age/anonymousSimpleType[0]", schemaWithElement);
       });
 
       test("should reject when parent element not found", () => {
@@ -543,16 +550,7 @@ describe("Anonymous SimpleType in Attributes Validators", () => {
     });
 
     test("should reject removing or modifying a missing anonymous simpleType of an attribute", () => {
-      const removed = validateRemoveSimpleType({ type: "removeSimpleType", payload: { typeId: "/attribute:color/anonymousSimpleType[0]" } }, schemaWithAttribute);
-      const modified = validateModifySimpleType(
-        { type: "modifySimpleType", payload: { typeId: "/attribute:color/anonymousSimpleType[0]", baseType: "xs:string" } },
-        schemaWithAttribute
-      );
-
-      expectInvalid(removed);
-      expect(removed.error).toContain("No anonymous simpleType found");
-      expectInvalid(modified);
-      expect(modified.error).toContain("No anonymous simpleType found");
+      expectNoAnonymousSimpleType("/attribute:color/anonymousSimpleType[0]", schemaWithAttribute);
     });
 
     test("should reject when parent attribute not found", () => {

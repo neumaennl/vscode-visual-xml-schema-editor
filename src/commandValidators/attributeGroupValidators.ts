@@ -17,7 +17,13 @@ import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
 import { locateNodeById } from "../schemaNavigator.js";
 import { getAttributeContainer } from "../../shared/schemaUtils.js";
 import { findAttributeGroupRef } from "../commandUtils.js";
-import { parseRequiredId, validateDefinitionExists, validateDefinitionRemoval, validateReference } from "./commonValidators.js";
+import type { ReferenceOrDefinition } from "./commonValidators.js";
+import {
+  locateReferenceOrDefinition,
+  parseRequiredId,
+  validateDefinitionRemoval,
+  validateReference,
+} from "./commonValidators.js";
 import { isReferencedInContent } from "./referenceSearch.js";
 
 // ===== AttributeGroup Reference Helpers =====
@@ -85,9 +91,6 @@ function validateAttrGroupRefExists(groupId: string, schemaObj: schema): Validat
   return { valid: true };
 }
 
-/** What an attribute group ID identifies: an attribute group reference, or a definition with its name. */
-type AttributeGroupTarget = { target: "reference" } | { target: "definition"; name: string | undefined };
-
 /**
  * Validates that the attribute group reference or definition that an ID identifies exists. Used by
  * both `validateRemoveAttributeGroup` and `validateModifyAttributeGroup`.
@@ -97,18 +100,18 @@ type AttributeGroupTarget = { target: "reference" } | { target: "definition"; na
  * @param schemaObj - The schema
  * @returns What the ID identifies, or the validation failure
  */
-function locateAttributeGroup(groupId: string, schemaObj: schema): ValidationFailure | ({ valid: true } & AttributeGroupTarget) {
+function locateAttributeGroup(groupId: string, schemaObj: schema): ValidationFailure | ({ valid: true } & ReferenceOrDefinition) {
   const parsedId = parseRequiredId(groupId, "Attribute group");
   if (!parsedId.valid) {
     return parsedId;
   }
-  const parsed = parsedId.parsed;
-  if (parsed.nodeType === SchemaNodeType.AttributeGroupRef) {
-    const refResult = validateAttrGroupRefExists(groupId, schemaObj);
-    return refResult.valid ? { valid: true, target: "reference" } : refResult;
-  }
-  const definitionResult = validateDefinitionExists(schemaObj.attributeGroup, parsed.name, `Attribute group not found: ${groupId}`);
-  return definitionResult.valid ? { valid: true, target: "definition", name: parsed.name } : definitionResult;
+  return locateReferenceOrDefinition(
+    parsedId.parsed,
+    SchemaNodeType.AttributeGroupRef,
+    () => validateAttrGroupRefExists(groupId, schemaObj),
+    schemaObj.attributeGroup,
+    `Attribute group not found: ${groupId}`
+  );
 }
 
 // ===== AttributeGroup Command Validators =====

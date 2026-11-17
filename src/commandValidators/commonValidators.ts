@@ -45,7 +45,7 @@ export function validateReference(
  * @param notFoundError - The error if no component has the name
  * @returns The validation result
  */
-export function validateDefinitionExists(
+function validateDefinitionExists(
   components: NamedComponent[] | undefined,
   name: string | undefined,
   notFoundError: string
@@ -54,6 +54,34 @@ export function validateDefinitionExists(
     return { valid: false, error: notFoundError };
   }
   return { valid: true };
+}
+
+/** What the ID of a reference or a definition identifies: a reference, or a definition with its name. */
+export type ReferenceOrDefinition = { target: "reference" } | { target: "definition"; name: string | undefined };
+
+/**
+ * Validates that the reference or the top-level definition that a parsed ID identifies exists.
+ *
+ * @param parsed - The parsed ID
+ * @param referenceType - The node type of the references, such as `SchemaNodeType.GroupRef`
+ * @param validateReferenceExists - Validates that the reference exists; called only for a reference
+ * @param definitions - The top-level definitions of the kind
+ * @param notFoundError - The error if no definition has the name
+ * @returns What the ID identifies, or the validation failure
+ */
+export function locateReferenceOrDefinition(
+  parsed: ParsedSchemaId,
+  referenceType: SchemaNodeType,
+  validateReferenceExists: () => ValidationResult,
+  definitions: NamedComponent[] | undefined,
+  notFoundError: string
+): ValidationFailure | ({ valid: true } & ReferenceOrDefinition) {
+  if (parsed.nodeType === referenceType) {
+    const refResult = validateReferenceExists();
+    return refResult.valid ? { valid: true, target: "reference" } : refResult;
+  }
+  const definitionResult = validateDefinitionExists(definitions, parsed.name, notFoundError);
+  return definitionResult.valid ? { valid: true, target: "definition", name: parsed.name } : definitionResult;
 }
 
 /**

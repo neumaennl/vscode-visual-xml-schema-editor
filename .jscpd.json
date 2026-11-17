@@ -2,6 +2,7 @@
   "path": ["."],
   "format": ["typescript", "javascript"],
   "ignore": ["**/shared/generated/**"],
+  "ignorePattern": ["import (type )?\\{[^}]*\\} from \"[^\"]*\";"],
   "minTokens": 50,
   "minLines": 5,
   "ignoreIdentifiers": true,

@@ -19,7 +19,13 @@ import {
 } from "./validationUtils.js";
 import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
 import { locateNodeById } from "../schemaNavigator.js";
-import { parseRequiredId, validateDefinitionExists, validateDefinitionRemoval, validateReference } from "./commonValidators.js";
+import type { ReferenceOrDefinition } from "./commonValidators.js";
+import {
+  locateReferenceOrDefinition,
+  parseRequiredId,
+  validateDefinitionRemoval,
+  validateReference,
+} from "./commonValidators.js";
 import type { SearchedCompositor } from "./referenceSearch.js";
 import { isReferencedInContent } from "./referenceSearch.js";
 
@@ -229,10 +235,7 @@ export function validateAddGroup(
  * What a group ID identifies: a compositor (`…/group:sequence[N]`) with the ID of its parent, a group
  * reference, or a group definition with its name.
  */
-type GroupTarget =
-  | { target: "compositor"; compositorParentId: string }
-  | { target: "reference" }
-  | { target: "definition"; name: string | undefined };
+type GroupTarget = { target: "compositor"; compositorParentId: string } | ReferenceOrDefinition;
 
 /**
  * Validates that the group that a group ID identifies exists. Used by both `validateRemoveGroup` and
@@ -258,12 +261,13 @@ function locateGroup(
     }
     return { valid: true, target: "compositor", compositorParentId: parsed.parentId };
   }
-  if (parsed.nodeType === SchemaNodeType.GroupRef) {
-    const refResult = validateGroupRefExists(groupId, schemaObj);
-    return refResult.valid ? { valid: true, target: "reference" } : refResult;
-  }
-  const definitionResult = validateDefinitionExists(schemaObj.group, parsed.name, `Group not found: ${groupId}`);
-  return definitionResult.valid ? { valid: true, target: "definition", name: parsed.name } : definitionResult;
+  return locateReferenceOrDefinition(
+    parsed,
+    SchemaNodeType.GroupRef,
+    () => validateGroupRefExists(groupId, schemaObj),
+    schemaObj.group,
+    `Group not found: ${groupId}`
+  );
 }
 
 /**

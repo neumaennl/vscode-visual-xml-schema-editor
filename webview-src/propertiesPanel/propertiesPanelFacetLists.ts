@@ -14,13 +14,11 @@ type BuildAndDispatch = (updater: (next: RestrictionSnapshot) => void) => void;
 export type ValueListFacet = "enumeration" | "pattern";
 
 /** The icon, label and add button text of each facet with several values. */
-const VALUE_LIST_FACETS: Record<
-  ValueListFacet,
-  { construct: FacetPaletteConstruct; label: string; addText: string }
-> = {
-  enumeration: { construct: PaletteSchemaConstruct.Enumeration, label: "Enumeration", addText: "+ value" },
-  pattern: { construct: PaletteSchemaConstruct.Pattern, label: "Pattern", addText: "+ pattern" },
-};
+const VALUE_LIST_FACETS: Record<ValueListFacet, { construct: FacetPaletteConstruct; label: string; addText: string }> =
+  {
+    enumeration: { construct: PaletteSchemaConstruct.Enumeration, label: "Enumeration", addText: "+ value" },
+    pattern: { construct: PaletteSchemaConstruct.Pattern, label: "Pattern", addText: "+ pattern" },
+  };
 
 /** Title of the remove buttons that are disabled because the restriction needs a facet. */
 const LAST_FACET_TITLE = "A restriction requires at least one facet";
@@ -57,7 +55,12 @@ export function appendFacetRemoveButton(
  * @param onRemove - Called when the button is clicked
  * @returns The button
  */
-function createRemoveButton(className: string, name: string, canRemove: boolean, onRemove: () => void): HTMLButtonElement {
+function createRemoveButton(
+  className: string,
+  name: string,
+  canRemove: boolean,
+  onRemove: () => void
+): HTMLButtonElement {
   const button = document.createElement("button");
   button.type = "button";
   button.className = className;
@@ -134,7 +137,9 @@ export function renderValueListFacet(
     const canRemoveValue = values.length > 1 || canRemove;
     values.forEach((value, index) => {
       if (index === editedIndex) {
-        const input = createValueInput(value, `Edit ${value}`, (next) => { finishEditing(index, next); });
+        const input = createValueInput(value, `Edit ${value}`, (next) => {
+          finishEditing(index, next);
+        });
         list.appendChild(input);
         input.focus();
         input.select();
@@ -147,7 +152,9 @@ export function renderValueListFacet(
           editedIndex = index;
           render();
         },
-        () => { update(values.filter((_, i) => i !== index)); }
+        () => {
+          update(values.filter((_, i) => i !== index));
+        }
       );
       if (values.length > 1) {
         addReorderHandlers(chip, index, list, drag, (sourceIndex) => {
@@ -203,12 +210,7 @@ interface DragState {
  * @param onRemove - Called when the remove button is clicked
  * @returns The chip
  */
-function createValueChip(
-  value: string,
-  canRemove: boolean,
-  onEdit: () => void,
-  onRemove: () => void
-): HTMLElement {
+function createValueChip(value: string, canRemove: boolean, onEdit: () => void, onRemove: () => void): HTMLElement {
   const chip = document.createElement("span");
   chip.className = "property-value-chip";
 
@@ -331,7 +333,9 @@ function createValueInput(value: string, label: string, onFinish: (value: string
       onFinish(value);
     }
   };
-  input.addEventListener("blur", () => { finish(input.value.trim()); });
+  input.addEventListener("blur", () => {
+    finish(input.value.trim());
+  });
   input.addEventListener("keydown", (event: KeyboardEvent) => {
     if (event.key === "Enter") {
       event.preventDefault();

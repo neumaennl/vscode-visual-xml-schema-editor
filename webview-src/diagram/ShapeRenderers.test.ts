@@ -2,11 +2,7 @@
  * Tests for shape rendering functions
  */
 
-import {
-  renderElementShape,
-  renderGroupShape,
-  renderTypeShape,
-} from "./ShapeRenderers";
+import { renderElementShape, renderGroupShape, renderTypeShape } from "./ShapeRenderers";
 import { DiagramItem } from "./DiagramItem";
 import type { Rectangle } from "./DiagramTypes";
 import { DiagramItemGroupType, DiagramItemType } from "./DiagramTypes";
@@ -18,7 +14,7 @@ describe("ShapeRenderers", () => {
 
   beforeEach(() => {
     mockGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    
+
     // Create a minimal mock diagram with style
     // eslint-disable-next-line no-restricted-syntax -- partial stub; unused Diagram fields omitted
     mockDiagram = {
@@ -150,13 +146,7 @@ describe("ShapeRenderers", () => {
       item.maxOccurrence = 1;
       item.isSimpleContent = true;
 
-      renderTypeShape(
-        rect,
-        "fill:yellow",
-        "stroke:#0000ff;stroke-width:2",
-        item,
-        mockGroup
-      );
+      renderTypeShape(rect, "fill:yellow", "stroke:#0000ff;stroke-width:2", item, mockGroup);
 
       const polygons = mockGroup.querySelectorAll("polygon");
       const bevelFill = polygons[1]!;
@@ -184,7 +174,13 @@ describe("ShapeRenderers", () => {
       ["choice", DiagramItemGroupType.Choice, 6], // The line and the trident
       ["all", DiagramItemGroupType.All, 8], // The lines and the tridents
     ])("should render %s indicator with three dots and its lines", (name, groupType, lineCount) => {
-      renderGroupShape({ x: 10, y: 10, width: 100, height: 50 }, "fill:green", "stroke:black", compositor(name, groupType), mockGroup);
+      renderGroupShape(
+        { x: 10, y: 10, width: 100, height: 50 },
+        "fill:green",
+        "stroke:black",
+        compositor(name, groupType),
+        mockGroup
+      );
 
       expect(mockGroup.querySelectorAll("circle")).toHaveLength(3);
       expect(mockGroup.querySelectorAll("line")).toHaveLength(lineCount);
@@ -202,7 +198,13 @@ describe("ShapeRenderers", () => {
     test("should render centered on rectangle", () => {
       const rect: Rectangle = { x: 50, y: 50, width: 100, height: 60 };
 
-      renderGroupShape(rect, "fill:green", "stroke:black", compositor("sequence", DiagramItemGroupType.Sequence), mockGroup);
+      renderGroupShape(
+        rect,
+        "fill:green",
+        "stroke:black",
+        compositor("sequence", DiagramItemGroupType.Sequence),
+        mockGroup
+      );
 
       // Check that elements are centered (centerX=100, centerY=80)
       const line = mockGroup.querySelector("line");

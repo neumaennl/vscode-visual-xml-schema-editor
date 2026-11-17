@@ -25,10 +25,7 @@ export function collectLocalSchemaTypeNames(node: DiagramItem): ReadonlySet<stri
   const names = new Set<string>();
   const visit = (item: DiagramItem): void => {
     const itemNodeType = getNodeType(item);
-    if (
-      (itemNodeType === SchemaNodeType.SimpleType || itemNodeType === SchemaNodeType.ComplexType) &&
-      item.name
-    ) {
+    if ((itemNodeType === SchemaNodeType.SimpleType || itemNodeType === SchemaNodeType.ComplexType) && item.name) {
       const localName = item.name.trim();
       if (localName) {
         names.add(localName);
@@ -55,10 +52,7 @@ export function collectLocalSchemaTypeNames(node: DiagramItem): ReadonlySet<stri
  * @param nextType - The entered type reference
  * @returns The trimmed reference, with the prefix of the target namespace for a type of the schema
  */
-export function normalizeTypeReferenceForCurrentSchema(
-  node: DiagramItem,
-  nextType: string
-): string {
+export function normalizeTypeReferenceForCurrentSchema(node: DiagramItem, nextType: string): string {
   const typeName = nextType.trim();
   if (!typeName) {
     return typeName;
@@ -73,9 +67,7 @@ export function normalizeTypeReferenceForCurrentSchema(
   }
 
   const localSchemaTypeNames = collectLocalSchemaTypeNames(node);
-  return localSchemaTypeNames.has(typeName)
-    ? `${currentSchemaPrefix}:${typeName}`
-    : typeName;
+  return localSchemaTypeNames.has(typeName) ? `${currentSchemaPrefix}:${typeName}` : typeName;
 }
 
 /**
@@ -281,7 +273,12 @@ export function resolveSimpleTypeId(node: DiagramItem): string | null {
  * @returns The complex-type schema ID or null when no complex type applies
  */
 function resolveComplexTypeId(node: DiagramItem): string | null {
-  return resolveTypeId(node, SchemaNodeType.ComplexType, SchemaNodeType.AnonymousComplexType, node.hasAnonymousComplexType);
+  return resolveTypeId(
+    node,
+    SchemaNodeType.ComplexType,
+    SchemaNodeType.AnonymousComplexType,
+    node.hasAnonymousComplexType
+  );
 }
 
 /**
@@ -382,10 +379,7 @@ export function createTypeCommand(node: DiagramItem, nextType: string): SchemaCo
  * @param nextBaseType - Proposed new base type from the UI
  * @returns A schema command or null when the node/base type is not editable
  */
-export function createComplexBaseTypeCommand(
-  node: DiagramItem,
-  nextBaseType: string
-): SchemaCommand | null {
+export function createComplexBaseTypeCommand(node: DiagramItem, nextBaseType: string): SchemaCommand | null {
   const baseType = normalizeTypeReferenceForCurrentSchema(node, nextBaseType);
   const nodeType = getNodeType(node);
   const complexTypeId = resolveComplexTypeId(node);
@@ -406,4 +400,3 @@ export function createComplexBaseTypeCommand(
     },
   };
 }
-

@@ -21,14 +21,13 @@ import { diagramItems } from "../../webview-src/__tests__/diagramTestHelpers";
 import { TEST_RESOURCES } from "../../src/__tests__/resourceTestHelpers.js";
 
 /** The folders with the schemas of the test. */
-const SCHEMA_FOLDERS = [
-  TEST_RESOURCES,
-  join(import.meta.dirname, "../../exampleFiles"),
-];
+const SCHEMA_FOLDERS = [TEST_RESOURCES, join(import.meta.dirname, "../../exampleFiles")];
 
 /** The paths of all schemas of the test. */
 const SCHEMA_FILES = SCHEMA_FOLDERS.flatMap((folder) =>
-  readdirSync(folder).filter((name) => name.endsWith(".xsd")).map((name) => join(folder, name))
+  readdirSync(folder)
+    .filter((name) => name.endsWith(".xsd"))
+    .map((name) => join(folder, name))
 );
 
 /**

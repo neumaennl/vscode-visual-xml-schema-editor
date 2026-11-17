@@ -43,7 +43,11 @@ export function removeFrom<N, K extends ArrayKeys<N>>(
   what: string
 ): void {
   const items = (node[key] ?? []) as Array<ItemOf<N, K>>;
-  const remaining = assumeRemoved(items, items.filter((item, index) => !isRemoved(item, index)), what);
+  const remaining = assumeRemoved(
+    items,
+    items.filter((item, index) => !isRemoved(item, index)),
+    what
+  );
   node[key] = (remaining.length > 0 ? remaining : undefined) as N[K];
 }
 

@@ -73,14 +73,20 @@ describe("vscode-releases", () => {
 
     test("should throw if the Node version of the Electron release is unknown", () => {
       expect(() => deriveVersions("1.125.0", { ...data, electron: "99.0.0" })).toThrow(
-        "Unknown Node version for Electron 99.0.0",
+        "Unknown Node version for Electron 99.0.0"
       );
     });
   });
 
   describe("expectedValues", () => {
     test("should turn derived versions into the values of package.json and .nvmrc", () => {
-      const derived = { vscode: "1.125.0", electron: "42.3.0", node: "24.15.0", typesVscode: "1.125.0", typesNode: "24.13.6" };
+      const derived = {
+        vscode: "1.125.0",
+        electron: "42.3.0",
+        node: "24.15.0",
+        typesVscode: "1.125.0",
+        typesNode: "24.13.6",
+      };
 
       expect(expectedValues(derived)).toEqual({
         engines: "^1.125.0",

@@ -16,10 +16,7 @@
  * expectInOrderOnLine(line, ['name="id"', 'use="required"']); // passes
  * ```
  */
-export function expectInOrderOnLine(
-  line: string,
-  expectedStrings: string[]
-): void {
+export function expectInOrderOnLine(line: string, expectedStrings: string[]): void {
   let searchStartIndex = 0;
 
   expectedStrings.forEach((expectedStr, i) => {
@@ -28,7 +25,7 @@ export function expectInOrderOnLine(
     expect(
       index,
       `Expected string "${expectedStr}" not found after "${previous}" on the same line. ` +
-      `Searched from position ${searchStartIndex} in line of length ${line.length}.`
+        `Searched from position ${searchStartIndex} in line of length ${line.length}.`
     ).not.toBe(-1);
 
     // The next string must come after this one
@@ -50,22 +47,19 @@ export function expectInOrderOnLine(
  * expectLinesInOrder(xml, ['<xs:element', '<xs:complexType']); // passes
  * ```
  */
-export function expectLinesInOrder(
-  text: string,
-  expectedStrings: string[]
-): void {
-  const lines = text.split('\n');
+export function expectLinesInOrder(text: string, expectedStrings: string[]): void {
+  const lines = text.split("\n");
   let currentLineIndex = 0;
 
   expectedStrings.forEach((expectedStr, i) => {
     const lineIndex = lines.findIndex((line, index) => index >= currentLineIndex && line.includes(expectedStr));
     const previous = expectedStrings[i - 1] ?? "(start of text)";
-    const searchContext = lines.slice(Math.max(0, currentLineIndex - 2), currentLineIndex + 3).join('\n');
+    const searchContext = lines.slice(Math.max(0, currentLineIndex - 2), currentLineIndex + 3).join("\n");
     expect(
       lineIndex,
       `Expected string "${expectedStr}" not found on a line after "${previous}".\n` +
-      `Searched from line ${currentLineIndex + 1}.\n` +
-      `Context:\n${searchContext}`
+        `Searched from line ${currentLineIndex + 1}.\n` +
+        `Context:\n${searchContext}`
     ).not.toBe(-1);
 
     // The next string must be on a later line

@@ -25,7 +25,10 @@ describe("PropertiesPanel: the type fields", () => {
     displayItem(container, diagramItem(schemaObj, "/element:customer"));
 
     const input = getInputByLabel(container, "Type");
-    const options = Array.from(container.querySelectorAll(`datalist#${input.getAttribute("list")!} option`), (option) => (option as HTMLOptionElement).value);
+    const options = Array.from(
+      container.querySelectorAll(`datalist#${input.getAttribute("list")!} option`),
+      (option) => (option as HTMLOptionElement).value
+    );
     expect(options).toEqual(expect.arrayContaining(["xs:string", "CustomerType", "tns:CustomerType"]));
   });
 

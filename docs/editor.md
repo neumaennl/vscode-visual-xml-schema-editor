@@ -36,13 +36,13 @@ The editor is what the user sees and works with: a webview with a palette on the
 
 This document describes the parts of the editor and how they are connected. The details are in other documents:
 
-| Topic | Document |
-|---|---|
-| Interaction model: what is done where | [UX concept](ux-concept.md) |
+| Topic                                        | Document                                  |
+| -------------------------------------------- | ----------------------------------------- |
+| Interaction model: what is done where        | [UX concept](ux-concept.md)               |
 | How the diagram is built, laid out and drawn | [Diagram rendering](diagram-rendering.md) |
-| How a palette drop becomes a command | [Drag and drop](drag-and-drop.md) |
-| Messages between webview and extension | [Messaging](messaging.md) |
-| What happens to a command in the extension | [Persistence](persistence.md) |
+| How a palette drop becomes a command         | [Drag and drop](drag-and-drop.md)         |
+| Messages between webview and extension       | [Messaging](messaging.md)                 |
+| What happens to a command in the extension   | [Persistence](persistence.md)             |
 
 # Opening the editor
 
@@ -57,13 +57,13 @@ The extension contributes the custom editor `visualXmlSchemaEditor.editor` for `
 
 The provider generates the HTML page. It allows scripts, restricts local resources to the extension folder, and sets a Content Security Policy with `default-src 'none'` and a nonce for the script. It loads `webview/main.js`, `webview/styles.css` and the Codicon CSS.[^webview-provider]
 
-| Area | Element | Content |
-|---|---|---|
-| Left | `#palette-panel` | Palette of schema constructs |
-| Center, top | `#notification-bar` | Error messages, dismissible |
-| Center, top | `#toolbar` | Zoom In, Zoom Out, Fit View |
-| Center | `#schema-canvas` (SVG) | The diagram |
-| Right | `#properties-panel` | Properties of the selected node |
+| Area        | Element                | Content                         |
+| ----------- | ---------------------- | ------------------------------- |
+| Left        | `#palette-panel`       | Palette of schema constructs    |
+| Center, top | `#notification-bar`    | Error messages, dismissible     |
+| Center, top | `#toolbar`             | Zoom In, Zoom Out, Fit View     |
+| Center      | `#schema-canvas` (SVG) | The diagram                     |
+| Right       | `#properties-panel`    | Properties of the selected node |
 
 The styles use VS Code theme CSS variables, so the editor follows the active color theme.
 
@@ -73,12 +73,12 @@ The styles use VS Code theme CSS variables, so the editor follows the active col
 
 **Messages from the extension**
 
-| Message | Reaction |
-|---|---|
-| `updateSchema` | Store the schema, update the name list of `DropCommandFactory`, re-render the diagram, hide the notification, restore the selection, save state. |
-| `updateDiagramOptions` | Store the options, save state, re-render. |
-| `error` | Show the message in the notification bar. |
-| `commandResult` | On success, hide the notification. On failure, show the error and restore the selection. |
+| Message                | Reaction                                                                                                                                         |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `updateSchema`         | Store the schema, update the name list of `DropCommandFactory`, re-render the diagram, hide the notification, restore the selection, save state. |
+| `updateDiagramOptions` | Store the options, save state, re-render.                                                                                                        |
+| `error`                | Show the message in the notification bar.                                                                                                        |
+| `commandResult`        | On success, hide the notification. On failure, show the error and restore the selection.                                                         |
 
 All edits are sent as `executeCommand` messages. See [Messaging](messaging.md).
 
@@ -99,22 +99,22 @@ The diagram shows the schema as a tree of nodes. Clicking a node selects it and 
 
 Three user settings change the diagram. All are booleans and default to `false`:[^manifest]
 
-| Setting | Effect |
-|---|---|
-| `visualXmlSchemaEditor.showDocumentation` | Show documentation text below items. |
+| Setting                                      | Effect                                                  |
+| -------------------------------------------- | ------------------------------------------------------- |
+| `visualXmlSchemaEditor.showDocumentation`    | Show documentation text below items.                    |
 | `visualXmlSchemaEditor.alwaysShowOccurrence` | Show occurrence (min..max) also for the default `1..1`. |
-| `visualXmlSchemaEditor.showType` | Show the type name in items. |
+| `visualXmlSchemaEditor.showType`             | Show the type name in items.                            |
 
 # Palette
 
 The palette lists the constructs that can be added, in four groups, each with a Codicon and a tooltip:[^palette-items]
 
-| Group | Items |
-|---|---|
-| Structure | element, attribute, group, any (disabled) |
-| Compositors | sequence, choice, all |
-| Types | complexType, simpleType, extension, restriction |
-| Facets | enumeration, pattern, length, minLength, maxLength, minExclusive, minInclusive, maxExclusive, maxInclusive, totalDigits, fractionDigits, whiteSpace |
+| Group       | Items                                                                                                                                               |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Structure   | element, attribute, group, any (disabled)                                                                                                           |
+| Compositors | sequence, choice, all                                                                                                                               |
+| Types       | complexType, simpleType, extension, restriction                                                                                                     |
+| Facets      | enumeration, pattern, length, minLength, maxLength, minExclusive, minInclusive, maxExclusive, maxInclusive, totalDigits, fractionDigits, whiteSpace |
 
 Items are added by dragging them onto a node in the diagram. Which construct can be dropped where, and which command a drop creates, is described in [Drag and drop](drag-and-drop.md).
 
@@ -122,12 +122,12 @@ Items are added by dragging them onto a node in the diagram. Which construct can
 
 `PropertiesPanel` shows the selected node and is the place where existing constructs are edited.[^properties-panel] Its header shows the node type, the node ID and, if the node can be deleted, a delete button.
 
-| Tab | Shown for | Content |
-|---|---|---|
-| General | All nodes | Name, type, cardinality, constraints, default/fixed value (elements), namespace declarations (schema root), attributes |
-| Facets | Simple types derived by restriction (not list or union) | Facet values, add and delete facets |
-| Docs | All nodes (not editable for every node) | `xs:documentation` entries of the node's annotations |
-| XML | All nodes | Read-only XML preview of the node |
+| Tab     | Shown for                                               | Content                                                                                                                |
+| ------- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| General | All nodes                                               | Name, type, cardinality, constraints, default/fixed value (elements), namespace declarations (schema root), attributes |
+| Facets  | Simple types derived by restriction (not list or union) | Facet values, add and delete facets                                                                                    |
+| Docs    | All nodes (not editable for every node)                 | `xs:documentation` entries of the node's annotations                                                                   |
+| XML     | All nodes                                               | Read-only XML preview of the node                                                                                      |
 
 Which fields are editable, the draft copy and the type suggestions are described in [UX concept](ux-concept.md#properties-panel).
 

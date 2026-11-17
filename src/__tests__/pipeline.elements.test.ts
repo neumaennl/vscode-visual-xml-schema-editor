@@ -77,17 +77,25 @@ describe("Integration: Element pipeline", () => {
     });
 
     test("should return validation error when element name is invalid", () => {
-      runCommandExpectValidationFailure(emptySchemaXml(), {
-        type: "addElement",
-        payload: { parentId: "/schema", elementName: "123invalid", elementType: "xs:string" },
-      }, "Element name must be a valid XML name");
+      runCommandExpectValidationFailure(
+        emptySchemaXml(),
+        {
+          type: "addElement",
+          payload: { parentId: "/schema", elementName: "123invalid", elementType: "xs:string" },
+        },
+        "Element name must be a valid XML name"
+      );
     });
 
     test("should return validation error for duplicate element name", () => {
-      runCommandExpectValidationFailure(SCHEMA_WITH_ELEMENTS, {
-        type: "addElement",
-        payload: { parentId: "/schema", elementName: "person", elementType: "xs:string" },
-      }, "Cannot add element: duplicate element name 'person' in schema");
+      runCommandExpectValidationFailure(
+        SCHEMA_WITH_ELEMENTS,
+        {
+          type: "addElement",
+          payload: { parentId: "/schema", elementName: "person", elementType: "xs:string" },
+        },
+        "Cannot add element: duplicate element name 'person' in schema"
+      );
     });
   });
 
@@ -106,10 +114,14 @@ describe("Integration: Element pipeline", () => {
     });
 
     test("should return validation error when element ID does not exist", () => {
-      runCommandExpectValidationFailure(SCHEMA_WITH_ELEMENTS, {
-        type: "removeElement",
-        payload: { elementId: "/element:nonexistent" },
-      }, "Element not found with name: nonexistent");
+      runCommandExpectValidationFailure(
+        SCHEMA_WITH_ELEMENTS,
+        {
+          type: "removeElement",
+          payload: { elementId: "/element:nonexistent" },
+        },
+        "Element not found with name: nonexistent"
+      );
     });
   });
 
@@ -137,17 +149,25 @@ describe("Integration: Element pipeline", () => {
     });
 
     test("should return validation error when element ID does not exist", () => {
-      runCommandExpectValidationFailure(SCHEMA_WITH_ELEMENTS, {
-        type: "modifyElement",
-        payload: { elementId: "/element:missing", elementName: "other" },
-      }, "Element not found with name: missing");
+      runCommandExpectValidationFailure(
+        SCHEMA_WITH_ELEMENTS,
+        {
+          type: "modifyElement",
+          payload: { elementId: "/element:missing", elementName: "other" },
+        },
+        "Element not found with name: missing"
+      );
     });
 
     test("should return validation error when new name is invalid", () => {
-      runCommandExpectValidationFailure(SCHEMA_WITH_ELEMENTS, {
-        type: "modifyElement",
-        payload: { elementId: "/element:person", elementName: "bad name" },
-      }, "Element name must be a valid XML name");
+      runCommandExpectValidationFailure(
+        SCHEMA_WITH_ELEMENTS,
+        {
+          type: "modifyElement",
+          payload: { elementId: "/element:person", elementName: "bad name" },
+        },
+        "Element name must be a valid XML name"
+      );
     });
   });
 
@@ -163,19 +183,28 @@ describe("Integration: Element pipeline", () => {
       { change: { fixed: "other" }, expected: { fixed: "other" } },
       { change: { fixed: "" }, expected: { fixed: undefined } },
     ])("should set $change on a top-level element", ({ change, expected }) => {
-      const result = runCommandExpectSuccessSchema(ELEMENT_AND_ALL_GROUP, { type: "modifyElement", payload: { elementId: "/element:item", ...change } });
+      const result = runCommandExpectSuccessSchema(ELEMENT_AND_ALL_GROUP, {
+        type: "modifyElement",
+        payload: { elementId: "/element:item", ...change },
+      });
 
       expect(result.element?.[0]).toMatchObject(expected);
     });
 
     test("should remove the default value when the fixed value is set", () => {
-      const result = runCommandExpectSuccessSchema(ELEMENT_AND_ALL_GROUP, { type: "modifyElement", payload: { elementId: CODE_ID, fixed: "B" } });
+      const result = runCommandExpectSuccessSchema(ELEMENT_AND_ALL_GROUP, {
+        type: "modifyElement",
+        payload: { elementId: CODE_ID, fixed: "B" },
+      });
 
       expect(result.complexType?.[1]?.sequence?.element?.[0]).toMatchObject({ fixed: "B", default_: undefined });
     });
 
     test("should remove default, fixed and nillable when an element becomes a reference", () => {
-      const result = runCommandExpectSuccessSchema(ELEMENT_AND_ALL_GROUP, { type: "modifyElement", payload: { elementId: CODE_ID, ref: "item" } });
+      const result = runCommandExpectSuccessSchema(ELEMENT_AND_ALL_GROUP, {
+        type: "modifyElement",
+        payload: { elementId: CODE_ID, ref: "item" },
+      });
 
       expect(result.complexType?.[1]?.sequence?.element?.[0]).toMatchObject({
         ref: "item",

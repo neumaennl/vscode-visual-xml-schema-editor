@@ -73,7 +73,11 @@ describe("compiler-target", () => {
     test.each([
       ["no JSON", "{ // comment", "not valid JSON."],
       ["no target", "{}", "expected a target ESxxxx, found undefined."],
-      ["a target that is not an edition", '{ "compilerOptions": { "target": "esnext" } }', 'expected a target ESxxxx, found "esnext".'],
+      [
+        "a target that is not an edition",
+        '{ "compilerOptions": { "target": "esnext" } }',
+        'expected a target ESxxxx, found "esnext".',
+      ],
     ])("should throw for a base with %s", async (_case, text, message) => {
       stubFetch({ [tsconfigBaseUrl(24)]: text });
 
@@ -87,7 +91,10 @@ describe("compiler-target", () => {
     });
 
     test("should throw if the request fails for another reason", async () => {
-      vi.stubGlobal("fetch", vi.fn(() => Promise.resolve({ ok: false, status: 500 })));
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(() => Promise.resolve({ ok: false, status: 500 }))
+      );
 
       await expect(loadEdition(24)).rejects.toThrow(`${tsconfigBaseUrl(24)}: HTTP 500`);
     });
@@ -99,7 +106,12 @@ describe("compiler-target", () => {
 
       const editions = await loadEditions([22, 24, 24]);
 
-      expect(editions).toEqual(new Map([[22, undefined], [24, "ES2024"]]));
+      expect(editions).toEqual(
+        new Map([
+          [22, undefined],
+          [24, "ES2024"],
+        ])
+      );
       expect(fetchMock).toHaveBeenCalledTimes(2);
     });
   });
@@ -143,10 +155,16 @@ describe("compiler-target", () => {
 
   describe("writeEdition", () => {
     test("should replace only the editions and return the changed files", () => {
-      expect(writeEdition(dir, "ES2024")).toEqual(["eslint.config.mjs", "tsconfig.extension.json", "tsconfig.webview.json"]);
+      expect(writeEdition(dir, "ES2024")).toEqual([
+        "eslint.config.mjs",
+        "tsconfig.extension.json",
+        "tsconfig.webview.json",
+      ]);
 
       expect(read("tsconfig.extension.json")).toBe(EXTENSION_TSCONFIG.replace(/ES2020/g, "ES2024"));
-      expect(read("tsconfig.webview.json")).toBe(WEBVIEW_TSCONFIG.replace('"target": "es2020"', '"target": "ES2024"').replace('["es2020",', '["ES2024",'));
+      expect(read("tsconfig.webview.json")).toBe(
+        WEBVIEW_TSCONFIG.replace('"target": "es2020"', '"target": "ES2024"').replace('["es2020",', '["ES2024",')
+      );
       expect(read("eslint.config.mjs")).toBe(ESLINT_CONFIG.replace(/2020/g, "2024"));
       expect(read("tsconfig.extension-test.json")).toBe(TEST_TSCONFIG);
       expect(read("package.json")).toBe('{ "target": "ES2020" }\n');

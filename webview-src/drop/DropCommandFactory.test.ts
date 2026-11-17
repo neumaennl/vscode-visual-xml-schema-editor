@@ -18,11 +18,7 @@ import { DERIVATIONS, derivedComplexTypeT, schemaWith } from "../../shared/__tes
  * @param overrides - The fields to set on the item
  * @returns The item
  */
-function makeItem(
-  id: string,
-  itemType: DiagramItemType,
-  overrides: Partial<DiagramItem> = {}
-): DiagramItem {
+function makeItem(id: string, itemType: DiagramItemType, overrides: Partial<DiagramItem> = {}): DiagramItem {
   const item = new DiagramItem(id, id.split(":").pop() ?? id, itemType);
   Object.assign(item, overrides);
   return item;
@@ -39,7 +35,8 @@ const NAME_FIELDS = ["elementName", "attributeName", "typeName", "groupName"];
  * @returns The generated name, or undefined if the command has none
  */
 function generatedName(factory: DropCommandFactory, construct: PaletteSchemaConstruct): string | undefined {
-  const payload = (factory.createNodeDropCommand(ROOT, construct) as { payload: Record<string, unknown> } | null)?.payload;
+  const payload = (factory.createNodeDropCommand(ROOT, construct) as { payload: Record<string, unknown> } | null)
+    ?.payload;
   const field = NAME_FIELDS.find((name) => typeof payload?.[name] === "string");
   return field === undefined ? undefined : (payload?.[field] as string);
 }
@@ -57,11 +54,15 @@ const ROOT = makeItem("/schema", DiagramItemType.element);
 /** An element without inline type. */
 const PERSON = makeItem("/element:person", DiagramItemType.element);
 /** An element with an inline complex type. */
-const PERSON_WITH_COMPLEX_TYPE = makeItem("/element:person", DiagramItemType.element, { hasAnonymousComplexType: true });
+const PERSON_WITH_COMPLEX_TYPE = makeItem("/element:person", DiagramItemType.element, {
+  hasAnonymousComplexType: true,
+});
 /** An element with an inline simple type. */
 const PERSON_WITH_SIMPLE_TYPE = makeItem("/element:person", DiagramItemType.element, { isSimpleContent: true });
 /** A sequence in an element. */
-const SEQUENCE = makeItem("/element:person/group[0]", DiagramItemType.group, { groupType: DiagramItemGroupType.Sequence });
+const SEQUENCE = makeItem("/element:person/group[0]", DiagramItemType.group, {
+  groupType: DiagramItemGroupType.Sequence,
+});
 /** A top-level group. */
 const GROUP = makeItem("/group:G", DiagramItemType.group);
 /** A complex type without base. */
@@ -87,8 +88,14 @@ describe("DropCommandFactory", () => {
       [C.Attribute, { type: "addAttribute", payload: { parentId: "/schema", attributeName: "Attribute1" } }],
       [C.SimpleType, { type: "addSimpleType", payload: { parentId: "/schema", typeName: "SimpleType1" } }],
       [C.ComplexType, { type: "addComplexType", payload: { parentId: "/schema", typeName: "ComplexType1" } }],
-      [C.Restriction, { type: "addSimpleType", payload: { parentId: "/schema", typeName: "SimpleType1", baseType: "xs:string" } }],
-      [C.Extension, { type: "addComplexType", payload: { parentId: "/schema", typeName: "ComplexType1", baseType: "xs:anyType" } }],
+      [
+        C.Restriction,
+        { type: "addSimpleType", payload: { parentId: "/schema", typeName: "SimpleType1", baseType: "xs:string" } },
+      ],
+      [
+        C.Extension,
+        { type: "addComplexType", payload: { parentId: "/schema", typeName: "ComplexType1", baseType: "xs:anyType" } },
+      ],
       [C.Group, { type: "addGroup", payload: { groupName: "Group1" } }],
     ])("should create the command for %s", (construct, expected) => {
       expect(factory.createNodeDropCommand(ROOT, construct)).toMatchObject(expected);
@@ -102,13 +109,20 @@ describe("DropCommandFactory", () => {
   describe("createNodeDropCommand", () => {
     test.each<AcceptedDrop>([
       ["an element on the schema root", ROOT, C.Element, { type: "addElement", payload: { parentId: "/schema" } }],
-      ...[DiagramItemGroupType.Sequence, DiagramItemGroupType.Choice, DiagramItemGroupType.All].map((groupType): AcceptedDrop => [
-        `an element on a ${groupType}`,
-        makeItem("/e/g[0]", DiagramItemType.group, { groupType }),
-        C.Element,
-        { type: "addElement" },
-      ]),
-      ["an attribute on the schema root", ROOT, C.Attribute, { type: "addAttribute", payload: { parentId: "/schema" } }],
+      ...[DiagramItemGroupType.Sequence, DiagramItemGroupType.Choice, DiagramItemGroupType.All].map(
+        (groupType): AcceptedDrop => [
+          `an element on a ${groupType}`,
+          makeItem("/e/g[0]", DiagramItemType.group, { groupType }),
+          C.Element,
+          { type: "addElement" },
+        ]
+      ),
+      [
+        "an attribute on the schema root",
+        ROOT,
+        C.Attribute,
+        { type: "addAttribute", payload: { parentId: "/schema" } },
+      ],
       [
         "an attribute on a named complexType",
         makeItem("/complexType:PersonType", DiagramItemType.type, { type: "complexType" }),
@@ -121,8 +135,18 @@ describe("DropCommandFactory", () => {
         C.Attribute,
         { type: "addAttribute", payload: { parentId: "/element:person/anonymousComplexType[0]" } },
       ],
-      ["a simpleType on the schema root", ROOT, C.SimpleType, { type: "addSimpleType", payload: { parentId: "/schema", typeName: "SimpleType1" } }],
-      ["a complexType on the schema root", ROOT, C.ComplexType, { type: "addComplexType", payload: { parentId: "/schema", typeName: "ComplexType1" } }],
+      [
+        "a simpleType on the schema root",
+        ROOT,
+        C.SimpleType,
+        { type: "addSimpleType", payload: { parentId: "/schema", typeName: "SimpleType1" } },
+      ],
+      [
+        "a complexType on the schema root",
+        ROOT,
+        C.ComplexType,
+        { type: "addComplexType", payload: { parentId: "/schema", typeName: "ComplexType1" } },
+      ],
       ["a group on the schema root", ROOT, C.Group, { type: "addGroup", payload: { groupName: "Group1" } }],
       [
         "an anonymous simpleType restriction on a typed element",
@@ -132,9 +156,15 @@ describe("DropCommandFactory", () => {
       ],
       [
         "a restriction that modifies an inline simpleType in place",
-        makeItem("/element:code", DiagramItemType.element, { type: "<anonymous simpleType> (restricts xs:string)", isSimpleContent: true }),
+        makeItem("/element:code", DiagramItemType.element, {
+          type: "<anonymous simpleType> (restricts xs:string)",
+          isSimpleContent: true,
+        }),
         C.Restriction,
-        { type: "modifySimpleType", payload: { typeId: "/element:code/anonymousSimpleType[0]", baseType: "xs:string" } },
+        {
+          type: "modifySimpleType",
+          payload: { typeId: "/element:code/anonymousSimpleType[0]", baseType: "xs:string" },
+        },
       ],
       [
         "a restriction that modifies an inline complexType in place",
@@ -142,20 +172,30 @@ describe("DropCommandFactory", () => {
         C.Restriction,
         {
           type: "modifyComplexType",
-          payload: { typeId: "/element:person/anonymousComplexType[0]", baseType: "BasePersonType", derivationKind: "restriction" },
+          payload: {
+            typeId: "/element:person/anonymousComplexType[0]",
+            baseType: "BasePersonType",
+            derivationKind: "restriction",
+          },
         },
       ],
       [
         "a restriction that modifies a named complexType in place",
         makeItem("/complexType:PersonType", DiagramItemType.type, { type: "complexType (extends BasePersonType)" }),
         C.Restriction,
-        { type: "modifyComplexType", payload: { typeId: "/complexType:PersonType", baseType: "BasePersonType", derivationKind: "restriction" } },
+        {
+          type: "modifyComplexType",
+          payload: { typeId: "/complexType:PersonType", baseType: "BasePersonType", derivationKind: "restriction" },
+        },
       ],
       [
         "a restriction of xs:anyType when no base can be inferred",
         CHOICE_TYPE,
         C.Restriction,
-        { type: "modifyComplexType", payload: { typeId: "/complexType:ChoiceType", baseType: "xs:anyType", derivationKind: "restriction" } },
+        {
+          type: "modifyComplexType",
+          payload: { typeId: "/complexType:ChoiceType", baseType: "xs:anyType", derivationKind: "restriction" },
+        },
       ],
       [
         "an anonymous complexType extension on a typed element",
@@ -163,7 +203,12 @@ describe("DropCommandFactory", () => {
         C.Extension,
         {
           type: "addComplexType",
-          payload: { parentId: "/element:person", baseType: "PersonType", contentModel: "sequence", derivationKind: "extension" },
+          payload: {
+            parentId: "/element:person",
+            baseType: "PersonType",
+            contentModel: "sequence",
+            derivationKind: "extension",
+          },
         },
       ],
       [
@@ -172,14 +217,21 @@ describe("DropCommandFactory", () => {
         C.Extension,
         {
           type: "modifyComplexType",
-          payload: { typeId: "/element:person/anonymousComplexType[0]", baseType: "BasePersonType", derivationKind: "extension" },
+          payload: {
+            typeId: "/element:person/anonymousComplexType[0]",
+            baseType: "BasePersonType",
+            derivationKind: "extension",
+          },
         },
       ],
       [
         "an extension of xs:anyType when no base can be inferred",
         CHOICE_TYPE,
         C.Extension,
-        { type: "modifyComplexType", payload: { typeId: "/complexType:ChoiceType", baseType: "xs:anyType", derivationKind: "extension" } },
+        {
+          type: "modifyComplexType",
+          payload: { typeId: "/complexType:ChoiceType", baseType: "xs:anyType", derivationKind: "extension" },
+        },
       ],
     ])("should create %s", (_case, item, construct, expected) => {
       expect(factory.createNodeDropCommand(item, construct)).toMatchObject(expected);
@@ -195,9 +247,19 @@ describe("DropCommandFactory", () => {
 
     test.each([
       ["a simpleType on an element", PERSON, C.SimpleType, "addSimpleType"],
-      ["a simpleType that replaces the inline complexType of an element", PERSON_WITH_COMPLEX_TYPE, C.SimpleType, "addSimpleType"],
+      [
+        "a simpleType that replaces the inline complexType of an element",
+        PERSON_WITH_COMPLEX_TYPE,
+        C.SimpleType,
+        "addSimpleType",
+      ],
       ["a complexType on an element", PERSON, C.ComplexType, "addComplexType"],
-      ["a complexType that replaces the inline simpleType of an element", PERSON_WITH_SIMPLE_TYPE, C.ComplexType, "addComplexType"],
+      [
+        "a complexType that replaces the inline simpleType of an element",
+        PERSON_WITH_SIMPLE_TYPE,
+        C.ComplexType,
+        "addComplexType",
+      ],
     ])("should create %s, with the element as parent and without typeName", (_case, item, construct, type) => {
       const cmd = factory.createNodeDropCommand(item, construct);
 
@@ -206,22 +268,42 @@ describe("DropCommandFactory", () => {
     });
 
     test.each([
-      ["a choice on a named complexType", makeItem("/complexType:PersonType", DiagramItemType.type, { type: "complexType" }), C.Choice, {
-        type: "modifyComplexType",
-        payload: { typeId: "/complexType:PersonType", contentModel: "choice" },
-      }],
-      ["an all on the anonymous complexType of an element", PERSON_WITH_COMPLEX_TYPE, C.All, {
-        type: "modifyComplexType",
-        payload: { typeId: "/element:person/anonymousComplexType[0]", contentModel: "all" },
-      }],
-      ["a sequence on a plain element", PERSON, C.Sequence, {
-        type: "addComplexType",
-        payload: { parentId: "/element:person", contentModel: "sequence" },
-      }],
-      ["a choice on a top-level group", makeItem("/group:PeopleGroup", DiagramItemType.group), C.Choice, {
-        type: "modifyGroup",
-        payload: { groupId: "/group:PeopleGroup", contentModel: "choice" },
-      }],
+      [
+        "a choice on a named complexType",
+        makeItem("/complexType:PersonType", DiagramItemType.type, { type: "complexType" }),
+        C.Choice,
+        {
+          type: "modifyComplexType",
+          payload: { typeId: "/complexType:PersonType", contentModel: "choice" },
+        },
+      ],
+      [
+        "an all on the anonymous complexType of an element",
+        PERSON_WITH_COMPLEX_TYPE,
+        C.All,
+        {
+          type: "modifyComplexType",
+          payload: { typeId: "/element:person/anonymousComplexType[0]", contentModel: "all" },
+        },
+      ],
+      [
+        "a sequence on a plain element",
+        PERSON,
+        C.Sequence,
+        {
+          type: "addComplexType",
+          payload: { parentId: "/element:person", contentModel: "sequence" },
+        },
+      ],
+      [
+        "a choice on a top-level group",
+        makeItem("/group:PeopleGroup", DiagramItemType.group),
+        C.Choice,
+        {
+          type: "modifyGroup",
+          payload: { groupId: "/group:PeopleGroup", contentModel: "choice" },
+        },
+      ],
     ])("should set the content model for %s", (_case, item, construct, expected) => {
       expect(factory.createNodeDropCommand(item, construct)).toEqual(expected);
     });
@@ -236,12 +318,17 @@ describe("DropCommandFactory", () => {
       ["a group on a complexType", makeItem("/complexType:C", DiagramItemType.type, { type: "complexType" }), C.Group],
       [
         "a compositor on a compositor",
-        makeItem("/complexType:PersonType/group:sequence[0]", DiagramItemType.group, { groupType: DiagramItemGroupType.Sequence }),
+        makeItem("/complexType:PersonType/group:sequence[0]", DiagramItemType.group, {
+          groupType: DiagramItemGroupType.Sequence,
+        }),
         C.All,
       ],
       ...(["list", "union"] as const).map((kind): RejectedDrop => [
         `a facet on a ${kind} simpleType`,
-        makeItem("/simpleType:Values", DiagramItemType.type, { type: `simpleType (${kind})`, simpleTypeDerivationKind: kind }),
+        makeItem("/simpleType:Values", DiagramItemType.type, {
+          type: `simpleType (${kind})`,
+          simpleTypeDerivationKind: kind,
+        }),
         C.Enumeration,
       ]),
     ])("should reject %s", (_case, item, construct) => {
@@ -284,9 +371,19 @@ describe("DropCommandFactory", () => {
     });
 
     test.each([
-      ["keep all patterns when another facet is dropped", ["[A-Z]{3}", "[0-9]{3}"], C.MaxLength, { pattern: ["[A-Z]{3}", "[0-9]{3}"], maxLength: 1 }],
+      [
+        "keep all patterns when another facet is dropped",
+        ["[A-Z]{3}", "[0-9]{3}"],
+        C.MaxLength,
+        { pattern: ["[A-Z]{3}", "[0-9]{3}"], maxLength: 1 },
+      ],
       ["append a default pattern to no pattern", [], C.Pattern, { pattern: [".*"] }],
-      ["append a default pattern to one pattern", ["[A-Z]{3}"], C.Pattern, { pattern: ["[A-Z]{3}", "[^a-zA-Z0-9\\s]*"] }],
+      [
+        "append a default pattern to one pattern",
+        ["[A-Z]{3}"],
+        C.Pattern,
+        { pattern: ["[A-Z]{3}", "[^a-zA-Z0-9\\s]*"] },
+      ],
       [
         "append a default pattern to two patterns",
         ["[A-Z]{3}", "[^a-zA-Z0-9\\s]*"],
@@ -296,7 +393,9 @@ describe("DropCommandFactory", () => {
     ])("should %s", (_case, existing, construct, restrictions) => {
       const patterns = existing.map((value) => `<xs:pattern value="${value}"/>`).join("");
       const item = diagramItem(
-        schemaWith(`<xs:simpleType name="Code"><xs:restriction base="xs:string">${patterns}</xs:restriction></xs:simpleType>`),
+        schemaWith(
+          `<xs:simpleType name="Code"><xs:restriction base="xs:string">${patterns}</xs:restriction></xs:simpleType>`
+        ),
         "/simpleType:Code"
       );
 
@@ -356,7 +455,9 @@ describe("DropCommandFactory", () => {
         group: [{ name: "Group1" }],
       });
 
-      const names = [C.Element, C.Attribute, C.SimpleType, C.ComplexType, C.Group].map((construct) => generatedName(factory, construct));
+      const names = [C.Element, C.Attribute, C.SimpleType, C.ComplexType, C.Group].map((construct) =>
+        generatedName(factory, construct)
+      );
 
       expect(names).toEqual(["Element3", "Attribute2", "SimpleType2", "ComplexType2", "Group2"]);
     });

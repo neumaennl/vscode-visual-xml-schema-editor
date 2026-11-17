@@ -2,10 +2,7 @@
  * Unit tests for the checks that validators of several areas share.
  */
 
-import type {
-  ChildKind,
-  NamedChild,
-} from "./commonValidators.js";
+import type { ChildKind, NamedChild } from "./commonValidators.js";
 import {
   locateChild,
   locateReferenceOrDefinition,
@@ -62,7 +59,13 @@ describe("locateReferenceOrDefinition", () => {
     id: string,
     referenceResult: { valid: true } | { valid: false; error: string } = { valid: true }
   ): ReturnType<typeof locateReferenceOrDefinition> =>
-    locateReferenceOrDefinition(parseSchemaId(id), SchemaNodeType.GroupRef, () => referenceResult, SCHEMA.element, "missing");
+    locateReferenceOrDefinition(
+      parseSchemaId(id),
+      SchemaNodeType.GroupRef,
+      () => referenceResult,
+      SCHEMA.element,
+      "missing"
+    );
 
   test("should locate an existing reference", () => {
     expect(locate("/complexType:T/groupRef:G[0]")).toEqual({ valid: true, target: "reference" });
@@ -76,7 +79,11 @@ describe("locateReferenceOrDefinition", () => {
   });
 
   test("should locate an existing definition with its name without checking a reference", () => {
-    expect(locate("/element:a", { valid: false, error: "no ref" })).toEqual({ valid: true, target: "definition", name: "a" });
+    expect(locate("/element:a", { valid: false, error: "no ref" })).toEqual({
+      valid: true,
+      target: "definition",
+      name: "a",
+    });
   });
 
   test("should reject a missing definition with the given error", () => {
@@ -84,7 +91,13 @@ describe("locateReferenceOrDefinition", () => {
   });
 
   test("should reject a definition if the schema has none of the kind", () => {
-    const result = locateReferenceOrDefinition(parseSchemaId("/group:G"), SchemaNodeType.GroupRef, () => ({ valid: true }), undefined, "missing");
+    const result = locateReferenceOrDefinition(
+      parseSchemaId("/group:G"),
+      SchemaNodeType.GroupRef,
+      () => ({ valid: true }),
+      undefined,
+      "missing"
+    );
     expect(result).toEqual({ valid: false, error: "missing" });
   });
 });
@@ -111,7 +124,11 @@ describe("validateDefinitionRemoval", () => {
   });
 
   test("should reject a definition that is still referenced", () => {
-    const result = validateDefinitionRemoval({ valid: true, target: "definition", name: "used" }, "Group", isReferenced);
+    const result = validateDefinitionRemoval(
+      { valid: true, target: "definition", name: "used" },
+      "Group",
+      isReferenced
+    );
     expectInvalid(result);
     expect(result.error).toBe("Group is still referenced and cannot be removed: used");
   });
@@ -131,11 +148,35 @@ describe("validateNewChild", () => {
 
   test.each([
     ["a missing parent", "/complexType:X", "b", undefined, "Parent node not found: /complexType:X"],
-    ["a parent of the wrong type", "/complexType:T", "b", undefined, "Cannot add element to parent of type: topLevelComplexType"],
+    [
+      "a parent of the wrong type",
+      "/complexType:T",
+      "b",
+      undefined,
+      "Cannot add element to parent of type: topLevelComplexType",
+    ],
     ["a reference in the schema root", "/schema", undefined, "a", "Top-level elements cannot be references"],
-    ["a duplicate name", SEQUENCE_ID, "first", undefined, "Cannot add element: duplicate element name 'first' in sequence"],
-    ["a name used by a reference", SEQUENCE_ID, "a", undefined, "Cannot add element: duplicate element name 'a' in sequence"],
-    ["a duplicate reference", SEQUENCE_ID, undefined, "a", "Cannot add element: duplicate element reference 'a' in sequence"],
+    [
+      "a duplicate name",
+      SEQUENCE_ID,
+      "first",
+      undefined,
+      "Cannot add element: duplicate element name 'first' in sequence",
+    ],
+    [
+      "a name used by a reference",
+      SEQUENCE_ID,
+      "a",
+      undefined,
+      "Cannot add element: duplicate element name 'a' in sequence",
+    ],
+    [
+      "a duplicate reference",
+      SEQUENCE_ID,
+      undefined,
+      "a",
+      "Cannot add element: duplicate element reference 'a' in sequence",
+    ],
   ])("should reject %s", (_case, parentId, name, ref, error) => {
     expect(validateNewChild(SCHEMA, parentId, ELEMENTS, name, ref)).toEqual({ valid: false, error });
   });
@@ -153,8 +194,16 @@ describe("locateChild", () => {
 
   test.each([
     ["an empty ID", " ", "Element ID cannot be empty"],
-    ["a missing parent", "/complexType:X/group:sequence[0]/element:a", "Parent node not found for element: /complexType:X/group:sequence[0]/element:a"],
-    ["a parent of the wrong type", "/complexType:T/element:a", "Cannot remove element from parent of type: topLevelComplexType"],
+    [
+      "a missing parent",
+      "/complexType:X/group:sequence[0]/element:a",
+      "Parent node not found for element: /complexType:X/group:sequence[0]/element:a",
+    ],
+    [
+      "a parent of the wrong type",
+      "/complexType:T/element:a",
+      "Cannot remove element from parent of type: topLevelComplexType",
+    ],
     ["a missing name", `${SEQUENCE_ID}/element:none`, "Element not found with name: none"],
     ["a position out of range", `${SEQUENCE_ID}/element:first[5]`, "Element not found at position: 5"],
   ])("should reject %s", (_case, id, error) => {
@@ -171,9 +220,21 @@ describe("validateInlineTypeParent", () => {
 
   test.each([
     ["a missing parent", "/element:x", "Parent not found: /element:x"],
-    ["a parent of the wrong type", "/complexType:T", "Parent of type 'topLevelComplexType' cannot contain a complexType"],
-    ["a reference", `${SEQUENCE_ID}/element:a[1]`, `'${SEQUENCE_ID}/element:a[1]' has a ref attribute and cannot carry an inline complexType`],
-    ["an element with an inline complexType", "/element:withType", "'/element:withType' already has an anonymous complexType"],
+    [
+      "a parent of the wrong type",
+      "/complexType:T",
+      "Parent of type 'topLevelComplexType' cannot contain a complexType",
+    ],
+    [
+      "a reference",
+      `${SEQUENCE_ID}/element:a[1]`,
+      `'${SEQUENCE_ID}/element:a[1]' has a ref attribute and cannot carry an inline complexType`,
+    ],
+    [
+      "an element with an inline complexType",
+      "/element:withType",
+      "'/element:withType' already has an anonymous complexType",
+    ],
   ])("should reject %s", (_case, parentId, error) => {
     expect(validateInlineTypeParent(parentId, SCHEMA, "complexType", PARENTS)).toEqual({ valid: false, error });
   });
@@ -182,7 +243,10 @@ describe("validateInlineTypeParent", () => {
 describe("locateType", () => {
   test("should find a top-level type", () => {
     const result = locateType("/simpleType:S", SCHEMA, "simpleType", SCHEMA.simpleType);
-    expect(result.valid && { name: result.type.name, anonymous: result.anonymous }).toEqual({ name: "S", anonymous: false });
+    expect(result.valid && { name: result.type.name, anonymous: result.anonymous }).toEqual({
+      name: "S",
+      anonymous: false,
+    });
   });
 
   test("should find an anonymous type in its parent", () => {
@@ -193,7 +257,11 @@ describe("locateType", () => {
   test.each([
     ["an empty ID", "", "Type ID cannot be empty"],
     ["a missing top-level type", "/simpleType:X", "Simple type 'X' not found in schema"],
-    ["a parent without an anonymous type", "/element:a/anonymousSimpleType[0]", "No anonymous simpleType found in parent: /element:a"],
+    [
+      "a parent without an anonymous type",
+      "/element:a/anonymousSimpleType[0]",
+      "No anonymous simpleType found in parent: /element:a",
+    ],
   ])("should reject %s", (_case, typeId, error) => {
     expect(locateType(typeId, SCHEMA, "simpleType", SCHEMA.simpleType)).toEqual({ valid: false, error });
   });

@@ -16,7 +16,7 @@ import type {
   CommandExecutionValidationFailure,
 } from "../commandProcessor.js";
 import { schema } from "../../shared/types.js";
-import type { SchemaCommand , topLevelElement } from "../../shared/types.js";
+import type { SchemaCommand, topLevelElement } from "../../shared/types.js";
 import { DERIVATIONS, derivedComplexTypeT, schemaXmlWith } from "../../shared/__tests__/schemaTestHelpers.js";
 
 // ─── XML Fixtures ────────────────────────────────────────────────────────────
@@ -61,7 +61,9 @@ export const SCHEMA_WITH_ANNOTATION = schemaXmlWith(`<xs:element name="person" t
 </xs:element>`);
 
 /** Schema that declares one import. */
-export const SCHEMA_WITH_IMPORT = schemaXmlWith(`<xs:import namespace="http://example.com/ext" schemaLocation="ext.xsd"/>`);
+export const SCHEMA_WITH_IMPORT = schemaXmlWith(
+  `<xs:import namespace="http://example.com/ext" schemaLocation="ext.xsd"/>`
+);
 
 /** Schema that declares one include. */
 export const SCHEMA_WITH_INCLUDE = schemaXmlWith(`<xs:include schemaLocation="base.xsd"/>`);
@@ -72,10 +74,10 @@ export const SCHEMA_WITH_INCLUDE = schemaXmlWith(`<xs:include schemaLocation="ba
  */
 export const COMPLEX_TYPES_WITH_ANY_ATTRIBUTE: ReadonlyArray<readonly [string, string]> = [
   ["a complex type", `<xs:complexType name="T"><xs:sequence/><xs:anyAttribute/></xs:complexType>`],
-  ...DERIVATIONS.map(([content, derivation]) => [
-    `the ${derivation} of ${content}`,
-    derivedComplexTypeT(content, derivation, "<xs:anyAttribute/>"),
-  ] as const),
+  ...DERIVATIONS.map(
+    ([content, derivation]) =>
+      [`the ${derivation} of ${content}`, derivedComplexTypeT(content, derivation, "<xs:anyAttribute/>")] as const
+  ),
 ];
 
 // ─── Pipeline Helpers ─────────────────────────────────────────────────────────
@@ -117,10 +119,7 @@ export function runCommandExpectSuccess(xml: string, command: SchemaCommand): st
  * @param command - The schema editing command to execute
  * @returns The unmarshalled schema object after the command was applied
  */
-export function runCommandExpectSuccessSchema(
-  xml: string,
-  command: SchemaCommand
-): schema {
+export function runCommandExpectSuccessSchema(xml: string, command: SchemaCommand): schema {
   const xmlContent = runCommandExpectSuccess(xml, command);
   return unmarshal(schema, xmlContent);
 }
@@ -136,11 +135,7 @@ export function runCommandExpectSuccessSchema(
  * @param command - The schema editing command to execute
  * @param expectedError - Expected exact validation error message
  */
-export function runCommandExpectValidationFailure(
-  xml: string,
-  command: SchemaCommand,
-  expectedError: string
-): void {
+export function runCommandExpectValidationFailure(xml: string, command: SchemaCommand, expectedError: string): void {
   const result = runCommand(xml, command);
   expect(result.success).toBe(false);
   const failure = result as CommandExecutionValidationFailure;

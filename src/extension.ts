@@ -4,7 +4,7 @@ import { SchemaEditorProvider } from "./webviewProvider.js";
 /**
  * Activates the Visual XML Schema Editor extension.
  * Registers the custom editor provider and commands.
- * 
+ *
  * @param context - The extension context provided by VS Code
  */
 export function activate(context: vscode.ExtensionContext): void {
@@ -12,47 +12,34 @@ export function activate(context: vscode.ExtensionContext): void {
   const provider = new SchemaEditorProvider(context);
 
   context.subscriptions.push(
-    vscode.window.registerCustomEditorProvider(
-      "visualXmlSchemaEditor.editor",
-      provider,
-      {
-        webviewOptions: {
-          retainContextWhenHidden: true,
-        },
-        supportsMultipleEditorsPerDocument: false,
-      }
-    )
+    vscode.window.registerCustomEditorProvider("visualXmlSchemaEditor.editor", provider, {
+      webviewOptions: {
+        retainContextWhenHidden: true,
+      },
+      supportsMultipleEditorsPerDocument: false,
+    })
   );
 
   // Register command to open schema in visual editor
   context.subscriptions.push(
-    vscode.commands.registerCommand(
-      "visualXmlSchemaEditor.openEditor",
-      async (uri?: vscode.Uri) => {
-        // If URI is provided (from context menu), use it
-        // Otherwise, try to get URI from active editor
-        let fileUri = uri;
+    vscode.commands.registerCommand("visualXmlSchemaEditor.openEditor", async (uri?: vscode.Uri) => {
+      // If URI is provided (from context menu), use it
+      // Otherwise, try to get URI from active editor
+      let fileUri = uri;
 
-        if (!fileUri) {
-          const editor = vscode.window.activeTextEditor;
-          if (editor?.document.fileName.endsWith(".xsd")) {
-            fileUri = editor.document.uri;
-          }
-        }
-
-        if (fileUri?.fsPath.endsWith(".xsd")) {
-          await vscode.commands.executeCommand(
-            "vscode.openWith",
-            fileUri,
-            "visualXmlSchemaEditor.editor"
-          );
-        } else {
-          await vscode.window.showErrorMessage(
-            "Please select an XSD file to open in the visual editor."
-          );
+      if (!fileUri) {
+        const editor = vscode.window.activeTextEditor;
+        if (editor?.document.fileName.endsWith(".xsd")) {
+          fileUri = editor.document.uri;
         }
       }
-    )
+
+      if (fileUri?.fsPath.endsWith(".xsd")) {
+        await vscode.commands.executeCommand("vscode.openWith", fileUri, "visualXmlSchemaEditor.editor");
+      } else {
+        await vscode.window.showErrorMessage("Please select an XSD file to open in the visual editor.");
+      }
+    })
   );
 }
 

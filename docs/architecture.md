@@ -54,11 +54,11 @@ This documentation describes the editor as it is developed on the branch `copilo
 
 The code is split into three parts that run in two separate environments:
 
-| Part | Folder | Runs in | Responsibility |
-|---|---|---|---|
-| Extension host | `src/` | VS Code extension host (Node.js) | Registers the custom editor, parses and serializes XSD, validates and executes edit commands, writes changes to the document. |
-| Webview | `webview-src/` | Sandboxed webview (browser) | Renders the diagram, palette and properties panel; turns user interactions into commands. |
-| Shared | `shared/` | Both (compiled into each side) | Schema model classes generated from the XSD meta-schema, command and message types, the ID strategy and small schema utilities. |
+| Part           | Folder         | Runs in                          | Responsibility                                                                                                                  |
+| -------------- | -------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Extension host | `src/`         | VS Code extension host (Node.js) | Registers the custom editor, parses and serializes XSD, validates and executes edit commands, writes changes to the document.   |
+| Webview        | `webview-src/` | Sandboxed webview (browser)      | Renders the diagram, palette and properties panel; turns user interactions into commands.                                       |
+| Shared         | `shared/`      | Both (compiled into each side)   | Schema model classes generated from the XSD meta-schema, command and message types, the ID strategy and small schema utilities. |
 
 ```mermaid
 flowchart LR
@@ -109,26 +109,26 @@ The `shared/` code is imported by both sides and compiled into each separately. 
 
 The rule of thumb: if an application that binds a completely different XML format would need it as well, it belongs in `xmlbind-ts`. If it needs XSD semantics or VS Code, it belongs in the editor. The [scope of xmlbind-ts](https://github.com/neumaennl/xmlbind-ts/blob/main/docs/architecture.md#scope) describes the library's part in detail.
 
-| Concern | Owner | Why |
-|---|---|---|
-| Parsing and writing XML, and the choice of the libraries that do it | xmlbind-ts | Generic. |
-| Decorators, the `xsd2ts` generator, and the conversion of values to the type of their field | xmlbind-ts | Generic binding mechanics. |
-| Keeping the source on a round trip: order, comments, processing instructions, prefixes, attribute order, quotes, empty-element style and indentation | xmlbind-ts | Every application that writes a document back needs it. |
-| Keeping content that no field maps, such as XSD 1.1 constructs or foreign elements | xmlbind-ts | The same. |
-| Reporting what a round trip drops or changes | xmlbind-ts | Only the library sees it. It reports facts, not decisions. |
-| What happens to a schema that does not survive a round trip unchanged: warn, read-only, or refuse to save | Editor | A product decision. |
-| Which schema for schemas the classes are generated from (XSD 1.0), and keeping them up to date | Editor | XSD-specific. |
-| What a valid edit is: commands and their validation, such as "a group that is still referenced cannot be removed" | Editor | XSD semantics. |
-| Resolving QNames, included and imported schemas, and the symbol table | Editor | XSD semantics. |
-| Diagram, properties panel, `WorkspaceEdit`, undo and redo | Editor | VS Code and UI. |
-| Tests that a command changes only what it should | Editor | Only the editor knows what a command should change. |
+| Concern                                                                                                                                              | Owner      | Why                                                        |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | ---------------------------------------------------------- |
+| Parsing and writing XML, and the choice of the libraries that do it                                                                                  | xmlbind-ts | Generic.                                                   |
+| Decorators, the `xsd2ts` generator, and the conversion of values to the type of their field                                                          | xmlbind-ts | Generic binding mechanics.                                 |
+| Keeping the source on a round trip: order, comments, processing instructions, prefixes, attribute order, quotes, empty-element style and indentation | xmlbind-ts | Every application that writes a document back needs it.    |
+| Keeping content that no field maps, such as XSD 1.1 constructs or foreign elements                                                                   | xmlbind-ts | The same.                                                  |
+| Reporting what a round trip drops or changes                                                                                                         | xmlbind-ts | Only the library sees it. It reports facts, not decisions. |
+| What happens to a schema that does not survive a round trip unchanged: warn, read-only, or refuse to save                                            | Editor     | A product decision.                                        |
+| Which schema for schemas the classes are generated from (XSD 1.0), and keeping them up to date                                                       | Editor     | XSD-specific.                                              |
+| What a valid edit is: commands and their validation, such as "a group that is still referenced cannot be removed"                                    | Editor     | XSD semantics.                                             |
+| Resolving QNames, included and imported schemas, and the symbol table                                                                                | Editor     | XSD semantics.                                             |
+| Diagram, properties panel, `WorkspaceEdit`, undo and redo                                                                                            | Editor     | VS Code and UI.                                            |
+| Tests that a command changes only what it should                                                                                                     | Editor     | Only the editor knows what a command should change.        |
 
 # Runtime dependencies
 
-| Package | Used by | Purpose |
-|---|---|---|
+| Package                 | Used by        | Purpose                                                                                                                                 |
+| ----------------------- | -------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | `@neumaennl/xmlbind-ts` | Extension host | `unmarshal` (XML → objects) and `marshal` (objects → XML) for the generated schema classes; the `xsd2ts` generator used to create them. |
-| `@vscode/codicons` | Webview | Icon font, loaded from `node_modules` through `webview.asWebviewUri`. |
+| `@vscode/codicons`      | Webview        | Icon font, loaded from `node_modules` through `webview.asWebviewUri`.                                                                   |
 
 The build outputs are `out/` (extension host and shared code, compiled by `tsc` to ES modules, because the package has `"type": "module"`; relative imports have the `.js` extension) and `webview/` (the Vite bundle `main.js`, an ES module, plus `styles.css`).[^vite-config] See [Build and packaging](build-and-packaging.md).
 
@@ -191,12 +191,12 @@ exampleFiles/             Sample XSD files for manual testing
 
 **Risks.** The ADR names four risks. Their mitigation today:
 
-| Risk | Mitigation in the code | Open |
-|---|---|---|
-| XML marshalling | `xmlbind-ts` marshals the schema; the result is parsed again before it is written (see [Persistence](persistence.md#command-pipeline)). | No fallback to text edits. Serialization reformats the document (see [Persistence](persistence.md#what-serialization-changes) and [Known issues](known-issues.md#every-command-reformats-the-whole-document)). |
-| Performance with large schemas | Children of collapsed nodes are neither laid out nor drawn. | No incremental update, no virtual scrolling, no performance tests (see [Known issues](known-issues.md#diagram-is-rebuilt-in-full-on-every-change)). |
-| Undo and redo | Every command is one `WorkspaceEdit`, undone as one step. | None. |
-| State synchronization | The document is the single source of truth; the webview re-renders from every `updateSchema`. | Commands can overlap while an edit is applied, and the view state is not fully restored (see [Known issues](known-issues.md#commands-can-overlap-while-an-edit-is-applied) and [Known issues](known-issues.md#view-state-is-not-restored-after-reopening)). |
+| Risk                           | Mitigation in the code                                                                                                                  | Open                                                                                                                                                                                                                                                        |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| XML marshalling                | `xmlbind-ts` marshals the schema; the result is parsed again before it is written (see [Persistence](persistence.md#command-pipeline)). | No fallback to text edits. Serialization reformats the document (see [Persistence](persistence.md#what-serialization-changes) and [Known issues](known-issues.md#every-command-reformats-the-whole-document)).                                              |
+| Performance with large schemas | Children of collapsed nodes are neither laid out nor drawn.                                                                             | No incremental update, no virtual scrolling, no performance tests (see [Known issues](known-issues.md#diagram-is-rebuilt-in-full-on-every-change)).                                                                                                         |
+| Undo and redo                  | Every command is one `WorkspaceEdit`, undone as one step.                                                                               | None.                                                                                                                                                                                                                                                       |
+| State synchronization          | The document is the single source of truth; the webview re-renders from every `updateSchema`.                                           | Commands can overlap while an edit is applied, and the view state is not fully restored (see [Known issues](known-issues.md#commands-can-overlap-while-an-edit-is-applied) and [Known issues](known-issues.md#view-state-is-not-restored-after-reopening)). |
 
 [^manifest]: Extension manifest
 

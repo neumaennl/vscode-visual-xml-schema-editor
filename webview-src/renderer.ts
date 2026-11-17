@@ -1,15 +1,8 @@
 import type { schema } from "../shared/types";
 import type { ViewState, RenderedNode } from "./webviewTypes";
 import type { DiagramOptions } from "../shared/messages";
-import type {
-  Diagram,
-  DiagramItem,
-} from "./diagram";
-import {
-  DiagramBuilder,
-  DiagramLayout,
-  DiagramSvgRenderer
-} from "./diagram";
+import type { Diagram, DiagramItem } from "./diagram";
+import { DiagramBuilder, DiagramLayout, DiagramSvgRenderer } from "./diagram";
 import {
   getActiveDraggedPaletteSchemaConstruct,
   PALETTE_MIME_TYPE,
@@ -28,15 +21,9 @@ export class DiagramRenderer {
   private currentDiagram: Diagram | null = null;
   private svgRenderer: DiagramSvgRenderer;
   private layout: DiagramLayout;
-  private onNodeClickCallback:
-    | ((node: DiagramItem, isExpandButton: boolean) => void)
-    | null = null;
-  private onNodeDropCallback:
-    | ((node: DiagramItem, construct: string) => void)
-    | null = null;
-  private canDropOnNodeCallback:
-    | ((node: DiagramItem, construct: string) => boolean)
-    | null = null;
+  private onNodeClickCallback: ((node: DiagramItem, isExpandButton: boolean) => void) | null = null;
+  private onNodeDropCallback: ((node: DiagramItem, construct: string) => void) | null = null;
+  private canDropOnNodeCallback: ((node: DiagramItem, construct: string) => boolean) | null = null;
 
   /**
    * Find a diagram item by its ID in the current diagram.
@@ -57,10 +44,7 @@ export class DiagramRenderer {
     this.viewState = viewState;
 
     // Create main group for transformations
-    this.mainGroup = document.createElementNS(
-      "http://www.w3.org/2000/svg",
-      "g"
-    );
+    this.mainGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
     this.canvas.appendChild(this.mainGroup);
     this.updateView(viewState);
 
@@ -102,8 +86,7 @@ export class DiagramRenderer {
 
       // Apply diagram options
       this.currentDiagram.showDocumentation = diagramOptions.showDocumentation;
-      this.currentDiagram.alwaysShowOccurrence =
-        diagramOptions.alwaysShowOccurrence;
+      this.currentDiagram.alwaysShowOccurrence = diagramOptions.alwaysShowOccurrence;
       this.currentDiagram.showType = diagramOptions.showType;
 
       // Restore expand state
@@ -188,9 +171,7 @@ export class DiagramRenderer {
    *
    * @param onNodeDrop - Callback that receives target node and dropped XML schema construct from palette
    */
-  public setDropHandler(
-    onNodeDrop: (node: DiagramItem, construct: string) => void
-  ): void {
+  public setDropHandler(onNodeDrop: (node: DiagramItem, construct: string) => void): void {
     this.onNodeDropCallback = onNodeDrop;
   }
 
@@ -199,9 +180,7 @@ export class DiagramRenderer {
    *
    * @param canDropOnNode - Callback that returns true when dropping is allowed
    */
-  public setNodeDropValidator(
-    canDropOnNode: (node: DiagramItem, construct: string) => boolean
-  ): void {
+  public setNodeDropValidator(canDropOnNode: (node: DiagramItem, construct: string) => boolean): void {
     this.canDropOnNodeCallback = canDropOnNode;
   }
 
@@ -232,14 +211,8 @@ export class DiagramRenderer {
       }
 
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- jsdom, which runs the tests, has no elementFromPoint()
-      const maybeElementUnderPointer = document.elementFromPoint?.(
-        event.clientX,
-        event.clientY
-      );
-      if (
-        maybeElementUnderPointer &&
-        itemGroup.contains(maybeElementUnderPointer)
-      ) {
+      const maybeElementUnderPointer = document.elementFromPoint?.(event.clientX, event.clientY);
+      if (maybeElementUnderPointer && itemGroup.contains(maybeElementUnderPointer)) {
         return;
       }
 
@@ -295,9 +268,7 @@ export class DiagramRenderer {
     const item = this.findItemById(itemId);
     const construct = this.getDraggedPaletteSchemaConstruct(event);
     const canDrop =
-      !!item &&
-      !!construct &&
-      (!this.canDropOnNodeCallback || this.canDropOnNodeCallback(item, construct));
+      !!item && !!construct && (!this.canDropOnNodeCallback || this.canDropOnNodeCallback(item, construct));
 
     return { itemGroup, item, construct, canDrop };
   }
@@ -332,12 +303,7 @@ export class DiagramRenderer {
    * @param className - CSS class name
    * @returns The created SVG text element
    */
-  private createText(
-    x: number,
-    y: number,
-    content: string,
-    className: string
-  ): SVGTextElement {
+  private createText(x: number, y: number, content: string, className: string): SVGTextElement {
     const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
     text.setAttribute("x", x.toString());
     text.setAttribute("y", y.toString());
@@ -369,17 +335,10 @@ export class DiagramRenderer {
    */
   public fitToCanvas(padding = 24): ViewState {
     const bbox = this.mainGroup.getBBox();
-    const canvasWidth =
-      this.canvas.clientWidth || this.canvas.viewBox.baseVal.width || 0;
-    const canvasHeight =
-      this.canvas.clientHeight || this.canvas.viewBox.baseVal.height || 0;
+    const canvasWidth = this.canvas.clientWidth || this.canvas.viewBox.baseVal.width || 0;
+    const canvasHeight = this.canvas.clientHeight || this.canvas.viewBox.baseVal.height || 0;
 
-    if (
-      canvasWidth === 0 ||
-      canvasHeight === 0 ||
-      bbox.width === 0 ||
-      bbox.height === 0
-    ) {
+    if (canvasWidth === 0 || canvasHeight === 0 || bbox.width === 0 || bbox.height === 0) {
       return this.viewState;
     }
 
@@ -452,10 +411,7 @@ export class DiagramRenderer {
   public showMessage(message: string): void {
     // Clear canvas and show message
     this.canvas.innerHTML = "";
-    this.mainGroup = document.createElementNS(
-      "http://www.w3.org/2000/svg",
-      "g"
-    );
+    this.mainGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
     this.canvas.appendChild(this.mainGroup);
 
     const text = this.createText(50, 50, message, "info-message");

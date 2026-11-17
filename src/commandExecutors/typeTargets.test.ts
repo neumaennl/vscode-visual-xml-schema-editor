@@ -70,14 +70,21 @@ describe("removeType", () => {
       "Complex type /element:named/anonymousComplexType[0] not found",
     ],
   ] as const)("should fail for %s", (_case, typeId, kind, error) => {
-    expect(() => { removeType(createSchema(), typeId, kind); }).toThrow(error);
+    expect(() => {
+      removeType(createSchema(), typeId, kind);
+    }).toThrow(error);
   });
 });
 
 describe("locateModifiedType", () => {
   test("should locate an anonymous type", () => {
     const schemaObj = createSchema();
-    const result = locateModifiedType(schemaObj, "/element:anonymous/anonymousComplexType[0]", "complexType", undefined);
+    const result = locateModifiedType(
+      schemaObj,
+      "/element:anonymous/anonymousComplexType[0]",
+      "complexType",
+      undefined
+    );
     expect(result).toEqual({ type: schemaObj.element?.[1]!.complexType, topLevel: false });
   });
 

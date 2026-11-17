@@ -17,7 +17,10 @@ import { createSection, createToggleRow } from "./propertiesPanelDom";
  * @param dispatchCommand - Callback used to emit schema-edit commands
  * @returns The section
  */
-export function renderConstraintsSection(node: DiagramItem, dispatchCommand: (command: SchemaCommand) => void): HTMLElement {
+export function renderConstraintsSection(
+  node: DiagramItem,
+  dispatchCommand: (command: SchemaCommand) => void
+): HTMLElement {
   const section = createSection("lock", "CONSTRAINTS");
 
   const nodeType = getNodeType(node);
@@ -100,8 +103,5 @@ export function renderConstraintsSection(node: DiagramItem, dispatchCommand: (co
  */
 export function canShowConstraintsSection(node: DiagramItem): boolean {
   const nodeType = getNodeType(node);
-  return (
-    nodeType === SchemaNodeType.Element ||
-    nodeType === SchemaNodeType.ComplexType
-  );
+  return nodeType === SchemaNodeType.Element || nodeType === SchemaNodeType.ComplexType;
 }

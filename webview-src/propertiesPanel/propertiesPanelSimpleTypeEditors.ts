@@ -22,9 +22,7 @@ import { getReadOnlyTypeValue } from "./propertiesPanelTypeHelpers";
  * @param node - Diagram node being edited
  * @returns The current simpleType derivation kind
  */
-export function getSimpleTypeDerivationKind(
-  node: DiagramItem
-): "restriction" | "list" | "union" {
+export function getSimpleTypeDerivationKind(node: DiagramItem): "restriction" | "list" | "union" {
   return node.simpleTypeDerivationKind ?? "restriction";
 }
 
@@ -77,9 +75,7 @@ function showUnionBody(node: DiagramItem, memberTypes: string[], hasInlineSimple
  */
 export function isSimpleTypeNode(nodeType: SchemaNodeType | null, hasInlineSimpleType: boolean): boolean {
   return (
-    nodeType === SchemaNodeType.SimpleType ||
-    nodeType === SchemaNodeType.AnonymousSimpleType ||
-    hasInlineSimpleType
+    nodeType === SchemaNodeType.SimpleType || nodeType === SchemaNodeType.AnonymousSimpleType || hasInlineSimpleType
   );
 }
 
@@ -192,14 +188,19 @@ export function renderSimpleTypeListEditor(context: SimpleTypeEditorContext): vo
   showInlineSimpleType(context);
 
   root.appendChild(
-    createEditableField("Item Type", itemType, onTypeChange(node, itemType, (normalizedNext) => {
-      const command = createSimpleTypeListCommand(node, normalizedNext);
-      if (!command) {
-        return;
-      }
-      showListBody(node, normalizedNext, hasInlineSimpleType);
-      dispatchCommand(command);
-    }), typeSuggestions)
+    createEditableField(
+      "Item Type",
+      itemType,
+      onTypeChange(node, itemType, (normalizedNext) => {
+        const command = createSimpleTypeListCommand(node, normalizedNext);
+        if (!command) {
+          return;
+        }
+        showListBody(node, normalizedNext, hasInlineSimpleType);
+        dispatchCommand(command);
+      }),
+      typeSuggestions
+    )
   );
 
   if (hasInlineSimpleType) {
@@ -216,9 +217,7 @@ export function renderSimpleTypeListEditor(context: SimpleTypeEditorContext): vo
  */
 export function renderSimpleTypeUnionEditor(context: SimpleTypeEditorContext): void {
   const { root, node, hasInlineSimpleType, typeSuggestions, dispatchCommand } = context;
-  const initialMemberTypes = node.simpleTypeUnionMemberTypes
-    ? [...node.simpleTypeUnionMemberTypes]
-    : [];
+  const initialMemberTypes = node.simpleTypeUnionMemberTypes ? [...node.simpleTypeUnionMemberTypes] : [];
   const memberTypes = initialMemberTypes.length > 0 ? initialMemberTypes : [""];
   showInlineSimpleType(context);
 
@@ -293,8 +292,7 @@ export function renderSimpleTypeUnionEditor(context: SimpleTypeEditorContext): v
 
       const deleteButton = document.createElement("button");
       deleteButton.type = "button";
-      deleteButton.className =
-        "property-docs-action property-docs-action-destructive property-docs-action-icon-only";
+      deleteButton.className = "property-docs-action property-docs-action-destructive property-docs-action-icon-only";
       deleteButton.setAttribute("aria-label", "Remove member type");
       deleteButton.title = "Remove member type";
       const iconSpan = document.createElement("span");

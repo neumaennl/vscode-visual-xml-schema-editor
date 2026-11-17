@@ -12,15 +12,19 @@ import type {
   ModifyAttributeGroupCommand,
   annotationType,
 } from "../../shared/types.js";
-import {
-  schema
-} from "../../shared/types.js";
+import { schema } from "../../shared/types.js";
 import {
   executeAddAttributeGroup,
   executeRemoveAttributeGroup,
   executeModifyAttributeGroup,
 } from "./attributeGroupExecutors.js";
-import { emptySchema, schemaWith, schemaWithAttrGroups, DERIVATIONS, derivedComplexTypeT } from "../../shared/__tests__/schemaTestHelpers.js";
+import {
+  emptySchema,
+  schemaWith,
+  schemaWithAttrGroups,
+  DERIVATIONS,
+  derivedComplexTypeT,
+} from "../../shared/__tests__/schemaTestHelpers.js";
 import { readTestSchema } from "../__tests__/resourceTestHelpers.js";
 
 /**
@@ -88,7 +92,6 @@ const COMMON_ATTRS_REF = `<xs:attributeGroup ref="CommonAttrs"/>`;
 function complexTypeT(schemaObj: schema): topLevelComplexType {
   return (schemaObj.complexType ?? []).find((ct) => ct.name === "T")!;
 }
-
 
 /**
  * Asserts that an annotation has the single documentation `New` and still its one appinfo.
@@ -197,13 +200,10 @@ describe("AttributeGroup Executors", () => {
 
         addAttributeGroup(schemaObj, { ref: "BaseAttrs", parentId: "/attributeGroup:ExtendedAttrs" });
 
-        const extGroup = (schemaObj.attributeGroup ?? []).find(
-          (g) => g.name === "ExtendedAttrs"
-        );
+        const extGroup = (schemaObj.attributeGroup ?? []).find((g) => g.name === "ExtendedAttrs");
         expect(extGroup?.attributeGroup ?? []).toHaveLength(1);
         expect((extGroup?.attributeGroup ?? [])[0]!.ref).toBe("BaseAttrs");
       });
-
     });
   });
 
@@ -226,7 +226,6 @@ describe("AttributeGroup Executors", () => {
         expect(schemaObj.attributeGroup ?? []).toHaveLength(1);
         expect((schemaObj.attributeGroup ?? [])[0]!.name).toBe("GroupB");
       });
-
     });
 
     describe("reference mode", () => {
@@ -262,12 +261,9 @@ describe("AttributeGroup Executors", () => {
 
         removeAttributeGroup(schemaObj, { groupId: "/attributeGroup:ExtendedAttrs/attributeGroupRef:BaseAttrs[0]" });
 
-        const extGroup = (schemaObj.attributeGroup ?? []).find(
-          (g) => g.name === "ExtendedAttrs"
-        );
+        const extGroup = (schemaObj.attributeGroup ?? []).find((g) => g.name === "ExtendedAttrs");
         expect(extGroup?.attributeGroup).toBeUndefined();
       });
-
     });
   });
 
@@ -341,7 +337,6 @@ describe("AttributeGroup Executors", () => {
         const agRef = (ct.attributeGroup ?? [])[0]!;
         expect(agRef.annotation?.documentation?.[0]!.value).toBe("Ref annotation");
       });
-
     });
   });
   describe("identifying references", () => {
@@ -376,7 +371,6 @@ describe("AttributeGroup Executors", () => {
 
       expect(refsOfT(schemaObj)).toEqual(["OtherAttrs", "OtherAttrs"]);
     });
-
   });
 
   describe("references in derived complex types", () => {
@@ -448,15 +442,16 @@ describe("AttributeGroup Executors", () => {
 
     test("should replace the documentation of a reference and keep its appinfo", () => {
       const schemaObj = schemaWithAttrGroups(
-        `<xs:complexType name="T"><xs:attributeGroup ref="CommonAttrs">${ANNOTATION}</xs:attributeGroup></xs:complexType>`,
+        `<xs:complexType name="T"><xs:attributeGroup ref="CommonAttrs">${ANNOTATION}</xs:attributeGroup></xs:complexType>`
       );
 
-      modifyAttributeGroup(schemaObj, { groupId: "/complexType:T/attributeGroupRef:CommonAttrs[0]", documentation: "New" });
+      modifyAttributeGroup(schemaObj, {
+        groupId: "/complexType:T/attributeGroupRef:CommonAttrs[0]",
+        documentation: "New",
+      });
 
       const t = (schemaObj.complexType ?? []).find((ct) => ct.name === "T");
       expectNewDocumentationAndKeptAppinfo(t?.attributeGroup?.[0]!.annotation);
     });
-
   });
-
 });

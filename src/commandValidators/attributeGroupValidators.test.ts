@@ -74,10 +74,7 @@ const REFERENCE_PLACES: Array<[string, string]> = [
     `<xs:complexType name="Base"/>
      <xs:complexType name="T"><xs:sequence><xs:element name="child"><xs:complexType><xs:complexContent><xs:extension base="Base"><xs:attributeGroup ref="REF"/></xs:extension></xs:complexContent></xs:complexType></xs:element></xs:sequence></xs:complexType>`,
   ],
-  [
-    "another attribute group",
-    `<xs:attributeGroup name="Combined"><xs:attributeGroup ref="REF"/></xs:attributeGroup>`,
-  ],
+  ["another attribute group", `<xs:attributeGroup name="Combined"><xs:attributeGroup ref="REF"/></xs:attributeGroup>`],
   ...localElementPlaces(LOCAL_ELEMENT_WITH_REF),
 ];
 
@@ -105,7 +102,10 @@ describe("AttributeGroup Validators", () => {
       });
 
       test("should reject addAttributeGroup with an invalid XML name", () => {
-        const result = validateAddAttributeGroup({ type: "addAttributeGroup", payload: { groupName: "123-invalid" } }, schemaObj);
+        const result = validateAddAttributeGroup(
+          { type: "addAttributeGroup", payload: { groupName: "123-invalid" } },
+          schemaObj
+        );
         expectInvalid(result);
         expect(result.error).toBe("Attribute group name must be a valid XML name");
       });
@@ -122,7 +122,10 @@ describe("AttributeGroup Validators", () => {
       });
 
       test("should accept addAttributeGroup with a valid unique name", () => {
-        const result = validateAddAttributeGroup({ type: "addAttributeGroup", payload: { groupName: "NewAttrs" } }, schemaObj);
+        const result = validateAddAttributeGroup(
+          { type: "addAttributeGroup", payload: { groupName: "NewAttrs" } },
+          schemaObj
+        );
         expect(result.valid).toBe(true);
       });
 
@@ -226,7 +229,7 @@ describe("AttributeGroup Validators", () => {
 
         const result = validateAddAttributeGroup(
           command,
-          schemaWithAttrGroups(`<xs:element name="root"><xs:complexType/></xs:element>`),
+          schemaWithAttrGroups(`<xs:element name="root"><xs:complexType/></xs:element>`)
         );
         expect(result.valid).toBe(true);
       });
@@ -249,19 +252,21 @@ describe("AttributeGroup Validators", () => {
 
         const result = validateAddAttributeGroup(
           command,
-          schemaWithAttrGroups(`<xs:element name="root" type="xs:string"/>`),
+          schemaWithAttrGroups(`<xs:element name="root" type="xs:string"/>`)
         );
         expectInvalid(result);
         expect(result.error).toBe("Cannot add attribute group reference to parent type: topLevelElement");
       });
     });
-
   });
 
   describe("validateRemoveAttributeGroup", () => {
     describe("definition mode", () => {
       test("should reject removeAttributeGroup with missing groupId", () => {
-        const result = validateRemoveAttributeGroup({ type: "removeAttributeGroup", payload: { groupId: "" } }, schemaObj);
+        const result = validateRemoveAttributeGroup(
+          { type: "removeAttributeGroup", payload: { groupId: "" } },
+          schemaObj
+        );
         expectInvalid(result);
         expect(result.error).toBe("Attribute group ID cannot be empty");
       });
@@ -279,7 +284,10 @@ describe("AttributeGroup Validators", () => {
 
       test.each([
         ["a complexType", PERSON_TYPE_WITH_REF_XSD],
-        ["the inline complexType of a local element in a sequence", "attribute-group-ref-in-local-element-in-sequence.xsd"],
+        [
+          "the inline complexType of a local element in a sequence",
+          "attribute-group-ref-in-local-element-in-sequence.xsd",
+        ],
         ["the inline complexType of a local element in a choice", "attribute-group-ref-in-local-element-in-choice.xsd"],
       ])("should reject removeAttributeGroup when group is referenced in %s", (_place, file) => {
         const result = validateRemoveAttributeGroup(
@@ -355,15 +363,21 @@ describe("AttributeGroup Validators", () => {
         expect(result.error).toBe("Attribute group is still referenced and cannot be removed: CommonAttrs");
       });
 
-      test.each(REFERENCE_PLACES)("should accept removing a group when only another group is referenced in %s", (_, body) => {
-        const command: RemoveAttributeGroupCommand = {
-          type: "removeAttributeGroup",
-          payload: { groupId: "/attributeGroup:CommonAttrs" },
-        };
+      test.each(REFERENCE_PLACES)(
+        "should accept removing a group when only another group is referenced in %s",
+        (_, body) => {
+          const command: RemoveAttributeGroupCommand = {
+            type: "removeAttributeGroup",
+            payload: { groupId: "/attributeGroup:CommonAttrs" },
+          };
 
-        const result = validateRemoveAttributeGroup(command, schemaWithAttrGroups(body.replace(/REF/g, "OtherAttrs")));
-        expect(result.valid).toBe(true);
-      });
+          const result = validateRemoveAttributeGroup(
+            command,
+            schemaWithAttrGroups(body.replace(/REF/g, "OtherAttrs"))
+          );
+          expect(result.valid).toBe(true);
+        }
+      );
     });
 
     describe("identifying a reference", () => {
@@ -431,13 +445,15 @@ describe("AttributeGroup Validators", () => {
         expect(result.error).toBe("Invalid attributeGroupRef ID: /attributeGroupRef:CommonAttrs[0]");
       });
     });
-
   });
 
   describe("validateModifyAttributeGroup", () => {
     describe("definition mode", () => {
       test("should reject modifyAttributeGroup with missing groupId", () => {
-        const result = validateModifyAttributeGroup({ type: "modifyAttributeGroup", payload: { groupId: "" } }, schemaObj);
+        const result = validateModifyAttributeGroup(
+          { type: "modifyAttributeGroup", payload: { groupId: "" } },
+          schemaObj
+        );
         expectInvalid(result);
         expect(result.error).toBe("Attribute group ID cannot be empty");
       });
@@ -615,13 +631,13 @@ describe("AttributeGroup Validators", () => {
       test("should accept a reference without a new ref", () => {
         const command: ModifyAttributeGroupCommand = {
           type: "modifyAttributeGroup",
-          payload: { groupId: "/complexType:PersonType/attributeGroupRef:CommonAttrs[0]", documentation: "Shared attributes" },
+          payload: {
+            groupId: "/complexType:PersonType/attributeGroupRef:CommonAttrs[0]",
+            documentation: "Shared attributes",
+          },
         };
 
-        const result = validateModifyAttributeGroup(
-          command,
-          schemaWithAttrGroups(PERSON_TYPE_WITH_COMMON_ATTRS_REF),
-        );
+        const result = validateModifyAttributeGroup(command, schemaWithAttrGroups(PERSON_TYPE_WITH_COMMON_ATTRS_REF));
         expect(result.valid).toBe(true);
       });
     });
@@ -644,15 +660,11 @@ describe("AttributeGroup Validators", () => {
           payload: { groupId: "/complexType:PersonType/attributeGroupRef:CommonAttrs[0]", ref: "123-invalid" },
         };
 
-        const result = validateModifyAttributeGroup(
-          command,
-          schemaWithAttrGroups(PERSON_TYPE_WITH_COMMON_ATTRS_REF),
-        );
+        const result = validateModifyAttributeGroup(command, schemaWithAttrGroups(PERSON_TYPE_WITH_COMMON_ATTRS_REF));
         expectInvalid(result);
         expect(result.error).toBe("Attribute group ref must be a valid XML name");
       });
     });
-
   });
 
   describe("references in the extension of a derived complexType", () => {

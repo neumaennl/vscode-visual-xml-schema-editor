@@ -265,7 +265,9 @@ describe("createDocsTab", () => {
       // An attribute is no node of the diagram; its ID stands for any node without a documentation target
       const node = new DiagramItem("/complexType:T/attribute:a", "a", DiagramItemType.element, new Diagram());
 
-      expect(() => createDocsTab(node, vi.fn(), vi.fn())).toThrow("Documentation cannot be added to /complexType:T/attribute:a");
+      expect(() => createDocsTab(node, vi.fn(), vi.fn())).toThrow(
+        "Documentation cannot be added to /complexType:T/attribute:a"
+      );
     });
 
     test("should also offer an empty annotation for the schema", () => {

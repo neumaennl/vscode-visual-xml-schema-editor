@@ -159,7 +159,6 @@ describe("executeRemoveAnnotation", () => {
     const elem = (schemaObj.element ?? [])[0]!;
     expect(elem.annotation).toBeUndefined();
   });
-
 });
 
 // ─── executeModifyAnnotation ─────────────────────────────────────────────────
@@ -220,7 +219,6 @@ describe("executeModifyAnnotation", () => {
 
     expect(valuesOf((schemaObj.element ?? [])[0]!.annotation?.appinfo)).toEqual(["new-info"]);
   });
-
 });
 
 // ─── executeAddDocumentation ─────────────────────────────────────────────────
@@ -264,7 +262,6 @@ describe("executeAddDocumentation", () => {
     const documentations = (schemaObj.element ?? [])[0]!.annotation?.documentation ?? [];
     expect(documentations[0]!._anyAttributes?.["xml:lang"]).toBeUndefined();
   });
-
 });
 
 // ─── executeRemoveDocumentation ──────────────────────────────────────────────
@@ -308,11 +305,10 @@ describe("executeRemoveDocumentation", () => {
       payload: { documentationId: "/element:person" },
     };
 
-    expect(() => { executeRemoveDocumentation(command, schemaObj); }).toThrow(
-      "Invalid documentationId format"
-    );
+    expect(() => {
+      executeRemoveDocumentation(command, schemaObj);
+    }).toThrow("Invalid documentationId format");
   });
-
 });
 
 // ─── executeModifyDocumentation ──────────────────────────────────────────────
@@ -390,11 +386,10 @@ describe("executeModifyDocumentation", () => {
       payload: { documentationId: "doc-123", content: "x" },
     };
 
-    expect(() => { executeModifyDocumentation(command, schemaObj); }).toThrow(
-      "Invalid documentationId format"
-    );
+    expect(() => {
+      executeModifyDocumentation(command, schemaObj);
+    }).toThrow("Invalid documentationId format");
   });
-
 });
 
 // ─── Schema-root annotation operations ──────────────────────────────────────
@@ -466,7 +461,6 @@ describe("executeRemoveAnnotation — schema root", () => {
 
     expect(schemaObj.annotation).toBeUndefined();
   });
-
 });
 
 describe("executeModifyAnnotation — schema root", () => {
@@ -495,7 +489,6 @@ describe("executeModifyAnnotation — schema root", () => {
     // First annotation untouched
     expect((annotations[0]!.documentation ?? [])[0]!.value).toBe("First.");
   });
-
 });
 
 describe("executeAddDocumentation — schema root", () => {
@@ -535,7 +528,6 @@ describe("executeAddDocumentation — schema root", () => {
     // First annotation untouched
     expect(annotations[0]!.documentation ?? []).toHaveLength(1);
   });
-
 });
 
 describe("executeRemoveDocumentation — schema root", () => {
@@ -581,7 +573,6 @@ describe("executeRemoveDocumentation — schema root", () => {
     // When the last documentation is removed, the property should be undefined
     expect(annotation.documentation).toBeUndefined();
   });
-
 });
 
 describe("executeModifyDocumentation — schema root", () => {

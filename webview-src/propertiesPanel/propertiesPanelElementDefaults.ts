@@ -23,14 +23,24 @@ export function renderElementDefaultFixedSection(
   row.className = "property-row-2col";
 
   // An empty value removes the default or fixed value
-  const defaultCol = createInputColumn("default", node.elementDefault ?? "", (val) => {
-    node.elementDefault = val || undefined;
-    dispatchCommand({ type: "modifyElement", payload: { elementId: node.id, default_: val } });
-  }, "—");
-  const fixedCol = createInputColumn("fixed", node.elementFixed ?? "", (val) => {
-    node.elementFixed = val || undefined;
-    dispatchCommand({ type: "modifyElement", payload: { elementId: node.id, fixed: val } });
-  }, "—");
+  const defaultCol = createInputColumn(
+    "default",
+    node.elementDefault ?? "",
+    (val) => {
+      node.elementDefault = val || undefined;
+      dispatchCommand({ type: "modifyElement", payload: { elementId: node.id, default_: val } });
+    },
+    "—"
+  );
+  const fixedCol = createInputColumn(
+    "fixed",
+    node.elementFixed ?? "",
+    (val) => {
+      node.elementFixed = val || undefined;
+      dispatchCommand({ type: "modifyElement", payload: { elementId: node.id, fixed: val } });
+    },
+    "—"
+  );
 
   row.appendChild(defaultCol);
   row.appendChild(fixedCol);

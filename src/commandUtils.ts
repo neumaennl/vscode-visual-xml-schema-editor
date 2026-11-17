@@ -32,14 +32,15 @@ export function parseSchemaAnnotationId(id: string): number | null {
  * @param id - The ID
  * @returns Annotation and documentation indices, or null if the format does not match.
  */
-export function parseSchemaDocumentationId(
-  id: string
-): { annotationIndex: number; documentationIndex: number } | null {
+export function parseSchemaDocumentationId(id: string): { annotationIndex: number; documentationIndex: number } | null {
   const match = /^\/schema\/annotation\[(\d+)\]\/documentation\[(\d+)\]$/.exec(id);
   if (!match) {
     return null;
   }
-  return { annotationIndex: parseInt(requireGroup(match, 1), 10), documentationIndex: parseInt(requireGroup(match, 2), 10) };
+  return {
+    annotationIndex: parseInt(requireGroup(match, 1), 10),
+    documentationIndex: parseInt(requireGroup(match, 2), 10),
+  };
 }
 
 /**
@@ -59,9 +60,7 @@ export function parseDocumentationId(documentationId: string): {
   // path is everything before that final suffix (including any intermediate
   // `/documentation[N]` segments in a hypothetical nested path).
   if (!match) {
-    throw new Error(
-      `Invalid documentationId format — expected "{elementPath}/documentation[N]": ${documentationId}`
-    );
+    throw new Error(`Invalid documentationId format — expected "{elementPath}/documentation[N]": ${documentationId}`);
   }
   return { elementId: requireGroup(match, 1), documentationIndex: parseInt(requireGroup(match, 2), 10) };
 }

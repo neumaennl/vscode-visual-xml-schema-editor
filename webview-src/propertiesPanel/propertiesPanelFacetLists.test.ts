@@ -31,7 +31,9 @@ function renderValueList(facet: ValueListFacet, values: string[], canRemove = tr
   const root = document.createElement("div");
   document.body.appendChild(root);
   const draft: RestrictionSnapshot = {};
-  const buildAndDispatch = vi.fn((updater: (next: RestrictionSnapshot) => void) => { updater(draft); });
+  const buildAndDispatch = vi.fn((updater: (next: RestrictionSnapshot) => void) => {
+    updater(draft);
+  });
   const onRemove = vi.fn<() => void>();
   renderValueListFacet(root, facet, values, buildAndDispatch, canRemove, onRemove);
   return { root, draft, buildAndDispatch, onRemove };
@@ -55,7 +57,9 @@ function chipValues(root: HTMLElement): string[] {
  * @returns The button
  */
 function buttonLabeled(root: HTMLElement, label: string): HTMLButtonElement {
-  const button = Array.from(root.querySelectorAll("button")).find((candidate) => candidate.getAttribute("aria-label") === label);
+  const button = Array.from(root.querySelectorAll("button")).find(
+    (candidate) => candidate.getAttribute("aria-label") === label
+  );
   expect(button).toBeInstanceOf(HTMLButtonElement);
   return button!;
 }
@@ -85,7 +89,10 @@ function enterValue(root: HTMLElement, value: string, key?: "Enter" | "Escape"):
  *
  * @returns An object that stores the data that `setData()` sets
  */
-function createDataTransfer(): Pick<DataTransfer, "effectAllowed" | "dropEffect" | "setData" | "getData" | "setDragImage"> {
+function createDataTransfer(): Pick<
+  DataTransfer,
+  "effectAllowed" | "dropEffect" | "setData" | "getData" | "setDragImage"
+> {
   const data: Record<string, string> = {};
   return {
     effectAllowed: "none",
@@ -134,7 +141,7 @@ describe("renderValueListFacet", () => {
     test("should add the entered value", () => {
       const { root, draft } = renderValueList("pattern", ["[A-Z]{3}"]);
 
-      (root.querySelector<HTMLButtonElement>(".property-value-add-button")!).click();
+      root.querySelector<HTMLButtonElement>(".property-value-add-button")!.click();
       enterValue(root, "[0-9]{3}");
 
       expect(draft.pattern).toEqual(["[A-Z]{3}", "[0-9]{3}"]);
@@ -148,7 +155,7 @@ describe("renderValueListFacet", () => {
     ])("should add nothing for $case", ({ value, key }) => {
       const { root, buildAndDispatch } = renderValueList("pattern", ["[A-Z]{3}"]);
 
-      (root.querySelector<HTMLButtonElement>(".property-value-add-button")!).click();
+      root.querySelector<HTMLButtonElement>(".property-value-add-button")!.click();
       enterValue(root, value, key);
 
       expect(buildAndDispatch).not.toHaveBeenCalled();
@@ -166,7 +173,7 @@ describe("renderValueListFacet", () => {
       const { root, draft } = renderValueList("pattern", ["[A-Z]{3}", "[0-9]{3}"]);
 
       buttonLabeled(root, "Edit [0-9]{3}").click();
-      expect((root.querySelector<HTMLInputElement>(".property-value-input")!).value).toBe("[0-9]{3}");
+      expect(root.querySelector<HTMLInputElement>(".property-value-input")!.value).toBe("[0-9]{3}");
       enterValue(root, next, key);
 
       expect(draft.pattern).toEqual(expected);

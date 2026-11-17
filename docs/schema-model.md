@@ -77,11 +77,11 @@ The generator creates one class per type and per element declaration of the meta
 
 The classes also have properties that are not in the meta-schema and are filled by `xmlbind-ts`:[^generated-schema][^generated-open-attrs]
 
-| Property | Meaning |
-|---|---|
+| Property             | Meaning                                                                                                                                                               |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `_namespacePrefixes` | Namespace declarations of the element, as prefix → namespace URI. On the `schema` object this is the list of prefixes used in QNames such as `type="tns:PersonType"`. |
-| `_anyAttributes` | Attributes from other namespaces (`openAttrs`). |
-| `_any` | Arbitrary child content, for example the content of `xs:documentation` and `xs:appinfo`. |
+| `_anyAttributes`     | Attributes from other namespaces (`openAttrs`).                                                                                                                       |
+| `_any`               | Arbitrary child content, for example the content of `xs:documentation` and `xs:appinfo`.                                                                              |
 
 The executors keep `schema._namespacePrefixes` in sync with the imports: adding an import always registers a prefix (an explicit one or a generated `ns0`, `ns1`, …), and removing or changing an import removes or updates it.[^schema-executors] `getCurrentSchemaPrefixes()` returns the prefixes that map to the schema's own target namespace.[^schema-utils]
 
@@ -134,17 +134,17 @@ The schema root has the ID `/schema` (`SCHEMA_ROOT_ID`). `isSchemaRoot()` treats
 - **Annotations of the schema root** have their own IDs: `/schema/annotation[0]` and `/schema/annotation[0]/documentation[1]`. The shorthand `/schema/documentation[N]` addresses the documentation entries of the first schema annotation.[^annotation-executors] For all other components, the annotation ID is the component's ID, and documentation entries are `<component ID>/documentation[N]`.[^builder-helpers]
 - **Imports and includes** are addressed by position: `/import[0]`, `/include[0]`.[^schema-executors]
 
-| Node | Example ID |
-|---|---|
-| Schema root | `/schema` |
-| Top-level element | `/element:person` |
-| Top-level complex type | `/complexType:PersonType` |
-| Sequence of a complex type | `/complexType:PersonType/group:sequence[0]` |
-| Element in that sequence | `/complexType:PersonType/group:sequence[0]/element:first[0]` |
-| Anonymous complex type | `/element:person/anonymousComplexType[0]` |
-| Group reference | `/complexType:PersonType/group:sequence[0]/groupRef:SharedGroup[0]` |
-| Schema documentation | `/schema/annotation[0]/documentation[0]` |
-| Import | `/import[0]` |
+| Node                       | Example ID                                                          |
+| -------------------------- | ------------------------------------------------------------------- |
+| Schema root                | `/schema`                                                           |
+| Top-level element          | `/element:person`                                                   |
+| Top-level complex type     | `/complexType:PersonType`                                           |
+| Sequence of a complex type | `/complexType:PersonType/group:sequence[0]`                         |
+| Element in that sequence   | `/complexType:PersonType/group:sequence[0]/element:first[0]`        |
+| Anonymous complex type     | `/element:person/anonymousComplexType[0]`                           |
+| Group reference            | `/complexType:PersonType/group:sequence[0]/groupRef:SharedGroup[0]` |
+| Schema documentation       | `/schema/annotation[0]/documentation[0]`                            |
+| Import                     | `/import[0]`                                                        |
 
 ## Who generates and who resolves IDs
 
@@ -153,14 +153,14 @@ The schema root has the ID `/schema` (`SCHEMA_ROOT_ID`). `isSchemaRoot()` treats
 
 `locateNodeById()` walks the segments from the schema root and returns the node the ID points to (as `parent`, because commands usually add to or change children of it) together with an internal type name such as `topLevelComplexType` or `sequence`. It supports these steps:[^navigator]
 
-| From | To |
-|---|---|
-| schema | top-level `element`, `complexType`, `simpleType`, `group`, `attributeGroup`, `attribute` |
-| element | `anonymousComplexType`, `anonymousSimpleType` |
+| From         | To                                                                                                             |
+| ------------ | -------------------------------------------------------------------------------------------------------------- |
+| schema       | top-level `element`, `complexType`, `simpleType`, `group`, `attributeGroup`, `attribute`                       |
+| element      | `anonymousComplexType`, `anonymousSimpleType`                                                                  |
 | complex type | `group:sequence`, `group:choice`, `group:all`, `attribute` (also through `complexContent` and `simpleContent`) |
-| named group | `group:sequence`, `group:choice`, `group:all` |
-| attribute | `anonymousSimpleType` |
-| compositor | `element`, nested `group:sequence`, `group:choice` |
+| named group  | `group:sequence`, `group:choice`, `group:all`                                                                  |
+| attribute    | `anonymousSimpleType`                                                                                          |
+| compositor   | `element`, nested `group:sequence`, `group:choice`                                                             |
 
 When a segment has a name, the node is found by name; the position is ignored. A name also matches a node whose `ref` has that value. Without a name, the node is found by position. Annotations, imports, includes, group references and attribute group references are resolved by the respective validators and executors, which resolve the parent with `locateNodeById()` and handle the last segment themselves.
 

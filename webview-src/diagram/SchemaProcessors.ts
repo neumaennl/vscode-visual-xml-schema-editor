@@ -4,21 +4,9 @@
  */
 
 import { DiagramItem } from "./DiagramItem";
-import type {
-  ComplexTypeLike,
-  SimpleTypeLike,
-  ContentTypeLike,
-  GroupDefLike,
-} from "./DiagramTypes";
-import {
-  DiagramItemType,
-  DiagramItemGroupType
-} from "./DiagramTypes";
-import {
-  generateSchemaId,
-  parseSchemaId,
-  SchemaNodeType,
-} from "../../shared/idStrategy";
+import type { ComplexTypeLike, SimpleTypeLike, ContentTypeLike, GroupDefLike } from "./DiagramTypes";
+import { DiagramItemType, DiagramItemGroupType } from "./DiagramTypes";
+import { generateSchemaId, parseSchemaId, SchemaNodeType } from "../../shared/idStrategy";
 import {
   extractDocumentation,
   extractDocumentationAnnotations,
@@ -45,10 +33,7 @@ export { processChildCollectionImpl as processChildCollection };
  * @param parent - Parent element item containing the anonymous type
  * @param complexType - Anonymous complex type definition
  */
-function processAnonymousComplexType(
-  parent: DiagramItem,
-  complexType: ComplexTypeLike
-): void {
+function processAnonymousComplexType(parent: DiagramItem, complexType: ComplexTypeLike): void {
   // Mark the parent type as anonymous complex type
   if (!parent.type) {
     parent.type = "<anonymous complexType>";
@@ -75,10 +60,7 @@ function processAnonymousComplexType(
  * @param parent - Parent element item containing the anonymous type
  * @param simpleType - Anonymous simple type definition
  */
-function processAnonymousSimpleType(
-  parent: DiagramItem,
-  simpleType: SimpleTypeLike
-): void {
+function processAnonymousSimpleType(parent: DiagramItem, simpleType: SimpleTypeLike): void {
   // Mark the parent as having simple content
   parent.isSimpleContent = true;
 
@@ -154,10 +136,7 @@ function mergeAnonymousTypeDocumentation(
  * @param parent - Parent diagram item to add children to
  * @param complexType - Complex type definition from schema
  */
-export function processComplexType(
-  parent: DiagramItem,
-  complexType: ComplexTypeLike
-): void {
+export function processComplexType(parent: DiagramItem, complexType: ComplexTypeLike): void {
   // Process attributes, which live in the extension or restriction of complex or simple content
   extractAttributes(parent, getAttributeContainer(complexType));
 
@@ -383,9 +362,15 @@ function processGroup(
     groupItem.addChild(item);
   });
 
-  ((groupDef as { group?: groupRef[] }).group ?? []).forEach((ref, index) => { processGroupRef(groupItem, ref, index); });
-  ((groupDef as { choice?: explicitGroup[] }).choice ?? []).forEach((choice, index) => { processChoice(groupItem, choice, index); });
-  ((groupDef as { sequence?: explicitGroup[] }).sequence ?? []).forEach((seq, index) => { processSequence(groupItem, seq, index); });
+  ((groupDef as { group?: groupRef[] }).group ?? []).forEach((ref, index) => {
+    processGroupRef(groupItem, ref, index);
+  });
+  ((groupDef as { choice?: explicitGroup[] }).choice ?? []).forEach((choice, index) => {
+    processChoice(groupItem, choice, index);
+  });
+  ((groupDef as { sequence?: explicitGroup[] }).sequence ?? []).forEach((seq, index) => {
+    processSequence(groupItem, seq, index);
+  });
 
   parent.addChild(groupItem);
 }
@@ -415,11 +400,7 @@ function resolveEffectiveGroupParentId(parent: DiagramItem): string {
  * @param groupReference - Group reference metadata from the schema.
  * @param position - Position of the reference among sibling children.
  */
-function processGroupRef(
-  parent: DiagramItem,
-  groupReference: groupRef,
-  position: number
-): void {
+function processGroupRef(parent: DiagramItem, groupReference: groupRef, position: number): void {
   const refName = groupReference.ref || "unnamed";
   const groupRefItem = new DiagramItem(
     generateSchemaId({
@@ -433,10 +414,7 @@ function processGroupRef(
     parent.diagram
   );
   groupRefItem.isReference = true;
-  groupRefItem.documentationAnnotations = extractDocumentationAnnotations(
-    groupRefItem.id,
-    groupReference.annotation
-  );
+  groupRefItem.documentationAnnotations = extractDocumentationAnnotations(groupRefItem.id, groupReference.annotation);
   groupRefItem.documentation = extractDocumentation(groupReference.annotation) ?? "";
   extractOccurrenceConstraints(groupRefItem, groupReference);
   parent.addChild(groupRefItem);
@@ -449,10 +427,7 @@ function processGroupRef(
  * @param parent - Parent diagram item to extend
  * @param extension - Extension definition from schema
  */
-function processExtension(
-  parent: DiagramItem,
-  extension: ContentTypeLike
-): void {
+function processExtension(parent: DiagramItem, extension: ContentTypeLike): void {
   // Extract base type - append to existing type info
   if (extension.base) {
     parent.type += ` (extends ${extension.base})`;
@@ -460,4 +435,3 @@ function processExtension(
 
   processParticles(parent, extension);
 }
-

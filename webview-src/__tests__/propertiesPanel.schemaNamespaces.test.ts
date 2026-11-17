@@ -31,8 +31,11 @@ describe("PropertiesPanel: the namespace fields of the schema", () => {
       },
     });
     expect(getInputByLabel(container, "targetNamespace").value).toBe("urn:updated");
-    expect(Array.from(container.querySelectorAll(".property-namespace-row input"), (input) => (input as HTMLInputElement).value)).toContain(
-      "urn:updated"
-    );
+    expect(
+      Array.from(
+        container.querySelectorAll(".property-namespace-row input"),
+        (input) => (input as HTMLInputElement).value
+      )
+    ).toContain("urn:updated");
   });
 });

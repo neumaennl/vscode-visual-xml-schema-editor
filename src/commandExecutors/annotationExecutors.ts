@@ -27,18 +27,10 @@ import type {
   RemoveDocumentationCommand,
   ModifyDocumentationCommand,
 } from "../../shared/types.js";
-import {
-  annotationType,
-  documentationType,
-  appinfoType,
-} from "../../shared/types.js";
+import { annotationType, documentationType, appinfoType } from "../../shared/types.js";
 import { isSchemaRoot } from "../../shared/schemaUtils.js";
 import { assumeValidated, locateValidated } from "./assumeValidated.js";
-import {
-  parseDocumentationId,
-  parseSchemaAnnotationId,
-  parseSchemaDocumentationId,
-} from "../commandUtils.js";
+import { parseDocumentationId, parseSchemaAnnotationId, parseSchemaDocumentationId } from "../commandUtils.js";
 
 export { parseDocumentationId, parseSchemaAnnotationId, parseSchemaDocumentationId };
 
@@ -139,11 +131,18 @@ function documentationAt(documentations: documentationType[], index: number, id:
  * @returns The annotation and the index of the entry in it
  * @throws An {@link Error} if the annotation does not exist, which the validator rules out
  */
-function locateDocumentation(schemaObj: schema, documentationId: string): { annotation: annotationType; index: number } {
+function locateDocumentation(
+  schemaObj: schema,
+  documentationId: string
+): { annotation: annotationType; index: number } {
   const schemaDocumentationId = parseSchemaDocumentationId(documentationId);
   if (schemaDocumentationId) {
     return {
-      annotation: schemaAnnotationAt(schemaObj.annotation ?? [], schemaDocumentationId.annotationIndex, documentationId),
+      annotation: schemaAnnotationAt(
+        schemaObj.annotation ?? [],
+        schemaDocumentationId.annotationIndex,
+        documentationId
+      ),
       index: schemaDocumentationId.documentationIndex,
     };
   }
@@ -175,11 +174,7 @@ function ensureAnnotation(node: AnnotatableNode): annotationType {
  * @param documentation - The new documentation text, if it changes
  * @param appInfo - The new appinfo text, if it changes
  */
-function applyAnnotationModifications(
-  annotation: annotationType,
-  documentation?: string,
-  appInfo?: string
-): void {
+function applyAnnotationModifications(annotation: annotationType, documentation?: string, appInfo?: string): void {
   if (documentation !== undefined) {
     annotation.documentation = [createDocumentation(documentation)];
   }
@@ -215,10 +210,7 @@ function applyAnnotationModifications(
  * @param command - The `addAnnotation` command to execute
  * @param schemaObj - The schema object to modify
  */
-export function executeAddAnnotation(
-  command: AddAnnotationCommand,
-  schemaObj: schema
-): void {
+export function executeAddAnnotation(command: AddAnnotationCommand, schemaObj: schema): void {
   const { targetId, documentation, appInfo } = command.payload;
 
   const annotation = new annotationType();
@@ -233,7 +225,7 @@ export function executeAddAnnotation(
 
   if (isSchemaRoot(targetId)) {
     // Schema allows multiple xs:annotation children — always append.
-    schemaObj.annotation = [...schemaObj.annotation ?? [], annotation];
+    schemaObj.annotation = [...(schemaObj.annotation ?? []), annotation];
     return;
   }
 
@@ -255,10 +247,7 @@ export function executeAddAnnotation(
  * @throws An {@link Error} if the node is not found, has no annotation, or the index is
  *   out of bounds
  */
-export function executeRemoveAnnotation(
-  command: RemoveAnnotationCommand,
-  schemaObj: schema
-): void {
+export function executeRemoveAnnotation(command: RemoveAnnotationCommand, schemaObj: schema): void {
   const { annotationId } = command.payload;
 
   const schemaAnnotationIndex = parseSchemaAnnotationId(annotationId);
@@ -290,21 +279,26 @@ export function executeRemoveAnnotation(
  * @throws An {@link Error} if the node is not found, has no annotation, or the index is
  *   out of bounds
  */
-export function executeModifyAnnotation(
-  command: ModifyAnnotationCommand,
-  schemaObj: schema
-): void {
+export function executeModifyAnnotation(command: ModifyAnnotationCommand, schemaObj: schema): void {
   const { annotationId, documentation, appInfo } = command.payload;
 
   const schemaAnnotationIndex = parseSchemaAnnotationId(annotationId);
   if (schemaAnnotationIndex !== null) {
     const annotations = schemaObj.annotation ?? [];
-    applyAnnotationModifications(schemaAnnotationAt(annotations, schemaAnnotationIndex, annotationId), documentation, appInfo);
+    applyAnnotationModifications(
+      schemaAnnotationAt(annotations, schemaAnnotationIndex, annotationId),
+      documentation,
+      appInfo
+    );
     return;
   }
 
   const node = findAnnotatableNode(schemaObj, annotationId);
-  applyAnnotationModifications(assumeValidated(node.annotation, `Annotation of ${annotationId}`), documentation, appInfo);
+  applyAnnotationModifications(
+    assumeValidated(node.annotation, `Annotation of ${annotationId}`),
+    documentation,
+    appInfo
+  );
 }
 
 // ===== Documentation Executors =====
@@ -324,29 +318,26 @@ export function executeModifyAnnotation(
  * @param schemaObj - The schema object to modify
  * @throws An {@link Error} if the target node is not found or does not support annotations
  */
-export function executeAddDocumentation(
-  command: AddDocumentationCommand,
-  schemaObj: schema
-): void {
+export function executeAddDocumentation(command: AddDocumentationCommand, schemaObj: schema): void {
   const { targetId, content, lang } = command.payload;
   const doc = createDocumentation(content, lang);
 
   if (isSchemaRoot(targetId)) {
     const annotation = getOrCreateFirstSchemaAnnotation(schemaObj);
-    annotation.documentation = [...annotation.documentation ?? [], doc];
+    annotation.documentation = [...(annotation.documentation ?? []), doc];
     return;
   }
 
   const schemaAnnotationIndex = parseSchemaAnnotationId(targetId);
   if (schemaAnnotationIndex !== null) {
     const annotation = schemaAnnotationAt(schemaObj.annotation ?? [], schemaAnnotationIndex, targetId);
-    annotation.documentation = [...annotation.documentation ?? [], doc];
+    annotation.documentation = [...(annotation.documentation ?? []), doc];
     return;
   }
 
   const node = findAnnotatableNode(schemaObj, targetId);
   const annotation = ensureAnnotation(node);
-  annotation.documentation = [...annotation.documentation ?? [], doc];
+  annotation.documentation = [...(annotation.documentation ?? []), doc];
 }
 
 /**
@@ -364,10 +355,7 @@ export function executeAddDocumentation(
  * @param schemaObj - The schema object to modify
  * @throws An {@link Error} if the node, annotation, or documentation element is not found
  */
-export function executeRemoveDocumentation(
-  command: RemoveDocumentationCommand,
-  schemaObj: schema
-): void {
+export function executeRemoveDocumentation(command: RemoveDocumentationCommand, schemaObj: schema): void {
   const { documentationId } = command.payload;
   const { annotation, index } = locateDocumentation(schemaObj, documentationId);
   const documentations = annotation.documentation ?? [];
@@ -393,10 +381,7 @@ export function executeRemoveDocumentation(
  * @param schemaObj - The schema object to modify
  * @throws An {@link Error} if the node, annotation, or documentation element is not found
  */
-export function executeModifyDocumentation(
-  command: ModifyDocumentationCommand,
-  schemaObj: schema
-): void {
+export function executeModifyDocumentation(command: ModifyDocumentationCommand, schemaObj: schema): void {
   const { documentationId, content, lang } = command.payload;
   const { annotation, index } = locateDocumentation(schemaObj, documentationId);
   const documentations = annotation.documentation ?? [];
@@ -412,11 +397,7 @@ export function executeModifyDocumentation(
  * @param content - The new text, if it changes
  * @param lang - The new language tag, if it changes; empty to remove it
  */
-function applyDocumentationModifications(
-  doc: documentationType,
-  content?: string,
-  lang?: string
-): void {
+function applyDocumentationModifications(doc: documentationType, content?: string, lang?: string): void {
   if (content !== undefined) {
     doc.value = content;
   }

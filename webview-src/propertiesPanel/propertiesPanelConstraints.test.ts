@@ -44,7 +44,10 @@ describe("canShowConstraintsSection", () => {
 
 describe("renderConstraintsSection", () => {
   test("should offer only nillable for a local element", () => {
-    const section = renderConstraintsSection(new DiagramItem("/element:root/element:item[0]", "item", DiagramItemType.element), vi.fn());
+    const section = renderConstraintsSection(
+      new DiagramItem("/element:root/element:item[0]", "item", DiagramItemType.element),
+      vi.fn()
+    );
 
     expect(section.querySelector(".property-section-header-label")?.textContent).toBe("CONSTRAINTS");
     expect(toggleLabels(section)).toEqual(["Nillable"]);

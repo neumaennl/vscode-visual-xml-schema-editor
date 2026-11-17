@@ -5,9 +5,7 @@
 import { DiagramRenderer } from "./renderer";
 import type { DiagramOptions } from "../shared/messages";
 import { setupGetBBoxMock } from "./__tests__/svgTestHelpers";
-import {
-  setActiveDraggedPaletteSchemaConstruct,
-} from "./palette/PaletteItems";
+import { setActiveDraggedPaletteSchemaConstruct } from "./palette/PaletteItems";
 import { PaletteSchemaConstruct } from "./palette/PaletteSchemaConstruct";
 import { SCHEMA_ROOT_ID } from "../shared/idStrategy";
 
@@ -71,7 +69,7 @@ describe("DiagramRenderer", () => {
     test("should apply transformation to main group", () => {
       const newViewState = { zoom: 2, panX: 10, panY: 20 };
       renderer.updateView(newViewState);
-      
+
       const mainGroup = mockCanvas.getElementsByTagName("g")[0]!;
       const transform = mainGroup.getAttribute("transform");
       expect(transform).toBeTruthy();
@@ -90,14 +88,14 @@ describe("DiagramRenderer", () => {
       const testGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
       testGroup.setAttribute("data-test", "initial");
       mockCanvas.appendChild(testGroup);
-      
+
       const mockSchema = {
         element: [{ name: "Test", type_: "string" }],
       };
       const onNodeClick = vi.fn();
-      
+
       renderer.renderSchema(mockSchema, DEFAULT_DIAGRAM_OPTIONS, onNodeClick);
-      
+
       // Verify diagram was created (main group should exist)
       const groups = mockCanvas.getElementsByTagName("g");
       expect(groups.length).toBeGreaterThan(0);
@@ -106,7 +104,7 @@ describe("DiagramRenderer", () => {
     test("should handle empty schema", () => {
       const emptySchema = {};
       const onNodeClick = vi.fn();
-      
+
       expect(() => {
         renderer.renderSchema(emptySchema, DEFAULT_DIAGRAM_OPTIONS, onNodeClick);
       }).not.toThrow();
@@ -114,9 +112,9 @@ describe("DiagramRenderer", () => {
 
     test("should handle null schema", () => {
       const onNodeClick = vi.fn();
-      
+
       renderer.renderSchema(null, DEFAULT_DIAGRAM_OPTIONS, onNodeClick);
-      
+
       // Should show message instead of throwing
       expect(mockCanvas.textContent).toContain("No schema to display");
     });
@@ -129,9 +127,9 @@ describe("DiagramRenderer", () => {
         ],
       };
       const onNodeClick = vi.fn();
-      
+
       renderer.renderSchema(mockSchema, DEFAULT_DIAGRAM_OPTIONS, onNodeClick);
-      
+
       const items = mockCanvas.querySelectorAll(".diagram-item");
       expect(items.length).toBeGreaterThan(0);
     });
@@ -141,9 +139,9 @@ describe("DiagramRenderer", () => {
         element: [{ name: "Test", type_: "string" }],
       };
       const onNodeClick = vi.fn();
-      
+
       renderer.renderSchema(mockSchema, DEFAULT_DIAGRAM_OPTIONS, onNodeClick);
-      
+
       // Callback should be stored for click handling
       expect(onNodeClick).toBeDefined();
     });
@@ -165,13 +163,13 @@ describe("DiagramRenderer", () => {
         element: [{ name: "Test", type_: "string" }],
       };
       const onNodeClick = vi.fn();
-      
+
       renderer.renderSchema(mockSchema, DEFAULT_DIAGRAM_OPTIONS, onNodeClick);
       const itemsBeforeRefresh = mockCanvas.querySelectorAll(".diagram-item").length;
-      
+
       renderer.refresh();
       const itemsAfterRefresh = mockCanvas.querySelectorAll(".diagram-item").length;
-      
+
       expect(itemsAfterRefresh).toBe(itemsBeforeRefresh);
     });
   });
@@ -181,13 +179,16 @@ describe("DiagramRenderer", () => {
       setupGetBBoxMock();
     });
 
-    test.each(["showDocumentation", "alwaysShowOccurrence", "showType"] as const)("should apply %s option to diagram", (option) => {
-      renderer.renderSchema(TEST_SCHEMA, { ...DEFAULT_DIAGRAM_OPTIONS, [option]: true }, vi.fn());
+    test.each(["showDocumentation", "alwaysShowOccurrence", "showType"] as const)(
+      "should apply %s option to diagram",
+      (option) => {
+        renderer.renderSchema(TEST_SCHEMA, { ...DEFAULT_DIAGRAM_OPTIONS, [option]: true }, vi.fn());
 
-      const diagram = renderer.getItemById(SCHEMA_ROOT_ID)?.diagram;
-      expect(diagram).toBeDefined();
-      expect(diagram?.[option]).toBe(true);
-    });
+        const diagram = renderer.getItemById(SCHEMA_ROOT_ID)?.diagram;
+        expect(diagram).toBeDefined();
+        expect(diagram?.[option]).toBe(true);
+      }
+    );
   });
 
   describe("drag and drop", () => {
@@ -252,9 +253,7 @@ describe("DiagramRenderer", () => {
       const documentWithElementFromPoint = document as Omit<Document, "elementFromPoint"> & {
         elementFromPoint?: (x: number, y: number) => Element | null;
       };
-      const originalElementFromPoint = documentWithElementFromPoint.elementFromPoint?.bind(
-        document
-      );
+      const originalElementFromPoint = documentWithElementFromPoint.elementFromPoint?.bind(document);
       documentWithElementFromPoint.elementFromPoint = (): Element => itemChild;
 
       const leaveEvent = new Event("dragleave", { bubbles: true }) as DragEvent;
@@ -272,7 +271,7 @@ describe("DiagramRenderer", () => {
   describe("showMessage", () => {
     test("should display message in canvas", () => {
       renderer.showMessage("Test message");
-      
+
       expect(mockCanvas.textContent).toContain("Test message");
     });
   });
@@ -280,7 +279,7 @@ describe("DiagramRenderer", () => {
   describe("showError", () => {
     test("should display error in canvas", () => {
       renderer.showError("Test error");
-      
+
       expect(mockCanvas.textContent).toContain("Test error");
     });
   });

@@ -78,9 +78,12 @@ describe("renderFacetsTab", () => {
     test.each([
       { id: "/simpleType:Code", fields: { "Min Length": "1", "Max Length": "5", "White Space": "collapse" } },
       { id: "/simpleType:Fixed", fields: { Length: "3" } },
-      { id: "/simpleType:Range", fields: { "Min Inclusive": "1", "Max Exclusive": "10", "Total Digits": "4", "Fraction Digits": "2" } },
+      {
+        id: "/simpleType:Range",
+        fields: { "Min Inclusive": "1", "Max Exclusive": "10", "Total Digits": "4", "Fraction Digits": "2" },
+      },
       { id: "/simpleType:OpenRange", fields: { "Max Inclusive": "9", "Min Exclusive": "0" } },
-    ])("should show a field for each other facet of $id, and only for those, in a fixed order",({ id, fields }) => {
+    ])("should show a field for each other facet of $id, and only for those, in a fixed order", ({ id, fields }) => {
       const { tab } = renderFacets(id);
 
       const inputs = Array.from(tab.querySelectorAll<HTMLInputElement>(".property-facet input"));
@@ -91,7 +94,9 @@ describe("renderFacetsTab", () => {
     });
 
     test("should reject a node without a simple type, for which the panel offers no Facets tab", () => {
-      expect(() => renderFacets("/element:plain")).toThrow("The Facets tab is only shown for simple types, not for /element:plain");
+      expect(() => renderFacets("/element:plain")).toThrow(
+        "The Facets tab is only shown for simple types, not for /element:plain"
+      );
     });
 
     test("should point to the palette for a restriction without facets", () => {
@@ -157,7 +162,7 @@ describe("renderFacetsTab", () => {
     test("should send a changed list of enumeration values with the other facets", () => {
       const { tab, node, dispatch } = renderFacets("/simpleType:Code");
 
-      (tab.querySelector<HTMLButtonElement>("button[aria-label='Remove A']")!).click();
+      tab.querySelector<HTMLButtonElement>("button[aria-label='Remove A']")!.click();
 
       expect(dispatch).toHaveBeenCalledExactlyOnceWith({
         type: "modifySimpleType",

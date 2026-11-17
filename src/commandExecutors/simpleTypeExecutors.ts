@@ -25,7 +25,7 @@ import {
   totalDigitsType,
   noFixedFacet,
   whiteSpaceType,
-  patternType
+  patternType,
 } from "../../shared/types.js";
 import { isSchemaRoot } from "../../shared/schemaUtils.js";
 import { assumeValidated } from "./assumeValidated.js";
@@ -41,10 +41,7 @@ import { createAnnotation, setDocumentation } from "./annotationUtils.js";
  * @param schemaObj - The schema object to modify
  * @throws An {@link Error} if the parent element or attribute is not found (anonymous case)
  */
-export function executeAddSimpleType(
-  command: AddSimpleTypeCommand,
-  schemaObj: schema
-): void {
+export function executeAddSimpleType(command: AddSimpleTypeCommand, schemaObj: schema): void {
   const { parentId, typeName, documentation, ...body } = command.payload;
   const simpleType = isSchemaRoot(parentId)
     ? Object.assign(new topLevelSimpleType(), { name: assumeValidated(typeName, "Type name") })
@@ -65,10 +62,7 @@ export function executeAddSimpleType(
  * @param schemaObj - The schema object to modify
  * @throws An {@link Error} if the type or its parent is not found
  */
-export function executeRemoveSimpleType(
-  command: RemoveSimpleTypeCommand,
-  schemaObj: schema
-): void {
+export function executeRemoveSimpleType(command: RemoveSimpleTypeCommand, schemaObj: schema): void {
   removeType(schemaObj, command.payload.typeId, "simpleType");
 }
 
@@ -81,10 +75,7 @@ export function executeRemoveSimpleType(
  * @param schemaObj - The schema object to modify
  * @throws An {@link Error} if the type or its parent is not found
  */
-export function executeModifySimpleType(
-  command: ModifySimpleTypeCommand,
-  schemaObj: schema
-): void {
+export function executeModifySimpleType(command: ModifySimpleTypeCommand, schemaObj: schema): void {
   const { typeId, typeName, ...updates } = command.payload;
   const { type } = locateModifiedType(schemaObj, typeId, "simpleType", typeName);
   updateTypeContents(type, updates);
@@ -127,13 +118,7 @@ function updateTypeContents(
     documentation?: string;
   }
 ): void {
-  const {
-    baseType,
-    listItemType,
-    unionMemberTypes,
-    restrictions,
-    documentation,
-  } = updates;
+  const { baseType, listItemType, unionMemberTypes, restrictions, documentation } = updates;
 
   // Without body fields, the body stays as it is
   const body = { baseType, listItemType, unionMemberTypes, restrictions };
@@ -244,10 +229,7 @@ const FACET_CLASSES = {
  * @param restriction - The restriction object to update
  * @param facets - The new restriction facets to apply
  */
-function applyRestrictionFacets(
-  restriction: restrictionType,
-  facets: RestrictionFacets
-): void {
+function applyRestrictionFacets(restriction: restrictionType, facets: RestrictionFacets): void {
   // Facets with a list of values (enumeration, pattern) get one element per value
   const facetElements = restriction as Record<keyof RestrictionFacets, object[] | undefined>;
   for (const key of Object.keys(FACET_CLASSES) as Array<keyof RestrictionFacets>) {

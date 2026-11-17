@@ -5,7 +5,14 @@
 import { DiagramItem } from "../diagram/DiagramItem";
 import { DiagramItemType } from "../diagram/DiagramTypes";
 import { SCHEMA_ROOT_ID } from "../../shared/idStrategy";
-import { findButton, getInputByLabel, hasLabel, createPanel, editInput, displayItem } from "../__tests__/propertiesPanelTestHelpers";
+import {
+  findButton,
+  getInputByLabel,
+  hasLabel,
+  createPanel,
+  editInput,
+  displayItem,
+} from "../__tests__/propertiesPanelTestHelpers";
 
 describe("PropertiesPanel", () => {
   let { container, panel, diagram } = createPanel();
@@ -40,7 +47,10 @@ describe("PropertiesPanel", () => {
   });
 
   test("should dispatch removeElement when the header delete button is clicked", () => {
-    const { dispatch } = displayItem(container, new DiagramItem("/element:person", "person", DiagramItemType.element, diagram));
+    const { dispatch } = displayItem(
+      container,
+      new DiagramItem("/element:person", "person", DiagramItemType.element, diagram)
+    );
 
     const deleteButton = container.querySelector<HTMLButtonElement>("button[title='Delete node']")!;
     expect(deleteButton.classList.contains("property-docs-action-icon-only")).toBe(true);
@@ -53,7 +63,8 @@ describe("PropertiesPanel", () => {
   });
 
   test("should dispatch removeGroup when deleting a compositor group", () => {
-    const { dispatch } = displayItem(container, 
+    const { dispatch } = displayItem(
+      container,
       new DiagramItem("/complexType:PersonType/group:sequence[0]", "sequence", DiagramItemType.group, diagram)
     );
 
@@ -76,9 +87,7 @@ describe("PropertiesPanel", () => {
 
   test("should render attributes safely without innerHTML interpolation", () => {
     const item = new DiagramItem("test-1", "TestItem", DiagramItemType.element, diagram);
-    item.attributes = [
-      { name: "<unsafe>", type: "string", use: "required" },
-    ];
+    item.attributes = [{ name: "<unsafe>", type: "string", use: "required" }];
 
     panel.display(item);
 
@@ -111,10 +120,17 @@ describe("PropertiesPanel", () => {
   });
 
   test.each([
-    ["dispatch modifyElement when the name is changed", "customer", [[{ type: "modifyElement", payload: { elementId: "/element:person", elementName: "customer" } }]]],
+    [
+      "dispatch modifyElement when the name is changed",
+      "customer",
+      [[{ type: "modifyElement", payload: { elementId: "/element:person", elementName: "customer" } }]],
+    ],
     ["not dispatch a rename command when the name is unchanged", " person ", []],
   ])("should %s", (_case, name, calls) => {
-    const { dispatch } = displayItem(container, new DiagramItem("/element:person", "person", DiagramItemType.element, diagram));
+    const { dispatch } = displayItem(
+      container,
+      new DiagramItem("/element:person", "person", DiagramItemType.element, diagram)
+    );
 
     editInput(container, "Name", name);
 
@@ -122,7 +138,10 @@ describe("PropertiesPanel", () => {
   });
 
   test("should not dispatch duplicate rename commands for the same node/name replay", () => {
-    const { panel: shownPanel, dispatch } = displayItem(container, new DiagramItem("/element:person", "person", DiagramItemType.element, diagram));
+    const { panel: shownPanel, dispatch } = displayItem(
+      container,
+      new DiagramItem("/element:person", "person", DiagramItemType.element, diagram)
+    );
     editInput(container, "Name", "customer");
 
     // Simulate stale re-display that still references the old node id/name.
@@ -156,8 +175,20 @@ describe("PropertiesPanel", () => {
   });
 
   test.each([
-    ["modifyElement", "a local element", "/element:root/element:item[0]", DiagramItemType.element, { elementId: "/element:root/element:item[0]" }],
-    ["modifyGroup", "a compositor", "/complexType:PersonType/group:sequence[0]", DiagramItemType.group, { groupId: "/complexType:PersonType/group:sequence[0]" }],
+    [
+      "modifyElement",
+      "a local element",
+      "/element:root/element:item[0]",
+      DiagramItemType.element,
+      { elementId: "/element:root/element:item[0]" },
+    ],
+    [
+      "modifyGroup",
+      "a compositor",
+      "/complexType:PersonType/group:sequence[0]",
+      DiagramItemType.group,
+      { groupId: "/complexType:PersonType/group:sequence[0]" },
+    ],
   ])("should dispatch %s when minOccurs of %s is changed", (type, _case, id, itemType, target) => {
     const item = new DiagramItem(id, "item", itemType, diagram);
     item.minOccurrence = 1;
@@ -205,7 +236,7 @@ describe("PropertiesPanel", () => {
     const xmlHint = container.querySelector(".property-xml-hint");
     expect(xmlHint?.textContent).toContain("Preview only");
     expect(xmlHint?.textContent).toContain("text editor tab");
-    expect(xmlPreview?.textContent).toContain('<xs:element');
+    expect(xmlPreview?.textContent).toContain("<xs:element");
     expect(xmlPreview?.textContent).toContain('maxOccurs="7"');
     expect(xmlPreview?.textContent).not.toContain('"id":');
 

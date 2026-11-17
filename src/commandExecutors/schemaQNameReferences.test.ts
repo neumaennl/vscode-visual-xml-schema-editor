@@ -15,10 +15,11 @@ import { forEachQNameReference } from "./schemaQNameReferences.js";
 const QNAME_IN_EVERY_PLACE = "qname-in-every-place.xsd";
 
 /** The paths of all schemas in the test resources and the example files. */
-const ALL_SCHEMA_FILES = [
-  TEST_RESOURCES,
-  join(import.meta.dirname, "../../exampleFiles"),
-].flatMap((folder) => readdirSync(folder).filter((name) => name.endsWith(".xsd")).map((name) => join(folder, name)));
+const ALL_SCHEMA_FILES = [TEST_RESOURCES, join(import.meta.dirname, "../../exampleFiles")].flatMap((folder) =>
+  readdirSync(folder)
+    .filter((name) => name.endsWith(".xsd"))
+    .map((name) => join(folder, name))
+);
 
 /**
  * Returns whether a value looks like a QName: not empty, without whitespace and with at most one colon.

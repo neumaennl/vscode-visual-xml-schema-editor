@@ -54,7 +54,10 @@ function renderNamespaces(schemaObj = unmarshal(schema, SCHEMA_WITH_TARGET)): Na
  * @param prefix - The prefix of the declaration
  * @returns The inputs and the button
  */
-function declarationRow(root: HTMLElement, prefix: string): { prefix: HTMLInputElement; uri: HTMLInputElement; remove: HTMLButtonElement } {
+function declarationRow(
+  root: HTMLElement,
+  prefix: string
+): { prefix: HTMLInputElement; uri: HTMLInputElement; remove: HTMLButtonElement } {
   const row = Array.from(root.querySelectorAll(".property-namespace-row")).find(
     (candidate) => candidate.querySelector<HTMLInputElement>("input[placeholder='prefix']")?.value === prefix
   );
@@ -117,9 +120,9 @@ describe("renderSchemaNamespaceProperties", () => {
   test("should reject a schema node without a diagram, which the diagram builder does not create", () => {
     const node = new DiagramItem("/schema", "schema", DiagramItemType.element);
 
-    expect(() => { renderSchemaNamespaceProperties(document.createElement("div"), node, vi.fn(), vi.fn()); }).toThrow(
-      "The schema node belongs to no diagram"
-    );
+    expect(() => {
+      renderSchemaNamespaceProperties(document.createElement("div"), node, vi.fn(), vi.fn());
+    }).toThrow("The schema node belongs to no diagram");
   });
 
   describe("the target namespace", () => {
@@ -148,18 +151,25 @@ describe("renderSchemaNamespaceProperties", () => {
     test.each<{ namespaces: Record<string, string>; prefix: string }>([
       { namespaces: { other: "urn:other" }, prefix: "tns" },
       { namespaces: { tns: "urn:other" }, prefix: "ns0" },
-    ])("should declare a new target namespace with the prefix $prefix for the declarations $namespaces", ({ namespaces, prefix }) => {
-      const { root, node, dispatch } = renderNamespaces(schemaWith("", namespaces));
-      const previous = { ...node.diagram?.schemaNamespacePrefixes };
+    ])(
+      "should declare a new target namespace with the prefix $prefix for the declarations $namespaces",
+      ({ namespaces, prefix }) => {
+        const { root, node, dispatch } = renderNamespaces(schemaWith("", namespaces));
+        const previous = { ...node.diagram?.schemaNamespacePrefixes };
 
-      editInput(root, "targetNamespace", "urn:new");
+        editInput(root, "targetNamespace", "urn:new");
 
-      expect(dispatch).toHaveBeenCalledExactlyOnceWith({
-        type: "modifySchemaNamespaces",
-        payload: { targetNamespace: "urn:new", namespacePrefixes: { ...previous, [prefix]: "urn:new" }, previousNamespacePrefixes: previous },
-      });
-      expect(node.diagram?.currentSchemaPrefix).toBe(prefix);
-    });
+        expect(dispatch).toHaveBeenCalledExactlyOnceWith({
+          type: "modifySchemaNamespaces",
+          payload: {
+            targetNamespace: "urn:new",
+            namespacePrefixes: { ...previous, [prefix]: "urn:new" },
+            previousNamespacePrefixes: previous,
+          },
+        });
+        expect(node.diagram?.currentSchemaPrefix).toBe(prefix);
+      }
+    );
   });
 
   describe("the namespace declarations", () => {
@@ -168,7 +178,9 @@ describe("renderSchemaNamespaceProperties", () => {
 
       commit(declarationRow(root, "tns").uri, "urn:updated");
 
-      expect(dispatch).toHaveBeenCalledExactlyOnceWith(namespacesCommand("urn:updated", { ...DECLARATIONS, tns: "urn:updated" }));
+      expect(dispatch).toHaveBeenCalledExactlyOnceWith(
+        namespacesCommand("urn:updated", { ...DECLARATIONS, tns: "urn:updated" })
+      );
     });
 
     test("should rename a prefix", () => {
@@ -176,18 +188,32 @@ describe("renderSchemaNamespaceProperties", () => {
 
       commit(declarationRow(root, "other").prefix, " ext ");
 
-      expect(dispatch).toHaveBeenCalledExactlyOnceWith(namespacesCommand("urn:original", { ext: "urn:other", tns: "urn:original", xs: XS }));
+      expect(dispatch).toHaveBeenCalledExactlyOnceWith(
+        namespacesCommand("urn:original", { ext: "urn:other", tns: "urn:original", xs: XS })
+      );
     });
 
     test.each([
-      { case: "an emptied URI", change: (root: HTMLElement): void => { commit(declarationRow(root, "other").uri, " "); } },
-      { case: "the remove button", change: (root: HTMLElement): void => { declarationRow(root, "other").remove.click(); } },
+      {
+        case: "an emptied URI",
+        change: (root: HTMLElement): void => {
+          commit(declarationRow(root, "other").uri, " ");
+        },
+      },
+      {
+        case: "the remove button",
+        change: (root: HTMLElement): void => {
+          declarationRow(root, "other").remove.click();
+        },
+      },
     ])("should remove a declaration with $case", ({ change }) => {
       const { root, dispatch } = renderNamespaces();
 
       change(root);
 
-      expect(dispatch).toHaveBeenCalledExactlyOnceWith(namespacesCommand("urn:original", { tns: "urn:original", xs: XS }));
+      expect(dispatch).toHaveBeenCalledExactlyOnceWith(
+        namespacesCommand("urn:original", { tns: "urn:original", xs: XS })
+      );
     });
 
     test("should remove the target namespace with its declaration", () => {
@@ -217,13 +243,17 @@ describe("renderSchemaNamespaceProperties", () => {
       uri.dispatchEvent(enter);
 
       expect(enter.defaultPrevented).toBe(true);
-      expect(dispatch).toHaveBeenCalledExactlyOnceWith(namespacesCommand("urn:original", { ...DECLARATIONS, other: "urn:changed" }));
+      expect(dispatch).toHaveBeenCalledExactlyOnceWith(
+        namespacesCommand("urn:original", { ...DECLARATIONS, other: "urn:changed" })
+      );
     });
 
     test("should add a declaration with a new prefix", () => {
       const { root, dispatch } = renderNamespaces();
 
-      (Array.from(root.querySelectorAll("button")).find((button) => button.textContent === "Add namespace")!).click();
+      Array.from(root.querySelectorAll("button"))
+        .find((button) => button.textContent === "Add namespace")!
+        .click();
 
       expect(dispatch).toHaveBeenCalledExactlyOnceWith(
         namespacesCommand("urn:original", { ...DECLARATIONS, ns0: "urn:example:namespace" })

@@ -1,20 +1,8 @@
 {
   "extends": "./tsconfig.webview.json",
   "compilerOptions": {
-    "types": [
-      "vitest/globals",
-      "node",
-      "vite/client"
-    ]
+    "types": ["vitest/globals", "node", "vite/client"]
   },
-  "include": [
-    "webview-src/**/*.ts",
-    "shared/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "out",
-    "webview",
-    "src"
-  ]
+  "include": ["webview-src/**/*.ts", "shared/**/*.ts"],
+  "exclude": ["node_modules", "out", "webview", "src"]
 }

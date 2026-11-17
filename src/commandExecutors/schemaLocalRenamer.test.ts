@@ -31,7 +31,8 @@ describe("schemaLocalRenamer", () => {
     {
       rename: renameLocalGroupRefInSchema,
       oldName: "groupRefInGroup",
-      read: (s: schema): string | undefined => s.group?.[0]?.sequence?.element?.[0]?.complexType?.sequence?.group?.[0]?.ref,
+      read: (s: schema): string | undefined =>
+        s.group?.[0]?.sequence?.element?.[0]?.complexType?.sequence?.group?.[0]?.ref,
     },
     {
       rename: renameLocalAttributeGroupRefInSchema,
@@ -43,13 +44,16 @@ describe("schemaLocalRenamer", () => {
       oldName: "elementRef",
       read: (s: schema): string | undefined => anonymousType(s)?.sequence?.element?.[0]?.ref,
     },
-  ])("should rename the reference to $oldName in an anonymous complex type with $rename.name", ({ rename, oldName, read }) => {
-    const schemaObj = readTestSchema(QNAME_IN_EVERY_PLACE);
+  ])(
+    "should rename the reference to $oldName in an anonymous complex type with $rename.name",
+    ({ rename, oldName, read }) => {
+      const schemaObj = readTestSchema(QNAME_IN_EVERY_PLACE);
 
-    rename(oldName, "Renamed", schemaObj);
+      rename(oldName, "Renamed", schemaObj);
 
-    expect(read(schemaObj)).toBe("tns:Renamed");
-  });
+      expect(read(schemaObj)).toBe("tns:Renamed");
+    }
+  );
 
   describe("renameLocalTypeInSchema", () => {
     test("should rename unqualified type references throughout the schema", () => {
@@ -95,9 +99,7 @@ describe("schemaLocalRenamer", () => {
       renameLocalTypeInSchema("BaseType", "RenamedType", schemaObj);
 
       expect((schemaObj.element ?? [])[0]!.type_).toBe("tns:RenamedType");
-      expect(((schemaObj.complexType ?? [])[0]!.sequence!.element ?? [])[0]!.type_).toBe(
-        "tns:RenamedType"
-      );
+      expect(((schemaObj.complexType ?? [])[0]!.sequence!.element ?? [])[0]!.type_).toBe("tns:RenamedType");
       expect((schemaObj.simpleType ?? [])[1]!.restriction!.base).toBe("tns:RenamedType");
     });
   });
@@ -191,9 +193,7 @@ describe("schemaLocalRenamer", () => {
       renameLocalElementRefInSchema("head", "renamedHead", schemaObj);
 
       expect((schemaObj.element ?? [])[1]!.substitutionGroup).toBe("tns:renamedHead");
-      expect(((schemaObj.complexType ?? [])[0]!.sequence!.element ?? [])[0]!.ref).toBe(
-        "tns:renamedHead"
-      );
+      expect(((schemaObj.complexType ?? [])[0]!.sequence!.element ?? [])[0]!.ref).toBe("tns:renamedHead");
     });
   });
 });

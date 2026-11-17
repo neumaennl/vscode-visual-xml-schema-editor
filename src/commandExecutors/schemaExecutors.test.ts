@@ -128,10 +128,13 @@ function removeInclude(schemaObj: schema, payload: RemoveIncludeCommand["payload
  */
 function schemaWithPrefixedImport(namespace: string, schemaLocation: string, prefix: string): schema {
   const schemaObj = emptySchema();
-  executeAddImport({
-    type: "addImport",
-    payload: { namespace, schemaLocation, prefix },
-  }, schemaObj);
+  executeAddImport(
+    {
+      type: "addImport",
+      payload: { namespace, schemaLocation, prefix },
+    },
+    schemaObj
+  );
   return schemaObj;
 }
 
@@ -141,9 +144,7 @@ function schemaWithPrefixedImport(namespace: string, schemaLocation: string, pre
  * @param imports - The imports
  * @returns The schema
  */
-function schemaWithImports(
-  ...imports: Array<{ namespace: string; schemaLocation: string; prefix?: string }>
-): schema {
+function schemaWithImports(...imports: Array<{ namespace: string; schemaLocation: string; prefix?: string }>): schema {
   const prefixes = Object.fromEntries(imports.flatMap((i) => (i.prefix ? [[i.prefix, i.namespace]] : [])));
   const importXml = imports
     .map((i) => `<xs:import namespace="${i.namespace}" schemaLocation="${i.schemaLocation}"/>`)
@@ -229,9 +230,7 @@ describe("executeAddImport", () => {
 
     // A prefix must have been registered
     const prefixes = schemaObj._namespacePrefixes ?? {};
-    const entry = Object.entries(prefixes).find(
-      ([, ns]) => ns === "http://example.com/ns"
-    );
+    const entry = Object.entries(prefixes).find(([, ns]) => ns === "http://example.com/ns");
     expect(entry).toBeDefined();
     expect(entry![0]).toMatch(/^ns\d+$/);
   });
@@ -239,20 +238,24 @@ describe("executeAddImport", () => {
   test("should auto-generate distinct prefixes for multiple imports", () => {
     const schemaObj = emptySchema();
 
-    executeAddImport({
-      type: "addImport",
-      payload: { namespace: "http://example.com/ns1", schemaLocation: "s1.xsd" },
-    }, schemaObj);
+    executeAddImport(
+      {
+        type: "addImport",
+        payload: { namespace: "http://example.com/ns1", schemaLocation: "s1.xsd" },
+      },
+      schemaObj
+    );
 
-    executeAddImport({
-      type: "addImport",
-      payload: { namespace: "http://example.com/ns2", schemaLocation: "s2.xsd" },
-    }, schemaObj);
+    executeAddImport(
+      {
+        type: "addImport",
+        payload: { namespace: "http://example.com/ns2", schemaLocation: "s2.xsd" },
+      },
+      schemaObj
+    );
 
     const prefixes = schemaObj._namespacePrefixes ?? {};
-    const nsEntries = Object.entries(prefixes).filter(
-      ([, ns]) => ns.startsWith("http://example.com/ns")
-    );
+    const nsEntries = Object.entries(prefixes).filter(([, ns]) => ns.startsWith("http://example.com/ns"));
     expect(nsEntries).toHaveLength(2);
     // The two auto-generated prefixes must be distinct
     expect(nsEntries[0]![0]).not.toBe(nsEntries[1]![0]);
@@ -308,10 +311,13 @@ describe("executeRemoveImport", () => {
       prefix: "ext",
     });
 
-    executeRemoveImport({
-      type: "removeImport",
-      payload: { importId: "/import[0]" },
-    }, schemaObj);
+    executeRemoveImport(
+      {
+        type: "removeImport",
+        payload: { importId: "/import[0]" },
+      },
+      schemaObj
+    );
 
     expect(schemaObj._namespacePrefixes?.ext).toBeUndefined();
   });
@@ -407,13 +413,16 @@ describe("executeModifyImport", () => {
       prefix: "ext",
     });
 
-    executeModifyImport({
-      type: "modifyImport",
-      payload: {
-        importId: "/import[0]",
-        namespace: "http://example.com/new-ns",
+    executeModifyImport(
+      {
+        type: "modifyImport",
+        payload: {
+          importId: "/import[0]",
+          namespace: "http://example.com/new-ns",
+        },
       },
-    }, schemaObj);
+      schemaObj
+    );
 
     expect(schemaObj._namespacePrefixes?.ext).toBe("http://example.com/new-ns");
   });
@@ -425,14 +434,17 @@ describe("executeModifyImport", () => {
       prefix: "oldpfx",
     });
 
-    executeModifyImport({
-      type: "modifyImport",
-      payload: {
-        importId: "/import[0]",
-        oldPrefix: "oldpfx",
-        prefix: "newpfx",
+    executeModifyImport(
+      {
+        type: "modifyImport",
+        payload: {
+          importId: "/import[0]",
+          oldPrefix: "oldpfx",
+          prefix: "newpfx",
+        },
       },
-    }, schemaObj);
+      schemaObj
+    );
 
     expect(schemaObj._namespacePrefixes?.oldpfx).toBeUndefined();
     expect(schemaObj._namespacePrefixes?.newpfx).toBe("http://example.com/ns");
@@ -440,14 +452,20 @@ describe("executeModifyImport", () => {
 
   test("should rewrite element type_ references when prefix is renamed", () => {
     const prefixes = { ext: "http://example.com/ext" };
-    const schemaObj = schemaWith(`<xs:import namespace="http://example.com/ext" schemaLocation="ext.xsd"/>
+    const schemaObj = schemaWith(
+      `<xs:import namespace="http://example.com/ext" schemaLocation="ext.xsd"/>
 <xs:element name="foo" type="ext:FooType"/>
-<xs:element name="bar" type="xs:string"/>`, prefixes);
+<xs:element name="bar" type="xs:string"/>`,
+      prefixes
+    );
 
-    executeModifyImport({
-      type: "modifyImport",
-      payload: { importId: "/import[0]", oldPrefix: "ext", prefix: "newext" },
-    }, schemaObj);
+    executeModifyImport(
+      {
+        type: "modifyImport",
+        payload: { importId: "/import[0]", oldPrefix: "ext", prefix: "newext" },
+      },
+      schemaObj
+    );
 
     const elems = schemaObj.element ?? [];
     expect(elems[0]!.type_).toBe("newext:FooType");
@@ -469,10 +487,13 @@ describe("executeModifyImport", () => {
     ct.sequence = seq;
     schemaObj.complexType = [ct];
 
-    executeModifyImport({
-      type: "modifyImport",
-      payload: { importId: "/import[0]", oldPrefix: "ext", prefix: "ex" },
-    }, schemaObj);
+    executeModifyImport(
+      {
+        type: "modifyImport",
+        payload: { importId: "/import[0]", oldPrefix: "ext", prefix: "ex" },
+      },
+      schemaObj
+    );
 
     expect(schemaObj.complexType[0]!.sequence!.element![0]!.ref).toBe("ex:ExternalElement");
   });
@@ -490,10 +511,13 @@ describe("executeModifyImport", () => {
     ct.complexContent = cc;
     schemaObj.complexType = [ct];
 
-    executeModifyImport({
-      type: "modifyImport",
-      payload: { importId: "/import[0]", oldPrefix: "ext", prefix: "external" },
-    }, schemaObj);
+    executeModifyImport(
+      {
+        type: "modifyImport",
+        payload: { importId: "/import[0]", oldPrefix: "ext", prefix: "external" },
+      },
+      schemaObj
+    );
 
     expect(schemaObj.complexType[0]!.complexContent!.extension!.base).toBe("external:BaseType");
   });
@@ -509,10 +533,13 @@ describe("executeModifyImport", () => {
     st.restriction = restr;
     schemaObj.simpleType = [st];
 
-    executeModifyImport({
-      type: "modifyImport",
-      payload: { importId: "/import[0]", oldPrefix: "ext", prefix: "p" },
-    }, schemaObj);
+    executeModifyImport(
+      {
+        type: "modifyImport",
+        payload: { importId: "/import[0]", oldPrefix: "ext", prefix: "p" },
+      },
+      schemaObj
+    );
 
     expect(schemaObj.simpleType[0]!.restriction!.base).toBe("p:ExternalSimpleType");
   });
@@ -528,24 +555,33 @@ describe("executeModifyImport", () => {
     st.union = union;
     schemaObj.simpleType = [st];
 
-    executeModifyImport({
-      type: "modifyImport",
-      payload: { importId: "/import[0]", oldPrefix: "ext", prefix: "p" },
-    }, schemaObj);
+    executeModifyImport(
+      {
+        type: "modifyImport",
+        payload: { importId: "/import[0]", oldPrefix: "ext", prefix: "p" },
+      },
+      schemaObj
+    );
 
     expect(schemaObj.simpleType[0]!.union!.memberTypes).toBe("p:TypeA xs:string p:TypeB");
   });
 
   test("should leave QName references unchanged when prefix is NOT renamed", () => {
     const prefixes = { ext: "http://example.com/old-ns" };
-    const schemaObj = schemaWith(`<xs:import namespace="http://example.com/old-ns" schemaLocation="ext.xsd"/>
-<xs:element name="foo" type="ext:FooType"/>`, prefixes);
+    const schemaObj = schemaWith(
+      `<xs:import namespace="http://example.com/old-ns" schemaLocation="ext.xsd"/>
+<xs:element name="foo" type="ext:FooType"/>`,
+      prefixes
+    );
 
     // Change namespace URI but not the prefix
-    executeModifyImport({
-      type: "modifyImport",
-      payload: { importId: "/import[0]", namespace: "http://example.com/new-ns" },
-    }, schemaObj);
+    executeModifyImport(
+      {
+        type: "modifyImport",
+        payload: { importId: "/import[0]", namespace: "http://example.com/new-ns" },
+      },
+      schemaObj
+    );
 
     // type_ must still use "ext:" prefix
     expect((schemaObj.element ?? [])[0]!.type_).toBe("ext:FooType");
@@ -566,10 +602,13 @@ describe("executeModifyImport", () => {
     s.import_ = [imp];
 
     // Explicitly rename "ext" → "newpfx" (oldPrefix identifies which one)
-    executeModifyImport({
-      type: "modifyImport",
-      payload: { importId: "/import[0]", oldPrefix: "ext", prefix: "newpfx" },
-    }, s);
+    executeModifyImport(
+      {
+        type: "modifyImport",
+        payload: { importId: "/import[0]", oldPrefix: "ext", prefix: "newpfx" },
+      },
+      s
+    );
 
     // "ext" is renamed to "newpfx"
     expect(s._namespacePrefixes.newpfx).toBe("http://example.com/ns");

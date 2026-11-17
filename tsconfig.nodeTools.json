@@ -3,13 +3,8 @@
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "target": "ES2024",
-    "lib": [
-      "ES2024"
-    ],
-    "types": [
-      "node",
-      "vitest/globals"
-    ],
+    "lib": ["ES2024"],
+    "types": ["node", "vitest/globals"],
     "strict": true,
     "allowUnreachableCode": false,
     "noUncheckedIndexedAccess": true,
@@ -20,9 +15,5 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": [
-    "scripts/**/*.ts",
-    "vite.config.ts",
-    "vitest.config.ts"
-  ]
+  "include": ["scripts/**/*.ts", "vite.config.ts", "vitest.config.ts"]
 }

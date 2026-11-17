@@ -59,9 +59,12 @@ function renderType(id: string): TypeFields {
 describe("renderTypeProperty", () => {
   muteDiagramBuilderLog();
 
-  test.each(["/schema", "/group:Contact", "/group:Contact/group:sequence[0]"])("should show no type fields for %s", (id) => {
-    expect(renderType(id).root.childElementCount).toBe(0);
-  });
+  test.each(["/schema", "/group:Contact", "/group:Contact/group:sequence[0]"])(
+    "should show no type fields for %s",
+    (id) => {
+      expect(renderType(id).root.childElementCount).toBe(0);
+    }
+  );
 
   describe("elements with a named type", () => {
     test("should show the type in a field with suggestions", () => {
@@ -70,7 +73,10 @@ describe("renderTypeProperty", () => {
       const input = getInputByLabel(root, "Type");
       expect(getLabels(root)).toEqual(["Type"]);
       expect(input.value).toBe("xs:string");
-      const options = Array.from(root.querySelectorAll(`datalist#${input.getAttribute("list")!} option`), (option) => (option as HTMLOptionElement).value);
+      const options = Array.from(
+        root.querySelectorAll(`datalist#${input.getAttribute("list")!} option`),
+        (option) => (option as HTMLOptionElement).value
+      );
       expect(options).toEqual(SUGGESTIONS);
     });
 
@@ -82,7 +88,10 @@ describe("renderTypeProperty", () => {
 
       editInput(root, "Type", value);
 
-      expect(dispatch).toHaveBeenCalledExactlyOnceWith({ type: "modifyElement", payload: { elementId: "/element:code", elementType: expected } });
+      expect(dispatch).toHaveBeenCalledExactlyOnceWith({
+        type: "modifyElement",
+        payload: { elementId: "/element:code", elementType: expected },
+      });
       expect(node.type).toBe(expected);
     });
 
@@ -108,7 +117,10 @@ describe("renderTypeProperty", () => {
 
       editInput(root, "Base Type", "xs:token");
 
-      expect(dispatch).toHaveBeenCalledExactlyOnceWith({ type: "modifySimpleType", payload: { typeId: "/simpleType:Code", baseType: "xs:token" } });
+      expect(dispatch).toHaveBeenCalledExactlyOnceWith({
+        type: "modifySimpleType",
+        payload: { typeId: "/simpleType:Code", baseType: "xs:token" },
+      });
       expect(node.type).toBe("simpleType (restricts xs:token)");
     });
 
@@ -132,7 +144,9 @@ describe("renderTypeProperty", () => {
 
       expect(getLabels(root)).toEqual(["Kind", "Base Type", "Type editing"]);
       expect(getTextByLabel(root, "Base Type")).toBe("Inline simpleType");
-      expect(getTextByLabel(root, "Type editing")).toBe("This simpleType does not expose a single base type that can be edited here.");
+      expect(getTextByLabel(root, "Type editing")).toBe(
+        "This simpleType does not expose a single base type that can be edited here."
+      );
     });
   });
 
@@ -162,7 +176,9 @@ describe("renderTypeProperty", () => {
 
       expect(getLabels(root)).toEqual(["Kind", "Type", "Replacement Type", "Type editing"]);
       expect(getTextByLabel(root, "Type")).toBe("Inline simpleType");
-      expect(getTextByLabel(root, "Type editing")).toBe("Setting a replacement type removes the current inline simpleType from this element.");
+      expect(getTextByLabel(root, "Type editing")).toBe(
+        "Setting a replacement type removes the current inline simpleType from this element."
+      );
     });
   });
 
@@ -177,17 +193,20 @@ describe("renderTypeProperty", () => {
     test.each([
       { value: "tns:Other", baseType: "tns:Other" },
       { value: "", baseType: "" },
-    ])("should change the base type of a derived complex type to '$value' and keep the derivation", ({ value, baseType }) => {
-      const { root, dispatch } = renderType("/complexType:Derived");
+    ])(
+      "should change the base type of a derived complex type to '$value' and keep the derivation",
+      ({ value, baseType }) => {
+        const { root, dispatch } = renderType("/complexType:Derived");
 
-      expect(getInputByLabel(root, "Base Type").value).toBe("tns:Base");
-      editInput(root, "Base Type", value);
+        expect(getInputByLabel(root, "Base Type").value).toBe("tns:Base");
+        editInput(root, "Base Type", value);
 
-      expect(dispatch).toHaveBeenCalledExactlyOnceWith({
-        type: "modifyComplexType",
-        payload: { typeId: "/complexType:Derived", baseType, derivationKind: "restriction" },
-      });
-    });
+        expect(dispatch).toHaveBeenCalledExactlyOnceWith({
+          type: "modifyComplexType",
+          payload: { typeId: "/complexType:Derived", baseType, derivationKind: "restriction" },
+        });
+      }
+    );
   });
 
   describe("elements with an inline complex type", () => {
@@ -219,7 +238,10 @@ describe("renderTypeProperty", () => {
 
       editInput(root, "Replacement Type", "tns:Derived");
 
-      expect(dispatch).toHaveBeenCalledExactlyOnceWith({ type: "modifyElement", payload: { elementId: "/element:extended", elementType: "tns:Derived" } });
+      expect(dispatch).toHaveBeenCalledExactlyOnceWith({
+        type: "modifyElement",
+        payload: { elementId: "/element:extended", elementType: "tns:Derived" },
+      });
       expect(node.type).toBe("tns:Derived");
       expect(node.hasAnonymousComplexType).toBe(false);
       expect(node.complexDerivationKind).toBeUndefined();

@@ -10,10 +10,7 @@ import type {
   RemoveAttributeGroupCommand,
   ModifyAttributeGroupCommand,
 } from "../../shared/types.js";
-import {
-  namedAttributeGroup,
-  attributeGroupRef,
-} from "../../shared/types.js";
+import { namedAttributeGroup, attributeGroupRef } from "../../shared/types.js";
 import { parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy.js";
 import { assumeValidated, locateValidated } from "./assumeValidated.js";
 import { createAnnotation, setDocumentation } from "./annotationUtils.js";
@@ -58,10 +55,7 @@ function locateAttrGroupRef(
  * @param schemaObj - The schema object to modify
  * @throws An {@link Error} if the parent node is not found (reference mode) or unsupported
  */
-export function executeAddAttributeGroup(
-  command: AddAttributeGroupCommand,
-  schemaObj: schema
-): void {
+export function executeAddAttributeGroup(command: AddAttributeGroupCommand, schemaObj: schema): void {
   const { groupName, documentation, ref, parentId } = command.payload;
 
   if (ref !== undefined) {
@@ -97,10 +91,7 @@ export function executeAddAttributeGroup(
  * @param schemaObj - The schema object to modify
  * @throws An {@link Error} if the attribute group or its parent is not found
  */
-export function executeRemoveAttributeGroup(
-  command: RemoveAttributeGroupCommand,
-  schemaObj: schema
-): void {
+export function executeRemoveAttributeGroup(command: RemoveAttributeGroupCommand, schemaObj: schema): void {
   const { groupId } = command.payload;
   const parsed = parseSchemaId(groupId);
 
@@ -126,16 +117,16 @@ export function executeRemoveAttributeGroup(
  * @param schemaObj - The schema object to modify
  * @throws An {@link Error} if the attribute group or its parent is not found
  */
-export function executeModifyAttributeGroup(
-  command: ModifyAttributeGroupCommand,
-  schemaObj: schema
-): void {
+export function executeModifyAttributeGroup(command: ModifyAttributeGroupCommand, schemaObj: schema): void {
   const { groupId, groupName, documentation, ref } = command.payload;
   const parsed = parseSchemaId(groupId);
 
   if (parsed.nodeType === SchemaNodeType.AttributeGroupRef) {
     // Reference mode: modify xs:attributeGroup ref="..." in its parent
-    const target = assumeValidated(locateAttrGroupRef(schemaObj, groupId).target, `Attribute group reference ${groupId}`);
+    const target = assumeValidated(
+      locateAttrGroupRef(schemaObj, groupId).target,
+      `Attribute group reference ${groupId}`
+    );
     if (ref !== undefined) {
       target.ref = ref;
     }

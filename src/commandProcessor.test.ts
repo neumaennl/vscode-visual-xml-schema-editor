@@ -21,10 +21,7 @@ import { emptySchemaXml, schemaXmlWith } from "../shared/__tests__/schemaTestHel
 // Type-safe mock types for testing
 type MockValidator = Pick<CommandValidator, "validate">;
 type MockExecutor = Pick<CommandExecutor, "execute">;
-type MockModelManager = Pick<
-  SchemaModelManager,
-  "loadFromXml" | "getSchema" | "setSchema" | "cloneSchema" | "toXml"
->;
+type MockModelManager = Pick<SchemaModelManager, "loadFromXml" | "getSchema" | "setSchema" | "cloneSchema" | "toXml">;
 
 // eslint-disable-next-line no-restricted-syntax -- `type` not in SchemaCommand union; cast needed to test unknown-type rejection at runtime
 const INVALID_COMMAND = { type: "unknownCommand", payload: {} } as unknown as SchemaCommand;
@@ -125,14 +122,11 @@ function topLevelElementNames(modelManager: SchemaModelManager): string[] {
  * @param result - The result of the command
  * @throws An {@link Error} if the command succeeded
  */
-function expectFailure(
-  result: CommandExecutionResult
-): asserts result is CommandExecutionFailure {
+function expectFailure(result: CommandExecutionResult): asserts result is CommandExecutionFailure {
   expect(result.success).toBe(false);
   expect(result.schema).toBeNull();
   expect(result.xmlContent).toBeNull();
-  if (result.success)
-    throw new Error("Expected command execution to fail");
+  if (result.success) throw new Error("Expected command execution to fail");
 }
 
 /**
@@ -142,13 +136,10 @@ function expectFailure(
  * @param result - The result of the command
  * @throws An {@link Error} if the command succeeded or failed validation
  */
-function expectRuntimeFailure(
-  result: CommandExecutionResult
-): asserts result is CommandExecutionRuntimeFailure {
+function expectRuntimeFailure(result: CommandExecutionResult): asserts result is CommandExecutionRuntimeFailure {
   expectFailure(result);
   expect(result.errorKind).toBe("runtime");
-  if (result.errorKind !== "runtime")
-    throw new Error("Expected runtime failure");
+  if (result.errorKind !== "runtime") throw new Error("Expected runtime failure");
   expect(typeof result.stack).toBe("string");
 }
 
@@ -159,13 +150,10 @@ function expectRuntimeFailure(
  * @param result - The result of the command
  * @throws An {@link Error} if the command succeeded or failed at runtime
  */
-function expectValidationFailure(
-  result: CommandExecutionResult
-): asserts result is CommandExecutionValidationFailure {
+function expectValidationFailure(result: CommandExecutionResult): asserts result is CommandExecutionValidationFailure {
   expectFailure(result);
   expect(result.errorKind).toBe("validation");
-  if (result.errorKind !== "validation")
-    throw new Error("Expected validation failure");
+  if (result.errorKind !== "validation") throw new Error("Expected validation failure");
 }
 
 describe("CommandProcessor", () => {
@@ -350,9 +338,11 @@ describe("CommandProcessor", () => {
 
     test("should fail if round-trip validation fails", () => {
       const loadFromXml = vi.fn<SchemaModelManager["loadFromXml"]>();
-      loadFromXml.mockImplementationOnce(() => undefined).mockImplementationOnce(() => {
-        throw new Error("Round-trip validation failed");
-      });
+      loadFromXml
+        .mockImplementationOnce(() => undefined)
+        .mockImplementationOnce(() => {
+          throw new Error("Round-trip validation failed");
+        });
       const modelManager = mockModelManager(mockSchema, { loadFromXml });
 
       const result = processorWith({ executor: versionSettingExecutor(), modelManager }).execute(

@@ -57,7 +57,7 @@ export class PropertiesPanel {
    */
   constructor(container: HTMLDivElement, dispatchCommand?: CommandDispatcher) {
     this.container = container;
-    this.dispatchCommand = dispatchCommand ?? (() : void => undefined);
+    this.dispatchCommand = dispatchCommand ?? ((): void => undefined);
   }
 
   /**
@@ -206,10 +206,7 @@ export class PropertiesPanel {
           if (trimmedName === currentName) {
             return;
           }
-          if (
-            this.pendingRename?.sourceId === node.id &&
-            this.pendingRename.newName === trimmedName
-          ) {
+          if (this.pendingRename?.sourceId === node.id && this.pendingRename.newName === trimmedName) {
             return;
           }
           const command = createRenameNodeComand(node, next);
@@ -224,16 +221,12 @@ export class PropertiesPanel {
       addPropertyToContainer(root, "Name", node.name);
     }
 
-    renderTypeProperty(
-      root,
-      node,
-      this.getTypeSuggestions(),
-      this.dispatchCommand,
-      addPropertyToContainer
-    );
+    renderTypeProperty(root, node, this.getTypeSuggestions(), this.dispatchCommand, addPropertyToContainer);
 
     if (getNodeType(node) === SchemaNodeType.Schema) {
-      renderSchemaNamespaceProperties(root, node, this.dispatchCommand, () => { this.render(); });
+      renderSchemaNamespaceProperties(root, node, this.dispatchCommand, () => {
+        this.render();
+      });
     }
 
     if (canEditCardinality(node)) {
@@ -334,17 +327,15 @@ export class PropertiesPanel {
     for (const preset of presets) {
       const isActive =
         node.minOccurrence === preset.min &&
-        (preset.max === "unbounded"
-          ? node.maxOccurrence === -1
-          : node.maxOccurrence === preset.max);
+        (preset.max === "unbounded" ? node.maxOccurrence === -1 : node.maxOccurrence === preset.max);
 
       const btn = document.createElement("button");
       btn.type = "button";
-      btn.className = isActive
-        ? "property-preset-btn property-preset-btn-active"
-        : "property-preset-btn";
+      btn.className = isActive ? "property-preset-btn property-preset-btn-active" : "property-preset-btn";
       btn.textContent = preset.label;
-      btn.addEventListener("click", () => { dispatchOccurrence(preset.min, preset.max); });
+      btn.addEventListener("click", () => {
+        dispatchOccurrence(preset.min, preset.max);
+      });
       presetsRow.appendChild(btn);
     }
 
@@ -410,7 +401,9 @@ export class PropertiesPanel {
    * @returns The content of the tab
    */
   private renderDocsTab(node: DiagramItem): HTMLElement {
-    return createDocsTab(node, this.dispatchCommand, () => { this.render(); });
+    return createDocsTab(node, this.dispatchCommand, () => {
+      this.render();
+    });
   }
 
   /**
@@ -425,7 +418,8 @@ export class PropertiesPanel {
 
     const hint = document.createElement("p");
     hint.className = "property-xml-hint";
-    hint.textContent = "Preview only; it may differ from the exact schema XML. Open the schema in a text editor tab for the source of truth.";
+    hint.textContent =
+      "Preview only; it may differ from the exact schema XML. Open the schema in a text editor tab for the source of truth.";
 
     const pre = document.createElement("pre");
     pre.className = "property-xml-preview";

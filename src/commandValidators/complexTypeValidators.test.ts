@@ -123,10 +123,15 @@ describe("ComplexType Validators", () => {
 
     // ── anonymous ──────────────────────────────────────────────────────────
     test("should accept an anonymous addComplexType command, also in place of a type attribute", () => {
-      const command: AddComplexTypeCommand = { type: "addComplexType", payload: { parentId: "/element:person", contentModel: "sequence" } };
+      const command: AddComplexTypeCommand = {
+        type: "addComplexType",
+        payload: { parentId: "/element:person", contentModel: "sequence" },
+      };
 
       expect(validateAddComplexType(command, schemaWithElement).valid).toBe(true);
-      expect(validateAddComplexType(command, schemaWith(`<xs:element name="person" type="xs:string"/>`)).valid).toBe(true);
+      expect(validateAddComplexType(command, schemaWith(`<xs:element name="person" type="xs:string"/>`)).valid).toBe(
+        true
+      );
     });
 
     test("should reject anonymous addComplexType when parent element not found", () => {
@@ -276,7 +281,10 @@ describe("ComplexType Validators", () => {
       { field: "derivationKind", expected: "Derivation kind must be one of" },
     ])("should reject modifyComplexType with an invalid $field", ({ field, expected }) => {
       // eslint-disable-next-line no-restricted-syntax -- the value "invalid" is outside the union of the field; cast needed to test validator rejection
-      const command = { type: "modifyComplexType", payload: { typeId: "/complexType:PersonType", [field]: "invalid" } } as unknown as ModifyComplexTypeCommand;
+      const command = {
+        type: "modifyComplexType",
+        payload: { typeId: "/complexType:PersonType", [field]: "invalid" },
+      } as unknown as ModifyComplexTypeCommand;
       const result = validateModifyComplexType(command, schemaWithPersonType);
       expectInvalid(result);
       expect(result.error).toContain(expected);
@@ -400,7 +408,11 @@ describe("Complex type rules", () => {
     },
     {
       rule: "an unknown derivation kind for an anonymous type",
-      result: validateAdd({ parentId: "/element:plain", contentModel: "sequence", derivationKind: UNKNOWN_DERIVATION_KIND }),
+      result: validateAdd({
+        parentId: "/element:plain",
+        contentModel: "sequence",
+        derivationKind: UNKNOWN_DERIVATION_KIND,
+      }),
       error: "Derivation kind must be one of: extension, restriction",
     },
     {
@@ -415,7 +427,12 @@ describe("Complex type rules", () => {
     },
     {
       rule: "an unknown derivation kind for a top-level type",
-      result: validateAdd({ parentId: "/schema", typeName: "T", contentModel: "sequence", derivationKind: UNKNOWN_DERIVATION_KIND }),
+      result: validateAdd({
+        parentId: "/schema",
+        typeName: "T",
+        contentModel: "sequence",
+        derivationKind: UNKNOWN_DERIVATION_KIND,
+      }),
       error: "Derivation kind must be one of: extension, restriction",
     },
     {

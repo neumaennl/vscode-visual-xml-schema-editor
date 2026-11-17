@@ -65,6 +65,7 @@ Reviews of single changes don't show whether the structure of the code as a whol
 - before each large redesign, as part of planning it.
 
 A review checks:
+
 - the responsibilities of the parts;
 - the direction of the dependencies;
 - the [Principles](architecture.md#principles);

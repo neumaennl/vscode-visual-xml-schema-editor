@@ -38,11 +38,7 @@ export function addPropertyToContainer(container: HTMLElement, label: string, va
  * @param label - Human-readable property label
  * @param element - Custom element to render as the property value
  */
-export function addPropertyWithElementToContainer(
-  container: HTMLElement,
-  label: string,
-  element: HTMLElement
-): void {
+export function addPropertyWithElementToContainer(container: HTMLElement, label: string, element: HTMLElement): void {
   const propertyDiv = document.createElement("div");
   propertyDiv.className = "property";
 
@@ -143,11 +139,7 @@ export function createSection(icon: string, label: string): HTMLElement {
  * @param onDelete - Optional callback to invoke when the delete button is clicked
  * @returns A DOM element containing the node-type label and optional delete action
  */
-export function createPropertiesPanelHeader(
-  nodeTypeLabel: string,
-  nodeId: string,
-  onDelete?: () => void
-): HTMLElement {
+export function createPropertiesPanelHeader(nodeTypeLabel: string, nodeId: string, onDelete?: () => void): HTMLElement {
   const header = document.createElement("div");
   header.className = "properties-panel-header";
 
@@ -180,8 +172,7 @@ export function createPropertiesPanelHeader(
   if (onDelete) {
     const deleteButton = document.createElement("button");
     deleteButton.type = "button";
-    deleteButton.className =
-      "property-docs-action property-docs-action-destructive property-docs-action-icon-only";
+    deleteButton.className = "property-docs-action property-docs-action-destructive property-docs-action-icon-only";
     deleteButton.setAttribute("aria-label", "Delete node");
     deleteButton.title = "Delete node";
 
@@ -205,11 +196,7 @@ export function createPropertiesPanelHeader(
  * @param onChange - Callback invoked with the new boolean value when toggled
  * @returns A DOM element containing the toggle row
  */
-export function createToggleRow(
-  label: string,
-  checked: boolean,
-  onChange: (next: boolean) => void
-): HTMLElement {
+export function createToggleRow(label: string, checked: boolean, onChange: (next: boolean) => void): HTMLElement {
   const row = document.createElement("div");
   row.className = "property-toggle-row";
 
@@ -223,7 +210,9 @@ export function createToggleRow(
   const checkbox = document.createElement("input");
   checkbox.type = "checkbox";
   checkbox.checked = checked;
-  checkbox.addEventListener("change", () => { onChange(checkbox.checked); });
+  checkbox.addEventListener("change", () => {
+    onChange(checkbox.checked);
+  });
 
   const slider = document.createElement("span");
   slider.className = "property-toggle-slider";
@@ -248,7 +237,9 @@ function createCommitInput(value: string, onCommit: (next: string) => void): HTM
   input.type = "text";
   input.className = "property-input";
   input.value = value;
-  input.addEventListener("blur", () => { onCommit(input.value); });
+  input.addEventListener("blur", () => {
+    onCommit(input.value);
+  });
   input.addEventListener("keydown", (event: KeyboardEvent) => {
     if (event.key === "Enter") {
       event.preventDefault();
@@ -351,13 +342,12 @@ export function createEditableField(
  * @param onCommit - Callback invoked when the textarea loses focus
  * @returns The created textarea element
  */
-export function createEditableTextArea(
-  value: string,
-  onCommit: (next: string) => void
-): HTMLElement {
+export function createEditableTextArea(value: string, onCommit: (next: string) => void): HTMLElement {
   const textArea = document.createElement("textarea");
   textArea.className = "property-docs-input";
   textArea.value = value;
-  textArea.addEventListener("blur", () => { onCommit(textArea.value); });
+  textArea.addEventListener("blur", () => {
+    onCommit(textArea.value);
+  });
   return textArea;
 }

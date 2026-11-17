@@ -5,13 +5,8 @@
       "name": "Run Extension",
       "type": "extensionHost",
       "request": "launch",
-      "args": [
-        "--disable-extensions",
-        "--extensionDevelopmentPath=${workspaceFolder}"
-      ],
-      "outFiles": [
-        "${workspaceFolder}/out/**/*.js"
-      ],
+      "args": ["--disable-extensions", "--extensionDevelopmentPath=${workspaceFolder}"],
+      "outFiles": ["${workspaceFolder}/out/**/*.js"],
       "preLaunchTask": "${defaultBuildTask}"
     },
     {
@@ -19,9 +14,7 @@
       "type": "extensionHost",
       "request": "launch",
       "testConfiguration": "${workspaceFolder}/.vscode-test.mjs",
-      "outFiles": [
-        "${workspaceFolder}/.vscode-test/out/**/*.js"
-      ],
+      "outFiles": ["${workspaceFolder}/.vscode-test/out/**/*.js"],
       "preLaunchTask": "npm: pretest:extension-host"
     }
   ]

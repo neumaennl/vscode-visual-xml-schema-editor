@@ -2,13 +2,7 @@
  * Tests for SVG helper functions
  */
 
-import {
-  svgLine,
-  svgRectangle,
-  svgPolygon,
-  svgCircle,
-  svgText,
-} from "./SvgHelpers";
+import { svgLine, svgRectangle, svgPolygon, svgCircle, svgText } from "./SvgHelpers";
 import type { Point, Rectangle } from "./DiagramTypes";
 
 describe("SvgHelpers", () => {
@@ -257,12 +251,7 @@ describe("SvgHelpers", () => {
   describe("Integration tests", () => {
     test("should allow multiple elements to be added to the same group", () => {
       svgLine(mockGroup, "stroke:black", 0, 0, 10, 10);
-      svgRectangle(
-        mockGroup,
-        { x: 0, y: 0, width: 10, height: 10 },
-        "fill:red",
-        "stroke:black"
-      );
+      svgRectangle(mockGroup, { x: 0, y: 0, width: 10, height: 10 }, "fill:red", "stroke:black");
       svgCircle(mockGroup, 5, 5, 2, "fill:blue");
       svgText(mockGroup, "Label", 0, 0, "font-size:12px");
 

@@ -21,8 +21,7 @@ type StringRestrictionKey = "minInclusive" | "maxInclusive" | "minExclusive" | "
 
 /** A single-value facet of the Facets tab: a number or a string. */
 type ValueFacet = { label: string; construct: FacetPaletteConstruct } & (
-  | { key: NumericRestrictionKey; numeric: true }
-  | { key: StringRestrictionKey; numeric: false }
+  { key: NumericRestrictionKey; numeric: true } | { key: StringRestrictionKey; numeric: false }
 );
 
 /** The single-value facets of the Facets tab, in the order they are shown. */
@@ -87,25 +86,19 @@ export function renderFacetsTab(
   const canRemoveFacet = countDefinedFacets(restrictions) > 1;
 
   if (restrictions.enumeration?.length) {
-    renderValueListFacet(
-      root,
-      "enumeration",
-      restrictions.enumeration,
-      buildAndDispatch,
-      canRemoveFacet,
-      () => { buildAndDispatch((draft) => { draft.enumeration = undefined; }); }
-    );
+    renderValueListFacet(root, "enumeration", restrictions.enumeration, buildAndDispatch, canRemoveFacet, () => {
+      buildAndDispatch((draft) => {
+        draft.enumeration = undefined;
+      });
+    });
   }
 
   if (restrictions.pattern?.length) {
-    renderValueListFacet(
-      root,
-      "pattern",
-      restrictions.pattern,
-      buildAndDispatch,
-      canRemoveFacet,
-      () => { buildAndDispatch((draft) => { draft.pattern = undefined; }); }
-    );
+    renderValueListFacet(root, "pattern", restrictions.pattern, buildAndDispatch, canRemoveFacet, () => {
+      buildAndDispatch((draft) => {
+        draft.pattern = undefined;
+      });
+    });
   }
 
   for (const facet of VALUE_FACETS) {
@@ -113,7 +106,10 @@ export function renderFacetsTab(
   }
 
   if (restrictions.whiteSpace !== undefined) {
-    const field = createEditableField("White Space", restrictions.whiteSpace, (next) => {
+    const field = createEditableField(
+      "White Space",
+      restrictions.whiteSpace,
+      (next) => {
         const value = next.trim();
         if (value !== "" && value !== "preserve" && value !== "replace" && value !== "collapse") {
           return;
@@ -121,10 +117,15 @@ export function renderFacetsTab(
         buildAndDispatch((draft) => {
           draft.whiteSpace = value || undefined;
         });
-      }, undefined, getFacetIconStyle(PaletteSchemaConstruct.WhiteSpace));
+      },
+      undefined,
+      getFacetIconStyle(PaletteSchemaConstruct.WhiteSpace)
+    );
     root.appendChild(
       appendFacetRemoveButton(field, "White Space", canRemoveFacet, () => {
-        buildAndDispatch((draft) => { draft.whiteSpace = undefined; });
+        buildAndDispatch((draft) => {
+          draft.whiteSpace = undefined;
+        });
       })
     );
   }
@@ -163,13 +164,19 @@ function appendOptionalValueFacet(
   const field = createEditableField(
     facet.label,
     value.toString(),
-    (next) => { buildAndDispatch((draft) => { assign(draft, next); }); },
+    (next) => {
+      buildAndDispatch((draft) => {
+        assign(draft, next);
+      });
+    },
     undefined,
     getFacetIconStyle(facet.construct)
   );
   root.appendChild(
     appendFacetRemoveButton(field, facet.label, canRemove, () => {
-      buildAndDispatch((draft) => { draft[facet.key] = undefined; });
+      buildAndDispatch((draft) => {
+        draft[facet.key] = undefined;
+      });
     })
   );
 }

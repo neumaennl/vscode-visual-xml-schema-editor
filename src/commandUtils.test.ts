@@ -87,23 +87,17 @@ describe("parseDocumentationId", () => {
   });
 
   test("should parse a nested path with index 2", () => {
-    const result = parseDocumentationId(
-      "/element:person/anonymousComplexType[0]/documentation[2]"
-    );
+    const result = parseDocumentationId("/element:person/anonymousComplexType[0]/documentation[2]");
     expect(result.elementId).toBe("/element:person/anonymousComplexType[0]");
     expect(result.documentationIndex).toBe(2);
   });
 
   test("should throw for an ID without documentation suffix", () => {
-    expect(() => parseDocumentationId("/element:person")).toThrow(
-      "Invalid documentationId format"
-    );
+    expect(() => parseDocumentationId("/element:person")).toThrow("Invalid documentationId format");
   });
 
   test("should throw for a bare non-path string", () => {
-    expect(() => parseDocumentationId("doc1")).toThrow(
-      "Invalid documentationId format"
-    );
+    expect(() => parseDocumentationId("doc1")).toThrow("Invalid documentationId format");
   });
 });
 
@@ -133,16 +127,12 @@ describe("parseSchemaAnnotationId", () => {
 
 describe("parseSchemaDocumentationId", () => {
   test("should parse '/schema/annotation[0]/documentation[1]'", () => {
-    const result = parseSchemaDocumentationId(
-      "/schema/annotation[0]/documentation[1]"
-    );
+    const result = parseSchemaDocumentationId("/schema/annotation[0]/documentation[1]");
     expect(result).toEqual({ annotationIndex: 0, documentationIndex: 1 });
   });
 
   test("should parse '/schema/annotation[2]/documentation[3]'", () => {
-    const result = parseSchemaDocumentationId(
-      "/schema/annotation[2]/documentation[3]"
-    );
+    const result = parseSchemaDocumentationId("/schema/annotation[2]/documentation[3]");
     expect(result).toEqual({ annotationIndex: 2, documentationIndex: 3 });
   });
 
@@ -155,8 +145,6 @@ describe("parseSchemaDocumentationId", () => {
   });
 
   test("should return null for an element path", () => {
-    expect(
-      parseSchemaDocumentationId("/element:person/documentation[0]")
-    ).toBeNull();
+    expect(parseSchemaDocumentationId("/element:person/documentation[0]")).toBeNull();
   });
 });

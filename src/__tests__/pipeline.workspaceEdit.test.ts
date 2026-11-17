@@ -31,8 +31,7 @@ import { schemaXmlWith } from "../../shared/__tests__/schemaTestHelpers.js";
 const SIMPLE_SCHEMA_XML = schemaXmlWith(`<xs:element name="person" type="xs:string"/>`);
 
 /** Waits for all pending microtasks to flush. */
-const flushMicrotasks = (): Promise<void> =>
-  new Promise<void>((resolve) => setTimeout(resolve, 0));
+const flushMicrotasks = (): Promise<void> => new Promise<void>((resolve) => setTimeout(resolve, 0));
 
 /**
  * Sends an `executeCommand` message that adds the top-level element with the given name, and waits for it.
@@ -90,9 +89,7 @@ describe("Integration: WorkspaceEdit via SchemaEditorProvider", () => {
           data: { success: true },
         })
       );
-      expect(editor.postMessage).not.toHaveBeenCalledWith(
-        expect.objectContaining({ command: "error" })
-      );
+      expect(editor.postMessage).not.toHaveBeenCalledWith(expect.objectContaining({ command: "error" }));
     });
   });
 
@@ -113,9 +110,7 @@ describe("Integration: WorkspaceEdit via SchemaEditorProvider", () => {
           data: { success: false, error: "Cannot add element: duplicate element name 'person' in schema" },
         })
       );
-      expect(editor.postMessage).not.toHaveBeenCalledWith(
-        expect.objectContaining({ command: "error" })
-      );
+      expect(editor.postMessage).not.toHaveBeenCalledWith(expect.objectContaining({ command: "error" }));
     });
   });
 

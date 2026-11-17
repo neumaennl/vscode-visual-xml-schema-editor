@@ -13,14 +13,8 @@ import type {
   topLevelAttribute,
   topLevelElement,
 } from "../../shared/types.js";
-import {
-  schema
-} from "../../shared/types.js";
-import {
-  executeAddSimpleType,
-  executeModifySimpleType,
-  executeRemoveSimpleType,
-} from "./simpleTypeExecutors.js";
+import { schema } from "../../shared/types.js";
+import { executeAddSimpleType, executeModifySimpleType, executeRemoveSimpleType } from "./simpleTypeExecutors.js";
 import { emptySchema, schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
 
 /** A simpleType `AgeType` that restricts `xs:integer`. */
@@ -107,17 +101,16 @@ function complexTypes(schemaObj: schema): NonNullable<schema["complexType"]> {
 // peels the type out of the actual `simpleTypes()` helper and removes `undefined` so
 // the table-driven facet expectations stay strongly typed without repeating the long
 // indexed-access expression at every case definition.
-type RestrictionExpectation = (
-  restriction: NonNullable<ReturnType<typeof simpleTypes>[number]["restriction"]>
-) => void;
+type RestrictionExpectation = (restriction: NonNullable<ReturnType<typeof simpleTypes>[number]["restriction"]>) => void;
 
 describe("SimpleType Executors", () => {
   describe("executeAddSimpleType", () => {
     test("should throw when a simpleType is added without any body details", () => {
       const schemaObj = emptySchema();
 
-      expect(() => { addSimpleType(schemaObj, { typeName: "NameType" }); })
-        .toThrow("Simple type body not found, although the validator accepted the command");
+      expect(() => {
+        addSimpleType(schemaObj, { typeName: "NameType" });
+      }).toThrow("Simple type body not found, although the validator accepted the command");
     });
 
     test("should add a named simpleType with base type only and serializes back to valid XSD", () => {
@@ -149,9 +142,7 @@ describe("SimpleType Executors", () => {
       expect(simpleTypes(schemaObj)).toHaveLength(2);
       expect(simpleTypes(schemaObj)[0]!.name).toBe("ExistingType");
       expect(simpleTypes(schemaObj)[1]!.name).toBe("AgeType");
-      expect(simpleTypes(schemaObj)[1]!.annotation!.documentation![0]!.value).toBe(
-        "Represents a person's age"
-      );
+      expect(simpleTypes(schemaObj)[1]!.annotation!.documentation![0]!.value).toBe("Represents a person's age");
     });
 
     // Keep the shared expectation signature separate so the facet case table remains readable.
@@ -346,11 +337,7 @@ describe("SimpleType Executors", () => {
         source: `<xs:simpleType name="ColorType"><xs:restriction base="xs:string"><xs:enumeration value="red"/></xs:restriction></xs:simpleType>`,
         payload: { restrictions: { enumeration: ["red", "green", "blue"] } },
         expectRestriction: (restriction): void => {
-          expect(restriction.enumeration!.map((value) => value.value)).toEqual([
-            "red",
-            "green",
-            "blue",
-          ]);
+          expect(restriction.enumeration!.map((value) => value.value)).toEqual(["red", "green", "blue"]);
         },
       },
       {
@@ -406,9 +393,7 @@ describe("SimpleType Executors", () => {
     });
 
     test("should switch an existing list simpleType to union", () => {
-      const schemaObj = schemaWith(
-        `<xs:simpleType name="TokenType"><xs:list itemType="xs:token"/></xs:simpleType>`
-      );
+      const schemaObj = schemaWith(`<xs:simpleType name="TokenType"><xs:list itemType="xs:token"/></xs:simpleType>`);
 
       modifySimpleType(schemaObj, {
         typeId: "/simpleType:TokenType",
@@ -445,19 +430,22 @@ describe("SimpleType Executors", () => {
       },
     ];
 
-    test.each(inlineCases)("should add an anonymous simpleType inside $label", ({ source, parentId, getSimpleType }) => {
-      const schemaObj = schemaWith(source);
+    test.each(inlineCases)(
+      "should add an anonymous simpleType inside $label",
+      ({ source, parentId, getSimpleType }) => {
+        const schemaObj = schemaWith(source);
 
-      addSimpleType(schemaObj, {
-        parentId,
-        baseType: "xs:string",
-        restrictions: { enumeration: ["red", "green", "blue"] },
-      });
+        addSimpleType(schemaObj, {
+          parentId,
+          baseType: "xs:string",
+          restrictions: { enumeration: ["red", "green", "blue"] },
+        });
 
-      const simpleType = getSimpleType(schemaObj);
-      expect(simpleType.restriction!.base).toBe("xs:string");
-      expect(simpleType.restriction!.enumeration).toHaveLength(3);
-    });
+        const simpleType = getSimpleType(schemaObj);
+        expect(simpleType.restriction!.base).toBe("xs:string");
+        expect(simpleType.restriction!.enumeration).toHaveLength(3);
+      }
+    );
 
     test("should add documentation to an anonymous simpleType on an element and keeps serialization valid", () => {
       const schemaObj = schemaWith(AGE_ELEMENT);
@@ -479,7 +467,11 @@ describe("SimpleType Executors", () => {
 
     test.each([
       ["type attribute", `<xs:element name="status" type="xs:string"/>`, "type_"],
-      ["anonymous complexType", `<xs:element name="status"><xs:complexType><xs:sequence/></xs:complexType></xs:element>`, "complexType"],
+      [
+        "anonymous complexType",
+        `<xs:element name="status"><xs:complexType><xs:sequence/></xs:complexType></xs:element>`,
+        "complexType",
+      ],
     ] as const)("should replace an existing %s when adding an anonymous simpleType", (_case, element, replaced) => {
       const schemaObj = schemaWith(element);
 
@@ -571,7 +563,9 @@ describe("SimpleType Executors", () => {
         source: `
   <xs:simpleType name="StatusType"><xs:restriction base="xs:string"/></xs:simpleType>
   <xs:element name="status" type="StatusType"/>`,
-        expectReferences: (schemaObj: schema): void => { expect(elements(schemaObj)[0]!.type_).toBe("StateType"); },
+        expectReferences: (schemaObj: schema): void => {
+          expect(elements(schemaObj)[0]!.type_).toBe("StateType");
+        },
       },
       {
         name: "attribute/@type",
@@ -580,7 +574,9 @@ describe("SimpleType Executors", () => {
   <xs:attribute name="code" type="CodeType"/>`,
         oldName: "CodeType",
         newName: "IdentifierType",
-        expectReferences: (schemaObj: schema): void => { expect(attributes(schemaObj)[0]!.type_).toBe("IdentifierType"); },
+        expectReferences: (schemaObj: schema): void => {
+          expect(attributes(schemaObj)[0]!.type_).toBe("IdentifierType");
+        },
       },
       {
         name: "restriction/@base",

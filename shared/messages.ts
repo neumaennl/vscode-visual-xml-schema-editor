@@ -31,8 +31,7 @@ export interface ErrorData {
 /**
  * Message to execute a schema command.
  */
-export interface ExecuteCommandMessage
-  extends Message<"executeCommand", SchemaCommand> {
+export interface ExecuteCommandMessage extends Message<"executeCommand", SchemaCommand> {
   command: "executeCommand";
   data: SchemaCommand;
 }
@@ -60,8 +59,7 @@ export interface UpdateSchemaMessage extends Message<"updateSchema", schema> {
 /**
  * Message to update diagram options in the webview.
  */
-export interface UpdateDiagramOptionsMessage
-  extends Message<"updateDiagramOptions", DiagramOptions> {
+export interface UpdateDiagramOptionsMessage extends Message<"updateDiagramOptions", DiagramOptions> {
   command: "updateDiagramOptions";
   data: DiagramOptions;
 }
@@ -69,8 +67,7 @@ export interface UpdateDiagramOptionsMessage
 /**
  * Message when the schema has been modified.
  */
-export interface SchemaModifiedMessage
-  extends Message<"schemaModified", schema> {
+export interface SchemaModifiedMessage extends Message<"schemaModified", schema> {
   command: "schemaModified";
   data: schema; // Updated schema object
 }
@@ -86,8 +83,7 @@ export interface ErrorMessage extends Message<"error", ErrorData> {
 /**
  * Message to report command execution result.
  */
-export interface CommandResultMessage
-  extends Message<"commandResult", CommandResponse> {
+export interface CommandResultMessage extends Message<"commandResult", CommandResponse> {
   command: "commandResult";
   data: CommandResponse;
 }
@@ -101,8 +97,4 @@ export type WebviewMessage = ExecuteCommandMessage;
  * Union type of all messages from extension to webview.
  */
 export type ExtensionMessage =
-  | UpdateSchemaMessage
-  | UpdateDiagramOptionsMessage
-  | SchemaModifiedMessage
-  | ErrorMessage
-  | CommandResultMessage;
+  UpdateSchemaMessage | UpdateDiagramOptionsMessage | SchemaModifiedMessage | ErrorMessage | CommandResultMessage;

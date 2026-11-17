@@ -103,7 +103,9 @@ describe("CommandValidator", () => {
 
     test("should return validator error when validator returns invalid", () => {
       const command = DELEGATED_COMMANDS[0]!;
-      mockValidators.get("validateAddElement")?.mockReturnValueOnce({ valid: false, error: "Element name cannot be empty" });
+      mockValidators
+        .get("validateAddElement")
+        ?.mockReturnValueOnce({ valid: false, error: "Element name cannot be empty" });
 
       const result = validator.validate(command, mockSchema);
 

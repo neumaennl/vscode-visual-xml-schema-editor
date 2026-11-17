@@ -34,8 +34,6 @@ export enum PaletteSchemaConstruct {
  * @param value - Raw drag payload value
  * @returns True when the value is a supported palette schema construct
  */
-export function isPaletteSchemaConstruct(
-  value: string
-): value is PaletteSchemaConstruct {
+export function isPaletteSchemaConstruct(value: string): value is PaletteSchemaConstruct {
   return (Object.values(PaletteSchemaConstruct) as string[]).includes(value);
 }

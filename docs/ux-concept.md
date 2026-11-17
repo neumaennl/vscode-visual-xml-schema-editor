@@ -57,13 +57,13 @@ The components that implement the model are described in [Editor](editor.md); th
 
 Each interaction belongs to one main surface:
 
-| Surface | Role | Examples |
-|---|---|---|
-| Palette and drag and drop | Add constructs | elements, attributes, groups, compositors, simple and complex types, restriction, extension, facets[^palette-items] |
-| Properties panel | Edit and delete the selected node | name, type, cardinality, facet values, documentation, delete |
-| Toolbar | Actions for the whole diagram | zoom in, zoom out, fit view |
-| Context menu | Contextual operations | reorder, refactor, find usages, go to definition, cut, copy, paste, regenerate sample XML |
-| Read-only display | Computed values | namespace, derived labels, unresolved values |
+| Surface                   | Role                              | Examples                                                                                                            |
+| ------------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Palette and drag and drop | Add constructs                    | elements, attributes, groups, compositors, simple and complex types, restriction, extension, facets[^palette-items] |
+| Properties panel          | Edit and delete the selected node | name, type, cardinality, facet values, documentation, delete                                                        |
+| Toolbar                   | Actions for the whole diagram     | zoom in, zoom out, fit view                                                                                         |
+| Context menu              | Contextual operations             | reorder, refactor, find usages, go to definition, cut, copy, paste, regenerate sample XML                           |
+| Read-only display         | Computed values                   | namespace, derived labels, unresolved values                                                                        |
 
 Discoverability rule: adding starts in the palette, editing starts in the panel. The context menu adds contextual operations to both.
 
@@ -83,26 +83,26 @@ Every change in the Facets tab sends `modifySimpleType` with the complete set of
 
 A restriction can have any number of facets at once, and the Facets tab shows a row for each of them. XSD defines which facets apply to which base types:
 
-| Facet | Applies to |
-|---|---|
-| `enumeration` | all types except `xs:boolean` |
-| `pattern` | all types |
-| `length`, `minLength`, `maxLength` | string and binary types (`xs:string`, `xs:hexBinary`, `xs:base64Binary` and their derived types) |
-| `minInclusive`, `maxInclusive`, `minExclusive`, `maxExclusive` | numeric, date and time types |
-| `totalDigits`, `fractionDigits` | `xs:decimal` and its derived types |
-| `whiteSpace` | string types |
+| Facet                                                          | Applies to                                                                                       |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `enumeration`                                                  | all types except `xs:boolean`                                                                    |
+| `pattern`                                                      | all types                                                                                        |
+| `length`, `minLength`, `maxLength`                             | string and binary types (`xs:string`, `xs:hexBinary`, `xs:base64Binary` and their derived types) |
+| `minInclusive`, `maxInclusive`, `minExclusive`, `maxExclusive` | numeric, date and time types                                                                     |
+| `totalDigits`, `fractionDigits`                                | `xs:decimal` and its derived types                                                               |
+| `whiteSpace`                                                   | string types                                                                                     |
 
 ## Combinations
 
 Some facets cannot be combined:
 
-| Combination | Rule |
-|---|---|
-| `length` with `minLength` or `maxLength` | Not allowed. |
-| `minInclusive` with `minExclusive` | Only one lower bound. |
-| `maxInclusive` with `maxExclusive` | Only one upper bound. |
-| `enumeration` with range or length facets | Allowed; the values must also satisfy the other facets. |
-| `enumeration` with `pattern` | Allowed; a value must match the pattern and be in the list. |
+| Combination                               | Rule                                                        |
+| ----------------------------------------- | ----------------------------------------------------------- |
+| `length` with `minLength` or `maxLength`  | Not allowed.                                                |
+| `minInclusive` with `minExclusive`        | Only one lower bound.                                       |
+| `maxInclusive` with `maxExclusive`        | Only one upper bound.                                       |
+| `enumeration` with range or length facets | Allowed; the values must also satisfy the other facets.     |
+| `enumeration` with `pattern`              | Allowed; a value must match the pattern and be in the list. |
 
 Palette drops and panel edits prevent facets that do not apply to the base type and combinations that are not allowed.
 
@@ -116,13 +116,13 @@ XSD allows several `xs:pattern` facets in one restriction. They are alternatives
 
 The panel shows an editable field only where the selected node supports the matching command:[^properties-panel]
 
-| Node | Editable fields |
-|---|---|
-| Element | Name; Type (explicit type) or Base Type and Replacement Type (anonymous type); minOccurs and maxOccurs (local elements only); default and fixed value; nillable; abstract (top-level only); mixed (anonymous complex type) |
-| Simple type | Name; Base Type, if a single base type can be resolved |
-| Complex type | Name; Base Type, if the type is derived by extension; abstract; mixed |
-| Group | Name |
-| Attribute | Name, type, use, default and fixed value |
+| Node         | Editable fields                                                                                                                                                                                                            |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Element      | Name; Type (explicit type) or Base Type and Replacement Type (anonymous type); minOccurs and maxOccurs (local elements only); default and fixed value; nillable; abstract (top-level only); mixed (anonymous complex type) |
+| Simple type  | Name; Base Type, if a single base type can be resolved                                                                                                                                                                     |
+| Complex type | Name; Base Type, if the type is derived by extension; abstract; mixed                                                                                                                                                      |
+| Group        | Name                                                                                                                                                                                                                       |
+| Attribute    | Name, type, use, default and fixed value                                                                                                                                                                                   |
 
 Computed values are shown as read-only text, for example the namespace, the group type, the anonymous-type indicator and summary labels such as `simpleType (restricts xs:string)`. The schema root shows its namespace declarations (see [Editor](editor.md#properties-panel)).
 

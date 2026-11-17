@@ -1,12 +1,5 @@
-import type {
-  PaletteGroup,
-  PaletteItem,
-} from "./PaletteItems";
-import {
-  PALETTE_MIME_TYPE,
-  paletteGroups,
-  setActiveDraggedPaletteSchemaConstruct,
-} from "./PaletteItems";
+import type { PaletteGroup, PaletteItem } from "./PaletteItems";
+import { PALETTE_MIME_TYPE, paletteGroups, setActiveDraggedPaletteSchemaConstruct } from "./PaletteItems";
 
 /**
  * Lightweight DOM-based component palette for drag-and-drop.
@@ -113,9 +106,7 @@ export class PaletteView {
       });
 
       const chevron = document.createElement("span");
-      const chevronIcon = this.openGroups.has(group.label)
-        ? "codicon-chevron-down"
-        : "codicon-chevron-right";
+      const chevronIcon = this.openGroups.has(group.label) ? "codicon-chevron-down" : "codicon-chevron-right";
       chevron.className = `codicon ${chevronIcon}`;
       groupButton.appendChild(chevron);
 

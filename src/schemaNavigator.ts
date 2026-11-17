@@ -55,10 +55,7 @@ export type NodeLocation =
  * // Returns the sequence group where elements can be added
  * ```
  */
-export function locateNodeById(
-  schemaObj: schema,
-  nodeId: string
-): NodeLocation {
+export function locateNodeById(schemaObj: schema, nodeId: string): NodeLocation {
   // Special case: the canonical schema root ID refers to the schema root
   if (isSchemaRoot(nodeId)) {
     return {
@@ -70,7 +67,7 @@ export function locateNodeById(
 
   try {
     const parsed = parseSchemaId(nodeId);
-    
+
     // Navigate through the path segments
     const segments = parsed.path;
     // eslint-disable-next-line no-restricted-syntax -- `currentNode` is a heterogeneous traversal variable reassigned to different child-node types; `unknown` is the correct annotation here
@@ -79,12 +76,8 @@ export function locateNodeById(
 
     for (const segment of segments) {
       const segmentInfo = parseSegment(segment);
-      
-      const result = navigateToChild(
-        currentNode,
-        currentType,
-        segmentInfo
-      );
+
+      const result = navigateToChild(currentNode, currentType, segmentInfo);
 
       if (!result.found) {
         return {
@@ -168,11 +161,7 @@ function parseSegment(segment: string): SegmentInfo {
  * @param segmentInfo - The child, as parsed from its segment of the ID
  * @returns The child and its kind, or `found: false` if the parent has no such child
  */
-function navigateToChild(
-  parent: unknown,
-  parentType: string,
-  segmentInfo: SegmentInfo
-): NavigationResult {
+function navigateToChild(parent: unknown, parentType: string, segmentInfo: SegmentInfo): NavigationResult {
   const { nodeType, name, position } = segmentInfo;
 
   // Handle navigation based on parent type and target node type
@@ -185,23 +174,11 @@ function navigateToChild(
     parentType === "attribute"
   ) {
     return navigateToAnonymousType(parent as AnonymousTypeHolder, nodeType);
-  } else if (
-    parentType === "topLevelComplexType" ||
-    parentType === "localComplexType"
-  ) {
-    return navigateFromComplexType(
-      parent as topLevelComplexType | localComplexType,
-      nodeType,
-      name,
-      position
-    );
+  } else if (parentType === "topLevelComplexType" || parentType === "localComplexType") {
+    return navigateFromComplexType(parent as topLevelComplexType | localComplexType, nodeType, name, position);
   } else if (parentType === "namedGroup") {
     return navigateFromNamedGroup(parent as namedGroup, nodeType, name, position);
-  } else if (
-    parentType === "sequence" ||
-    parentType === "choice" ||
-    parentType === "all"
-  ) {
+  } else if (parentType === "sequence" || parentType === "choice" || parentType === "all") {
     return navigateFromGroup(parent as explicitGroup, nodeType, name, position);
   }
 
@@ -210,7 +187,10 @@ function navigateToChild(
 
 /** The property of the schema that holds each kind of top-level component, and the type of the node. */
 const TOP_LEVEL_KINDS: Partial<
-  Record<SchemaNodeType, { property: "element" | "complexType" | "simpleType" | "group" | "attributeGroup" | "attribute"; nodeType: string }>
+  Record<
+    SchemaNodeType,
+    { property: "element" | "complexType" | "simpleType" | "group" | "attributeGroup" | "attribute"; nodeType: string }
+  >
 > = {
   [SchemaNodeType.Element]: { property: "element", nodeType: "topLevelElement" },
   [SchemaNodeType.ComplexType]: { property: "complexType", nodeType: "topLevelComplexType" },
@@ -245,7 +225,10 @@ function navigateFromSchema(
 }
 
 /** An element or attribute, which can hold an anonymous type; attributes only hold simple types. */
-interface AnonymousTypeHolder { complexType?: localComplexType; simpleType?: localSimpleType }
+interface AnonymousTypeHolder {
+  complexType?: localComplexType;
+  simpleType?: localSimpleType;
+}
 
 /**
  * Navigate from an element or attribute to its anonymous complexType or simpleType.

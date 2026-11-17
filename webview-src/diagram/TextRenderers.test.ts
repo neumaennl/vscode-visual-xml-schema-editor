@@ -2,11 +2,7 @@
  * Tests for text rendering functions
  */
 
-import {
-  renderText,
-  renderDocumentation,
-  renderOccurrence,
-} from "./TextRenderers";
+import { renderText, renderDocumentation, renderOccurrence } from "./TextRenderers";
 import { DiagramItem } from "./DiagramItem";
 import type { Diagram } from "./Diagram";
 import type { Rectangle } from "./DiagramTypes";
@@ -20,10 +16,7 @@ describe("TextRenderers", () => {
 
   beforeEach(() => {
     mockGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    mockSvg = document.createElementNS(
-      "http://www.w3.org/2000/svg",
-      "svg"
-    );
+    mockSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     document.body.appendChild(mockSvg);
 
     // Mock getBBox for SVG text elements (not supported in jsdom)
@@ -135,13 +128,19 @@ describe("TextRenderers", () => {
       ["multiple lines", "Line 1\nLine 2\nLine 3", 100, ["Line 1", "Line 2", "Line 3"]],
       ["at most 3 lines", "Line 1\nLine 2\nLine 3\nLine 4\nLine 5", 150, ["Line 1", "Line 2", "Line 3"]],
     ])("should render %s of documentation", (_case, documentation, height, expected) => {
-      renderDocumentation(makeItem({ documentation, documentationBox: { x: 10, y: 100, width: 200, height } }), mockGroup);
+      renderDocumentation(
+        makeItem({ documentation, documentationBox: { x: 10, y: 100, width: 200, height } }),
+        mockGroup
+      );
 
       expect(Array.from(mockGroup.querySelectorAll("text"), (text) => text.textContent)).toEqual(expected);
     });
 
     test("should truncate long documentation lines", () => {
-      renderDocumentation(makeItem({ documentation: "A".repeat(100), documentationBox: { x: 10, y: 100, width: 200, height: 50 } }), mockGroup);
+      renderDocumentation(
+        makeItem({ documentation: "A".repeat(100), documentationBox: { x: 10, y: 100, width: 200, height: 50 } }),
+        mockGroup
+      );
 
       const text = mockGroup.querySelector("text");
       expect(text?.textContent.length).toBeLessThanOrEqual(50);
@@ -165,7 +164,10 @@ describe("TextRenderers", () => {
       ["the default 1..1 when alwaysShowOccurrence is true", 1, 1, { alwaysShowOccurrence: true }, "1..1"],
       ["0..1", 0, 1, {}, "0..1"],
     ])("should render %s", (_case, minOccurrence, maxOccurrence, diagramOptions, expected) => {
-      const item = makeItem({ minOccurrence, maxOccurrence, elementBox: { x: 10, y: 10, width: 100, height: 50 } }, diagramOptions);
+      const item = makeItem(
+        { minOccurrence, maxOccurrence, elementBox: { x: 10, y: 10, width: 100, height: 50 } },
+        diagramOptions
+      );
 
       renderOccurrence(item, mockGroup);
 
@@ -173,7 +175,10 @@ describe("TextRenderers", () => {
     });
 
     test("should position text relative to element box", () => {
-      renderOccurrence(makeItem({ minOccurrence: 0, maxOccurrence: -1, elementBox: { x: 20, y: 30, width: 80, height: 40 } }), mockGroup);
+      renderOccurrence(
+        makeItem({ minOccurrence: 0, maxOccurrence: -1, elementBox: { x: 20, y: 30, width: 80, height: 40 } }),
+        mockGroup
+      );
 
       const text = mockGroup.querySelector("text");
       expect(text?.getAttribute("x")).toBe("105"); // 20 + 80 + 5

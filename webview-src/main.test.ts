@@ -4,7 +4,6 @@
 
 import type { Mock } from "vitest";
 
-
 // Mock the VS Code API before importing
 const mockPostMessage = vi.fn();
 const mockGetState = vi.fn();
@@ -85,10 +84,7 @@ describe("SchemaEditorApp", () => {
 
     await import("./main");
 
-    expect(addEventListenerSpy).toHaveBeenCalledWith(
-      "message",
-      expect.any(Function)
-    );
+    expect(addEventListenerSpy).toHaveBeenCalledWith("message", expect.any(Function));
   });
 
   test("should handle updateSchema message", async () => {
@@ -138,10 +134,10 @@ describe("SchemaEditorApp", () => {
   });
 
   test("should restore state on initialization", async () => {
-    const savedState = { 
-      zoom: 1.5, 
-      panX: 100, 
-      panY: 50 
+    const savedState = {
+      zoom: 1.5,
+      panX: 100,
+      panY: 50,
     };
     mockGetState.mockReturnValue(savedState);
 

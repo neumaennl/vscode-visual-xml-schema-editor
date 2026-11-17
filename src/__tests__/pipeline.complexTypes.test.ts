@@ -85,17 +85,25 @@ describe("Integration: ComplexType pipeline", () => {
     });
 
     test("should return validation error when type name is invalid", () => {
-      runCommandExpectValidationFailure(emptySchemaXml(), {
-        type: "addComplexType",
-        payload: { parentId: "/schema", typeName: "123Bad", contentModel: "sequence" },
-      }, "Type name must be a valid XML name");
+      runCommandExpectValidationFailure(
+        emptySchemaXml(),
+        {
+          type: "addComplexType",
+          payload: { parentId: "/schema", typeName: "123Bad", contentModel: "sequence" },
+        },
+        "Type name must be a valid XML name"
+      );
     });
 
     test("should return validation error for duplicate complex type name", () => {
-      runCommandExpectValidationFailure(SCHEMA_WITH_COMPLEXTYPE, {
-        type: "addComplexType",
-        payload: { parentId: "/schema", typeName: "PersonType", contentModel: "sequence" },
-      }, "Complex type 'PersonType' already exists in schema");
+      runCommandExpectValidationFailure(
+        SCHEMA_WITH_COMPLEXTYPE,
+        {
+          type: "addComplexType",
+          payload: { parentId: "/schema", typeName: "PersonType", contentModel: "sequence" },
+        },
+        "Complex type 'PersonType' already exists in schema"
+      );
     });
   });
 
@@ -113,10 +121,14 @@ describe("Integration: ComplexType pipeline", () => {
     });
 
     test("should return validation error when type ID does not exist", () => {
-      runCommandExpectValidationFailure(SCHEMA_WITH_COMPLEXTYPE, {
-        type: "removeComplexType",
-        payload: { typeId: "/complexType:NoSuchType" },
-      }, "Complex type 'NoSuchType' not found in schema");
+      runCommandExpectValidationFailure(
+        SCHEMA_WITH_COMPLEXTYPE,
+        {
+          type: "removeComplexType",
+          payload: { typeId: "/complexType:NoSuchType" },
+        },
+        "Complex type 'NoSuchType' not found in schema"
+      );
     });
   });
 
@@ -157,10 +169,14 @@ describe("Integration: ComplexType pipeline", () => {
     });
 
     test("should return validation error when type ID does not exist", () => {
-      runCommandExpectValidationFailure(SCHEMA_WITH_COMPLEXTYPE, {
-        type: "modifyComplexType",
-        payload: { typeId: "/complexType:Ghost", typeName: "Other" },
-      }, "Complex type 'Ghost' not found in schema");
+      runCommandExpectValidationFailure(
+        SCHEMA_WITH_COMPLEXTYPE,
+        {
+          type: "modifyComplexType",
+          payload: { typeId: "/complexType:Ghost", typeName: "Other" },
+        },
+        "Complex type 'Ghost' not found in schema"
+      );
     });
 
     test("should wrap the group reference of a type without a compositor when it gets a base type", () => {

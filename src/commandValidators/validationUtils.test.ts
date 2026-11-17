@@ -1,8 +1,4 @@
-import {
-  isValidXmlName,
-  validateOccurrences,
-  validateElementType,
-} from "./validationUtils.js";
+import { isValidXmlName, validateOccurrences, validateElementType } from "./validationUtils.js";
 import { expectInvalid } from "../__tests__/validationTestHelpers.js";
 
 describe("validationUtils", () => {
@@ -64,9 +60,7 @@ describe("validationUtils", () => {
     test("should reject invalid maxOccurs", () => {
       const result = validateOccurrences(1, -1);
       expectInvalid(result);
-      expect(result.error).toBe(
-        "maxOccurs must be a non-negative integer or 'unbounded'"
-      );
+      expect(result.error).toBe("maxOccurs must be a non-negative integer or 'unbounded'");
     });
 
     test("should reject minOccurs > maxOccurs", () => {

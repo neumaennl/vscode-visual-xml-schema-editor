@@ -22,9 +22,12 @@ const SCHEMA_TWO_IMPORTS = schemaXmlWith(`<xs:import namespace="http://example.c
 const SCHEMA_WITH_NO_NAMESPACE_IMPORT = schemaXmlWith(`<xs:import schemaLocation="no-namespace.xsd"/>`);
 
 /** Schema with an import of `http://example.com/ext` that is bound to the prefix `ext`. */
-const SCHEMA_WITH_EXT_IMPORT = schemaXmlWith(`<xs:import namespace="http://example.com/ext" schemaLocation="ext.xsd"/>`, {
-  ext: "http://example.com/ext",
-});
+const SCHEMA_WITH_EXT_IMPORT = schemaXmlWith(
+  `<xs:import namespace="http://example.com/ext" schemaLocation="ext.xsd"/>`,
+  {
+    ext: "http://example.com/ext",
+  }
+);
 
 /** Schema whose only use of the imported namespace is the prefix `ext` in the XPath of a key. */
 const SCHEMA_WITH_PREFIX_IN_XPATH = schemaXmlWith(
@@ -34,7 +37,6 @@ const SCHEMA_WITH_PREFIX_IN_XPATH = schemaXmlWith(
 </xs:element>`,
   { ext: "http://example.com/ext" }
 );
-
 
 /** The command that removes the first import. */
 const REMOVE_FIRST_IMPORT: SchemaCommand = { type: "removeImport", payload: { importId: "/import[0]" } };
@@ -53,7 +55,9 @@ describe("Integration: Import pipeline", () => {
       });
       const imports = result.import_ ?? [];
 
-      expect(imports.some((i) => i.namespace === "http://example.com/ext" && i.schemaLocation === "ext.xsd")).toBe(true);
+      expect(imports.some((i) => i.namespace === "http://example.com/ext" && i.schemaLocation === "ext.xsd")).toBe(
+        true
+      );
     });
 
     test("should add an import with an explicit prefix", () => {
@@ -84,39 +88,49 @@ describe("Integration: Import pipeline", () => {
       expect(imports.some((i) => i.namespace === "http://example.com/auto")).toBe(true);
       // A prefix in the format "ns0", "ns1", ... must have been registered
       const prefixes = result._namespacePrefixes ?? {};
-      const autoPrefix = Object.keys(prefixes).find(
-        (k) => prefixes[k] === "http://example.com/auto"
-      );
+      const autoPrefix = Object.keys(prefixes).find((k) => prefixes[k] === "http://example.com/auto");
       expect(autoPrefix).toBeDefined();
       expect(autoPrefix).toMatch(/^ns\d+$/);
     });
 
     test("should return validation error for an invalid namespace URI", () => {
-      runCommandExpectValidationFailure(emptySchemaXml(), {
-        type: "addImport",
-        payload: { namespace: "not a uri", schemaLocation: "x.xsd" },
-      }, "Namespace must be a valid absolute URI");
+      runCommandExpectValidationFailure(
+        emptySchemaXml(),
+        {
+          type: "addImport",
+          payload: { namespace: "not a uri", schemaLocation: "x.xsd" },
+        },
+        "Namespace must be a valid absolute URI"
+      );
     });
 
     test("should return validation error for a duplicate namespace", () => {
-      runCommandExpectValidationFailure(SCHEMA_WITH_IMPORT, {
-        type: "addImport",
-        payload: {
-          namespace: "http://example.com/ext",
-          schemaLocation: "other.xsd",
+      runCommandExpectValidationFailure(
+        SCHEMA_WITH_IMPORT,
+        {
+          type: "addImport",
+          payload: {
+            namespace: "http://example.com/ext",
+            schemaLocation: "other.xsd",
+          },
         },
-      }, "An import for namespace 'http://example.com/ext' already exists");
+        "An import for namespace 'http://example.com/ext' already exists"
+      );
     });
 
     test("should return validation error for a reserved prefix 'xml'", () => {
-      runCommandExpectValidationFailure(emptySchemaXml(), {
-        type: "addImport",
-        payload: {
-          namespace: "http://example.com/new",
-          schemaLocation: "new.xsd",
-          prefix: "xml",
+      runCommandExpectValidationFailure(
+        emptySchemaXml(),
+        {
+          type: "addImport",
+          payload: {
+            namespace: "http://example.com/new",
+            schemaLocation: "new.xsd",
+            prefix: "xml",
+          },
         },
-      }, "Prefix 'xml' is reserved and cannot be used");
+        "Prefix 'xml' is reserved and cannot be used"
+      );
     });
   });
 
@@ -147,10 +161,14 @@ describe("Integration: Import pipeline", () => {
     });
 
     test("should return validation error when import ID is out of range", () => {
-      runCommandExpectValidationFailure(SCHEMA_WITH_IMPORT, {
-        type: "removeImport",
-        payload: { importId: "/import[5]" },
-      }, "Import not found: /import[5]");
+      runCommandExpectValidationFailure(
+        SCHEMA_WITH_IMPORT,
+        {
+          type: "removeImport",
+          payload: { importId: "/import[5]" },
+        },
+        "Import not found: /import[5]"
+      );
     });
   });
 
@@ -179,10 +197,14 @@ describe("Integration: Import pipeline", () => {
     });
 
     test("should return validation error when import ID is out of range", () => {
-      runCommandExpectValidationFailure(SCHEMA_WITH_IMPORT, {
-        type: "modifyImport",
-        payload: { importId: "/import[99]", schemaLocation: "x.xsd" },
-      }, "Import not found: /import[99]");
+      runCommandExpectValidationFailure(
+        SCHEMA_WITH_IMPORT,
+        {
+          type: "modifyImport",
+          payload: { importId: "/import[99]", schemaLocation: "x.xsd" },
+        },
+        "Import not found: /import[99]"
+      );
     });
   });
 
@@ -213,9 +235,15 @@ describe("Integration: Import pipeline", () => {
     });
 
     test("should bind an additional prefix to the namespace of an import", () => {
-      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_EXT_IMPORT, { type: "modifyImport", payload: { importId: "/import[0]", prefix: "more" } });
+      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_EXT_IMPORT, {
+        type: "modifyImport",
+        payload: { importId: "/import[0]", prefix: "more" },
+      });
 
-      expect(result._namespacePrefixes).toMatchObject({ ext: "http://example.com/ext", more: "http://example.com/ext" });
+      expect(result._namespacePrefixes).toMatchObject({
+        ext: "http://example.com/ext",
+        more: "http://example.com/ext",
+      });
     });
 
     test("should keep the binding when a prefix is renamed to itself", () => {

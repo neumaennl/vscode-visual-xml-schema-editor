@@ -5,7 +5,10 @@
 import { appendTo, assignDefined, removeFrom } from "./nodeProperties.js";
 
 /** A node with an optional array property, like the generated classes. */
-interface Node { items?: string[]; other?: number }
+interface Node {
+  items?: string[];
+  other?: number;
+}
 
 describe("appendTo", () => {
   test("should create the array for the first item", () => {
@@ -44,9 +47,9 @@ describe("removeFrom", () => {
     ["no matching item", { items: ["a"] }],
     ["no array", {}],
   ])("should fail if nothing is removed: %s", (_case, node: Node) => {
-    expect(() => { removeFrom(node, "items", (item) => item === "x", "Item x"); }).toThrow(
-      "Item x not found, although the validator accepted the command"
-    );
+    expect(() => {
+      removeFrom(node, "items", (item) => item === "x", "Item x");
+    }).toThrow("Item x not found, although the validator accepted the command");
   });
 });
 

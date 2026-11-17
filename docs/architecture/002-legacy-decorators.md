@@ -82,16 +82,16 @@ The test configurations extend these files and inherit the settings.
 
 ## Reasons
 
-| | Legacy decorators | Stage 3 decorators |
-|---|---|---|
-| Standard | No, and never will be; the flag is called "experimental". | Follows a TC39 proposal, but one that moved back to Stage 2.7 and may change. |
-| Stability | Frozen; TypeScript 6 and 7 support them unchanged. | If the proposal changes, TypeScript changes its output, and `xmlbind-ts` may have to follow. |
-| Engines | None runs them; `tsc` lowers them. | None runs them; `tsc` lowers them. |
-| Compilers | `tsc`, Babel, esbuild, SWC and Oxc. | `tsc`, Babel and esbuild; not Oxc, so not Vite 8 and Vitest 5. |
-| Vitest | Needs nothing; Vite reads the flags from `tsconfig`. | Needs a transform plugin that depends on the JavaScript API of TypeScript 6, which TypeScript 7 does not have; it would have to be rewritten for the API of 7.1 or stay on the compatibility package `@typescript/typescript6`. |
-| Output | The compiled generated classes were less than half as large when this ADR was written. | Larger, because every decorated class gets helper calls. |
-| Ecosystem | Widely used (Angular, NestJS, TypeORM); `xmlbind-ts` tests itself with them. | The TypeScript default; `xmlbind-ts` supports them. |
-| Change | Three flags in two files; the generated code stays as it is. | None; it is the state before this ADR. |
+|           | Legacy decorators                                                                      | Stage 3 decorators                                                                                                                                                                                                              |
+| --------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Standard  | No, and never will be; the flag is called "experimental".                              | Follows a TC39 proposal, but one that moved back to Stage 2.7 and may change.                                                                                                                                                   |
+| Stability | Frozen; TypeScript 6 and 7 support them unchanged.                                     | If the proposal changes, TypeScript changes its output, and `xmlbind-ts` may have to follow.                                                                                                                                    |
+| Engines   | None runs them; `tsc` lowers them.                                                     | None runs them; `tsc` lowers them.                                                                                                                                                                                              |
+| Compilers | `tsc`, Babel, esbuild, SWC and Oxc.                                                    | `tsc`, Babel and esbuild; not Oxc, so not Vite 8 and Vitest 5.                                                                                                                                                                  |
+| Vitest    | Needs nothing; Vite reads the flags from `tsconfig`.                                   | Needs a transform plugin that depends on the JavaScript API of TypeScript 6, which TypeScript 7 does not have; it would have to be rewritten for the API of 7.1 or stay on the compatibility package `@typescript/typescript6`. |
+| Output    | The compiled generated classes were less than half as large when this ADR was written. | Larger, because every decorated class gets helper calls.                                                                                                                                                                        |
+| Ecosystem | Widely used (Angular, NestJS, TypeORM); `xmlbind-ts` tests itself with them.           | The TypeScript default; `xmlbind-ts` supports them.                                                                                                                                                                             |
+| Change    | Three flags in two files; the generated code stays as it is.                           | None; it is the state before this ADR.                                                                                                                                                                                          |
 
 The project needs no feature that only one of the two kinds has. The deciding points are that Stage 3 decorators would tie the tests to a plugin built on an API that TypeScript is replacing, and to a proposal that has just moved backwards, while legacy decorators work with all tools as they are.
 

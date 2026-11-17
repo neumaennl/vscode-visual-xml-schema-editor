@@ -169,10 +169,7 @@ function validateSchemaLocation(schemaLocation: string): ValidationResult {
  * @param schemaObj - The schema
  * @returns The validation result
  */
-export function validateAddImport(
-  command: AddImportCommand,
-  schemaObj: schema
-): ValidationResult {
+export function validateAddImport(command: AddImportCommand, schemaObj: schema): ValidationResult {
   const { namespace, schemaLocation, prefix } = command.payload;
 
   const namespaceResult = validateImportNamespace(namespace);
@@ -213,10 +210,7 @@ export function validateAddImport(
  * @param schemaObj - The schema
  * @returns The validation result
  */
-export function validateRemoveImport(
-  command: RemoveImportCommand,
-  schemaObj: schema
-): ValidationResult {
+export function validateRemoveImport(command: RemoveImportCommand, schemaObj: schema): ValidationResult {
   if (!command.payload.importId.trim()) {
     return { valid: false, error: "Import ID cannot be empty" };
   }
@@ -244,10 +238,7 @@ export function validateRemoveImport(
  * @param schemaObj - The schema
  * @returns The validation result
  */
-export function validateModifyImport(
-  command: ModifyImportCommand,
-  schemaObj: schema
-): ValidationResult {
+export function validateModifyImport(command: ModifyImportCommand, schemaObj: schema): ValidationResult {
   const { importId, namespace, schemaLocation, oldPrefix, prefix } = command.payload;
 
   if (!importId.trim()) {
@@ -304,7 +295,7 @@ export function validateModifyImport(
     // Check prefix uniqueness: the new prefix must not already be registered
     // for a *different* namespace.  It is fine (no-op) if it is already
     // registered for the same namespace that this import is being modified to.
-    const targetNamespace = (namespace?.trim()) ?? idResult.entry.namespace;
+    const targetNamespace = namespace?.trim() ?? idResult.entry.namespace;
     // A prefix binds a namespace, so an import without one cannot get a prefix
     if (!targetNamespace) {
       return { valid: false, error: `Cannot bind prefix '${prefix}' to an import without a namespace` };
@@ -329,10 +320,7 @@ export function validateModifyImport(
  * @param schemaObj - The schema
  * @returns The validation result
  */
-export function validateAddInclude(
-  command: AddIncludeCommand,
-  schemaObj: schema
-): ValidationResult {
+export function validateAddInclude(command: AddIncludeCommand, schemaObj: schema): ValidationResult {
   const { schemaLocation } = command.payload;
 
   const locationResult = validateSchemaLocation(schemaLocation);
@@ -354,10 +342,7 @@ export function validateAddInclude(
  * @param schemaObj - The schema
  * @returns The validation result
  */
-export function validateRemoveInclude(
-  command: RemoveIncludeCommand,
-  schemaObj: schema
-): ValidationResult {
+export function validateRemoveInclude(command: RemoveIncludeCommand, schemaObj: schema): ValidationResult {
   if (!command.payload.includeId.trim()) {
     return { valid: false, error: "Include ID cannot be empty" };
   }
@@ -375,10 +360,7 @@ export function validateRemoveInclude(
  * @param schemaObj - The schema
  * @returns The validation result
  */
-export function validateModifyInclude(
-  command: ModifyIncludeCommand,
-  schemaObj: schema
-): ValidationResult {
+export function validateModifyInclude(command: ModifyIncludeCommand, schemaObj: schema): ValidationResult {
   const { includeId, schemaLocation } = command.payload;
 
   if (!includeId.trim()) {
@@ -394,12 +376,7 @@ export function validateModifyInclude(
   const trimmedLocation = schemaLocation.trim();
   const includes = schemaObj.include ?? [];
   const currentPosition = idResult.position;
-  if (
-    includes.some(
-      (inc, index) =>
-        index !== currentPosition && inc.schemaLocation === trimmedLocation
-    )
-  ) {
+  if (includes.some((inc, index) => index !== currentPosition && inc.schemaLocation === trimmedLocation)) {
     return {
       valid: false,
       error: `An include for schema location '${trimmedLocation}' already exists`,

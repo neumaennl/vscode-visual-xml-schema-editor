@@ -85,7 +85,11 @@ function validateRestrictionBaseType(
  * @param simpleType - The simple type
  * @returns The kind, or `undefined` for a simple type without a body, which is not valid XSD
  */
-function bodyKindOf(simpleType: { restriction?: unknown; list?: unknown; union?: unknown }): SimpleTypeDerivationKind | undefined {
+function bodyKindOf(simpleType: {
+  restriction?: unknown;
+  list?: unknown;
+  union?: unknown;
+}): SimpleTypeDerivationKind | undefined {
   if (simpleType.restriction) return "restriction";
   if (simpleType.list) return "list";
   if (simpleType.union) return "union";
@@ -115,12 +119,14 @@ function validateSimpleTypeBody(
   const hasRestrictionBody = payload.baseType !== undefined || payload.restrictions !== undefined;
   const hasListBody = payload.listItemType !== undefined;
   const hasUnionBody = payload.unionMemberTypes !== undefined;
-  const bodyKinds = [hasRestrictionBody ? "restriction" : null, hasListBody ? "list" : null, hasUnionBody ? "union" : null].filter(Boolean) as SimpleTypeDerivationKind[];
+  const bodyKinds = [
+    hasRestrictionBody ? "restriction" : null,
+    hasListBody ? "list" : null,
+    hasUnionBody ? "union" : null,
+  ].filter(Boolean) as SimpleTypeDerivationKind[];
 
   if (bodyKinds.length === 0) {
-    return existingBodyKind
-      ? { valid: true }
-      : { valid: false, error: "Simple type body is required" };
+    return existingBodyKind ? { valid: true } : { valid: false, error: "Simple type body is required" };
   }
 
   if (bodyKinds.length > 1) {
@@ -184,10 +190,7 @@ function validateSimpleTypeBody(
  * @param schemaObj - The schema
  * @returns The validation result
  */
-export function validateAddSimpleType(
-  command: AddSimpleTypeCommand,
-  schemaObj: schema
-): ValidationResult {
+export function validateAddSimpleType(command: AddSimpleTypeCommand, schemaObj: schema): ValidationResult {
   const { parentId, typeName } = command.payload;
 
   if (parentId !== undefined && !isSchemaRoot(parentId)) {
@@ -198,7 +201,7 @@ export function validateAddSimpleType(
     }
   } else if (typeName === undefined || !isValidXmlName(typeName)) {
     return { valid: false, error: "Type name must be a valid XML name" };
-  } else if ((schemaObj.simpleType ?? []).some(st => st.name === typeName)) {
+  } else if ((schemaObj.simpleType ?? []).some((st) => st.name === typeName)) {
     return { valid: false, error: `Simple type '${typeName}' already exists in schema` };
   }
   return validateSimpleTypeBody(command.payload, schemaObj);
@@ -211,10 +214,7 @@ export function validateAddSimpleType(
  * @param schemaObj - The schema
  * @returns The validation result
  */
-export function validateRemoveSimpleType(
-  command: RemoveSimpleTypeCommand,
-  schemaObj: schema
-): ValidationResult {
+export function validateRemoveSimpleType(command: RemoveSimpleTypeCommand, schemaObj: schema): ValidationResult {
   // TODO Phase 2: Check if type is being used by other elements/types
   const located = locateType(command.payload.typeId, schemaObj, "simpleType", schemaObj.simpleType);
   return located.valid ? { valid: true } : located;
@@ -228,10 +228,7 @@ export function validateRemoveSimpleType(
  * @param schemaObj - The schema
  * @returns The validation result
  */
-export function validateModifySimpleType(
-  command: ModifySimpleTypeCommand,
-  schemaObj: schema
-): ValidationResult {
+export function validateModifySimpleType(command: ModifySimpleTypeCommand, schemaObj: schema): ValidationResult {
   const { typeId, typeName } = command.payload;
   const located = locateType(typeId, schemaObj, "simpleType", schemaObj.simpleType);
   if (!located.valid) {

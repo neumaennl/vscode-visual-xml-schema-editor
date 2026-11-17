@@ -18,22 +18,22 @@
     // The vscode module of the Vitest tests, set as an alias in vitest.config.ts.
     "src/__mocks__/*.ts",
     // The type tests, which Vitest's typecheck runs.
-    "shared/**/*.test-d.ts"
+    "shared/**/*.test-d.ts",
   ],
   "ignoreDependencies": [
     // webviewProvider.ts loads its stylesheet from node_modules by path.
     "@vscode/codicons",
     // @vscode/test-cli imports it at runtime but does not declare it as a dependency.
-    "@vscode/test-electron"
+    "@vscode/test-electron",
   ],
   "usedClassMembers": [
     // VS Code calls it when it opens a schema in the custom editor.
-    { "implements": "vscode.CustomTextEditorProvider", "members": ["resolveCustomTextEditor"] }
+    { "implements": "vscode.CustomTextEditorProvider", "members": ["resolveCustomTextEditor"] },
   ],
   "rules": {
     // An ignore comment must give its reason after "--".
     "require-suppression-reason": "error",
     // An ignore comment that no longer suppresses anything fails the run.
-    "stale-suppressions": "error"
-  }
+    "stale-suppressions": "error",
+  },
 }

@@ -31,10 +31,7 @@ export function extractBaseType(typeText: string): string | undefined {
  * @param nextItemType - Proposed list item type from the UI
  * @returns A schema command or null when the node/item type is not editable
  */
-export function createSimpleTypeListCommand(
-  node: DiagramItem,
-  nextItemType: string
-): SchemaCommand | null {
+export function createSimpleTypeListCommand(node: DiagramItem, nextItemType: string): SchemaCommand | null {
   const itemType = normalizeTypeReferenceForCurrentSchema(node, nextItemType);
   if (!itemType) {
     return null;
@@ -59,10 +56,7 @@ export function createSimpleTypeListCommand(
  * @param nextMemberTypes - Proposed union member type names from the UI
  * @returns A schema command or null when the node/member types are not editable
  */
-export function createSimpleTypeUnionCommand(
-  node: DiagramItem,
-  nextMemberTypes: string[]
-): SchemaCommand | null {
+export function createSimpleTypeUnionCommand(node: DiagramItem, nextMemberTypes: string[]): SchemaCommand | null {
   const simpleTypeId = resolveSimpleTypeId(node);
   if (!simpleTypeId) {
     return null;
@@ -99,9 +93,7 @@ export function createSimpleTypeKindCommand(
 ): SchemaCommand | null {
   const simpleTypeId = resolveSimpleTypeId(node);
   const baseType =
-    (node.simpleTypeListItemType ?? "") ||
-    (node.simpleTypeUnionMemberTypes?.[0] ?? "") ||
-    extractBaseType(node.type);
+    (node.simpleTypeListItemType ?? "") || (node.simpleTypeUnionMemberTypes?.[0] ?? "") || extractBaseType(node.type);
   if (!simpleTypeId || !baseType) {
     return null;
   }

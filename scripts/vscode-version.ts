@@ -65,7 +65,11 @@ const LABELS: Record<keyof ExpectedValues, string> = {
  */
 export function formatTable(header: string[], rows: string[][]): string {
   const widths = header.map((h, i) => Math.max(h.length, ...rows.map((r) => r[i]?.length ?? 0)));
-  const line = (cells: string[]): string => cells.map((c, i) => c.padEnd(widths[i] ?? 0)).join("  ").trimEnd();
+  const line = (cells: string[]): string =>
+    cells
+      .map((c, i) => c.padEnd(widths[i] ?? 0))
+      .join("  ")
+      .trimEnd();
   return [line(header), line(widths.map((w) => "-".repeat(w))), ...rows.map(line)].join("\n");
 }
 
@@ -102,7 +106,9 @@ export async function check(dir = "."): Promise<number> {
   const keys = Object.keys(expected) as Array<keyof ExpectedValues>;
   const nodeMajor = parseVersion(derived.node)[0];
   const problems = [
-    ...keys.filter((key) => expected[key] !== actual[key]).map((key) => `${LABELS[key]}: is "${actual[key]}", expected "${expected[key]}"`),
+    ...keys
+      .filter((key) => expected[key] !== actual[key])
+      .map((key) => `${LABELS[key]}: is "${actual[key]}", expected "${expected[key]}"`),
     ...editionProblems(dir, nodeMajor, await loadEdition(nodeMajor)),
   ];
   console.log(`VS Code ${vscode} ships Electron ${derived.electron} with Node ${derived.node}.`);
@@ -126,8 +132,22 @@ export async function check(dir = "."): Promise<number> {
  * @param rl - The terminal interface
  * @returns The chosen VS Code version
  */
-export async function choose(rows: ReleaseRow[], dates: Record<string, string>, current: string, rl: Asker): Promise<string> {
-  const header = ["VS Code", "Released", "Electron", "Node", "@types/vscode", "@types/node", "ECMAScript", "Node end of life"];
+export async function choose(
+  rows: ReleaseRow[],
+  dates: Record<string, string>,
+  current: string,
+  rl: Asker
+): Promise<string> {
+  const header = [
+    "VS Code",
+    "Released",
+    "Electron",
+    "Node",
+    "@types/vscode",
+    "@types/node",
+    "ECMAScript",
+    "Node end of life",
+  ];
   const cells = rows.map((r) => [
     r.vscode === current ? `${r.vscode} (current)` : r.vscode,
     dates[r.vscode] ?? "-",
@@ -229,7 +249,7 @@ async function apply(
   dates: Record<string, string>,
   manifest: Manifest,
   requested: string | undefined,
-  dir: string,
+  dir: string
 ): Promise<{ values: ExpectedValues; run: boolean }> {
   const current = parseVersion(manifest.pkg.engines.vscode).join(".");
   const rl = createInterface({ input: process.stdin, output: process.stdout });
@@ -245,9 +265,11 @@ async function apply(
     const values = expectedValues(derived);
     writeValues(manifest, values, dir);
     const changed = writeEdition(dir, derived.edition);
-    console.log(`Set engines.vscode ${values.engines}, @types/vscode ${values.typesVscode}, ` +
-      `@types/node ${values.typesNode}, .nvmrc ${values.nvmrc} and the ECMAScript edition ${derived.edition}` +
-      (changed.length > 0 ? ` (changed ${changed.join(", ")}).` : "."));
+    console.log(
+      `Set engines.vscode ${values.engines}, @types/vscode ${values.typesVscode}, ` +
+        `@types/node ${values.typesNode}, .nvmrc ${values.nvmrc} and the ECMAScript edition ${derived.edition}` +
+        (changed.length > 0 ? ` (changed ${changed.join(", ")}).` : ".")
+    );
     return { values, run: await confirmSteps(rl, values.nvmrc) };
   } finally {
     rl.close();
@@ -309,6 +331,6 @@ if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.a
     (error: unknown) => {
       console.error(error instanceof Error ? error.message : String(error));
       process.exit(1);
-    },
+    }
   );
 }

@@ -17,7 +17,6 @@ import { emptySchemaXml, schemaXmlWith } from "../../shared/__tests__/schemaTest
 const SCHEMA_TWO_INCLUDES = schemaXmlWith(`<xs:include schemaLocation="base.xsd"/>
 <xs:include schemaLocation="common.xsd"/>`);
 
-
 /** The command that removes the first include. */
 const REMOVE_FIRST_INCLUDE: SchemaCommand = { type: "removeInclude", payload: { includeId: "/include[0]" } };
 
@@ -36,24 +35,36 @@ describe("Integration: Include pipeline", () => {
     });
 
     test("should return validation error for an empty schemaLocation", () => {
-      runCommandExpectValidationFailure(emptySchemaXml(), {
-        type: "addInclude",
-        payload: { schemaLocation: "" },
-      }, "Schema location cannot be empty");
+      runCommandExpectValidationFailure(
+        emptySchemaXml(),
+        {
+          type: "addInclude",
+          payload: { schemaLocation: "" },
+        },
+        "Schema location cannot be empty"
+      );
     });
 
     test("should return validation error for a schemaLocation with whitespace", () => {
-      runCommandExpectValidationFailure(emptySchemaXml(), {
-        type: "addInclude",
-        payload: { schemaLocation: "my schema.xsd" },
-      }, "Schema location must be a valid path or URI without whitespace");
+      runCommandExpectValidationFailure(
+        emptySchemaXml(),
+        {
+          type: "addInclude",
+          payload: { schemaLocation: "my schema.xsd" },
+        },
+        "Schema location must be a valid path or URI without whitespace"
+      );
     });
 
     test("should return validation error for a duplicate schemaLocation", () => {
-      runCommandExpectValidationFailure(SCHEMA_WITH_INCLUDE, {
-        type: "addInclude",
-        payload: { schemaLocation: "base.xsd" },
-      }, "An include for schema location 'base.xsd' already exists");
+      runCommandExpectValidationFailure(
+        SCHEMA_WITH_INCLUDE,
+        {
+          type: "addInclude",
+          payload: { schemaLocation: "base.xsd" },
+        },
+        "An include for schema location 'base.xsd' already exists"
+      );
     });
   });
 
@@ -76,10 +87,14 @@ describe("Integration: Include pipeline", () => {
     });
 
     test("should return validation error when include ID is out of range", () => {
-      runCommandExpectValidationFailure(SCHEMA_WITH_INCLUDE, {
-        type: "removeInclude",
-        payload: { includeId: "/include[9]" },
-      }, "Include not found: /include[9]");
+      runCommandExpectValidationFailure(
+        SCHEMA_WITH_INCLUDE,
+        {
+          type: "removeInclude",
+          payload: { includeId: "/include[9]" },
+        },
+        "Include not found: /include[9]"
+      );
     });
   });
 
@@ -98,10 +113,14 @@ describe("Integration: Include pipeline", () => {
     });
 
     test("should return validation error when include ID is out of range", () => {
-      runCommandExpectValidationFailure(SCHEMA_WITH_INCLUDE, {
-        type: "modifyInclude",
-        payload: { includeId: "/include[99]", schemaLocation: "x.xsd" },
-      }, "Include not found: /include[99]");
+      runCommandExpectValidationFailure(
+        SCHEMA_WITH_INCLUDE,
+        {
+          type: "modifyInclude",
+          payload: { includeId: "/include[99]", schemaLocation: "x.xsd" },
+        },
+        "Include not found: /include[99]"
+      );
     });
   });
 });

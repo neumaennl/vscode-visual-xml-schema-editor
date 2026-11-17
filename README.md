@@ -22,11 +22,11 @@ The visual editor opens next to the normal text editor; it does not replace it. 
 
 ## Settings
 
-| Setting | Default | Effect |
-|---|---|---|
-| `visualXmlSchemaEditor.showDocumentation` | `false` | Shows the documentation annotations of the schema in the diagram. |
+| Setting                                      | Default | Effect                                                                                       |
+| -------------------------------------------- | ------- | -------------------------------------------------------------------------------------------- |
+| `visualXmlSchemaEditor.showDocumentation`    | `false` | Shows the documentation annotations of the schema in the diagram.                            |
 | `visualXmlSchemaEditor.alwaysShowOccurrence` | `false` | Shows the occurrence (`minOccurs`..`maxOccurs`) of every item, including the default `1..1`. |
-| `visualXmlSchemaEditor.showType` | `false` | Shows the type of each element in the diagram. |
+| `visualXmlSchemaEditor.showType`             | `false` | Shows the type of each element in the diagram.                                               |
 
 Changes to the settings apply immediately to all open diagrams.
 

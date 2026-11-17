@@ -84,10 +84,7 @@ export function getExtensionBaseType(item: DiagramItem): string {
  * @param construct - The dropped facet
  * @returns The command, or null if the target is not a restriction simpleType
  */
-export function createFacetNodeDropCommand(
-  item: DiagramItem,
-  construct: FacetPaletteConstruct
-): SchemaCommand | null {
+export function createFacetNodeDropCommand(item: DiagramItem, construct: FacetPaletteConstruct): SchemaCommand | null {
   if (!isRestrictionSimpleType(item)) {
     return null;
   }

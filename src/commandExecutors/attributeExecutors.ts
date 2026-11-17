@@ -10,10 +10,7 @@ import type {
   ModifyAttributeCommand,
   AttributeFields,
 } from "../../shared/types.js";
-import {
-  attribute,
-  topLevelAttribute,
-} from "../../shared/types.js";
+import { attribute, topLevelAttribute } from "../../shared/types.js";
 import { assumeValidated, assumptionFailed, locateValidated } from "./assumeValidated.js";
 import { parseSchemaId, SCHEMA_ROOT_ID } from "../../shared/idStrategy.js";
 import { createAnnotation, setDocumentation } from "./annotationUtils.js";
@@ -31,10 +28,7 @@ import { identifyChild } from "../commandUtils.js";
  * @param schemaObj - The schema object to modify
  * @throws An {@link Error} if parent node not found or duplicate attribute name exists
  */
-export function executeAddAttribute(
-  command: AddAttributeCommand,
-  schemaObj: schema
-): void {
+export function executeAddAttribute(command: AddAttributeCommand, schemaObj: schema): void {
   const location = locateValidated(schemaObj, command.payload.parentId);
   const container = attributesOf(location.parent, location.parentType);
   appendTo(container, "attribute", createNewAttribute(command.payload, location.parentType === "schema"));
@@ -48,10 +42,7 @@ export function executeAddAttribute(
  * @param schemaObj - The schema object to modify
  * @throws An {@link Error} if parent or attribute not found
  */
-export function executeRemoveAttribute(
-  command: RemoveAttributeCommand,
-  schemaObj: schema
-): void {
+export function executeRemoveAttribute(command: RemoveAttributeCommand, schemaObj: schema): void {
   const parsed = parseSchemaId(command.payload.attributeId);
   const location = locateValidated(schemaObj, parsed.parentId ?? SCHEMA_ROOT_ID);
   const child = identifyChild("Attribute", parsed.name, parsed.position);
@@ -66,13 +57,11 @@ export function executeRemoveAttribute(
  * @param schemaObj - The schema object to modify
  * @throws An {@link Error} if parent or attribute not found
  */
-export function executeModifyAttribute(
-  command: ModifyAttributeCommand,
-  schemaObj: schema
-): void {
+export function executeModifyAttribute(command: ModifyAttributeCommand, schemaObj: schema): void {
   const parsed = parseSchemaId(command.payload.attributeId);
   const location = locateValidated(schemaObj, parsed.parentId ?? SCHEMA_ROOT_ID);
-  const attributes: Array<topLevelAttribute | attribute> = attributesOf(location.parent, location.parentType).attribute ?? [];
+  const attributes: Array<topLevelAttribute | attribute> =
+    attributesOf(location.parent, location.parentType).attribute ?? [];
   const child = identifyChild("Attribute", parsed.name, parsed.position);
   const attr = assumeValidated(attributes.find(child.matches), child.what);
   updateAttributeProperties(attr, command.payload);
@@ -164,7 +153,7 @@ function updateAttributeProperties(attr: topLevelAttribute | attribute, changes:
   }
   // 'use' only exists on local attributes (attribute class), not on topLevelAttribute
   if (required !== undefined && "use" in attr) {
-    (attr).use = required ? "required" : "optional";
+    attr.use = required ? "required" : "optional";
   }
   if (defaultValue !== undefined) {
     attr.default_ = defaultValue;

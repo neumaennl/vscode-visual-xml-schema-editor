@@ -4,16 +4,8 @@
  * required fields, the allowed values of `maxOccurs` and the discriminated union.
  */
 
-import type {
-  AddAttributePayload,
-  RemoveAttributePayload,
-  ModifyAttributePayload,
-} from "./attribute.js";
-import type {
-  AddElementPayload,
-  RemoveElementPayload,
-  ModifyElementPayload,
-} from "./element.js";
+import type { AddAttributePayload, RemoveAttributePayload, ModifyAttributePayload } from "./attribute.js";
+import type { AddElementPayload, RemoveElementPayload, ModifyElementPayload } from "./element.js";
 import type {
   AddGroupPayload,
   RemoveGroupPayload,

@@ -1,20 +1,8 @@
 {
   "extends": "./tsconfig.extension.json",
   "compilerOptions": {
-    "types": [
-      "vitest/globals",
-      "node"
-    ]
+    "types": ["vitest/globals", "node"]
   },
-  "include": [
-    "shared/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    ".vscode-test",
-    "out",
-    "webview",
-    "webview-src",
-    "src"
-  ]
+  "include": ["shared/**/*.ts"],
+  "exclude": ["node_modules", ".vscode-test", "out", "webview", "webview-src", "src"]
 }

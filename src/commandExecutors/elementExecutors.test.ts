@@ -6,11 +6,7 @@
 import { unmarshal, marshal } from "@neumaennl/xmlbind-ts";
 import type { AddElementPayload, ModifyElementPayload, localElement } from "../../shared/types.js";
 import { schema } from "../../shared/types.js";
-import {
-  executeAddElement,
-  executeRemoveElement,
-  executeModifyElement,
-} from "./elementExecutors.js";
+import { executeAddElement, executeRemoveElement, executeModifyElement } from "./elementExecutors.js";
 import { emptySchema, schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
 import { readTestSchema } from "../__tests__/resourceTestHelpers.js";
 
@@ -107,7 +103,12 @@ describe("Element Executors", () => {
     test("should add top-level element with documentation", () => {
       const schemaObj = emptySchema();
 
-      addElement(schemaObj, { parentId: "/schema", elementName: "person", elementType: "string", documentation: "Represents a person" });
+      addElement(schemaObj, {
+        parentId: "/schema",
+        elementName: "person",
+        elementType: "string",
+        documentation: "Represents a person",
+      });
 
       expect(schemaObj.element?.[0]!.annotation?.documentation?.map((d) => d.value)).toEqual(["Represents a person"]);
     });
@@ -123,7 +124,11 @@ describe("Element Executors", () => {
     test("should add element to a sequence in complexContent extension using group parent ID", () => {
       const schemaObj = readTestSchema("worker-type-extends-person-type.xsd");
 
-      addElement(schemaObj, { parentId: "/complexType:WorkerType/group:sequence[0]", elementName: "department", elementType: "xs:string" });
+      addElement(schemaObj, {
+        parentId: "/complexType:WorkerType/group:sequence[0]",
+        elementName: "department",
+        elementType: "xs:string",
+      });
 
       const elements = schemaObj.complexType?.[0]!.complexContent?.extension?.sequence?.element ?? [];
       expect(elements).toHaveLength(2);
@@ -132,14 +137,23 @@ describe("Element Executors", () => {
 
     test.each([
       ["a reference element", {}, { minOccurs: undefined, maxOccurs: undefined }],
-      ["a reference element with occurrences", { minOccurs: 0, maxOccurs: "unbounded" as const }, { minOccurs: 0, maxOccurs: "unbounded" }],
+      [
+        "a reference element with occurrences",
+        { minOccurs: 0, maxOccurs: "unbounded" as const },
+        { minOccurs: 0, maxOccurs: "unbounded" },
+      ],
     ])("should add %s to a sequence", (_case, occurrences, expected) => {
       const schemaObj = readTestSchema(PERSON_AND_ORDER_TYPE_XSD);
 
       addElement(schemaObj, { parentId: ORDER_SEQUENCE_ID, ref: "person", ...occurrences });
 
       expect(orderSequenceElements(schemaObj)).toHaveLength(1);
-      expect(orderSequenceElements(schemaObj)[0]).toMatchObject({ ref: "person", name: undefined, type_: undefined, ...expected });
+      expect(orderSequenceElements(schemaObj)[0]).toMatchObject({
+        ref: "person",
+        name: undefined,
+        type_: undefined,
+        ...expected,
+      });
     });
 
     test("should produce valid XML for a reference element", () => {
@@ -194,7 +208,10 @@ describe("Element Executors", () => {
     });
 
     test.each([
-      ["complexType", `<xs:complexType><xs:sequence><xs:element name="id" type="xs:string"/></xs:sequence></xs:complexType>`],
+      [
+        "complexType",
+        `<xs:complexType><xs:sequence><xs:element name="id" type="xs:string"/></xs:sequence></xs:complexType>`,
+      ],
       ["simpleType", `<xs:simpleType><xs:restriction base="xs:string"/></xs:simpleType>`],
     ] as const)("should replace an inline anonymous %s when setting an explicit element type", (kind, inlineType) => {
       const schemaObj = schemaWith(`<xs:element name="person">${inlineType}</xs:element>`);
@@ -259,9 +276,17 @@ describe("Element Executors", () => {
     test("should modify a reference element to become named", () => {
       const schemaObj = schemaWith(ORDER_TYPE_WITH_PERSON_REF);
 
-      modifyElement(schemaObj, { elementId: `${ORDER_SEQUENCE_ID}/element:person`, elementName: "employee", elementType: "xs:string" });
+      modifyElement(schemaObj, {
+        elementId: `${ORDER_SEQUENCE_ID}/element:person`,
+        elementName: "employee",
+        elementType: "xs:string",
+      });
 
-      expect(orderSequenceElements(schemaObj)[0]).toMatchObject({ name: "employee", type_: "xs:string", ref: undefined });
+      expect(orderSequenceElements(schemaObj)[0]).toMatchObject({
+        name: "employee",
+        type_: "xs:string",
+        ref: undefined,
+      });
     });
 
     test("should produce valid XML after modifying element", () => {

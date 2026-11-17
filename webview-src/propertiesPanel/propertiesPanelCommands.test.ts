@@ -64,6 +64,8 @@ describe("createComplexBaseTypeCommand", () => {
     element.isSimpleContent = true;
     expect(createComplexBaseTypeCommand(element, "B")).toBeNull();
     element.hasAnonymousComplexType = true;
-    expect(createComplexBaseTypeCommand(element, "B")).toMatchObject({ payload: { typeId: "/element:a/anonymousComplexType[0]" } });
+    expect(createComplexBaseTypeCommand(element, "B")).toMatchObject({
+      payload: { typeId: "/element:a/anonymousComplexType[0]" },
+    });
   });
 });

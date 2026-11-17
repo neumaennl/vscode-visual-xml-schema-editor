@@ -4,11 +4,7 @@ import "./styles.css";
 import { DiagramRenderer } from "./renderer";
 import { PropertiesPanel } from "./propertiesPanel/propertiesPanel";
 import type { schema } from "../shared/types";
-import type {
-  VSCodeAPI,
-  ViewState,
-  WebviewState,
-} from "./webviewTypes";
+import type { VSCodeAPI, ViewState, WebviewState } from "./webviewTypes";
 import type { DiagramItem } from "./diagram";
 import type { ExtensionMessage, DiagramOptions } from "../shared/messages";
 import { PaletteView } from "./palette/PaletteView";
@@ -88,55 +84,52 @@ class SchemaEditorApp {
    * Set up message listener for communication with VS Code extension
    */
   private setupMessageListener(): void {
-    window.addEventListener(
-      "message",
-      (event: MessageEvent<ExtensionMessage>) => {
-        const message = event.data;
+    window.addEventListener("message", (event: MessageEvent<ExtensionMessage>) => {
+      const message = event.data;
 
-        switch (message.command) {
-          case "updateSchema": {
-            this.currentSchema = message.data;
-            this.dropCommandFactory.updateNamesFromSchema(message.data);
-            this.renderSchema(message.data);
-            this.dismissNotification();
-            this.refreshSelection();
-            this.saveState();
-            break;
-          }
-
-          case "updateDiagramOptions": {
-            this.diagramOptions = message.data;
-            this.saveState();
-            // Re-render with new options if schema is loaded
-            if (this.currentSchema) {
-              this.renderSchema(this.currentSchema);
-            }
-            break;
-          }
-
-          case "error": {
-            this.showError(message.data.message);
-            break;
-          }
-
-          case "commandResult": {
-            if (message.data.success) {
-              this.dismissNotification();
-              break;
-            }
-            if (message.data.error) {
-              this.showError(message.data.error);
-            }
-            this.refreshSelection();
-            break;
-          }
-
-          case "schemaModified":
-            // Never sent (see "Message `schemaModified` is unused" in docs/known-issues.md)
-            break;
+      switch (message.command) {
+        case "updateSchema": {
+          this.currentSchema = message.data;
+          this.dropCommandFactory.updateNamesFromSchema(message.data);
+          this.renderSchema(message.data);
+          this.dismissNotification();
+          this.refreshSelection();
+          this.saveState();
+          break;
         }
+
+        case "updateDiagramOptions": {
+          this.diagramOptions = message.data;
+          this.saveState();
+          // Re-render with new options if schema is loaded
+          if (this.currentSchema) {
+            this.renderSchema(this.currentSchema);
+          }
+          break;
+        }
+
+        case "error": {
+          this.showError(message.data.message);
+          break;
+        }
+
+        case "commandResult": {
+          if (message.data.success) {
+            this.dismissNotification();
+            break;
+          }
+          if (message.data.error) {
+            this.showError(message.data.error);
+          }
+          this.refreshSelection();
+          break;
+        }
+
+        case "schemaModified":
+          // Never sent (see "Message `schemaModified` is unused" in docs/known-issues.md)
+          break;
       }
-    );
+    });
   }
 
   /**
@@ -144,18 +137,13 @@ class SchemaEditorApp {
    * @param schemaObj - The schema to render
    */
   private renderSchema(schemaObj: schema): void {
-
     try {
       console.log("Schema object received:", schemaObj);
 
       // The renderer will need to traverse the schema structure
-      this.renderer.renderSchema(
-        schemaObj,
-        this.diagramOptions,
-        (item: DiagramItem, isExpandButton: boolean) => {
-          this.onNodeClick(item, isExpandButton);
-        }
-      );
+      this.renderer.renderSchema(schemaObj, this.diagramOptions, (item: DiagramItem, isExpandButton: boolean) => {
+        this.onNodeClick(item, isExpandButton);
+      });
 
       // Center the diagram if this is the first render (no saved pan position)
       if (this.viewState.panX === 0 && this.viewState.panY === 0) {
@@ -192,10 +180,7 @@ class SchemaEditorApp {
    * @param item - The diagram item that was clicked
    * @param isExpandButton - True if the expand button was clicked
    */
-  private onNodeClick(
-    item: DiagramItem,
-    isExpandButton = false
-  ): void {
+  private onNodeClick(item: DiagramItem, isExpandButton = false): void {
     if (isExpandButton) {
       // Toggle expand/collapse
       item.showChildElements = !item.showChildElements;
@@ -264,9 +249,7 @@ class SchemaEditorApp {
    */
   private setupDragAndDrop(): void {
     this.renderer.setNodeDropValidator(
-      (item, construct) =>
-        isPaletteSchemaConstruct(construct) &&
-        this.dropCommandFactory.canDropOnNode(item, construct)
+      (item, construct) => isPaletteSchemaConstruct(construct) && this.dropCommandFactory.canDropOnNode(item, construct)
     );
     this.renderer.setDropHandler((item, construct) => {
       this.handleNodeDrop(item, construct);
@@ -399,9 +382,9 @@ class SchemaEditorApp {
   private showError(message: string): void {
     if (!this.notificationBar) {
       this.notificationBar = document.getElementById("notification-bar");
-      document
-        .getElementById("notification-dismiss")
-        ?.addEventListener("click", () => { this.dismissNotification(); });
+      document.getElementById("notification-dismiss")?.addEventListener("click", () => {
+        this.dismissNotification();
+      });
     }
     const msgEl = document.getElementById("notification-message");
     if (msgEl) {

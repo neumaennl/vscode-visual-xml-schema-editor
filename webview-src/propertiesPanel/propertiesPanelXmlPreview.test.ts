@@ -164,7 +164,13 @@ describe("buildXmlPreview", () => {
     },
     {
       id: "/group:Contact",
-      fragment: ['<xs:group name="Contact">', "  <xs:choice>", "    <!-- ... truncated ... -->", "  </xs:choice>", "</xs:group>"],
+      fragment: [
+        '<xs:group name="Contact">',
+        "  <xs:choice>",
+        "    <!-- ... truncated ... -->",
+        "  </xs:choice>",
+        "</xs:group>",
+      ],
     },
     {
       id: "/complexType:WithRef/group:sequence[0]/groupRef:Contact[0]",
@@ -195,7 +201,9 @@ describe("buildXmlPreview", () => {
     const elements = Array.from({ length: 51 }, (_, index) => `<xs:element name="e${index}" type="xs:string"/>`);
     const sequenceId = "/complexType:Many/group:sequence[0]";
 
-    const schemaObj = schemaWith(`<xs:complexType name="Many"><xs:sequence>${elements.join("")}</xs:sequence></xs:complexType>`);
+    const schemaObj = schemaWith(
+      `<xs:complexType name="Many"><xs:sequence>${elements.join("")}</xs:sequence></xs:complexType>`
+    );
 
     const fragment = buildXmlPreview(diagramItem(schemaObj, sequenceId));
 

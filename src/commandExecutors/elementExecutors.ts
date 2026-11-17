@@ -10,11 +10,7 @@ import type {
   ModifyElementCommand,
   ModifyElementPayload,
 } from "../../shared/types.js";
-import {
-  topLevelElement,
-  localElement,
-  narrowMaxMin,
-} from "../../shared/types.js";
+import { topLevelElement, localElement, narrowMaxMin } from "../../shared/types.js";
 import { assumeValidated, assumptionFailed, locateValidated } from "./assumeValidated.js";
 import { parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy.js";
 import { renameLocalElementRefInSchema } from "./schemaLocalRenamer.js";
@@ -35,10 +31,7 @@ type ElementChanges = Omit<ModifyElementPayload, "elementId">;
  * @param schemaObj - The schema object to modify
  * @throws An {@link Error} if parent node not found or element cannot be added
  */
-export function executeAddElement(
-  command: AddElementCommand,
-  schemaObj: schema
-): void {
+export function executeAddElement(command: AddElementCommand, schemaObj: schema): void {
   const location = locateValidated(schemaObj, command.payload.parentId);
   const newElement = createNewElement(command.payload, location.parentType);
   appendTo(elementsOf(location.parent, location.parentType), "element", newElement);
@@ -51,10 +44,7 @@ export function executeAddElement(
  * @param schemaObj - The schema object to modify
  * @throws An {@link Error} if parent node or element not found
  */
-export function executeRemoveElement(
-  command: RemoveElementCommand,
-  schemaObj: schema
-): void {
+export function executeRemoveElement(command: RemoveElementCommand, schemaObj: schema): void {
   const parsed = parseSchemaId(command.payload.elementId);
   const location = locateValidated(schemaObj, parsed.parentId ?? SCHEMA_ROOT_ID);
   const child = identifyChild("Element", parsed.name, parsed.position);
@@ -68,10 +58,7 @@ export function executeRemoveElement(
  * @param schemaObj - The schema object to modify
  * @throws An {@link Error} if parent node or element not found
  */
-export function executeModifyElement(
-  command: ModifyElementCommand,
-  schemaObj: schema
-): void {
+export function executeModifyElement(command: ModifyElementCommand, schemaObj: schema): void {
   const { elementId, ...changes } = command.payload;
   const parsed = parseSchemaId(elementId);
   const location = locateValidated(schemaObj, parsed.parentId ?? SCHEMA_ROOT_ID);
@@ -88,7 +75,10 @@ export function executeModifyElement(
   }
 
   const child = identifyChild("Element", parsed.name, parsed.position);
-  const element = assumeValidated((elementsOf(location.parent, location.parentType).element ?? []).find(child.matches), child.what);
+  const element = assumeValidated(
+    (elementsOf(location.parent, location.parentType).element ?? []).find(child.matches),
+    child.what
+  );
   updateElementProperties(element, changes, location.parentType);
 }
 
@@ -183,8 +173,18 @@ function setOccurrences(
  * @param parentType - Type of the parent container
  */
 function updateElementProperties(element: AnyElement, changes: ElementChanges, parentType: string): void {
-  const { elementName, elementType, ref, minOccurs, maxOccurs, documentation, nillable, abstract: isAbstract, default_, fixed } =
-    changes;
+  const {
+    elementName,
+    elementType,
+    ref,
+    minOccurs,
+    maxOccurs,
+    documentation,
+    nillable,
+    abstract: isAbstract,
+    default_,
+    fixed,
+  } = changes;
   if (ref !== undefined) {
     // Switching to a reference: clear name and type
     (element as localElement).ref = ref;

@@ -2,12 +2,7 @@
  * Unit tests for `TypeNodeCreators` module.
  */
 
-import {
-  createElementNode,
-  createComplexTypeNode,
-  createSimpleTypeNode,
-  createTopLevelNode,
-} from "./TypeNodeCreators";
+import { createElementNode, createComplexTypeNode, createSimpleTypeNode, createTopLevelNode } from "./TypeNodeCreators";
 import { Diagram } from "./Diagram";
 import { DiagramItemType } from "./DiagramTypes";
 import {

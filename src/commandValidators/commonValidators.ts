@@ -13,7 +13,9 @@ import type { ValidationFailure, ValidationResult } from "./validationUtils.js";
 import { isValidXmlName, validateAnonymousTypeParent } from "./validationUtils.js";
 
 /** A top-level component, as far as the checks look at it. */
-interface NamedComponent { name?: string }
+interface NamedComponent {
+  name?: string;
+}
 
 /**
  * Validates the `ref` of a reference: it must be a valid XML name and name one of the top-level
@@ -92,7 +94,10 @@ export function locateReferenceOrDefinition(
  * @param label - What the ID identifies, capitalized, for the error message, such as `"Group"`
  * @returns The parsed ID, or the validation failure
  */
-export function parseRequiredId(id: string, label: string): ValidationFailure | { valid: true; parsed: ParsedSchemaId } {
+export function parseRequiredId(
+  id: string,
+  label: string
+): ValidationFailure | { valid: true; parsed: ParsedSchemaId } {
   if (!id.trim()) {
     return { valid: false, error: `${label} ID cannot be empty` };
   }
@@ -123,7 +128,10 @@ export function validateDefinitionRemoval(
 }
 
 /** A local element or attribute, as far as the checks look at it. */
-export interface NamedChild { name?: string; ref?: string }
+export interface NamedChild {
+  name?: string;
+  ref?: string;
+}
 
 /** Elements or attributes, for {@link locateChild}. */
 export interface ChildKind {
@@ -215,7 +223,8 @@ export function locateChild(
   const children = kind.getChildren(location.parent);
   const child = findIdentifiedChild(children, parsed.name, parsed.position);
   if (!child) {
-    const spec = parsed.position !== undefined ? `at position: ${parsed.position}` : `with name: ${parsed.name ?? "(none)"}`;
+    const spec =
+      parsed.position !== undefined ? `at position: ${parsed.position}` : `with name: ${parsed.name ?? "(none)"}`;
     return { valid: false, error: `${kind.label} not found ${spec}` };
   }
   return { valid: true, child };
@@ -284,7 +293,8 @@ export function locateType<T>(
     return parsedId;
   }
   const parsed = parsedId.parsed;
-  const anonymousNodeType = kind === "simpleType" ? SchemaNodeType.AnonymousSimpleType : SchemaNodeType.AnonymousComplexType;
+  const anonymousNodeType =
+    kind === "simpleType" ? SchemaNodeType.AnonymousSimpleType : SchemaNodeType.AnonymousComplexType;
   if (parsed.nodeType === anonymousNodeType) {
     const result = validateAnonymousTypeParent(typeId, parsed.parentId, schemaObj, kind);
     if (!result.success) {

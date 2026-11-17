@@ -15,11 +15,7 @@ const MAX_DOC_LINE_LENGTH = 50;
  * @param group - The SVG group to append text to
  * @param svg - The SVG element for text measurement
  */
-export function renderText(
-  item: DiagramItem,
-  group: SVGElement,
-  svg: SVGSVGElement
-): void {
+export function renderText(item: DiagramItem, group: SVGElement, svg: SVGSVGElement): void {
   const scaledBox = item.scaleRectangle(item.elementBox);
   const centerX = scaledBox.x + scaledBox.width / 2;
   const centerY = scaledBox.y + scaledBox.height / 2;
@@ -52,22 +48,12 @@ export function renderText(
  * @param svg - The SVG element for text measurement
  * @returns Truncated text with ellipsis if needed
  */
-function truncateText(
-  text: string,
-  maxWidth: number,
-  fontSize: number,
-  svg: SVGSVGElement
-): string {
+function truncateText(text: string, maxWidth: number, fontSize: number, svg: SVGSVGElement): string {
   // Create a temporary SVG text element to measure actual width
-  const tempText = document.createElementNS(
-    "http://www.w3.org/2000/svg",
-    "text"
-  );
+  const tempText = document.createElementNS("http://www.w3.org/2000/svg", "text");
   tempText.setAttribute(
     "style",
-    `font-family:${
-      svg.style.fontFamily || "Arial"
-    };font-size:${fontSize}pt;font-weight:bold`
+    `font-family:${svg.style.fontFamily || "Arial"};font-size:${fontSize}pt;font-weight:bold`
   );
   tempText.textContent = text;
   svg.appendChild(tempText);
@@ -110,10 +96,7 @@ function truncateText(
  * @param item - The diagram item with documentation
  * @param group - The SVG group to append documentation to
  */
-export function renderDocumentation(
-  item: DiagramItem,
-  group: SVGElement
-): void {
+export function renderDocumentation(item: DiagramItem, group: SVGElement): void {
   const scaledBox = item.scaleRectangle(item.documentationBox);
   if (scaledBox.width === 0 || scaledBox.height === 0) return;
 
@@ -139,16 +122,11 @@ export function renderDocumentation(
  * @param group - The SVG group to append text to
  */
 export function renderOccurrence(item: DiagramItem, group: SVGElement): void {
-  if (
-    !item.diagram?.alwaysShowOccurrence &&
-    item.maxOccurrence <= 1 &&
-    item.minOccurrence === 1
-  ) {
+  if (!item.diagram?.alwaysShowOccurrence && item.maxOccurrence <= 1 && item.minOccurrence === 1) {
     return;
   }
 
-  const maxOccurText =
-    item.maxOccurrence === -1 ? "∞" : item.maxOccurrence.toString();
+  const maxOccurText = item.maxOccurrence === -1 ? "∞" : item.maxOccurrence.toString();
   const occurText = `${item.minOccurrence}..${maxOccurText}`;
   const scaledBox = item.scaleRectangle(item.elementBox);
 

@@ -127,7 +127,6 @@ const BUILD_ORDER_TYPE: SchemaCommand[] = [
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
-
 /**
  * Builds a schema with the complexType `OrderType` whose sequence holds one element.
  *

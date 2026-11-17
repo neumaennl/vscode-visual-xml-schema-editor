@@ -54,7 +54,8 @@ interface GitHubRelease {
 
 const SOURCES = {
   vscodeReleases: "https://api.github.com/repos/microsoft/vscode/releases",
-  vscodeFile: (tag: string, file: string): string => `https://raw.githubusercontent.com/microsoft/vscode/${tag}/${file}`,
+  vscodeFile: (tag: string, file: string): string =>
+    `https://raw.githubusercontent.com/microsoft/vscode/${tag}/${file}`,
   electronReleases: "https://releases.electronjs.org/releases.json",
   nodeSchedule: "https://raw.githubusercontent.com/nodejs/Release/main/schedule.json",
   npmPackage: (name: string): string => `https://registry.npmjs.org/${name.replace("/", "%2f")}`,

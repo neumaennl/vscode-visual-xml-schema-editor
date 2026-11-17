@@ -42,7 +42,9 @@ describe("rewritePrefixInSchema", () => {
   });
 
   test("should not throw on an empty schema", () => {
-    expect(() => { rewritePrefixInSchema("old", "new", emptySchema()); }).not.toThrow();
+    expect(() => {
+      rewritePrefixInSchema("old", "new", emptySchema());
+    }).not.toThrow();
   });
 
   test("should not rewrite element @type values with a different prefix", () => {
@@ -55,17 +57,37 @@ describe("rewritePrefixInSchema", () => {
 
   test.each([
     ["top-level element @type", ELEMENT_OF_EXT_TYPE, `type="p:FooType"`],
-    ["top-level element @substitutionGroup", `<xs:element name="foo" substitutionGroup="ext:Head"/>`, `substitutionGroup="p:Head"`],
+    [
+      "top-level element @substitutionGroup",
+      `<xs:element name="foo" substitutionGroup="ext:Head"/>`,
+      `substitutionGroup="p:Head"`,
+    ],
     ["top-level attribute @type", `<xs:attribute name="myAttr" type="ext:AttrType"/>`, `type="p:AttrType"`],
-    ["simpleType restriction/@base", `<xs:simpleType name="MyST"><xs:restriction base="ext:BaseString"/></xs:simpleType>`, `base="p:BaseString"`],
-    ["simpleType list/@itemType", `<xs:simpleType name="ListST"><xs:list itemType="ext:ItemType"/></xs:simpleType>`, `itemType="p:ItemType"`],
+    [
+      "simpleType restriction/@base",
+      `<xs:simpleType name="MyST"><xs:restriction base="ext:BaseString"/></xs:simpleType>`,
+      `base="p:BaseString"`,
+    ],
+    [
+      "simpleType list/@itemType",
+      `<xs:simpleType name="ListST"><xs:list itemType="ext:ItemType"/></xs:simpleType>`,
+      `itemType="p:ItemType"`,
+    ],
     [
       "all matching union/@memberTypes tokens",
       `<xs:simpleType name="UnionST"><xs:union memberTypes="ext:TypeA xs:string ext:TypeB"/></xs:simpleType>`,
       `memberTypes="p:TypeA xs:string p:TypeB"`,
     ],
-    ["complexContent extension/@base", complexTypeWith(`<xs:complexContent><xs:extension base="ext:Parent"/></xs:complexContent>`), `base="p:Parent"`],
-    ["complexContent restriction/@base", complexTypeWith(`<xs:complexContent><xs:restriction base="ext:Base"/></xs:complexContent>`), `base="p:Base"`],
+    [
+      "complexContent extension/@base",
+      complexTypeWith(`<xs:complexContent><xs:extension base="ext:Parent"/></xs:complexContent>`),
+      `base="p:Parent"`,
+    ],
+    [
+      "complexContent restriction/@base",
+      complexTypeWith(`<xs:complexContent><xs:restriction base="ext:Base"/></xs:complexContent>`),
+      `base="p:Base"`,
+    ],
     [
       "element @type inside a complexContent extension sequence",
       complexTypeWith(
@@ -80,10 +102,22 @@ describe("rewritePrefixInSchema", () => {
       ),
       `type="p:AttrType"`,
     ],
-    ["simpleContent restriction/@base", complexTypeWith(`<xs:simpleContent><xs:restriction base="ext:SimpleBase"/></xs:simpleContent>`), `base="p:SimpleBase"`],
+    [
+      "simpleContent restriction/@base",
+      complexTypeWith(`<xs:simpleContent><xs:restriction base="ext:SimpleBase"/></xs:simpleContent>`),
+      `base="p:SimpleBase"`,
+    ],
     ["top-level complexType group refs", complexTypeWith(`<xs:group ref="ext:MyGroup"/>`), `ref="p:MyGroup"`],
-    ["top-level complexType attributeGroup refs", complexTypeWith(`<xs:attributeGroup ref="ext:MyAttrGroup"/>`), `ref="p:MyAttrGroup"`],
-    ["top-level complexType attribute @type", complexTypeWith(`<xs:attribute name="localAttr" type="ext:AttrType"/>`), `type="p:AttrType"`],
+    [
+      "top-level complexType attributeGroup refs",
+      complexTypeWith(`<xs:attributeGroup ref="ext:MyAttrGroup"/>`),
+      `ref="p:MyAttrGroup"`,
+    ],
+    [
+      "top-level complexType attribute @type",
+      complexTypeWith(`<xs:attribute name="localAttr" type="ext:AttrType"/>`),
+      `type="p:AttrType"`,
+    ],
     [
       "inline simpleType restriction bases on complexType attributes",
       complexTypeWith(`<xs:attribute name="localAttr">${SIMPLE_TYPE_OF_EXT_BASE}</xs:attribute>`),
@@ -91,11 +125,21 @@ describe("rewritePrefixInSchema", () => {
     ],
     [
       "deeply nested compositor element @type values",
-      complexTypeWith(`<xs:sequence><xs:choice><xs:element name="deep" type="ext:DeepType"/></xs:choice></xs:sequence>`),
+      complexTypeWith(
+        `<xs:sequence><xs:choice><xs:element name="deep" type="ext:DeepType"/></xs:choice></xs:sequence>`
+      ),
       `type="p:DeepType"`,
     ],
-    ["nested group refs inside compositors", complexTypeWith(`<xs:sequence><xs:group ref="ext:SeqGroup"/></xs:sequence>`), `ref="p:SeqGroup"`],
-    ["keyref/@refer on top-level elements", `<xs:element name="root">${KEYREF_TO_EXT_KEY}</xs:element>`, `refer="p:KeyName"`],
+    [
+      "nested group refs inside compositors",
+      complexTypeWith(`<xs:sequence><xs:group ref="ext:SeqGroup"/></xs:sequence>`),
+      `ref="p:SeqGroup"`,
+    ],
+    [
+      "keyref/@refer on top-level elements",
+      `<xs:element name="root">${KEYREF_TO_EXT_KEY}</xs:element>`,
+      `refer="p:KeyName"`,
+    ],
     [
       "keyref/@refer on nested elements",
       complexTypeWith(`<xs:sequence><xs:element name="child">${KEYREF_TO_EXT_KEY}</xs:element></xs:sequence>`),

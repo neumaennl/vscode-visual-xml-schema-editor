@@ -46,13 +46,16 @@ describe("propertiesPanelTypeHelpers", () => {
       { id: "/element:size", nodeType: SchemaNodeType.Element, simple: true, complex: false },
       { id: "/element:note", nodeType: SchemaNodeType.Element, simple: false, complex: true },
       { id: "/simpleType:Word", nodeType: SchemaNodeType.SimpleType, simple: false, complex: false },
-    ])("should tell whether $id has an inline simple ($simple) or complex type ($complex)", ({ id, nodeType, simple, complex }) => {
-      const node = typedNode(id);
+    ])(
+      "should tell whether $id has an inline simple ($simple) or complex type ($complex)",
+      ({ id, nodeType, simple, complex }) => {
+        const node = typedNode(id);
 
-      expect(isInlineSimpleTypeElement(node, nodeType)).toBe(simple);
-      expect(isInlineComplexTypeElement(node, nodeType)).toBe(complex);
-      expect(hasInlineAnonymousElementType(node, nodeType)).toBe(simple || complex);
-    });
+        expect(isInlineSimpleTypeElement(node, nodeType)).toBe(simple);
+        expect(isInlineComplexTypeElement(node, nodeType)).toBe(complex);
+        expect(hasInlineAnonymousElementType(node, nodeType)).toBe(simple || complex);
+      }
+    );
   });
 
   describe("getReadOnlyTypeValue", () => {
@@ -100,9 +103,12 @@ describe("propertiesPanelTypeHelpers", () => {
       },
       { id: "/simpleType:Word", nodeType: SchemaNodeType.SimpleType, baseType: "xs:string", expected: null },
       { id: "/element:code", nodeType: SchemaNodeType.Element, baseType: undefined, expected: null },
-    ])("should give $id as $nodeType with the base type $baseType the hint '$expected'", ({ id, nodeType, baseType, expected }) => {
-      expect(getTypeEditHint(typedNode(id), nodeType, baseType)).toBe(expected);
-    });
+    ])(
+      "should give $id as $nodeType with the base type $baseType the hint '$expected'",
+      ({ id, nodeType, baseType, expected }) => {
+        expect(getTypeEditHint(typedNode(id), nodeType, baseType)).toBe(expected);
+      }
+    );
   });
 
   describe("getDerivationRelation", () => {

@@ -90,15 +90,15 @@ If a step throws, the renderer writes "Error: …" as SVG text into the canvas a
 
 The root of the tree is always one item for the schema itself, labelled `Schema: <targetNamespace>` (or `Schema: no namespace`). It carries the schema's documentation, and the top-level attributes are stored as its attributes. Its children are the top-level constructs, in this order: elements, complex types, simple types, named groups. Within each kind, the document order is kept. A schema without any of them gets the child "No elements found".[^diagram-builder]
 
-| Schema construct | Item type | Label | Type text (shown with `showType`) |
-|---|---|---|---|
-| Schema | `element` | `Schema: <namespace>` | |
-| Element (top-level or local) | `element` | name, or "unnamed" without a name | value of `type`, or `<anonymous complexType>` / `<anonymous simpleType>` for an inline type |
-| Named complex type | `type` | name | `complexType` |
-| Named simple type | `type` | name | `simpleType` |
-| Named group | `group` | name | |
-| `sequence`, `choice`, `all` | `group` (compositor) | none, the symbol is drawn instead | |
-| Group reference | `group`, marked as reference | value of `ref` | |
+| Schema construct             | Item type                    | Label                             | Type text (shown with `showType`)                                                           |
+| ---------------------------- | ---------------------------- | --------------------------------- | ------------------------------------------------------------------------------------------- |
+| Schema                       | `element`                    | `Schema: <namespace>`             |                                                                                             |
+| Element (top-level or local) | `element`                    | name, or "unnamed" without a name | value of `type`, or `<anonymous complexType>` / `<anonymous simpleType>` for an inline type |
+| Named complex type           | `type`                       | name                              | `complexType`                                                                               |
+| Named simple type            | `type`                       | name                              | `simpleType`                                                                                |
+| Named group                  | `group`                      | name                              |                                                                                             |
+| `sequence`, `choice`, `all`  | `group` (compositor)         | none, the symbol is drawn instead |                                                                                             |
+| Group reference              | `group`, marked as reference | value of `ref`                    |                                                                                             |
 
 The type text gets suffixes for content and derivation, for example `complexType with complexContent (extends Base)`:[^schema-processors][^schema-processors-simple]
 
@@ -126,12 +126,12 @@ The type text gets suffixes for content and derivation, for example `complexType
 
 `DiagramItem` holds one node:[^diagram-item]
 
-| Group | Fields |
-|---|---|
-| Identity | `id` (path-based ID), `name`, `type` (type text), `itemType` (`element`, `group`, `type`), `groupType` (`sequence`, `choice`, `all`) |
-| Tree | `parent`, `childElements`, `hasChildElements`, `showChildElements` (expanded) |
-| Notation | `minOccurrence`, `maxOccurrence`, `isReference`, `isSimpleContent` |
-| Layout | `location`, `size`, `elementBox` (the shape), `childExpandButtonBox`, `documentationBox`, `boundingBox` (shape plus visible children) |
+| Group                            | Fields                                                                                                                                                                                                                                                                                                  |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Identity                         | `id` (path-based ID), `name`, `type` (type text), `itemType` (`element`, `group`, `type`), `groupType` (`sequence`, `choice`, `all`)                                                                                                                                                                    |
+| Tree                             | `parent`, `childElements`, `hasChildElements`, `showChildElements` (expanded)                                                                                                                                                                                                                           |
+| Notation                         | `minOccurrence`, `maxOccurrence`, `isReference`, `isSimpleContent`                                                                                                                                                                                                                                      |
+| Layout                           | `location`, `size`, `elementBox` (the shape), `childExpandButtonBox`, `documentationBox`, `boundingBox` (shape plus visible children)                                                                                                                                                                   |
 | Content for the properties panel | `documentation`, `documentationAnnotations`, `attributes`, `restrictions`, `isAbstract`, `isMixed`, `isNillable`, `hasAnonymousComplexType`, `elementDefault`, `elementFixed`, `complexDerivationKind`, `simpleTypeDerivationKind`, `simpleTypeListItemType`, `simpleTypeUnionMemberTypes`, `namespace` |
 
 `Diagram` holds the root items (always one, the schema), the three display options `showDocumentation`, `alwaysShowOccurrence` and `showType`, the style, the bounding box with a padding of 20, and the namespace information of the schema that the properties panel uses (`currentSchemaPrefix`, `schemaTargetNamespace`, `schemaNamespacePrefixes`, `localSchemaTypeNames`).[^diagram]
@@ -146,10 +146,10 @@ Some fields come from the original and are not used; they are listed in [Known i
 
 The layout is a simple tree layout from left to right. Sizes are fixed and do not depend on the text:[^diagram-layout]
 
-| Item | Size |
-|---|---|
+| Item                                        | Size     |
+| ------------------------------------------- | -------- |
 | Element, type, named group, group reference | 120 × 40 |
-| Compositor (`sequence`, `choice`, `all`) | 40 × 20 |
+| Compositor (`sequence`, `choice`, `all`)    | 40 × 20  |
 
 Rules:
 
@@ -162,16 +162,16 @@ Rules:
 
 # Shapes and notation
 
-| Shape | Meaning |
-|---|---|
-| Rectangle | Element, also the schema root |
-| Octagon | Group; a compositor shows a symbol: for `sequence` three dots on a horizontal line, for `choice` and `all` three dots in a column between connecting lines that differ for the two |
-| Rectangle with beveled left corners | Named type; the beveled area is filled for simple types and simple content |
-| Dashed outline (`5,3`) | `minOccurs="0"` |
-| Second outline offset by 3 px behind the shape | `maxOccurs` other than 1 (also for `maxOccurs="0"`, see [Known issues](known-issues.md#items-with-maxoccurs-0-are-drawn-as-repeated)) |
-| `min..max` right of the shape, `∞` for `unbounded` | Occurrence; hidden for `1..1` unless `alwaysShowOccurrence` is set |
-| Small arrow at the lower left | Reference (only group references) |
-| Box with − or + right of the shape | Expanded or collapsed; only for items with children |
+| Shape                                              | Meaning                                                                                                                                                                            |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Rectangle                                          | Element, also the schema root                                                                                                                                                      |
+| Octagon                                            | Group; a compositor shows a symbol: for `sequence` three dots on a horizontal line, for `choice` and `all` three dots in a column between connecting lines that differ for the two |
+| Rectangle with beveled left corners                | Named type; the beveled area is filled for simple types and simple content                                                                                                         |
+| Dashed outline (`5,3`)                             | `minOccurs="0"`                                                                                                                                                                    |
+| Second outline offset by 3 px behind the shape     | `maxOccurs` other than 1 (also for `maxOccurs="0"`, see [Known issues](known-issues.md#items-with-maxoccurs-0-are-drawn-as-repeated))                                              |
+| `min..max` right of the shape, `∞` for `unbounded` | Occurrence; hidden for `1..1` unless `alwaysShowOccurrence` is set                                                                                                                 |
+| Small arrow at the lower left                      | Reference (only group references)                                                                                                                                                  |
+| Box with − or + right of the shape                 | Expanded or collapsed; only for items with children                                                                                                                                |
 
 [^shape-renderers][^svg-renderer][^text-renderers]
 
@@ -198,10 +198,10 @@ All mouse handling on nodes is done with one listener per event type on the canv
 
 The diagram code is a TypeScript port of parts of [XSD Diagram](https://github.com/dgis/xsddiagram) by Régis Cosnier, a C# desktop program that draws XSD files.[^xsddiagram] The port was written by GitHub Copilot. Seven files carry a "Ported from XSD Diagram" comment: `DiagramTypes.ts`, `index.ts`, `DiagramItem.ts`, `Diagram.ts`, `DiagramBuilder.ts`, `DiagramLayout.ts` and `DiagramSvgRenderer.ts`. The main correspondences are:
 
-| XSD Diagram (C#) | Port |
-|---|---|
-| `XSDDiagrams/Rendering/DiagramItem.cs` | `DiagramItem.ts` |
-| `XSDDiagrams/Rendering/Diagram.cs` | `Diagram.ts` |
+| XSD Diagram (C#)                              | Port                                                                                    |
+| --------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `XSDDiagrams/Rendering/DiagramItem.cs`        | `DiagramItem.ts`                                                                        |
+| `XSDDiagrams/Rendering/Diagram.cs`            | `Diagram.ts`                                                                            |
 | `XSDDiagrams/Rendering/DiagramSvgRenderer.cs` | `DiagramSvgRenderer.ts` (with `ShapeRenderers.ts`, `TextRenderers.ts`, `SvgHelpers.ts`) |
 
 The port draws SVG into the DOM instead of using GDI+, reads the classes generated by xmlbind-ts instead of .NET's schema API, and adds IDs, the expand state, selection and drop targets. The layout is simpler than the original's.

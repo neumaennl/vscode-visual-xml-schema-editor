@@ -13,9 +13,6 @@ import type { ValidationResult, ValidationFailure } from "../commandValidators/v
  * @param result - The validation result
  * @throws An {@link Error} if the result is valid
  */
-export function expectInvalid(
-  result: ValidationResult
-): asserts result is ValidationFailure {
-  if (result.valid)
-    throw new Error("Expected validation to fail but it passed");
+export function expectInvalid(result: ValidationResult): asserts result is ValidationFailure {
+  if (result.valid) throw new Error("Expected validation to fail but it passed");
 }

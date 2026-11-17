@@ -126,7 +126,6 @@ export class DiagramLayout {
     }
   }
 
-
   /**
    * Layout children of an item
    *
@@ -136,12 +135,8 @@ export class DiagramLayout {
     // Position children relative to parent's width + expand button + spacing
     // Expand button: 5px gap + 12px button + 5px gap = 22px
     // Use single spacing for one child (no vertical line), double spacing for multiple (with vertical line)
-    const horizontalSpacing =
-      parent.childElements.length === 1
-        ? this.HORIZONTAL_SPACING
-        : this.HORIZONTAL_SPACING * 2;
-    const startX =
-      parent.location.x + parent.size.width + 22 + horizontalSpacing;
+    const horizontalSpacing = parent.childElements.length === 1 ? this.HORIZONTAL_SPACING : this.HORIZONTAL_SPACING * 2;
+    const startX = parent.location.x + parent.size.width + 22 + horizontalSpacing;
     const parentCenterY = parent.location.y + parent.size.height / 2;
 
     let currentY = parentCenterY;

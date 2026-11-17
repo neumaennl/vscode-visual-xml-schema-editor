@@ -3,14 +3,9 @@
     "module": "esnext",
     "moduleResolution": "bundler",
     "target": "ES2024",
-    "lib": [
-      "ES2024",
-      "DOM"
-    ],
+    "lib": ["ES2024", "DOM"],
     "sourceMap": true,
-    "types": [
-      "vite/client"
-    ],
+    "types": ["vite/client"],
     "noEmit": true,
     "strict": true,
     "allowUnreachableCode": false,
@@ -23,16 +18,6 @@
     "useDefineForClassFields": true,
     "allowSyntheticDefaultImports": true
   },
-  "include": [
-    "webview-src/**/*",
-    "shared/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "out",
-    "webview",
-    "**/*.test.ts",
-    "**/*.test-d.ts",
-    "**/__tests__/**"
-  ]
+  "include": ["webview-src/**/*", "shared/**/*"],
+  "exclude": ["node_modules", "out", "webview", "**/*.test.ts", "**/*.test-d.ts", "**/__tests__/**"]
 }

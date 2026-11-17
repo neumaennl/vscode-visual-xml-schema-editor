@@ -2,11 +2,7 @@
  * Unit tests for annotation validators (Annotation and Documentation).
  */
 
-import type {
-  schema,
-  AddAnnotationCommand,
-  AddDocumentationCommand,
-} from "../../shared/types.js";
+import type { schema, AddAnnotationCommand, AddDocumentationCommand } from "../../shared/types.js";
 import {
   validateAddAnnotation,
   validateRemoveAnnotation,
@@ -81,10 +77,15 @@ function eachValidator<C extends unknown[], V>(validators: Array<[string, V]>, c
 // eslint-disable-next-line jsdoc/require-param, jsdoc/require-returns -- the plugin applies the comment below to the callbacks in the array, which need none
 /** The validators of `removeAnnotation` and `modifyAnnotation`, which check the annotation ID the same way. */
 const ANNOTATION_ID_VALIDATORS: Array<[string, (annotationId: string, schemaObj: schema) => ValidationResult]> = [
-  ["removeAnnotation", (annotationId, s): ValidationResult => validateRemoveAnnotation({ type: "removeAnnotation", payload: { annotationId } }, s)],
+  [
+    "removeAnnotation",
+    (annotationId, s): ValidationResult =>
+      validateRemoveAnnotation({ type: "removeAnnotation", payload: { annotationId } }, s),
+  ],
   [
     "modifyAnnotation",
-    (annotationId, s): ValidationResult => validateModifyAnnotation({ type: "modifyAnnotation", payload: { annotationId, documentation: "Updated." } }, s),
+    (annotationId, s): ValidationResult =>
+      validateModifyAnnotation({ type: "modifyAnnotation", payload: { annotationId, documentation: "Updated." } }, s),
   ],
 ];
 
@@ -103,11 +104,18 @@ const ANNOTATION_ID_CASES: Array<[string, string, string, Expected]> = [
 // eslint-disable-next-line jsdoc/require-param, jsdoc/require-returns -- the plugin applies the comment below to the callbacks in the array, which need none
 /** The validators of `removeDocumentation` and `modifyDocumentation`, which check the documentation ID the same way. */
 const DOCUMENTATION_ID_VALIDATORS: Array<[string, (documentationId: string, schemaObj: schema) => ValidationResult]> = [
-  ["removeDocumentation", (documentationId, s): ValidationResult => validateRemoveDocumentation({ type: "removeDocumentation", payload: { documentationId } }, s)],
+  [
+    "removeDocumentation",
+    (documentationId, s): ValidationResult =>
+      validateRemoveDocumentation({ type: "removeDocumentation", payload: { documentationId } }, s),
+  ],
   [
     "modifyDocumentation",
     (documentationId, s): ValidationResult =>
-      validateModifyDocumentation({ type: "modifyDocumentation", payload: { documentationId, content: "Updated." } }, s),
+      validateModifyDocumentation(
+        { type: "modifyDocumentation", payload: { documentationId, content: "Updated." } },
+        s
+      ),
   ],
 ];
 
@@ -135,7 +143,12 @@ const DOCUMENTATION_ID_CASES: Array<[string, string, string, Expected]> = [
     "/element:person/documentation[1]",
     { valid: true },
   ],
-  ["valid schema annotation and entry indices", SCHEMA_ANNOTATION, "/schema/annotation[0]/documentation[0]", { valid: true }],
+  [
+    "valid schema annotation and entry indices",
+    SCHEMA_ANNOTATION,
+    "/schema/annotation[0]/documentation[0]",
+    { valid: true },
+  ],
   [
     "a schema annotation index out of bounds",
     SCHEMA_ANNOTATION,
@@ -143,7 +156,12 @@ const DOCUMENTATION_ID_CASES: Array<[string, string, string, Expected]> = [
     { error: "out of bounds" },
   ],
   ["the shorthand for the first schema annotation", SCHEMA_ANNOTATION, "/schema/documentation[0]", { valid: true }],
-  ["the shorthand without schema annotations", "", "/schema/documentation[0]", { error: "No annotation found on schema root" }],
+  [
+    "the shorthand without schema annotations",
+    "",
+    "/schema/documentation[0]",
+    { error: "No annotation found on schema root" },
+  ],
 ];
 
 // ─── Annotation Validators ──────────────────────────────────────────────────

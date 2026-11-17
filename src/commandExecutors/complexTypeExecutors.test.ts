@@ -4,19 +4,9 @@
  */
 
 import { marshal, unmarshal } from "@neumaennl/xmlbind-ts";
-import type {
-  AddComplexTypeCommand,
-  ModifyComplexTypeCommand,
-  RemoveComplexTypeCommand,
-} from "../../shared/types.js";
-import {
-  schema,
-} from "../../shared/types.js";
-import {
-  executeAddComplexType,
-  executeModifyComplexType,
-  executeRemoveComplexType,
-} from "./complexTypeExecutors.js";
+import type { AddComplexTypeCommand, ModifyComplexTypeCommand, RemoveComplexTypeCommand } from "../../shared/types.js";
+import { schema } from "../../shared/types.js";
+import { executeAddComplexType, executeModifyComplexType, executeRemoveComplexType } from "./complexTypeExecutors.js";
 import { emptySchema, schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
 
 /** A complexType `EmployeeType` that extends `PersonType`. */
@@ -102,16 +92,19 @@ function expectAnonymousExtensionOf(schemaObj: schema, base: string): void {
 
 describe("ComplexType Executors", () => {
   describe("executeAddComplexType", () => {
-    test.each(["sequence", "choice", "all"] as const)("should add a top-level complexType with a %s content model", (model) => {
-      const schemaObj = emptySchema();
+    test.each(["sequence", "choice", "all"] as const)(
+      "should add a top-level complexType with a %s content model",
+      (model) => {
+        const schemaObj = emptySchema();
 
-      addComplexType(schemaObj, { typeName: "PersonType", contentModel: model });
+        addComplexType(schemaObj, { typeName: "PersonType", contentModel: model });
 
-      const complexType = topLevelComplexTypes(schemaObj)[0]!;
-      expect(complexType.name).toBe("PersonType");
-      expect((["sequence", "choice", "all"] as const).filter((m) => complexType[m] !== undefined)).toEqual([model]);
-      expect(complexType.complexContent).toBeUndefined();
-    });
+        const complexType = topLevelComplexTypes(schemaObj)[0]!;
+        expect(complexType.name).toBe("PersonType");
+        expect((["sequence", "choice", "all"] as const).filter((m) => complexType[m] !== undefined)).toEqual([model]);
+        expect(complexType.complexContent).toBeUndefined();
+      }
+    );
 
     test("should set abstract on a new complexType", () => {
       const schemaObj = emptySchema();
@@ -146,9 +139,7 @@ describe("ComplexType Executors", () => {
         documentation: "Describes a person.",
       });
 
-      expect(topLevelComplexTypes(schemaObj)[0]!.annotation!.documentation![0]!.value).toBe(
-        "Describes a person."
-      );
+      expect(topLevelComplexTypes(schemaObj)[0]!.annotation!.documentation![0]!.value).toBe("Describes a person.");
     });
 
     test("should add a complexType with a base type extension", () => {
@@ -263,9 +254,7 @@ describe("ComplexType Executors", () => {
         documentation: "Updated documentation.",
       });
 
-      expect(topLevelComplexTypes(schemaObj)[0]!.annotation!.documentation![0]!.value).toBe(
-        "Updated documentation."
-      );
+      expect(topLevelComplexTypes(schemaObj)[0]!.annotation!.documentation![0]!.value).toBe("Updated documentation.");
     });
 
     test("should change the content model to choice", () => {
@@ -426,7 +415,11 @@ describe("ComplexType Executors", () => {
 
     test.each([
       ["type attribute", `<xs:element name="person" type="xs:string"/>`, "type_"],
-      ["anonymous simpleType", `<xs:element name="person"><xs:simpleType><xs:restriction base="xs:string"/></xs:simpleType></xs:element>`, "simpleType"],
+      [
+        "anonymous simpleType",
+        `<xs:element name="person"><xs:simpleType><xs:restriction base="xs:string"/></xs:simpleType></xs:element>`,
+        "simpleType",
+      ],
     ] as const)("should replace an existing %s when adding an anonymous complexType", (_case, element, replaced) => {
       const schemaObj = schemaWith(element);
 

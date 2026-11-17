@@ -109,10 +109,14 @@ describe("Integration: Annotation pipeline", () => {
     });
 
     test("should return validation error when target element does not exist", () => {
-      runCommandExpectValidationFailure(SCHEMA_WITH_ELEMENTS, {
-        type: "addAnnotation",
-        payload: { targetId: "/element:nonexistent", documentation: "desc" },
-      }, "Target node not found or does not support annotations: /element:nonexistent");
+      runCommandExpectValidationFailure(
+        SCHEMA_WITH_ELEMENTS,
+        {
+          type: "addAnnotation",
+          payload: { targetId: "/element:nonexistent", documentation: "desc" },
+        },
+        "Target node not found or does not support annotations: /element:nonexistent"
+      );
     });
   });
 
@@ -129,10 +133,14 @@ describe("Integration: Annotation pipeline", () => {
     });
 
     test("should return validation error when the element has no annotation", () => {
-      runCommandExpectValidationFailure(SCHEMA_WITH_ELEMENTS, {
-        type: "removeAnnotation",
-        payload: { annotationId: "/element:person" },
-      }, "No annotation found on node: /element:person");
+      runCommandExpectValidationFailure(
+        SCHEMA_WITH_ELEMENTS,
+        {
+          type: "removeAnnotation",
+          payload: { annotationId: "/element:person" },
+        },
+        "No annotation found on node: /element:person"
+      );
     });
 
     test("should keep remaining schema annotations before top-level declarations after deletion", () => {
@@ -184,10 +192,14 @@ describe("Integration: Annotation pipeline", () => {
     });
 
     test("should return validation error when element does not exist", () => {
-      runCommandExpectValidationFailure(SCHEMA_WITH_ANNOTATION, {
-        type: "modifyAnnotation",
-        payload: { annotationId: "/element:noElement", documentation: "text" },
-      }, "Target node not found or does not support annotations: /element:noElement");
+      runCommandExpectValidationFailure(
+        SCHEMA_WITH_ANNOTATION,
+        {
+          type: "modifyAnnotation",
+          payload: { annotationId: "/element:noElement", documentation: "text" },
+        },
+        "Target node not found or does not support annotations: /element:noElement"
+      );
     });
   });
 });
@@ -239,13 +251,17 @@ describe("Integration: Documentation pipeline", () => {
     });
 
     test("should return validation error when target element does not exist", () => {
-      runCommandExpectValidationFailure(SCHEMA_WITH_ANNOTATION, {
-        type: "addDocumentation",
-        payload: {
-          targetId: "/element:missing",
-          content: "text",
+      runCommandExpectValidationFailure(
+        SCHEMA_WITH_ANNOTATION,
+        {
+          type: "addDocumentation",
+          payload: {
+            targetId: "/element:missing",
+            content: "text",
+          },
         },
-      }, "Target node not found or does not support annotations: /element:missing");
+        "Target node not found or does not support annotations: /element:missing"
+      );
     });
   });
 
@@ -263,10 +279,14 @@ describe("Integration: Documentation pipeline", () => {
     });
 
     test("should return validation error when documentation index is out of bounds", () => {
-      runCommandExpectValidationFailure(SCHEMA_WITH_ANNOTATION, {
-        type: "removeDocumentation",
-        payload: { documentationId: "/element:person/documentation[5]" },
-      }, "Documentation index 5 out of bounds (length 1): /element:person/documentation[5]");
+      runCommandExpectValidationFailure(
+        SCHEMA_WITH_ANNOTATION,
+        {
+          type: "removeDocumentation",
+          payload: { documentationId: "/element:person/documentation[5]" },
+        },
+        "Documentation index 5 out of bounds (length 1): /element:person/documentation[5]"
+      );
     });
   });
 
@@ -287,13 +307,17 @@ describe("Integration: Documentation pipeline", () => {
     });
 
     test("should return validation error when documentation index is out of bounds", () => {
-      runCommandExpectValidationFailure(SCHEMA_WITH_ANNOTATION, {
-        type: "modifyDocumentation",
-        payload: {
-          documentationId: "/element:person/documentation[9]",
-          content: "text",
+      runCommandExpectValidationFailure(
+        SCHEMA_WITH_ANNOTATION,
+        {
+          type: "modifyDocumentation",
+          payload: {
+            documentationId: "/element:person/documentation[9]",
+            content: "text",
+          },
         },
-      }, "Documentation index 9 out of bounds (length 1): /element:person/documentation[9]");
+        "Documentation index 9 out of bounds (length 1): /element:person/documentation[9]"
+      );
     });
   });
 });

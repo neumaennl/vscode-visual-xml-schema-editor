@@ -19,8 +19,16 @@ const LIST_FACETS = ["enumeration", "pattern"] as const;
 
 /** The facets that have one value; only the first element is read. */
 const SINGLE_VALUE_FACETS = [
-  "length", "minLength", "maxLength", "minInclusive", "maxInclusive", "minExclusive", "maxExclusive",
-  "totalDigits", "fractionDigits", "whiteSpace",
+  "length",
+  "minLength",
+  "maxLength",
+  "minInclusive",
+  "maxInclusive",
+  "minExclusive",
+  "maxExclusive",
+  "totalDigits",
+  "fractionDigits",
+  "whiteSpace",
 ] as const;
 
 /**

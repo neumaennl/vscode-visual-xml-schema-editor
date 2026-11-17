@@ -18,17 +18,10 @@ import { locateType, validateInlineTypeParent, validateNewTypeName } from "./com
  * Only compositor models are supported in Phase 1 (sequence, choice, all).
  * Note: `ContentModel` type in `shared/commands/schemaTypes.ts` defines: `"sequence"` | `"choice"` | `"all"`
  */
-export const VALID_COMPLEX_TYPE_CONTENT_MODELS = [
-  "sequence",
-  "choice",
-  "all",
-] as const;
+export const VALID_COMPLEX_TYPE_CONTENT_MODELS = ["sequence", "choice", "all"] as const;
 
 /** Valid derivation kinds for complex types that use a base type. */
-export const VALID_COMPLEX_TYPE_DERIVATION_KINDS = [
-  "extension",
-  "restriction",
-] as const;
+export const VALID_COMPLEX_TYPE_DERIVATION_KINDS = ["extension", "restriction"] as const;
 
 /** Container types that may hold an anonymous complexType inline. */
 const INLINE_COMPLEX_TYPE_PARENT_TYPES = ["topLevelElement", "localElement"];
@@ -41,10 +34,7 @@ const INLINE_COMPLEX_TYPE_PARENT_TYPES = ["topLevelElement", "localElement"];
  * @param validModels - The content models that the command allows
  * @returns The validation result
  */
-function validateContentModel(
-  contentModel: string | undefined,
-  validModels: readonly string[]
-): ValidationResult {
+function validateContentModel(contentModel: string | undefined, validModels: readonly string[]): ValidationResult {
   if (!contentModel) {
     return { valid: false, error: "Content model is required" };
   }
@@ -63,13 +53,15 @@ function validateContentModel(
  * @param derivationKind - The `derivationKind` of the payload; a payload without one is valid
  * @returns The validation result
  */
-function validateDerivationKind(
-  derivationKind: string | undefined
-): ValidationResult {
+function validateDerivationKind(derivationKind: string | undefined): ValidationResult {
   if (derivationKind === undefined) {
     return { valid: true };
   }
-  if (!VALID_COMPLEX_TYPE_DERIVATION_KINDS.includes(derivationKind as typeof VALID_COMPLEX_TYPE_DERIVATION_KINDS[number])) {
+  if (
+    !VALID_COMPLEX_TYPE_DERIVATION_KINDS.includes(
+      derivationKind as (typeof VALID_COMPLEX_TYPE_DERIVATION_KINDS)[number]
+    )
+  ) {
     return {
       valid: false,
       error: `Derivation kind must be one of: ${VALID_COMPLEX_TYPE_DERIVATION_KINDS.join(", ")}`,
@@ -146,7 +138,8 @@ function validateComplexTypeContentChange(
       error: `'${typeId}' has simple content, whose base type, derivation and content model cannot be changed yet`,
     };
   }
-  const groupRef = existing.group ?? existing.complexContent?.extension?.group ?? existing.complexContent?.restriction?.group;
+  const groupRef =
+    existing.group ?? existing.complexContent?.extension?.group ?? existing.complexContent?.restriction?.group;
   if (payload.contentModel !== undefined && groupRef) {
     return {
       valid: false,
@@ -164,10 +157,7 @@ function validateComplexTypeContentChange(
  * @param schemaObj - The schema
  * @returns The validation result
  */
-export function validateAddComplexType(
-  command: AddComplexTypeCommand,
-  schemaObj: schema
-): ValidationResult {
+export function validateAddComplexType(command: AddComplexTypeCommand, schemaObj: schema): ValidationResult {
   const { parentId, typeName, contentModel, derivationKind } = command.payload;
   const isTopLevel = isSchemaRoot(parentId);
 
@@ -200,10 +190,7 @@ export function validateAddComplexType(
  * @param schemaObj - The schema
  * @returns The validation result
  */
-export function validateRemoveComplexType(
-  command: RemoveComplexTypeCommand,
-  schemaObj: schema
-): ValidationResult {
+export function validateRemoveComplexType(command: RemoveComplexTypeCommand, schemaObj: schema): ValidationResult {
   const located = locateType(command.payload.typeId, schemaObj, "complexType", schemaObj.complexType);
   return located.valid ? { valid: true } : located;
 }
@@ -216,10 +203,7 @@ export function validateRemoveComplexType(
  * @param schemaObj - The schema
  * @returns The validation result
  */
-export function validateModifyComplexType(
-  command: ModifyComplexTypeCommand,
-  schemaObj: schema
-): ValidationResult {
+export function validateModifyComplexType(command: ModifyComplexTypeCommand, schemaObj: schema): ValidationResult {
   const { typeId, typeName, contentModel, derivationKind } = command.payload;
   const located = locateType(typeId, schemaObj, "complexType", schemaObj.complexType);
   if (!located.valid) return located;

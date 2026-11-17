@@ -69,12 +69,12 @@ sequenceDiagram
 
 `execute()` is synchronous and returns a result object instead of throwing. The provider maps the outcome to messages:[^webview-provider][^workspace-edit-test]
 
-| Outcome | Cause | Message to the webview |
-|---|---|---|
-| Success | Edit applied | `commandResult` `{ success: true }`, plus `updateSchema` from the document change |
-| Validation failure | The validator rejected the command | `commandResult` `{ success: false, error }` |
-| Runtime failure | An exception in parsing, executing or serializing, for example because the document does not parse | `error` with code `COMMAND_EXECUTION_ERROR` and stack trace; the message starts with "Command execution failed:" |
-| Edit rejected | `applyEdit()` returned `false` | `error` with code `COMMAND_EXECUTION_ERROR` |
+| Outcome            | Cause                                                                                              | Message to the webview                                                                                           |
+| ------------------ | -------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Success            | Edit applied                                                                                       | `commandResult` `{ success: true }`, plus `updateSchema` from the document change                                |
+| Validation failure | The validator rejected the command                                                                 | `commandResult` `{ success: false, error }`                                                                      |
+| Runtime failure    | An exception in parsing, executing or serializing, for example because the document does not parse | `error` with code `COMMAND_EXECUTION_ERROR` and stack trace; the message starts with "Command execution failed:" |
+| Edit rejected      | `applyEdit()` returned `false`                                                                     | `error` with code `COMMAND_EXECUTION_ERROR`                                                                      |
 
 On `commandResult` with `success: false` and on `error`, the webview shows the message in its notification bar; the diagram stays as it is. A successful `commandResult` or the next `updateSchema` hides the notification.[^webview-main]
 

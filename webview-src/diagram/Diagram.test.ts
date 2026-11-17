@@ -28,7 +28,7 @@ describe("Diagram", () => {
   describe("addRootElement", () => {
     test("should add element to root elements", () => {
       const item = new DiagramItem("test-1", "TestItem", DiagramItemType.element, diagram);
-      
+
       diagram.addRootElement(item);
 
       expect(diagram.rootElements).toHaveLength(1);
@@ -38,7 +38,7 @@ describe("Diagram", () => {
     test("should set diagram reference on the element", () => {
       const item = new DiagramItem("test-1", "TestItem", DiagramItemType.element, diagram);
       const newDiagram = new Diagram();
-      
+
       newDiagram.addRootElement(item);
 
       expect(item.diagram).toBe(newDiagram);
@@ -100,9 +100,19 @@ describe("Diagram", () => {
       const items = addTree();
       items.b.showChildElements = true;
 
-      diagram.restoreExpandState(new Map([["schema", true], ["a", true]]));
+      diagram.restoreExpandState(
+        new Map([
+          ["schema", true],
+          ["a", true],
+        ])
+      );
 
-      expect([items.schema, items.a, items.b, items.c].map((item) => item.showChildElements)).toEqual([true, true, true, false]);
+      expect([items.schema, items.a, items.b, items.c].map((item) => item.showChildElements)).toEqual([
+        true,
+        true,
+        true,
+        false,
+      ]);
     });
   });
 

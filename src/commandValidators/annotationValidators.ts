@@ -25,14 +25,9 @@ import type {
 import type { ValidationFailure, ValidationResult } from "./validationUtils.js";
 import { locateNodeById } from "../schemaNavigator.js";
 import { isSchemaRoot } from "../../shared/schemaUtils.js";
-import {
-  parseDocumentationId,
-  parseSchemaAnnotationId,
-  parseSchemaDocumentationId,
-} from "../commandUtils.js";
+import { parseDocumentationId, parseSchemaAnnotationId, parseSchemaDocumentationId } from "../commandUtils.js";
 
 // ===== Internal helpers =====
-
 
 /**
  * Type guard: returns true when `node` exposes an `annotation` property.
@@ -40,9 +35,7 @@ import {
  * @param node - The schema object of a node
  * @returns True if the node can hold an annotation
  */
-function hasAnnotationProperty(
-  node: unknown
-): node is { annotation?: annotationType } {
+function hasAnnotationProperty(node: unknown): node is { annotation?: annotationType } {
   return typeof node === "object" && node !== null && "annotation" in node;
 }
 
@@ -73,7 +66,10 @@ function locateAnnotatable(
  * @returns The annotation, or the validation failure if the component does not exist, does not support
  * annotations or has none
  */
-function locateAnnotation(schemaObj: schema, nodeId: string): ValidationFailure | { valid: true; annotation: annotationType } {
+function locateAnnotation(
+  schemaObj: schema,
+  nodeId: string
+): ValidationFailure | { valid: true; annotation: annotationType } {
   const located = locateAnnotatable(schemaObj, nodeId);
   if (!located.valid) {
     return located;
@@ -118,10 +114,7 @@ function validateAddTarget(
  * @param schemaObj - The schema
  * @returns The validation result
  */
-export function validateAddAnnotation(
-  command: AddAnnotationCommand,
-  schemaObj: schema
-): ValidationResult {
+export function validateAddAnnotation(command: AddAnnotationCommand, schemaObj: schema): ValidationResult {
   const targetId = command.payload.targetId;
   return validateAddTarget(targetId, schemaObj, (target) =>
     target.annotation
@@ -188,10 +181,7 @@ function validateAnnotationId(annotationId: string, schemaObj: schema, action: "
  * @param schemaObj - The schema
  * @returns The validation result
  */
-export function validateRemoveAnnotation(
-  command: RemoveAnnotationCommand,
-  schemaObj: schema
-): ValidationResult {
+export function validateRemoveAnnotation(command: RemoveAnnotationCommand, schemaObj: schema): ValidationResult {
   return validateAnnotationId(command.payload.annotationId, schemaObj, "remove");
 }
 
@@ -202,10 +192,7 @@ export function validateRemoveAnnotation(
  * @param schemaObj - The schema
  * @returns The validation result
  */
-export function validateModifyAnnotation(
-  command: ModifyAnnotationCommand,
-  schemaObj: schema
-): ValidationResult {
+export function validateModifyAnnotation(command: ModifyAnnotationCommand, schemaObj: schema): ValidationResult {
   return validateAnnotationId(command.payload.annotationId, schemaObj, "modify");
 }
 
@@ -219,10 +206,7 @@ export function validateModifyAnnotation(
  * @param schemaObj - The schema
  * @returns The validation result
  */
-export function validateAddDocumentation(
-  command: AddDocumentationCommand,
-  schemaObj: schema
-): ValidationResult {
+export function validateAddDocumentation(command: AddDocumentationCommand, schemaObj: schema): ValidationResult {
   const targetId = command.payload.targetId;
   const schemaAnnotationIndex = parseSchemaAnnotationId(targetId);
   if (schemaAnnotationIndex !== null) {
@@ -248,7 +232,11 @@ function validateDocumentationId(documentationId: string, schemaObj: schema): Va
   // "/schema/annotation[N]/documentation[M]" format
   const schemaDocumentationId = parseSchemaDocumentationId(documentationId);
   if (schemaDocumentationId) {
-    const indexResult = validateSchemaAnnotationIndex(schemaDocumentationId.annotationIndex, schemaObj, documentationId);
+    const indexResult = validateSchemaAnnotationIndex(
+      schemaDocumentationId.annotationIndex,
+      schemaObj,
+      documentationId
+    );
     if (!indexResult.valid) {
       return indexResult;
     }
@@ -293,7 +281,11 @@ function validateDocumentationId(documentationId: string, schemaObj: schema): Va
  * @param documentationId - The documentation ID, for the error message
  * @returns The validation result
  */
-function validateDocumentationIndex(documentationIndex: number, count: number, documentationId: string): ValidationResult {
+function validateDocumentationIndex(
+  documentationIndex: number,
+  count: number,
+  documentationId: string
+): ValidationResult {
   if (documentationIndex >= count) {
     return {
       valid: false,
@@ -311,10 +303,7 @@ function validateDocumentationIndex(documentationIndex: number, count: number, d
  * @param schemaObj - The schema
  * @returns The validation result
  */
-export function validateRemoveDocumentation(
-  command: RemoveDocumentationCommand,
-  schemaObj: schema
-): ValidationResult {
+export function validateRemoveDocumentation(command: RemoveDocumentationCommand, schemaObj: schema): ValidationResult {
   return validateDocumentationId(command.payload.documentationId, schemaObj);
 }
 
@@ -326,9 +315,6 @@ export function validateRemoveDocumentation(
  * @param schemaObj - The schema
  * @returns The validation result
  */
-export function validateModifyDocumentation(
-  command: ModifyDocumentationCommand,
-  schemaObj: schema
-): ValidationResult {
+export function validateModifyDocumentation(command: ModifyDocumentationCommand, schemaObj: schema): ValidationResult {
   return validateDocumentationId(command.payload.documentationId, schemaObj);
 }

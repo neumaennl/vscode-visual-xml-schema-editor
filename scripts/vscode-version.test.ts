@@ -23,9 +23,13 @@ const PACKAGE_JSON = {
  * @param edition - The edition, such as `ES2024`
  * @returns The text of the configuration
  */
-const tsconfig = (edition: string): string => `{ "compilerOptions": { "target": "${edition}", "lib": ["${edition}", "DOM"] } }\n`;
+const tsconfig = (edition: string): string =>
+  `{ "compilerOptions": { "target": "${edition}", "lib": ["${edition}", "DOM"] } }\n`;
 
-const ORIGINAL_IS_TTY = Object.getOwnPropertyDescriptor(process.stdin, "isTTY") ?? { value: undefined, configurable: true };
+const ORIGINAL_IS_TTY = Object.getOwnPropertyDescriptor(process.stdin, "isTTY") ?? {
+  value: undefined,
+  configurable: true,
+};
 
 let dir: string;
 
@@ -114,7 +118,9 @@ describe("vscode-version", () => {
       stubReleases();
 
       await expect(check(dir)).resolves.toBe(0);
-      expect(console.log).toHaveBeenCalledWith("engines.vscode, @types/vscode, @types/node, .nvmrc and the ECMAScript edition match.");
+      expect(console.log).toHaveBeenCalledWith(
+        "engines.vscode, @types/vscode, @types/node, .nvmrc and the ECMAScript edition match."
+      );
     });
 
     test("should return 1 and name each place in the configurations with another edition", async () => {
@@ -173,7 +179,9 @@ describe("vscode-version", () => {
       await expect(update("1.141.0", dir)).resolves.toBe(0);
 
       expect(read("tsconfig.json")).toBe(tsconfig("ES2024"));
-      expect(console.log).toHaveBeenCalledWith(expect.stringContaining("the ECMAScript edition ES2024 (changed tsconfig.json)."));
+      expect(console.log).toHaveBeenCalledWith(
+        expect.stringContaining("the ECMAScript edition ES2024 (changed tsconfig.json).")
+      );
     });
 
     test("should throw for a version whose Node version has no @tsconfig/bases configuration", async () => {
@@ -194,7 +202,9 @@ describe("vscode-version", () => {
       writeProject();
       stubReleases();
 
-      await expect(update("1.130.0", dir)).rejects.toThrow("VS Code 1.130.0 is not a release x.y.0 of microsoft/vscode");
+      await expect(update("1.130.0", dir)).rejects.toThrow(
+        "VS Code 1.130.0 is not a release x.y.0 of microsoft/vscode"
+      );
       expect(read(".nvmrc")).toBe("24.15.0\n");
     });
 
@@ -242,13 +252,23 @@ describe("vscode-version", () => {
   describe("choose", () => {
     const rows = [
       { vscode: "1.110.0", electron: "39.6.0", node: "22.22.0", typesNode: "22.20.5", edition: "ES2023" },
-      { vscode: "1.125.0", electron: "42.3.0", node: "24.15.0", typesVscode: "1.125.0", typesNode: "24.13.6", edition: "ES2024" },
+      {
+        vscode: "1.125.0",
+        electron: "42.3.0",
+        node: "24.15.0",
+        typesVscode: "1.125.0",
+        typesNode: "24.13.6",
+        edition: "ES2024",
+      },
       { vscode: "1.150.0", electron: "45.1.0", node: "26.2.0", typesVscode: "1.150.0", typesNode: "26.1.0" },
     ];
     const dates = { "1.110.0": "2026-03-09", "1.125.0": "2026-06-17", "1.150.0": "2027-06-16" };
 
     test("should ask again until the answer is a version with both @types versions and an edition", async () => {
-      asker.question.mockResolvedValueOnce("1.110.0").mockResolvedValueOnce("1.150.0").mockResolvedValueOnce(" 1.125.0 ");
+      asker.question
+        .mockResolvedValueOnce("1.110.0")
+        .mockResolvedValueOnce("1.150.0")
+        .mockResolvedValueOnce(" 1.125.0 ");
 
       await expect(choose(rows, dates, "1.125.0", asker)).resolves.toBe("1.125.0");
 

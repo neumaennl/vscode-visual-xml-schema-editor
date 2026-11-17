@@ -66,6 +66,7 @@ Effort:
   The webview reads IDs with its own helpers, such as `getNodeType()` and `isTopLevelElement()` in `propertiesPanelCommands.ts`, instead of shared ones; `idStrategy.ts` had such helpers, but nothing used them, so they were removed.
 
   The goal is one consistent grammar, generated and resolved by a single implementation in `shared/`. Since IDs are not stored in the XSD file, a new format needs no migration. The redesign should be planned together with [Diagram items copy values from the schema objects](#diagram-items-copy-values-from-the-schema-objects), which also changes the diagram builder.
+
 - **GitHub issue:** [#348](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/348)
 
 ## Commands can change or lose content outside the edit
@@ -81,6 +82,7 @@ Effort:
   - The XML declaration is always written as `<?xml version="1.0" encoding="UTF-8"?>`. ([xmlbind-ts](https://github.com/neumaennl/xmlbind-ts/blob/main/docs/known-issues.md#the-attributes-of-the-xml-declaration-are-not-kept))
 
   The editor does not warn about any of this. The causes are in `xmlbind-ts` (see [Architecture](architecture.md#responsibilities-of-xmlbind-ts-and-the-editor)); 2.x gets no more fixes, and version 3, which writes only the changes of a command, fixes them ([#444](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/444)). What the editor does with a schema that does not survive a round trip unchanged is its own decision: for example, it could compare the document with the result of a round trip when it is opened, and warn or switch to read-only if they differ.
+
 - **GitHub issue:** [#444](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/444)
 
 ## Turning the default namespace into a prefix does not rewrite references
@@ -141,6 +143,7 @@ Effort:
   - the properties panel shows the editors of an inline simple type, and changing a facet or the derivation there fails the same way.
 
   The fix is to check `hasAnonymousComplexType` wherever the flag is read as an inline simple type, or to split the flag. The facets of a restriction of simple content cannot be edited by any command yet (see [Complex types with simple content cannot be created or derived](#complex-types-with-simple-content-cannot-be-created-or-derived)).
+
 - **GitHub issue:** [#440](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/440)
 
 ## Named complex types with simple content are shown as inline simple types
@@ -236,6 +239,7 @@ Effort:
   - **Derivation by extension.** The content types of the base and the derived type must both be mixed or both be element-only. Switching only the derived type can make the schema invalid; no validator checks `mixed`.
 
   The fix is to hide the toggle for simple content, to read and write the effective value (on `xs:complexContent` if the attribute is there), and to check the base type in the validator.
+
 - **GitHub issue:** none
 
 ## Facets are not checked against the base type
@@ -273,6 +277,7 @@ Effort:
   - Anonymous types cannot be selected or deleted on their own, and the element's documentation falls back to the type's documentation, which cannot be told apart.
 
   How Altova XMLSpy shows anonymous types is unclear: its manual says that "there is no separate symbol for local complex types", which can mean that they are merged into the element or that they use the same symbol as named complex types; this was not tried in XMLSpy. The editor does not have to follow XMLSpy here. An alternative is to draw the anonymous type as a child node of the element, so that every node is exactly one construct. This could be a diagram option. It should be decided before the [node IDs are redesigned](#node-ids-are-ambiguous-and-have-many-special-cases). It should also be planned together with [Diagram items copy values from the schema objects](#diagram-items-copy-values-from-the-schema-objects).
+
 - **GitHub issue:** [#358](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/358)
 
 ## Palette has no entry for attribute groups
@@ -477,6 +482,7 @@ Effort:
   - `DiagramBuilder` and `DropCommandFactory` collect the same lists in the webview.
 
   The fix is pure functions in `shared/` that take the schema object as a parameter (for example `findTopLevel(schemaObj, kind, name)`, `getTopLevel(schemaObj, kind)` and `forEachTopLevelComponent(schemaObj, callback)`), used everywhere.
+
 - **GitHub issue:** none
 
 ## Duplicated and dead code

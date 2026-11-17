@@ -44,7 +44,7 @@ describe("Import Validators", () => {
     schemaObj = emptySchema();
   });
 
-describe("validateAddImport", () => {
+  describe("validateAddImport", () => {
     test("should accept addImport with both namespace and schemaLocation", () => {
       const command: AddImportCommand = {
         type: "addImport",
@@ -128,7 +128,9 @@ describe("validateAddImport", () => {
     });
 
     test("should reject addImport when namespace is already imported", () => {
-      const schemaWithImport = schemaWith(`<xs:import namespace="http://example.com/existing" schemaLocation="existing.xsd"/>`);
+      const schemaWithImport = schemaWith(
+        `<xs:import namespace="http://example.com/existing" schemaLocation="existing.xsd"/>`
+      );
       const command: AddImportCommand = {
         type: "addImport",
         payload: {
@@ -143,7 +145,10 @@ describe("validateAddImport", () => {
     });
 
     test("should reject addImport with an already-used prefix bound to a different namespace", () => {
-      const schemaWithPrefix = schemaWith(`<xs:import namespace="http://example.com/existing" schemaLocation="existing.xsd"/>`, { ext: "http://example.com/existing" });
+      const schemaWithPrefix = schemaWith(
+        `<xs:import namespace="http://example.com/existing" schemaLocation="existing.xsd"/>`,
+        { ext: "http://example.com/existing" }
+      );
       const command: AddImportCommand = {
         type: "addImport",
         payload: {
@@ -234,14 +239,20 @@ describe("validateAddImport", () => {
 
     test("should accept removeImport when import exists and is not referenced", () => {
       const schemaWithImport = schemaWith(NS1_IMPORT);
-      const result = validateRemoveImport({ type: "removeImport", payload: { importId: "/import[0]" } }, schemaWithImport);
+      const result = validateRemoveImport(
+        { type: "removeImport", payload: { importId: "/import[0]" } },
+        schemaWithImport
+      );
       expect(result.valid).toBe(true);
     });
 
     test("should reject removeImport when namespace prefix is referenced in an element type", () => {
       const prefixes = { ext: "http://example.com/ext" };
-      const schemaWithRef = schemaWith(`<xs:import namespace="http://example.com/ext" schemaLocation="ext.xsd"/>
-<xs:element name="foo" type="ext:MyType"/>`, prefixes);
+      const schemaWithRef = schemaWith(
+        `<xs:import namespace="http://example.com/ext" schemaLocation="ext.xsd"/>
+<xs:element name="foo" type="ext:MyType"/>`,
+        prefixes
+      );
       const result = validateRemoveImport({ type: "removeImport", payload: { importId: "/import[0]" } }, schemaWithRef);
       expectInvalid(result);
       expect(result.error).toContain("still referenced");
@@ -251,7 +262,10 @@ describe("validateAddImport", () => {
       // This verifies that the full recursive traversal catches references
       // that were missed by the old shallow implementation.
       const schemaWithDeepRef = readTestSchema("import-with-type-used-in-nested-choice.xsd");
-      const result = validateRemoveImport({ type: "removeImport", payload: { importId: "/import[0]" } }, schemaWithDeepRef);
+      const result = validateRemoveImport(
+        { type: "removeImport", payload: { importId: "/import[0]" } },
+        schemaWithDeepRef
+      );
       expectInvalid(result);
       expect(result.error).toContain("still referenced");
     });
@@ -410,7 +424,10 @@ describe("Include Validators", () => {
     });
 
     test("should reject addInclude when schemaLocation contains whitespace", () => {
-      const result = validateAddInclude({ type: "addInclude", payload: { schemaLocation: "my schema.xsd" } }, schemaObj);
+      const result = validateAddInclude(
+        { type: "addInclude", payload: { schemaLocation: "my schema.xsd" } },
+        schemaObj
+      );
       expectInvalid(result);
       expect(result.error).toBe("Schema location must be a valid path or URI without whitespace");
     });
@@ -422,7 +439,10 @@ describe("Include Validators", () => {
 
     test("should reject addInclude when the same schemaLocation already exists", () => {
       const schemaWithInclude = schemaWithIncludes("other.xsd");
-      const result = validateAddInclude({ type: "addInclude", payload: { schemaLocation: "other.xsd" } }, schemaWithInclude);
+      const result = validateAddInclude(
+        { type: "addInclude", payload: { schemaLocation: "other.xsd" } },
+        schemaWithInclude
+      );
       expectInvalid(result);
       expect(result.error).toBe("An include for schema location 'other.xsd' already exists");
     });
@@ -462,7 +482,10 @@ describe("Include Validators", () => {
 
     test("should accept removeInclude with valid includeId", () => {
       const schemaWithInclude = schemaWithIncludes("other.xsd");
-      const result = validateRemoveInclude({ type: "removeInclude", payload: { includeId: "/include[0]" } }, schemaWithInclude);
+      const result = validateRemoveInclude(
+        { type: "removeInclude", payload: { includeId: "/include[0]" } },
+        schemaWithInclude
+      );
       expect(result.valid).toBe(true);
     });
   });
@@ -648,7 +671,10 @@ describe("Import and namespace rules", () => {
     },
     {
       rule: "an empty prefix for a changed import",
-      result: validateModifyImport({ type: "modifyImport", payload: { importId: "/import[0]", prefix: "" } }, schemaWithImport),
+      result: validateModifyImport(
+        { type: "modifyImport", payload: { importId: "/import[0]", prefix: "" } },
+        schemaWithImport
+      ),
       error: "Prefix cannot be empty when provided",
     },
     {

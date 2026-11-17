@@ -102,13 +102,13 @@ This document describes how the extension is tested today and the conventions fo
 
 # Running the tests
 
-| Script | What it does |
-|---|---|
-| `npm test` | Compiles the extension and the webview and runs the type check (`pretest` runs `npm run compile` and `npm run typecheck`), then runs all tests. |
-| `npm run typecheck` | Type-checks the tests and the scripts with `tsc` (see below). |
-| `npm run test:watch` | Runs Vitest in watch mode, without compiling and without the type check. |
-| `npm run test:coverage` | Runs all tests with a coverage report in `coverage/`, without compiling and without the type check. |
-| `npm run test:extension-host` | Runs the smoke tests inside VS Code (see [Tests in the extension host](#tests-in-the-extension-host)). `npm test` does not run them. |
+| Script                        | What it does                                                                                                                                    |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm test`                    | Compiles the extension and the webview and runs the type check (`pretest` runs `npm run compile` and `npm run typecheck`), then runs all tests. |
+| `npm run typecheck`           | Type-checks the tests and the scripts with `tsc` (see below).                                                                                   |
+| `npm run test:watch`          | Runs Vitest in watch mode, without compiling and without the type check.                                                                        |
+| `npm run test:coverage`       | Runs all tests with a coverage report in `coverage/`, without compiling and without the type check.                                             |
+| `npm run test:extension-host` | Runs the smoke tests inside VS Code (see [Tests in the extension host](#tests-in-the-extension-host)). `npm test` does not run them.            |
 
 Vitest only removes the types from the TypeScript files; it does not check them. `npm run typecheck` runs `tsc --noEmit` with the test configurations `tsconfig.extension-test.json`, `tsconfig.webview-test.json`, `tsconfig.shared-test.json` and `tsconfig.integration-test.json`, with `tsconfig.nodeTools.json` (the scripts and the configurations of Vite and Vitest), and with `tsconfig.extension-host-test.json` (the tests in the extension host), so a type error in a test or in the code it tests fails `npm test`.[^manifest]
 
@@ -120,13 +120,13 @@ Use the Node version from `.nvmrc`, which CI also uses. It is the Node version o
 
 `vitest.config.ts` defines five projects, one for each part of the code (see [Architecture](architecture.md#components)) and one for the integration tests that use the extension host and the webview together, on top of one shared base:[^vitest-config]
 
-| Project | Tests | Environment | Aliases | Type-checked with |
-|---|---|---|---|---|
-| `extension` | `src/**/*.test.ts` | Node.js | `vscode` to the mock | `tsconfig.extension-test.json` |
-| `shared` | `shared/**/*.test.ts`, type tests `shared/**/*.test-d.ts` | Node.js | `vscode` to the mock | `tsconfig.shared-test.json` |
-| `webview` | `webview-src/**/*.test.ts` | jsdom | none | `tsconfig.webview-test.json` |
-| `scripts` | `scripts/**/*.test.ts` | Node.js | none | `tsconfig.nodeTools.json` |
-| `integration` | `test/integration/**/*.test.ts` | jsdom | `vscode` to the mock | `tsconfig.integration-test.json` |
+| Project       | Tests                                                     | Environment | Aliases              | Type-checked with                |
+| ------------- | --------------------------------------------------------- | ----------- | -------------------- | -------------------------------- |
+| `extension`   | `src/**/*.test.ts`                                        | Node.js     | `vscode` to the mock | `tsconfig.extension-test.json`   |
+| `shared`      | `shared/**/*.test.ts`, type tests `shared/**/*.test-d.ts` | Node.js     | `vscode` to the mock | `tsconfig.shared-test.json`      |
+| `webview`     | `webview-src/**/*.test.ts`                                | jsdom       | none                 | `tsconfig.webview-test.json`     |
+| `scripts`     | `scripts/**/*.test.ts`                                    | Node.js     | none                 | `tsconfig.nodeTools.json`        |
+| `integration` | `test/integration/**/*.test.ts`                           | jsdom       | `vscode` to the mock | `tsconfig.integration-test.json` |
 
 - **Shared base.** The base enables the globals (`describe`, `test`, `expect`, `vi` without an import), defines the reporters and the coverage. The projects only add their name, environment, test files and the `vscode` alias, and in `shared` the type checking mode for type tests.
 - **Type tests.** The `shared` project has Vitest's type checking mode on for `*.test-d.ts` files: Vitest does not run them but checks them with `tsc` and `tsconfig.shared-test.json`, and reports each `test()` whose code has a type error as failed. `npm test` therefore also fails when a type test fails.[^vitest-config]
@@ -162,18 +162,18 @@ The `vscode` mock is not used through this mechanism: `src/__mocks__/vscode.ts` 
 - **Integration tests** test several modules together. Each module is tested by its unit tests first; an integration test only checks what the modules do together and does not repeat the cases of the unit tests. Those within one project sit in the `__tests__` folder of the part; those that use the extension host and the webview together sit in `test/integration/` (see [Project boundaries](development-guidelines.md#project-boundaries)). The `src/__tests__/pipeline.*.test.ts` files send commands through the real `CommandProcessor`, which validates, executes and serializes them (see [Persistence](persistence.md#command-pipeline)), and check the resulting XML or schema; `pipeline.chained.test.ts` runs several commands in a row. `pipeline.workspaceEdit.test.ts` starts one step earlier: it sends an `executeCommand` message to `SchemaEditorProvider` and checks the `WorkspaceEdit`, the `applyEdit` call and the reply.[^workspace-edit-test] The `webview-src/__tests__/propertiesPanel.*.test.ts` files display diagram items in a whole `PropertiesPanel` and check what only the panel does for a tab: for which nodes it offers the tab, the type suggestions it collects, and that it passes the commands on and shows the tab again after a change; the tabs themselves have unit tests. `test/integration/commandAgreement.test.ts` checks that the validators and the executors agree ([ADR 003](architecture/003-validators-check-executors-assume.md)): it builds the diagram of every schema in `src/__tests__/test-resources` and `exampleFiles`, creates the commands that the webview can send for its nodes, and applies every command that the validator accepts; the executor must neither throw nor leave the schema unchanged. It sits in the `integration` project, the only one that may use the extension host and the webview together (see [Project boundaries](development-guidelines.md#project-boundaries)), because it needs the `DiagramBuilder` of the webview and the validators and executors of the extension host; these do not use `vscode`.
 - **Type tests** check rules of types that the compiler enforces and the code relies on, with `expectTypeOf()`, for example `expectTypeOf<Omit<P, "id">>().not.toExtend<P>()` for a required field. `shared/commands/commandTypes.test-d.ts` checks the required fields of the command payloads, the allowed values of `maxOccurs` and that `SchemaCommand` rejects an unknown `type` and a payload of another command. A type test is only written for such a rule, not for values assigned to a typed literal: the compiler already checks those, so such a test cannot fail.
 
-| Area | Tests | Details |
-|---|---|---|
-| Command types, IDs, schema utilities | `shared/commands/commandTypes.test-d.ts`, `shared/idStrategy.test.ts`, `shared/schemaUtils.test.ts` | [Commands](commands.md#files), [Schema model](schema-model.md#node-ids) |
-| Validators and executors | `src/commandValidators/`, `src/commandExecutors/`, `src/commandValidator.test.ts`, `src/commandExecutor.test.ts` | [Commands](commands.md) |
-| Processor, schema model, navigation | `src/commandProcessor.test.ts`, `src/schemaModelManager.test.ts`, `src/schemaNavigator.test.ts` | [Persistence](persistence.md), [Schema model](schema-model.md) |
-| Command pipeline | `src/__tests__/pipeline.*.test.ts` | [Persistence](persistence.md#command-pipeline) |
-| Extension and editor provider | `src/extension.test.ts`, `src/webviewProvider.test.ts` | [Messaging](messaging.md) |
-| Webview app | `webview-src/main.test.ts` | [Editor](editor.md) |
-| Diagram | `webview-src/diagram/`, `webview-src/renderer.test.ts` | [Diagram rendering](diagram-rendering.md#tests) |
-| Palette and drag and drop | `webview-src/drop/DropCommandFactory.test.ts`, `webview-src/palette/PaletteView.test.ts`, `webview-src/renderer.test.ts` | [Drag and drop](drag-and-drop.md#adding-a-draggable-construct) |
-| Properties panel | `webview-src/propertiesPanel/propertiesPanel*.test.ts` (unit tests, one per module), `webview-src/__tests__/propertiesPanel.*.test.ts` (integration tests of what needs the whole panel, such as which tabs it offers) | [UX concept](ux-concept.md) |
-| Scripts | `scripts/**/*.test.ts` | [Build and packaging](build-and-packaging.md#vs-code-and-node-versions) |
+| Area                                 | Tests                                                                                                                                                                                                                  | Details                                                                 |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| Command types, IDs, schema utilities | `shared/commands/commandTypes.test-d.ts`, `shared/idStrategy.test.ts`, `shared/schemaUtils.test.ts`                                                                                                                    | [Commands](commands.md#files), [Schema model](schema-model.md#node-ids) |
+| Validators and executors             | `src/commandValidators/`, `src/commandExecutors/`, `src/commandValidator.test.ts`, `src/commandExecutor.test.ts`                                                                                                       | [Commands](commands.md)                                                 |
+| Processor, schema model, navigation  | `src/commandProcessor.test.ts`, `src/schemaModelManager.test.ts`, `src/schemaNavigator.test.ts`                                                                                                                        | [Persistence](persistence.md), [Schema model](schema-model.md)          |
+| Command pipeline                     | `src/__tests__/pipeline.*.test.ts`                                                                                                                                                                                     | [Persistence](persistence.md#command-pipeline)                          |
+| Extension and editor provider        | `src/extension.test.ts`, `src/webviewProvider.test.ts`                                                                                                                                                                 | [Messaging](messaging.md)                                               |
+| Webview app                          | `webview-src/main.test.ts`                                                                                                                                                                                             | [Editor](editor.md)                                                     |
+| Diagram                              | `webview-src/diagram/`, `webview-src/renderer.test.ts`                                                                                                                                                                 | [Diagram rendering](diagram-rendering.md#tests)                         |
+| Palette and drag and drop            | `webview-src/drop/DropCommandFactory.test.ts`, `webview-src/palette/PaletteView.test.ts`, `webview-src/renderer.test.ts`                                                                                               | [Drag and drop](drag-and-drop.md#adding-a-draggable-construct)          |
+| Properties panel                     | `webview-src/propertiesPanel/propertiesPanel*.test.ts` (unit tests, one per module), `webview-src/__tests__/propertiesPanel.*.test.ts` (integration tests of what needs the whole panel, such as which tabs it offers) | [UX concept](ux-concept.md)                                             |
+| Scripts                              | `scripts/**/*.test.ts`                                                                                                                                                                                                 | [Build and packaging](build-and-packaging.md#vs-code-and-node-versions) |
 
 # Conventions
 
@@ -265,14 +265,14 @@ A small smoke suite runs inside VS Code, with the real `vscode` API instead of t
 
 ADR 001 plans six levels of testing. The current state:[^adr-001]
 
-| Level in the ADR | Current state |
-|---|---|
-| Unit tests (Jest or Mocha, VS Code API mocked, 80% coverage of business logic) | Done with Vitest instead of Jest or Mocha (see [ADR 001, section 9](architecture/001-editor-transition.md#9-deviations-from-this-design)) and [Coverage](#coverage). The tests for the State Reconciler and the selection manager do not exist, because these parts are not built. |
-| Integration tests (VS Code Extension Test Runner) | Mostly done in Vitest with the mocked VS Code API: the pipeline tests and the message handling of `SchemaEditorProvider`. A smoke suite with `@vscode/test-cli` checks activation, the custom editor, a `WorkspaceEdit` from a webview message and undo inside VS Code, with a mock webview (see [Tests in the extension host](#tests-in-the-extension-host)). |
-| End-to-end tests (Playwright or Selenium) | None. Planned on the editor branch ([#377](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/377)). |
-| Performance tests | None. |
-| Manual tests | No defined process. |
-| Regression tests (CI on every commit) | CI runs lint, build, type check and all tests, including the tests in the extension host, on pushes to `main` and on every pull request. |
+| Level in the ADR                                                               | Current state                                                                                                                                                                                                                                                                                                                                                  |
+| ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Unit tests (Jest or Mocha, VS Code API mocked, 80% coverage of business logic) | Done with Vitest instead of Jest or Mocha (see [ADR 001, section 9](architecture/001-editor-transition.md#9-deviations-from-this-design)) and [Coverage](#coverage). The tests for the State Reconciler and the selection manager do not exist, because these parts are not built.                                                                             |
+| Integration tests (VS Code Extension Test Runner)                              | Mostly done in Vitest with the mocked VS Code API: the pipeline tests and the message handling of `SchemaEditorProvider`. A smoke suite with `@vscode/test-cli` checks activation, the custom editor, a `WorkspaceEdit` from a webview message and undo inside VS Code, with a mock webview (see [Tests in the extension host](#tests-in-the-extension-host)). |
+| End-to-end tests (Playwright or Selenium)                                      | None. Planned on the editor branch ([#377](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/377)).                                                                                                                                                                                                                                          |
+| Performance tests                                                              | None.                                                                                                                                                                                                                                                                                                                                                          |
+| Manual tests                                                                   | No defined process.                                                                                                                                                                                                                                                                                                                                            |
+| Regression tests (CI on every commit)                                          | CI runs lint, build, type check and all tests, including the tests in the extension host, on pushes to `main` and on every pull request.                                                                                                                                                                                                                       |
 
 [^manifest]: Extension manifest (test scripts)
 

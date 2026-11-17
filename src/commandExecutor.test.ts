@@ -45,7 +45,7 @@ describe("CommandExecutor", () => {
       expect(() => {
         executor.execute(command, mockSchema);
       }).not.toThrow();
-      
+
       // Verify the element was added
       expect(mockSchema.element).toBeDefined();
     });
@@ -70,7 +70,7 @@ describe("CommandExecutor", () => {
       expect(() => {
         executor.execute(command, mockSchema);
       }).not.toThrow();
-      
+
       // Verify the element was removed
       expect(mockSchema.element).toBeUndefined();
     });
@@ -93,7 +93,7 @@ describe("CommandExecutor", () => {
       };
 
       executor.execute(command, testSchema);
-      
+
       // Verify the element was modified
       expect(testSchema.element).toBeDefined();
       const elements = Array.isArray(testSchema.element) ? testSchema.element : [testSchema.element];
@@ -194,9 +194,7 @@ describe("CommandExecutor", () => {
       }).not.toThrow();
 
       expect(mockSchema.annotation ?? []).toHaveLength(1);
-      expect(((mockSchema.annotation ?? [])[0]!.documentation ?? [])[0]!.value).toBe(
-        "Test schema annotation"
-      );
+      expect(((mockSchema.annotation ?? [])[0]!.documentation ?? [])[0]!.value).toBe("Test schema annotation");
     });
 
     test("should delegate addDocumentation execution successfully", () => {

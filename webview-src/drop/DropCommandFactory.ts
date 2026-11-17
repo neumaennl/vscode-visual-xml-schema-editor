@@ -4,7 +4,15 @@ import { DiagramItemType } from "../diagram";
 import { generateSchemaId, parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy";
 import { PaletteSchemaConstruct } from "../palette/PaletteSchemaConstruct";
 import { isFacetPaletteConstruct } from "../palette/FacetIconStyles";
-import { createFacetNodeDropCommand, getAnonymousComplexTypeId, getAnonymousSimpleTypeId, getExtensionBaseType, getRestrictionBaseType, isComplexTypeNode, isSimpleTypeNode } from "./DropCommandFactoryTypeHelpers";
+import {
+  createFacetNodeDropCommand,
+  getAnonymousComplexTypeId,
+  getAnonymousSimpleTypeId,
+  getExtensionBaseType,
+  getRestrictionBaseType,
+  isComplexTypeNode,
+  isSimpleTypeNode,
+} from "./DropCommandFactoryTypeHelpers";
 
 /**
  * Creates schema commands from drag-and-drop actions.
@@ -81,10 +89,7 @@ export class DropCommandFactory {
    * @param construct - Palette schema construct
    * @returns Command or null if unsupported
    */
-  public createNodeDropCommand(
-    item: DiagramItem,
-    construct: PaletteSchemaConstruct
-  ): SchemaCommand | null {
+  public createNodeDropCommand(item: DiagramItem, construct: PaletteSchemaConstruct): SchemaCommand | null {
     return this.createNodeDropCommandInternal(item, construct, true);
   }
 
@@ -154,14 +159,8 @@ export class DropCommandFactory {
    * @param reserveNames - Whether the new name is reserved
    * @returns Command or null if the target cannot hold elements
    */
-  private createElementNodeDropCommand(
-    item: DiagramItem,
-    reserveNames: boolean
-  ): SchemaCommand | null {
-    if (
-      this.isSchemaRoot(item) ||
-      item.itemType === DiagramItemType.group
-    ) {
+  private createElementNodeDropCommand(item: DiagramItem, reserveNames: boolean): SchemaCommand | null {
+    if (this.isSchemaRoot(item) || item.itemType === DiagramItemType.group) {
       return {
         type: "addElement",
         payload: {
@@ -182,10 +181,7 @@ export class DropCommandFactory {
    * @param reserveNames - Whether the new name is reserved
    * @returns Command or null if the target cannot hold attributes
    */
-  private createAttributeNodeDropCommand(
-    item: DiagramItem,
-    reserveNames: boolean
-  ): SchemaCommand | null {
+  private createAttributeNodeDropCommand(item: DiagramItem, reserveNames: boolean): SchemaCommand | null {
     if (this.isSchemaRoot(item) || isComplexTypeNode(item)) {
       return {
         type: "addAttribute",
@@ -196,10 +192,7 @@ export class DropCommandFactory {
         },
       };
     }
-    if (
-      item.itemType === DiagramItemType.element &&
-      item.hasAnonymousComplexType
-    ) {
+    if (item.itemType === DiagramItemType.element && item.hasAnonymousComplexType) {
       const anonCtId = generateSchemaId({
         nodeType: SchemaNodeType.AnonymousComplexType,
         parentId: item.id,
@@ -243,7 +236,6 @@ export class DropCommandFactory {
     return { type: "addComplexType", payload: { parentId: item.id, ...typeName, contentModel: "sequence" } };
   }
 
-
   /**
    * Creates the command that adds a named group, which only the schema root can hold.
    *
@@ -251,10 +243,7 @@ export class DropCommandFactory {
    * @param reserveNames - Whether the new name is reserved
    * @returns Command or null if the target is not the schema root
    */
-  private createGroupNodeDropCommand(
-    item: DiagramItem,
-    reserveNames: boolean
-  ): SchemaCommand | null {
+  private createGroupNodeDropCommand(item: DiagramItem, reserveNames: boolean): SchemaCommand | null {
     if (this.isSchemaRoot(item)) {
       return {
         type: "addGroup",
@@ -400,9 +389,7 @@ export class DropCommandFactory {
    *
    * @param nodes - Named schema collection
    */
-  private addNamedNodesToSet(
-    nodes: Array<{ name?: string }> | undefined
-  ): void {
+  private addNamedNodesToSet(nodes: Array<{ name?: string }> | undefined): void {
     (nodes ?? []).forEach((node) => {
       if (node.name) {
         this.schemaTopLevelNames.add(node.name);

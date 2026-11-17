@@ -7,12 +7,7 @@ import type { SchemaCommand } from "../../shared/types";
 import { SchemaNodeType } from "../../shared/idStrategy";
 import type { DiagramItem } from "../diagram";
 import { createEditableField } from "./propertiesPanelDom";
-import {
-  createComplexBaseTypeCommand,
-  createTypeCommand,
-  getNodeType,
-  onTypeChange,
-} from "./propertiesPanelCommands";
+import { createComplexBaseTypeCommand, createTypeCommand, getNodeType, onTypeChange } from "./propertiesPanelCommands";
 import { extractBaseType } from "./propertiesPanelSimpleTypeCommands";
 import {
   getDerivationRelation,
@@ -61,19 +56,27 @@ export function renderTypeProperty(
     renderSimpleTypeKindSelector(root, node, hasInlineSimpleType, dispatchCommand);
   }
 
-  if (
-    isSimpleTypeNode(nodeType, hasInlineSimpleType) &&
-    simpleTypeDerivationKind === "list"
-  ) {
-    renderSimpleTypeListEditor({ root, node, hasInlineSimpleType, typeSuggestions, dispatchCommand, addPropertyToContainer });
+  if (isSimpleTypeNode(nodeType, hasInlineSimpleType) && simpleTypeDerivationKind === "list") {
+    renderSimpleTypeListEditor({
+      root,
+      node,
+      hasInlineSimpleType,
+      typeSuggestions,
+      dispatchCommand,
+      addPropertyToContainer,
+    });
     return;
   }
 
-  if (
-    isSimpleTypeNode(nodeType, hasInlineSimpleType) &&
-    simpleTypeDerivationKind === "union"
-  ) {
-    renderSimpleTypeUnionEditor({ root, node, hasInlineSimpleType, typeSuggestions, dispatchCommand, addPropertyToContainer });
+  if (isSimpleTypeNode(nodeType, hasInlineSimpleType) && simpleTypeDerivationKind === "union") {
+    renderSimpleTypeUnionEditor({
+      root,
+      node,
+      hasInlineSimpleType,
+      typeSuggestions,
+      dispatchCommand,
+      addPropertyToContainer,
+    });
     return;
   }
 
@@ -178,14 +181,9 @@ function createTypeField(
  * @param hasInlineSimpleType - Whether the node is an element with an inline simple type
  * @returns True when the field is shown for a restriction of a named base type
  */
-function shouldRenderSimpleBaseTypeEditor(
-  nodeType: SchemaNodeType | null,
-  hasInlineSimpleType: boolean
-): boolean {
+function shouldRenderSimpleBaseTypeEditor(nodeType: SchemaNodeType | null, hasInlineSimpleType: boolean): boolean {
   return (
-    nodeType === SchemaNodeType.SimpleType ||
-    nodeType === SchemaNodeType.AnonymousSimpleType ||
-    hasInlineSimpleType
+    nodeType === SchemaNodeType.SimpleType || nodeType === SchemaNodeType.AnonymousSimpleType || hasInlineSimpleType
   );
 }
 
@@ -240,16 +238,21 @@ function renderSimpleBaseTypeEditor(
     createEditableField(
       "Base Type",
       baseType,
-      onTypeChange(node, baseType, (normalizedNext, next) => {
-        const command = createTypeCommand(node, next);
-        if (!command) {
-          return;
-        }
-        node.type = hasInlineSimpleType
-          ? `<anonymous simpleType> (restricts ${normalizedNext})`
-          : `simpleType (restricts ${normalizedNext})`;
-        dispatchCommand(command);
-      }, true),
+      onTypeChange(
+        node,
+        baseType,
+        (normalizedNext, next) => {
+          const command = createTypeCommand(node, next);
+          if (!command) {
+            return;
+          }
+          node.type = hasInlineSimpleType
+            ? `<anonymous simpleType> (restricts ${normalizedNext})`
+            : `simpleType (restricts ${normalizedNext})`;
+          dispatchCommand(command);
+        },
+        true
+      ),
       typeSuggestions
     )
   );
@@ -285,17 +288,22 @@ function renderComplexBaseTypeEditor(
     createEditableField(
       "Base Type",
       baseType ?? "",
-      onTypeChange(node, baseType ?? "", (normalizedNext, next) => {
-        const command = createComplexBaseTypeCommand(node, next);
-        if (!command) {
-          return;
-        }
-        const prefix = hasInlineComplexType ? "<anonymous complexType>" : "complexType";
-        const derivationKind = node.complexDerivationKind ?? "extension";
-        const relation = getDerivationRelation(derivationKind);
-        node.type = normalizedNext ? `${prefix} (${relation} ${normalizedNext})` : prefix;
-        dispatchCommand(command);
-      }, true),
+      onTypeChange(
+        node,
+        baseType ?? "",
+        (normalizedNext, next) => {
+          const command = createComplexBaseTypeCommand(node, next);
+          if (!command) {
+            return;
+          }
+          const prefix = hasInlineComplexType ? "<anonymous complexType>" : "complexType";
+          const derivationKind = node.complexDerivationKind ?? "extension";
+          const relation = getDerivationRelation(derivationKind);
+          node.type = normalizedNext ? `${prefix} (${relation} ${normalizedNext})` : prefix;
+          dispatchCommand(command);
+        },
+        true
+      ),
       typeSuggestions
     )
   );
@@ -367,17 +375,22 @@ function renderInlineAnonymousTypeReplacement(
     createEditableField(
       "Replacement Type",
       baseType ?? "",
-      onTypeChange(node, baseType ?? "", (normalizedNext, next) => {
-        const command = createTypeCommand(node, next);
-        if (!command) {
-          return;
-        }
-        node.type = normalizedNext;
-        node.hasAnonymousComplexType = false;
-        node.isSimpleContent = false;
-        node.complexDerivationKind = undefined;
-        dispatchCommand(command);
-      }, true),
+      onTypeChange(
+        node,
+        baseType ?? "",
+        (normalizedNext, next) => {
+          const command = createTypeCommand(node, next);
+          if (!command) {
+            return;
+          }
+          node.type = normalizedNext;
+          node.hasAnonymousComplexType = false;
+          node.isSimpleContent = false;
+          node.complexDerivationKind = undefined;
+          dispatchCommand(command);
+        },
+        true
+      ),
       typeSuggestions
     )
   );

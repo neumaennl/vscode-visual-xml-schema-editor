@@ -37,7 +37,12 @@ describe("DiagramSvgRenderer", () => {
    * @param properties - Further properties of the item; the element box defaults to 100 × 50 at (10, 10)
    * @returns The group of the item, or `null` if it was not rendered
    */
-  function renderRootItem(id: string, name: string, itemType: DiagramItemType, properties: Partial<DiagramItem> = {}): Element | null {
+  function renderRootItem(
+    id: string,
+    name: string,
+    itemType: DiagramItemType,
+    properties: Partial<DiagramItem> = {}
+  ): Element | null {
     const item = new DiagramItem(id, name, itemType, diagram);
     item.elementBox = { x: 10, y: 10, width: 100, height: 50 };
     Object.assign(item, properties);
@@ -77,7 +82,7 @@ describe("DiagramSvgRenderer", () => {
       const customGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
       svg.appendChild(customGroup);
       const customRenderer = new DiagramSvgRenderer(svg, customGroup);
-      
+
       expect(customRenderer).toBeDefined();
       const nestedGroups = customGroup.querySelectorAll("g");
       expect(nestedGroups.length).toBeGreaterThan(0);
@@ -137,7 +142,9 @@ describe("DiagramSvgRenderer", () => {
     });
 
     test("should render group item with tooltip", () => {
-      const itemElement = renderRootItem("grp", "Group", DiagramItemType.group, { elementBox: { x: 10, y: 10, width: 40, height: 20 } });
+      const itemElement = renderRootItem("grp", "Group", DiagramItemType.group, {
+        elementBox: { x: 10, y: 10, width: 40, height: 20 },
+      });
 
       expect(itemElement?.querySelector("title")?.textContent).toBe("Group");
     });
@@ -160,7 +167,11 @@ describe("DiagramSvgRenderer", () => {
     test.each([
       ["item text", false, {}],
       ["occurrence text when not default", false, { minOccurrence: 0, maxOccurrence: -1 }],
-      ["documentation when showDocumentation is true", true, { documentation: "Test documentation", documentationBox: { x: 10, y: 70, width: 200, height: 60 } }],
+      [
+        "documentation when showDocumentation is true",
+        true,
+        { documentation: "Test documentation", documentationBox: { x: 10, y: 70, width: 200, height: 60 } },
+      ],
     ])("should render %s", (_case, showDocumentation, properties) => {
       diagram.showDocumentation = showDocumentation;
 
@@ -172,15 +183,24 @@ describe("DiagramSvgRenderer", () => {
     test("should render text for top-level named groups", () => {
       const id = generateSchemaId({ nodeType: SchemaNodeType.Group, name: "PersonGroup" });
 
-      const itemElement = renderRootItem(id, "PersonGroup", DiagramItemType.group, { elementBox: { x: 10, y: 10, width: 120, height: 40 } });
+      const itemElement = renderRootItem(id, "PersonGroup", DiagramItemType.group, {
+        elementBox: { x: 10, y: 10, width: 120, height: 40 },
+      });
 
       expect(itemElement?.querySelector("text")?.textContent).toContain("PersonGroup");
     });
 
     test("should not render text for compositor groups", () => {
-      const id = generateSchemaId({ nodeType: SchemaNodeType.Group, name: "sequence", parentId: "/complexType:PersonType", position: 0 });
+      const id = generateSchemaId({
+        nodeType: SchemaNodeType.Group,
+        name: "sequence",
+        parentId: "/complexType:PersonType",
+        position: 0,
+      });
 
-      const itemElement = renderRootItem(id, "sequence", DiagramItemType.group, { elementBox: { x: 10, y: 10, width: 40, height: 20 } });
+      const itemElement = renderRootItem(id, "sequence", DiagramItemType.group, {
+        elementBox: { x: 10, y: 10, width: 40, height: 20 },
+      });
 
       expect(itemElement?.querySelectorAll("text")).toHaveLength(0);
     });

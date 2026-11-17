@@ -2,21 +2,9 @@
  * Validators for group commands (Group and AttributeGroup).
  */
 
-import type {
-  schema,
-  AddGroupCommand,
-  RemoveGroupCommand,
-  ModifyGroupCommand,
-  groupRef,
-} from "../../shared/types.js";
-import type {
-  ValidationFailure,
-  ValidationResult,
-} from "./validationUtils.js";
-import {
-  isValidXmlName,
-  validateOccurrences,
-} from "./validationUtils.js";
+import type { schema, AddGroupCommand, RemoveGroupCommand, ModifyGroupCommand, groupRef } from "../../shared/types.js";
+import type { ValidationFailure, ValidationResult } from "./validationUtils.js";
+import { isValidXmlName, validateOccurrences } from "./validationUtils.js";
 import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
 import { locateNodeById } from "../schemaNavigator.js";
 import type { ReferenceOrDefinition } from "./commonValidators.js";
@@ -33,11 +21,7 @@ import { isReferencedInContent } from "./referenceSearch.js";
  * Valid content models for Group elements.
  * Groups can only use structure models (sequence, choice, all).
  */
-export const VALID_GROUP_CONTENT_MODELS = [
-  "sequence",
-  "choice",
-  "all",
-] as const;
+export const VALID_GROUP_CONTENT_MODELS = ["sequence", "choice", "all"] as const;
 
 // ===== Group Reference Helpers =====
 
@@ -143,16 +127,14 @@ function complexTypeHasParticle(ct: ComplexTypeWithParticles): boolean {
  * @param schemaObj - The schema
  * @returns The validation result
  */
-export function validateAddGroup(
-  command: AddGroupCommand,
-  schemaObj: schema
-): ValidationResult {
+export function validateAddGroup(command: AddGroupCommand, schemaObj: schema): ValidationResult {
   if (command.payload.ref !== undefined) {
     // Reference mode validation — reject definition-mode fields
     if (command.payload.groupName !== undefined || command.payload.contentModel !== undefined) {
       return {
         valid: false,
-        error: "Cannot combine ref with groupName or contentModel — use ref for group references, groupName/contentModel for group definitions",
+        error:
+          "Cannot combine ref with groupName or contentModel — use ref for group references, groupName/contentModel for group definitions",
       };
     }
     const parentId = command.payload.parentId;
@@ -164,14 +146,8 @@ export function validateAddGroup(
       return referenceResult;
     }
     // Validate minOccurs/maxOccurs when provided
-    if (
-      command.payload.minOccurs !== undefined ||
-      command.payload.maxOccurs !== undefined
-    ) {
-      const occurrenceResult = validateOccurrences(
-        command.payload.minOccurs,
-        command.payload.maxOccurs
-      );
+    if (command.payload.minOccurs !== undefined || command.payload.maxOccurs !== undefined) {
+      const occurrenceResult = validateOccurrences(command.payload.minOccurs, command.payload.maxOccurs);
       if (!occurrenceResult.valid) {
         return occurrenceResult;
       }
@@ -186,7 +162,10 @@ export function validateAddGroup(
       return { valid: false, error: `Cannot add group ref to parent type: ${location.parentType}` };
     }
     // When adding a group ref directly onto a complexType, reject if a particle is already set
-    if (isComplexTypeParent(location.parentType) && complexTypeHasParticle(location.parent as ComplexTypeWithParticles)) {
+    if (
+      isComplexTypeParent(location.parentType) &&
+      complexTypeHasParticle(location.parent as ComplexTypeWithParticles)
+    ) {
       return {
         valid: false,
         error: `Cannot add a group reference to complexType '${parentId}': it already has a particle (group, sequence, choice, or all)`,
@@ -203,7 +182,8 @@ export function validateAddGroup(
   ) {
     return {
       valid: false,
-      error: "Cannot combine groupName/contentModel with parentId, minOccurs, or maxOccurs — use ref for group references",
+      error:
+        "Cannot combine groupName/contentModel with parentId, minOccurs, or maxOccurs — use ref for group references",
     };
   }
   const { groupName } = command.payload;
@@ -219,9 +199,7 @@ export function validateAddGroup(
       error: `Content model must be one of: ${VALID_GROUP_CONTENT_MODELS.join(", ")}`,
     };
   }
-  const exists = (schemaObj.group ?? []).some(
-    (g) => g.name === groupName
-  );
+  const exists = (schemaObj.group ?? []).some((g) => g.name === groupName);
   if (exists) {
     return {
       valid: false,
@@ -245,10 +223,7 @@ type GroupTarget = { target: "compositor"; compositorParentId: string } | Refere
  * @param schemaObj - The schema
  * @returns What the ID identifies, or the validation failure
  */
-function locateGroup(
-  groupId: string,
-  schemaObj: schema
-): ValidationFailure | ({ valid: true } & GroupTarget) {
+function locateGroup(groupId: string, schemaObj: schema): ValidationFailure | ({ valid: true } & GroupTarget) {
   const parsedId = parseRequiredId(groupId, "Group");
   if (!parsedId.valid) {
     return parsedId;
@@ -278,10 +253,7 @@ function locateGroup(
  * @param schemaObj - The schema
  * @returns The validation result
  */
-export function validateRemoveGroup(
-  command: RemoveGroupCommand,
-  schemaObj: schema
-): ValidationResult {
+export function validateRemoveGroup(command: RemoveGroupCommand, schemaObj: schema): ValidationResult {
   return validateDefinitionRemoval(locateGroup(command.payload.groupId, schemaObj), "Group", (name) =>
     isGroupReferenced(name, schemaObj)
   );
@@ -294,7 +266,10 @@ export function validateRemoveGroup(
  * @param compositorParentId - The ID of the parent of the compositor
  * @returns The validation result
  */
-function validateCompositorChange(payload: ModifyGroupCommand["payload"], compositorParentId: string): ValidationResult {
+function validateCompositorChange(
+  payload: ModifyGroupCommand["payload"],
+  compositorParentId: string
+): ValidationResult {
   if (payload.groupName !== undefined || payload.contentModel !== undefined || payload.ref !== undefined) {
     return {
       valid: false,
@@ -328,7 +303,8 @@ function validateReferenceChange(payload: ModifyGroupCommand["payload"], schemaO
   if (payload.groupName !== undefined || payload.contentModel !== undefined) {
     return {
       valid: false,
-      error: "Cannot use groupName or contentModel when modifying a group reference — use ref, minOccurs, maxOccurs, or documentation instead",
+      error:
+        "Cannot use groupName or contentModel when modifying a group reference — use ref, minOccurs, maxOccurs, or documentation instead",
     };
   }
   if (payload.ref !== undefined) {
@@ -350,7 +326,8 @@ function validateDefinitionChange(payload: ModifyGroupCommand["payload"]): Valid
   if (payload.ref !== undefined || payload.minOccurs !== undefined || payload.maxOccurs !== undefined) {
     return {
       valid: false,
-      error: "Cannot use ref, minOccurs, or maxOccurs when modifying a group definition — use groupName, contentModel, or documentation instead",
+      error:
+        "Cannot use ref, minOccurs, or maxOccurs when modifying a group definition — use groupName, contentModel, or documentation instead",
     };
   }
   if (payload.groupName !== undefined && !isValidXmlName(payload.groupName)) {
@@ -373,10 +350,7 @@ function validateDefinitionChange(payload: ModifyGroupCommand["payload"]): Valid
  * @param schemaObj - The schema
  * @returns The validation result
  */
-export function validateModifyGroup(
-  command: ModifyGroupCommand,
-  schemaObj: schema
-): ValidationResult {
+export function validateModifyGroup(command: ModifyGroupCommand, schemaObj: schema): ValidationResult {
   const located = locateGroup(command.payload.groupId, schemaObj);
   if (!located.valid) {
     return located;

@@ -38,12 +38,12 @@ Drag and drop from the palette is the only way to add constructs to a schema (se
 
 Drag and drop is split into four parts, so that new constructs and rules can be added without touching the event handling:
 
-| Part | Responsibility |
-|---|---|
-| Palette (`PaletteView`, `PaletteItems`) | What is dragged: starts the drag and passes the construct. |
-| Renderer (`DiagramRenderer`) | Where it is dropped: finds the node under the pointer, shows the highlight and reports the drop. |
-| `DropCommandFactory` | Whether the drop is allowed and which command it creates. All placement rules live here. |
-| Extension host | Validates and executes the command and sends the updated schema back (see [Persistence](persistence.md)). |
+| Part                                    | Responsibility                                                                                            |
+| --------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Palette (`PaletteView`, `PaletteItems`) | What is dragged: starts the drag and passes the construct.                                                |
+| Renderer (`DiagramRenderer`)            | Where it is dropped: finds the node under the pointer, shows the highlight and reports the drop.          |
+| `DropCommandFactory`                    | Whether the drop is allowed and which command it creates. All placement rules live here.                  |
+| Extension host                          | Validates and executes the command and sends the updated schema back (see [Persistence](persistence.md)). |
 
 `SchemaEditorApp` in `main.ts` only connects the parts: it gives the renderer a validator and a drop handler that both ask the factory, and sends the resulting command.[^webview-main] The renderer and the app do not know any placement rule.
 
@@ -74,6 +74,7 @@ sequenceDiagram
    - in a shared variable in `PaletteItems.ts` (`setActiveDraggedPaletteSchemaConstruct()`), which the renderer can read at any time during the drag.
 
    The second place is needed because the browser hides the drag data until the drop, so the renderer could not decide which nodes to highlight while the item is moved. `PaletteView` also sets `effectAllowed` to `copy`. Disabled items (`any`) are not draggable. When the drag ends, the shared variable is cleared.[^palette-view][^palette-items]
+
 2. **Drag over.** The renderer listens on the canvas. It finds the nearest element with `data-item-id`, reads the construct from the drag data or, if that is empty, from the shared variable (see [Known issues](known-issues.md#palette-drag-and-drop-uses-two-ways-to-pass-the-dragged-construct)), and calls the validator. If the drop is allowed, it calls `preventDefault()` and adds the CSS class `drag-over`, which highlights the node's shape; otherwise it removes the class.[^renderer]
 3. **Drag leave.** The class is only removed when the pointer really leaves the node: if the element under the pointer or the `relatedTarget` is still inside the node, the event is ignored. Without this check, the highlight flickers when the pointer moves between the shapes and texts of one node.
 4. **Drop.** The renderer checks the drop again, removes the highlight, calls the drop handler and clears the shared variable.
@@ -91,32 +92,32 @@ The node kinds in the table are:
 - **Complex type, simple type:** a named type node. A simple type counts as a restriction if its label contains `restricts`; list and union types do not.
 - **Group:** a top-level group definition, not a group reference.
 
-| Construct | Target | Command |
-|---|---|---|
-| element | schema root, compositor | `addElement` with a generated name and type `xs:string` |
-| attribute | schema root, named complex type, also a derived one | `addAttribute` with a generated name and type `xs:string` |
-| | element with anonymous complex type | `addAttribute` on the anonymous complex type |
-| group | schema root | `addGroup` with a generated name and content model `sequence` (a definition; references cannot be dropped) |
-| simpleType | schema root | `addSimpleType` with a generated name and base type `xs:string` |
-| | element | `addSimpleType` without name: an anonymous simple type that replaces the element's type |
-| complexType | schema root | `addComplexType` with a generated name and content model `sequence` |
-| | element | `addComplexType` without name: an anonymous complex type that replaces the element's type |
-| sequence, choice, all | complex type | `modifyComplexType` with the new content model |
-| | element with anonymous complex type | `modifyComplexType` on the anonymous complex type |
-| | other element | `addComplexType` with the content model: a new anonymous complex type |
-| | group | `modifyGroup` with the new content model |
-| restriction | schema root | `addSimpleType` with a generated name and base type `xs:string` |
-| | element with anonymous complex type | `modifyComplexType` with `derivationKind: "restriction"` |
-| | element with simple content | `modifySimpleType` on the anonymous simple type |
-| | other element | `addSimpleType` without name, based on the element's type |
-| | simple type | `modifySimpleType` |
-| | complex type | `modifyComplexType` with `derivationKind: "restriction"` |
-| extension | schema root | `addComplexType` with a generated name, content model `sequence`, base type `xs:anyType` and `derivationKind: "extension"` |
-| | element with anonymous complex type | `modifyComplexType` with `derivationKind: "extension"` |
-| | other element | `addComplexType` without name, derived by extension from the element's type |
-| | complex type | `modifyComplexType` with `derivationKind: "extension"` |
-| facets (all twelve) | simple type derived by restriction, element with simple content derived by restriction | `modifySimpleType` with the existing facets plus the dropped one |
-| any | - | not supported (disabled in the palette) |
+| Construct             | Target                                                                                 | Command                                                                                                                    |
+| --------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| element               | schema root, compositor                                                                | `addElement` with a generated name and type `xs:string`                                                                    |
+| attribute             | schema root, named complex type, also a derived one                                    | `addAttribute` with a generated name and type `xs:string`                                                                  |
+|                       | element with anonymous complex type                                                    | `addAttribute` on the anonymous complex type                                                                               |
+| group                 | schema root                                                                            | `addGroup` with a generated name and content model `sequence` (a definition; references cannot be dropped)                 |
+| simpleType            | schema root                                                                            | `addSimpleType` with a generated name and base type `xs:string`                                                            |
+|                       | element                                                                                | `addSimpleType` without name: an anonymous simple type that replaces the element's type                                    |
+| complexType           | schema root                                                                            | `addComplexType` with a generated name and content model `sequence`                                                        |
+|                       | element                                                                                | `addComplexType` without name: an anonymous complex type that replaces the element's type                                  |
+| sequence, choice, all | complex type                                                                           | `modifyComplexType` with the new content model                                                                             |
+|                       | element with anonymous complex type                                                    | `modifyComplexType` on the anonymous complex type                                                                          |
+|                       | other element                                                                          | `addComplexType` with the content model: a new anonymous complex type                                                      |
+|                       | group                                                                                  | `modifyGroup` with the new content model                                                                                   |
+| restriction           | schema root                                                                            | `addSimpleType` with a generated name and base type `xs:string`                                                            |
+|                       | element with anonymous complex type                                                    | `modifyComplexType` with `derivationKind: "restriction"`                                                                   |
+|                       | element with simple content                                                            | `modifySimpleType` on the anonymous simple type                                                                            |
+|                       | other element                                                                          | `addSimpleType` without name, based on the element's type                                                                  |
+|                       | simple type                                                                            | `modifySimpleType`                                                                                                         |
+|                       | complex type                                                                           | `modifyComplexType` with `derivationKind: "restriction"`                                                                   |
+| extension             | schema root                                                                            | `addComplexType` with a generated name, content model `sequence`, base type `xs:anyType` and `derivationKind: "extension"` |
+|                       | element with anonymous complex type                                                    | `modifyComplexType` with `derivationKind: "extension"`                                                                     |
+|                       | other element                                                                          | `addComplexType` without name, derived by extension from the element's type                                                |
+|                       | complex type                                                                           | `modifyComplexType` with `derivationKind: "extension"`                                                                     |
+| facets (all twelve)   | simple type derived by restriction, element with simple content derived by restriction | `modifySimpleType` with the existing facets plus the dropped one                                                           |
+| any                   | -                                                                                      | not supported (disabled in the palette)                                                                                    |
 
 Every other combination returns `null`. In particular, nothing can be dropped on attributes or group references, and only elements can be dropped on compositors. A compositor drop on a type that already has one replaces the compositor and moves its particles into the new one (see [Commands](commands.md#complex-types)).[^drop-factory] In a derived complex type, `addAttribute` puts the attribute into the `xs:extension` or `xs:restriction` (see [Commands](commands.md#attributes)). In a restriction, the dropped attribute is not checked against the base type, so it usually makes the schema invalid (see [Known issues](known-issues.md#attributes-in-a-restriction-are-not-checked-against-the-base-type)). A facet drop is also accepted on an element whose inline complex type has simple content derived by restriction, and the command then fails (see [Known issues](known-issues.md#inline-complex-types-with-simple-content-are-treated-as-inline-simple-types)).
 
@@ -130,13 +131,13 @@ Every other combination returns `null`. In particular, nothing can be dropped on
 
 **Facets.** A dropped facet gets a default value. A dropped enumeration or pattern adds its value to the existing ones; every other facet overwrites the facet if it already exists:
 
-| Facet | Default |
-|---|---|
-| `enumeration` | `value`, or `value2`, `value3`, … with the lowest number that is not in use yet |
-| `pattern` | `.*` if the restriction has no pattern yet; otherwise `[^a-zA-Z0-9\s]*`, also if the restriction already has this pattern |
-| `length`, `minLength`, `maxLength`, `totalDigits`, `fractionDigits` | `1` |
-| `minInclusive`, `maxInclusive`, `minExclusive`, `maxExclusive` | `0` |
-| `whiteSpace` | `preserve` |
+| Facet                                                               | Default                                                                                                                   |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `enumeration`                                                       | `value`, or `value2`, `value3`, … with the lowest number that is not in use yet                                           |
+| `pattern`                                                           | `.*` if the restriction has no pattern yet; otherwise `[^a-zA-Z0-9\s]*`, also if the restriction already has this pattern |
+| `length`, `minLength`, `maxLength`, `totalDigits`, `fractionDigits` | `1`                                                                                                                       |
+| `minInclusive`, `maxInclusive`, `minExclusive`, `maxExclusive`      | `0`                                                                                                                       |
+| `whiteSpace`                                                        | `preserve`                                                                                                                |
 
 Patterns of one restriction are alternatives (see [UX concept](ux-concept.md#multiple-patterns)), so every added pattern widens the type. `.*` keeps a type without patterns as it was, apart from values with line breaks; `[^a-zA-Z0-9\s]*` only adds values without letters, digits and whitespace, until the user edits it. Facets are not checked against the base type (see [Known issues](known-issues.md#facets-are-not-checked-against-the-base-type)).
 

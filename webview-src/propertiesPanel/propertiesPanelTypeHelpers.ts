@@ -13,10 +13,7 @@ import type { DiagramComplexDerivationKind, DiagramItem } from "../diagram";
  * @param nodeType - Schema node type of the item
  * @returns True when the item is an element with an inline simple type
  */
-export function isInlineSimpleTypeElement(
-  node: DiagramItem,
-  nodeType: SchemaNodeType | null
-): boolean {
+export function isInlineSimpleTypeElement(node: DiagramItem, nodeType: SchemaNodeType | null): boolean {
   return nodeType === SchemaNodeType.Element && node.isSimpleContent;
 }
 
@@ -27,10 +24,7 @@ export function isInlineSimpleTypeElement(
  * @param nodeType - Schema node type of the item
  * @returns True when the item is an element with an inline complex type
  */
-export function isInlineComplexTypeElement(
-  node: DiagramItem,
-  nodeType: SchemaNodeType | null
-): boolean {
+export function isInlineComplexTypeElement(node: DiagramItem, nodeType: SchemaNodeType | null): boolean {
   return nodeType === SchemaNodeType.Element && node.hasAnonymousComplexType;
 }
 
@@ -41,14 +35,8 @@ export function isInlineComplexTypeElement(
  * @param nodeType - Schema node type of the item
  * @returns True when the item is an element with an inline type
  */
-export function hasInlineAnonymousElementType(
-  node: DiagramItem,
-  nodeType: SchemaNodeType | null
-): boolean {
-  return (
-    isInlineComplexTypeElement(node, nodeType) ||
-    isInlineSimpleTypeElement(node, nodeType)
-  );
+export function hasInlineAnonymousElementType(node: DiagramItem, nodeType: SchemaNodeType | null): boolean {
+  return isInlineComplexTypeElement(node, nodeType) || isInlineSimpleTypeElement(node, nodeType);
 }
 
 /**
@@ -61,8 +49,12 @@ export function hasInlineAnonymousElementType(
  */
 export function getReadOnlyTypeValue(node: DiagramItem, baseType: string | undefined): string {
   if (node.hasAnonymousComplexType) {
-    const derivationRelation = node.complexDerivationKind ? getDerivationRelation(node.complexDerivationKind) : undefined;
-    return derivationRelation && baseType ? `Inline complexType (${derivationRelation} ${baseType})` : "Inline complexType";
+    const derivationRelation = node.complexDerivationKind
+      ? getDerivationRelation(node.complexDerivationKind)
+      : undefined;
+    return derivationRelation && baseType
+      ? `Inline complexType (${derivationRelation} ${baseType})`
+      : "Inline complexType";
   }
   if (node.isSimpleContent) {
     const body = describeSimpleTypeBody(node, baseType);
@@ -84,7 +76,9 @@ function describeSimpleTypeBody(node: DiagramItem, baseType: string | undefined)
     case "list":
       return node.simpleTypeListItemType ? `list of ${node.simpleTypeListItemType}` : undefined;
     case "union":
-      return node.simpleTypeUnionMemberTypes?.length ? `union of ${node.simpleTypeUnionMemberTypes.join(", ")}` : undefined;
+      return node.simpleTypeUnionMemberTypes?.length
+        ? `union of ${node.simpleTypeUnionMemberTypes.join(", ")}`
+        : undefined;
     default:
       return baseType ? `restricts ${baseType}` : undefined;
   }
@@ -107,15 +101,10 @@ export function getTypeEditHint(
   if (isInlineComplexTypeElement(node, nodeType)) {
     return "Setting a replacement type removes the current inline complexType from this element.";
   }
-  if (
-    isInlineSimpleTypeElement(node, nodeType)
-  ) {
+  if (isInlineSimpleTypeElement(node, nodeType)) {
     return "Setting a replacement type removes the current inline simpleType from this element.";
   }
-  if (
-    (nodeType === SchemaNodeType.SimpleType || nodeType === SchemaNodeType.AnonymousSimpleType) &&
-    !baseType
-  ) {
+  if ((nodeType === SchemaNodeType.SimpleType || nodeType === SchemaNodeType.AnonymousSimpleType) && !baseType) {
     return "This simpleType does not expose a single base type that can be edited here.";
   }
   return null;

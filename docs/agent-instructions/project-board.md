@@ -30,12 +30,32 @@ Read the items in their manual order, with status and phase (the API returns at 
   user(login: "neumaennl") {
     projectV2(number: 1) {
       items(first: 100) {
-        pageInfo { hasNextPage endCursor }
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
         nodes {
           id
-          content { ... on Issue { number title state repository { name } } }
-          status: fieldValueByName(name: "Status") { ... on ProjectV2ItemFieldSingleSelectValue { name } }
-          phase: fieldValueByName(name: "Phase") { ... on ProjectV2ItemFieldSingleSelectValue { name } }
+          content {
+            ... on Issue {
+              number
+              title
+              state
+              repository {
+                name
+              }
+            }
+          }
+          status: fieldValueByName(name: "Status") {
+            ... on ProjectV2ItemFieldSingleSelectValue {
+              name
+            }
+          }
+          phase: fieldValueByName(name: "Phase") {
+            ... on ProjectV2ItemFieldSingleSelectValue {
+              name
+            }
+          }
         }
       }
     }
@@ -43,10 +63,10 @@ Read the items in their manual order, with status and phase (the API returns at 
 }
 ```
 
-| To | Use |
-|---|---|
-| Add an issue to the board | `gh project item-add 1 --owner neumaennl --url <issue URL>` |
-| Set Status or Phase | `updateProjectV2ItemFieldValue` with the field ID and the option ID (`gh project field-list 1 --owner neumaennl`) |
-| Move an item | `updateProjectV2ItemPosition` with `afterId`, or without it to move the item to the top |
-| Read relationships | the fields `parent`, `subIssues`, `blockedBy`, `blocking` and `relatesTo` of an issue |
-| Change relationships | `addSubIssue`, `addBlockedBy`, `addRelatesTo`, and `removeSubIssue`, `removeBlockedBy`, `removeRelatesTo` |
+| To                        | Use                                                                                                               |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Add an issue to the board | `gh project item-add 1 --owner neumaennl --url <issue URL>`                                                       |
+| Set Status or Phase       | `updateProjectV2ItemFieldValue` with the field ID and the option ID (`gh project field-list 1 --owner neumaennl`) |
+| Move an item              | `updateProjectV2ItemPosition` with `afterId`, or without it to move the item to the top                           |
+| Read relationships        | the fields `parent`, `subIssues`, `blockedBy`, `blocking` and `relatesTo` of an issue                             |
+| Change relationships      | `addSubIssue`, `addBlockedBy`, `addRelatesTo`, and `removeSubIssue`, `removeBlockedBy`, `removeRelatesTo`         |

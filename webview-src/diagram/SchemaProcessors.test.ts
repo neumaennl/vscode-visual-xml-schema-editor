@@ -31,7 +31,12 @@ describe("SchemaProcessors", () => {
 <xs:element name="n" type="xs:string"/>`);
       const [complexElement, simpleElement, namedElement] = schemaObj.element ?? [];
       const items = [complexElement, simpleElement, namedElement].map((element) => {
-        const elementItem = new DiagramItem(`/element:${element!.name}`, element!.name, DiagramItemType.element, diagram);
+        const elementItem = new DiagramItem(
+          `/element:${element!.name}`,
+          element!.name,
+          DiagramItemType.element,
+          diagram
+        );
         processAnonymousTypes(elementItem, element!);
         return elementItem;
       });
@@ -153,12 +158,7 @@ describe("SchemaProcessors", () => {
 
   describe("processSequence / processChoice / processAll — group IDs", () => {
     test("should generate a group ID containing 'sequence' for a sequence under a named complexType", () => {
-      const ctItem = new DiagramItem(
-        "/complexType:PersonType",
-        "PersonType",
-        DiagramItemType.type,
-        diagram
-      );
+      const ctItem = new DiagramItem("/complexType:PersonType", "PersonType", DiagramItemType.type, diagram);
 
       processSequence(ctItem, { element: [{ name: "name", type_: "xs:string" }] });
 
@@ -169,12 +169,7 @@ describe("SchemaProcessors", () => {
     });
 
     test("should generate a group ID containing 'choice' for a choice under a named complexType", () => {
-      const ctItem = new DiagramItem(
-        "/complexType:ChoiceType",
-        "ChoiceType",
-        DiagramItemType.type,
-        diagram
-      );
+      const ctItem = new DiagramItem("/complexType:ChoiceType", "ChoiceType", DiagramItemType.type, diagram);
 
       processChoice(ctItem, { element: [{ name: "opt", type_: "xs:string" }] });
 
@@ -184,12 +179,7 @@ describe("SchemaProcessors", () => {
     });
 
     test("should generate a group ID containing 'all' for an all group under a named complexType", () => {
-      const ctItem = new DiagramItem(
-        "/complexType:AllType",
-        "AllType",
-        DiagramItemType.type,
-        diagram
-      );
+      const ctItem = new DiagramItem("/complexType:AllType", "AllType", DiagramItemType.type, diagram);
 
       processAll(ctItem, { element: [{ name: "field", type_: "xs:string" }] });
 
@@ -199,12 +189,7 @@ describe("SchemaProcessors", () => {
     });
 
     test("should include anonymousComplexType in the group ID when parent is an element with anonymous CT", () => {
-      const elemItem = new DiagramItem(
-        "/element:person",
-        "person",
-        DiagramItemType.element,
-        diagram
-      );
+      const elemItem = new DiagramItem("/element:person", "person", DiagramItemType.element, diagram);
       // Mark as having anonymous complex type (as processAnonymousComplexType does)
       elemItem.hasAnonymousComplexType = true;
 
@@ -215,12 +200,7 @@ describe("SchemaProcessors", () => {
     });
 
     test("should give child elements inside a group IDs with the correct group parent", () => {
-      const ctItem = new DiagramItem(
-        "/complexType:PersonType",
-        "PersonType",
-        DiagramItemType.type,
-        diagram
-      );
+      const ctItem = new DiagramItem("/complexType:PersonType", "PersonType", DiagramItemType.type, diagram);
 
       processSequence(ctItem, {
         element: [
@@ -230,21 +210,12 @@ describe("SchemaProcessors", () => {
       });
 
       const seq = ctItem.childElements[0]!;
-      expect(seq.childElements[0]!.id).toBe(
-        "/complexType:PersonType/group:sequence[0]/element:first[0]"
-      );
-      expect(seq.childElements[1]!.id).toBe(
-        "/complexType:PersonType/group:sequence[0]/element:last[1]"
-      );
+      expect(seq.childElements[0]!.id).toBe("/complexType:PersonType/group:sequence[0]/element:first[0]");
+      expect(seq.childElements[1]!.id).toBe("/complexType:PersonType/group:sequence[0]/element:last[1]");
     });
 
     test("should add an empty group to the parent so it can act as a drop target", () => {
-      const ctItem = new DiagramItem(
-        "/complexType:EmptyType",
-        "EmptyType",
-        DiagramItemType.type,
-        diagram
-      );
+      const ctItem = new DiagramItem("/complexType:EmptyType", "EmptyType", DiagramItemType.type, diagram);
 
       processSequence(ctItem, { element: [] });
       expect(ctItem.childElements).toHaveLength(1);
@@ -252,12 +223,7 @@ describe("SchemaProcessors", () => {
     });
 
     test("should mark local group elements with inline anonymous complexType and extension base", () => {
-      const ctItem = new DiagramItem(
-        "/complexType:ContainerType",
-        "ContainerType",
-        DiagramItemType.type,
-        diagram
-      );
+      const ctItem = new DiagramItem("/complexType:ContainerType", "ContainerType", DiagramItemType.type, diagram);
 
       processSequence(ctItem, {
         element: [
@@ -284,12 +250,7 @@ describe("SchemaProcessors", () => {
     });
 
     test("should render nested group references inside sequence groups", () => {
-      const ctItem = new DiagramItem(
-        "/complexType:PersonType",
-        "PersonType",
-        DiagramItemType.type,
-        diagram
-      );
+      const ctItem = new DiagramItem("/complexType:PersonType", "PersonType", DiagramItemType.type, diagram);
 
       processSequence(ctItem, {
         group: [{ ref: "SharedGroup", minOccurs: 0, maxOccurs: "unbounded" }],
@@ -297,21 +258,14 @@ describe("SchemaProcessors", () => {
 
       const sequence = ctItem.childElements[0]!;
       expect(sequence.childElements).toHaveLength(1);
-      expect(sequence.childElements[0]!.id).toBe(
-        "/complexType:PersonType/group:sequence[0]/groupRef:SharedGroup[0]"
-      );
+      expect(sequence.childElements[0]!.id).toBe("/complexType:PersonType/group:sequence[0]/groupRef:SharedGroup[0]");
       expect(sequence.childElements[0]!.minOccurrence).toBe(0);
       expect(sequence.childElements[0]!.maxOccurrence).toBe(-1);
       expect(sequence.childElements[0]!.isReference).toBe(true);
     });
 
     test("should render nested compositors using schema positions", () => {
-      const ctItem = new DiagramItem(
-        "/complexType:PersonType",
-        "PersonType",
-        DiagramItemType.type,
-        diagram
-      );
+      const ctItem = new DiagramItem("/complexType:PersonType", "PersonType", DiagramItemType.type, diagram);
 
       processSequence(ctItem, {
         element: [{ name: "first", type_: "xs:string" }],
@@ -319,18 +273,11 @@ describe("SchemaProcessors", () => {
       });
 
       const sequence = ctItem.childElements[0]!;
-      expect(sequence.childElements[1]!.id).toBe(
-        "/complexType:PersonType/group:sequence[0]/group:choice[0]"
-      );
+      expect(sequence.childElements[1]!.id).toBe("/complexType:PersonType/group:sequence[0]/group:choice[0]");
     });
 
     test("should extract compositor documentation for properties-panel docs editing", () => {
-      const ctItem = new DiagramItem(
-        "/complexType:PersonType",
-        "PersonType",
-        DiagramItemType.type,
-        diagram
-      );
+      const ctItem = new DiagramItem("/complexType:PersonType", "PersonType", DiagramItemType.type, diagram);
 
       processSequence(ctItem, {
         annotation: {
@@ -357,12 +304,7 @@ describe("SchemaProcessors", () => {
 
   describe("processAnonymousTypes with an anonymous complexType — group IDs", () => {
     test("should produce sequence ID with anonymousComplexType segment", () => {
-      const elemItem = new DiagramItem(
-        "/element:person",
-        "person",
-        DiagramItemType.element,
-        diagram
-      );
+      const elemItem = new DiagramItem("/element:person", "person", DiagramItemType.element, diagram);
 
       processAnonymousTypes(elemItem, {
         complexType: { sequence: { element: [{ name: "name", type_: "xs:string" }] } },

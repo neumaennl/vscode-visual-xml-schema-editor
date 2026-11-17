@@ -5,15 +5,8 @@
  */
 
 import type { DiagramItem } from "./DiagramItem";
-import type {
-  Size,
-  Rectangle,
-  DiagramStyle,
-} from "./DiagramTypes";
-import {
-  enclosingRectangle,
-  defaultDiagramStyle,
-} from "./DiagramTypes";
+import type { Size, Rectangle, DiagramStyle } from "./DiagramTypes";
+import { enclosingRectangle, defaultDiagramStyle } from "./DiagramTypes";
 
 /**
  * Main diagram class that holds the complete structure of an XSD visualization.
@@ -24,19 +17,19 @@ export class Diagram {
 
   /** Padding around the diagram content */
   public padding: Size = { width: 20, height: 20 };
-  
+
   /** Calculated bounding box containing all diagram elements */
   public boundingBox: Rectangle = { x: 0, y: 0, width: 0, height: 0 };
-  
+
   /** Scale factor for rendering (1.0 = 100%) */
   public scale = 1.0;
-  
+
   /** Whether to display documentation annotations */
   public showDocumentation = false;
-  
+
   /** Whether to always show occurrence constraints */
   public alwaysShowOccurrence = false;
-  
+
   /** Whether to show type information */
   public showType = false;
 
@@ -58,7 +51,7 @@ export class Diagram {
   /**
    * Adds a root element to the diagram.
    * Typically used to add the schema root node.
-   * 
+   *
    * @param element - The diagram item to add as a root element
    */
   public addRootElement(element: DiagramItem): void {
@@ -70,7 +63,7 @@ export class Diagram {
    * Calculates the overall bounding box of the diagram.
    * Computes the minimum rectangle that contains all root elements and their children.
    * Includes padding in the calculation.
-   * 
+   *
    * @returns The calculated bounding rectangle
    */
   public calculateBoundingBox(): Rectangle {
@@ -148,7 +141,7 @@ export class Diagram {
   /**
    * Scales a rectangle based on the diagram's scale factor.
    * Applies the diagram scale to all rectangle dimensions and rounds to integers.
-   * 
+   *
    * @param rect - The rectangle to scale
    * @returns A new rectangle with scaled dimensions
    */

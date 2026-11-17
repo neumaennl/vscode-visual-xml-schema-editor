@@ -1,7 +1,7 @@
 /**
  * `DiagramBuilder` creates a Diagram from an unmarshalled XSD schema.
  * Ported and adapted from XSD Diagram project.
- * 
+ *
  * This class orchestrates the building process by delegating to specialized modules:
  * - `TypeNodeCreators`: Creates diagram nodes from schema type definitions
  * - `SchemaProcessors`: Processes schema structures and builds hierarchies
@@ -11,25 +11,10 @@
 import { Diagram } from "./Diagram";
 import { DiagramItem } from "./DiagramItem";
 import { DiagramItemType } from "./DiagramTypes";
-import type {
-  schema,
-  namedGroup,
-} from "../../shared/types";
-import {
-  generateSchemaId,
-  SCHEMA_ROOT_ID,
-  SchemaNodeType,
-} from "../../shared/idStrategy";
-import {
-  createElementNode,
-  createComplexTypeNode,
-  createSimpleTypeNode,
-  createTopLevelNode,
-} from "./TypeNodeCreators";
-import {
-  extractDocumentation,
-  extractDocumentationAnnotations,
-} from "./DiagramBuilderHelpers";
+import type { schema, namedGroup } from "../../shared/types";
+import { generateSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy";
+import { createElementNode, createComplexTypeNode, createSimpleTypeNode, createTopLevelNode } from "./TypeNodeCreators";
+import { extractDocumentation, extractDocumentationAnnotations } from "./DiagramBuilderHelpers";
 import {
   processChildCollection,
   processAnonymousTypes,
@@ -58,7 +43,7 @@ export class DiagramBuilder {
   /**
    * Builds a diagram from a schema object.
    * Parses the schema structure and creates a hierarchical diagram representation.
-   * 
+   *
    * @param schemaObj - The XSD schema object to build from
    * @returns The constructed diagram with all schema elements visualized
    */
@@ -74,12 +59,7 @@ export class DiagramBuilder {
 
     // Create a root node representing the schema
     const targetNs = schemaObj.targetNamespace ?? "no namespace";
-    const schemaNode = new DiagramItem(
-      SCHEMA_ROOT_ID,
-      `Schema: ${targetNs}`,
-      DiagramItemType.element,
-      this.diagram
-    );
+    const schemaNode = new DiagramItem(SCHEMA_ROOT_ID, `Schema: ${targetNs}`, DiagramItemType.element, this.diagram);
     schemaNode.documentationAnnotations = extractDocumentationAnnotations(schemaNode.id, schemaObj.annotation);
     schemaNode.documentation = extractDocumentation(schemaObj.annotation) ?? "";
     schemaNode.attributes = (schemaObj.attribute ?? [])
@@ -94,9 +74,24 @@ export class DiagramBuilder {
     // Process the top-level components with their content
     const diagram = this.diagram;
     // jscpd:ignore-start -- calls of one function with the collection of each kind, not duplicated logic
-    processChildCollection(schemaNode, schemaObj.element, (elem) => createElementNode(elem, diagram), processAnonymousTypes);
-    processChildCollection(schemaNode, schemaObj.complexType, (ct) => createComplexTypeNode(ct, diagram), processComplexType);
-    processChildCollection(schemaNode, schemaObj.simpleType, (st) => createSimpleTypeNode(st, diagram), processSimpleTypeBody);
+    processChildCollection(
+      schemaNode,
+      schemaObj.element,
+      (elem) => createElementNode(elem, diagram),
+      processAnonymousTypes
+    );
+    processChildCollection(
+      schemaNode,
+      schemaObj.complexType,
+      (ct) => createComplexTypeNode(ct, diagram),
+      processComplexType
+    );
+    processChildCollection(
+      schemaNode,
+      schemaObj.simpleType,
+      (st) => createSimpleTypeNode(st, diagram),
+      processSimpleTypeBody
+    );
     processChildCollection(schemaNode, schemaObj.group, (grp) => this.createNamedGroup(grp));
     // jscpd:ignore-end
 

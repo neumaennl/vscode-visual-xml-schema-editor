@@ -26,7 +26,11 @@ interface TypesOfKind {
 }
 
 /** An element or attribute that can hold an anonymous type instead of a named one. */
-interface TypeHolder { type_?: string; simpleType?: object; complexType?: object }
+interface TypeHolder {
+  type_?: string;
+  simpleType?: object;
+  complexType?: object;
+}
 
 /** The top-level types of the schema, as far as these helpers use them. */
 type TypesOfSchema = Record<TypeKind, Array<{ name: string }> | undefined>;
@@ -52,11 +56,13 @@ function labelOf(kind: TypeKind): string {
  */
 function locateAnonymousTypeHolder(schemaObj: schema, typeId: string, kind: TypeKind): TypeHolder | undefined {
   const parsed = parseSchemaId(typeId);
-  const anonymousNodeType = kind === "simpleType" ? SchemaNodeType.AnonymousSimpleType : SchemaNodeType.AnonymousComplexType;
+  const anonymousNodeType =
+    kind === "simpleType" ? SchemaNodeType.AnonymousSimpleType : SchemaNodeType.AnonymousComplexType;
   if (parsed.nodeType !== anonymousNodeType) {
     return undefined;
   }
-  const holder = locateValidated(schemaObj, assumeValidated(parsed.parentId, `Parent of ${typeId}`)).parent as TypeHolder;
+  const holder = locateValidated(schemaObj, assumeValidated(parsed.parentId, `Parent of ${typeId}`))
+    .parent as TypeHolder;
   assumeValidated(holder[kind], `${labelOf(kind)} ${typeId}`);
   return holder;
 }

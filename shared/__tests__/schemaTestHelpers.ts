@@ -71,9 +71,7 @@ ${body}`);
  * @returns The schema object
  */
 export function schemaWithIncludes(...schemaLocations: string[]): schema {
-  return schemaWith(
-    schemaLocations.map((loc) => `<xs:include schemaLocation="${loc}"/>`).join("\n")
-  );
+  return schemaWith(schemaLocations.map((loc) => `<xs:include schemaLocation="${loc}"/>`).join("\n"));
 }
 
 /** The content of a derived complex type. */

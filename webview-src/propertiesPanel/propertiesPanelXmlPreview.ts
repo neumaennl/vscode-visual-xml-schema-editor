@@ -45,9 +45,7 @@ function renderChildNodes(children: DiagramItem[], level: number, depth: number)
     return [renderTruncationMarker(level)];
   }
 
-  const rendered = children
-    .slice(0, MAX_PREVIEW_CHILDREN_PER_NODE)
-    .map((child) => renderNode(child, level, depth + 1));
+  const rendered = children.slice(0, MAX_PREVIEW_CHILDREN_PER_NODE).map((child) => renderNode(child, level, depth + 1));
   if (children.length > MAX_PREVIEW_CHILDREN_PER_NODE) {
     rendered.push(renderTruncationMarker(level));
   }
@@ -245,12 +243,7 @@ function renderComplexTypeBody(node: DiagramItem, level: number, depth: number):
     const contentTag = node.isSimpleContent ? "xs:simpleContent" : "xs:complexContent";
 
     return [
-      renderTag(
-        contentTag,
-        [],
-        [renderTag(derivationTag, [["base", baseType]], derivationChildren, level + 1)],
-        level
-      ),
+      renderTag(contentTag, [], [renderTag(derivationTag, [["base", baseType]], derivationChildren, level + 1)], level),
     ];
   }
 
@@ -335,20 +328,14 @@ function renderGroupNode(node: DiagramItem, nodeType: SchemaNodeType | null, lev
 
   if (!parsedParentId) {
     const attrs: XmlAttr[] = [["name", node.name]];
-    const children = [
-      ...renderAnnotations(node, level + 1),
-      ...renderChildNodes(node.childElements, level + 1, depth),
-    ];
+    const children = [...renderAnnotations(node, level + 1), ...renderChildNodes(node.childElements, level + 1, depth)];
     return renderTag("xs:group", attrs, children, level);
   }
 
   const compositor = parsedName === "choice" || parsedName === "all" ? parsedName : "sequence";
   const attrs: XmlAttr[] = [];
   appendOccurrenceAttributes(attrs, node, false);
-  const children = [
-    ...renderAnnotations(node, level + 1),
-    ...renderChildNodes(node.childElements, level + 1, depth),
-  ];
+  const children = [...renderAnnotations(node, level + 1), ...renderChildNodes(node.childElements, level + 1, depth)];
   return renderTag(`xs:${compositor}`, attrs, children, level);
 }
 
@@ -381,10 +368,7 @@ function renderComplexTypeNode(node: DiagramItem, level: number, depth: number):
     attrs.push(["mixed", "true"]);
   }
 
-  const children = [
-    ...renderAnnotations(node, level + 1),
-    ...renderComplexTypeBody(node, level + 1, depth),
-  ];
+  const children = [...renderAnnotations(node, level + 1), ...renderComplexTypeBody(node, level + 1, depth)];
 
   return renderTag("xs:complexType", attrs, children, level);
 }
@@ -415,10 +399,7 @@ function renderSchemaNode(node: DiagramItem, level: number, depth: number): stri
     attrs.push(["targetNamespace", node.diagram.schemaTargetNamespace]);
   }
 
-  const children = [
-    ...renderAnnotations(node, level + 1),
-    ...renderChildNodes(node.childElements, level + 1, depth),
-  ];
+  const children = [...renderAnnotations(node, level + 1), ...renderChildNodes(node.childElements, level + 1, depth)];
 
   return renderTag("xs:schema", attrs, children, level);
 }

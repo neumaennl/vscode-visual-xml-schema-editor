@@ -64,7 +64,12 @@ function isAttrGroupReferenced(name: string, schemaObj: schema): boolean {
  * @returns The validation result
  */
 function validateAttrGroupReference(ref: string, schemaObj: schema): ValidationResult {
-  return validateReference(ref, schemaObj.attributeGroup, "Attribute group", `Referenced attribute group does not exist: ${ref}`);
+  return validateReference(
+    ref,
+    schemaObj.attributeGroup,
+    "Attribute group",
+    `Referenced attribute group does not exist: ${ref}`
+  );
 }
 
 /**
@@ -100,7 +105,10 @@ function validateAttrGroupRefExists(groupId: string, schemaObj: schema): Validat
  * @param schemaObj - The schema
  * @returns What the ID identifies, or the validation failure
  */
-function locateAttributeGroup(groupId: string, schemaObj: schema): ValidationFailure | ({ valid: true } & ReferenceOrDefinition) {
+function locateAttributeGroup(
+  groupId: string,
+  schemaObj: schema
+): ValidationFailure | ({ valid: true } & ReferenceOrDefinition) {
   const parsedId = parseRequiredId(groupId, "Attribute group");
   if (!parsedId.valid) {
     return parsedId;
@@ -128,10 +136,7 @@ function locateAttributeGroup(groupId: string, schemaObj: schema): ValidationFai
  * @param schemaObj - The schema object to validate against
  * @returns Validation result
  */
-export function validateAddAttributeGroup(
-  command: AddAttributeGroupCommand,
-  schemaObj: schema
-): ValidationResult {
+export function validateAddAttributeGroup(command: AddAttributeGroupCommand, schemaObj: schema): ValidationResult {
   const { groupName, ref, parentId } = command.payload;
 
   if (ref !== undefined) {
@@ -139,8 +144,7 @@ export function validateAddAttributeGroup(
     if (groupName !== undefined) {
       return {
         valid: false,
-        error:
-          "Cannot combine ref with groupName — use ref for references, groupName for definitions",
+        error: "Cannot combine ref with groupName — use ref for references, groupName for definitions",
       };
     }
     if (!parentId?.trim()) {
@@ -172,8 +176,7 @@ export function validateAddAttributeGroup(
   if (parentId !== undefined) {
     return {
       valid: false,
-      error:
-        "Cannot combine groupName with parentId — use ref for references, groupName for definitions",
+      error: "Cannot combine groupName with parentId — use ref for references, groupName for definitions",
     };
   }
   if (groupName === undefined || !isValidXmlName(groupName)) {
@@ -182,9 +185,7 @@ export function validateAddAttributeGroup(
       error: "Attribute group name must be a valid XML name",
     };
   }
-  const exists = (schemaObj.attributeGroup ?? []).some(
-    (g) => g.name === groupName
-  );
+  const exists = (schemaObj.attributeGroup ?? []).some((g) => g.name === groupName);
   if (exists) {
     return {
       valid: false,
@@ -209,8 +210,10 @@ export function validateRemoveAttributeGroup(
   command: RemoveAttributeGroupCommand,
   schemaObj: schema
 ): ValidationResult {
-  return validateDefinitionRemoval(locateAttributeGroup(command.payload.groupId, schemaObj), "Attribute group", (name) =>
-    isAttrGroupReferenced(name, schemaObj)
+  return validateDefinitionRemoval(
+    locateAttributeGroup(command.payload.groupId, schemaObj),
+    "Attribute group",
+    (name) => isAttrGroupReferenced(name, schemaObj)
   );
 }
 
@@ -241,8 +244,7 @@ export function validateModifyAttributeGroup(
     if (groupName !== undefined) {
       return {
         valid: false,
-        error:
-          "Cannot use groupName when modifying an attribute group reference — use ref or documentation instead",
+        error: "Cannot use groupName when modifying an attribute group reference — use ref or documentation instead",
       };
     }
     return ref === undefined ? { valid: true } : validateAttrGroupReference(ref, schemaObj);
@@ -251,8 +253,7 @@ export function validateModifyAttributeGroup(
   if (ref !== undefined) {
     return {
       valid: false,
-      error:
-        "Cannot use ref when modifying an attribute group definition — use groupName or documentation instead",
+      error: "Cannot use ref when modifying an attribute group definition — use groupName or documentation instead",
     };
   }
   if (groupName !== undefined) {

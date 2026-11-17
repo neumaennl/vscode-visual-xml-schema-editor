@@ -74,7 +74,9 @@ describe("DiagramBuilder", () => {
     });
 
     test("should process schema elements", () => {
-      const nodes = topLevelNodes(`<xs:element name="Person" type="PersonType"/><xs:element name="Address" type="AddressType"/>`);
+      const nodes = topLevelNodes(
+        `<xs:element name="Person" type="PersonType"/><xs:element name="Address" type="AddressType"/>`
+      );
 
       expect(nodes.map((node) => node.name)).toEqual(["Person", "Address"]);
     });
@@ -100,7 +102,11 @@ describe("DiagramBuilder", () => {
 
     test.each([
       ["a complex type", `<xs:complexType name="PersonType"/>`, "complexType"],
-      ["a simple type", `<xs:simpleType name="EmailType"><xs:restriction base="xs:string"/></xs:simpleType>`, "simpleType (restricts xs:string)"],
+      [
+        "a simple type",
+        `<xs:simpleType name="EmailType"><xs:restriction base="xs:string"/></xs:simpleType>`,
+        "simpleType (restricts xs:string)",
+      ],
     ])("should process %s", (_case, content, type) => {
       const nodes = topLevelNodes(content);
 
@@ -110,7 +116,10 @@ describe("DiagramBuilder", () => {
 
     test.each([
       ["no children are found", ""],
-      ["the schema has only top-level attributes, which are not rendered as separate nodes", `<xs:attribute name="id" type="xs:string"/>`],
+      [
+        "the schema has only top-level attributes, which are not rendered as separate nodes",
+        `<xs:attribute name="id" type="xs:string"/>`,
+      ],
     ])("should add placeholder when %s", (_case, content) => {
       const nodes = topLevelNodes(content);
 
@@ -127,7 +136,9 @@ describe("DiagramBuilder", () => {
     });
 
     test("should render named groups as top-level diagram nodes", () => {
-      const nodes = topLevelNodes(`<xs:group name="PersonGroup"><xs:sequence><xs:element name="name" type="xs:string"/></xs:sequence></xs:group>`);
+      const nodes = topLevelNodes(
+        `<xs:group name="PersonGroup"><xs:sequence><xs:element name="name" type="xs:string"/></xs:sequence></xs:group>`
+      );
 
       expect(nodes).toHaveLength(1);
       expect(nodes[0]!.id).toBe("/group:PersonGroup");
@@ -135,23 +146,36 @@ describe("DiagramBuilder", () => {
     });
 
     test("should render group references inside named groups", () => {
-      const nodes = topLevelNodes(`<xs:group name="ContainerGroup"><xs:sequence><xs:group ref="SharedGroup"/></xs:sequence></xs:group>`);
+      const nodes = topLevelNodes(
+        `<xs:group name="ContainerGroup"><xs:sequence><xs:group ref="SharedGroup"/></xs:sequence></xs:group>`
+      );
 
       const sequence = nodes[0]!.childElements[0]!;
       expect(sequence.childElements[0]!.id).toBe("/group:ContainerGroup/group:sequence[0]/groupRef:SharedGroup[0]");
     });
 
     test.each([
-      ["an inline complex type", `<xs:element name="Person"><xs:complexType><xs:sequence><xs:element name="name" type="xs:string"/></xs:sequence></xs:complexType></xs:element>`, true],
-      ["an inline simple type", `<xs:element name="Person"><xs:simpleType><xs:restriction base="xs:int"/></xs:simpleType></xs:element>`, false],
+      [
+        "an inline complex type",
+        `<xs:element name="Person"><xs:complexType><xs:sequence><xs:element name="name" type="xs:string"/></xs:sequence></xs:complexType></xs:element>`,
+        true,
+      ],
+      [
+        "an inline simple type",
+        `<xs:element name="Person"><xs:simpleType><xs:restriction base="xs:int"/></xs:simpleType></xs:element>`,
+        false,
+      ],
       ["a named type", `<xs:element name="Person" type="xs:string"/>`, false],
-    ])("should process elements with %s and set hasAnonymousComplexType for inline complex types", (_case, content, hasAnonymousComplexType) => {
-      const nodes = topLevelNodes(content);
+    ])(
+      "should process elements with %s and set hasAnonymousComplexType for inline complex types",
+      (_case, content, hasAnonymousComplexType) => {
+        const nodes = topLevelNodes(content);
 
-      expect(nodes).toHaveLength(1);
-      expect(nodes[0]!.name).toBe("Person");
-      expect(nodes[0]!.hasAnonymousComplexType).toBe(hasAnonymousComplexType);
-    });
+        expect(nodes).toHaveLength(1);
+        expect(nodes[0]!.name).toBe("Person");
+        expect(nodes[0]!.hasAnonymousComplexType).toBe(hasAnonymousComplexType);
+      }
+    );
 
     test("should handle schema without targetNamespace", () => {
       const diagram = builder.buildFromSchema(schemaWith(`<xs:element name="Test"/>`));

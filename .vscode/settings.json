@@ -13,9 +13,7 @@
   "js/ts.tsdk.promptToUseWorkspaceVersion": true,
   "terminal.integrated.automationProfile.linux": {
     "path": "bash",
-    "args": [
-      "-i"
-    ]
+    "args": ["-i"]
   },
   "[typescript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode",

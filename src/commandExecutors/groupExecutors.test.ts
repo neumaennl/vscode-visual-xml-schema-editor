@@ -4,19 +4,9 @@
  */
 
 import { unmarshal, marshal } from "@neumaennl/xmlbind-ts";
-import type {
-  AddGroupCommand,
-  RemoveGroupCommand,
-  ModifyGroupCommand,
-} from "../../shared/types.js";
-import {
-  schema
-} from "../../shared/types.js";
-import {
-  executeAddGroup,
-  executeRemoveGroup,
-  executeModifyGroup,
-} from "./groupExecutors.js";
+import type { AddGroupCommand, RemoveGroupCommand, ModifyGroupCommand } from "../../shared/types.js";
+import { schema } from "../../shared/types.js";
+import { executeAddGroup, executeRemoveGroup, executeModifyGroup } from "./groupExecutors.js";
 import { emptySchema, schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
 import { readTestSchema } from "../__tests__/resourceTestHelpers.js";
 
@@ -169,7 +159,6 @@ describe("Group Executors", () => {
 
       expect((schemaObj.complexType ?? [])[0]!.sequence).toBeUndefined();
     });
-
   });
 
   describe("executeModifyGroup", () => {
@@ -232,9 +221,7 @@ describe("Group Executors", () => {
 
       const grp = (schemaObj.group ?? [])[0]!;
       expect(grp.annotation).toBeDefined();
-      expect(grp.annotation!.documentation![0]!.value).toBe(
-        "Updated documentation"
-      );
+      expect(grp.annotation!.documentation![0]!.value).toBe("Updated documentation");
     });
 
     test("should update name, content model, and documentation together", () => {
@@ -358,9 +345,8 @@ describe("Group Executors", () => {
           documentation: "A person group ref annotation",
         });
 
-expect(firstGroupRefDocumentation(schemaObj)).toEqual(["A person group ref annotation"]);
+        expect(firstGroupRefDocumentation(schemaObj)).toEqual(["A person group ref annotation"]);
       });
-
     });
 
     describe("executeRemoveGroup (reference mode)", () => {
@@ -428,7 +414,7 @@ expect(firstGroupRefDocumentation(schemaObj)).toEqual(["A person group ref annot
           documentation: "Updated ref annotation",
         });
 
-expect(firstGroupRefDocumentation(schemaObj)).toEqual(["Updated ref annotation"]);
+        expect(firstGroupRefDocumentation(schemaObj)).toEqual(["Updated ref annotation"]);
       });
 
       test("should modify a direct group ref on a complexType", () => {

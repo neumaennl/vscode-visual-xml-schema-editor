@@ -27,7 +27,7 @@ export enum SchemaNodeType {
   SimpleType = "simpleType",
   /** Element group definition */
   Group = "group",
-/** Schema node type for a group reference (`xs:group ref="..."`) */
+  /** Schema node type for a group reference (`xs:group ref="..."`) */
   GroupRef = "groupRef",
   /** Attribute group definition */
   AttributeGroup = "attributeGroup",
@@ -191,8 +191,7 @@ export function parseSchemaId(id: string): ParsedSchemaId {
   const nodeInfo = parseNodeSegment(lastSegment);
 
   // Build parent ID if there are parent segments
-  const parentId =
-    segments.length > 1 ? `/${segments.slice(0, -1).join("/")}` : undefined;
+  const parentId = segments.length > 1 ? `/${segments.slice(0, -1).join("/")}` : undefined;
 
   return {
     ...nodeInfo,

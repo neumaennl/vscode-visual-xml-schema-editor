@@ -14,14 +14,7 @@ import type { Point, Rectangle } from "./DiagramTypes";
  * @param x2 - Ending X coordinate
  * @param y2 - Ending Y coordinate
  */
-export function svgLine(
-  group: SVGElement,
-  style: string,
-  x1: number,
-  y1: number,
-  x2: number,
-  y2: number
-): void {
+export function svgLine(group: SVGElement, style: string, x1: number, y1: number, x2: number, y2: number): void {
   const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
   line.setAttribute("x1", x1.toString());
   line.setAttribute("y1", y1.toString());
@@ -38,16 +31,8 @@ export function svgLine(
  * @param fill - Fill style string
  * @param stroke - Stroke style string
  */
-export function svgRectangle(
-  group: SVGElement,
-  rect: Rectangle,
-  fill: string,
-  stroke: string
-): void {
-  const rectangle = document.createElementNS(
-    "http://www.w3.org/2000/svg",
-    "rect"
-  );
+export function svgRectangle(group: SVGElement, rect: Rectangle, fill: string, stroke: string): void {
+  const rectangle = document.createElementNS("http://www.w3.org/2000/svg", "rect");
   rectangle.setAttribute("x", rect.x.toString());
   rectangle.setAttribute("y", rect.y.toString());
   rectangle.setAttribute("width", rect.width.toString());
@@ -63,16 +48,8 @@ export function svgRectangle(
  * @param fill - Fill style string
  * @param stroke - Stroke style string
  */
-export function svgPolygon(
-  group: SVGElement,
-  points: Point[],
-  fill: string,
-  stroke: string
-): void {
-  const polygon = document.createElementNS(
-    "http://www.w3.org/2000/svg",
-    "polygon"
-  );
+export function svgPolygon(group: SVGElement, points: Point[], fill: string, stroke: string): void {
+  const polygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
   const pointsStr = points.map(({ x, y }) => `${x},${y}`).join(" ");
   polygon.setAttribute("points", pointsStr);
   polygon.setAttribute("style", `${fill};${stroke}`);
@@ -87,17 +64,8 @@ export function svgPolygon(
  * @param r - Radius
  * @param fill - Fill style string
  */
-export function svgCircle(
-  group: SVGElement,
-  cx: number,
-  cy: number,
-  r: number,
-  fill: string
-): void {
-  const circle = document.createElementNS(
-    "http://www.w3.org/2000/svg",
-    "circle"
-  );
+export function svgCircle(group: SVGElement, cx: number, cy: number, r: number, fill: string): void {
+  const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
   circle.setAttribute("cx", cx.toString());
   circle.setAttribute("cy", cy.toString());
   circle.setAttribute("r", r.toString());
@@ -114,18 +82,8 @@ export function svgCircle(
  * @param style - CSS style string
  * @param title - Optional tooltip text
  */
-export function svgText(
-  group: SVGElement,
-  text: string,
-  x: number,
-  y: number,
-  style: string,
-  title?: string
-): void {
-  const textElement = document.createElementNS(
-    "http://www.w3.org/2000/svg",
-    "text"
-  );
+export function svgText(group: SVGElement, text: string, x: number, y: number, style: string, title?: string): void {
+  const textElement = document.createElementNS("http://www.w3.org/2000/svg", "text");
   textElement.setAttribute("x", x.toString());
   textElement.setAttribute("y", y.toString());
   textElement.setAttribute("style", style);
@@ -133,10 +91,7 @@ export function svgText(
 
   // Add title for tooltip if provided
   if (title) {
-    const titleElement = document.createElementNS(
-      "http://www.w3.org/2000/svg",
-      "title"
-    );
+    const titleElement = document.createElementNS("http://www.w3.org/2000/svg", "title");
     titleElement.textContent = title;
     textElement.appendChild(titleElement);
   }

@@ -40,14 +40,7 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       include: ["shared/**/*.ts", "src/**/*.ts", "webview-src/**/*.ts"],
-      exclude: [
-        "**/*.d.ts",
-        "**/generated/**",
-        "**/__tests__/**",
-        "**/__mocks__/**",
-        "**/*.test.ts",
-        "**/*.test-d.ts",
-      ],
+      exclude: ["**/*.d.ts", "**/generated/**", "**/__tests__/**", "**/__mocks__/**", "**/*.test.ts", "**/*.test-d.ts"],
       reporter: ["text", "json-summary", "json", "html"],
       // A run below these values fails (see "Coverage" in docs/testing.md)
       thresholds: { lines: 85, statements: 85, functions: 85, branches: 85 },

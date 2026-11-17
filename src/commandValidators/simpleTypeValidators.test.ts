@@ -8,11 +8,7 @@ import type {
   RemoveSimpleTypeCommand,
   ModifySimpleTypeCommand,
 } from "../../shared/types.js";
-import {
-  validateAddSimpleType,
-  validateRemoveSimpleType,
-  validateModifySimpleType,
-} from "./simpleTypeValidators.js";
+import { validateAddSimpleType, validateRemoveSimpleType, validateModifySimpleType } from "./simpleTypeValidators.js";
 import type { ValidationResult } from "./validationUtils.js";
 import { expectInvalid } from "../__tests__/validationTestHelpers.js";
 import { emptySchema, schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
@@ -62,7 +58,10 @@ function validateModify(payload: ModifySimpleTypeCommand["payload"]): Validation
  */
 function expectNoAnonymousSimpleType(typeId: string, schemaObj: schema): void {
   const removed = validateRemoveSimpleType({ type: "removeSimpleType", payload: { typeId } }, schemaObj);
-  const modified = validateModifySimpleType({ type: "modifySimpleType", payload: { typeId, baseType: "xs:string" } }, schemaObj);
+  const modified = validateModifySimpleType(
+    { type: "modifySimpleType", payload: { typeId, baseType: "xs:string" } },
+    schemaObj
+  );
 
   expectInvalid(removed);
   expect(removed.error).toContain("No anonymous simpleType found");
@@ -163,7 +162,9 @@ describe("SimpleType Validators", () => {
 
       const result = validateAddSimpleType(command, emptySchemaObj);
       expectInvalid(result);
-      expect(result.error).toBe("Base type: Invalid element type 'xs:nonExistentType': must be a built-in XSD type, a user-defined type in the schema, a type from a valid import with a matching namespace prefix, or a type from an included schema");
+      expect(result.error).toBe(
+        "Base type: Invalid element type 'xs:nonExistentType': must be a built-in XSD type, a user-defined type in the schema, a type from a valid import with a matching namespace prefix, or a type from an included schema"
+      );
     });
 
     test("should reject addSimpleType when type name already exists in schema", () => {
@@ -384,10 +385,15 @@ describe("SimpleType Validators", () => {
 
     describe("validateAddSimpleType (anonymous)", () => {
       test("should accept adding an anonymous simpleType to an element, also in place of its type attribute", () => {
-        const command: AddSimpleTypeCommand = { type: "addSimpleType", payload: { parentId: "/element:age", baseType: "xs:integer" } };
+        const command: AddSimpleTypeCommand = {
+          type: "addSimpleType",
+          payload: { parentId: "/element:age", baseType: "xs:integer" },
+        };
 
         expect(validateAddSimpleType(command, schemaWithElement).valid).toBe(true);
-        expect(validateAddSimpleType(command, schemaWith(`<xs:element name="age" type="xs:integer"/>`)).valid).toBe(true);
+        expect(validateAddSimpleType(command, schemaWith(`<xs:element name="age" type="xs:integer"/>`)).valid).toBe(
+          true
+        );
       });
 
       test("should reject when parent element not found", () => {
@@ -420,7 +426,9 @@ describe("SimpleType Validators", () => {
 
         const result = validateAddSimpleType(command, schemaWithElement);
         expectInvalid(result);
-        expect(result.error).toBe("Base type: Invalid element type 'xs:badType': must be a built-in XSD type, a user-defined type in the schema, a type from a valid import with a matching namespace prefix, or a type from an included schema");
+        expect(result.error).toBe(
+          "Base type: Invalid element type 'xs:badType': must be a built-in XSD type, a user-defined type in the schema, a type from a valid import with a matching namespace prefix, or a type from an included schema"
+        );
       });
     });
 
@@ -509,7 +517,10 @@ describe("Anonymous SimpleType in Attributes Validators", () => {
 
   describe("validateAddSimpleType (anonymous inside attribute)", () => {
     test("should accept adding an anonymous simpleType to a top-level attribute, also in place of its type attribute", () => {
-      const command: AddSimpleTypeCommand = { type: "addSimpleType", payload: { parentId: "/attribute:color", baseType: "xs:string" } };
+      const command: AddSimpleTypeCommand = {
+        type: "addSimpleType",
+        payload: { parentId: "/attribute:color", baseType: "xs:string" },
+      };
 
       expect(validateAddSimpleType(command, schemaWithAttribute).valid).toBe(true);
       expect(validateAddSimpleType(command, schemaWithTypedAttribute).valid).toBe(true);
@@ -596,7 +607,12 @@ describe("Simple type rules", () => {
   test.each<{ rule: string; result: ValidationResult; error: string }>([
     {
       rule: "facets that are all undefined",
-      result: validateAdd({ parentId: "/schema", typeName: "T", baseType: "xs:string", restrictions: { minLength: undefined } }),
+      result: validateAdd({
+        parentId: "/schema",
+        typeName: "T",
+        baseType: "xs:string",
+        restrictions: { minLength: undefined },
+      }),
       error: "Restriction simpleType body must include at least one facet",
     },
     {

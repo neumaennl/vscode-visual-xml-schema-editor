@@ -190,7 +190,7 @@ describe("SchemaModelManager", () => {
 
       expect(cloned).not.toBe(manager.getSchema());
       expect(cloned.targetNamespace).toBe("http://example.com/test");
-      
+
       const clonedElements = cloned.element ?? [];
       expect(clonedElements).toHaveLength(1);
       expect(clonedElements[0]!.name).toBe("root");

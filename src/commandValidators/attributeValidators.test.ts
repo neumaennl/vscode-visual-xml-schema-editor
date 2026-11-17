@@ -3,16 +3,8 @@
  */
 
 import type { schema } from "../../shared/types.js";
-import type {
-  AddAttributeCommand,
-  RemoveAttributeCommand,
-  ModifyAttributeCommand,
-} from "../../shared/types.js";
-import {
-  validateAddAttribute,
-  validateRemoveAttribute,
-  validateModifyAttribute,
-} from "./attributeValidators.js";
+import type { AddAttributeCommand, RemoveAttributeCommand, ModifyAttributeCommand } from "../../shared/types.js";
+import { validateAddAttribute, validateRemoveAttribute, validateModifyAttribute } from "./attributeValidators.js";
 import { expectInvalid } from "../__tests__/validationTestHelpers.js";
 import { schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
 
@@ -81,9 +73,7 @@ describe("Attribute Validators", () => {
 
       const result = validateAddAttribute(command, schemaObj);
       expectInvalid(result);
-      expect(result.error).toBe(
-        "An attribute cannot have both a default value and a fixed value"
-      );
+      expect(result.error).toBe("An attribute cannot have both a default value and a fixed value");
     });
   });
 
@@ -142,9 +132,7 @@ describe("Attribute Validators", () => {
 
       const result = validateModifyAttribute(command, schemaObj);
       expectInvalid(result);
-      expect(result.error).toBe(
-        "An attribute cannot have both a default value and a fixed value"
-      );
+      expect(result.error).toBe("An attribute cannot have both a default value and a fixed value");
     });
   });
 
@@ -204,9 +192,7 @@ describe("Attribute Validators", () => {
       };
       const result = validateAddAttribute(command, refSchema);
       expectInvalid(result);
-      expect(result.error).toBe(
-        "A reference attribute cannot have a default or fixed value"
-      );
+      expect(result.error).toBe("A reference attribute cannot have a default or fixed value");
     });
 
     test("should reject addAttribute with invalid ref name", () => {
@@ -244,9 +230,7 @@ describe("Attribute Validators", () => {
       };
       const result = validateModifyAttribute(command, refSchema);
       expectInvalid(result);
-      expect(result.error).toBe(
-        "A reference attribute cannot have a default or fixed value"
-      );
+      expect(result.error).toBe("A reference attribute cannot have a default or fixed value");
     });
 
     test("should reject addAttribute with ref that does not exist in schema", () => {
@@ -464,7 +448,9 @@ describe("Attribute Validators", () => {
 
       const result = validateModifyAttribute(
         command,
-        schemaWith(`<xs:attribute name="lang" type="xs:string"/><xs:complexType name="T"><xs:attribute name="code" type="xs:string"/></xs:complexType>`),
+        schemaWith(
+          `<xs:attribute name="lang" type="xs:string"/><xs:complexType name="T"><xs:attribute name="code" type="xs:string"/></xs:complexType>`
+        )
       );
       expect(result.valid).toBe(true);
     });
@@ -511,5 +497,4 @@ describe("Attribute Validators", () => {
       expect(validateModifyAttribute(command, schemaWith(EXTENSION_WITH_ATTRIBUTE)).valid).toBe(true);
     });
   });
-
 });

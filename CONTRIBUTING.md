@@ -4,9 +4,9 @@ Contributions are welcome: bug reports, ideas and pull requests. This file expla
 
 ## Branches
 
-| Branch | Content |
-|---|---|
-| `main` | The current version: a viewer that shows XML Schema files as a diagram. |
+| Branch                            | Content                                                                                                                                            |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `main`                            | The current version: a viewer that shows XML Schema files as a diagram.                                                                            |
 | `copilot/add-editor-capabilities` | The editor in development: it adds a palette, drag and drop and an editable properties panel. **Base your work and pull requests on this branch.** |
 
 The documentation in [`docs/`](docs/index.md) describes the editor branch.
@@ -21,6 +21,7 @@ The documentation in [`docs/`](docs/index.md) describes the editor branch.
    ```
 
    Then set `NODE_AUTH_TOKEN` to the token, permanently or only for the npm commands that install packages, for example `NODE_AUTH_TOKEN=<token> npm ci`. The line is not in the repository's `.npmrc`, because Dependabot would send `${NODE_AUTH_TOKEN}` literally instead of its own credential.
+
 3. Run `npm ci`.
 4. Open the folder in VS Code and press F5 (launch configuration "Run Extension"). A second VS Code window opens with the extension loaded. In it, open an `.xsd` file, for example from `exampleFiles/`, with "Open With…" → "Visual XML Schema Editor".
 

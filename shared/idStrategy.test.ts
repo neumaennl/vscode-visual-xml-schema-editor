@@ -2,11 +2,7 @@
  * Unit tests for ID strategy implementation.
  */
 
-import {
-  generateSchemaId,
-  parseSchemaId,
-  SchemaNodeType,
-} from "./idStrategy.js";
+import { generateSchemaId, parseSchemaId, SchemaNodeType } from "./idStrategy.js";
 
 describe("generateSchemaId", () => {
   describe("Top-level nodes", () => {
@@ -205,9 +201,7 @@ describe("parseSchemaId", () => {
     });
 
     test("should parse deeply nested element ID", () => {
-      const parsed = parseSchemaId(
-        "/element:person/element:address[0]/element:street[0]"
-      );
+      const parsed = parseSchemaId("/element:person/element:address[0]/element:street[0]");
       expect(parsed.nodeType).toBe(SchemaNodeType.Element);
       expect(parsed.name).toBe("street");
       expect(parsed.position).toBe(0);
@@ -233,9 +227,7 @@ describe("parseSchemaId", () => {
 
   describe("Namespaces", () => {
     test("should parse ID with namespace", () => {
-      const parsed = parseSchemaId(
-        "/element:{http://example.com/schema}person"
-      );
+      const parsed = parseSchemaId("/element:{http://example.com/schema}person");
       expect(parsed.nodeType).toBe(SchemaNodeType.Element);
       expect(parsed.name).toBe("person");
       expect(parsed.namespace).toBe("http://example.com/schema");
@@ -252,9 +244,7 @@ describe("parseSchemaId", () => {
 
   describe("Error handling", () => {
     test("should throw error for ID without leading slash", () => {
-      expect(() => parseSchemaId("element:person")).toThrow(
-        "Invalid schema ID format"
-      );
+      expect(() => parseSchemaId("element:person")).toThrow("Invalid schema ID format");
     });
 
     test("should throw error for empty string", () => {
@@ -270,8 +260,14 @@ describe("parseSchemaId", () => {
 describe("Round-trip conversion", () => {
   test.each([
     ["a top-level element", { nodeType: SchemaNodeType.Element, name: "person" }],
-    ["a child element", { nodeType: SchemaNodeType.Element, name: "address", parentId: "/element:person", position: 0 }],
-    ["a namespace", { nodeType: SchemaNodeType.ComplexType, name: "PersonType", namespace: "http://example.com/types" }],
+    [
+      "a child element",
+      { nodeType: SchemaNodeType.Element, name: "address", parentId: "/element:person", position: 0 },
+    ],
+    [
+      "a namespace",
+      { nodeType: SchemaNodeType.ComplexType, name: "PersonType", namespace: "http://example.com/types" },
+    ],
     ["an anonymous type", { nodeType: SchemaNodeType.AnonymousComplexType, parentId: "/element:person", position: 0 }],
   ])("should generate and parse consistently for %s", (_case, params) => {
     expect(parseSchemaId(generateSchemaId(params))).toMatchObject(params);

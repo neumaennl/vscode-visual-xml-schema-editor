@@ -111,7 +111,13 @@ function visitProperty(
   }
   const kind = key === "ref" ? REF_KINDS.find((refKind) => refKind === holderKey) : QNAME_PROPERTIES.get(key);
   if (kind) {
-    visit({ kind, value, replace: (newValue) => { Reflect.set(node, key, newValue); } });
+    visit({
+      kind,
+      value,
+      replace: (newValue) => {
+        Reflect.set(node, key, newValue);
+      },
+    });
   }
 }
 

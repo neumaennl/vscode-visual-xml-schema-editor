@@ -49,9 +49,7 @@ export function isValidXmlName(name: string): boolean {
  * @param minOccurs - The `minOccurs` value to validate
  * @returns Validation result
  */
-function validateMinOccurs(
-  minOccurs: number | undefined
-): ValidationResult {
+function validateMinOccurs(minOccurs: number | undefined): ValidationResult {
   if (minOccurs === undefined) {
     return { valid: true };
   }
@@ -76,9 +74,7 @@ function validateMinOccurs(
  * @param maxOccurs - The `maxOccurs` value to validate
  * @returns Validation result
  */
-function validateMaxOccurs(
-  maxOccurs: number | string | undefined
-): ValidationResult {
+function validateMaxOccurs(maxOccurs: number | string | undefined): ValidationResult {
   if (maxOccurs === undefined) {
     return { valid: true };
   }
@@ -116,11 +112,7 @@ function validateOccurrenceConstraint(
   minOccurs: number | undefined,
   maxOccurs: number | string | undefined
 ): ValidationResult {
-  if (
-    minOccurs !== undefined &&
-    typeof maxOccurs === "number" &&
-    minOccurs > maxOccurs
-  ) {
+  if (minOccurs !== undefined && typeof maxOccurs === "number" && minOccurs > maxOccurs) {
     return { valid: false, error: "minOccurs must be <= maxOccurs" };
   }
 
@@ -173,7 +165,7 @@ const BUILT_IN_XSD_TYPE_NAMES = new Set([
   "ENTITIES",
   "NMTOKEN",
   "NMTOKENS",
-  
+
   // Numeric types
   "decimal",
   "integer",
@@ -191,7 +183,7 @@ const BUILT_IN_XSD_TYPE_NAMES = new Set([
   "unsignedByte",
   "float",
   "double",
-  
+
   // Date and time types
   "date",
   "time",
@@ -202,7 +194,7 @@ const BUILT_IN_XSD_TYPE_NAMES = new Set([
   "gMonthDay",
   "gYear",
   "gYearMonth",
-  
+
   // Other types
   "boolean",
   "base64Binary",
@@ -222,7 +214,7 @@ const BUILT_IN_XSD_TYPE_NAMES = new Set([
  * @returns The local name without prefix
  */
 function getLocalTypeName(typeName: string): string {
-  const colonIndex = typeName.indexOf(':');
+  const colonIndex = typeName.indexOf(":");
   return colonIndex >= 0 ? typeName.substring(colonIndex + 1) : typeName;
 }
 
@@ -234,7 +226,7 @@ function getLocalTypeName(typeName: string): string {
  * @returns The prefix without the colon, or undefined if no prefix
  */
 function getTypePrefix(typeName: string): string | undefined {
-  const colonIndex = typeName.indexOf(':');
+  const colonIndex = typeName.indexOf(":");
   return colonIndex >= 0 ? typeName.substring(0, colonIndex) : undefined;
 }
 
@@ -259,12 +251,12 @@ function isBuiltInXsdType(typeName: string): boolean {
  */
 export function validateElementType(
   typeName: string,
-  schemaObj: { 
-    simpleType?: Array<{ name?: string }>, 
-    complexType?: Array<{ name?: string }>,
-    import_?: Array<{ namespace?: string }>,
-    include?: Array<{ schemaLocation?: string }>,
-    _namespacePrefixes?: Record<string, string>
+  schemaObj: {
+    simpleType?: Array<{ name?: string }>;
+    complexType?: Array<{ name?: string }>;
+    import_?: Array<{ namespace?: string }>;
+    include?: Array<{ schemaLocation?: string }>;
+    _namespacePrefixes?: Record<string, string>;
   }
 ): ValidationResult {
   if (!typeName || typeName.trim().length === 0) {
@@ -282,12 +274,12 @@ export function validateElementType(
   const localTypeName = getLocalTypeName(trimmedType);
 
   // Check if it's a user-defined simple type
-  if ((schemaObj.simpleType ?? []).some(type => type.name === localTypeName)) {
+  if ((schemaObj.simpleType ?? []).some((type) => type.name === localTypeName)) {
     return { valid: true };
   }
 
   // Check if it's a user-defined complex type
-  if ((schemaObj.complexType ?? []).some(type => type.name === localTypeName)) {
+  if ((schemaObj.complexType ?? []).some((type) => type.name === localTypeName)) {
     return { valid: true };
   }
 
@@ -300,10 +292,10 @@ export function validateElementType(
       // Look up the namespace URI for this prefix
       // _namespacePrefixes structure: { prefix: namespaceUri }
       const namespaceUri = schemaObj._namespacePrefixes[typePrefix];
-      
+
       if (namespaceUri) {
         // Check if there's an import for this namespace
-        const hasMatchingImport = (schemaObj.import_ ?? []).some(imp => imp.namespace === namespaceUri);
+        const hasMatchingImport = (schemaObj.import_ ?? []).some((imp) => imp.namespace === namespaceUri);
         if (hasMatchingImport) {
           // Type is from a valid import with matching namespace, allow it
           return { valid: true };
@@ -319,9 +311,9 @@ export function validateElementType(
     }
   }
 
-  return { 
-    valid: false, 
-    error: `Invalid element type '${trimmedType}': must be a built-in XSD type, a user-defined type in the schema, a type from a valid import with a matching namespace prefix, or a type from an included schema` 
+  return {
+    valid: false,
+    error: `Invalid element type '${trimmedType}': must be a built-in XSD type, a user-defined type in the schema, a type from a valid import with a matching namespace prefix, or a type from an included schema`,
   };
 }
 

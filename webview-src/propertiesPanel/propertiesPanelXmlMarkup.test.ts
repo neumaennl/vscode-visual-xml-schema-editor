@@ -6,7 +6,16 @@ import { escapeXml, optionalAttributes, pad, renderTag, toAttrString } from "./p
 
 describe("optionalAttributes", () => {
   test("should keep the attributes with a value, in their order", () => {
-    expect(optionalAttributes([["name", "a"], ["type", undefined], ["use", ""]])).toEqual([["name", "a"], ["use", ""]]);
+    expect(
+      optionalAttributes([
+        ["name", "a"],
+        ["type", undefined],
+        ["use", ""],
+      ])
+    ).toEqual([
+      ["name", "a"],
+      ["use", ""],
+    ]);
   });
 });
 
@@ -25,7 +34,12 @@ describe("pad", () => {
 
 describe("toAttrString", () => {
   test("should write escaped attributes with a leading space each", () => {
-    expect(toAttrString([["name", "a"], ["default", "x<y"]])).toBe(` name="a" default="x&lt;y"`);
+    expect(
+      toAttrString([
+        ["name", "a"],
+        ["default", "x<y"],
+      ])
+    ).toBe(` name="a" default="x&lt;y"`);
   });
 
   test("should write nothing without attributes", () => {
@@ -39,6 +53,8 @@ describe("renderTag", () => {
   });
 
   test("should write the children between the start and end tag", () => {
-    expect(renderTag("xs:sequence", [], ["    <xs:element/>"], 1)).toBe("  <xs:sequence>\n    <xs:element/>\n  </xs:sequence>");
+    expect(renderTag("xs:sequence", [], ["    <xs:element/>"], 1)).toBe(
+      "  <xs:sequence>\n    <xs:element/>\n  </xs:sequence>"
+    );
   });
 });

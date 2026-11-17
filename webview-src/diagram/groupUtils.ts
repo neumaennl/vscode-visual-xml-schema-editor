@@ -14,9 +14,7 @@ export function isCompositorGroup(item: DiagramItem): boolean {
     return (
       parsed.nodeType === SchemaNodeType.Group &&
       parsed.parentId !== undefined &&
-      (parsed.name === "sequence" ||
-        parsed.name === "choice" ||
-        parsed.name === "all")
+      (parsed.name === "sequence" || parsed.name === "choice" || parsed.name === "all")
     );
   } catch {
     return false;

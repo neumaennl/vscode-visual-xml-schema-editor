@@ -35,10 +35,7 @@ function flattenDocumentation(annotations: DiagramAnnotationEntry[]): string {
  * @param annotations - Annotation entries to normalize
  * @returns Normalized annotation entries with regenerated IDs
  */
-function normalizeAnnotationEntries(
-  ownerId: string,
-  annotations: DiagramAnnotationEntry[]
-): DiagramAnnotationEntry[] {
+function normalizeAnnotationEntries(ownerId: string, annotations: DiagramAnnotationEntry[]): DiagramAnnotationEntry[] {
   return annotations.map((annotation, annotationIndex) => {
     const annotationId = buildAnnotationId(ownerId, annotationIndex);
     return {
@@ -100,9 +97,7 @@ function updateAnnotationAtIndex(
   targetIndex: number,
   updateAnnotation: (annotation: DiagramAnnotationEntry) => DiagramAnnotationEntry
 ): DiagramAnnotationEntry[] {
-  return annotations.map((annotation, index) =>
-    index === targetIndex ? updateAnnotation(annotation) : annotation
-  );
+  return annotations.map((annotation, index) => (index === targetIndex ? updateAnnotation(annotation) : annotation));
 }
 
 /**
@@ -117,7 +112,9 @@ function updateAnnotationAtIndex(
 function updateDocumentationEntriesAtIndex(
   annotations: DiagramAnnotationEntry[],
   targetIndex: number,
-  updateEntries: (entries: DiagramAnnotationEntry["documentationEntries"]) => DiagramAnnotationEntry["documentationEntries"]
+  updateEntries: (
+    entries: DiagramAnnotationEntry["documentationEntries"]
+  ) => DiagramAnnotationEntry["documentationEntries"]
 ): DiagramAnnotationEntry[] {
   return updateAnnotationAtIndex(annotations, targetIndex, (annotation) => ({
     ...annotation,
@@ -271,9 +268,7 @@ function createAnnotationSection(
   const annotationHeader = document.createElement("div");
   annotationHeader.className = "property-docs-entry-header";
   const annotationLabel = document.createElement("label");
-  annotationLabel.textContent = isSchemaDocsTarget(node)
-    ? `Annotation ${annotationIndex + 1}:`
-    : "Annotation:";
+  annotationLabel.textContent = isSchemaDocsTarget(node) ? `Annotation ${annotationIndex + 1}:` : "Annotation:";
   annotationHeader.appendChild(annotationLabel);
   annotationHeader.appendChild(
     createActionButton(
@@ -396,9 +391,7 @@ export function createDocsTab(
     : node.documentationAnnotations.slice(0, 1);
 
   annotationsToRender.forEach((annotation, annotationIndex) => {
-    root.appendChild(
-      createAnnotationSection(node, annotation, annotationIndex, dispatchCommand, rerender)
-    );
+    root.appendChild(createAnnotationSection(node, annotation, annotationIndex, dispatchCommand, rerender));
   });
 
   appendAddSchemaAnnotationButton(root, node, dispatchCommand, rerender);

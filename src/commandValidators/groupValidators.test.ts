@@ -3,16 +3,8 @@
  */
 
 import type { schema } from "../../shared/types.js";
-import type {
-  AddGroupCommand,
-  RemoveGroupCommand,
-  ModifyGroupCommand,
-} from "../../shared/types.js";
-import {
-  validateAddGroup,
-  validateRemoveGroup,
-  validateModifyGroup,
-} from "./groupValidators.js";
+import type { AddGroupCommand, RemoveGroupCommand, ModifyGroupCommand } from "../../shared/types.js";
+import { validateAddGroup, validateRemoveGroup, validateModifyGroup } from "./groupValidators.js";
 import { expectInvalid } from "../__tests__/validationTestHelpers.js";
 import { localElementPlaces } from "../__tests__/referenceTestHelpers.js";
 import { emptySchema, schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
@@ -64,10 +56,7 @@ const REFERENCE_PLACES: Array<[string, string]> = [
     "the choice of a complexType",
     `<xs:complexType name="T"><xs:choice><xs:group ref="REF"/></xs:choice></xs:complexType>`,
   ],
-  [
-    "a complexType itself",
-    `<xs:complexType name="T"><xs:group ref="REF"/></xs:complexType>`,
-  ],
+  ["a complexType itself", `<xs:complexType name="T"><xs:group ref="REF"/></xs:complexType>`],
   [
     "the inline complexType of a top-level element",
     `<xs:element name="root"><xs:complexType><xs:sequence><xs:group ref="REF"/></xs:sequence></xs:complexType></xs:element>`,
@@ -111,10 +100,7 @@ const REFERENCE_PLACES: Array<[string, string]> = [
     "the choice of a complexContent restriction",
     `<xs:complexType name="Derived"><xs:complexContent><xs:restriction base="xs:anyType"><xs:choice><xs:group ref="REF"/></xs:choice></xs:restriction></xs:complexContent></xs:complexType>`,
   ],
-  [
-    "the choice of another group",
-    `<xs:group name="Combined"><xs:choice><xs:group ref="REF"/></xs:choice></xs:group>`,
-  ],
+  ["the choice of another group", `<xs:group name="Combined"><xs:choice><xs:group ref="REF"/></xs:choice></xs:group>`],
   ...localElementPlaces(LOCAL_ELEMENT_WITH_REF),
 ];
 
@@ -180,7 +166,10 @@ describe("Group Validators", () => {
     });
 
     test("should reject addGroup when both ref and groupName are provided", () => {
-      const command = { type: "addGroup", payload: { ref: "SomeGroup", groupName: "AlsoAGroup", parentId: "/complexType:PersonType/group:sequence[0]" } } as AddGroupCommand;
+      const command = {
+        type: "addGroup",
+        payload: { ref: "SomeGroup", groupName: "AlsoAGroup", parentId: "/complexType:PersonType/group:sequence[0]" },
+      } as AddGroupCommand;
 
       const result = validateAddGroup(command, schemaObj);
       expectInvalid(result);
@@ -188,7 +177,10 @@ describe("Group Validators", () => {
     });
 
     test("should reject addGroup when both ref and contentModel are provided", () => {
-      const command = { type: "addGroup", payload: { ref: "SomeGroup", contentModel: "sequence", parentId: "/complexType:PersonType/group:sequence[0]" } } as AddGroupCommand;
+      const command = {
+        type: "addGroup",
+        payload: { ref: "SomeGroup", contentModel: "sequence", parentId: "/complexType:PersonType/group:sequence[0]" },
+      } as AddGroupCommand;
 
       const result = validateAddGroup(command, schemaObj);
       expectInvalid(result);
@@ -196,7 +188,14 @@ describe("Group Validators", () => {
     });
 
     test("should reject addGroup definition when parentId is provided alongside groupName", () => {
-      const command = { type: "addGroup", payload: { groupName: "SomeGroup", contentModel: "sequence", parentId: "/complexType:PersonType/group:sequence[0]" } } as AddGroupCommand;
+      const command = {
+        type: "addGroup",
+        payload: {
+          groupName: "SomeGroup",
+          contentModel: "sequence",
+          parentId: "/complexType:PersonType/group:sequence[0]",
+        },
+      } as AddGroupCommand;
 
       const result = validateAddGroup(command, schemaObj);
       expectInvalid(result);
@@ -204,7 +203,10 @@ describe("Group Validators", () => {
     });
 
     test("should reject addGroup definition when minOccurs is provided alongside groupName", () => {
-      const command = { type: "addGroup", payload: { groupName: "SomeGroup", contentModel: "sequence", minOccurs: 0 } } as AddGroupCommand;
+      const command = {
+        type: "addGroup",
+        payload: { groupName: "SomeGroup", contentModel: "sequence", minOccurs: 0 },
+      } as AddGroupCommand;
 
       const result = validateAddGroup(command, schemaObj);
       expectInvalid(result);
@@ -612,14 +614,26 @@ describe("Group Validators", () => {
     });
 
     test("should reject when definition-mode fields are used with a group reference ID", () => {
-      const command = { type: "modifyGroup", payload: { groupId: "/complexType:PersonType/group:sequence[0]/groupRef:PersonGroup[0]", groupName: "RenamedGroup" } } as ModifyGroupCommand;
+      const command = {
+        type: "modifyGroup",
+        payload: {
+          groupId: "/complexType:PersonType/group:sequence[0]/groupRef:PersonGroup[0]",
+          groupName: "RenamedGroup",
+        },
+      } as ModifyGroupCommand;
       const result = validateModifyGroup(command, schemaWithRef);
       expectInvalid(result);
       expect(result.error).toContain("Cannot use groupName or contentModel when modifying a group reference");
     });
 
     test("should reject when contentModel is used with a group reference ID", () => {
-      const command = { type: "modifyGroup", payload: { groupId: "/complexType:PersonType/group:sequence[0]/groupRef:PersonGroup[0]", contentModel: "choice" } } as ModifyGroupCommand;
+      const command = {
+        type: "modifyGroup",
+        payload: {
+          groupId: "/complexType:PersonType/group:sequence[0]/groupRef:PersonGroup[0]",
+          contentModel: "choice",
+        },
+      } as ModifyGroupCommand;
       const result = validateModifyGroup(command, schemaWithRef);
       expectInvalid(result);
       expect(result.error).toContain("Cannot use groupName or contentModel when modifying a group reference");
@@ -707,14 +721,20 @@ describe("Group Validators", () => {
     });
 
     test("should reject when ref is used with a definition ID", () => {
-      const command = { type: "modifyGroup", payload: { groupId: "/group:PersonGroup", ref: "OtherGroup" } } as ModifyGroupCommand;
+      const command = {
+        type: "modifyGroup",
+        payload: { groupId: "/group:PersonGroup", ref: "OtherGroup" },
+      } as ModifyGroupCommand;
       const result = validateModifyGroup(command, schemaWithGroup);
       expectInvalid(result);
       expect(result.error).toContain("Cannot use ref, minOccurs, or maxOccurs when modifying a group definition");
     });
 
     test("should reject when minOccurs is used with a definition ID", () => {
-      const command = { type: "modifyGroup", payload: { groupId: "/group:PersonGroup", minOccurs: 0 } } as ModifyGroupCommand;
+      const command = {
+        type: "modifyGroup",
+        payload: { groupId: "/group:PersonGroup", minOccurs: 0 },
+      } as ModifyGroupCommand;
       const result = validateModifyGroup(command, schemaWithGroup);
       expectInvalid(result);
       expect(result.error).toContain("Cannot use ref, minOccurs, or maxOccurs when modifying a group definition");
@@ -732,15 +752,18 @@ describe("Group Validators", () => {
       expect(result.error).toBe("Group is still referenced and cannot be removed: CommonGroup");
     });
 
-    test.each(REFERENCE_PLACES)("should accept removing a group when only another group is referenced in %s", (_, body) => {
-      const command: RemoveGroupCommand = {
-        type: "removeGroup",
-        payload: { groupId: "/group:CommonGroup" },
-      };
+    test.each(REFERENCE_PLACES)(
+      "should accept removing a group when only another group is referenced in %s",
+      (_, body) => {
+        const command: RemoveGroupCommand = {
+          type: "removeGroup",
+          payload: { groupId: "/group:CommonGroup" },
+        };
 
-      const result = validateRemoveGroup(command, schemaWithGroups(body.replace(/REF/g, "OtherGroup")));
-      expect(result.valid).toBe(true);
-    });
+        const result = validateRemoveGroup(command, schemaWithGroups(body.replace(/REF/g, "OtherGroup")));
+        expect(result.valid).toBe(true);
+      }
+    );
   });
 
   describe("group references in compositors", () => {
@@ -868,7 +891,10 @@ describe("Group Validators", () => {
 
     test("should reject a definition with a content model other than sequence, choice or all", () => {
       // eslint-disable-next-line no-restricted-syntax -- an invalid content model, as the webview could send it, which TypeScript does not allow
-      const command = { type: "addGroup", payload: { groupName: "NewGroup", contentModel: "simpleContent" } } as unknown as AddGroupCommand;
+      const command = {
+        type: "addGroup",
+        payload: { groupName: "NewGroup", contentModel: "simpleContent" },
+      } as unknown as AddGroupCommand;
 
       const result = validateAddGroup(command, schemaObj);
       expectInvalid(result);
@@ -888,12 +914,14 @@ describe("Group Validators", () => {
 
     test("should reject changing a definition to a content model other than sequence, choice or all", () => {
       // eslint-disable-next-line no-restricted-syntax -- an invalid content model, as the webview could send it, which TypeScript does not allow
-      const command = { type: "modifyGroup", payload: { groupId: "/group:CommonGroup", contentModel: "simpleContent" } } as unknown as ModifyGroupCommand;
+      const command = {
+        type: "modifyGroup",
+        payload: { groupId: "/group:CommonGroup", contentModel: "simpleContent" },
+      } as unknown as ModifyGroupCommand;
 
       const result = validateModifyGroup(command, schemaWithGroups(""));
       expectInvalid(result);
       expect(result.error).toBe("Content model must be one of: sequence, choice, all");
     });
   });
-
 });

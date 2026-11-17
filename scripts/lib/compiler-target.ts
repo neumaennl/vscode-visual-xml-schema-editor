@@ -80,18 +80,21 @@ const RULES: EditionRule[] = [
     applies: (file) => TSCONFIG.test(file),
     find: (text) => [
       ...matches(TARGET, text).map((m) => ({ setting: "target", value: settingValueOf(m).toUpperCase() })),
-      ...matches(LIB, text).flatMap((lib) => matches(LIB_ENTRY, settingValueOf(lib)).map((m) => ({ setting: "lib", value: settingValueOf(m).toUpperCase() }))),
+      ...matches(LIB, text).flatMap((lib) =>
+        matches(LIB_ENTRY, settingValueOf(lib)).map((m) => ({ setting: "lib", value: settingValueOf(m).toUpperCase() }))
+      ),
     ],
     replace: (text, edition) =>
       replaceSettingValue(
         replaceSettingValue(text, TARGET, () => edition),
         LIB,
-        (entries) => replaceSettingValue(entries, LIB_ENTRY, () => edition),
+        (entries) => replaceSettingValue(entries, LIB_ENTRY, () => edition)
       ),
   },
   {
     applies: (file) => file === ESLINT_CONFIG,
-    find: (text) => matches(ECMA_VERSION, text).map((m) => ({ setting: "ecmaVersion", value: `ES${settingValueOf(m)}` })),
+    find: (text) =>
+      matches(ECMA_VERSION, text).map((m) => ({ setting: "ecmaVersion", value: `ES${settingValueOf(m)}` })),
     replace: (text, edition) => replaceSettingValue(text, ECMA_VERSION, () => edition.slice(2)),
   },
 ];
@@ -167,7 +170,8 @@ export async function loadEditions(majors: number[]): Promise<Map<number, string
  */
 function configFiles(dir: string): Array<{ file: string; rule: EditionRule }> {
   return readdirSync(dir)
-    .sort().flatMap((file) => RULES.filter((rule) => rule.applies(file)).map((rule) => ({ file, rule })));
+    .sort()
+    .flatMap((file) => RULES.filter((rule) => rule.applies(file)).map((rule) => ({ file, rule })));
 }
 
 /**
@@ -177,7 +181,9 @@ function configFiles(dir: string): Array<{ file: string; rule: EditionRule }> {
  * @returns The places, in the order of the files and within a file
  */
 function findEditions(dir: string): EditionUse[] {
-  return configFiles(dir).flatMap(({ file, rule }) => rule.find(readFileSync(join(dir, file), "utf8")).map((use) => ({ file, ...use })));
+  return configFiles(dir).flatMap(({ file, rule }) =>
+    rule.find(readFileSync(join(dir, file), "utf8")).map((use) => ({ file, ...use }))
+  );
 }
 
 /**

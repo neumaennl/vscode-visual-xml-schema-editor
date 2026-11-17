@@ -61,34 +61,45 @@ describe("Integration: Attribute pipeline", () => {
       expect(code!.use).toBe("required");
     });
 
-    test.each(COMPLEX_TYPES_WITH_ANY_ATTRIBUTE)("should write a new attribute of %s before xs:anyAttribute", (_, complexType) => {
-      const updatedXml = runCommandExpectSuccess(schemaXmlWith(complexType), {
-        type: "addAttribute",
-        payload: { parentId: "/complexType:T", attributeName: "a", attributeType: "xs:string" },
-      });
-      expectLinesInOrder(updatedXml, ["<xs:attribute ", "<xs:anyAttribute/>"]);
-    });
+    test.each(COMPLEX_TYPES_WITH_ANY_ATTRIBUTE)(
+      "should write a new attribute of %s before xs:anyAttribute",
+      (_, complexType) => {
+        const updatedXml = runCommandExpectSuccess(schemaXmlWith(complexType), {
+          type: "addAttribute",
+          payload: { parentId: "/complexType:T", attributeName: "a", attributeType: "xs:string" },
+        });
+        expectLinesInOrder(updatedXml, ["<xs:attribute ", "<xs:anyAttribute/>"]);
+      }
+    );
 
     test("should return validation error when attribute name is invalid", () => {
-      runCommandExpectValidationFailure(SCHEMA_WITH_COMPLEXTYPE, {
-        type: "addAttribute",
-        payload: {
-          parentId: "/complexType:PersonType",
-          attributeName: "bad attr",
-          attributeType: "xs:string",
+      runCommandExpectValidationFailure(
+        SCHEMA_WITH_COMPLEXTYPE,
+        {
+          type: "addAttribute",
+          payload: {
+            parentId: "/complexType:PersonType",
+            attributeName: "bad attr",
+            attributeType: "xs:string",
+          },
         },
-      }, "Attribute name must be a valid XML name");
+        "Attribute name must be a valid XML name"
+      );
     });
 
     test("should return validation error when parent does not exist", () => {
-      runCommandExpectValidationFailure(emptySchemaXml(), {
-        type: "addAttribute",
-        payload: {
-          parentId: "/complexType:Missing",
-          attributeName: "x",
-          attributeType: "xs:string",
+      runCommandExpectValidationFailure(
+        emptySchemaXml(),
+        {
+          type: "addAttribute",
+          payload: {
+            parentId: "/complexType:Missing",
+            attributeName: "x",
+            attributeType: "xs:string",
+          },
         },
-      }, "Parent node not found: /complexType:Missing");
+        "Parent node not found: /complexType:Missing"
+      );
     });
   });
 
@@ -108,10 +119,14 @@ describe("Integration: Attribute pipeline", () => {
     });
 
     test("should return validation error when attribute ID is out of range", () => {
-      runCommandExpectValidationFailure(SCHEMA_WITH_COMPLEXTYPE, {
-        type: "removeAttribute",
-        payload: { attributeId: "/complexType:PersonType/attribute:id[99]" },
-      }, "Attribute not found at position: 99");
+      runCommandExpectValidationFailure(
+        SCHEMA_WITH_COMPLEXTYPE,
+        {
+          type: "removeAttribute",
+          payload: { attributeId: "/complexType:PersonType/attribute:id[99]" },
+        },
+        "Attribute not found at position: 99"
+      );
     });
   });
 
@@ -148,13 +163,17 @@ describe("Integration: Attribute pipeline", () => {
     });
 
     test("should return validation error when attribute ID is out of range", () => {
-      runCommandExpectValidationFailure(SCHEMA_WITH_COMPLEXTYPE, {
-        type: "modifyAttribute",
-        payload: {
-          attributeId: "/complexType:PersonType/attribute:id[99]",
-          attributeName: "other",
+      runCommandExpectValidationFailure(
+        SCHEMA_WITH_COMPLEXTYPE,
+        {
+          type: "modifyAttribute",
+          payload: {
+            attributeId: "/complexType:PersonType/attribute:id[99]",
+            attributeName: "other",
+          },
         },
-      }, "Attribute not found at position: 99");
+        "Attribute not found at position: 99"
+      );
     });
   });
 });

@@ -53,7 +53,7 @@ This reference describes every edit command: its payload, the rules that the val
 - **Occurrences.** `minOccurs` is a non-negative integer, `maxOccurs` a non-negative integer or `"unbounded"`, and `minOccurs` must not exceed `maxOccurs`. They are written only when given, and never on top-level elements.
 - **Names.** Names and `ref` values must match `isValidXmlName()`: an ASCII letter or `_`, then letters, digits, `_`, `-` or `.`. Prefixed references such as `tns:Address` are rejected (see [Known issues](known-issues.md#name-validation-is-ascii-only-and-rejects-prefixed-references)).
 - **Types.** A type name (`elementType`, `baseType`, `listItemType`, union members) is accepted if it is a built-in XSD type with any prefix, a type defined in the schema, a type whose prefix belongs to an import, or any valid name if the schema has an include. Attribute types are not checked.
-- **`documentation` field.** Most add and modify payloads have an optional `documentation` string. `add*` writes it only if it is not empty. `modify*` replaces *all* documentation entries of the node with one entry containing the string, even if it is empty; it does not remove the annotation. To edit single entries, use the [documentation commands](#annotations-and-documentation).
+- **`documentation` field.** Most add and modify payloads have an optional `documentation` string. `add*` writes it only if it is not empty. `modify*` replaces _all_ documentation entries of the node with one entry containing the string, even if it is empty; it does not remove the annotation. To edit single entries, use the [documentation commands](#annotations-and-documentation).
 - **Insertion.** New nodes are appended to the end of their parent.
 - **Validator and executor.** The validator checks everything the executor relies on, and the executor does not check it again. Where the executor assumes something, it fails with an error such as "Element person not found, although the validator accepted the command" if the assumption does not hold ([ADR 003](architecture/003-validators-check-executors-assume.md)).
 - **Removal.** Removing a group, attribute group or import is rejected while it is still referenced. Removing an element, attribute or type is not checked and can leave references that point nowhere.
@@ -62,39 +62,39 @@ This reference describes every edit command: its payload, the rules that the val
 
 "Sent by" names where the webview creates the command; commands without an entry are implemented and tested in the extension host, but no UI sends them yet. "Palette drop" means `DropCommandFactory` in `webview-src/drop/`, "Properties panel" the files in `webview-src/propertiesPanel/`.
 
-| Area (file in `shared/commands/`) | Command | ID in payload | Sent by |
-|---|---|---|---|
-| Elements (`element.ts`) | `addElement` | `parentId` | Palette drop |
-| | `removeElement` | `elementId` | Properties panel (delete) |
-| | `modifyElement` | `elementId` | Properties panel |
-| Attributes (`attribute.ts`) | `addAttribute` | `parentId` | Palette drop |
-| | `removeAttribute` | `attributeId` | - |
-| | `modifyAttribute` | `attributeId` | - |
-| Types (`schemaTypes.ts`) | `addSimpleType` | `parentId?` | Palette drop |
-| | `removeSimpleType` | `typeId` | Properties panel (delete) |
-| | `modifySimpleType` | `typeId` | Properties panel, palette drop |
-| | `addComplexType` | `parentId?` | Palette drop |
-| | `removeComplexType` | `typeId` | Properties panel (delete) |
-| | `modifyComplexType` | `typeId` | Properties panel, palette drop |
-| Groups (`group.ts`) | `addGroup` | `parentId?` | Palette drop |
-| | `removeGroup` | `groupId` | Properties panel (delete) |
-| | `modifyGroup` | `groupId` | Properties panel, palette drop |
-| | `addAttributeGroup` | `parentId?` | - |
-| | `removeAttributeGroup` | `groupId` | - |
-| | `modifyAttributeGroup` | `groupId` | - |
-| Annotations (`metadata.ts`) | `addAnnotation` | `targetId` | Properties panel (documentation) |
-| | `removeAnnotation` | `annotationId` | Properties panel (documentation) |
-| | `modifyAnnotation` | `annotationId` | - |
-| | `addDocumentation` | `targetId` | Properties panel (documentation) |
-| | `removeDocumentation` | `documentationId` | Properties panel (documentation) |
-| | `modifyDocumentation` | `documentationId` | Properties panel (documentation) |
-| Schema (`module.ts`) | `addImport` | none | - |
-| | `removeImport` | `importId` | - |
-| | `modifyImport` | `importId` | - |
-| | `addInclude` | none | - |
-| | `removeInclude` | `includeId` | - |
-| | `modifyInclude` | `includeId` | - |
-| | `modifySchemaNamespaces` | none | Properties panel (namespaces) |
+| Area (file in `shared/commands/`) | Command                  | ID in payload     | Sent by                          |
+| --------------------------------- | ------------------------ | ----------------- | -------------------------------- |
+| Elements (`element.ts`)           | `addElement`             | `parentId`        | Palette drop                     |
+|                                   | `removeElement`          | `elementId`       | Properties panel (delete)        |
+|                                   | `modifyElement`          | `elementId`       | Properties panel                 |
+| Attributes (`attribute.ts`)       | `addAttribute`           | `parentId`        | Palette drop                     |
+|                                   | `removeAttribute`        | `attributeId`     | -                                |
+|                                   | `modifyAttribute`        | `attributeId`     | -                                |
+| Types (`schemaTypes.ts`)          | `addSimpleType`          | `parentId?`       | Palette drop                     |
+|                                   | `removeSimpleType`       | `typeId`          | Properties panel (delete)        |
+|                                   | `modifySimpleType`       | `typeId`          | Properties panel, palette drop   |
+|                                   | `addComplexType`         | `parentId?`       | Palette drop                     |
+|                                   | `removeComplexType`      | `typeId`          | Properties panel (delete)        |
+|                                   | `modifyComplexType`      | `typeId`          | Properties panel, palette drop   |
+| Groups (`group.ts`)               | `addGroup`               | `parentId?`       | Palette drop                     |
+|                                   | `removeGroup`            | `groupId`         | Properties panel (delete)        |
+|                                   | `modifyGroup`            | `groupId`         | Properties panel, palette drop   |
+|                                   | `addAttributeGroup`      | `parentId?`       | -                                |
+|                                   | `removeAttributeGroup`   | `groupId`         | -                                |
+|                                   | `modifyAttributeGroup`   | `groupId`         | -                                |
+| Annotations (`metadata.ts`)       | `addAnnotation`          | `targetId`        | Properties panel (documentation) |
+|                                   | `removeAnnotation`       | `annotationId`    | Properties panel (documentation) |
+|                                   | `modifyAnnotation`       | `annotationId`    | -                                |
+|                                   | `addDocumentation`       | `targetId`        | Properties panel (documentation) |
+|                                   | `removeDocumentation`    | `documentationId` | Properties panel (documentation) |
+|                                   | `modifyDocumentation`    | `documentationId` | Properties panel (documentation) |
+| Schema (`module.ts`)              | `addImport`              | none              | -                                |
+|                                   | `removeImport`           | `importId`        | -                                |
+|                                   | `modifyImport`           | `importId`        | -                                |
+|                                   | `addInclude`             | none              | -                                |
+|                                   | `removeInclude`          | `includeId`       | -                                |
+|                                   | `modifyInclude`          | `includeId`       | -                                |
+|                                   | `modifySchemaNamespaces` | none              | Properties panel (namespaces)    |
 
 A drop on an existing type or group creates a `modify*` command instead of an `add*` command; for example, a compositor dropped on a complex type, or on an element with an anonymous complex type, becomes `modifyComplexType` with a new content model (see [Drag and drop](drag-and-drop.md)).[^drop-factory] That attributes can only be added is listed in [Known issues](known-issues.md#attribute-editing-is-half-implemented).
 
@@ -102,17 +102,17 @@ A drop on an existing type or group creates a `modify*` command instead of an `a
 
 `addElement`, `removeElement` and `modifyElement` are defined in `element.ts`.[^element]
 
-| Field | add | modify | Meaning and rules |
-|---|---|---|---|
-| `parentId` / `elementId` | required | required | Parent: the schema, a `sequence`, `choice` or `all`. |
-| `elementName` | name or `ref` | optional | Must be unique among the siblings when added. |
-| `elementType` | optional | optional | Must be a known type (see [Conventions](#conventions)). Omit it to give the element an anonymous type later with `addSimpleType` or `addComplexType`. Setting it removes an anonymous type. |
-| `ref` | name or `ref` | optional | Name of a top-level element. Not allowed directly under the schema. |
-| `minOccurs`, `maxOccurs` | optional | optional | Ignored for top-level elements. |
-| `documentation` | optional | optional | See [Conventions](#conventions). |
-| `nillable` | - | optional | |
-| `abstract` | - | optional | Only applied to top-level elements. |
-| `default_`, `fixed` | - | optional | Not both, and not on a reference. Setting one removes the other; an empty string removes the attribute. Turning an element into a reference also removes `default`, `fixed` and `nillable`. |
+| Field                    | add           | modify   | Meaning and rules                                                                                                                                                                           |
+| ------------------------ | ------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `parentId` / `elementId` | required      | required | Parent: the schema, a `sequence`, `choice` or `all`.                                                                                                                                        |
+| `elementName`            | name or `ref` | optional | Must be unique among the siblings when added.                                                                                                                                               |
+| `elementType`            | optional      | optional | Must be a known type (see [Conventions](#conventions)). Omit it to give the element an anonymous type later with `addSimpleType` or `addComplexType`. Setting it removes an anonymous type. |
+| `ref`                    | name or `ref` | optional | Name of a top-level element. Not allowed directly under the schema.                                                                                                                         |
+| `minOccurs`, `maxOccurs` | optional      | optional | Ignored for top-level elements.                                                                                                                                                             |
+| `documentation`          | optional      | optional | See [Conventions](#conventions).                                                                                                                                                            |
+| `nillable`               | -             | optional |                                                                                                                                                                                             |
+| `abstract`               | -             | optional | Only applied to top-level elements.                                                                                                                                                         |
+| `default_`, `fixed`      | -             | optional | Not both, and not on a reference. Setting one removes the other; an empty string removes the attribute. Turning an element into a reference also removes `default`, `fixed` and `nillable`. |
 
 `removeElement` takes only `elementId`. Renaming a top-level element also renames the `ref` and `substitutionGroup` values that point to it. Renames do not check for an existing element with the new name (see [Known issues](known-issues.md#renames-and-new-references-do-not-check-for-duplicates)).[^validators][^executors]
 
@@ -120,15 +120,15 @@ A drop on an existing type or group creates a `modify*` command instead of an `a
 
 `addAttribute`, `removeAttribute` and `modifyAttribute` are defined in `attribute.ts`.[^attribute]
 
-| Field | add | modify | Meaning and rules |
-|---|---|---|---|
-| `parentId` / `attributeId` | required | required | Parent: the schema or a complex type (top-level or anonymous). In a complex type with `xs:complexContent` or `xs:simpleContent`, the attributes are those of its `xs:extension` or `xs:restriction`. |
-| `attributeName` | name or `ref` | optional | Must be unique within the parent when added. |
-| `attributeType` | optional | optional | Not checked. |
-| `ref` | name or `ref` | optional | Name of a top-level attribute. Not allowed directly under the schema. |
-| `required` | optional | optional | Written as `use="required"` or `use="optional"`, only on attributes inside a complex type. |
-| `defaultValue`, `fixedValue` | optional | optional | Not both, and not with `ref`. In `modify*`, setting one removes the other; an empty string is written as an empty value. |
-| `documentation` | optional | optional | See [Conventions](#conventions). |
+| Field                        | add           | modify   | Meaning and rules                                                                                                                                                                                    |
+| ---------------------------- | ------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `parentId` / `attributeId`   | required      | required | Parent: the schema or a complex type (top-level or anonymous). In a complex type with `xs:complexContent` or `xs:simpleContent`, the attributes are those of its `xs:extension` or `xs:restriction`. |
+| `attributeName`              | name or `ref` | optional | Must be unique within the parent when added.                                                                                                                                                         |
+| `attributeType`              | optional      | optional | Not checked.                                                                                                                                                                                         |
+| `ref`                        | name or `ref` | optional | Name of a top-level attribute. Not allowed directly under the schema.                                                                                                                                |
+| `required`                   | optional      | optional | Written as `use="required"` or `use="optional"`, only on attributes inside a complex type.                                                                                                           |
+| `defaultValue`, `fixedValue` | optional      | optional | Not both, and not with `ref`. In `modify*`, setting one removes the other; an empty string is written as an empty value.                                                                             |
+| `documentation`              | optional      | optional | See [Conventions](#conventions).                                                                                                                                                                     |
 
 `removeAttribute` takes only `attributeId`.[^validators][^executors]
 
@@ -138,15 +138,15 @@ New attributes and attribute group references (`addAttributeGroup`) are written 
 
 `addSimpleType`, `removeSimpleType` and `modifySimpleType` are defined in `schemaTypes.ts`.[^schema-types]
 
-| Field | add | modify | Meaning and rules |
-|---|---|---|---|
-| `parentId` / `typeId` | optional | required | Parent for an anonymous type: an element or attribute without `ref` and without an anonymous type. |
-| `typeName` | top-level only | top-level only | Must be unique when added. Renaming updates all unprefixed and target-namespace references in the schema. |
-| `baseType` | restriction | restriction | Base of a restriction. |
-| `restrictions` | restriction | restriction | Facets, see [Restriction facets](#restriction-facets). |
-| `listItemType` | list | list | Item type of a list. |
-| `unionMemberTypes` | union | union | Member types of a union; not empty, no empty entries. |
-| `documentation` | optional | optional | See [Conventions](#conventions). |
+| Field                 | add            | modify         | Meaning and rules                                                                                         |
+| --------------------- | -------------- | -------------- | --------------------------------------------------------------------------------------------------------- |
+| `parentId` / `typeId` | optional       | required       | Parent for an anonymous type: an element or attribute without `ref` and without an anonymous type.        |
+| `typeName`            | top-level only | top-level only | Must be unique when added. Renaming updates all unprefixed and target-namespace references in the schema. |
+| `baseType`            | restriction    | restriction    | Base of a restriction.                                                                                    |
+| `restrictions`        | restriction    | restriction    | Facets, see [Restriction facets](#restriction-facets).                                                    |
+| `listItemType`        | list           | list           | Item type of a list.                                                                                      |
+| `unionMemberTypes`    | union          | union          | Member types of a union; not empty, no empty entries.                                                     |
+| `documentation`       | optional       | optional       | See [Conventions](#conventions).                                                                          |
 
 The fields decide the kind of the body (`SimpleTypeDerivationKind`): `baseType` or `restrictions` make a restriction, `listItemType` a list, `unionMemberTypes` a union. Exactly one kind is allowed. `addSimpleType` needs a body. In `modifySimpleType`, body fields replace the body, also with another kind; without body fields, the body stays as it is. `restrictions` without `baseType` change only the facets of an existing restriction, which keeps its base, also an inline simple type; a list, a union or a new type needs `baseType` ("Cannot apply restrictions without a base type", "Base type cannot be empty"). A `baseType` replaces the base, also an inline simple type. `modifySimpleType` rejects a `typeName` for an anonymous type.
 
@@ -156,13 +156,13 @@ Creating an anonymous simple type removes the `type` attribute and an anonymous 
 
 `RestrictionFacets` has 12 optional fields:
 
-| Facet | Type |
-|---|---|
-| `minInclusive`, `maxInclusive`, `minExclusive`, `maxExclusive` | string |
-| `length`, `minLength`, `maxLength`, `totalDigits`, `fractionDigits` | number |
-| `pattern` | string[] (one `xs:pattern` per value; a value of the type must match one of them) |
-| `enumeration` | string[] (one `xs:enumeration` per value) |
-| `whiteSpace` | `"preserve"`, `"replace"` or `"collapse"` |
+| Facet                                                               | Type                                                                              |
+| ------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `minInclusive`, `maxInclusive`, `minExclusive`, `maxExclusive`      | string                                                                            |
+| `length`, `minLength`, `maxLength`, `totalDigits`, `fractionDigits` | number                                                                            |
+| `pattern`                                                           | string[] (one `xs:pattern` per value; a value of the type must match one of them) |
+| `enumeration`                                                       | string[] (one `xs:enumeration` per value)                                         |
+| `whiteSpace`                                                        | `"preserve"`, `"replace"` or `"collapse"`                                         |
 
 A restriction without `restrictions` has no facets, which XSD allows. If `restrictions` is given, it must contain at least one facet ("Restriction simpleType body must include at least one facet"). `restrictions` always replaces all facets: facets that are not in the payload are removed, so a client must send the complete set. Facets are not checked against the base type; `maxLength` on `xs:integer` or `minLength` greater than `maxLength` are accepted (see [Known issues](known-issues.md#facets-are-not-checked-against-the-base-type)).[^executors]
 
@@ -170,16 +170,16 @@ A restriction without `restrictions` has no facets, which XSD allows. If `restri
 
 `addComplexType`, `removeComplexType` and `modifyComplexType` are defined in `schemaTypes.ts`.[^schema-types]
 
-| Field | add | modify | Meaning and rules |
-|---|---|---|---|
-| `parentId` / `typeId` | optional | required | Parent for an anonymous type: an element without `ref` and without an anonymous type. |
-| `typeName` | top-level only | top-level only | Must be unique when added. Renaming updates references like `modifySimpleType`. |
-| `contentModel` | required | optional | `sequence`, `choice` or `all` (`ContentModel`). Changing it replaces the compositor and moves its particles into the new one. Rejected for a type whose particle is a group reference, because a complex type has at most one particle. |
-| `baseType` | optional | optional | Checked like the other type names (see [Conventions](#conventions)). Wraps the content in `complexContent` with an `extension` or `restriction` of this type: the compositor, or for a type without one, its group reference and attributes as they are. An empty string removes the base and unwraps the content. |
-| `derivationKind` | optional | optional | `extension` (default) or `restriction` (`ComplexTypeDerivationKind`). Needs a base type, from the payload or the existing type ("Derivation kind requires a base type"). |
-| `mixed` | optional | optional | |
-| `abstract` | optional | optional | Only applied to top-level types. |
-| `documentation` | optional | optional | See [Conventions](#conventions). |
+| Field                 | add            | modify         | Meaning and rules                                                                                                                                                                                                                                                                                                  |
+| --------------------- | -------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `parentId` / `typeId` | optional       | required       | Parent for an anonymous type: an element without `ref` and without an anonymous type.                                                                                                                                                                                                                              |
+| `typeName`            | top-level only | top-level only | Must be unique when added. Renaming updates references like `modifySimpleType`.                                                                                                                                                                                                                                    |
+| `contentModel`        | required       | optional       | `sequence`, `choice` or `all` (`ContentModel`). Changing it replaces the compositor and moves its particles into the new one. Rejected for a type whose particle is a group reference, because a complex type has at most one particle.                                                                            |
+| `baseType`            | optional       | optional       | Checked like the other type names (see [Conventions](#conventions)). Wraps the content in `complexContent` with an `extension` or `restriction` of this type: the compositor, or for a type without one, its group reference and attributes as they are. An empty string removes the base and unwraps the content. |
+| `derivationKind`      | optional       | optional       | `extension` (default) or `restriction` (`ComplexTypeDerivationKind`). Needs a base type, from the payload or the existing type ("Derivation kind requires a base type").                                                                                                                                           |
+| `mixed`               | optional       | optional       |                                                                                                                                                                                                                                                                                                                    |
+| `abstract`            | optional       | optional       | Only applied to top-level types.                                                                                                                                                                                                                                                                                   |
+| `documentation`       | optional       | optional       | See [Conventions](#conventions).                                                                                                                                                                                                                                                                                   |
 
 The complex type commands cannot create or change simple content: for a complex type with `simpleContent`, `modifyComplexType` rejects `baseType`, `derivationKind` and `contentModel` (see [Known issues](known-issues.md#complex-types-with-simple-content-cannot-be-created-or-derived)). Creating an anonymous complex type removes the `type` attribute and an anonymous simple type of its element. `removeComplexType` takes only `typeId` and does not check whether the type is still used.[^validators][^executors]
 
@@ -187,18 +187,18 @@ The complex type commands cannot create or change simple content: for a complex 
 
 `addGroup`, `removeGroup` and `modifyGroup` are defined in `group.ts`.[^group] `addGroup` has two modes:
 
-| Mode | Fields | Rules |
-|---|---|---|
-| Definition | `groupName`, `contentModel`, `documentation?` | Top-level; the name must be unique. `parentId` and occurrences are not allowed. |
-| Reference | `ref`, `parentId`, `minOccurs?`, `maxOccurs?`, `documentation?` | `ref` must name a group definition. Parent: a `sequence`, a `choice`, or a complex type that has no particle yet. |
+| Mode       | Fields                                                          | Rules                                                                                                             |
+| ---------- | --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Definition | `groupName`, `contentModel`, `documentation?`                   | Top-level; the name must be unique. `parentId` and occurrences are not allowed.                                   |
+| Reference  | `ref`, `parentId`, `minOccurs?`, `maxOccurs?`, `documentation?` | `ref` must name a group definition. Parent: a `sequence`, a `choice`, or a complex type that has no particle yet. |
 
 `groupId` in `removeGroup` and `modifyGroup` can name three kinds of node, and `modifyGroup` accepts different fields for each:
 
-| `groupId` | Example | `modifyGroup` fields |
-|---|---|---|
-| Group definition | `/group:Address` | `groupName`, `contentModel`, `documentation`. Renaming updates the references. |
-| Group reference | `…/group:sequence[0]/groupRef:Address[0]` | `ref`, `minOccurs`, `maxOccurs`, `documentation` |
-| Compositor | `…/group:sequence[0]` | `minOccurs`, `maxOccurs`, `documentation`. The compositor of a group definition (`/group:Address/group:sequence[0]`) has no occurrences in XML Schema, so only `documentation` is accepted there. |
+| `groupId`        | Example                                   | `modifyGroup` fields                                                                                                                                                                              |
+| ---------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Group definition | `/group:Address`                          | `groupName`, `contentModel`, `documentation`. Renaming updates the references.                                                                                                                    |
+| Group reference  | `…/group:sequence[0]/groupRef:Address[0]` | `ref`, `minOccurs`, `maxOccurs`, `documentation`                                                                                                                                                  |
+| Compositor       | `…/group:sequence[0]`                     | `minOccurs`, `maxOccurs`, `documentation`. The compositor of a group definition (`/group:Address/group:sequence[0]`) has no occurrences in XML Schema, so only `documentation` is accepted there. |
 
 `removeGroup` on a compositor removes it from the complex type, the group definition or the compositor that contains it. A group definition cannot be removed while a reference points to it.[^validators][^executors]
 
@@ -210,14 +210,14 @@ The complex type commands cannot create or change simple content: for a complex 
 
 The six commands in `metadata.ts` edit `xs:annotation` and its `xs:documentation` entries.[^metadata] The IDs follow the annotation scheme in [Schema model](schema-model.md#node-ids).
 
-| Command | Fields | Effect |
-|---|---|---|
-| `addAnnotation` | `targetId`, `documentation?`, `appInfo?` | Adds an annotation to the schema (`/schema`) or replaces the annotation of a node. |
-| `removeAnnotation` | `annotationId` | Removes the annotation. |
-| `modifyAnnotation` | `annotationId`, `documentation?`, `appInfo?` | `documentation` replaces all documentation entries with one, `appInfo` replaces the content of the first `xs:appinfo`. |
-| `addDocumentation` | `targetId`, `content`, `lang?` | Adds a documentation entry to the annotation of a node, creating the annotation if needed. `lang` becomes `xml:lang`. |
-| `removeDocumentation` | `documentationId` | Removes one entry. |
-| `modifyDocumentation` | `documentationId`, `content?`, `lang?` | Changes one entry; an empty `lang` removes `xml:lang`. |
+| Command               | Fields                                       | Effect                                                                                                                 |
+| --------------------- | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `addAnnotation`       | `targetId`, `documentation?`, `appInfo?`     | Adds an annotation to the schema (`/schema`) or replaces the annotation of a node.                                     |
+| `removeAnnotation`    | `annotationId`                               | Removes the annotation.                                                                                                |
+| `modifyAnnotation`    | `annotationId`, `documentation?`, `appInfo?` | `documentation` replaces all documentation entries with one, `appInfo` replaces the content of the first `xs:appinfo`. |
+| `addDocumentation`    | `targetId`, `content`, `lang?`               | Adds a documentation entry to the annotation of a node, creating the annotation if needed. `lang` becomes `xml:lang`.  |
+| `removeDocumentation` | `documentationId`                            | Removes one entry.                                                                                                     |
+| `modifyDocumentation` | `documentationId`, `content?`, `lang?`       | Changes one entry; an empty `lang` removes `xml:lang`.                                                                 |
 
 The properties panel uses these commands for the documentation of the selected node, not the `documentation` field of the `modify*` commands.[^validators][^executors]
 
@@ -225,14 +225,14 @@ The properties panel uses these commands for the documentation of the selected n
 
 The commands in `module.ts` change the schema root.[^module] They have no parent ID; imports and includes are addressed by position (`/import[0]`, `/include[0]`).
 
-| Command | Fields | Rules and effect |
-|---|---|---|
-| `addImport` | `namespace`, `schemaLocation`, `prefix?` | `namespace` must be an absolute URI without an existing import, `schemaLocation` must not contain whitespace. The prefix must be a valid, unused, non-reserved name; if it is omitted, the executor generates `ns0`, `ns1`, …, and binds it to the namespace. |
-| `removeImport` | `importId` | Rejected while a QName still uses a prefix of the namespace. Removes the prefix bindings of the namespace. |
-| `modifyImport` | `importId`, `namespace?`, `schemaLocation?`, `oldPrefix?`, `prefix?` | `prefix` with `oldPrefix` renames the binding and rewrites all QNames that use it, also in the `xpath` of the selectors and fields of identity constraints. `prefix` alone adds another binding for the namespace. `oldPrefix` requires `prefix`. An import without a namespace cannot get a prefix. |
-| `addInclude` | `schemaLocation` | No other include with the same location. |
-| `removeInclude` | `includeId` | |
-| `modifyInclude` | `includeId`, `schemaLocation` | Replaces the location. |
+| Command                  | Fields                                                                | Rules and effect                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| ------------------------ | --------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `addImport`              | `namespace`, `schemaLocation`, `prefix?`                              | `namespace` must be an absolute URI without an existing import, `schemaLocation` must not contain whitespace. The prefix must be a valid, unused, non-reserved name; if it is omitted, the executor generates `ns0`, `ns1`, …, and binds it to the namespace.                                                                                                                                                                                                          |
+| `removeImport`           | `importId`                                                            | Rejected while a QName still uses a prefix of the namespace. Removes the prefix bindings of the namespace.                                                                                                                                                                                                                                                                                                                                                             |
+| `modifyImport`           | `importId`, `namespace?`, `schemaLocation?`, `oldPrefix?`, `prefix?`  | `prefix` with `oldPrefix` renames the binding and rewrites all QNames that use it, also in the `xpath` of the selectors and fields of identity constraints. `prefix` alone adds another binding for the namespace. `oldPrefix` requires `prefix`. An import without a namespace cannot get a prefix.                                                                                                                                                                   |
+| `addInclude`             | `schemaLocation`                                                      | No other include with the same location.                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `removeInclude`          | `includeId`                                                           |                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `modifyInclude`          | `includeId`, `schemaLocation`                                         | Replaces the location.                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | `modifySchemaNamespaces` | `targetNamespace?`, `namespacePrefixes`, `previousNamespacePrefixes?` | `namespacePrefixes` is the complete prefix map; prefixes not in it are removed. `targetNamespace` must be one of the URIs in the map; an empty string removes it. With `previousNamespacePrefixes`, a prefix whose URI did not change but whose name did is treated as a rename, and the QNames are rewritten. Removing a prefix that QNames still use is not checked (see [Known issues](known-issues.md#removing-a-namespace-prefix-does-not-check-for-references)). |
 
 # Example
@@ -277,16 +277,16 @@ The element prefix `xs:` is missing in the output because serialization drops it
 
 # Files
 
-| File | Content |
-|---|---|
-| `shared/commands/base.ts` | `BaseCommand` and `CommandResponse` |
-| `shared/commands/element.ts`, `attribute.ts`, `schemaTypes.ts`, `group.ts`, `metadata.ts`, `module.ts` | Payloads, command types and the union of the commands of each kind of component, such as `ElementCommand`, one file per area |
-| `shared/commands/index.ts` | Re-exports the areas and defines the `SchemaCommand` union, which combines the unions of the areas |
-| `shared/messages.ts` | The messages that carry the commands (see [Messaging](messaging.md)) |
-| `shared/types.ts` | Re-exports the generated classes, the commands and the messages |
-| `src/commandHandlers.ts` | `findCommandHandler()`, which finds the validator or executor of a command by its name |
-| `src/commandValidators/` | One validator per command, grouped by area; the checks that validators of several areas share in `commonValidators.ts`, the search for references to groups and attribute groups in `referenceSearch.ts`, and `validationUtils.ts` |
-| `src/commandExecutors/` | One executor per command, grouped by area, and the shared rename and prefix helpers (`schemaLocalRenamer.ts`, `schemaQNameRewriter.ts`, `schemaPrefixChecker.ts`), which all use the walk over every QName of the schema in `schemaQNameReferences.ts`; helpers for optional properties and arrays (`nodeProperties.ts`), for anonymous and top-level types (`typeTargets.ts`) and for documentation (`annotationUtils.ts`) |
+| File                                                                                                   | Content                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `shared/commands/base.ts`                                                                              | `BaseCommand` and `CommandResponse`                                                                                                                                                                                                                                                                                                                                                                                         |
+| `shared/commands/element.ts`, `attribute.ts`, `schemaTypes.ts`, `group.ts`, `metadata.ts`, `module.ts` | Payloads, command types and the union of the commands of each kind of component, such as `ElementCommand`, one file per area                                                                                                                                                                                                                                                                                                |
+| `shared/commands/index.ts`                                                                             | Re-exports the areas and defines the `SchemaCommand` union, which combines the unions of the areas                                                                                                                                                                                                                                                                                                                          |
+| `shared/messages.ts`                                                                                   | The messages that carry the commands (see [Messaging](messaging.md))                                                                                                                                                                                                                                                                                                                                                        |
+| `shared/types.ts`                                                                                      | Re-exports the generated classes, the commands and the messages                                                                                                                                                                                                                                                                                                                                                             |
+| `src/commandHandlers.ts`                                                                               | `findCommandHandler()`, which finds the validator or executor of a command by its name                                                                                                                                                                                                                                                                                                                                      |
+| `src/commandValidators/`                                                                               | One validator per command, grouped by area; the checks that validators of several areas share in `commonValidators.ts`, the search for references to groups and attribute groups in `referenceSearch.ts`, and `validationUtils.ts`                                                                                                                                                                                          |
+| `src/commandExecutors/`                                                                                | One executor per command, grouped by area, and the shared rename and prefix helpers (`schemaLocalRenamer.ts`, `schemaQNameRewriter.ts`, `schemaPrefixChecker.ts`), which all use the walk over every QName of the schema in `schemaQNameReferences.ts`; helpers for optional properties and arrays (`nodeProperties.ts`), for anonymous and top-level types (`typeTargets.ts`) and for documentation (`annotationUtils.ts`) |
 
 Each command type has a string literal as `type`, so `SchemaCommand` is a discriminated union: a `switch` on `command.type` narrows the payload to the right type. The type tests in `shared/commands/commandTypes.test-d.ts` check the required fields, the allowed values of `maxOccurs` and that the union rejects unknown types and mismatched payloads (see [Testing](testing.md#kinds-of-tests)); the behaviour is tested next to the validators and executors.[^commands]
 

@@ -19,10 +19,7 @@
     },
     {
       "label": "Build All",
-      "dependsOn": [
-        "npm: compile-extension",
-        "npm: compile-webview"
-      ],
+      "dependsOn": ["npm: compile-extension", "npm: compile-webview"],
       "dependsOrder": "parallel",
       "group": "build"
     },
@@ -65,10 +62,7 @@
     },
     {
       "label": "Watch All",
-      "dependsOn": [
-        "npm: watch-extension",
-        "npm: watch-webview"
-      ],
+      "dependsOn": ["npm: watch-extension", "npm: watch-webview"],
       "dependsOrder": "parallel",
       "group": {
         "kind": "build",

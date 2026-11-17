@@ -53,7 +53,12 @@ function validateAttributeKind(
     if (defaultValue !== undefined || fixedValue !== undefined) {
       return { valid: false, error: "A reference attribute cannot have a default or fixed value" };
     }
-    return validateReference(ref, schemaObj.attribute, "Attribute", `Referenced attribute '${ref}' does not exist in schema`);
+    return validateReference(
+      ref,
+      schemaObj.attribute,
+      "Attribute",
+      `Referenced attribute '${ref}' does not exist in schema`
+    );
   }
   if ((nameRequired || attributeName !== undefined) && !isValidXmlName(attributeName ?? "")) {
     return { valid: false, error: "Attribute name must be a valid XML name" };
@@ -72,17 +77,19 @@ function validateAttributeKind(
  * @param schemaObj - The schema
  * @returns The validation result
  */
-export function validateAddAttribute(
-  command: AddAttributeCommand,
-  schemaObj: schema
-): ValidationResult {
+export function validateAddAttribute(command: AddAttributeCommand, schemaObj: schema): ValidationResult {
   const { parentId, attributeName, ref } = command.payload;
 
   if (!parentId.trim()) {
     return { valid: false, error: "Parent ID cannot be empty" };
   }
 
-  const kindResult = validateAttributeKind(command.payload, schemaObj, true, "A reference attribute cannot have a name or type");
+  const kindResult = validateAttributeKind(
+    command.payload,
+    schemaObj,
+    true,
+    "A reference attribute cannot have a name or type"
+  );
   if (!kindResult.valid) {
     return kindResult;
   }
@@ -97,10 +104,7 @@ export function validateAddAttribute(
  * @param schemaObj - The schema
  * @returns The validation result
  */
-export function validateRemoveAttribute(
-  command: RemoveAttributeCommand,
-  schemaObj: schema
-): ValidationResult {
+export function validateRemoveAttribute(command: RemoveAttributeCommand, schemaObj: schema): ValidationResult {
   const located = locateChild(schemaObj, command.payload.attributeId, ATTRIBUTES, "remove attribute from");
   return located.valid ? { valid: true } : located;
 }
@@ -113,10 +117,7 @@ export function validateRemoveAttribute(
  * @param schemaObj - The schema
  * @returns The validation result
  */
-export function validateModifyAttribute(
-  command: ModifyAttributeCommand,
-  schemaObj: schema
-): ValidationResult {
+export function validateModifyAttribute(command: ModifyAttributeCommand, schemaObj: schema): ValidationResult {
   const located = locateChild(schemaObj, command.payload.attributeId, ATTRIBUTES, "modify attribute in");
   if (!located.valid) {
     return located;

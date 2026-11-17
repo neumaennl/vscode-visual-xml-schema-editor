@@ -4,14 +4,9 @@
     "moduleResolution": "nodenext",
     "target": "ES2024",
     "outDir": "out",
-    "lib": [
-      "ES2024"
-    ],
+    "lib": ["ES2024"],
     "sourceMap": true,
-    "types": [
-      "node",
-      "vscode"
-    ],
+    "types": ["node", "vscode"],
     "strict": true,
     "allowUnreachableCode": false,
     "noUncheckedIndexedAccess": true,
@@ -23,10 +18,7 @@
     "experimentalDecorators": true,
     "useDefineForClassFields": true
   },
-  "include": [
-    "src/**/*",
-    "shared/**/*"
-  ],
+  "include": ["src/**/*", "shared/**/*"],
   "exclude": [
     "node_modules",
     ".vscode-test",

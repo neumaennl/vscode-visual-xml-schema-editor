@@ -48,14 +48,10 @@ export interface CommandExecutionRuntimeFailure {
 }
 
 /** Union of the two failure result types. */
-export type CommandExecutionFailure =
-  | CommandExecutionValidationFailure
-  | CommandExecutionRuntimeFailure;
+export type CommandExecutionFailure = CommandExecutionValidationFailure | CommandExecutionRuntimeFailure;
 
 /** Discriminated union of all possible command execution outcomes. */
-export type CommandExecutionResult =
-  | CommandExecutionSuccess
-  | CommandExecutionFailure;
+export type CommandExecutionResult = CommandExecutionSuccess | CommandExecutionFailure;
 
 /**
  * `CommandProcessor` manages the execution of schema editing commands.
@@ -75,11 +71,7 @@ export class CommandProcessor {
    * @param executor - Command executor instance (optional, creates default if not provided)
    * @param modelManager - Schema model manager instance (optional, creates default if not provided)
    */
-  constructor(
-    validator?: CommandValidator,
-    executor?: CommandExecutor,
-    modelManager?: SchemaModelManager
-  ) {
+  constructor(validator?: CommandValidator, executor?: CommandExecutor, modelManager?: SchemaModelManager) {
     this.validator = validator ?? new CommandValidator();
     this.executor = executor ?? new CommandExecutor();
     this.modelManager = modelManager ?? new SchemaModelManager();
@@ -95,10 +87,7 @@ export class CommandProcessor {
    * @param currentXml - The current XML content of the schema
    * @returns Result containing success status, updated schema and XML, or error message
    */
-  public execute(
-    command: SchemaCommand,
-    currentXml: string
-  ): CommandExecutionResult {
+  public execute(command: SchemaCommand, currentXml: string): CommandExecutionResult {
     // Prevent concurrent executions
     if (this.isExecuting) {
       return {
@@ -116,7 +105,7 @@ export class CommandProcessor {
       // Step 1: Parse current XML to schema object using SchemaModelManager
       this.modelManager.loadFromXml(currentXml);
       const schemaObj = this.modelManager.getSchema();
-      
+
       if (!schemaObj) {
         throw new Error("Failed to load schema from XML");
       }
@@ -145,7 +134,7 @@ export class CommandProcessor {
 
       // Step 6: Validate the resulting XML can be parsed (round-trip validation)
       this.modelManager.loadFromXml(updatedXml);
-      
+
       // Restore the working schema to maintain consistency in modelManager state
       this.modelManager.setSchema(workingSchema);
 

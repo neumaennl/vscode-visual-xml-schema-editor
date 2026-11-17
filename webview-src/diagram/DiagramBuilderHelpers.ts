@@ -79,13 +79,11 @@ export function extractDocumentationAnnotations(
 /**
  * Extracts documentation from an annotation object in an XSD schema.
  * Concatenates multiple documentation elements with newlines.
- * 
+ *
  * @param annotation - The annotation of a component, or the annotations of the schema
  * @returns Concatenated documentation string or undefined if no documentation exists
  */
-export function extractDocumentation(
-  annotation?: annotationType | annotationType[]
-): string | undefined {
+export function extractDocumentation(annotation?: annotationType | annotationType[]): string | undefined {
   const annotations = annotationsOf(annotation);
   if (annotations.length === 0) {
     return undefined;
@@ -102,27 +100,23 @@ export function extractDocumentation(
 /**
  * Extracts occurrence constraints (`minOccurs`/`maxOccurs`) from a schema element.
  * Updates the diagram item with parsed occurrence values.
- * 
+ *
  * @param item - Diagram item to update with occurrence constraints
  * @param source - Source object with `minOccurs`/`maxOccurs` properties
  */
-export function extractOccurrenceConstraints(
-  item: DiagramItem,
-  source: ElementWithOccurrence
-): void {
+export function extractOccurrenceConstraints(item: DiagramItem, source: ElementWithOccurrence): void {
   if (source.minOccurs !== undefined) {
     item.minOccurrence = source.minOccurs;
   }
   if (source.maxOccurs !== undefined) {
-    item.maxOccurrence =
-      source.maxOccurs === "unbounded" ? -1 : source.maxOccurs;
+    item.maxOccurrence = source.maxOccurs === "unbounded" ? -1 : source.maxOccurs;
   }
 }
 
 /**
  * Extracts attributes from a complex type or extension definition.
  * Parses attribute properties and adds them to the diagram item.
- * 
+ *
  * @param item - Diagram item to add attributes to
  * @param source - Source object that may contain attribute definitions
  */
@@ -174,6 +168,7 @@ export function toRestrictionFacets(restrictions: DiagramItem["restrictions"]): 
   const whiteSpace = restrictions.whiteSpace;
   return {
     ...restrictions,
-    whiteSpace: whiteSpace === "preserve" || whiteSpace === "replace" || whiteSpace === "collapse" ? whiteSpace : undefined,
+    whiteSpace:
+      whiteSpace === "preserve" || whiteSpace === "replace" || whiteSpace === "collapse" ? whiteSpace : undefined,
   };
 }

@@ -30,10 +30,7 @@ describe("DiagramBuilderHelpers", () => {
 
     test("should extract multiple documentation entries", () => {
       const annotation = {
-        documentation: [
-          { value: "First line" },
-          { value: "Second line" },
-        ],
+        documentation: [{ value: "First line" }, { value: "Second line" }],
       };
       expect(extractDocumentation(annotation)).toBe("First line\nSecond line");
     });
@@ -55,9 +52,7 @@ describe("DiagramBuilderHelpers", () => {
         },
       ];
 
-      expect(extractDocumentation(annotations)).toBe(
-        "First annotation\nSecond entry\nThird entry"
-      );
+      expect(extractDocumentation(annotations)).toBe("First annotation\nSecond entry\nThird entry");
     });
 
     test("should preserve annotation/documentation structure and IDs for the properties panel", () => {
@@ -139,7 +134,7 @@ describe("DiagramBuilderHelpers", () => {
     test("should handle null/undefined source", () => {
       extractAttributes(item, null);
       expect(item.attributes).toHaveLength(0);
-      
+
       extractAttributes(item, undefined);
       expect(item.attributes).toHaveLength(0);
     });

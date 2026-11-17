@@ -100,11 +100,7 @@ export function renderTypeShape(
  * @param rect - Rectangle dimensions and position
  * @param group - Parent SVG group element
  */
-function renderGroupTypeIndicator(
-  item: DiagramItem,
-  rect: Rectangle,
-  group: SVGElement
-): void {
+function renderGroupTypeIndicator(item: DiagramItem, rect: Rectangle, group: SVGElement): void {
   const foregroundPen = `stroke:${item.getStyle().lineColor};stroke-width:1`;
   const foregroundBrush = `fill:${item.getStyle().foregroundColor}`;
   const centerX = rect.x + rect.width / 2;
@@ -116,23 +112,10 @@ function renderGroupTypeIndicator(
       const dotSize = 2;
       const spacing = dotSize * 3;
       // Draw horizontal line
-      svgLine(
-        group,
-        foregroundPen,
-        centerX - spacing * 2,
-        centerY,
-        centerX + spacing * 2,
-        centerY
-      );
+      svgLine(group, foregroundPen, centerX - spacing * 2, centerY, centerX + spacing * 2, centerY);
       // Draw dots
       for (let i = -1; i <= 1; i++) {
-        svgCircle(
-          group,
-          centerX + i * spacing,
-          centerY,
-          dotSize,
-          foregroundBrush
-        );
+        svgCircle(group, centerX + i * spacing, centerY, dotSize, foregroundBrush);
       }
       break;
     }
@@ -158,7 +141,13 @@ function renderGroupTypeIndicator(
  * @param stroke - Stroke style string
  * @param item - Diagram item being rendered
  */
-function renderPolygonWithShadow(group: SVGElement, points: Point[], fill: string, stroke: string, item: DiagramItem): void {
+function renderPolygonWithShadow(
+  group: SVGElement,
+  points: Point[],
+  fill: string,
+  stroke: string,
+  item: DiagramItem
+): void {
   if (item.maxOccurrence !== 1) {
     const shadowPoints = points.map((p) => ({ x: p.x + SHADOW_OFFSET, y: p.y + SHADOW_OFFSET }));
     svgPolygon(group, shadowPoints, fill, stroke);

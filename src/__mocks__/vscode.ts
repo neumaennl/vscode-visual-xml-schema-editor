@@ -6,56 +6,60 @@
 export const Uri = {
   file: vi.fn((path: string) => ({
     fsPath: path,
-    scheme: 'file',
+    scheme: "file",
     path,
-    toString: (): string => path
+    toString: (): string => path,
   })),
   parse: vi.fn((value: string) => ({
     fsPath: value,
-    scheme: 'file',
+    scheme: "file",
     path: value,
-    toString: (): string => value
+    toString: (): string => value,
   })),
   joinPath: vi.fn((_base: unknown, ...paths: string[]) => ({
     fsPath: paths.join("/"),
-    scheme: 'file',
+    scheme: "file",
     path: paths.join("/"),
-    toString: (): string => paths.join("/")
-  }))
+    toString: (): string => paths.join("/"),
+  })),
 };
 
 export const Disposable = {
   from: vi.fn(() => ({
-    dispose: vi.fn()
-  }))
+    dispose: vi.fn(),
+  })),
 };
 
-export const EventEmitter = vi.fn(class {
-  event = vi.fn();
-  fire = vi.fn();
-  dispose = vi.fn();
-});
+export const EventEmitter = vi.fn(
+  class {
+    event = vi.fn();
+    fire = vi.fn();
+    dispose = vi.fn();
+  }
+);
 
-export const CancellationTokenSource = vi.fn(class {
-  token = {};
-  cancel = vi.fn();
-  dispose = vi.fn();
-});
+export const CancellationTokenSource = vi.fn(
+  class {
+    token = {};
+    cancel = vi.fn();
+    dispose = vi.fn();
+  }
+);
 
 export const workspace = {
   openTextDocument: vi.fn(),
   onDidChangeTextDocument: vi.fn(() => ({ dispose: vi.fn() })),
   onDidChangeConfiguration: vi.fn(() => ({ dispose: vi.fn() })),
   getConfiguration: vi.fn(() => ({
-    get: vi.fn((key: string, defaultValue?: unknown) => defaultValue)
+    get: vi.fn((key: string, defaultValue?: unknown) => defaultValue),
   })),
   getWorkspaceFolder: vi.fn(),
   workspaceFolders: [],
   fs: {
     readFile: vi.fn(),
-    writeFile: vi.fn()
+    writeFile: vi.fn(),
   },
-  applyEdit: vi.fn()
+  applyEdit: vi.fn(),
 };
 
 export const window = {
@@ -64,30 +68,32 @@ export const window = {
   showInformationMessage: vi.fn(),
   showWarningMessage: vi.fn(),
   activeTextEditor: undefined,
-  createWebviewPanel: vi.fn()
+  createWebviewPanel: vi.fn(),
 };
 
 export const commands = {
   registerCommand: vi.fn(() => ({ dispose: vi.fn() })),
-  executeCommand: vi.fn()
+  executeCommand: vi.fn(),
 };
 
 export const languages = {
-  registerDocumentFormattingEditProvider: vi.fn(() => ({ dispose: vi.fn() }))
+  registerDocumentFormattingEditProvider: vi.fn(() => ({ dispose: vi.fn() })),
 };
 
 export const ViewColumn = {
   One: 1,
   Two: 2,
-  Three: 3
+  Three: 3,
 };
 
 export const WebviewPanelSerializer = {};
 
 export const CustomEditorProvider = {};
 
-export const WorkspaceEdit = vi.fn(class {
-  replace = vi.fn();
-});
+export const WorkspaceEdit = vi.fn(
+  class {
+    replace = vi.fn();
+  }
+);
 
 export const Range = vi.fn();

@@ -60,9 +60,15 @@ describe("isReferencedInContent", () => {
 
   test.each([
     ["a schema without content", ``],
-    ["a reference to another group", `<xs:complexType name="T"><xs:sequence><xs:group ref="H"/></xs:sequence></xs:complexType>`],
+    [
+      "a reference to another group",
+      `<xs:complexType name="T"><xs:sequence><xs:group ref="H"/></xs:sequence></xs:complexType>`,
+    ],
     ["a top-level element without inline complexType", `<xs:element name="e" type="xs:string"/>`],
-    ["a local element without inline complexType", `<xs:group name="H"><xs:all><xs:element name="a" type="xs:string"/></xs:all></xs:group>`],
+    [
+      "a local element without inline complexType",
+      `<xs:group name="H"><xs:all><xs:element name="a" type="xs:string"/></xs:all></xs:group>`,
+    ],
   ])("should find no group reference in %s", (_case, body) => {
     expect(isReferencedInContent(schemaWith(body), GROUP_G)).toBe(false);
   });
@@ -72,7 +78,9 @@ describe("isReferencedInContent", () => {
     expect(isReferencedInContent(created, GROUP_G)).toBe(false);
 
     const withCompositor = new schema();
-    withCompositor.complexType = [Object.assign(new topLevelComplexType(), { name: "T", sequence: new explicitGroup() })];
+    withCompositor.complexType = [
+      Object.assign(new topLevelComplexType(), { name: "T", sequence: new explicitGroup() }),
+    ];
     expect(isReferencedInContent(withCompositor, GROUP_G)).toBe(false);
   });
 

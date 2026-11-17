@@ -4,10 +4,7 @@
 
 import type { SchemaCommand } from "../../shared/types";
 import type { Diagram, DiagramItem } from "../diagram";
-import {
-  addPropertyWithElementToContainer,
-  createEditableField,
-} from "./propertiesPanelDom";
+import { addPropertyWithElementToContainer, createEditableField } from "./propertiesPanelDom";
 
 type CommandDispatcher = (command: SchemaCommand) => void;
 
@@ -60,20 +57,10 @@ export function renderSchemaNamespaceProperties(
   const namespacesContainer = document.createElement("div");
   namespacesContainer.className = "property-schema-namespaces";
 
-  const entries = Object.entries(namespacePrefixes).sort(([prefixA], [prefixB]) =>
-    prefixA.localeCompare(prefixB)
-  );
+  const entries = Object.entries(namespacePrefixes).sort(([prefixA], [prefixB]) => prefixA.localeCompare(prefixB));
   for (const [prefix, namespaceUri] of entries) {
     namespacesContainer.appendChild(
-      createNamespaceRow(
-        diagram,
-        prefix,
-        namespaceUri,
-        targetNamespace,
-        namespacePrefixes,
-        dispatchCommand,
-        rerender
-      )
+      createNamespaceRow(diagram, prefix, namespaceUri, targetNamespace, namespacePrefixes, dispatchCommand, rerender)
     );
   }
 
@@ -151,9 +138,7 @@ function createNamespaceRow(
       nextNamespacePrefixes[nextPrefix] = nextNamespaceUri;
     }
     const nextTargetNamespace =
-      targetNamespace && namespacePrefixes[prefix] === targetNamespace
-        ? nextNamespaceUri
-        : targetNamespace;
+      targetNamespace && namespacePrefixes[prefix] === targetNamespace ? nextNamespaceUri : targetNamespace;
     applySchemaNamespaceDraftState(
       diagram,
       nextTargetNamespace,
@@ -185,10 +170,7 @@ function createNamespaceRow(
   removeButton.addEventListener("click", () => {
     const previousNamespacePrefixes = { ...namespacePrefixes };
     const { [prefix]: _removed, ...nextNamespacePrefixes } = namespacePrefixes;
-    const nextTargetNamespace =
-      targetNamespace && namespacePrefixes[prefix] === targetNamespace
-        ? ""
-        : targetNamespace;
+    const nextTargetNamespace = targetNamespace && namespacePrefixes[prefix] === targetNamespace ? "" : targetNamespace;
     applySchemaNamespaceDraftState(
       diagram,
       nextTargetNamespace,
@@ -227,9 +209,7 @@ function applySchemaNamespaceDraftState(
   const normalizedTargetNamespace = targetNamespace.trim();
   if (
     normalizedTargetNamespace &&
-    !Object.values(normalizedNamespacePrefixes).some(
-      (namespaceUri) => namespaceUri === normalizedTargetNamespace
-    )
+    !Object.values(normalizedNamespacePrefixes).some((namespaceUri) => namespaceUri === normalizedTargetNamespace)
   ) {
     rerender();
     return;
@@ -237,10 +217,7 @@ function applySchemaNamespaceDraftState(
 
   diagram.schemaTargetNamespace = normalizedTargetNamespace;
   diagram.schemaNamespacePrefixes = normalizedNamespacePrefixes;
-  const nextSchemaPrefix = findTargetNamespacePrefix(
-    normalizedNamespacePrefixes,
-    normalizedTargetNamespace
-  );
+  const nextSchemaPrefix = findTargetNamespacePrefix(normalizedNamespacePrefixes, normalizedTargetNamespace);
   diagram.currentSchemaPrefix = nextSchemaPrefix;
 
   dispatchCommand({
@@ -271,11 +248,7 @@ function syncTargetNamespaceWithDeclarations(
   namespacePrefixes: Record<string, string>,
   preferredPrefix?: string
 ): Record<string, string> {
-  const previousPrefix = findTargetNamespacePrefix(
-    namespacePrefixes,
-    previousTargetNamespace,
-    preferredPrefix
-  );
+  const previousPrefix = findTargetNamespacePrefix(namespacePrefixes, previousTargetNamespace, preferredPrefix);
   if (previousPrefix !== undefined) {
     if (nextTargetNamespace) {
       return { ...namespacePrefixes, [previousPrefix]: nextTargetNamespace };
@@ -311,15 +284,10 @@ function findTargetNamespacePrefix(
     return undefined;
   }
   const normalizedPreferredPrefix = preferredPrefix?.trim();
-  if (
-    normalizedPreferredPrefix &&
-    namespacePrefixes[normalizedPreferredPrefix] === targetNamespace
-  ) {
+  if (normalizedPreferredPrefix && namespacePrefixes[normalizedPreferredPrefix] === targetNamespace) {
     return normalizedPreferredPrefix;
   }
-  return Object.entries(namespacePrefixes).find(
-    ([, namespaceUri]) => namespaceUri === targetNamespace
-  )?.[0];
+  return Object.entries(namespacePrefixes).find(([, namespaceUri]) => namespaceUri === targetNamespace)?.[0];
 }
 
 /**
@@ -343,9 +311,7 @@ function generateUniqueNamespacePrefix(namespacePrefixes: Record<string, string>
  * @param namespacePrefixes - The namespace declarations
  * @returns The normalized declarations
  */
-function normalizeNamespacePrefixes(
-  namespacePrefixes: NamespacePrefixes
-): NamespacePrefixes {
+function normalizeNamespacePrefixes(namespacePrefixes: NamespacePrefixes): NamespacePrefixes {
   const normalized: NamespacePrefixes = {};
   for (const [prefix, namespaceUri] of Object.entries(namespacePrefixes)) {
     const normalizedPrefix = prefix.trim();

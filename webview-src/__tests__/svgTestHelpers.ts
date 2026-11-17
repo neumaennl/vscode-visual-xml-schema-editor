@@ -14,7 +14,7 @@ export interface ElementWithGetBBox extends Element {
 /**
  * Mock `getBBox` for SVG elements in jsdom environment.
  * jsdom doesn't implement SVG layout calculations, so we need to mock this.
- * 
+ *
  * This mock approximates text width as 6 pixels per character and height as 10 pixels.
  * These values are reasonable approximations for testing purposes.
  */

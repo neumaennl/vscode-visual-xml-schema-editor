@@ -49,31 +49,31 @@ The provider sends through `safePostMessage()`, which catches and logs errors of
 
 **Webview to extension**
 
-| Message | Data | Sent when |
-|---|---|---|
+| Message          | Data                                        | Sent when                                                                            |
+| ---------------- | ------------------------------------------- | ------------------------------------------------------------------------------------ |
 | `executeCommand` | `SchemaCommand` (see [Commands](#commands)) | The user drops a palette item or edits or deletes something in the properties panel. |
 
 **Extension to webview**
 
-| Message | Data | Sent when |
-|---|---|---|
-| `updateSchema` | `schema` - the whole parsed document | The editor opens, and after every change of the document, including changes made by commands, undo and redo, and edits outside the visual editor. |
-| `updateDiagramOptions` | `DiagramOptions` - `showDocumentation`, `alwaysShowOccurrence`, `showType` | The editor opens, and a setting in `visualXmlSchemaEditor.*` changes. |
-| `commandResult` | `CommandResponse` - `success`, `error?`, `data?` | A command was applied to the document (`success: true`, no `data`), or its validation failed (`success: false` with `error`). |
-| `error` | `ErrorData` - `message`, `code?`, `stack?` | The document cannot be parsed (only `message`), or a command fails at runtime or cannot be applied (`code: "COMMAND_EXECUTION_ERROR"`, mostly with `stack`). |
-| `schemaModified` | `schema` | Never. The type exists, but the extension does not send it and the webview does not handle it (see [Known issues](known-issues.md#message-schemamodified-is-unused)). |
+| Message                | Data                                                                       | Sent when                                                                                                                                                             |
+| ---------------------- | -------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `updateSchema`         | `schema` - the whole parsed document                                       | The editor opens, and after every change of the document, including changes made by commands, undo and redo, and edits outside the visual editor.                     |
+| `updateDiagramOptions` | `DiagramOptions` - `showDocumentation`, `alwaysShowOccurrence`, `showType` | The editor opens, and a setting in `visualXmlSchemaEditor.*` changes.                                                                                                 |
+| `commandResult`        | `CommandResponse` - `success`, `error?`, `data?`                           | A command was applied to the document (`success: true`, no `data`), or its validation failed (`success: false` with `error`).                                         |
+| `error`                | `ErrorData` - `message`, `code?`, `stack?`                                 | The document cannot be parsed (only `message`), or a command fails at runtime or cannot be applied (`code: "COMMAND_EXECUTION_ERROR"`, mostly with `stack`).          |
+| `schemaModified`       | `schema`                                                                   | Never. The type exists, but the extension does not send it and the webview does not handle it (see [Known issues](known-issues.md#message-schemamodified-is-unused)). |
 
 # Sequences
 
-| Situation | Messages to the webview, in order |
-|---|---|
-| Opening the editor | `updateSchema` (or `error` if the document does not parse), then `updateDiagramOptions` |
-| Successful command | `updateSchema`, then `commandResult` with `success: true` |
-| Validation failure | `commandResult` with `success: false` |
-| Runtime failure | `error` with code `COMMAND_EXECUTION_ERROR` |
-| The edit is rejected by VS Code (`applyEdit` returns `false`) | `error` with code `COMMAND_EXECUTION_ERROR` |
-| Edit outside the visual editor, undo, redo | `updateSchema` (or `error`) |
-| Settings change | `updateDiagramOptions` |
+| Situation                                                     | Messages to the webview, in order                                                       |
+| ------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Opening the editor                                            | `updateSchema` (or `error` if the document does not parse), then `updateDiagramOptions` |
+| Successful command                                            | `updateSchema`, then `commandResult` with `success: true`                               |
+| Validation failure                                            | `commandResult` with `success: false`                                                   |
+| Runtime failure                                               | `error` with code `COMMAND_EXECUTION_ERROR`                                             |
+| The edit is rejected by VS Code (`applyEdit` returns `false`) | `error` with code `COMMAND_EXECUTION_ERROR`                                             |
+| Edit outside the visual editor, undo, redo                    | `updateSchema` (or `error`)                                                             |
+| Settings change                                               | `updateDiagramOptions`                                                                  |
 
 After a successful command, `updateSchema` arrives before `commandResult`: applying the edit fires the document change event, whose handler sends the new schema, and the provider sends the result only after `applyEdit` has returned. The webview does not depend on the order. It re-renders on `updateSchema`, and on `commandResult` it only hides or shows the notification (see [Editor](editor.md#schemaeditorapp)).[^webview-main]
 

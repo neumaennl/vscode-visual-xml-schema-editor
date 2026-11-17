@@ -17,7 +17,10 @@ function exited(status: number, stdout = ""): ReturnType<typeof spawnSync> {
   return { status, stdout } as ReturnType<typeof spawnSync>;
 }
 
-const ORIGINAL_PLATFORM = Object.getOwnPropertyDescriptor(process, "platform") ?? { value: process.platform, configurable: true };
+const ORIGINAL_PLATFORM = Object.getOwnPropertyDescriptor(process, "platform") ?? {
+  value: process.platform,
+  configurable: true,
+};
 
 /**
  * Makes `process.platform` return another platform until the end of the test.
@@ -52,7 +55,11 @@ describe("node-setup", () => {
       const folder = installNode("24.15.0");
 
       expect(folder).toBe("/home/user/.nvm/versions/node/v24.15.0/bin");
-      expect(spawnSync).toHaveBeenCalledWith("bash", ["-c", expect.stringContaining("nvm install"), "bash", "24.15.0"], expect.anything());
+      expect(spawnSync).toHaveBeenCalledWith(
+        "bash",
+        ["-c", expect.stringContaining("nvm install"), "bash", "24.15.0"],
+        expect.anything()
+      );
     });
 
     test("should return undefined if nvm fails", () => {
@@ -66,7 +73,9 @@ describe("node-setup", () => {
     test("should install the version with nvm-windows and return its folder under nvm root", () => {
       stubPlatform("win32");
       vi.stubEnv("NVM_HOME", "C:\\nvm");
-      vi.mocked(spawnSync).mockReturnValueOnce(exited(0)).mockReturnValueOnce(exited(0, "\nCurrent Root: D:\\node-versions\n"));
+      vi.mocked(spawnSync)
+        .mockReturnValueOnce(exited(0))
+        .mockReturnValueOnce(exited(0, "\nCurrent Root: D:\\node-versions\n"));
       vi.mocked(existsSync).mockReturnValue(true);
 
       const folder = installNode("24.15.0");
@@ -87,7 +96,9 @@ describe("node-setup", () => {
     test("should install the version with fnm and return the folder of its node", () => {
       stubPlatform("linux");
       vi.stubEnv("FNM_DIR", "/home/user/.fnm");
-      vi.mocked(spawnSync).mockReturnValueOnce(exited(0)).mockReturnValueOnce(exited(0, "/home/user/.fnm/node-versions/v24.15.0/installation/bin/node\n"));
+      vi.mocked(spawnSync)
+        .mockReturnValueOnce(exited(0))
+        .mockReturnValueOnce(exited(0, "/home/user/.fnm/node-versions/v24.15.0/installation/bin/node\n"));
 
       expect(installNode("24.15.0")).toBe("/home/user/.fnm/node-versions/v24.15.0/installation/bin");
       expect(spawnSync).toHaveBeenNthCalledWith(1, "fnm", ["install", "24.15.0"], { stdio: "inherit" });

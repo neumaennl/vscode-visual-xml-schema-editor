@@ -31,10 +31,7 @@ import type {
   ModifyIncludeCommand,
   ModifySchemaNamespacesCommand,
 } from "../../shared/types.js";
-import {
-  importType,
-  includeType
-} from "../../shared/types.js";
+import { importType, includeType } from "../../shared/types.js";
 import { parseSchemaId } from "../../shared/idStrategy.js";
 import { assumeValidated } from "./assumeValidated.js";
 import { removeFrom } from "./nodeProperties.js";
@@ -107,17 +104,14 @@ function removePrefixForNamespace(namespaceUri: string, schemaObj: schema): void
  * @param command - The `addImport` command to execute
  * @param schemaObj - The schema object to modify
  */
-export function executeAddImport(
-  command: AddImportCommand,
-  schemaObj: schema
-): void {
+export function executeAddImport(command: AddImportCommand, schemaObj: schema): void {
   const namespace = command.payload.namespace.trim();
   const schemaLocation = command.payload.schemaLocation.trim();
   const prefix = command.payload.prefix?.trim();
   const newImport = new importType();
   newImport.namespace = namespace;
   newImport.schemaLocation = schemaLocation;
-  schemaObj.import_ = [...schemaObj.import_ ?? [], newImport];
+  schemaObj.import_ = [...(schemaObj.import_ ?? []), newImport];
 
   // Always ensure a prefix is registered so types can be referenced
   const registeredPrefix = prefix ?? generateUniquePrefix(schemaObj);
@@ -137,10 +131,7 @@ export function executeAddImport(
  * @param command - The `removeImport` command to execute
  * @param schemaObj - The schema object to modify
  */
-export function executeRemoveImport(
-  command: RemoveImportCommand,
-  schemaObj: schema
-): void {
+export function executeRemoveImport(command: RemoveImportCommand, schemaObj: schema): void {
   const { importId } = command.payload;
   const removed = findModuleEntry(importId, schemaObj.import_, "Import");
   removeFrom(schemaObj, "import_", (entry) => entry === removed, `Import ${importId}`);
@@ -170,10 +161,7 @@ export function executeRemoveImport(
  * @param command - The `modifyImport` command to execute
  * @param schemaObj - The schema object to modify
  */
-export function executeModifyImport(
-  command: ModifyImportCommand,
-  schemaObj: schema
-): void {
+export function executeModifyImport(command: ModifyImportCommand, schemaObj: schema): void {
   const { importId, oldPrefix } = command.payload;
   const namespace = command.payload.namespace?.trim();
   const schemaLocation = command.payload.schemaLocation?.trim();
@@ -226,14 +214,11 @@ export function executeModifyImport(
  * @param command - The `addInclude` command to execute
  * @param schemaObj - The schema object to modify
  */
-export function executeAddInclude(
-  command: AddIncludeCommand,
-  schemaObj: schema
-): void {
+export function executeAddInclude(command: AddIncludeCommand, schemaObj: schema): void {
   const schemaLocation = command.payload.schemaLocation.trim();
   const newInclude = new includeType();
   newInclude.schemaLocation = schemaLocation;
-  schemaObj.include = [...schemaObj.include ?? [], newInclude];
+  schemaObj.include = [...(schemaObj.include ?? []), newInclude];
 }
 
 /**
@@ -245,10 +230,7 @@ export function executeAddInclude(
  * @param command - The `removeInclude` command to execute
  * @param schemaObj - The schema object to modify
  */
-export function executeRemoveInclude(
-  command: RemoveIncludeCommand,
-  schemaObj: schema
-): void {
+export function executeRemoveInclude(command: RemoveIncludeCommand, schemaObj: schema): void {
   const { includeId } = command.payload;
   const removed = findModuleEntry(includeId, schemaObj.include, "Include");
   removeFrom(schemaObj, "include", (entry) => entry === removed, `Include ${includeId}`);
@@ -263,10 +245,7 @@ export function executeRemoveInclude(
  * @param command - The `modifyInclude` command to execute
  * @param schemaObj - The schema object to modify
  */
-export function executeModifyInclude(
-  command: ModifyIncludeCommand,
-  schemaObj: schema
-): void {
+export function executeModifyInclude(command: ModifyIncludeCommand, schemaObj: schema): void {
   const { includeId } = command.payload;
   const schemaLocation = command.payload.schemaLocation.trim();
   findModuleEntry(includeId, schemaObj.include, "Include").schemaLocation = schemaLocation;
@@ -278,9 +257,7 @@ export function executeModifyInclude(
  * @param namespacePrefixes - The declarations, prefix → namespace URI
  * @returns The trimmed declarations
  */
-function normalizeNamespacePrefixes(
-  namespacePrefixes: Record<string, string>
-): Record<string, string> {
+function normalizeNamespacePrefixes(namespacePrefixes: Record<string, string>): Record<string, string> {
   const normalized: Record<string, string> = {};
   for (const [prefix, namespaceUri] of Object.entries(namespacePrefixes)) {
     const normalizedPrefix = prefix.trim();
@@ -316,9 +293,7 @@ function detectPrefixRenames(
   for (const oldPrefix of removedPrefixes) {
     const previousNamespaceUri = previousNamespacePrefixes[oldPrefix];
     const candidatePrefix = addedPrefixes.find(
-      (newPrefix) =>
-        !usedAddedPrefixes.has(newPrefix) &&
-        nextNamespacePrefixes[newPrefix] === previousNamespaceUri
+      (newPrefix) => !usedAddedPrefixes.has(newPrefix) && nextNamespacePrefixes[newPrefix] === previousNamespaceUri
     );
     if (!candidatePrefix) {
       continue;
@@ -336,10 +311,7 @@ function detectPrefixRenames(
  * @param command - The command
  * @param schemaObj - The schema
  */
-export function executeModifySchemaNamespaces(
-  command: ModifySchemaNamespacesCommand,
-  schemaObj: schema
-): void {
+export function executeModifySchemaNamespaces(command: ModifySchemaNamespacesCommand, schemaObj: schema): void {
   const normalizedNamespacePrefixes = normalizeNamespacePrefixes(command.payload.namespacePrefixes);
   const previousNamespacePrefixes = normalizeNamespacePrefixes(
     command.payload.previousNamespacePrefixes ?? schemaObj._namespacePrefixes ?? {}

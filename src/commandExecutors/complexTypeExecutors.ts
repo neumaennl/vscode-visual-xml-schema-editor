@@ -27,7 +27,7 @@ import {
   complexRestrictionType,
   extensionType,
   explicitGroup,
-  all
+  all,
 } from "../../shared/types.js";
 import { getContentContainer, getContentDerivation, isSchemaRoot } from "../../shared/schemaUtils.js";
 import { assumeValidated } from "./assumeValidated.js";
@@ -70,12 +70,17 @@ interface ComplexTypeContentState {
  * @param schemaObj - The schema object to modify
  * @throws An {@link Error} if the parent element is not found (anonymous case)
  */
-export function executeAddComplexType(
-  command: AddComplexTypeCommand,
-  schemaObj: schema
-): void {
-  const { parentId, typeName, contentModel, abstract: isAbstract, baseType, derivationKind, mixed, documentation } =
-    command.payload;
+export function executeAddComplexType(command: AddComplexTypeCommand, schemaObj: schema): void {
+  const {
+    parentId,
+    typeName,
+    contentModel,
+    abstract: isAbstract,
+    baseType,
+    derivationKind,
+    mixed,
+    documentation,
+  } = command.payload;
   const ct = isSchemaRoot(parentId)
     ? assignDefined(new topLevelComplexType(), { name: assumeValidated(typeName, "Type name"), abstract: isAbstract })
     : new localComplexType();
@@ -96,10 +101,7 @@ export function executeAddComplexType(
  * @param schemaObj - The schema object to modify
  * @throws An {@link Error} if the type or its parent is not found
  */
-export function executeRemoveComplexType(
-  command: RemoveComplexTypeCommand,
-  schemaObj: schema
-): void {
+export function executeRemoveComplexType(command: RemoveComplexTypeCommand, schemaObj: schema): void {
   removeType(schemaObj, command.payload.typeId, "complexType");
 }
 
@@ -112,17 +114,9 @@ export function executeRemoveComplexType(
  * @param schemaObj - The schema object to modify
  * @throws An {@link Error} if the type or its parent is not found
  */
-export function executeModifyComplexType(
-  command: ModifyComplexTypeCommand,
-  schemaObj: schema
-): void {
+export function executeModifyComplexType(command: ModifyComplexTypeCommand, schemaObj: schema): void {
   const { typeId, typeName, abstract: isAbstract, ...updates } = command.payload;
-  const { type, topLevel } = locateModifiedType(
-    schemaObj,
-    typeId,
-    "complexType",
-    typeName
-  );
+  const { type, topLevel } = locateModifiedType(schemaObj, typeId, "complexType", typeName);
   // Only top-level complex types can be abstract
   if (topLevel) {
     assignDefined(type as topLevelComplexType, { abstract: isAbstract });
@@ -273,8 +267,7 @@ function captureContentState(ct: ComplexTypeHolder): ComplexTypeContentState {
   const source = getContentContainer<ComplexTypeContentState>(ct);
   // Copy properties because the source object will be mutated when rebuilding
   // derivation wrappers in executeModifyComplexType.
-  const { sequence, choice, all, group, attribute, attributeGroup, anyAttribute } =
-    source;
+  const { sequence, choice, all, group, attribute, attributeGroup, anyAttribute } = source;
   return { sequence, choice, all, group, attribute, attributeGroup, anyAttribute };
 }
 

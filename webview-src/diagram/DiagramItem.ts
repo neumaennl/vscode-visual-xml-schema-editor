@@ -13,11 +13,7 @@ import type {
   Rectangle,
 } from "./DiagramTypes";
 import type { DiagramStyle } from "./DiagramTypes";
-import {
-  DiagramItemGroupType,
-  defaultDiagramStyle,
-  enclosingRectangle,
-} from "./DiagramTypes";
+import { DiagramItemGroupType, defaultDiagramStyle, enclosingRectangle } from "./DiagramTypes";
 import type { Diagram } from "./Diagram";
 
 /**
@@ -109,12 +105,7 @@ export class DiagramItem {
    * @param itemType - The kind of item
    * @param diagram - The diagram that the item belongs to, if any
    */
-  constructor(
-    id: string,
-    name: string,
-    itemType: DiagramItemType,
-    diagram: Diagram | null = null
-  ) {
+  constructor(id: string, name: string, itemType: DiagramItemType, diagram: Diagram | null = null) {
     this.id = id;
     this.name = name;
     this.itemType = itemType;

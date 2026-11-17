@@ -22,13 +22,28 @@ export function localElementPlaces(localElement: string): Array<[string, string]
     return `<xs:complexType name="Derived"><xs:complexContent><xs:restriction base="xs:anyType">${content}</xs:restriction></xs:complexContent></xs:complexType>`;
   };
   const places: Array<[string, string]> = [
-    ["the sequence of a complexType", `<xs:complexType name="T"><xs:sequence>${localElement}</xs:sequence></xs:complexType>`],
+    [
+      "the sequence of a complexType",
+      `<xs:complexType name="T"><xs:sequence>${localElement}</xs:sequence></xs:complexType>`,
+    ],
     ["the choice of a complexType", `<xs:complexType name="T"><xs:choice>${localElement}</xs:choice></xs:complexType>`],
     ["the all of a complexType", `<xs:complexType name="T"><xs:all>${localElement}</xs:all></xs:complexType>`],
-    ["a choice nested in a sequence", `<xs:complexType name="T"><xs:sequence><xs:choice>${localElement}</xs:choice></xs:sequence></xs:complexType>`],
-    ["a sequence nested in a choice", `<xs:complexType name="T"><xs:choice><xs:sequence>${localElement}</xs:sequence></xs:choice></xs:complexType>`],
-    ["a top-level element", `<xs:element name="root"><xs:complexType><xs:sequence>${localElement}</xs:sequence></xs:complexType></xs:element>`],
-    ["the sequence of a named group", `<xs:group name="Combined"><xs:sequence>${localElement}</xs:sequence></xs:group>`],
+    [
+      "a choice nested in a sequence",
+      `<xs:complexType name="T"><xs:sequence><xs:choice>${localElement}</xs:choice></xs:sequence></xs:complexType>`,
+    ],
+    [
+      "a sequence nested in a choice",
+      `<xs:complexType name="T"><xs:choice><xs:sequence>${localElement}</xs:sequence></xs:choice></xs:complexType>`,
+    ],
+    [
+      "a top-level element",
+      `<xs:element name="root"><xs:complexType><xs:sequence>${localElement}</xs:sequence></xs:complexType></xs:element>`,
+    ],
+    [
+      "the sequence of a named group",
+      `<xs:group name="Combined"><xs:sequence>${localElement}</xs:sequence></xs:group>`,
+    ],
     ["the all of a named group", `<xs:group name="Combined"><xs:all>${localElement}</xs:all></xs:group>`],
   ];
   for (const derivation of ["extension", "restriction"]) {

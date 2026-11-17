@@ -5,10 +5,7 @@
  * Success-path assertions are made against the unmarshalled schema object.
  */
 
-import type {
-  annotationType,
-  schema,
-} from "../../shared/types.js";
+import type { annotationType, schema } from "../../shared/types.js";
 import {
   COMPLEX_TYPES_WITH_ANY_ATTRIBUTE,
   SCHEMA_WITH_GROUP,
@@ -72,17 +69,25 @@ describe("Integration: Group pipeline", () => {
     });
 
     test("should return validation error for duplicate group name", () => {
-      runCommandExpectValidationFailure(SCHEMA_WITH_GROUP, {
-        type: "addGroup",
-        payload: { groupName: "ContactGroup", contentModel: "sequence" },
-      }, "Group name already exists: ContactGroup");
+      runCommandExpectValidationFailure(
+        SCHEMA_WITH_GROUP,
+        {
+          type: "addGroup",
+          payload: { groupName: "ContactGroup", contentModel: "sequence" },
+        },
+        "Group name already exists: ContactGroup"
+      );
     });
 
     test("should return validation error when group name is invalid", () => {
-      runCommandExpectValidationFailure(emptySchemaXml(), {
-        type: "addGroup",
-        payload: { groupName: "bad group", contentModel: "sequence" },
-      }, "Group name must be a valid XML name");
+      runCommandExpectValidationFailure(
+        emptySchemaXml(),
+        {
+          type: "addGroup",
+          payload: { groupName: "bad group", contentModel: "sequence" },
+        },
+        "Group name must be a valid XML name"
+      );
     });
   });
 
@@ -100,10 +105,14 @@ describe("Integration: Group pipeline", () => {
     });
 
     test("should return validation error when group ID does not exist", () => {
-      runCommandExpectValidationFailure(SCHEMA_WITH_GROUP, {
-        type: "removeGroup",
-        payload: { groupId: "/group:NoSuchGroup" },
-      }, "Group not found: /group:NoSuchGroup");
+      runCommandExpectValidationFailure(
+        SCHEMA_WITH_GROUP,
+        {
+          type: "removeGroup",
+          payload: { groupId: "/group:NoSuchGroup" },
+        },
+        "Group not found: /group:NoSuchGroup"
+      );
     });
 
     test("should remove a compositor nested in another compositor", () => {
@@ -147,10 +156,14 @@ describe("Integration: Group pipeline", () => {
     });
 
     test("should return validation error when group ID does not exist", () => {
-      runCommandExpectValidationFailure(SCHEMA_WITH_GROUP, {
-        type: "modifyGroup",
-        payload: { groupId: "/group:Ghost", groupName: "Other" },
-      }, "Group not found: /group:Ghost");
+      runCommandExpectValidationFailure(
+        SCHEMA_WITH_GROUP,
+        {
+          type: "modifyGroup",
+          payload: { groupId: "/group:Ghost", groupName: "Other" },
+        },
+        "Group not found: /group:Ghost"
+      );
     });
 
     test("should return validation error for occurrences on the compositor of a group definition", () => {
@@ -178,26 +191,40 @@ describe("Integration: AttributeGroup pipeline", () => {
     });
 
     test("should return validation error for duplicate attributeGroup name", () => {
-      runCommandExpectValidationFailure(SCHEMA_WITH_ATTRIBUTEGROUP, {
-        type: "addAttributeGroup",
-        payload: { groupName: "CommonAttrs" },
-      }, "Attribute group name already exists: CommonAttrs");
+      runCommandExpectValidationFailure(
+        SCHEMA_WITH_ATTRIBUTEGROUP,
+        {
+          type: "addAttributeGroup",
+          payload: { groupName: "CommonAttrs" },
+        },
+        "Attribute group name already exists: CommonAttrs"
+      );
     });
 
     test("should return validation error when group name is invalid", () => {
-      runCommandExpectValidationFailure(emptySchemaXml(), {
-        type: "addAttributeGroup",
-        payload: { groupName: "bad name" },
-      }, "Attribute group name must be a valid XML name");
+      runCommandExpectValidationFailure(
+        emptySchemaXml(),
+        {
+          type: "addAttributeGroup",
+          payload: { groupName: "bad name" },
+        },
+        "Attribute group name must be a valid XML name"
+      );
     });
 
-    test.each(COMPLEX_TYPES_WITH_ANY_ATTRIBUTE)("should write a new reference of %s before xs:anyAttribute", (_, complexType) => {
-      const updatedXml = runCommandExpectSuccess(schemaXmlWith(`<xs:attributeGroup name="CommonAttrs"/>\n${complexType}`), {
-        type: "addAttributeGroup",
-        payload: { ref: "CommonAttrs", parentId: "/complexType:T" },
-      });
-      expectLinesInOrder(updatedXml, [`<xs:attributeGroup ref="CommonAttrs"/>`, "<xs:anyAttribute/>"]);
-    });
+    test.each(COMPLEX_TYPES_WITH_ANY_ATTRIBUTE)(
+      "should write a new reference of %s before xs:anyAttribute",
+      (_, complexType) => {
+        const updatedXml = runCommandExpectSuccess(
+          schemaXmlWith(`<xs:attributeGroup name="CommonAttrs"/>\n${complexType}`),
+          {
+            type: "addAttributeGroup",
+            payload: { ref: "CommonAttrs", parentId: "/complexType:T" },
+          }
+        );
+        expectLinesInOrder(updatedXml, [`<xs:attributeGroup ref="CommonAttrs"/>`, "<xs:anyAttribute/>"]);
+      }
+    );
   });
 
   describe("removeAttributeGroup", () => {
@@ -212,10 +239,14 @@ describe("Integration: AttributeGroup pipeline", () => {
     });
 
     test("should return validation error when group ID does not exist", () => {
-      runCommandExpectValidationFailure(SCHEMA_WITH_ATTRIBUTEGROUP, {
-        type: "removeAttributeGroup",
-        payload: { groupId: "/attributeGroup:Missing" },
-      }, "Attribute group not found: /attributeGroup:Missing");
+      runCommandExpectValidationFailure(
+        SCHEMA_WITH_ATTRIBUTEGROUP,
+        {
+          type: "removeAttributeGroup",
+          payload: { groupId: "/attributeGroup:Missing" },
+        },
+        "Attribute group not found: /attributeGroup:Missing"
+      );
     });
   });
 
@@ -234,10 +265,14 @@ describe("Integration: AttributeGroup pipeline", () => {
     });
 
     test("should return validation error when group ID does not exist", () => {
-      runCommandExpectValidationFailure(SCHEMA_WITH_ATTRIBUTEGROUP, {
-        type: "modifyAttributeGroup",
-        payload: { groupId: "/attributeGroup:NoSuch", groupName: "Other" },
-      }, "Attribute group not found: /attributeGroup:NoSuch");
+      runCommandExpectValidationFailure(
+        SCHEMA_WITH_ATTRIBUTEGROUP,
+        {
+          type: "modifyAttributeGroup",
+          payload: { groupId: "/attributeGroup:NoSuch", groupName: "Other" },
+        },
+        "Attribute group not found: /attributeGroup:NoSuch"
+      );
     });
   });
 
@@ -254,17 +289,25 @@ describe("Integration: AttributeGroup pipeline", () => {
     });
 
     test("should remove a group reference from an anonymous complex type", () => {
-      const result = runCommandExpectSuccessSchema(GROUP_PARTICLES, { type: "removeGroup", payload: { groupId: PERSON_GROUP_REF_ID } });
+      const result = runCommandExpectSuccessSchema(GROUP_PARTICLES, {
+        type: "removeGroup",
+        payload: { groupId: PERSON_GROUP_REF_ID },
+      });
 
       expect(result.element?.find((el) => el.name === "person")?.complexType?.group).toBeUndefined();
     });
 
     test.each([
-      { node: "a group definition", groupId: "/group:Contact", read: (s: schema): annotationType | undefined => s.group?.[0]?.annotation },
+      {
+        node: "a group definition",
+        groupId: "/group:Contact",
+        read: (s: schema): annotationType | undefined => s.group?.[0]?.annotation,
+      },
       {
         node: "a group reference in an anonymous complex type",
         groupId: PERSON_GROUP_REF_ID,
-        read: (s: schema): annotationType | undefined => s.element?.find((el) => el.name === "person")?.complexType?.group?.annotation,
+        read: (s: schema): annotationType | undefined =>
+          s.element?.find((el) => el.name === "person")?.complexType?.group?.annotation,
       },
       {
         node: "a compositor",
@@ -272,7 +315,10 @@ describe("Integration: AttributeGroup pipeline", () => {
         read: (s: schema): annotationType | undefined => s.complexType?.[0]?.sequence?.annotation,
       },
     ])("should replace the documentation of $node", ({ groupId, read }) => {
-      const result = runCommandExpectSuccessSchema(GROUP_PARTICLES, { type: "modifyGroup", payload: { groupId, documentation: "New" } });
+      const result = runCommandExpectSuccessSchema(GROUP_PARTICLES, {
+        type: "modifyGroup",
+        payload: { groupId, documentation: "New" },
+      });
 
       expect(read(result)?.documentation?.map((doc) => doc.value)).toEqual(["New"]);
     });
@@ -287,7 +333,10 @@ describe("Integration: AttributeGroup pipeline", () => {
     });
 
     test("should remove the compositor of a complexContent restriction", () => {
-      const result = runCommandExpectSuccessSchema(GROUP_PARTICLES, { type: "removeGroup", payload: { groupId: "/complexType:Restricted/group:sequence[0]" } });
+      const result = runCommandExpectSuccessSchema(GROUP_PARTICLES, {
+        type: "removeGroup",
+        payload: { groupId: "/complexType:Restricted/group:sequence[0]" },
+      });
 
       expect(result.complexType?.[1]?.complexContent?.restriction?.sequence).toBeUndefined();
     });

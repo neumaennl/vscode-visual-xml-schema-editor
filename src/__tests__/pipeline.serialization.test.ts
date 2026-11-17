@@ -39,7 +39,7 @@ describe("Integration: namespaces after serialization", () => {
     const xml = runCommandExpectSuccess(TARGET_NAMESPACE_AS_DEFAULT, addElementOfType("myType"));
 
     expect(xml).toContain(
-      '<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="urn:example" targetNamespace="urn:example">',
+      '<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="urn:example" targetNamespace="urn:example">'
     );
     expect(xml).toMatch(/<xs:element [^>]*name="root"/);
     expect(xml).toMatch(/<xs:element [^>]*name="added"/);
@@ -50,7 +50,7 @@ describe("Integration: namespaces after serialization", () => {
     const xml = runCommandExpectSuccess(XML_SCHEMA_AS_DEFAULT, addElementOfType("t:myType"));
 
     expect(xml).toContain(
-      '<schema xmlns="http://www.w3.org/2001/XMLSchema" xmlns:t="urn:example" targetNamespace="urn:example">',
+      '<schema xmlns="http://www.w3.org/2001/XMLSchema" xmlns:t="urn:example" targetNamespace="urn:example">'
     );
     expect(xml).toMatch(/<element [^>]*name="added"/);
     expect(xml).not.toContain("xs:");

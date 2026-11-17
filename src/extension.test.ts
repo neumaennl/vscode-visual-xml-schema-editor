@@ -16,7 +16,9 @@ import type { MockedFunction } from "vitest";
 function activateAndGetOpenEditorHandler(context: vscode.ExtensionContext): (uri?: vscode.Uri) => Promise<void> {
   activate(context);
   const registerCommandMock = vscode.commands.registerCommand as MockedFunction<typeof vscode.commands.registerCommand>;
-  const handler = registerCommandMock.mock.calls.find(([command]) => command === "visualXmlSchemaEditor.openEditor")?.[1];
+  const handler = registerCommandMock.mock.calls.find(
+    ([command]) => command === "visualXmlSchemaEditor.openEditor"
+  )?.[1];
   if (!handler) {
     throw new Error("openEditor command handler not registered");
   }
@@ -153,7 +155,9 @@ describe("Extension", () => {
 
   describe("deactivate", () => {
     test("should complete without errors", () => {
-      expect(() => { deactivate(); }).not.toThrow();
+      expect(() => {
+        deactivate();
+      }).not.toThrow();
     });
   });
 });

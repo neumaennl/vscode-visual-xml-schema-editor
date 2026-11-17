@@ -4,16 +4,8 @@
 
 import { unmarshal } from "@neumaennl/xmlbind-ts";
 import { schema } from "../../shared/types.js";
-import type {
-  AddElementCommand,
-  RemoveElementCommand,
-  ModifyElementCommand,
-} from "../../shared/types.js";
-import {
-  validateAddElement,
-  validateRemoveElement,
-  validateModifyElement,
-} from "./elementValidators.js";
+import type { AddElementCommand, RemoveElementCommand, ModifyElementCommand } from "../../shared/types.js";
+import { validateAddElement, validateRemoveElement, validateModifyElement } from "./elementValidators.js";
 import { expectInvalid } from "../__tests__/validationTestHelpers.js";
 import { schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
 import { readTestSchema } from "../__tests__/resourceTestHelpers.js";
@@ -114,7 +106,10 @@ describe("Element Validators", () => {
 
     test("should reject invalid element type", () => {
       const result = validateAddElement(
-        { type: "addElement", payload: { parentId: "/schema", elementName: "testElement", elementType: "invalidType" } },
+        {
+          type: "addElement",
+          payload: { parentId: "/schema", elementName: "testElement", elementType: "invalidType" },
+        },
         schemaObj
       );
 
@@ -177,11 +172,14 @@ describe("Element Validators", () => {
 
     test("should accept user-defined type with prefix", () => {
       const prefixes = { tns: "http://example.com/types" };
-      const customSchema = schemaWith(`<xs:complexType name="PersonType">
+      const customSchema = schemaWith(
+        `<xs:complexType name="PersonType">
   <xs:sequence>
     <xs:element name="name" type="xs:string"/>
   </xs:sequence>
-</xs:complexType>`, prefixes);
+</xs:complexType>`,
+        prefixes
+      );
 
       const command: AddElementCommand = {
         type: "addElement",
@@ -359,7 +357,10 @@ describe("Element Validators", () => {
     });
 
     test("should reject modifyElement with invalid elementType", () => {
-      const result = validateModifyElement({ type: "modifyElement", payload: { elementId: "/element:person", elementType: "invalidType" } }, schemaObj);
+      const result = validateModifyElement(
+        { type: "modifyElement", payload: { elementId: "/element:person", elementType: "invalidType" } },
+        schemaObj
+      );
 
       expectInvalid(result);
       expect(result.error).toContain("Invalid element type 'invalidType'");
@@ -475,7 +476,10 @@ describe("Element Validators", () => {
     });
 
     test("should reject addElement with ref at schema level (top-level elements cannot be refs)", () => {
-      const result = validateAddElement({ type: "addElement", payload: { parentId: "/schema", ref: "person" } }, seqSchema);
+      const result = validateAddElement(
+        { type: "addElement", payload: { parentId: "/schema", ref: "person" } },
+        seqSchema
+      );
       expectInvalid(result);
       expect(result.error).toBe("Top-level elements cannot be references");
     });
@@ -560,7 +564,9 @@ describe("Element Validators", () => {
 
       const result = validateAddElement(
         command,
-        schemaWith(`<xs:complexType name="T"><xs:all><xs:element name="first" type="xs:string"/></xs:all></xs:complexType>`),
+        schemaWith(
+          `<xs:complexType name="T"><xs:all><xs:element name="first" type="xs:string"/></xs:all></xs:complexType>`
+        )
       );
       expectInvalid(result);
       expect(result.error).toBe("Cannot add element: duplicate element name 'first' in all");
@@ -628,7 +634,9 @@ describe("Element Validators", () => {
 
       const result = validateRemoveElement(command, schemaWith(SEQUENCE_WITH_ELEMENTS));
       expectInvalid(result);
-      expect(result.error).toBe("Parent node not found for element: /complexType:Missing/group:sequence[0]/element:first");
+      expect(result.error).toBe(
+        "Parent node not found for element: /complexType:Missing/group:sequence[0]/element:first"
+      );
     });
 
     test("should reject removing an element from a parent that cannot hold elements", () => {
@@ -650,7 +658,9 @@ describe("Element Validators", () => {
 
       const result = validateModifyElement(command, schemaWith(SEQUENCE_WITH_ELEMENTS));
       expectInvalid(result);
-      expect(result.error).toBe("Parent node not found for element: /complexType:Missing/group:sequence[0]/element:first");
+      expect(result.error).toBe(
+        "Parent node not found for element: /complexType:Missing/group:sequence[0]/element:first"
+      );
     });
 
     test("should reject modifying an element in a parent that cannot hold elements", () => {
@@ -695,11 +705,10 @@ describe("Element Validators", () => {
       const result = validateModifyElement(
         command,
         schemaWith(
-          `<xs:element name="root" type="xs:string"/><xs:complexType name="T"><xs:sequence><xs:element name="first" type="xs:string"/></xs:sequence></xs:complexType>`,
-        ),
+          `<xs:element name="root" type="xs:string"/><xs:complexType name="T"><xs:sequence><xs:element name="first" type="xs:string"/></xs:sequence></xs:complexType>`
+        )
       );
       expect(result.valid).toBe(true);
     });
   });
-
 });

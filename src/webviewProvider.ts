@@ -1,11 +1,7 @@
 import * as vscode from "vscode";
 import { unmarshal } from "@neumaennl/xmlbind-ts";
 import { schema } from "../shared/types.js";
-import type {
-  ExecuteCommandMessage,
-  WebviewMessage,
-  DiagramOptions,
-} from "../shared/messages.js";
+import type { ExecuteCommandMessage, WebviewMessage, DiagramOptions } from "../shared/messages.js";
 import { CommandProcessor } from "./commandProcessor.js";
 
 /**
@@ -18,7 +14,7 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
 
   /**
    * Creates a new `SchemaEditorProvider`.
-   * 
+   *
    * @param context - The extension context provided by VS Code
    */
   constructor(private readonly context: vscode.ExtensionContext) {
@@ -29,14 +25,11 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
    * Safely sends a message to the webview with error logging.
    * This prevents unhandled promise rejections and avoids infinite error loops
    * when `postMessage` itself fails.
-   * 
+   *
    * @param webview - The webview to send the message to
    * @param message - The message to send
    */
-  private async safePostMessage(
-    webview: vscode.Webview,
-    message: unknown
-  ): Promise<void> {
+  private async safePostMessage(webview: vscode.Webview, message: unknown): Promise<void> {
     try {
       await webview.postMessage(message);
     } catch (error) {
@@ -49,7 +42,7 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
   /**
    * Resolves and initializes the custom text editor for an XSD document.
    * Sets up the webview, establishes communication channels, and loads the initial schema.
-   * 
+   *
    * @param document - The text document being edited
    * @param webviewPanel - The webview panel to display the custom editor
    * @param _token - Cancellation token for the operation
@@ -71,27 +64,22 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
     this.sendDiagramOptions(webviewPanel.webview);
 
     // Listen for document changes
-    const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument(
-      (e) => {
-        if (e.document.uri.toString() === document.uri.toString()) {
-          this.updateWebview(document, webviewPanel.webview);
-        }
+    const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument((e) => {
+      if (e.document.uri.toString() === document.uri.toString()) {
+        this.updateWebview(document, webviewPanel.webview);
       }
-    );
+    });
 
     // Listen for configuration changes
-    const changeConfigSubscription = vscode.workspace.onDidChangeConfiguration(
-      (e) => {
-        if (e.affectsConfiguration("visualXmlSchemaEditor")) {
-          this.sendDiagramOptions(webviewPanel.webview);
-        }
+    const changeConfigSubscription = vscode.workspace.onDidChangeConfiguration((e) => {
+      if (e.affectsConfiguration("visualXmlSchemaEditor")) {
+        this.sendDiagramOptions(webviewPanel.webview);
       }
-    );
+    });
 
     // Listen for messages from webview
     webviewPanel.webview.onDidReceiveMessage(
-      (message: WebviewMessage) =>
-        void this.handleWebviewMessage(message, document, webviewPanel.webview),
+      (message: WebviewMessage) => void this.handleWebviewMessage(message, document, webviewPanel.webview),
       undefined,
       this.context.subscriptions
     );
@@ -104,7 +92,7 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
 
   /**
    * Reads diagram options from VS Code settings and sends them to the webview.
-   * 
+   *
    * @param webview - The webview to send the diagram options to
    */
   private sendDiagramOptions(webview: vscode.Webview): void {
@@ -124,14 +112,11 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
   /**
    * Updates the webview with the current document content.
    * Parses the XSD document and sends the schema object to the webview for visualization.
-   * 
+   *
    * @param document - The text document containing the XSD content
    * @param webview - The webview to update with the parsed schema
    */
-  private updateWebview(
-    document: vscode.TextDocument,
-    webview: vscode.Webview
-  ): void {
+  private updateWebview(document: vscode.TextDocument, webview: vscode.Webview): void {
     try {
       console.log("Parsing XSD document...");
       const xmlContent = document.getText();
@@ -161,7 +146,7 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
   /**
    * Handles messages received from the webview.
    * Processes commands sent from the visual editor to modify the document.
-   * 
+   *
    * @param message - The message received from the webview
    * @param document - The document being edited
    * @param webview - The webview to send responses back to
@@ -183,7 +168,7 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
   /**
    * Executes a command using the `CommandProcessor`.
    * Applies the resulting changes to the document if successful.
-   * 
+   *
    * @param message - The execute command message from the webview
    * @param document - The document to update
    * @param webview - The webview to send responses back to
@@ -202,12 +187,7 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
         const edit = new vscode.WorkspaceEdit();
         // Calculate the full range of the document, handling empty documents
         const lastLine = Math.max(0, document.lineCount - 1);
-        const fullRange = new vscode.Range(
-          0,
-          0,
-          lastLine,
-          document.lineAt(lastLine).text.length
-        );
+        const fullRange = new vscode.Range(0, 0, lastLine, document.lineAt(lastLine).text.length);
         edit.replace(document.uri, fullRange, result.xmlContent);
         const success = await vscode.workspace.applyEdit(edit);
 
@@ -273,26 +253,15 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
    * Generates the HTML content for the webview.
    * Creates a complete HTML page with the editor UI, including toolbar,
    * canvas, and properties panel.
-   * 
+   *
    * @param webview - The webview to generate HTML for
    * @returns The complete HTML content as a string
    */
   private getHtmlForWebview(webview: vscode.Webview): string {
-    const scriptUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(this.context.extensionUri, "webview", "main.js")
-    );
-    const styleUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(this.context.extensionUri, "webview", "styles.css")
-    );
+    const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, "webview", "main.js"));
+    const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, "webview", "styles.css"));
     const codiconUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(
-        this.context.extensionUri,
-        "node_modules",
-        "@vscode",
-        "codicons",
-        "dist",
-        "codicon.css"
-      )
+      vscode.Uri.joinPath(this.context.extensionUri, "node_modules", "@vscode", "codicons", "dist", "codicon.css")
     );
     const scriptSrc = scriptUri.toString();
     const styleSrc = styleUri.toString();
@@ -342,13 +311,12 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
   /**
    * Generates a cryptographically secure nonce for Content Security Policy.
    * Used to allow only specific inline scripts to execute in the webview.
-   * 
+   *
    * @returns A random 32-character nonce string
    */
   private getNonce(): string {
     let text = "";
-    const possible =
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     for (let i = 0; i < 32; i++) {
       text += possible.charAt(Math.floor(Math.random() * possible.length));
     }

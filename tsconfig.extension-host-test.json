@@ -5,23 +5,14 @@
     "target": "ES2024",
     "rootDir": "test/extension-host",
     "outDir": ".vscode-test/out",
-    "lib": [
-      "ES2024",
-      "DOM"
-    ],
+    "lib": ["ES2024", "DOM"],
     "sourceMap": true,
-    "types": [
-      "mocha",
-      "node",
-      "vscode"
-    ],
+    "types": ["mocha", "node", "vscode"],
     "strict": true,
     "allowUnreachableCode": false,
     "noUncheckedIndexedAccess": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": [
-    "test/extension-host/**/*.ts"
-  ]
+  "include": ["test/extension-host/**/*.ts"]
 }

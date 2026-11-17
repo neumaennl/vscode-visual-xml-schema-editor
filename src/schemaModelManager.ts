@@ -1,12 +1,12 @@
 /**
  * `SchemaModelManager`: Manages schema state and orchestrates updates.
- * 
+ *
  * This class maintains the authoritative schema state and provides:
  * - Schema loading and state management
  * - Marshalling (schema object to XML)
  * - Unmarshalling (XML to schema object)
  * - Cloning, so that commands are executed on a copy
- * 
+ *
  * Following ADR 001: Editor Transition Architecture
  */
 
@@ -38,7 +38,7 @@ export class SchemaModelManager {
 
   /**
    * Creates a new `SchemaModelManager`.
-   * 
+   *
    * @param initialSchema - Optional initial schema to load
    */
   constructor(initialSchema?: schema) {
@@ -49,7 +49,7 @@ export class SchemaModelManager {
 
   /**
    * Loads schema from XML string.
-   * 
+   *
    * @param xmlContent - The XML content to parse
    * @throws An {@link Error} if parsing fails
    */
@@ -57,16 +57,13 @@ export class SchemaModelManager {
     try {
       this.schemaState = unmarshal(schema, xmlContent);
     } catch (error) {
-      throw new Error(
-        `Failed to load schema from XML: ${(error as Error).message}`,
-        { cause: error }
-      );
+      throw new Error(`Failed to load schema from XML: ${(error as Error).message}`, { cause: error });
     }
   }
 
   /**
    * Gets the current schema state.
-   * 
+   *
    * @returns The current schema object, or null if not loaded
    */
   public getSchema(): schema | null {
@@ -75,7 +72,7 @@ export class SchemaModelManager {
 
   /**
    * Sets the schema state.
-   * 
+   *
    * @param schemaObj - The schema object to set
    */
   public setSchema(schemaObj: schema): void {
@@ -84,7 +81,7 @@ export class SchemaModelManager {
 
   /**
    * Marshals the current schema to XML.
-   * 
+   *
    * @returns The XML string representation of the schema, ending with a line break
    * @throws An {@link Error} if schema is not loaded or marshalling fails
    */
@@ -96,17 +93,14 @@ export class SchemaModelManager {
     try {
       return fixOutputLineBreaks(marshal(this.schemaState));
     } catch (error) {
-      throw new Error(
-        `Failed to marshal schema to XML: ${(error as Error).message}`,
-        { cause: error }
-      );
+      throw new Error(`Failed to marshal schema to XML: ${(error as Error).message}`, { cause: error });
     }
   }
 
   /**
    * Creates a deep copy of the current schema.
    * Uses marshal/unmarshal to preserve xmlbind metadata.
-   * 
+   *
    * @returns A deep copy of the schema
    * @throws An {@link Error} if schema is not loaded or cloning fails
    */
@@ -119,10 +113,7 @@ export class SchemaModelManager {
       const xml = marshal(this.schemaState);
       return unmarshal(schema, xml);
     } catch (error) {
-      throw new Error(
-        `Failed to clone schema: ${(error as Error).message}`,
-        { cause: error }
-      );
+      throw new Error(`Failed to clone schema: ${(error as Error).message}`, { cause: error });
     }
   }
 }

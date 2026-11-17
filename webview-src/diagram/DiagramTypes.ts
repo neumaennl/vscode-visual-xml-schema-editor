@@ -141,30 +141,26 @@ export interface DiagramStyle {
   lineColor: string;
 }
 
-  /**
-   * Get computed value of a CSS variable from the document root
-   *
-   * @param name - The name of the variable, such as `--vscode-font-family`
-   * @param fallback - The value without a document or without the variable
-   * @returns The value of the variable, or the fallback
-   */
-  function getCssVar(name: string, fallback: string): string {
-    if (typeof document !== "undefined") {
-      return (
-        getComputedStyle(document.documentElement)
-          .getPropertyValue(name)
-          .trim() || fallback
-      );
-    }
-    return fallback;
+/**
+ * Get computed value of a CSS variable from the document root
+ *
+ * @param name - The name of the variable, such as `--vscode-font-family`
+ * @param fallback - The value without a document or without the variable
+ * @returns The value of the variable, or the fallback
+ */
+function getCssVar(name: string, fallback: string): string {
+  if (typeof document !== "undefined") {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
   }
+  return fallback;
+}
 
-  export const defaultDiagramStyle: DiagramStyle = {
-    fontFamily: getCssVar("--vscode-font-family", "Arial, sans-serif"),
-    fontSize: 10,
-    smallFontSize: 8,
-    documentationFontSize: 9,
-    foregroundColor: getCssVar("--vscode-editor-foreground", "rgb(0,0,0)"),
-    backgroundColor: getCssVar("--vscode-editor-background", "rgb(255,255,255)"),
-    lineColor: getCssVar("--vscode-editor-foreground", "rgb(0,0,0)"),
-  };
+export const defaultDiagramStyle: DiagramStyle = {
+  fontFamily: getCssVar("--vscode-font-family", "Arial, sans-serif"),
+  fontSize: 10,
+  smallFontSize: 8,
+  documentationFontSize: 9,
+  foregroundColor: getCssVar("--vscode-editor-foreground", "rgb(0,0,0)"),
+  backgroundColor: getCssVar("--vscode-editor-background", "rgb(255,255,255)"),
+  lineColor: getCssVar("--vscode-editor-foreground", "rgb(0,0,0)"),
+};

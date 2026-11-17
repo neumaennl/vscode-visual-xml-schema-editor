@@ -115,17 +115,25 @@ describe("Integration: SimpleType pipeline", () => {
     });
 
     test("should return validation error when type name is invalid", () => {
-      runCommandExpectValidationFailure(emptySchemaXml(), {
-        type: "addSimpleType",
-        payload: { parentId: "/schema", typeName: "bad type", baseType: "xs:string" },
-      }, "Type name must be a valid XML name");
+      runCommandExpectValidationFailure(
+        emptySchemaXml(),
+        {
+          type: "addSimpleType",
+          payload: { parentId: "/schema", typeName: "bad type", baseType: "xs:string" },
+        },
+        "Type name must be a valid XML name"
+      );
     });
 
     test("should return validation error for duplicate type name", () => {
-      runCommandExpectValidationFailure(SCHEMA_WITH_SIMPLETYPE, {
-        type: "addSimpleType",
-        payload: { parentId: "/schema", typeName: "StatusType", baseType: "xs:string" },
-      }, "Simple type 'StatusType' already exists in schema");
+      runCommandExpectValidationFailure(
+        SCHEMA_WITH_SIMPLETYPE,
+        {
+          type: "addSimpleType",
+          payload: { parentId: "/schema", typeName: "StatusType", baseType: "xs:string" },
+        },
+        "Simple type 'StatusType' already exists in schema"
+      );
     });
   });
 
@@ -143,10 +151,14 @@ describe("Integration: SimpleType pipeline", () => {
     });
 
     test("should return validation error when type ID does not exist", () => {
-      runCommandExpectValidationFailure(SCHEMA_WITH_SIMPLETYPE, {
-        type: "removeSimpleType",
-        payload: { typeId: "/simpleType:NonExistent" },
-      }, "Simple type 'NonExistent' not found in schema");
+      runCommandExpectValidationFailure(
+        SCHEMA_WITH_SIMPLETYPE,
+        {
+          type: "removeSimpleType",
+          payload: { typeId: "/simpleType:NonExistent" },
+        },
+        "Simple type 'NonExistent' not found in schema"
+      );
     });
   });
 
@@ -246,10 +258,14 @@ describe("Integration: SimpleType pipeline", () => {
     });
 
     test("should return validation error when type ID does not exist", () => {
-      runCommandExpectValidationFailure(SCHEMA_WITH_SIMPLETYPE, {
-        type: "modifySimpleType",
-        payload: { typeId: "/simpleType:Missing", typeName: "Other" },
-      }, "Simple type 'Missing' not found in schema");
+      runCommandExpectValidationFailure(
+        SCHEMA_WITH_SIMPLETYPE,
+        {
+          type: "modifySimpleType",
+          payload: { typeId: "/simpleType:Missing", typeName: "Other" },
+        },
+        "Simple type 'Missing' not found in schema"
+      );
     });
   });
 });

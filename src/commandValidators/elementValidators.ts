@@ -2,20 +2,9 @@
  * Validators for element commands.
  */
 
-import type {
-  schema,
-  AddElementCommand,
-  RemoveElementCommand,
-  ModifyElementCommand,
-} from "../../shared/types.js";
-import type {
-  ValidationResult,
-} from "./validationUtils.js";
-import {
-  isValidXmlName,
-  validateOccurrences,
-  validateElementType,
-} from "./validationUtils.js";
+import type { schema, AddElementCommand, RemoveElementCommand, ModifyElementCommand } from "../../shared/types.js";
+import type { ValidationResult } from "./validationUtils.js";
+import { isValidXmlName, validateOccurrences, validateElementType } from "./validationUtils.js";
 import type { ChildKind, NamedChild } from "./commonValidators.js";
 import { locateChild, validateNewChild, validateReference } from "./commonValidators.js";
 
@@ -52,10 +41,7 @@ function validateElementReference(ref: string, schemaObj: schema): ValidationRes
  * @param schemaObj - The schema
  * @returns The validation result
  */
-export function validateAddElement(
-  command: AddElementCommand,
-  schemaObj: schema
-): ValidationResult {
+export function validateAddElement(command: AddElementCommand, schemaObj: schema): ValidationResult {
   const { parentId, elementName, elementType, ref, minOccurs, maxOccurs } = command.payload;
 
   // Validate parentId is not empty
@@ -102,10 +88,7 @@ export function validateAddElement(
  * @param schemaObj - The schema
  * @returns The validation result
  */
-export function validateRemoveElement(
-  command: RemoveElementCommand,
-  schemaObj: schema
-): ValidationResult {
+export function validateRemoveElement(command: RemoveElementCommand, schemaObj: schema): ValidationResult {
   const located = locateChild(schemaObj, command.payload.elementId, ELEMENTS, "remove element from");
   return located.valid ? { valid: true } : located;
 }
@@ -119,10 +102,7 @@ export function validateRemoveElement(
  * @param schemaObj - The schema
  * @returns The validation result
  */
-export function validateModifyElement(
-  command: ModifyElementCommand,
-  schemaObj: schema
-): ValidationResult {
+export function validateModifyElement(command: ModifyElementCommand, schemaObj: schema): ValidationResult {
   const { elementId, elementName, elementType, ref, minOccurs, maxOccurs, default_, fixed } = command.payload;
 
   const located = locateChild(schemaObj, elementId, ELEMENTS, "modify element in");

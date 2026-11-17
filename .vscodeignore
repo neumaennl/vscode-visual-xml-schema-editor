@@ -34,5 +34,8 @@ eslint.config.mjs
 vitest.config.ts
 vite.config.ts
 tsconfig*.json
+.prettierrc.json
+.prettierignore
+.git-blame-ignore-revs
 
 # node_modules is not excluded: vsce includes production dependencies only.

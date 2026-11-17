@@ -94,16 +94,31 @@ export class PropertiesPanel {
     }
 
     this.container.replaceChildren();
-    const deleteCommand = createDeleteNodeCommand(this.draftNode);
     this.container.appendChild(
       createPropertiesPanelHeader(
         getNodeTypeLabel(this.draftNode),
         this.draftNode.id,
-        deleteCommand ? () : void => { this.dispatchCommand(deleteCommand); } : undefined
+        this.createDeleteHandler(this.draftNode)
       )
     );
     this.container.appendChild(this.createTabBar());
     this.container.appendChild(this.renderTabContent(this.draftNode));
+  }
+
+  /**
+   * Creates the handler of the header's delete button, which dispatches the command that deletes the node.
+   *
+   * @param node - Diagram node shown in the panel
+   * @returns The handler, or `undefined` if the node cannot be deleted
+   */
+  private createDeleteHandler(node: DiagramItem): (() => void) | undefined {
+    const deleteCommand = createDeleteNodeCommand(node);
+    if (!deleteCommand) {
+      return undefined;
+    }
+    return (): void => {
+      this.dispatchCommand(deleteCommand);
+    };
   }
 
   /**

@@ -1,0 +1,6 @@
+# Written by npm.
+package-lock.json
+# Local drafts, excluded in .git/info/exclude, which Prettier does not read.
+.drafts/
+# Generated from schema/XMLSchema.xsd; formatting it would be undone by the next generation.
+shared/generated/

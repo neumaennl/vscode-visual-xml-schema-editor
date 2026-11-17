@@ -128,15 +128,7 @@ export function renderTypeProperty(
 
   const typeCommand = createTypeCommand(node, node.type);
   if (typeCommand) {
-    root.appendChild(
-      createEditableField("Type", node.type, onTypeChange(node, node.type, (normalizedNext, next) => {
-        const command = createTypeCommand(node, next);
-        if (command) {
-          node.type = normalizedNext;
-          dispatchCommand(command);
-        }
-      }, true), typeSuggestions)
-    );
+    root.appendChild(createTypeField(node, node.type, typeSuggestions, dispatchCommand));
     return;
   }
 
@@ -146,6 +138,36 @@ export function renderTypeProperty(
   if (typeHint) {
     addPropertyToContainer(root, "Type editing", typeHint);
   }
+}
+
+/**
+ * Creates the editable Type field of a node whose type can be changed by a command.
+ *
+ * @param node - Diagram node being edited; its `type` is updated when a change is sent
+ * @param type - Current type of the node
+ * @param typeSuggestions - Suggested type names for the field
+ * @param dispatchCommand - Callback used to emit schema commands
+ * @returns The field
+ */
+function createTypeField(
+  node: DiagramItem,
+  type: string,
+  typeSuggestions: string[],
+  dispatchCommand: (command: SchemaCommand) => void
+): HTMLElement {
+  const onChange = onTypeChange(
+    node,
+    type,
+    (normalizedNext, next) => {
+      const command = createTypeCommand(node, next);
+      if (command) {
+        node.type = normalizedNext;
+        dispatchCommand(command);
+      }
+    },
+    true
+  );
+  return createEditableField("Type", type, onChange, typeSuggestions);
 }
 
 /**

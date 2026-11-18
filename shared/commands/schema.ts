@@ -1,6 +1,5 @@
 /**
- * Module command types for managing schema imports and includes.
- * Provides commands for modularizing schemas across multiple files.
+ * Commands that change the schema element itself: its imports, includes and namespace declarations.
  */
 
 import type { BaseCommand } from "./base.js";

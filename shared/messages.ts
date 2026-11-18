@@ -3,7 +3,6 @@
  * Defines the bidirectional message format for command execution and updates.
  */
 
-import type { CommandResponse } from "./commands/base.js";
 import type { SchemaCommand } from "./commands/index.js";
 import type { schema } from "./generated/index.js";
 
@@ -26,6 +25,16 @@ export interface ErrorData {
   code?: string;
   /** Optional stack trace for debugging */
   stack?: string;
+}
+
+/**
+ * The result of a command that was applied to the document or rejected by its validator.
+ */
+export interface CommandResponse {
+  /** Whether the command was applied to the document */
+  success: boolean;
+  /** The validation error, if the command was rejected */
+  error?: string;
 }
 
 /**
@@ -65,14 +74,6 @@ export interface UpdateDiagramOptionsMessage extends Message<"updateDiagramOptio
 }
 
 /**
- * Message when the schema has been modified.
- */
-export interface SchemaModifiedMessage extends Message<"schemaModified", schema> {
-  command: "schemaModified";
-  data: schema; // Updated schema object
-}
-
-/**
  * Message to report an error.
  */
 export interface ErrorMessage extends Message<"error", ErrorData> {
@@ -96,5 +97,4 @@ export type WebviewMessage = ExecuteCommandMessage;
 /**
  * Union type of all messages from extension to webview.
  */
-export type ExtensionMessage =
-  UpdateSchemaMessage | UpdateDiagramOptionsMessage | SchemaModifiedMessage | ErrorMessage | CommandResultMessage;
+export type ExtensionMessage = UpdateSchemaMessage | UpdateDiagramOptionsMessage | ErrorMessage | CommandResultMessage;

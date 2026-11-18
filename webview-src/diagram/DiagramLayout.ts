@@ -111,13 +111,6 @@ export class DiagramLayout {
         };
         break;
 
-      case DiagramItemType.reference:
-        item.size = {
-          width: this.ELEMENT_WIDTH,
-          height: this.ELEMENT_HEIGHT,
-        };
-        break;
-
       default:
         item.size = {
           width: this.ELEMENT_WIDTH,

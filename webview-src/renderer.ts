@@ -1,5 +1,5 @@
 import type { schema } from "../shared/types";
-import type { ViewState, RenderedNode } from "./webviewTypes";
+import type { ViewState } from "./webviewTypes";
 import type { DiagramOptions } from "../shared/messages";
 import type { Diagram, DiagramItem } from "./diagram";
 import { DiagramBuilder, DiagramLayout, DiagramSvgRenderer } from "./diagram";
@@ -17,7 +17,6 @@ export class DiagramRenderer {
   private canvas: SVGSVGElement;
   private mainGroup: SVGGElement;
   private viewState: ViewState;
-  private renderedNodes = new Map<string, RenderedNode>();
   private currentDiagram: Diagram | null = null;
   private svgRenderer: DiagramSvgRenderer;
   private layout: DiagramLayout;
@@ -69,7 +68,6 @@ export class DiagramRenderer {
     onNodeClick: (node: DiagramItem, isExpandButton: boolean) => void
   ): void {
     this.onNodeClickCallback = onNodeClick;
-    this.renderedNodes.clear();
 
     if (!schemaObj) {
       this.showMessage("No schema to display");

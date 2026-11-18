@@ -1,18 +1,17 @@
 import type { schema, SchemaCommand } from "../../shared/types";
 import type { DiagramItem } from "../diagram";
 import { DiagramItemType } from "../diagram";
-import { generateSchemaId, parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy";
+import { parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy";
+import { anonymousTypeId, isSchemaRoot } from "../../shared/schemaUtils";
 import { PaletteSchemaConstruct } from "../palette/PaletteSchemaConstruct";
 import { isFacetPaletteConstruct } from "../palette/FacetIconStyles";
 import {
   createFacetNodeDropCommand,
-  getAnonymousComplexTypeId,
-  getAnonymousSimpleTypeId,
   getExtensionBaseType,
   getRestrictionBaseType,
   isComplexTypeNode,
   isSimpleTypeNode,
-} from "./DropCommandFactoryTypeHelpers";
+} from "./TypeDropCommands";
 
 /**
  * Creates schema commands from drag-and-drop actions.
@@ -160,7 +159,7 @@ export class DropCommandFactory {
    * @returns Command or null if the target cannot hold elements
    */
   private createElementNodeDropCommand(item: DiagramItem, reserveNames: boolean): SchemaCommand | null {
-    if (this.isSchemaRoot(item) || item.itemType === DiagramItemType.group) {
+    if (isSchemaRoot(item.id) || item.itemType === DiagramItemType.group) {
       return {
         type: "addElement",
         payload: {
@@ -182,7 +181,7 @@ export class DropCommandFactory {
    * @returns Command or null if the target cannot hold attributes
    */
   private createAttributeNodeDropCommand(item: DiagramItem, reserveNames: boolean): SchemaCommand | null {
-    if (this.isSchemaRoot(item) || isComplexTypeNode(item)) {
+    if (isSchemaRoot(item.id) || isComplexTypeNode(item)) {
       return {
         type: "addAttribute",
         payload: {
@@ -193,11 +192,7 @@ export class DropCommandFactory {
       };
     }
     if (item.itemType === DiagramItemType.element && item.hasAnonymousComplexType) {
-      const anonCtId = generateSchemaId({
-        nodeType: SchemaNodeType.AnonymousComplexType,
-        parentId: item.id,
-        position: 0,
-      });
+      const anonCtId = anonymousTypeId(item.id, "complexType");
       return {
         type: "addAttribute",
         payload: {
@@ -224,7 +219,7 @@ export class DropCommandFactory {
     reserveNames: boolean,
     construct: PaletteSchemaConstruct.SimpleType | PaletteSchemaConstruct.ComplexType
   ): SchemaCommand | null {
-    const isRoot = this.isSchemaRoot(item);
+    const isRoot = isSchemaRoot(item.id);
     if (!isRoot && item.itemType !== DiagramItemType.element) {
       return null;
     }
@@ -244,7 +239,7 @@ export class DropCommandFactory {
    * @returns Command or null if the target is not the schema root
    */
   private createGroupNodeDropCommand(item: DiagramItem, reserveNames: boolean): SchemaCommand | null {
-    if (this.isSchemaRoot(item)) {
+    if (isSchemaRoot(item.id)) {
       return {
         type: "addGroup",
         payload: {
@@ -283,7 +278,7 @@ export class DropCommandFactory {
         return {
           type: "modifyComplexType",
           payload: {
-            typeId: getAnonymousComplexTypeId(item),
+            typeId: anonymousTypeId(item.id, "complexType"),
             contentModel,
           },
         };
@@ -327,7 +322,7 @@ export class DropCommandFactory {
     reserveNames: boolean,
     construct: PaletteSchemaConstruct.Restriction | PaletteSchemaConstruct.Extension
   ): SchemaCommand | null {
-    if (this.isSchemaRoot(item)) {
+    if (isSchemaRoot(item.id)) {
       return this.createTopLevelDerivationCommand(construct, reserveNames);
     }
     const isRestriction = construct === PaletteSchemaConstruct.Restriction;
@@ -336,7 +331,7 @@ export class DropCommandFactory {
     const isElement = item.itemType === DiagramItemType.element;
 
     if ((isElement && item.hasAnonymousComplexType) || (!isElement && isComplexTypeNode(item))) {
-      const typeId = isElement ? getAnonymousComplexTypeId(item) : item.id;
+      const typeId = isElement ? anonymousTypeId(item.id, "complexType") : item.id;
       return { type: "modifyComplexType", payload: { typeId, baseType, derivationKind } };
     }
     if (isElement && !isRestriction) {
@@ -347,23 +342,13 @@ export class DropCommandFactory {
     }
     if (isElement) {
       return item.isSimpleContent
-        ? { type: "modifySimpleType", payload: { typeId: getAnonymousSimpleTypeId(item), baseType } }
+        ? { type: "modifySimpleType", payload: { typeId: anonymousTypeId(item.id, "simpleType"), baseType } }
         : { type: "addSimpleType", payload: { parentId: item.id, baseType } };
     }
     if (isRestriction && isSimpleTypeNode(item)) {
       return { type: "modifySimpleType", payload: { typeId: item.id, baseType } };
     }
     return null;
-  }
-
-  /**
-   * Tells whether the item is the schema root.
-   *
-   * @param item - The diagram item
-   * @returns True for the schema root
-   */
-  private isSchemaRoot(item: DiagramItem): boolean {
-    return item.id === SCHEMA_ROOT_ID;
   }
 
   /**

@@ -1,5 +1,4 @@
 // Webview-specific types (only used in webview-src, not in extension)
-import type { DiagramItem } from "./diagram";
 import type { schema, WebviewMessage, DiagramOptions } from "../shared/types";
 
 export interface VSCodeAPI<State = unknown> {
@@ -18,13 +17,4 @@ export interface WebviewState {
   viewState?: ViewState;
   schema?: schema;
   diagramOptions?: DiagramOptions;
-}
-
-export interface RenderedNode {
-  node: DiagramItem;
-  element: SVGGElement;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
 }

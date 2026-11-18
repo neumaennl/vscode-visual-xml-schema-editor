@@ -64,7 +64,7 @@ export function executeModifyAttribute(command: ModifyAttributeCommand, schemaOb
     attributesOf(location.parent, location.parentType).attribute ?? [];
   const child = identifyChild("Attribute", parsed.name, parsed.position);
   const attr = assumeValidated(attributes.find(child.matches), child.what);
-  updateAttributeProperties(attr, command.payload);
+  updateAttributeProperties(attr, command.payload, location.parentType === "schema");
 }
 
 // ===== Helper Functions =====
@@ -129,12 +129,17 @@ function createNewAttribute(fields: AttributeFields, isTopLevel: boolean): topLe
 /**
  * Updates properties on an attribute (works for both top-level and local attributes).
  * When `ref` is set, clears `name` and `type_`. When `attributeName` is set, clears `ref`.
- * The `use` property (required/optional) is only applied when the attribute supports it.
+ * `use` is set from `required` only on local attributes; top-level attributes have no `use`.
  *
  * @param attr - The attribute to update
  * @param changes - The changes of the `modifyAttribute` command
+ * @param topLevel - Whether the attribute is a top-level attribute of the schema
  */
-function updateAttributeProperties(attr: topLevelAttribute | attribute, changes: AttributeFields): void {
+function updateAttributeProperties(
+  attr: topLevelAttribute | attribute,
+  changes: AttributeFields,
+  topLevel: boolean
+): void {
   const { attributeName, attributeType, ref, required, defaultValue, fixedValue, documentation } = changes;
   if (ref !== undefined) {
     // Switching to a reference: clear name and type
@@ -151,9 +156,8 @@ function updateAttributeProperties(attr: topLevelAttribute | attribute, changes:
       attr.type_ = attributeType;
     }
   }
-  // 'use' only exists on local attributes (attribute class), not on topLevelAttribute
-  if (required !== undefined && "use" in attr) {
-    attr.use = required ? "required" : "optional";
+  if (required !== undefined && !topLevel) {
+    (attr as attribute).use = required ? "required" : "optional";
   }
   if (defaultValue !== undefined) {
     attr.default_ = defaultValue;

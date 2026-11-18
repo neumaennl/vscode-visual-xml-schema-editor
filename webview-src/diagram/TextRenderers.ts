@@ -16,9 +16,9 @@ const MAX_DOC_LINE_LENGTH = 50;
  * @param svg - The SVG element for text measurement
  */
 export function renderText(item: DiagramItem, group: SVGElement, svg: SVGSVGElement): void {
-  const scaledBox = item.scaleRectangle(item.elementBox);
-  const centerX = scaledBox.x + scaledBox.width / 2;
-  const centerY = scaledBox.y + scaledBox.height / 2;
+  const box = item.elementBox;
+  const centerX = box.x + box.width / 2;
+  const centerY = box.y + box.height / 2;
 
   let displayText = item.name;
   if (item.diagram?.showType && item.type) {
@@ -26,7 +26,7 @@ export function renderText(item: DiagramItem, group: SVGElement, svg: SVGSVGElem
   }
 
   // Truncate text to fit in box with some padding
-  const maxWidth = scaledBox.width - 10; // 5px padding on each side
+  const maxWidth = box.width - 10; // 5px padding on each side
   const fontSize = item.getStyle().fontSize;
   const truncatedText = truncateText(displayText, maxWidth, fontSize, svg);
 
@@ -97,8 +97,8 @@ function truncateText(text: string, maxWidth: number, fontSize: number, svg: SVG
  * @param group - The SVG group to append documentation to
  */
 export function renderDocumentation(item: DiagramItem, group: SVGElement): void {
-  const scaledBox = item.scaleRectangle(item.documentationBox);
-  if (scaledBox.width === 0 || scaledBox.height === 0) return;
+  const box = item.documentationBox;
+  if (box.width === 0 || box.height === 0) return;
 
   // Simple documentation rendering - just show first line
   const lines = item.documentation.split("\n").slice(0, 3);
@@ -109,8 +109,8 @@ export function renderDocumentation(item: DiagramItem, group: SVGElement): void 
     svgText(
       group,
       text,
-      scaledBox.x + 5,
-      scaledBox.y + lineHeight + i * lineHeight,
+      box.x + 5,
+      box.y + lineHeight + i * lineHeight,
       `font-family:${item.getStyle().fontFamily};font-size:${lineHeight}pt;fill:${item.getStyle().foregroundColor};text-anchor:start`
     );
   });
@@ -128,13 +128,13 @@ export function renderOccurrence(item: DiagramItem, group: SVGElement): void {
 
   const maxOccurText = item.maxOccurrence === -1 ? "∞" : item.maxOccurrence.toString();
   const occurText = `${item.minOccurrence}..${maxOccurText}`;
-  const scaledBox = item.scaleRectangle(item.elementBox);
+  const box = item.elementBox;
 
   svgText(
     group,
     occurText,
-    scaledBox.x + scaledBox.width + 5,
-    scaledBox.y + scaledBox.height - 5,
+    box.x + box.width + 5,
+    box.y + box.height - 5,
     `font-family:${item.getStyle().fontFamily};font-size:${item.getStyle().smallFontSize}pt;fill:${item.getStyle().foregroundColor};text-anchor:start`
   );
 }

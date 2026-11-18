@@ -7,7 +7,7 @@ import type { SchemaCommand } from "../../shared/types";
 import type { DiagramItem } from "../diagram";
 import { toRestrictionFacets } from "../diagram";
 import { createEditableField } from "./propertiesPanelDom";
-import { resolveSimpleTypeId } from "./propertiesPanelCommands";
+import { resolveSimpleTypeId } from "./propertiesPanelTargets";
 import type { RestrictionSnapshot } from "./propertiesPanelDraft";
 import { hasEditableFacetValues } from "./propertiesPanelDraft";
 import { getFacetIconStyle, type FacetPaletteConstruct } from "../palette/FacetIconStyles";

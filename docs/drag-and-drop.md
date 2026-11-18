@@ -4,8 +4,8 @@ title: Drag and drop
 description: How a construct is dragged from the palette onto a diagram node - the responsibilities of palette, renderer, DropCommandFactory and extension host, the event flow, which construct can be dropped on which node with which command, and the generated defaults.
 tags: [drag-and-drop, palette, renderer, drop-command-factory, webview]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-11T19:28:57Z }
-verified: { by: human:neumaennl, at: 2026-11-11T19:31:18Z }
+generated: { by: human:neumaennl, at: 2026-11-18T09:05:08Z }
+verified: { by: human:neumaennl, at: 2026-11-18T12:43:13Z }
 sources:
   - id: palette-items
     resource: ../webview-src/palette/PaletteItems.ts
@@ -23,7 +23,7 @@ sources:
     resource: ../webview-src/drop/DropCommandFactory.ts
     title: DropCommandFactory
   - id: drop-type-helpers
-    resource: ../webview-src/drop/DropCommandFactoryTypeHelpers.ts
+    resource: ../webview-src/drop/TypeDropCommands.ts
     title: Drop helpers for types, derivations and facets
   - id: drop-factory-tests
     resource: ../webview-src/drop/DropCommandFactory.test.ts
@@ -145,7 +145,7 @@ Patterns of one restriction are alternatives (see [UX concept](ux-concept.md#mul
 
 1. Add the construct to `PaletteSchemaConstruct`.
 2. Add a palette item in `PaletteItems.ts` (group, label, Codicon, tooltip), if users should drag it.
-3. Add the placement rules and the command to `DropCommandFactory`, or to `DropCommandFactoryTypeHelpers` for types and facets. The validator in the renderer uses the same method, so hover feedback and drop stay consistent.
+3. Add the placement rules and the command to `DropCommandFactory`, or to `TypeDropCommands` for types and facets. The validator in the renderer uses the same method, so hover feedback and drop stay consistent.
 4. If the command is new, add it as described in [Commands](commands.md#files).
 5. Add tests: placement and payloads in `DropCommandFactory.test.ts`, drag events in `renderer.test.ts` only if the event handling changes.[^drop-factory-tests]
 

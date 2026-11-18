@@ -98,7 +98,6 @@ describe("DiagramLayout", () => {
       ["element", "elem", DiagramItemType.element, { width: 120, height: 40 }], // ELEMENT_WIDTH, ELEMENT_HEIGHT
       ["type", "type", DiagramItemType.type, { width: 120, height: 40 }],
       ["compositor", "/complexType:T/group:sequence[0]", DiagramItemType.group, { width: 40, height: 20 }], // GROUP_WIDTH, GROUP_HEIGHT
-      ["reference", "ref", DiagramItemType.reference, { width: 120, height: 40 }],
     ])("should size %s items correctly", (_case, id, itemType, size) => {
       expect(layoutRootItem(id, itemType).size).toMatchObject(size);
     });

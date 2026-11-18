@@ -2,10 +2,19 @@
  * Unit tests for schema utility functions.
  */
 
-import { getAttributeContainer, getContentDerivation, isSchemaRoot } from "./schemaUtils.js";
+import { anonymousTypeId, getAttributeContainer, getContentDerivation, isSchemaRoot } from "./schemaUtils.js";
 import { DERIVATIONS, derivedComplexTypeT, schemaWith } from "./__tests__/schemaTestHelpers.js";
 
 describe("schemaUtils", () => {
+  describe("anonymousTypeId", () => {
+    test.each([
+      ["simpleType", "/element:a/anonymousSimpleType[0]"],
+      ["complexType", "/element:a/anonymousComplexType[0]"],
+    ] as const)("should return the ID of the anonymous %s", (kind, expected) => {
+      expect(anonymousTypeId("/element:a", kind)).toBe(expected);
+    });
+  });
+
   describe("isSchemaRoot", () => {
     test("should return true for undefined", () => {
       expect(isSchemaRoot(undefined)).toBe(true);

@@ -30,18 +30,8 @@ import { parseDocumentationId, parseSchemaAnnotationId, parseSchemaDocumentation
 // ===== Internal helpers =====
 
 /**
- * Type guard: returns true when `node` exposes an `annotation` property.
- *
- * @param node - The schema object of a node
- * @returns True if the node can hold an annotation
- */
-function hasAnnotationProperty(node: unknown): node is { annotation?: annotationType } {
-  return typeof node === "object" && node !== null && "annotation" in node;
-}
-
-/**
- * Locates the non-schema component that `nodeId` identifies, if it exists and supports annotations
- * (i.e. has an `annotation` property).
+ * Locates the non-schema component that `nodeId` identifies. Every component that the navigator finds,
+ * except the schema, holds at most one annotation; the schema holds a list and is handled by the callers.
  *
  * @param schemaObj - The schema
  * @param nodeId - The ID of the component
@@ -52,10 +42,10 @@ function locateAnnotatable(
   nodeId: string
 ): ValidationFailure | { valid: true; target: { annotation?: annotationType } } {
   const location = locateNodeById(schemaObj, nodeId);
-  if (!location.found || !hasAnnotationProperty(location.parent)) {
+  if (!location.found || location.parentType === "schema") {
     return { valid: false, error: `Target node not found or does not support annotations: ${nodeId}` };
   }
-  return { valid: true, target: location.parent };
+  return { valid: true, target: location.parent as { annotation?: annotationType } };
 }
 
 /**

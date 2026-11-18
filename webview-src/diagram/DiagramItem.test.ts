@@ -65,53 +65,6 @@ describe("DiagramItem", () => {
     });
   });
 
-  describe("scaleInt", () => {
-    test("should return unscaled value when no diagram", () => {
-      const item = new DiagramItem("id1", "Test", DiagramItemType.element);
-      expect(item.scaleInt(100)).toBe(100);
-    });
-
-    test("should scale value by diagram scale", () => {
-      const diagram = new Diagram();
-      diagram.scale = 2.0;
-      const item = new DiagramItem("id1", "Test", DiagramItemType.element, diagram);
-
-      expect(item.scaleInt(100)).toBe(200);
-    });
-
-    test("should round scaled value", () => {
-      const diagram = new Diagram();
-      diagram.scale = 1.5;
-      const item = new DiagramItem("id1", "Test", DiagramItemType.element, diagram);
-
-      expect(item.scaleInt(100)).toBe(150);
-    });
-  });
-
-  describe("scaleRectangle", () => {
-    test("should return unscaled rectangle when no diagram", () => {
-      const item = new DiagramItem("id1", "Test", DiagramItemType.element);
-      const rect = { x: 10, y: 20, width: 100, height: 50 };
-      const result = item.scaleRectangle(rect);
-
-      expect(result).toEqual(rect);
-    });
-
-    test("should scale rectangle by diagram scale", () => {
-      const diagram = new Diagram();
-      diagram.scale = 2.0;
-      const item = new DiagramItem("id1", "Test", DiagramItemType.element, diagram);
-      const rect = { x: 10, y: 20, width: 100, height: 50 };
-
-      const result = item.scaleRectangle(rect);
-
-      expect(result.x).toBe(20);
-      expect(result.y).toBe(40);
-      expect(result.width).toBe(200);
-      expect(result.height).toBe(100);
-    });
-  });
-
   describe("calculateBoundingBox", () => {
     test("should return item bounds when no children", () => {
       const item = new DiagramItem("id1", "Test", DiagramItemType.element);

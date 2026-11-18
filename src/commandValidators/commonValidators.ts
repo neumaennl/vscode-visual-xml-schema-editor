@@ -8,9 +8,10 @@ import type { schema } from "../../shared/types.js";
 import type { ParsedSchemaId } from "../../shared/idStrategy.js";
 import { parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy.js";
 import { locateNodeById } from "../schemaNavigator.js";
+import type { TypeKind } from "../../shared/schemaUtils.js";
 import { findIdentifiedChild } from "../commandUtils.js";
 import type { ValidationFailure, ValidationResult } from "./validationUtils.js";
-import { isValidXmlName, validateAnonymousTypeParent } from "./validationUtils.js";
+import { isValidXmlName } from "./validationUtils.js";
 
 /** A top-level component, as far as the checks look at it. */
 interface NamedComponent {
@@ -230,9 +231,6 @@ export function locateChild(
   return { valid: true, child };
 }
 
-/** The two kinds of types, named like the property that holds an anonymous type in its parent. */
-export type TypeKind = "simpleType" | "complexType";
-
 /**
  * Validates the parent of the anonymous simpleType or complexType that an add command creates: it
  * exists, can hold such a type, is not a reference and has no anonymous type of this kind yet. Nodes
@@ -273,6 +271,36 @@ export function validateInlineTypeParent(
 export type LocatedType<T> = ValidationFailure | { valid: true; type: T; anonymous: boolean };
 
 /**
+ * Locates the anonymous simpleType or complexType that an ID such as `/element:a/anonymousSimpleType[0]`
+ * identifies, in the element or attribute that holds it.
+ *
+ * @param typeId - The ID of the type, for messages
+ * @param parentId - The ID of the element or attribute that holds the type
+ * @param schemaObj - The schema
+ * @param kind - The kind of the type, which is also the property that holds it
+ * @returns The located type, or the validation failure if the parent or its type does not exist
+ */
+function locateAnonymousType<T>(
+  typeId: string,
+  parentId: string | undefined,
+  schemaObj: schema,
+  kind: TypeKind
+): LocatedType<T> {
+  if (!parentId) {
+    return { valid: false, error: `Invalid anonymous ${kind} ID: ${typeId}` };
+  }
+  const location = locateNodeById(schemaObj, parentId);
+  if (!location.found) {
+    return { valid: false, error: `Parent not found: ${parentId}` };
+  }
+  const type = (location.parent as Partial<Record<TypeKind, T>>)[kind];
+  if (type === undefined) {
+    return { valid: false, error: `No anonymous ${kind} found in parent: ${parentId}` };
+  }
+  return { valid: true, type, anonymous: true };
+}
+
+/**
  * Locates the simpleType or complexType that a remove or modify command changes: an anonymous type
  * in its parent, or a top-level type.
  *
@@ -296,12 +324,7 @@ export function locateType<T>(
   const anonymousNodeType =
     kind === "simpleType" ? SchemaNodeType.AnonymousSimpleType : SchemaNodeType.AnonymousComplexType;
   if (parsed.nodeType === anonymousNodeType) {
-    const result = validateAnonymousTypeParent(typeId, parsed.parentId, schemaObj, kind);
-    if (!result.success) {
-      return result.error;
-    }
-    // validateAnonymousTypeParent() has checked that the parent has an anonymous type of this kind
-    return { valid: true, type: (result.location.parent as Record<TypeKind, T>)[kind], anonymous: true };
+    return locateAnonymousType<T>(typeId, parsed.parentId, schemaObj, kind);
   }
   const type = (topLevelTypes ?? []).find((t) => t.name === parsed.name);
   if (!type) {

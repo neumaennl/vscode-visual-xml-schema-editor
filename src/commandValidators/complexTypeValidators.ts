@@ -16,7 +16,7 @@ import { locateType, validateInlineTypeParent, validateNewTypeName } from "./com
 /**
  * Valid content models for `ComplexType` elements.
  * Only compositor models are supported in Phase 1 (sequence, choice, all).
- * Note: `ContentModel` type in `shared/commands/schemaTypes.ts` defines: `"sequence"` | `"choice"` | `"all"`
+ * Note: `ContentModel` type in `shared/commands/complexType.ts` defines: `"sequence"` | `"choice"` | `"all"`
  */
 export const VALID_COMPLEX_TYPE_CONTENT_MODELS = ["sequence", "choice", "all"] as const;
 

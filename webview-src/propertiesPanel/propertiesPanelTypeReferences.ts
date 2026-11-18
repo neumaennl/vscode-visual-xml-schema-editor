@@ -1,0 +1,94 @@
+/**
+ * Type references entered in the properties panel: the type names of the schema, and the prefix of the
+ * target namespace that a reference to one of them gets.
+ */
+
+import { SchemaNodeType } from "../../shared/idStrategy";
+import type { DiagramItem } from "../diagram";
+import { getNodeType } from "./propertiesPanelNodeKinds";
+import { BUILT_IN_XSD_TYPE_LOCAL_NAME_SET } from "./propertiesPanelTypeCatalog";
+
+/**
+ * Collects and caches top-level/local simpleType and complexType names from the active diagram.
+ *
+ * @param node - Any diagram node that belongs to the currently rendered diagram
+ * @returns A set of discovered local schema type names
+ */
+export function collectLocalSchemaTypeNames(node: DiagramItem): ReadonlySet<string> {
+  const cached = node.diagram?.localSchemaTypeNames;
+  if (cached) {
+    return cached;
+  }
+
+  const names = new Set<string>();
+  const visit = (item: DiagramItem): void => {
+    const itemNodeType = getNodeType(item);
+    if ((itemNodeType === SchemaNodeType.SimpleType || itemNodeType === SchemaNodeType.ComplexType) && item.name) {
+      const localName = item.name.trim();
+      if (localName) {
+        names.add(localName);
+      }
+    }
+    for (const child of item.childElements) {
+      visit(child);
+    }
+  };
+  for (const root of node.diagram?.rootElements ?? []) {
+    visit(root);
+  }
+  if (node.diagram) {
+    node.diagram.localSchemaTypeNames = names;
+  }
+  return names;
+}
+
+/**
+ * Normalizes a type reference entered in the properties panel.
+ * For local schema types, this prefixes with the schema `targetNamespace` prefix when available.
+ *
+ * @param node - Diagram item whose schema the type belongs to
+ * @param nextType - The entered type reference
+ * @returns The trimmed reference, with the prefix of the target namespace for a type of the schema
+ */
+export function normalizeTypeReference(node: DiagramItem, nextType: string): string {
+  const typeName = nextType.trim();
+  if (!typeName) {
+    return typeName;
+  }
+  if (typeName.includes(":")) {
+    return typeName;
+  }
+
+  const currentSchemaPrefix = node.diagram?.currentSchemaPrefix?.trim();
+  if (!currentSchemaPrefix || BUILT_IN_XSD_TYPE_LOCAL_NAME_SET.has(typeName)) {
+    return typeName;
+  }
+
+  const localSchemaTypeNames = collectLocalSchemaTypeNames(node);
+  return localSchemaTypeNames.has(typeName) ? `${currentSchemaPrefix}:${typeName}` : typeName;
+}
+
+/**
+ * Returns the commit callback of a type field: it calls `apply` only when the new type differs from the
+ * current one, both normalized for the current schema (see {@link normalizeTypeReference}).
+ *
+ * @param node - Diagram item whose type field this is
+ * @param current - The current type
+ * @param apply - Applies the change; gets the normalized and the entered new type
+ * @param allowEmpty - Whether an empty type is applied too, which removes the type
+ * @returns The commit callback
+ */
+export function createTypeCommitHandler(
+  node: DiagramItem,
+  current: string,
+  apply: (normalizedNext: string, next: string) => void,
+  allowEmpty = false
+): (next: string) => void {
+  return (next) => {
+    const normalizedNext = normalizeTypeReference(node, next);
+    if ((!normalizedNext && !allowEmpty) || normalizedNext === normalizeTypeReference(node, current)) {
+      return;
+    }
+    apply(normalizedNext, next);
+  };
+}

@@ -6,15 +6,10 @@
 import type { DiagramItem } from "../diagram";
 import { DiagramItemType } from "../diagram/DiagramTypes";
 import type { SchemaCommand } from "../../shared/types";
-import {
-  collectLocalSchemaTypeNames,
-  getNodeType,
-  getNodeTypeLabel,
-  canEditCardinality,
-  createDeleteNodeCommand,
-  createRenameNodeComand,
-  resolveSimpleTypeId,
-} from "./propertiesPanelCommands";
+import { canEditCardinality, getNodeType, getNodeTypeLabel } from "./propertiesPanelNodeKinds";
+import { collectLocalSchemaTypeNames } from "./propertiesPanelTypeReferences";
+import { createDeleteNodeCommand, createRenameNodeCommand } from "./propertiesPanelCommands";
+import { resolveSimpleTypeId } from "./propertiesPanelTargets";
 import { SchemaNodeType } from "../../shared/idStrategy";
 import { createDraftNode } from "./propertiesPanelDraft";
 import {
@@ -197,7 +192,7 @@ export class PropertiesPanel {
     root.className = "property-tab-content";
     root.appendChild(createSectionHeader("symbol-key", "IDENTITY"));
 
-    const nameCommand = createRenameNodeComand(node, node.name);
+    const nameCommand = createRenameNodeCommand(node, node.name);
     if (nameCommand) {
       root.appendChild(
         createEditableField("Name", node.name, (next) => {
@@ -209,7 +204,7 @@ export class PropertiesPanel {
           if (this.pendingRename?.sourceId === node.id && this.pendingRename.newName === trimmedName) {
             return;
           }
-          const command = createRenameNodeComand(node, next);
+          const command = createRenameNodeCommand(node, next);
           if (command) {
             node.name = trimmedName;
             this.pendingRename = { sourceId: node.id, newName: trimmedName };

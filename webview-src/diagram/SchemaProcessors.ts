@@ -13,7 +13,7 @@ import {
   extractAttributes,
   extractOccurrenceConstraints,
 } from "./DiagramBuilderHelpers";
-import { getAttributeContainer } from "../../shared/schemaUtils";
+import { anonymousTypeId, getAttributeContainer, type TypeKind } from "../../shared/schemaUtils";
 import type { localElement } from "../../shared/generated/localElement";
 import type { explicitGroup } from "../../shared/generated/explicitGroup";
 import type { all } from "../../shared/generated/all";
@@ -22,9 +22,6 @@ import type { allType } from "../../shared/generated/allType";
 import type { groupRef } from "../../shared/generated/groupRef";
 import type { narrowMaxMin } from "../../shared/generated/narrowMaxMin";
 import { processList, processRestriction, processUnion } from "./SchemaProcessorsSimpleTypes";
-import { processChildCollection as processChildCollectionImpl } from "./SchemaProcessorsCommon";
-
-export { processChildCollectionImpl as processChildCollection };
 
 /**
  * Processes an anonymous inline complex type within an element.
@@ -47,7 +44,7 @@ function processAnonymousComplexType(parent: DiagramItem, complexType: ComplexTy
     parent.isMixed = true;
   }
 
-  mergeAnonymousTypeDocumentation(parent, SchemaNodeType.AnonymousComplexType, complexType.annotation);
+  mergeAnonymousTypeDocumentation(parent, "complexType", complexType.annotation);
 
   // Process the complex type structure directly on the parent
   processComplexType(parent, complexType);
@@ -64,7 +61,7 @@ function processAnonymousSimpleType(parent: DiagramItem, simpleType: SimpleTypeL
   // Mark the parent as having simple content
   parent.isSimpleContent = true;
 
-  mergeAnonymousTypeDocumentation(parent, SchemaNodeType.AnonymousSimpleType, simpleType.annotation);
+  mergeAnonymousTypeDocumentation(parent, "simpleType", simpleType.annotation);
 
   // Set type before processing restriction so += works correctly
   if (!parent.type) {
@@ -113,19 +110,18 @@ export function processSimpleTypeBody(item: DiagramItem, simpleType: SimpleTypeL
  * keep the ID of the anonymous type, so that editing them changes the type's annotation.
  *
  * @param parent - Diagram item of the element
- * @param nodeType - The node type of the anonymous type
+ * @param kind - The kind of the anonymous type
  * @param annotation - The annotation of the anonymous type
  */
 function mergeAnonymousTypeDocumentation(
   parent: DiagramItem,
-  nodeType: SchemaNodeType.AnonymousComplexType | SchemaNodeType.AnonymousSimpleType,
+  kind: TypeKind,
   annotation: Parameters<typeof extractDocumentation>[0]
 ): void {
   if (parent.documentation) {
     return;
   }
-  const anonymousTypeId = generateSchemaId({ nodeType, parentId: parent.id, position: 0 });
-  parent.documentationAnnotations = extractDocumentationAnnotations(anonymousTypeId, annotation);
+  parent.documentationAnnotations = extractDocumentationAnnotations(anonymousTypeId(parent.id, kind), annotation);
   parent.documentation = extractDocumentation(annotation) ?? "";
 }
 
@@ -384,11 +380,7 @@ function processGroup(
  */
 function resolveEffectiveGroupParentId(parent: DiagramItem): string {
   if (parent.itemType === DiagramItemType.element && parent.hasAnonymousComplexType) {
-    return generateSchemaId({
-      nodeType: SchemaNodeType.AnonymousComplexType,
-      parentId: parent.id,
-      position: 0,
-    });
+    return anonymousTypeId(parent.id, "complexType");
   }
   return parent.id;
 }

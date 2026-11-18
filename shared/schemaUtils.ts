@@ -3,7 +3,7 @@
  * These utilities are shared between the extension and webview.
  */
 
-import { SCHEMA_ROOT_ID } from "./idStrategy.js";
+import { SCHEMA_ROOT_ID, SchemaNodeType, generateSchemaId } from "./idStrategy.js";
 import type { attribute, attributeGroupRef, schema } from "./types.js";
 
 /**
@@ -41,6 +41,21 @@ export function getCurrentSchemaPrefixes(schemaObj: schema): string[] {
   return Object.entries(schemaObj._namespacePrefixes ?? {})
     .filter(([prefix, namespaceUri]) => prefix !== "" && namespaceUri === targetNamespace)
     .map(([prefix]) => prefix);
+}
+
+/** The two kinds of types, named like the property that holds an anonymous type in its element or attribute. */
+export type TypeKind = "simpleType" | "complexType";
+
+/**
+ * Returns the ID of the anonymous type of an element or attribute, such as `/element:a/anonymousSimpleType[0]`.
+ *
+ * @param parentId - The ID of the element or attribute
+ * @param kind - The kind of the anonymous type
+ * @returns The ID of the anonymous type
+ */
+export function anonymousTypeId(parentId: string, kind: TypeKind): string {
+  const nodeType = kind === "simpleType" ? SchemaNodeType.AnonymousSimpleType : SchemaNodeType.AnonymousComplexType;
+  return generateSchemaId({ nodeType, parentId, position: 0 });
 }
 
 /** The extension and restriction of the complex or simple content of a complex type. */

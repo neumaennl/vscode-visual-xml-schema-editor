@@ -1,5 +1,10 @@
+/**
+ * The commands for drops on types: on named simple and complex types and on the anonymous types of
+ * elements, including the facets of a restriction, and what the drop target tells about its type.
+ */
+
 import type { RestrictionFacets, SchemaCommand } from "../../shared/types";
-import { generateSchemaId, SchemaNodeType } from "../../shared/idStrategy";
+import { anonymousTypeId } from "../../shared/schemaUtils";
 import type { DiagramItem } from "../diagram";
 import { DiagramItemType, parseDerivationBaseType, toRestrictionFacets } from "../diagram";
 import type { FacetPaletteConstruct } from "../palette/FacetIconStyles";
@@ -23,34 +28,6 @@ export function isSimpleTypeNode(item: DiagramItem): boolean {
  */
 export function isComplexTypeNode(item: DiagramItem): boolean {
   return item.itemType === DiagramItemType.type && item.type.startsWith("complexType");
-}
-
-/**
- * Resolves the anonymous simpleType ID associated with an element.
- *
- * @param item - The element
- * @returns The ID of its anonymous simpleType
- */
-export function getAnonymousSimpleTypeId(item: DiagramItem): string {
-  return generateSchemaId({
-    nodeType: SchemaNodeType.AnonymousSimpleType,
-    parentId: item.id,
-    position: 0,
-  });
-}
-
-/**
- * Resolves the anonymous complexType ID associated with an element.
- *
- * @param item - The element
- * @returns The ID of its anonymous complexType
- */
-export function getAnonymousComplexTypeId(item: DiagramItem): string {
-  return generateSchemaId({
-    nodeType: SchemaNodeType.AnonymousComplexType,
-    parentId: item.id,
-    position: 0,
-  });
 }
 
 /**
@@ -96,7 +73,7 @@ export function createFacetNodeDropCommand(item: DiagramItem, construct: FacetPa
   return {
     type: "modifySimpleType",
     payload: {
-      typeId: item.itemType === DiagramItemType.element ? getAnonymousSimpleTypeId(item) : item.id,
+      typeId: item.itemType === DiagramItemType.element ? anonymousTypeId(item.id, "simpleType") : item.id,
       baseType: getRestrictionBaseType(item),
       restrictions: { ...existingFacets, ...facet },
     },

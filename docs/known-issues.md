@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-18T08:18:54Z }
-verified: { by: human:neumaennl, at: 2026-11-18T08:56:25Z }
+generated: { by: human:neumaennl, at: 2026-11-18T09:05:08Z }
+verified: { by: human:neumaennl, at: 2026-11-18T12:43:13Z }
 ---
 
 # Purpose
@@ -46,7 +46,7 @@ Effort:
 
 ## Node IDs are ambiguous and have many special cases
 
-- **Location:** `shared/idStrategy.ts`, `src/schemaNavigator.ts`, `src/commandValidators/`, `src/commandExecutors/`, `webview-src/diagram/` (ID generation), `webview-src/propertiesPanel/propertiesPanelCommands.ts`
+- **Location:** `shared/idStrategy.ts`, `src/schemaNavigator.ts`, `src/commandValidators/`, `src/commandExecutors/`, `webview-src/diagram/` (ID generation), `webview-src/propertiesPanel/propertiesPanelCommands.ts`, `webview-src/propertiesPanel/propertiesPanelNodeKinds.ts`, `webview-src/propertiesPanel/propertiesPanelTargets.ts`
 - **Severity:** High
 - **Effort:** L
 - **Description:** The ID conventions go back to the original protocol design, written before the editor was implemented, and were adapted during implementation (see [Schema model](schema-model.md#node-ids)). Some of the resulting problems are bugs:
@@ -61,9 +61,9 @@ Effort:
   - `complexContent` derivation is skipped, so the `extension` or `restriction` has no segment of its own.
   - Top-level components have a name and no position; local elements have both, but only one is used.
   - The last segment of annotations, imports, includes and references is resolved by the individual validators and executors instead of one resolver.
-  - The doc comments of `parentId` in `shared/commands/schemaTypes.ts` say "Omit or set to 'schema'", but `isSchemaRoot()` only accepts `/schema`; `parentId: "schema"` fails with "Parent not found: schema".
+  - The doc comments of `parentId` in `shared/commands/simpleType.ts` and `complexType.ts` say "Omit or set to 'schema'", but `isSchemaRoot()` only accepts `/schema`; `parentId: "schema"` fails with "Parent not found: schema".
 
-  The webview reads IDs with its own helpers, such as `getNodeType()` and `isTopLevelElement()` in `propertiesPanelCommands.ts`, instead of shared ones; `idStrategy.ts` had such helpers, but nothing used them, so they were removed.
+  The webview reads IDs with its own helpers, such as `getNodeType()` and `isTopLevelElement()` in `propertiesPanelNodeKinds.ts`, instead of shared ones; `idStrategy.ts` had such helpers, but nothing used them, so they were removed.
 
   The goal is one consistent grammar, generated and resolved by a single implementation in `shared/`. Since IDs are not stored in the XSD file, a new format needs no migration. The redesign should be planned together with [Diagram items copy values from the schema objects](#diagram-items-copy-values-from-the-schema-objects), which also changes the diagram builder.
 
@@ -135,7 +135,7 @@ Effort:
 
 ## Inline complex types with simple content are treated as inline simple types
 
-- **Location:** `webview-src/diagram/SchemaProcessors.ts` (`processComplexType()`, `processAnonymousSimpleType()`), `webview-src/drop/DropCommandFactoryTypeHelpers.ts` (`isRestrictionSimpleType()`, `createFacetNodeDropCommand()`), `webview-src/propertiesPanel/propertiesPanelTypeHelpers.ts` (`isInlineSimpleTypeElement()`), `webview-src/propertiesPanel/propertiesPanelCommands.ts` (`resolveSimpleTypeId()`)
+- **Location:** `webview-src/diagram/SchemaProcessors.ts` (`processComplexType()`, `processAnonymousSimpleType()`), `webview-src/drop/TypeDropCommands.ts` (`isRestrictionSimpleType()`, `createFacetNodeDropCommand()`), `webview-src/propertiesPanel/propertiesPanelTypeHelpers.ts` (`isInlineSimpleTypeElement()`), `webview-src/propertiesPanel/propertiesPanelTargets.ts` (`resolveSimpleTypeId()`)
 - **Severity:** Medium
 - **Effort:** S
 - **Description:** The diagram builder sets `isSimpleContent` both on an element with an inline simple type and on an element whose inline complex type has `xs:simpleContent`. The drop rules and the properties panel read the flag as "the element has an inline simple type" and address `/element:x/anonymousSimpleType[0]`, which only exists in the first case. For the element `price` with `<xs:complexType><xs:simpleContent><xs:restriction base="B"/></xs:simpleContent></xs:complexType>`, labelled `<anonymous complexType> with simpleContent (restricts B)`:
@@ -320,14 +320,6 @@ Effort:
 - **Description:** The doc comment says the function produces a cryptographically secure nonce for the webview's Content Security Policy, but it uses `Math.random`. The risk is low: the webview is local to VS Code, a new nonce is generated for every page, and the official VS Code webview samples use the same approach. The misleading comment is the main problem. The fix is either to correct the comment or to use `crypto.randomBytes` or `crypto.randomUUID`.
 - **GitHub issue:** none
 
-## Message `schemaModified` is unused
-
-- **Location:** `shared/messages.ts`, `webview-src/main.ts`
-- **Severity:** Low
-- **Effort:** S
-- **Description:** The extension-to-webview message `schemaModified` is defined in the message types, but the extension never sends it and the webview does not handle it.
-- **GitHub issue:** none
-
 ## `vscode:check` does not check the Node versions that runtime dependencies require
 
 - **Location:** `scripts/vscode-version.ts`, `.github/workflows/ci.yml`
@@ -453,7 +445,7 @@ Effort:
 - **Location:** `webview-src/propertiesPanel/propertiesPanel.ts` (`renderCardinalitySection()`), `propertiesPanelConstraints.ts` (`renderConstraintsSection()`), `propertiesPanelDocs.ts`, `propertiesPanelElementDefaults.ts`, `propertiesPanelFacets.ts`, `propertiesPanelSchemaNamespaces.ts`, `propertiesPanelSimpleTypeEditors.ts`, `propertiesPanelTypes.ts`
 - **Severity:** Low
 - **Effort:** M
-- **Description:** The properties panel builds its commands in two ways. `propertiesPanelCommands.ts` and `propertiesPanelSimpleTypeCommands.ts` have functions that take a node and return a command, such as `createRenameNodeComand()` and `createTypeCommand()`. Twenty other commands are written out inside the event handlers that render the fields and update the draft copy: two in `propertiesPanel.ts` (cardinality), five in `propertiesPanelConstraints.ts` (nillable, abstract, mixed), seven in `propertiesPanelDocs.ts` and one or two in each of the other files listed. These can only be tested through the DOM, and changes to a command or to the values it reads (for example [#360](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/360), see [Diagram items copy values from the schema objects](#diagram-items-copy-values-from-the-schema-objects)) have to be found in all of these places. The fix is to move the construction of these commands into functions in the command modules and to leave only the draft update and the dispatch in the handlers.
+- **Description:** The properties panel builds its commands in two ways. `propertiesPanelCommands.ts` and `propertiesPanelSimpleTypeCommands.ts` have functions that take a node and return a command, such as `createRenameNodeCommand()` and `createTypeCommand()`. Twenty other commands are written out inside the event handlers that render the fields and update the draft copy: two in `propertiesPanel.ts` (cardinality), five in `propertiesPanelConstraints.ts` (nillable, abstract, mixed), seven in `propertiesPanelDocs.ts` and one or two in each of the other files listed. These can only be tested through the DOM, and changes to a command or to the values it reads (for example [#360](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/360), see [Diagram items copy values from the schema objects](#diagram-items-copy-values-from-the-schema-objects)) have to be found in all of these places. The fix is to move the construction of these commands into functions in the command modules and to leave only the draft update and the dispatch in the handlers.
 - **GitHub issue:** [#156](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/156)
 
 ## Top-level lookups are duplicated instead of shared
@@ -474,10 +466,7 @@ Effort:
 - **Location:** whole repository
 - **Severity:** Low
 - **Effort:** L
-- **Description:** The [development guidelines](development-guidelines.md#code-quality) ask to avoid code duplication, but the code base likely contains dead code, and duplicated logic that is written in different ways, which was not caught in reviews. `npm run lint` reports code that is copied, also with changed names (see [Build and packaging](build-and-packaging.md#duplicated-code)), and [#439](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/439) removed all such copies; it does not find logic that is written differently. fallow finds code that is unused across files, but not unused branches within a function (see [Build and packaging](build-and-packaging.md#unused-code)). The [duplicated top-level lookups](#top-level-lookups-are-duplicated-instead-of-shared) are an example. A systematic cleanup by an agent is planned. Besides duplicated logic within one part, the agent should look explicitly for code that the extension (`src/`) and the webview (`webview-src/`) each implement on their own, and move it to `shared/`, which both use; for example the rules where an element or attribute may be placed, which both sides check (see [Architecture](architecture.md#principles)), and the top-level lookups in `DiagramBuilder` and `DropCommandFactory`. Examples found in the diagram code (see [Diagram rendering](diagram-rendering.md)):
-  - `DiagramBuilder.elementMap` is only cleared.
-  - `DiagramItemType.reference` is never assigned; only the layout and a test handle it, and the renderer draws no shape for it.
-  - `Diagram.scale` is always 1, so `scaleRectangle()` of `Diagram` and `DiagramItem` and `DiagramItem.scaleInt()` change nothing.
+- **Description:** The [development guidelines](development-guidelines.md#code-quality) ask to avoid code duplication, but the code base likely contains dead code, and duplicated logic that is written in different ways, which was not caught in reviews. `npm run lint` reports code that is copied, also with changed names (see [Build and packaging](build-and-packaging.md#duplicated-code)), and [#439](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/439) removed all such copies; it does not find logic that is written differently. fallow finds code that is unused across files, but not unused branches within a function (see [Build and packaging](build-and-packaging.md#unused-code)). The [duplicated top-level lookups](#top-level-lookups-are-duplicated-instead-of-shared) are an example. A systematic cleanup by an agent is planned. Besides duplicated logic within one part, the agent should look explicitly for code that the extension (`src/`) and the webview (`webview-src/`) each implement on their own, and move it to `shared/`, which both use; for example the rules where an element or attribute may be placed, which both sides check (see [Architecture](architecture.md#principles)), and the top-level lookups in `DiagramBuilder` and `DropCommandFactory`. Functions that read schema objects move into `shared/` only with the move to `xmlbind-ts` 3 ([ADR 006](architecture/006-module-structure.md#schema-objects-on-both-sides)). The structure review [#448](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/448) removed the dead code it found in the diagram.
 
 - **GitHub issue:** none
 
@@ -491,7 +480,7 @@ Effort:
 
 ## Complex types with simple content cannot be created or derived
 
-- **Location:** `shared/commands/schemaTypes.ts` (`AddComplexTypePayload`, `ModifyComplexTypePayload`), `src/commandValidators/complexTypeValidators.ts` (`validateModifyComplexType()`), `src/commandExecutors/complexTypeExecutors.ts`
+- **Location:** `shared/commands/complexType.ts` (`AddComplexTypePayload`, `ModifyComplexTypePayload`), `src/commandValidators/complexTypeValidators.ts` (`validateModifyComplexType()`), `src/commandExecutors/complexTypeExecutors.ts`
 - **Severity:** Low
 - **Effort:** L
 - **Description:** A complex type with `xs:simpleContent` has text content of a simple type plus attributes, for example a price with a currency. The complex type commands only know complex content: `addComplexType` requires a `contentModel` and always creates a compositor, and the executor only builds `complexContent`, so a `baseType` or `contentModel` for a type with simple content would add a `complexContent` next to the `simpleContent`, which is invalid. `modifyComplexType` therefore rejects `baseType`, `derivationKind` and `contentModel` for such types (see [Commands](commands.md#complex-types)). Such types can be shown and renamed, and their documentation can be edited, but a type with simple content cannot be created, its base type and derivation cannot be changed, and an existing type cannot be switched between simple and complex content. A related problem is the [mixed content toggle](#mixed-content-toggle-ignores-simple-content-complexcontent-and-the-base-type). The fix needs a way to choose simple content in the payloads, for example a content kind, and an executor that builds `simpleContent` with an `extension` or `restriction` of a simple base type.

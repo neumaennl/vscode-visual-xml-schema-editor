@@ -7,7 +7,9 @@ import type { SchemaCommand } from "../../shared/types";
 import { SchemaNodeType } from "../../shared/idStrategy";
 import type { DiagramItem } from "../diagram";
 import { createEditableField } from "./propertiesPanelDom";
-import { createComplexBaseTypeCommand, createTypeCommand, getNodeType, onTypeChange } from "./propertiesPanelCommands";
+import { createComplexBaseTypeCommand, createTypeCommand } from "./propertiesPanelCommands";
+import { getNodeType } from "./propertiesPanelNodeKinds";
+import { createTypeCommitHandler } from "./propertiesPanelTypeReferences";
 import { extractBaseType } from "./propertiesPanelSimpleTypeCommands";
 import {
   getDerivationRelation,
@@ -158,7 +160,7 @@ function createTypeField(
   typeSuggestions: string[],
   dispatchCommand: (command: SchemaCommand) => void
 ): HTMLElement {
-  const onChange = onTypeChange(
+  const onChange = createTypeCommitHandler(
     node,
     type,
     (normalizedNext, next) => {
@@ -238,7 +240,7 @@ function renderSimpleBaseTypeEditor(
     createEditableField(
       "Base Type",
       baseType,
-      onTypeChange(
+      createTypeCommitHandler(
         node,
         baseType,
         (normalizedNext, next) => {
@@ -288,7 +290,7 @@ function renderComplexBaseTypeEditor(
     createEditableField(
       "Base Type",
       baseType ?? "",
-      onTypeChange(
+      createTypeCommitHandler(
         node,
         baseType ?? "",
         (normalizedNext, next) => {
@@ -333,7 +335,7 @@ function renderComplexReplacementType(
     createEditableField(
       "Replacement Type",
       baseType ?? "",
-      onTypeChange(node, baseType ?? "", (normalizedNext) => {
+      createTypeCommitHandler(node, baseType ?? "", (normalizedNext) => {
         const command = createTypeCommand(node, normalizedNext);
         if (!command) {
           return;
@@ -375,7 +377,7 @@ function renderInlineAnonymousTypeReplacement(
     createEditableField(
       "Replacement Type",
       baseType ?? "",
-      onTypeChange(
+      createTypeCommitHandler(
         node,
         baseType ?? "",
         (normalizedNext, next) => {

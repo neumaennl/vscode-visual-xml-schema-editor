@@ -19,7 +19,6 @@ export enum DiagramItemType {
   element = "element",
   group = "group",
   type = "type",
-  reference = "reference",
 }
 
 export enum DiagramItemGroupType {
@@ -27,9 +26,6 @@ export enum DiagramItemGroupType {
   Choice = "choice",
   All = "all",
 }
-
-export type DiagramComplexDerivationKind = "extension" | "restriction";
-export type DiagramSimpleTypeDerivationKind = "restriction" | "list" | "union";
 
 export interface Point {
   x: number;

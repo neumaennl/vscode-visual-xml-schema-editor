@@ -4,8 +4,8 @@ title: Commands
 description: The edit commands - payload fields, the rules the validators enforce, what the executors change in the schema, and where the webview sends them.
 tags: [commands, payload, validation, reference]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-14T17:03:55Z }
-verified: { by: human:neumaennl, at: 2026-11-14T17:23:45Z }
+generated: { by: human:neumaennl, at: 2026-11-18T09:05:08Z }
+verified: { by: human:neumaennl, at: 2026-11-18T12:43:13Z }
 sources:
   - id: commands
     resource: ../shared/commands/index.ts
@@ -16,17 +16,23 @@ sources:
   - id: attribute
     resource: ../shared/commands/attribute.ts
     title: Attribute commands
-  - id: schema-types
-    resource: ../shared/commands/schemaTypes.ts
-    title: Simple and complex type commands
+  - id: simple-type
+    resource: ../shared/commands/simpleType.ts
+    title: Simple type commands
+  - id: complex-type
+    resource: ../shared/commands/complexType.ts
+    title: Complex type commands
   - id: group
     resource: ../shared/commands/group.ts
-    title: Group and attribute group commands
-  - id: metadata
-    resource: ../shared/commands/metadata.ts
+    title: Group commands
+  - id: attribute-group
+    resource: ../shared/commands/attributeGroup.ts
+    title: Attribute group commands
+  - id: annotation
+    resource: ../shared/commands/annotation.ts
     title: Annotation and documentation commands
-  - id: module
-    resource: ../shared/commands/module.ts
+  - id: schema
+    resource: ../shared/commands/schema.ts
     title: Import, include and namespace commands
   - id: validators
     resource: ../src/commandValidators/
@@ -48,7 +54,7 @@ This reference describes every edit command: its payload, the rules that the val
 - **Three verbs.** Each construct has `add*`, `remove*` and `modify*` commands. `add*` names its parent (`parentId`, `targetId`), `remove*` and `modify*` name the node itself (`elementId`, `typeId`, …).
 - **Partial updates.** `modify*` payloads have only one required field, the ID. Fields that are omitted stay unchanged. What an empty string does depends on the field and is noted below.
 - **Name or reference.** Elements, attributes, groups and attribute groups are either declared with a name or refer to a top-level declaration with `ref`. A payload uses one or the other: `ref` together with a name or type is rejected. In `modify*`, setting `ref` removes the name and type, and setting a name removes `ref`.
-- **Top-level or anonymous.** `addSimpleType` and `addComplexType` create a named top-level type when `parentId` is omitted or `/schema`, and an anonymous type inside the element or attribute that `parentId` names. Anonymous types have no `typeName`. (The doc comments in `schemaTypes.ts` say "Omit or set to 'schema'"; only `/schema` works, see [Known issues](known-issues.md#node-ids-are-ambiguous-and-have-many-special-cases).)
+- **Top-level or anonymous.** `addSimpleType` and `addComplexType` create a named top-level type when `parentId` is omitted or `/schema`, and an anonymous type inside the element or attribute that `parentId` names. Anonymous types have no `typeName`. (The doc comments in `simpleType.ts` and `complexType.ts` say "Omit or set to 'schema'"; only `/schema` works, see [Known issues](known-issues.md#node-ids-are-ambiguous-and-have-many-special-cases).)
 - **Definition or reference mode.** `addGroup` and `addAttributeGroup` either define a top-level group (name, no `parentId`) or add a reference to one (`ref` and `parentId`).
 - **Occurrences.** `minOccurs` is a non-negative integer, `maxOccurs` a non-negative integer or `"unbounded"`, and `minOccurs` must not exceed `maxOccurs`. They are written only when given, and never on top-level elements.
 - **Names.** Names and `ref` values must match `isValidXmlName()`: an ASCII letter or `_`, then letters, digits, `_`, `-` or `.`. Prefixed references such as `tns:Address` are rejected (see [Known issues](known-issues.md#name-validation-is-ascii-only-and-rejects-prefixed-references)).
@@ -62,39 +68,39 @@ This reference describes every edit command: its payload, the rules that the val
 
 "Sent by" names where the webview creates the command; commands without an entry are implemented and tested in the extension host, but no UI sends them yet. "Palette drop" means `DropCommandFactory` in `webview-src/drop/`, "Properties panel" the files in `webview-src/propertiesPanel/`.
 
-| Area (file in `shared/commands/`) | Command                  | ID in payload     | Sent by                          |
-| --------------------------------- | ------------------------ | ----------------- | -------------------------------- |
-| Elements (`element.ts`)           | `addElement`             | `parentId`        | Palette drop                     |
-|                                   | `removeElement`          | `elementId`       | Properties panel (delete)        |
-|                                   | `modifyElement`          | `elementId`       | Properties panel                 |
-| Attributes (`attribute.ts`)       | `addAttribute`           | `parentId`        | Palette drop                     |
-|                                   | `removeAttribute`        | `attributeId`     | -                                |
-|                                   | `modifyAttribute`        | `attributeId`     | -                                |
-| Types (`schemaTypes.ts`)          | `addSimpleType`          | `parentId?`       | Palette drop                     |
-|                                   | `removeSimpleType`       | `typeId`          | Properties panel (delete)        |
-|                                   | `modifySimpleType`       | `typeId`          | Properties panel, palette drop   |
-|                                   | `addComplexType`         | `parentId?`       | Palette drop                     |
-|                                   | `removeComplexType`      | `typeId`          | Properties panel (delete)        |
-|                                   | `modifyComplexType`      | `typeId`          | Properties panel, palette drop   |
-| Groups (`group.ts`)               | `addGroup`               | `parentId?`       | Palette drop                     |
-|                                   | `removeGroup`            | `groupId`         | Properties panel (delete)        |
-|                                   | `modifyGroup`            | `groupId`         | Properties panel, palette drop   |
-|                                   | `addAttributeGroup`      | `parentId?`       | -                                |
-|                                   | `removeAttributeGroup`   | `groupId`         | -                                |
-|                                   | `modifyAttributeGroup`   | `groupId`         | -                                |
-| Annotations (`metadata.ts`)       | `addAnnotation`          | `targetId`        | Properties panel (documentation) |
-|                                   | `removeAnnotation`       | `annotationId`    | Properties panel (documentation) |
-|                                   | `modifyAnnotation`       | `annotationId`    | -                                |
-|                                   | `addDocumentation`       | `targetId`        | Properties panel (documentation) |
-|                                   | `removeDocumentation`    | `documentationId` | Properties panel (documentation) |
-|                                   | `modifyDocumentation`    | `documentationId` | Properties panel (documentation) |
-| Schema (`module.ts`)              | `addImport`              | none              | -                                |
-|                                   | `removeImport`           | `importId`        | -                                |
-|                                   | `modifyImport`           | `importId`        | -                                |
-|                                   | `addInclude`             | none              | -                                |
-|                                   | `removeInclude`          | `includeId`       | -                                |
-|                                   | `modifyInclude`          | `includeId`       | -                                |
-|                                   | `modifySchemaNamespaces` | none              | Properties panel (namespaces)    |
+| Area (file in `shared/commands/`)      | Command                  | ID in payload     | Sent by                          |
+| -------------------------------------- | ------------------------ | ----------------- | -------------------------------- |
+| Elements (`element.ts`)                | `addElement`             | `parentId`        | Palette drop                     |
+|                                        | `removeElement`          | `elementId`       | Properties panel (delete)        |
+|                                        | `modifyElement`          | `elementId`       | Properties panel                 |
+| Attributes (`attribute.ts`)            | `addAttribute`           | `parentId`        | Palette drop                     |
+|                                        | `removeAttribute`        | `attributeId`     | -                                |
+|                                        | `modifyAttribute`        | `attributeId`     | -                                |
+| Simple types (`simpleType.ts`)         | `addSimpleType`          | `parentId?`       | Palette drop                     |
+|                                        | `removeSimpleType`       | `typeId`          | Properties panel (delete)        |
+|                                        | `modifySimpleType`       | `typeId`          | Properties panel, palette drop   |
+| Complex types (`complexType.ts`)       | `addComplexType`         | `parentId?`       | Palette drop                     |
+|                                        | `removeComplexType`      | `typeId`          | Properties panel (delete)        |
+|                                        | `modifyComplexType`      | `typeId`          | Properties panel, palette drop   |
+| Groups (`group.ts`)                    | `addGroup`               | `parentId?`       | Palette drop                     |
+|                                        | `removeGroup`            | `groupId`         | Properties panel (delete)        |
+|                                        | `modifyGroup`            | `groupId`         | Properties panel, palette drop   |
+| Attribute groups (`attributeGroup.ts`) | `addAttributeGroup`      | `parentId?`       | -                                |
+|                                        | `removeAttributeGroup`   | `groupId`         | -                                |
+|                                        | `modifyAttributeGroup`   | `groupId`         | -                                |
+| Annotations (`annotation.ts`)          | `addAnnotation`          | `targetId`        | Properties panel (documentation) |
+|                                        | `removeAnnotation`       | `annotationId`    | Properties panel (documentation) |
+|                                        | `modifyAnnotation`       | `annotationId`    | -                                |
+|                                        | `addDocumentation`       | `targetId`        | Properties panel (documentation) |
+|                                        | `removeDocumentation`    | `documentationId` | Properties panel (documentation) |
+|                                        | `modifyDocumentation`    | `documentationId` | Properties panel (documentation) |
+| Schema (`schema.ts`)                   | `addImport`              | none              | -                                |
+|                                        | `removeImport`           | `importId`        | -                                |
+|                                        | `modifyImport`           | `importId`        | -                                |
+|                                        | `addInclude`             | none              | -                                |
+|                                        | `removeInclude`          | `includeId`       | -                                |
+|                                        | `modifyInclude`          | `includeId`       | -                                |
+|                                        | `modifySchemaNamespaces` | none              | Properties panel (namespaces)    |
 
 A drop on an existing type or group creates a `modify*` command instead of an `add*` command; for example, a compositor dropped on a complex type, or on an element with an anonymous complex type, becomes `modifyComplexType` with a new content model (see [Drag and drop](drag-and-drop.md)).[^drop-factory] That attributes can only be added is listed in [Known issues](known-issues.md#attribute-editing-is-half-implemented).
 
@@ -136,7 +142,7 @@ New attributes and attribute group references (`addAttributeGroup`) are written 
 
 # Simple types
 
-`addSimpleType`, `removeSimpleType` and `modifySimpleType` are defined in `schemaTypes.ts`.[^schema-types]
+`addSimpleType`, `removeSimpleType` and `modifySimpleType` are defined in `simpleType.ts`.[^simple-type]
 
 | Field                 | add            | modify         | Meaning and rules                                                                                         |
 | --------------------- | -------------- | -------------- | --------------------------------------------------------------------------------------------------------- |
@@ -168,7 +174,7 @@ A restriction without `restrictions` has no facets, which XSD allows. If `restri
 
 # Complex types
 
-`addComplexType`, `removeComplexType` and `modifyComplexType` are defined in `schemaTypes.ts`.[^schema-types]
+`addComplexType`, `removeComplexType` and `modifyComplexType` are defined in `complexType.ts`.[^complex-type]
 
 | Field                 | add            | modify         | Meaning and rules                                                                                                                                                                                                                                                                                                  |
 | --------------------- | -------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -204,11 +210,11 @@ The complex type commands cannot create or change simple content: for a complex 
 
 # Attribute groups
 
-`addAttributeGroup`, `removeAttributeGroup` and `modifyAttributeGroup` are defined in `group.ts`.[^group] They work like the group commands with fewer fields: a definition has `groupName`, a reference `ref` and `parentId` (a complex type or an attribute group), both can have `documentation`. Like attributes, the references of a complex type with complex or simple content are those of its extension or restriction. `modifyAttributeGroup` changes `groupName`, `ref` or `documentation`; renaming a definition updates the references and checks for an existing attribute group with the new name. A definition cannot be removed while a reference points to it.[^validators][^executors]
+`addAttributeGroup`, `removeAttributeGroup` and `modifyAttributeGroup` are defined in `attributeGroup.ts`.[^attribute-group] They work like the group commands with fewer fields: a definition has `groupName`, a reference `ref` and `parentId` (a complex type or an attribute group), both can have `documentation`. Like attributes, the references of a complex type with complex or simple content are those of its extension or restriction. `modifyAttributeGroup` changes `groupName`, `ref` or `documentation`; renaming a definition updates the references and checks for an existing attribute group with the new name. A definition cannot be removed while a reference points to it.[^validators][^executors]
 
 # Annotations and documentation
 
-The six commands in `metadata.ts` edit `xs:annotation` and its `xs:documentation` entries.[^metadata] The IDs follow the annotation scheme in [Schema model](schema-model.md#node-ids).
+The six commands in `annotation.ts` edit `xs:annotation` and its `xs:documentation` entries.[^annotation] The IDs follow the annotation scheme in [Schema model](schema-model.md#node-ids).
 
 | Command               | Fields                                       | Effect                                                                                                                 |
 | --------------------- | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
@@ -223,7 +229,7 @@ The properties panel uses these commands for the documentation of the selected n
 
 # Imports, includes and namespaces
 
-The commands in `module.ts` change the schema root.[^module] They have no parent ID; imports and includes are addressed by position (`/import[0]`, `/include[0]`).
+The commands in `schema.ts` change the schema root.[^schema] They have no parent ID; imports and includes are addressed by position (`/import[0]`, `/include[0]`).
 
 | Command                  | Fields                                                                | Rules and effect                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | ------------------------ | --------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -277,16 +283,16 @@ The element prefix `xs:` is missing in the output because serialization drops it
 
 # Files
 
-| File                                                                                                   | Content                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `shared/commands/base.ts`                                                                              | `BaseCommand` and `CommandResponse`                                                                                                                                                                                                                                                                                                                                                                                         |
-| `shared/commands/element.ts`, `attribute.ts`, `schemaTypes.ts`, `group.ts`, `metadata.ts`, `module.ts` | Payloads, command types and the union of the commands of each kind of component, such as `ElementCommand`, one file per area                                                                                                                                                                                                                                                                                                |
-| `shared/commands/index.ts`                                                                             | Re-exports the areas and defines the `SchemaCommand` union, which combines the unions of the areas                                                                                                                                                                                                                                                                                                                          |
-| `shared/messages.ts`                                                                                   | The messages that carry the commands (see [Messaging](messaging.md))                                                                                                                                                                                                                                                                                                                                                        |
-| `shared/types.ts`                                                                                      | Re-exports the generated classes, the commands and the messages                                                                                                                                                                                                                                                                                                                                                             |
-| `src/commandHandlers.ts`                                                                               | `findCommandHandler()`, which finds the validator or executor of a command by its name                                                                                                                                                                                                                                                                                                                                      |
-| `src/commandValidators/`                                                                               | One validator per command, grouped by area; the checks that validators of several areas share in `commonValidators.ts`, the search for references to groups and attribute groups in `referenceSearch.ts`, and `validationUtils.ts`                                                                                                                                                                                          |
-| `src/commandExecutors/`                                                                                | One executor per command, grouped by area, and the shared rename and prefix helpers (`schemaLocalRenamer.ts`, `schemaQNameRewriter.ts`, `schemaPrefixChecker.ts`), which all use the walk over every QName of the schema in `schemaQNameReferences.ts`; helpers for optional properties and arrays (`nodeProperties.ts`), for anonymous and top-level types (`typeTargets.ts`) and for documentation (`annotationUtils.ts`) |
+| File                                                                                                                                           | Content                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| ---------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `shared/commands/base.ts`                                                                                                                      | `BaseCommand`                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `shared/commands/element.ts`, `attribute.ts`, `simpleType.ts`, `complexType.ts`, `group.ts`, `attributeGroup.ts`, `annotation.ts`, `schema.ts` | Payloads, command types and the union of the commands of each kind of component, such as `ElementCommand`, one file per kind, named like the modules of the validators and executors                                                                                                                                                                                                                                        |
+| `shared/commands/index.ts`                                                                                                                     | Re-exports the areas and defines the `SchemaCommand` union, which combines the unions of the areas                                                                                                                                                                                                                                                                                                                          |
+| `shared/messages.ts`                                                                                                                           | The messages that carry the commands, and `CommandResponse`, the result of a command (see [Messaging](messaging.md))                                                                                                                                                                                                                                                                                                        |
+| `shared/types.ts`                                                                                                                              | Re-exports the generated classes, the commands and the messages                                                                                                                                                                                                                                                                                                                                                             |
+| `src/commandHandlers.ts`                                                                                                                       | `findCommandHandler()`, which finds the validator or executor of a command by its name                                                                                                                                                                                                                                                                                                                                      |
+| `src/commandValidators/`                                                                                                                       | One validator per command, grouped by area; the checks that validators of several areas share in `commonValidators.ts`, the search for references to groups and attribute groups in `referenceSearch.ts`, and `validationUtils.ts`                                                                                                                                                                                          |
+| `src/commandExecutors/`                                                                                                                        | One executor per command, grouped by area, and the shared rename and prefix helpers (`schemaLocalRenamer.ts`, `schemaQNameRewriter.ts`, `schemaPrefixChecker.ts`), which all use the walk over every QName of the schema in `schemaQNameReferences.ts`; helpers for optional properties and arrays (`nodeProperties.ts`), for anonymous and top-level types (`typeTargets.ts`) and for documentation (`annotationUtils.ts`) |
 
 Each command type has a string literal as `type`, so `SchemaCommand` is a discriminated union: a `switch` on `command.type` narrows the payload to the right type. The type tests in `shared/commands/commandTypes.test-d.ts` check the required fields, the allowed values of `maxOccurs` and that the union rejects unknown types and mismatched payloads (see [Testing](testing.md#kinds-of-tests)); the behaviour is tested next to the validators and executors.[^commands]
 
@@ -307,13 +313,17 @@ Each command type has a string literal as `type`, so `SchemaCommand` is a discri
 
 [^attribute]: [Attribute commands](../shared/commands/attribute.ts)
 
-[^schema-types]: [Simple and complex type commands](../shared/commands/schemaTypes.ts)
+[^simple-type]: [Simple type commands](../shared/commands/simpleType.ts)
 
-[^group]: [Group and attribute group commands](../shared/commands/group.ts)
+[^complex-type]: [Complex type commands](../shared/commands/complexType.ts)
 
-[^metadata]: [Annotation and documentation commands](../shared/commands/metadata.ts)
+[^group]: [Group commands](../shared/commands/group.ts)
 
-[^module]: [Import, include and namespace commands](../shared/commands/module.ts)
+[^attribute-group]: [Attribute group commands](../shared/commands/attributeGroup.ts)
+
+[^annotation]: [Annotation and documentation commands](../shared/commands/annotation.ts)
+
+[^schema]: [Import, include and namespace commands](../shared/commands/schema.ts)
 
 [^validators]: [Command validators](../src/commandValidators/)
 

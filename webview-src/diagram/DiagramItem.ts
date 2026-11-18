@@ -3,18 +3,11 @@
  * Ported from XSD Diagram project
  */
 
-import type {
-  DiagramItemType,
-  DiagramComplexDerivationKind,
-  DiagramSimpleTypeDerivationKind,
-  DiagramAnnotationEntry,
-  Point,
-  Size,
-  Rectangle,
-} from "./DiagramTypes";
+import type { DiagramItemType, DiagramAnnotationEntry, Point, Size, Rectangle } from "./DiagramTypes";
 import type { DiagramStyle } from "./DiagramTypes";
 import { DiagramItemGroupType, defaultDiagramStyle, enclosingRectangle } from "./DiagramTypes";
 import type { Diagram } from "./Diagram";
+import type { ComplexTypeDerivationKind, SimpleTypeDerivationKind } from "../../shared/types";
 
 /**
  * A node of the diagram: an element, group, type or the schema, with what the diagram shows of it, its
@@ -45,8 +38,8 @@ export class DiagramItem {
   public isMixed = false;
   public hasAnonymousComplexType = false;
   // jscpd:ignore-end
-  public complexDerivationKind?: DiagramComplexDerivationKind;
-  public simpleTypeDerivationKind?: DiagramSimpleTypeDerivationKind;
+  public complexDerivationKind?: ComplexTypeDerivationKind;
+  public simpleTypeDerivationKind?: SimpleTypeDerivationKind;
   public simpleTypeListItemType?: string;
   public simpleTypeUnionMemberTypes?: string[];
 
@@ -130,27 +123,6 @@ export class DiagramItem {
    */
   public getStyle(): DiagramStyle {
     return this.diagram?.style ?? defaultDiagramStyle;
-  }
-
-  /**
-   * Scale a number based on diagram scale
-   *
-   * @param value - The value at scale 1
-   * @returns The scaled and rounded value, or the value itself without a diagram
-   */
-  public scaleInt(value: number): number {
-    if (!this.diagram) return value;
-    return Math.round(value * this.diagram.scale);
-  }
-
-  /**
-   * Scale a rectangle (see {@link Diagram.scaleRectangle})
-   *
-   * @param rect - The rectangle at scale 1
-   * @returns The scaled rectangle, or the rectangle itself without a diagram
-   */
-  public scaleRectangle(rect: Rectangle): Rectangle {
-    return this.diagram ? this.diagram.scaleRectangle(rect) : rect;
   }
 
   /**

@@ -4,7 +4,8 @@
  */
 
 import { SchemaNodeType } from "../../shared/idStrategy";
-import type { DiagramComplexDerivationKind, DiagramItem } from "../diagram";
+import type { ComplexTypeDerivationKind } from "../../shared/types";
+import type { DiagramItem } from "../diagram";
 
 /**
  * Tells whether the node is an element with an inline (anonymous) simple type.
@@ -116,6 +117,6 @@ export function getTypeEditHint(
  * @param derivationKind - The derivation kind of the complex type
  * @returns `"restricts"` for a restriction, `"extends"` for an extension
  */
-export function getDerivationRelation(derivationKind: DiagramComplexDerivationKind): string {
+export function getDerivationRelation(derivationKind: ComplexTypeDerivationKind): string {
   return derivationKind === "restriction" ? "restricts" : "extends";
 }

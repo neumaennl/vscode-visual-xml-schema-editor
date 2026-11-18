@@ -1,6 +1,5 @@
 /**
- * Metadata command types for managing annotations and documentation.
- * Provides commands for adding descriptive information to schema components.
+ * Commands that add, remove and modify annotations and their documentation.
  */
 
 import type { BaseCommand } from "./base.js";

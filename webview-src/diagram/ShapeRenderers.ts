@@ -52,7 +52,7 @@ export function renderGroupShape(
   item: DiagramItem,
   group: SVGElement
 ): void {
-  const points = beveledRectangle(rect, Math.round(rect.height * 0.3), true);
+  const points = beveledRectangle(rect, rect.height * 0.3, true);
   renderPolygonWithShadow(group, points, fill, stroke, item);
 
   // Draw group type indicator only for compositor groups (sequence/choice/all)
@@ -76,7 +76,7 @@ export function renderTypeShape(
   item: DiagramItem,
   group: SVGElement
 ): void {
-  const bevel = Math.round(rect.height * 0.2);
+  const bevel = rect.height * 0.2;
   const points = beveledRectangle(rect, bevel, false);
   renderPolygonWithShadow(group, points, fill, stroke, item);
 

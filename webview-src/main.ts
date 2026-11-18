@@ -124,10 +124,6 @@ class SchemaEditorApp {
           this.refreshSelection();
           break;
         }
-
-        case "schemaModified":
-          // Never sent (see "Message `schemaModified` is unused" in docs/known-issues.md)
-          break;
       }
     });
   }

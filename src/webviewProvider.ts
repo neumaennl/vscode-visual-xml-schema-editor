@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { unmarshal } from "@neumaennl/xmlbind-ts";
 import { schema } from "../shared/types.js";
-import type { ExecuteCommandMessage, WebviewMessage, DiagramOptions } from "../shared/messages.js";
+import type { ExecuteCommandMessage, ExtensionMessage, WebviewMessage, DiagramOptions } from "../shared/messages.js";
 import { CommandProcessor } from "./commandProcessor.js";
 
 /**
@@ -29,7 +29,7 @@ export class SchemaEditorProvider implements vscode.CustomTextEditorProvider {
    * @param webview - The webview to send the message to
    * @param message - The message to send
    */
-  private async safePostMessage(webview: vscode.Webview, message: unknown): Promise<void> {
+  private async safePostMessage(webview: vscode.Webview, message: ExtensionMessage): Promise<void> {
     try {
       await webview.postMessage(message);
     } catch (error) {

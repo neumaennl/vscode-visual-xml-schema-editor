@@ -7,7 +7,7 @@ import type { SchemaCommand } from "../../shared/types";
 import { SchemaNodeType } from "../../shared/idStrategy";
 import type { DiagramItem } from "../diagram";
 import { createEditableField } from "./propertiesPanelDom";
-import { normalizeTypeReferenceForCurrentSchema, onTypeChange } from "./propertiesPanelCommands";
+import { createTypeCommitHandler, normalizeTypeReference } from "./propertiesPanelTypeReferences";
 import {
   createSimpleTypeKindCommand,
   createSimpleTypeListCommand,
@@ -191,7 +191,7 @@ export function renderSimpleTypeListEditor(context: SimpleTypeEditorContext): vo
     createEditableField(
       "Item Type",
       itemType,
-      onTypeChange(node, itemType, (normalizedNext) => {
+      createTypeCommitHandler(node, itemType, (normalizedNext) => {
         const command = createSimpleTypeListCommand(node, normalizedNext);
         if (!command) {
           return;
@@ -234,7 +234,7 @@ export function renderSimpleTypeUnionEditor(context: SimpleTypeEditorContext): v
 
   const toNormalizedMembers = (entries: string[]): string[] =>
     entries
-      .map((memberType) => normalizeTypeReferenceForCurrentSchema(node, memberType))
+      .map((memberType) => normalizeTypeReference(node, memberType))
       .map((memberType) => memberType.trim())
       .filter((memberType) => memberType.length > 0);
 
@@ -353,7 +353,7 @@ export function renderInlineSimpleTypeReplacement(
     createEditableField(
       "Replacement Type",
       baseType,
-      onTypeChange(node, baseType, (normalizedNext) => {
+      createTypeCommitHandler(node, baseType, (normalizedNext) => {
         const command: SchemaCommand = {
           type: "modifyElement",
           payload: {

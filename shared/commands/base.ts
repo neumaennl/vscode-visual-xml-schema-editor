@@ -13,15 +13,3 @@ export interface BaseCommand<T = unknown> {
   /** Payload containing command-specific data */
   payload: T;
 }
-
-/**
- * Standard response for command execution.
- */
-export interface CommandResponse {
-  /** Whether the command was executed successfully */
-  success: boolean;
-  /** Error message if execution failed */
-  error?: string;
-  /** Additional data returned from command execution */
-  data?: unknown;
-}

@@ -5,7 +5,8 @@
 import type { SchemaCommand } from "../../shared/types";
 import type { DiagramItem } from "../diagram";
 import { parseDerivationBaseType } from "../diagram";
-import { normalizeTypeReferenceForCurrentSchema, resolveSimpleTypeId } from "./propertiesPanelCommands";
+import { resolveSimpleTypeId } from "./propertiesPanelTargets";
+import { normalizeTypeReference } from "./propertiesPanelTypeReferences";
 
 /**
  * Extracts the simple base type from the user-facing type label shown in the panel.
@@ -32,7 +33,7 @@ export function extractBaseType(typeText: string): string | undefined {
  * @returns A schema command or null when the node/item type is not editable
  */
 export function createSimpleTypeListCommand(node: DiagramItem, nextItemType: string): SchemaCommand | null {
-  const itemType = normalizeTypeReferenceForCurrentSchema(node, nextItemType);
+  const itemType = normalizeTypeReference(node, nextItemType);
   if (!itemType) {
     return null;
   }
@@ -62,7 +63,7 @@ export function createSimpleTypeUnionCommand(node: DiagramItem, nextMemberTypes:
     return null;
   }
   const normalized = nextMemberTypes
-    .map((memberType) => normalizeTypeReferenceForCurrentSchema(node, memberType))
+    .map((memberType) => normalizeTypeReference(node, memberType))
     .map((memberType) => memberType.trim())
     .filter((memberType) => memberType.length > 0);
   if (normalized.length === 0) {

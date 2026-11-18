@@ -122,7 +122,7 @@ export class DiagramSvgRenderer {
     if (!firstChild || !lastChild) return;
 
     const foregroundPen = `stroke:${item.getStyle().lineColor};stroke-width:1;stroke-linecap:round`;
-    const parentMidY = item.scaleInt(item.location.y + item.size.height / 2);
+    const parentMidY = item.location.y + item.size.height / 2;
 
     // Calculate where the horizontal line from parent should start (after expand button)
     // Expand button is at parent.x + parent.width + 5, with width 12, plus 5px spacing = +22
@@ -131,12 +131,12 @@ export class DiagramSvgRenderer {
     if (firstChild === lastChild) {
       // Single child - direct line
       const child = firstChild;
-      const childMidY = item.scaleInt(child.location.y + child.size.height / 2);
+      const childMidY = child.location.y + child.size.height / 2;
 
-      const parentLineStartX = item.scaleInt(item.location.x + item.size.width + expandButtonOffset);
+      const parentLineStartX = item.location.x + item.size.width + expandButtonOffset;
 
       // Horizontal line from parent (starting after expand button)
-      const midPointX = parentLineStartX + (item.scaleInt(child.location.x) - parentLineStartX) / 2;
+      const midPointX = parentLineStartX + (child.location.x - parentLineStartX) / 2;
 
       svgLine(group, foregroundPen, parentLineStartX, parentMidY, midPointX, parentMidY);
 
@@ -144,24 +144,24 @@ export class DiagramSvgRenderer {
       svgLine(group, foregroundPen, midPointX, parentMidY, midPointX, childMidY);
 
       // Horizontal line to child
-      svgLine(group, foregroundPen, midPointX, childMidY, item.scaleInt(child.location.x), childMidY);
+      svgLine(group, foregroundPen, midPointX, childMidY, child.location.x, childMidY);
     } else {
       // Multiple children - vertical connector with horizontal connectors to each child
-      const parentLineStartX = item.scaleInt(item.location.x + item.size.width + expandButtonOffset);
+      const parentLineStartX = item.location.x + item.size.width + expandButtonOffset;
 
       // Position vertical line midway between parent button and children
-      const childStartX = item.scaleInt(firstChild.location.x);
-      const verticalLineX = Math.floor((parentLineStartX + childStartX) / 2);
+      const childStartX = firstChild.location.x;
+      const verticalLineX = (parentLineStartX + childStartX) / 2;
 
       // Draw horizontal connectors from vertical line to each child
       for (const child of item.childElements) {
-        const childMidY = item.scaleInt(child.location.y + child.size.height / 2);
-        svgLine(group, foregroundPen, verticalLineX, childMidY, item.scaleInt(child.location.x), childMidY);
+        const childMidY = child.location.y + child.size.height / 2;
+        svgLine(group, foregroundPen, verticalLineX, childMidY, child.location.x, childMidY);
       }
 
       // Draw vertical connector
-      const firstMidY = item.scaleInt(firstChild.location.y + firstChild.size.height / 2);
-      const lastMidY = item.scaleInt(lastChild.location.y + lastChild.size.height / 2);
+      const firstMidY = firstChild.location.y + firstChild.size.height / 2;
+      const lastMidY = lastChild.location.y + lastChild.size.height / 2;
       svgLine(group, foregroundPen, verticalLineX, firstMidY, verticalLineX, lastMidY);
 
       // Connect to parent (starting after expand button)
@@ -175,7 +175,7 @@ export class DiagramSvgRenderer {
    * @param group - The SVG group to append shape to
    */
   private renderShape(item: DiagramItem, group: SVGElement): void {
-    const scaledBox = item.scaleRectangle(item.elementBox);
+    const box = item.elementBox;
     // Use semi-transparent background so it works with any theme
     const backgroundBrush = `fill:${item.getStyle().backgroundColor}`;
     const foregroundPen = `stroke:${item.getStyle().lineColor};stroke-width:2`;
@@ -183,19 +183,15 @@ export class DiagramSvgRenderer {
 
     switch (item.itemType) {
       case DiagramItemType.element:
-        renderElementShape(scaledBox, backgroundBrush, foregroundPen + dashed, item, group);
+        renderElementShape(box, backgroundBrush, foregroundPen + dashed, item, group);
         break;
 
       case DiagramItemType.group:
-        renderGroupShape(scaledBox, backgroundBrush, foregroundPen + dashed, item, group);
+        renderGroupShape(box, backgroundBrush, foregroundPen + dashed, item, group);
         break;
 
       case DiagramItemType.type:
-        renderTypeShape(scaledBox, backgroundBrush, foregroundPen + dashed, item, group);
-        break;
-
-      case DiagramItemType.reference:
-        // Never assigned, so nothing to draw (see "Duplicated and dead code" in docs/known-issues.md)
+        renderTypeShape(box, backgroundBrush, foregroundPen + dashed, item, group);
         break;
     }
   }
@@ -206,7 +202,7 @@ export class DiagramSvgRenderer {
    * @param group - The SVG group to append button to
    */
   private renderExpandButton(item: DiagramItem, group: SVGElement): void {
-    const scaledBox = item.scaleRectangle(item.childExpandButtonBox);
+    const box = item.childExpandButtonBox;
     const foregroundPen = `stroke:${item.getStyle().lineColor};stroke-width:1`;
     const backgroundBrush = `fill:${item.getStyle().backgroundColor}`;
 
@@ -215,11 +211,11 @@ export class DiagramSvgRenderer {
     buttonGroup.setAttribute("class", "expand-button");
     buttonGroup.setAttribute("cursor", "pointer");
 
-    svgRectangle(buttonGroup, scaledBox, backgroundBrush, foregroundPen);
+    svgRectangle(buttonGroup, box, backgroundBrush, foregroundPen);
 
     // Draw + or - sign
-    const centerX = scaledBox.x + scaledBox.width / 2;
-    const centerY = scaledBox.y + scaledBox.height / 2;
+    const centerX = box.x + box.width / 2;
+    const centerY = box.y + box.height / 2;
     const size = 4;
 
     // Horizontal line
@@ -239,10 +235,10 @@ export class DiagramSvgRenderer {
    * @param group - The SVG group to append arrow to
    */
   private renderReferenceArrow(item: DiagramItem, group: SVGElement): void {
-    const scaledBox = item.scaleRectangle(item.elementBox);
+    const box = item.elementBox;
     const arrowPen = `stroke:${item.getStyle().lineColor};stroke-width:2`;
-    const baseX = scaledBox.x + 1;
-    const baseY = scaledBox.y + scaledBox.height - 1;
+    const baseX = box.x + 1;
+    const baseY = box.y + box.height - 1;
     const targetX = baseX + 3;
     const targetY = baseY - 3;
 

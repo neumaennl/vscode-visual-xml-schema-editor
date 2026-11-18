@@ -21,9 +21,6 @@ export class Diagram {
   /** Calculated bounding box containing all diagram elements */
   public boundingBox: Rectangle = { x: 0, y: 0, width: 0, height: 0 };
 
-  /** Scale factor for rendering (1.0 = 100%) */
-  public scale = 1.0;
-
   /** Whether to display documentation annotations */
   public showDocumentation = false;
 
@@ -136,21 +133,5 @@ export class Diagram {
       pending.push(...[...item.childElements].reverse());
       item = pending.pop();
     }
-  }
-
-  /**
-   * Scales a rectangle based on the diagram's scale factor.
-   * Applies the diagram scale to all rectangle dimensions and rounds to integers.
-   *
-   * @param rect - The rectangle to scale
-   * @returns A new rectangle with scaled dimensions
-   */
-  public scaleRectangle(rect: Rectangle): Rectangle {
-    return {
-      x: Math.round(rect.x * this.scale),
-      y: Math.round(rect.y * this.scale),
-      width: Math.round(rect.width * this.scale),
-      height: Math.round(rect.height * this.scale),
-    };
   }
 }

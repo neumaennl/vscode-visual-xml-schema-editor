@@ -7,7 +7,7 @@
 import type { SchemaCommand } from "../../shared/types";
 import type { DiagramItem } from "../diagram";
 import type { DiagramAnnotationEntry, DiagramDocumentationEntry } from "../diagram/DiagramTypes";
-import { resolveDocumentationTargetId } from "./propertiesPanelCommands";
+import { resolveDocumentationTargetId } from "./propertiesPanelTargets";
 import { createEditableTextArea } from "./propertiesPanelDom";
 import { buildAnnotationId, buildDocumentationId } from "../diagram/DiagramBuilderHelpers";
 import { SCHEMA_ROOT_ID } from "../../shared/idStrategy";

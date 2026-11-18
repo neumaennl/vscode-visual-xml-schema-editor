@@ -4,14 +4,14 @@ title: UX concept
 description: The interaction model of the editor - which surface adds, edits and deletes what, how facets work, and how the properties panel behaves - with a list of what the current editor does not implement yet.
 tags: [ux, editor, palette, properties-panel, facets, context-menu, toolbar]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-15T17:30:13Z }
-verified: { by: human:neumaennl, at: 2026-11-15T17:40:45Z }
+generated: { by: human:neumaennl, at: 2026-11-18T09:05:08Z }
+verified: { by: human:neumaennl, at: 2026-11-18T12:43:13Z }
 sources:
   - id: palette-items
     resource: ../webview-src/palette/PaletteItems.ts
     title: Palette item definitions
   - id: drop-type-helpers
-    resource: ../webview-src/drop/DropCommandFactoryTypeHelpers.ts
+    resource: ../webview-src/drop/TypeDropCommands.ts
     title: Drop helpers for types, derivations and facets
   - id: properties-panel
     resource: ../webview-src/propertiesPanel/propertiesPanel.ts

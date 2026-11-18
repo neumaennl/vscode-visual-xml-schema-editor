@@ -6,7 +6,7 @@
 import { SCHEMA_ROOT_ID, parseSchemaId, SchemaNodeType } from "../../shared/idStrategy";
 import type { DiagramItem } from "../diagram";
 import { DiagramItemType } from "../diagram/DiagramTypes";
-import { getNodeType, isTopLevelElement } from "./propertiesPanelCommands";
+import { getNodeType, isTopLevelElement } from "./propertiesPanelNodeKinds";
 import { extractBaseType } from "./propertiesPanelSimpleTypeCommands";
 import type { XmlAttr } from "./propertiesPanelXmlMarkup";
 import { escapeXml, optionalAttributes, pad, renderTag, toAttrString } from "./propertiesPanelXmlMarkup";

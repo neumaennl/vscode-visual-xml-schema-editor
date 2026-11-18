@@ -7,10 +7,10 @@ import type { SchemaCommand, schema } from "../shared/types.js";
 import type { CommandHandlers } from "./commandHandlers.js";
 import { findCommandHandler } from "./commandHandlers.js";
 
-// Import execution functions from specialized modules
 import * as elementExecutors from "./commandExecutors/elementExecutors.js";
 import * as attributeExecutors from "./commandExecutors/attributeExecutors.js";
-import * as typeExecutors from "./commandExecutors/typeExecutors.js";
+import * as simpleTypeExecutors from "./commandExecutors/simpleTypeExecutors.js";
+import * as complexTypeExecutors from "./commandExecutors/complexTypeExecutors.js";
 import * as groupExecutors from "./commandExecutors/groupExecutors.js";
 import * as attributeGroupExecutors from "./commandExecutors/attributeGroupExecutors.js";
 import * as annotationExecutors from "./commandExecutors/annotationExecutors.js";
@@ -39,7 +39,8 @@ export class CommandExecutor {
     this.executors = executors ?? {
       ...elementExecutors,
       ...attributeExecutors,
-      ...typeExecutors,
+      ...simpleTypeExecutors,
+      ...complexTypeExecutors,
       ...groupExecutors,
       ...attributeGroupExecutors,
       ...annotationExecutors,

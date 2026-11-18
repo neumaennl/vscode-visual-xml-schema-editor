@@ -4,8 +4,8 @@ title: "ADR 002: Legacy TypeScript decorators"
 description: The decision to compile the decorators of the generated schema classes as TypeScript's legacy decorators instead of TC39 Stage 3 decorators, with the reasons, the consequences, the rejected alternatives and when to review it.
 tags: [adr, architecture, decorators, typescript, build, testing]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-10T10:54:23Z }
-verified: { by: human:neumaennl, at: 2026-11-10T11:14:05Z }
+generated: { by: human:neumaennl, at: 2026-11-18T09:05:08Z }
+verified: { by: human:neumaennl, at: 2026-11-18T12:43:13Z }
 sources:
   - id: tsconfig
     resource: ../../tsconfig.extension.json
@@ -97,7 +97,7 @@ The project needs no feature that only one of the two kinds has. The deciding po
 
 ## Consequences
 
-- **Fields must exist on the objects.** `hasAnnotationProperty()` in the annotation validators decides with `"annotation" in node` whether a node supports annotations.[^annotation-validators] That only works if declared fields exist on the object even when they have no value. Stage 3 decorators made that happen as a side effect. With legacy decorators and the ES2020 target, fields without a value do not exist, and the annotation tests fail. `useDefineForClassFields: true` creates every declared field, so the behavior no longer depends on the kind of decorators. With this option, legacy decorators that put accessors on the prototype would be hidden by the fields; the decorators of `xmlbind-ts` only record metadata, so this does not apply.
+- **Fields exist on the objects.** When this ADR was written, `hasAnnotationProperty()` in the annotation validators decided with `"annotation" in node` whether a node supports annotations.[^annotation-validators] That only works if declared fields exist on the object even when they have no value. Stage 3 decorators made that happen as a side effect. With legacy decorators and the ES2020 target, fields without a value do not exist, and the annotation tests failed. `useDefineForClassFields: true` creates every declared field, so the behavior no longer depends on the kind of decorators. Since [ADR 006](006-module-structure.md#schema-objects-on-both-sides), no code decides by whether a field exists, so nothing relies on the option any more; it stays, so that the objects keep their shape until the move to `xmlbind-ts` 3. With this option, legacy decorators that put accessors on the prototype would be hidden by the fields; the decorators of `xmlbind-ts` only record metadata, so this does not apply.
 - **No type metadata.** Without `emitDecoratorMetadata`, `xmlbind-ts` does not read the TypeScript types at runtime and relies on the explicit `type` in the generated classes. Oxc would derive these types less precisely than `tsc`, so tests and build could behave differently if it were enabled.
 - **Vitest needs no plugin** for decorators: Vite reads `experimentalDecorators` from `tsconfig` and passes it to Oxc.
 - **The editor branch** uses the settings since `main` was merged into it in Phase 9 ([#402](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/402)), with `xmlbind-ts` 2.3, which detects the kind of decorators in the same way.

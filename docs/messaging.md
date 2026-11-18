@@ -4,8 +4,8 @@ title: Messaging
 description: The message protocol between the extension host and the webview - the messages in both directions and the order in which they arrive.
 tags: [messaging, protocol, postMessage, commands, webview]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-18T08:18:54Z }
-verified: { by: human:neumaennl, at: 2026-11-18T08:56:25Z }
+generated: { by: human:neumaennl, at: 2026-11-18T09:05:08Z }
+verified: { by: human:neumaennl, at: 2026-11-18T12:43:13Z }
 sources:
   - id: messages
     resource: ../shared/messages.ts
@@ -55,13 +55,12 @@ The provider sends through `safePostMessage()`, which catches and logs errors of
 
 **Extension to webview**
 
-| Message                | Data                                                                       | Sent when                                                                                                                                                             |
-| ---------------------- | -------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `updateSchema`         | `schema` - the whole parsed document                                       | The editor opens, and after every change of the document, including changes made by commands, undo and redo, and edits outside the visual editor.                     |
-| `updateDiagramOptions` | `DiagramOptions` - `showDocumentation`, `alwaysShowOccurrence`, `showType` | The editor opens, and a setting in `visualXmlSchemaEditor.*` changes.                                                                                                 |
-| `commandResult`        | `CommandResponse` - `success`, `error?`, `data?`                           | A command was applied to the document (`success: true`, no `data`), or its validation failed (`success: false` with `error`).                                         |
-| `error`                | `ErrorData` - `message`, `code?`, `stack?`                                 | The document cannot be parsed (only `message`), or a command fails at runtime or cannot be applied (`code: "COMMAND_EXECUTION_ERROR"`, mostly with `stack`).          |
-| `schemaModified`       | `schema`                                                                   | Never. The type exists, but the extension does not send it and the webview does not handle it (see [Known issues](known-issues.md#message-schemamodified-is-unused)). |
+| Message                | Data                                                                       | Sent when                                                                                                                                                    |
+| ---------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `updateSchema`         | `schema` - the whole parsed document                                       | The editor opens, and after every change of the document, including changes made by commands, undo and redo, and edits outside the visual editor.            |
+| `updateDiagramOptions` | `DiagramOptions` - `showDocumentation`, `alwaysShowOccurrence`, `showType` | The editor opens, and a setting in `visualXmlSchemaEditor.*` changes.                                                                                        |
+| `commandResult`        | `CommandResponse` - `success`, `error?`                                    | A command was applied to the document (`success: true`), or its validation failed (`success: false` with `error`).                                           |
+| `error`                | `ErrorData` - `message`, `code?`, `stack?`                                 | The document cannot be parsed (only `message`), or a command fails at runtime or cannot be applied (`code: "COMMAND_EXECUTION_ERROR"`, mostly with `stack`). |
 
 # Sequences
 
@@ -142,7 +141,7 @@ interface BaseCommand<T> {
 - **Full updates.** Every change sends the whole schema, and the webview rebuilds the whole diagram. Incremental updates are not implemented.
 - **No results for runtime failures.** A command that fails at runtime produces an `error` message instead of a `commandResult`, so the webview does not restore the selection as it does for validation failures.
 - **One message from the webview.** The webview only sends schema commands so far. The message union is kept for requests that are not edits, such as opening a definition ([ADR 005](architecture/005-message-protocol.md)).
-- **Unused types.** `schemaModified` is never sent, and 12 of the 31 commands are not sent by any UI yet (see [Commands](commands.md#overview)).
+- **Unused commands.** 12 of the 31 commands are not sent by any UI yet (see [Commands](commands.md#overview)).
 
 [^messages]: [Message types](../shared/messages.ts)
 

@@ -1,176 +1,14 @@
 /**
- * Command-building helpers for `PropertiesPanel` interactions.
- * This module translates edited diagram-node values into shared schema commands
- * while hiding ID-resolution details from the panel UI code.
+ * The commands that the properties panel sends: it translates edited values of a diagram item into
+ * schema commands.
  */
 
 import type { SchemaCommand } from "../../shared/types";
-import { SCHEMA_ROOT_ID, generateSchemaId, parseSchemaId, SchemaNodeType } from "../../shared/idStrategy";
+import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy";
 import type { DiagramItem } from "../diagram";
-import { DiagramItemType } from "../diagram/DiagramTypes";
-import { BUILT_IN_XSD_TYPE_LOCAL_NAME_SET } from "./propertiesPanelTypeCatalog";
-
-/**
- * Collects and caches top-level/local simpleType and complexType names from the active diagram.
- *
- * @param node - Any diagram node that belongs to the currently rendered diagram
- * @returns A set of discovered local schema type names
- */
-export function collectLocalSchemaTypeNames(node: DiagramItem): ReadonlySet<string> {
-  const cached = node.diagram?.localSchemaTypeNames;
-  if (cached) {
-    return cached;
-  }
-
-  const names = new Set<string>();
-  const visit = (item: DiagramItem): void => {
-    const itemNodeType = getNodeType(item);
-    if ((itemNodeType === SchemaNodeType.SimpleType || itemNodeType === SchemaNodeType.ComplexType) && item.name) {
-      const localName = item.name.trim();
-      if (localName) {
-        names.add(localName);
-      }
-    }
-    for (const child of item.childElements) {
-      visit(child);
-    }
-  };
-  for (const root of node.diagram?.rootElements ?? []) {
-    visit(root);
-  }
-  if (node.diagram) {
-    node.diagram.localSchemaTypeNames = names;
-  }
-  return names;
-}
-
-/**
- * Normalizes a type reference entered in the properties panel.
- * For local schema types, this prefixes with the schema `targetNamespace` prefix when available.
- *
- * @param node - Diagram item whose schema the type belongs to
- * @param nextType - The entered type reference
- * @returns The trimmed reference, with the prefix of the target namespace for a type of the schema
- */
-export function normalizeTypeReferenceForCurrentSchema(node: DiagramItem, nextType: string): string {
-  const typeName = nextType.trim();
-  if (!typeName) {
-    return typeName;
-  }
-  if (typeName.includes(":")) {
-    return typeName;
-  }
-
-  const currentSchemaPrefix = node.diagram?.currentSchemaPrefix?.trim();
-  if (!currentSchemaPrefix || BUILT_IN_XSD_TYPE_LOCAL_NAME_SET.has(typeName)) {
-    return typeName;
-  }
-
-  const localSchemaTypeNames = collectLocalSchemaTypeNames(node);
-  return localSchemaTypeNames.has(typeName) ? `${currentSchemaPrefix}:${typeName}` : typeName;
-}
-
-/**
- * Determines the schema node type represented by a diagram item.
- *
- * @param node - Diagram item to inspect
- * @returns The resolved schema node type or null when it cannot be inferred
- */
-export function getNodeType(node: DiagramItem): SchemaNodeType | null {
-  if (node.id === SCHEMA_ROOT_ID) {
-    return SchemaNodeType.Schema;
-  }
-  try {
-    return parseSchemaId(node.id).nodeType;
-  } catch {
-    switch (node.itemType) {
-      case DiagramItemType.element:
-        return SchemaNodeType.Element;
-      case DiagramItemType.type:
-        return SchemaNodeType.SimpleType;
-      case DiagramItemType.group:
-        return SchemaNodeType.Group;
-      default:
-        return null;
-    }
-  }
-}
-
-/**
- * Resolves a user-facing label for the selected node type.
- *
- * @param node - Diagram item to inspect
- * @returns A short node-type label for the properties panel header
- */
-export function getNodeTypeLabel(node: DiagramItem): string {
-  const nodeType = getNodeType(node);
-  switch (nodeType) {
-    case SchemaNodeType.Schema:
-      return "Schema";
-    case SchemaNodeType.Element:
-      return "Element";
-    case SchemaNodeType.ComplexType:
-      return "Complex Type";
-    case SchemaNodeType.SimpleType:
-      return "Simple Type";
-    case SchemaNodeType.Group:
-      return "Group";
-    case SchemaNodeType.GroupRef:
-      return "Group Reference";
-    default:
-      return node.itemType;
-  }
-}
-
-/**
- * Returns whether the given diagram item represents a top-level element declaration.
- *
- * @param node - Diagram item to inspect
- * @returns True when the node is a top-level element
- */
-export function isTopLevelElement(node: DiagramItem): boolean {
-  try {
-    const parsed = parseSchemaId(node.id);
-    return parsed.nodeType === SchemaNodeType.Element && !parsed.parentId;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Returns whether occurrence fields should be editable for the given node.
- *
- * @param node - Diagram item to inspect
- * @returns True when `minOccurs`/`maxOccurs` may be edited
- */
-export function canEditCardinality(node: DiagramItem): boolean {
-  const nodeType = getNodeType(node);
-  if (nodeType === SchemaNodeType.Schema || isTopLevelElement(node)) {
-    return false;
-  }
-  if (nodeType === SchemaNodeType.Element || node.itemType === DiagramItemType.element) {
-    return true;
-  }
-  if (nodeType === SchemaNodeType.GroupRef) {
-    return true;
-  }
-  if (nodeType === SchemaNodeType.Group) {
-    try {
-      const parsed = parseSchemaId(node.id);
-      const isCompositor = parsed.name === "sequence" || parsed.name === "choice" || parsed.name === "all";
-      if (!isCompositor || parsed.parentId === undefined) {
-        return false;
-      }
-      // XML Schema allows no occurrences on the compositor of a group definition
-      const parent = parseSchemaId(parsed.parentId);
-      const isInGroupDefinition = parent.nodeType === SchemaNodeType.Group && parent.parentId === undefined;
-      return !isInGroupDefinition;
-    } catch {
-      return false;
-    }
-  }
-  return false;
-}
+import { getNodeType } from "./propertiesPanelNodeKinds";
+import { resolveComplexTypeId, resolveSimpleTypeId } from "./propertiesPanelTargets";
+import { normalizeTypeReference } from "./propertiesPanelTypeReferences";
 
 /**
  * Builds a rename command for the selected node.
@@ -179,7 +17,7 @@ export function canEditCardinality(node: DiagramItem): boolean {
  * @param newName - Proposed new name from the UI
  * @returns A schema command or null when the node/name is not editable
  */
-export function createRenameNodeComand(node: DiagramItem, newName: string): SchemaCommand | null {
+export function createRenameNodeCommand(node: DiagramItem, newName: string): SchemaCommand | null {
   const name = newName.trim();
   if (!name) {
     return null;
@@ -232,115 +70,6 @@ export function createDeleteNodeCommand(node: DiagramItem): SchemaCommand | null
 }
 
 /**
- * Returns the commit callback of a type field: it calls `apply` only when the new type differs from the
- * current one, both normalized for the current schema (see {@link normalizeTypeReferenceForCurrentSchema}).
- *
- * @param node - Diagram item whose type field this is
- * @param current - The current type
- * @param apply - Applies the change; gets the normalized and the entered new type
- * @param allowEmpty - Whether an empty type is applied too, which removes the type
- * @returns The commit callback
- */
-export function onTypeChange(
-  node: DiagramItem,
-  current: string,
-  apply: (normalizedNext: string, next: string) => void,
-  allowEmpty = false
-): (next: string) => void {
-  return (next) => {
-    const normalizedNext = normalizeTypeReferenceForCurrentSchema(node, next);
-    if ((!normalizedNext && !allowEmpty) || normalizedNext === normalizeTypeReferenceForCurrentSchema(node, current)) {
-      return;
-    }
-    apply(normalizedNext, next);
-  };
-}
-
-/**
- * Resolves the schema ID of the simple type represented by the given node.
- *
- * @param node - Diagram item to inspect
- * @returns The simple-type schema ID or null when no simple type applies
- */
-export function resolveSimpleTypeId(node: DiagramItem): string | null {
-  return resolveTypeId(node, SchemaNodeType.SimpleType, SchemaNodeType.AnonymousSimpleType, node.isSimpleContent);
-}
-
-/**
- * Resolves the schema ID of the complex type represented by the given node.
- *
- * @param node - Diagram item to inspect
- * @returns The complex-type schema ID or null when no complex type applies
- */
-function resolveComplexTypeId(node: DiagramItem): string | null {
-  return resolveTypeId(
-    node,
-    SchemaNodeType.ComplexType,
-    SchemaNodeType.AnonymousComplexType,
-    node.hasAnonymousComplexType
-  );
-}
-
-/**
- * Resolves the schema ID of the type that a node represents: the node itself if it is a type of the
- * kind, or the anonymous type of an element that has one.
- *
- * @param node - Diagram item to inspect
- * @param namedType - The node type of a named type of the kind
- * @param anonymousType - The node type of an anonymous type of the kind
- * @param hasInlineType - Whether the node, if it is an element, has an anonymous type of the kind
- * @returns The type's schema ID, or null when no type of the kind applies
- */
-function resolveTypeId(
-  node: DiagramItem,
-  namedType: SchemaNodeType,
-  anonymousType: SchemaNodeType,
-  hasInlineType: boolean
-): string | null {
-  const nodeType = getNodeType(node);
-  if (nodeType === namedType || nodeType === anonymousType) {
-    return node.id;
-  }
-  if (nodeType === SchemaNodeType.Element && hasInlineType) {
-    return generateSchemaId({ nodeType: anonymousType, parentId: node.id, position: 0 });
-  }
-  return null;
-}
-
-/**
- * Resolves the default annotation/documentation target for Docs-tab operations.
- * For element nodes that inline anonymous types, this returns the anonymous type ID
- * so documentation edits target the actual annotated schema node instead of the
- * parent element wrapper. Anonymous types are no diagram items of their own.
- *
- * @param node - Diagram item being edited in the Docs tab
- * @returns The schema ID that documentation commands should target, or null when unsupported
- */
-export function resolveDocumentationTargetId(node: DiagramItem): string | null {
-  const nodeType = getNodeType(node);
-  switch (nodeType) {
-    case SchemaNodeType.Schema:
-      return SCHEMA_ROOT_ID;
-    case SchemaNodeType.Element:
-      if (node.hasAnonymousComplexType) {
-        return generateSchemaId({
-          nodeType: SchemaNodeType.AnonymousComplexType,
-          parentId: node.id,
-          position: 0,
-        });
-      }
-      return resolveSimpleTypeId(node) ?? node.id;
-    case SchemaNodeType.SimpleType:
-    case SchemaNodeType.ComplexType:
-    case SchemaNodeType.Group:
-    case SchemaNodeType.GroupRef:
-      return node.id;
-    default:
-      return null;
-  }
-}
-
-/**
  * Builds a type/base-type update command for the selected node.
  *
  * @param node - Diagram item being edited
@@ -348,7 +77,7 @@ export function resolveDocumentationTargetId(node: DiagramItem): string | null {
  * @returns A schema command or null when the node/type is not editable
  */
 export function createTypeCommand(node: DiagramItem, nextType: string): SchemaCommand | null {
-  const typeName = normalizeTypeReferenceForCurrentSchema(node, nextType);
+  const typeName = normalizeTypeReference(node, nextType);
   if (!typeName) {
     return null;
   }
@@ -380,15 +109,9 @@ export function createTypeCommand(node: DiagramItem, nextType: string): SchemaCo
  * @returns A schema command or null when the node/base type is not editable
  */
 export function createComplexBaseTypeCommand(node: DiagramItem, nextBaseType: string): SchemaCommand | null {
-  const baseType = normalizeTypeReferenceForCurrentSchema(node, nextBaseType);
-  const nodeType = getNodeType(node);
+  const baseType = normalizeTypeReference(node, nextBaseType);
   const complexTypeId = resolveComplexTypeId(node);
-  if (
-    !complexTypeId ||
-    (nodeType !== SchemaNodeType.ComplexType &&
-      nodeType !== SchemaNodeType.AnonymousComplexType &&
-      !(nodeType === SchemaNodeType.Element && node.hasAnonymousComplexType))
-  ) {
+  if (!complexTypeId) {
     return null;
   }
   return {

@@ -1,27 +1,7 @@
 /**
- * `CommandValidator`: Validates commands before execution.
- * Implements validation logic for all schema editing commands.
- *
- * Current Implementation (Phase 1 - Syntactic Validation):
- * - XML name syntax validation for all name fields
- * - Occurrence constraints validation (`minOccurs >= 0`, `maxOccurs` logic, consistency)
- * - Content model validation for complexType and group commands
- * - Required field validation (non-empty strings where appropriate)
- *
- * IMPORTANT: The IDs in commands (`parentId`, `elementId`, etc.) are UI-generated identifiers
- * for diagram nodes, NOT the XSD schema 'id' attributes. These are managed by the UI layer
- * and cannot be validated against the schema structure at this stage.
- *
- * Future Enhancements (Phase 2+ - Semantic Validation):
- * - Validate that UI node IDs correspond to actual nodes when execution logic is implemented
- * - Check for duplicate element/type names before adding (requires execution context)
- * - Validate type references (ensure referenced types are valid built-in or user-defined)
- * - Check for circular dependencies in type hierarchies
- * - Validate XPath expressions in key/keyref/unique constraints
- * - Verify namespace URI format and declarations
- * - Check if types/groups are being used before allowing removal
- * - Validate facet restrictions for simple types
- * - Ensure complex content model semantics (e.g., all can't contain choice)
+ * `CommandValidator`: checks a command against the current schema before it is executed, by
+ * dispatching it to the validator of its type in `commandValidators/`. The validators check
+ * everything the executors rely on (see `docs/architecture/003-validators-check-executors-assume.md`).
  */
 
 import type { SchemaCommand, schema } from "../shared/types.js";
@@ -29,7 +9,6 @@ import type { ValidationResult } from "./commandValidators/validationUtils.js";
 import type { CommandHandlers } from "./commandHandlers.js";
 import { findCommandHandler } from "./commandHandlers.js";
 
-// Import validation functions from specialized modules for default usage
 import * as elementValidators from "./commandValidators/elementValidators.js";
 import * as attributeValidators from "./commandValidators/attributeValidators.js";
 import * as simpleTypeValidators from "./commandValidators/simpleTypeValidators.js";
@@ -92,6 +71,3 @@ export class CommandValidator {
     return validator(command, schemaObj);
   }
 }
-
-// Re-export ValidationResult and utility functions
-export type { ValidationResult };

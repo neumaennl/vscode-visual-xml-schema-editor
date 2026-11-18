@@ -11,13 +11,11 @@ import type {
   topLevelSimpleType,
 } from "../../shared/types.js";
 import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
+import type { TypeKind } from "../../shared/schemaUtils.js";
 import { isSchemaRoot } from "../../shared/schemaUtils.js";
 import { assumeValidated, locateValidated } from "./assumeValidated.js";
 import { appendTo, removeFrom } from "./nodeProperties.js";
 import { renameLocalTypeInSchema } from "./schemaLocalRenamer.js";
-
-/** The two kinds of types, named like the property that holds them in the schema or in their parent. */
-export type TypeKind = "simpleType" | "complexType";
 
 /** The types of each kind, top-level or anonymous. */
 interface TypesOfKind {

@@ -9,18 +9,22 @@ export * from "./base.js";
 // Re-export all command modules
 export * from "./element.js";
 export * from "./attribute.js";
-export * from "./schemaTypes.js";
+export * from "./simpleType.js";
+export * from "./complexType.js";
 export * from "./group.js";
-export * from "./metadata.js";
-export * from "./module.js";
+export * from "./attributeGroup.js";
+export * from "./annotation.js";
+export * from "./schema.js";
 
 // Import the commands of each area for the union
 import type { ElementCommand } from "./element.js";
 import type { AttributeCommand } from "./attribute.js";
-import type { SimpleTypeCommand, ComplexTypeCommand } from "./schemaTypes.js";
-import type { GroupCommand, AttributeGroupCommand } from "./group.js";
-import type { AnnotationCommand, DocumentationCommand } from "./metadata.js";
-import type { ImportCommand, IncludeCommand, ModifySchemaNamespacesCommand } from "./module.js";
+import type { SimpleTypeCommand } from "./simpleType.js";
+import type { ComplexTypeCommand } from "./complexType.js";
+import type { GroupCommand } from "./group.js";
+import type { AttributeGroupCommand } from "./attributeGroup.js";
+import type { AnnotationCommand, DocumentationCommand } from "./annotation.js";
+import type { ImportCommand, IncludeCommand, ModifySchemaNamespacesCommand } from "./schema.js";
 
 /**
  * Union type of all possible commands.

@@ -137,27 +137,4 @@ describe("Diagram", () => {
       expect(box.height).toBe(90); // 50 + 2*padding(20)
     });
   });
-
-  describe("scaleRectangle", () => {
-    test("should scale rectangle dimensions", () => {
-      diagram.scale = 2.0;
-      const rect = { x: 10, y: 20, width: 100, height: 50 };
-
-      const scaled = diagram.scaleRectangle(rect);
-
-      expect(scaled).toEqual({ x: 20, y: 40, width: 200, height: 100 });
-    });
-
-    test("should round scaled values", () => {
-      diagram.scale = 1.5;
-      const rect = { x: 10, y: 10, width: 11, height: 11 };
-
-      const scaled = diagram.scaleRectangle(rect);
-
-      expect(scaled.x).toBe(15);
-      expect(scaled.y).toBe(15);
-      expect(scaled.width).toBe(17); // 16.5 rounded
-      expect(scaled.height).toBe(17); // 16.5 rounded
-    });
-  });
 });

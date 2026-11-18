@@ -5,7 +5,6 @@
 import { renderText, renderDocumentation, renderOccurrence } from "./TextRenderers";
 import { DiagramItem } from "./DiagramItem";
 import type { Diagram } from "./Diagram";
-import type { Rectangle } from "./DiagramTypes";
 import { DiagramItemType } from "./DiagramTypes";
 import { setupGetBBoxMock } from "../__tests__/svgTestHelpers";
 
@@ -42,7 +41,7 @@ describe("TextRenderers", () => {
   });
 
   /**
-   * Creates an element item in the mock diagram that is not scaled.
+   * Creates an element item in the mock diagram.
    *
    * @param properties - The properties of the item, such as its boxes
    * @param diagramOptions - The options of the diagram that differ from the mock diagram
@@ -52,7 +51,6 @@ describe("TextRenderers", () => {
     const item = new DiagramItem("test-id", "Test", DiagramItemType.element);
     Object.assign(item, properties);
     item.diagram = Object.assign({}, mockDiagram, diagramOptions);
-    item.scaleRectangle = (rect: Rectangle): Rectangle => rect;
     return item;
   }
 

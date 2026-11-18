@@ -6,13 +6,8 @@
 
 import type { AddAttributePayload, RemoveAttributePayload, ModifyAttributePayload } from "./attribute.js";
 import type { AddElementPayload, RemoveElementPayload, ModifyElementPayload } from "./element.js";
-import type {
-  AddGroupPayload,
-  RemoveGroupPayload,
-  ModifyGroupPayload,
-  RemoveAttributeGroupPayload,
-  ModifyAttributeGroupPayload,
-} from "./group.js";
+import type { AddGroupPayload, RemoveGroupPayload, ModifyGroupPayload } from "./group.js";
+import type { RemoveAttributeGroupPayload, ModifyAttributeGroupPayload } from "./attributeGroup.js";
 import type {
   AddAnnotationPayload,
   RemoveAnnotationPayload,
@@ -20,7 +15,7 @@ import type {
   AddDocumentationPayload,
   RemoveDocumentationPayload,
   ModifyDocumentationPayload,
-} from "./metadata.js";
+} from "./annotation.js";
 import type {
   AddImportPayload,
   RemoveImportPayload,
@@ -29,14 +24,9 @@ import type {
   RemoveIncludePayload,
   ModifyIncludePayload,
   ModifySchemaNamespacesPayload,
-} from "./module.js";
-import type {
-  RemoveSimpleTypePayload,
-  ModifySimpleTypePayload,
-  AddComplexTypePayload,
-  RemoveComplexTypePayload,
-  ModifyComplexTypePayload,
-} from "./schemaTypes.js";
+} from "./schema.js";
+import type { RemoveSimpleTypePayload, ModifySimpleTypePayload } from "./simpleType.js";
+import type { AddComplexTypePayload, RemoveComplexTypePayload, ModifyComplexTypePayload } from "./complexType.js";
 import type { SchemaCommand } from "./index.js";
 
 describe("Command types", () => {

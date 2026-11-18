@@ -4,7 +4,8 @@
 
 import { PropertiesPanel } from "../propertiesPanel/propertiesPanel";
 import { Diagram } from "../diagram/Diagram";
-import type { DiagramItem } from "../diagram/DiagramItem";
+import { DiagramItem } from "../diagram/DiagramItem";
+import { DiagramItemType } from "../diagram/DiagramTypes";
 import type { SchemaCommand } from "../../shared/types";
 import type { Mock } from "vitest";
 
@@ -185,4 +186,18 @@ export function displayItem(container: HTMLDivElement, item: DiagramItem, tab?: 
     findButton(container, tab)?.click();
   }
   return { panel, dispatch };
+}
+
+/**
+ * Creates a diagram item in a diagram whose schema has the target namespace prefix `tns`. The diagram
+ * defines no types, so normalizing a type only trims it.
+ *
+ * @param id - The ID of the item
+ * @param itemType - The type of the item
+ * @returns The item
+ */
+export function itemWithPrefix(id: string, itemType = DiagramItemType.element): DiagramItem {
+  const diagram = new Diagram();
+  diagram.currentSchemaPrefix = "tns";
+  return new DiagramItem(id, "name", itemType, diagram);
 }

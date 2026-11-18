@@ -5,8 +5,9 @@
 
 import type { DiagramItem } from "../diagram";
 import type { SchemaCommand } from "../../shared/types";
-import { SchemaNodeType, generateSchemaId } from "../../shared/idStrategy";
-import { getNodeType, isTopLevelElement } from "./propertiesPanelCommands";
+import { SchemaNodeType } from "../../shared/idStrategy";
+import { anonymousTypeId } from "../../shared/schemaUtils";
+import { getNodeType, isTopLevelElement } from "./propertiesPanelNodeKinds";
 import { createSection, createToggleRow } from "./propertiesPanelDom";
 
 /**
@@ -51,11 +52,7 @@ export function renderConstraintsSection(
 
     // Mixed content toggle (element with anonymous complex type)
     if (node.hasAnonymousComplexType) {
-      const anonComplexTypeId = generateSchemaId({
-        nodeType: SchemaNodeType.AnonymousComplexType,
-        parentId: node.id,
-        position: 0,
-      });
+      const anonComplexTypeId = anonymousTypeId(node.id, "complexType");
       section.appendChild(
         createToggleRow("Mixed content", node.isMixed, (next) => {
           node.isMixed = next;

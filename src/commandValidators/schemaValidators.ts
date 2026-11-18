@@ -13,6 +13,7 @@ import type {
   ModifySchemaNamespacesCommand,
 } from "../../shared/types.js";
 import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
+import { isReservedPrefix, prefixesForNamespace } from "../../shared/qNames.js";
 import type { ValidationResult } from "./validationUtils.js";
 import { isValidXmlName } from "./validationUtils.js";
 import { isAnyPrefixReferencedInSchema } from "../commandExecutors/schemaPrefixChecker.js";
@@ -99,12 +100,10 @@ function validateModuleId<T extends object>(
  */
 function isNamespaceReferenced(namespace: string, schemaObj: schema): boolean {
   if (!namespace || !schemaObj._namespacePrefixes) return false;
-  const prefixesForNs = new Set(
-    Object.entries(schemaObj._namespacePrefixes)
-      .filter(([, ns]) => ns === namespace)
-      .map(([pfx]) => pfx)
+  return isAnyPrefixReferencedInSchema(
+    new Set(prefixesForNamespace(schemaObj._namespacePrefixes, namespace)),
+    schemaObj
   );
-  return isAnyPrefixReferencedInSchema(prefixesForNs, schemaObj);
 }
 
 /**
@@ -118,7 +117,7 @@ function validatePrefix(prefix: string): ValidationResult {
   if (prefix !== prefix.trim()) {
     return { valid: false, error: `Prefix '${prefix}' must not contain leading or trailing whitespace` };
   }
-  if (prefix === "xml" || prefix === "xmlns") {
+  if (isReservedPrefix(prefix)) {
     return { valid: false, error: `Prefix '${prefix}' is reserved and cannot be used` };
   }
   if (prefix && !isValidXmlName(prefix)) {

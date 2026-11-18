@@ -2,10 +2,10 @@
  * Unit tests for the draft copy of a node that the properties panel edits.
  */
 
-import { createDraftNode, hasEditableFacetValues, type RestrictionSnapshot } from "./propertiesPanelDraft";
+import { createDraftNode } from "./propertiesPanelDraft";
 import { DiagramItem } from "../diagram";
 import { diagramItem, muteDiagramBuilderLog } from "../__tests__/diagramTestHelpers";
-import { schemaWith } from "../../shared/__tests__/schemaTestHelpers";
+import { webviewSchemaWith } from "../../shared/__tests__/schemaTestHelpers";
 
 /** An element with documentation, an attribute and a child, restrictions with and without lists of facets, and a union. */
 const DRAFT_NODES = `<xs:element name="note">
@@ -19,23 +19,11 @@ const DRAFT_NODES = `<xs:element name="note">
 <xs:simpleType name="Short"><xs:restriction base="xs:string"><xs:maxLength value="3"/></xs:restriction></xs:simpleType>
 <xs:simpleType name="Mixed"><xs:union memberTypes="xs:int xs:token"/></xs:simpleType>`;
 
-describe("hasEditableFacetValues", () => {
-  test.each<{ restrictions: RestrictionSnapshot; expected: boolean }>([
-    { restrictions: {}, expected: false },
-    { restrictions: { enumeration: [], pattern: [] }, expected: false },
-    { restrictions: { minLength: undefined }, expected: false },
-    { restrictions: { maxLength: 5 }, expected: true },
-    { restrictions: { pattern: ["[a-z]+"] }, expected: true },
-  ])("should return $expected for $restrictions", ({ restrictions, expected }) => {
-    expect(hasEditableFacetValues(restrictions)).toBe(expected);
-  });
-});
-
 describe("createDraftNode", () => {
   muteDiagramBuilderLog();
 
   test("should copy all values of the node into a new diagram item of the same diagram", () => {
-    const node = diagramItem(schemaWith(DRAFT_NODES), "/element:note");
+    const node = diagramItem(webviewSchemaWith(DRAFT_NODES), "/element:note");
 
     const draft = createDraftNode(node);
 
@@ -46,7 +34,7 @@ describe("createDraftNode", () => {
   });
 
   test("should copy the children, attributes, documentation and boxes, so that changing them leaves the node unchanged", () => {
-    const node = diagramItem(schemaWith(DRAFT_NODES), "/element:note");
+    const node = diagramItem(webviewSchemaWith(DRAFT_NODES), "/element:note");
     const original = structuredClone({
       attributes: node.attributes,
       annotations: node.documentationAnnotations,
@@ -70,7 +58,7 @@ describe("createDraftNode", () => {
   });
 
   test("should copy the facets, so that changing them leaves the node unchanged", () => {
-    const node = diagramItem(schemaWith(DRAFT_NODES), "/simpleType:Word");
+    const node = diagramItem(webviewSchemaWith(DRAFT_NODES), "/simpleType:Word");
 
     const draft = createDraftNode(node);
     draft.restrictions?.enumeration?.push("b");
@@ -83,7 +71,7 @@ describe("createDraftNode", () => {
   });
 
   test("should copy facets without enumeration values and patterns", () => {
-    const node = diagramItem(schemaWith(DRAFT_NODES), "/simpleType:Short");
+    const node = diagramItem(webviewSchemaWith(DRAFT_NODES), "/simpleType:Short");
 
     const draft = createDraftNode(node);
 
@@ -92,7 +80,7 @@ describe("createDraftNode", () => {
   });
 
   test("should copy the member types of a union", () => {
-    const node = diagramItem(schemaWith(DRAFT_NODES), "/simpleType:Mixed");
+    const node = diagramItem(webviewSchemaWith(DRAFT_NODES), "/simpleType:Mixed");
 
     createDraftNode(node).simpleTypeUnionMemberTypes?.push("xs:date");
 

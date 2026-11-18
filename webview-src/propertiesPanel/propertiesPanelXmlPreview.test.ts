@@ -8,9 +8,7 @@
 
 import { buildXmlPreview } from "./propertiesPanelXmlPreview";
 import { diagramItem } from "../__tests__/diagramTestHelpers";
-import { unmarshal } from "@neumaennl/xmlbind-ts";
-import { schema } from "../../shared/types";
-import { schemaWith } from "../../shared/__tests__/schemaTestHelpers";
+import { webviewSchemaFromXml, webviewSchemaWith } from "../../shared/__tests__/schemaTestHelpers";
 
 /** Elements, types and a group with the properties that the fragment shows. */
 const PREVIEW_NODES = `<xs:element name="code" type="xs:string" nillable="true" default="A"/>
@@ -177,16 +175,14 @@ describe("buildXmlPreview", () => {
       fragment: ['<xs:group ref="Contact" minOccurs="0"/>'],
     },
   ])("should show $id with its attributes, annotations, facets and one level of children", ({ id, fragment }) => {
-    expect(buildXmlPreview(diagramItem(schemaWith(PREVIEW_NODES), id))).toBe(fragment.join("\n"));
+    expect(buildXmlPreview(diagramItem(webviewSchemaWith(PREVIEW_NODES), id))).toBe(fragment.join("\n"));
   });
 
   test("should show the namespaces of the schema and declares the xs prefix that the fragment uses", () => {
-    const schemaObj = unmarshal(
-      schema,
-      `<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="urn:default" targetNamespace="urn:target">
+    const schemaObj =
+      webviewSchemaFromXml(`<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="urn:default" targetNamespace="urn:target">
   <xsd:element name="a" type="xsd:string"/>
-</xsd:schema>`
-    );
+</xsd:schema>`);
 
     expect(buildXmlPreview(diagramItem(schemaObj, "/schema"))).toBe(
       [
@@ -201,7 +197,7 @@ describe("buildXmlPreview", () => {
     const elements = Array.from({ length: 51 }, (_, index) => `<xs:element name="e${index}" type="xs:string"/>`);
     const sequenceId = "/complexType:Many/group:sequence[0]";
 
-    const schemaObj = schemaWith(
+    const schemaObj = webviewSchemaWith(
       `<xs:complexType name="Many"><xs:sequence>${elements.join("")}</xs:sequence></xs:complexType>`
     );
 

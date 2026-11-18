@@ -2,6 +2,7 @@
  * Unit tests for the commands that the editors of simple types in the properties panel send.
  */
 
+import { webviewSchemaFromXml } from "../../shared/__tests__/schemaTestHelpers";
 import {
   createSimpleTypeKindCommand,
   createSimpleTypeListCommand,
@@ -10,8 +11,6 @@ import {
 } from "./propertiesPanelSimpleTypeCommands";
 import type { DiagramItem } from "../diagram";
 import { diagramItem, muteDiagramBuilderLog } from "../__tests__/diagramTestHelpers";
-import { unmarshal } from "@neumaennl/xmlbind-ts";
-import { schema } from "../../shared/types";
 
 /**
  * Restriction, list and union types, a union of an inline type, which has no type to derive a list
@@ -36,7 +35,7 @@ const SIMPLE_TYPES_XML = `<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
  * @returns The item
  */
 function simpleTypeNode(id: string): DiagramItem {
-  return diagramItem(unmarshal(schema, SIMPLE_TYPES_XML), id);
+  return diagramItem(webviewSchemaFromXml(SIMPLE_TYPES_XML), id);
 }
 
 describe("propertiesPanelSimpleTypeCommands", () => {

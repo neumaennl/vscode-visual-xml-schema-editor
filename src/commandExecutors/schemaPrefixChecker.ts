@@ -3,6 +3,7 @@
  */
 
 import type { schema } from "../../shared/types.js";
+import { splitQName } from "../../shared/qNames.js";
 import { forEachQNameReference } from "./schemaQNameReferences.js";
 
 /**
@@ -17,8 +18,8 @@ import { forEachQNameReference } from "./schemaQNameReferences.js";
 export function isAnyPrefixReferencedInSchema(prefixes: ReadonlySet<string>, schemaObj: schema): boolean {
   let referenced = false;
   forEachQNameReference(schemaObj, (reference) => {
-    const colon = reference.value.indexOf(":");
-    if (colon > 0 && prefixes.has(reference.value.slice(0, colon))) {
+    const { prefix } = splitQName(reference.value);
+    if (prefix !== undefined && prefixes.has(prefix)) {
       referenced = true;
     }
   });

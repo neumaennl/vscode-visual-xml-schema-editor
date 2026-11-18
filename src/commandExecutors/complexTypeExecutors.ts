@@ -71,18 +71,10 @@ interface ComplexTypeContentState {
  * @throws An {@link Error} if the parent element is not found (anonymous case)
  */
 export function executeAddComplexType(command: AddComplexTypeCommand, schemaObj: schema): void {
-  const {
-    parentId,
-    typeName,
-    contentModel,
-    abstract: isAbstract,
-    baseType,
-    derivationKind,
-    mixed,
-    documentation,
-  } = command.payload;
+  const { parentId, typeName, contentModel, abstract, baseType, derivationKind, mixed, documentation } =
+    command.payload;
   const ct = isSchemaRoot(parentId)
-    ? assignDefined(new topLevelComplexType(), { name: assumeValidated(typeName, "Type name"), abstract: isAbstract })
+    ? assignDefined(new topLevelComplexType(), { name: assumeValidated(typeName, "Type name"), abstract })
     : new localComplexType();
   assignDefined(ct, { mixed });
   if (documentation) {
@@ -115,11 +107,11 @@ export function executeRemoveComplexType(command: RemoveComplexTypeCommand, sche
  * @throws An {@link Error} if the type or its parent is not found
  */
 export function executeModifyComplexType(command: ModifyComplexTypeCommand, schemaObj: schema): void {
-  const { typeId, typeName, abstract: isAbstract, ...updates } = command.payload;
+  const { typeId, typeName, abstract, ...updates } = command.payload;
   const { type, topLevel } = locateModifiedType(schemaObj, typeId, "complexType", typeName);
   // Only top-level complex types can be abstract
   if (topLevel) {
-    assignDefined(type as topLevelComplexType, { abstract: isAbstract });
+    assignDefined(type as topLevelComplexType, { abstract });
   }
   updateComplexTypeContents(type, updates);
 }

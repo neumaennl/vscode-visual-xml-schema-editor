@@ -3,6 +3,7 @@
  * and the replacement type of inline types.
  */
 
+import { webviewSchemaFromXml } from "../../shared/__tests__/schemaTestHelpers";
 import type { Mock } from "vitest";
 import { renderTypeProperty } from "./propertiesPanelTypes";
 import { addPropertyToContainer } from "./propertiesPanelDom";
@@ -10,8 +11,6 @@ import type { SchemaCommand } from "../../shared/types";
 import type { DiagramItem } from "../diagram";
 import { editInput, getInputByLabel, getLabels, getTextByLabel } from "../__tests__/propertiesPanelTestHelpers";
 import { diagramItem, muteDiagramBuilderLog } from "../__tests__/diagramTestHelpers";
-import { unmarshal } from "@neumaennl/xmlbind-ts";
-import { schema } from "../../shared/types";
 
 /**
  * Named simple and complex types, and elements with a named type and with inline types, in a schema
@@ -50,7 +49,7 @@ interface TypeFields {
  */
 function renderType(id: string): TypeFields {
   const root = document.createElement("div");
-  const node = diagramItem(unmarshal(schema, TYPES_XML), id);
+  const node = diagramItem(webviewSchemaFromXml(TYPES_XML), id);
   const dispatch = vi.fn<(command: SchemaCommand) => void>();
   renderTypeProperty(root, node, SUGGESTIONS, dispatch, addPropertyToContainer);
   return { root, node, dispatch };

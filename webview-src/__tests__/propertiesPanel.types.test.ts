@@ -6,22 +6,18 @@
 
 import { getInputByLabel, displayItem, editInput } from "./propertiesPanelTestHelpers";
 import { diagramItem, muteDiagramBuilderLog } from "./diagramTestHelpers";
-import { unmarshal } from "@neumaennl/xmlbind-ts";
-import { schema } from "../../shared/types";
-import { schemaWith } from "../../shared/__tests__/schemaTestHelpers";
+import { webviewSchemaFromXml, webviewSchemaWith } from "../../shared/__tests__/schemaTestHelpers";
 
 describe("PropertiesPanel: the type fields", () => {
   muteDiagramBuilderLog();
 
   test("should suggest the built-in types and the types of the schema, with and without its prefix", () => {
     const container = document.createElement("div");
-    const schemaObj = unmarshal(
-      schema,
-      `<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tns="urn:test" targetNamespace="urn:test">
+    const schemaObj =
+      webviewSchemaFromXml(`<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tns="urn:test" targetNamespace="urn:test">
   <xs:complexType name="CustomerType"/>
   <xs:element name="customer" type="xs:string"/>
-</xs:schema>`
-    );
+</xs:schema>`);
     displayItem(container, diagramItem(schemaObj, "/element:customer"));
 
     const input = getInputByLabel(container, "Type");
@@ -36,11 +32,11 @@ describe("PropertiesPanel: the type fields", () => {
     const container = document.createElement("div");
     const body = '<xs:simpleType name="lengthRestricitionType"><xs:restriction base="xs:string"/></xs:simpleType>';
     const id = "/simpleType:lengthRestricitionType";
-    const { panel, dispatch } = displayItem(container, diagramItem(schemaWith(body), id));
+    const { panel, dispatch } = displayItem(container, diagramItem(webviewSchemaWith(body), id));
 
     editInput(container, "Name", "lengthRestrictionType");
     // The diagram has not been rebuilt yet, so the panel gets the item with the old name again
-    panel.display(diagramItem(schemaWith(body), id));
+    panel.display(diagramItem(webviewSchemaWith(body), id));
     editInput(container, "Base Type", "xs:string");
 
     expect(dispatch).toHaveBeenCalledExactlyOnceWith({

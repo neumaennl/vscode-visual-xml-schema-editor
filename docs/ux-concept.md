@@ -4,8 +4,8 @@ title: UX concept
 description: The interaction model of the editor - which surface adds, edits and deletes what, how facets work, and how the properties panel behaves - with a list of what the current editor does not implement yet.
 tags: [ux, editor, palette, properties-panel, facets, context-menu, toolbar]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-18T09:05:08Z }
-verified: { by: human:neumaennl, at: 2026-11-18T12:43:13Z }
+generated: { by: human:neumaennl, at: 2026-11-18T13:02:47Z }
+verified: { by: human:neumaennl, at: 2026-11-18T15:05:42Z }
 sources:
   - id: palette-items
     resource: ../webview-src/palette/PaletteItems.ts
@@ -146,7 +146,7 @@ The panel header has a delete button for the selected node.[^panel-commands]
 - An element with an anonymous simple type has an editable **Base Type** field and the Facets tab. An element with an anonymous complex type derived by extension has an editable **Base Type** field. Both offer a **Replacement Type** field that replaces the anonymous type with a reference to a named type.
 - Dropping an anonymous simple or complex type on an element with `type="…"` replaces the reference with the anonymous type instead of failing.
 - Dropping **restriction** on a node creates or changes a restriction; dropping **extension** creates or changes a complex type extension. The base type is the one shown on the node; without one, it is `xs:string` for simple types and `xs:anyType` for complex types and extensions.[^drop-type-helpers]
-- Type and Base Type fields suggest the built-in XSD types and the types of the current schema, with and without the schema's prefix. Any other value can be typed, for types from imported or included schemas.[^panel-types]
+- Type and Base Type fields suggest the 44 built-in data types of XML Schema 1.0 (not `anyType` and `anySimpleType`, which cannot be the base of a simple type) and the types of the current schema, with and without the schema's prefix. Any other value can be typed, for types from imported or included schemas.[^panel-types]
 
 ## Docs
 

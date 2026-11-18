@@ -173,18 +173,8 @@ function setOccurrences(
  * @param parentType - Type of the parent container
  */
 function updateElementProperties(element: AnyElement, changes: ElementChanges, parentType: string): void {
-  const {
-    elementName,
-    elementType,
-    ref,
-    minOccurs,
-    maxOccurs,
-    documentation,
-    nillable,
-    abstract: isAbstract,
-    default_,
-    fixed,
-  } = changes;
+  const { elementName, elementType, ref, minOccurs, maxOccurs, documentation, nillable, abstract, default_, fixed } =
+    changes;
   if (ref !== undefined) {
     // Switching to a reference: clear name and type
     (element as localElement).ref = ref;
@@ -217,8 +207,8 @@ function updateElementProperties(element: AnyElement, changes: ElementChanges, p
   }
 
   // Update abstract flag (top-level elements only)
-  if (isAbstract !== undefined && parentType === "schema") {
-    (element as topLevelElement).abstract = isAbstract ? true : undefined;
+  if (abstract !== undefined && parentType === "schema") {
+    (element as topLevelElement).abstract = abstract ? true : undefined;
   }
 
   // Update default and fixed value; an empty string removes the value

@@ -4,7 +4,8 @@
  */
 
 import { unmarshal } from "@neumaennl/xmlbind-ts";
-import { schema } from "../types.js";
+import { XSD_NAMESPACE } from "../builtInTypes.js";
+import { type NamespacePrefixes, schema } from "../types.js";
 
 /**
  * Returns the XML of a schema with the given content.
@@ -13,12 +14,12 @@ import { schema } from "../types.js";
  * @param namespaces - Further namespace declarations of the schema, by prefix
  * @returns The XML, with the XML declaration and the `xs` namespace
  */
-export function schemaXmlWith(body: string, namespaces: Record<string, string> = {}): string {
+export function schemaXmlWith(body: string, namespaces: Readonly<NamespacePrefixes> = {}): string {
   const declarations = Object.entries(namespaces)
     .map(([prefix, uri]) => ` xmlns:${prefix}="${uri}"`)
     .join("");
   return `<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"${declarations}>
+<xs:schema xmlns:xs="${XSD_NAMESPACE}"${declarations}>
 ${body}
 </xs:schema>`;
 }
@@ -39,8 +40,42 @@ export function emptySchemaXml(): string {
  * @param namespaces - Further namespace declarations of the schema, by prefix
  * @returns The schema object
  */
-export function schemaWith(body: string, namespaces: Record<string, string> = {}): schema {
+export function schemaWith(body: string, namespaces: Readonly<NamespacePrefixes> = {}): schema {
   return unmarshal(schema, schemaXmlWith(body, namespaces));
+}
+
+/**
+ * Sends a schema object through JSON, as `postMessage()` and `setState()` do: the webview gets plain objects
+ * without the classes and without the fields that have no value (see ADR 006).
+ *
+ * @param schemaObj - The schema object, as `unmarshal()` returns it
+ * @returns The schema in the form the webview receives
+ */
+export function asReceivedByWebview(schemaObj: schema): schema {
+  return JSON.parse(JSON.stringify(schemaObj)) as schema;
+}
+
+/**
+ * Unmarshals the XML of a schema and returns it in the form the webview receives (see
+ * {@link asReceivedByWebview}).
+ *
+ * @param xml - The XML of the schema
+ * @returns The schema as plain objects
+ */
+export function webviewSchemaFromXml(xml: string): schema {
+  return asReceivedByWebview(unmarshal(schema, xml));
+}
+
+/**
+ * Unmarshals a schema with the given content and returns it in the form the webview receives (see
+ * {@link asReceivedByWebview}).
+ *
+ * @param body - The XSD content of the schema
+ * @param namespaces - Further namespace declarations of the schema, by prefix
+ * @returns The schema as plain objects
+ */
+export function webviewSchemaWith(body: string, namespaces: Readonly<NamespacePrefixes> = {}): schema {
+  return asReceivedByWebview(schemaWith(body, namespaces));
 }
 
 /**

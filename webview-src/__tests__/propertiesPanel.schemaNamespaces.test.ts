@@ -4,18 +4,16 @@
  * shows them for the schema, passes their commands on and shows the changed namespaces.
  */
 
+import { webviewSchemaFromXml } from "../../shared/__tests__/schemaTestHelpers";
 import { getInputByLabel, displayItem, editInput } from "./propertiesPanelTestHelpers";
 import { diagramItem, muteDiagramBuilderLog } from "./diagramTestHelpers";
-import { unmarshal } from "@neumaennl/xmlbind-ts";
-import { schema } from "../../shared/types";
 
 describe("PropertiesPanel: the namespace fields of the schema", () => {
   muteDiagramBuilderLog();
 
   test("should edit the target namespace of the schema and show its changed declaration", () => {
     const container = document.createElement("div");
-    const schemaObj = unmarshal(
-      schema,
+    const schemaObj = webviewSchemaFromXml(
       '<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tns="urn:original" targetNamespace="urn:original"/>'
     );
     const { dispatch } = displayItem(container, diagramItem(schemaObj, "/schema"));

@@ -76,6 +76,27 @@ const maxTernaryLines = {
 // only names no-unexpected-multiline of the recommended rules, which it cannot
 // check automatically. It stays on, because it reports statements that a missing
 // semicolon joins with the next line.
+/** The project boundaries: which folders the code of a folder must not import. */
+const PROJECT_BOUNDARIES = [
+  { folder: "shared", allowed: "shared", forbidden: ["src", "webview-src", "test", "scripts"] },
+  { folder: "src", allowed: "its own code and shared", forbidden: ["webview-src", "test", "scripts"] },
+  { folder: "webview-src", allowed: "its own code and shared", forbidden: ["src", "test", "scripts"] },
+  { folder: "scripts", allowed: "its own code", forbidden: ["src", "webview-src", "shared", "test"] },
+];
+
+/**
+ * Returns the pattern of `no-restricted-imports` that enforces a project boundary.
+ *
+ * @param {{ folder: string, allowed: string, forbidden: string[] }} boundary - The boundary of a folder
+ * @returns {{ regex: string, message: string }} The pattern
+ */
+function boundaryPattern({ folder, allowed, forbidden }) {
+  return {
+    regex: `^(\\.\\./)+(${forbidden.join("|")})(/|$)`,
+    message: `Code in ${folder} may only import ${allowed} (see "Project boundaries" in docs/development-guidelines.md).`,
+  };
+}
+
 export default defineConfig([
   globalIgnores([
     "out/",
@@ -301,27 +322,41 @@ export default defineConfig([
   // Project boundaries (see "Project boundaries" in docs/development-guidelines.md): `shared` uses only
   // `shared`; `src` and `webview-src` use only their own code and `shared`; `scripts` uses only
   // `scripts`. Only the tests in `test/integration` may use the extension host and the webview together.
-  ...[
-    { folder: "shared", allowed: "shared", forbidden: ["src", "webview-src", "test", "scripts"] },
-    { folder: "src", allowed: "its own code and shared", forbidden: ["webview-src", "test", "scripts"] },
-    { folder: "webview-src", allowed: "its own code and shared", forbidden: ["src", "test", "scripts"] },
-    { folder: "scripts", allowed: "its own code", forbidden: ["src", "webview-src", "shared", "test"] },
-  ].map(({ folder, allowed, forbidden }) => ({
-    files: [`${folder}/**/*.ts`],
+  ...PROJECT_BOUNDARIES.map((boundary) => ({
+    files: [`${boundary.folder}/**/*.ts`],
+    rules: {
+      "no-restricted-imports": ["error", { patterns: [boundaryPattern(boundary)] }],
+    },
+  })),
+  // Tests of the webview get the schema in the form the webview receives it, through JSON (see "Schema
+  // objects on both sides" in docs/architecture/006-module-structure.md). The rule repeats the project
+  // boundary, because a later setting of a rule replaces an earlier one.
+  {
+    files: ["webview-src/**/*.test.ts", "webview-src/__tests__/**/*.ts"],
     rules: {
       "no-restricted-imports": [
         "error",
         {
-          patterns: [
+          paths: [
             {
-              regex: `^(\\.\\./)+(${forbidden.join("|")})(/|$)`,
-              message: `Code in ${folder} may only import ${allowed} (see "Project boundaries" in docs/development-guidelines.md).`,
+              name: "@neumaennl/xmlbind-ts",
+              importNames: ["unmarshal"],
+              message:
+                "Use webviewSchemaFromXml() from shared/__tests__/schemaTestHelpers, which sends the schema through JSON.",
+            },
+          ],
+          patterns: [
+            boundaryPattern(PROJECT_BOUNDARIES.find(({ folder }) => folder === "webview-src")),
+            {
+              regex: "shared/__tests__/schemaTestHelpers$",
+              importNames: ["schemaWith", "emptySchema", "schemaWithAttrGroups", "schemaWithIncludes"],
+              message: "Use webviewSchemaWith() or asReceivedByWebview(), which send the schema through JSON.",
             },
           ],
         },
       ],
     },
-  })),
+  },
   // Webview TypeScript files configuration (browser environment)
   {
     files: ["webview-src/**/*.ts"],

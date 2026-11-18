@@ -6,7 +6,7 @@
 
 import { findButton, displayItem } from "./propertiesPanelTestHelpers";
 import { diagramItem, muteDiagramBuilderLog } from "./diagramTestHelpers";
-import { schemaWith } from "../../shared/__tests__/schemaTestHelpers";
+import { webviewSchemaWith } from "../../shared/__tests__/schemaTestHelpers";
 
 /** An element with documentation and one without. */
 const ELEMENTS = `<xs:element name="person"><xs:annotation><xs:documentation>Person doc</xs:documentation></xs:annotation></xs:element>
@@ -17,7 +17,7 @@ describe("PropertiesPanel: the Docs tab", () => {
 
   test("should show the documentation of the selected node and send its changes", () => {
     const container = document.createElement("div");
-    const { dispatch } = displayItem(container, diagramItem(schemaWith(ELEMENTS), "/element:person"), "Docs");
+    const { dispatch } = displayItem(container, diagramItem(webviewSchemaWith(ELEMENTS), "/element:person"), "Docs");
     const textArea = container.querySelector("textarea")!;
 
     expect(textArea.value).toBe("Person doc");
@@ -32,7 +32,7 @@ describe("PropertiesPanel: the Docs tab", () => {
 
   test("should show added documentation at once", () => {
     const container = document.createElement("div");
-    displayItem(container, diagramItem(schemaWith(ELEMENTS), "/element:plain"), "Docs");
+    displayItem(container, diagramItem(webviewSchemaWith(ELEMENTS), "/element:plain"), "Docs");
 
     findButton(container, "Add documentation")?.click();
 

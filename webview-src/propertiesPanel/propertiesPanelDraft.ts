@@ -9,20 +9,6 @@ import { DiagramItem } from "../diagram";
 export type RestrictionSnapshot = NonNullable<DiagramItem["restrictions"]>;
 
 /**
- * Returns whether the given restriction object exposes at least one facet that the
- * current `PropertiesPanel` UI knows how to edit.
- *
- * @param restrictions - Restriction snapshot to inspect
- * @returns True when at least one editable facet is present
- */
-export function hasEditableFacetValues(restrictions: RestrictionSnapshot): boolean {
-  return (Object.keys(restrictions) as Array<keyof RestrictionSnapshot>).some((key) => {
-    const value = restrictions[key];
-    return Array.isArray(value) ? value.length > 0 : value !== undefined;
-  });
-}
-
-/**
  * Creates a deep-enough clone of a diagram node for temporary `PropertiesPanel` edits.
  * Mutable collections rendered by the panel are copied so tab switching does not
  * mutate the original selected node until commands are dispatched.

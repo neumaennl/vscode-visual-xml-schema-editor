@@ -8,7 +8,6 @@ import {
   extractOccurrenceConstraints,
   extractAttributes,
   parseDerivationBaseType,
-  toRestrictionFacets,
 } from "./DiagramBuilderHelpers";
 import { DiagramItem } from "./DiagramItem";
 import { Diagram } from "./Diagram";
@@ -199,24 +198,6 @@ describe("DiagramBuilderHelpers", () => {
       ["", undefined],
     ])("should read %j", (typeText, expected) => {
       expect(parseDerivationBaseType(typeText)).toBe(expected);
-    });
-  });
-
-  describe("toRestrictionFacets", () => {
-    test("should return undefined without facets", () => {
-      expect(toRestrictionFacets(undefined)).toBeUndefined();
-    });
-
-    test("should keep the facets and a valid whiteSpace value", () => {
-      expect(toRestrictionFacets({ pattern: ["a+"], length: 3, whiteSpace: "collapse" })).toEqual({
-        pattern: ["a+"],
-        length: 3,
-        whiteSpace: "collapse",
-      });
-    });
-
-    test("should leave out a whiteSpace value that the schema does not allow", () => {
-      expect(toRestrictionFacets({ whiteSpace: "trim" })?.whiteSpace).toBeUndefined();
     });
   });
 });

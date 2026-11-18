@@ -6,7 +6,7 @@
 import type { RestrictionFacets, SchemaCommand } from "../../shared/types";
 import { anonymousTypeId } from "../../shared/schemaUtils";
 import type { DiagramItem } from "../diagram";
-import { DiagramItemType, parseDerivationBaseType, toRestrictionFacets } from "../diagram";
+import { DiagramItemType, parseDerivationBaseType } from "../diagram";
 import type { FacetPaletteConstruct } from "../palette/FacetIconStyles";
 import { PaletteSchemaConstruct } from "../palette/PaletteSchemaConstruct";
 
@@ -65,7 +65,7 @@ export function createFacetNodeDropCommand(item: DiagramItem, construct: FacetPa
   if (!isRestrictionSimpleType(item)) {
     return null;
   }
-  const existingFacets = toRestrictionFacets(item.restrictions) ?? {};
+  const existingFacets = item.restrictions ?? {};
   const facet = createDefaultFacet(construct, existingFacets);
   if (!facet) {
     return null;

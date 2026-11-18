@@ -5,13 +5,11 @@
 
 import type { Mock } from "vitest";
 import { renderSchemaNamespaceProperties } from "./propertiesPanelSchemaNamespaces";
-import type { SchemaCommand } from "../../shared/types";
+import type { NamespacePrefixes, SchemaCommand } from "../../shared/types";
 import { DiagramItem, DiagramItemType } from "../diagram";
 import { editInput, getInputByLabel } from "../__tests__/propertiesPanelTestHelpers";
 import { diagramItem, muteDiagramBuilderLog } from "../__tests__/diagramTestHelpers";
-import { schemaWith } from "../../shared/__tests__/schemaTestHelpers";
-import { unmarshal } from "@neumaennl/xmlbind-ts";
-import { schema } from "../../shared/types";
+import { webviewSchemaFromXml, webviewSchemaWith } from "../../shared/__tests__/schemaTestHelpers";
 
 /** The namespace of XML Schema. */
 const XS = "http://www.w3.org/2001/XMLSchema";
@@ -37,7 +35,7 @@ interface NamespaceFields {
  * @param schemaObj - The schema; by default {@link SCHEMA_WITH_TARGET}
  * @returns The fields, the node and the mocks
  */
-function renderNamespaces(schemaObj = unmarshal(schema, SCHEMA_WITH_TARGET)): NamespaceFields {
+function renderNamespaces(schemaObj = webviewSchemaFromXml(SCHEMA_WITH_TARGET)): NamespaceFields {
   const root = document.createElement("div");
   document.body.appendChild(root);
   const node = diagramItem(schemaObj, "/schema");
@@ -87,7 +85,7 @@ function commit(input: HTMLInputElement, value: string): void {
  * @param namespacePrefixes - The new namespace declarations
  * @returns The command
  */
-function namespacesCommand(targetNamespace: string, namespacePrefixes: Record<string, string>): SchemaCommand {
+function namespacesCommand(targetNamespace: string, namespacePrefixes: NamespacePrefixes): SchemaCommand {
   return {
     type: "modifySchemaNamespaces",
     payload: { targetNamespace, namespacePrefixes, previousNamespacePrefixes: DECLARATIONS },
@@ -148,13 +146,13 @@ describe("renderSchemaNamespaceProperties", () => {
       expect(node.diagram?.currentSchemaPrefix).toBeUndefined();
     });
 
-    test.each<{ namespaces: Record<string, string>; prefix: string }>([
+    test.each<{ namespaces: NamespacePrefixes; prefix: string }>([
       { namespaces: { other: "urn:other" }, prefix: "tns" },
       { namespaces: { tns: "urn:other" }, prefix: "ns0" },
     ])(
       "should declare a new target namespace with the prefix $prefix for the declarations $namespaces",
       ({ namespaces, prefix }) => {
-        const { root, node, dispatch } = renderNamespaces(schemaWith("", namespaces));
+        const { root, node, dispatch } = renderNamespaces(webviewSchemaWith("", namespaces));
         const previous = { ...node.diagram?.schemaNamespacePrefixes };
 
         editInput(root, "targetNamespace", "urn:new");

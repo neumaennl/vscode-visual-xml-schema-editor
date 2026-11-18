@@ -8,7 +8,7 @@ import { DiagramItem } from "../diagram/DiagramItem";
 import { DiagramItemGroupType, DiagramItemType } from "../diagram/DiagramTypes";
 import { PaletteSchemaConstruct } from "../palette/PaletteSchemaConstruct";
 import { diagramItem } from "../__tests__/diagramTestHelpers";
-import { DERIVATIONS, derivedComplexTypeT, schemaWith } from "../../shared/__tests__/schemaTestHelpers";
+import { DERIVATIONS, derivedComplexTypeT, webviewSchemaWith } from "../../shared/__tests__/schemaTestHelpers";
 
 /**
  * Creates a diagram item whose name is the last part of its ID.
@@ -238,7 +238,7 @@ describe("DropCommandFactory", () => {
     });
 
     test.each(DERIVATIONS)("should create an attribute on a named complexType with %s %s", (content, derivation) => {
-      const item = diagramItem(schemaWith(derivedComplexTypeT(content, derivation)), "/complexType:T");
+      const item = diagramItem(webviewSchemaWith(derivedComplexTypeT(content, derivation)), "/complexType:T");
 
       const cmd = factory.createNodeDropCommand(item, C.Attribute);
 
@@ -393,7 +393,7 @@ describe("DropCommandFactory", () => {
     ])("should %s", (_case, existing, construct, restrictions) => {
       const patterns = existing.map((value) => `<xs:pattern value="${value}"/>`).join("");
       const item = diagramItem(
-        schemaWith(
+        webviewSchemaWith(
           `<xs:simpleType name="Code"><xs:restriction base="xs:string">${patterns}</xs:restriction></xs:simpleType>`
         ),
         "/simpleType:Code"
@@ -412,7 +412,7 @@ describe("DropCommandFactory", () => {
       { existing: ["value", "value3"], expected: ["value", "value3", "value2"] },
     ])("should append a unique enumeration value to $existing", ({ existing, expected }) => {
       const enumerations = existing.map((value) => `<xs:enumeration value="${value}"/>`).join("");
-      const schemaObj = schemaWith(
+      const schemaObj = webviewSchemaWith(
         `<xs:simpleType name="Status"><xs:restriction base="xs:string">${enumerations}</xs:restriction></xs:simpleType>`
       );
       const item = diagramItem(schemaObj, "/simpleType:Status");
@@ -426,7 +426,7 @@ describe("DropCommandFactory", () => {
     });
 
     test("should append an enumeration value to the anonymous simpleType of an element", () => {
-      const schemaObj = schemaWith(
+      const schemaObj = webviewSchemaWith(
         `<xs:element name="code"><xs:simpleType><xs:restriction base="xs:string">` +
           `<xs:enumeration value="a"/><xs:enumeration value="value"/>` +
           `</xs:restriction></xs:simpleType></xs:element>`

@@ -4,7 +4,6 @@
  */
 
 import type { DiagramItem } from "./DiagramItem";
-import type { RestrictionFacets } from "../../shared/types";
 import type {
   DiagramAnnotationEntry,
   DiagramDocumentationEntry,
@@ -152,23 +151,4 @@ export function extractAttributes(item: DiagramItem, source: ElementWithAttribut
 export function parseDerivationBaseType(typeText: string): string | undefined {
   const match = /\((?:restricts|extends) ([^)]+)\)/.exec(typeText);
   return match ? requireGroup(match, 1).trim() : undefined;
-}
-
-/**
- * Converts the facets of a diagram item to the form that the simple type commands take. The diagram
- * reads the `whiteSpace` facet as a string; a value that the schema does not allow is left out.
- *
- * @param restrictions - The facets of the diagram item
- * @returns The facets, or undefined if the item has none
- */
-export function toRestrictionFacets(restrictions: DiagramItem["restrictions"]): RestrictionFacets | undefined {
-  if (!restrictions) {
-    return undefined;
-  }
-  const whiteSpace = restrictions.whiteSpace;
-  return {
-    ...restrictions,
-    whiteSpace:
-      whiteSpace === "preserve" || whiteSpace === "replace" || whiteSpace === "collapse" ? whiteSpace : undefined,
-  };
 }

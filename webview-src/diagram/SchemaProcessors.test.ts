@@ -13,7 +13,7 @@ import {
 import { DiagramItem } from "../diagram/DiagramItem";
 import { Diagram } from "../diagram/Diagram";
 import { DiagramItemGroupType, DiagramItemType } from "../diagram/DiagramTypes";
-import { DERIVATIONS, derivedComplexTypeT, schemaWith } from "../../shared/__tests__/schemaTestHelpers";
+import { DERIVATIONS, derivedComplexTypeT, webviewSchemaWith } from "../../shared/__tests__/schemaTestHelpers";
 
 describe("SchemaProcessors", () => {
   let diagram: Diagram;
@@ -26,7 +26,7 @@ describe("SchemaProcessors", () => {
 
   describe("processAnonymousTypes", () => {
     test("should process an anonymous complexType or simpleType and ignores an element without one", () => {
-      const schemaObj = schemaWith(`<xs:element name="c"><xs:complexType mixed="true"/></xs:element>
+      const schemaObj = webviewSchemaWith(`<xs:element name="c"><xs:complexType mixed="true"/></xs:element>
 <xs:element name="s"><xs:simpleType><xs:restriction base="xs:string"/></xs:simpleType></xs:element>
 <xs:element name="n" type="xs:string"/>`);
       const [complexElement, simpleElement, namedElement] = schemaObj.element ?? [];
@@ -54,7 +54,7 @@ describe("SchemaProcessors", () => {
       ["list", `<xs:list itemType="xs:int"/>`],
       ["union", `<xs:union memberTypes="xs:int xs:string"/>`],
     ])("should process a %s", (kind, body) => {
-      const simpleType = schemaWith(`<xs:simpleType name="S">${body}</xs:simpleType>`).simpleType?.[0];
+      const simpleType = webviewSchemaWith(`<xs:simpleType name="S">${body}</xs:simpleType>`).simpleType?.[0];
       processSimpleTypeBody(item, simpleType ?? {});
       expect(item.simpleTypeDerivationKind ?? "restriction").toBe(kind);
     });
@@ -146,7 +146,7 @@ describe("SchemaProcessors", () => {
     });
 
     test.each(DERIVATIONS)("should read the attributes of the %s %s", (content, derivation) => {
-      const complexType = schemaWith(
+      const complexType = webviewSchemaWith(
         derivedComplexTypeT(content, derivation, `<xs:attribute name="id" type="xs:integer"/>`)
       ).complexType![0]!;
 

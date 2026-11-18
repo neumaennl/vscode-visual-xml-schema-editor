@@ -6,7 +6,7 @@
 
 import { findButton, displayItem, editInput } from "./propertiesPanelTestHelpers";
 import { diagramItem, muteDiagramBuilderLog } from "./diagramTestHelpers";
-import { schemaWith } from "../../shared/__tests__/schemaTestHelpers";
+import { webviewSchemaWith } from "../../shared/__tests__/schemaTestHelpers";
 
 /** Restrictions, a list, a union and elements with a named and an inline simple type. */
 const SIMPLE_TYPES = `<xs:simpleType name="Code"><xs:restriction base="xs:string">
@@ -28,14 +28,18 @@ describe("PropertiesPanel: the Facets tab", () => {
     { id: "/element:plain", shown: false },
   ])("should offer the Facets tab for $id: $shown", ({ id, shown }) => {
     const container = document.createElement("div");
-    displayItem(container, diagramItem(schemaWith(SIMPLE_TYPES), id));
+    displayItem(container, diagramItem(webviewSchemaWith(SIMPLE_TYPES), id));
 
     expect(findButton(container, "Facets") !== undefined).toBe(shown);
   });
 
   test("should send changes of the facets with all patterns", () => {
     const container = document.createElement("div");
-    const { dispatch } = displayItem(container, diagramItem(schemaWith(SIMPLE_TYPES), "/simpleType:Code"), "Facets");
+    const { dispatch } = displayItem(
+      container,
+      diagramItem(webviewSchemaWith(SIMPLE_TYPES), "/simpleType:Code"),
+      "Facets"
+    );
 
     editInput(container, "Max Length", "3");
 

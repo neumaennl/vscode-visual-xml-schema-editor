@@ -30,9 +30,11 @@ import type {
   RemoveIncludeCommand,
   ModifyIncludeCommand,
   ModifySchemaNamespacesCommand,
+  NamespacePrefixes,
 } from "../../shared/types.js";
 import { importType, includeType } from "../../shared/types.js";
 import { parseSchemaId } from "../../shared/idStrategy.js";
+import { firstFreePrefix, normalizeNamespacePrefixes } from "../../shared/qNames.js";
 import { assumeValidated } from "./assumeValidated.js";
 import { removeFrom } from "./nodeProperties.js";
 import { rewritePrefixInSchema } from "./schemaQNameRewriter.js";
@@ -51,22 +53,6 @@ import { rewritePrefixInSchema } from "./schemaQNameRewriter.js";
 function findModuleEntry<T>(id: string, entries: T[] | undefined, label: string): T {
   const index = assumeValidated(parseSchemaId(id).position, `Position of ${id}`);
   return assumeValidated(entries?.[index], `${label} ${id}`);
-}
-
-/**
- * Generates a unique namespace prefix that is not already present in
- * `schema._namespacePrefixes`. Candidates are `"ns0"`, `"ns1"`, `"ns2"`, …
- *
- * @param schemaObj - The schema
- * @returns The first free prefix
- */
-function generateUniquePrefix(schemaObj: schema): string {
-  const existing = new Set(Object.keys(schemaObj._namespacePrefixes ?? {}));
-  let i = 0;
-  while (existing.has(`ns${i}`)) {
-    i++;
-  }
-  return `ns${i}`;
 }
 
 /**
@@ -114,7 +100,7 @@ export function executeAddImport(command: AddImportCommand, schemaObj: schema): 
   schemaObj.import_ = [...(schemaObj.import_ ?? []), newImport];
 
   // Always ensure a prefix is registered so types can be referenced
-  const registeredPrefix = prefix ?? generateUniquePrefix(schemaObj);
+  const registeredPrefix = prefix ?? firstFreePrefix(schemaObj._namespacePrefixes ?? {});
   schemaObj._namespacePrefixes ??= {};
   schemaObj._namespacePrefixes[registeredPrefix] = namespace;
 }
@@ -252,25 +238,6 @@ export function executeModifyInclude(command: ModifyIncludeCommand, schemaObj: s
 }
 
 /**
- * Trims the prefixes and namespace URIs of namespace declarations and leaves out those without a URI.
- *
- * @param namespacePrefixes - The declarations, prefix → namespace URI
- * @returns The trimmed declarations
- */
-function normalizeNamespacePrefixes(namespacePrefixes: Record<string, string>): Record<string, string> {
-  const normalized: Record<string, string> = {};
-  for (const [prefix, namespaceUri] of Object.entries(namespacePrefixes)) {
-    const normalizedPrefix = prefix.trim();
-    const normalizedNamespaceUri = namespaceUri.trim();
-    if (!normalizedNamespaceUri) {
-      continue;
-    }
-    normalized[normalizedPrefix] = normalizedNamespaceUri;
-  }
-  return normalized;
-}
-
-/**
  * Finds the prefixes that were renamed: a removed prefix whose namespace an added prefix now declares.
  * Each added prefix is used for one rename at most.
  *
@@ -279,8 +246,8 @@ function normalizeNamespacePrefixes(namespacePrefixes: Record<string, string>): 
  * @returns The renames, old prefix and new prefix
  */
 function detectPrefixRenames(
-  previousNamespacePrefixes: Record<string, string>,
-  nextNamespacePrefixes: Record<string, string>
+  previousNamespacePrefixes: Readonly<NamespacePrefixes>,
+  nextNamespacePrefixes: Readonly<NamespacePrefixes>
 ): Array<{ oldPrefix: string; newPrefix: string }> {
   const removedPrefixes = Object.keys(previousNamespacePrefixes).filter(
     (prefix) => !Object.prototype.hasOwnProperty.call(nextNamespacePrefixes, prefix)

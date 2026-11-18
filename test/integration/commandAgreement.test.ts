@@ -19,6 +19,7 @@ import { CommandExecutor } from "../../src/commandExecutor.js";
 import type { DiagramItem } from "../../webview-src/diagram/DiagramItem";
 import { diagramItems } from "../../webview-src/__tests__/diagramTestHelpers";
 import { TEST_RESOURCES } from "../../src/__tests__/resourceTestHelpers.js";
+import { webviewSchemaFromXml } from "../../shared/__tests__/schemaTestHelpers";
 
 /** The folders with the schemas of the test. */
 const SCHEMA_FOLDERS = [TEST_RESOURCES, join(import.meta.dirname, "../../exampleFiles")];
@@ -169,7 +170,7 @@ describe("Integration: validators and executors agree", () => {
   test.each(SCHEMA_FILES)("should apply every command that the validator accepts to %s", (file) => {
     const xml = readFileSync(file, "utf8");
     const commands = [
-      ...diagramItems(unmarshal(schema, xml)).flatMap(commandsForItem),
+      ...diagramItems(webviewSchemaFromXml(xml)).flatMap(commandsForItem),
       ...commandsForSchemaContent(unmarshal(schema, xml)),
     ];
 

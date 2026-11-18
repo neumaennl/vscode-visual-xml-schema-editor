@@ -4,6 +4,7 @@
  */
 
 import { SCHEMA_ROOT_ID, SchemaNodeType, generateSchemaId } from "./idStrategy.js";
+import { prefixesForNamespace } from "./qNames.js";
 import type { attribute, attributeGroupRef, schema } from "./types.js";
 
 /**
@@ -38,9 +39,7 @@ export function getCurrentSchemaPrefixes(schemaObj: schema): string[] {
   if (!targetNamespace) {
     return [];
   }
-  return Object.entries(schemaObj._namespacePrefixes ?? {})
-    .filter(([prefix, namespaceUri]) => prefix !== "" && namespaceUri === targetNamespace)
-    .map(([prefix]) => prefix);
+  return prefixesForNamespace(schemaObj._namespacePrefixes ?? {}, targetNamespace).filter((prefix) => prefix !== "");
 }
 
 /** The two kinds of types, named like the property that holds an anonymous type in its element or attribute. */

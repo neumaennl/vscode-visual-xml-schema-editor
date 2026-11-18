@@ -3,39 +3,42 @@
  * Keeps the facet-specific UI and command-building logic separate from the main panel class.
  */
 
+import {
+  countFacetsWithValues,
+  isNumericFacet,
+  isWhiteSpaceValue,
+  type SINGLE_VALUE_FACETS,
+} from "../../shared/facets";
 import type { SchemaCommand } from "../../shared/types";
 import type { DiagramItem } from "../diagram";
-import { toRestrictionFacets } from "../diagram";
 import { createEditableField } from "./propertiesPanelDom";
 import { resolveSimpleTypeId } from "./propertiesPanelTargets";
 import type { RestrictionSnapshot } from "./propertiesPanelDraft";
-import { hasEditableFacetValues } from "./propertiesPanelDraft";
 import { getFacetIconStyle, type FacetPaletteConstruct } from "../palette/FacetIconStyles";
 import { PaletteSchemaConstruct } from "../palette/PaletteSchemaConstruct";
 import { appendFacetRemoveButton, renderValueListFacet } from "./propertiesPanelFacetLists";
 
-/** Numeric facet keys editable in the Facets tab. */
-type NumericRestrictionKey = "length" | "minLength" | "maxLength" | "totalDigits" | "fractionDigits";
-/** String boundary facet keys editable in the Facets tab. */
-type StringRestrictionKey = "minInclusive" | "maxInclusive" | "minExclusive" | "maxExclusive";
+/** The single-value facets that the Facets tab shows as text fields; `whiteSpace` has a field of its own. */
+type ValueFacetName = Exclude<(typeof SINGLE_VALUE_FACETS)[number], "whiteSpace">;
 
-/** A single-value facet of the Facets tab: a number or a string. */
-type ValueFacet = { label: string; construct: FacetPaletteConstruct } & (
-  { key: NumericRestrictionKey; numeric: true } | { key: StringRestrictionKey; numeric: false }
-);
+/** How the Facets tab shows a single-value facet. */
+interface ValueFacetField {
+  label: string;
+  construct: FacetPaletteConstruct;
+}
 
-/** The single-value facets of the Facets tab, in the order they are shown. */
-const VALUE_FACETS: ValueFacet[] = [
-  { label: "Length", key: "length", construct: PaletteSchemaConstruct.Length, numeric: true },
-  { label: "Min Length", key: "minLength", construct: PaletteSchemaConstruct.MinLength, numeric: true },
-  { label: "Max Length", key: "maxLength", construct: PaletteSchemaConstruct.MaxLength, numeric: true },
-  { label: "Min Inclusive", key: "minInclusive", construct: PaletteSchemaConstruct.MinInclusive, numeric: false },
-  { label: "Max Inclusive", key: "maxInclusive", construct: PaletteSchemaConstruct.MaxInclusive, numeric: false },
-  { label: "Min Exclusive", key: "minExclusive", construct: PaletteSchemaConstruct.MinExclusive, numeric: false },
-  { label: "Max Exclusive", key: "maxExclusive", construct: PaletteSchemaConstruct.MaxExclusive, numeric: false },
-  { label: "Total Digits", key: "totalDigits", construct: PaletteSchemaConstruct.TotalDigits, numeric: true },
-  { label: "Fraction Digits", key: "fractionDigits", construct: PaletteSchemaConstruct.FractionDigits, numeric: true },
-];
+/** The text fields of the single-value facets, in the order they are shown. */
+const VALUE_FACETS = {
+  length: { label: "Length", construct: PaletteSchemaConstruct.Length },
+  minLength: { label: "Min Length", construct: PaletteSchemaConstruct.MinLength },
+  maxLength: { label: "Max Length", construct: PaletteSchemaConstruct.MaxLength },
+  minInclusive: { label: "Min Inclusive", construct: PaletteSchemaConstruct.MinInclusive },
+  maxInclusive: { label: "Max Inclusive", construct: PaletteSchemaConstruct.MaxInclusive },
+  minExclusive: { label: "Min Exclusive", construct: PaletteSchemaConstruct.MinExclusive },
+  maxExclusive: { label: "Max Exclusive", construct: PaletteSchemaConstruct.MaxExclusive },
+  totalDigits: { label: "Total Digits", construct: PaletteSchemaConstruct.TotalDigits },
+  fractionDigits: { label: "Fraction Digits", construct: PaletteSchemaConstruct.FractionDigits },
+} satisfies Record<ValueFacetName, ValueFacetField>;
 
 /**
  * Renders the Facets tab for a simple type or inline simple type.
@@ -60,7 +63,7 @@ export function renderFacetsTab(
     throw new Error(`The Facets tab is only shown for simple types, not for ${node.id}`);
   }
 
-  if (!restrictions || !hasEditableFacetValues(restrictions)) {
+  if (!restrictions || countFacetsWithValues(restrictions) === 0) {
     addPropertyToContainer(
       root,
       "Facets",
@@ -80,10 +83,10 @@ export function renderFacetsTab(
     // Without a base type, the restriction keeps its base, which may be an inline simple type
     dispatchCommand({
       type: "modifySimpleType",
-      payload: { typeId: simpleTypeId, restrictions: toRestrictionFacets(nextRestrictions) },
+      payload: { typeId: simpleTypeId, restrictions: nextRestrictions },
     });
   };
-  const canRemoveFacet = countDefinedFacets(restrictions) > 1;
+  const canRemoveFacet = countFacetsWithValues(restrictions) > 1;
 
   if (restrictions.enumeration?.length) {
     renderValueListFacet(root, "enumeration", restrictions.enumeration, buildAndDispatch, canRemoveFacet, () => {
@@ -101,8 +104,8 @@ export function renderFacetsTab(
     });
   }
 
-  for (const facet of VALUE_FACETS) {
-    appendOptionalValueFacet(root, facet, restrictions[facet.key], buildAndDispatch, canRemoveFacet);
+  for (const key of Object.keys(VALUE_FACETS) as ValueFacetName[]) {
+    appendOptionalValueFacet(root, key, restrictions[key], buildAndDispatch, canRemoveFacet);
   }
 
   if (restrictions.whiteSpace !== undefined) {
@@ -111,11 +114,11 @@ export function renderFacetsTab(
       restrictions.whiteSpace,
       (next) => {
         const value = next.trim();
-        if (value !== "" && value !== "preserve" && value !== "replace" && value !== "collapse") {
+        if (value !== "" && !isWhiteSpaceValue(value)) {
           return;
         }
         buildAndDispatch((draft) => {
-          draft.whiteSpace = value || undefined;
+          draft.whiteSpace = value === "" ? undefined : value;
         });
       },
       undefined,
@@ -138,14 +141,14 @@ export function renderFacetsTab(
  * facet.
  *
  * @param root - The tab
- * @param facet - The facet
+ * @param key - The facet
  * @param value - The value of the facet
  * @param buildAndDispatch - Applies a change to the facets and dispatches it
  * @param canRemove - Whether the facet may be removed
  */
 function appendOptionalValueFacet(
   root: HTMLElement,
-  facet: ValueFacet,
+  key: ValueFacetName,
   value: number | string | undefined,
   buildAndDispatch: (updater: (next: RestrictionSnapshot) => void) => void,
   canRemove: boolean
@@ -153,16 +156,17 @@ function appendOptionalValueFacet(
   if (value === undefined) {
     return;
   }
+  const { label, construct } = VALUE_FACETS[key];
   const assign = (draft: RestrictionSnapshot, text: string): void => {
     const trimmed = text.trim();
-    if (facet.numeric) {
-      draft[facet.key] = trimmed ? Number(trimmed) : undefined;
+    if (isNumericFacet(key)) {
+      draft[key] = trimmed ? Number(trimmed) : undefined;
     } else {
-      draft[facet.key] = trimmed || undefined;
+      draft[key] = trimmed || undefined;
     }
   };
   const field = createEditableField(
-    facet.label,
+    label,
     value.toString(),
     (next) => {
       buildAndDispatch((draft) => {
@@ -170,25 +174,13 @@ function appendOptionalValueFacet(
       });
     },
     undefined,
-    getFacetIconStyle(facet.construct)
+    getFacetIconStyle(construct)
   );
   root.appendChild(
-    appendFacetRemoveButton(field, facet.label, canRemove, () => {
+    appendFacetRemoveButton(field, label, canRemove, () => {
       buildAndDispatch((draft) => {
-        draft[facet.key] = undefined;
+        draft[key] = undefined;
       });
     })
   );
-}
-
-/**
- * Counts the facets of a restriction that have a value; an empty list of values counts as no facet.
- *
- * @param restrictions - The facets
- * @returns The number of facets with a value
- */
-function countDefinedFacets(restrictions: RestrictionSnapshot): number {
-  // Object.values() drops undefined from the types of optional properties, but the draft sets them to undefined
-  const values: Array<RestrictionSnapshot[keyof RestrictionSnapshot]> = Object.values(restrictions);
-  return values.filter((value) => (Array.isArray(value) ? value.length > 0 : value !== undefined)).length;
 }

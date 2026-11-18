@@ -8,7 +8,7 @@ import { createDocsTab } from "./propertiesPanelDocs";
 import type { SchemaCommand } from "../../shared/types";
 import { Diagram, DiagramItem, DiagramItemType } from "../diagram";
 import { diagramItem, muteDiagramBuilderLog } from "../__tests__/diagramTestHelpers";
-import { schemaWith } from "../../shared/__tests__/schemaTestHelpers";
+import { webviewSchemaWith } from "../../shared/__tests__/schemaTestHelpers";
 
 /**
  * Three annotations of the schema, the first with two documentation entries, the second with one and
@@ -43,7 +43,7 @@ interface DocsTab {
  * @returns The tab, the item and the mocks
  */
 function renderDocs(body: string, id: string): DocsTab {
-  const node = diagramItem(schemaWith(body), id);
+  const node = diagramItem(webviewSchemaWith(body), id);
   const dispatch = vi.fn<(command: SchemaCommand) => void>();
   const rerender = vi.fn<() => void>();
   return { tab: createDocsTab(node, dispatch, rerender), node, dispatch, rerender };

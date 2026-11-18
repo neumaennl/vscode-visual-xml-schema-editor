@@ -13,7 +13,7 @@ import {
 import { SchemaNodeType } from "../../shared/idStrategy";
 import type { DiagramItem } from "../diagram";
 import { diagramItem, muteDiagramBuilderLog } from "../__tests__/diagramTestHelpers";
-import { schemaWith } from "../../shared/__tests__/schemaTestHelpers";
+import { webviewSchemaWith } from "../../shared/__tests__/schemaTestHelpers";
 
 /** Elements with a named type, inline simple types (a restriction, a list and unions) and inline complex types, and a named simple type. */
 const TYPED_NODES = `<xs:element name="code" type="xs:string"/>
@@ -34,7 +34,7 @@ const TYPED_NODES = `<xs:element name="code" type="xs:string"/>
  * @returns The item
  */
 function typedNode(id: string): DiagramItem {
-  return diagramItem(schemaWith(TYPED_NODES), id);
+  return diagramItem(webviewSchemaWith(TYPED_NODES), id);
 }
 
 describe("propertiesPanelTypeHelpers", () => {

@@ -3,7 +3,7 @@
  */
 
 import {
-  collectLocalSchemaTypeNames,
+  collectTypeSuggestions,
   createTypeCommitHandler,
   normalizeTypeReference,
 } from "./propertiesPanelTypeReferences";
@@ -35,21 +35,33 @@ function itemInSchemaWithTypes(): DiagramItem {
   return item;
 }
 
-describe("collectLocalSchemaTypeNames", () => {
-  test("should collect the trimmed names of the simple and complex types of the diagram", () => {
-    expect([...collectLocalSchemaTypeNames(itemInSchemaWithTypes())]).toEqual(["Code", "Person"]);
+describe("collectTypeSuggestions", () => {
+  test("should suggest the 44 built-in data types without a node", () => {
+    const suggestions = collectTypeSuggestions(null);
+    expect(suggestions).toHaveLength(44);
+    expect(suggestions).toEqual(expect.arrayContaining(["xs:string", "xs:ID", "xs:unsignedInt", "xs:gYear"]));
+    expect(suggestions).not.toContain("xs:anyType");
   });
 
-  test("should cache the names on the diagram", () => {
+  test("should add the trimmed names of the types of the schema with and without the prefix of its target namespace", () => {
+    expect(collectTypeSuggestions(itemInSchemaWithTypes()).slice(44)).toEqual([
+      "Code",
+      "tns:Code",
+      "Person",
+      "tns:Person",
+    ]);
+  });
+
+  test("should collect the type names of the diagram once and cache them", () => {
     const item = itemInSchemaWithTypes();
-    const names = collectLocalSchemaTypeNames(item);
+    collectTypeSuggestions(item);
     item.diagram?.rootElements.push(new DiagramItem("/simpleType:Later", "Later", DiagramItemType.type));
-    expect(collectLocalSchemaTypeNames(item)).toBe(names);
-    expect(item.diagram?.localSchemaTypeNames).toBe(names);
+    expect(collectTypeSuggestions(item)).not.toContain("Later");
+    expect([...(item.diagram?.localSchemaTypeNames ?? [])]).toEqual(["Code", "Person"]);
   });
 
-  test("should return no names for an item without a diagram", () => {
-    expect(collectLocalSchemaTypeNames(new DiagramItem("/element:a", "a", DiagramItemType.element)).size).toBe(0);
+  test("should suggest only the built-in data types for an item without a diagram", () => {
+    expect(collectTypeSuggestions(new DiagramItem("/element:a", "a", DiagramItemType.element))).toHaveLength(44);
   });
 });
 

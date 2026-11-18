@@ -3,10 +3,11 @@
  * target namespace that a reference to one of them gets.
  */
 
+import { BUILT_IN_DATATYPES, isBuiltInTypeName } from "../../shared/builtInTypes";
 import { SchemaNodeType } from "../../shared/idStrategy";
+import { splitQName } from "../../shared/qNames";
 import type { DiagramItem } from "../diagram";
 import { getNodeType } from "./propertiesPanelNodeKinds";
-import { BUILT_IN_XSD_TYPE_LOCAL_NAME_SET } from "./propertiesPanelTypeCatalog";
 
 /**
  * Collects and caches top-level/local simpleType and complexType names from the active diagram.
@@ -14,7 +15,7 @@ import { BUILT_IN_XSD_TYPE_LOCAL_NAME_SET } from "./propertiesPanelTypeCatalog";
  * @param node - Any diagram node that belongs to the currently rendered diagram
  * @returns A set of discovered local schema type names
  */
-export function collectLocalSchemaTypeNames(node: DiagramItem): ReadonlySet<string> {
+function collectLocalSchemaTypeNames(node: DiagramItem): ReadonlySet<string> {
   const cached = node.diagram?.localSchemaTypeNames;
   if (cached) {
     return cached;
@@ -43,6 +44,28 @@ export function collectLocalSchemaTypeNames(node: DiagramItem): ReadonlySet<stri
 }
 
 /**
+ * Returns the type names that the type fields suggest: the built-in data types of XML Schema and the types of
+ * the node's schema, with and without the prefix of its target namespace.
+ *
+ * @param node - A diagram item of the schema, or null for the built-in types only
+ * @returns The type names
+ */
+export function collectTypeSuggestions(node: DiagramItem | null): string[] {
+  const suggestions = new Set(BUILT_IN_DATATYPES.map((localName) => `xs:${localName}`));
+  if (!node) {
+    return Array.from(suggestions);
+  }
+  const currentSchemaPrefix = node.diagram?.currentSchemaPrefix;
+  for (const localName of collectLocalSchemaTypeNames(node)) {
+    suggestions.add(localName);
+    if (currentSchemaPrefix) {
+      suggestions.add(`${currentSchemaPrefix}:${localName}`);
+    }
+  }
+  return Array.from(suggestions);
+}
+
+/**
  * Normalizes a type reference entered in the properties panel.
  * For local schema types, this prefixes with the schema `targetNamespace` prefix when available.
  *
@@ -55,12 +78,12 @@ export function normalizeTypeReference(node: DiagramItem, nextType: string): str
   if (!typeName) {
     return typeName;
   }
-  if (typeName.includes(":")) {
+  if (splitQName(typeName).prefix !== undefined) {
     return typeName;
   }
 
   const currentSchemaPrefix = node.diagram?.currentSchemaPrefix?.trim();
-  if (!currentSchemaPrefix || BUILT_IN_XSD_TYPE_LOCAL_NAME_SET.has(typeName)) {
+  if (!currentSchemaPrefix || isBuiltInTypeName(typeName)) {
     return typeName;
   }
 

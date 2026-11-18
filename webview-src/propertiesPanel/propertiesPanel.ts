@@ -7,7 +7,7 @@ import type { DiagramItem } from "../diagram";
 import { DiagramItemType } from "../diagram/DiagramTypes";
 import type { SchemaCommand } from "../../shared/types";
 import { canEditCardinality, getNodeType, getNodeTypeLabel } from "./propertiesPanelNodeKinds";
-import { collectLocalSchemaTypeNames } from "./propertiesPanelTypeReferences";
+import { collectTypeSuggestions } from "./propertiesPanelTypeReferences";
 import { createDeleteNodeCommand, createRenameNodeCommand } from "./propertiesPanelCommands";
 import { resolveSimpleTypeId } from "./propertiesPanelTargets";
 import { SchemaNodeType } from "../../shared/idStrategy";
@@ -24,7 +24,6 @@ import {
 import { createDocsTab } from "./propertiesPanelDocs";
 import { renderFacetsTab } from "./propertiesPanelFacets";
 import { renderSchemaNamespaceProperties } from "./propertiesPanelSchemaNamespaces";
-import { BUILTIN_TYPE_SUGGESTIONS } from "./propertiesPanelTypeCatalog";
 import { renderTypeProperty } from "./propertiesPanelTypes";
 import { renderElementDefaultFixedSection } from "./propertiesPanelElementDefaults";
 import { canShowConstraintsSection, renderConstraintsSection } from "./propertiesPanelConstraints";
@@ -366,27 +365,12 @@ export class PropertiesPanel {
   }
 
   /**
-   * Returns the type names that the type fields suggest: the built-in XSD types and the types of the
-   * current schema, with and without the prefix of its target namespace.
+   * Returns the type names that the type fields suggest (see {@link collectTypeSuggestions}).
    *
    * @returns The type names
    */
   private getTypeSuggestions(): string[] {
-    const collected = new Set(BUILTIN_TYPE_SUGGESTIONS);
-    const sourceNode = this.selectedNode ?? this.draftNode;
-    if (!sourceNode) {
-      return Array.from(collected);
-    }
-    const localSchemaTypeNames = collectLocalSchemaTypeNames(sourceNode);
-    const currentSchemaPrefix = this.selectedNode?.diagram?.currentSchemaPrefix;
-    for (const localName of localSchemaTypeNames) {
-      collected.add(localName);
-      if (currentSchemaPrefix) {
-        collected.add(`${currentSchemaPrefix}:${localName}`);
-      }
-    }
-
-    return Array.from(collected);
+    return collectTypeSuggestions(this.selectedNode ?? this.draftNode);
   }
 
   /**

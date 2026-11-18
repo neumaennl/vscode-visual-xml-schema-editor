@@ -4,6 +4,9 @@
 
 import type { BaseCommand } from "./base.js";
 
+/** Namespace declarations: prefix → namespace URI; the empty prefix declares the default namespace. */
+export type NamespacePrefixes = Record<string, string>;
+
 /**
  * Payload for adding an import to the schema.
  */
@@ -145,11 +148,11 @@ export interface ModifySchemaNamespacesPayload {
   /**
    * Complete namespace prefix mapping for schema declarations (prefix → namespace URI).
    */
-  namespacePrefixes: Record<string, string>;
+  namespacePrefixes: NamespacePrefixes;
   /**
    * Previous namespace prefix mapping, used to detect prefix renames for QName rewrites.
    */
-  previousNamespacePrefixes?: Record<string, string>;
+  previousNamespacePrefixes?: NamespacePrefixes;
 }
 
 /**

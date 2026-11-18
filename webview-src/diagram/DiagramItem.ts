@@ -7,7 +7,7 @@ import type { DiagramItemType, DiagramAnnotationEntry, Point, Size, Rectangle } 
 import type { DiagramStyle } from "./DiagramTypes";
 import { DiagramItemGroupType, defaultDiagramStyle, enclosingRectangle } from "./DiagramTypes";
 import type { Diagram } from "./Diagram";
-import type { ComplexTypeDerivationKind, SimpleTypeDerivationKind } from "../../shared/types";
+import type { ComplexTypeDerivationKind, RestrictionFacets, SimpleTypeDerivationKind } from "../../shared/types";
 
 /**
  * A node of the diagram: an element, group, type or the schema, with what the diagram shows of it, its
@@ -72,20 +72,7 @@ export class DiagramItem {
   }> = [];
 
   // Restrictions (for simpleType restrictions)
-  public restrictions?: {
-    enumeration?: string[];
-    pattern?: string[];
-    length?: number;
-    minLength?: number;
-    maxLength?: number;
-    minInclusive?: string;
-    maxInclusive?: string;
-    minExclusive?: string;
-    maxExclusive?: string;
-    totalDigits?: number;
-    fractionDigits?: number;
-    whiteSpace?: string;
-  };
+  public restrictions?: RestrictionFacets;
 
   // Reference to diagram for accessing settings
   public diagram: Diagram | null = null;

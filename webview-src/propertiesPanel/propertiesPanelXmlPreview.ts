@@ -3,6 +3,8 @@
  * Converts a selected diagram node into an XSD fragment string.
  */
 
+import { XSD_NAMESPACE } from "../../shared/builtInTypes";
+import { LIST_FACETS, SINGLE_VALUE_FACETS } from "../../shared/facets";
 import { SCHEMA_ROOT_ID, parseSchemaId, SchemaNodeType } from "../../shared/idStrategy";
 import type { DiagramItem } from "../diagram";
 import { DiagramItemType } from "../diagram/DiagramTypes";
@@ -151,28 +153,14 @@ function renderRestrictionFacets(node: DiagramItem, level: number): string[] {
 
   const facets: string[] = [];
 
-  for (const value of restrictions.enumeration ?? []) {
-    facets.push(renderTag("xs:enumeration", [["value", value]], [], level));
+  for (const facetName of LIST_FACETS) {
+    for (const value of restrictions[facetName] ?? []) {
+      facets.push(renderTag(`xs:${facetName}`, [["value", value]], [], level));
+    }
   }
 
-  for (const value of restrictions.pattern ?? []) {
-    facets.push(renderTag("xs:pattern", [["value", value]], [], level));
-  }
-
-  const scalarFacetMap: Array<[string, number | string | undefined]> = [
-    ["length", restrictions.length],
-    ["minLength", restrictions.minLength],
-    ["maxLength", restrictions.maxLength],
-    ["minInclusive", restrictions.minInclusive],
-    ["maxInclusive", restrictions.maxInclusive],
-    ["minExclusive", restrictions.minExclusive],
-    ["maxExclusive", restrictions.maxExclusive],
-    ["totalDigits", restrictions.totalDigits],
-    ["fractionDigits", restrictions.fractionDigits],
-    ["whiteSpace", restrictions.whiteSpace],
-  ];
-
-  for (const [facetName, value] of scalarFacetMap) {
+  for (const facetName of SINGLE_VALUE_FACETS) {
+    const value = restrictions[facetName];
     if (value !== undefined) {
       facets.push(renderTag(`xs:${facetName}`, [["value", String(value)]], [], level));
     }
@@ -392,7 +380,7 @@ function renderSchemaNode(node: DiagramItem, level: number, depth: number): stri
   }
 
   if (!namespaceEntries.some(([prefix]) => prefix === "xs")) {
-    attrs.push(["xmlns:xs", "http://www.w3.org/2001/XMLSchema"]);
+    attrs.push(["xmlns:xs", XSD_NAMESPACE]);
   }
 
   if (node.diagram?.schemaTargetNamespace) {

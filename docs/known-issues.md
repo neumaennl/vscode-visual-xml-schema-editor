@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-18T09:05:08Z }
-verified: { by: human:neumaennl, at: 2026-11-18T12:43:13Z }
+generated: { by: human:neumaennl, at: 2026-11-18T13:02:32Z }
+verified: { by: human:neumaennl, at: 2026-11-18T15:05:42Z }
 ---
 
 # Purpose
@@ -227,6 +227,19 @@ Effort:
 - **Effort:** M
 - **Description:** `isValidXmlName()` is the regular expression `/^[a-zA-Z_][\w.-]*$/`. XML names may contain non-ASCII letters (`Straße`, `名前`), which are rejected. The same function checks `ref` values of elements, attributes, groups and attribute groups, so a reference with a prefix such as `tns:Address`, which is the usual form in schemas with a target namespace, is rejected as well, and the existence checks compare the `ref` with the unprefixed names (`name === ref`). The webview does not send `ref` values yet, so today only names are affected. The fix is a check for NCNames following the XML specification, and a QName check for `ref` that resolves the prefix like `validateElementType()`.
 - **GitHub issue:** none
+
+## Built-in types are recognized by their local name only
+
+- **Location:** `src/commandValidators/validationUtils.ts` (`validateElementType()`), `webview-src/propertiesPanel/propertiesPanelTypeReferences.ts` (`collectTypeSuggestions()`, `normalizeTypeReference()`)
+- **Severity:** Medium
+- **Effort:** S
+- **Description:** A type reference names a built-in type only if its prefix declares the namespace of XML Schema, or if it has no prefix and the default namespace is the namespace of XML Schema. The editor ignores the prefix on both sides:
+  - `validateElementType()` accepts every reference whose local name is a built-in type, whatever the prefix: `type="tns:string"` or `type="foo:string"` with an undeclared `foo` are accepted.
+  - The properties panel suggests the built-in types with the prefix `xs`, which is wrong in a schema that declares the namespace with another prefix such as `xsd`, and `normalizeTypeReference()` keeps a built-in type that is entered without a prefix, such as `string`, without one, which is only valid if the default namespace is the namespace of XML Schema.
+
+  The fix is to resolve the prefix with the namespace declarations of the schema (`shared/qNames.ts`) and to use the schema's own prefix for the namespace of XML Schema; the structure review [#448](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/448) does this when it replaces the fixed `xs:` prefix in the webview.
+
+- **GitHub issue:** [#448](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/448)
 
 ## Mixed content toggle ignores simple content, `complexContent` and the base type
 
@@ -466,7 +479,7 @@ Effort:
 - **Location:** whole repository
 - **Severity:** Low
 - **Effort:** L
-- **Description:** The [development guidelines](development-guidelines.md#code-quality) ask to avoid code duplication, but the code base likely contains dead code, and duplicated logic that is written in different ways, which was not caught in reviews. `npm run lint` reports code that is copied, also with changed names (see [Build and packaging](build-and-packaging.md#duplicated-code)), and [#439](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/439) removed all such copies; it does not find logic that is written differently. fallow finds code that is unused across files, but not unused branches within a function (see [Build and packaging](build-and-packaging.md#unused-code)). The [duplicated top-level lookups](#top-level-lookups-are-duplicated-instead-of-shared) are an example. A systematic cleanup by an agent is planned. Besides duplicated logic within one part, the agent should look explicitly for code that the extension (`src/`) and the webview (`webview-src/`) each implement on their own, and move it to `shared/`, which both use; for example the rules where an element or attribute may be placed, which both sides check (see [Architecture](architecture.md#principles)), and the top-level lookups in `DiagramBuilder` and `DropCommandFactory`. Functions that read schema objects move into `shared/` only with the move to `xmlbind-ts` 3 ([ADR 006](architecture/006-module-structure.md#schema-objects-on-both-sides)). The structure review [#448](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/448) removed the dead code it found in the diagram.
+- **Description:** The [development guidelines](development-guidelines.md#code-quality) ask to avoid code duplication, but the code base likely contains dead code, and duplicated logic that is written in different ways, which was not caught in reviews. `npm run lint` reports code that is copied, also with changed names (see [Build and packaging](build-and-packaging.md#duplicated-code)), and [#439](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/439) removed all such copies; it does not find logic that is written differently. fallow finds code that is unused across files, but not unused branches within a function (see [Build and packaging](build-and-packaging.md#unused-code)). The [duplicated top-level lookups](#top-level-lookups-are-duplicated-instead-of-shared) are an example. A systematic cleanup by an agent is planned. Besides duplicated logic within one part, the agent should look explicitly for code that the extension (`src/`) and the webview (`webview-src/`) each implement on their own, and move it to `shared/`, which both use; for example the rules where an element or attribute may be placed, which both sides check (see [Architecture](architecture.md#principles)), and the top-level lookups in `DiagramBuilder` and `DropCommandFactory`. Functions that read schema objects move into `shared/` only with the move to `xmlbind-ts` 3 ([ADR 006](architecture/006-module-structure.md#schema-objects-on-both-sides)). The structure review [#448](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/448) removed the dead code it found in the diagram, and moved the built-in types, the facets and the functions on QNames and namespace prefixes, which both sides had written down on their own, into `shared/` (`builtInTypes.ts`, `facets.ts`, `qNames.ts`).
 
 - **GitHub issue:** none
 

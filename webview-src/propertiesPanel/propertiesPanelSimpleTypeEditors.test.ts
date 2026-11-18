@@ -25,7 +25,7 @@ import {
   getTextByLabel,
 } from "../__tests__/propertiesPanelTestHelpers";
 import { diagramItem, muteDiagramBuilderLog } from "../__tests__/diagramTestHelpers";
-import { schemaWith } from "../../shared/__tests__/schemaTestHelpers";
+import { webviewSchemaWith } from "../../shared/__tests__/schemaTestHelpers";
 
 /** Named and anonymous list, union and restriction types, and an element with a named type. */
 const SIMPLE_TYPES = `<xs:simpleType name="Tokens"><xs:list itemType="xs:token"/></xs:simpleType>
@@ -65,7 +65,7 @@ function renderEditor(
   ) => void
 ): SimpleTypeEditor {
   const root = document.createElement("div");
-  const node = diagramItem(schemaWith(SIMPLE_TYPES), id);
+  const node = diagramItem(webviewSchemaWith(SIMPLE_TYPES), id);
   const dispatch = vi.fn<(command: SchemaCommand) => void>();
   render(root, node, id.startsWith("/element:"), dispatch);
   return { root, node, dispatch };
@@ -115,7 +115,7 @@ describe("propertiesPanelSimpleTypeEditors", () => {
       { id: "/simpleType:Code", kind: "restriction" },
       { id: "/element:plain", kind: "restriction" },
     ])("should return $kind for $id", ({ id, kind }) => {
-      expect(getSimpleTypeDerivationKind(diagramItem(schemaWith(SIMPLE_TYPES), id))).toBe(kind);
+      expect(getSimpleTypeDerivationKind(diagramItem(webviewSchemaWith(SIMPLE_TYPES), id))).toBe(kind);
     });
   });
 

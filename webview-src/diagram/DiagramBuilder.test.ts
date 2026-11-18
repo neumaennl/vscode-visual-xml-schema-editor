@@ -5,7 +5,7 @@
 import { DiagramBuilder } from "../diagram/DiagramBuilder";
 import type { DiagramItem } from "../diagram/DiagramItem";
 import { schema } from "../../shared/types";
-import { schemaWith } from "../../shared/__tests__/schemaTestHelpers";
+import { webviewSchemaWith } from "../../shared/__tests__/schemaTestHelpers";
 
 /**
  * Creates a valid schema object for testing.
@@ -34,7 +34,7 @@ describe("DiagramBuilder", () => {
    * @returns The top-level nodes
    */
   function topLevelNodes(content: string): DiagramItem[] {
-    return builder.buildFromSchema(schemaWith(content)).rootElements[0]!.childElements;
+    return builder.buildFromSchema(webviewSchemaWith(content)).rootElements[0]!.childElements;
   }
 
   describe("buildFromSchema", () => {
@@ -178,14 +178,14 @@ describe("DiagramBuilder", () => {
     );
 
     test("should handle schema without targetNamespace", () => {
-      const diagram = builder.buildFromSchema(schemaWith(`<xs:element name="Test"/>`));
+      const diagram = builder.buildFromSchema(webviewSchemaWith(`<xs:element name="Test"/>`));
 
       expect(diagram.rootElements[0]!.name).toContain("Schema:");
     });
 
     test("should expose top-level attributes on schema root properties", () => {
       const diagram = builder.buildFromSchema(
-        schemaWith(`<xs:attribute name="lang" type="xs:string"/><xs:attribute name="version" type="xs:string"/>`)
+        webviewSchemaWith(`<xs:attribute name="lang" type="xs:string"/><xs:attribute name="version" type="xs:string"/>`)
       );
 
       expect(diagram.rootElements[0]!.attributes.map((attribute) => attribute.name)).toEqual(["lang", "version"]);

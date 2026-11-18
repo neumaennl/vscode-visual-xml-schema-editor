@@ -7,6 +7,7 @@
 import type { DiagramItem } from "./DiagramItem";
 import type { Size, Rectangle, DiagramStyle } from "./DiagramTypes";
 import { enclosingRectangle, defaultDiagramStyle } from "./DiagramTypes";
+import type { NamespacePrefixes } from "../../shared/types";
 
 /**
  * Main diagram class that holds the complete structure of an XSD visualization.
@@ -37,7 +38,7 @@ export class Diagram {
   public schemaTargetNamespace = "";
 
   /** Schema-level namespace declarations keyed by prefix */
-  public schemaNamespacePrefixes: Record<string, string> = {};
+  public schemaNamespacePrefixes: NamespacePrefixes = {};
 
   /** Cached local simple/complex type names discovered in the current schema diagram */
   public localSchemaTypeNames?: ReadonlySet<string>;

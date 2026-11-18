@@ -109,6 +109,14 @@ describe("SchemaProcessorsSimpleTypes", () => {
       expect(item.restrictions?.whiteSpace).toBe("collapse");
     });
 
+    test("should leave out a whiteSpace value that the schema does not allow", () => {
+      const restriction = { base: "xs:string", whiteSpace: [{ value: "trim" }], length: [{ value: 3 }] };
+
+      processRestriction(item, restriction);
+
+      expect(item.restrictions).toEqual({ length: 3 });
+    });
+
     test("should extract multiple facets at once", () => {
       const restriction = {
         base: "xs:string",

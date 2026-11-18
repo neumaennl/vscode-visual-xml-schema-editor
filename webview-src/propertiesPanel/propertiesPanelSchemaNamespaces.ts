@@ -2,14 +2,17 @@
  * Schema-root namespace editing helpers for the properties panel.
  */
 
-import type { SchemaCommand } from "../../shared/types";
+import type { NamespacePrefixes, SchemaCommand } from "../../shared/types";
 import type { Diagram, DiagramItem } from "../diagram";
+import {
+  firstFreePrefix,
+  isReservedPrefix,
+  normalizeNamespacePrefixes,
+  prefixesForNamespace,
+} from "../../shared/qNames";
 import { addPropertyWithElementToContainer, createEditableField } from "./propertiesPanelDom";
 
 type CommandDispatcher = (command: SchemaCommand) => void;
-
-const RESERVED_NAMESPACE_PREFIXES = new Set(["xml", "xmlns"]);
-type NamespacePrefixes = Record<string, string>;
 
 /**
  * Renders schema-root namespace fields and wires edits to `modifySchemaNamespaces` commands.
@@ -71,7 +74,7 @@ export function renderSchemaNamespaceProperties(
   addButton.addEventListener("click", () => {
     const previousNamespacePrefixes = { ...namespacePrefixes };
     const nextNamespacePrefixes = { ...namespacePrefixes };
-    const nextPrefix = generateUniqueNamespacePrefix(nextNamespacePrefixes);
+    const nextPrefix = firstFreePrefix(nextNamespacePrefixes);
     nextNamespacePrefixes[nextPrefix] = "urn:example:namespace";
     applySchemaNamespaceDraftState(
       diagram,
@@ -128,7 +131,7 @@ function createNamespaceRow(
   const commit = (): void => {
     const nextPrefix = prefixInput.value.trim();
     const nextNamespaceUri = namespaceInput.value.trim();
-    if (RESERVED_NAMESPACE_PREFIXES.has(nextPrefix)) {
+    if (isReservedPrefix(nextPrefix)) {
       rerender();
       return;
     }
@@ -205,7 +208,7 @@ function applySchemaNamespaceDraftState(
   dispatchCommand: CommandDispatcher,
   rerender: () => void
 ): void {
-  const normalizedNamespacePrefixes = normalizeNamespacePrefixes(namespacePrefixes);
+  const normalizedNamespacePrefixes = normalizeEditedNamespacePrefixes(namespacePrefixes);
   const normalizedTargetNamespace = targetNamespace.trim();
   if (
     normalizedTargetNamespace &&
@@ -245,9 +248,9 @@ function applySchemaNamespaceDraftState(
 function syncTargetNamespaceWithDeclarations(
   previousTargetNamespace: string,
   nextTargetNamespace: string,
-  namespacePrefixes: Record<string, string>,
+  namespacePrefixes: NamespacePrefixes,
   preferredPrefix?: string
-): Record<string, string> {
+): NamespacePrefixes {
   const previousPrefix = findTargetNamespacePrefix(namespacePrefixes, previousTargetNamespace, preferredPrefix);
   if (previousPrefix !== undefined) {
     if (nextTargetNamespace) {
@@ -261,9 +264,7 @@ function syncTargetNamespaceWithDeclarations(
   }
   // An empty prefix gets the default as well
   const candidatePrefix = (preferredPrefix?.trim() ?? "") || "tns";
-  const nextPrefix = namespacePrefixes[candidatePrefix]
-    ? generateUniqueNamespacePrefix(namespacePrefixes)
-    : candidatePrefix;
+  const nextPrefix = namespacePrefixes[candidatePrefix] ? firstFreePrefix(namespacePrefixes) : candidatePrefix;
   return { ...namespacePrefixes, [nextPrefix]: nextTargetNamespace };
 }
 
@@ -276,7 +277,7 @@ function syncTargetNamespaceWithDeclarations(
  * @returns The prefix, or undefined when there is no target namespace or no declaration of it
  */
 function findTargetNamespacePrefix(
-  namespacePrefixes: Record<string, string>,
+  namespacePrefixes: NamespacePrefixes,
   targetNamespace: string,
   preferredPrefix?: string
 ): string | undefined {
@@ -287,21 +288,7 @@ function findTargetNamespacePrefix(
   if (normalizedPreferredPrefix && namespacePrefixes[normalizedPreferredPrefix] === targetNamespace) {
     return normalizedPreferredPrefix;
   }
-  return Object.entries(namespacePrefixes).find(([, namespaceUri]) => namespaceUri === targetNamespace)?.[0];
-}
-
-/**
- * Returns the first prefix `ns0`, `ns1`, … that is not declared yet.
- *
- * @param namespacePrefixes - The namespace declarations
- * @returns The prefix
- */
-function generateUniqueNamespacePrefix(namespacePrefixes: Record<string, string>): string {
-  let index = 0;
-  while (Object.prototype.hasOwnProperty.call(namespacePrefixes, `ns${index}`)) {
-    index++;
-  }
-  return `ns${index}`;
+  return prefixesForNamespace(namespacePrefixes, targetNamespace)[0];
 }
 
 /**
@@ -311,15 +298,8 @@ function generateUniqueNamespacePrefix(namespacePrefixes: Record<string, string>
  * @param namespacePrefixes - The namespace declarations
  * @returns The normalized declarations
  */
-function normalizeNamespacePrefixes(namespacePrefixes: NamespacePrefixes): NamespacePrefixes {
-  const normalized: NamespacePrefixes = {};
-  for (const [prefix, namespaceUri] of Object.entries(namespacePrefixes)) {
-    const normalizedPrefix = prefix.trim();
-    const normalizedNamespaceUri = namespaceUri.trim();
-    if (!normalizedNamespaceUri || RESERVED_NAMESPACE_PREFIXES.has(normalizedPrefix)) {
-      continue;
-    }
-    normalized[normalizedPrefix] = normalizedNamespaceUri;
-  }
-  return normalized;
+function normalizeEditedNamespacePrefixes(namespacePrefixes: Readonly<NamespacePrefixes>): NamespacePrefixes {
+  return Object.fromEntries(
+    Object.entries(normalizeNamespacePrefixes(namespacePrefixes)).filter(([prefix]) => !isReservedPrefix(prefix))
+  );
 }

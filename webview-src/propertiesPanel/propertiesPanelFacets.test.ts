@@ -9,7 +9,7 @@ import type { SchemaCommand } from "../../shared/types";
 import type { DiagramItem } from "../diagram";
 import { editInput, getChipValuesByLabel, getInputByLabel } from "../__tests__/propertiesPanelTestHelpers";
 import { diagramItem, muteDiagramBuilderLog } from "../__tests__/diagramTestHelpers";
-import { schemaWith } from "../../shared/__tests__/schemaTestHelpers";
+import { webviewSchemaWith } from "../../shared/__tests__/schemaTestHelpers";
 
 /**
  * Restrictions with every facet that the tab edits, one with an inline base type, one with only a
@@ -46,7 +46,7 @@ interface FacetsTab {
  * @returns The tab, the item and the mock
  */
 function renderFacets(id: string): FacetsTab {
-  const node = diagramItem(schemaWith(RESTRICTIONS), id);
+  const node = diagramItem(webviewSchemaWith(RESTRICTIONS), id);
   const dispatch = vi.fn<(command: SchemaCommand) => void>();
   return { tab: renderFacetsTab(node, dispatch, addPropertyToContainer), node, dispatch };
 }

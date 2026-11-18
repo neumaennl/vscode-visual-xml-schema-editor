@@ -5,7 +5,7 @@
 import { renderElementDefaultFixedSection } from "./propertiesPanelElementDefaults";
 import type { SchemaCommand } from "../../shared/types";
 import { diagramItem, muteDiagramBuilderLog } from "../__tests__/diagramTestHelpers";
-import { schemaWith } from "../../shared/__tests__/schemaTestHelpers";
+import { webviewSchemaWith } from "../../shared/__tests__/schemaTestHelpers";
 
 /** An element with a default and a fixed value, and one without. */
 const ELEMENTS = `<xs:element name="code" type="xs:string" default="A" fixed="B"/>
@@ -31,7 +31,10 @@ describe("renderElementDefaultFixedSection", () => {
   muteDiagramBuilderLog();
 
   test("should show the default and the fixed value of the element under a section header", () => {
-    const section = renderElementDefaultFixedSection(diagramItem(schemaWith(ELEMENTS), "/element:code"), vi.fn());
+    const section = renderElementDefaultFixedSection(
+      diagramItem(webviewSchemaWith(ELEMENTS), "/element:code"),
+      vi.fn()
+    );
 
     expect(section.querySelector(".property-section-header-label")?.textContent).toBe("DEFAULT & FIXED");
     expect(inputOf(section, "default").value).toBe("A");
@@ -39,7 +42,10 @@ describe("renderElementDefaultFixedSection", () => {
   });
 
   test("should show empty fields with a placeholder for an element without default and fixed values", () => {
-    const section = renderElementDefaultFixedSection(diagramItem(schemaWith(ELEMENTS), "/element:plain"), vi.fn());
+    const section = renderElementDefaultFixedSection(
+      diagramItem(webviewSchemaWith(ELEMENTS), "/element:plain"),
+      vi.fn()
+    );
 
     for (const label of ["default", "fixed"]) {
       expect(inputOf(section, label).value).toBe("");
@@ -55,7 +61,7 @@ describe("renderElementDefaultFixedSection", () => {
   ] as const)(
     "should set the $label value of the draft to '$value' and send it",
     ({ label, value, field, expected, payload }) => {
-      const node = diagramItem(schemaWith(ELEMENTS), "/element:code");
+      const node = diagramItem(webviewSchemaWith(ELEMENTS), "/element:code");
       const dispatch = vi.fn<(command: SchemaCommand) => void>();
       const input = inputOf(renderElementDefaultFixedSection(node, dispatch), label);
 

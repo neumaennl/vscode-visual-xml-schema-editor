@@ -16,7 +16,7 @@ import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
 import { isReservedPrefix, prefixesForNamespace } from "../../shared/qNames.js";
 import type { ValidationResult } from "./validationUtils.js";
 import { isValidXmlName } from "./validationUtils.js";
-import { isAnyPrefixReferencedInSchema } from "../commandExecutors/schemaPrefixChecker.js";
+import { isAnyPrefixReferenced } from "../schemaReferences/referenceChecks.js";
 
 // ===== Helpers =====
 
@@ -90,7 +90,7 @@ function validateModuleId<T extends object>(
  * in `_namespacePrefixes` AND that prefix is referenced anywhere in the schema.
  *
  * Collects all prefixes bound to the namespace and delegates to
- * {@link isAnyPrefixReferencedInSchema} for a single full recursive traversal
+ * {@link isAnyPrefixReferenced} for a single full recursive traversal
  * of all QName-valued fields (`element/@type`, `complexType/@base`,
  * `restriction/@base`, `union/@memberTypes`, `group/@ref`, `attributeGroup/@ref`, etc.)
  *
@@ -100,10 +100,7 @@ function validateModuleId<T extends object>(
  */
 function isNamespaceReferenced(namespace: string, schemaObj: schema): boolean {
   if (!namespace || !schemaObj._namespacePrefixes) return false;
-  return isAnyPrefixReferencedInSchema(
-    new Set(prefixesForNamespace(schemaObj._namespacePrefixes, namespace)),
-    schemaObj
-  );
+  return isAnyPrefixReferenced(new Set(prefixesForNamespace(schemaObj._namespacePrefixes, namespace)), schemaObj);
 }
 
 /**

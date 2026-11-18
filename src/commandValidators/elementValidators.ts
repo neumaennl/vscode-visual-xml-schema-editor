@@ -29,7 +29,7 @@ const ELEMENTS: ChildKind = {
  * @returns The validation result
  */
 function validateElementReference(ref: string, schemaObj: schema): ValidationResult {
-  return validateReference(ref, schemaObj.element, "Element", `Referenced element '${ref}' does not exist in schema`);
+  return validateReference(ref, "element", schemaObj, `Referenced element '${ref}' does not exist in schema`);
 }
 
 /**

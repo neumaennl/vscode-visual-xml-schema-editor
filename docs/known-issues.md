@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-18T13:02:32Z }
-verified: { by: human:neumaennl, at: 2026-11-18T15:05:42Z }
+generated: { by: human:neumaennl, at: 2026-11-18T15:12:15Z }
+verified: { by: human:neumaennl, at: 2026-11-18T19:48:12Z }
 ---
 
 # Purpose
@@ -87,7 +87,7 @@ Effort:
 
 ## Turning the default namespace into a prefix does not rewrite references
 
-- **Location:** `src/commandExecutors/schemaExecutors.ts` (`executeModifySchemaNamespaces()`), `src/commandExecutors/schemaQNameRewriter.ts`
+- **Location:** `src/commandExecutors/schemaExecutors.ts` (`executeModifySchemaNamespaces()`), `src/schemaReferences/referenceRewrites.ts`
 - **Severity:** Medium
 - **Effort:** S
 - **Description:** `modifySchemaNamespaces` treats a prefix whose name changed but whose URI did not as a rename, and rewrites the QNames that use it (see [Commands](commands.md#imports-includes-and-namespaces)). If one side of the rename is the empty prefix of the default namespace, nothing is rewritten. When `xmlns="urn:x"` becomes `xmlns:tns="urn:x"`, unprefixed QNames such as `type="Address"` no longer resolve to `urn:x`; when `tns` becomes the default namespace, `tns:Address` loses its binding. The fix is to add the prefix to unprefixed QNames in the first case and to remove it in the second. The `xpath` of selectors and fields needs its own rule: XPath does not apply the default namespace to unprefixed names, so a name in an XPath keeps its prefix, and turning a prefix that an XPath uses into the default namespace should be rejected.
@@ -106,7 +106,7 @@ Effort:
 - **Location:** `src/commandValidators/schemaValidators.ts` (`validateModifySchemaNamespaces()`)
 - **Severity:** Medium
 - **Effort:** S
-- **Description:** `modifySchemaNamespaces` replaces the complete prefix map, so a prefix that is missing from the map is removed. The validator does not check whether QNames such as `type="tns:Address"` still use the removed prefix, and the schema is left with references that cannot be resolved. The properties panel sends this command when a namespace row is deleted. `removeImport` already rejects the removal of a namespace that is still referenced (`isAnyPrefixReferencedInSchema()`); the same check is needed for prefixes that are removed and not renamed.
+- **Description:** `modifySchemaNamespaces` replaces the complete prefix map, so a prefix that is missing from the map is removed. The validator does not check whether QNames such as `type="tns:Address"` still use the removed prefix, and the schema is left with references that cannot be resolved. The properties panel sends this command when a namespace row is deleted. `removeImport` already rejects the removal of a namespace that is still referenced (`isAnyPrefixReferenced()`); the same check is needed for prefixes that are removed and not renamed.
 - **GitHub issue:** [#428](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/428)
 
 ## Documentation overlaps the next item
@@ -220,12 +220,12 @@ Effort:
 - **Description:** The diagram builder does not read the `ref` attribute of local elements. An `<xs:element ref="…"/>` is shown with the name "unnamed" and is not marked as a reference. `isReference` is only set for group references. (That commands on such nodes fail is part of [Node IDs are ambiguous and have many special cases](#node-ids-are-ambiguous-and-have-many-special-cases).) See also [Diagram items copy values from the schema objects](#diagram-items-copy-values-from-the-schema-objects).
 - **GitHub issue:** [#276](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/276)
 
-## Name validation is ASCII-only and rejects prefixed references
+## Name validation is ASCII-only
 
 - **Location:** `src/commandValidators/validationUtils.ts` (`isValidXmlName()`), the validators that call it
 - **Severity:** Medium
 - **Effort:** M
-- **Description:** `isValidXmlName()` is the regular expression `/^[a-zA-Z_][\w.-]*$/`. XML names may contain non-ASCII letters (`Straße`, `名前`), which are rejected. The same function checks `ref` values of elements, attributes, groups and attribute groups, so a reference with a prefix such as `tns:Address`, which is the usual form in schemas with a target namespace, is rejected as well, and the existence checks compare the `ref` with the unprefixed names (`name === ref`). The webview does not send `ref` values yet, so today only names are affected. The fix is a check for NCNames following the XML specification, and a QName check for `ref` that resolves the prefix like `validateElementType()`.
+- **Description:** `isValidXmlName()` is the regular expression `/^[a-zA-Z_][\w.-]*$/`. XML names may contain non-ASCII letters (`Straße`, `名前`), which are rejected, in names and in the prefix and local name of a `ref`. The fix is a check for NCNames following the XML specification.
 - **GitHub issue:** none
 
 ## Built-in types are recognized by their local name only

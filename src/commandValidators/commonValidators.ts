@@ -8,7 +8,8 @@ import type { schema } from "../../shared/types.js";
 import type { ParsedSchemaId } from "../../shared/idStrategy.js";
 import { parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy.js";
 import { locateNodeById } from "../schemaNavigator.js";
-import type { TypeKind } from "../../shared/schemaUtils.js";
+import { ownComponentName, splitQName } from "../../shared/qNames.js";
+import { getCurrentSchemaPrefixes, type TypeKind } from "../../shared/schemaUtils.js";
 import { findIdentifiedChild } from "../commandUtils.js";
 import type { ValidationFailure, ValidationResult } from "./validationUtils.js";
 import { isValidXmlName } from "./validationUtils.js";
@@ -18,26 +19,43 @@ interface NamedComponent {
   name?: string;
 }
 
+/** The kinds of top-level components that a `ref` can refer to. */
+export type ReferencedKind = "element" | "attribute" | "group" | "attributeGroup";
+
+/** What a reference refers to, capitalized, for the error messages. */
+const REFERENCED_KIND_LABELS: Record<ReferencedKind, string> = {
+  element: "Element",
+  attribute: "Attribute",
+  group: "Group",
+  attributeGroup: "Attribute group",
+};
+
 /**
- * Validates the `ref` of a reference: it must be a valid XML name and name one of the top-level
- * components it can refer to.
+ * Validates the `ref` of a reference: it must be a QName, and name one of the top-level components of
+ * the schema that it can refer to, without a prefix or with a prefix of the schema's target namespace
+ * (see {@link ownComponentName}).
  *
  * @param ref - The value of `ref`
- * @param components - The top-level components that `ref` can refer to
- * @param kind - What is referenced, capitalized, for the error message, such as `"Attribute group"`
- * @param notFoundError - The error if no component has the name
+ * @param kind - What the reference refers to
+ * @param schemaObj - The schema
+ * @param notFoundError - The error if the schema has no such component
  * @returns The validation result
  */
 export function validateReference(
   ref: string,
-  components: NamedComponent[] | undefined,
-  kind: string,
+  kind: ReferencedKind,
+  schemaObj: schema,
   notFoundError: string
 ): ValidationResult {
-  if (!isValidXmlName(ref)) {
-    return { valid: false, error: `${kind} ref must be a valid XML name` };
+  const { prefix, localName } = splitQName(ref);
+  if (!isValidXmlName(localName) || (prefix !== undefined && !isValidXmlName(prefix))) {
+    return { valid: false, error: `${REFERENCED_KIND_LABELS[kind]} ref must be a valid QName` };
   }
-  return validateDefinitionExists(components, ref, notFoundError);
+  const name = ownComponentName(ref, getCurrentSchemaPrefixes(schemaObj));
+  if (name === undefined) {
+    return { valid: false, error: notFoundError };
+  }
+  return validateDefinitionExists(schemaObj[kind], name, notFoundError);
 }
 
 /**

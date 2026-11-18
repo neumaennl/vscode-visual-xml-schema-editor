@@ -202,7 +202,7 @@ describe("Attribute Validators", () => {
       };
       const result = validateAddAttribute(command, refSchema);
       expectInvalid(result);
-      expect(result.error).toBe("Attribute ref must be a valid XML name");
+      expect(result.error).toBe("Attribute ref must be a valid QName");
     });
 
     test("should reject modifyAttribute with ref and attributeName together", () => {
@@ -437,7 +437,7 @@ describe("Attribute Validators", () => {
 
       const result = validateModifyAttribute(command, schemaWith(ATTRIBUTES));
       expectInvalid(result);
-      expect(result.error).toBe("Attribute ref must be a valid XML name");
+      expect(result.error).toBe("Attribute ref must be a valid QName");
     });
 
     test("should accept changing an attribute to a reference to an existing top-level attribute", () => {

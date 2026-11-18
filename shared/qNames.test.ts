@@ -6,6 +6,7 @@ import {
   firstFreePrefix,
   isReservedPrefix,
   normalizeNamespacePrefixes,
+  ownComponentName,
   prefixesForNamespace,
   splitQName,
 } from "./qNames.js";
@@ -18,6 +19,18 @@ describe("splitQName", () => {
     ["a:b:c", "a", "b:c"],
   ])("should split %s", (qName, prefix, localName) => {
     expect(splitQName(qName)).toEqual({ prefix, localName });
+  });
+});
+
+describe("ownComponentName", () => {
+  test.each([
+    ["Address", ["tns"], "Address"],
+    ["tns:Address", ["tns", "own"], "Address"],
+    ["own:Address", ["tns", "own"], "Address"],
+    ["other:Address", ["tns"], undefined],
+    ["tns:Address", [], undefined],
+  ])("should return for %s with the own prefixes %j: %s", (qName, ownPrefixes, expected) => {
+    expect(ownComponentName(qName, ownPrefixes)).toBe(expected);
   });
 });
 

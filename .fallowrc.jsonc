@@ -30,6 +30,42 @@
     // VS Code calls it when it opens a schema in the custom editor.
     { "implements": "vscode.CustomTextEditorProvider", "members": ["resolveCustomTextEditor"] },
   ],
+  // The layers of the extension host (see docs/architecture/006-module-structure.md). A zone may
+  // import from itself and from the zones its rule allows; files in no zone, such as the test helpers
+  // in src/__tests__, are not checked.
+  "boundaries": {
+    "zones": [
+      { "name": "vscode", "patterns": ["src/extension.ts", "src/webviewProvider.ts"] },
+      { "name": "pipeline", "patterns": ["src/commandProcessor.ts"] },
+      {
+        "name": "dispatch",
+        "patterns": ["src/commandValidator.ts", "src/commandExecutor.ts", "src/commandHandlers.ts"],
+      },
+      // Validators and executors are one layer, but do not import each other.
+      { "name": "validators", "patterns": ["src/commandValidators/**"] },
+      { "name": "executors", "patterns": ["src/commandExecutors/**"] },
+      {
+        "name": "schemaAccess",
+        "patterns": [
+          "src/schemaReferences/**",
+          "src/schemaNavigator.ts",
+          "src/commandUtils.ts",
+          "src/schemaModelManager.ts",
+        ],
+      },
+      { "name": "shared", "patterns": ["shared/**"] },
+    ],
+    "rules": [
+      // Each layer uses the layer directly below it; every layer may use the schema access and shared.
+      { "from": "vscode", "allow": ["pipeline", "schemaAccess", "shared"] },
+      { "from": "pipeline", "allow": ["dispatch", "schemaAccess", "shared"] },
+      { "from": "dispatch", "allow": ["validators", "executors", "schemaAccess", "shared"] },
+      { "from": "validators", "allow": ["schemaAccess", "shared"] },
+      { "from": "executors", "allow": ["schemaAccess", "shared"] },
+      { "from": "schemaAccess", "allow": ["shared"] },
+      { "from": "shared", "allow": [] },
+    ],
+  },
   "rules": {
     // An ignore comment must give its reason after "--".
     "require-suppression-reason": "error",

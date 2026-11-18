@@ -17,7 +17,7 @@ import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
 import { assumeValidated, assumptionFailed, locateValidated } from "./assumeValidated.js";
 import { appendTo, assignDefined, removeFrom } from "./nodeProperties.js";
 import { createAnnotation, setDocumentation } from "./annotationUtils.js";
-import { renameLocalGroupRefInSchema } from "./schemaLocalRenamer.js";
+import { renameOwnReferences } from "../schemaReferences/referenceRewrites.js";
 
 // ===== Element Group Executors =====
 
@@ -139,7 +139,7 @@ export function executeModifyGroup(command: ModifyGroupCommand, schemaObj: schem
   );
 
   if (groupName !== undefined) {
-    renameLocalGroupRefInSchema(grp.name, groupName, schemaObj);
+    renameOwnReferences("group", grp.name, groupName, schemaObj);
     grp.name = groupName;
   }
   if (documentation !== undefined) {

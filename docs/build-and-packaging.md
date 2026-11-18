@@ -1,11 +1,11 @@
 ---
 type: Build Process
 title: Build and packaging
-description: How the extension is built, run, linted, packaged and checked - the build outputs and tsconfig files, the npm scripts, the scripts in TypeScript, running it in VS Code, the VSIX and its check, the generated schema classes, dependencies and the Node version, ESLint, the checks for duplicated and unused code, the formatting with Prettier, CI, and planned changes.
+description: How the extension is built, run, linted, packaged and checked - the build outputs and tsconfig files, the npm scripts, the scripts in TypeScript, running it in VS Code, the VSIX and its check, the generated schema classes, dependencies and the Node version, ESLint, the checks for duplicated and unused code and for the layers, the formatting with Prettier, CI, and planned changes.
 tags: [build, packaging, vsix, vite, typescript, eslint, jscpd, fallow, prettier, ci, dependencies]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-18T13:02:32Z }
-verified: { by: human:neumaennl, at: 2026-11-18T15:05:42Z }
+generated: { by: human:neumaennl, at: 2026-11-18T18:45:44Z }
+verified: { by: human:neumaennl, at: 2026-11-18T19:48:12Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -219,9 +219,9 @@ How `concurrently` runs them:
 
 - all checks always run to the end, so one run reports all problems;
 - the run fails if one of them fails;
-- `--group` prints the output of each check as one block, labeled `[eslint]`, `[jscpd]`, `[fallow]`, `[fallow-production]` and `[prettier]`.
+- `--group` prints the output of each check as one block, labeled `[eslint]`, `[jscpd]`, `[fallow]`, `[fallow-production]`, `[fallow-architecture]` and `[prettier]`.
 
-To run one check alone, use `npx eslint .`, `npx jscpd`, `npx fallow dead-code --no-cache --fail-on-issues`, `npx fallow dead-code --production --no-cache --fail-on-issues` or `npx prettier --check .`. They read the same configuration as `npm run lint`. `npm run lint:fix` runs only ESLint, because jscpd and fallow fix nothing; `npm run format` fixes the formatting.
+To run one check alone, use `npx eslint .`, `npx jscpd`, `npx fallow dead-code --no-cache --fail-on-issues`, `npx fallow dead-code --production --no-cache --fail-on-issues`, `npx fallow architecture --no-cache` or `npx prettier --check .`. They read the same configuration as `npm run lint`. `npm run lint:fix` runs only ESLint, because jscpd and fallow fix nothing; `npm run format` fixes the formatting.
 
 ## ESLint
 
@@ -276,12 +276,13 @@ fallow finds the entry points itself, in `package.json` and in the configuration
 - Two dependencies count as used: `@vscode/codicons`, whose stylesheet `webviewProvider.ts` loads by path, and `@vscode/test-electron`, which `@vscode/test-cli` imports without declaring it.
 - `resolveCustomTextEditor()` counts as used in a class that implements `vscode.CustomTextEditorProvider`, because VS Code calls it.
 
-`npm run lint` runs fallow twice:
+`npm run lint` runs fallow three times:
 
 - **`fallow dead-code`** checks the whole project, including the tests.
 - **`fallow dead-code --production`** leaves out the tests, the support entry points, the configurations of the tools and the devDependencies. It finds code that only tests use, such as an export that only a test imports, or a method that only tests call.
+- **`fallow architecture`** checks the layers within the extension host (see [Layers](#layers)) and that there are no import cycles.
 
-Both runs use `--fail-on-issues`, so every finding fails the run, also the kinds that fallow only reports as warnings by default, such as an unused devDependency. There is no baseline. `--no-cache` keeps fallow from writing a cache into the checkout.
+The two runs of `fallow dead-code` use `--fail-on-issues`, so every finding fails the run, also the kinds that fallow only reports as warnings by default, such as an unused devDependency. There is no baseline. `--no-cache` keeps fallow from writing a cache into the checkout.
 
 `.fallowrc.jsonc` sets two rules:[^fallow]
 
@@ -295,6 +296,10 @@ Its limits:
 - Members with decorators are not checked, because a decorator can use them.
 - The production mode also leaves out the configurations of the build tools. `readTarget()` in `scripts/lib/compiler-target.ts`, which only `vite.config.ts` uses, therefore has an ignore comment.
 - fallow finds unused files, exports and members, not unused branches within a function, such as the cases of a `switch` that no caller reaches. The coverage report shows them (see [Testing](testing.md#coverage)), so compare it before and after a change that removes code.
+
+## Layers
+
+ESLint checks which projects may use which (see [ESLint](#eslint)). Within a project, `boundaries` in `.fallowrc.jsonc` checks the layers of [ADR 006](architecture/006-module-structure.md#layers):[^fallow] each zone lists the files of a layer, and each rule the zones that a zone may import from besides itself. In the extension host, each layer may use the layer directly below it, the schema access (`src/schemaReferences/`, `schemaNavigator.ts`, `commandUtils.ts`, `schemaModelManager.ts`) and `shared/`: `extension.ts` and `webviewProvider.ts` the pipeline, the pipeline the dispatch, the dispatch the validators and the executors. Validators and executors may only use the schema access and `shared/`, and not each other; the schema access may only use `shared/`. Files that are in no zone, such as the test helpers in `src/__tests__`, are not checked. A new module of the extension host is added to a zone; a module that would need a layer above it moves its code down (see [ADR 006](architecture/006-module-structure.md#consequences)).
 
 ## Formatting
 

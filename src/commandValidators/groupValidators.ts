@@ -2,7 +2,13 @@
  * Validators for group commands (Group and AttributeGroup).
  */
 
-import type { schema, AddGroupCommand, RemoveGroupCommand, ModifyGroupCommand, groupRef } from "../../shared/types.js";
+import type {
+  schema,
+  AddGroupCommand,
+  RemoveGroupCommand,
+  ModifyGroupCommand,
+  complexType,
+} from "../../shared/types.js";
 import type { ValidationFailure, ValidationResult } from "./validationUtils.js";
 import { isValidXmlName, validateOccurrences } from "./validationUtils.js";
 import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
@@ -14,8 +20,7 @@ import {
   validateDefinitionRemoval,
   validateReference,
 } from "./commonValidators.js";
-import type { SearchedCompositor } from "./referenceSearch.js";
-import { isReferencedInContent } from "./referenceSearch.js";
+import { isReferenced } from "../schemaReferences/referenceChecks.js";
 
 /**
  * Valid content models for Group elements.
@@ -26,21 +31,6 @@ export const VALID_GROUP_CONTENT_MODELS = ["sequence", "choice", "all"] as const
 // ===== Group Reference Helpers =====
 
 /**
- * Returns true if any schema construct references the named group: a complexType or the extension or
- * restriction of its content, or a compositor, at any depth (see {@link isReferencedInContent}).
- *
- * @param name - The name of the group
- * @param schemaObj - The schema to search
- * @returns Whether a reference was found
- */
-function isGroupReferenced(name: string, schemaObj: schema): boolean {
-  return isReferencedInContent(schemaObj, {
-    inContent: (content) => content.group?.ref === name,
-    inCompositor: (compositor) => (compositor.group ?? []).some((ref) => ref.ref === name),
-  });
-}
-
-/**
  * Validates the reference to a group definition.
  *
  * @param ref - The value of `ref`
@@ -48,16 +38,11 @@ function isGroupReferenced(name: string, schemaObj: schema): boolean {
  * @returns The validation result
  */
 function validateGroupReference(ref: string, schemaObj: schema): ValidationResult {
-  return validateReference(ref, schemaObj.group, "Group", `Referenced group does not exist: ${ref}`);
+  return validateReference(ref, "group", schemaObj, `Referenced group does not exist: ${ref}`);
 }
 
-/** Structural type for a complexType node that can hold a direct particle. */
-interface ComplexTypeWithParticles {
-  group?: groupRef;
-  sequence?: SearchedCompositor;
-  choice?: SearchedCompositor;
-  all?: SearchedCompositor;
-}
+/** The particles of a complexType: a group reference, a sequence, a choice or an all, at most one of them. */
+type ComplexTypeWithParticles = Pick<complexType, "group" | "sequence" | "choice" | "all">;
 
 /**
  * Returns true if the parent type is a complexType (top-level or local).
@@ -255,7 +240,7 @@ function locateGroup(groupId: string, schemaObj: schema): ValidationFailure | ({
  */
 export function validateRemoveGroup(command: RemoveGroupCommand, schemaObj: schema): ValidationResult {
   return validateDefinitionRemoval(locateGroup(command.payload.groupId, schemaObj), "Group", (name) =>
-    isGroupReferenced(name, schemaObj)
+    isReferenced(schemaObj, "group", name)
   );
 }
 

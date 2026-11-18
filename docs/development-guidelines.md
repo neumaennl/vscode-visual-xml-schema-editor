@@ -4,8 +4,8 @@ title: Development guidelines
 description: Rules for everyone who changes the extension - code size, code quality, formatting and ESLint, structure reviews, TypeScript and naming, VS Code and Node versions, TSDoc, tests, documentation and the knowledge bundle, issues, what to check before committing, and commits.
 tags: [guidelines, conventions, code-quality, typescript, documentation, workflow]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-17T19:12:27Z }
-verified: { by: human:neumaennl, at: 2026-11-17T20:01:05Z }
+generated: { by: human:neumaennl, at: 2026-11-18T15:12:15Z }
+verified: { by: human:neumaennl, at: 2026-11-18T19:48:12Z }
 sources:
   - id: eslint
     resource: ../eslint.config.mjs
@@ -92,7 +92,7 @@ The reports of the duplicate check and the unused-code check are inputs. The rev
 - The code is split into the projects `shared/`, `src/` (extension host) and `webview-src/` (webview), each with its tests (see [Architecture](architecture.md#components)).
 - `shared/` only uses code from `shared/`. `src/` and `webview-src/` only use their own code and `shared/`. `scripts/` only uses code from `scripts/`: Node runs the scripts directly, without a build, which the code in `shared/` needs (see [Build and packaging](build-and-packaging.md#scripts)). This also applies to tests and test helpers: a helper that tests of several projects need belongs in `shared/__tests__/`.
 - Only the integration tests in `test/integration/` may use `src/` and `webview-src/` together, for example to check that the commands the webview builds are accepted by the extension host (see [Testing](testing.md#kinds-of-tests)).
-- ESLint enforces these boundaries with `no-restricted-imports` (see [Build and packaging](build-and-packaging.md#lint)). The rule only sees static imports and exports; dynamic `import()`, the paths of `vi.mock()` and files read with `node:fs` are not checked and follow the rule all the same.[^eslint]
+- ESLint enforces these boundaries with `no-restricted-imports` (see [Build and packaging](build-and-packaging.md#lint)). Within a project, fallow checks the layers of [ADR 006](architecture/006-module-structure.md#layers) (see [Layers](build-and-packaging.md#layers)). The rule only sees static imports and exports; dynamic `import()`, the paths of `vi.mock()` and files read with `node:fs` are not checked and follow the rule all the same.[^eslint]
 
 # VS Code and Node versions
 

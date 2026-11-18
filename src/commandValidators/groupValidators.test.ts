@@ -395,7 +395,7 @@ describe("Group Validators", () => {
       };
       const result = validateAddGroup(command, schemaWithGroup);
       expectInvalid(result);
-      expect(result.error).toBe("Group ref must be a valid XML name");
+      expect(result.error).toBe("Group ref must be a valid QName");
     });
 
     test("should reject when referenced group does not exist", () => {
@@ -851,7 +851,7 @@ describe("Group Validators", () => {
 
       const result = validateModifyGroup(command, schemaWithGroups(TWO_REFS));
       expectInvalid(result);
-      expect(result.error).toBe("Group ref must be a valid XML name");
+      expect(result.error).toBe("Group ref must be a valid QName");
     });
   });
 

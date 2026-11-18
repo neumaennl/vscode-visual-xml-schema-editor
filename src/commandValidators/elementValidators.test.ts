@@ -508,7 +508,7 @@ describe("Element Validators", () => {
       };
       const result = validateAddElement(command, seqSchema);
       expectInvalid(result);
-      expect(result.error).toBe("Element ref must be a valid XML name");
+      expect(result.error).toBe("Element ref must be a valid QName");
     });
 
     test("should reject modifyElement with ref and elementName together", () => {
@@ -693,7 +693,7 @@ describe("Element Validators", () => {
 
       const result = validateModifyElement(command, schemaWith(SEQUENCE_WITH_ELEMENTS));
       expectInvalid(result);
-      expect(result.error).toBe("Element ref must be a valid XML name");
+      expect(result.error).toBe("Element ref must be a valid QName");
     });
 
     test("should accept changing an element to a reference to an existing top-level element", () => {

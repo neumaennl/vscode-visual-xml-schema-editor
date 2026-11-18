@@ -17,6 +17,8 @@ import {
 import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
 import { expectInvalid } from "../__tests__/validationTestHelpers.js";
 import { schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
+import { unmarshal } from "@neumaennl/xmlbind-ts";
+import { schema } from "../../shared/types.js";
 
 /** Elements of the schema and of sequences, as the element validators define them. */
 const ELEMENTS: ChildKind = {
@@ -36,21 +38,39 @@ const SCHEMA = schemaWith(`<xs:element name="a" type="xs:string"/>
 
 const SEQUENCE_ID = "/complexType:T/group:sequence[0]";
 
+/** A schema with the target namespace `urn:t` and the prefixes `tns` for it and `other` for `urn:o`. */
+const SCHEMA_WITH_TARGET_NAMESPACE = unmarshal(
+  schema,
+  `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tns="urn:t" xmlns:other="urn:o" targetNamespace="urn:t">
+  <xs:element name="a" type="xs:string"/>
+</xs:schema>`
+);
+
 describe("validateReference", () => {
   test("should accept a reference to an existing component", () => {
-    expect(validateReference("a", SCHEMA.element, "Element", "missing")).toEqual({ valid: true });
+    expect(validateReference("a", "element", SCHEMA, "missing")).toEqual({ valid: true });
   });
 
-  test("should reject a ref that is no valid XML name", () => {
-    const result = validateReference("1a", SCHEMA.element, "Element", "missing");
+  test.each(["1a", "tns:1a", "1t:a"])("should reject the ref %s, which is no valid QName", (ref) => {
+    const result = validateReference(ref, "element", SCHEMA, "missing");
     expectInvalid(result);
-    expect(result.error).toBe("Element ref must be a valid XML name");
+    expect(result.error).toBe("Element ref must be a valid QName");
   });
 
   test("should reject a reference to a missing component with the given error", () => {
-    const result = validateReference("b", SCHEMA.element, "Element", "missing");
+    const result = validateReference("b", "element", SCHEMA, "missing");
     expectInvalid(result);
     expect(result.error).toBe("missing");
+  });
+
+  test.each([
+    ["a", true],
+    ["tns:a", true],
+    ["other:a", false],
+    ["undeclared:a", false],
+  ])("should resolve the ref %s in a schema with a target namespace: %s", (ref, valid) => {
+    expect(validateReference(ref, "element", SCHEMA_WITH_TARGET_NAMESPACE, "missing").valid).toBe(valid);
   });
 });
 

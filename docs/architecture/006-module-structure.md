@@ -4,8 +4,8 @@ title: "ADR 006: Module structure"
 description: The decision how the code within the extension host, the webview and the shared code is split into layers, in which direction the layers may depend on each other, what belongs into the shared code and what it may rely on, how files are named, and how fallow checks the layers.
 tags: [adr, architecture, structure, dependencies, shared]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-18T08:38:06Z }
-verified: { by: human:neumaennl, at: 2026-11-18T08:56:25Z }
+generated: { by: human:neumaennl, at: 2026-11-18T18:45:44Z }
+verified: { by: human:neumaennl, at: 2026-11-18T19:48:12Z }
 sources:
   - id: guidelines
     resource: ../development-guidelines.md
@@ -43,7 +43,7 @@ The [project boundaries](../development-guidelines.md#project-boundaries) say wh
 
 ### Layers
 
-Each project is split into layers. A module may import from its own layer and from the layers below it, never from a layer above it, and two modules of the same layer that serve different purposes do not import each other: what both need goes into a layer below them.
+Each project is split into layers. A module may import from its own layer and from the layer directly below it; it does not import from a layer above it and does not skip a layer. The exceptions are the layers that every layer may use: the schema access in the extension host, the diagram in the webview, and the shared code in both. Two modules of the same layer that serve different purposes do not import each other: what both need goes into a layer below them.
 
 **Extension host (`src/`), from top to bottom:**
 

@@ -28,6 +28,20 @@ export function splitQName(qName: string): SplitQName {
     : { prefix: undefined, localName: qName };
 }
 
+/**
+ * Returns the local name of a QName that refers to a component of the schema itself: a QName without a
+ * prefix, or with one of the prefixes of the schema's target namespace. A QName without a prefix counts
+ * as the schema's own whatever the default namespace is, as the editor has always treated it.
+ *
+ * @param qName - The QName, such as `tns:Address`
+ * @param ownPrefixes - The prefixes of the schema's target namespace
+ * @returns The local name, or undefined if the QName has another prefix
+ */
+export function ownComponentName(qName: string, ownPrefixes: readonly string[]): string | undefined {
+  const { prefix, localName } = splitQName(qName);
+  return prefix === undefined || ownPrefixes.includes(prefix) ? localName : undefined;
+}
+
 /** The prefixes that XML reserves and that cannot be declared. */
 const RESERVED_PREFIXES: ReadonlySet<string> = new Set(["xml", "xmlns"]);
 

@@ -15,7 +15,7 @@ import type { TypeKind } from "../../shared/schemaUtils.js";
 import { isSchemaRoot } from "../../shared/schemaUtils.js";
 import { assumeValidated, locateValidated } from "./assumeValidated.js";
 import { appendTo, removeFrom } from "./nodeProperties.js";
-import { renameLocalTypeInSchema } from "./schemaLocalRenamer.js";
+import { renameOwnReferences } from "../schemaReferences/referenceRewrites.js";
 
 /** The types of each kind, top-level or anonymous. */
 interface TypesOfKind {
@@ -129,7 +129,7 @@ export function locateModifiedType<K extends TypeKind>(
     `${labelOf(kind)} ${typeId}`
   );
   if (typeName !== undefined) {
-    renameLocalTypeInSchema(type.name, typeName, schemaObj);
+    renameOwnReferences("type", type.name, typeName, schemaObj);
     type.name = typeName;
   }
   return { type, topLevel: true };

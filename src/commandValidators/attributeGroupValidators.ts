@@ -9,7 +9,6 @@ import type {
   AddAttributeGroupCommand,
   RemoveAttributeGroupCommand,
   ModifyAttributeGroupCommand,
-  attributeGroupRef,
 } from "../../shared/types.js";
 import type { ValidationFailure, ValidationResult } from "./validationUtils.js";
 import { isValidXmlName } from "./validationUtils.js";
@@ -24,37 +23,9 @@ import {
   validateDefinitionRemoval,
   validateReference,
 } from "./commonValidators.js";
-import { isReferencedInContent } from "./referenceSearch.js";
+import { isReferenced } from "../schemaReferences/referenceChecks.js";
 
 // ===== AttributeGroup Reference Helpers =====
-
-/**
- * Returns true if one of the attribute group references matches the name.
- *
- * @param refs - The attribute group references of a node
- * @param name - The name of the attribute group
- * @returns Whether a reference matches
- */
-function refersTo(refs: attributeGroupRef[] | undefined, name: string): boolean {
-  return (refs ?? []).some((r) => r.ref === name);
-}
-
-/**
- * Returns true if the named attribute group is referenced anywhere in the schema: in the content of
- * a complexType (see {@link isReferencedInContent}), or in another attribute group definition.
- *
- * @param name - The name of the attribute group
- * @param schemaObj - The schema to search
- * @returns Whether a reference was found
- */
-function isAttrGroupReferenced(name: string, schemaObj: schema): boolean {
-  return (
-    isReferencedInContent(schemaObj, {
-      inContent: (content) => refersTo(content.attributeGroup, name),
-      inCompositor: () => false,
-    }) || (schemaObj.attributeGroup ?? []).some((ag) => refersTo(ag.attributeGroup, name))
-  );
-}
 
 /**
  * Validates the reference to an attribute group definition.
@@ -64,12 +35,7 @@ function isAttrGroupReferenced(name: string, schemaObj: schema): boolean {
  * @returns The validation result
  */
 function validateAttrGroupReference(ref: string, schemaObj: schema): ValidationResult {
-  return validateReference(
-    ref,
-    schemaObj.attributeGroup,
-    "Attribute group",
-    `Referenced attribute group does not exist: ${ref}`
-  );
+  return validateReference(ref, "attributeGroup", schemaObj, `Referenced attribute group does not exist: ${ref}`);
 }
 
 /**
@@ -213,7 +179,7 @@ export function validateRemoveAttributeGroup(
   return validateDefinitionRemoval(
     locateAttributeGroup(command.payload.groupId, schemaObj),
     "Attribute group",
-    (name) => isAttrGroupReferenced(name, schemaObj)
+    (name) => isReferenced(schemaObj, "attributeGroup", name)
   );
 }
 

@@ -36,6 +36,14 @@ const GROUP_PARTICLES = schemaXmlWith(`<xs:group name="Contact">
   <xs:complexContent><xs:restriction base="xs:anyType"><xs:sequence/></xs:restriction></xs:complexContent>
 </xs:complexType>`);
 
+/** A schema with a target namespace, declared with the prefix `tns`, and the group `G`, which `T` references. */
+const NAMESPACED_GROUP = `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tns="urn:t" targetNamespace="urn:t">
+  <xs:group name="G"><xs:sequence/></xs:group>
+  <xs:complexType name="T"><xs:group ref="tns:G"/></xs:complexType>
+  <xs:complexType name="Empty"/>
+</xs:schema>`;
+
 /** The ID of the group reference in the anonymous complex type of `person`. */
 const PERSON_GROUP_REF_ID = "/element:person/anonymousComplexType[0]/groupRef:Contact[0]";
 
@@ -112,6 +120,14 @@ describe("Integration: Group pipeline", () => {
           payload: { groupId: "/group:NoSuchGroup" },
         },
         "Group not found: /group:NoSuchGroup"
+      );
+    });
+
+    test("should reject the removal of a group that a reference with the prefix of the target namespace uses", () => {
+      runCommandExpectValidationFailure(
+        NAMESPACED_GROUP,
+        { type: "removeGroup", payload: { groupId: "/group:G" } },
+        "Group is still referenced and cannot be removed: G"
       );
     });
 
@@ -286,6 +302,15 @@ describe("Integration: AttributeGroup pipeline", () => {
       });
 
       expect(result.element?.find((el) => el.name === "empty")?.complexType?.group?.ref).toBe("Contact");
+    });
+
+    test("should add a group reference with the prefix of the target namespace", () => {
+      const result = runCommandExpectSuccessSchema(NAMESPACED_GROUP, {
+        type: "addGroup",
+        payload: { parentId: "/complexType:Empty", ref: "tns:G" },
+      });
+
+      expect(result.complexType?.find((ct) => ct.name === "Empty")?.group?.ref).toBe("tns:G");
     });
 
     test("should remove a group reference from an anonymous complex type", () => {

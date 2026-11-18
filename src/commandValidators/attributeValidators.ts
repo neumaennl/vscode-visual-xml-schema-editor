@@ -53,12 +53,7 @@ function validateAttributeKind(
     if (defaultValue !== undefined || fixedValue !== undefined) {
       return { valid: false, error: "A reference attribute cannot have a default or fixed value" };
     }
-    return validateReference(
-      ref,
-      schemaObj.attribute,
-      "Attribute",
-      `Referenced attribute '${ref}' does not exist in schema`
-    );
+    return validateReference(ref, "attribute", schemaObj, `Referenced attribute '${ref}' does not exist in schema`);
   }
   if ((nameRequired || attributeName !== undefined) && !isValidXmlName(attributeName ?? "")) {
     return { valid: false, error: "Attribute name must be a valid XML name" };

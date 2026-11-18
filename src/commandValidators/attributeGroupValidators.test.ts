@@ -173,7 +173,7 @@ describe("AttributeGroup Validators", () => {
 
         const result = validateAddAttributeGroup(command, schemaObj2);
         expectInvalid(result);
-        expect(result.error).toBe("Attribute group ref must be a valid XML name");
+        expect(result.error).toBe("Attribute group ref must be a valid QName");
       });
 
       test("should reject when the referenced group does not exist", () => {
@@ -662,7 +662,7 @@ describe("AttributeGroup Validators", () => {
 
         const result = validateModifyAttributeGroup(command, schemaWithAttrGroups(PERSON_TYPE_WITH_COMMON_ATTRS_REF));
         expectInvalid(result);
-        expect(result.error).toBe("Attribute group ref must be a valid XML name");
+        expect(result.error).toBe("Attribute group ref must be a valid QName");
       });
     });
   });

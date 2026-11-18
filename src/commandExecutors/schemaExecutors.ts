@@ -16,7 +16,7 @@
  * - Executors maintain `_namespacePrefixes` in sync with `import_` when a prefix
  *   is provided or when an import is removed.
  * - When a prefix is renamed, ALL QName references using the old prefix are
- *   updated throughout the schema (see {@link rewritePrefixInSchema}).
+ *   updated throughout the schema (see {@link rewritePrefix}).
  * - Commands are assumed to have been pre-validated; no duplicate checks are
  *   performed here.
  */
@@ -37,7 +37,7 @@ import { parseSchemaId } from "../../shared/idStrategy.js";
 import { firstFreePrefix, normalizeNamespacePrefixes } from "../../shared/qNames.js";
 import { assumeValidated } from "./assumeValidated.js";
 import { removeFrom } from "./nodeProperties.js";
-import { rewritePrefixInSchema } from "./schemaQNameRewriter.js";
+import { rewritePrefix } from "../schemaReferences/referenceRewrites.js";
 
 // ===== Helpers =====
 
@@ -180,7 +180,7 @@ export function executeModifyImport(command: ModifyImportCommand, schemaObj: sch
       const { [oldPrefix]: _removed, ...otherPrefixes } = schemaObj._namespacePrefixes;
       schemaObj._namespacePrefixes = otherPrefixes;
       if (oldPrefix !== prefix) {
-        rewritePrefixInSchema(oldPrefix, prefix, schemaObj);
+        rewritePrefix(oldPrefix, prefix, schemaObj);
       }
     }
     // Without oldPrefix, the prefix is an additional binding of the namespace
@@ -289,7 +289,7 @@ export function executeModifySchemaNamespaces(command: ModifySchemaNamespacesCom
     // the default namespace (the empty prefix) are not rewritten yet (see "Turning the default
     // namespace into a prefix does not rewrite references" in docs/known-issues.md)
     if (oldPrefix && newPrefix) {
-      rewritePrefixInSchema(oldPrefix, newPrefix, schemaObj);
+      rewritePrefix(oldPrefix, newPrefix, schemaObj);
     }
   }
 

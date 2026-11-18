@@ -4,8 +4,8 @@ title: Schema model
 description: The object model of an XSD file - classes generated from the XSD meta-schema, XML binding with xmlbind-ts, and the path-based IDs that identify schema nodes.
 tags: [schema-model, data-model, xmlbind-ts, code-generation, ids, navigation]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-18T09:05:08Z }
-verified: { by: human:neumaennl, at: 2026-11-18T12:43:13Z }
+generated: { by: human:neumaennl, at: 2026-11-18T19:53:10Z }
+verified: { by: human:neumaennl, at: 2026-11-18T20:26:45Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -37,9 +37,9 @@ sources:
   - id: annotation-executors
     resource: ../src/commandExecutors/annotationExecutors.ts
     title: Annotation command executors
-  - id: model-manager
-    resource: ../src/schemaModelManager.ts
-    title: SchemaModelManager
+  - id: schema-xml
+    resource: ../src/schemaXml.ts
+    title: Conversion between XML and schema objects
   - id: command-processor
     resource: ../src/commandProcessor.ts
     title: CommandProcessor
@@ -87,23 +87,14 @@ The executors keep `schema._namespacePrefixes` in sync with the imports: adding 
 
 # XML binding with xmlbind-ts
 
-`@neumaennl/xmlbind-ts` is a JAXB-like XML binding library. Two functions are used at runtime:[^model-manager]
+`@neumaennl/xmlbind-ts` is a JAXB-like XML binding library. Two functions are used at runtime:[^schema-xml]
 
 - `unmarshal(schema, xml)` parses XML into a `schema` object, using the decorators to map elements and attributes to properties.
 - `marshal(schemaObj)` serializes a `schema` object back to XML.
 
 The binding only runs in the extension host. The webview uses the generated classes as TypeScript types only: it receives the schema as plain data through `postMessage` and does not bundle `xmlbind-ts` (see [Architecture](architecture.md)).
 
-`unmarshal` is called in two places: in `SchemaModelManager` and directly in `SchemaEditorProvider`, which parses the document to send the schema to the webview.[^webview-provider]
-
-# SchemaModelManager
-
-`SchemaModelManager` holds the schema object for the command pipeline:[^model-manager]
-
-- `loadFromXml()` unmarshals the document text; `getSchema()` and `setSchema()` read and replace the object.
-- `toXml()` marshals the object.
-- `cloneSchema()` creates a deep copy by marshalling and unmarshalling, so the copy is a set of real class instances with all binding metadata. `CommandProcessor` executes commands on such a copy, so a failing command leaves the original untouched.[^command-processor]
-- It has no methods to look up components. Validators and executors get a cloned schema object, and the webview cannot use code from `src/`, so they, the navigator and the webview look up components themselves (see [Known issues](known-issues.md#top-level-lookups-are-duplicated-instead-of-shared)).
+`src/schemaXml.ts` is the only place that calls them: `parseSchema()` unmarshals the text of a document, and `serializeSchema()` marshals a schema object and corrects the line breaks of the output (see [Persistence](persistence.md#what-serialization-changes)).[^schema-xml] Both keep no state. The command pipeline parses the document for every command and executes the command on that object, and `SchemaEditorProvider` parses it to send the schema to the webview.[^webview-provider] Neither has functions to look up components; the validators, the executors, the navigator and the webview look them up themselves (see [Known issues](known-issues.md#top-level-lookups-are-duplicated-instead-of-shared)).
 
 # Node IDs
 
@@ -191,7 +182,7 @@ These are listed in [Known issues](known-issues.md#node-ids-are-ambiguous-and-ha
 
 [^schema-executors]: [Schema-level command executors](../src/commandExecutors/schemaExecutors.ts)
 
-[^model-manager]: [SchemaModelManager](../src/schemaModelManager.ts)
+[^schema-xml]: [Conversion between XML and schema objects](../src/schemaXml.ts)
 
 [^webview-provider]: [Custom editor provider](../src/webviewProvider.ts)
 

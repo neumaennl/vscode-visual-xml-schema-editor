@@ -4,8 +4,8 @@ title: "ADR 003: Validators check, executors assume"
 description: The decision that the validators check everything an executor relies on and the executors do not check it again, how an executor states what it assumes, why this is safe, the scenarios that were examined, and how a test keeps validators and executors in agreement.
 tags: [adr, architecture, commands, validation, error-handling, testing]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-11T18:50:29Z }
-verified: { by: human:neumaennl, at: 2026-11-11T19:10:51Z }
+generated: { by: human:neumaennl, at: 2026-11-18T19:53:10Z }
+verified: { by: human:neumaennl, at: 2026-11-18T20:26:45Z }
 sources:
   - id: command-processor
     resource: ../../src/commandProcessor.ts
@@ -29,7 +29,7 @@ sources:
 
 ## Context
 
-Every command has a validator and an executor (see [Commands](../commands.md)). `CommandProcessor` runs the validator first and the executor only if the validator accepts the command, on a copy of the schema (see [Persistence](../persistence.md#command-pipeline)).[^command-processor] It was not settled what the executors check themselves. Some had their own checks that repeated the validators; most guarded against a missing parent or target with `if (!x) return;`, so that a command reported success without doing anything; others failed with a `TypeError`. Where a validator and its executor disagreed, the result was a lost change that looked like a success.
+Every command has a validator and an executor (see [Commands](../commands.md)). `CommandProcessor` runs the validator first and the executor only if the validator accepts the command, on the schema that it parsed from the document for this command (see [Persistence](../persistence.md#command-pipeline)).[^command-processor] It was not settled what the executors check themselves. Some had their own checks that repeated the validators; most guarded against a missing parent or target with `if (!x) return;`, so that a command reported success without doing anything; others failed with a `TypeError`. Where a validator and its executor disagreed, the result was a lost change that looked like a success.
 
 ## Decision
 
@@ -42,14 +42,14 @@ Every command has a validator and an executor (see [Commands](../commands.md)). 
 ## Reasons
 
 - **The validators already are the gatekeepers.** The architecture gives them this role (see [Architecture](../architecture.md#principles)), and they check the parent and the target of every command. Checks in the executors could only repeat them, and two copies of a rule drift apart.
-- **The executors cannot crash the extension.** They run only inside `CommandProcessor`, after validation and on a copy, and every exception becomes a runtime failure. Failing gracefully needs no checks in the executors.
+- **The executors cannot crash the extension.** They run only inside `CommandProcessor`, after validation and on a schema that was parsed for this command alone, and every exception becomes a runtime failure. Failing gracefully needs no checks in the executors.
 - **A silent no-op is worse than an error.** A guard that returns reports success while the user's change is lost. An assumption that fails names the disagreement, so it is found and fixed in the validator or the executor.
 
 ## Scenarios that were examined
 
 These scenarios could need checks in an executor. None of them does:
 
-- **Data that the validator cannot see.** The validator and the executor see the same data: the executor works on a copy of the schema that the validator checked, in the same synchronous call.
+- **Data that the validator cannot see.** The validator and the executor see the same data: the executor works on the schema object that the validator checked, in the same synchronous call.
 - **Stale IDs.** A command may carry IDs from a schema that the document no longer has (see [Persistence](../persistence.md#concurrency)). The validator resolves them against the current document and rejects them.
 - **Executors called without validation.** Only `CommandProcessor` calls the executors.
 - **Payloads that do not match the types.** Messages from the webview are not checked at runtime (see [Messaging](../messaging.md#channel)); the validators check the fields that matter, and anything else fails as a runtime failure.

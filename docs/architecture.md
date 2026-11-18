@@ -4,8 +4,8 @@ title: Architecture
 description: How the extension host, the webview and the shared code work together to provide a visual editor for XML Schema (XSD) files, what xmlbind-ts is responsible for and what the editor is, and the design decisions behind the command-based design.
 tags: [architecture, extension-host, webview, shared, design-decisions]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-16T16:34:30Z }
-verified: { by: human:neumaennl, at: 2026-11-16T19:10:57Z }
+generated: { by: human:neumaennl, at: 2026-11-18T19:53:10Z }
+verified: { by: human:neumaennl, at: 2026-11-18T20:26:45Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -69,7 +69,8 @@ flowchart LR
       PROV --> PROC[CommandProcessor]
       PROC --> VAL[CommandValidator]
       PROC --> EXE[CommandExecutor]
-      PROC --> MM[SchemaModelManager]
+      PROC --> XML[schemaXml]
+      PROV --> XML
     end
     subgraph Webview
       APP[SchemaEditorApp] --> DIA[Diagram renderer]
@@ -89,7 +90,7 @@ The `shared/` code is imported by both sides and compiled into each separately. 
 1. **Open.** VS Code calls `SchemaEditorProvider.resolveCustomTextEditor`. The provider sets up the webview HTML, parses the document text into a schema object and sends it to the webview (`updateSchema`), together with the diagram settings (`updateDiagramOptions`).[^webview-provider]
 2. **Render.** The webview builds a diagram model from the schema object, lays it out and renders it as SVG. See [Diagram rendering](diagram-rendering.md).
 3. **Edit.** A user action (drop from the palette, change in the properties panel) becomes a command. The webview sends it as an `executeCommand` message. See [Messaging](messaging.md).
-4. **Execute.** The provider passes the command and the current document text to the `CommandProcessor`, which orchestrates the steps: `SchemaModelManager` parses the XML into a schema object, `CommandValidator` validates the command, `CommandExecutor` executes it on a copy of the schema, and `SchemaModelManager` serializes the result and parses it again as a check.[^command-processor] See [Persistence](persistence.md).
+4. **Execute.** The provider passes the command and the current document text to the `CommandProcessor`, which orchestrates the steps: `parseSchema()` parses the XML into a schema object, `CommandValidator` validates the command, `CommandExecutor` executes it on that object, and `serializeSchema()` serializes the result, which is parsed again as a check.[^command-processor] See [Persistence](persistence.md).
 5. **Write back.** On success, the provider replaces the whole document text with the new XML in one `WorkspaceEdit` and reports `commandResult`.
 6. **Refresh.** The document change fires `onDidChangeTextDocument`, and the provider parses the document again and sends a fresh `updateSchema`. The same path handles changes made in the text editor or by other tools.
 
@@ -99,7 +100,7 @@ The `shared/` code is imported by both sides and compiled into each separately. 
 - **All changes are commands.** The webview never edits the schema directly. It sends typed commands, and the extension host validates and executes them.
 - **Checks complement each other.** The webview checks what it can decide from the diagram, to give immediate feedback: drop targets, and empty or unchanged input. The extension host is the gatekeeper: it checks every command completely, including the rules that need the whole schema (names, types, references, duplicates), and decides. Rules are not copied to the webview for their own sake; where both sides check the same thing, such as where an element or attribute may be placed, it is because the webview needs it for feedback and the extension host must not rely on the webview (see [Messaging](messaging.md#validation-in-the-webview)).
 - **Validators check, executors assume.** The validator of a command checks everything its executor relies on; the executor does not check it again and states only what it assumes, so that a disagreement fails with an error instead of doing nothing ([ADR 003](architecture/003-validators-check-executors-assume.md)).[^adr-003]
-- **Transactional execution.** Commands run on a copy of the schema, so a failed command leaves the document unchanged. The result is written as a single edit, which VS Code's undo handles as one step.
+- **Transactional execution.** Every command parses the document text again and keeps no state, so a failed command leaves nothing behind and the document unchanged. The result is written as a single edit, which VS Code's undo handles as one step.
 - **One set of shared types.** Commands, messages and the schema model are defined once in `shared/` and used by both sides, so the compiler checks both ends of the protocol.
 - **Generic XML handling belongs to xmlbind-ts.** What any application that binds XML would need is done by the library; what needs XSD semantics or VS Code is done by the editor (see [Responsibilities of xmlbind-ts and the editor](#responsibilities-of-xmlbind-ts-and-the-editor)).
 - **Path-based IDs.** Schema nodes are identified by XPath-like IDs such as `/element:person/anonymousComplexType[0]`, which both sides can generate and resolve. See [Schema model](schema-model.md).
@@ -142,10 +143,11 @@ src/                      Extension host
   commandValidator.ts     Dispatch to commandValidators/
   commandExecutor.ts      Dispatch to commandExecutors/
   commandHandlers.ts      Finds the validator or executor of a command
-  schemaModelManager.ts   Holds the schema object; marshal/unmarshal/clone
+  schemaXml.ts            parseSchema() and serializeSchema(): XML to schema object and back
   schemaNavigator.ts      Resolves IDs to nodes in the schema object
   commandValidators/      Validation rules per schema construct
-  commandExecutors/       Execution per schema construct, rename and QName helpers
+  commandExecutors/       Execution per schema construct
+  schemaReferences/       Finds, checks and rewrites the QNames of a schema
 webview-src/              Webview
   main.ts                 SchemaEditorApp: startup, messages, state, selection, zoom/pan
   renderer.ts             Canvas, click and drag-and-drop handling

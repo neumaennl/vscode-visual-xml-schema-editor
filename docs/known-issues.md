@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-18T15:12:15Z }
-verified: { by: human:neumaennl, at: 2026-11-18T19:48:12Z }
+generated: { by: human:neumaennl, at: 2026-11-18T19:53:10Z }
+verified: { by: human:neumaennl, at: 2026-11-18T20:26:45Z }
 ---
 
 # Purpose
@@ -190,10 +190,10 @@ Effort:
 
 ## Commands can overlap while an edit is applied
 
-- **Location:** `src/commandProcessor.ts` (`isExecuting`), `src/webviewProvider.ts` (`executeCommand()`), `webview-src/main.ts`
+- **Location:** `src/webviewProvider.ts` (`executeCommand()`), `webview-src/main.ts`
 - **Severity:** Medium
 - **Effort:** M
-- **Description:** `CommandProcessor` guards against concurrent commands with an `isExecuting` flag, but `execute()` is synchronous, so the flag can never be set when the next command arrives. The asynchronous part is not guarded: the provider awaits `applyEdit()`, and the webview sends commands without waiting for `commandResult`. A second command that arrives during the wait reads the document text before the first edit and computes its replace range from it, so it can undo the first change or leave parts of the old text in the document. This follows from the code and was not reproduced in VS Code. The fix is to queue commands in the provider (process one after the other, each after the previous edit is applied) and to remove the flag; the webview could additionally block input while a command is pending (see [Persistence](persistence.md#concurrency)). The messages carry no request ID and `commandResult` does not name its command, so the webview cannot tell which of several pending commands a result belongs to (see [Messaging](messaging.md#limitations)).
+- **Description:** `CommandProcessor.execute()` is synchronous, so two commands never run in it at the same time. The asynchronous part is not guarded: the provider awaits `applyEdit()`, and the webview sends commands without waiting for `commandResult`. A second command that arrives during the wait reads the document text before the first edit and computes its replace range from it, so it can undo the first change or leave parts of the old text in the document. This follows from the code and was not reproduced in VS Code. The fix is to queue commands in the provider (process one after the other, each after the previous edit is applied) and to remove the flag; the webview could additionally block input while a command is pending (see [Persistence](persistence.md#concurrency)). The messages carry no request ID and `commandResult` does not name its command, so the webview cannot tell which of several pending commands a result belongs to (see [Messaging](messaging.md#limitations)).
 - **GitHub issue:** [#432](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/432)
 
 ## Particles are not shown in document order
@@ -317,14 +317,6 @@ Effort:
 - **Description:** For a list whose item type is an inline simple type (`<xs:list><xs:simpleType><xs:restriction base="xs:int"/></xs:simpleType></xs:list>`), `processList()` takes the base of the inline type as the item type. The diagram shows "list of xs:int", the properties panel offers `xs:int` as the item type, and the XML tab shows `<xs:list itemType="xs:int"/>`, although the list has no `itemType`. Changing the item type in the panel replaces the inline type. A union with inline member types is shown without any member types: the XML tab shows an empty `<xs:union/>`. The fix is to show inline item and member types as such, which depends on [Inline types have no node of their own](#inline-types-have-no-node-of-their-own).
 - **GitHub issue:** none
 
-## `SchemaEditorProvider` parses XML without `SchemaModelManager`
-
-- **Location:** `src/webviewProvider.ts`
-- **Severity:** Low
-- **Effort:** S
-- **Description:** The provider calls `unmarshal()` directly to send the schema to the webview, while the command pipeline uses `SchemaModelManager.loadFromXml()`. The two paths have different error handling, and parsing is not in one place.
-- **GitHub issue:** none
-
 ## Nonce uses `Math.random`
 
 - **Location:** `src/webviewProvider.ts` (`getNonce()`)
@@ -423,10 +415,10 @@ Effort:
 
 ## The editor corrects the line breaks of the output
 
-- **Location:** `src/schemaModelManager.ts` (`fixOutputLineBreaks()`), `xmlbind-ts` (`marshal`)
+- **Location:** `src/schemaXml.ts` (`fixOutputLineBreaks()`), `xmlbind-ts` (`marshal`)
 - **Severity:** Low
 - **Effort:** S
-- **Description:** Since version 2.4.0, `marshal` starts its output with a line break unless it starts with the XML declaration, and no longer ends it with one ([xmlbind-ts](https://github.com/neumaennl/xmlbind-ts/blob/main/docs/known-issues.md#the-output-of-marshal-starts-with-a-line-break)). Every command would therefore remove the line break at the end of the file and put an empty line at the start of a schema without an XML declaration. `SchemaModelManager.toXml()` removes the leading line break and ends the output with exactly one (see [Persistence](persistence.md#what-serialization-changes)). Keeping the formatting of the source belongs to `xmlbind-ts` (see [Architecture](architecture.md#responsibilities-of-xmlbind-ts-and-the-editor)), and 2.x gets no more fixes, so the editor works around it until it moves to version 3, whose output has to keep the line breaks of the source; then `fixOutputLineBreaks()` is removed.
+- **Description:** Since version 2.4.0, `marshal` starts its output with a line break unless it starts with the XML declaration, and no longer ends it with one ([xmlbind-ts](https://github.com/neumaennl/xmlbind-ts/blob/main/docs/known-issues.md#the-output-of-marshal-starts-with-a-line-break)). Every command would therefore remove the line break at the end of the file and put an empty line at the start of a schema without an XML declaration. `serializeSchema()` removes the leading line break and ends the output with exactly one (see [Persistence](persistence.md#what-serialization-changes)). Keeping the formatting of the source belongs to `xmlbind-ts` (see [Architecture](architecture.md#responsibilities-of-xmlbind-ts-and-the-editor)), and 2.x gets no more fixes, so the editor works around it until it moves to version 3, whose output has to keep the line breaks of the source; then `fixOutputLineBreaks()` is removed.
 - **GitHub issue:** [#444](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/444)
 
 ## Unused protected class members are not detected
@@ -466,7 +458,7 @@ Effort:
 - **Location:** `src/commandValidators/`, `src/commandExecutors/`, `src/schemaNavigator.ts`, `webview-src/diagram/DiagramBuilder.ts`, `webview-src/drop/DropCommandFactory.ts`
 - **Severity:** Low
 - **Effort:** L
-- **Description:** There are no shared functions that look up top-level components in a schema object. `SchemaModelManager` had query methods, but only tests called them, so [#439](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/439) removed them: they worked on the schema stored in the manager, while validators and executors get a cloned schema object, and the webview cannot use code from `src/`. #439 also merged the lookups that were copies of each other within the validators, the executors and the navigator. The parts still look up components on their own:
+- **Description:** There are no shared functions that look up top-level components in a schema object. `SchemaModelManager` had query methods, but only tests called them, so [#439](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/439) removed them: they worked on the schema stored in the manager, while validators and executors got a cloned schema object, and the webview cannot use code from `src/`. #439 also merged the lookups that were copies of each other within the validators, the executors and the navigator. The parts still look up components on their own:
   - More than ten places in the validators and executors look up a top-level component by name with `(schemaObj.<kind> ?? []).some(…)` or `.find(…)`, and the navigator has a table of the top-level kinds.
   - `DiagramBuilder` and `DropCommandFactory` collect the same lists in the webview.
 

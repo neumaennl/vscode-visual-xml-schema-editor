@@ -2,7 +2,7 @@
  * Shared test helpers and XML fixtures for integration tests.
  *
  * Integration tests exercise the full extension-side editing pipeline:
- *   `CommandProcessor.execute()` → `CommandValidator` → `CommandExecutor` → `SchemaModelManager`
+ *   `CommandProcessor.execute()` → `parseSchema()` → `CommandValidator` → `CommandExecutor` → `serializeSchema()`
  *
  * Helpers here are intentionally thin wrappers around `CommandProcessor` so
  * tests stay focused on behaviour rather than boilerplate.

@@ -4,8 +4,8 @@ title: Build and packaging
 description: How the extension is built, run, linted, packaged and checked - the build outputs and tsconfig files, the npm scripts, the scripts in TypeScript, running it in VS Code, the VSIX and its check, the generated schema classes, dependencies and the Node version, ESLint, the checks for duplicated and unused code and for the layers, the formatting with Prettier, CI, and planned changes.
 tags: [build, packaging, vsix, vite, typescript, eslint, jscpd, fallow, prettier, ci, dependencies]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-18T18:45:44Z }
-verified: { by: human:neumaennl, at: 2026-11-18T19:48:12Z }
+generated: { by: human:neumaennl, at: 2026-11-18T19:53:10Z }
+verified: { by: human:neumaennl, at: 2026-11-18T20:26:45Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -299,7 +299,7 @@ Its limits:
 
 ## Layers
 
-ESLint checks which projects may use which (see [ESLint](#eslint)). Within a project, `boundaries` in `.fallowrc.jsonc` checks the layers of [ADR 006](architecture/006-module-structure.md#layers):[^fallow] each zone lists the files of a layer, and each rule the zones that a zone may import from besides itself. In the extension host, each layer may use the layer directly below it, the schema access (`src/schemaReferences/`, `schemaNavigator.ts`, `commandUtils.ts`, `schemaModelManager.ts`) and `shared/`: `extension.ts` and `webviewProvider.ts` the pipeline, the pipeline the dispatch, the dispatch the validators and the executors. Validators and executors may only use the schema access and `shared/`, and not each other; the schema access may only use `shared/`. Files that are in no zone, such as the test helpers in `src/__tests__`, are not checked. A new module of the extension host is added to a zone; a module that would need a layer above it moves its code down (see [ADR 006](architecture/006-module-structure.md#consequences)).
+ESLint checks which projects may use which (see [ESLint](#eslint)). Within a project, `boundaries` in `.fallowrc.jsonc` checks the layers of [ADR 006](architecture/006-module-structure.md#layers):[^fallow] each zone lists the files of a layer, and each rule the zones that a zone may import from besides itself. In the extension host, each layer may use the layer directly below it, the schema access (`src/schemaReferences/`, `schemaNavigator.ts`, `commandUtils.ts`, `schemaXml.ts`) and `shared/`: `extension.ts` and `webviewProvider.ts` the pipeline, the pipeline the dispatch, the dispatch the validators and the executors. Validators and executors may only use the schema access and `shared/`, and not each other; the schema access may only use `shared/`. Files that are in no zone, such as the test helpers in `src/__tests__`, are not checked. A new module of the extension host is added to a zone; a module that would need a layer above it moves its code down (see [ADR 006](architecture/006-module-structure.md#consequences)).
 
 ## Formatting
 

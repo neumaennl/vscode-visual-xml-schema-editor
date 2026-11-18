@@ -182,7 +182,6 @@ describe("SchemaEditorProvider", () => {
         errorKind: "runtime",
         error: "Command execution failed: Something exploded",
         stack: "Error: Something exploded\n  at executeAddElement (...)",
-        schema: null,
         xmlContent: null,
       });
 
@@ -209,8 +208,7 @@ describe("SchemaEditorProvider", () => {
     test("should send 'error' message with code when applyEdit returns false", async () => {
       vi.spyOn(CommandProcessor.prototype, "execute").mockReturnValue({
         success: true,
-        // schema/xmlContent values are irrelevant — only the applyEdit branch is under test
-        schema: {},
+        // The XML is irrelevant — only the applyEdit branch is under test
         xmlContent: "<xs:schema/>",
       });
       (vscode.workspace.applyEdit as Mock).mockResolvedValue(false);

@@ -4,8 +4,8 @@ title: Persistence
 description: How edits reach the XSD file - the command pipeline, the document edit, what serialization changes, undo and save, and how changes from outside reach the diagram.
 tags: [persistence, command-pipeline, workspace-edit, serialization, undo, xmlbind-ts]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-12T12:01:26Z }
-verified: { by: human:neumaennl, at: 2026-11-12T12:07:29Z }
+generated: { by: human:neumaennl, at: 2026-11-18T19:53:10Z }
+verified: { by: human:neumaennl, at: 2026-11-18T20:26:45Z }
 sources:
   - id: extension
     resource: ../src/extension.ts
@@ -16,9 +16,9 @@ sources:
   - id: command-processor
     resource: ../src/commandProcessor.ts
     title: CommandProcessor
-  - id: model-manager
-    resource: ../src/schemaModelManager.ts
-    title: SchemaModelManager
+  - id: schema-xml
+    resource: ../src/schemaXml.ts
+    title: Conversion between XML and schema objects
   - id: webview-main
     resource: ../webview-src/main.ts
     title: Webview app (message handling)
@@ -60,10 +60,10 @@ sequenceDiagram
 ```
 
 1. **Receive.** The webview posts `executeCommand` with a `SchemaCommand`. It does not wait for an answer and has no "pending" state.[^webview-main]
-2. **Parse.** `CommandProcessor.execute()` loads the document text with `SchemaModelManager.loadFromXml()`.[^command-processor]
+2. **Parse.** `CommandProcessor.execute()` parses the document text with `parseSchema()`. Every command parses it again; the processor keeps no schema between commands.[^command-processor][^schema-xml]
 3. **Validate.** `CommandValidator` checks the command against the parsed schema.
-4. **Execute on a copy.** `SchemaModelManager.cloneSchema()` creates a deep copy (marshal and unmarshal), and `CommandExecutor` changes the copy. A failure leaves the original untouched.[^model-manager]
-5. **Serialize and check.** The copy is marshalled to XML, and the XML is parsed again. If it does not parse, the command fails.
+4. **Execute.** `CommandExecutor` changes the parsed schema object. It belongs to this command alone, so a failure leaves nothing behind.
+5. **Serialize and check.** `serializeSchema()` marshals the schema object to XML, and the XML is parsed again. If it does not parse, the command fails.
 6. **Write.** The provider replaces the full range of the document with the new XML in one `WorkspaceEdit` and calls `vscode.workspace.applyEdit()`.[^webview-provider]
 7. **Refresh.** The edit fires `onDidChangeTextDocument`, and the provider parses the document and sends `updateSchema`, as for any other change (see [Changes from outside](#changes-from-outside)).
 
@@ -101,7 +101,7 @@ Changed:
 - Indentation becomes two spaces.
 - Attributes are reordered, and single quotes become double quotes.
 - Empty elements written as `<a></a>` become `<a/>`.
-- The document ends with exactly one line break, and a document without an XML declaration starts with its first comment or the root element, without empty lines before it. `marshal` of `xmlbind-ts` 2.4 does not end the document with a line break and starts a document without an XML declaration with one; `SchemaModelManager.toXml()` corrects both (see [Known issues](known-issues.md#the-editor-corrects-the-line-breaks-of-the-output)).[^model-manager]
+- The document ends with exactly one line break, and a document without an XML declaration starts with its first comment or the root element, without empty lines before it. `marshal` of `xmlbind-ts` 2.4 does not end the document with a line break and starts a document without an XML declaration with one; `serializeSchema()` corrects both (see [Known issues](known-issues.md#the-editor-corrects-the-line-breaks-of-the-output)).[^schema-xml]
 - Character references such as `&#65;` or `&#x263A;` are written as the characters they stand for, except `&#13;`, which stays a reference because a literal carriage return would be read as a line break.
 - Leading and trailing whitespace in text content such as `documentation` is trimmed. This is intended.
 - Children of one kind that occur in more than one run are written together, which changes the meaning of a `sequence`, and comments between them move.
@@ -139,7 +139,7 @@ The XSD document is the only thing the extension writes to a file. Two other kin
 
 # Concurrency
 
-`CommandProcessor` has an `isExecuting` flag that rejects a command while another one runs. Because `execute()` is synchronous, a second command can never arrive while the flag is set, so the flag has no effect.[^command-processor] The part that can overlap is asynchronous and not covered: the provider awaits `applyEdit()`, and the webview does not wait for `commandResult` before sending the next command. A second command that arrives during that wait reads the document text before the first edit and computes its range from it (see [Known issues](known-issues.md#commands-can-overlap-while-an-edit-is-applied)).
+`CommandProcessor.execute()` is synchronous, so two commands never run in it at the same time.[^command-processor] The part that can overlap is asynchronous and not covered: the provider awaits `applyEdit()`, and the webview does not wait for `commandResult` before sending the next command. A second command that arrives during that wait reads the document text before the first edit and computes its range from it (see [Known issues](known-issues.md#commands-can-overlap-while-an-edit-is-applied)).
 
 Commands also carry IDs from the schema the webview last received. If the document changes in the text editor and the command is sent before the new `updateSchema` arrives, the IDs refer to the old structure. Position-based IDs can then point to a different node (see [Schema model](schema-model.md#node-ids)).
 
@@ -148,7 +148,6 @@ Commands also carry IDs from the schema the webview last received. If the docume
 - Every command reformats the whole file ([Known issues](known-issues.md#every-command-reformats-the-whole-document), [xmlbind-ts#252](https://github.com/neumaennl/xmlbind-ts/issues/252)).
 - Commands can overlap while an edit is applied ([Known issues](known-issues.md#commands-can-overlap-while-an-edit-is-applied)).
 - Every document change is parsed in full and logged ([Known issues](known-issues.md#every-document-change-is-parsed-in-full-and-logged)).
-- The provider parses with `unmarshal` directly instead of `SchemaModelManager` ([Known issues](known-issues.md#schemaeditorprovider-parses-xml-without-schemamodelmanager)).
 
 [^extension]: [Extension entry point](../src/extension.ts)
 
@@ -156,7 +155,7 @@ Commands also carry IDs from the schema the webview last received. If the docume
 
 [^command-processor]: [CommandProcessor](../src/commandProcessor.ts)
 
-[^model-manager]: [SchemaModelManager](../src/schemaModelManager.ts)
+[^schema-xml]: [Conversion between XML and schema objects](../src/schemaXml.ts)
 
 [^webview-main]: [Webview app](../webview-src/main.ts)
 

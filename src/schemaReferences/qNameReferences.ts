@@ -259,7 +259,8 @@ function isNameChar(char: string): boolean {
  * Returns whether a value is an object of the schema tree.
  *
  * This relies on how xmlbind-ts represents an unmarshalled schema, which is always the case here,
- * because `SchemaModelManager.cloneSchema()` marshals and unmarshals the schema:
+ * because `CommandProcessor` parses the document for every command, and executors only add instances of
+ * the generated classes:
  * - The objects are instances of the generated classes. Attribute values are strings, numbers or
  *   booleans; xmlbind-ts would create a `Date` for a date-typed field, but the XSD classes have none,
  *   and an object without own enumerable properties would add nothing to the walk anyway.
@@ -271,7 +272,7 @@ function isNameChar(char: string): boolean {
  *   did not skip them.
  * - The tree comes from XML, so it has no cycles.
  *
- * `schemaQNameReferences.test.ts` checks the outcome: the look-alikes in `appinfo` and in foreign
+ * `qNameReferences.test.ts` checks the outcome: the look-alikes in `appinfo` and in foreign
  * attributes are not visited, and in all test and example schemas, every visited value looks like
  * a QName.
  *

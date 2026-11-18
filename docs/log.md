@@ -1,5 +1,10 @@
 # Knowledge Bundle Update Log
 
+## 2026-11-18
+
+- **Create**: [ADR 005: Message protocol](architecture/005-message-protocol.md): the messages from the webview stay a union of requests, of which a schema edit is one; answers will be matched by a request ID. [Known issues](known-issues.md): removed "Every message from the webview is a schema command", which the ADR decides; [Messaging](messaging.md#limitations) links the ADR ([#448](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/448)).
+- **Create**: [ADR 006: Module structure](architecture/006-module-structure.md): the layers of the extension host, the webview and the shared code, the direction of their dependencies, what belongs into `shared/`, what code that reads schema objects may rely on, given that the webview gets the schema as JSON without classes and without fields that have no value and that the objects of `xmlbind-ts` 3 are not known yet, the names of the modules of the commands, and the check of the layers with fallow ([#448](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/448)).
+
 ## 2026-11-17
 
 - **Update**: [Build and packaging](build-and-packaging.md#formatting): new section "Formatting": Prettier formats TypeScript, `.mjs`, JSON, JSONC, YAML and Markdown with the settings of xmlbind-ts, `npm run lint` and CI check the formatting, `npm run format` applies it, and VS Code formats on save. It describes the settings, `.prettierignore`, the conflict check with ESLint and `.git-blame-ignore-revs`; "npm scripts", "Packaging", "Generated schema classes", "Lint", "Duplicated code", "Dependencies and Node" and "CI" mention Prettier. The [development guidelines](development-guidelines.md#code-quality) ask for formatted code, count the line breaks that Prettier adds for the size limits, and say that a change that only reformats a document keeps its status. `CONTRIBUTING.md` describes the setup of VS Code and `git blame`. [Known issues](known-issues.md): removed "Code is not formatted automatically" ([#454](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/454)).

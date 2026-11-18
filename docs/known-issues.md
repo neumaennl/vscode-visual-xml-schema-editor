@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-17T19:12:27Z }
-verified: { by: human:neumaennl, at: 2026-11-17T20:01:05Z }
+generated: { by: human:neumaennl, at: 2026-11-18T08:18:54Z }
+verified: { by: human:neumaennl, at: 2026-11-18T08:56:25Z }
 ---
 
 # Purpose
@@ -439,14 +439,6 @@ Effort:
 - **Effort:** S
 - **Description:** When an ID is parsed, the text of its node type, such as `element` in `/element:a`, is taken as a `SchemaNodeType` without a check. `toNodeType()` does this with a type assertion and an `eslint-disable` comment. An ID with an unknown type, such as `/foo:bar`, gets a node type that does not exist; the lookup then finds nothing, and the error says the node was not found instead of naming the unknown type. A check against the values of `SchemaNodeType` would remove the assertion: `parseSchemaId()` would throw for an unknown type, and `parseRequiredId()` and the navigator would turn that into a clear error. The IDs are redesigned in [#417](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/417) (see [Node IDs are ambiguous and have many special cases](#node-ids-are-ambiguous-and-have-many-special-cases)), so the check belongs into the new parser.
 - **GitHub issue:** none (part of [#417](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/417))
-
-## Every message from the webview is a schema command
-
-- **Location:** `shared/messages.ts` (`WebviewMessage`, `ExecuteCommandMessage`), `src/webviewProvider.ts` (`handleWebviewMessage()`), `webview-src/main.ts`
-- **Severity:** Low
-- **Effort:** M
-- **Description:** `WebviewMessage`, the union of the messages from the webview, has a single member, `executeCommand`, which wraps a `SchemaCommand` (see [Messaging](messaging.md#messages)). So the switch on `message.command` in `handleWebviewMessage()` has one case, which ESLint reports as an unnecessary condition (`@typescript-eslint/no-unnecessary-condition`); an `eslint-disable-next-line` comment points to this entry. It is unclear whether this is intended. If every message from the webview is meant to be a schema edit, the wrapper is redundant and the webview could send `SchemaCommand`s directly. If the webview is meant to send other requests as well, these are missing so far; the [UX concept](ux-concept.md) plans context menu operations such as find usages, go to definition and regenerating sample XML, some of which need the extension but do not change the schema, and the [missing correlation](messaging.md#limitations) of commands and results may need a request ID in the message. Deciding needs an analysis of the existing and planned features and an architecture decision, recorded as an ADR.
-- **GitHub issue:** none
 
 ## Documentation in the diagram is cut off and hard to read
 

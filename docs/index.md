@@ -26,7 +26,7 @@ okf_version: "0.2"
 # Schema and edits
 
 - [Schema model](schema-model.md) - The object model of an XSD file - classes generated from the XSD meta-schema, XML binding with xmlbind-ts, and the path-based IDs that identify schema nodes.
-- [Drag and drop](drag-and-drop.md) - How a construct is dragged from the palette onto a diagram node - the responsibilities of palette, renderer, DropCommandFactory and extension host, the event flow, which construct can be dropped on which node with which command, and the generated defaults.
+- [Drag and drop](drag-and-drop.md) - How a schema construct is dragged from the palette onto a diagram node - the responsibilities of palette, canvas, drag and drop and extension host, the event flow, which schema construct can be dropped on which node with which command, and the generated defaults.
 - [Messaging](messaging.md) - The message protocol between the extension host and the webview - the messages in both directions and the order in which they arrive.
 - [Commands](commands.md) - The edit commands - payload fields, the rules the validators enforce, what the executors change in the schema, and where the webview sends them.
 - [Persistence](persistence.md) - How edits reach the XSD file - the command pipeline, the document edit, what serialization changes, undo and save, and how changes from outside reach the diagram.

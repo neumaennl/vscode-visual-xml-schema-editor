@@ -3,8 +3,7 @@ import type { DiagramItem } from "../diagram";
 import { DiagramItemType } from "../diagram";
 import { parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy";
 import { anonymousTypeId, isSchemaRoot } from "../../shared/schemaUtils";
-import { PaletteSchemaConstruct } from "../palette/PaletteSchemaConstruct";
-import { isFacetPaletteConstruct } from "../palette/FacetIconStyles";
+import { isFacetSchemaConstruct, DraggableSchemaConstruct } from "./DraggableSchemaConstruct";
 import {
   createFacetNodeDropCommand,
   getExtensionBaseType,
@@ -21,15 +20,15 @@ export class DropCommandFactory {
   private schemaTopLevelNames = new Set<string>();
 
   /**
-   * Checks whether dropping a construct on a node is allowed without
+   * Checks whether dropping a schema construct on a node is allowed without
    * mutating internal naming state.
    *
    * @param item - Drop target node
-   * @param construct - Palette schema construct
+   * @param schemaConstruct - Palette schema construct
    * @returns True when the drop is valid for the target node
    */
-  public canDropOnNode(item: DiagramItem, construct: PaletteSchemaConstruct): boolean {
-    return this.createNodeDropCommandInternal(item, construct, false) !== null;
+  public canDropOnNode(item: DiagramItem, schemaConstruct: DraggableSchemaConstruct): boolean {
+    return this.createNodeDropCommandInternal(item, schemaConstruct, false) !== null;
   }
 
   /**
@@ -51,15 +50,15 @@ export class DropCommandFactory {
    * Creates the command for a restriction or extension dropped on the schema root: a new top-level
    * simple type that restricts `xs:string`, or a new top-level complex type that extends `xs:anyType`.
    *
-   * @param construct - Restriction or Extension
+   * @param schemaConstruct - Restriction or Extension
    * @param reserveNames - Whether the new name is reserved, so that the next drop gets another one
    * @returns The command
    */
   private createTopLevelDerivationCommand(
-    construct: PaletteSchemaConstruct.Restriction | PaletteSchemaConstruct.Extension,
+    schemaConstruct: DraggableSchemaConstruct.Restriction | DraggableSchemaConstruct.Extension,
     reserveNames: boolean
   ): SchemaCommand {
-    if (construct === PaletteSchemaConstruct.Restriction) {
+    if (schemaConstruct === DraggableSchemaConstruct.Restriction) {
       return {
         type: "addSimpleType",
         payload: {
@@ -85,47 +84,47 @@ export class DropCommandFactory {
    * Create a command payload for a node-level drop.
    *
    * @param item - Drop target node
-   * @param construct - Palette schema construct
+   * @param schemaConstruct - Palette schema construct
    * @returns Command or null if unsupported
    */
-  public createNodeDropCommand(item: DiagramItem, construct: PaletteSchemaConstruct): SchemaCommand | null {
-    return this.createNodeDropCommandInternal(item, construct, true);
+  public createNodeDropCommand(item: DiagramItem, schemaConstruct: DraggableSchemaConstruct): SchemaCommand | null {
+    return this.createNodeDropCommandInternal(item, schemaConstruct, true);
   }
 
   /**
-   * Creates the command for a drop on a node, depending on the dropped construct.
+   * Creates the command for a drop on a node, depending on the dropped schema construct.
    *
    * @param item - Drop target node
-   * @param construct - Palette schema construct
+   * @param schemaConstruct - Palette schema construct
    * @param reserveNames - Whether a new name is reserved, so that the next drop gets another one
-   * @returns Command or null if the target cannot take the construct
+   * @returns Command or null if the target cannot take the schema construct
    */
   private createNodeDropCommandInternal(
     item: DiagramItem,
-    construct: PaletteSchemaConstruct,
+    schemaConstruct: DraggableSchemaConstruct,
     reserveNames: boolean
   ): SchemaCommand | null {
-    if (isFacetPaletteConstruct(construct)) {
-      return createFacetNodeDropCommand(item, construct);
+    if (isFacetSchemaConstruct(schemaConstruct)) {
+      return createFacetNodeDropCommand(item, schemaConstruct);
     }
-    switch (construct) {
-      case PaletteSchemaConstruct.Element:
+    switch (schemaConstruct) {
+      case DraggableSchemaConstruct.Element:
         return this.createElementNodeDropCommand(item, reserveNames);
-      case PaletteSchemaConstruct.Attribute:
+      case DraggableSchemaConstruct.Attribute:
         return this.createAttributeNodeDropCommand(item, reserveNames);
-      case PaletteSchemaConstruct.SimpleType:
-      case PaletteSchemaConstruct.ComplexType:
-        return this.createTypeNodeDropCommand(item, reserveNames, construct);
-      case PaletteSchemaConstruct.Restriction:
-      case PaletteSchemaConstruct.Extension:
-        return this.createDerivationNodeDropCommand(item, reserveNames, construct);
-      case PaletteSchemaConstruct.Group:
+      case DraggableSchemaConstruct.SimpleType:
+      case DraggableSchemaConstruct.ComplexType:
+        return this.createTypeNodeDropCommand(item, reserveNames, schemaConstruct);
+      case DraggableSchemaConstruct.Restriction:
+      case DraggableSchemaConstruct.Extension:
+        return this.createDerivationNodeDropCommand(item, reserveNames, schemaConstruct);
+      case DraggableSchemaConstruct.Group:
         return this.createGroupNodeDropCommand(item, reserveNames);
-      case PaletteSchemaConstruct.Sequence:
+      case DraggableSchemaConstruct.Sequence:
         return this.createCompositorNodeDropCommand(item, "sequence");
-      case PaletteSchemaConstruct.Choice:
+      case DraggableSchemaConstruct.Choice:
         return this.createCompositorNodeDropCommand(item, "choice");
-      case PaletteSchemaConstruct.All:
+      case DraggableSchemaConstruct.All:
         return this.createCompositorNodeDropCommand(item, "all");
       default:
         return null;
@@ -211,19 +210,19 @@ export class DropCommandFactory {
    *
    * @param item - Drop target node
    * @param reserveNames - Whether the new name is reserved
-   * @param construct - `SimpleType` or `ComplexType`
+   * @param schemaConstruct - `SimpleType` or `ComplexType`
    * @returns Command or null if the target cannot hold the type
    */
   private createTypeNodeDropCommand(
     item: DiagramItem,
     reserveNames: boolean,
-    construct: PaletteSchemaConstruct.SimpleType | PaletteSchemaConstruct.ComplexType
+    schemaConstruct: DraggableSchemaConstruct.SimpleType | DraggableSchemaConstruct.ComplexType
   ): SchemaCommand | null {
     const isRoot = isSchemaRoot(item.id);
     if (!isRoot && item.itemType !== DiagramItemType.element) {
       return null;
     }
-    if (construct === PaletteSchemaConstruct.SimpleType) {
+    if (schemaConstruct === DraggableSchemaConstruct.SimpleType) {
       const typeName = isRoot ? { typeName: this.nextName("SimpleType", reserveNames) } : {};
       return { type: "addSimpleType", payload: { parentId: item.id, ...typeName, baseType: "xs:string" } };
     }
@@ -314,18 +313,18 @@ export class DropCommandFactory {
    *
    * @param item - Drop target node
    * @param reserveNames - Whether a new name is reserved
-   * @param construct - Restriction or Extension
+   * @param schemaConstruct - Restriction or Extension
    * @returns Command or null if unsupported
    */
   private createDerivationNodeDropCommand(
     item: DiagramItem,
     reserveNames: boolean,
-    construct: PaletteSchemaConstruct.Restriction | PaletteSchemaConstruct.Extension
+    schemaConstruct: DraggableSchemaConstruct.Restriction | DraggableSchemaConstruct.Extension
   ): SchemaCommand | null {
     if (isSchemaRoot(item.id)) {
-      return this.createTopLevelDerivationCommand(construct, reserveNames);
+      return this.createTopLevelDerivationCommand(schemaConstruct, reserveNames);
     }
-    const isRestriction = construct === PaletteSchemaConstruct.Restriction;
+    const isRestriction = schemaConstruct === DraggableSchemaConstruct.Restriction;
     const derivationKind = isRestriction ? "restriction" : "extension";
     const baseType = isRestriction ? getRestrictionBaseType(item) : getExtensionBaseType(item);
     const isElement = item.itemType === DiagramItemType.element;

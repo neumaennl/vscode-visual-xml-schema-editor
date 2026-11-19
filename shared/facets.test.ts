@@ -6,6 +6,7 @@ import type { RestrictionFacets } from "./commands/simpleType.js";
 import {
   countFacetsWithValues,
   type FacetName,
+  isFacetName,
   isNumericFacet,
   isWhiteSpaceValue,
   LIST_FACETS,
@@ -55,5 +56,16 @@ describe("isNumericFacet", () => {
       "totalDigits",
       "fractionDigits",
     ]);
+  });
+});
+
+describe("isFacetName", () => {
+  test.each([
+    ["minLength", true],
+    ["whiteSpace", true],
+    ["element", false],
+    ["MinLength", false],
+  ])("should return for %s: %s", (value, expected) => {
+    expect(isFacetName(value)).toBe(expected);
   });
 });

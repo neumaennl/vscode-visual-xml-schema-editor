@@ -1,18 +1,14 @@
 import { PaletteView } from "./PaletteView";
-import {
-  getActiveDraggedPaletteSchemaConstruct,
-  PALETTE_MIME_TYPE,
-  paletteGroups,
-  setActiveDraggedPaletteSchemaConstruct,
-} from "./PaletteItems";
-import { PaletteSchemaConstruct } from "./PaletteSchemaConstruct";
+import { paletteGroups } from "./paletteEntries";
+import { getDraggedSchemaConstruct, setDraggedSchemaConstruct } from "../dragAndDrop/draggedSchemaConstruct";
+import { DraggableSchemaConstruct } from "../dragAndDrop/DraggableSchemaConstruct";
 
 describe("PaletteView", () => {
   let container: HTMLDivElement;
 
   beforeEach(() => {
     container = document.createElement("div");
-    setActiveDraggedPaletteSchemaConstruct(null);
+    setDraggedSchemaConstruct(null);
   });
 
   test("should render grouped items", () => {
@@ -37,36 +33,31 @@ describe("PaletteView", () => {
     expect(container.querySelector('[data-testid="palette-item-element"]')).toBeFalsy();
   });
 
-  test("should set drag payload on dragstart", () => {
+  test("should remember the dragged schema construct on dragstart and allow copying", () => {
     const view = new PaletteView(container, paletteGroups);
     view.render();
 
     const row = container.querySelector<HTMLDivElement>('[data-testid="palette-item-element"]')!;
 
-    const setData = vi.fn();
+    const dataTransfer = { effectAllowed: "none" };
     const event = new Event("dragstart", { bubbles: true }) as DragEvent;
-    Object.defineProperty(event, "dataTransfer", {
-      value: {
-        setData,
-        effectAllowed: "none",
-      },
-    });
+    Object.defineProperty(event, "dataTransfer", { value: dataTransfer });
 
     row.dispatchEvent(event);
 
-    expect(setData).toHaveBeenCalledWith(PALETTE_MIME_TYPE, "element");
-    expect(getActiveDraggedPaletteSchemaConstruct()).toBe(PaletteSchemaConstruct.Element);
+    expect(getDraggedSchemaConstruct()).toBe(DraggableSchemaConstruct.Element);
+    expect(dataTransfer.effectAllowed).toBe("copy");
   });
 
-  test("should clear active dragged construct on dragend", () => {
+  test("should forget the dragged schema construct on dragend", () => {
     const view = new PaletteView(container, paletteGroups);
     view.render();
 
     const row = container.querySelector<HTMLDivElement>('[data-testid="palette-item-element"]')!;
 
-    setActiveDraggedPaletteSchemaConstruct(PaletteSchemaConstruct.Element);
+    setDraggedSchemaConstruct(DraggableSchemaConstruct.Element);
     row.dispatchEvent(new Event("dragend", { bubbles: true }));
 
-    expect(getActiveDraggedPaletteSchemaConstruct()).toBeNull();
+    expect(getDraggedSchemaConstruct()).toBeNull();
   });
 });

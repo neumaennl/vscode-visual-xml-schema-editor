@@ -1,5 +1,6 @@
-import type { PaletteGroup, PaletteItem } from "./PaletteItems";
-import { PALETTE_MIME_TYPE, paletteGroups, setActiveDraggedPaletteSchemaConstruct } from "./PaletteItems";
+import type { PaletteGroup, PaletteItem } from "./paletteEntries";
+import { paletteGroups } from "./paletteEntries";
+import { setDraggedSchemaConstruct } from "../dragAndDrop/draggedSchemaConstruct";
 
 /**
  * Lightweight DOM-based component palette for drag-and-drop.
@@ -171,16 +172,14 @@ export class PaletteView {
         event.preventDefault();
         return;
       }
-      if (!event.dataTransfer) {
-        return;
+      if (event.dataTransfer) {
+        event.dataTransfer.effectAllowed = "copy";
       }
-      event.dataTransfer.setData(PALETTE_MIME_TYPE, item.id);
-      event.dataTransfer.effectAllowed = "copy";
-      setActiveDraggedPaletteSchemaConstruct(item.id);
+      setDraggedSchemaConstruct(item.id);
     });
 
     row.addEventListener("dragend", () => {
-      setActiveDraggedPaletteSchemaConstruct(null);
+      setDraggedSchemaConstruct(null);
     });
 
     return row;

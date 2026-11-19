@@ -4,8 +4,8 @@ title: "ADR 006: Module structure"
 description: The decision how the code within the extension host, the webview and the shared code is split into layers, in which direction the layers may depend on each other, what belongs into the shared code and what it may rely on, how files are named, and how fallow checks the layers.
 tags: [adr, architecture, structure, dependencies, shared]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-18T18:45:44Z }
-verified: { by: human:neumaennl, at: 2026-11-18T19:48:12Z }
+generated: { by: human:neumaennl, at: 2026-11-19T14:50:08Z }
+verified: { by: human:neumaennl, at: 2026-11-19T15:32:47Z }
 sources:
   - id: guidelines
     resource: ../development-guidelines.md
@@ -37,32 +37,33 @@ The [project boundaries](../development-guidelines.md#project-boundaries) say wh
 - knowledge about XML Schema was written down several times, and the copies had drifted apart: the list of built-in types in the extension host had 46 names, the one in the webview 27; the facet names were listed in about seven places; the prefixes of QNames were resolved in six places;
 - the webview kept facts about the schema twice, on the `Diagram` and in the schema object;
 - the handling of the canvas was split between `main.ts` and `renderer.ts`;
-- the command types, the validators and the executors grouped the constructs in three different ways.
+- the command types, the validators and the executors grouped the schema constructs in three different ways.
 
 ## Decision
 
 ### Layers
 
-Each project is split into layers. A module may import from its own layer and from the layer directly below it; it does not import from a layer above it and does not skip a layer. The exceptions are the layers that every layer may use: the schema access in the extension host, the diagram in the webview, and the shared code in both. Two modules of the same layer that serve different purposes do not import each other: what both need goes into a layer below them.
+Each project is split into layers. A module may import from its own layer and from the layer directly below it; it does not import from a layer above it and does not skip a layer. The exceptions are the schema access in the extension host and the diagram in the webview, which any layer above them may use, the shared code, which both projects may use, and the facet icons in the webview, which lie below the surfaces and are used only by the palette and by the properties panel, the two places that show facets. Two modules of the same layer that serve different purposes do not import each other: what both need goes into a layer below them.
 
 **Extension host (`src/`), from top to bottom:**
 
-| Layer         | Modules                                                                          | Responsibility                                                                        |
-| ------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| VS Code       | `extension.ts`, `webviewProvider.ts`                                             | Activation, the webview, messages and the document. Only these use VS Code.           |
-| Pipeline      | `commandProcessor.ts`                                                            | Parse, validate, execute, serialize.                                                  |
-| Dispatch      | `commandValidator.ts`, `commandExecutor.ts`, `commandHandlers.ts`                | Find the validator or executor of a command.                                          |
-| Commands      | `commandValidators/`, `commandExecutors/`                                        | One module per construct and side; validators and executors do not import each other. |
-| Schema access | `schemaReferences/`, `schemaNavigator.ts`, `commandUtils.ts`, the XML conversion | Finding and rewriting references, resolving IDs, parsing and serializing.             |
+| Layer         | Modules                                                                          | Responsibility                                                                               |
+| ------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| VS Code       | `extension.ts`, `webviewProvider.ts`                                             | Activation, the webview, messages and the document. Only these use VS Code.                  |
+| Pipeline      | `commandProcessor.ts`                                                            | Parse, validate, execute, serialize.                                                         |
+| Dispatch      | `commandValidator.ts`, `commandExecutor.ts`, `commandHandlers.ts`                | Find the validator or executor of a command.                                                 |
+| Commands      | `commandValidators/`, `commandExecutors/`                                        | One module per schema construct and side; validators and executors do not import each other. |
+| Schema access | `schemaReferences/`, `schemaNavigator.ts`, `commandUtils.ts`, the XML conversion | Finding and rewriting references, resolving IDs, parsing and serializing.                    |
 
 **Webview (`webview-src/`), from top to bottom:**
 
-| Layer    | Modules                                 | Responsibility                                                                                         |
-| -------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| App      | `main.ts`                               | Wiring, messages and the saved state.                                                                  |
-| Surfaces | the canvas, `propertiesPanel/`, `drop/` | Drawing and handling the canvas; turning edits and drops into commands. They do not import each other. |
-| Palette  | `palette/`                              | The constructs of the palette, their icons and the dragged construct.                                  |
-| Diagram  | `diagram/`                              | Schema → diagram items → layout → SVG. Knows nothing about commands or the palette.                    |
+| Layer         | Modules                                   | Responsibility                                                                                                                                                        |
+| ------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| App           | `main.ts`                                 | Wiring, messages and the saved state.                                                                                                                                 |
+| Surfaces      | `canvas/`, `palette/`, `propertiesPanel/` | Drawing and handling the canvas, which turns drops into commands; showing the palette and starting drags; turning edits into commands. They do not import each other. |
+| Drag and drop | `dragAndDrop/`                            | The schema constructs that can be dragged, the dragged schema construct and the drop rules.                                                                           |
+| Facet icons   | `facetIcons.ts`                           | The icon and color of each facet, for the palette and the properties panel.                                                                                           |
+| Diagram       | `diagram/`                                | Schema → diagram items → layout → SVG. Knows nothing about commands or the palette.                                                                                   |
 
 **Shared (`shared/`):** the generated classes at the bottom, then the command and message types, then the pure functions about XML Schema, which use both.
 
@@ -84,16 +85,16 @@ The two sides do not see the same objects. The extension host works with the obj
 - Code that reads schema objects takes structural types, such as `{ name?: string }`, decides by values (`value !== undefined`), never by whether a key exists (`in`, `Object.hasOwn()`, `Object.keys()`) or by the class (`instanceof`), and does not create instances of the generated classes outside the executors.
 - In the webview, only the diagram builder and one module of accessor functions read the schema objects (see [#360](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/360)).
 - Tests of the webview use the schema in the form the webview gets it: a test helper in `shared/__tests__/` sends the result of `unmarshal()` through JSON.
-- Functions that read schema objects and that both sides need, such as the lookup of top-level components and the rules where a construct may be placed, move into `shared/` with the move to version 3, when the objects are known. #444 then also checks what the webview receives.
+- Functions that read schema objects and that both sides need, such as the lookup of top-level components and the rules where a schema construct may be placed, move into `shared/` with the move to version 3, when the objects are known. #444 then also checks what the webview receives.
 
 ### Names
 
-- The command types in `shared/commands/`, the validators and the executors are split by the same constructs and named after them: `element`, `attribute`, `simpleType`, `complexType`, `group`, `attributeGroup`, `annotation` (with documentation) and `schema` (imports, includes and namespaces). There are no barrel modules within a project besides `shared/types.ts`, `shared/commands/index.ts` and `webview-src/diagram/index.ts`.
+- The command types in `shared/commands/`, the validators and the executors are split by the same schema constructs and named after them: `element`, `attribute`, `simpleType`, `complexType`, `group`, `attributeGroup`, `annotation` (with documentation) and `schema` (imports, includes and namespaces). There are no barrel modules within a project besides `shared/types.ts`, `shared/commands/index.ts` and `webview-src/diagram/index.ts`.
 - A module is named after what it does, not after the module that uses it: helpers that several modules use get a name of their own instead of `…Utils` or `…Helpers` of one user.
 
 ### Checks
 
-fallow checks the layers of the extension host and of the webview with `boundaries` in `.fallowrc.jsonc`, and the absence of import cycles, in `npm run lint` (`fallow architecture`).[^fallow-config] ESLint keeps checking the project boundaries.
+fallow checks the layers of the extension host and of the webview with `boundaries` in `.fallowrc.jsonc`, and the absence of import cycles, in `npm run lint` (`fallow architecture`).[^fallow-config] The configuration allows each part exactly the parts that its code uses, within the rules above, so that a new dependency changes the configuration and shows in a review. ESLint keeps checking the project boundaries.
 
 ## Consequences
 
@@ -101,7 +102,7 @@ fallow checks the layers of the extension host and of the webview with `boundari
 - The built-in types, the facets and the handling of QNames move into `shared/`; the copies in the extension host and the webview are removed.
 - The canvas becomes one module below `main.ts`, which keeps the view state once.
 - The facts about the schema on `Diagram` are removed; the properties panel reads them from the schema object.
-- The command types of simple and complex types, groups and attribute groups, annotations and the schema are split into files per construct, and the barrel `commandExecutors/typeExecutors.ts` is removed.
+- The command types of simple and complex types, groups and attribute groups, annotations and the schema are split into files per schema construct, and the barrel `commandExecutors/typeExecutors.ts` is removed.
 - A new module is placed into a layer; if it needs a layer above it, the code it needs moves down.
 - The tests of the webview get the schema through JSON, like the webview. The checks by key, `hasSimpleTypeFacets()` in the webview and `"use" in attr` and `hasAnnotationProperty()` in the extension host, decide by values or by the kind of the node.
 - #444 gets the task to move the functions that read schema objects and that both sides need into `shared/`, and to check what the webview receives.

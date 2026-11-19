@@ -4,14 +4,14 @@ title: UX concept
 description: The interaction model of the editor - which surface adds, edits and deletes what, how facets work, and how the properties panel behaves - with a list of what the current editor does not implement yet.
 tags: [ux, editor, palette, properties-panel, facets, context-menu, toolbar]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-18T13:02:47Z }
-verified: { by: human:neumaennl, at: 2026-11-18T15:05:42Z }
+generated: { by: human:neumaennl, at: 2026-11-19T14:50:08Z }
+verified: { by: human:neumaennl, at: 2026-11-19T15:32:47Z }
 sources:
   - id: palette-items
-    resource: ../webview-src/palette/PaletteItems.ts
+    resource: ../webview-src/palette/paletteEntries.ts
     title: Palette item definitions
   - id: drop-type-helpers
-    resource: ../webview-src/drop/TypeDropCommands.ts
+    resource: ../webview-src/dragAndDrop/TypeDropCommands.ts
     title: Drop helpers for types, derivations and facets
   - id: properties-panel
     resource: ../webview-src/propertiesPanel/propertiesPanel.ts
@@ -47,8 +47,8 @@ The components that implement the model are described in [Editor](editor.md); th
 
 # Core rules
 
-- New constructs are added by dragging an item from the palette onto a node in the diagram.
-- Existing constructs are edited in the properties panel, and deleted there where deletion is supported.
+- New schema constructs are added by dragging an item from the palette onto a node in the diagram.
+- Existing schema constructs are edited in the properties panel, and deleted there where deletion is supported.
 - The toolbar only has actions for the whole schema or diagram.
 - The context menu complements palette and panel; it is never the main way to add or edit.
 - The XML tab of the properties panel is read-only.
@@ -59,7 +59,7 @@ Each interaction belongs to one main surface:
 
 | Surface                   | Role                              | Examples                                                                                                            |
 | ------------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| Palette and drag and drop | Add constructs                    | elements, attributes, groups, compositors, simple and complex types, restriction, extension, facets[^palette-items] |
+| Palette and drag and drop | Add schema constructs             | elements, attributes, groups, compositors, simple and complex types, restriction, extension, facets[^palette-items] |
 | Properties panel          | Edit and delete the selected node | name, type, cardinality, facet values, documentation, delete                                                        |
 | Toolbar                   | Actions for the whole diagram     | zoom in, zoom out, fit view                                                                                         |
 | Context menu              | Contextual operations             | reorder, refactor, find usages, go to definition, cut, copy, paste, regenerate sample XML                           |
@@ -71,7 +71,7 @@ Discoverability rule: adding starts in the palette, editing starts in the panel.
 
 ## Adding, editing and deleting
 
-Facets follow the same pattern as all other constructs:
+Facets follow the same pattern as all other schema constructs:
 
 - **Add:** drag a facet item from the palette onto a simple type derived by restriction, or onto an element with such an anonymous simple type. The facet is added with a default value.[^drop-type-helpers]
 - **Edit:** change the value in the Facets tab of the properties panel.
@@ -161,7 +161,7 @@ The XML tab is read-only. It shows an XSD fragment for the node, generated in th
 ## Synchronization
 
 - The panel edits a draft copy of the selected node, so switching tabs does not reload old values from the diagram.
-- After every schema update, the panel finds the selected node again by its ID and the diagram highlights it again. If the node no longer exists, the panel is cleared.
+- After every schema update, the panel finds the selected node again by its ID. The diagram keeps the node highlighted across every redraw, also after expanding or collapsing a node and after a changed diagram option. If the node no longer exists, the panel and the highlight are cleared.
 - When a command fails, the webview shows the error message, and the panel shows the node again as it was before the edit.[^webview-main]
 
 # Context menu and toolbar

@@ -4,8 +4,8 @@ title: Testing
 description: How the extension is tested - running the tests and the type check, the five Vitest projects, mocks and helpers, conventions for tests, mocks, helper functions and helper classes, which tests to write for typical changes, coverage, CI, the smoke tests in the extension host with a mock webview, and how the current tests compare with the testing strategy of ADR 001.
 tags: [testing, vitest, mocks, coverage, ci, conventions]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-18T19:53:10Z }
-verified: { by: human:neumaennl, at: 2026-11-18T20:26:45Z }
+generated: { by: human:neumaennl, at: 2026-11-19T14:50:08Z }
+verified: { by: human:neumaennl, at: 2026-11-19T15:32:47Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -170,8 +170,8 @@ The `vscode` mock is not used through this mechanism: `src/__mocks__/vscode.ts` 
 | Command pipeline                     | `src/__tests__/pipeline.*.test.ts`                                                                                                                                                                                     | [Persistence](persistence.md#command-pipeline)                          |
 | Extension and editor provider        | `src/extension.test.ts`, `src/webviewProvider.test.ts`                                                                                                                                                                 | [Messaging](messaging.md)                                               |
 | Webview app                          | `webview-src/main.test.ts`                                                                                                                                                                                             | [Editor](editor.md)                                                     |
-| Diagram                              | `webview-src/diagram/`, `webview-src/renderer.test.ts`                                                                                                                                                                 | [Diagram rendering](diagram-rendering.md#tests)                         |
-| Palette and drag and drop            | `webview-src/drop/DropCommandFactory.test.ts`, `webview-src/drop/TypeDropCommands.test.ts`, `webview-src/palette/PaletteView.test.ts`, `webview-src/renderer.test.ts`                                                  | [Drag and drop](drag-and-drop.md#adding-a-draggable-construct)          |
+| Diagram                              | `webview-src/diagram/`, `webview-src/canvas/`                                                                                                                                                                          | [Diagram rendering](diagram-rendering.md#tests)                         |
+| Palette and drag and drop            | `webview-src/dragAndDrop/DropCommandFactory.test.ts`, `webview-src/dragAndDrop/TypeDropCommands.test.ts`, `webview-src/palette/PaletteView.test.ts`, `webview-src/canvas/canvasDrop.test.ts`                           | [Drag and drop](drag-and-drop.md#adding-a-draggable-schema-construct)   |
 | Properties panel                     | `webview-src/propertiesPanel/propertiesPanel*.test.ts` (unit tests, one per module), `webview-src/__tests__/propertiesPanel.*.test.ts` (integration tests of what needs the whole panel, such as which tabs it offers) | [UX concept](ux-concept.md)                                             |
 | Scripts                              | `scripts/**/*.test.ts`                                                                                                                                                                                                 | [Build and packaging](build-and-packaging.md#vs-code-and-node-versions) |
 
@@ -228,14 +228,14 @@ There are no helper classes in the tests today. Factory functions and plain obje
 
 - **A new or changed command:** the command type in `shared/commands/` and, if its payload has required fields or restricted values, cases in `shared/commands/commandTypes.test-d.ts`; validator tests in `src/commandValidators/<area>Validators.test.ts`, executor tests in `src/commandExecutors/<area>Executors.test.ts`, a pipeline test in `src/__tests__/pipeline.<area>.test.ts` that runs the command on XML, and the command in the agreement test `test/integration/commandAgreement.test.ts` (see [Commands](commands.md#files) for the other places a new command touches).
 - **A new message:** `webviewProvider.test.ts` for the extension host side and `main.test.ts` for the webview side.
-- **A new draggable construct:** placement and payload in `DropCommandFactory.test.ts`; `renderer.test.ts` only if the event handling changes (see [Drag and drop](drag-and-drop.md#adding-a-draggable-construct)).
+- **A new draggable schema construct:** placement and payload in `DropCommandFactory.test.ts`; `canvas/canvasDrop.test.ts` only if the event handling changes (see [Drag and drop](drag-and-drop.md#adding-a-draggable-schema-construct)).
 - **Changes to the webview UI:** a jsdom test next to the changed module that builds the needed DOM, triggers the event and checks the DOM and the posted messages. Tests that measure text call `setupGetBBoxMock()`.
 - **Changes to activation, the registration of the custom editor or the message handling:** besides the Vitest tests, run `npm run test:extension-host`; extend the smoke tests only if the change adds a path that they do not reach.
 - **Changes to a script:** a test next to the script, with the network, the terminal and other programs mocked, except a program that the script's own task depends on, such as `unzip` for `verify-vsix.ts`.
 
 # Coverage
 
-The coverage report (`@vitest/coverage-v8`) includes all TypeScript files in `shared/`, `src/` and `webview-src/` except type declarations, generated classes (`shared/generated/`), test files (`*.test.ts`, `*.test-d.ts`), and `__tests__` and `__mocks__` folders. The scripts in `scripts/` are not part of it. Files that contain only types, such as `webview-src/webviewTypes.ts`, appear with no statements and do not change the totals. CI shows the coverage report in the job summary and on pull requests (see [CI](#ci)).[^vitest-config]
+The coverage report (`@vitest/coverage-v8`) includes all TypeScript files in `shared/`, `src/` and `webview-src/` except type declarations, generated classes (`shared/generated/`), test files (`*.test.ts`, `*.test-d.ts`), and `__tests__` and `__mocks__` folders. The scripts in `scripts/` are not part of it. Files that contain only types, such as `shared/messages.ts`, appear with no statements and do not change the totals. CI shows the coverage report in the job summary and on pull requests (see [CI](#ci)).[^vitest-config]
 
 The threshold is 85% for lines, statements, functions and branches (`coverage.thresholds` in `vitest.config.ts`). A run with coverage below one of them fails, also in CI. The coverage is only a little above the thresholds, which is enough because new and changed code is tested anyway (see [Development guidelines](development-guidelines.md#tests)).
 

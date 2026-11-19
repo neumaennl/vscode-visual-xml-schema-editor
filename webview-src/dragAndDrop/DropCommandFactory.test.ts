@@ -6,7 +6,7 @@
 import { DropCommandFactory } from "./DropCommandFactory";
 import { DiagramItem } from "../diagram/DiagramItem";
 import { DiagramItemGroupType, DiagramItemType } from "../diagram/DiagramTypes";
-import { PaletteSchemaConstruct } from "../palette/PaletteSchemaConstruct";
+import { DraggableSchemaConstruct } from "./DraggableSchemaConstruct";
 import { diagramItem } from "../__tests__/diagramTestHelpers";
 import { DERIVATIONS, derivedComplexTypeT, webviewSchemaWith } from "../../shared/__tests__/schemaTestHelpers";
 
@@ -28,26 +28,26 @@ function makeItem(id: string, itemType: DiagramItemType, overrides: Partial<Diag
 const NAME_FIELDS = ["elementName", "attributeName", "typeName", "groupName"];
 
 /**
- * Drops a construct on the schema root and returns the name that the command generated.
+ * Drops a schema construct on the schema root and returns the name that the command generated.
  *
  * @param factory - The factory
- * @param construct - The dropped construct
+ * @param schemaConstruct - The dropped schema construct
  * @returns The generated name, or undefined if the command has none
  */
-function generatedName(factory: DropCommandFactory, construct: PaletteSchemaConstruct): string | undefined {
-  const payload = (factory.createNodeDropCommand(ROOT, construct) as { payload: Record<string, unknown> } | null)
+function generatedName(factory: DropCommandFactory, schemaConstruct: DraggableSchemaConstruct): string | undefined {
+  const payload = (factory.createNodeDropCommand(ROOT, schemaConstruct) as { payload: Record<string, unknown> } | null)
     ?.payload;
   const field = NAME_FIELDS.find((name) => typeof payload?.[name] === "string");
   return field === undefined ? undefined : (payload?.[field] as string);
 }
 
-const C = PaletteSchemaConstruct;
+const C = DraggableSchemaConstruct;
 
-/** A drop that creates a command: the case, the target, the dropped construct and the expected command. */
-type AcceptedDrop = [string, DiagramItem, PaletteSchemaConstruct, object];
+/** A drop that creates a command: the case, the target, the dropped schema construct and the expected command. */
+type AcceptedDrop = [string, DiagramItem, DraggableSchemaConstruct, object];
 
-/** A drop that is rejected: the case, the target and the dropped construct. */
-type RejectedDrop = [string, DiagramItem, PaletteSchemaConstruct];
+/** A drop that is rejected: the case, the target and the dropped schema construct. */
+type RejectedDrop = [string, DiagramItem, DraggableSchemaConstruct];
 
 /** The schema root. */
 const ROOT = makeItem("/schema", DiagramItemType.element);
@@ -97,11 +97,11 @@ describe("DropCommandFactory", () => {
         { type: "addComplexType", payload: { parentId: "/schema", typeName: "ComplexType1", baseType: "xs:anyType" } },
       ],
       [C.Group, { type: "addGroup", payload: { groupName: "Group1" } }],
-    ])("should create the command for %s", (construct, expected) => {
-      expect(factory.createNodeDropCommand(ROOT, construct)).toMatchObject(expected);
+    ])("should create the command for %s", (schemaConstruct, expected) => {
+      expect(factory.createNodeDropCommand(ROOT, schemaConstruct)).toMatchObject(expected);
     });
 
-    test("should return null for unsupported top-level construct", () => {
+    test("should return null for unsupported top-level schema construct", () => {
       expect(factory.createNodeDropCommand(ROOT, C.Any)).toBeNull();
     });
   });
@@ -233,8 +233,8 @@ describe("DropCommandFactory", () => {
           payload: { typeId: "/complexType:ChoiceType", baseType: "xs:anyType", derivationKind: "extension" },
         },
       ],
-    ])("should create %s", (_case, item, construct, expected) => {
-      expect(factory.createNodeDropCommand(item, construct)).toMatchObject(expected);
+    ])("should create %s", (_case, item, schemaConstruct, expected) => {
+      expect(factory.createNodeDropCommand(item, schemaConstruct)).toMatchObject(expected);
     });
 
     test.each(DERIVATIONS)("should create an attribute on a named complexType with %s %s", (content, derivation) => {
@@ -260,8 +260,8 @@ describe("DropCommandFactory", () => {
         C.ComplexType,
         "addComplexType",
       ],
-    ])("should create %s, with the element as parent and without typeName", (_case, item, construct, type) => {
-      const cmd = factory.createNodeDropCommand(item, construct);
+    ])("should create %s, with the element as parent and without typeName", (_case, item, schemaConstruct, type) => {
+      const cmd = factory.createNodeDropCommand(item, schemaConstruct);
 
       expect(cmd).toMatchObject({ type, payload: { parentId: "/element:person" } });
       expect((cmd as { payload: { typeName?: string } }).payload.typeName).toBeUndefined();
@@ -304,8 +304,8 @@ describe("DropCommandFactory", () => {
           payload: { groupId: "/group:PeopleGroup", contentModel: "choice" },
         },
       ],
-    ])("should set the content model for %s", (_case, item, construct, expected) => {
-      expect(factory.createNodeDropCommand(item, construct)).toEqual(expected);
+    ])("should set the content model for %s", (_case, item, schemaConstruct, expected) => {
+      expect(factory.createNodeDropCommand(item, schemaConstruct)).toEqual(expected);
     });
 
     test.each<RejectedDrop>([
@@ -331,9 +331,9 @@ describe("DropCommandFactory", () => {
         }),
         C.Enumeration,
       ]),
-    ])("should reject %s", (_case, item, construct) => {
-      expect(factory.createNodeDropCommand(item, construct)).toBeNull();
-      expect(factory.canDropOnNode(item, construct)).toBe(false);
+    ])("should reject %s", (_case, item, schemaConstruct) => {
+      expect(factory.createNodeDropCommand(item, schemaConstruct)).toBeNull();
+      expect(factory.canDropOnNode(item, schemaConstruct)).toBe(false);
     });
   });
 
@@ -390,7 +390,7 @@ describe("DropCommandFactory", () => {
         C.Pattern,
         { pattern: ["[A-Z]{3}", "[^a-zA-Z0-9\\s]*", "[^a-zA-Z0-9\\s]*"] },
       ],
-    ])("should %s", (_case, existing, construct, restrictions) => {
+    ])("should %s", (_case, existing, schemaConstruct, restrictions) => {
       const patterns = existing.map((value) => `<xs:pattern value="${value}"/>`).join("");
       const item = diagramItem(
         webviewSchemaWith(
@@ -399,7 +399,7 @@ describe("DropCommandFactory", () => {
         "/simpleType:Code"
       );
 
-      expect(factory.createNodeDropCommand(item, construct)).toMatchObject({
+      expect(factory.createNodeDropCommand(item, schemaConstruct)).toMatchObject({
         type: "modifySimpleType",
         payload: { typeId: "/simpleType:Code", restrictions },
       });
@@ -455,8 +455,8 @@ describe("DropCommandFactory", () => {
         group: [{ name: "Group1" }],
       });
 
-      const names = [C.Element, C.Attribute, C.SimpleType, C.ComplexType, C.Group].map((construct) =>
-        generatedName(factory, construct)
+      const names = [C.Element, C.Attribute, C.SimpleType, C.ComplexType, C.Group].map((schemaConstruct) =>
+        generatedName(factory, schemaConstruct)
       );
 
       expect(names).toEqual(["Element3", "Attribute2", "SimpleType2", "ComplexType2", "Group2"]);

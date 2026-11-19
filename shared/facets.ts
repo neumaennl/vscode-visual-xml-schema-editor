@@ -29,6 +29,16 @@ export const SINGLE_VALUE_FACETS = [
 const FACET_NAMES: readonly FacetName[] = [...LIST_FACETS, ...SINGLE_VALUE_FACETS];
 
 /**
+ * Tells whether a text is the name of a facet.
+ *
+ * @param value - The text
+ * @returns True for the twelve facet names
+ */
+export function isFacetName(value: string): value is FacetName {
+  return (FACET_NAMES as readonly string[]).includes(value);
+}
+
+/**
  * Counts the facets that have a value; an empty list of values counts as no facet.
  *
  * @param facets - The facets

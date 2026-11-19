@@ -1,31 +1,40 @@
 // Tells Vite to write webview/styles.css, which the HTML of the webview loads with <link>.
 // The bundle itself contains no CSS and injects none.
 import "./styles.css";
-import { DiagramRenderer } from "./renderer";
+import { DiagramCanvas } from "./canvas/DiagramCanvas";
 import { PropertiesPanel } from "./propertiesPanel/propertiesPanel";
-import type { schema } from "../shared/types";
-import type { VSCodeAPI, ViewState, WebviewState } from "./webviewTypes";
+import type { schema, WebviewMessage } from "../shared/types";
+import type { ViewState } from "./canvas/CanvasView";
 import type { DiagramItem } from "./diagram";
 import type { ExtensionMessage, DiagramOptions } from "../shared/messages";
 import { PaletteView } from "./palette/PaletteView";
-import { DropCommandFactory } from "./drop/DropCommandFactory";
-import { isPaletteSchemaConstruct } from "./palette/PaletteSchemaConstruct";
+
+/** The API that VS Code gives the webview. */
+interface VSCodeAPI<State> {
+  postMessage(message: WebviewMessage): void;
+  getState(): State | undefined;
+  setState(state: State): void;
+}
+
+/** What the webview saves with `setState()`, so that it can be shown again when it is recreated. */
+interface WebviewState {
+  viewState?: ViewState;
+  schema?: schema;
+  diagramOptions?: DiagramOptions;
+}
 
 declare function acquireVsCodeApi<State>(): VSCodeAPI<State>;
 
 /**
- * The webview application: connects the diagram, the properties panel and the palette with the
- * extension host, and keeps the state of the webview.
+ * The webview application: connects the canvas, the properties panel and the palette with the extension
+ * host, and keeps the state of the webview.
  */
 class SchemaEditorApp {
   private vscode: VSCodeAPI<WebviewState>;
-  private renderer: DiagramRenderer;
+  private canvas: DiagramCanvas;
   private propertiesPanel: PropertiesPanel;
   private currentSchema: schema | undefined;
-  private viewState: ViewState;
   private diagramOptions: DiagramOptions;
-  private paletteView: PaletteView | null = null;
-  private dropCommandFactory = new DropCommandFactory();
   private notificationBar: HTMLElement | null = null;
   private selectedNodeId: string | null = null;
 
@@ -36,19 +45,32 @@ class SchemaEditorApp {
    */
   constructor() {
     this.vscode = acquireVsCodeApi<WebviewState>();
-    this.viewState = { zoom: 1, panX: 0, panY: 0 };
-    this.diagramOptions = {
+    const state = this.vscode.getState();
+    this.diagramOptions = state?.diagramOptions ?? {
       showDocumentation: false,
       alwaysShowOccurrence: false,
       showType: false,
     };
 
-    const canvas = document.getElementById("schema-canvas");
-    if (!canvas || !(canvas instanceof SVGSVGElement)) {
+    const svg = document.getElementById("schema-canvas");
+    if (!svg || !(svg instanceof SVGSVGElement)) {
       throw new Error("Canvas element not found or is not an SVG element");
     }
 
-    this.renderer = new DiagramRenderer(canvas, this.viewState);
+    this.canvas = new DiagramCanvas(svg, state?.viewState, {
+      select: (item): void => {
+        this.onNodeSelected(item);
+      },
+      viewChanged: (): void => {
+        this.saveState();
+      },
+      failed: (message): void => {
+        this.showError(message);
+      },
+      dispatch: (command): void => {
+        this.vscode.postMessage({ command: "executeCommand", data: command });
+      },
+    });
     this.propertiesPanel = new PropertiesPanel(
       document.getElementById("properties-content") as HTMLDivElement,
       (command) => {
@@ -58,25 +80,15 @@ class SchemaEditorApp {
 
     const paletteContainer = document.getElementById("palette-content");
     if (paletteContainer && paletteContainer instanceof HTMLDivElement) {
-      this.paletteView = new PaletteView(paletteContainer);
-      this.paletteView.render();
+      new PaletteView(paletteContainer).render();
     }
 
     this.setupMessageListener();
     this.setupToolbar();
-    this.setupCanvasInteraction();
-    this.setupDragAndDrop();
 
-    // Restore state if available
-    const state = this.vscode.getState();
-    if (state) {
-      this.viewState = state.viewState ?? this.viewState;
-      this.diagramOptions = state.diagramOptions ?? this.diagramOptions;
-      if (state.schema) {
-        this.currentSchema = state.schema;
-        this.dropCommandFactory.updateNamesFromSchema(state.schema);
-        this.renderSchema(state.schema);
-      }
+    if (state?.schema) {
+      this.currentSchema = state.schema;
+      this.renderSchema(state.schema);
     }
   }
 
@@ -90,7 +102,6 @@ class SchemaEditorApp {
       switch (message.command) {
         case "updateSchema": {
           this.currentSchema = message.data;
-          this.dropCommandFactory.updateNamesFromSchema(message.data);
           this.renderSchema(message.data);
           this.dismissNotification();
           this.refreshSelection();
@@ -129,22 +140,13 @@ class SchemaEditorApp {
   }
 
   /**
-   * Render a schema object to the diagram
-   * @param schemaObj - The schema to render
+   * Draws a schema on the canvas and shows an error if that fails.
+   *
+   * @param schemaObj - The schema to draw
    */
   private renderSchema(schemaObj: schema): void {
     try {
-      console.log("Schema object received:", schemaObj);
-
-      // The renderer will need to traverse the schema structure
-      this.renderer.renderSchema(schemaObj, this.diagramOptions, (item: DiagramItem, isExpandButton: boolean) => {
-        this.onNodeClick(item, isExpandButton);
-      });
-
-      // Center the diagram if this is the first render (no saved pan position)
-      if (this.viewState.panX === 0 && this.viewState.panY === 0) {
-        this.centerDiagram();
-      }
+      this.canvas.render(schemaObj, this.diagramOptions);
     } catch (error) {
       console.error("Error rendering schema:", error);
       this.showError(`Failed to render: ${(error as Error).message}`);
@@ -152,47 +154,13 @@ class SchemaEditorApp {
   }
 
   /**
-   * Center the diagram in the canvas viewport
+   * Shows a node that the user selected on the canvas in the properties panel.
+   *
+   * @param item - The selected node
    */
-  private centerDiagram(): void {
-    const canvas = document.getElementById("schema-canvas");
-    if (!canvas) return;
-
-    // Get canvas dimensions
-    const canvasWidth = canvas.clientWidth;
-    const canvasHeight = canvas.clientHeight;
-
-    // Center the diagram by offsetting to middle of canvas
-    // Start with some offset from top-left to avoid toolbar
-    this.viewState.panX = canvasWidth / 2 - 100;
-    this.viewState.panY = canvasHeight / 2 - 100;
-
-    this.renderer.updateView(this.viewState);
-    this.saveState();
-  }
-
-  /**
-   * Handle node click events
-   * @param item - The diagram item that was clicked
-   * @param isExpandButton - True if the expand button was clicked
-   */
-  private onNodeClick(item: DiagramItem, isExpandButton = false): void {
-    if (isExpandButton) {
-      // Toggle expand/collapse
-      item.showChildElements = !item.showChildElements;
-
-      // Refresh the diagram (re-layout and re-render without rebuilding)
-      try {
-        this.renderer.refresh();
-      } catch (error) {
-        this.showError(`Failed to refresh diagram: ${(error as Error).message}`);
-      }
-    } else {
-      // Display item properties in the properties panel
-      this.selectedNodeId = item.id;
-      this.renderer.selectNode(item.id);
-      this.propertiesPanel.display(item);
-    }
+  private onNodeSelected(item: DiagramItem): void {
+    this.selectedNodeId = item.id;
+    this.propertiesPanel.display(item);
   }
 
   /**
@@ -204,14 +172,15 @@ class SchemaEditorApp {
       return;
     }
 
-    const selectedItem = this.renderer.getItemById(this.selectedNodeId);
+    const selectedItem = this.canvas.getItem(this.selectedNodeId);
     if (!selectedItem) {
       this.selectedNodeId = null;
+      this.canvas.select(null);
       this.propertiesPanel.clear();
       return;
     }
 
-    this.renderer.selectNode(selectedItem.id);
+    this.canvas.select(selectedItem.id);
     this.propertiesPanel.display(selectedItem);
   }
 
@@ -219,155 +188,12 @@ class SchemaEditorApp {
    * Set up toolbar button event handlers
    */
   private setupToolbar(): void {
-    const zoomInBtn = document.getElementById("zoomIn");
-    const zoomOutBtn = document.getElementById("zoomOut");
-    const fitViewBtn = document.getElementById("fitView");
-
-    zoomInBtn?.addEventListener("click", () => {
-      this.zoomTowardsCenter(1.2);
-    });
-
-    zoomOutBtn?.addEventListener("click", () => {
-      this.zoomTowardsCenter(0.8);
-    });
-
-    fitViewBtn?.addEventListener("click", () => {
-      if (!this.currentSchema) return;
-      // Fit the diagram content precisely into the canvas
-      const newView = this.renderer.fitToCanvas(24);
-      this.viewState = newView;
-      this.saveState();
-    });
-  }
-
-  /**
-   * Set up palette-to-canvas drag and drop interactions.
-   */
-  private setupDragAndDrop(): void {
-    this.renderer.setNodeDropValidator(
-      (item, construct) => isPaletteSchemaConstruct(construct) && this.dropCommandFactory.canDropOnNode(item, construct)
-    );
-    this.renderer.setDropHandler((item, construct) => {
-      this.handleNodeDrop(item, construct);
-    });
-  }
-
-  /**
-   * Handles a drop onto a specific diagram node.
-   *
-   * @param item - Drop target node
-   * @param construct - XML schema construct from palette
-   */
-  private handleNodeDrop(item: DiagramItem, construct: string): void {
-    if (!isPaletteSchemaConstruct(construct)) {
-      this.showError(`Drop of '${construct}' is not supported for '${item.name}'`);
-      return;
+    const actions = { zoomIn: "zoomIn", zoomOut: "zoomOut", fitView: "fit" } as const;
+    for (const [buttonId, action] of Object.entries(actions)) {
+      document.getElementById(buttonId)?.addEventListener("click", () => {
+        this.canvas.changeView(action);
+      });
     }
-    const command = this.dropCommandFactory.createNodeDropCommand(item, construct);
-    if (!command) {
-      this.showError(`Drop of '${construct}' is not supported for '${item.name}'`);
-      return;
-    }
-    this.vscode.postMessage({ command: "executeCommand", data: command });
-  }
-
-  /**
-   * Zoom towards the center of the canvas
-   * @param delta - Zoom factor (e.g., 1.2 for zoom in, 0.8 for zoom out)
-   */
-  private zoomTowardsCenter(delta: number): void {
-    if (!this.currentSchema) return;
-
-    const canvas = document.getElementById("schema-canvas");
-    if (!canvas) return;
-
-    this.zoomAt(canvas.clientWidth / 2, canvas.clientHeight / 2, delta);
-  }
-
-  /**
-   * Zooms the view and keeps a point of the canvas in the same position.
-   *
-   * @param canvasX - The x coordinate of the point, relative to the canvas
-   * @param canvasY - The y coordinate of the point, relative to the canvas
-   * @param delta - Zoom factor (e.g., 1.2 for zoom in, 0.8 for zoom out)
-   */
-  private zoomAt(canvasX: number, canvasY: number, delta: number): void {
-    // The point in diagram space before the zoom
-    const pointX = (canvasX - this.viewState.panX) / this.viewState.zoom;
-    const pointY = (canvasY - this.viewState.panY) / this.viewState.zoom;
-
-    this.viewState.zoom *= delta;
-    this.viewState.panX = canvasX - pointX * this.viewState.zoom;
-    this.viewState.panY = canvasY - pointY * this.viewState.zoom;
-
-    this.renderer.updateView(this.viewState);
-    this.saveState();
-  }
-
-  /**
-   * Set up canvas interaction handlers for panning and zooming
-   */
-  private setupCanvasInteraction(): void {
-    const canvas = document.getElementById("schema-canvas");
-    if (!canvas || !(canvas instanceof SVGSVGElement)) {
-      return;
-    }
-    let isPanning = false;
-    let startX = 0;
-    let startY = 0;
-    let hasMoved = false;
-
-    canvas.addEventListener("mousedown", (e: MouseEvent) => {
-      const target = e.target as SVGElement;
-
-      // Allow panning with middle button, Ctrl+left button, or left button on canvas background
-      const isMiddleButton = e.button === 1;
-      const isCtrlLeftButton = e.button === 0 && e.ctrlKey;
-      const isBackgroundClick = e.button === 0 && target === canvas;
-
-      if (isMiddleButton || isCtrlLeftButton || isBackgroundClick) {
-        isPanning = true;
-        hasMoved = false;
-        startX = e.clientX - this.viewState.panX;
-        startY = e.clientY - this.viewState.panY;
-        e.preventDefault();
-        canvas.style.cursor = "grabbing";
-      }
-    });
-
-    canvas.addEventListener("mousemove", (e: MouseEvent) => {
-      if (isPanning) {
-        hasMoved = true;
-        this.viewState.panX = e.clientX - startX;
-        this.viewState.panY = e.clientY - startY;
-        this.renderer.updateView(this.viewState);
-      }
-    });
-
-    canvas.addEventListener("mouseup", (e: MouseEvent) => {
-      if (isPanning) {
-        isPanning = false;
-        canvas.style.cursor = "grab";
-        if (hasMoved) {
-          this.saveState();
-          // Prevent click event if we were panning
-          e.stopPropagation();
-        }
-      }
-    });
-
-    // Zoom with mouse wheel
-    canvas.addEventListener("wheel", (e: WheelEvent) => {
-      e.preventDefault();
-
-      // Get mouse position relative to canvas
-      const rect = canvas.getBoundingClientRect();
-      const mouseX = e.clientX - rect.left;
-      const mouseY = e.clientY - rect.top;
-
-      // Keep the point under the mouse in the same position
-      this.zoomAt(mouseX, mouseY, e.deltaY > 0 ? 0.9 : 1.1);
-    });
   }
 
   /**
@@ -402,7 +228,7 @@ class SchemaEditorApp {
   private saveState(): void {
     this.vscode.setState({
       schema: this.currentSchema,
-      viewState: this.viewState,
+      viewState: this.canvas.viewState,
       diagramOptions: this.diagramOptions,
     });
   }

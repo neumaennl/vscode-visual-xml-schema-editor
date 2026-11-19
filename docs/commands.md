@@ -4,8 +4,8 @@ title: Commands
 description: The edit commands - payload fields, the rules the validators enforce, what the executors change in the schema, and where the webview sends them.
 tags: [commands, payload, validation, reference]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-18T15:12:15Z }
-verified: { by: human:neumaennl, at: 2026-11-18T19:48:12Z }
+generated: { by: human:neumaennl, at: 2026-11-19T14:50:08Z }
+verified: { by: human:neumaennl, at: 2026-11-19T15:32:47Z }
 sources:
   - id: commands
     resource: ../shared/commands/index.ts
@@ -41,7 +41,7 @@ sources:
     resource: ../src/commandExecutors/
     title: Command executors
   - id: drop-factory
-    resource: ../webview-src/drop/DropCommandFactory.ts
+    resource: ../webview-src/dragAndDrop/DropCommandFactory.ts
     title: DropCommandFactory
 ---
 
@@ -51,7 +51,7 @@ This reference describes every edit command: its payload, the rules that the val
 
 # Conventions
 
-- **Three verbs.** Each construct has `add*`, `remove*` and `modify*` commands. `add*` names its parent (`parentId`, `targetId`), `remove*` and `modify*` name the node itself (`elementId`, `typeId`, …).
+- **Three verbs.** Each schema construct has `add*`, `remove*` and `modify*` commands. `add*` names its parent (`parentId`, `targetId`), `remove*` and `modify*` name the node itself (`elementId`, `typeId`, …).
 - **Partial updates.** `modify*` payloads have only one required field, the ID. Fields that are omitted stay unchanged. What an empty string does depends on the field and is noted below.
 - **Name or reference.** Elements, attributes, groups and attribute groups are either declared with a name or refer to a top-level declaration with `ref`. A payload uses one or the other: `ref` together with a name or type is rejected. In `modify*`, setting `ref` removes the name and type, and setting a name removes `ref`.
 - **Top-level or anonymous.** `addSimpleType` and `addComplexType` create a named top-level type when `parentId` is omitted or `/schema`, and an anonymous type inside the element or attribute that `parentId` names. Anonymous types have no `typeName`. (The doc comments in `simpleType.ts` and `complexType.ts` say "Omit or set to 'schema'"; only `/schema` works, see [Known issues](known-issues.md#node-ids-are-ambiguous-and-have-many-special-cases).)
@@ -66,7 +66,7 @@ This reference describes every edit command: its payload, the rules that the val
 
 # Overview
 
-"Sent by" names where the webview creates the command; commands without an entry are implemented and tested in the extension host, but no UI sends them yet. "Palette drop" means `DropCommandFactory` in `webview-src/drop/`, "Properties panel" the files in `webview-src/propertiesPanel/`.
+"Sent by" names where the webview creates the command; commands without an entry are implemented and tested in the extension host, but no UI sends them yet. "Palette drop" means `DropCommandFactory` in `webview-src/dragAndDrop/`, "Properties panel" the files in `webview-src/propertiesPanel/`.
 
 | Area (file in `shared/commands/`)      | Command                  | ID in payload     | Sent by                          |
 | -------------------------------------- | ------------------------ | ----------------- | -------------------------------- |
@@ -330,4 +330,4 @@ Each command type has a string literal as `type`, so `SchemaCommand` is a discri
 
 [^executors]: [Command executors](../src/commandExecutors/)
 
-[^drop-factory]: [DropCommandFactory](../webview-src/drop/DropCommandFactory.ts)
+[^drop-factory]: [DropCommandFactory](../webview-src/dragAndDrop/DropCommandFactory.ts)

@@ -4,21 +4,20 @@
  */
 
 import type { RestrictionSnapshot } from "./propertiesPanelDraft";
-import { getFacetIconStyle, type FacetPaletteConstruct } from "../palette/FacetIconStyles";
-import { PaletteSchemaConstruct } from "../palette/PaletteSchemaConstruct";
+import type { LIST_FACETS } from "../../shared/facets";
+import { getFacetIconStyle } from "../facetIcons";
 
 /** Commits an update of the restriction draft. */
 type BuildAndDispatch = (updater: (next: RestrictionSnapshot) => void) => void;
 
 /** The facets with several values. */
-export type ValueListFacet = "enumeration" | "pattern";
+export type ValueListFacet = (typeof LIST_FACETS)[number];
 
-/** The icon, label and add button text of each facet with several values. */
-const VALUE_LIST_FACETS: Record<ValueListFacet, { construct: FacetPaletteConstruct; label: string; addText: string }> =
-  {
-    enumeration: { construct: PaletteSchemaConstruct.Enumeration, label: "Enumeration", addText: "+ value" },
-    pattern: { construct: PaletteSchemaConstruct.Pattern, label: "Pattern", addText: "+ pattern" },
-  };
+/** The label and add button text of each facet with several values. */
+const VALUE_LIST_FACETS: Record<ValueListFacet, { label: string; addText: string }> = {
+  enumeration: { label: "Enumeration", addText: "+ value" },
+  pattern: { label: "Pattern", addText: "+ pattern" },
+};
 
 /** Title of the remove buttons that are disabled because the restriction needs a facet. */
 const LAST_FACET_TITLE = "A restriction requires at least one facet";
@@ -94,8 +93,8 @@ export function renderValueListFacet(
   canRemove: boolean,
   onRemove: () => void
 ): void {
-  const { construct, label, addText } = VALUE_LIST_FACETS[facet];
-  const field = createFacetListField(construct, label, canRemove, onRemove);
+  const { label, addText } = VALUE_LIST_FACETS[facet];
+  const field = createFacetListField(facet, label, canRemove, onRemove);
   const list = document.createElement("div");
   list.className = "property-value-list";
   field.appendChild(list);
@@ -352,14 +351,14 @@ function createValueInput(value: string, label: string, onFinish: (value: string
  * Creates the field of a facet with several values: a label with the icon of the facet and a button
  * that removes the whole facet.
  *
- * @param construct - The facet, for its icon
+ * @param facet - The facet, for its icon
  * @param label - The label of the facet
  * @param canRemove - Whether the facet may be removed; the last facet of a restriction may not
  * @param onRemove - Called when the whole facet is removed
  * @returns The field, to which the editor appends its values
  */
 function createFacetListField(
-  construct: FacetPaletteConstruct,
+  facet: ValueListFacet,
   label: string,
   canRemove: boolean,
   onRemove: () => void
@@ -369,7 +368,7 @@ function createFacetListField(
 
   const labelElement = document.createElement("label");
   const labelIcon = document.createElement("span");
-  const iconStyle = getFacetIconStyle(construct);
+  const iconStyle = getFacetIconStyle(facet);
   labelIcon.className = `codicon codicon-${iconStyle.icon} property-facet-icon`;
   labelIcon.setAttribute("aria-hidden", "true");
   labelIcon.style.color = iconStyle.color;

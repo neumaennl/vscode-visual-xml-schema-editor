@@ -14,31 +14,24 @@ import type { DiagramItem } from "../diagram";
 import { createEditableField } from "./propertiesPanelDom";
 import { resolveSimpleTypeId } from "./propertiesPanelTargets";
 import type { RestrictionSnapshot } from "./propertiesPanelDraft";
-import { getFacetIconStyle, type FacetPaletteConstruct } from "../palette/FacetIconStyles";
-import { PaletteSchemaConstruct } from "../palette/PaletteSchemaConstruct";
+import { getFacetIconStyle } from "../facetIcons";
 import { appendFacetRemoveButton, renderValueListFacet } from "./propertiesPanelFacetLists";
 
 /** The single-value facets that the Facets tab shows as text fields; `whiteSpace` has a field of its own. */
 type ValueFacetName = Exclude<(typeof SINGLE_VALUE_FACETS)[number], "whiteSpace">;
 
-/** How the Facets tab shows a single-value facet. */
-interface ValueFacetField {
-  label: string;
-  construct: FacetPaletteConstruct;
-}
-
-/** The text fields of the single-value facets, in the order they are shown. */
-const VALUE_FACETS = {
-  length: { label: "Length", construct: PaletteSchemaConstruct.Length },
-  minLength: { label: "Min Length", construct: PaletteSchemaConstruct.MinLength },
-  maxLength: { label: "Max Length", construct: PaletteSchemaConstruct.MaxLength },
-  minInclusive: { label: "Min Inclusive", construct: PaletteSchemaConstruct.MinInclusive },
-  maxInclusive: { label: "Max Inclusive", construct: PaletteSchemaConstruct.MaxInclusive },
-  minExclusive: { label: "Min Exclusive", construct: PaletteSchemaConstruct.MinExclusive },
-  maxExclusive: { label: "Max Exclusive", construct: PaletteSchemaConstruct.MaxExclusive },
-  totalDigits: { label: "Total Digits", construct: PaletteSchemaConstruct.TotalDigits },
-  fractionDigits: { label: "Fraction Digits", construct: PaletteSchemaConstruct.FractionDigits },
-} satisfies Record<ValueFacetName, ValueFacetField>;
+/** The labels of the text fields of the single-value facets, in the order they are shown. */
+const VALUE_FACET_LABELS = {
+  length: "Length",
+  minLength: "Min Length",
+  maxLength: "Max Length",
+  minInclusive: "Min Inclusive",
+  maxInclusive: "Max Inclusive",
+  minExclusive: "Min Exclusive",
+  maxExclusive: "Max Exclusive",
+  totalDigits: "Total Digits",
+  fractionDigits: "Fraction Digits",
+} satisfies Record<ValueFacetName, string>;
 
 /**
  * Renders the Facets tab for a simple type or inline simple type.
@@ -104,7 +97,7 @@ export function renderFacetsTab(
     });
   }
 
-  for (const key of Object.keys(VALUE_FACETS) as ValueFacetName[]) {
+  for (const key of Object.keys(VALUE_FACET_LABELS) as ValueFacetName[]) {
     appendOptionalValueFacet(root, key, restrictions[key], buildAndDispatch, canRemoveFacet);
   }
 
@@ -122,7 +115,7 @@ export function renderFacetsTab(
         });
       },
       undefined,
-      getFacetIconStyle(PaletteSchemaConstruct.WhiteSpace)
+      getFacetIconStyle("whiteSpace")
     );
     root.appendChild(
       appendFacetRemoveButton(field, "White Space", canRemoveFacet, () => {
@@ -156,7 +149,7 @@ function appendOptionalValueFacet(
   if (value === undefined) {
     return;
   }
-  const { label, construct } = VALUE_FACETS[key];
+  const label = VALUE_FACET_LABELS[key];
   const assign = (draft: RestrictionSnapshot, text: string): void => {
     const trimmed = text.trim();
     if (isNumericFacet(key)) {
@@ -174,7 +167,7 @@ function appendOptionalValueFacet(
       });
     },
     undefined,
-    getFacetIconStyle(construct)
+    getFacetIconStyle(key)
   );
   root.appendChild(
     appendFacetRemoveButton(field, label, canRemove, () => {

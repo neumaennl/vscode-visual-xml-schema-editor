@@ -4,8 +4,8 @@ title: Editor
 description: The custom editor and the webview app - how the editor opens, the page layout, the app that wires palette, diagram and properties panel together, navigation, diagram settings, the palette and the properties panel tabs.
 tags: [editor, webview, palette, properties-panel, navigation, ui]
 status: stable
-generated: { by: human:neumaennl, at: 2026-10-28T14:47:04Z }
-verified: { by: human:neumaennl, at: 2026-10-28T15:08:21Z }
+generated: { by: human:neumaennl, at: 2026-11-19T14:50:08Z }
+verified: { by: human:neumaennl, at: 2026-11-19T15:32:47Z }
 verified:
   by: human:neumaennl
   at: 2026-10-08T08:46:19Z
@@ -22,9 +22,15 @@ sources:
   - id: webview-main
     resource: ../webview-src/main.ts
     title: Webview entry point (SchemaEditorApp)
+  - id: diagram-canvas
+    resource: ../webview-src/canvas/DiagramCanvas.ts
+    title: DiagramCanvas
+  - id: canvas-view
+    resource: ../webview-src/canvas/CanvasView.ts
+    title: CanvasView (zoom and pan)
   - id: palette-items
-    resource: ../webview-src/palette/PaletteItems.ts
-    title: Palette item definitions
+    resource: ../webview-src/palette/paletteEntries.ts
+    title: Palette entries
   - id: properties-panel
     resource: ../webview-src/propertiesPanel/propertiesPanel.ts
     title: PropertiesPanel
@@ -69,29 +75,29 @@ The styles use VS Code theme CSS variables, so the editor follows the active col
 
 # SchemaEditorApp
 
-`SchemaEditorApp` in `webview-src/main.ts` is the webview's entry point. It creates the renderer, the palette and the properties panel, and wires them together.[^webview-main]
+`SchemaEditorApp` in `webview-src/main.ts` is the webview's entry point. It creates the canvas, the palette and the properties panel, and wires them together.[^webview-main] The canvas (`DiagramCanvas` in `webview-src/canvas/`) draws the diagram and handles everything that happens on it: selecting, expanding and collapsing nodes, zooming and panning, and drops.[^diagram-canvas]
 
 **Messages from the extension**
 
-| Message                | Reaction                                                                                                                                         |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `updateSchema`         | Store the schema, update the name list of `DropCommandFactory`, re-render the diagram, hide the notification, restore the selection, save state. |
-| `updateDiagramOptions` | Store the options, save state, re-render.                                                                                                        |
-| `error`                | Show the message in the notification bar.                                                                                                        |
-| `commandResult`        | On success, hide the notification. On failure, show the error and restore the selection.                                                         |
+| Message                | Reaction                                                                                                                                                            |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `updateSchema`         | Store the schema, re-render the diagram (the canvas also updates the names that its drop rules generate), hide the notification, restore the selection, save state. |
+| `updateDiagramOptions` | Store the options, save state, re-render.                                                                                                                           |
+| `error`                | Show the message in the notification bar.                                                                                                                           |
+| `commandResult`        | On success, hide the notification. On failure, show the error and restore the selection.                                                                            |
 
 All edits are sent as `executeCommand` messages. See [Messaging](messaging.md).
 
-**State.** The app saves the last schema, the view state (zoom, pan) and the diagram options with `vscode.setState`, and reads them at startup, so the diagram reappears at once when the webview is recreated. The restored zoom and pan are not applied to the first render, and the expand state is not saved (see [Known issues](known-issues.md#view-state-is-not-restored-after-reopening)). The selection is kept in memory only; after every re-render the app selects the node with the same ID again (see [UX concept](ux-concept.md#synchronization)).
+**State.** The app saves the last schema, the view state (zoom, pan) and the diagram options with `vscode.setState`, and reads them at startup, so the diagram reappears at once, with the saved zoom and pan, when the webview is recreated. The expand state is not saved (see [Known issues](known-issues.md#expand-state-is-not-restored-after-reopening)). The selection is kept in memory only; the canvas keeps the selected node selected across every redraw, and after an `updateSchema` the app shows the node with the same ID again in the properties panel, or clears it if the node is gone (see [UX concept](ux-concept.md#synchronization)).
 
 # Navigation
 
-Zoom and pan are handled by the app, which passes the view state to the renderer:[^webview-main]
+Zoom and pan are handled by the canvas, which keeps the view state in one place (`CanvasView`) and reports every change to the app, which saves it:[^canvas-view]
 
 - Mouse wheel: zoom around the cursor.
 - Toolbar: Zoom In and Zoom Out (around the center), Fit View (fit the whole diagram into the canvas).
 - Panning: drag with the left mouse button on the background, with the middle mouse button, or with Ctrl + left mouse button.
-- On the first render without a saved pan position, the diagram is centered.
+- On the first render without a saved view state, the diagram is centered.
 
 # Diagram
 
@@ -107,7 +113,7 @@ Three user settings change the diagram. All are booleans and default to `false`:
 
 # Palette
 
-The palette lists the constructs that can be added, in four groups, each with a Codicon and a tooltip:[^palette-items]
+The palette lists the schema constructs that can be added, in four groups, each with a Codicon and a tooltip:[^palette-items]
 
 | Group       | Items                                                                                                                                               |
 | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -116,11 +122,11 @@ The palette lists the constructs that can be added, in four groups, each with a 
 | Types       | complexType, simpleType, extension, restriction                                                                                                     |
 | Facets      | enumeration, pattern, length, minLength, maxLength, minExclusive, minInclusive, maxExclusive, maxInclusive, totalDigits, fractionDigits, whiteSpace |
 
-Items are added by dragging them onto a node in the diagram. Which construct can be dropped where, and which command a drop creates, is described in [Drag and drop](drag-and-drop.md).
+Items are added by dragging them onto a node in the diagram. Which schema construct can be dropped where, and which command a drop creates, is described in [Drag and drop](drag-and-drop.md).
 
 # Properties panel
 
-`PropertiesPanel` shows the selected node and is the place where existing constructs are edited.[^properties-panel] Its header shows the node type, the node ID and, if the node can be deleted, a delete button.
+`PropertiesPanel` shows the selected node and is the place where existing schema constructs are edited.[^properties-panel] Its header shows the node type, the node ID and, if the node can be deleted, a delete button.
 
 | Tab     | Shown for                                               | Content                                                                                                                |
 | ------- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
@@ -139,6 +145,10 @@ Which fields are editable, the draft copy and the type suggestions are described
 
 [^webview-main]: Webview entry point (SchemaEditorApp)
 
-[^palette-items]: Palette item definitions
+[^diagram-canvas]: DiagramCanvas
+
+[^canvas-view]: CanvasView (zoom and pan)
+
+[^palette-items]: Palette entries
 
 [^properties-panel]: PropertiesPanel

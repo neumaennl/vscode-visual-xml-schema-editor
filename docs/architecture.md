@@ -4,8 +4,8 @@ title: Architecture
 description: How the extension host, the webview and the shared code work together to provide a visual editor for XML Schema (XSD) files, what xmlbind-ts is responsible for and what the editor is, and the design decisions behind the command-based design.
 tags: [architecture, extension-host, webview, shared, design-decisions]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-18T19:53:10Z }
-verified: { by: human:neumaennl, at: 2026-11-18T20:26:45Z }
+generated: { by: human:neumaennl, at: 2026-11-19T14:50:08Z }
+verified: { by: human:neumaennl, at: 2026-11-19T15:32:47Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -29,7 +29,7 @@ sources:
     resource: ../vite.config.ts
     title: Webview bundle configuration
   - id: drop-factory
-    resource: ../webview-src/drop/DropCommandFactory.ts
+    resource: ../webview-src/dragAndDrop/DropCommandFactory.ts
     title: DropCommandFactory
   - id: properties-panel-commands
     resource: ../webview-src/propertiesPanel/propertiesPanelCommands.ts
@@ -44,7 +44,7 @@ sources:
 
 # Purpose
 
-The extension adds a visual editor for XML Schema (`*.xsd`) files to VS Code. It shows a schema as an interactive diagram, and lets users add constructs from a palette by drag and drop and edit their properties in a side panel. Every change is written back to the XSD text, so the file stays a normal, version-controllable XSD.
+The extension adds a visual editor for XML Schema (`*.xsd`) files to VS Code. It shows a schema as an interactive diagram, and lets users add schema constructs from a palette by drag and drop and edit their properties in a side panel. Every change is written back to the XSD text, so the file stays a normal, version-controllable XSD.
 
 The visual editor is offered as an alternative editor (priority `option`) next to the normal text editor. It opens through "Open With…", the explorer context menu or the command `visualXmlSchemaEditor.openEditor`.[^manifest]
 
@@ -73,10 +73,11 @@ flowchart LR
       PROV --> XML
     end
     subgraph Webview
-      APP[SchemaEditorApp] --> DIA[Diagram renderer]
+      APP[SchemaEditorApp] --> DIA[Canvas]
       APP --> PAL[Palette]
       APP --> PP[Properties panel]
-      APP --> DROP[DropCommandFactory]
+      DIA --> DND[Drag and drop]
+      PAL --> DND
     end
   end
   DOC <-- "read: getText, onDidChangeTextDocument<br/>write: WorkspaceEdit" --> PROV
@@ -149,11 +150,12 @@ src/                      Extension host
   commandExecutors/       Execution per schema construct
   schemaReferences/       Finds, checks and rewrites the QNames of a schema
 webview-src/              Webview
-  main.ts                 SchemaEditorApp: startup, messages, state, selection, zoom/pan
-  renderer.ts             Canvas, click and drag-and-drop handling
+  main.ts                 SchemaEditorApp: startup, messages, saved state, wiring
+  canvas/                 The canvas: drawing, selection, expanding, zoom/pan, drops
   diagram/                Schema → diagram model → layout → SVG
-  palette/                Palette of schema constructs
-  drop/                   Turns drops into commands
+  palette/                The palette: its view and entries
+  dragAndDrop/            Draggable schema constructs, the dragged schema construct, drop rules
+  facetIcons.ts           Icon and color of each facet
   propertiesPanel/        Properties panel tabs and editors
   styles.css              Layout and theming
 shared/                   Used by both sides
@@ -183,7 +185,7 @@ exampleFiles/             Sample XSD files for manual testing
 - Integration with VS Code: every command ends in one `WorkspaceEdit`, so undo, redo, the dirty marker and saving work as for any text edit (see [Persistence](persistence.md#undo-redo-and-save)).
 - Single source of truth: the document; the webview only holds derived state.
 
-**Where commands are created.** Each surface builds the commands for its own input: `DropCommandFactory` for drops from the palette,[^drop-factory] the properties panel for edits.[^properties-panel-commands] This follows the UX concept: adding starts in the palette, editing starts in the properties panel, and the toolbar has no editing actions (see [UX concept](ux-concept.md#core-rules)).
+**Where commands are created.** Each surface builds the commands for its own input: the canvas for drops from the palette, with the drop rules of `DropCommandFactory`,[^drop-factory] the properties panel for edits.[^properties-panel-commands] This follows the UX concept: adding starts in the palette, editing starts in the properties panel, and the toolbar has no editing actions (see [UX concept](ux-concept.md#core-rules)).
 
 **Diagram updates.** Every `updateSchema` rebuilds the whole diagram; only the expand state is carried over by node ID (see [Diagram rendering](diagram-rendering.md#pipeline) and [Known issues](known-issues.md#diagram-is-rebuilt-in-full-on-every-change)). Incremental updates are planned ([#19](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/19)); they need unambiguous node IDs first ([#348](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/348)).
 
@@ -193,12 +195,12 @@ exampleFiles/             Sample XSD files for manual testing
 
 **Risks.** The ADR names four risks. Their mitigation today:
 
-| Risk                           | Mitigation in the code                                                                                                                  | Open                                                                                                                                                                                                                                                        |
-| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| XML marshalling                | `xmlbind-ts` marshals the schema; the result is parsed again before it is written (see [Persistence](persistence.md#command-pipeline)). | No fallback to text edits. Serialization reformats the document (see [Persistence](persistence.md#what-serialization-changes) and [Known issues](known-issues.md#every-command-reformats-the-whole-document)).                                              |
-| Performance with large schemas | Children of collapsed nodes are neither laid out nor drawn.                                                                             | No incremental update, no virtual scrolling, no performance tests (see [Known issues](known-issues.md#diagram-is-rebuilt-in-full-on-every-change)).                                                                                                         |
-| Undo and redo                  | Every command is one `WorkspaceEdit`, undone as one step.                                                                               | None.                                                                                                                                                                                                                                                       |
-| State synchronization          | The document is the single source of truth; the webview re-renders from every `updateSchema`.                                           | Commands can overlap while an edit is applied, and the view state is not fully restored (see [Known issues](known-issues.md#commands-can-overlap-while-an-edit-is-applied) and [Known issues](known-issues.md#view-state-is-not-restored-after-reopening)). |
+| Risk                           | Mitigation in the code                                                                                                                  | Open                                                                                                                                                                                                                                                      |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| XML marshalling                | `xmlbind-ts` marshals the schema; the result is parsed again before it is written (see [Persistence](persistence.md#command-pipeline)). | No fallback to text edits. Serialization reformats the document (see [Persistence](persistence.md#what-serialization-changes) and [Known issues](known-issues.md#every-command-reformats-the-whole-document)).                                            |
+| Performance with large schemas | Children of collapsed nodes are neither laid out nor drawn.                                                                             | No incremental update, no virtual scrolling, no performance tests (see [Known issues](known-issues.md#diagram-is-rebuilt-in-full-on-every-change)).                                                                                                       |
+| Undo and redo                  | Every command is one `WorkspaceEdit`, undone as one step.                                                                               | None.                                                                                                                                                                                                                                                     |
+| State synchronization          | The document is the single source of truth; the webview re-renders from every `updateSchema`.                                           | Commands can overlap while an edit is applied, and the expand state is not restored (see [Known issues](known-issues.md#commands-can-overlap-while-an-edit-is-applied) and [Known issues](known-issues.md#expand-state-is-not-restored-after-reopening)). |
 
 [^manifest]: Extension manifest
 

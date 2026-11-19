@@ -133,17 +133,18 @@ describe("SchemaEditorApp", () => {
     addEventListenerSpy.mockRestore();
   });
 
-  test("should restore state on initialization", async () => {
-    const savedState = {
-      zoom: 1.5,
-      panX: 100,
-      panY: 50,
-    };
-    mockGetState.mockReturnValue(savedState);
+  test("should draw a saved schema with the saved zoom and pan", async () => {
+    mockGetState.mockReturnValue({
+      viewState: { zoom: 1.5, panX: 100, panY: 50 },
+      schema: { element: [{ name: "test" }] },
+    });
 
     await import("./main");
 
-    expect(mockGetState).toHaveBeenCalled();
+    const group = document.querySelector("#schema-canvas > g:last-child");
+    expect(group?.getAttribute("transform")).toBe("translate(100, 50) scale(1.5)");
+    expect(document.querySelector("[data-item-id]")).not.toBeNull();
+    expect(mockSetState).not.toHaveBeenCalled();
   });
 
   test("should initialize with default state when no saved state", async () => {

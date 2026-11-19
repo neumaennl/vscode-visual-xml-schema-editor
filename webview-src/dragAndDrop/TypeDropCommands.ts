@@ -7,8 +7,7 @@ import type { RestrictionFacets, SchemaCommand } from "../../shared/types";
 import { anonymousTypeId } from "../../shared/schemaUtils";
 import type { DiagramItem } from "../diagram";
 import { DiagramItemType, parseDerivationBaseType } from "../diagram";
-import type { FacetPaletteConstruct } from "../palette/FacetIconStyles";
-import { PaletteSchemaConstruct } from "../palette/PaletteSchemaConstruct";
+import { type FacetSchemaConstruct, DraggableSchemaConstruct } from "./DraggableSchemaConstruct";
 
 /**
  * Returns whether the item represents a named simpleType.
@@ -58,15 +57,18 @@ export function getExtensionBaseType(item: DiagramItem): string {
  * Creates a facet modification command when the drop target is a restriction simpleType.
  *
  * @param item - The drop target
- * @param construct - The dropped facet
+ * @param schemaConstruct - The dropped facet
  * @returns The command, or null if the target is not a restriction simpleType
  */
-export function createFacetNodeDropCommand(item: DiagramItem, construct: FacetPaletteConstruct): SchemaCommand | null {
+export function createFacetNodeDropCommand(
+  item: DiagramItem,
+  schemaConstruct: FacetSchemaConstruct
+): SchemaCommand | null {
   if (!isRestrictionSimpleType(item)) {
     return null;
   }
   const existingFacets = item.restrictions ?? {};
-  const facet = createDefaultFacet(construct, existingFacets);
+  const facet = createDefaultFacet(schemaConstruct, existingFacets);
   if (!facet) {
     return null;
   }
@@ -109,36 +111,36 @@ const ADDITIONAL_PATTERN = "[^a-zA-Z0-9\\s]*";
  * Creates the default value of a dropped facet. An enumeration or a pattern is appended to the existing
  * values instead of replacing them; every other facet overwrites the existing one.
  *
- * @param construct - The facet dropped from the palette.
+ * @param schemaConstruct - The facet dropped from the palette.
  * @param existingFacets - The facets the drop target already has.
- * @returns The facet to merge into the existing facets, or `null` if the construct is no facet.
+ * @returns The facet to merge into the existing facets, or `null` if the schema construct is no facet.
  */
 function createDefaultFacet(
-  construct: FacetPaletteConstruct,
+  schemaConstruct: FacetSchemaConstruct,
   existingFacets: RestrictionFacets
 ): RestrictionFacets | null {
-  switch (construct) {
-    case PaletteSchemaConstruct.Enumeration: {
+  switch (schemaConstruct) {
+    case DraggableSchemaConstruct.Enumeration: {
       const existingValues = existingFacets.enumeration ?? [];
       return { enumeration: [...existingValues, createUniqueEnumerationValue(existingValues)] };
     }
-    case PaletteSchemaConstruct.Pattern: {
+    case DraggableSchemaConstruct.Pattern: {
       const existingPatterns = existingFacets.pattern ?? [];
       const pattern = existingPatterns.length > 0 ? ADDITIONAL_PATTERN : FIRST_PATTERN;
       return { pattern: [...existingPatterns, pattern] };
     }
-    case PaletteSchemaConstruct.Length:
-    case PaletteSchemaConstruct.MinLength:
-    case PaletteSchemaConstruct.MaxLength:
-    case PaletteSchemaConstruct.TotalDigits:
-    case PaletteSchemaConstruct.FractionDigits:
-      return { [construct]: 1 };
-    case PaletteSchemaConstruct.MinExclusive:
-    case PaletteSchemaConstruct.MinInclusive:
-    case PaletteSchemaConstruct.MaxExclusive:
-    case PaletteSchemaConstruct.MaxInclusive:
-      return { [construct]: "0" };
-    case PaletteSchemaConstruct.WhiteSpace:
+    case DraggableSchemaConstruct.Length:
+    case DraggableSchemaConstruct.MinLength:
+    case DraggableSchemaConstruct.MaxLength:
+    case DraggableSchemaConstruct.TotalDigits:
+    case DraggableSchemaConstruct.FractionDigits:
+      return { [schemaConstruct]: 1 };
+    case DraggableSchemaConstruct.MinExclusive:
+    case DraggableSchemaConstruct.MinInclusive:
+    case DraggableSchemaConstruct.MaxExclusive:
+    case DraggableSchemaConstruct.MaxInclusive:
+      return { [schemaConstruct]: "0" };
+    case DraggableSchemaConstruct.WhiteSpace:
       return { whiteSpace: "preserve" };
   }
 }

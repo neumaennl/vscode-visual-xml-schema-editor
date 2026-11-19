@@ -30,7 +30,7 @@
     // VS Code calls it when it opens a schema in the custom editor.
     { "implements": "vscode.CustomTextEditorProvider", "members": ["resolveCustomTextEditor"] },
   ],
-  // The layers of the extension host (see docs/architecture/006-module-structure.md). A zone may
+  // The layers of the extension host and of the webview (see docs/architecture/006-module-structure.md). A zone may
   // import from itself and from the zones its rule allows; files in no zone, such as the test helpers
   // in src/__tests__, are not checked.
   "boundaries": {
@@ -48,17 +48,33 @@
         "name": "schemaAccess",
         "patterns": ["src/schemaReferences/**", "src/schemaNavigator.ts", "src/commandUtils.ts", "src/schemaXml.ts"],
       },
+      // The layers of the webview: the app; the surfaces, which do not import each other; below them drag
+      // and drop, and the facet icons for the palette and the properties panel; and the diagram.
+      { "name": "app", "patterns": ["webview-src/main.ts"] },
+      { "name": "canvas", "patterns": ["webview-src/canvas/**"] },
+      { "name": "palette", "patterns": ["webview-src/palette/**"] },
+      { "name": "propertiesPanel", "patterns": ["webview-src/propertiesPanel/**"] },
+      { "name": "dragAndDrop", "patterns": ["webview-src/dragAndDrop/**"] },
+      { "name": "facetIcons", "patterns": ["webview-src/facetIcons.ts", "webview-src/facetIcons.test.ts"] },
+      { "name": "diagram", "patterns": ["webview-src/diagram/**"] },
       { "name": "shared", "patterns": ["shared/**"] },
     ],
     "rules": [
-      // Each layer uses the layer directly below it; every layer may use the schema access and shared.
+      // Each zone may use exactly the zones that its code uses, so that a new dependency shows in a review.
       { "from": "vscode", "allow": ["pipeline", "schemaAccess", "shared"] },
       { "from": "pipeline", "allow": ["dispatch", "schemaAccess", "shared"] },
-      { "from": "dispatch", "allow": ["validators", "executors", "schemaAccess", "shared"] },
+      { "from": "dispatch", "allow": ["validators", "executors", "shared"] },
       { "from": "validators", "allow": ["schemaAccess", "shared"] },
       { "from": "executors", "allow": ["schemaAccess", "shared"] },
       { "from": "schemaAccess", "allow": ["shared"] },
       { "from": "shared", "allow": [] },
+      { "from": "app", "allow": ["canvas", "palette", "propertiesPanel", "diagram", "shared"] },
+      { "from": "canvas", "allow": ["dragAndDrop", "diagram", "shared"] },
+      { "from": "palette", "allow": ["dragAndDrop", "facetIcons"] },
+      { "from": "propertiesPanel", "allow": ["facetIcons", "diagram", "shared"] },
+      { "from": "dragAndDrop", "allow": ["diagram", "shared"] },
+      { "from": "facetIcons", "allow": ["shared"] },
+      { "from": "diagram", "allow": ["shared"] },
     ],
   },
   "rules": {

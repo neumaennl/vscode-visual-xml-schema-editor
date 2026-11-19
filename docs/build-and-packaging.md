@@ -4,8 +4,8 @@ title: Build and packaging
 description: How the extension is built, run, linted, packaged and checked - the build outputs and tsconfig files, the npm scripts, the scripts in TypeScript, running it in VS Code, the VSIX and its check, the generated schema classes, dependencies and the Node version, ESLint, the checks for duplicated and unused code and for the layers, the formatting with Prettier, CI, and planned changes.
 tags: [build, packaging, vsix, vite, typescript, eslint, jscpd, fallow, prettier, ci, dependencies]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-18T19:53:10Z }
-verified: { by: human:neumaennl, at: 2026-11-18T20:26:45Z }
+generated: { by: human:neumaennl, at: 2026-11-19T14:11:39Z }
+verified: { by: human:neumaennl, at: 2026-11-19T15:32:47Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -280,7 +280,7 @@ fallow finds the entry points itself, in `package.json` and in the configuration
 
 - **`fallow dead-code`** checks the whole project, including the tests.
 - **`fallow dead-code --production`** leaves out the tests, the support entry points, the configurations of the tools and the devDependencies. It finds code that only tests use, such as an export that only a test imports, or a method that only tests call.
-- **`fallow architecture`** checks the layers within the extension host (see [Layers](#layers)) and that there are no import cycles.
+- **`fallow architecture`** checks the layers within the extension host and the webview (see [Layers](#layers)) and that there are no import cycles.
 
 The two runs of `fallow dead-code` use `--fail-on-issues`, so every finding fails the run, also the kinds that fallow only reports as warnings by default, such as an unused devDependency. There is no baseline. `--no-cache` keeps fallow from writing a cache into the checkout.
 
@@ -292,14 +292,31 @@ The two runs of `fallow dead-code` use `--fail-on-issues`, so every finding fail
 Its limits:
 
 - fallow does not check protected class members (see [Unused protected class members are not detected](known-issues.md#unused-protected-class-members-are-not-detected)). ESLint checks private members.
-- Without type information, fallow does not see that a member is used when it is called by a computed name, such as `obj[name]()`. Such a member needs an ignore comment with the reason.
+- Without type information, fallow does not see that a member is used when it is called by a computed name, such as `obj[name]()`, through a class field ([fallow#4799](https://github.com/fallow-rs/fallow/issues/4799)). Such a member needs an ignore comment with the reason.
 - Members with decorators are not checked, because a decorator can use them.
 - The production mode also leaves out the configurations of the build tools. `readTarget()` in `scripts/lib/compiler-target.ts`, which only `vite.config.ts` uses, therefore has an ignore comment.
 - fallow finds unused files, exports and members, not unused branches within a function, such as the cases of a `switch` that no caller reaches. The coverage report shows them (see [Testing](testing.md#coverage)), so compare it before and after a change that removes code.
 
 ## Layers
 
-ESLint checks which projects may use which (see [ESLint](#eslint)). Within a project, `boundaries` in `.fallowrc.jsonc` checks the layers of [ADR 006](architecture/006-module-structure.md#layers):[^fallow] each zone lists the files of a layer, and each rule the zones that a zone may import from besides itself. In the extension host, each layer may use the layer directly below it, the schema access (`src/schemaReferences/`, `schemaNavigator.ts`, `commandUtils.ts`, `schemaXml.ts`) and `shared/`: `extension.ts` and `webviewProvider.ts` the pipeline, the pipeline the dispatch, the dispatch the validators and the executors. Validators and executors may only use the schema access and `shared/`, and not each other; the schema access may only use `shared/`. Files that are in no zone, such as the test helpers in `src/__tests__`, are not checked. A new module of the extension host is added to a zone; a module that would need a layer above it moves its code down (see [ADR 006](architecture/006-module-structure.md#consequences)).
+ESLint checks which projects may use which (see [ESLint](#eslint)). Within a project, `boundaries` in `.fallowrc.jsonc` checks the layers of [ADR 006](architecture/006-module-structure.md#layers):[^fallow] each zone lists the files of a layer, and each rule the zones that a zone may import from besides itself. The rules allow each zone exactly the zones that its code uses, so that a new dependency changes `.fallowrc.jsonc` and shows in a review; a dependency that the layers of ADR 006 do not allow is not added, the code moves instead.
+
+| Zone                                                                                         | May use                                  |
+| -------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| VS Code (`extension.ts`, `webviewProvider.ts`)                                               | pipeline, schema access, `shared/`       |
+| Pipeline (`commandProcessor.ts`)                                                             | dispatch, schema access, `shared/`       |
+| Dispatch (`commandValidator.ts`, `commandExecutor.ts`, `commandHandlers.ts`)                 | validators, executors, `shared/`         |
+| Validators, executors (`commandValidators/`, `commandExecutors/`)                            | schema access, `shared/`; not each other |
+| Schema access (`schemaReferences/`, `schemaNavigator.ts`, `commandUtils.ts`, `schemaXml.ts`) | `shared/`                                |
+| App (`main.ts`)                                                                              | the surfaces, diagram, `shared/`         |
+| Surface: canvas (`canvas/`)                                                                  | drag and drop, diagram, `shared/`        |
+| Surface: properties panel (`propertiesPanel/`)                                               | facet icons, diagram, `shared/`          |
+| Surface: palette (`palette/`)                                                                | drag and drop, facet icons               |
+| Drag and drop (`dragAndDrop/`)                                                               | diagram, `shared/`                       |
+| Facet icons (`facetIcons.ts`), diagram (`diagram/`)                                          | `shared/`                                |
+| Shared (`shared/`)                                                                           | nothing else                             |
+
+Each surface is a zone of its own, so that surfaces cannot import each other. Files that are in no zone, such as the test helpers in `src/__tests__` and `webview-src/__tests__`, are not checked. A new module of the extension host is added to a zone; a module that would need a layer above it moves its code down (see [ADR 006](architecture/006-module-structure.md#consequences)).
 
 ## Formatting
 

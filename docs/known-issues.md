@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-18T19:53:10Z }
-verified: { by: human:neumaennl, at: 2026-11-18T20:26:45Z }
+generated: { by: human:neumaennl, at: 2026-11-19T14:50:08Z }
+verified: { by: human:neumaennl, at: 2026-11-19T15:32:47Z }
 ---
 
 # Purpose
@@ -23,8 +23,8 @@ Rules:
 Severity:
 
 - **High:** a feature fails, or an edit changes or loses data that the user did not ask to change.
-- **Medium:** a visible bug that misinforms the user or blocks a task, missing editor support for constructs that are common in schemas, or a mismatch that is likely to lead to wrong changes.
-- **Low:** cosmetic issues, maintainability problems (structure, duplicated or dead code), missing support for rare constructs or details, or minor inaccuracies.
+- **Medium:** a visible bug that misinforms the user or blocks a task, missing editor support for schema constructs that are common in schemas, or a mismatch that is likely to lead to wrong changes.
+- **Low:** cosmetic issues, maintainability problems (structure, duplicated or dead code), missing support for rare schema constructs or details, or minor inaccuracies.
 
 Severity rates the problem itself, not its priority and not the problems it causes; those have entries of their own.
 
@@ -119,23 +119,15 @@ Effort:
 
 ## Generated names ignore local names in the drop target
 
-- **Location:** `webview-src/drop/DropCommandFactory.ts` (`updateNamesFromSchema()`, `nextName()`)
+- **Location:** `webview-src/dragAndDrop/DropCommandFactory.ts` (`updateNamesFromSchema()`, `nextName()`)
 - **Severity:** Medium
 - **Effort:** S
-- **Description:** The names for dropped elements and attributes are generated from the names of top-level constructs only. If the drop target already contains a local element `Element1` or a local attribute `Attribute1`, the drop generates the same name, and the command is rejected with an error such as "Cannot add element: duplicate element name 'Element1' in sequence". For attributes, the message contains the internal term `topLevelComplexType` instead of the type name. A second drop succeeds, because the failed name stays reserved until the next schema update. The fix is to also skip the names already used in the drop target (see [Drag and drop](drag-and-drop.md#defaults)).
+- **Description:** The names for dropped elements and attributes are generated from the names of top-level schema constructs only. If the drop target already contains a local element `Element1` or a local attribute `Attribute1`, the drop generates the same name, and the command is rejected with an error such as "Cannot add element: duplicate element name 'Element1' in sequence". For attributes, the message contains the internal term `topLevelComplexType` instead of the type name. A second drop succeeds, because the failed name stays reserved until the next schema update. The fix is to also skip the names already used in the drop target (see [Drag and drop](drag-and-drop.md#defaults)).
 - **GitHub issue:** [#430](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/430)
-
-## Diagram error text stays after a successful render
-
-- **Location:** `webview-src/renderer.ts` (`showError()`), `webview-src/diagram/DiagramSvgRenderer.ts` (`render()`)
-- **Severity:** Medium
-- **Effort:** S
-- **Description:** When building, laying out or drawing fails, `DiagramRenderer.showError()` adds the text "Error: …" to the canvas group. The next render only empties the content group inside it, so the error text stays visible over the diagram, even after the schema has been fixed. The app also shows the error in the notification bar, which is enough. The fix is to remove the SVG error text, or to put it into the content group (see [Diagram rendering](diagram-rendering.md#pipeline)).
-- **GitHub issue:** [#431](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/431)
 
 ## Inline complex types with simple content are treated as inline simple types
 
-- **Location:** `webview-src/diagram/SchemaProcessors.ts` (`processComplexType()`, `processAnonymousSimpleType()`), `webview-src/drop/TypeDropCommands.ts` (`isRestrictionSimpleType()`, `createFacetNodeDropCommand()`), `webview-src/propertiesPanel/propertiesPanelTypeHelpers.ts` (`isInlineSimpleTypeElement()`), `webview-src/propertiesPanel/propertiesPanelTargets.ts` (`resolveSimpleTypeId()`)
+- **Location:** `webview-src/diagram/SchemaProcessors.ts` (`processComplexType()`, `processAnonymousSimpleType()`), `webview-src/dragAndDrop/TypeDropCommands.ts` (`isRestrictionSimpleType()`, `createFacetNodeDropCommand()`), `webview-src/propertiesPanel/propertiesPanelTypeHelpers.ts` (`isInlineSimpleTypeElement()`), `webview-src/propertiesPanel/propertiesPanelTargets.ts` (`resolveSimpleTypeId()`)
 - **Severity:** Medium
 - **Effort:** S
 - **Description:** The diagram builder sets `isSimpleContent` both on an element with an inline simple type and on an element whose inline complex type has `xs:simpleContent`. The drop rules and the properties panel read the flag as "the element has an inline simple type" and address `/element:x/anonymousSimpleType[0]`, which only exists in the first case. For the element `price` with `<xs:complexType><xs:simpleContent><xs:restriction base="B"/></xs:simpleContent></xs:complexType>`, labelled `<anonymous complexType> with simpleContent (restricts B)`:
@@ -178,14 +170,12 @@ Effort:
 - **Description:** Removing a top-level simple or complex type is accepted even if elements, attributes or other types still use it (`validateRemoveSimpleType()` has a `TODO Phase 2` for this). The schema is left with `type` and `base` values that point nowhere. The properties panel sends these commands when a type is deleted. The same applies to top-level elements and attributes that are still referenced with `ref` or `substitutionGroup`. Groups, attribute groups and imports already reject the removal while they are referenced; types, elements and attributes need the same check (see [Commands](commands.md#conventions)).
 - **GitHub issue:** none
 
-## View state is not restored after reopening
+## Expand state is not restored after reopening
 
-- **Location:** `webview-src/main.ts` (constructor), `webview-src/renderer.ts`, `webview-src/webviewTypes.ts` (`WebviewState`)
+- **Location:** `webview-src/canvas/DiagramCanvas.ts` (`render()`), `webview-src/main.ts` (`WebviewState`)
 - **Severity:** Medium
-- **Effort:** M
-- **Description:** When VS Code is restarted with a schema open in the visual editor, all nodes are collapsed and the diagram is not where it was. There are two causes:
-  - The zoom and pan are saved, but not applied. The constructor creates `DiagramRenderer` with the default view state object and only afterwards replaces `this.viewState` with the saved one; the renderer keeps the old object and renders at zoom 1, pan 0/0. Centering is skipped because the restored pan is not 0/0, so the root node ends up in the top-left corner. The first pan or zoom then jumps to the saved position.
-  - The expand state is not saved. The renderer keeps it across re-renders in memory only; `WebviewState` contains just the schema, the view state and the diagram options.
+- **Effort:** S
+- **Description:** When VS Code is restarted with a schema open in the visual editor, all nodes are collapsed. The canvas keeps the expand state across redraws in memory only; `WebviewState` contains just the schema, the view state and the diagram options. The zoom and pan are restored since the structure review [#448](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/448). The fix is to save the expand state with the other state and to pass it to the canvas when the webview is created.
 - **GitHub issue:** [#347](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/347)
 
 ## Commands can overlap while an edit is applied
@@ -265,7 +255,7 @@ Effort:
 
 ## Attributes in a restriction are not checked against the base type
 
-- **Location:** `src/commandValidators/attributeValidators.ts` (`validateAddAttribute()`), `src/commandValidators/attributeGroupValidators.ts` (`validateAddAttributeGroup()`), `webview-src/drop/DropCommandFactory.ts` (`createAttributeNodeDropCommand()`)
+- **Location:** `src/commandValidators/attributeValidators.ts` (`validateAddAttribute()`), `src/commandValidators/attributeGroupValidators.ts` (`validateAddAttributeGroup()`), `webview-src/dragAndDrop/DropCommandFactory.ts` (`createAttributeNodeDropCommand()`)
 - **Severity:** Medium
 - **Effort:** L
 - **Description:** In a complex type that derives by restriction, XML Schema only allows attributes that restrict an attribute of the base type, or that the base type's `xs:anyAttribute` allows ("Derivation Valid (Restriction, Complex)"). `addAttribute` and `addAttributeGroup` add any attribute or reference to the `xs:restriction` of complex or simple content, and the attribute drop accepts such types and adds `Attribute1`. Unless the base type declares `Attribute1` or has a matching wildcard, the schema is then invalid; the command reports success. The user can rename the attribute to one of the base type. The fix needs the attributes of the base type, including those of its attribute groups and its own base types, and its wildcard; it can share the lookup of the base type with [Facets are not checked against the base type](#facets-are-not-checked-against-the-base-type).
@@ -281,21 +271,21 @@ Effort:
 
 ## Inline types have no node of their own
 
-- **Location:** `webview-src/diagram/SchemaProcessors.ts`, `webview-src/drop/` (drop rules), `webview-src/propertiesPanel/` (element editors), `shared/idStrategy.ts`, `src/commandExecutors/`
+- **Location:** `webview-src/diagram/SchemaProcessors.ts`, `webview-src/dragAndDrop/` (drop rules), `webview-src/propertiesPanel/` (element editors), `shared/idStrategy.ts`, `src/commandExecutors/`
 - **Severity:** Medium
 - **Effort:** L
-- **Description:** An anonymous (inline) complex or simple type is not drawn as a node; its content is merged into the element (see [Diagram rendering](diagram-rendering.md#from-schema-to-diagram-items)). In the schema model and the node IDs, however, the anonymous type has its own segment (`/element:person/anonymousComplexType[0]`, see [Schema model](schema-model.md#conventions)). So one diagram node stands for two constructs, and every part of the editor has to decide which of the two is meant:
+- **Description:** An anonymous (inline) complex or simple type is not drawn as a node; its content is merged into the element (see [Diagram rendering](diagram-rendering.md#from-schema-to-diagram-items)). In the schema model and the node IDs, however, the anonymous type has its own segment (`/element:person/anonymousComplexType[0]`, see [Schema model](schema-model.md#conventions)). So one diagram node stands for two schema constructs, and every part of the editor has to decide which of the two is meant:
   - The drop rules have extra cases for "element with anonymous complex type" and "element with simple content", which turn a drop on the element into a command on its type (see [Drag and drop](drag-and-drop.md)).
   - The properties panel of an element mixes element and type fields: Base Type, Replacement Type, `mixed` and the Facets tab belong to the type (see [UX concept](ux-concept.md)).
   - Anonymous types cannot be selected or deleted on their own, and the element's documentation falls back to the type's documentation, which cannot be told apart.
 
-  How Altova XMLSpy shows anonymous types is unclear: its manual says that "there is no separate symbol for local complex types", which can mean that they are merged into the element or that they use the same symbol as named complex types; this was not tried in XMLSpy. The editor does not have to follow XMLSpy here. An alternative is to draw the anonymous type as a child node of the element, so that every node is exactly one construct. This could be a diagram option. It should be decided before the [node IDs are redesigned](#node-ids-are-ambiguous-and-have-many-special-cases). It should also be planned together with [Diagram items copy values from the schema objects](#diagram-items-copy-values-from-the-schema-objects).
+  How Altova XMLSpy shows anonymous types is unclear: its manual says that "there is no separate symbol for local complex types", which can mean that they are merged into the element or that they use the same symbol as named complex types; this was not tried in XMLSpy. The editor does not have to follow XMLSpy here. An alternative is to draw the anonymous type as a child node of the element, so that every node is exactly one schema construct. This could be a diagram option. It should be decided before the [node IDs are redesigned](#node-ids-are-ambiguous-and-have-many-special-cases). It should also be planned together with [Diagram items copy values from the schema objects](#diagram-items-copy-values-from-the-schema-objects).
 
 - **GitHub issue:** [#358](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/358)
 
 ## Palette has no entry for attribute groups
 
-- **Location:** `webview-src/palette/`, `webview-src/drop/`, `webview-src/diagram/DiagramBuilderHelpers.ts` (`extractAttributes()`)
+- **Location:** `webview-src/palette/`, `webview-src/dragAndDrop/`, `webview-src/diagram/DiagramBuilderHelpers.ts` (`extractAttributes()`)
 - **Severity:** Medium
 - **Effort:** L
 - **Description:** The palette has items for elements, attributes and groups, but none for attribute groups, so they cannot be created or referenced in the editor. The commands exist (`addAttributeGroup`, `removeAttributeGroup`, `modifyAttributeGroup`, see [Commands](commands.md#attribute-groups)), but the webview never sends them. The diagram does not show attribute groups either: it only reads `attribute`, so top-level attribute group definitions and `<xs:attributeGroup ref="…"/>` inside complex types are left out, and the only use in the webview is the duplicate-name check in `DropCommandFactory`. The fix is a palette item with drop targets for the schema (definition) and complex types (reference), showing definitions and references in the diagram, and the header delete button for them.
@@ -333,14 +323,6 @@ Effort:
 - **Description:** The extension runs on the Node version of the extension host, which `.nvmrc` records (see [VS Code and Node versions](build-and-packaging.md#vs-code-and-node-versions)). `npm run vscode:check` checks the values derived from the VS Code version, but not whether the runtime dependencies accept that Node version: `@neumaennl/xmlbind-ts` declares `engines.node` `>=24`, which fits the extension host's 24.15.0, but an upgrade that raises its minimum would go unnoticed. `xmlbind-ts` checks the same for its own dependencies with `npm run node:check`. The fix is a check after `npm ci` that reads `engines.node` of the runtime dependencies from `node_modules` and compares it with `.nvmrc`.
 - **GitHub issue:** none
 
-## Palette drag and drop uses two ways to pass the dragged construct
-
-- **Location:** `webview-src/palette/PaletteItems.ts` (`PALETTE_MIME_TYPE`, `setActiveDraggedPaletteSchemaConstruct`), `webview-src/palette/PaletteView.ts`, `webview-src/renderer.ts` (`getDraggedPaletteSchemaConstruct`)
-- **Severity:** Low
-- **Effort:** S
-- **Description:** The palette puts the dragged construct both into `dataTransfer` under a custom MIME type and into a module variable. The renderer reads the MIME data first and falls back to the module variable, justified with "some environments" that do not expose custom MIME data. The extension only runs in one environment, the VS Code webview (Chromium), so one approach should be chosen. In Chromium, `getData()` always returns an empty string during `dragover` (the data can only be read on `drop`), so today the highlighting of valid drop targets always uses the module variable and the drop itself uses the MIME data. Since the drag source and the drop target are in the same webview, the module variable alone would be enough. Alternatively, the construct could be encoded in the MIME type name, which is readable through `dataTransfer.types` during `dragover`.
-- **GitHub issue:** none
-
 ## Every document change is parsed in full and logged
 
 - **Location:** `src/webviewProvider.ts` (`updateWebview()`)
@@ -373,28 +355,12 @@ Effort:
 - **Description:** The shape renderers draw the second outline that marks repetition whenever `maxOccurrence !== 1`. An element, group or type with `maxOccurs="0"` (which removes it from the content model) is therefore drawn as if it could repeat. The check should be `maxOccurrence > 1 || maxOccurrence === -1` (see [Diagram rendering](diagram-rendering.md#shapes-and-notation)). See also [Diagram items copy values from the schema objects](#diagram-items-copy-values-from-the-schema-objects).
 - **GitHub issue:** none
 
-## Diagram stays empty after `showMessage`
-
-- **Location:** `webview-src/renderer.ts` (`showMessage()`)
-- **Severity:** Low
-- **Effort:** S
-- **Description:** `showMessage()` empties the canvas and creates a new canvas group for its text, but `DiagramSvgRenderer` keeps drawing into the old group, which is no longer in the canvas. After a message, no diagram is shown until the webview is recreated. Today this cannot happen: the message is only shown when `updateSchema` carries no schema, and the extension always sends the parse result. The fix is to keep the canvas group and only replace the content, for example with a method on `DiagramSvgRenderer` (see [Diagram rendering](diagram-rendering.md#interaction)).
-- **GitHub issue:** none
-
 ## Documentation box size does not match the drawn text
 
 - **Location:** `webview-src/diagram/DiagramLayout.ts` (`calculateDocumentationBox()`), `webview-src/diagram/TextRenderers.ts` (`renderDocumentation()`)
 - **Severity:** Low
 - **Effort:** S
 - **Description:** The layout estimates the height of the documentation as if the text were wrapped at 30 characters per line with 12 px per line (at most 100 px). The renderer does not wrap: it draws the first three lines of the documentation, cuts each after 50 characters and uses the font size number 9 as line height, although the font size is 9 pt (12 px). For 150 characters on one line, the box is 70 px high, but a single line of 50 characters is drawn, and the rest is not visible anywhere in the diagram. The fix is to wrap the text in the renderer and compute the height from the same wrapped lines (see [Diagram rendering](diagram-rendering.md#shapes-and-notation)). See also [Documentation in the diagram is cut off and hard to read](#documentation-in-the-diagram-is-cut-off-and-hard-to-read).
-- **GitHub issue:** none
-
-## Selection highlight is lost after expanding or collapsing
-
-- **Location:** `webview-src/main.ts` (`onNodeClick()`, `updateDiagramOptions` handler), `webview-src/renderer.ts` (`refresh()`)
-- **Severity:** Low
-- **Effort:** S
-- **Description:** Every render recreates the SVG of all items, which removes the `.selected` class. After `updateSchema`, the app selects the node again, but not after an expand or collapse and not after a changed diagram option. The highlight disappears while the properties panel still shows the node. The fix is to apply the selection again in the renderer after each render, or to call `refreshSelection()` in these places as well (see [Diagram rendering](diagram-rendering.md#interaction)).
 - **GitHub issue:** none
 
 ## Diagram does not follow theme changes
@@ -455,7 +421,7 @@ Effort:
 
 ## Top-level lookups are duplicated instead of shared
 
-- **Location:** `src/commandValidators/`, `src/commandExecutors/`, `src/schemaNavigator.ts`, `webview-src/diagram/DiagramBuilder.ts`, `webview-src/drop/DropCommandFactory.ts`
+- **Location:** `src/commandValidators/`, `src/commandExecutors/`, `src/schemaNavigator.ts`, `webview-src/diagram/DiagramBuilder.ts`, `webview-src/dragAndDrop/DropCommandFactory.ts`
 - **Severity:** Low
 - **Effort:** L
 - **Description:** There are no shared functions that look up top-level components in a schema object. `SchemaModelManager` had query methods, but only tests called them, so [#439](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/439) removed them: they worked on the schema stored in the manager, while validators and executors got a cloned schema object, and the webview cannot use code from `src/`. #439 also merged the lookups that were copies of each other within the validators, the executors and the navigator. The parts still look up components on their own:
@@ -477,7 +443,7 @@ Effort:
 
 ## Diagram items copy values from the schema objects
 
-- **Location:** `webview-src/diagram/DiagramItem.ts`, `webview-src/diagram/SchemaProcessors*.ts`, `webview-src/diagram/TypeNodeCreators.ts`, `webview-src/propertiesPanel/propertiesPanelDraft.ts`, `webview-src/propertiesPanel/`, `webview-src/drop/`
+- **Location:** `webview-src/diagram/DiagramItem.ts`, `webview-src/diagram/SchemaProcessors*.ts`, `webview-src/diagram/TypeNodeCreators.ts`, `webview-src/propertiesPanel/propertiesPanelDraft.ts`, `webview-src/propertiesPanel/`, `webview-src/dragAndDrop/`
 - **Severity:** Low
 - **Effort:** L
 - **Description:** `DiagramItem` does not reference the schema object it represents; the builder copies about 22 values into it instead (see [Diagram rendering](diagram-rendering.md#data-model)). The renderer needs only a few of them; most are read by the properties panel and the drop code. Every new value has to be added to the item and to the builder; `createDraftNode()` copies all fields for the properties panel draft, but a new array or object needs a copy of its own there. The extraction is partly duplicated: `processGroup` builds group elements inline instead of using `createElementNode`. Values that are not copied, or copied in a reduced form, cause bugs: [Restricted complex content is shown without content](#restricted-complex-content-is-shown-without-content), [Element references are not shown as references](#element-references-are-not-shown-as-references) and [Items with maxOccurs 0 are drawn as repeated](#items-with-maxoccurs-0-are-drawn-as-repeated) come at least partly from this layer. The plan is to keep only view state on the item, add a typed reference to the schema object, and read values through one module of accessor functions. The properties panel draft must then be a deep copy of the schema object: after a failed command the webview receives no new schema, so changes to the shared object would remain. This should be planned together with [inline types](#inline-types-have-no-node-of-their-own) and the [node ID redesign](#node-ids-are-ambiguous-and-have-many-special-cases), which also change the builder.
@@ -501,10 +467,10 @@ Effort:
 
 ## Diagram is rebuilt in full on every change
 
-- **Location:** `webview-src/renderer.ts` (`renderSchema()`, `refresh()`), `webview-src/main.ts` (`updateSchema`, `updateDiagramOptions`), `webview-src/diagram/DiagramLayout.ts`
+- **Location:** `webview-src/canvas/DiagramCanvas.ts` (`render()`, `draw()`), `webview-src/main.ts` (`updateSchema`, `updateDiagramOptions`), `webview-src/diagram/DiagramLayout.ts`
 - **Severity:** Low
 - **Effort:** L
-- **Description:** Every change redraws the whole diagram. Each `updateSchema` builds all diagram items from the schema object again, calculates the layout of every item and replaces all SVG content, even if the edit changed a single attribute. Changing a diagram option does the same, although the options are only applied after the build and would need only a new layout. Expanding or collapsing a node calls `refresh()`, which keeps the items but calculates the layout of all items and redraws the whole SVG. For large schemas this probably makes editing slow; this was not measured. Smaller improvements are to use `refresh()` for option changes and, for expanding and collapsing, to lay out only the item and its ancestors; real incremental updates would need the [ambiguous node IDs](#node-ids-are-ambiguous-and-have-many-special-cases) fixed first, so that items can be matched across builds (see [Diagram rendering](diagram-rendering.md#pipeline)).
+- **Description:** Every change redraws the whole diagram. Each `updateSchema` builds all diagram items from the schema object again, calculates the layout of every item and replaces all SVG content, even if the edit changed a single attribute. Changing a diagram option does the same, although the options are only applied after the build and would need only a new layout. Expanding or collapsing a node keeps the items but calculates the layout of all items and redraws the whole SVG. For large schemas this probably makes editing slow; this was not measured. Smaller improvements are to only lay out and draw again for option changes and, for expanding and collapsing, to lay out only the item and its ancestors; real incremental updates would need the [ambiguous node IDs](#node-ids-are-ambiguous-and-have-many-special-cases) fixed first, so that items can be matched across builds (see [Diagram rendering](diagram-rendering.md#pipeline)).
 - **GitHub issue:** none
 
 ## The extension host is not bundled

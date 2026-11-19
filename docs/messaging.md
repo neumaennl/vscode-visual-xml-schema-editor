@@ -4,8 +4,8 @@ title: Messaging
 description: The message protocol between the extension host and the webview - the messages in both directions and the order in which they arrive.
 tags: [messaging, protocol, postMessage, commands, webview]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-18T09:05:08Z }
-verified: { by: human:neumaennl, at: 2026-11-18T12:43:13Z }
+generated: { by: human:neumaennl, at: 2026-11-19T14:50:08Z }
+verified: { by: human:neumaennl, at: 2026-11-19T15:32:47Z }
 sources:
   - id: messages
     resource: ../shared/messages.ts
@@ -116,9 +116,9 @@ The webview shows the error and restores the properties panel from the last sche
 
 The webview checks very little before it sends a command; the rules live in the validators of the extension (see [Persistence](persistence.md#command-pipeline)). What the webview does:[^webview-main]
 
-- **Drops.** While a palette item is dragged over the diagram, the renderer asks a drop validator (`setNodeDropValidator()`), which uses `DropCommandFactory.canDropOnNode()`, whether the node accepts the construct. Nodes that don't accept it show no drop feedback, and a drop on them sends nothing.
+- **Drops.** While a palette item is dragged over the diagram, the canvas asks the drop rules (`DropCommandFactory.canDropOnNode()`) whether the node accepts the schema construct. Nodes that don't accept it show no drop feedback, and a drop on them sends nothing.
 - **Empty or unchanged input.** An empty name or one equal to the current name sends nothing. Occurrence fields send nothing if the value is not a number or `unbounded`; negative numbers or `minOccurs` > `maxOccurs` are left to the validator.
-- **Draft copy.** The properties panel edits a copy of the selected node. After `commandResult` with `success: false`, the webview selects the node again (`refreshSelection()`), which replaces the copy with the values from the last schema, so a rejected edit disappears from the panel.
+- **Draft copy.** The properties panel edits a copy of the selected node. After `commandResult` with `success: false`, the webview shows the node again (`refreshSelection()`), which replaces the copy with the values from the last schema, so a rejected edit disappears from the panel.
 
 Names, types, references and duplicates are only checked by the extension. A rejected command therefore costs one round trip, and the error appears as a notification instead of next to the input field.
 
@@ -133,7 +133,7 @@ interface BaseCommand<T> {
 }
 ```
 
-`SchemaCommand` in `shared/commands/index.ts` is the union of all 31 command types. Existing nodes are addressed by a path-based ID in the payload (see [Schema model](schema-model.md#node-ids)); new top-level constructs have no parent ID or an optional one. [Commands](commands.md) lists the commands with their payloads and rules, and where the webview sends them.
+`SchemaCommand` in `shared/commands/index.ts` is the union of all 31 command types. Existing nodes are addressed by a path-based ID in the payload (see [Schema model](schema-model.md#node-ids)); new top-level schema constructs have no parent ID or an optional one. [Commands](commands.md) lists the commands with their payloads and rules, and where the webview sends them.
 
 # Limitations
 

@@ -4,12 +4,12 @@ title: Diagram rendering
 description: How the schema object becomes the SVG diagram - the build, layout and render steps, which schema constructs become which nodes, the layout rules, the notation, the interaction, and the origin in xsddiagram.
 tags: [diagram, rendering, layout, svg, webview, xsddiagram]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-17T11:10:00Z }
-verified: { by: human:neumaennl, at: 2026-11-17T11:18:25Z }
+generated: { by: human:neumaennl, at: 2026-11-19T14:50:08Z }
+verified: { by: human:neumaennl, at: 2026-11-19T15:32:47Z }
 sources:
   - id: renderer
-    resource: ../webview-src/renderer.ts
-    title: DiagramRenderer
+    resource: ../webview-src/canvas/DiagramCanvas.ts
+    title: DiagramCanvas
   - id: webview-main
     resource: ../webview-src/main.ts
     title: Webview entry point (SchemaEditorApp)
@@ -59,11 +59,11 @@ sources:
 
 # Purpose
 
-The diagram is the main view of the editor: a tree of nodes that shows the structure of the schema and is the target of clicks and drops. This document describes how the schema object that the webview receives becomes that SVG tree, how it is laid out and drawn, and what it does and does not show. Where the diagram sits in the webview, the settings that change it, zoom and pan are described in [Editor](editor.md#diagram); dropping constructs on nodes in [Drag and drop](drag-and-drop.md).
+The diagram is the main view of the editor: a tree of nodes that shows the structure of the schema and is the target of clicks and drops. This document describes how the schema object that the webview receives becomes that SVG tree, how it is laid out and drawn, and what it does and does not show. Where the diagram sits in the webview, the settings that change it, zoom and pan are described in [Editor](editor.md#diagram); dropping schema constructs on nodes in [Drag and drop](drag-and-drop.md).
 
 # Pipeline
 
-The diagram is produced in three steps. `DiagramRenderer` in `webview-src/renderer.ts` runs them; the steps live in `webview-src/diagram/`:[^renderer]
+The diagram is produced in three steps. `DiagramCanvas` in `webview-src/canvas/DiagramCanvas.ts` runs them; the steps live in `webview-src/diagram/`:[^renderer]
 
 1. **Build.** `DiagramBuilder` turns the schema object into a `Diagram` with a tree of `DiagramItem`s.[^diagram-builder]
 2. **Layout.** `DiagramLayout` computes the size and position of every visible item.[^diagram-layout]
@@ -80,15 +80,15 @@ flowchart LR
     T --> L
 ```
 
-A new schema or a changed diagram option calls `renderSchema()`, which runs all three steps. Before the build, it saves `showChildElements` of every item by ID; after the build, it sets it again on the items with the same ID. Since the IDs are paths (see [Schema model](schema-model.md#node-ids)), nodes stay expanded after an edit, unless the edit changes their path, for example by a rename. New items start collapsed, so a newly opened schema shows only the root node. Expanding or collapsing a node calls `refresh()`, which only lays out and renders the existing diagram again.[^renderer]
+A new schema or a changed diagram option calls `render()`, which runs all three steps. Before the build, it saves `showChildElements` of every item by ID; after the build, it sets it again on the items with the same ID. Since the IDs are paths (see [Schema model](schema-model.md#node-ids)), nodes stay expanded after an edit, unless the edit changes their path, for example by a rename. New items start collapsed, so a newly opened schema shows only the root node. Expanding or collapsing a node only lays out and draws the existing diagram again.[^renderer]
 
 There is no incremental update: every step works on the whole diagram (see [Known issues](known-issues.md#diagram-is-rebuilt-in-full-on-every-change)).
 
-If a step throws, the renderer writes "Error: …" as SVG text into the canvas and throws again; the app catches the error and shows it in the notification bar as well.[^webview-main] The SVG text stays after the next successful render (see [Known issues](known-issues.md#diagram-error-text-stays-after-a-successful-render)).
+If a step throws, the canvas throws the error on; the app catches it and shows it in the notification bar.[^webview-main] The canvas itself shows no error text.
 
 # From schema to diagram items
 
-The root of the tree is always one item for the schema itself, labelled `Schema: <targetNamespace>` (or `Schema: no namespace`). It carries the schema's documentation, and the top-level attributes are stored as its attributes. Its children are the top-level constructs, in this order: elements, complex types, simple types, named groups. Within each kind, the document order is kept. A schema without any of them gets the child "No elements found".[^diagram-builder]
+The root of the tree is always one item for the schema itself, labelled `Schema: <targetNamespace>` (or `Schema: no namespace`). It carries the schema's documentation, and the top-level attributes are stored as its attributes. Its children are the top-level schema constructs, in this order: elements, complex types, simple types, named groups. Within each kind, the document order is kept. A schema without any of them gets the child "No elements found".[^diagram-builder]
 
 | Schema construct             | Item type                    | Label                             | Type text (shown with `showType`)                                                           |
 | ---------------------------- | ---------------------------- | --------------------------------- | ------------------------------------------------------------------------------------------- |
@@ -187,12 +187,10 @@ Rules:
 
 All mouse handling on nodes is done with one listener per event type on the canvas. The listener finds the item with `closest("[data-item-id]")` and looks it up by ID in the current diagram.[^renderer]
 
-- **Expand button.** A click inside `.expand-button` toggles `showChildElements` and calls `refresh()`.
-- **Selection.** A click elsewhere on an item selects it: `selectNode()` moves the `.selected` class to it, and the properties panel shows it. After an `updateSchema`, the app selects the node with the same ID again. After expanding, collapsing or a changed diagram option it does not, so the highlight disappears while the properties panel still shows the node (see [Known issues](known-issues.md#selection-highlight-is-lost-after-expanding-or-collapsing)).[^webview-main]
+- **Expand button.** A click inside `.expand-button` toggles `showChildElements` and lays out and draws the diagram again. If that fails, the app shows the error in the notification bar.
+- **Selection.** A click elsewhere on an item selects it: the canvas remembers its ID and moves the `.selected` class to it, and the properties panel shows it. Every draw creates the items anew, so the canvas marks the selected node again after each one: after an `updateSchema`, after expanding or collapsing and after a changed diagram option.[^webview-main]
 - **Drop targets.** During a palette drag, `dragover` adds `.drag-over` to valid targets, and `drop` hands the item to the drop handler (see [Drag and drop](drag-and-drop.md#flow)).
-- **Zoom and pan** change the transform of the canvas group (`updateView()`); `fitToCanvas()` scales and moves it so that the whole diagram fits with 24 px padding. The mouse and toolbar handling is described in [Editor](editor.md#navigation).
-
-`showMessage()` replaces the canvas content with a text, for example "No schema to display". It also replaces the canvas group, so a later render draws into a group that is no longer shown (see [Known issues](known-issues.md#diagram-stays-empty-after-showmessage)).
+- **Zoom and pan** change the transform of the canvas group; `CanvasView` keeps them in one place, and `fit()` scales and moves the group so that the whole diagram fits with 24 px padding. The mouse and toolbar handling is described in [Editor](editor.md#navigation).
 
 # Origin
 
@@ -210,9 +208,9 @@ Licensing facts: XSD Diagram is offered under GPL, LGPL or MS-PL. This repositor
 
 # Tests
 
-`DiagramBuilder.test.ts`, `SchemaProcessors.test.ts`, `TypeNodeCreators.test.ts` and `DiagramBuilderHelpers.test.ts` cover the build; `DiagramLayout.test.ts`, `DiagramItem.test.ts` and `Diagram.test.ts` the layout; `DiagramSvgRenderer.test.ts`, `ShapeRenderers.test.ts`, `TextRenderers.test.ts` and `SvgHelpers.test.ts` the drawing; `renderer.test.ts` the expand state, clicks and drag events. The webview tests run in jsdom, which has no layout engine, so `getBBox()` is mocked (`setupGetBBoxMock()` in `webview-src/__tests__/svgTestHelpers.ts`).
+`DiagramBuilder.test.ts`, `SchemaProcessors.test.ts`, `TypeNodeCreators.test.ts` and `DiagramBuilderHelpers.test.ts` cover the build; `DiagramLayout.test.ts`, `DiagramItem.test.ts` and `Diagram.test.ts` the layout; `DiagramSvgRenderer.test.ts`, `ShapeRenderers.test.ts`, `TextRenderers.test.ts` and `SvgHelpers.test.ts` the drawing; `canvas/DiagramCanvas.test.ts` the expand state, the selection and clicks, `canvas/CanvasView.test.ts` zoom and pan, and `canvas/canvasDrop.test.ts` the drag events. The webview tests run in jsdom, which has no layout engine, so `getBBox()` is mocked (`setupGetBBoxMock()` in `webview-src/__tests__/svgTestHelpers.ts`).
 
-[^renderer]: DiagramRenderer
+[^renderer]: DiagramCanvas
 
 [^webview-main]: Webview entry point (SchemaEditorApp)
 

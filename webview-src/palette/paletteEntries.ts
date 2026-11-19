@@ -1,17 +1,17 @@
-import { PaletteSchemaConstruct } from "./PaletteSchemaConstruct";
-import { FACET_ICON_STYLES } from "./FacetIconStyles";
-
 /**
- * Palette item definitions for editor drag-and-drop.
- * Mirrors the prototype grouping/icons while marking unsupported operations.
+ * The entries of the palette: the schema constructs that can be dragged from it, grouped, with their names,
+ * icons and descriptions.
  */
+
+import { DraggableSchemaConstruct } from "../dragAndDrop/DraggableSchemaConstruct";
+import { getFacetIconStyle } from "../facetIcons";
 
 /**
  * Single draggable item shown in the palette.
  */
 export interface PaletteItem {
   /** Stable item id used as drag payload. */
-  id: PaletteSchemaConstruct;
+  id: DraggableSchemaConstruct;
   /** User-facing display name. */
   name: string;
   /** VS Code codicon name (without the `"codicon-"` prefix). */
@@ -42,7 +42,7 @@ export const paletteGroups: PaletteGroup[] = [
     label: "Structure",
     items: [
       {
-        id: PaletteSchemaConstruct.Element,
+        id: DraggableSchemaConstruct.Element,
         name: "element",
         icon: "code",
         color: "#dcdcaa",
@@ -50,7 +50,7 @@ export const paletteGroups: PaletteGroup[] = [
         enabled: true,
       },
       {
-        id: PaletteSchemaConstruct.Attribute,
+        id: DraggableSchemaConstruct.Attribute,
         name: "attribute",
         icon: "mention",
         color: "#9cdcfe",
@@ -58,7 +58,7 @@ export const paletteGroups: PaletteGroup[] = [
         enabled: true,
       },
       {
-        id: PaletteSchemaConstruct.Group,
+        id: DraggableSchemaConstruct.Group,
         name: "group",
         icon: "collection",
         color: "#c586c0",
@@ -66,7 +66,7 @@ export const paletteGroups: PaletteGroup[] = [
         enabled: true,
       },
       {
-        id: PaletteSchemaConstruct.Any,
+        id: DraggableSchemaConstruct.Any,
         name: "any",
         icon: "symbol-misc",
         color: "#d7ba7d",
@@ -79,7 +79,7 @@ export const paletteGroups: PaletteGroup[] = [
     label: "Compositors",
     items: [
       {
-        id: PaletteSchemaConstruct.Sequence,
+        id: DraggableSchemaConstruct.Sequence,
         name: "sequence",
         icon: "list-ordered",
         color: "#79c0a4",
@@ -87,7 +87,7 @@ export const paletteGroups: PaletteGroup[] = [
         enabled: true,
       },
       {
-        id: PaletteSchemaConstruct.Choice,
+        id: DraggableSchemaConstruct.Choice,
         name: "choice",
         icon: "worktree",
         color: "#c586c0",
@@ -95,7 +95,7 @@ export const paletteGroups: PaletteGroup[] = [
         enabled: true,
       },
       {
-        id: PaletteSchemaConstruct.All,
+        id: DraggableSchemaConstruct.All,
         name: "all",
         icon: "layers",
         color: "#ce9178",
@@ -108,7 +108,7 @@ export const paletteGroups: PaletteGroup[] = [
     label: "Types",
     items: [
       {
-        id: PaletteSchemaConstruct.ComplexType,
+        id: DraggableSchemaConstruct.ComplexType,
         name: "complexType",
         icon: "symbol-class",
         color: "#7aa6ff",
@@ -116,7 +116,7 @@ export const paletteGroups: PaletteGroup[] = [
         enabled: true,
       },
       {
-        id: PaletteSchemaConstruct.SimpleType,
+        id: DraggableSchemaConstruct.SimpleType,
         name: "simpleType",
         icon: "symbol-method",
         color: "#aac7ff",
@@ -124,7 +124,7 @@ export const paletteGroups: PaletteGroup[] = [
         enabled: true,
       },
       {
-        id: PaletteSchemaConstruct.Extension,
+        id: DraggableSchemaConstruct.Extension,
         name: "extension",
         icon: "diff-added",
         color: "#6a9955",
@@ -132,7 +132,7 @@ export const paletteGroups: PaletteGroup[] = [
         enabled: true,
       },
       {
-        id: PaletteSchemaConstruct.Restriction,
+        id: DraggableSchemaConstruct.Restriction,
         name: "restriction",
         icon: "diff-removed",
         color: "#f48771",
@@ -145,117 +145,89 @@ export const paletteGroups: PaletteGroup[] = [
     label: "Facets",
     items: [
       {
-        id: PaletteSchemaConstruct.Enumeration,
+        id: DraggableSchemaConstruct.Enumeration,
         name: "enumeration",
-        ...FACET_ICON_STYLES[PaletteSchemaConstruct.Enumeration],
+        ...getFacetIconStyle("enumeration"),
         description: "Allowed value set",
         enabled: true,
       },
       {
-        id: PaletteSchemaConstruct.Pattern,
+        id: DraggableSchemaConstruct.Pattern,
         name: "pattern",
-        ...FACET_ICON_STYLES[PaletteSchemaConstruct.Pattern],
+        ...getFacetIconStyle("pattern"),
         description: "Regex pattern",
         enabled: true,
       },
       {
-        id: PaletteSchemaConstruct.Length,
+        id: DraggableSchemaConstruct.Length,
         name: "length",
-        ...FACET_ICON_STYLES[PaletteSchemaConstruct.Length],
+        ...getFacetIconStyle("length"),
         description: "Exact length",
         enabled: true,
       },
       {
-        id: PaletteSchemaConstruct.MinLength,
+        id: DraggableSchemaConstruct.MinLength,
         name: "minLength",
-        ...FACET_ICON_STYLES[PaletteSchemaConstruct.MinLength],
+        ...getFacetIconStyle("minLength"),
         description: "Minimum length",
         enabled: true,
       },
       {
-        id: PaletteSchemaConstruct.MaxLength,
+        id: DraggableSchemaConstruct.MaxLength,
         name: "maxLength",
-        ...FACET_ICON_STYLES[PaletteSchemaConstruct.MaxLength],
+        ...getFacetIconStyle("maxLength"),
         description: "Maximum length",
         enabled: true,
       },
       {
-        id: PaletteSchemaConstruct.MinExclusive,
+        id: DraggableSchemaConstruct.MinExclusive,
         name: "minExclusive",
-        ...FACET_ICON_STYLES[PaletteSchemaConstruct.MinExclusive],
+        ...getFacetIconStyle("minExclusive"),
         description: "Exclusive lower bound",
         enabled: true,
       },
       {
-        id: PaletteSchemaConstruct.MinInclusive,
+        id: DraggableSchemaConstruct.MinInclusive,
         name: "minInclusive",
-        ...FACET_ICON_STYLES[PaletteSchemaConstruct.MinInclusive],
+        ...getFacetIconStyle("minInclusive"),
         description: "Inclusive lower bound",
         enabled: true,
       },
       {
-        id: PaletteSchemaConstruct.MaxExclusive,
+        id: DraggableSchemaConstruct.MaxExclusive,
         name: "maxExclusive",
-        ...FACET_ICON_STYLES[PaletteSchemaConstruct.MaxExclusive],
+        ...getFacetIconStyle("maxExclusive"),
         description: "Exclusive upper bound",
         enabled: true,
       },
       {
-        id: PaletteSchemaConstruct.MaxInclusive,
+        id: DraggableSchemaConstruct.MaxInclusive,
         name: "maxInclusive",
-        ...FACET_ICON_STYLES[PaletteSchemaConstruct.MaxInclusive],
+        ...getFacetIconStyle("maxInclusive"),
         description: "Inclusive upper bound",
         enabled: true,
       },
       {
-        id: PaletteSchemaConstruct.TotalDigits,
+        id: DraggableSchemaConstruct.TotalDigits,
         name: "totalDigits",
-        ...FACET_ICON_STYLES[PaletteSchemaConstruct.TotalDigits],
+        ...getFacetIconStyle("totalDigits"),
         description: "Total number of digits",
         enabled: true,
       },
       {
-        id: PaletteSchemaConstruct.FractionDigits,
+        id: DraggableSchemaConstruct.FractionDigits,
         name: "fractionDigits",
-        ...FACET_ICON_STYLES[PaletteSchemaConstruct.FractionDigits],
+        ...getFacetIconStyle("fractionDigits"),
         description: "Number of fraction digits",
         enabled: true,
       },
       {
-        id: PaletteSchemaConstruct.WhiteSpace,
+        id: DraggableSchemaConstruct.WhiteSpace,
         name: "whiteSpace",
-        ...FACET_ICON_STYLES[PaletteSchemaConstruct.WhiteSpace],
+        ...getFacetIconStyle("whiteSpace"),
         description: "Whitespace normalization",
         enabled: true,
       },
     ],
   },
 ];
-
-/**
- * MIME type used for palette drag event payloads.
- */
-export const PALETTE_MIME_TYPE = "application/x-xsd-component";
-
-let activeDraggedPaletteSchemaConstruct: PaletteSchemaConstruct | null = null;
-
-/**
- * Track the currently dragged XML schema construct from the palette.
- *
- * Some dragover environments do not expose custom MIME payload values via
- * `dataTransfer.getData()`, so this state is used as a fallback.
- *
- * @param kind - The dragged construct, or null when the drag ends
- */
-export function setActiveDraggedPaletteSchemaConstruct(kind: PaletteSchemaConstruct | null): void {
-  activeDraggedPaletteSchemaConstruct = kind;
-}
-
-/**
- * Get the currently dragged XML schema construct from the palette, if any.
- *
- * @returns The dragged construct, or null if nothing from the palette is dragged
- */
-export function getActiveDraggedPaletteSchemaConstruct(): PaletteSchemaConstruct | null {
-  return activeDraggedPaletteSchemaConstruct;
-}

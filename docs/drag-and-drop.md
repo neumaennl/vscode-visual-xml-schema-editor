@@ -1,84 +1,80 @@
 ---
 type: Process
 title: Drag and drop
-description: How a construct is dragged from the palette onto a diagram node - the responsibilities of palette, renderer, DropCommandFactory and extension host, the event flow, which construct can be dropped on which node with which command, and the generated defaults.
-tags: [drag-and-drop, palette, renderer, drop-command-factory, webview]
+description: How a schema construct is dragged from the palette onto a diagram node - the responsibilities of palette, canvas, drag and drop and extension host, the event flow, which schema construct can be dropped on which node with which command, and the generated defaults.
+tags: [drag-and-drop, palette, canvas, drop-command-factory, webview]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-18T09:05:08Z }
-verified: { by: human:neumaennl, at: 2026-11-18T12:43:13Z }
+generated: { by: human:neumaennl, at: 2026-11-19T14:51:50Z }
+verified: { by: human:neumaennl, at: 2026-11-19T15:32:47Z }
 sources:
   - id: palette-items
-    resource: ../webview-src/palette/PaletteItems.ts
-    title: Palette item definitions and MIME type
+    resource: ../webview-src/palette/paletteEntries.ts
+    title: Palette entries
   - id: palette-view
     resource: ../webview-src/palette/PaletteView.ts
     title: PaletteView
   - id: renderer
-    resource: ../webview-src/renderer.ts
-    title: DiagramRenderer (drop handling)
+    resource: ../webview-src/canvas/canvasDrop.ts
+    title: Drop handling of the canvas
   - id: webview-main
     resource: ../webview-src/main.ts
     title: Webview entry point (SchemaEditorApp)
   - id: drop-factory
-    resource: ../webview-src/drop/DropCommandFactory.ts
+    resource: ../webview-src/dragAndDrop/DropCommandFactory.ts
     title: DropCommandFactory
   - id: drop-type-helpers
-    resource: ../webview-src/drop/TypeDropCommands.ts
+    resource: ../webview-src/dragAndDrop/TypeDropCommands.ts
     title: Drop helpers for types, derivations and facets
   - id: drop-factory-tests
-    resource: ../webview-src/drop/DropCommandFactory.test.ts
+    resource: ../webview-src/dragAndDrop/DropCommandFactory.test.ts
     title: DropCommandFactory tests
 ---
 
 # Purpose
 
-Drag and drop from the palette is the only way to add constructs to a schema (see [UX concept](ux-concept.md#core-rules)). This document describes how a drop becomes a command: who is responsible for what, the order of events, the rules for which construct can be dropped on which node, and the values that new constructs get. The palette itself is described in [Editor](editor.md#palette), the commands in [Commands](commands.md).
+Drag and drop from the palette is the only way to add schema constructs to a schema (see [UX concept](ux-concept.md#core-rules)). This document describes how a drop becomes a command: who is responsible for what, the order of events, the rules for which schema construct can be dropped on which node, and the values that new schema constructs get. The palette itself is described in [Editor](editor.md#palette), the commands in [Commands](commands.md).
 
 # Responsibilities
 
-Drag and drop is split into four parts, so that new constructs and rules can be added without touching the event handling:
+Drag and drop is split into four parts, so that new schema constructs and rules can be added without touching the event handling:
 
-| Part                                    | Responsibility                                                                                            |
-| --------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| Palette (`PaletteView`, `PaletteItems`) | What is dragged: starts the drag and passes the construct.                                                |
-| Renderer (`DiagramRenderer`)            | Where it is dropped: finds the node under the pointer, shows the highlight and reports the drop.          |
-| `DropCommandFactory`                    | Whether the drop is allowed and which command it creates. All placement rules live here.                  |
-| Extension host                          | Validates and executes the command and sends the updated schema back (see [Persistence](persistence.md)). |
+| Part                                                  | Responsibility                                                                                                                                                                                                                            |
+| ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Palette (`palette/`: `PaletteView`, `paletteEntries`) | What is dragged: shows the schema constructs and starts the drag.                                                                                                                                                                         |
+| Canvas (`canvas/canvasDrop.ts`)                       | Where it is dropped: finds the node under the pointer, shows the highlight and hands the drop to the drop rules.                                                                                                                          |
+| Drag and drop (`dragAndDrop/`)                        | What is dragged and what a drop does: the schema constructs, the dragged schema construct, and the drop rules (`DropCommandFactory`), which decide whether a drop is allowed and which command it creates. All placement rules live here. |
+| Extension host                                        | Validates and executes the command and sends the updated schema back (see [Persistence](persistence.md)).                                                                                                                                 |
 
-`SchemaEditorApp` in `main.ts` only connects the parts: it gives the renderer a validator and a drop handler that both ask the factory, and sends the resulting command.[^webview-main] The renderer and the app do not know any placement rule.
+The canvas owns the drop rules: it creates the `DropCommandFactory`, updates its list of names whenever it draws a new schema, and hands the command of a drop to `SchemaEditorApp` in `main.ts`, which sends it.[^webview-main] The app knows nothing about drops, and the canvas knows no placement rule.
 
 # Flow
 
 ```mermaid
 sequenceDiagram
     participant P as PaletteView
-    participant R as DiagramRenderer
-    participant A as SchemaEditorApp
+    participant D as draggedSchemaConstruct
+    participant C as DiagramCanvas
     participant F as DropCommandFactory
+    participant A as SchemaEditorApp
     participant H as Extension host
-    P->>P: drag starts: remember which construct is dragged
+    P->>D: drag starts: setDraggedSchemaConstruct(schemaConstruct)
     loop dragover on a node
-        R->>A: validator(item, construct)
-        A->>F: canDropOnNode(item, construct)
-        F-->>R: allowed? (highlight with drag-over)
+        C->>D: getDraggedSchemaConstruct()
+        C->>F: canDropOnNode(item, schemaConstruct)
+        F-->>C: allowed? (highlight with drag-over)
     end
-    R->>A: drop handler(item, construct)
-    A->>F: createNodeDropCommand(item, construct)
-    F-->>A: command or null
+    C->>F: createNodeDropCommand(item, schemaConstruct)
+    F-->>C: command
+    C->>A: dispatch(command)
     A->>H: executeCommand
     H-->>A: updateSchema, then commandResult
 ```
 
-1. **Drag start.** When the user starts dragging a palette item, `PaletteView` remembers which construct (for example `element`) is being dragged. It stores the construct ID in two places:
-   - in the browser's drag data (`event.dataTransfer`, under the type `application/x-xsd-component`), which the drop target can read when the item is dropped;
-   - in a shared variable in `PaletteItems.ts` (`setActiveDraggedPaletteSchemaConstruct()`), which the renderer can read at any time during the drag.
-
-   The second place is needed because the browser hides the drag data until the drop, so the renderer could not decide which nodes to highlight while the item is moved. `PaletteView` also sets `effectAllowed` to `copy`. Disabled items (`any`) are not draggable. When the drag ends, the shared variable is cleared.[^palette-view][^palette-items]
-
-2. **Drag over.** The renderer listens on the canvas. It finds the nearest element with `data-item-id`, reads the construct from the drag data or, if that is empty, from the shared variable (see [Known issues](known-issues.md#palette-drag-and-drop-uses-two-ways-to-pass-the-dragged-construct)), and calls the validator. If the drop is allowed, it calls `preventDefault()` and adds the CSS class `drag-over`, which highlights the node's shape; otherwise it removes the class.[^renderer]
+1. **Drag start.** When the user starts dragging a palette item, `PaletteView` remembers which schema construct (for example `element`) is being dragged, with `setDraggedSchemaConstruct()` in `dragAndDrop/draggedSchemaConstruct.ts`. The palette and the canvas are in the same webview, so the canvas reads it from there. The drag data of the browser (`dataTransfer`) is not used: during `dragover`, Chromium does not let the drop target read it, so it could not decide which nodes to highlight. `PaletteView` also sets `effectAllowed` to `copy`. Disabled items (`any`) are not draggable. When the drag ends, the dragged schema construct is cleared.[^palette-view][^palette-items]
+2. **Drag over.** The canvas finds the nearest element with `data-item-id`, reads the dragged schema construct and asks the drop rules. If the drop is allowed, it calls `preventDefault()` and adds the CSS class `drag-over`, which highlights the node's shape; otherwise it removes the class.[^renderer]
 3. **Drag leave.** The class is only removed when the pointer really leaves the node: if the element under the pointer or the `relatedTarget` is still inside the node, the event is ignored. Without this check, the highlight flickers when the pointer moves between the shapes and texts of one node.
-4. **Drop.** The renderer checks the drop again, removes the highlight, calls the drop handler and clears the shared variable.
-5. **Command.** `SchemaEditorApp` asks `DropCommandFactory` for the command and sends it as `{ command: "executeCommand", data: command }`. If the factory returns `null`, it shows the error "Drop of '<construct>' is not supported for '<node name>'".[^webview-main]
+4. **Drop.** The canvas checks the drop again, removes the highlight and clears the dragged schema construct.
+5. **Command.** The canvas asks `DropCommandFactory` for the command and hands it to the app, which sends it as `{ command: "executeCommand", data: command }`. If the factory returns `null`, the app shows the error "Drop of '<schema construct>' is not supported for '<node name>'".[^webview-main]
 
 The extension host validates every command again. The check in the webview is only for immediate feedback; a drop that passes it can still fail, for example because of a name conflict inside the parent, and the error is then shown like any other command error (see [Messaging](messaging.md)).
 
@@ -92,7 +88,7 @@ The node kinds in the table are:
 - **Complex type, simple type:** a named type node. A simple type counts as a restriction if its label contains `restricts`; list and union types do not.
 - **Group:** a top-level group definition, not a group reference.
 
-| Construct             | Target                                                                                 | Command                                                                                                                    |
+| Schema construct      | Target                                                                                 | Command                                                                                                                    |
 | --------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | element               | schema root, compositor                                                                | `addElement` with a generated name and type `xs:string`                                                                    |
 | attribute             | schema root, named complex type, also a derived one                                    | `addAttribute` with a generated name and type `xs:string`                                                                  |
@@ -123,7 +119,7 @@ Every other combination returns `null`. In particular, nothing can be dropped on
 
 # Defaults
 
-**Names.** New named constructs get the names `Element1`, `Attribute1`, `Group1`, `SimpleType1` and `ComplexType1`; the number is the lowest one that is not in use. The factory keeps the names of all top-level elements, attributes, simple types, complex types, groups and attribute groups, refreshed on every schema update. A name is reserved as soon as a command is created, so two drops before the next update do not get the same name; the checks during `dragover` do not reserve names.[^drop-factory] Names of local elements and attributes are not considered, so a drop on a node that already contains a local `Element1` or `Attribute1` is rejected (see [Known issues](known-issues.md#generated-names-ignore-local-names-in-the-drop-target)).
+**Names.** New named schema constructs get the names `Element1`, `Attribute1`, `Group1`, `SimpleType1` and `ComplexType1`; the number is the lowest one that is not in use. The factory keeps the names of all top-level elements, attributes, simple types, complex types, groups and attribute groups, refreshed on every schema update. A name is reserved as soon as a command is created, so two drops before the next update do not get the same name; the checks during `dragover` do not reserve names.[^drop-factory] Names of local elements and attributes are not considered, so a drop on a node that already contains a local `Element1` or `Attribute1` is rejected (see [Known issues](known-issues.md#generated-names-ignore-local-names-in-the-drop-target)).
 
 **Types.** New elements and attributes get the type `xs:string`. New complex types get the content model `sequence`.
 
@@ -141,21 +137,21 @@ Every other combination returns `null`. In particular, nothing can be dropped on
 
 Patterns of one restriction are alternatives (see [UX concept](ux-concept.md#multiple-patterns)), so every added pattern widens the type. `.*` keeps a type without patterns as it was, apart from values with line breaks; `[^a-zA-Z0-9\s]*` only adds values without letters, digits and whitespace, until the user edits it. Facets are not checked against the base type (see [Known issues](known-issues.md#facets-are-not-checked-against-the-base-type)).
 
-# Adding a draggable construct
+# Adding a draggable schema construct
 
-1. Add the construct to `PaletteSchemaConstruct`.
-2. Add a palette item in `PaletteItems.ts` (group, label, Codicon, tooltip), if users should drag it.
-3. Add the placement rules and the command to `DropCommandFactory`, or to `TypeDropCommands` for types and facets. The validator in the renderer uses the same method, so hover feedback and drop stay consistent.
+1. Add the schema construct to `DraggableSchemaConstruct` in `dragAndDrop/`.
+2. Add a palette entry in `palette/paletteEntries.ts` (group, label, Codicon, tooltip), if users should drag it.
+3. Add the placement rules and the command to `DropCommandFactory`, or to `TypeDropCommands` for types and facets. The canvas uses the same method for the highlight, so hover feedback and drop stay consistent.
 4. If the command is new, add it as described in [Commands](commands.md#files).
-5. Add tests: placement and payloads in `DropCommandFactory.test.ts`, drag events in `renderer.test.ts` only if the event handling changes.[^drop-factory-tests]
+5. Add tests: placement and payloads in `DropCommandFactory.test.ts`, drag events in `canvas/canvasDrop.test.ts` only if the event handling changes.[^drop-factory-tests]
 
-The tests that cover drag and drop are `DropCommandFactory.test.ts` (rules, payloads, names, base types, facets), `renderer.test.ts` (validator, highlight, fallback, drag leave guard) and `PaletteView.test.ts` (drag payload and cleanup).
+The tests that cover drag and drop are `DropCommandFactory.test.ts` (rules, payloads, names, base types, facets), `canvas/canvasDrop.test.ts` (highlight, drop, drag leave guard), `canvas/DiagramCanvas.test.ts` (drops become commands), `dragAndDrop/draggedSchemaConstruct.test.ts` and `PaletteView.test.ts` (drag payload and cleanup).
 
-[^palette-items]: Palette item definitions and MIME type
+[^palette-items]: Palette entries
 
 [^palette-view]: PaletteView
 
-[^renderer]: DiagramRenderer (drop handling)
+[^renderer]: Drop handling of the canvas
 
 [^webview-main]: Webview entry point (SchemaEditorApp)
 

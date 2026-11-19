@@ -5,7 +5,7 @@
  */
 
 import type { DiagramItem } from "../diagram";
-import type { FacetIconStyle } from "../palette/FacetIconStyles";
+import type { FacetIconStyle } from "../facetIcons";
 
 let nextDatalistId = 0;
 

@@ -4,8 +4,8 @@ title: "ADR 004: XML Schema 1.0 first"
 description: The decision to support XML Schema 1.0 now and XML Schema 1.1 later, the two conditions that keep the way to 1.1 open, how 1.1 could be added, the open question about validation, and when to review it.
 tags: [adr, architecture, schema-model, xsd-1.1, validation]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-11T07:57:24Z }
-verified: { by: human:neumaennl, at: 2026-11-11T08:28:29Z }
+generated: { by: human:neumaennl, at: 2026-11-19T14:50:08Z }
+verified: { by: human:neumaennl, at: 2026-11-19T15:32:47Z }
 sources:
   - id: meta-schema
     resource: ../../schema/XMLSchema.xsd
@@ -25,15 +25,15 @@ sources:
 
 ## Context
 
-The schema classes in `shared/generated/` are generated from `schema/XMLSchema.xsd` (see [Schema model](../schema-model.md#generated-classes)). That file is the schema for schemas of XML Schema 1.0: it has `version="1.0"`, the namespace `http://www.w3.org/2001/XMLSchema` and the document type `-//W3C//DTD XMLSCHEMA 200102//EN`, and none of the constructs that XML Schema 1.1 adds.[^meta-schema] So the editor knows the elements and attributes of XML Schema 1.0 only.
+The schema classes in `shared/generated/` are generated from `schema/XMLSchema.xsd` (see [Schema model](../schema-model.md#generated-classes)). That file is the schema for schemas of XML Schema 1.0: it has `version="1.0"`, the namespace `http://www.w3.org/2001/XMLSchema` and the document type `-//W3C//DTD XMLSCHEMA 200102//EN`, and none of the schema constructs that XML Schema 1.1 adds.[^meta-schema] So the editor knows the elements and attributes of XML Schema 1.0 only.
 
-XML Schema 1.1 adds constructs such as `xs:assert`, `xs:alternative`, `xs:openContent`, `xs:defaultOpenContent` and `xs:override`, and the `vc:` attributes for conditional inclusion. It also changes rules that exist in 1.0: an `xs:all` may contain elements with `maxOccurs` greater than 1 and group references, wildcards get `notNamespace` and `notQName`, and XPath expressions appear in more places, with `xpathDefaultNamespace`.
+XML Schema 1.1 adds schema constructs such as `xs:assert`, `xs:alternative`, `xs:openContent`, `xs:defaultOpenContent` and `xs:override`, and the `vc:` attributes for conditional inclusion. It also changes rules that exist in 1.0: an `xs:all` may contain elements with `maxOccurs` greater than 1 and group references, wildcards get `notNamespace` and `notQName`, and XPath expressions appear in more places, with `xpathDefaultNamespace`.
 
 ## Decision
 
 The editor supports XML Schema 1.0. XML Schema 1.1 is added later, when users ask for it. Two conditions keep that way open:
 
-1. **The editor does not silently destroy 1.1 constructs.** A schema that uses them can be opened, and an edit must not lose them. This condition is not met today: the constructs that the 1.0 classes do not map, such as `xs:assert`, are dropped on every command (see [Known issues](../known-issues.md#commands-can-change-or-lose-content-outside-the-edit)). The fix belongs to `xmlbind-ts`, which is to keep unmapped content ([xmlbind-ts#289](https://github.com/neumaennl/xmlbind-ts/issues/289)).[^issue-289]
+1. **The editor does not silently destroy 1.1 constructs.** A schema that uses them can be opened, and an edit must not lose them. This condition is not met today: the schema constructs that the 1.0 classes do not map, such as `xs:assert`, are dropped on every command (see [Known issues](../known-issues.md#commands-can-change-or-lose-content-outside-the-edit)). The fix belongs to `xmlbind-ts`, which is to keep unmapped content ([xmlbind-ts#289](https://github.com/neumaennl/xmlbind-ts/issues/289)).[^issue-289]
 2. **XPath, `xs:all` and wildcards are not hard-wired to the rules of 1.0.** Code that handles selectors and fields, the particles of an `xs:all`, or the attributes of `xs:any` and `xs:anyAttribute` keeps the 1.0 rules in one place each, so that 1.1 can change them without a search through the code.
 
 ## How 1.1 could be added

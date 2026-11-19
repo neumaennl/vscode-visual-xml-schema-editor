@@ -5,7 +5,7 @@
 
 import { DiagramItem } from "../diagram/DiagramItem";
 import { DiagramItemType } from "../diagram/DiagramTypes";
-import { PaletteSchemaConstruct } from "../palette/PaletteSchemaConstruct";
+import { DraggableSchemaConstruct } from "./DraggableSchemaConstruct";
 import {
   createFacetNodeDropCommand,
   getExtensionBaseType,
@@ -84,14 +84,14 @@ describe("getExtensionBaseType", () => {
 
 describe("createFacetNodeDropCommand", () => {
   test("should modify a named simple type by its own ID", () => {
-    expect(createFacetNodeDropCommand(RESTRICTED_SIMPLE_TYPE, PaletteSchemaConstruct.MaxLength)).toMatchObject({
+    expect(createFacetNodeDropCommand(RESTRICTED_SIMPLE_TYPE, DraggableSchemaConstruct.MaxLength)).toMatchObject({
       type: "modifySimpleType",
       payload: { typeId: "/simpleType:Code", baseType: "xs:string", restrictions: { maxLength: 1 } },
     });
   });
 
   test("should modify the anonymous simple type of an element", () => {
-    expect(createFacetNodeDropCommand(ELEMENT_WITH_RESTRICTION, PaletteSchemaConstruct.MinInclusive)).toMatchObject({
+    expect(createFacetNodeDropCommand(ELEMENT_WITH_RESTRICTION, DraggableSchemaConstruct.MinInclusive)).toMatchObject({
       type: "modifySimpleType",
       payload: {
         typeId: "/element:count/anonymousSimpleType[0]",
@@ -107,6 +107,6 @@ describe("createFacetNodeDropCommand", () => {
     ["a complex type", makeItem("/complexType:T", type, { type: "complexType (restricts xs:anyType)" })],
     ["an element without simple content", makeItem("/element:a", element, { type: "xs:string (restricts)" })],
   ])("should return null for %s", (_case, item) => {
-    expect(createFacetNodeDropCommand(item, PaletteSchemaConstruct.Enumeration)).toBeNull();
+    expect(createFacetNodeDropCommand(item, DraggableSchemaConstruct.Enumeration)).toBeNull();
   });
 });

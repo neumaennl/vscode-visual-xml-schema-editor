@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-20T13:22:02Z }
-verified: { by: human:neumaennl, at: 2026-11-20T15:04:32Z }
+generated: { by: human:neumaennl, at: 2026-11-20T15:22:36Z }
+verified: { by: human:neumaennl, at: 2026-11-20T15:25:36Z }
 ---
 
 # Purpose
@@ -128,8 +128,8 @@ Effort:
 - **Location:** `src/schemaConstraints/`
 - **Severity:** Medium
 - **Effort:** L
-- **Description:** XML Schema requires that each element of a document matches exactly one particle of its content model without looking ahead ("Unique Particle Attribution"). `<xs:choice><xs:element name="a"/><xs:element name="a"/></xs:choice>`, two `a` in an `xs:all`, and a sequence `a?, a` violate it, even if both `a` have the same type. The editor does not check it, so adding or renaming elements and changing their occurrences can produce such content models. The fix is one more constraint in the check of the result (see [ADR 003](architecture/003-validators-check-executors-assume.md)).
-- **GitHub issue:** none
+- **Description:** XML Schema requires that each element of a document matches exactly one particle of its content model without looking ahead ("Unique Particle Attribution"). `<xs:choice><xs:element name="a"/><xs:element name="a"/></xs:choice>`, two `a` in an `xs:all`, and a sequence `a?, a` violate it, even if both `a` have the same type. The editor does not check it, so adding or renaming elements and changing their occurrences can produce such content models. The fix is one more constraint in the check of the result (see [ADR 003](architecture/003-validators-check-executors-assume.md)). It waits for the move to xmlbind-ts 3, because the check needs the order of the children of a sequence, which xmlbind-ts 2 does not keep reliably.
+- **GitHub issue:** [#444](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/444)
 
 ## Inline complex types with simple content are treated as inline simple types
 

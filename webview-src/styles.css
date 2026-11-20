@@ -216,6 +216,13 @@ body {
   border-radius: 2px;
 }
 
+/* Why a field rejected the entered text, below the field */
+.property-message {
+  margin-top: 2px;
+  font-size: 0.9em;
+  color: var(--vscode-errorForeground);
+}
+
 .property-facet-icon {
   margin-right: 6px;
   font-size: 13px;

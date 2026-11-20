@@ -113,8 +113,6 @@ describe("renderFacetsTab", () => {
       { id: "/simpleType:Range", label: "Min Inclusive", value: " 2 ", facets: { minInclusive: "2" } },
       { id: "/simpleType:Code", label: "Max Length", value: " ", facets: { maxLength: undefined } },
       { id: "/simpleType:Range", label: "Min Inclusive", value: "", facets: { minInclusive: undefined } },
-      { id: "/simpleType:Code", label: "White Space", value: "preserve", facets: { whiteSpace: "preserve" } },
-      { id: "/simpleType:Code", label: "White Space", value: "", facets: { whiteSpace: undefined } },
     ])("should set $label of $id to '$value' and keep the other facets", ({ id, label, value, facets }) => {
       const { tab, node, dispatch } = renderFacets(id);
       const expected = { ...node.restrictions, ...facets };
@@ -128,13 +126,33 @@ describe("renderFacetsTab", () => {
       expect(node.restrictions).toEqual(expected);
     });
 
-    test("should ignore a value of the white space facet that XML Schema does not allow", () => {
+    test("should suggest the values of the white space facet and set an entered one", () => {
+      const { tab, node, dispatch } = renderFacets("/simpleType:Code");
+      const input = getInputByLabel(tab, "White Space");
+      const suggestions = tab.querySelector<HTMLDataListElement>(`#${input.getAttribute("list") ?? ""}`)!;
+      const expected = { ...node.restrictions, whiteSpace: "preserve" };
+
+      expect(Array.from(suggestions.options, (option) => option.value)).toEqual(["preserve", "replace", "collapse"]);
+      editInput(tab, "White Space", "preserve");
+
+      expect(dispatch).toHaveBeenCalledExactlyOnceWith({
+        type: "modifySimpleType",
+        payload: { typeId: "/simpleType:Code", restrictions: expected },
+      });
+      expect(node.restrictions).toEqual(expected);
+    });
+
+    test("should reject a value that the white space facet does not allow, with a message", () => {
       const { tab, node, dispatch } = renderFacets("/simpleType:Code");
 
       editInput(tab, "White Space", "trim");
 
       expect(dispatch).not.toHaveBeenCalled();
       expect(node.restrictions?.whiteSpace).toBe("collapse");
+      expect(getInputByLabel(tab, "White Space").value).toBe("collapse");
+      expect(getInputByLabel(tab, "White Space").parentElement?.querySelector(".property-message")?.textContent).toBe(
+        "'trim' is not a value of White Space. Choose one of: preserve, replace, collapse"
+      );
     });
 
     test("should keep the inline base type, which the command does not name", () => {

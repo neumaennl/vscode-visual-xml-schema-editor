@@ -4,8 +4,8 @@ title: UX concept
 description: The interaction model of the editor - which surface adds, edits and deletes what, how facets work, and how the properties panel behaves - with a list of what the current editor does not implement yet.
 tags: [ux, editor, palette, properties-panel, facets, context-menu, toolbar]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-19T14:50:08Z }
-verified: { by: human:neumaennl, at: 2026-11-19T15:32:47Z }
+generated: { by: human:neumaennl, at: 2026-11-20T08:02:47Z }
+verified: { by: human:neumaennl, at: 2026-11-20T08:38:02Z }
 sources:
   - id: palette-items
     resource: ../webview-src/palette/paletteEntries.ts
@@ -128,10 +128,21 @@ Computed values are shown as read-only text, for example the namespace, the grou
 
 The panel header has a delete button for the selected node.[^panel-commands]
 
+A field that rejects the entered text, such as an empty name, says why below the field and shows the current value again; the message disappears with the next accepted value. The last member type of a union and the last facet of a restriction cannot be removed; their remove buttons are disabled.
+
+## Fields with fixed values
+
+A field whose value is one of a fixed set of values accepts no free text:
+
+- **Yes/no** is a toggle switch, such as nillable, abstract and mixed content.
+- **Other fixed values** are a text field that suggests the values and filters them as the user types, like the base type field, such as the kind of a simple type (Restriction, List, Union) and the White Space facet (`preserve`, `replace`, `collapse`). It accepts a value or its label, ignoring case. Anything else is rejected with a message below the field, which names the values, and the field shows the current value again. The message disappears with the next valid entry.
+
+Text fields without this restriction are only used where the value is open, such as names, numbers and type references, for example the base type and the member types of a union; their suggestions are a convenience, not a restriction, so that a type of an imported schema can be entered too.
+
 ## Facets
 
 - Shown for simple types and elements with simple content that are derived by restriction, not by list or union.
-- Shows an editable row for every facet that is present.
+- Shows an editable row for every facet that is present: a text field for each facet with one value, White Space accepts only its three values (see [Fields with fixed values](#fields-with-fixed-values)), and a remove button next to each facet.
 - Enumeration values and patterns are shown as chips, one per value:[^panel-facet-lists]
   - Clicking a value edits it in place. Enter or leaving the field saves the value, Escape cancels. An empty value removes it; an unchanged value or one that the facet already has keeps the old value.
   - The close button of a chip removes the value, and "+ value" or "+ pattern" adds one. A value that the facet already has is not added.

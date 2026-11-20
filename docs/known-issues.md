@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-19T14:50:08Z }
-verified: { by: human:neumaennl, at: 2026-11-19T15:32:47Z }
+generated: { by: human:neumaennl, at: 2026-11-20T08:02:47Z }
+verified: { by: human:neumaennl, at: 2026-11-20T08:38:02Z }
 ---
 
 # Purpose

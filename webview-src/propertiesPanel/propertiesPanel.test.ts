@@ -203,6 +203,56 @@ describe("PropertiesPanel", () => {
     });
   });
 
+  test("should reject an empty name with a message and show the current name again", () => {
+    const { dispatch } = displayItem(
+      container,
+      new DiagramItem("/element:person", "person", DiagramItemType.element, diagram)
+    );
+
+    editInput(container, "Name", "  ");
+
+    expect(dispatch).not.toHaveBeenCalled();
+    expect(getInputByLabel(container, "Name").value).toBe("person");
+    expect(getInputByLabel(container, "Name").parentElement?.querySelector(".property-message")?.textContent).toBe(
+      "Enter a name"
+    );
+  });
+
+  test.each(["unbounded", " unbounded "])("should accept maxOccurs %j without a message", (text) => {
+    const item = new DiagramItem("/element:root/element:item[0]", "item", DiagramItemType.element, diagram);
+    item.minOccurrence = 1;
+    item.maxOccurrence = 3;
+    const { dispatch } = displayItem(container, item);
+
+    editInput(container, "maxOccurs", text);
+
+    expect(dispatch).toHaveBeenCalledExactlyOnceWith({
+      type: "modifyElement",
+      payload: { elementId: "/element:root/element:item[0]", minOccurs: 1, maxOccurs: "unbounded" },
+    });
+    expect(getInputByLabel(container, "maxOccurs").value).toBe("unbounded");
+    expect(container.querySelector(".property-message:not([hidden])")).toBeNull();
+  });
+
+  test.each([
+    ["minOccurs", "abc", "1", "minOccurs must be a number"],
+    ["minOccurs", " ", "1", "minOccurs must be a number"],
+    ["maxOccurs", "many", "3", "maxOccurs must be a number or unbounded"],
+  ])("should reject %s %j with a message and show the current value again", (label, text, current, message) => {
+    const item = new DiagramItem("/element:root/element:item[0]", "item", DiagramItemType.element, diagram);
+    item.minOccurrence = 1;
+    item.maxOccurrence = 3;
+    const { dispatch } = displayItem(container, item);
+
+    editInput(container, label, text);
+
+    expect(dispatch).not.toHaveBeenCalled();
+    expect(getInputByLabel(container, label).value).toBe(current);
+    expect(getInputByLabel(container, label).parentElement?.querySelector(".property-message")?.textContent).toBe(
+      message
+    );
+  });
+
   test.each([
     ["top-level elements", "/element:item", DiagramItemType.element],
     ["schema nodes", SCHEMA_ROOT_ID, DiagramItemType.group],

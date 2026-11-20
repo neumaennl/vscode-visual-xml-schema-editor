@@ -194,10 +194,14 @@ export class PropertiesPanel {
     const nameCommand = createRenameNodeCommand(node, node.name);
     if (nameCommand) {
       root.appendChild(
-        createEditableField("Name", node.name, (next) => {
+        createEditableField("Name", node.name, (next, reject) => {
           const trimmedName = next.trim();
           const currentName = node.name.trim();
           if (trimmedName === currentName) {
+            return;
+          }
+          if (!trimmedName) {
+            reject("Enter a name");
             return;
           }
           if (this.pendingRename?.sourceId === node.id && this.pendingRename.newName === trimmedName) {
@@ -288,19 +292,25 @@ export class PropertiesPanel {
     const row = document.createElement("div");
     row.className = "property-row-2col";
 
-    const minCol = createInputColumn("minOccurs:", String(node.minOccurrence), (text) => {
-      const val = Number(text);
-      if (!Number.isNaN(val)) {
-        dispatchOccurrence(val, node.maxOccurrence === -1 ? "unbounded" : node.maxOccurrence);
+    // Negative numbers, fractions and minOccurs > maxOccurs are left to the validator of the extension host
+    const minCol = createInputColumn("minOccurs:", String(node.minOccurrence), (text, reject) => {
+      const raw = text.trim();
+      const minOccurs = Number(raw);
+      if (raw === "" || Number.isNaN(minOccurs)) {
+        reject("minOccurs must be a number");
+        return;
       }
+      dispatchOccurrence(minOccurs, node.maxOccurrence === -1 ? "unbounded" : node.maxOccurrence);
     });
     const maxValue = node.maxOccurrence === -1 ? "unbounded" : String(node.maxOccurrence);
-    const maxCol = createInputColumn("maxOccurs:", maxValue, (text) => {
+    const maxCol = createInputColumn("maxOccurs:", maxValue, (text, reject) => {
       const raw = text.trim();
       const maxOccurs = raw === "unbounded" ? "unbounded" : Number(raw);
-      if (maxOccurs === "unbounded" || !Number.isNaN(maxOccurs)) {
-        dispatchOccurrence(node.minOccurrence, maxOccurs);
+      if (raw === "" || Number.isNaN(maxOccurs)) {
+        reject("maxOccurs must be a number or unbounded");
+        return;
       }
+      dispatchOccurrence(node.minOccurrence, maxOccurs);
     });
 
     row.appendChild(minCol);

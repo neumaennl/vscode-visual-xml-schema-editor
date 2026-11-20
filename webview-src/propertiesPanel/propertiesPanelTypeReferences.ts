@@ -7,6 +7,7 @@ import { BUILT_IN_DATATYPES, isBuiltInTypeName } from "../../shared/builtInTypes
 import { SchemaNodeType } from "../../shared/idStrategy";
 import { splitQName } from "../../shared/qNames";
 import type { DiagramItem } from "../diagram";
+import type { CommitHandler } from "./propertiesPanelDom";
 import { getNodeType } from "./propertiesPanelNodeKinds";
 
 /**
@@ -93,7 +94,8 @@ export function normalizeTypeReference(node: DiagramItem, nextType: string): str
 
 /**
  * Returns the commit callback of a type field: it calls `apply` only when the new type differs from the
- * current one, both normalized for the current schema (see {@link normalizeTypeReference}).
+ * current one, both normalized for the current schema (see {@link normalizeTypeReference}), and rejects an
+ * empty type with a message unless `allowEmpty` is set.
  *
  * @param node - Diagram item whose type field this is
  * @param current - The current type
@@ -106,10 +108,14 @@ export function createTypeCommitHandler(
   current: string,
   apply: (normalizedNext: string, next: string) => void,
   allowEmpty = false
-): (next: string) => void {
-  return (next) => {
+): CommitHandler {
+  return (next, reject) => {
     const normalizedNext = normalizeTypeReference(node, next);
-    if ((!normalizedNext && !allowEmpty) || normalizedNext === normalizeTypeReference(node, current)) {
+    if (!normalizedNext && !allowEmpty) {
+      reject("Enter a type, such as xs:string");
+      return;
+    }
+    if (normalizedNext === normalizeTypeReference(node, current)) {
       return;
     }
     apply(normalizedNext, next);

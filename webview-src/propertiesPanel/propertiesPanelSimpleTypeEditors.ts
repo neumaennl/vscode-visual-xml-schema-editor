@@ -3,10 +3,10 @@
  * Keeps the structured editor controls out of the general type-property module.
  */
 
-import type { SchemaCommand } from "../../shared/types";
+import type { SchemaCommand, SimpleTypeDerivationKind } from "../../shared/types";
 import { SchemaNodeType } from "../../shared/idStrategy";
 import type { DiagramItem } from "../diagram";
-import { createEditableField } from "./propertiesPanelDom";
+import { type ChoiceOption, createChoiceField, createEditableField, createSuggestionInput } from "./propertiesPanelDom";
 import { createTypeCommitHandler, normalizeTypeReference } from "./propertiesPanelTypeReferences";
 import {
   createSimpleTypeKindCommand,
@@ -15,6 +15,8 @@ import {
 } from "./propertiesPanelSimpleTypeCommands";
 import { getReadOnlyTypeValue } from "./propertiesPanelTypeHelpers";
 
+/** Why the last member type of a union cannot be removed. */
+const LAST_MEMBER_TYPE_MESSAGE = "A union needs at least one member type";
 /**
  * Resolves the current simpleType derivation kind from structured diagram state. The diagram builder
  * sets the kind for every simple type with a body; other nodes count as restrictions.
@@ -22,7 +24,7 @@ import { getReadOnlyTypeValue } from "./propertiesPanelTypeHelpers";
  * @param node - Diagram node being edited
  * @returns The current simpleType derivation kind
  */
-export function getSimpleTypeDerivationKind(node: DiagramItem): "restriction" | "list" | "union" {
+export function getSimpleTypeDerivationKind(node: DiagramItem): SimpleTypeDerivationKind {
   return node.simpleTypeDerivationKind ?? "restriction";
 }
 
@@ -95,38 +97,16 @@ export function renderSimpleTypeKindSelector(
   hasInlineSimpleType: boolean,
   dispatchCommand: (command: SchemaCommand) => void
 ): void {
-  const currentKind = getSimpleTypeDerivationKind(node);
-  const field = document.createElement("div");
-  field.className = "property";
-
-  const label = document.createElement("label");
-  label.textContent = "Kind:";
-  field.appendChild(label);
-
-  const select = document.createElement("select");
-  select.className = "property-input";
-  const options = [
+  const options: ReadonlyArray<ChoiceOption<SimpleTypeDerivationKind>> = [
     { value: "restriction", label: "Restriction" },
     { value: "list", label: "List" },
     { value: "union", label: "Union" },
   ];
-
-  for (const option of options) {
-    const optionElement = document.createElement("option");
-    optionElement.value = option.value;
-    optionElement.textContent = option.label;
-    select.appendChild(optionElement);
-  }
-
-  select.value = currentKind;
-  // A select only reports a change to another value, so the new kind always differs from the current one
-  select.addEventListener("change", () => {
-    const nextKind = select.value as "restriction" | "list" | "union";
+  const field = createChoiceField("Kind", getSimpleTypeDerivationKind(node), options, (nextKind) => {
     const command = createSimpleTypeKindCommand(node, nextKind);
     if (!command) {
       // Nothing to derive the new body from, for example a union of inline types only
-      select.value = currentKind;
-      return;
+      return false;
     }
 
     // The command builder derives the new body from the current one; a list or union has no facets
@@ -144,9 +124,8 @@ export function renderSimpleTypeKindSelector(
     }
 
     dispatchCommand(command);
+    return true;
   });
-
-  field.appendChild(select);
   root.appendChild(field);
 }
 
@@ -266,49 +245,44 @@ export function renderSimpleTypeUnionEditor(context: SimpleTypeEditorContext): v
       row.style.gap = "6px";
       row.style.alignItems = "center";
 
-      const select = document.createElement("select");
-      select.className = "property-input";
-
-      const optionValues = Array.from(
-        new Set(["", ...typeSuggestions, ...memberTypes].map((entry) => entry.trim()).filter(Boolean))
+      // A member type is a type reference, an open value: any type can be entered, the known ones are suggested
+      const memberInput = createSuggestionInput(
+        memberType,
+        typeSuggestions,
+        (next, reject) => {
+          const entered = next.trim();
+          if (entered === memberTypes[index]) {
+            return;
+          }
+          const nextMemberTypes = memberTypes.map((existing, i) => (i === index ? entered : existing));
+          if (toNormalizedMembers(nextMemberTypes).length === 0) {
+            reject(LAST_MEMBER_TYPE_MESSAGE);
+            return;
+          }
+          memberTypes[index] = entered;
+          commitUnionMembers(memberTypes);
+        },
+        "type, such as xs:string"
       );
-      const emptyOption = document.createElement("option");
-      emptyOption.value = "";
-      emptyOption.textContent = "Select type...";
-      select.appendChild(emptyOption);
-
-      for (const optionValue of optionValues) {
-        const option = document.createElement("option");
-        option.value = optionValue;
-        option.textContent = optionValue;
-        select.appendChild(option);
-      }
-
-      select.value = memberType;
-      select.addEventListener("change", () => {
-        memberTypes[index] = select.value;
-        commitUnionMembers(memberTypes);
-      });
 
       const deleteButton = document.createElement("button");
       deleteButton.type = "button";
       deleteButton.className = "property-docs-action property-docs-action-destructive property-docs-action-icon-only";
       deleteButton.setAttribute("aria-label", "Remove member type");
-      deleteButton.title = "Remove member type";
+      // A union needs at least one member type
+      deleteButton.disabled = memberTypes.length <= 1;
+      deleteButton.title = deleteButton.disabled ? LAST_MEMBER_TYPE_MESSAGE : "Remove member type";
       const iconSpan = document.createElement("span");
       iconSpan.className = "codicon codicon-trash";
       iconSpan.setAttribute("aria-hidden", "true");
       deleteButton.appendChild(iconSpan);
       deleteButton.addEventListener("click", () => {
         memberTypes.splice(index, 1);
-        if (memberTypes.length === 0) {
-          memberTypes.push("");
-        }
         renderRows();
         commitUnionMembers(memberTypes);
       });
 
-      row.appendChild(select);
+      row.appendChild(memberInput);
       row.appendChild(deleteButton);
       editorBody.appendChild(row);
     });

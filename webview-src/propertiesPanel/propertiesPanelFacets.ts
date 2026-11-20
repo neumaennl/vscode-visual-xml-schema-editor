@@ -6,12 +6,12 @@
 import {
   countFacetsWithValues,
   isNumericFacet,
-  isWhiteSpaceValue,
+  WHITE_SPACE_VALUES,
   type SINGLE_VALUE_FACETS,
 } from "../../shared/facets";
 import type { SchemaCommand } from "../../shared/types";
 import type { DiagramItem } from "../diagram";
-import { createEditableField } from "./propertiesPanelDom";
+import { createChoiceField, createEditableField } from "./propertiesPanelDom";
 import { resolveSimpleTypeId } from "./propertiesPanelTargets";
 import type { RestrictionSnapshot } from "./propertiesPanelDraft";
 import { getFacetIconStyle } from "../facetIcons";
@@ -102,19 +102,17 @@ export function renderFacetsTab(
   }
 
   if (restrictions.whiteSpace !== undefined) {
-    const field = createEditableField(
+    // The facet has three values, so it accepts only these; it is removed with its remove button
+    const field = createChoiceField(
       "White Space",
       restrictions.whiteSpace,
+      WHITE_SPACE_VALUES.map((value) => ({ value, label: value })),
       (next) => {
-        const value = next.trim();
-        if (value !== "" && !isWhiteSpaceValue(value)) {
-          return;
-        }
         buildAndDispatch((draft) => {
-          draft.whiteSpace = value === "" ? undefined : value;
+          draft.whiteSpace = next;
         });
+        return true;
       },
-      undefined,
       getFacetIconStyle("whiteSpace")
     );
     root.appendChild(

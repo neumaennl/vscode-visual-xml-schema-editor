@@ -20,8 +20,7 @@ import {
   editInput,
   getInputByLabel,
   getLabels,
-  getSelectByLabel,
-  getSelectsByLabel,
+  getInputsByLabel,
   getTextByLabel,
 } from "../__tests__/propertiesPanelTestHelpers";
 import { diagramItem, muteDiagramBuilderLog } from "../__tests__/diagramTestHelpers";
@@ -85,14 +84,14 @@ function renderBodyEditor(id: string, editor: typeof renderSimpleTypeListEditor)
 }
 
 /**
- * Selects a value in a select, which reports the change.
+ * Enters a text in an input and leaves it, which commits the text.
  *
- * @param select - The select
- * @param value - The value to select
+ * @param input - The input
+ * @param text - The text
  */
-function choose(select: HTMLSelectElement, value: string): void {
-  select.value = value;
-  select.dispatchEvent(new Event("change"));
+function enter(input: HTMLInputElement, text: string): void {
+  input.value = text;
+  input.dispatchEvent(new Event("blur"));
 }
 
 /**
@@ -135,12 +134,13 @@ describe("propertiesPanelSimpleTypeEditors", () => {
   });
 
   describe("renderSimpleTypeKindSelector", () => {
-    test("should offer the three kinds and select the current one", () => {
+    test("should suggest the three kinds and show the current one", () => {
       const { root } = renderEditor("/simpleType:Tokens", renderSimpleTypeKindSelector);
 
-      const select = getSelectByLabel(root, "Kind");
-      expect(Array.from(select.options, (option) => option.textContent)).toEqual(["Restriction", "List", "Union"]);
-      expect(select.value).toBe("list");
+      const input = getInputByLabel(root, "Kind");
+      const suggestions = root.querySelector<HTMLDataListElement>(`#${input.getAttribute("list") ?? ""}`)!;
+      expect(Array.from(suggestions.options, (option) => option.value)).toEqual(["Restriction", "List", "Union"]);
+      expect(input.value).toBe("List");
     });
 
     test.each([
@@ -190,7 +190,7 @@ describe("propertiesPanelSimpleTypeEditors", () => {
         const { root, node, dispatch } = renderEditor(id, renderSimpleTypeKindSelector);
         const typeId = id.startsWith("/element:") ? `${id}/anonymousSimpleType[0]` : id;
 
-        choose(getSelectByLabel(root, "Kind"), kind);
+        editInput(root, "Kind", kind);
 
         expect(dispatch).toHaveBeenCalledExactlyOnceWith({ type: "modifySimpleType", payload: { typeId, ...payload } });
         expect(node).toMatchObject(draft);
@@ -199,12 +199,11 @@ describe("propertiesPanelSimpleTypeEditors", () => {
 
     test("should keep the kind of a union of inline types, which has no type to derive a list from", () => {
       const { root, dispatch } = renderEditor("/simpleType:InlineMembers", renderSimpleTypeKindSelector);
-      const select = getSelectByLabel(root, "Kind");
 
-      choose(select, "list");
+      editInput(root, "Kind", "list");
 
       expect(dispatch).not.toHaveBeenCalled();
-      expect(select.value).toBe("union");
+      expect(getInputByLabel(root, "Kind").value).toBe("Union");
     });
   });
 
@@ -253,17 +252,24 @@ describe("propertiesPanelSimpleTypeEditors", () => {
   });
 
   describe("renderSimpleTypeUnionEditor", () => {
-    test("should show a select for each member type, which offers the suggestions and the member types", () => {
+    test("should show a text field for each member type, which suggests the type names", () => {
       const { root } = renderBodyEditor("/simpleType:Number", renderSimpleTypeUnionEditor);
 
-      const selects = getSelectsByLabel(root, "Member Types");
-      expect(selects.map((select) => select.value)).toEqual(["xs:int", "xs:decimal"]);
-      expect(Array.from(selects[0]!.options, (option) => option.value)).toEqual([
-        "",
-        ...SUGGESTIONS,
-        "xs:int",
-        "xs:decimal",
-      ]);
+      const inputs = getInputsByLabel(root, "Member Types");
+      expect(inputs.map((input) => input.value)).toEqual(["xs:int", "xs:decimal"]);
+      const suggestions = root.querySelector<HTMLDataListElement>(`#${inputs[0]!.getAttribute("list") ?? ""}`)!;
+      expect(Array.from(suggestions.options, (option) => option.value)).toEqual(SUGGESTIONS);
+    });
+
+    test("should accept a member type that is not suggested, such as a type of an imported schema", () => {
+      const { root, dispatch } = renderBodyEditor("/simpleType:Number", renderSimpleTypeUnionEditor);
+
+      enter(getInputsByLabel(root, "Member Types")[1]!, "ext:Code");
+
+      expect(dispatch).toHaveBeenCalledExactlyOnceWith({
+        type: "modifySimpleType",
+        payload: { typeId: "/simpleType:Number", unionMemberTypes: ["xs:int", "ext:Code"] },
+      });
     });
 
     test.each([
@@ -276,7 +282,7 @@ describe("propertiesPanelSimpleTypeEditors", () => {
     ])("should change a member type of the union of $id", ({ id, typeId, type }) => {
       const { root, node, dispatch } = renderBodyEditor(id, renderSimpleTypeUnionEditor);
 
-      choose(getSelectsByLabel(root, "Member Types")[1]!, "xs:double");
+      enter(getInputsByLabel(root, "Member Types")[1]!, "xs:double");
 
       expect(dispatch).toHaveBeenCalledExactlyOnceWith({
         type: "modifySimpleType",
@@ -285,25 +291,40 @@ describe("propertiesPanelSimpleTypeEditors", () => {
       expect(node.type).toBe(type);
     });
 
-    test("should send nothing when a member type is selected again", () => {
+    test("should send nothing when a member type is entered again", () => {
       const { root, dispatch } = renderBodyEditor("/simpleType:Number", renderSimpleTypeUnionEditor);
 
-      choose(getSelectsByLabel(root, "Member Types")[1]!, "xs:decimal");
+      enter(getInputsByLabel(root, "Member Types")[1]!, "xs:decimal");
 
       expect(dispatch).not.toHaveBeenCalled();
     });
 
-    test("should remove member types, but send no union without members", () => {
+    test("should remove member types, but not the last one", () => {
       const { root, dispatch } = renderBodyEditor("/simpleType:Number", renderSimpleTypeUnionEditor);
 
-      removeMemberButtons(root)[0]!.click();
       removeMemberButtons(root)[0]!.click();
 
       expect(dispatch).toHaveBeenCalledExactlyOnceWith({
         type: "modifySimpleType",
         payload: { typeId: "/simpleType:Number", unionMemberTypes: ["xs:decimal"] },
       });
-      expect(getSelectsByLabel(root, "Member Types").map((select) => select.value)).toEqual([""]);
+      expect(getInputsByLabel(root, "Member Types").map((input) => input.value)).toEqual(["xs:decimal"]);
+      expect(removeMemberButtons(root).map((button) => button.disabled)).toEqual([true]);
+    });
+
+    test("should reject emptying the only member type with a message", () => {
+      const { root, dispatch } = renderBodyEditor("/simpleType:Number", renderSimpleTypeUnionEditor);
+      removeMemberButtons(root)[0]!.click();
+      dispatch.mockClear();
+      const input = getInputsByLabel(root, "Member Types")[0]!;
+
+      enter(input, " ");
+
+      expect(dispatch).not.toHaveBeenCalled();
+      expect(input.value).toBe("xs:decimal");
+      expect(input.parentElement?.querySelector(".property-message")?.textContent).toBe(
+        "A union needs at least one member type"
+      );
     });
 
     test("should add an empty member type without sending a command", () => {
@@ -313,18 +334,14 @@ describe("propertiesPanelSimpleTypeEditors", () => {
         .find((button) => button.textContent === "Add member type")!
         .click();
 
-      expect(getSelectsByLabel(root, "Member Types").map((select) => select.value)).toEqual([
-        "xs:int",
-        "xs:decimal",
-        "",
-      ]);
+      expect(getInputsByLabel(root, "Member Types").map((input) => input.value)).toEqual(["xs:int", "xs:decimal", ""]);
       expect(dispatch).not.toHaveBeenCalled();
     });
 
     test("should show one empty member type for a union of inline types", () => {
       const { root } = renderBodyEditor("/simpleType:InlineMembers", renderSimpleTypeUnionEditor);
 
-      expect(getSelectsByLabel(root, "Member Types").map((select) => select.value)).toEqual([""]);
+      expect(getInputsByLabel(root, "Member Types").map((input) => input.value)).toEqual([""]);
     });
 
     test("should offer to replace the inline union of an element with its first member type", () => {

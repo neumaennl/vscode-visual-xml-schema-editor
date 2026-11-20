@@ -77,7 +77,7 @@ export function isNumericFacet(facet: FacetName): facet is NumericFacetName {
 export type WhiteSpaceValue = NonNullable<RestrictionFacets["whiteSpace"]>;
 
 /** The values that the `whiteSpace` facet allows. */
-const WHITE_SPACE_VALUES: ReadonlySet<string> = new Set<WhiteSpaceValue>(["preserve", "replace", "collapse"]);
+export const WHITE_SPACE_VALUES: readonly WhiteSpaceValue[] = ["preserve", "replace", "collapse"];
 
 /**
  * Tells whether a text is a value of the `whiteSpace` facet.
@@ -86,5 +86,5 @@ const WHITE_SPACE_VALUES: ReadonlySet<string> = new Set<WhiteSpaceValue>(["prese
  * @returns True for `preserve`, `replace` and `collapse`
  */
 export function isWhiteSpaceValue(value: string): value is WhiteSpaceValue {
-  return WHITE_SPACE_VALUES.has(value);
+  return (WHITE_SPACE_VALUES as readonly string[]).includes(value);
 }

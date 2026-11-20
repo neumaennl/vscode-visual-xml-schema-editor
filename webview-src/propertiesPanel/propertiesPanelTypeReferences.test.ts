@@ -86,21 +86,25 @@ describe("normalizeTypeReference", () => {
 describe("createTypeCommitHandler", () => {
   test("should apply a changed type with the normalized and the entered value", () => {
     const apply = vi.fn();
-    createTypeCommitHandler(itemWithPrefix("/element:a"), "xs:string", apply)(" xs:int ");
+    createTypeCommitHandler(itemWithPrefix("/element:a"), "xs:string", apply)(" xs:int ", vi.fn());
     expect(apply).toHaveBeenCalledWith("xs:int", " xs:int ");
   });
 
   test("should ignore a type that only differs before normalization", () => {
     const apply = vi.fn();
-    createTypeCommitHandler(itemWithPrefix("/element:a"), "xs:int", apply)("  xs:int ");
+    createTypeCommitHandler(itemWithPrefix("/element:a"), "xs:int", apply)("  xs:int ", vi.fn());
     expect(apply).not.toHaveBeenCalled();
   });
 
-  test("should ignore an empty type unless it is allowed", () => {
+  test("should reject an empty type with a message unless it is allowed", () => {
     const apply = vi.fn();
-    createTypeCommitHandler(itemWithPrefix("/element:a"), "xs:string", apply)("  ");
+    const reject = vi.fn();
+    createTypeCommitHandler(itemWithPrefix("/element:a"), "xs:string", apply)("  ", reject);
     expect(apply).not.toHaveBeenCalled();
-    createTypeCommitHandler(itemWithPrefix("/element:a"), "xs:string", apply, true)("  ");
+    expect(reject).toHaveBeenCalledExactlyOnceWith("Enter a type, such as xs:string");
+
+    createTypeCommitHandler(itemWithPrefix("/element:a"), "xs:string", apply, true)("  ", reject);
     expect(apply).toHaveBeenCalledWith("", "  ");
+    expect(reject).toHaveBeenCalledTimes(1);
   });
 });

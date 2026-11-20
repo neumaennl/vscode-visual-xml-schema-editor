@@ -39,36 +39,19 @@ export function getInputByLabel(container: HTMLElement, label: string): HTMLInpu
 }
 
 /**
- * Returns the select of the field with the given label and fails the test if there is none.
+ * Returns all inputs of the field with the given label, such as the member types of a union, and fails the
+ * test if there is none.
  *
  * @param container - The element that holds the panel
  * @param label - The label without the colon
- * @returns The select
- * @throws An {@link Error} if the field has no select
+ * @returns The inputs, in document order
  */
-export function getSelectByLabel(container: HTMLElement, label: string): HTMLSelectElement {
+export function getInputsByLabel(container: HTMLElement, label: string): HTMLInputElement[] {
   const match = findLabel(container, label);
   expect(match).toBeDefined();
-  const select = match?.parentElement?.querySelector("select");
-  if (!select) {
-    throw new Error(`The field ${label} has no select`);
-  }
-  return select;
-}
-
-/**
- * Returns all selects of the field with the given label and fails the test if there is none.
- *
- * @param container - The element that holds the panel
- * @param label - The label without the colon
- * @returns The selects, in document order
- */
-export function getSelectsByLabel(container: HTMLElement, label: string): HTMLSelectElement[] {
-  const match = findLabel(container, label);
-  expect(match).toBeDefined();
-  const selects = Array.from(match?.parentElement?.querySelectorAll("select") ?? []);
-  expect(selects.length).toBeGreaterThan(0);
-  return selects;
+  const inputs = Array.from(match?.parentElement?.querySelectorAll("input") ?? []);
+  expect(inputs.length).toBeGreaterThan(0);
+  return inputs;
 }
 
 /**

@@ -137,6 +137,19 @@ describe("renderSchemaNamespaceProperties", () => {
       expect(rerender).toHaveBeenCalledOnce();
     });
 
+    test("should reject a target namespace that is not an absolute URI with a message below the field", () => {
+      const { root, dispatch } = renderNamespaces();
+
+      editInput(root, "targetNamespace", "original");
+
+      const input = getInputByLabel(root, "targetNamespace");
+      expect(dispatch).not.toHaveBeenCalled();
+      expect(input.value).toBe("urn:original");
+      expect(input.parentElement?.querySelector(".property-message")?.textContent).toBe(
+        "targetNamespace must be a valid absolute URI"
+      );
+    });
+
     test("should remove the declaration of a removed target namespace", () => {
       const { root, node, dispatch } = renderNamespaces();
 
@@ -222,13 +235,34 @@ describe("renderSchemaNamespaceProperties", () => {
       expect(dispatch).toHaveBeenCalledExactlyOnceWith(namespacesCommand("", { other: "urn:other", xs: XS }));
     });
 
-    test.each(["xml", "xmlns"])("should reject the reserved prefix %s and show the declarations again", (prefix) => {
+    test.each([
+      ["the reserved prefix xml", "xml", "Prefix 'xml' is reserved and cannot be used"],
+      ["the reserved prefix xmlns", "xmlns", "Prefix 'xmlns' is reserved and cannot be used"],
+      ["a prefix that is no valid name", "1x", "Prefix '1x' is not a valid XML name"],
+      ["a prefix that is already declared", "xs", "Prefix 'xs' is already declared"],
+    ])("should reject %s with a message below the field and keep the prefix", (_case, prefix, message) => {
       const { root, dispatch, rerender } = renderNamespaces();
+      const input = declarationRow(root, "other").prefix;
 
-      commit(declarationRow(root, "other").prefix, prefix);
+      commit(input, prefix);
 
       expect(dispatch).not.toHaveBeenCalled();
-      expect(rerender).toHaveBeenCalledOnce();
+      expect(rerender).not.toHaveBeenCalled();
+      expect(input.value).toBe("other");
+      expect(input.parentElement?.querySelector(".property-message")?.textContent).toBe(message);
+    });
+
+    test("should reject a namespace URI that is not absolute with a message below the field", () => {
+      const { root, dispatch } = renderNamespaces();
+      const input = declarationRow(root, "other").uri;
+
+      commit(input, "not a uri");
+
+      expect(dispatch).not.toHaveBeenCalled();
+      expect(input.value).toBe("urn:other");
+      expect(input.parentElement?.querySelector(".property-message")?.textContent).toBe(
+        "Namespace URI must be a valid absolute URI"
+      );
     });
 
     test("should commit a declaration with Enter", () => {

@@ -4,8 +4,8 @@ title: Architecture
 description: How the extension host, the webview and the shared code work together to provide a visual editor for XML Schema (XSD) files, what xmlbind-ts is responsible for and what the editor is, and the design decisions behind the command-based design.
 tags: [architecture, extension-host, webview, shared, design-decisions]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-19T14:50:08Z }
-verified: { by: human:neumaennl, at: 2026-11-19T15:32:47Z }
+generated: { by: human:neumaennl, at: 2026-11-20T08:53:46Z }
+verified: { by: human:neumaennl, at: 2026-11-20T09:57:53Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -99,7 +99,7 @@ The `shared/` code is imported by both sides and compiled into each separately. 
 
 - **The XSD document is the single source of truth.** The webview never holds authoritative state. It re-renders from each `updateSchema`. The state it saves with `setState` is only a cache so the view survives being hidden and restored.
 - **All changes are commands.** The webview never edits the schema directly. It sends typed commands, and the extension host validates and executes them.
-- **Checks complement each other.** The webview checks what it can decide from the diagram, to give immediate feedback: drop targets, and empty or unchanged input. The extension host is the gatekeeper: it checks every command completely, including the rules that need the whole schema (names, types, references, duplicates), and decides. Rules are not copied to the webview for their own sake; where both sides check the same thing, such as where an element or attribute may be placed, it is because the webview needs it for feedback and the extension host must not rely on the webview (see [Messaging](messaging.md#validation-in-the-webview)).
+- **Checks complement each other.** The webview checks what it can decide from the diagram and from the value of one field, to give immediate feedback: drop targets, and in the properties panel names, type references, facet values, occurrences, namespaces and duplicate values, whose errors it shows below the field. The extension host is the gatekeeper: it checks every command completely, including the rules that need the whole schema or more than one value (references, duplicate names, `minOccurs` > `maxOccurs`), and decides; its errors are shown in the notification banner. Where both sides check the same thing, the rule is written once in `shared/` and both use it, because the webview needs it for feedback and the extension host must not rely on the webview (see [Messaging](messaging.md#validation-in-the-webview) and [UX concept](ux-concept.md#where-errors-appear)).
 - **Validators check, executors assume.** The validator of a command checks everything its executor relies on; the executor does not check it again and states only what it assumes, so that a disagreement fails with an error instead of doing nothing ([ADR 003](architecture/003-validators-check-executors-assume.md)).[^adr-003]
 - **Transactional execution.** Every command parses the document text again and keeps no state, so a failed command leaves nothing behind and the document unchanged. The result is written as a single edit, which VS Code's undo handles as one step.
 - **One set of shared types.** Commands, messages and the schema model are defined once in `shared/` and used by both sides, so the compiler checks both ends of the protocol.

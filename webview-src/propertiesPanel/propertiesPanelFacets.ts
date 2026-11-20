@@ -6,16 +6,17 @@
 import {
   countFacetsWithValues,
   isNumericFacet,
+  validateFacetValue,
   WHITE_SPACE_VALUES,
   type SINGLE_VALUE_FACETS,
 } from "../../shared/facets";
 import type { SchemaCommand } from "../../shared/types";
 import type { DiagramItem } from "../diagram";
-import { createChoiceField, createEditableField } from "./propertiesPanelDom";
+import { createChoiceField, createEditableField } from "./propertiesPanelFields";
 import { resolveSimpleTypeId } from "./propertiesPanelTargets";
 import type { RestrictionSnapshot } from "./propertiesPanelDraft";
 import { getFacetIconStyle } from "../facetIcons";
-import { appendFacetRemoveButton, renderValueListFacet } from "./propertiesPanelFacetLists";
+import { appendFacetRemoveButton, LAST_FACET_TITLE, renderValueListFacet } from "./propertiesPanelFacetLists";
 
 /** The single-value facets that the Facets tab shows as text fields; `whiteSpace` has a field of its own. */
 type ValueFacetName = Exclude<(typeof SINGLE_VALUE_FACETS)[number], "whiteSpace">;
@@ -159,7 +160,19 @@ function appendOptionalValueFacet(
   const field = createEditableField(
     label,
     value.toString(),
-    (next) => {
+    (next, reject) => {
+      const trimmed = next.trim();
+      if (!trimmed && !canRemove) {
+        reject(LAST_FACET_TITLE);
+        return;
+      }
+      if (trimmed && isNumericFacet(key)) {
+        const result = validateFacetValue(key, Number(trimmed));
+        if (!result.valid) {
+          reject(result.error);
+          return;
+        }
+      }
       buildAndDispatch((draft) => {
         assign(draft, next);
       });

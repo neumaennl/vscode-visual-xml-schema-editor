@@ -3,7 +3,7 @@
  * Provides TypeScript-narrowing assertion functions for `ValidationResult`.
  * Uses plain throws (not test framework matchers).
  */
-import type { ValidationResult, ValidationFailure } from "../commandValidators/validationUtils.js";
+import type { ValidationResult, ValidationFailure } from "../validation.js";
 
 /**
  * Asserts that a `ValidationResult` represents a failure and narrows its type to

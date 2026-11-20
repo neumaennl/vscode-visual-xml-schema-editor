@@ -22,7 +22,7 @@ import type {
   ModifyDocumentationCommand,
   annotationType,
 } from "../../shared/types.js";
-import type { ValidationFailure, ValidationResult } from "./validationUtils.js";
+import type { ValidationFailure, ValidationResult } from "../../shared/validation.js";
 import { locateNodeById } from "../schemaNavigator.js";
 import { isSchemaRoot } from "../../shared/schemaUtils.js";
 import { parseDocumentationId, parseSchemaAnnotationId, parseSchemaDocumentationId } from "../commandUtils.js";

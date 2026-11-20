@@ -3,9 +3,13 @@
  * enumeration values and patterns. Both are shown as a list of chips.
  */
 
+import { validateFacetValue } from "../../shared/facets";
 import type { RestrictionSnapshot } from "./propertiesPanelDraft";
 import type { LIST_FACETS } from "../../shared/facets";
 import { getFacetIconStyle } from "../facetIcons";
+import { createFieldMessage } from "./propertiesPanelFields";
+import { addReorderHandlers, type DragState, moveValue } from "./propertiesPanelValueReorder";
+import type { ValidationFailure } from "../../shared/validation";
 
 /** Commits an update of the restriction draft. */
 type BuildAndDispatch = (updater: (next: RestrictionSnapshot) => void) => void;
@@ -20,7 +24,7 @@ const VALUE_LIST_FACETS: Record<ValueListFacet, { label: string; addText: string
 };
 
 /** Title of the remove buttons that are disabled because the restriction needs a facet. */
-const LAST_FACET_TITLE = "A restriction requires at least one facet";
+export const LAST_FACET_TITLE = "A restriction requires at least one facet";
 
 /**
  * Turns a facet field into a removable facet by adding a remove button to it.
@@ -76,7 +80,8 @@ function createRemoveButton(
 
 /**
  * Renders a facet with several values as a list of chips that can be edited, removed and reordered by
- * dragging their grab handle, with a button that adds a value. A value that the list already contains is not added.
+ * dragging their grab handle, with a button that adds a value. A value that the list already contains is
+ * rejected with a message below the list.
  *
  * @param root - Container to append the editor to
  * @param facet - The facet to edit
@@ -98,6 +103,13 @@ export function renderValueListFacet(
   const list = document.createElement("div");
   list.className = "property-value-list";
   field.appendChild(list);
+  const message = createFieldMessage();
+  field.appendChild(message);
+  const reject = (text: string): void => {
+    message.textContent = text;
+    message.hidden = false;
+    render();
+  };
 
   let values = [...initialValues];
   let isAdding = false;
@@ -105,6 +117,7 @@ export function renderValueListFacet(
   const drag: DragState = { index: null };
 
   const update = (next: string[]): void => {
+    message.hidden = true;
     values = next;
     buildAndDispatch((draft) => {
       draft[facet] = values.length > 0 ? [...values] : undefined;
@@ -112,22 +125,13 @@ export function renderValueListFacet(
     render();
   };
 
-  /**
-   * Finishes editing a value: an empty value removes it, an unchanged value, a value the list already
-   * contains or a cancelled edit keeps the old value.
-   *
-   * @param index - The index of the edited value
-   * @param next - The new value, or null if the edit was cancelled
-   */
-  const finishEditing = (index: number, next: string | null): void => {
-    editedIndex = null;
-    const canRemoveValue = values.length > 1 || canRemove;
-    if (next === "" && canRemoveValue) {
-      update(values.filter((_, i) => i !== index));
-    } else if (next && !values.includes(next)) {
-      update(values.map((value, i) => (i === index ? next : value)));
-    } else {
+  const apply = (outcome: ValueListOutcome): void => {
+    if (outcome === null) {
       render();
+    } else if (outcome.valid) {
+      update(outcome.values);
+    } else {
+      reject(outcome.error);
     }
   };
 
@@ -137,7 +141,8 @@ export function renderValueListFacet(
     values.forEach((value, index) => {
       if (index === editedIndex) {
         const input = createValueInput(value, `Edit ${value}`, (next) => {
-          finishEditing(index, next);
+          editedIndex = null;
+          apply(editOutcome(facet, values, index, next, values.length > 1 || canRemove));
         });
         list.appendChild(input);
         input.focus();
@@ -166,37 +171,98 @@ export function renderValueListFacet(
       list.appendChild(chip);
     });
 
-    if (isAdding) {
-      const input = createValueInput("", "New value", (next) => {
-        isAdding = false;
-        if (next && !values.includes(next)) {
-          update([...values, next]);
-        } else {
-          render();
-        }
-      });
-      list.appendChild(input);
-      input.focus();
-    } else {
-      const addButton = document.createElement("button");
-      addButton.type = "button";
-      addButton.className = "property-value-add-button";
-      addButton.textContent = addText;
-      addButton.addEventListener("click", () => {
+    appendAddControl(
+      list,
+      isAdding ? null : addText,
+      () => {
         isAdding = true;
         render();
-      });
-      list.appendChild(addButton);
-    }
+      },
+      (next) => {
+        isAdding = false;
+        apply(next ? checkedValues(facet, [...values, next]) : null);
+      }
+    );
   };
 
   render();
   root.appendChild(field);
 }
 
-/** The index of the chip that is being dragged, shared by the chips of one list; `null` without a drag. */
-interface DragState {
-  index: number | null;
+/** What a change of a value list leads to: new values, a rejection with a message, or nothing to change. */
+type ValueListOutcome = ({ valid: true; values: string[] } | ValidationFailure) | null;
+
+/**
+ * Checks new values of a facet with the shared rules, which reject a value the list already contains.
+ *
+ * @param facet - The facet
+ * @param values - The new values
+ * @returns The values, or why the facet does not allow them
+ */
+function checkedValues(facet: ValueListFacet, values: string[]): ValueListOutcome {
+  const result = validateFacetValue(facet, values);
+  return result.valid ? { valid: true, values } : result;
+}
+
+/**
+ * Decides what finishing the edit of a value does: an empty value removes it, unless it is the last value
+ * of the only facet; an unchanged value or a cancelled edit changes nothing; a new value is checked (see
+ * {@link checkedValues}).
+ *
+ * @param facet - The facet
+ * @param values - The current values
+ * @param index - The index of the edited value
+ * @param next - The new value, or null if the edit was cancelled
+ * @param canRemoveValue - Whether a value may be removed
+ * @returns What the edit leads to
+ */
+function editOutcome(
+  facet: ValueListFacet,
+  values: string[],
+  index: number,
+  next: string | null,
+  canRemoveValue: boolean
+): ValueListOutcome {
+  if (next === "") {
+    return canRemoveValue
+      ? { valid: true, values: values.filter((_, i) => i !== index) }
+      : { valid: false, error: LAST_FACET_TITLE };
+  }
+  if (next === null || next === values[index]) {
+    return null;
+  }
+  return checkedValues(
+    facet,
+    values.map((value, i) => (i === index ? next : value))
+  );
+}
+
+/**
+ * Appends the button that adds a value, or, while a value is added, the field for it.
+ *
+ * @param list - The list of values
+ * @param addText - The text of the button, or null while a value is added
+ * @param onStart - Called when the button is clicked
+ * @param onFinish - Called once with the new value, or with `null` when the input is cancelled
+ */
+function appendAddControl(
+  list: HTMLElement,
+  addText: string | null,
+  onStart: () => void,
+  onFinish: (value: string | null) => void
+): void {
+  if (addText === null) {
+    const input = createValueInput("", "New value", onFinish);
+    list.appendChild(input);
+    input.focus();
+    return;
+  }
+  const addButton = document.createElement("button");
+  addButton.type = "button";
+  addButton.className = "property-value-add-button";
+  addButton.textContent = addText;
+  addButton.addEventListener("click", onStart);
+  list.appendChild(addButton);
 }
 
 /**
@@ -224,90 +290,6 @@ function createValueChip(value: string, canRemove: boolean, onEdit: () => void, 
 
   chip.appendChild(createRemoveButton("property-value-chip-remove", value, canRemove, onRemove));
   return chip;
-}
-
-/**
- * Adds a grab handle to a chip, like the one of the palette items, that drags the chip onto another
- * chip of the same list to move its value there. Only the handle starts a drag, so that clicking and
- * selecting the value edits it.
- *
- * @param chip - The chip
- * @param index - The index of the chip's value
- * @param list - The list that holds the chips
- * @param drag - The drag state shared by the chips of the list
- * @param onDropFrom - Called with the index of the dragged value when a chip is dropped on this one
- */
-function addReorderHandlers(
-  chip: HTMLElement,
-  index: number,
-  list: HTMLElement,
-  drag: DragState,
-  onDropFrom: (sourceIndex: number) => void
-): void {
-  const grip = document.createElement("span");
-  grip.className = "codicon codicon-gripper property-value-chip-grip";
-  grip.draggable = true;
-  grip.title = "Drag to reorder";
-  grip.setAttribute("aria-hidden", "true");
-  chip.prepend(grip);
-
-  grip.addEventListener("dragstart", (event) => {
-    drag.index = index;
-    if (event.dataTransfer) {
-      // Some browsers start a drag only with data
-      event.dataTransfer.setData("text/plain", String(index));
-      event.dataTransfer.effectAllowed = "move";
-      event.dataTransfer.setDragImage(chip, 0, 0);
-    }
-    chip.classList.add("property-value-chip-dragging");
-  });
-  grip.addEventListener("dragend", () => {
-    chip.classList.remove("property-value-chip-dragging");
-    list.querySelectorAll(".property-value-chip-drag-over").forEach((element) => {
-      element.classList.remove("property-value-chip-drag-over");
-    });
-    drag.index = null;
-  });
-  chip.addEventListener("dragover", (event) => {
-    if (drag.index === null) {
-      return;
-    }
-    event.preventDefault();
-    if (event.dataTransfer) {
-      event.dataTransfer.dropEffect = "move";
-    }
-    chip.classList.add("property-value-chip-drag-over");
-  });
-  chip.addEventListener("dragleave", () => {
-    chip.classList.remove("property-value-chip-drag-over");
-  });
-  chip.addEventListener("drop", (event) => {
-    if (drag.index === null) {
-      return;
-    }
-    event.preventDefault();
-    chip.classList.remove("property-value-chip-drag-over");
-    onDropFrom(drag.index);
-  });
-}
-
-/**
- * Moves a value to another position.
- *
- * @param values - The values
- * @param sourceIndex - The current index of the value
- * @param targetIndex - The new index of the value
- * @returns The reordered values, or `null` if an index is invalid or both are the same
- */
-function moveValue(values: readonly string[], sourceIndex: number, targetIndex: number): string[] | null {
-  const isValid = (index: number): boolean => Number.isInteger(index) && index >= 0 && index < values.length;
-  const moved = values[sourceIndex];
-  if (moved === undefined || !isValid(sourceIndex) || !isValid(targetIndex) || sourceIndex === targetIndex) {
-    return null;
-  }
-  const next = values.filter((_, index) => index !== sourceIndex);
-  next.splice(targetIndex, 0, moved);
-  return next;
 }
 
 /**

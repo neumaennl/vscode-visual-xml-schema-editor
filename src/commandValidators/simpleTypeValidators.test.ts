@@ -9,8 +9,8 @@ import type {
   ModifySimpleTypeCommand,
 } from "../../shared/types.js";
 import { validateAddSimpleType, validateRemoveSimpleType, validateModifySimpleType } from "./simpleTypeValidators.js";
-import type { ValidationResult } from "./validationUtils.js";
-import { expectInvalid } from "../__tests__/validationTestHelpers.js";
+import type { ValidationResult } from "../../shared/validation.js";
+import { expectInvalid } from "../../shared/__tests__/validationTestHelpers.js";
 import { emptySchema, schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
 
 /**
@@ -28,7 +28,7 @@ const REF_ID = "/element:person/anonymousComplexType[0]/group:sequence[0]/elemen
 
 /** The error for the type name `Unknown`, which names no type. */
 const UNKNOWN_TYPE_ERROR =
-  "Invalid element type 'Unknown': must be a built-in XSD type, a user-defined type in the schema, a type from a valid import with a matching namespace prefix, or a type from an included schema";
+  "Unknown type 'Unknown': use a built-in type, a type of this schema, a type of an imported schema with its prefix, or a type of an included schema";
 
 /**
  * Validates `addSimpleType` with the payload against {@link SIMPLE_TYPE_PARENTS}.
@@ -125,6 +125,36 @@ describe("SimpleType Validators", () => {
       expect(result.error).toBe("Restriction simpleType body must include at least one facet");
     });
 
+    test.each([
+      [
+        "a length that is no number, which arrives as null",
+        { maxLength: null },
+        "maxLength must be a non-negative integer",
+      ],
+      ["a negative length", { minLength: -3 }, "minLength must be a non-negative integer"],
+      ["totalDigits 0", { totalDigits: 0 }, "totalDigits must be a positive integer"],
+      [
+        "a whiteSpace value that XML Schema does not allow",
+        { whiteSpace: "trim" },
+        "whiteSpace must be one of preserve, replace, collapse",
+      ],
+      ["an enumeration value twice", { enumeration: ["a", "a"] }, "enumeration already has the value 'a'"],
+    ])("should reject facets with %s", (_case, restrictions, error) => {
+      const command = {
+        type: "addSimpleType",
+        // eslint-disable-next-line no-restricted-syntax -- values that the types do not allow, as they arrive from the webview
+        payload: {
+          typeName: "NameType",
+          baseType: "xs:string",
+          restrictions,
+        } as unknown as AddSimpleTypeCommand["payload"],
+      } satisfies AddSimpleTypeCommand;
+
+      const result = validateAddSimpleType(command, emptySchemaObj);
+      expectInvalid(result);
+      expect(result.error).toBe(error);
+    });
+
     test("should reject addSimpleType with missing body for a restriction body", () => {
       const command = {
         type: "addSimpleType",
@@ -163,7 +193,7 @@ describe("SimpleType Validators", () => {
       const result = validateAddSimpleType(command, emptySchemaObj);
       expectInvalid(result);
       expect(result.error).toBe(
-        "Base type: Invalid element type 'xs:nonExistentType': must be a built-in XSD type, a user-defined type in the schema, a type from a valid import with a matching namespace prefix, or a type from an included schema"
+        "Base type: Unknown type 'xs:nonExistentType': use a built-in type, a type of this schema, a type of an imported schema with its prefix, or a type of an included schema"
       );
     });
 
@@ -427,7 +457,7 @@ describe("SimpleType Validators", () => {
         const result = validateAddSimpleType(command, schemaWithElement);
         expectInvalid(result);
         expect(result.error).toBe(
-          "Base type: Invalid element type 'xs:badType': must be a built-in XSD type, a user-defined type in the schema, a type from a valid import with a matching namespace prefix, or a type from an included schema"
+          "Base type: Unknown type 'xs:badType': use a built-in type, a type of this schema, a type of an imported schema with its prefix, or a type of an included schema"
         );
       });
     });

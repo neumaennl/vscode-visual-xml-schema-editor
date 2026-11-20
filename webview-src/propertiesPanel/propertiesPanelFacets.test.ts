@@ -142,6 +142,30 @@ describe("renderFacetsTab", () => {
       expect(node.restrictions).toEqual(expected);
     });
 
+    test.each([
+      {
+        id: "/simpleType:Code",
+        label: "Max Length",
+        value: "abc",
+        message: "maxLength must be a non-negative integer",
+      },
+      { id: "/simpleType:Code", label: "Min Length", value: "-3", message: "minLength must be a non-negative integer" },
+      { id: "/simpleType:Range", label: "Total Digits", value: "0", message: "totalDigits must be a positive integer" },
+      { id: "/simpleType:Fixed", label: "Length", value: " ", message: "A restriction requires at least one facet" },
+    ])("should reject $label '$value' of $id with a message and keep the facets", ({ id, label, value, message }) => {
+      const { tab, node, dispatch } = renderFacets(id);
+      const before = { ...node.restrictions };
+      const input = getInputByLabel(tab, label);
+      const current = input.value;
+
+      editInput(tab, label, value);
+
+      expect(dispatch).not.toHaveBeenCalled();
+      expect(node.restrictions).toEqual(before);
+      expect(input.value).toBe(current);
+      expect(input.parentElement?.querySelector(".property-message")?.textContent).toBe(message);
+    });
+
     test("should reject a value that the white space facet does not allow, with a message", () => {
       const { tab, node, dispatch } = renderFacets("/simpleType:Code");
 

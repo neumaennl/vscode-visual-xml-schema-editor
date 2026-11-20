@@ -2,9 +2,11 @@
  * Validators for element commands.
  */
 
+import { isValidXmlName } from "../../shared/qNames.js";
 import type { schema, AddElementCommand, RemoveElementCommand, ModifyElementCommand } from "../../shared/types.js";
-import type { ValidationResult } from "./validationUtils.js";
-import { isValidXmlName, validateOccurrences, validateElementType } from "./validationUtils.js";
+import type { ValidationResult } from "../../shared/validation.js";
+import { validateTypeInSchema } from "./validationUtils.js";
+import { validateOccurrences } from "../../shared/occurrences.js";
 import type { ChildKind, NamedChild } from "./commonValidators.js";
 import { locateChild, validateNewChild, validateReference } from "./commonValidators.js";
 
@@ -65,7 +67,7 @@ export function validateAddElement(command: AddElementCommand, schemaObj: schema
       return { valid: false, error: "Element name must be a valid XML name" };
     }
     if (elementType !== undefined) {
-      const typeValidation = validateElementType(elementType, schemaObj);
+      const typeValidation = validateTypeInSchema(elementType, schemaObj);
       if (!typeValidation.valid) {
         return typeValidation;
       }
@@ -128,7 +130,7 @@ export function validateModifyElement(command: ModifyElementCommand, schemaObj: 
 
     // Validate elementType if provided
     if (elementType !== undefined) {
-      const typeValidation = validateElementType(elementType, schemaObj);
+      const typeValidation = validateTypeInSchema(elementType, schemaObj);
       if (!typeValidation.valid) {
         return typeValidation;
       }

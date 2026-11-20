@@ -6,11 +6,14 @@ import type { NamespacePrefixes, SchemaCommand } from "../../shared/types";
 import type { Diagram, DiagramItem } from "../diagram";
 import {
   firstFreePrefix,
+  isAbsoluteUri,
   isReservedPrefix,
   normalizeNamespacePrefixes,
   prefixesForNamespace,
+  validatePrefix,
 } from "../../shared/qNames";
-import { addPropertyWithElementToContainer, createEditableField } from "./propertiesPanelDom";
+import { addPropertyWithElementToContainer } from "./propertiesPanelDom";
+import { createEditableField, createTextInput } from "./propertiesPanelFields";
 
 type CommandDispatcher = (command: SchemaCommand) => void;
 
@@ -37,8 +40,13 @@ export function renderSchemaNamespaceProperties(
   const namespacePrefixes = { ...diagram.schemaNamespacePrefixes };
 
   root.appendChild(
-    createEditableField("targetNamespace", targetNamespace, (next) => {
+    createEditableField("targetNamespace", targetNamespace, (next, reject) => {
       const nextTargetNamespace = next.trim();
+      // An empty target namespace removes it
+      if (nextTargetNamespace && !isAbsoluteUri(nextTargetNamespace)) {
+        reject("targetNamespace must be a valid absolute URI");
+        return;
+      }
       const previousNamespacePrefixes = { ...namespacePrefixes };
       const nextNamespacePrefixes = syncTargetNamespaceWithDeclarations(
         targetNamespace,
@@ -93,7 +101,8 @@ export function renderSchemaNamespaceProperties(
 /**
  * Creates the row of a namespace declaration: a prefix and a URI field, which commit when they are
  * left, and a button that removes the declaration. Changing or removing the declaration of the target
- * namespace changes or removes the target namespace too; a reserved prefix is rejected.
+ * namespace changes or removes the target namespace too. An invalid, reserved or already declared prefix
+ * and a URI that is not absolute are rejected with a message below the field.
  *
  * @param diagram - The diagram of the schema
  * @param prefix - The prefix of the declaration
@@ -116,32 +125,16 @@ function createNamespaceRow(
   const row = document.createElement("div");
   row.className = "property-namespace-row";
 
-  const prefixInput = document.createElement("input");
-  prefixInput.type = "text";
-  prefixInput.className = "property-input";
-  prefixInput.value = prefix;
-  prefixInput.placeholder = "prefix";
-
-  const namespaceInput = document.createElement("input");
-  namespaceInput.type = "text";
-  namespaceInput.className = "property-input";
-  namespaceInput.value = namespaceUri;
-  namespaceInput.placeholder = "namespace URI";
-
+  let currentPrefix = prefix;
+  let currentNamespaceUri = namespaceUri;
   const commit = (): void => {
-    const nextPrefix = prefixInput.value.trim();
-    const nextNamespaceUri = namespaceInput.value.trim();
-    if (isReservedPrefix(nextPrefix)) {
-      rerender();
-      return;
-    }
     const previousNamespacePrefixes = { ...namespacePrefixes };
     const { [prefix]: _removed, ...nextNamespacePrefixes } = namespacePrefixes;
-    if (nextNamespaceUri) {
-      nextNamespacePrefixes[nextPrefix] = nextNamespaceUri;
+    if (currentNamespaceUri) {
+      nextNamespacePrefixes[currentPrefix] = currentNamespaceUri;
     }
     const nextTargetNamespace =
-      targetNamespace && namespacePrefixes[prefix] === targetNamespace ? nextNamespaceUri : targetNamespace;
+      targetNamespace && namespacePrefixes[prefix] === targetNamespace ? currentNamespaceUri : targetNamespace;
     applySchemaNamespaceDraftState(
       diagram,
       nextTargetNamespace,
@@ -151,20 +144,45 @@ function createNamespaceRow(
       rerender
     );
   };
-  prefixInput.addEventListener("blur", commit);
-  namespaceInput.addEventListener("blur", commit);
-  prefixInput.addEventListener("keydown", (event: KeyboardEvent) => {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      prefixInput.blur();
-    }
-  });
-  namespaceInput.addEventListener("keydown", (event: KeyboardEvent) => {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      namespaceInput.blur();
-    }
-  });
+
+  const prefixField = createTextInput(
+    prefix,
+    (next, reject) => {
+      const nextPrefix = next.trim();
+      if (nextPrefix === currentPrefix) {
+        return;
+      }
+      const result = validatePrefix(nextPrefix);
+      if (!result.valid) {
+        reject(result.error);
+        return;
+      }
+      if (Object.hasOwn(namespacePrefixes, nextPrefix)) {
+        reject(`Prefix '${nextPrefix}' is already declared`);
+        return;
+      }
+      currentPrefix = nextPrefix;
+      commit();
+    },
+    { placeholder: "prefix" }
+  );
+  const namespaceField = createTextInput(
+    namespaceUri,
+    (next, reject) => {
+      const nextNamespaceUri = next.trim();
+      if (nextNamespaceUri === currentNamespaceUri) {
+        return;
+      }
+      // An empty URI removes the declaration
+      if (nextNamespaceUri && !isAbsoluteUri(nextNamespaceUri)) {
+        reject("Namespace URI must be a valid absolute URI");
+        return;
+      }
+      currentNamespaceUri = nextNamespaceUri;
+      commit();
+    },
+    { placeholder: "namespace URI" }
+  );
 
   const removeButton = document.createElement("button");
   removeButton.type = "button";
@@ -184,7 +202,7 @@ function createNamespaceRow(
     );
   });
 
-  row.append(prefixInput, namespaceInput, removeButton);
+  row.append(prefixField, namespaceField, removeButton);
   return row;
 }
 

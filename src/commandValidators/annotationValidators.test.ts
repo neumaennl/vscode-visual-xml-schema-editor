@@ -11,8 +11,8 @@ import {
   validateRemoveDocumentation,
   validateModifyDocumentation,
 } from "./annotationValidators.js";
-import type { ValidationResult } from "./validationUtils.js";
-import { expectInvalid } from "../__tests__/validationTestHelpers.js";
+import type { ValidationResult } from "../../shared/validation.js";
+import { expectInvalid } from "../../shared/__tests__/validationTestHelpers.js";
 import { emptySchema, schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
 import { readTestSchema } from "../__tests__/resourceTestHelpers.js";
 

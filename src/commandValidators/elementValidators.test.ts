@@ -6,7 +6,7 @@ import { unmarshal } from "@neumaennl/xmlbind-ts";
 import { schema } from "../../shared/types.js";
 import type { AddElementCommand, RemoveElementCommand, ModifyElementCommand } from "../../shared/types.js";
 import { validateAddElement, validateRemoveElement, validateModifyElement } from "./elementValidators.js";
-import { expectInvalid } from "../__tests__/validationTestHelpers.js";
+import { expectInvalid } from "../../shared/__tests__/validationTestHelpers.js";
 import { schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
 import { readTestSchema } from "../__tests__/resourceTestHelpers.js";
 
@@ -114,7 +114,7 @@ describe("Element Validators", () => {
       );
 
       expectInvalid(result);
-      expect(result.error).toContain("Invalid element type 'invalidType'");
+      expect(result.error).toContain("Unknown type 'invalidType'");
     });
 
     test("should reject prefixed type when no imports or includes exist", () => {
@@ -129,7 +129,7 @@ describe("Element Validators", () => {
 
       const result = validateAddElement(command, schemaObj);
       expectInvalid(result);
-      expect(result.error).toContain("Invalid element type");
+      expect(result.error).toContain("Unknown type");
       expect(result.error).toContain("unknown:SomeType");
     });
 
@@ -243,7 +243,7 @@ describe("Element Validators", () => {
 
       const result = validateAddElement(command, customSchema);
       expectInvalid(result);
-      expect(result.error).toContain("Invalid element type");
+      expect(result.error).toContain("Unknown type");
       expect(result.error).toContain("wrongprefix:SomeType");
     });
 
@@ -300,7 +300,7 @@ describe("Element Validators", () => {
 
       const result = validateAddElement(command, schemaObj);
       expectInvalid(result);
-      expect(result.error).toBe("Element type is required");
+      expect(result.error).toBe("Type is required");
     });
 
     test("should reject addElement with missing parentId", () => {
@@ -363,7 +363,7 @@ describe("Element Validators", () => {
       );
 
       expectInvalid(result);
-      expect(result.error).toContain("Invalid element type 'invalidType'");
+      expect(result.error).toContain("Unknown type 'invalidType'");
     });
 
     test("should accept modifyElement with valid built-in type", () => {

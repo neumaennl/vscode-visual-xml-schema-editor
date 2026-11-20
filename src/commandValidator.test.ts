@@ -9,8 +9,8 @@ import { CommandValidator } from "./commandValidator.js";
 import type { CommandHandler } from "./commandHandlers.js";
 import type { SchemaCommand } from "../shared/types.js";
 import { schema } from "../shared/types.js";
-import type { ValidationResult } from "./commandValidators/validationUtils.js";
-import { expectInvalid } from "./__tests__/validationTestHelpers.js";
+import type { ValidationResult } from "../shared/validation.js";
+import { expectInvalid } from "../shared/__tests__/validationTestHelpers.js";
 import type { Mock } from "vitest";
 
 /** A validator mock. */

@@ -4,7 +4,8 @@
 
 import type { SchemaCommand } from "../../shared/types";
 import type { DiagramItem } from "../diagram";
-import { createInputColumn, createSection } from "./propertiesPanelDom";
+import { createSection } from "./propertiesPanelDom";
+import { createInputColumn } from "./propertiesPanelFields";
 
 /**
  * Renders the DEFAULT & FIXED section for element nodes.

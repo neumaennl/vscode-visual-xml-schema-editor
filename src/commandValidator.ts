@@ -5,7 +5,7 @@
  */
 
 import type { SchemaCommand, schema } from "../shared/types.js";
-import type { ValidationResult } from "./commandValidators/validationUtils.js";
+import type { ValidationResult } from "../shared/validation.js";
 import type { CommandHandlers } from "./commandHandlers.js";
 import { findCommandHandler } from "./commandHandlers.js";
 

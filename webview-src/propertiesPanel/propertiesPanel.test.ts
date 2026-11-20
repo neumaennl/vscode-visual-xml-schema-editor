@@ -203,18 +203,21 @@ describe("PropertiesPanel", () => {
     });
   });
 
-  test("should reject an empty name with a message and show the current name again", () => {
+  test.each([
+    ["an empty name", "  ", "Enter a name"],
+    ["a name that is no valid XML name", "1person", "Name must be a valid XML name"],
+  ])("should reject %s with a message and show the current name again", (_case, name, message) => {
     const { dispatch } = displayItem(
       container,
       new DiagramItem("/element:person", "person", DiagramItemType.element, diagram)
     );
 
-    editInput(container, "Name", "  ");
+    editInput(container, "Name", name);
 
     expect(dispatch).not.toHaveBeenCalled();
     expect(getInputByLabel(container, "Name").value).toBe("person");
     expect(getInputByLabel(container, "Name").parentElement?.querySelector(".property-message")?.textContent).toBe(
-      "Enter a name"
+      message
     );
   });
 
@@ -238,6 +241,9 @@ describe("PropertiesPanel", () => {
     ["minOccurs", "abc", "1", "minOccurs must be a number"],
     ["minOccurs", " ", "1", "minOccurs must be a number"],
     ["maxOccurs", "many", "3", "maxOccurs must be a number or unbounded"],
+    ["minOccurs", "-1", "1", "minOccurs must be a non-negative integer"],
+    ["minOccurs", "1.5", "1", "minOccurs must be an integer"],
+    ["maxOccurs", "-2", "3", "maxOccurs must be a non-negative integer or 'unbounded'"],
   ])("should reject %s %j with a message and show the current value again", (label, text, current, message) => {
     const item = new DiagramItem("/element:root/element:item[0]", "item", DiagramItemType.element, diagram);
     item.minOccurrence = 1;

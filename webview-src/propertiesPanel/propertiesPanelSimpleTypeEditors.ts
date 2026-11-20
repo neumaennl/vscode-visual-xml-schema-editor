@@ -6,8 +6,13 @@
 import type { SchemaCommand, SimpleTypeDerivationKind } from "../../shared/types";
 import { SchemaNodeType } from "../../shared/idStrategy";
 import type { DiagramItem } from "../diagram";
-import { type ChoiceOption, createChoiceField, createEditableField, createSuggestionInput } from "./propertiesPanelDom";
-import { createTypeCommitHandler, normalizeTypeReference } from "./propertiesPanelTypeReferences";
+import { type ChoiceOption, createChoiceField, createEditableField, createTextInput } from "./propertiesPanelFields";
+import {
+  createTypeCommitHandler,
+  normalizeTypeReference,
+  typeReferenceContextOf,
+} from "./propertiesPanelTypeReferences";
+import { validateTypeReference } from "../../shared/typeReferences";
 import {
   createSimpleTypeKindCommand,
   createSimpleTypeListCommand,
@@ -246,9 +251,8 @@ export function renderSimpleTypeUnionEditor(context: SimpleTypeEditorContext): v
       row.style.alignItems = "center";
 
       // A member type is a type reference, an open value: any type can be entered, the known ones are suggested
-      const memberInput = createSuggestionInput(
+      const memberInput = createTextInput(
         memberType,
-        typeSuggestions,
         (next, reject) => {
           const entered = next.trim();
           if (entered === memberTypes[index]) {
@@ -259,10 +263,17 @@ export function renderSimpleTypeUnionEditor(context: SimpleTypeEditorContext): v
             reject(LAST_MEMBER_TYPE_MESSAGE);
             return;
           }
+          const result = entered
+            ? validateTypeReference(normalizeTypeReference(node, entered), typeReferenceContextOf(node))
+            : undefined;
+          if (result && !result.valid) {
+            reject(result.error);
+            return;
+          }
           memberTypes[index] = entered;
           commitUnionMembers(memberTypes);
         },
-        "type, such as xs:string"
+        { suggestions: typeSuggestions, placeholder: "type, such as xs:string" }
       );
 
       const deleteButton = document.createElement("button");

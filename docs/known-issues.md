@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-20T08:02:47Z }
-verified: { by: human:neumaennl, at: 2026-11-20T08:38:02Z }
+generated: { by: human:neumaennl, at: 2026-11-20T08:53:46Z }
+verified: { by: human:neumaennl, at: 2026-11-20T09:57:53Z }
 ---
 
 # Purpose
@@ -212,7 +212,7 @@ Effort:
 
 ## Name validation is ASCII-only
 
-- **Location:** `src/commandValidators/validationUtils.ts` (`isValidXmlName()`), the validators that call it
+- **Location:** `shared/qNames.ts` (`isValidXmlName()`), the validators and the fields of the properties panel that call it
 - **Severity:** Medium
 - **Effort:** M
 - **Description:** `isValidXmlName()` is the regular expression `/^[a-zA-Z_][\w.-]*$/`. XML names may contain non-ASCII letters (`Straße`, `名前`), which are rejected, in names and in the prefix and local name of a `ref`. The fix is a check for NCNames following the XML specification.
@@ -220,11 +220,11 @@ Effort:
 
 ## Built-in types are recognized by their local name only
 
-- **Location:** `src/commandValidators/validationUtils.ts` (`validateElementType()`), `webview-src/propertiesPanel/propertiesPanelTypeReferences.ts` (`collectTypeSuggestions()`, `normalizeTypeReference()`)
+- **Location:** `shared/typeReferences.ts` (`validateTypeReference()`), `webview-src/propertiesPanel/propertiesPanelTypeReferences.ts` (`collectTypeSuggestions()`, `normalizeTypeReference()`)
 - **Severity:** Medium
 - **Effort:** S
 - **Description:** A type reference names a built-in type only if its prefix declares the namespace of XML Schema, or if it has no prefix and the default namespace is the namespace of XML Schema. The editor ignores the prefix on both sides:
-  - `validateElementType()` accepts every reference whose local name is a built-in type, whatever the prefix: `type="tns:string"` or `type="foo:string"` with an undeclared `foo` are accepted.
+  - `validateTypeReference()`, which the validators and the properties panel share, accepts every reference whose local name is a built-in type or a type of the schema, whatever the prefix: `type="tns:string"`, `type="foo:string"` with an undeclared `foo`, or `ext:Address` for a local type `Address` are accepted.
   - The properties panel suggests the built-in types with the prefix `xs`, which is wrong in a schema that declares the namespace with another prefix such as `xsd`, and `normalizeTypeReference()` keeps a built-in type that is entered without a prefix, such as `string`, without one, which is only valid if the default namespace is the namespace of XML Schema.
 
   The fix is to resolve the prefix with the namespace declarations of the schema (`shared/qNames.ts`) and to use the schema's own prefix for the namespace of XML Schema; the structure review [#448](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/448) does this when it replaces the fixed `xs:` prefix in the webview.
@@ -293,10 +293,10 @@ Effort:
 
 ## References to included and imported schemas are not checked
 
-- **Location:** `src/commandValidators/validationUtils.ts` (`validateElementType()`)
+- **Location:** `shared/typeReferences.ts` (`validateTypeReference()`)
 - **Severity:** Medium
 - **Effort:** L
-- **Description:** The editor never reads the schemas that `xs:include` and `xs:import` refer to. `validateElementType()` therefore accepts every type name with a prefix whose namespace has an `xs:import`, and every name without a prefix as soon as the schema has an `xs:include`, whether the type exists there or not: a misspelled `type="tns:Adress"` is accepted when `tns` is imported. The diagram cannot show the content of such types either. The fix needs the referenced files to be read and their components collected, the symbol table of [Responsibilities of xmlbind-ts and the editor](architecture.md#responsibilities-of-xmlbind-ts-and-the-editor). See also [Imports and includes cannot be edited in the editor](#imports-and-includes-cannot-be-edited-in-the-editor).
+- **Description:** The editor never reads the schemas that `xs:include` and `xs:import` refer to. `validateTypeReference()` therefore accepts every type name with a prefix whose namespace has an `xs:import`, and every name without a prefix as soon as the schema has an `xs:include`, whether the type exists there or not: a misspelled `type="tns:Adress"` is accepted when `tns` is imported. The diagram cannot show the content of such types either. The fix needs the referenced files to be read and their components collected, the symbol table of [Responsibilities of xmlbind-ts and the editor](architecture.md#responsibilities-of-xmlbind-ts-and-the-editor). See also [Imports and includes cannot be edited in the editor](#imports-and-includes-cannot-be-edited-in-the-editor).
 - **GitHub issue:** none
 
 ## Lists and unions with inline types are shown as if they had named types

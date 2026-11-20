@@ -40,6 +40,12 @@ export class Diagram {
   /** Schema-level namespace declarations keyed by prefix */
   public schemaNamespacePrefixes: NamespacePrefixes = {};
 
+  /** The namespaces that the schema imports, for the check of type references */
+  public importedNamespaces: readonly string[] = [];
+
+  /** Whether the schema includes other schemas, for the check of type references */
+  public hasIncludes = false;
+
   /** Cached local simple/complex type names discovered in the current schema diagram */
   public localSchemaTypeNames?: ReadonlySet<string>;
 

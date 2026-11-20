@@ -1,5 +1,9 @@
 # Knowledge Bundle Update Log
 
+## 2026-11-20
+
+- **Update**: [UX concept](ux-concept.md#where-errors-appear): new rule "Where errors appear": errors that the properties panel finds itself appear below the field, errors of the extension host in the notification banner. The panel now checks names, type references, facet values, occurrences, namespace prefixes and URIs, and duplicate values of enumerations and patterns, with rules in `shared/` (`validation.ts`, `qNames.ts`, `typeReferences.ts`, `occurrences.ts`, `facets.ts`) that the validators use too; the validators now also reject invalid facet values, which could write `<xs:maxLength/>` without a value ([#448](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/448)). [Architecture](architecture.md#principles), [Messaging](messaging.md#validation-in-the-webview), [Commands](commands.md#files), [Testing](testing.md) and [Known issues](known-issues.md) follow.
+
 ## 2026-11-19
 
 - **Update**: [UX concept](ux-concept.md#fields-with-fixed-values): new rule "Fields with fixed values": a toggle switch for yes/no, otherwise a text field that suggests the values, filters them while typing and accepts only them, with a message below the field for anything else; free text only for open values. The White Space field of the Facets tab and the kind of a simple type work this way; the member types of a union are text fields with suggestions like the base type, so that a type of an imported schema can be entered too ([#448](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/448)). Fields that reject the entered text, an empty name or type, an occurrence that is no number and an empty union, now say why below the field and show the current value again; the last member type of a union cannot be removed ([UX concept](ux-concept.md#properties-panel), [Messaging](messaging.md#validation-in-the-webview)).

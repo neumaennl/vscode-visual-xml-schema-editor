@@ -4,6 +4,9 @@
 
 import {
   firstFreePrefix,
+  isAbsoluteUri,
+  isValidXmlName,
+  validatePrefix,
   isReservedPrefix,
   normalizeNamespacePrefixes,
   ownComponentName,
@@ -66,5 +69,47 @@ describe("normalizeNamespacePrefixes", () => {
       tns: "urn:a",
       xml: "urn:x",
     });
+  });
+});
+
+describe("isValidXmlName", () => {
+  test("should accept valid XML names", () => {
+    expect(isValidXmlName("element")).toBe(true);
+    expect(isValidXmlName("Element")).toBe(true);
+    expect(isValidXmlName("element_name")).toBe(true);
+    expect(isValidXmlName("element-name")).toBe(true);
+    expect(isValidXmlName("element123")).toBe(true);
+    expect(isValidXmlName("_element")).toBe(true);
+  });
+
+  test("should reject invalid XML names", () => {
+    expect(isValidXmlName("123element")).toBe(false);
+    expect(isValidXmlName("-element")).toBe(false);
+    expect(isValidXmlName("element name")).toBe(false);
+    expect(isValidXmlName("")).toBe(false);
+  });
+});
+
+describe("isAbsoluteUri", () => {
+  test.each([
+    ["http://example.com/ns", true],
+    ["urn:example:ns", true],
+    ["example.com/ns", false],
+    ["http://example.com/a b", false],
+    ["", false],
+  ])("should return for %j: %s", (value, expected) => {
+    expect(isAbsoluteUri(value)).toBe(expected);
+  });
+});
+
+describe("validatePrefix", () => {
+  test.each([
+    ["tns", { valid: true }],
+    ["", { valid: true }],
+    [" tns", { valid: false, error: "Prefix ' tns' must not contain leading or trailing whitespace" }],
+    ["xml", { valid: false, error: "Prefix 'xml' is reserved and cannot be used" }],
+    ["1a", { valid: false, error: "Prefix '1a' is not a valid XML name" }],
+  ])("should check the prefix %j", (prefix, expected) => {
+    expect(validatePrefix(prefix)).toEqual(expected);
   });
 });

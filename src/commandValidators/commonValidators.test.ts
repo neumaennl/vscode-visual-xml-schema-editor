@@ -15,7 +15,7 @@ import {
   validateReference,
 } from "./commonValidators.js";
 import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
-import { expectInvalid } from "../__tests__/validationTestHelpers.js";
+import { expectInvalid } from "../../shared/__tests__/validationTestHelpers.js";
 import { schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
 import { unmarshal } from "@neumaennl/xmlbind-ts";
 import { schema } from "../../shared/types.js";

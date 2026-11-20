@@ -6,7 +6,7 @@
 import type { SchemaCommand } from "../../shared/types";
 import { SchemaNodeType } from "../../shared/idStrategy";
 import type { DiagramItem } from "../diagram";
-import { createEditableField } from "./propertiesPanelDom";
+import { createEditableField } from "./propertiesPanelFields";
 import { createComplexBaseTypeCommand, createTypeCommand } from "./propertiesPanelCommands";
 import { getNodeType } from "./propertiesPanelNodeKinds";
 import { createTypeCommitHandler } from "./propertiesPanelTypeReferences";

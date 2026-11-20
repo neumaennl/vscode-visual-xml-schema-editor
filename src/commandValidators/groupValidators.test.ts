@@ -5,7 +5,7 @@
 import type { schema } from "../../shared/types.js";
 import type { AddGroupCommand, RemoveGroupCommand, ModifyGroupCommand } from "../../shared/types.js";
 import { validateAddGroup, validateRemoveGroup, validateModifyGroup } from "./groupValidators.js";
-import { expectInvalid } from "../__tests__/validationTestHelpers.js";
+import { expectInvalid } from "../../shared/__tests__/validationTestHelpers.js";
 import { localElementPlaces } from "../__tests__/referenceTestHelpers.js";
 import { emptySchema, schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
 import { readTestSchema } from "../__tests__/resourceTestHelpers.js";

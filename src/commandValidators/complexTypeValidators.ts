@@ -2,14 +2,15 @@
  * Validators for complex type commands.
  */
 
+import { isValidXmlName } from "../../shared/qNames.js";
 import type {
   schema,
   AddComplexTypeCommand,
   RemoveComplexTypeCommand,
   ModifyComplexTypeCommand,
 } from "../../shared/types.js";
-import type { ValidationResult } from "./validationUtils.js";
-import { isValidXmlName, validateElementType } from "./validationUtils.js";
+import type { ValidationResult } from "../../shared/validation.js";
+import { validateTypeInSchema } from "./validationUtils.js";
 import { isSchemaRoot } from "../../shared/schemaUtils.js";
 import { locateType, validateInlineTypeParent, validateNewTypeName } from "./commonValidators.js";
 
@@ -99,7 +100,7 @@ function validateComplexTypeDerivation(
 ): ValidationResult {
   const baseType = payload.baseType?.trim();
   if (baseType) {
-    const baseTypeResult = validateElementType(baseType, schemaObj);
+    const baseTypeResult = validateTypeInSchema(baseType, schemaObj);
     if (!baseTypeResult.valid) {
       return {
         valid: false,

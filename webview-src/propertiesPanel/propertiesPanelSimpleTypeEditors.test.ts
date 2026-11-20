@@ -261,15 +261,17 @@ describe("propertiesPanelSimpleTypeEditors", () => {
       expect(Array.from(suggestions.options, (option) => option.value)).toEqual(SUGGESTIONS);
     });
 
-    test("should accept a member type that is not suggested, such as a type of an imported schema", () => {
+    test("should reject a member type that the schema does not offer, with a message below the field", () => {
       const { root, dispatch } = renderBodyEditor("/simpleType:Number", renderSimpleTypeUnionEditor);
+      const input = getInputsByLabel(root, "Member Types")[1]!;
 
-      enter(getInputsByLabel(root, "Member Types")[1]!, "ext:Code");
+      enter(input, "ext:Unknown");
 
-      expect(dispatch).toHaveBeenCalledExactlyOnceWith({
-        type: "modifySimpleType",
-        payload: { typeId: "/simpleType:Number", unionMemberTypes: ["xs:int", "ext:Code"] },
-      });
+      expect(dispatch).not.toHaveBeenCalled();
+      expect(input.value).toBe("xs:decimal");
+      expect(input.parentElement?.querySelector(".property-message")?.textContent).toContain(
+        "Unknown type 'ext:Unknown'"
+      );
     });
 
     test.each([

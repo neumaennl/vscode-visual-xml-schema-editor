@@ -2,6 +2,8 @@
  * Validators for simple type commands.
  */
 
+import { countFacetsWithValues, validateFacetValues } from "../../shared/facets.js";
+import { isValidXmlName } from "../../shared/qNames.js";
 import type {
   schema,
   AddSimpleTypeCommand,
@@ -10,8 +12,8 @@ import type {
   RestrictionFacets,
   SimpleTypeDerivationKind,
 } from "../../shared/types.js";
-import type { ValidationResult } from "./validationUtils.js";
-import { isValidXmlName, validateElementType } from "./validationUtils.js";
+import type { ValidationResult } from "../../shared/validation.js";
+import { validateTypeInSchema } from "./validationUtils.js";
 import { isSchemaRoot } from "../../shared/schemaUtils.js";
 import { locateType, validateInlineTypeParent, validateNewTypeName } from "./commonValidators.js";
 
@@ -19,34 +21,20 @@ import { locateType, validateInlineTypeParent, validateNewTypeName } from "./com
 const INLINE_SIMPLE_TYPE_PARENT_TYPES = ["topLevelElement", "localElement", "topLevelAttribute", "attribute"];
 
 /**
- * Tells whether the facets contain at least one value; an empty list counts as no value.
- *
- * @param restrictions - The facets of the payload
- * @returns True if a facet has a value
- */
-function hasRestrictionFacetValues(restrictions: RestrictionFacets): boolean {
-  return Object.values(restrictions).some((value) => {
-    if (value === undefined || value === null) {
-      return false;
-    }
-    if (Array.isArray(value)) {
-      return value.length > 0;
-    }
-    return true;
-  });
-}
-
-/**
- * Validates the facets of a restriction body.
+ * Validates the facets of a restriction body: at least one facet, and a valid value for each (see
+ * {@link validateFacetValues}).
  *
  * @param restrictions - The `restrictions` of the payload
  * @returns The validation result; a body without `restrictions` is valid
  */
 function validateRestrictionFacets(restrictions: RestrictionFacets | undefined): ValidationResult {
-  if (restrictions !== undefined && !hasRestrictionFacetValues(restrictions)) {
+  if (restrictions === undefined) {
+    return { valid: true };
+  }
+  if (countFacetsWithValues(restrictions) === 0) {
     return { valid: false, error: "Restriction simpleType body must include at least one facet" };
   }
-  return { valid: true };
+  return validateFacetValues(restrictions);
 }
 
 /**
@@ -69,7 +57,7 @@ function validateRestrictionBaseType(
   if (!baseType) {
     return { valid: false, error: "Base type cannot be empty" };
   }
-  const baseTypeResult = validateElementType(baseType, schemaObj);
+  const baseTypeResult = validateTypeInSchema(baseType, schemaObj);
   if (!baseTypeResult.valid) {
     return {
       valid: false,
@@ -150,7 +138,7 @@ function validateSimpleTypeBody(
     if (!listItemType) {
       return { valid: false, error: "List item type cannot be empty" };
     }
-    const listTypeResult = validateElementType(listItemType, schemaObj);
+    const listTypeResult = validateTypeInSchema(listItemType, schemaObj);
     if (!listTypeResult.valid) {
       return {
         valid: false,
@@ -170,7 +158,7 @@ function validateSimpleTypeBody(
       return { valid: false, error: "Union member types cannot contain empty entries" };
     }
 
-    const typeResult = validateElementType(trimmed, schemaObj);
+    const typeResult = validateTypeInSchema(trimmed, schemaObj);
     if (!typeResult.valid) {
       return {
         valid: false,

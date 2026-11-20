@@ -5,7 +5,7 @@
 import type { schema } from "../../shared/types.js";
 import type { AddAttributeCommand, RemoveAttributeCommand, ModifyAttributeCommand } from "../../shared/types.js";
 import { validateAddAttribute, validateRemoveAttribute, validateModifyAttribute } from "./attributeValidators.js";
-import { expectInvalid } from "../__tests__/validationTestHelpers.js";
+import { expectInvalid } from "../../shared/__tests__/validationTestHelpers.js";
 import { schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
 
 /** A top-level attribute `lang` and a complexType `T` with a local attribute `code` and a reference to `lang`. */

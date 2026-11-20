@@ -4,8 +4,8 @@ title: Testing
 description: How the extension is tested - running the tests and the type check, the five Vitest projects, mocks and helpers, conventions for tests, mocks, helper functions and helper classes, which tests to write for typical changes, coverage, CI, the smoke tests in the extension host with a mock webview, and how the current tests compare with the testing strategy of ADR 001.
 tags: [testing, vitest, mocks, coverage, ci, conventions]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-20T07:37:18Z }
-verified: { by: human:neumaennl, at: 2026-11-20T08:38:02Z }
+generated: { by: human:neumaennl, at: 2026-11-20T09:40:53Z }
+verified: { by: human:neumaennl, at: 2026-11-20T09:57:53Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -29,7 +29,7 @@ sources:
     resource: ../src/__tests__/providerTestHelpers.ts
     title: Stubs of the VS Code objects for the provider
   - id: validation-test-helpers
-    resource: ../src/__tests__/validationTestHelpers.ts
+    resource: ../shared/__tests__/validationTestHelpers.ts
     title: Assertion helper for validation results
   - id: text-test-helpers
     resource: ../src/__tests__/textTestHelpers.ts
@@ -43,6 +43,9 @@ sources:
   - id: svg-test-helpers
     resource: ../webview-src/__tests__/svgTestHelpers.ts
     title: getBBox mock for jsdom
+  - id: drag-test-helpers
+    resource: ../webview-src/__tests__/dragTestHelpers.ts
+    title: Drag events for jsdom
   - id: properties-panel-test-helpers
     resource: ../webview-src/__tests__/propertiesPanelTestHelpers.ts
     title: Helpers that find the fields and buttons of the properties panel
@@ -141,10 +144,11 @@ Use the Node version from `.nvmrc`, which CI also uses. It is the Node version o
 - **Properties panel.** `webview-src/__tests__/propertiesPanelTestHelpers.ts` creates a panel in a new container with a new diagram (`createPanel()`), and displays an item in a new panel whose commands go to a mock, optionally on a given tab (`displayItem()`). It finds the fields of the panel by their labels (`getInputByLabel()`, `getInputsByLabel()`, `hasLabel()`), reads the text of a read-only field (`getTextByLabel()`), the values of the chips of a field (`getChipValuesByLabel()`) and the labels of all fields (`getLabels()`), and finds buttons, such as those of the tabs, by their text (`findButton()`), and enters a value into a field and leaves it, which commits the value (`editInput()`). `itemWithPrefix()` creates an item in a diagram whose schema has the prefix `tns` for its target namespace, for the unit tests of the modules that build commands and type references.[^properties-panel-test-helpers]
 - **Diagram items.** `webview-src/__tests__/diagramTestHelpers.ts` builds the diagram of a real schema with the `DiagramBuilder`: `diagramItems(schemaObj)` returns all items, `diagramItem(schemaObj, id)` the item with an ID. The builder logs every schema it builds; `muteDiagramBuilderLog()`, called in a `describe` block, mutes `console.log` in its tests and restores it after each. Tests of the panel and the drop code use them instead of creating `DiagramItem`s by hand, so that the items have the IDs and values that the builder gives them (see [Expected results](#expected-results)). New tests follow this rule, and some older ones were rewritten to follow it; others still create the items by hand.[^diagram-test-helpers]
 - **SVG measuring.** jsdom has no layout engine, so `setupGetBBoxMock()` in `webview-src/__tests__/svgTestHelpers.ts` gives every element a `getBBox()` that assumes 6 pixels per character and a height of 10 pixels.[^svg-test-helpers]
+- **Drag and drop.** jsdom has no `DataTransfer`, so `webview-src/__tests__/dragTestHelpers.ts` creates a stub that stores the data of a drag (`createDataTransfer()`) and dispatches a drag event that carries one (`dispatchDrag()`).[^drag-test-helpers]
 - **Pipeline helpers.** `src/__tests__/pipelineTestHelpers.ts` has small schemas as constants (`SCHEMA_WITH_ELEMENTS` and others, built with `schemaXmlWith()`) and runs a command through a new `CommandProcessor`: `runCommand()`, `runCommandExpectSuccess()` (returns the XML), `runCommandExpectSuccessSchema()` (returns the unmarshalled schema) and `runCommandExpectValidationFailure()`. `findTopLevelElement(schemaObj, name)` returns a top-level element of the result and asserts that it exists.[^pipeline-test-helpers]
 - **Places of references.** `localElementPlaces(localElement)` in `src/__tests__/referenceTestHelpers.ts` returns the places where a local element can be nested in schema content, for the tests of the group and attribute group validators that check whether a definition is still referenced.[^reference-test-helpers]
 - **Schema XML and objects.** `shared/__tests__/schemaTestHelpers.ts`, which the tests of all projects use, builds the XML of a schema with `schemaXmlWith(body, namespaces)` (the XML declaration, the `xs` namespace, further namespace declarations by prefix if given, and the given content) and of a schema without content with `emptySchemaXml()`. For the tests of validators and executors it unmarshals schemas: `schemaWith(body, namespaces)`, `emptySchema()`, `schemaWithAttrGroups(body)` and `schemaWithIncludes(...)`. The tests of the webview get the schema in the form the webview receives it, sent through JSON, which drops the classes and the fields without a value ([ADR 006](architecture/006-module-structure.md#schema-objects-on-both-sides)): `webviewSchemaWith(body, namespaces)`, `webviewSchemaFromXml(xml)` and `asReceivedByWebview(schemaObj)`. ESLint rejects `unmarshal` and the other helpers that return schema objects in the tests of the webview (see [Build and packaging](build-and-packaging.md#eslint)). `derivedComplexTypeT(content, derivation, body)` builds the XML of a derived complex type `T`, and `DERIVATIONS` lists the four combinations of `complexContent` or `simpleContent` with `extension` or `restriction` for `test.each()`. A test that only needs the schema object uses these instead of unmarshalling XML itself.[^schema-test-helpers] `src/__tests__/resourceTestHelpers.ts` reads the XML files in `src/__tests__/test-resources` for the tests of the extension host: `readTestXml(name)` returns the text, `readTestSchema(name)` the unmarshalled schema, and `TEST_RESOURCES` is the path of the folder, which the agreement test lists.[^resource-test-helpers]
-- **Assertions.** `expectInvalid()` in `src/__tests__/validationTestHelpers.ts` checks that a validation failed and narrows the result, so that the test can read `error`.[^validation-test-helpers] `src/__tests__/textTestHelpers.ts` checks the order of strings in text such as serialized XML: `expectLinesInOrder()` across lines, `expectInOrderOnLine()` within one line.[^text-test-helpers]
+- **Assertions.** `expectInvalid()` in `shared/__tests__/validationTestHelpers.ts` checks that a validation failed and narrows the result, so that the test can read `error`.[^validation-test-helpers] `src/__tests__/textTestHelpers.ts` checks the order of strings in text such as serialized XML: `expectLinesInOrder()` across lines, `expectInOrderOnLine()` within one line.[^text-test-helpers]
 - **Scripts.** The tests of the scripts send no request and install nothing. `scripts/__tests__/releaseTestHelpers.ts` replaces `fetch` with `stubFetch()`, which answers each URL with a given body, and builds GitHub releases with `release()` and `releasesPage()`. The tests of `vscode-version.ts` and `scripts/lib/node-setup.ts` mock `node:child_process`, `node:fs` and `node:readline/promises` where the script would start programs, check files or ask in the terminal, and work in a temporary folder. The tests of `scripts/lib/compiler-target.ts` write tsconfig files and an ESLint configuration into a temporary folder and check which editions it finds and replaces. The tests of `verify-vsix.ts` unpack tiny VSIX files from `scripts/__tests__/test-resources/` with the same tool as the script (`unzip`, on Windows `tar.exe`), because unpacking is what the script checks: a valid extension, one without `activate()` and one with a missing dependency, all ES modules like the extension.[^release-test-helpers]
 
 ## The `__mocks__` folder
@@ -297,6 +301,8 @@ ADR 001 plans six levels of testing. The current state:[^adr-001]
 [^release-test-helpers]: Helpers for the tests of the scripts
 
 [^svg-test-helpers]: getBBox mock for jsdom
+
+[^drag-test-helpers]: Drag events for jsdom
 
 [^properties-panel-test-helpers]: Helpers that find the fields and buttons of the properties panel
 

@@ -6,8 +6,9 @@
 import { BUILT_IN_DATATYPES, isBuiltInTypeName } from "../../shared/builtInTypes";
 import { SchemaNodeType } from "../../shared/idStrategy";
 import { splitQName } from "../../shared/qNames";
+import { type TypeReferenceContext, validateTypeReference } from "../../shared/typeReferences";
 import type { DiagramItem } from "../diagram";
-import type { CommitHandler } from "./propertiesPanelDom";
+import type { CommitHandler } from "./propertiesPanelFields";
 import { getNodeType } from "./propertiesPanelNodeKinds";
 
 /**
@@ -93,9 +94,25 @@ export function normalizeTypeReference(node: DiagramItem, nextType: string): str
 }
 
 /**
+ * Returns what the schema of a node offers to type references, for {@link validateTypeReference}.
+ *
+ * @param node - A diagram item of the schema
+ * @returns The type names, namespace declarations, imported namespaces and includes of the schema
+ */
+export function typeReferenceContextOf(node: DiagramItem): TypeReferenceContext {
+  return {
+    localTypeNames: [...collectLocalSchemaTypeNames(node)],
+    namespacePrefixes: node.diagram?.schemaNamespacePrefixes ?? {},
+    importedNamespaces: node.diagram?.importedNamespaces ?? [],
+    hasIncludes: node.diagram?.hasIncludes ?? false,
+  };
+}
+
+/**
  * Returns the commit callback of a type field: it calls `apply` only when the new type differs from the
- * current one, both normalized for the current schema (see {@link normalizeTypeReference}), and rejects an
- * empty type with a message unless `allowEmpty` is set.
+ * current one, both normalized for the current schema (see {@link normalizeTypeReference}). It rejects an
+ * empty type with a message unless `allowEmpty` is set, and a type that the schema does not offer (see
+ * {@link validateTypeReference}).
  *
  * @param node - Diagram item whose type field this is
  * @param current - The current type
@@ -117,6 +134,13 @@ export function createTypeCommitHandler(
     }
     if (normalizedNext === normalizeTypeReference(node, current)) {
       return;
+    }
+    if (normalizedNext) {
+      const result = validateTypeReference(normalizedNext, typeReferenceContextOf(node));
+      if (!result.valid) {
+        reject(result.error);
+        return;
+      }
     }
     apply(normalizedNext, next);
   };

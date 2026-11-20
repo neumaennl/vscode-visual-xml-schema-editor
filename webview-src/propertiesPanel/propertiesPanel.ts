@@ -3,6 +3,8 @@
  * Renders node properties such as name, type, cardinality, documentation, and attributes.
  */
 
+import { validateMaxOccurs, validateMinOccurs } from "../../shared/occurrences";
+import { isValidXmlName } from "../../shared/qNames";
 import type { DiagramItem } from "../diagram";
 import { DiagramItemType } from "../diagram/DiagramTypes";
 import type { SchemaCommand } from "../../shared/types";
@@ -15,12 +17,11 @@ import { createDraftNode } from "./propertiesPanelDraft";
 import {
   addPropertyToContainer,
   createAttributeList,
-  createEditableField,
   createPropertiesPanelHeader,
-  createInputColumn,
   createSection,
   createSectionHeader,
 } from "./propertiesPanelDom";
+import { createEditableField, createInputColumn } from "./propertiesPanelFields";
 import { createDocsTab } from "./propertiesPanelDocs";
 import { renderFacetsTab } from "./propertiesPanelFacets";
 import { renderSchemaNamespaceProperties } from "./propertiesPanelSchemaNamespaces";
@@ -204,6 +205,10 @@ export class PropertiesPanel {
             reject("Enter a name");
             return;
           }
+          if (!isValidXmlName(trimmedName)) {
+            reject("Name must be a valid XML name");
+            return;
+          }
           if (this.pendingRename?.sourceId === node.id && this.pendingRename.newName === trimmedName) {
             return;
           }
@@ -292,12 +297,17 @@ export class PropertiesPanel {
     const row = document.createElement("div");
     row.className = "property-row-2col";
 
-    // Negative numbers, fractions and minOccurs > maxOccurs are left to the validator of the extension host
+    // Each value is checked on its own; minOccurs > maxOccurs is left to the validator of the extension host
     const minCol = createInputColumn("minOccurs:", String(node.minOccurrence), (text, reject) => {
       const raw = text.trim();
       const minOccurs = Number(raw);
       if (raw === "" || Number.isNaN(minOccurs)) {
         reject("minOccurs must be a number");
+        return;
+      }
+      const result = validateMinOccurs(minOccurs);
+      if (!result.valid) {
+        reject(result.error);
         return;
       }
       dispatchOccurrence(minOccurs, node.maxOccurrence === -1 ? "unbounded" : node.maxOccurrence);
@@ -308,6 +318,11 @@ export class PropertiesPanel {
       const maxOccurs = raw === "unbounded" ? "unbounded" : Number(raw);
       if (raw === "" || Number.isNaN(maxOccurs)) {
         reject("maxOccurs must be a number or unbounded");
+        return;
+      }
+      const result = validateMaxOccurs(maxOccurs);
+      if (!result.valid) {
+        reject(result.error);
         return;
       }
       dispatchOccurrence(node.minOccurrence, maxOccurs);

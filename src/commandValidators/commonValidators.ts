@@ -8,11 +8,10 @@ import type { schema } from "../../shared/types.js";
 import type { ParsedSchemaId } from "../../shared/idStrategy.js";
 import { parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy.js";
 import { locateNodeById } from "../schemaNavigator.js";
-import { ownComponentName, splitQName } from "../../shared/qNames.js";
+import { ownComponentName, splitQName, isValidXmlName } from "../../shared/qNames.js";
 import { getCurrentSchemaPrefixes, type TypeKind } from "../../shared/schemaUtils.js";
 import { findIdentifiedChild } from "../commandUtils.js";
-import type { ValidationFailure, ValidationResult } from "./validationUtils.js";
-import { isValidXmlName } from "./validationUtils.js";
+import type { ValidationFailure, ValidationResult } from "../../shared/validation.js";
 
 /** A top-level component, as far as the checks look at it. */
 interface NamedComponent {

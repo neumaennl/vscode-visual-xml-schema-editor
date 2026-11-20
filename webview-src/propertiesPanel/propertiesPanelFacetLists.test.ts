@@ -6,6 +6,7 @@
 import type { Mock } from "vitest";
 import { appendFacetRemoveButton, renderValueListFacet, type ValueListFacet } from "./propertiesPanelFacetLists";
 import type { RestrictionSnapshot } from "./propertiesPanelDraft";
+import { createDataTransfer, dispatchDrag } from "../__tests__/dragTestHelpers";
 
 /** Title of the remove buttons that are disabled because the restriction needs a facet. */
 const LAST_FACET_TITLE = "A restriction requires at least one facet";
@@ -82,42 +83,6 @@ function enterValue(root: HTMLElement, value: string, key?: "Enter" | "Escape"):
   if (key !== "Enter") {
     input.dispatchEvent(new FocusEvent("blur"));
   }
-}
-
-/**
- * Returns a stub of the `DataTransfer` of a drag event, which jsdom does not have.
- *
- * @returns An object that stores the data that `setData()` sets
- */
-function createDataTransfer(): Pick<
-  DataTransfer,
-  "effectAllowed" | "dropEffect" | "setData" | "getData" | "setDragImage"
-> {
-  const data: Record<string, string> = {};
-  return {
-    effectAllowed: "none",
-    dropEffect: "none",
-    setDragImage: (): void => undefined,
-    setData: (type: string, value: string): void => {
-      data[type] = value;
-    },
-    getData: (type: string): string => data[type] ?? "",
-  };
-}
-
-/**
- * Dispatches a drag event with a `DataTransfer` on an element.
- *
- * @param target - The element
- * @param type - The type of the event
- * @param dataTransfer - The data of the drag
- * @returns The event
- */
-function dispatchDrag(target: Element, type: string, dataTransfer = createDataTransfer()): Event {
-  const event = new Event(type, { bubbles: true, cancelable: true });
-  Object.defineProperty(event, "dataTransfer", { value: dataTransfer });
-  target.dispatchEvent(event);
-  return event;
 }
 
 describe("renderValueListFacet", () => {
@@ -263,30 +228,6 @@ describe("renderValueListFacet", () => {
 
       expect(draft.enumeration).toEqual(["B", "C", "A"]);
       expect(chipValues(root)).toEqual(["B", "C", "A"]);
-    });
-
-    test("should mark the dragged chip until the drag ends", () => {
-      const { root } = renderValueList("enumeration", ["A", "B"]);
-      const [first, second] = Array.from(root.querySelectorAll(".property-value-chip"));
-      const grip = first!.querySelector(".property-value-chip-grip")!;
-
-      dispatchDrag(grip, "dragstart");
-      dispatchDrag(second!, "dragover");
-      expect(first!.classList).toContain("property-value-chip-dragging");
-      dispatchDrag(grip, "dragend");
-
-      expect(first!.classList).not.toContain("property-value-chip-dragging");
-      expect(second!.classList).not.toContain("property-value-chip-drag-over");
-    });
-
-    test("should ignore a drop that does not come from a chip of the list", () => {
-      const { root, buildAndDispatch } = renderValueList("enumeration", ["A", "B"]);
-      const chip = root.querySelector(".property-value-chip")!;
-
-      expect(dispatchDrag(chip, "dragover").defaultPrevented).toBe(false);
-      expect(dispatchDrag(chip, "drop").defaultPrevented).toBe(false);
-
-      expect(buildAndDispatch).not.toHaveBeenCalled();
     });
 
     test("should change nothing when a chip is dropped on itself", () => {

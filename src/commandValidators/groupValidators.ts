@@ -2,6 +2,7 @@
  * Validators for group commands (Group and AttributeGroup).
  */
 
+import { isValidXmlName } from "../../shared/qNames.js";
 import type {
   schema,
   AddGroupCommand,
@@ -9,8 +10,8 @@ import type {
   ModifyGroupCommand,
   complexType,
 } from "../../shared/types.js";
-import type { ValidationFailure, ValidationResult } from "./validationUtils.js";
-import { isValidXmlName, validateOccurrences } from "./validationUtils.js";
+import type { ValidationFailure, ValidationResult } from "../../shared/validation.js";
+import { validateOccurrences } from "../../shared/occurrences.js";
 import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
 import { locateNodeById } from "../schemaNavigator.js";
 import type { ReferenceOrDefinition } from "./commonValidators.js";

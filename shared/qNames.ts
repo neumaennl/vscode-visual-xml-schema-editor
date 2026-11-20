@@ -1,10 +1,11 @@
 /**
- * QNames and namespace prefixes: splitting a QName, the reserved prefixes, and the functions on a map of
- * namespace declarations (prefix → namespace URI, the empty prefix for the default namespace). They work
+ * Names, QNames and namespaces: checking XML names, prefixes and namespace URIs, splitting a QName, the
+ * reserved prefixes, and the functions on a map of namespace declarations (prefix → namespace URI, the empty prefix for the default namespace). They work
  * on strings and maps, not on schema objects (see ADR 006).
  */
 
 import type { NamespacePrefixes } from "./commands/schema.js";
+import type { ValidationResult } from "./validation.js";
 
 /** A QName split into its parts. */
 export interface SplitQName {
@@ -97,4 +98,56 @@ export function normalizeNamespacePrefixes(namespacePrefixes: Readonly<Namespace
     }
   }
   return normalized;
+}
+
+/**
+ * Validates if a string is a valid XML name.
+ * XML names must start with a letter or underscore, and contain only
+ * letters, digits, hyphens, underscores, and periods.
+ *
+ * @param name - The name to validate
+ * @returns true if valid XML name, false otherwise
+ *
+ * The pattern is ASCII-only (see "Name validation is ASCII-only" in `docs/known-issues.md`).
+ */
+export function isValidXmlName(name: string): boolean {
+  if (!name || name.trim().length === 0) {
+    return false;
+  }
+  // XML name pattern: starts with letter or underscore,
+  // followed by letters, digits, hyphens, underscores, or periods
+  const xmlNamePattern = /^[a-zA-Z_][\w.-]*$/;
+  return xmlNamePattern.test(name);
+}
+
+/**
+ * Returns true if `value` looks like a valid absolute URI.
+ * Accepts common schemes (http, https, urn, ftp, file) as well as any other
+ * scheme following the pattern `"<letters>:..."` to stay flexible.
+ *
+ * @param value - The value to check
+ * @returns True if the value is an absolute URI
+ */
+export function isAbsoluteUri(value: string): boolean {
+  return /^[a-zA-Z][a-zA-Z0-9+\-.]*:[^\s]+$/.test(value);
+}
+
+/**
+ * Validates a namespace prefix: no surrounding whitespace, not reserved, and a valid XML name. The empty
+ * prefix stands for the default namespace; the callers decide whether they allow it.
+ *
+ * @param prefix - The prefix
+ * @returns The validation result
+ */
+export function validatePrefix(prefix: string): ValidationResult {
+  if (prefix !== prefix.trim()) {
+    return { valid: false, error: `Prefix '${prefix}' must not contain leading or trailing whitespace` };
+  }
+  if (isReservedPrefix(prefix)) {
+    return { valid: false, error: `Prefix '${prefix}' is reserved and cannot be used` };
+  }
+  if (prefix && !isValidXmlName(prefix)) {
+    return { valid: false, error: `Prefix '${prefix}' is not a valid XML name` };
+  }
+  return { valid: true };
 }

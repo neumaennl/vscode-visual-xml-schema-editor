@@ -13,24 +13,11 @@ import type {
   ModifySchemaNamespacesCommand,
 } from "../../shared/types.js";
 import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
-import { isReservedPrefix, prefixesForNamespace } from "../../shared/qNames.js";
-import type { ValidationResult } from "./validationUtils.js";
-import { isValidXmlName } from "./validationUtils.js";
+import { prefixesForNamespace, isAbsoluteUri, validatePrefix } from "../../shared/qNames.js";
+import type { ValidationResult } from "../../shared/validation.js";
 import { isAnyPrefixReferenced } from "../schemaReferences/referenceChecks.js";
 
 // ===== Helpers =====
-
-/**
- * Returns true if `value` looks like a valid absolute URI.
- * Accepts common schemes (http, https, urn, ftp, file) as well as any other
- * scheme following the pattern `"<letters>:..."` to stay flexible.
- *
- * @param value - The value to check
- * @returns True if the value is an absolute URI
- */
-function isAbsoluteUri(value: string): boolean {
-  return /^[a-zA-Z][a-zA-Z0-9+\-.]*:[^\s]+$/.test(value);
-}
 
 /**
  * Returns true if `value` looks like a valid relative or absolute file path /
@@ -101,26 +88,6 @@ function validateModuleId<T extends object>(
 function isNamespaceReferenced(namespace: string, schemaObj: schema): boolean {
   if (!namespace || !schemaObj._namespacePrefixes) return false;
   return isAnyPrefixReferenced(new Set(prefixesForNamespace(schemaObj._namespacePrefixes, namespace)), schemaObj);
-}
-
-/**
- * Validates a namespace prefix: no surrounding whitespace, not reserved, and a valid XML name. The empty
- * prefix stands for the default namespace; the callers decide whether they allow it.
- *
- * @param prefix - The prefix
- * @returns The validation result
- */
-function validatePrefix(prefix: string): ValidationResult {
-  if (prefix !== prefix.trim()) {
-    return { valid: false, error: `Prefix '${prefix}' must not contain leading or trailing whitespace` };
-  }
-  if (isReservedPrefix(prefix)) {
-    return { valid: false, error: `Prefix '${prefix}' is reserved and cannot be used` };
-  }
-  if (prefix && !isValidXmlName(prefix)) {
-    return { valid: false, error: `Prefix '${prefix}' is not a valid XML name` };
-  }
-  return { valid: true };
 }
 
 /**

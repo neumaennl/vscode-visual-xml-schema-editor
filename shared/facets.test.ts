@@ -7,6 +7,8 @@ import {
   countFacetsWithValues,
   type FacetName,
   isFacetName,
+  validateFacetValue,
+  validateFacetValues,
   isNumericFacet,
   isWhiteSpaceValue,
   LIST_FACETS,
@@ -67,5 +69,51 @@ describe("isFacetName", () => {
     ["MinLength", false],
   ])("should return for %s: %s", (value, expected) => {
     expect(isFacetName(value)).toBe(expected);
+  });
+});
+
+describe("validateFacetValue", () => {
+  test.each([
+    ["maxLength", 0, true],
+    ["maxLength", 5, true],
+    ["maxLength", -1, false],
+    ["maxLength", 1.5, false],
+    ["maxLength", null, false],
+    ["totalDigits", 1, true],
+    ["totalDigits", 0, false],
+    ["whiteSpace", "collapse", true],
+    ["whiteSpace", "trim", false],
+    ["enumeration", ["a", "b"], true],
+    ["enumeration", ["a", "a"], false],
+    ["pattern", ["[a-z]+", "[0-9]+"], true],
+    ["minInclusive", "abc", true],
+    ["minInclusive", 3, false],
+  ] as const)("should check %s %j: %s", (facet, value, valid) => {
+    expect(validateFacetValue(facet, value).valid).toBe(valid);
+  });
+
+  test("should say why a value is invalid", () => {
+    expect(validateFacetValue("maxLength", -1)).toEqual({
+      valid: false,
+      error: "maxLength must be a non-negative integer",
+    });
+    expect(validateFacetValue("totalDigits", 0)).toEqual({
+      valid: false,
+      error: "totalDigits must be a positive integer",
+    });
+    expect(validateFacetValue("enumeration", ["a", "a"])).toEqual({
+      valid: false,
+      error: "enumeration already has the value 'a'",
+    });
+  });
+});
+
+describe("validateFacetValues", () => {
+  test("should report the first invalid facet that is set", () => {
+    expect(validateFacetValues({ minLength: 1, maxLength: undefined })).toEqual({ valid: true });
+    expect(validateFacetValues({ minLength: -2, maxLength: 1.5 })).toEqual({
+      valid: false,
+      error: "minLength must be a non-negative integer",
+    });
   });
 });

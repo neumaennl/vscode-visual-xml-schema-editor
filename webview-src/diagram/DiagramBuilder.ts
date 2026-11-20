@@ -52,6 +52,10 @@ export class DiagramBuilder {
     this.diagram.currentSchemaPrefix = getCurrentSchemaPrefixes(schemaObj)[0];
     this.diagram.schemaTargetNamespace = schemaObj.targetNamespace?.toString() ?? "";
     this.diagram.schemaNamespacePrefixes = { ...(schemaObj._namespacePrefixes ?? {}) };
+    this.diagram.importedNamespaces = (schemaObj.import_ ?? []).flatMap((imp) =>
+      imp.namespace === undefined ? [] : [imp.namespace]
+    );
+    this.diagram.hasIncludes = (schemaObj.include ?? []).length > 0;
     this.diagram.localSchemaTypeNames = undefined;
 
     console.log("DiagramBuilder - Building from schema:", schemaObj);

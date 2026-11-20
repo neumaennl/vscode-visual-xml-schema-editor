@@ -182,6 +182,19 @@ describe("renderTypeProperty", () => {
   });
 
   describe("complex types", () => {
+    test("should reject a base type that the schema does not offer, with a message below the field", () => {
+      const { root, dispatch } = renderType("/complexType:Derived");
+
+      editInput(root, "Base Type", "tns:Other");
+
+      expect(dispatch).not.toHaveBeenCalled();
+      const input = getInputByLabel(root, "Base Type");
+      expect(input.value).toBe("tns:Base");
+      expect(input.parentElement?.querySelector(".property-message")?.textContent).toBe(
+        "Unknown type 'tns:Other': use a built-in type, a type of this schema, a type of an imported schema with its prefix, or a type of an included schema"
+      );
+    });
+
     test("should show a complex type without a base type read-only", () => {
       const { root } = renderType("/complexType:Base");
 
@@ -190,7 +203,7 @@ describe("renderTypeProperty", () => {
     });
 
     test.each([
-      { value: "tns:Other", baseType: "tns:Other" },
+      { value: "xs:anyType", baseType: "xs:anyType" },
       { value: "", baseType: "" },
     ])(
       "should change the base type of a derived complex type to '$value' and keep the derivation",

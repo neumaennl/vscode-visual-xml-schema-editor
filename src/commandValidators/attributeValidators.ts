@@ -2,6 +2,7 @@
  * Validators for attribute commands.
  */
 
+import { isValidXmlName } from "../../shared/qNames.js";
 import type {
   schema,
   AddAttributeCommand,
@@ -9,8 +10,7 @@ import type {
   ModifyAttributeCommand,
   AttributeFields,
 } from "../../shared/types.js";
-import type { ValidationResult } from "./validationUtils.js";
-import { isValidXmlName } from "./validationUtils.js";
+import type { ValidationResult } from "../../shared/validation.js";
 import { getAttributeContainer } from "../../shared/schemaUtils.js";
 import type { ChildKind } from "./commonValidators.js";
 import { locateChild, validateNewChild, validateReference } from "./commonValidators.js";

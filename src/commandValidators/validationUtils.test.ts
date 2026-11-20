@@ -1,121 +1,40 @@
-import { isValidXmlName, validateOccurrences, validateElementType } from "./validationUtils.js";
-import { expectInvalid } from "../__tests__/validationTestHelpers.js";
+import { validateTypeInSchema } from "./validationUtils.js";
 
-describe("validationUtils", () => {
-  describe("isValidXmlName", () => {
-    test("should accept valid XML names", () => {
-      expect(isValidXmlName("element")).toBe(true);
-      expect(isValidXmlName("Element")).toBe(true);
-      expect(isValidXmlName("element_name")).toBe(true);
-      expect(isValidXmlName("element-name")).toBe(true);
-      expect(isValidXmlName("element123")).toBe(true);
-      expect(isValidXmlName("_element")).toBe(true);
-    });
-
-    test("should reject invalid XML names", () => {
-      expect(isValidXmlName("123element")).toBe(false);
-      expect(isValidXmlName("-element")).toBe(false);
-      expect(isValidXmlName("element name")).toBe(false);
-      expect(isValidXmlName("")).toBe(false);
-    });
-  });
-
-  describe("validateOccurrences", () => {
-    test("should accept undefined minOccurs and maxOccurs", () => {
-      const result = validateOccurrences(undefined, undefined);
-      expect(result.valid).toBe(true);
-    });
-
-    test.each([0, 1, 10])("should accept the minOccurs %d without maxOccurs", (value) => {
-      expect(validateOccurrences(value, undefined).valid).toBe(true);
-    });
-
-    test.each([0, 1, 10, "unbounded"])("should accept the maxOccurs %s without minOccurs", (value) => {
-      expect(validateOccurrences(undefined, value).valid).toBe(true);
-    });
-
-    test.each([
-      [-1, undefined, "minOccurs must be a non-negative integer"],
-      [1.5, undefined, "minOccurs must be an integer"],
-      [undefined, -1, "maxOccurs must be a non-negative integer or 'unbounded'"],
-      [undefined, 1.5, "maxOccurs must be an integer or 'unbounded'"],
-    ])("should reject minOccurs %s and maxOccurs %s", (minOccurs, maxOccurs, error) => {
-      const result = validateOccurrences(minOccurs, maxOccurs);
-      expectInvalid(result);
-      expect(result.error).toBe(error);
-    });
-
-    test("should accept valid minOccurs and maxOccurs", () => {
-      expect(validateOccurrences(0, 1).valid).toBe(true);
-      expect(validateOccurrences(1, 10).valid).toBe(true);
-      expect(validateOccurrences(0, "unbounded").valid).toBe(true);
-    });
-
-    test("should reject invalid minOccurs", () => {
-      const result = validateOccurrences(-1, 10);
-      expectInvalid(result);
-      expect(result.error).toBe("minOccurs must be a non-negative integer");
-    });
-
-    test("should reject invalid maxOccurs", () => {
-      const result = validateOccurrences(1, -1);
-      expectInvalid(result);
-      expect(result.error).toBe("maxOccurs must be a non-negative integer or 'unbounded'");
-    });
-
-    test("should reject minOccurs > maxOccurs", () => {
-      const result = validateOccurrences(10, 5);
-      expectInvalid(result);
-      expect(result.error).toBe("minOccurs must be <= maxOccurs");
-    });
-
-    test("should accept minOccurs <= maxOccurs with unbounded", () => {
-      const result = validateOccurrences(10, "unbounded");
-      expect(result.valid).toBe(true);
-    });
-
-    test("should accept equal minOccurs and maxOccurs", () => {
-      const result = validateOccurrences(5, 5);
-      expect(result.valid).toBe(true);
-    });
-  });
-});
-
-describe("validateElementType", () => {
+describe("validateTypeInSchema", () => {
   const emptySchema = {};
 
   test("should accept built-in XSD types", () => {
-    expect(validateElementType("xs:string", emptySchema).valid).toBe(true);
-    expect(validateElementType("xs:integer", emptySchema).valid).toBe(true);
-    expect(validateElementType("string", emptySchema).valid).toBe(true);
+    expect(validateTypeInSchema("xs:string", emptySchema).valid).toBe(true);
+    expect(validateTypeInSchema("xs:integer", emptySchema).valid).toBe(true);
+    expect(validateTypeInSchema("string", emptySchema).valid).toBe(true);
   });
 
   test("should accept user-defined simpleType in schema", () => {
     const schemaObj = { simpleType: [{ name: "StatusType" }] };
-    expect(validateElementType("StatusType", schemaObj).valid).toBe(true);
-    expect(validateElementType("UnknownType", schemaObj).valid).toBe(false);
+    expect(validateTypeInSchema("StatusType", schemaObj).valid).toBe(true);
+    expect(validateTypeInSchema("UnknownType", schemaObj).valid).toBe(false);
   });
 
   test("should accept user-defined complexType in schema", () => {
     const schemaObj = { complexType: [{ name: "PersonType" }] };
-    expect(validateElementType("PersonType", schemaObj).valid).toBe(true);
-    expect(validateElementType("UnknownType", schemaObj).valid).toBe(false);
+    expect(validateTypeInSchema("PersonType", schemaObj).valid).toBe(true);
+    expect(validateTypeInSchema("UnknownType", schemaObj).valid).toBe(false);
   });
 
   test("should accept unqualified type when schema has includes", () => {
     const schemaObj = { include: [{ schemaLocation: "other.xsd" }] };
-    expect(validateElementType("IncludedType", schemaObj).valid).toBe(true);
-    expect(validateElementType("AnotherType", schemaObj).valid).toBe(true);
+    expect(validateTypeInSchema("IncludedType", schemaObj).valid).toBe(true);
+    expect(validateTypeInSchema("AnotherType", schemaObj).valid).toBe(true);
   });
 
   test("should reject unqualified unknown type when schema has no includes", () => {
     const schemaObj = {};
-    const result = validateElementType("UnknownType", schemaObj);
+    const result = validateTypeInSchema("UnknownType", schemaObj);
     expect(result.valid).toBe(false);
   });
 
   test("should reject empty type name", () => {
-    const result = validateElementType("", emptySchema);
+    const result = validateTypeInSchema("", emptySchema);
     expect(result.valid).toBe(false);
   });
 });

@@ -889,8 +889,10 @@ body {
   right: 0;
   z-index: 200;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
+  max-height: 40vh;
+  overflow-y: auto;
   padding: 6px 12px;
   background: var(--vscode-inputValidation-errorBackground, #5a1d1d);
   border-bottom: 1px solid var(--vscode-inputValidation-errorBorder, #be1100);
@@ -904,9 +906,9 @@ body {
 
 #notification-message {
   flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  min-width: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 #notification-dismiss {
@@ -917,4 +919,6 @@ body {
   font-size: 14px;
   padding: 0 4px;
   flex-shrink: 0;
+  position: sticky;
+  top: 0;
 }

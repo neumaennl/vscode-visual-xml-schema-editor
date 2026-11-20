@@ -4,8 +4,8 @@ title: UX concept
 description: The interaction model of the editor - which surface adds, edits and deletes what, how facets work, and how the properties panel behaves - with a list of what the current editor does not implement yet.
 tags: [ux, editor, palette, properties-panel, facets, context-menu, toolbar]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-20T08:53:46Z }
-verified: { by: human:neumaennl, at: 2026-11-20T09:57:53Z }
+generated: { by: human:neumaennl, at: 2026-11-20T10:00:58Z }
+verified: { by: human:neumaennl, at: 2026-11-20T10:41:02Z }
 sources:
   - id: palette-items
     resource: ../webview-src/palette/paletteEntries.ts
@@ -131,7 +131,7 @@ The panel header has a delete button for the selected node.[^panel-commands]
 ## Where errors appear
 
 - **An error that the properties panel finds itself** is shown directly below the field, which shows the current value again; the message disappears with the next accepted value.
-- **An error that the extension host finds** when it rejects a command is shown in the notification banner, and the panel shows the node again as it was.
+- **An error that the extension host finds** when it rejects a command is shown in the notification banner, and the panel shows the node again as it was. The banner shows the whole message: long messages wrap, and a message longer than the banner can show scrolls.
 
 The panel checks everything it can decide from the value of one field: names, type references (a built-in type, a type of the schema, a type of an imported schema with its prefix, or a type of an included schema), the values of the facets, occurrences, namespace prefixes and URIs, and values that a list of an enumeration or a pattern already contains. It uses the same rules as the extension host, from `shared/`; the extension host checks them again, and checks everything that needs more than one field, such as duplicate names or `minOccurs` > `maxOccurs`. The last member type of a union and the last facet of a restriction cannot be removed; their remove buttons are disabled.
 

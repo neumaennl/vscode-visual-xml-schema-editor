@@ -2,6 +2,7 @@
 
 ## 2026-11-20
 
+- **Update**: [UX concept](ux-concept.md#where-errors-appear): the notification banner shows the whole message; long messages wrap instead of being cut off, and a message longer than the banner can show scrolls ([#448](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/448)). [Editor](editor.md#webview-page) follows, and its front matter no longer has `verified` twice.
 - **Update**: [UX concept](ux-concept.md#where-errors-appear): new rule "Where errors appear": errors that the properties panel finds itself appear below the field, errors of the extension host in the notification banner. The panel now checks names, type references, facet values, occurrences, namespace prefixes and URIs, and duplicate values of enumerations and patterns, with rules in `shared/` (`validation.ts`, `qNames.ts`, `typeReferences.ts`, `occurrences.ts`, `facets.ts`) that the validators use too; the validators now also reject invalid facet values, which could write `<xs:maxLength/>` without a value ([#448](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/448)). [Architecture](architecture.md#principles), [Messaging](messaging.md#validation-in-the-webview), [Commands](commands.md#files), [Testing](testing.md) and [Known issues](known-issues.md) follow.
 
 ## 2026-11-19

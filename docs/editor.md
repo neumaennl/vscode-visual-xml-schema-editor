@@ -4,11 +4,8 @@ title: Editor
 description: The custom editor and the webview app - how the editor opens, the page layout, the app that wires palette, diagram and properties panel together, navigation, diagram settings, the palette and the properties panel tabs.
 tags: [editor, webview, palette, properties-panel, navigation, ui]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-19T14:50:08Z }
-verified: { by: human:neumaennl, at: 2026-11-19T15:32:47Z }
-verified:
-  by: human:neumaennl
-  at: 2026-10-08T08:46:19Z
+generated: { by: human:neumaennl, at: 2026-11-20T10:00:58Z }
+verified: { by: human:neumaennl, at: 2026-11-20T10:41:02Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -63,13 +60,13 @@ The extension contributes the custom editor `visualXmlSchemaEditor.editor` for `
 
 The provider generates the HTML page. It allows scripts, restricts local resources to the extension folder, and sets a Content Security Policy with `default-src 'none'` and a nonce for the script. It loads `webview/main.js`, `webview/styles.css` and the Codicon CSS.[^webview-provider]
 
-| Area        | Element                | Content                         |
-| ----------- | ---------------------- | ------------------------------- |
-| Left        | `#palette-panel`       | Palette of schema constructs    |
-| Center, top | `#notification-bar`    | Error messages, dismissible     |
-| Center, top | `#toolbar`             | Zoom In, Zoom Out, Fit View     |
-| Center      | `#schema-canvas` (SVG) | The diagram                     |
-| Right       | `#properties-panel`    | Properties of the selected node |
+| Area        | Element                | Content                              |
+| ----------- | ---------------------- | ------------------------------------ |
+| Left        | `#palette-panel`       | Palette of schema constructs         |
+| Center, top | `#notification-bar`    | Error messages, in full, dismissible |
+| Center, top | `#toolbar`             | Zoom In, Zoom Out, Fit View          |
+| Center      | `#schema-canvas` (SVG) | The diagram                          |
+| Right       | `#properties-panel`    | Properties of the selected node      |
 
 The styles use VS Code theme CSS variables, so the editor follows the active color theme.
 

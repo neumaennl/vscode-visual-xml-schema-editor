@@ -346,3 +346,36 @@ describe("SchemaNavigator", () => {
     });
   });
 });
+
+describe("elements with the same name", () => {
+  /** A sequence `a, b, a`, whose second `a` has an anonymous complex type with the element `c`. */
+  const REPEATED = schemaWith(`<xs:complexType name="T"><xs:sequence>
+  <xs:element name="a" type="xs:string"/>
+  <xs:element name="b" type="xs:string"/>
+  <xs:element name="a"><xs:complexType><xs:sequence><xs:element name="c"/></xs:sequence></xs:complexType></xs:element>
+</xs:sequence></xs:complexType>`);
+
+  test("should find an element by its position, not by its name", () => {
+    const result = locateNodeById(REPEATED, "/complexType:T/group:sequence[0]/element:a[2]");
+
+    expect(result.found && result.parent).toBe(REPEATED.complexType![0]!.sequence!.element![2]);
+  });
+
+  test("should find nothing for an ID whose name does not fit the element at its position", () => {
+    const result = locateNodeById(
+      REPEATED,
+      "/complexType:T/group:sequence[0]/element:b[2]/anonymousComplexType[0]/group:sequence[0]/element:c[0]"
+    );
+
+    expect(result.found).toBe(false);
+  });
+
+  test("should find the content of the second of two elements with the same name", () => {
+    const result = locateNodeById(
+      REPEATED,
+      "/complexType:T/group:sequence[0]/element:a[2]/anonymousComplexType[0]/group:sequence[0]/element:c[0]"
+    );
+
+    expect(result).toMatchObject({ found: true, parentType: "localElement", parent: { name: "c" } });
+  });
+});

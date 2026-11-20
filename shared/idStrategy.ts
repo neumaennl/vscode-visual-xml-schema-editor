@@ -155,6 +155,9 @@ export function generateSchemaId(params: IdGenerationParams): string {
 /** Canonical schema-root ID used throughout the webview and extension. */
 export const SCHEMA_ROOT_ID = generateSchemaId({ nodeType: SchemaNodeType.Schema });
 
+/** The name in the ID of a node without a name, such as an element reference: `element:unnamed[1]`. */
+export const UNNAMED_NODE_NAME = "unnamed";
+
 /**
  * Parses a schema ID string into its components.
  *

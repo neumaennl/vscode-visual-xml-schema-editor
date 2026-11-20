@@ -12,7 +12,12 @@ import type {
 import type { ValidationResult } from "../../shared/validation.js";
 import { validateTypeInSchema } from "./validationUtils.js";
 import { isSchemaRoot } from "../../shared/schemaUtils.js";
-import { locateType, validateInlineTypeParent, validateNewTypeName } from "./commonValidators.js";
+import {
+  locateType,
+  validateInlineTypeParent,
+  validateNewTypeName,
+  validateUnusedTypeName,
+} from "./commonValidators.js";
 
 /**
  * Valid content models for `ComplexType` elements.
@@ -175,13 +180,7 @@ export function validateAddComplexType(command: AddComplexTypeCommand, schemaObj
   if (!derivationKindResult.valid) return derivationKindResult;
   const derivationResult = validateComplexTypeDerivation(command.payload, undefined, schemaObj);
   if (!derivationResult.valid) return derivationResult;
-  if (isTopLevel && typeName !== undefined && (schemaObj.complexType ?? []).some((ct) => ct.name === typeName)) {
-    return {
-      valid: false,
-      error: `Complex type '${typeName}' already exists in schema`,
-    };
-  }
-  return { valid: true };
+  return isTopLevel && typeName !== undefined ? validateUnusedTypeName(typeName, schemaObj) : { valid: true };
 }
 
 /**
@@ -209,7 +208,7 @@ export function validateModifyComplexType(command: ModifyComplexTypeCommand, sch
   const located = locateType(typeId, schemaObj, "complexType", schemaObj.complexType);
   if (!located.valid) return located;
 
-  const nameResult = validateNewTypeName(typeName, located, "complexType");
+  const nameResult = validateNewTypeName(typeName, located, "complexType", schemaObj);
   if (!nameResult.valid) return nameResult;
   if (contentModel !== undefined) {
     const contentModelResult = validateContentModel(contentModel, VALID_COMPLEX_TYPE_CONTENT_MODELS);

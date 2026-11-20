@@ -13,6 +13,8 @@ import {
   validateNewChild,
   validateNewTypeName,
   validateReference,
+  validateUniqueTopLevelName,
+  validateUnusedTypeName,
 } from "./commonValidators.js";
 import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
 import { expectInvalid } from "../../shared/__tests__/validationTestHelpers.js";
@@ -162,8 +164,12 @@ describe("validateDefinitionRemoval", () => {
 });
 
 describe("validateNewChild", () => {
-  test("should accept a new element in a sequence", () => {
-    expect(validateNewChild(SCHEMA, SEQUENCE_ID, ELEMENTS, "second", undefined)).toEqual({ valid: true });
+  test.each([
+    ["a new name", "second", undefined],
+    ["a name that the sequence already has, which the pipeline checks after the command", "first", undefined],
+    ["a reference that the sequence already has", undefined, "a"],
+  ])("should accept an element in a sequence with %s", (_case, name, ref) => {
+    expect(validateNewChild(SCHEMA, SEQUENCE_ID, ELEMENTS, name, ref)).toEqual({ valid: true });
   });
 
   test.each([
@@ -177,35 +183,55 @@ describe("validateNewChild", () => {
     ],
     ["a reference in the schema root", "/schema", undefined, "a", "Top-level elements cannot be references"],
     [
-      "a duplicate name",
-      SEQUENCE_ID,
-      "first",
-      undefined,
-      "Cannot add element: duplicate element name 'first' in sequence",
-    ],
-    [
-      "a name used by a reference",
-      SEQUENCE_ID,
+      "a top-level name that is used",
+      "/schema",
       "a",
       undefined,
-      "Cannot add element: duplicate element name 'a' in sequence",
-    ],
-    [
-      "a duplicate reference",
-      SEQUENCE_ID,
-      undefined,
-      "a",
-      "Cannot add element: duplicate element reference 'a' in sequence",
+      "Cannot add element: duplicate element name 'a' in schema",
     ],
   ])("should reject %s", (_case, parentId, name, ref, error) => {
     expect(validateNewChild(SCHEMA, parentId, ELEMENTS, name, ref)).toEqual({ valid: false, error });
   });
 });
 
+describe("validateUniqueTopLevelName", () => {
+  const A = SCHEMA.element![0];
+
+  test.each<[string, string, string | undefined, NamedChild | undefined]>([
+    ["a new top-level name", "schema", "b", undefined],
+    ["no name", "schema", undefined, undefined],
+    ["the name that the renamed element already has", "schema", "a", A],
+    [
+      "a name of a top-level element for a local one, which the pipeline checks on the result",
+      "sequence",
+      "a",
+      undefined,
+    ],
+  ])("should accept %s", (_case, parentType, name, changedChild) => {
+    expect(validateUniqueTopLevelName(SCHEMA, ELEMENTS, parentType, name, "modify", changedChild)).toEqual({
+      valid: true,
+    });
+  });
+
+  test("should reject a top-level name that another element has", () => {
+    expect(validateUniqueTopLevelName(SCHEMA, ELEMENTS, "schema", "a", "add")).toEqual({
+      valid: false,
+      error: "Cannot add element: duplicate element name 'a' in schema",
+    });
+  });
+});
+
 describe("locateChild", () => {
+  test("should return the type of the parent", () => {
+    const result = locateChild(SCHEMA, `${SEQUENCE_ID}/element:first`, ELEMENTS, "modify element in");
+
+    expect(result.valid && result.parentType).toBe("sequence");
+  });
+
   test.each([
     ["by name", `${SEQUENCE_ID}/element:first`, "first"],
-    ["by position", `${SEQUENCE_ID}/element:x[1]`, undefined],
+    ["by position and the ref", `${SEQUENCE_ID}/element:a[1]`, undefined],
+    ["by position, without a name", `${SEQUENCE_ID}/element:unnamed[1]`, undefined],
     ["in the schema root, without a parent ID", "/element:a", "a"],
   ])("should find an element %s", (_case, id, name) => {
     const result = locateChild(SCHEMA, id, ELEMENTS, "remove element from");
@@ -225,7 +251,12 @@ describe("locateChild", () => {
       "Cannot remove element from parent of type: topLevelComplexType",
     ],
     ["a missing name", `${SEQUENCE_ID}/element:none`, "Element not found with name: none"],
-    ["a position out of range", `${SEQUENCE_ID}/element:first[5]`, "Element not found at position: 5"],
+    ["a position out of range", `${SEQUENCE_ID}/element:first[5]`, "Element not found with name: first at position: 5"],
+    [
+      "a name that does not match the position",
+      `${SEQUENCE_ID}/element:a[0]`,
+      "Element not found with name: a at position: 0",
+    ],
   ])("should reject %s", (_case, id, error) => {
     expect(locateChild(SCHEMA, id, ELEMENTS, "remove element from")).toEqual({ valid: false, error });
   });
@@ -295,10 +326,14 @@ describe("locateType", () => {
 });
 
 describe("validateNewTypeName", () => {
+  const S = SCHEMA.simpleType![0];
+
   test.each([
     ["no new name", undefined, false, { valid: true }],
     ["a valid name of a top-level type", "U", false, { valid: true }],
+    ["the current name", "S", false, { valid: true }],
     ["an invalid name", "1U", false, { valid: false, error: "Type name must be a valid XML name" }],
+    ["the name of another type", "T", false, { valid: false, error: "Complex type 'T' already exists in schema" }],
     [
       "a name for an anonymous type",
       "U",
@@ -306,6 +341,23 @@ describe("validateNewTypeName", () => {
       { valid: false, error: "Cannot provide 'typeName' when modifying an anonymous simpleType" },
     ],
   ])("should check %s", (_case, typeName, anonymous, expected) => {
-    expect(validateNewTypeName(typeName, { anonymous }, "simpleType")).toEqual(expected);
+    expect(validateNewTypeName(typeName, { anonymous, type: S }, "simpleType", SCHEMA)).toEqual(expected);
+  });
+});
+
+describe("validateUnusedTypeName", () => {
+  test("should accept a name that no type has", () => {
+    expect(validateUnusedTypeName("U", SCHEMA)).toEqual({ valid: true });
+  });
+
+  test.each([
+    ["a simple type", "S", "Simple type 'S' already exists in schema"],
+    ["a complex type", "T", "Complex type 'T' already exists in schema"],
+  ])("should reject the name of %s", (_case, typeName, error) => {
+    expect(validateUnusedTypeName(typeName, SCHEMA)).toEqual({ valid: false, error });
+  });
+
+  test("should accept the name of the type that is renamed", () => {
+    expect(validateUnusedTypeName("S", SCHEMA, SCHEMA.simpleType![0])).toEqual({ valid: true });
   });
 });

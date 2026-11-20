@@ -1,15 +1,18 @@
 ---
 type: Architecture Decision Record
 title: "ADR 003: Validators check, executors assume"
-description: The decision that the validators check everything an executor relies on and the executors do not check it again, how an executor states what it assumes, why this is safe, the scenarios that were examined, and how a test keeps validators and executors in agreement.
+description: The decision that the validators check everything an executor relies on and the executors do not check it again, how an executor states what it assumes, why this is safe, the scenarios that were examined, how a test keeps validators and executors in agreement, and why the pipeline checks the resulting schema for the constraints that span it.
 tags: [adr, architecture, commands, validation, error-handling, testing]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-18T19:53:10Z }
-verified: { by: human:neumaennl, at: 2026-11-18T20:26:45Z }
+generated: { by: human:neumaennl, at: 2026-11-20T13:21:09Z }
+verified: { by: human:neumaennl, at: 2026-11-20T15:04:32Z }
 sources:
   - id: command-processor
     resource: ../../src/commandProcessor.ts
     title: CommandProcessor
+  - id: schema-constraints
+    resource: ../../src/schemaConstraints/schemaConstraints.ts
+    title: Constraints that span the schema
   - id: assume-validated
     resource: ../../src/commandExecutors/assumeValidated.ts
     title: Assumptions of the executors
@@ -33,7 +36,8 @@ Every command has a validator and an executor (see [Commands](../commands.md)). 
 
 ## Decision
 
-- **The validator checks everything the executor relies on:** that the parent and the target exist, that the parent can hold the new node, that the payload is complete and consistent, and the rules of XML Schema and of the editor. If an executor relies on something that the validator does not check, the validator is extended.
+- **The validator checks everything the executor relies on:** that the parent and the target exist, that the parent can hold the new node, that the payload is complete and consistent, and the rules of XML Schema and of the editor that concern the command itself. If an executor relies on something that the validator does not check, the validator is extended.
+- **The pipeline checks the resulting schema.** What a command does to the rest of the schema is checked on the result. After the executor, `CommandProcessor` rejects the command if the result cannot be read again, or if it violates a constraint of XML Schema that spans the schema and that the schema did not violate before, such as that elements with the same name in a content model must have the same type.[^command-processor] A schema that is already invalid can still be edited elsewhere.
 - **The executor does not repeat these checks.** It assumes that the command is valid.
 - **Where the types need such an assumption, the executor states it** with the helpers in `src/commandExecutors/assumeValidated.ts`:[^assume-validated] `assumeValidated(value, what)` returns a value that the validator guarantees, `assumeRemoved()` checks that a removal removed something, `locateValidated()` locates a node that the validator found, and `assumptionFailed()` marks a branch that a valid command cannot reach. If an assumption does not hold, the command fails with an error such as "Element person not found, although the validator accepted the command".
 - **`CommandProcessor` turns every exception into a runtime failure.** The document stays unchanged, and the webview shows the message.
@@ -43,6 +47,7 @@ Every command has a validator and an executor (see [Commands](../commands.md)). 
 
 - **The validators already are the gatekeepers.** The architecture gives them this role (see [Architecture](../architecture.md#principles)), and they check the parent and the target of every command. Checks in the executors could only repeat them, and two copies of a rule drift apart.
 - **The executors cannot crash the extension.** They run only inside `CommandProcessor`, after validation and on a schema that was parsed for this command alone, and every exception becomes a runtime failure. Failing gracefully needs no checks in the executors.
+- **Only the result shows what a command did to the rest of the schema.** A command can break a constraint in components it does not touch: an element added to a group definition can break the content models of all types that use the group. Checking this beforehand would mean predicting the result of the executor in the validator, a second copy of what the executor does.
 - **A silent no-op is worse than an error.** A guard that returns reports success while the user's change is lost. An assumption that fails names the disagreement, so it is found and fixed in the validator or the executor.
 
 ## Scenarios that were examined
@@ -69,11 +74,13 @@ The same code had three more gaps that produced invalid XSD instead of a no-op, 
 - An executor has no checks of its own besides the assumptions. A new executor states what it assumes with the helpers instead of returning silently.
 - A new rule that an executor needs goes into the validator, with a test of the validator.
 - A disagreement shows up as a failing agreement test, or at runtime as an error that says that the validator accepted the command. Tests of an executor may use such input to check the error.
+- A constraint of XML Schema that spans the schema is added to the check of the result in `src/schemaConstraints/`,[^schema-constraints] not to a validator.
 - The agreement test only covers the nodes of the test schemas and the commands it creates for them. A new kind of node or command needs a schema in `test-resources` that contains it, and the command in the test.
 
 ## Rejected alternatives
 
 - **Checks in the executors.** Each executor would check what it relies on and throw a meaningful error. This repeats the validators, and the copies drift apart.
+- **Checking the constraints that span the schema in the validators.** Each validator would have to predict which content models and attribute uses its command changes. A case that is overlooked writes an invalid schema without an error. A first attempt, for duplicate names, was both too strict and incomplete.
 - **Deleting the guards without replacing them.** A disagreement would surface as a `TypeError` or as a silent no-op. The `TypeError` is graceful too, but does not say what went wrong, and a no-op is not noticed at all.
 
 ## Review
@@ -81,6 +88,8 @@ The same code had three more gaps that produced invalid XSD instead of a no-op, 
 Review this decision if the executors are called from somewhere other than `CommandProcessor`, or if validation and execution no longer run on the same schema in the same call.
 
 [^command-processor]: [CommandProcessor](../../src/commandProcessor.ts)
+
+[^schema-constraints]: [Constraints that span the schema](../../src/schemaConstraints/schemaConstraints.ts)
 
 [^assume-validated]: [Assumptions of the executors](../../src/commandExecutors/assumeValidated.ts)
 

@@ -303,12 +303,19 @@ function validateReferenceChange(payload: ModifyGroupCommand["payload"], schemaO
 }
 
 /**
- * Validates the changes of a `modifyGroup` command to a group definition.
+ * Validates the changes of a `modifyGroup` command to a group definition: a new name must be valid and
+ * no other group definition may have it.
  *
  * @param payload - The payload of the command
+ * @param schemaObj - The schema
+ * @param currentName - The current name of the group definition
  * @returns The validation result
  */
-function validateDefinitionChange(payload: ModifyGroupCommand["payload"]): ValidationResult {
+function validateDefinitionChange(
+  payload: ModifyGroupCommand["payload"],
+  schemaObj: schema,
+  currentName: string | undefined
+): ValidationResult {
   if (payload.ref !== undefined || payload.minOccurs !== undefined || payload.maxOccurs !== undefined) {
     return {
       valid: false,
@@ -316,8 +323,16 @@ function validateDefinitionChange(payload: ModifyGroupCommand["payload"]): Valid
         "Cannot use ref, minOccurs, or maxOccurs when modifying a group definition — use groupName, contentModel, or documentation instead",
     };
   }
-  if (payload.groupName !== undefined && !isValidXmlName(payload.groupName)) {
+  const { groupName } = payload;
+  if (groupName !== undefined && !isValidXmlName(groupName)) {
     return { valid: false, error: "Group name must be a valid XML name" };
+  }
+  if (
+    groupName !== undefined &&
+    groupName !== currentName &&
+    (schemaObj.group ?? []).some((g) => g.name === groupName)
+  ) {
+    return { valid: false, error: `Group name already exists: ${groupName}` };
   }
   if (payload.contentModel !== undefined && !VALID_GROUP_CONTENT_MODELS.includes(payload.contentModel)) {
     return {
@@ -347,6 +362,6 @@ export function validateModifyGroup(command: ModifyGroupCommand, schemaObj: sche
     case "reference":
       return validateReferenceChange(command.payload, schemaObj);
     case "definition":
-      return validateDefinitionChange(command.payload);
+      return validateDefinitionChange(command.payload, schemaObj, located.name);
   }
 }

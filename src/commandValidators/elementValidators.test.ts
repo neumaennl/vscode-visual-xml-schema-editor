@@ -6,6 +6,7 @@ import { unmarshal } from "@neumaennl/xmlbind-ts";
 import { schema } from "../../shared/types.js";
 import type { AddElementCommand, RemoveElementCommand, ModifyElementCommand } from "../../shared/types.js";
 import { validateAddElement, validateRemoveElement, validateModifyElement } from "./elementValidators.js";
+import type { ValidationResult } from "../../shared/validation.js";
 import { expectInvalid } from "../../shared/__tests__/validationTestHelpers.js";
 import { schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
 import { readTestSchema } from "../__tests__/resourceTestHelpers.js";
@@ -556,20 +557,19 @@ describe("Element Validators", () => {
       expect(result.valid).toBe(true);
     });
 
-    test("should reject an element name that already exists in the all", () => {
-      const command: AddElementCommand = {
-        type: "addElement",
-        payload: { parentId: "/complexType:T/group:all[0]", elementName: "first", elementType: "xs:string" },
-      };
-
-      const result = validateAddElement(
-        command,
-        schemaWith(
-          `<xs:complexType name="T"><xs:all><xs:element name="first" type="xs:string"/></xs:all></xs:complexType>`
-        )
-      );
-      expectInvalid(result);
-      expect(result.error).toBe("Cannot add element: duplicate element name 'first' in all");
+    test.each<[string, AddElementCommand["payload"], string]>([
+      [
+        "a name that the all already has",
+        { parentId: "/complexType:T/group:all[0]", elementName: "first", elementType: "xs:string" },
+        `<xs:complexType name="T"><xs:all><xs:element name="first" type="xs:string"/></xs:all></xs:complexType>`,
+      ],
+      [
+        "a reference that the sequence already has",
+        { parentId: "/complexType:T/group:sequence[0]", ref: "root" },
+        SEQUENCE_WITH_ELEMENTS,
+      ],
+    ])("should leave %s to the constraints that the pipeline checks after the command", (_case, payload, body) => {
+      expect(validateAddElement({ type: "addElement", payload }, schemaWith(body))).toEqual({ valid: true });
     });
 
     test("should reject an element without name and ref", () => {
@@ -592,17 +592,6 @@ describe("Element Validators", () => {
       const result = validateAddElement(command, schemaWith(SEQUENCE_WITH_ELEMENTS));
       expectInvalid(result);
       expect(result.error).toBe("Cannot add element to parent of type: topLevelComplexType");
-    });
-
-    test("should reject a reference that already exists in the sequence", () => {
-      const command: AddElementCommand = {
-        type: "addElement",
-        payload: { parentId: "/complexType:T/group:sequence[0]", ref: "root" },
-      };
-
-      const result = validateAddElement(command, schemaWith(SEQUENCE_WITH_ELEMENTS));
-      expectInvalid(result);
-      expect(result.error).toBe("Cannot add element: duplicate element reference 'root' in sequence");
     });
 
     test("should accept removing an element identified by position", () => {
@@ -710,5 +699,42 @@ describe("Element Validators", () => {
       );
       expect(result.valid).toBe(true);
     });
+  });
+});
+
+describe("duplicates when an element changes", () => {
+  /** {@link SEQUENCE_WITH_ELEMENTS} with a second top-level element `other`. */
+  const SCHEMA = `${SEQUENCE_WITH_ELEMENTS}<xs:element name="other" type="xs:string"/>`;
+  const FIRST_ID = "/complexType:T/group:sequence[0]/element:first";
+
+  test.each<[string, ModifyElementCommand["payload"], ValidationResult]>([
+    ["a local element to its own name", { elementId: FIRST_ID, elementName: "first" }, { valid: true }],
+    [
+      "a local element to a name that only another parent has",
+      { elementId: FIRST_ID, elementName: "other" },
+      { valid: true },
+    ],
+    [
+      "a local element to the name of a sibling, which the pipeline checks after the command",
+      { elementId: FIRST_ID, elementName: "second" },
+      { valid: true },
+    ],
+    [
+      "a local element to the name of a reference, which the pipeline checks after the command",
+      { elementId: FIRST_ID, elementName: "root" },
+      { valid: true },
+    ],
+    [
+      "a local element into a reference that the parent has, which the pipeline checks after the command",
+      { elementId: FIRST_ID, ref: "root" },
+      { valid: true },
+    ],
+    [
+      "a top-level element to the name of another one",
+      { elementId: "/element:other", elementName: "root" },
+      { valid: false, error: "Cannot modify element: duplicate element name 'root' in schema" },
+    ],
+  ])("should check changing %s", (_case, payload, expected) => {
+    expect(validateModifyElement({ type: "modifyElement", payload }, schemaWith(SCHEMA))).toEqual(expected);
   });
 });

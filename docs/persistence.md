@@ -4,8 +4,8 @@ title: Persistence
 description: How edits reach the XSD file - the command pipeline, the document edit, what serialization changes, undo and save, and how changes from outside reach the diagram.
 tags: [persistence, command-pipeline, workspace-edit, serialization, undo, xmlbind-ts]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-18T20:40:51Z }
-verified: { by: human:neumaennl, at: 2026-11-19T15:32:47Z }
+generated: { by: human:neumaennl, at: 2026-11-20T13:22:26Z }
+verified: { by: human:neumaennl, at: 2026-11-20T15:04:32Z }
 sources:
   - id: extension
     resource: ../src/extension.ts
@@ -63,16 +63,17 @@ sequenceDiagram
 2. **Parse.** `CommandProcessor.execute()` parses the document text with `parseSchema()`. Every command parses it again; the processor keeps no schema between commands.[^command-processor][^schema-xml]
 3. **Validate.** `CommandValidator` checks the command against the parsed schema.
 4. **Execute.** `CommandExecutor` changes the parsed schema object. It belongs to this command alone, so a failure leaves nothing behind.
-5. **Serialize and check.** `serializeSchema()` marshals the schema object to XML, and the XML is parsed again. If it does not parse, the command fails.
-6. **Write.** The provider replaces the full range of the document with the new XML in one `WorkspaceEdit` and calls `vscode.workspace.applyEdit()`.[^webview-provider]
-7. **Refresh.** The edit fires `onDidChangeTextDocument`, and the provider parses the document and sends `updateSchema`, as for any other change (see [Changes from outside](#changes-from-outside)).
+5. **Check the result.** If the result violates a constraint of XML Schema that spans the schema and that the schema did not violate before, such as that elements with the same name in a content model have the same type, the command is rejected like by a validator (see [ADR 003](architecture/003-validators-check-executors-assume.md)).
+6. **Serialize and check.** `serializeSchema()` marshals the schema object to XML, and the XML is parsed again. If it does not parse, the command fails.
+7. **Write.** The provider replaces the full range of the document with the new XML in one `WorkspaceEdit` and calls `vscode.workspace.applyEdit()`.[^webview-provider]
+8. **Refresh.** The edit fires `onDidChangeTextDocument`, and the provider parses the document and sends `updateSchema`, as for any other change (see [Changes from outside](#changes-from-outside)).
 
 `execute()` is synchronous and returns a result object instead of throwing. The provider maps the outcome to messages:[^webview-provider][^workspace-edit-test]
 
 | Outcome            | Cause                                                                                              | Message to the webview                                                                                           |
 | ------------------ | -------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | Success            | Edit applied                                                                                       | `commandResult` `{ success: true }`, plus `updateSchema` from the document change                                |
-| Validation failure | The validator rejected the command                                                                 | `commandResult` `{ success: false, error }`                                                                      |
+| Validation failure | The validator rejected the command, or its result violates a constraint that spans the schema      | `commandResult` `{ success: false, error }`                                                                      |
 | Runtime failure    | An exception in parsing, executing or serializing, for example because the document does not parse | `error` with code `COMMAND_EXECUTION_ERROR` and stack trace; the message starts with "Command execution failed:" |
 | Edit rejected      | `applyEdit()` returned `false`                                                                     | `error` with code `COMMAND_EXECUTION_ERROR`                                                                      |
 

@@ -26,7 +26,7 @@ import { identifyChild } from "../commandUtils.js";
  *
  * @param command - The `addAttribute` command to execute
  * @param schemaObj - The schema object to modify
- * @throws An {@link Error} if parent node not found or duplicate attribute name exists
+ * @throws An {@link Error} if the parent node is not found, which the validator rules out
  */
 export function executeAddAttribute(command: AddAttributeCommand, schemaObj: schema): void {
   const location = locateValidated(schemaObj, command.payload.parentId);

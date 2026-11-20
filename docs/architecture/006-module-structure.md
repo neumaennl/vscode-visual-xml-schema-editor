@@ -4,8 +4,8 @@ title: "ADR 006: Module structure"
 description: The decision how the code within the extension host, the webview and the shared code is split into layers, in which direction the layers may depend on each other, what belongs into the shared code and what it may rely on, how files are named, and how fallow checks the layers.
 tags: [adr, architecture, structure, dependencies, shared]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-19T14:50:08Z }
-verified: { by: human:neumaennl, at: 2026-11-19T15:32:47Z }
+generated: { by: human:neumaennl, at: 2026-11-20T13:21:09Z }
+verified: { by: human:neumaennl, at: 2026-11-20T15:04:32Z }
 sources:
   - id: guidelines
     resource: ../development-guidelines.md
@@ -43,17 +43,18 @@ The [project boundaries](../development-guidelines.md#project-boundaries) say wh
 
 ### Layers
 
-Each project is split into layers. A module may import from its own layer and from the layer directly below it; it does not import from a layer above it and does not skip a layer. The exceptions are the schema access in the extension host and the diagram in the webview, which any layer above them may use, the shared code, which both projects may use, and the facet icons in the webview, which lie below the surfaces and are used only by the palette and by the properties panel, the two places that show facets. Two modules of the same layer that serve different purposes do not import each other: what both need goes into a layer below them.
+Each project is split into layers. A module may import from its own layer and from the layer directly below it; it does not import from a layer above it and does not skip a layer. The exceptions are the schema access in the extension host and the diagram in the webview, which any layer above them may use, the schema constraints in the extension host, which only the pipeline uses, the shared code, which both projects may use, and the facet icons in the webview, which lie below the surfaces and are used only by the palette and by the properties panel, the two places that show facets. Two modules of the same layer that serve different purposes do not import each other: what both need goes into a layer below them.
 
 **Extension host (`src/`), from top to bottom:**
 
-| Layer         | Modules                                                                          | Responsibility                                                                               |
-| ------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| VS Code       | `extension.ts`, `webviewProvider.ts`                                             | Activation, the webview, messages and the document. Only these use VS Code.                  |
-| Pipeline      | `commandProcessor.ts`                                                            | Parse, validate, execute, serialize.                                                         |
-| Dispatch      | `commandValidator.ts`, `commandExecutor.ts`, `commandHandlers.ts`                | Find the validator or executor of a command.                                                 |
-| Commands      | `commandValidators/`, `commandExecutors/`                                        | One module per schema construct and side; validators and executors do not import each other. |
-| Schema access | `schemaReferences/`, `schemaNavigator.ts`, `commandUtils.ts`, the XML conversion | Finding and rewriting references, resolving IDs, parsing and serializing.                    |
+| Layer         | Modules                                                                          | Responsibility                                                                                                                                                      |
+| ------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| VS Code       | `extension.ts`, `webviewProvider.ts`                                             | Activation, the webview, messages and the document. Only these use VS Code.                                                                                         |
+| Pipeline      | `commandProcessor.ts`                                                            | Parse, validate, execute, check the constraints, serialize.                                                                                                         |
+| Dispatch      | `commandValidator.ts`, `commandExecutor.ts`, `commandHandlers.ts`                | Find the validator or executor of a command.                                                                                                                        |
+| Constraints   | `schemaConstraints/`                                                             | The constraints of XML Schema that span the schema, which the pipeline checks on the result of a command (see [ADR 003](003-validators-check-executors-assume.md)). |
+| Commands      | `commandValidators/`, `commandExecutors/`                                        | One module per schema construct and side; validators and executors do not import each other.                                                                        |
+| Schema access | `schemaReferences/`, `schemaNavigator.ts`, `commandUtils.ts`, the XML conversion | Finding and rewriting references, resolving IDs, parsing and serializing.                                                                                           |
 
 **Webview (`webview-src/`), from top to bottom:**
 

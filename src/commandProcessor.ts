@@ -7,6 +7,8 @@ import type { SchemaCommand } from "../shared/types.js";
 import { CommandValidator } from "./commandValidator.js";
 import { CommandExecutor } from "./commandExecutor.js";
 import { parseSchema, serializeSchema } from "./schemaXml.js";
+import { findConstraintViolations } from "./schemaConstraints/schemaConstraints.js";
+import { findAddedViolations } from "./schemaConstraints/constraintViolation.js";
 
 /** Successful command execution. */
 export interface CommandExecutionSuccess {
@@ -16,7 +18,8 @@ export interface CommandExecutionSuccess {
 }
 
 /**
- * Command was rejected by the validator (bad input or incompatible schema state).
+ * Command was rejected by the validator (bad input or incompatible schema state), or its result would
+ * violate a constraint of XML Schema that the schema did not violate before.
  * The caller reports it as a `commandResult` message, so that the webview can show
  * actionable feedback to the user.
  */
@@ -71,8 +74,9 @@ export class CommandProcessor {
 
   /**
    * Executes a command on the schema of a document: parses the text, validates the command, executes it
-   * on the parsed schema, serializes the schema and checks that the result can be parsed again. Returns a
-   * result instead of throwing.
+   * on the parsed schema, rejects it if the result violates a constraint of XML Schema that spans the schema
+   * and that the schema did not violate before, serializes the schema and checks that the result can be
+   * parsed again. Returns a result instead of throwing.
    *
    * @param command - The command to execute
    * @param currentXml - The current XML content of the schema
@@ -87,7 +91,12 @@ export class CommandProcessor {
         return { success: false, error: validationResult.error, errorKind: "validation", xmlContent: null };
       }
 
+      const violationsBefore = findConstraintViolations(schemaObj);
       this.executor.execute(command, schemaObj);
+      const [addedViolation] = findAddedViolations(violationsBefore, findConstraintViolations(schemaObj));
+      if (addedViolation) {
+        return { success: false, error: addedViolation.message, errorKind: "validation", xmlContent: null };
+      }
       const updatedXml = serializeSchema(schemaObj);
 
       // The document must stay readable: reject a result that cannot be parsed again

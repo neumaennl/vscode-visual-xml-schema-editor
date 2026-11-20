@@ -4,8 +4,8 @@ title: Drag and drop
 description: How a schema construct is dragged from the palette onto a diagram node - the responsibilities of palette, canvas, drag and drop and extension host, the event flow, which schema construct can be dropped on which node with which command, and the generated defaults.
 tags: [drag-and-drop, palette, canvas, drop-command-factory, webview]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-19T14:51:50Z }
-verified: { by: human:neumaennl, at: 2026-11-19T15:32:47Z }
+generated: { by: human:neumaennl, at: 2026-11-20T13:22:49Z }
+verified: { by: human:neumaennl, at: 2026-11-20T15:04:32Z }
 sources:
   - id: palette-items
     resource: ../webview-src/palette/paletteEntries.ts
@@ -119,7 +119,7 @@ Every other combination returns `null`. In particular, nothing can be dropped on
 
 # Defaults
 
-**Names.** New named schema constructs get the names `Element1`, `Attribute1`, `Group1`, `SimpleType1` and `ComplexType1`; the number is the lowest one that is not in use. The factory keeps the names of all top-level elements, attributes, simple types, complex types, groups and attribute groups, refreshed on every schema update. A name is reserved as soon as a command is created, so two drops before the next update do not get the same name; the checks during `dragover` do not reserve names.[^drop-factory] Names of local elements and attributes are not considered, so a drop on a node that already contains a local `Element1` or `Attribute1` is rejected (see [Known issues](known-issues.md#generated-names-ignore-local-names-in-the-drop-target)).
+**Names.** New named schema constructs get the names `Element1`, `Attribute1`, `Group1`, `SimpleType1` and `ComplexType1`; the number is the lowest one that is not in use. The factory keeps the names of all top-level elements, attributes, simple types, complex types, groups and attribute groups, refreshed on every schema update. A name is reserved as soon as a command is created, so two drops before the next update do not get the same name; the checks during `dragover` do not reserve names.[^drop-factory] Names of local elements and attributes are not considered, so a drop can repeat a local name of the drop target (see [Known issues](known-issues.md#generated-names-ignore-local-names-in-the-drop-target)).
 
 **Types.** New elements and attributes get the type `xs:string`. New complex types get the content model `sequence`.
 

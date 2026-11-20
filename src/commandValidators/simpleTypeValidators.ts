@@ -15,7 +15,12 @@ import type {
 import type { ValidationResult } from "../../shared/validation.js";
 import { validateTypeInSchema } from "./validationUtils.js";
 import { isSchemaRoot } from "../../shared/schemaUtils.js";
-import { locateType, validateInlineTypeParent, validateNewTypeName } from "./commonValidators.js";
+import {
+  locateType,
+  validateInlineTypeParent,
+  validateNewTypeName,
+  validateUnusedTypeName,
+} from "./commonValidators.js";
 
 /** Container types that may hold an anonymous simpleType inline. */
 const INLINE_SIMPLE_TYPE_PARENT_TYPES = ["topLevelElement", "localElement", "topLevelAttribute", "attribute"];
@@ -189,8 +194,11 @@ export function validateAddSimpleType(command: AddSimpleTypeCommand, schemaObj: 
     }
   } else if (typeName === undefined || !isValidXmlName(typeName)) {
     return { valid: false, error: "Type name must be a valid XML name" };
-  } else if ((schemaObj.simpleType ?? []).some((st) => st.name === typeName)) {
-    return { valid: false, error: `Simple type '${typeName}' already exists in schema` };
+  } else {
+    const nameResult = validateUnusedTypeName(typeName, schemaObj);
+    if (!nameResult.valid) {
+      return nameResult;
+    }
   }
   return validateSimpleTypeBody(command.payload, schemaObj);
 }
@@ -222,7 +230,7 @@ export function validateModifySimpleType(command: ModifySimpleTypeCommand, schem
   if (!located.valid) {
     return located;
   }
-  const nameResult = validateNewTypeName(typeName, located, "simpleType");
+  const nameResult = validateNewTypeName(typeName, located, "simpleType", schemaObj);
   if (!nameResult.valid) {
     return nameResult;
   }

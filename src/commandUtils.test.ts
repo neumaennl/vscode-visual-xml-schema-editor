@@ -41,7 +41,9 @@ describe("identifyChild", () => {
   });
 
   test.each([
-    ["the position, which wins over the name", "x", 1, 1, true],
+    ["the position and the ref", "b", 1, 1, true],
+    ["the position and unnamed for a child without a name", "unnamed", 1, 1, true],
+    ["the position, but not a name that does not fit it", "x", 1, 1, false],
     ["another position", "a", 1, 0, false],
     ["the name", "a", undefined, 0, true],
     ["the ref", "b", undefined, 1, true],

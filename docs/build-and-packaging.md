@@ -4,8 +4,8 @@ title: Build and packaging
 description: How the extension is built, run, linted, packaged and checked - the build outputs and tsconfig files, the npm scripts, the scripts in TypeScript, running it in VS Code, the VSIX and its check, the generated schema classes, dependencies and the Node version, ESLint, the checks for duplicated and unused code and for the layers, the formatting with Prettier, CI, and planned changes.
 tags: [build, packaging, vsix, vite, typescript, eslint, jscpd, fallow, prettier, ci, dependencies]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-19T14:11:39Z }
-verified: { by: human:neumaennl, at: 2026-11-19T15:32:47Z }
+generated: { by: human:neumaennl, at: 2026-11-20T13:21:09Z }
+verified: { by: human:neumaennl, at: 2026-11-20T15:04:32Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -301,20 +301,21 @@ Its limits:
 
 ESLint checks which projects may use which (see [ESLint](#eslint)). Within a project, `boundaries` in `.fallowrc.jsonc` checks the layers of [ADR 006](architecture/006-module-structure.md#layers):[^fallow] each zone lists the files of a layer, and each rule the zones that a zone may import from besides itself. The rules allow each zone exactly the zones that its code uses, so that a new dependency changes `.fallowrc.jsonc` and shows in a review; a dependency that the layers of ADR 006 do not allow is not added, the code moves instead.
 
-| Zone                                                                                         | May use                                  |
-| -------------------------------------------------------------------------------------------- | ---------------------------------------- |
-| VS Code (`extension.ts`, `webviewProvider.ts`)                                               | pipeline, schema access, `shared/`       |
-| Pipeline (`commandProcessor.ts`)                                                             | dispatch, schema access, `shared/`       |
-| Dispatch (`commandValidator.ts`, `commandExecutor.ts`, `commandHandlers.ts`)                 | validators, executors, `shared/`         |
-| Validators, executors (`commandValidators/`, `commandExecutors/`)                            | schema access, `shared/`; not each other |
-| Schema access (`schemaReferences/`, `schemaNavigator.ts`, `commandUtils.ts`, `schemaXml.ts`) | `shared/`                                |
-| App (`main.ts`)                                                                              | the surfaces, diagram, `shared/`         |
-| Surface: canvas (`canvas/`)                                                                  | drag and drop, diagram, `shared/`        |
-| Surface: properties panel (`propertiesPanel/`)                                               | facet icons, diagram, `shared/`          |
-| Surface: palette (`palette/`)                                                                | drag and drop, facet icons               |
-| Drag and drop (`dragAndDrop/`)                                                               | diagram, `shared/`                       |
-| Facet icons (`facetIcons.ts`), diagram (`diagram/`)                                          | `shared/`                                |
-| Shared (`shared/`)                                                                           | nothing else                             |
+| Zone                                                                                         | May use                                         |
+| -------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| VS Code (`extension.ts`, `webviewProvider.ts`)                                               | pipeline, schema access, `shared/`              |
+| Pipeline (`commandProcessor.ts`)                                                             | dispatch, constraints, schema access, `shared/` |
+| Constraints (`schemaConstraints/`)                                                           | `shared/`                                       |
+| Dispatch (`commandValidator.ts`, `commandExecutor.ts`, `commandHandlers.ts`)                 | validators, executors, `shared/`                |
+| Validators, executors (`commandValidators/`, `commandExecutors/`)                            | schema access, `shared/`; not each other        |
+| Schema access (`schemaReferences/`, `schemaNavigator.ts`, `commandUtils.ts`, `schemaXml.ts`) | `shared/`                                       |
+| App (`main.ts`)                                                                              | the surfaces, diagram, `shared/`                |
+| Surface: canvas (`canvas/`)                                                                  | drag and drop, diagram, `shared/`               |
+| Surface: properties panel (`propertiesPanel/`)                                               | facet icons, diagram, `shared/`                 |
+| Surface: palette (`palette/`)                                                                | drag and drop, facet icons                      |
+| Drag and drop (`dragAndDrop/`)                                                               | diagram, `shared/`                              |
+| Facet icons (`facetIcons.ts`), diagram (`diagram/`)                                          | `shared/`                                       |
+| Shared (`shared/`)                                                                           | nothing else                                    |
 
 Each surface is a zone of its own, so that surfaces cannot import each other. Files that are in no zone, such as the test helpers in `src/__tests__` and `webview-src/__tests__`, are not checked. A new module of the extension host is added to a zone; a module that would need a layer above it moves its code down (see [ADR 006](architecture/006-module-structure.md#consequences)).
 

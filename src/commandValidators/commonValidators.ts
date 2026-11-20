@@ -168,8 +168,8 @@ export interface ChildKind {
 
 /**
  * Validates the parent of the element or attribute that an add command creates: it exists and can
- * hold the kind, a reference is not added to the schema root, and the parent has no child of the kind
- * with the same name or ref yet.
+ * hold the kind, a reference is not added to the schema root, and a top-level name is not used yet (see
+ * {@link validateUniqueTopLevelName}).
  *
  * @param schemaObj - The schema
  * @param parentId - The ID of the parent
@@ -197,14 +197,63 @@ export function validateNewChild(
   if (ref !== undefined && parentType === "schema") {
     return { valid: false, error: `Top-level ${label}s cannot be references` };
   }
-  const existing = kind.getChildren(location.parent);
-  if (name && existing.some((c) => c.name === name || c.ref === name)) {
-    return { valid: false, error: `Cannot add ${label}: duplicate ${label} name '${name}' in ${parentType}` };
+  return validateUniqueTopLevelName(schemaObj, kind, parentType, name, "add");
+}
+
+/**
+ * Validates that no other top-level element or attribute has the name that a top-level one gets: the
+ * top-level components of one kind need unique names. Local elements and attributes are not checked here;
+ * whether they may share a name is decided by the constraints of XML Schema that the pipeline checks on the
+ * result, such as that elements with the same name in a content model have the same type.
+ *
+ * @param schemaObj - The schema
+ * @param kind - Elements or attributes
+ * @param parentType - The type of the parent of the element or attribute; only `"schema"` is checked
+ * @param name - The new name, if the element or attribute gets one
+ * @param action - What the command does, for the message, such as `"add"`
+ * @param changedChild - The element or attribute that is renamed, which may already have the name
+ * @returns The validation result
+ */
+export function validateUniqueTopLevelName(
+  schemaObj: schema,
+  kind: ChildKind,
+  parentType: string,
+  name: string | undefined,
+  action: string,
+  changedChild?: NamedChild
+): ValidationResult {
+  const isUsed = (other: NamedChild): boolean => other !== changedChild && other.name === name;
+  if (parentType !== "schema" || !name || !kind.getChildren(schemaObj).some(isUsed)) {
+    return { valid: true };
   }
-  if (ref && existing.some((c) => c.ref === ref || c.name === ref)) {
-    return { valid: false, error: `Cannot add ${label}: duplicate ${label} reference '${ref}' in ${parentType}` };
+  const label = kind.label.toLowerCase();
+  return { valid: false, error: `Cannot ${action} ${label}: duplicate ${label} name '${name}' in schema` };
+}
+
+/** An element or attribute that {@link locateChild} found, and the type of its parent. */
+export interface LocatedChild {
+  valid: true;
+  /** The element or attribute. */
+  child: NamedChild;
+  /** The type of the parent, such as `"sequence"`. */
+  parentType: string;
+}
+
+/**
+ * Says which child of an ID was not found, for messages: `with name: a`, `at position: 2`, or
+ * `with name: a at position: 0` if the ID has both, which also covers a child at the position that has
+ * another name.
+ *
+ * @param name - The name from the ID, if it has one
+ * @param position - The position from the ID, if it has one
+ * @returns The description
+ */
+function describeMissingChild(name: string | undefined, position: number | undefined): string {
+  const atPosition = position === undefined ? "" : `at position: ${position}`;
+  if (name === undefined) {
+    return atPosition || "with name: (none)";
   }
-  return { valid: true };
+  return atPosition ? `with name: ${name} ${atPosition}` : `with name: ${name}`;
 }
 
 /**
@@ -223,7 +272,7 @@ export function locateChild(
   id: string,
   kind: ChildKind,
   action: string
-): ValidationFailure | { valid: true; child: NamedChild } {
+): ValidationFailure | LocatedChild {
   const parsedId = parseRequiredId(id, kind.label);
   if (!parsedId.valid) {
     return parsedId;
@@ -241,11 +290,9 @@ export function locateChild(
   const children = kind.getChildren(location.parent);
   const child = findIdentifiedChild(children, parsed.name, parsed.position);
   if (!child) {
-    const spec =
-      parsed.position !== undefined ? `at position: ${parsed.position}` : `with name: ${parsed.name ?? "(none)"}`;
-    return { valid: false, error: `${kind.label} not found ${spec}` };
+    return { valid: false, error: `${kind.label} not found ${describeMissingChild(parsed.name, parsed.position)}` };
   }
-  return { valid: true, child };
+  return { valid: true, child, parentType };
 }
 
 /**
@@ -345,25 +392,48 @@ export function locateType<T>(
   }
   const type = (topLevelTypes ?? []).find((t) => t.name === parsed.name);
   if (!type) {
-    const label = kind === "simpleType" ? "Simple type" : "Complex type";
-    return { valid: false, error: `${label} '${parsed.name ?? "(none)"}' not found in schema` };
+    return { valid: false, error: `${TYPE_LABELS[kind]} '${parsed.name ?? "(none)"}' not found in schema` };
   }
   return { valid: true, type, anonymous: false };
 }
 
+/** The kinds of types, capitalized, for the error messages. */
+const TYPE_LABELS: Record<TypeKind, string> = { simpleType: "Simple type", complexType: "Complex type" };
+
+/**
+ * Validates that no top-level type has the name yet. Simple and complex types share their names, so a
+ * complex type cannot have the name of a simple type, and the other way round.
+ *
+ * @param typeName - The name
+ * @param schemaObj - The schema
+ * @param renamedType - The type that gets the name, which may already have it
+ * @returns The validation result
+ */
+export function validateUnusedTypeName(typeName: string, schemaObj: schema, renamedType?: unknown): ValidationResult {
+  for (const kind of ["simpleType", "complexType"] as const) {
+    if ((schemaObj[kind] ?? []).some((type) => type !== renamedType && type.name === typeName)) {
+      return { valid: false, error: `${TYPE_LABELS[kind]} '${typeName}' already exists in schema` };
+    }
+  }
+  return { valid: true };
+}
+
 /**
  * Validates the new name that a modify command gives a type: an anonymous type cannot get one, and the
- * name of a top-level type must be a valid XML name.
+ * name of a top-level type must be a valid XML name that no other type has (see
+ * {@link validateUnusedTypeName}).
  *
  * @param typeName - The new name, if the command changes it
  * @param located - The type that the command changes
  * @param kind - The kind of the type
+ * @param schemaObj - The schema
  * @returns The validation result
  */
 export function validateNewTypeName(
   typeName: string | undefined,
-  located: { anonymous: boolean },
-  kind: TypeKind
+  located: { anonymous: boolean; type: unknown },
+  kind: TypeKind,
+  schemaObj: schema
 ): ValidationResult {
   if (typeName === undefined) {
     return { valid: true };
@@ -374,5 +444,5 @@ export function validateNewTypeName(
   if (!isValidXmlName(typeName)) {
     return { valid: false, error: "Type name must be a valid XML name" };
   }
-  return { valid: true };
+  return validateUnusedTypeName(typeName, schemaObj, located.type);
 }

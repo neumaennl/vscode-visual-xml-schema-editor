@@ -240,11 +240,11 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
     });
   });
 
-  test("should reject adding a duplicate element into OrderType sequence", () => {
+  test("should reject adding an element with the name of another one and another type", () => {
     // Build a schema that already has orderId in OrderType/sequence
     const xml = orderTypeWithElement("orderId", "xs:string");
 
-    // Attempt to add orderId again
+    // Attempt to add orderId again, with another type
     runCommandExpectValidationFailure(
       xml,
       {
@@ -255,7 +255,7 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
           elementType: "xs:integer",
         },
       },
-      "Cannot add element: duplicate element name 'orderId' in sequence"
+      "Elements named 'orderId' in complex type 'OrderType' must have the same type, but have xs:string and xs:integer"
     );
   });
 

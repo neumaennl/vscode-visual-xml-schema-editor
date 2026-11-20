@@ -4,8 +4,8 @@ title: Architecture
 description: How the extension host, the webview and the shared code work together to provide a visual editor for XML Schema (XSD) files, what xmlbind-ts is responsible for and what the editor is, and the design decisions behind the command-based design.
 tags: [architecture, extension-host, webview, shared, design-decisions]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-20T08:53:46Z }
-verified: { by: human:neumaennl, at: 2026-11-20T09:57:53Z }
+generated: { by: human:neumaennl, at: 2026-11-20T13:22:26Z }
+verified: { by: human:neumaennl, at: 2026-11-20T15:04:32Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -100,7 +100,7 @@ The `shared/` code is imported by both sides and compiled into each separately. 
 - **The XSD document is the single source of truth.** The webview never holds authoritative state. It re-renders from each `updateSchema`. The state it saves with `setState` is only a cache so the view survives being hidden and restored.
 - **All changes are commands.** The webview never edits the schema directly. It sends typed commands, and the extension host validates and executes them.
 - **Checks complement each other.** The webview checks what it can decide from the diagram and from the value of one field, to give immediate feedback: drop targets, and in the properties panel names, type references, facet values, occurrences, namespaces and duplicate values, whose errors it shows below the field. The extension host is the gatekeeper: it checks every command completely, including the rules that need the whole schema or more than one value (references, duplicate names, `minOccurs` > `maxOccurs`), and decides; its errors are shown in the notification banner. Where both sides check the same thing, the rule is written once in `shared/` and both use it, because the webview needs it for feedback and the extension host must not rely on the webview (see [Messaging](messaging.md#validation-in-the-webview) and [UX concept](ux-concept.md#where-errors-appear)).
-- **Validators check, executors assume.** The validator of a command checks everything its executor relies on; the executor does not check it again and states only what it assumes, so that a disagreement fails with an error instead of doing nothing ([ADR 003](architecture/003-validators-check-executors-assume.md)).[^adr-003]
+- **Validators check, executors assume, the pipeline checks the result.** The validator of a command checks everything its executor relies on; the executor does not check it again and states only what it assumes, so that a disagreement fails with an error instead of doing nothing. What a command does to the rest of the schema is checked on the result: the pipeline rejects a command whose result cannot be read again or newly violates a constraint of XML Schema that spans the schema, such as that elements with the same name in a content model have the same type ([ADR 003](architecture/003-validators-check-executors-assume.md)).[^adr-003]
 - **Transactional execution.** Every command parses the document text again and keeps no state, so a failed command leaves nothing behind and the document unchanged. The result is written as a single edit, which VS Code's undo handles as one step.
 - **One set of shared types.** Commands, messages and the schema model are defined once in `shared/` and used by both sides, so the compiler checks both ends of the protocol.
 - **Generic XML handling belongs to xmlbind-ts.** What any application that binds XML would need is done by the library; what needs XSD semantics or VS Code is done by the editor (see [Responsibilities of xmlbind-ts and the editor](#responsibilities-of-xmlbind-ts-and-the-editor)).
@@ -140,7 +140,7 @@ The build outputs are `out/` (extension host and shared code, compiled by `tsc` 
 src/                      Extension host
   extension.ts            Activation: registers the custom editor and command
   webviewProvider.ts      Custom editor provider, message handling, document edits
-  commandProcessor.ts     Orchestrates parse → validate → execute → serialize
+  commandProcessor.ts     Orchestrates parse → validate → execute → check constraints → serialize
   commandValidator.ts     Dispatch to commandValidators/
   commandExecutor.ts      Dispatch to commandExecutors/
   commandHandlers.ts      Finds the validator or executor of a command
@@ -149,6 +149,7 @@ src/                      Extension host
   commandValidators/      Validation rules per schema construct
   commandExecutors/       Execution per schema construct
   schemaReferences/       Finds, checks and rewrites the QNames of a schema
+  schemaConstraints/      Constraints of XML Schema that span the schema, checked after a command
 webview-src/              Webview
   main.ts                 SchemaEditorApp: startup, messages, saved state, wiring
   canvas/                 The canvas: drawing, selection, expanding, zoom/pan, drops

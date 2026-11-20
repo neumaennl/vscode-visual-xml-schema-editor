@@ -125,7 +125,7 @@ describe("Integration: Attribute pipeline", () => {
           type: "removeAttribute",
           payload: { attributeId: "/complexType:PersonType/attribute:id[99]" },
         },
-        "Attribute not found at position: 99"
+        "Attribute not found with name: id at position: 99"
       );
     });
   });
@@ -172,7 +172,7 @@ describe("Integration: Attribute pipeline", () => {
             attributeName: "other",
           },
         },
-        "Attribute not found at position: 99"
+        "Attribute not found with name: id at position: 99"
       );
     });
   });

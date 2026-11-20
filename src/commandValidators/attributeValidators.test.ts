@@ -5,6 +5,7 @@
 import type { schema } from "../../shared/types.js";
 import type { AddAttributeCommand, RemoveAttributeCommand, ModifyAttributeCommand } from "../../shared/types.js";
 import { validateAddAttribute, validateRemoveAttribute, validateModifyAttribute } from "./attributeValidators.js";
+import type { ValidationResult } from "../../shared/validation.js";
 import { expectInvalid } from "../../shared/__tests__/validationTestHelpers.js";
 import { schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
 
@@ -279,26 +280,20 @@ describe("Attribute Validators", () => {
       expect(result.error).toBe("Cannot add attribute to parent of type: topLevelElement");
     });
 
-    test("should reject a reference that already exists in the complexType", () => {
-      const command: AddAttributeCommand = {
-        type: "addAttribute",
-        payload: { parentId: "/complexType:T", ref: "lang" },
-      };
-
-      const result = validateAddAttribute(command, schemaWith(ATTRIBUTES));
-      expectInvalid(result);
-      expect(result.error).toBe("Cannot add attribute: duplicate attribute reference 'lang' in topLevelComplexType");
-    });
-
-    test("should reject a name that a reference in the complexType already uses", () => {
-      const command: AddAttributeCommand = {
-        type: "addAttribute",
-        payload: { parentId: "/complexType:T", attributeName: "lang", attributeType: "xs:string" },
-      };
-
-      const result = validateAddAttribute(command, schemaWith(ATTRIBUTES));
-      expectInvalid(result);
-      expect(result.error).toBe("Cannot add attribute: duplicate attribute name 'lang' in topLevelComplexType");
+    test.each<[string, AddAttributeCommand["payload"], string]>([
+      ["a reference that the complexType already has", { parentId: "/complexType:T", ref: "lang" }, ATTRIBUTES],
+      [
+        "a name that a reference in the complexType already uses",
+        { parentId: "/complexType:T", attributeName: "lang", attributeType: "xs:string" },
+        ATTRIBUTES,
+      ],
+      [
+        "a name that an attribute in the extension already uses",
+        { parentId: "/complexType:T", attributeName: "code", attributeType: "xs:string" },
+        EXTENSION_WITH_ATTRIBUTE,
+      ],
+    ])("should leave %s to the constraints that the pipeline checks after the command", (_case, payload, body) => {
+      expect(validateAddAttribute({ type: "addAttribute", payload }, schemaWith(body))).toEqual({ valid: true });
     });
 
     test("should reject a top-level attribute name that already exists", () => {
@@ -468,17 +463,6 @@ describe("Attribute Validators", () => {
   });
 
   describe("attributes in the extension of a derived complexType", () => {
-    test("should reject a name that an attribute in the extension already uses", () => {
-      const command: AddAttributeCommand = {
-        type: "addAttribute",
-        payload: { parentId: "/complexType:T", attributeName: "code", attributeType: "xs:string" },
-      };
-
-      const result = validateAddAttribute(command, schemaWith(EXTENSION_WITH_ATTRIBUTE));
-      expectInvalid(result);
-      expect(result.error).toBe("Cannot add attribute: duplicate attribute name 'code' in topLevelComplexType");
-    });
-
     test("should accept removing an attribute in the extension", () => {
       const command: RemoveAttributeCommand = {
         type: "removeAttribute",
@@ -496,5 +480,37 @@ describe("Attribute Validators", () => {
 
       expect(validateModifyAttribute(command, schemaWith(EXTENSION_WITH_ATTRIBUTE)).valid).toBe(true);
     });
+  });
+});
+
+describe("duplicates when an attribute changes", () => {
+  /** {@link ATTRIBUTES} with a second top-level attribute `other`. */
+  const SCHEMA = `${ATTRIBUTES}<xs:attribute name="other" type="xs:string"/>`;
+  const CODE_ID = "/complexType:T/attribute:code";
+
+  test.each<[string, ModifyAttributeCommand["payload"], ValidationResult]>([
+    ["a local attribute to its own name", { attributeId: CODE_ID, attributeName: "code" }, { valid: true }],
+    [
+      "a local attribute to a name that only another parent has",
+      { attributeId: CODE_ID, attributeName: "other" },
+      { valid: true },
+    ],
+    [
+      "a local attribute to the name of a reference, which the pipeline checks after the command",
+      { attributeId: CODE_ID, attributeName: "lang" },
+      { valid: true },
+    ],
+    [
+      "a local attribute into a reference that the parent has, which the pipeline checks after the command",
+      { attributeId: CODE_ID, ref: "lang" },
+      { valid: true },
+    ],
+    [
+      "a top-level attribute to the name of another one",
+      { attributeId: "/attribute:other", attributeName: "lang" },
+      { valid: false, error: "Cannot modify attribute: duplicate attribute name 'lang' in schema" },
+    ],
+  ])("should check changing %s", (_case, payload, expected) => {
+    expect(validateModifyAttribute({ type: "modifyAttribute", payload }, schemaWith(SCHEMA))).toEqual(expected);
   });
 });

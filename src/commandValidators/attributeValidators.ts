@@ -13,7 +13,7 @@ import type {
 import type { ValidationResult } from "../../shared/validation.js";
 import { getAttributeContainer } from "../../shared/schemaUtils.js";
 import type { ChildKind } from "./commonValidators.js";
-import { locateChild, validateNewChild, validateReference } from "./commonValidators.js";
+import { locateChild, validateNewChild, validateReference, validateUniqueTopLevelName } from "./commonValidators.js";
 
 /** Parent types that can contain attributes. */
 const VALID_ATTR_PARENTS = ["schema", "topLevelComplexType", "localComplexType"] as const;
@@ -66,7 +66,8 @@ function validateAttributeKind(
 
 /**
  * Validates an `addAttribute` command: the parent ID must not be empty, the fields must fit a reference
- * or a named attribute, and the parent must be able to hold the attribute without a duplicate.
+ * or a named attribute, the parent must be able to hold the attribute, and a top-level attribute needs a name
+ * that no other one has.
  *
  * @param command - The command
  * @param schemaObj - The schema
@@ -105,8 +106,8 @@ export function validateRemoveAttribute(command: RemoveAttributeCommand, schemaO
 }
 
 /**
- * Validates a `modifyAttribute` command: the attribute must exist, and the new fields must fit a
- * reference or a named attribute.
+ * Validates a `modifyAttribute` command: the attribute must exist, the new fields must fit a reference
+ * or a named attribute, and no other top-level attribute may have the new name of a top-level attribute.
  *
  * @param command - The command
  * @param schemaObj - The schema
@@ -117,6 +118,21 @@ export function validateModifyAttribute(command: ModifyAttributeCommand, schemaO
   if (!located.valid) {
     return located;
   }
-
-  return validateAttributeKind(command.payload, schemaObj, false, "Cannot set both ref and name/type on an attribute");
+  const kindResult = validateAttributeKind(
+    command.payload,
+    schemaObj,
+    false,
+    "Cannot set both ref and name/type on an attribute"
+  );
+  if (!kindResult.valid) {
+    return kindResult;
+  }
+  return validateUniqueTopLevelName(
+    schemaObj,
+    ATTRIBUTES,
+    located.parentType,
+    command.payload.attributeName,
+    "modify",
+    located.child
+  );
 }

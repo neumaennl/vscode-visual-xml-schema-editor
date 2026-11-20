@@ -8,7 +8,7 @@ import type { ValidationResult } from "../../shared/validation.js";
 import { validateTypeInSchema } from "./validationUtils.js";
 import { validateOccurrences } from "../../shared/occurrences.js";
 import type { ChildKind, NamedChild } from "./commonValidators.js";
-import { locateChild, validateNewChild, validateReference } from "./commonValidators.js";
+import { locateChild, validateNewChild, validateReference, validateUniqueTopLevelName } from "./commonValidators.js";
 
 /** Parent types that can contain child elements. */
 const VALID_ELEMENT_PARENTS = ["schema", "sequence", "choice", "all"] as const;
@@ -34,44 +34,71 @@ function validateElementReference(ref: string, schemaObj: schema): ValidationRes
   return validateReference(ref, "element", schemaObj, `Referenced element '${ref}' does not exist in schema`);
 }
 
+/** The fields of an element command that depend on whether the element is a reference. */
+interface ElementKindFields {
+  elementName?: string;
+  elementType?: string;
+  ref?: string;
+}
+
+/**
+ * Validates the fields that depend on whether an element is a reference: a reference has no name or
+ * type and refers to a top-level element; another element has a valid name and an existing type, if it
+ * has one.
+ *
+ * @param fields - The fields of the command
+ * @param schemaObj - The schema
+ * @param nameRequired - Whether an element that is not a reference needs a name
+ * @param nameOrTypeOnReferenceError - The error if a reference has a name or type
+ * @returns The validation result
+ */
+function validateElementKind(
+  fields: ElementKindFields,
+  schemaObj: schema,
+  nameRequired: boolean,
+  nameOrTypeOnReferenceError: string
+): ValidationResult {
+  const { elementName, elementType, ref } = fields;
+  if (ref !== undefined) {
+    if (elementName !== undefined || elementType !== undefined) {
+      return { valid: false, error: nameOrTypeOnReferenceError };
+    }
+    return validateElementReference(ref, schemaObj);
+  }
+  if ((nameRequired || elementName !== undefined) && !isValidXmlName(elementName ?? "")) {
+    return { valid: false, error: "Element name must be a valid XML name" };
+  }
+  return elementType === undefined ? { valid: true } : validateTypeInSchema(elementType, schemaObj);
+}
+
 /**
  * Validates an `addElement` command: a reference has no name or type and refers to a top-level element;
  * another element has a valid name and an existing type, if it has one. The parent must be able to hold
- * the element without a duplicate, and the occurrences must be consistent.
+ * the element, a top-level element needs a name that no other one has, and the occurrences must be
+ * consistent.
  *
  * @param command - The command
  * @param schemaObj - The schema
  * @returns The validation result
  */
 export function validateAddElement(command: AddElementCommand, schemaObj: schema): ValidationResult {
-  const { parentId, elementName, elementType, ref, minOccurs, maxOccurs } = command.payload;
+  const { parentId, elementName, ref, minOccurs, maxOccurs } = command.payload;
 
   // Validate parentId is not empty
   if (!parentId.trim()) {
     return { valid: false, error: "Parent ID cannot be empty" };
   }
 
-  if (ref !== undefined) {
-    // Reference element: name and type are forbidden
-    if (elementName !== undefined || elementType !== undefined) {
-      return { valid: false, error: "A reference element cannot have a name or type" };
-    }
-    const referenceResult = validateElementReference(ref, schemaObj);
-    if (!referenceResult.valid) {
-      return referenceResult;
-    }
-  } else {
-    // Named element: name is required; type is optional (omit when the element will carry
-    // an inline anonymous simpleType or complexType added via a subsequent command)
-    if (!isValidXmlName(elementName ?? "")) {
-      return { valid: false, error: "Element name must be a valid XML name" };
-    }
-    if (elementType !== undefined) {
-      const typeValidation = validateTypeInSchema(elementType, schemaObj);
-      if (!typeValidation.valid) {
-        return typeValidation;
-      }
-    }
+  // The type is optional: it is omitted when the element will carry an inline anonymous simpleType or
+  // complexType, added by a later command
+  const kindResult = validateElementKind(
+    command.payload,
+    schemaObj,
+    true,
+    "A reference element cannot have a name or type"
+  );
+  if (!kindResult.valid) {
+    return kindResult;
   }
 
   const parentResult = validateNewChild(schemaObj, parentId, ELEMENTS, elementName, ref);
@@ -97,15 +124,16 @@ export function validateRemoveElement(command: RemoveElementCommand, schemaObj: 
 
 /**
  * Validates a `modifyElement` command: the element must exist; a new ref excludes a name or type and
- * must refer to a top-level element, a new name must be valid and a new type must exist. An element has
- * at most one of default and fixed, a reference neither, and the occurrences must be consistent.
+ * must refer to a top-level element, a new name must be valid and a new type must exist. No other top-level
+ * element may have the new name of a top-level element. An element has at most one of default and fixed, a
+ * reference neither, and the occurrences must be consistent.
  *
  * @param command - The command
  * @param schemaObj - The schema
  * @returns The validation result
  */
 export function validateModifyElement(command: ModifyElementCommand, schemaObj: schema): ValidationResult {
-  const { elementId, elementName, elementType, ref, minOccurs, maxOccurs, default_, fixed } = command.payload;
+  const { elementId, elementName, ref, minOccurs, maxOccurs, default_, fixed } = command.payload;
 
   const located = locateChild(schemaObj, elementId, ELEMENTS, "modify element in");
   if (!located.valid) {
@@ -113,28 +141,26 @@ export function validateModifyElement(command: ModifyElementCommand, schemaObj: 
   }
   const el = located.child;
 
-  if (ref !== undefined) {
-    // Reference: name and type are forbidden
-    if (elementName !== undefined || elementType !== undefined) {
-      return { valid: false, error: "Cannot set both ref and name/type on an element" };
-    }
-    const referenceResult = validateElementReference(ref, schemaObj);
-    if (!referenceResult.valid) {
-      return referenceResult;
-    }
-  } else {
-    // Validate element name if provided
-    if (elementName !== undefined && !isValidXmlName(elementName)) {
-      return { valid: false, error: "Element name must be a valid XML name" };
-    }
+  const kindResult = validateElementKind(
+    command.payload,
+    schemaObj,
+    false,
+    "Cannot set both ref and name/type on an element"
+  );
+  if (!kindResult.valid) {
+    return kindResult;
+  }
 
-    // Validate elementType if provided
-    if (elementType !== undefined) {
-      const typeValidation = validateTypeInSchema(elementType, schemaObj);
-      if (!typeValidation.valid) {
-        return typeValidation;
-      }
-    }
+  const uniqueResult = validateUniqueTopLevelName(
+    schemaObj,
+    ELEMENTS,
+    located.parentType,
+    elementName,
+    "modify",
+    located.child
+  );
+  if (!uniqueResult.valid) {
+    return uniqueResult;
   }
 
   // XML Schema allows at most one of default and fixed, and neither on a reference; an empty string removes the value

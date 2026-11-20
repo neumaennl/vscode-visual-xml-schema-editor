@@ -728,3 +728,30 @@ describe("Simple type rules", () => {
     expect(result).toEqual({ valid: true });
   });
 });
+
+describe("names of simple types that other types have", () => {
+  test("should reject a new simple type with the name of a complex type", () => {
+    const result = validateAdd({ typeName: "PersonType", baseType: "xs:string" });
+    expectInvalid(result);
+    expect(result.error).toBe("Complex type 'PersonType' already exists in schema");
+  });
+
+  test.each([
+    ["a complex type", "PersonType", "Complex type 'PersonType' already exists in schema"],
+    ["another simple type", "Other", "Simple type 'Other' already exists in schema"],
+  ])("should reject renaming a simple type to the name of %s", (_case, typeName, error) => {
+    const schemaObj = schemaWith(
+      `${SIMPLE_TYPE_PARENTS}<xs:simpleType name="Other"><xs:restriction base="xs:string"/></xs:simpleType>`
+    );
+    const result = validateModifySimpleType(
+      { type: "modifySimpleType", payload: { typeId: "/simpleType:AgeType", typeName } },
+      schemaObj
+    );
+    expectInvalid(result);
+    expect(result.error).toBe(error);
+  });
+
+  test("should accept the unchanged name", () => {
+    expect(validateModify({ typeId: "/simpleType:AgeType", typeName: "AgeType" })).toEqual({ valid: true });
+  });
+});

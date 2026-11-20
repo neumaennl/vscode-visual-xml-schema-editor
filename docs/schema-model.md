@@ -4,8 +4,8 @@ title: Schema model
 description: The object model of an XSD file - classes generated from the XSD meta-schema, XML binding with xmlbind-ts, and the path-based IDs that identify schema nodes.
 tags: [schema-model, data-model, xmlbind-ts, code-generation, ids, navigation]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-18T19:53:10Z }
-verified: { by: human:neumaennl, at: 2026-11-18T20:26:45Z }
+generated: { by: human:neumaennl, at: 2026-11-20T13:22:02Z }
+verified: { by: human:neumaennl, at: 2026-11-20T15:04:32Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -153,14 +153,12 @@ The schema root has the ID `/schema` (`SCHEMA_ROOT_ID`). `isSchemaRoot()` treats
 | attribute    | `anonymousSimpleType`                                                                                          |
 | compositor   | `element`, nested `group:sequence`, `group:choice`                                                             |
 
-When a segment has a name, the node is found by name; the position is ignored. A name also matches a node whose `ref` has that value. Without a name, the node is found by position. Annotations, imports, includes, group references and attribute group references are resolved by the respective validators and executors, which resolve the parent with `locateNodeById()` and handle the last segment themselves.
+When a segment has a position, the node is found by position, and the name of the segment must match its name or `ref`, or be `unnamed` for a node without a name; an ID that no longer fits the schema finds nothing. Without a position, the node is found by name or `ref`. So elements with the same name in one compositor, and element references, are found as well. Annotations, imports, includes, group references and attribute group references are resolved by the respective validators and executors, which resolve the parent with `locateNodeById()` and handle the last segment themselves.
 
 # Limitations
 
 These are listed in [Known issues](known-issues.md#node-ids-are-ambiguous-and-have-many-special-cases) and tracked in [#348](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/348):
 
-- Because names take precedence over positions, two particles with the same name in one compositor always resolve to the first.
-- IDs of unnamed elements (such as element references) contain `unnamed`, which the navigator cannot resolve.
 - The navigator has its own segment parser that does not handle `{namespace}` names.
 - The scheme has special cases: compositors reuse the `group` type, derivation is skipped, schema-root annotations follow other rules than all other annotations, and top-level components are not under `/schema`.
 

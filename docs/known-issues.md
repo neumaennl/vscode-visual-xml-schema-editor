@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-20T08:53:46Z }
-verified: { by: human:neumaennl, at: 2026-11-20T09:57:53Z }
+generated: { by: human:neumaennl, at: 2026-11-20T13:22:02Z }
+verified: { by: human:neumaennl, at: 2026-11-20T15:04:32Z }
 ---
 
 # Purpose
@@ -49,9 +49,7 @@ Effort:
 - **Location:** `shared/idStrategy.ts`, `src/schemaNavigator.ts`, `src/commandValidators/`, `src/commandExecutors/`, `webview-src/diagram/` (ID generation), `webview-src/propertiesPanel/propertiesPanelCommands.ts`, `webview-src/propertiesPanel/propertiesPanelNodeKinds.ts`, `webview-src/propertiesPanel/propertiesPanelTargets.ts`
 - **Severity:** High
 - **Effort:** L
-- **Description:** The ID conventions go back to the original protocol design, written before the editor was implemented, and were adapted during implementation (see [Schema model](schema-model.md#node-ids)). Some of the resulting problems are bugs:
-  - **Equal names resolve to the first node.** IDs of local elements contain both name and position (`element:first[0]`), but `findByNameOrPosition()` only uses the position when there is no name. If a compositor contains two particles with the same name or the same `ref` (which XSD allows, for example a sequence `a, b, a` or a reference that is repeated), every ID resolves to the first one, and commands change the wrong node.
-  - **Element references cannot be addressed.** Unlike group and attribute group references, element references have no node type. The diagram builder gives an `<xs:element ref="…"/>` the name "unnamed", so its ID is `element:unnamed[N]`, which `locateNodeById()` cannot resolve because it matches by name or `ref`. Commands that target such a node fail.
+- **Description:** The ID conventions go back to the original protocol design, written before the editor was implemented, and were adapted during implementation (see [Schema model](schema-model.md#node-ids)). One of the resulting problems is a bug:
   - **Namespaced names are parsed wrongly.** `locateNodeById()` uses `parseSchemaId()` to split the ID, but then parses each segment with a private copy of the segment parser (`parseSegment`). Unlike `parseNodeSegment()` in `idStrategy.ts`, the copy splits at the first colon and does not handle `{namespace}name`.
 
   Others are special cases that make the scheme harder to use and to extend:
@@ -59,7 +57,7 @@ Effort:
   - There are three annotation schemes: a component's annotation uses the component's ID, schema-root annotations are numbered, and `/schema/documentation[N]` is a shorthand for the first schema annotation.
   - Compositors reuse the node type `group` (`group:sequence[0]`) instead of having their own node types.
   - `complexContent` derivation is skipped, so the `extension` or `restriction` has no segment of its own.
-  - Top-level components have a name and no position; local elements have both, but only one is used.
+  - Top-level components have a name and no position; local elements have both.
   - The last segment of annotations, imports, includes and references is resolved by the individual validators and executors instead of one resolver.
   - The doc comments of `parentId` in `shared/commands/simpleType.ts` and `complexType.ts` say "Omit or set to 'schema'", but `isSchemaRoot()` only accepts `/schema`; `parentId: "schema"` fails with "Parent not found: schema".
 
@@ -122,8 +120,16 @@ Effort:
 - **Location:** `webview-src/dragAndDrop/DropCommandFactory.ts` (`updateNamesFromSchema()`, `nextName()`)
 - **Severity:** Medium
 - **Effort:** S
-- **Description:** The names for dropped elements and attributes are generated from the names of top-level schema constructs only. If the drop target already contains a local element `Element1` or a local attribute `Attribute1`, the drop generates the same name, and the command is rejected with an error such as "Cannot add element: duplicate element name 'Element1' in sequence". For attributes, the message contains the internal term `topLevelComplexType` instead of the type name. A second drop succeeds, because the failed name stays reserved until the next schema update. The fix is to also skip the names already used in the drop target (see [Drag and drop](drag-and-drop.md#defaults)).
+- **Description:** The names for dropped elements and attributes are generated from the names of top-level schema constructs only. If the drop target already contains a local element `Element1` or a local attribute `Attribute1`, the drop generates the same name. A second `Attribute1`, or an `Element1` of another type, is rejected; an `Element1` of the same type is added, which is allowed in a sequence but not in a choice (see [Unique Particle Attribution is not checked](#unique-particle-attribution-is-not-checked)). After a rejection, a second drop succeeds, because the failed name stays reserved until the next schema update. The fix is to also skip the names already used in the drop target (see [Drag and drop](drag-and-drop.md#defaults)).
 - **GitHub issue:** [#430](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/430)
+
+## Unique Particle Attribution is not checked
+
+- **Location:** `src/schemaConstraints/`
+- **Severity:** Medium
+- **Effort:** L
+- **Description:** XML Schema requires that each element of a document matches exactly one particle of its content model without looking ahead ("Unique Particle Attribution"). `<xs:choice><xs:element name="a"/><xs:element name="a"/></xs:choice>`, two `a` in an `xs:all`, and a sequence `a?, a` violate it, even if both `a` have the same type. The editor does not check it, so adding or renaming elements and changing their occurrences can produce such content models. The fix is one more constraint in the check of the result (see [ADR 003](architecture/003-validators-check-executors-assume.md)).
+- **GitHub issue:** none
 
 ## Inline complex types with simple content are treated as inline simple types
 
@@ -152,14 +158,6 @@ Effort:
 - **Severity:** Medium
 - **Effort:** M
 - **Description:** For `xs:complexContent`, an `xs:extension` is processed with its compositors, but an `xs:restriction` is passed to the simple type function `processRestriction()`, which only reads facets. A complex type that restricts another one with complex content is therefore shown without children; its attributes are read like those of an extension. The function also sets `simpleTypeDerivationKind` on the complex type. The fix is to process the compositors of restrictions of complex content like those of extensions (see [Diagram rendering](diagram-rendering.md#from-schema-to-diagram-items)). See also [Diagram items copy values from the schema objects](#diagram-items-copy-values-from-the-schema-objects).
-- **GitHub issue:** none
-
-## Renames and new references do not check for duplicates
-
-- **Location:** `src/commandValidators/elementValidators.ts` (`validateModifyElement()`), `src/commandValidators/attributeValidators.ts` (`validateModifyAttribute()`), `src/commandValidators/simpleTypeValidators.ts` (`validateModifySimpleType()`), `src/commandValidators/complexTypeValidators.ts` (`validateModifyComplexType()`), `src/commandValidators/groupValidators.ts` (`validateModifyGroup()`), `src/commandValidators/attributeGroupValidators.ts` (`validateAddAttributeGroup()`, `validateModifyAttributeGroup()`)
-- **Severity:** Medium
-- **Effort:** M
-- **Description:** The `add*` validators, except for attribute group references, reject a name or reference that already exists, but the `modify*` validators of elements, attributes, simple types, complex types and groups only check that the new name or reference is valid. Renaming the top-level element `a` to `b` while `b` exists is accepted and writes a schema with two top-level elements named `b`, which is invalid XSD; the same happens for attributes, types and groups. Likewise, changing a local element or attribute into a reference that its parent already contains (for example a second `<xs:attribute ref="lang"/>` in the same complexType) is accepted, which `validateAddElement()` and `validateAddAttribute()` reject. Because node IDs resolve to the first match, the two nodes can then no longer be told apart (see [Node IDs are ambiguous](#node-ids-are-ambiguous-and-have-many-special-cases)). `validateModifyAttributeGroup()` already has the check for names. Attribute group references are not checked at all: `addAttributeGroup` in reference mode and `modifyAttributeGroup` with a new `ref` accept a reference to a group that the complex type, or the extension or restriction of its content, already references, which declares the same attributes twice and is invalid XSD. The fix is the same check in these validators as in the matching `add*` validators, skipped when the name or reference does not change, and a check for existing references in `validateAddAttributeGroup()`.
 - **GitHub issue:** none
 
 ## Removing a simple or complex type does not check for references
@@ -207,7 +205,7 @@ Effort:
 - **Location:** `webview-src/diagram/SchemaProcessors.ts`
 - **Severity:** Medium
 - **Effort:** M
-- **Description:** The diagram builder does not read the `ref` attribute of local elements. An `<xs:element ref="…"/>` is shown with the name "unnamed" and is not marked as a reference. `isReference` is only set for group references. (That commands on such nodes fail is part of [Node IDs are ambiguous and have many special cases](#node-ids-are-ambiguous-and-have-many-special-cases).) See also [Diagram items copy values from the schema objects](#diagram-items-copy-values-from-the-schema-objects).
+- **Description:** The diagram builder does not read the `ref` attribute of local elements. An `<xs:element ref="…"/>` is shown with the name "unnamed" and is not marked as a reference. `isReference` is only set for group references. See also [Diagram items copy values from the schema objects](#diagram-items-copy-values-from-the-schema-objects).
 - **GitHub issue:** [#276](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/276)
 
 ## Name validation is ASCII-only

@@ -13,6 +13,7 @@
 
 import type { attributeGroupRef } from "../shared/types.js";
 import { requireGroup } from "../shared/regexUtils.js";
+import { UNNAMED_NODE_NAME } from "../shared/idStrategy.js";
 
 /**
  * Parses a schema-annotation ID of the form `"/schema/annotation[N]"`.
@@ -88,8 +89,22 @@ export function findAttributeGroupRef(
 }
 
 /**
+ * Returns true if the name from an ID names a child: its name, its ref, or {@link UNNAMED_NODE_NAME} for
+ * a child without a name.
+ *
+ * @param child - The element or attribute
+ * @param name - The name from the ID
+ * @returns Whether the name names the child
+ */
+function isNamedBy(child: { name?: string; ref?: string }, name: string): boolean {
+  return child.name === name || child.ref === name || (name === UNNAMED_NODE_NAME && !child.name);
+}
+
+/**
  * Returns true if a local element or attribute is the one that the name and position of its ID
- * identify. The position is more specific and wins; otherwise the name matches the name or the ref.
+ * identify. The position is more specific: it finds the child, and a name in the ID must then match it,
+ * so that an ID that no longer fits the schema finds nothing instead of another child (see
+ * {@link isNamedBy}).
  *
  * @param child - The element or attribute
  * @param index - Its position among the children of its kind of its parent
@@ -104,9 +119,9 @@ function isIdentifiedChild(
   position: number | undefined
 ): boolean {
   if (position !== undefined) {
-    return index === position;
+    return index === position && (name === undefined || isNamedBy(child, name));
   }
-  return name !== undefined && (child.name === name || child.ref === name);
+  return name !== undefined && isNamedBy(child, name);
 }
 
 /**

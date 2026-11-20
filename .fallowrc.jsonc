@@ -37,6 +37,8 @@
     "zones": [
       { "name": "vscode", "patterns": ["src/extension.ts", "src/webviewProvider.ts"] },
       { "name": "pipeline", "patterns": ["src/commandProcessor.ts"] },
+      // The constraints of XML Schema that span the schema, which the pipeline checks after a command.
+      { "name": "schemaConstraints", "patterns": ["src/schemaConstraints/**"] },
       {
         "name": "dispatch",
         "patterns": ["src/commandValidator.ts", "src/commandExecutor.ts", "src/commandHandlers.ts"],
@@ -62,7 +64,8 @@
     "rules": [
       // Each zone may use exactly the zones that its code uses, so that a new dependency shows in a review.
       { "from": "vscode", "allow": ["pipeline", "schemaAccess", "shared"] },
-      { "from": "pipeline", "allow": ["dispatch", "schemaAccess", "shared"] },
+      { "from": "pipeline", "allow": ["dispatch", "schemaConstraints", "schemaAccess", "shared"] },
+      { "from": "schemaConstraints", "allow": ["shared"] },
       { "from": "dispatch", "allow": ["validators", "executors", "shared"] },
       { "from": "validators", "allow": ["schemaAccess", "shared"] },
       { "from": "executors", "allow": ["schemaAccess", "shared"] },

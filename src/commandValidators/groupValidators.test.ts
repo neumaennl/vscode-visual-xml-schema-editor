@@ -925,3 +925,25 @@ describe("Group Validators", () => {
     });
   });
 });
+
+describe("names of group definitions that another group has", () => {
+  test("should reject renaming a group definition to the name of another one", () => {
+    const command: ModifyGroupCommand = {
+      type: "modifyGroup",
+      payload: { groupId: "/group:CommonGroup", groupName: "OtherGroup" },
+    };
+
+    const result = validateModifyGroup(command, schemaWithGroups(""));
+    expectInvalid(result);
+    expect(result.error).toBe("Group name already exists: OtherGroup");
+  });
+
+  test("should accept the unchanged name", () => {
+    const command: ModifyGroupCommand = {
+      type: "modifyGroup",
+      payload: { groupId: "/group:CommonGroup", groupName: "CommonGroup" },
+    };
+
+    expect(validateModifyGroup(command, schemaWithGroups(""))).toEqual({ valid: true });
+  });
+});

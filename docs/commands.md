@@ -4,8 +4,8 @@ title: Commands
 description: The edit commands - payload fields, the rules the validators enforce, what the executors change in the schema, and where the webview sends them.
 tags: [commands, payload, validation, reference]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-20T08:53:46Z }
-verified: { by: human:neumaennl, at: 2026-11-20T09:57:53Z }
+generated: { by: human:neumaennl, at: 2026-11-20T13:22:12Z }
+verified: { by: human:neumaennl, at: 2026-11-20T15:04:32Z }
 sources:
   - id: commands
     resource: ../shared/commands/index.ts
@@ -62,6 +62,10 @@ This reference describes every edit command: its payload, the rules that the val
 - **`documentation` field.** Most add and modify payloads have an optional `documentation` string. `add*` writes it only if it is not empty. `modify*` replaces _all_ documentation entries of the node with one entry containing the string, even if it is empty; it does not remove the annotation. To edit single entries, use the [documentation commands](#annotations-and-documentation).
 - **Insertion.** New nodes are appended to the end of their parent.
 - **Validator and executor.** The validator checks everything the executor relies on, and the executor does not check it again. Where the executor assumes something, it fails with an error such as "Element person not found, although the validator accepted the command" if the assumption does not hold ([ADR 003](architecture/003-validators-check-executors-assume.md)).
+- **Constraints on the result.** Besides its validator, every command is checked on its result: it is rejected if the schema would newly violate one of these constraints of XML Schema ([ADR 003](architecture/003-validators-check-executors-assume.md)):
+  - Elements with the same name in the content model of a complex type, including its nested compositors, referenced groups and the content of an extended base type, have the same type. So a sequence `a, b, a` is allowed if both `a` have the same type.
+  - A complex type, including its attribute groups and an extended base type, and an attribute group have each attribute only once.
+  - Unique Particle Attribution is not checked yet (see [Known issues](known-issues.md#unique-particle-attribution-is-not-checked)).
 - **Removal.** Removing a group, attribute group or import is rejected while it is still referenced, also with a prefix of the target namespace. Removing an element, attribute or type is not checked and can leave references that point nowhere.
 
 # Overview
@@ -111,7 +115,7 @@ A drop on an existing type or group creates a `modify*` command instead of an `a
 | Field                    | add           | modify   | Meaning and rules                                                                                                                                                                           |
 | ------------------------ | ------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `parentId` / `elementId` | required      | required | Parent: the schema, a `sequence`, `choice` or `all`.                                                                                                                                        |
-| `elementName`            | name or `ref` | optional | Must be unique among the siblings when added.                                                                                                                                               |
+| `elementName`            | name or `ref` | optional | A top-level element needs a name that no other top-level element has, also when renamed. Local elements may share a name (see [Conventions](#conventions)).                                 |
 | `elementType`            | optional      | optional | Must be a known type (see [Conventions](#conventions)). Omit it to give the element an anonymous type later with `addSimpleType` or `addComplexType`. Setting it removes an anonymous type. |
 | `ref`                    | name or `ref` | optional | Name of a top-level element. Not allowed directly under the schema.                                                                                                                         |
 | `minOccurs`, `maxOccurs` | optional      | optional | Ignored for top-level elements.                                                                                                                                                             |
@@ -120,7 +124,7 @@ A drop on an existing type or group creates a `modify*` command instead of an `a
 | `abstract`               | -             | optional | Only applied to top-level elements.                                                                                                                                                         |
 | `default_`, `fixed`      | -             | optional | Not both, and not on a reference. Setting one removes the other; an empty string removes the attribute. Turning an element into a reference also removes `default`, `fixed` and `nillable`. |
 
-`removeElement` takes only `elementId`. Renaming a top-level element also renames the `ref` and `substitutionGroup` values that point to it. Renames do not check for an existing element with the new name (see [Known issues](known-issues.md#renames-and-new-references-do-not-check-for-duplicates)).[^validators][^executors]
+`removeElement` takes only `elementId`. Renaming a top-level element also renames the `ref` and `substitutionGroup` values that point to it.[^validators][^executors]
 
 # Attributes
 
@@ -129,7 +133,7 @@ A drop on an existing type or group creates a `modify*` command instead of an `a
 | Field                        | add           | modify   | Meaning and rules                                                                                                                                                                                    |
 | ---------------------------- | ------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `parentId` / `attributeId`   | required      | required | Parent: the schema or a complex type (top-level or anonymous). In a complex type with `xs:complexContent` or `xs:simpleContent`, the attributes are those of its `xs:extension` or `xs:restriction`. |
-| `attributeName`              | name or `ref` | optional | Must be unique within the parent when added.                                                                                                                                                         |
+| `attributeName`              | name or `ref` | optional | A top-level attribute needs a name that no other top-level attribute has, also when renamed. For local attributes, see [Conventions](#conventions).                                                  |
 | `attributeType`              | optional      | optional | Not checked.                                                                                                                                                                                         |
 | `ref`                        | name or `ref` | optional | Name of a top-level attribute. Not allowed directly under the schema.                                                                                                                                |
 | `required`                   | optional      | optional | Written as `use="required"` or `use="optional"`, only on attributes inside a complex type.                                                                                                           |
@@ -144,15 +148,15 @@ New attributes and attribute group references (`addAttributeGroup`) are written 
 
 `addSimpleType`, `removeSimpleType` and `modifySimpleType` are defined in `simpleType.ts`.[^simple-type]
 
-| Field                 | add            | modify         | Meaning and rules                                                                                         |
-| --------------------- | -------------- | -------------- | --------------------------------------------------------------------------------------------------------- |
-| `parentId` / `typeId` | optional       | required       | Parent for an anonymous type: an element or attribute without `ref` and without an anonymous type.        |
-| `typeName`            | top-level only | top-level only | Must be unique when added. Renaming updates all unprefixed and target-namespace references in the schema. |
-| `baseType`            | restriction    | restriction    | Base of a restriction.                                                                                    |
-| `restrictions`        | restriction    | restriction    | Facets, see [Restriction facets](#restriction-facets).                                                    |
-| `listItemType`        | list           | list           | Item type of a list.                                                                                      |
-| `unionMemberTypes`    | union          | union          | Member types of a union; not empty, no empty entries.                                                     |
-| `documentation`       | optional       | optional       | See [Conventions](#conventions).                                                                          |
+| Field                 | add            | modify         | Meaning and rules                                                                                                                                                             |
+| --------------------- | -------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `parentId` / `typeId` | optional       | required       | Parent for an anonymous type: an element or attribute without `ref` and without an anonymous type.                                                                            |
+| `typeName`            | top-level only | top-level only | Must be unique among the simple and complex types, which share their names, also when renamed. Renaming updates all unprefixed and target-namespace references in the schema. |
+| `baseType`            | restriction    | restriction    | Base of a restriction.                                                                                                                                                        |
+| `restrictions`        | restriction    | restriction    | Facets, see [Restriction facets](#restriction-facets).                                                                                                                        |
+| `listItemType`        | list           | list           | Item type of a list.                                                                                                                                                          |
+| `unionMemberTypes`    | union          | union          | Member types of a union; not empty, no empty entries.                                                                                                                         |
+| `documentation`       | optional       | optional       | See [Conventions](#conventions).                                                                                                                                              |
 
 The fields decide the kind of the body (`SimpleTypeDerivationKind`): `baseType` or `restrictions` make a restriction, `listItemType` a list, `unionMemberTypes` a union. Exactly one kind is allowed. `addSimpleType` needs a body. In `modifySimpleType`, body fields replace the body, also with another kind; without body fields, the body stays as it is. `restrictions` without `baseType` change only the facets of an existing restriction, which keeps its base, also an inline simple type; a list, a union or a new type needs `baseType` ("Cannot apply restrictions without a base type", "Base type cannot be empty"). A `baseType` replaces the base, also an inline simple type. `modifySimpleType` rejects a `typeName` for an anonymous type.
 
@@ -179,7 +183,7 @@ A restriction without `restrictions` has no facets, which XSD allows. If `restri
 | Field                 | add            | modify         | Meaning and rules                                                                                                                                                                                                                                                                                                  |
 | --------------------- | -------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `parentId` / `typeId` | optional       | required       | Parent for an anonymous type: an element without `ref` and without an anonymous type.                                                                                                                                                                                                                              |
-| `typeName`            | top-level only | top-level only | Must be unique when added. Renaming updates references like `modifySimpleType`.                                                                                                                                                                                                                                    |
+| `typeName`            | top-level only | top-level only | Must be unique among the simple and complex types like in `addSimpleType`, also when renamed. Renaming updates references like `modifySimpleType`.                                                                                                                                                                 |
 | `contentModel`        | required       | optional       | `sequence`, `choice` or `all` (`ContentModel`). Changing it replaces the compositor and moves its particles into the new one. Rejected for a type whose particle is a group reference, because a complex type has at most one particle.                                                                            |
 | `baseType`            | optional       | optional       | Checked like the other type names (see [Conventions](#conventions)). Wraps the content in `complexContent` with an `extension` or `restriction` of this type: the compositor, or for a type without one, its group reference and attributes as they are. An empty string removes the base and unwraps the content. |
 | `derivationKind`      | optional       | optional       | `extension` (default) or `restriction` (`ComplexTypeDerivationKind`). Needs a base type, from the payload or the existing type ("Derivation kind requires a base type").                                                                                                                                           |
@@ -202,7 +206,7 @@ The complex type commands cannot create or change simple content: for a complex 
 
 | `groupId`        | Example                                   | `modifyGroup` fields                                                                                                                                                                              |
 | ---------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Group definition | `/group:Address`                          | `groupName`, `contentModel`, `documentation`. Renaming updates the references.                                                                                                                    |
+| Group definition | `/group:Address`                          | `groupName`, `contentModel`, `documentation`. The new name must be unique. Renaming updates the references.                                                                                       |
 | Group reference  | `…/group:sequence[0]/groupRef:Address[0]` | `ref`, `minOccurs`, `maxOccurs`, `documentation`                                                                                                                                                  |
 | Compositor       | `…/group:sequence[0]`                     | `minOccurs`, `maxOccurs`, `documentation`. The compositor of a group definition (`/group:Address/group:sequence[0]`) has no occurrences in XML Schema, so only `documentation` is accepted there. |
 

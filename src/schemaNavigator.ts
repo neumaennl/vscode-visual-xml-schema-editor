@@ -18,6 +18,7 @@ import type {
 import { parseSchemaId, SchemaNodeType, toNodeType } from "../shared/idStrategy.js";
 import { getContentContainer, isSchemaRoot } from "../shared/schemaUtils.js";
 import { requireGroup } from "../shared/regexUtils.js";
+import { findIdentifiedChild } from "./commandUtils.js";
 
 /**
  * Result of a node location operation: the node and its type if it was found, otherwise an error.
@@ -206,7 +207,7 @@ const TOP_LEVEL_KINDS: Partial<
  * @param schemaObj - The schema
  * @param nodeType - The node type of the top-level component
  * @param name - The name of the component
- * @param position - The position of the component among those of its kind, used if there is no name
+ * @param position - The position of the component among those of its kind, which wins over its name
  * @returns The component and its kind, or `found: false` if the schema has no such component
  */
 function navigateFromSchema(
@@ -220,7 +221,7 @@ function navigateFromSchema(
     return { found: false };
   }
   const components: Array<{ name?: string }> = schemaObj[kind.property] ?? [];
-  const node = findByNameOrPosition(components, name, position);
+  const node = findIdentifiedChild(components, name, position);
   return node ? { found: true, node, nodeType: kind.nodeType } : { found: false };
 }
 
@@ -253,7 +254,7 @@ function navigateToAnonymousType(holder: AnonymousTypeHolder, nodeType: SchemaNo
  * @param complexType - The complex type
  * @param nodeType - The node type of the child
  * @param name - The kind of compositor (`sequence`, `choice` or `all`), or the name of an attribute
- * @param position - The position of an attribute, used if there is no name
+ * @param position - The position of an attribute, which wins over its name
  * @returns The child and its kind, or `found: false` if the complex type has no such child
  */
 function navigateFromComplexType(
@@ -290,7 +291,7 @@ function navigateFromComplexType(
 
   if (nodeType === SchemaNodeType.Attribute) {
     const attrs = getContentContainer<ComplexTypeContent>(complexType).attribute ?? [];
-    const attr = findByNameOrPosition(attrs, name, position);
+    const attr = findIdentifiedChild(attrs, name, position);
     if (attr) {
       return { found: true, node: attr, nodeType: "attribute" };
     }
@@ -359,7 +360,7 @@ function navigateFromNamedGroup(
  * @param group - The compositor
  * @param nodeType - The node type of the child
  * @param name - The name of an element, or the kind of a nested compositor (`choice` or `sequence`)
- * @param position - The position of an element, used if there is no name, or of a nested compositor
+ * @param position - The position of an element, which wins over its name, or of a nested compositor
  * @returns The child and its kind, or `found: false` if the compositor has no such child
  */
 function navigateFromGroup(
@@ -370,7 +371,7 @@ function navigateFromGroup(
 ): NavigationResult {
   if (nodeType === SchemaNodeType.Element) {
     const elements: Array<{ name?: string; ref?: string }> = group.element ?? [];
-    const element = findByNameOrPosition(elements, name, position);
+    const element = findIdentifiedChild(elements, name, position);
     if (element) {
       return { found: true, node: element, nodeType: "localElement" };
     }
@@ -391,26 +392,4 @@ function navigateFromGroup(
   }
 
   return { found: false };
-}
-
-/**
- * Find an item by name or position in an array.
- * Also matches items whose `ref` equals the given name, enabling navigation to reference nodes.
- *
- * @param items - The items
- * @param name - The name or `ref` of the item
- * @param position - The position of the item, used if there is no name
- * @returns The first matching item, or undefined if there is none or neither name nor position is given
- */
-function findByNameOrPosition<T extends { name?: string; ref?: string }>(
-  items: T[],
-  name?: string,
-  position?: number
-): T | undefined {
-  if (name !== undefined) {
-    return items.find((item) => item.name === name || item.ref === name);
-  } else if (position !== undefined) {
-    return items[position];
-  }
-  return undefined;
 }

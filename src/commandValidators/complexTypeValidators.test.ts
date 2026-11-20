@@ -454,3 +454,38 @@ describe("Complex type rules", () => {
     expect(result).toEqual({ valid: false, error });
   });
 });
+
+describe("names of complex types that other types have", () => {
+  /** Two complex types and a simple type. */
+  const TYPES = schemaWith(`<xs:complexType name="A"/><xs:complexType name="B"/>
+<xs:simpleType name="S"><xs:restriction base="xs:string"/></xs:simpleType>`);
+
+  test.each([
+    ["another complex type", "B", "Complex type 'B' already exists in schema"],
+    ["a simple type", "S", "Simple type 'S' already exists in schema"],
+  ])("should reject renaming a complex type to the name of %s", (_case, typeName, error) => {
+    const result = validateModifyComplexType(
+      { type: "modifyComplexType", payload: { typeId: "/complexType:A", typeName } },
+      TYPES
+    );
+    expectInvalid(result);
+    expect(result.error).toBe(error);
+  });
+
+  test("should accept the unchanged name", () => {
+    const result = validateModifyComplexType(
+      { type: "modifyComplexType", payload: { typeId: "/complexType:A", typeName: "A" } },
+      TYPES
+    );
+    expect(result).toEqual({ valid: true });
+  });
+
+  test("should reject a new complex type with the name of a simple type", () => {
+    const result = validateAddComplexType(
+      { type: "addComplexType", payload: { typeName: "S", contentModel: "sequence" } },
+      TYPES
+    );
+    expectInvalid(result);
+    expect(result.error).toBe("Simple type 'S' already exists in schema");
+  });
+});

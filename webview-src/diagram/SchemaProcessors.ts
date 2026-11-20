@@ -6,7 +6,7 @@
 import { DiagramItem } from "./DiagramItem";
 import type { ComplexTypeLike, SimpleTypeLike, ContentTypeLike, GroupDefLike } from "./DiagramTypes";
 import { DiagramItemType, DiagramItemGroupType } from "./DiagramTypes";
-import { generateSchemaId, parseSchemaId, SchemaNodeType } from "../../shared/idStrategy";
+import { generateSchemaId, parseSchemaId, SchemaNodeType, UNNAMED_NODE_NAME } from "../../shared/idStrategy";
 import {
   extractDocumentation,
   extractDocumentationAnnotations,
@@ -313,11 +313,11 @@ function processGroup(
     const item = new DiagramItem(
       generateSchemaId({
         nodeType: SchemaNodeType.Element,
-        name: elem.name ?? "unnamed",
+        name: elem.name ?? UNNAMED_NODE_NAME,
         parentId: groupItem.id,
         position: elemPosition,
       }),
-      elem.name ?? "unnamed",
+      elem.name ?? UNNAMED_NODE_NAME,
       DiagramItemType.element,
       parent.diagram
     );
@@ -393,7 +393,7 @@ function resolveEffectiveGroupParentId(parent: DiagramItem): string {
  * @param position - Position of the reference among sibling children.
  */
 function processGroupRef(parent: DiagramItem, groupReference: groupRef, position: number): void {
-  const refName = groupReference.ref || "unnamed";
+  const refName = groupReference.ref || UNNAMED_NODE_NAME;
   const groupRefItem = new DiagramItem(
     generateSchemaId({
       nodeType: SchemaNodeType.GroupRef,

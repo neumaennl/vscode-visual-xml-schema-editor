@@ -136,7 +136,7 @@ Effort:
 - **Severity:** Medium
 - **Effort:** M
 - **Description:** For `xs:complexContent`, the compositors of an `xs:extension` become children of the type, but those of an `xs:restriction` do not. A complex type that restricts another one with complex content is therefore shown without children; its attributes are read like those of an extension. The fix is to process the compositors of restrictions of complex content like those of extensions (see [Diagram rendering](diagram-rendering.md#from-schema-to-diagram-items)).
-- **GitHub issue:** none
+- **GitHub issue:** [#276](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/276)
 
 ## Removing a simple or complex type does not check for references
 

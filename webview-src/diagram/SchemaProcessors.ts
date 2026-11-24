@@ -7,8 +7,9 @@ import { DiagramItem } from "./DiagramItem";
 import type { ComplexTypeLike, ContentTypeLike, GroupDefLike } from "./DiagramTypes";
 import { DiagramItemType, DiagramItemGroupType } from "./DiagramTypes";
 import { generateSchemaId, parseSchemaId, SchemaNodeType, UNNAMED_NODE_NAME } from "../../shared/idStrategy";
-import { anonymousTypeId, getContentContainer, getTargetNamespacePrefixes } from "../../shared/schemaUtils";
-import { ownComponentName } from "../../shared/qNames";
+import { anonymousTypeId, getContentContainer } from "../../shared/schemaUtils";
+import { localNameIfInTargetNamespace } from "../../shared/qNames";
+import { getNamespacePrefixes, getTargetNamespace } from "./schemaAccessors";
 import type { localElement } from "../../shared/generated/localElement";
 import type { explicitGroup } from "../../shared/generated/explicitGroup";
 import type { all } from "../../shared/generated/all";
@@ -238,7 +239,8 @@ function elementLabel(element: { name?: string; ref?: string }, parent: DiagramI
  * @returns The label
  */
 function referenceLabel(ref: string, parent: DiagramItem): string {
-  return ownComponentName(ref, getTargetNamespacePrefixes(parent.diagram.schema)) ?? ref;
+  const { diagram } = parent;
+  return localNameIfInTargetNamespace(ref, getNamespacePrefixes(diagram), getTargetNamespace(diagram)) ?? ref;
 }
 
 /**

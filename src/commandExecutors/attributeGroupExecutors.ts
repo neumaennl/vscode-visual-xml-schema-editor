@@ -14,7 +14,7 @@ import { namedAttributeGroup, attributeGroupRef } from "../../shared/types.js";
 import { parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy.js";
 import { assumeValidated, locateValidated } from "./assumeValidated.js";
 import { createAnnotation } from "./annotationUtils.js";
-import { renameOwnReferences } from "../schemaReferences/referenceRewrites.js";
+import { renameReferencesInTargetNamespace } from "../schemaReferences/referenceRewrites.js";
 import type { AttributeContainer } from "../../shared/schemaUtils.js";
 import { getAttributeContainer } from "../../shared/schemaUtils.js";
 import { findAttributeGroupRef } from "../commandUtils.js";
@@ -139,7 +139,7 @@ export function executeModifyAttributeGroup(command: ModifyAttributeGroupCommand
     `Attribute group ${groupId}`
   );
   if (groupName !== undefined) {
-    renameOwnReferences("attributeGroup", attrGroup.name, groupName, schemaObj);
+    renameReferencesInTargetNamespace("attributeGroup", attrGroup.name, groupName, schemaObj);
     attrGroup.name = groupName;
   }
 }

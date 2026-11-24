@@ -8,10 +8,10 @@ import type { schema, topLevelElement } from "../../shared/types.js";
 import { forEachComplexType, forEachElementOfComplexType, type ElementParticle } from "./contentModels.js";
 import type { ConstraintViolation } from "./constraintViolation.js";
 import {
-  findOwnComponent,
+  findComponentInTargetNamespace,
   localDeclarationName,
   localNameOf,
-  resolveQName,
+  expandedNameOf,
   schemaNamesOf,
   topLevelName,
   type SchemaNames,
@@ -47,14 +47,14 @@ function typeOfDeclaration(
   visited = new Set<object>()
 ): ElementType | undefined {
   if (declaration.type_) {
-    return { key: resolveQName(declaration.type_, names), label: declaration.type_ };
+    return { key: expandedNameOf(declaration.type_, names), label: declaration.type_ };
   }
   const anonymousType = declaration.complexType ?? declaration.simpleType;
   if (anonymousType) {
     return { key: anonymousType, label: ANONYMOUS_LABEL };
   }
   if (declaration.substitutionGroup) {
-    const head = findOwnComponent(declaration.substitutionGroup, names.schemaObj.element, names);
+    const head = findComponentInTargetNamespace(declaration.substitutionGroup, names.schemaObj.element, names);
     if (!head || visited.has(head)) {
       return undefined;
     }
@@ -74,10 +74,14 @@ function typeOfDeclaration(
  */
 function nameAndType(element: ElementParticle, names: SchemaNames): { name: string; type?: ElementType } {
   if (element.ref) {
-    const target: topLevelElement | undefined = findOwnComponent(element.ref, names.schemaObj.element, names);
+    const target: topLevelElement | undefined = findComponentInTargetNamespace(
+      element.ref,
+      names.schemaObj.element,
+      names
+    );
     return target
       ? { name: topLevelName(target.name, names), type: typeOfDeclaration(target, names) }
-      : { name: resolveQName(element.ref, names) };
+      : { name: expandedNameOf(element.ref, names) };
   }
   const name = localDeclarationName(element.name ?? "", element.form, names.schemaObj.elementFormDefault, names);
   return { name, type: typeOfDeclaration(element, names) };

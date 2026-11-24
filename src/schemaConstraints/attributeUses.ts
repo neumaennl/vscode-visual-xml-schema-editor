@@ -8,11 +8,11 @@ import type { attribute, schema } from "../../shared/types.js";
 import { forEachComplexType, type ComplexTypeDefinition } from "./contentModels.js";
 import type { ConstraintViolation } from "./constraintViolation.js";
 import {
-  findOwnComponent,
+  findComponentInTargetNamespace,
   forEachReferencedComponent,
   localDeclarationName,
   localNameOf,
-  resolveQName,
+  expandedNameOf,
   schemaNamesOf,
   topLevelName,
   type SchemaNames,
@@ -74,7 +74,7 @@ function attributeUsesOfComplexType(complexType: ComplexTypeDefinition, names: S
     visitedTypes.add(current);
     addAttributeUses(getContentDerivation<AttributeHolder>(current) ?? current, names, uses, visitedGroups);
     const base: string | undefined = (current.complexContent?.extension ?? current.simpleContent?.extension)?.base;
-    current = base ? findOwnComponent(base, names.schemaObj.complexType, names) : undefined;
+    current = base ? findComponentInTargetNamespace(base, names.schemaObj.complexType, names) : undefined;
   }
   return uses;
 }
@@ -89,8 +89,8 @@ function attributeUsesOfComplexType(complexType: ComplexTypeDefinition, names: S
  */
 function nameOfUse(use: attribute, names: SchemaNames): string {
   if (use.ref) {
-    const target = findOwnComponent(use.ref, names.schemaObj.attribute, names);
-    return target ? topLevelName(target.name, names) : resolveQName(use.ref, names);
+    const target = findComponentInTargetNamespace(use.ref, names.schemaObj.attribute, names);
+    return target ? topLevelName(target.name, names) : expandedNameOf(use.ref, names);
   }
   return localDeclarationName(use.name ?? "", use.form, names.schemaObj.attributeFormDefault, names);
 }

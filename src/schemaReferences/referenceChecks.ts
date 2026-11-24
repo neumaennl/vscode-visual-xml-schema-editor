@@ -4,15 +4,14 @@
  */
 
 import type { schema } from "../../shared/types.js";
-import { ownComponentName, splitQName } from "../../shared/qNames.js";
-import { getTargetNamespacePrefixes } from "../../shared/schemaUtils.js";
+import { localNameIfInTargetNamespace, splitQName } from "../../shared/qNames.js";
 import type { QNameKind } from "./qNameReferences.js";
 import { forEachQNameReference } from "./qNameReferences.js";
 
 /**
  * Returns true if the schema refers to its own component of the given kind and name anywhere, with a
- * QName without a prefix or with a prefix of its target namespace (see {@link ownComponentName}), as the
- * renames find them.
+ * QName that resolves to its target namespace (see {@link localNameIfInTargetNamespace}), as the renames
+ * find them.
  *
  * @param schemaObj - The schema to search
  * @param kind - What the references refer to
@@ -20,10 +19,11 @@ import { forEachQNameReference } from "./qNameReferences.js";
  * @returns Whether a reference was found
  */
 export function isReferenced(schemaObj: schema, kind: QNameKind, name: string): boolean {
-  const tnsPrefixes = getTargetNamespacePrefixes(schemaObj);
+  const namespacePrefixes = schemaObj._namespacePrefixes ?? {};
   let referenced = false;
   forEachQNameReference(schemaObj, (reference) => {
-    if (reference.kind === kind && ownComponentName(reference.value, tnsPrefixes) === name) {
+    const localName = localNameIfInTargetNamespace(reference.value, namespacePrefixes, schemaObj.targetNamespace);
+    if (reference.kind === kind && localName === name) {
       referenced = true;
     }
   });

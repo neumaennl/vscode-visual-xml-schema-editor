@@ -4,26 +4,31 @@
  */
 
 import type { schema } from "../../shared/types.js";
-import { ownComponentName, splitQName } from "../../shared/qNames.js";
-import { getTargetNamespacePrefixes } from "../../shared/schemaUtils.js";
+import { localNameIfInTargetNamespace, splitQName } from "../../shared/qNames.js";
 import type { QNameKind } from "./qNameReferences.js";
 import { forEachQNameReference } from "./qNameReferences.js";
 
 /**
  * Renames the references of one kind to a component of the schema itself from `oldName` to `newName`:
- * those without a prefix and those with a prefix of the schema's target namespace (see
- * {@link ownComponentName}), which keep their prefix. For `element`, this includes `substitutionGroup`.
+ * those that resolve to the schema's target namespace (see {@link localNameIfInTargetNamespace}), which
+ * keep their prefix. For `element`, this includes `substitutionGroup`.
  *
  * @param kind - What the references refer to
  * @param oldName - The current local name
  * @param newName - The new local name
  * @param schemaObj - The schema object to mutate in place
  */
-export function renameOwnReferences(kind: QNameKind, oldName: string, newName: string, schemaObj: schema): void {
+export function renameReferencesInTargetNamespace(
+  kind: QNameKind,
+  oldName: string,
+  newName: string,
+  schemaObj: schema
+): void {
   if (oldName === newName) return;
-  const tnsPrefixes = getTargetNamespacePrefixes(schemaObj);
+  const namespacePrefixes = schemaObj._namespacePrefixes ?? {};
   forEachQNameReference(schemaObj, (reference) => {
-    if (reference.kind !== kind || ownComponentName(reference.value, tnsPrefixes) !== oldName) {
+    const localName = localNameIfInTargetNamespace(reference.value, namespacePrefixes, schemaObj.targetNamespace);
+    if (reference.kind !== kind || localName !== oldName) {
       return;
     }
     const { prefix } = splitQName(reference.value);

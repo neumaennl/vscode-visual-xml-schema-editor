@@ -4,7 +4,7 @@
  */
 
 import { marshal } from "@neumaennl/xmlbind-ts";
-import { renameOwnReferences, rewritePrefix } from "./referenceRewrites.js";
+import { renameReferencesInTargetNamespace, rewritePrefix } from "./referenceRewrites.js";
 import { emptySchema, schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
 import { readTestSchema } from "../__tests__/resourceTestHelpers.js";
 import type { localComplexType, schema } from "../../shared/types.js";
@@ -44,7 +44,7 @@ function complexTypeWith(content: string): string {
   return `<xs:complexType name="T">${content}</xs:complexType>`;
 }
 
-describe("renameOwnReferences", () => {
+describe("renameReferencesInTargetNamespace", () => {
   test.each([
     {
       kind: "group" as const,
@@ -72,17 +72,17 @@ describe("renameOwnReferences", () => {
     ({ kind, oldName, read }) => {
       const schemaObj = readTestSchema(QNAME_IN_EVERY_PLACE);
 
-      renameOwnReferences(kind, oldName, "Renamed", schemaObj);
+      renameReferencesInTargetNamespace(kind, oldName, "Renamed", schemaObj);
 
       expect(read(schemaObj)).toBe("tns:Renamed");
     }
   );
 
-  describe("renameOwnReferences for type", () => {
+  describe("renameReferencesInTargetNamespace for type", () => {
     test("should rename unqualified type references throughout the schema", () => {
       const schemaObj = readTestSchema("types-referencing-base-type.xsd");
 
-      renameOwnReferences("type", "BaseType", "RenamedType", schemaObj);
+      renameReferencesInTargetNamespace("type", "BaseType", "RenamedType", schemaObj);
 
       expect((schemaObj.element ?? [])[0]!.type_).toBe("RenamedType");
       expect((schemaObj.attribute ?? [])[0]!.type_).toBe("RenamedType");
@@ -95,7 +95,7 @@ describe("renameOwnReferences", () => {
   <xs:element name="status" type="BaseType"/>
   <xs:element name="external" type="ext:BaseType"/>`);
 
-      renameOwnReferences("type", "BaseType", "RenamedType", schemaObj);
+      renameReferencesInTargetNamespace("type", "BaseType", "RenamedType", schemaObj);
 
       const elements = schemaObj.element ?? [];
       expect(elements[0]!.type_).toBe("RenamedType");
@@ -119,7 +119,7 @@ describe("renameOwnReferences", () => {
         ext: "http://example.com/external",
       };
 
-      renameOwnReferences("type", "BaseType", "RenamedType", schemaObj);
+      renameReferencesInTargetNamespace("type", "BaseType", "RenamedType", schemaObj);
 
       expect((schemaObj.element ?? [])[0]!.type_).toBe("tns:RenamedType");
       expect(((schemaObj.complexType ?? [])[0]!.sequence!.element ?? [])[0]!.type_).toBe("tns:RenamedType");
@@ -127,13 +127,13 @@ describe("renameOwnReferences", () => {
     });
   });
 
-  describe("renameOwnReferences for group", () => {
+  describe("renameReferencesInTargetNamespace for group", () => {
     test("should rename matching group refs in complex types and named groups", () => {
       const schemaObj = schemaWith(`
   <xs:complexType name="Wrapper"><xs:group ref="OldGroup"/></xs:complexType>
   <xs:group name="Container"><xs:sequence><xs:group ref="OldGroup"/></xs:sequence></xs:group>`);
 
-      renameOwnReferences("group", "OldGroup", "NewGroup", schemaObj);
+      renameReferencesInTargetNamespace("group", "OldGroup", "NewGroup", schemaObj);
 
       expect((schemaObj.complexType ?? [])[0]!.group!.ref).toBe("NewGroup");
       expect(((schemaObj.group ?? [])[0]!.sequence!.group ?? [])[0]!.ref).toBe("NewGroup");
@@ -148,19 +148,19 @@ describe("renameOwnReferences", () => {
         tns: "http://example.com/ns",
       };
 
-      renameOwnReferences("group", "OldGroup", "NewGroup", schemaObj);
+      renameReferencesInTargetNamespace("group", "OldGroup", "NewGroup", schemaObj);
 
       expect((schemaObj.complexType ?? [])[0]!.group!.ref).toBe("tns:NewGroup");
     });
   });
 
-  describe("renameOwnReferences for attributeGroup", () => {
+  describe("renameReferencesInTargetNamespace for attributeGroup", () => {
     test("should rename matching attributeGroup refs across holders", () => {
       const schemaObj = schemaWith(`
   <xs:complexType name="Wrapper"><xs:attributeGroup ref="OldAttrs"/></xs:complexType>
   <xs:attributeGroup name="Shared"><xs:attributeGroup ref="OldAttrs"/></xs:attributeGroup>`);
 
-      renameOwnReferences("attributeGroup", "OldAttrs", "NewAttrs", schemaObj);
+      renameReferencesInTargetNamespace("attributeGroup", "OldAttrs", "NewAttrs", schemaObj);
 
       expect(((schemaObj.complexType ?? [])[0]!.attributeGroup ?? [])[0]!.ref).toBe("NewAttrs");
       expect(((schemaObj.attributeGroup ?? [])[0]!.attributeGroup ?? [])[0]!.ref).toBe("NewAttrs");
@@ -175,13 +175,13 @@ describe("renameOwnReferences", () => {
         tns: "http://example.com/ns",
       };
 
-      renameOwnReferences("attributeGroup", "OldAttrs", "NewAttrs", schemaObj);
+      renameReferencesInTargetNamespace("attributeGroup", "OldAttrs", "NewAttrs", schemaObj);
 
       expect(((schemaObj.complexType ?? [])[0]!.attributeGroup ?? [])[0]!.ref).toBe("tns:NewAttrs");
     });
   });
 
-  describe("renameOwnReferences for element", () => {
+  describe("renameReferencesInTargetNamespace for element", () => {
     test("should rename matching element refs and substitution groups", () => {
       const schemaObj = schemaWith(`
   <xs:element name="head"/>
@@ -193,7 +193,7 @@ describe("renameOwnReferences", () => {
     <xs:choice><xs:element ref="head"/></xs:choice>
   </xs:group>`);
 
-      renameOwnReferences("element", "head", "renamedHead", schemaObj);
+      renameReferencesInTargetNamespace("element", "head", "renamedHead", schemaObj);
 
       expect((schemaObj.element ?? [])[1]!.substitutionGroup).toBe("renamedHead");
       expect(((schemaObj.complexType ?? [])[0]!.sequence!.element ?? [])[0]!.ref).toBe("renamedHead");
@@ -213,11 +213,24 @@ describe("renameOwnReferences", () => {
         tns: "http://example.com/ns",
       };
 
-      renameOwnReferences("element", "head", "renamedHead", schemaObj);
+      renameReferencesInTargetNamespace("element", "head", "renamedHead", schemaObj);
 
       expect((schemaObj.element ?? [])[1]!.substitutionGroup).toBe("tns:renamedHead");
       expect(((schemaObj.complexType ?? [])[0]!.sequence!.element ?? [])[0]!.ref).toBe("tns:renamedHead");
     });
+  });
+});
+
+describe("renameReferencesInTargetNamespace with the namespace of XML Schema as the default namespace", () => {
+  test("should rename only the reference with the prefix of the target namespace", () => {
+    const schemaObj = readTestSchema("xsd-as-default-namespace.xsd");
+
+    renameReferencesInTargetNamespace("group", "G", "Renamed", schemaObj);
+
+    expect(schemaObj.complexType?.map((type) => [type.name, type.group?.ref])).toEqual([
+      ["Unprefixed", "G"],
+      ["Prefixed", "tns:Renamed"],
+    ]);
   });
 });
 

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Declares the namespace of XML Schema both as the default namespace and as xs, as some schemas do.
+     A QName without a prefix is then in the namespace of XML Schema, not in the target namespace: the
+     group reference without a prefix refers to xs:G, only the one with tns to the group G of this schema. -->
+<schema xmlns="http://www.w3.org/2001/XMLSchema" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tns="urn:example" targetNamespace="urn:example">
+  <group name="G"><sequence/></group>
+  <complexType name="Unprefixed">
+    <group ref="G"/>
+  </complexType>
+  <xs:complexType name="Prefixed">
+    <xs:group ref="tns:G"/>
+  </xs:complexType>
+</schema>

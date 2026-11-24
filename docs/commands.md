@@ -3,9 +3,8 @@ type: Reference
 title: Commands
 description: The edit commands - payload fields, the rules the validators enforce, what the executors change in the schema, and where the webview sends them.
 tags: [commands, payload, validation, reference]
-status: stable
-generated: { by: human:neumaennl, at: 2026-11-24T10:38:26Z }
-verified: { by: human:neumaennl, at: 2026-11-24T17:27:00Z }
+status: draft
+generated: { by: human:neumaennl, at: 2026-11-24T18:58:14Z }
 sources:
   - id: commands
     resource: ../shared/commands/index.ts
@@ -57,7 +56,7 @@ This reference describes every edit command: its payload, the rules that the val
 - **Top-level or anonymous.** `addSimpleType` and `addComplexType` create a named top-level type when `parentId` is omitted or `/schema`, and an anonymous type inside the element or attribute that `parentId` names. Anonymous types have no `typeName`. (The doc comments in `simpleType.ts` and `complexType.ts` say "Omit or set to 'schema'"; only `/schema` works, see [Known issues](known-issues.md#node-ids-are-ambiguous-and-have-many-special-cases).)
 - **Definition or reference mode.** `addGroup` and `addAttributeGroup` either define a top-level group (name, no `parentId`) or add a reference to one (`ref` and `parentId`).
 - **Occurrences.** `minOccurs` is a non-negative integer, `maxOccurs` a non-negative integer or `"unbounded"`, and `minOccurs` must not exceed `maxOccurs`. They are written only when given, and never on top-level elements.
-- **Names.** Names must match `isValidXmlName()` in `shared/qNames.ts`: an ASCII letter or `_`, then letters, digits, `_`, `-` or `.` (see [Known issues](known-issues.md#name-validation-is-ascii-only)). A `ref` is a QName whose prefix and local name each match it. It must name a top-level component of the schema itself, without a prefix or with a prefix of its target namespace, such as `tns:Address`; renames, the check for references before a removal and the validation of `ref` all treat these two forms alike.
+- **Names.** Names must match `isValidXmlName()` in `shared/qNames.ts`: an ASCII letter or `_`, then letters, digits, `_`, `-` or `.` (see [Known issues](known-issues.md#name-validation-is-ascii-only)). A `ref` is a QName whose prefix and local name each match it. It must name a top-level component of the schema itself, so it must resolve to the target namespace with the namespace declarations of the schema: with a prefix declared for the target namespace, such as `tns:Address`, or without a prefix if the default namespace is the target namespace, or if the schema has neither. Renames, the check for references before a removal, the constraints of XML Schema and the validation of `ref` all resolve references this way (`localNameIfInTargetNamespace()` in `shared/qNames.ts`).
 - **Types.** A type name (`elementType`, `baseType`, `listItemType`, union members) is accepted if it is a built-in XSD type with any prefix, a type defined in the schema, a type whose prefix belongs to an import, or any valid name if the schema has an include. Attribute types are not checked.
 - **`documentation` field.** Most add payloads have an optional `documentation` string, which becomes the first documentation entry of the new node if it is not empty. The modify payloads have none: documentation entries are changed one by one with the [documentation commands](#annotations-and-documentation), which keep the other entries and their languages.
 - **Insertion.** New nodes are appended to the end of their parent.
@@ -66,7 +65,7 @@ This reference describes every edit command: its payload, the rules that the val
   - Elements with the same name in the content model of a complex type, including its nested compositors, referenced groups and the content of an extended base type, have the same type. So a sequence `a, b, a` is allowed if both `a` have the same type.
   - A complex type, including its attribute groups and an extended base type, and an attribute group have each attribute only once.
   - Unique Particle Attribution is not checked yet (see [Known issues](known-issues.md#unique-particle-attribution-is-not-checked)).
-- **Removal.** Removing a group, attribute group or import is rejected while it is still referenced, also with a prefix of the target namespace. Removing an element, attribute or type is not checked and can leave references that point nowhere.
+- **Removal.** Removing a group, attribute group or import is rejected while it is still referenced, however the reference is written. Removing an element, attribute or type is not checked and can leave references that point nowhere.
 
 # Overview
 

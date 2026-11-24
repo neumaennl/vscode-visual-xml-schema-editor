@@ -3,12 +3,11 @@
  * a namespace and a local name, and the lookup of the schema's own top-level components by a QName.
  */
 
-import { ownComponentName, splitQName } from "../../shared/qNames.js";
-import { getTargetNamespacePrefixes } from "../../shared/schemaUtils.js";
+import { localNameIfInTargetNamespace, resolveQName } from "../../shared/qNames.js";
 import { formChoice } from "../../shared/types.js";
 import type { NamespacePrefixes, schema } from "../../shared/types.js";
 
-/** What resolving the names of a schema needs: the schema, its target namespace and its prefixes. */
+/** What resolving the names of a schema needs: the schema, its target namespace and its namespace declarations. */
 export interface SchemaNames {
   /** The schema. */
   schemaObj: schema;
@@ -16,8 +15,6 @@ export interface SchemaNames {
   targetNamespace: string;
   /** The namespace declarations of the schema element. */
   prefixes: NamespacePrefixes;
-  /** The prefixes of the target namespace. */
-  tnsPrefixes: string[];
 }
 
 /**
@@ -31,7 +28,6 @@ export function schemaNamesOf(schemaObj: schema): SchemaNames {
     schemaObj,
     targetNamespace: schemaObj.targetNamespace?.toString() ?? "",
     prefixes: schemaObj._namespacePrefixes ?? {},
-    tnsPrefixes: getTargetNamespacePrefixes(schemaObj),
   };
 }
 
@@ -48,7 +44,7 @@ function expandedName(namespace: string, localName: string): string {
 
 /**
  * Returns the local name of an expanded name, for messages. A QName with a prefix that is not declared,
- * which {@link resolveQName} keeps as written, is returned as it is.
+ * which {@link expandedNameOf} keeps as written, is returned as it is.
  *
  * @param name - The expanded name, such as `{urn:t}a`
  * @returns The local name, such as `a`
@@ -58,22 +54,17 @@ export function localNameOf(name: string): string {
 }
 
 /**
- * Resolves a QName to an expanded name. A prefix stands for the namespace it is declared for; a QName
- * without a prefix is in the default namespace if the schema declares one, and otherwise in the target
- * namespace, as the editor treats such QNames elsewhere. A prefix that is not declared is kept as written,
- * so that two such QNames are only equal if they are written the same.
+ * Returns the expanded name of a QName, resolved with the namespace declarations of the schema (see
+ * `resolveQName()`). A prefix that is not declared is kept as written, so that two such QNames are only
+ * equal if they are written the same.
  *
  * @param qName - The QName, such as `xs:string`
  * @param names - The names of the schema
  * @returns The expanded name
  */
-export function resolveQName(qName: string, names: SchemaNames): string {
-  const { prefix, localName } = splitQName(qName);
-  if (prefix === undefined) {
-    return expandedName(names.prefixes[""] ?? names.targetNamespace, localName);
-  }
-  const namespace = names.prefixes[prefix];
-  return namespace === undefined ? qName : expandedName(namespace, localName);
+export function expandedNameOf(qName: string, names: SchemaNames): string {
+  const resolved = resolveQName(qName, names.prefixes);
+  return resolved ? expandedName(resolved.namespace, resolved.localName) : qName;
 }
 
 /**
@@ -126,7 +117,7 @@ export function forEachReferencedComponent<T extends { name?: string }>(
   visit: (component: T) => void
 ): void {
   for (const reference of references) {
-    const component = reference.ref ? findOwnComponent(reference.ref, components, names) : undefined;
+    const component = reference.ref ? findComponentInTargetNamespace(reference.ref, components, names) : undefined;
     if (component && !visited.has(component)) {
       visited.add(component);
       visit(component);
@@ -135,18 +126,18 @@ export function forEachReferencedComponent<T extends { name?: string }>(
 }
 
 /**
- * Finds the top-level component of the schema that a QName refers to (see `ownComponentName()`).
+ * Finds the top-level component of the schema that a QName refers to (see `localNameIfInTargetNamespace()`).
  *
  * @param qName - The QName, such as `tns:Address`
  * @param components - The top-level components of one kind
  * @param names - The names of the schema
  * @returns The component, or `undefined` if the QName refers to another schema or to no component
  */
-export function findOwnComponent<T extends { name?: string }>(
+export function findComponentInTargetNamespace<T extends { name?: string }>(
   qName: string,
   components: readonly T[] | undefined,
   names: SchemaNames
 ): T | undefined {
-  const name = ownComponentName(qName, names.tnsPrefixes);
+  const name = localNameIfInTargetNamespace(qName, names.prefixes, names.targetNamespace);
   return name === undefined ? undefined : components?.find((component) => component.name === name);
 }

@@ -67,7 +67,8 @@ describe("validateReference", () => {
   });
 
   test.each([
-    ["a", true],
+    // Without a default namespace, a QName without a prefix is in no namespace, not in the target namespace
+    ["a", false],
     ["tns:a", true],
     ["other:a", false],
     ["undeclared:a", false],

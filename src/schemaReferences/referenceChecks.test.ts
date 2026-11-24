@@ -82,7 +82,8 @@ describe("isReferenced", () => {
   });
 
   test.each([
-    ["G", true],
+    // Without a default namespace, a QName without a prefix is in no namespace, not in the target namespace
+    ["G", false],
     ["tns:G", true],
     ["own:G", true],
     ["other:G", false],

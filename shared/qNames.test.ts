@@ -9,8 +9,9 @@ import {
   validatePrefix,
   isReservedPrefix,
   normalizeNamespacePrefixes,
-  ownComponentName,
+  localNameIfInTargetNamespace,
   prefixesForNamespace,
+  resolveQName,
   splitQName,
 } from "./qNames.js";
 
@@ -25,16 +26,38 @@ describe("splitQName", () => {
   });
 });
 
-describe("ownComponentName", () => {
+/** Namespace declarations with a default namespace, a prefix for it and a prefix for another namespace. */
+const DECLARATIONS = { "": "urn:d", tns: "urn:t", own: "urn:t", other: "urn:o" };
+
+describe("resolveQName", () => {
   test.each([
-    ["Address", ["tns"], "Address"],
-    ["tns:Address", ["tns", "own"], "Address"],
-    ["own:Address", ["tns", "own"], "Address"],
-    ["other:Address", ["tns"], undefined],
-    ["tns:Address", [], undefined],
-  ])("should return for %s with the prefixes %j of the target namespace: %s", (qName, tnsPrefixes, expected) => {
-    expect(ownComponentName(qName, tnsPrefixes)).toBe(expected);
+    ["a declared prefix", "tns:A", DECLARATIONS, { namespace: "urn:t", localName: "A" }],
+    ["no prefix, in the default namespace", "A", DECLARATIONS, { namespace: "urn:d", localName: "A" }],
+    ["no prefix and no default namespace, in no namespace", "A", { tns: "urn:t" }, { namespace: "", localName: "A" }],
+    ["a prefix that is not declared", "x:A", DECLARATIONS, undefined],
+  ])("should resolve a QName with %s", (_case, qName, declarations, expected) => {
+    expect(resolveQName(qName, declarations)).toEqual(expected);
   });
+});
+
+describe("localNameIfInTargetNamespace", () => {
+  test.each([
+    ["tns:A", DECLARATIONS, "urn:t", "A"],
+    ["own:A", DECLARATIONS, "urn:t", "A"],
+    ["other:A", DECLARATIONS, "urn:t", undefined],
+    // Without a prefix, the default namespace decides, not the target namespace
+    ["A", DECLARATIONS, "urn:t", undefined],
+    ["A", DECLARATIONS, "urn:d", "A"],
+    ["A", { tns: "urn:t" }, "urn:t", undefined],
+    // A schema without a target namespace owns the names in no namespace
+    ["A", { tns: "urn:t" }, undefined, "A"],
+    ["x:A", DECLARATIONS, "urn:t", undefined],
+  ])(
+    "should return for %s with %j and the target namespace %s: %s",
+    (qName, declarations, targetNamespace, expected) => {
+      expect(localNameIfInTargetNamespace(qName, declarations, targetNamespace)).toBe(expected);
+    }
+  );
 });
 
 describe("isReservedPrefix", () => {

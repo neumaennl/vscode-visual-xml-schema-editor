@@ -13,7 +13,7 @@ import type {
 import { topLevelElement, localElement, narrowMaxMin } from "../../shared/types.js";
 import { assumeValidated, assumptionFailed, locateValidated } from "./assumeValidated.js";
 import { parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy.js";
-import { renameOwnReferences } from "../schemaReferences/referenceRewrites.js";
+import { renameReferencesInTargetNamespace } from "../schemaReferences/referenceRewrites.js";
 import { createAnnotation } from "./annotationUtils.js";
 import { appendTo, removeFrom } from "./nodeProperties.js";
 import { identifyChild } from "../commandUtils.js";
@@ -71,7 +71,7 @@ export function executeModifyElement(command: ModifyElementCommand, schemaObj: s
     !parsed.parentId &&
     parsed.name
   ) {
-    renameOwnReferences("element", parsed.name, changes.elementName, schemaObj);
+    renameReferencesInTargetNamespace("element", parsed.name, changes.elementName, schemaObj);
   }
 
   const child = identifyChild("Element", parsed.name, parsed.position);

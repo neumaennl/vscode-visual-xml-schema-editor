@@ -29,18 +29,48 @@ export function splitQName(qName: string): SplitQName {
     : { prefix: undefined, localName: qName };
 }
 
+/** A QName resolved with the namespace declarations: the namespace it is in and its local name. */
+export interface ExpandedName {
+  /** The namespace URI, or the empty string for no namespace */
+  namespace: string;
+  /** The local name */
+  localName: string;
+}
+
 /**
- * Returns the local name of a QName that refers to a component of the schema itself: a QName without a
- * prefix, or with one of the prefixes of the schema's target namespace. A QName without a prefix counts
- * as the schema's own whatever the default namespace is, as the editor has always treated it.
+ * Resolves a QName with namespace declarations, as XML Schema does for the values of `type`, `ref`,
+ * `base`, `itemType` and `memberTypes`: a prefix stands for the namespace it is declared for, and a QName
+ * without a prefix is in the default namespace, or in no namespace if there is none.
  *
  * @param qName - The QName, such as `tns:Address`
- * @param tnsPrefixes - The prefixes of the schema's target namespace
- * @returns The local name, or undefined if the QName has another prefix
+ * @param namespacePrefixes - The namespace declarations, with the empty prefix for the default namespace
+ * @returns The namespace and the local name, or `undefined` if the prefix is not declared
  */
-export function ownComponentName(qName: string, tnsPrefixes: readonly string[]): string | undefined {
+export function resolveQName(qName: string, namespacePrefixes: Readonly<NamespacePrefixes>): ExpandedName | undefined {
   const { prefix, localName } = splitQName(qName);
-  return prefix === undefined || tnsPrefixes.includes(prefix) ? localName : undefined;
+  if (prefix === undefined) {
+    return { namespace: namespacePrefixes[""] ?? "", localName };
+  }
+  const namespace = namespacePrefixes[prefix];
+  return namespace === undefined ? undefined : { namespace, localName };
+}
+
+/**
+ * Returns the local name of a QName that refers to a component of the schema itself, that is, a QName
+ * that resolves to the target namespace (see {@link resolveQName}).
+ *
+ * @param qName - The QName, such as `tns:Address`
+ * @param namespacePrefixes - The namespace declarations of the schema
+ * @param targetNamespace - The target namespace of the schema, or `undefined` if it has none
+ * @returns The local name, or `undefined` if the QName refers to another namespace
+ */
+export function localNameIfInTargetNamespace(
+  qName: string,
+  namespacePrefixes: Readonly<NamespacePrefixes>,
+  targetNamespace: string | undefined
+): string | undefined {
+  const expandedName = resolveQName(qName, namespacePrefixes);
+  return expandedName?.namespace === (targetNamespace ?? "") ? expandedName.localName : undefined;
 }
 
 /** The prefixes that XML reserves and that cannot be declared. */

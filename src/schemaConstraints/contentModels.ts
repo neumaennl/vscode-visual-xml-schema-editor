@@ -4,7 +4,7 @@
  */
 
 import type { formChoice, localComplexType, schema, topLevelComplexType } from "../../shared/types.js";
-import { findOwnComponent, forEachReferencedComponent, type SchemaNames } from "./schemaNames.js";
+import { findComponentInTargetNamespace, forEachReferencedComponent, type SchemaNames } from "./schemaNames.js";
 
 /** A named or anonymous complex type. */
 export type ComplexTypeDefinition = topLevelComplexType | localComplexType;
@@ -68,11 +68,11 @@ function particleHolderOf(complexType: ComplexTypeDefinition): ParticleHolder {
  * @param holder - The node
  * @param visit - Called for each element particle
  */
-function forEachOwnElement(holder: ParticleHolder, visit: (element: ElementParticle) => void): void {
+function forEachDescendantElement(holder: ParticleHolder, visit: (element: ElementParticle) => void): void {
   asList(holder.element).forEach(visit);
   for (const compositor of COMPOSITORS) {
     for (const nested of asList(holder[compositor])) {
-      forEachOwnElement(nested, visit);
+      forEachDescendantElement(nested, visit);
     }
   }
 }
@@ -118,7 +118,7 @@ function extensionChain(complexType: ComplexTypeDefinition, names: SchemaNames):
   while (current && !chain.includes(current)) {
     chain.unshift(current);
     const base: string | undefined = current.complexContent?.extension?.base;
-    current = base ? findOwnComponent(base, names.schemaObj.complexType, names) : undefined;
+    current = base ? findComponentInTargetNamespace(base, names.schemaObj.complexType, names) : undefined;
   }
   return chain;
 }
@@ -162,7 +162,7 @@ export function forEachComplexType(
   };
   const visitComplexType = (complexType: ComplexTypeDefinition, description: string): void => {
     visit(complexType, description);
-    forEachOwnElement(particleHolderOf(complexType), visitAnonymous);
+    forEachDescendantElement(particleHolderOf(complexType), visitAnonymous);
   };
 
   for (const complexType of schemaObj.complexType ?? []) {
@@ -170,6 +170,6 @@ export function forEachComplexType(
   }
   (schemaObj.element ?? []).forEach(visitAnonymous);
   for (const group of schemaObj.group ?? []) {
-    forEachOwnElement(group, visitAnonymous);
+    forEachDescendantElement(group, visitAnonymous);
   }
 }

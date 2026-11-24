@@ -8,8 +8,8 @@ import type { schema } from "../../shared/types.js";
 import type { ParsedSchemaId } from "../../shared/idStrategy.js";
 import { parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy.js";
 import { locateNodeById } from "../schemaNavigator.js";
-import { ownComponentName, splitQName, isValidXmlName } from "../../shared/qNames.js";
-import { getTargetNamespacePrefixes, type TypeKind } from "../../shared/schemaUtils.js";
+import { localNameIfInTargetNamespace, splitQName, isValidXmlName } from "../../shared/qNames.js";
+import type { TypeKind } from "../../shared/schemaUtils.js";
 import { findIdentifiedChild } from "../commandUtils.js";
 import type { ValidationFailure, ValidationResult } from "../../shared/validation.js";
 
@@ -31,8 +31,8 @@ const REFERENCED_KIND_LABELS: Record<ReferencedKind, string> = {
 
 /**
  * Validates the `ref` of a reference: it must be a QName, and name one of the top-level components of
- * the schema that it can refer to, without a prefix or with a prefix of the schema's target namespace
- * (see {@link ownComponentName}).
+ * the schema that it can refer to: it must resolve to the schema's target namespace (see
+ * {@link localNameIfInTargetNamespace}).
  *
  * @param ref - The value of `ref`
  * @param kind - What the reference refers to
@@ -50,7 +50,7 @@ export function validateReference(
   if (!isValidXmlName(localName) || (prefix !== undefined && !isValidXmlName(prefix))) {
     return { valid: false, error: `${REFERENCED_KIND_LABELS[kind]} ref must be a valid QName` };
   }
-  const name = ownComponentName(ref, getTargetNamespacePrefixes(schemaObj));
+  const name = localNameIfInTargetNamespace(ref, schemaObj._namespacePrefixes ?? {}, schemaObj.targetNamespace);
   if (name === undefined) {
     return { valid: false, error: notFoundError };
   }

@@ -328,6 +328,34 @@ describe("Schema-root Annotation Validators", () => {
       expect(result.valid).toBe(true);
     });
 
+    test.each([
+      [
+        "addDocumentation",
+        (lang: string): ValidationResult =>
+          validateAddDocumentation(
+            { type: "addDocumentation", payload: { targetId: "/element:person", content: "Doc.", lang } },
+            readTestSchema(DOCUMENTED_PERSON_XSD)
+          ),
+      ],
+      [
+        "modifyDocumentation",
+        (lang: string): ValidationResult =>
+          validateModifyDocumentation(
+            { type: "modifyDocumentation", payload: { documentationId: "/element:person/documentation[0]", lang } },
+            readTestSchema(DOCUMENTED_PERSON_XSD)
+          ),
+      ],
+    ])(
+      "should check the language of %s: accept a language code or none, reject anything else",
+      (_command, validate) => {
+        expect(validate("de-CH").valid).toBe(true);
+        expect(validate("").valid).toBe(true);
+        const result = validate("en_US");
+        expectInvalid(result);
+        expect(result.error).toBe("Language must be a language code such as en or de-CH");
+      }
+    );
+
     test("should reject when '/schema/annotation[N]' index is out of bounds", () => {
       const schemaObj = schemaWith(SCHEMA_ANNOTATION);
       const command: AddDocumentationCommand = {

@@ -8,6 +8,7 @@ import { createDocsTab } from "./propertiesPanelDocs";
 import type { SchemaCommand } from "../../shared/types";
 import { Diagram, DiagramItem, DiagramItemType } from "../diagram";
 import { diagramItem, muteDiagramBuilderLog } from "../__tests__/diagramTestHelpers";
+import { editInput, getInputByLabel } from "../__tests__/propertiesPanelTestHelpers";
 import { webviewSchemaWith } from "../../shared/__tests__/schemaTestHelpers";
 import { schema } from "../../shared/types";
 
@@ -80,9 +81,12 @@ describe("createDocsTab", () => {
       expect(labelTexts(tab)).toEqual([
         "Annotation 1:",
         "Documentation 1:",
+        "Language:",
         "Documentation 2:",
+        "Language:",
         "Annotation 2:",
         "Documentation 1:",
+        "Language:",
         "Annotation 3:",
       ]);
       expect(Array.from(tab.querySelectorAll("textarea"), (textArea) => textArea.value)).toEqual([
@@ -97,7 +101,7 @@ describe("createDocsTab", () => {
     test("should show the annotation of another node without a number and offer no further annotation", () => {
       const { tab } = renderDocs(DOCUMENTED, "/element:person");
 
-      expect(labelTexts(tab)).toEqual(["Annotation:", "Documentation 1:"]);
+      expect(labelTexts(tab)).toEqual(["Annotation:", "Documentation 1:", "Language:"]);
       expect(tab.querySelector("textarea")?.value).toBe("Person doc");
       expect(buttonsLabeled(tab, "Add annotation")).toHaveLength(0);
     });
@@ -156,6 +160,51 @@ describe("createDocsTab", () => {
         type: "removeDocumentation",
         payload: { documentationId: "/schema/annotation[0]/documentation[0]" },
       });
+    });
+  });
+
+  describe("editing the language", () => {
+    /** An element whose documentation is in German. */
+    const GERMAN = `<xs:element name="person"><xs:annotation><xs:documentation xml:lang="de">Person</xs:documentation></xs:annotation></xs:element>`;
+
+    test("should show the language of a documentation entry", () => {
+      const { tab } = renderDocs(GERMAN, "/element:person");
+
+      expect(getInputByLabel(tab, "Language").value).toBe("de");
+    });
+
+    test.each([
+      ["change the language", " de-CH ", "de-CH"],
+      ["remove the language when the field is emptied", "", ""],
+    ])("should %s", (_case, value, lang) => {
+      const { tab, dispatch } = renderDocs(GERMAN, "/element:person");
+
+      editInput(tab, "Language", value);
+
+      expect(dispatch).toHaveBeenCalledExactlyOnceWith({
+        type: "modifyDocumentation",
+        payload: { documentationId: "/element:person/documentation[0]", lang },
+      });
+    });
+
+    test("should send nothing when the language is entered again", () => {
+      const { tab, dispatch } = renderDocs(GERMAN, "/element:person");
+
+      editInput(tab, "Language", " de ");
+
+      expect(dispatch).not.toHaveBeenCalled();
+    });
+
+    test("should reject a value that is no language code, with a message", () => {
+      const { tab, dispatch } = renderDocs(GERMAN, "/element:person");
+
+      editInput(tab, "Language", "de_CH");
+
+      expect(dispatch).not.toHaveBeenCalled();
+      expect(getInputByLabel(tab, "Language").value).toBe("de");
+      expect(getInputByLabel(tab, "Language").parentElement?.querySelector(".property-message")?.textContent).toBe(
+        "Language must be a language code such as en or de-CH"
+      );
     });
   });
 

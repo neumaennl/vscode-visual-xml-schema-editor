@@ -8,6 +8,8 @@ import { getDocumentationAnnotations, type DiagramItem } from "../diagram";
 import type { DiagramAnnotationEntry, DiagramDocumentationEntry } from "../diagram/DiagramTypes";
 import { resolveDocumentationTargetId } from "./propertiesPanelTargets";
 import { createEditableTextArea } from "./propertiesPanelDom";
+import { createEditableField } from "./propertiesPanelFields";
+import { validateLanguage } from "../../shared/languages";
 import { SCHEMA_ROOT_ID } from "../../shared/idStrategy";
 
 const NEW_DOCUMENTATION_TEXT = "New documentation";
@@ -68,8 +70,40 @@ function createActionButton(
 }
 
 /**
- * Renders a documentation entry of an annotation section: its label, a button that removes it, and a
- * text area that changes its text.
+ * Creates the field that changes the language (`xml:lang`) of a documentation entry. An empty value
+ * removes the language.
+ *
+ * @param entry - The documentation entry
+ * @param dispatchCommand - Callback used to emit schema-edit commands
+ * @returns The field
+ */
+function createLanguageField(
+  entry: DiagramDocumentationEntry,
+  dispatchCommand: (command: SchemaCommand) => void
+): HTMLElement {
+  const current = entry.lang ?? "";
+  const field = createEditableField("Language", current, (next, reject) => {
+    const lang = next.trim();
+    if (lang === current) {
+      return;
+    }
+    const result = lang ? validateLanguage(lang) : undefined;
+    if (result && !result.valid) {
+      reject(result.error);
+      return;
+    }
+    dispatchCommand({ type: "modifyDocumentation", payload: { documentationId: entry.id, lang } });
+  });
+  field.classList.add("property-docs-language");
+  const input = field.querySelector("input");
+  input?.setAttribute("placeholder", "language");
+  input?.setAttribute("title", "Language of the entry (xml:lang), such as en or de-CH; empty for none");
+  return field;
+}
+
+/**
+ * Renders a documentation entry of an annotation section: a header with its label, a field for its
+ * language and a button that removes it, and a text area that changes its text.
  *
  * @param entry - The documentation entry
  * @param documentationIndex - Position of the entry within the annotation
@@ -90,6 +124,7 @@ function createDocumentationEntry(
   const label = document.createElement("label");
   label.textContent = `Documentation ${documentationIndex + 1}:`;
   header.appendChild(label);
+  header.appendChild(createLanguageField(entry, dispatchCommand));
 
   header.appendChild(
     createActionButton(

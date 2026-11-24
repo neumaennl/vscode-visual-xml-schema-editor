@@ -166,7 +166,7 @@ Text fields without this restriction are only used where the value is open, such
 ## Docs
 
 - Each documentation entry is a text field that commits on blur or Enter, like all other fields. There is no save button.
-- Documentation entries can be added and removed, each with its language (`xml:lang`). The schema root can have several annotations, which can be added and removed; other nodes show only their first annotation.
+- Documentation entries can be added and removed. Each entry has a field for its language (`xml:lang`) next to its label; an empty field removes the language, and new entries start without one. The schema root can have several annotations, which can be added and removed; other nodes show only their first annotation.
 - New documentation goes to the node itself, or for an element with an anonymous type to that type, where the diagram also reads it. Every node of the diagram has such a target.[^panel-docs]
 
 ## XML
@@ -205,7 +205,6 @@ The current editor does not implement these parts of the model yet:
 - **Attributes:** no field is editable (see [Known issues](known-issues.md#attribute-editing-is-half-implemented)).
 - **Mixed content:** the toggle is also shown for simple content, ignores `mixed` on `xs:complexContent` and does not check the base type (see [Known issues](known-issues.md#mixed-content-toggle-ignores-simple-content-complexcontent-and-the-base-type)).
 - **Deleting nodes:** the header delete button exists only for elements, named simple and complex types, groups and group references; attributes, compositors and anonymous types cannot be deleted.
-- **Documentation language:** `xml:lang` is preserved but neither shown nor editable (see [Known issues](known-issues.md#language-of-documentation-entries-cannot-be-edited)).
 - **Toolbar:** implemented as described; restyling it and adding more actions for the whole diagram, such as exporting the diagram as an image, are planned ([#155](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/155)).
 
 [^palette-items]: Palette item definitions

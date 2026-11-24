@@ -307,14 +307,6 @@ Effort:
 - **Description:** A restriction without facets shows "This type has no facets yet. To add a facet, drag one from the palette onto the node (available in a future release)." Dropping facets from the palette already works (see [UX concept](ux-concept.md#adding-editing-and-deleting)), so the part in parentheses should be removed.
 - **GitHub issue:** none
 
-## Language of documentation entries cannot be edited
-
-- **Location:** `webview-src/propertiesPanel/propertiesPanelDocs.ts`
-- **Severity:** Low
-- **Effort:** S
-- **Description:** The Docs tab shows only the text of a documentation entry, not its `xml:lang` attribute, and it has no field to set or change it. Existing values are preserved because `modifyDocumentation` is sent without `lang`, but new entries always lack a language. Both commands already accept `lang`, and in `modifyDocumentation` an empty value removes the attribute (see [Commands](commands.md#annotations-and-documentation)); only the webview is missing. The fix is a language field next to each entry that sends `lang` with `addDocumentation` and `modifyDocumentation`.
-- **GitHub issue:** none
-
 ## Documentation box size does not match the drawn text
 
 - **Location:** `webview-src/diagram/DiagramLayout.ts` (`calculateDocumentationBox()`), `webview-src/diagram/TextRenderers.ts` (`renderDocumentation()`)

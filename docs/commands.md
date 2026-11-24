@@ -3,9 +3,8 @@ type: Reference
 title: Commands
 description: The edit commands - payload fields, the rules the validators enforce, what the executors change in the schema, and where the webview sends them.
 tags: [commands, payload, validation, reference]
-status: stable
-generated: { by: human:neumaennl, at: 2026-11-20T13:22:12Z }
-verified: { by: human:neumaennl, at: 2026-11-20T15:04:32Z }
+status: draft
+generated: { by: human:neumaennl, at: 2026-11-24T09:10:41Z }
 sources:
   - id: commands
     resource: ../shared/commands/index.ts
@@ -229,7 +228,7 @@ The six commands in `annotation.ts` edit `xs:annotation` and its `xs:documentati
 | `removeDocumentation` | `documentationId`                            | Removes one entry.                                                                                                     |
 | `modifyDocumentation` | `documentationId`, `content?`, `lang?`       | Changes one entry; an empty `lang` removes `xml:lang`.                                                                 |
 
-The properties panel uses these commands for the documentation of the selected node, not the `documentation` field of the `modify*` commands.[^validators][^executors]
+A `lang` must be a value of `xs:language`, such as `en` or `de-CH`; the empty string removes `xml:lang` (`modifyDocumentation`) or adds none (`addDocumentation`). The properties panel checks its language field with the same rule. The properties panel uses these commands for the documentation of the selected node, not the `documentation` field of the `modify*` commands.[^validators][^executors]
 
 # Imports, includes and namespaces
 

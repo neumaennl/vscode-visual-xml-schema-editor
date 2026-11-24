@@ -25,6 +25,7 @@ import type {
 import type { ValidationFailure, ValidationResult } from "../../shared/validation.js";
 import { locateNodeById } from "../schemaNavigator.js";
 import { isSchemaRoot } from "../../shared/schemaUtils.js";
+import { validateLanguage } from "../../shared/languages.js";
 import { parseDocumentationId, parseSchemaAnnotationId, parseSchemaDocumentationId } from "../commandUtils.js";
 
 // ===== Internal helpers =====
@@ -189,14 +190,30 @@ export function validateModifyAnnotation(command: ModifyAnnotationCommand, schem
 // ===== Documentation Command Validation =====
 
 /**
- * Validates an `addDocumentation` command: the target is an existing annotation of the schema root, the
- * schema root, or an existing component that supports annotations.
+ * Validates the language of a documentation command. Without a language, or with an empty one, the
+ * documentation has no `xml:lang`.
+ *
+ * @param lang - The language of the payload
+ * @returns The validation result
+ */
+function validateOptionalLanguage(lang: string | undefined): ValidationResult {
+  return lang ? validateLanguage(lang) : { valid: true };
+}
+
+/**
+ * Validates an `addDocumentation` command: the language, if any, is a language code, and the target is an
+ * existing annotation of the schema root, the schema root, or an existing component that supports
+ * annotations.
  *
  * @param command - The command
  * @param schemaObj - The schema
  * @returns The validation result
  */
 export function validateAddDocumentation(command: AddDocumentationCommand, schemaObj: schema): ValidationResult {
+  const languageResult = validateOptionalLanguage(command.payload.lang);
+  if (!languageResult.valid) {
+    return languageResult;
+  }
   const targetId = command.payload.targetId;
   const schemaAnnotationIndex = parseSchemaAnnotationId(targetId);
   if (schemaAnnotationIndex !== null) {
@@ -298,13 +315,17 @@ export function validateRemoveDocumentation(command: RemoveDocumentationCommand,
 }
 
 /**
- * Validates a `modifyDocumentation` command: the documentation must exist (see
- * {@link validateDocumentationId}).
+ * Validates a `modifyDocumentation` command: the language, if any, is a language code, and the
+ * documentation must exist (see {@link validateDocumentationId}). An empty language removes `xml:lang`.
  *
  * @param command - The command
  * @param schemaObj - The schema
  * @returns The validation result
  */
 export function validateModifyDocumentation(command: ModifyDocumentationCommand, schemaObj: schema): ValidationResult {
+  const languageResult = validateOptionalLanguage(command.payload.lang);
+  if (!languageResult.valid) {
+    return languageResult;
+  }
   return validateDocumentationId(command.payload.documentationId, schemaObj);
 }

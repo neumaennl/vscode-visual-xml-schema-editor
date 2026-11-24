@@ -414,15 +414,46 @@ body {
 
 .property-docs-entry-header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 4px 8px;
 }
 
 .property-docs-entry-header label {
   color: var(--vscode-descriptionForeground);
   font-size: 11px;
   font-weight: 600;
+}
+
+/*
+ * The language field of a documentation entry sits in the header of the entry: its input stands next to
+ * the remove button, and its message gets a line of its own below them. The header has no room for the
+ * label, which stays for screen readers; the placeholder and the tooltip of the input say what it is.
+ */
+.property-docs-language {
+  display: contents;
+}
+
+.property-docs-language label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.property-docs-language input {
+  width: 6em;
+  margin-left: auto;
+}
+
+.property-docs-language .property-message {
+  order: 1;
+  flex-basis: 100%;
+  margin-top: 0;
+  text-align: right;
 }
 
 .property-docs-section {

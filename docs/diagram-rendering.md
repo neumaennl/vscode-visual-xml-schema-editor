@@ -107,7 +107,7 @@ The type text is read from the schema object. It gets suffixes for content and d
 
 **Inline types.** An anonymous complex or simple type is not a node of its own. Its content is merged into the element: the compositors of the type become children of the element, and its documentation is shown if the element has none (see [Known issues](known-issues.md#inline-types-have-no-node-of-their-own)).[^schema-processors]
 
-**Children.** Complex types, elements with an inline complex type and extensions get their compositor (`sequence`, `choice` or `all`) or group reference as a child. A compositor's children are its elements, then its group references, then nested `choice`s, then nested `sequence`s. This order is fixed and not the order of the schema (see [Known issues](known-issues.md#particles-are-not-shown-in-document-order)). A restriction of complex content shows no children (see [Known issues](known-issues.md#restricted-complex-content-is-shown-without-content)).[^schema-processors]
+**Children.** Complex types and elements with an inline complex type get their compositor (`sequence`, `choice` or `all`) or group reference as a child; with complex content, it is the one of the extension or restriction. A compositor's children are its elements, then its group references, then nested `choice`s, then nested `sequence`s. This order is fixed and not the order of the schema (see [Known issues](known-issues.md#particles-are-not-shown-in-document-order)).[^schema-processors]
 
 **References are not expanded.** An element with `type="Address"` has no children, even if `Address` is a complex type with content; the content is only shown at the type's own node. Group references are not expanded either. So there are no cycles, even for recursive schemas.
 

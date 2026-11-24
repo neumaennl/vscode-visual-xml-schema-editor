@@ -7,7 +7,7 @@ import { DiagramItem } from "./DiagramItem";
 import type { ComplexTypeLike, ContentTypeLike, GroupDefLike } from "./DiagramTypes";
 import { DiagramItemType, DiagramItemGroupType } from "./DiagramTypes";
 import { generateSchemaId, parseSchemaId, SchemaNodeType, UNNAMED_NODE_NAME } from "../../shared/idStrategy";
-import { anonymousTypeId, getTargetNamespacePrefixes } from "../../shared/schemaUtils";
+import { anonymousTypeId, getContentContainer, getTargetNamespacePrefixes } from "../../shared/schemaUtils";
 import { ownComponentName } from "../../shared/qNames";
 import type { localElement } from "../../shared/generated/localElement";
 import type { explicitGroup } from "../../shared/generated/explicitGroup";
@@ -39,29 +39,7 @@ export function processAnonymousTypes(item: DiagramItem, element: { complexType?
  * @param complexType - Complex type definition from schema
  */
 export function processComplexType(parent: DiagramItem, complexType: ComplexTypeLike): void {
-  if (complexType.complexContent) {
-    processDerivation(parent, complexType.complexContent);
-  }
-  if (complexType.simpleContent) {
-    processDerivation(parent, complexType.simpleContent);
-  }
-  processParticles(parent, complexType);
-}
-
-/**
- * Processes the extension or restriction of the complexContent or simpleContent of a complex type.
- *
- * @param parent - Diagram item of the complex type
- * @param content - The complexContent or simpleContent
- */
-function processDerivation(
-  parent: DiagramItem,
-  content: { extension?: ContentTypeLike; restriction?: ContentTypeLike }
-): void {
-  // The particles of a restriction are not shown yet (see the known issue about restricted complex content)
-  if (content.extension) {
-    processParticles(parent, content.extension);
-  }
+  processParticles(parent, getContentContainer<ContentTypeLike>(complexType));
 }
 
 /**

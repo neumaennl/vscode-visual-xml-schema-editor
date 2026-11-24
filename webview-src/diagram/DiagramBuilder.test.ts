@@ -135,6 +135,23 @@ describe("DiagramBuilder", () => {
       }
     );
 
+    test.each(["extension", "restriction"])(
+      "should show the compositor and elements of the %s of complex content, with the IDs that the extension host uses",
+      (derivation) => {
+        const nodes = topLevelNodes(
+          `<xs:complexType name="T"><xs:complexContent><xs:${derivation} base="B">
+  <xs:sequence><xs:element name="x" type="xs:string"/></xs:sequence>
+</xs:${derivation}></xs:complexContent></xs:complexType>`
+        );
+
+        const sequence = nodes[0]!.childElements[0]!;
+        expect(sequence.id).toBe("/complexType:T/group:sequence[0]");
+        expect(sequence.childElements.map((child) => child.id)).toEqual([
+          "/complexType:T/group:sequence[0]/element:x[0]",
+        ]);
+      }
+    );
+
     test("should handle schema without targetNamespace", () => {
       const diagram = builder.buildFromSchema(webviewSchemaWith(`<xs:element name="Test"/>`));
 

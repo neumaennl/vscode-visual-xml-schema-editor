@@ -130,14 +130,6 @@ Effort:
 - **Description:** XML Schema requires that each element of a document matches exactly one particle of its content model without looking ahead ("Unique Particle Attribution"). `<xs:choice><xs:element name="a"/><xs:element name="a"/></xs:choice>`, two `a` in an `xs:all`, and a sequence `a?, a` violate it, even if both `a` have the same type. The editor does not check it, so adding or renaming elements and changing their occurrences can produce such content models. The fix is one more constraint in the check of the result (see [ADR 003](architecture/003-validators-check-executors-assume.md)). It waits for the move to xmlbind-ts 3, because the check needs the order of the children of a sequence, which xmlbind-ts 2 does not keep reliably.
 - **GitHub issue:** [#444](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/444)
 
-## Restricted complex content is shown without content
-
-- **Location:** `webview-src/diagram/SchemaProcessors.ts` (`processDerivation()`)
-- **Severity:** Medium
-- **Effort:** M
-- **Description:** For `xs:complexContent`, the compositors of an `xs:extension` become children of the type, but those of an `xs:restriction` do not. A complex type that restricts another one with complex content is therefore shown without children; its attributes are read like those of an extension. The fix is to process the compositors of restrictions of complex content like those of extensions (see [Diagram rendering](diagram-rendering.md#from-schema-to-diagram-items)).
-- **GitHub issue:** [#276](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/276)
-
 ## Removing a simple or complex type does not check for references
 
 - **Location:** `src/commandValidators/simpleTypeValidators.ts` (`validateRemoveSimpleType()`), `src/commandValidators/complexTypeValidators.ts` (`validateRemoveComplexType()`), `src/commandValidators/elementValidators.ts` (`validateRemoveElement()`), `src/commandValidators/attributeValidators.ts` (`validateRemoveAttribute()`)

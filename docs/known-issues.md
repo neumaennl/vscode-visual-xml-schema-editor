@@ -122,6 +122,14 @@ Effort:
 - **Description:** The names for dropped elements and attributes are generated from the names of top-level schema constructs only. If the drop target already contains a local element `Element1` or a local attribute `Attribute1`, the drop generates the same name. A second `Attribute1`, or an `Element1` of another type, is rejected; an `Element1` of the same type is added, which is allowed in a sequence but not in a choice (see [Unique Particle Attribution is not checked](#unique-particle-attribution-is-not-checked)). After a rejection, a second drop succeeds, because the failed name stays reserved until the next schema update. The fix is to also skip the names already used in the drop target (see [Drag and drop](drag-and-drop.md#defaults)).
 - **GitHub issue:** [#430](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/430)
 
+## Attribute references are not shown
+
+- **Location:** `webview-src/diagram/typeAccessors.ts` (`getAttributes()`), `webview-src/propertiesPanel/propertiesPanelDom.ts` (`createAttributeList()`), `webview-src/propertiesPanel/propertiesPanelXmlPreview.ts`
+- **Severity:** Medium
+- **Effort:** S
+- **Description:** The properties panel only shows the named attributes of a complex type or of the schema. An attribute reference such as `<xs:attribute ref="xml:lang"/>` is missing from the attribute list, and the XML tab leaves it out of the fragment without any hint, so the fragment looks complete although it is not. The fix is to show a reference with the attribute it refers to, which belongs to showing and editing references in general.
+- **GitHub issue:** [#276](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/276)
+
 ## Unique Particle Attribution is not checked
 
 - **Location:** `src/schemaConstraints/`

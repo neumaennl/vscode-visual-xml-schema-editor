@@ -3,8 +3,9 @@ type: Reference
 title: Commands
 description: The edit commands - payload fields, the rules the validators enforce, what the executors change in the schema, and where the webview sends them.
 tags: [commands, payload, validation, reference]
-status: draft
+status: stable
 generated: { by: human:neumaennl, at: 2026-11-24T10:38:26Z }
+verified: { by: human:neumaennl, at: 2026-11-24T17:27:00Z }
 sources:
   - id: commands
     resource: ../shared/commands/index.ts

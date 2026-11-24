@@ -3,8 +3,9 @@ type: Architecture Decision Record
 title: "ADR 007: Diagram items reference their schema objects"
 description: The decision that the items of the diagram reference the schema objects they show instead of copying values from them, that the webview reads these objects through accessor modules, and that the properties panel only reads them, with the reasons, the consequences and when to review it.
 tags: [adr, architecture, webview, diagram, properties-panel]
-status: draft
+status: stable
 generated: { by: human:neumaennl, at: 2026-11-24T16:37:13Z }
+verified: { by: human:neumaennl, at: 2026-11-24T17:27:00Z }
 sources:
   - id: diagram-item
     resource: ../../webview-src/diagram/DiagramItem.ts

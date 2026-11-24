@@ -3,8 +3,9 @@ type: Concept
 title: UX concept
 description: The interaction model of the editor - which surface adds, edits and deletes what, how facets work, and how the properties panel behaves - with a list of what the current editor does not implement yet.
 tags: [ux, editor, palette, properties-panel, facets, context-menu, toolbar]
-status: draft
+status: stable
 generated: { by: human:neumaennl, at: 2026-11-24T15:38:45Z }
+verified: { by: human:neumaennl, at: 2026-11-24T17:27:00Z }
 sources:
   - id: palette-items
     resource: ../webview-src/palette/paletteEntries.ts

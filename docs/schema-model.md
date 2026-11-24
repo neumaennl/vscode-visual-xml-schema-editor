@@ -3,8 +3,9 @@ type: Data Model
 title: Schema model
 description: The object model of an XSD file - classes generated from the XSD meta-schema, XML binding with xmlbind-ts, and the path-based IDs that identify schema nodes.
 tags: [schema-model, data-model, xmlbind-ts, code-generation, ids, navigation]
-status: draft
+status: stable
 generated: { by: human:neumaennl, at: 2026-11-24T14:23:17Z }
+verified: { by: human:neumaennl, at: 2026-11-24T17:27:00Z }
 sources:
   - id: manifest
     resource: ../package.json

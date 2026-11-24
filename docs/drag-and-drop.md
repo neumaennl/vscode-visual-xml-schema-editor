@@ -3,8 +3,9 @@ type: Process
 title: Drag and drop
 description: How a schema construct is dragged from the palette onto a diagram node - the responsibilities of palette, canvas, drag and drop and extension host, the event flow, which schema construct can be dropped on which node with which command, and the generated defaults.
 tags: [drag-and-drop, palette, canvas, drop-command-factory, webview]
-status: draft
+status: stable
 generated: { by: human:neumaennl, at: 2026-11-23T19:31:58Z }
+verified: { by: human:neumaennl, at: 2026-11-24T17:27:00Z }
 sources:
   - id: palette-items
     resource: ../webview-src/palette/paletteEntries.ts

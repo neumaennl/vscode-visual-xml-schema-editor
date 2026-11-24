@@ -3,9 +3,8 @@ type: Known Issues
 title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
-status: stable
-generated: { by: human:neumaennl, at: 2026-11-24T16:36:51Z }
-verified: { by: human:neumaennl, at: 2026-11-24T17:27:00Z }
+status: draft
+generated: { by: human:neumaennl, at: 2026-11-24T18:51:56Z }
 ---
 
 # Purpose
@@ -213,7 +212,7 @@ Effort:
 - **Location:** `shared/qNames.ts` (`ownComponentName()`) and its callers in `src/schemaReferences/`, `src/schemaConstraints/`, `src/commandValidators/commonValidators.ts`, `webview-src/diagram/SchemaProcessors.ts` and `webview-src/propertiesPanel/propertiesPanelTypeReferences.ts`
 - **Severity:** Medium
 - **Effort:** M
-- **Description:** In XML Schema, a QName without a prefix in `type`, `ref`, `base`, `itemType` or `memberTypes` belongs to the default namespace (`xmlns="…"`), or to no namespace if there is none. The editor counts it as a name of the schema itself in every case. That is only right if the default namespace is the target namespace, or if there is neither. With a target namespace and no default namespace, `type="Address"` means `{no namespace}Address`; with the XSD namespace as the default namespace, as in `exampleFiles/example.xsd`, `ref="Address"` means `xs:Address`. The reference checks before a removal, the renaming of references, the constraints of XML Schema, the labels of references and the check of type references can therefore take such a name for one of the schema's own components, and a rename can rewrite it. The fix is to resolve an unprefixed name with the default namespace and compare it with the target namespace; xmlbind-ts 2 only gives the declarations of the schema element, which covers nearly all schemas.
+- **Description:** In XML Schema, a QName without a prefix in `type`, `ref`, `base`, `itemType` or `memberTypes` belongs to the default namespace (`xmlns="…"`), or to no namespace if there is none. The editor counts it as a name of the schema itself in every case. That is only right if the default namespace is the target namespace, or if there is neither. With a target namespace and no default namespace, `type="Address"` means `{no namespace}Address`; with the XSD namespace as the default namespace, `ref="Address"` means `xs:Address`. The reference checks before a removal, the renaming of references, the constraints of XML Schema, the labels of references and the check of type references can therefore take such a name for one of the schema's own components, and a rename can rewrite it. The fix is to resolve an unprefixed name with the default namespace and compare it with the target namespace; xmlbind-ts 2 only gives the declarations of the schema element, which covers nearly all schemas.
 - **GitHub issue:** [#448](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/448) (step 7)
 
 ## Mixed content toggle ignores simple content, `complexContent` and the base type

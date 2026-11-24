@@ -83,7 +83,7 @@ const BUILD_ORDER_TYPE: SchemaCommand[] = [
     payload: {
       parentId: "/complexType:OrderType/group:sequence[0]/element:items/anonymousComplexType[0]/group:sequence[0]",
       elementName: "item",
-      elementType: "lengthRestrictionType",
+      elementType: "tns:lengthRestrictionType",
       minOccurs: 1,
       maxOccurs: "unbounded",
     },
@@ -93,7 +93,7 @@ const BUILD_ORDER_TYPE: SchemaCommand[] = [
     type: "addElement",
     payload: {
       parentId: "/complexType:OrderType/group:sequence[0]",
-      ref: "example",
+      ref: "tns:example",
       minOccurs: 0,
     },
   },
@@ -112,7 +112,7 @@ const BUILD_ORDER_TYPE: SchemaCommand[] = [
     payload: {
       parentId: "/schema",
       elementName: "order",
-      elementType: "OrderType",
+      elementType: "tns:OrderType",
     },
   },
   // Step 10: add documentation to orderId
@@ -151,10 +151,10 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
    * - `orderId`  `xs:string`,  `minOccurs=1`, `maxOccurs=1`
    * - `qty`      `xs:integer`, `minOccurs=0`, `maxOccurs=1`
    * - `items`    no type   , `minOccurs=1`, `maxOccurs="unbounded"`
-   *              → anonymous complexType → sequence → item (`lengthRestricitionType`, 1..*)
-   * - `example`  (ref element), `minOccurs=0`
+   *              → anonymous complexType → sequence → item (`tns:lengthRestrictionType`, 1..*)
+   * - `tns:example` (ref element), `minOccurs=0`
    * - `currency` attribute (xs:string)
-   * Plus a top-level `order` element of type `OrderType`.
+   * Plus a top-level `order` element of type `tns:OrderType`.
    * Finally adds documentation to `orderId`.
    */
   describe("builds OrderType with typed elements, an anonymous inner complexType, a reference, occurrence constraints, and an attribute", () => {
@@ -174,7 +174,7 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
       expect(topElements.length).toBe(2);
       const orderElement = topElements.find((e) => e.name === "order");
       expect(orderElement).toBeDefined();
-      expect(orderElement!.type_).toBe("OrderType");
+      expect(orderElement!.type_).toBe("tns:OrderType");
     });
 
     test("should add OrderType with a sequence of four elements", () => {
@@ -214,21 +214,21 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
       expect(itemsEl!.maxOccurs).toBe("unbounded");
       expect(itemsEl!.complexType).toBeDefined();
 
-      // items anonymous complexType → sequence → item (lengthRestrictionType, 1..*)
+      // items anonymous complexType → sequence → item (tns:lengthRestrictionType, 1..*)
       const itemsAnonCT = itemsEl!.complexType!;
       expect(itemsAnonCT.sequence).toBeDefined();
       const innerElements = itemsAnonCT.sequence!.element ?? [];
       expect(innerElements.length).toBe(1);
       const itemEl = innerElements.find((e) => e.name === "item");
       expect(itemEl).toBeDefined();
-      expect(itemEl!.type_).toBe("lengthRestrictionType");
+      expect(itemEl!.type_).toBe("tns:lengthRestrictionType");
       expect(itemEl!.minOccurs).toBe(1);
       expect(itemEl!.maxOccurs).toBe("unbounded");
     });
 
     test("should add the reference to example and the attribute currency", () => {
       // example ref element, minOccurs=0
-      const exampleRef = seqElements.find((e) => e.ref === "example");
+      const exampleRef = seqElements.find((e) => e.ref === "tns:example");
       expect(exampleRef).toBeDefined();
       expect(exampleRef!.minOccurs).toBe(0);
 
@@ -327,7 +327,7 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
       type: "addElement",
       payload: {
         parentId: "/complexType:WrapperType/group:sequence[0]",
-        ref: "example",
+        ref: "tns:example",
         minOccurs: 0,
         maxOccurs: "unbounded",
       },
@@ -335,7 +335,7 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
 
     const result: schema = runCommandExpectSuccessSchema(xml, {
       type: "addElement",
-      payload: { parentId: "/schema", elementName: "wrapper", elementType: "WrapperType" },
+      payload: { parentId: "/schema", elementName: "wrapper", elementType: "tns:WrapperType" },
     });
 
     const wrapperType = (result.complexType ?? []).find((t) => t.name === "WrapperType");
@@ -343,7 +343,7 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
 
     const refEls = wrapperType!.sequence!.element ?? [];
     expect(refEls.length).toBe(1);
-    expect(refEls[0]!.ref).toBe("example");
+    expect(refEls[0]!.ref).toBe("tns:example");
     expect(refEls[0]!.name).toBeUndefined();
     expect(refEls[0]!.type_).toBeUndefined();
     expect(refEls[0]!.minOccurs).toBe(0);

@@ -15,9 +15,6 @@ import { emptySchemaXml, schemaXmlWith } from "../../shared/__tests__/schemaTest
 /** A list simpleType `Codes` of tokens. */
 const LIST_TYPE = `<xs:simpleType name="Codes"><xs:list itemType="xs:token"/></xs:simpleType>`;
 
-/** A union simpleType `Size` of integers and tokens. */
-const UNION_TYPE = `<xs:simpleType name="Size"><xs:union memberTypes="xs:integer xs:token"/></xs:simpleType>`;
-
 /** A simpleType `ShortCode` that restricts an inline simpleType to at most 8 characters. */
 const INLINE_BASE_TYPE = `<xs:simpleType name="ShortCode">
   <xs:restriction>
@@ -244,17 +241,6 @@ describe("Integration: SimpleType pipeline", () => {
       const codeList = (result.simpleType ?? []).find((t) => t.name === "CodeList");
 
       expect(codeList?.list?.itemType).toBe("xs:token");
-    });
-
-    test("should change only the documentation of a union simpleType", () => {
-      const result = runCommandExpectSuccessSchema(schemaXmlWith(UNION_TYPE), {
-        type: "modifySimpleType",
-        payload: { typeId: "/simpleType:Size", documentation: "A number or a word" },
-      });
-      const size = (result.simpleType ?? []).find((t) => t.name === "Size");
-
-      expect(size?.union?.memberTypes).toBe("xs:integer xs:token");
-      expect(size?.annotation?.documentation?.[0]?.value).toBe("A number or a word");
     });
 
     test("should return validation error when type ID does not exist", () => {

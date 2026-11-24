@@ -9,11 +9,12 @@ import type {
   RemoveAttributeCommand,
   ModifyAttributeCommand,
   AttributeFields,
+  AddAttributePayload,
 } from "../../shared/types.js";
 import { attribute, topLevelAttribute } from "../../shared/types.js";
 import { assumeValidated, assumptionFailed, locateValidated } from "./assumeValidated.js";
 import { parseSchemaId, SCHEMA_ROOT_ID } from "../../shared/idStrategy.js";
-import { createAnnotation, setDocumentation } from "./annotationUtils.js";
+import { createAnnotation } from "./annotationUtils.js";
 import type { AttributeContainer } from "../../shared/schemaUtils.js";
 import { getAttributeContainer } from "../../shared/schemaUtils.js";
 import { appendTo, removeFrom } from "./nodeProperties.js";
@@ -94,7 +95,10 @@ function attributesOf(parent: unknown, parentType: string): AttributeContainer {
  * @param isTopLevel - Whether the attribute is added to the schema
  * @returns New attribute instance
  */
-function createNewAttribute(fields: AttributeFields, isTopLevel: boolean): topLevelAttribute | attribute {
+function createNewAttribute(
+  fields: AttributeFields & Pick<AddAttributePayload, "documentation">,
+  isTopLevel: boolean
+): topLevelAttribute | attribute {
   const { attributeName, attributeType, ref, required, defaultValue, fixedValue, documentation } = fields;
   let newAttr: topLevelAttribute | attribute;
   if (isTopLevel) {
@@ -140,7 +144,7 @@ function updateAttributeProperties(
   changes: AttributeFields,
   topLevel: boolean
 ): void {
-  const { attributeName, attributeType, ref, required, defaultValue, fixedValue, documentation } = changes;
+  const { attributeName, attributeType, ref, required, defaultValue, fixedValue } = changes;
   if (ref !== undefined) {
     // Switching to a reference: clear name and type
     (attr as attribute).ref = ref;
@@ -166,8 +170,5 @@ function updateAttributeProperties(
   if (fixedValue !== undefined) {
     attr.fixed = fixedValue;
     attr.default_ = undefined;
-  }
-  if (documentation !== undefined) {
-    setDocumentation(attr, documentation);
   }
 }

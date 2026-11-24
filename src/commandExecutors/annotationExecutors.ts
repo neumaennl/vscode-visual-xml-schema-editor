@@ -165,20 +165,13 @@ function ensureAnnotation(node: AnnotatableNode): annotationType {
 }
 
 /**
- * Shared logic for modifying documentation and appinfo on a single `annotationType`.
- * When `documentation` is provided, all existing `xs:documentation` children are
- * replaced with a single new element containing the supplied text. When `appInfo` is provided, it
- * replaces the text of the first `xs:appinfo`, or becomes the first one.
+ * Changes the appinfo of an annotation: a new `appInfo` replaces the text of the first `xs:appinfo`, or
+ * becomes the first one. Its documentation entries are changed with the documentation commands.
  *
  * @param annotation - The annotation to change
- * @param documentation - The new documentation text, if it changes
  * @param appInfo - The new appinfo text, if it changes
  */
-function applyAnnotationModifications(annotation: annotationType, documentation?: string, appInfo?: string): void {
-  if (documentation !== undefined) {
-    annotation.documentation = [createDocumentation(documentation)];
-  }
-
+function applyAnnotationModifications(annotation: annotationType, appInfo?: string): void {
   if (appInfo !== undefined) {
     const first = annotation.appinfo?.[0];
     if (first) {
@@ -270,9 +263,8 @@ export function executeRemoveAnnotation(command: RemoveAnnotationCommand, schema
  * For the schema root use `annotationId: "/schema/annotation[N]"` to modify
  * the N-th annotation.
  *
- * When `documentation` is provided, all existing `xs:documentation` children
- * are replaced with a single new element containing the supplied text.
- * When `appInfo` is provided the first `xs:appinfo` child is created-or-updated.
+ * When `appInfo` is provided the first `xs:appinfo` child is created-or-updated. The documentation
+ * entries are changed with the documentation commands, one by one.
  *
  * @param command - The `modifyAnnotation` command to execute
  * @param schemaObj - The schema object to modify
@@ -280,25 +272,17 @@ export function executeRemoveAnnotation(command: RemoveAnnotationCommand, schema
  *   out of bounds
  */
 export function executeModifyAnnotation(command: ModifyAnnotationCommand, schemaObj: schema): void {
-  const { annotationId, documentation, appInfo } = command.payload;
+  const { annotationId, appInfo } = command.payload;
 
   const schemaAnnotationIndex = parseSchemaAnnotationId(annotationId);
   if (schemaAnnotationIndex !== null) {
     const annotations = schemaObj.annotation ?? [];
-    applyAnnotationModifications(
-      schemaAnnotationAt(annotations, schemaAnnotationIndex, annotationId),
-      documentation,
-      appInfo
-    );
+    applyAnnotationModifications(schemaAnnotationAt(annotations, schemaAnnotationIndex, annotationId), appInfo);
     return;
   }
 
   const node = findAnnotatableNode(schemaObj, annotationId);
-  applyAnnotationModifications(
-    assumeValidated(node.annotation, `Annotation of ${annotationId}`),
-    documentation,
-    appInfo
-  );
+  applyAnnotationModifications(assumeValidated(node.annotation, `Annotation of ${annotationId}`), appInfo);
 }
 
 // ===== Documentation Executors =====

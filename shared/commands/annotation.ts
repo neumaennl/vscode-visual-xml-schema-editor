@@ -46,8 +46,6 @@ export interface RemoveAnnotationCommand extends BaseCommand<RemoveAnnotationPay
 export interface ModifyAnnotationPayload {
   /** ID of the annotation to modify */
   annotationId: string;
-  /** New documentation content (optional) */
-  documentation?: string;
   /** New application information (optional) */
   appInfo?: string;
 }

@@ -44,13 +44,12 @@ function commandsForNode(id: string): SchemaCommand[] {
     case SchemaNodeType.Element:
       return [
         { type: "removeElement", payload: { elementId: id } },
-        { type: "modifyElement", payload: { elementId: id, documentation: "Changed" } },
+        { type: "modifyElement", payload: { elementId: id, elementName: `Renamed${name!}` } },
       ];
     case SchemaNodeType.ComplexType:
     case SchemaNodeType.AnonymousComplexType:
       return [
         { type: "removeComplexType", payload: { typeId: id } },
-        { type: "modifyComplexType", payload: { typeId: id, documentation: "Changed" } },
         { type: "modifyComplexType", payload: { typeId: id, baseType: "xs:anyType" } },
         // The test schemas derive only by extension, so a restriction is always a change
         { type: "modifyComplexType", payload: { typeId: id, derivationKind: "restriction" } },
@@ -59,7 +58,6 @@ function commandsForNode(id: string): SchemaCommand[] {
     case SchemaNodeType.AnonymousSimpleType: {
       const commands: SchemaCommand[] = [
         { type: "removeSimpleType", payload: { typeId: id } },
-        { type: "modifySimpleType", payload: { typeId: id, documentation: "Changed" } },
         { type: "modifySimpleType", payload: { typeId: id, restrictions: { maxLength: 99 } } },
       ];
       // Only named simpleTypes can be renamed
@@ -73,13 +71,12 @@ function commandsForNode(id: string): SchemaCommand[] {
       return [
         { type: "removeGroup", payload: { groupId: id } },
         { type: "modifyGroup", payload: { groupId: id, minOccurs: 0 } },
-        { type: "modifyGroup", payload: { groupId: id, documentation: "Changed" } },
       ];
     case SchemaNodeType.AttributeGroup:
     case SchemaNodeType.AttributeGroupRef:
       return [
         { type: "removeAttributeGroup", payload: { groupId: id } },
-        { type: "modifyAttributeGroup", payload: { groupId: id, documentation: "Changed" } },
+        { type: "modifyAttributeGroup", payload: { groupId: id, groupName: `Renamed${name!}` } },
       ];
     default:
       return [];
@@ -102,7 +99,7 @@ function commandsForItem(item: DiagramItem): SchemaCommand[] {
     { type: "addDocumentation", payload: { targetId: item.id, content: "Added" } },
     ...getDocumentationAnnotations(item).flatMap((annotation): SchemaCommand[] => [
       { type: "removeAnnotation", payload: { annotationId: annotation.id } },
-      { type: "modifyAnnotation", payload: { annotationId: annotation.id, documentation: "Changed" } },
+      { type: "modifyAnnotation", payload: { annotationId: annotation.id, appInfo: "Changed" } },
       { type: "addDocumentation", payload: { targetId: annotation.id, content: "Added" } },
       ...annotation.documentationEntries.flatMap((entry): SchemaCommand[] => [
         { type: "removeDocumentation", payload: { documentationId: entry.id } },
@@ -137,7 +134,7 @@ function commandsForSchemaContent(schemaObj: schema): SchemaCommand[] {
     ]),
     ...attributeIds.flatMap((attributeId): SchemaCommand[] => [
       { type: "removeAttribute", payload: { attributeId } },
-      { type: "modifyAttribute", payload: { attributeId, documentation: "Changed" } },
+      { type: "modifyAttribute", payload: { attributeId, defaultValue: "changed" } },
     ]),
   ];
 }

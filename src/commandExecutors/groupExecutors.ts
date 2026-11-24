@@ -10,13 +10,12 @@ import type {
   RemoveGroupCommand,
   ModifyGroupCommand,
   ContentModel,
-  annotationType,
 } from "../../shared/types.js";
 import { namedGroup, allType, simpleExplicitGroup, groupRef } from "../../shared/types.js";
 import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
 import { assumeValidated, assumptionFailed, locateValidated } from "./assumeValidated.js";
 import { appendTo, assignDefined, removeFrom } from "./nodeProperties.js";
-import { createAnnotation, setDocumentation } from "./annotationUtils.js";
+import { createAnnotation } from "./annotationUtils.js";
 import { renameOwnReferences } from "../schemaReferences/referenceRewrites.js";
 
 // ===== Element Group Executors =====
@@ -101,20 +100,13 @@ export function executeRemoveGroup(command: RemoveGroupCommand, schemaObj: schem
  * @throws An {@link Error} if the group or its parent is not found
  */
 export function executeModifyGroup(command: ModifyGroupCommand, schemaObj: schema): void {
-  const { groupId, groupName, contentModel, documentation, ref, minOccurs, maxOccurs } = command.payload;
+  const { groupId, groupName, contentModel, ref, minOccurs, maxOccurs } = command.payload;
   const parsed = parseSchemaId(groupId);
 
   if (parsed.nodeType === SchemaNodeType.Group && parsed.parentId) {
     const location = locateValidated(schemaObj, groupId);
-    const compositor = location.parent as {
-      minOccurs?: number;
-      maxOccurs?: number | "unbounded";
-      annotation?: annotationType;
-    };
+    const compositor = location.parent as { minOccurs?: number; maxOccurs?: number | "unbounded" };
     assignDefined(compositor, { minOccurs, maxOccurs });
-    if (documentation !== undefined) {
-      setDocumentation(compositor, documentation);
-    }
     return;
   }
 
@@ -126,9 +118,6 @@ export function executeModifyGroup(command: ModifyGroupCommand, schemaObj: schem
       `Group reference ${groupId}`
     );
     assignDefined(target, { ref, minOccurs, maxOccurs });
-    if (documentation !== undefined) {
-      setDocumentation(target, documentation);
-    }
     return;
   }
 
@@ -141,9 +130,6 @@ export function executeModifyGroup(command: ModifyGroupCommand, schemaObj: schem
   if (groupName !== undefined) {
     renameOwnReferences("group", grp.name, groupName, schemaObj);
     grp.name = groupName;
-  }
-  if (documentation !== undefined) {
-    setDocumentation(grp, documentation);
   }
   if (contentModel !== undefined) {
     applyGroupContentModel(grp, contentModel);

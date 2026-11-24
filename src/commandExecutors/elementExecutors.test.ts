@@ -240,14 +240,6 @@ describe("Element Executors", () => {
       expect(schemaObj.complexType?.[0]!.sequence?.element?.[0]!.ref).toBe("customer");
     });
 
-    test("should add documentation to element", () => {
-      const schemaObj = schemaWith(`<xs:element name="person" type="xs:string"/>`);
-
-      modifyElement(schemaObj, { elementId: "/element:person", documentation: "Employee information" });
-
-      expect(schemaObj.element?.[0]!.annotation?.documentation?.[0]!.value).toBe("Employee information");
-    });
-
     test.each([
       ["the name", `<xs:element name="phone" type="xs:string"/>`, { elementName: "mobile" }, { name: "mobile" }],
       [
@@ -296,7 +288,6 @@ describe("Element Executors", () => {
         elementId: "/element:person",
         elementName: "employee",
         elementType: "xs:int",
-        documentation: "Employee record",
       });
 
       const reparsed = unmarshal(schema, marshal(schemaObj));

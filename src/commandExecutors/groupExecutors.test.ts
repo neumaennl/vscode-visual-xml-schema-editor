@@ -209,22 +209,7 @@ describe("Group Executors", () => {
       expect(grp.all).toBeUndefined();
     });
 
-    test("should update the documentation of a group", () => {
-      const schemaObj = schemaWith(`<xs:group name="DocGroup">
-  <xs:sequence/>
-</xs:group>`);
-
-      modifyGroup(schemaObj, {
-        groupId: "/group:DocGroup",
-        documentation: "Updated documentation",
-      });
-
-      const grp = (schemaObj.group ?? [])[0]!;
-      expect(grp.annotation).toBeDefined();
-      expect(grp.annotation!.documentation![0]!.value).toBe("Updated documentation");
-    });
-
-    test("should update name, content model, and documentation together", () => {
+    test("should update the name and the content model together", () => {
       const schemaObj = schemaWith(`<xs:group name="OriginalGroup">
   <xs:sequence/>
 </xs:group>`);
@@ -233,14 +218,12 @@ describe("Group Executors", () => {
         groupId: "/group:OriginalGroup",
         groupName: "UpdatedGroup",
         contentModel: "all",
-        documentation: "New doc",
       });
 
       const grp = (schemaObj.group ?? [])[0]!;
       expect(grp.name).toBe("UpdatedGroup");
       expect(grp.all).toBeDefined();
       expect(grp.sequence).toBeUndefined();
-      expect(grp.annotation!.documentation![0]!.value).toBe("New doc");
     });
 
     test("should leave unchanged properties untouched", () => {
@@ -404,17 +387,6 @@ describe("Group Executors", () => {
         const ref = ((schemaObj.complexType ?? [])[0]!.sequence!.group ?? [])[0]!;
         expect(ref.minOccurs).toBe(0);
         expect(ref.maxOccurs).toBe("unbounded");
-      });
-
-      test("should set documentation annotation on a group reference", () => {
-        const schemaObj = schemaWith(PERSON_TYPE_WITH_GROUP_REF);
-
-        modifyGroup(schemaObj, {
-          groupId: "/complexType:PersonType/group:sequence[0]/groupRef:PersonGroup[0]",
-          documentation: "Updated ref annotation",
-        });
-
-        expect(firstGroupRefDocumentation(schemaObj)).toEqual(["Updated ref annotation"]);
       });
 
       test("should modify a direct group ref on a complexType", () => {

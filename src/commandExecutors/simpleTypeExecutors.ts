@@ -30,7 +30,7 @@ import {
 import { isSchemaRoot } from "../../shared/schemaUtils.js";
 import { assumeValidated } from "./assumeValidated.js";
 import { locateModifiedType, placeNewType, removeType } from "./typeTargets.js";
-import { createAnnotation, setDocumentation } from "./annotationUtils.js";
+import { createAnnotation } from "./annotationUtils.js";
 
 /**
  * Executes an `addSimpleType` command.
@@ -105,8 +105,8 @@ function buildRestriction(base: string, facets?: RestrictionFacets): restriction
  * Works for both `topLevelSimpleType` and `localSimpleType`.
  *
  * @param simpleType - The simpleType object to update
- * @param updates - The new base type, list item type, union member types, restriction facets and
- *   documentation; each is optional, and without the body fields the body stays as it is
+ * @param updates - The new base type, list item type, union member types and restriction facets; each is
+ *   optional, and without them the body stays as it is
  */
 function updateTypeContents(
   simpleType: { restriction?: restrictionType; list?: listType; union?: unionType; annotation?: annotationType },
@@ -115,20 +115,15 @@ function updateTypeContents(
     listItemType?: string;
     unionMemberTypes?: string[];
     restrictions?: RestrictionFacets;
-    documentation?: string;
   }
 ): void {
-  const { baseType, listItemType, unionMemberTypes, restrictions, documentation } = updates;
+  const { baseType, listItemType, unionMemberTypes, restrictions } = updates;
 
   // Without body fields, the body stays as it is
   const body = { baseType, listItemType, unionMemberTypes, restrictions };
   const derivationKind = derivationKindOf(body);
   if (derivationKind) {
     applySimpleTypeBody(simpleType, body, derivationKind);
-  }
-
-  if (documentation !== undefined) {
-    setDocumentation(simpleType, documentation);
   }
 }
 

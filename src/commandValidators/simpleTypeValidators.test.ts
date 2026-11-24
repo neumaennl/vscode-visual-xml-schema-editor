@@ -697,7 +697,7 @@ describe("Simple type rules", () => {
     },
     {
       rule: "changing an anonymous type that does not exist",
-      result: validateModify({ typeId: "/element:plain/anonymousSimpleType[0]", documentation: "Docs" }),
+      result: validateModify({ typeId: "/element:plain/anonymousSimpleType[0]", baseType: "xs:string" }),
       error: "No anonymous simpleType found in parent: /element:plain",
     },
     {

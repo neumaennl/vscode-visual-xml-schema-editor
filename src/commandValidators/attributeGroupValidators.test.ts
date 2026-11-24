@@ -617,30 +617,6 @@ describe("AttributeGroup Validators", () => {
         expect(result.error).toContain("Cannot use groupName when modifying an attribute group reference");
       });
     });
-    describe("changing only the documentation", () => {
-      test("should accept a definition without a new name", () => {
-        const command: ModifyAttributeGroupCommand = {
-          type: "modifyAttributeGroup",
-          payload: { groupId: "/attributeGroup:CommonAttrs", documentation: "Shared attributes" },
-        };
-
-        const result = validateModifyAttributeGroup(command, schemaWithAttrGroups(""));
-        expect(result.valid).toBe(true);
-      });
-
-      test("should accept a reference without a new ref", () => {
-        const command: ModifyAttributeGroupCommand = {
-          type: "modifyAttributeGroup",
-          payload: {
-            groupId: "/complexType:PersonType/attributeGroupRef:CommonAttrs[0]",
-            documentation: "Shared attributes",
-          },
-        };
-
-        const result = validateModifyAttributeGroup(command, schemaWithAttrGroups(PERSON_TYPE_WITH_COMMON_ATTRS_REF));
-        expect(result.valid).toBe(true);
-      });
-    });
 
     describe("invalid references", () => {
       test("should reject a reference ID without a parent", () => {

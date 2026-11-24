@@ -5,7 +5,6 @@
  * Success-path assertions are made against the unmarshalled schema object.
  */
 
-import type { annotationType, schema } from "../../shared/types.js";
 import {
   COMPLEX_TYPES_WITH_ANY_ATTRIBUTE,
   SCHEMA_WITH_GROUP,
@@ -320,32 +319,6 @@ describe("Integration: AttributeGroup pipeline", () => {
       });
 
       expect(result.element?.find((el) => el.name === "person")?.complexType?.group).toBeUndefined();
-    });
-
-    test.each([
-      {
-        node: "a group definition",
-        groupId: "/group:Contact",
-        read: (s: schema): annotationType | undefined => s.group?.[0]?.annotation,
-      },
-      {
-        node: "a group reference in an anonymous complex type",
-        groupId: PERSON_GROUP_REF_ID,
-        read: (s: schema): annotationType | undefined =>
-          s.element?.find((el) => el.name === "person")?.complexType?.group?.annotation,
-      },
-      {
-        node: "a compositor",
-        groupId: "/complexType:Choices/group:sequence[0]",
-        read: (s: schema): annotationType | undefined => s.complexType?.[0]?.sequence?.annotation,
-      },
-    ])("should replace the documentation of $node", ({ groupId, read }) => {
-      const result = runCommandExpectSuccessSchema(GROUP_PARTICLES, {
-        type: "modifyGroup",
-        payload: { groupId, documentation: "New" },
-      });
-
-      expect(read(result)?.documentation?.map((doc) => doc.value)).toEqual(["New"]);
     });
 
     test("should remove one of two compositors nested in a sequence", () => {

@@ -259,7 +259,7 @@ function validateCompositorChange(
   if (payload.groupName !== undefined || payload.contentModel !== undefined || payload.ref !== undefined) {
     return {
       valid: false,
-      error: "Compositor groups only support minOccurs, maxOccurs, or documentation updates",
+      error: "Compositor groups only support minOccurs and maxOccurs updates",
     };
   }
   // XML Schema allows no occurrences on the compositor of a group definition
@@ -278,8 +278,8 @@ function validateCompositorChange(
 }
 
 /**
- * Validates the changes of a `modifyGroup` command to a group reference. Documentation is allowed on
- * group references, through their annotation.
+ * Validates the changes of a `modifyGroup` command to a group reference: a new `ref` must name a group
+ * definition, and the occurrences must be valid.
  *
  * @param payload - The payload of the command
  * @param schemaObj - The schema
@@ -290,7 +290,7 @@ function validateReferenceChange(payload: ModifyGroupCommand["payload"], schemaO
     return {
       valid: false,
       error:
-        "Cannot use groupName or contentModel when modifying a group reference — use ref, minOccurs, maxOccurs, or documentation instead",
+        "Cannot use groupName or contentModel when modifying a group reference — use ref, minOccurs or maxOccurs instead",
     };
   }
   if (payload.ref !== undefined) {
@@ -320,7 +320,7 @@ function validateDefinitionChange(
     return {
       valid: false,
       error:
-        "Cannot use ref, minOccurs, or maxOccurs when modifying a group definition — use groupName, contentModel, or documentation instead",
+        "Cannot use ref, minOccurs, or maxOccurs when modifying a group definition — use groupName or contentModel instead",
     };
   }
   const { groupName } = payload;

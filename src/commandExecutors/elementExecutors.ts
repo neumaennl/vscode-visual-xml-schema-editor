@@ -14,7 +14,7 @@ import { topLevelElement, localElement, narrowMaxMin } from "../../shared/types.
 import { assumeValidated, assumptionFailed, locateValidated } from "./assumeValidated.js";
 import { parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy.js";
 import { renameOwnReferences } from "../schemaReferences/referenceRewrites.js";
-import { createAnnotation, setDocumentation } from "./annotationUtils.js";
+import { createAnnotation } from "./annotationUtils.js";
 import { appendTo, removeFrom } from "./nodeProperties.js";
 import { identifyChild } from "../commandUtils.js";
 
@@ -173,8 +173,7 @@ function setOccurrences(
  * @param parentType - Type of the parent container
  */
 function updateElementProperties(element: AnyElement, changes: ElementChanges, parentType: string): void {
-  const { elementName, elementType, ref, minOccurs, maxOccurs, documentation, nillable, abstract, default_, fixed } =
-    changes;
+  const { elementName, elementType, ref, minOccurs, maxOccurs, nillable, abstract, default_, fixed } = changes;
   if (ref !== undefined) {
     // Switching to a reference: clear name and type
     (element as localElement).ref = ref;
@@ -225,9 +224,5 @@ function updateElementProperties(element: AnyElement, changes: ElementChanges, p
   }
   if (fixed) {
     valueHolder.default_ = undefined;
-  }
-
-  if (documentation !== undefined) {
-    setDocumentation(element, documentation);
   }
 }

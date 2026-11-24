@@ -115,12 +115,12 @@ const BUILD_ORDER_TYPE: SchemaCommand[] = [
       elementType: "OrderType",
     },
   },
-  // Step 10: add inline documentation to orderId
+  // Step 10: add documentation to orderId
   {
-    type: "modifyElement",
+    type: "addDocumentation",
     payload: {
-      elementId: "/complexType:OrderType/group:sequence[0]/element:orderId",
-      documentation: "Unique identifier for the order",
+      targetId: "/complexType:OrderType/group:sequence[0]/element:orderId",
+      content: "Unique identifier for the order",
     },
   },
 ];
@@ -155,7 +155,7 @@ describe("Integration: chained editing pipeline on example.xsd", () => {
    * - `example`  (ref element), `minOccurs=0`
    * - `currency` attribute (xs:string)
    * Plus a top-level `order` element of type `OrderType`.
-   * Finally modifies `orderId` to carry inline documentation.
+   * Finally adds documentation to `orderId`.
    */
   describe("builds OrderType with typed elements, an anonymous inner complexType, a reference, occurrence constraints, and an attribute", () => {
     let result: schema;

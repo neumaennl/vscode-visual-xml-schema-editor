@@ -83,8 +83,6 @@ export interface ModifyComplexTypePayload {
   derivationKind?: ComplexTypeDerivationKind;
   /** New mixed content flag (optional) */
   mixed?: boolean;
-  /** New documentation (optional) */
-  documentation?: string;
 }
 
 /**

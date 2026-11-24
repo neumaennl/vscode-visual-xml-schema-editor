@@ -10,7 +10,6 @@ import type {
   AddAttributeGroupCommand,
   RemoveAttributeGroupCommand,
   ModifyAttributeGroupCommand,
-  annotationType,
 } from "../../shared/types.js";
 import { schema } from "../../shared/types.js";
 import {
@@ -66,9 +65,6 @@ const TWO_REFS = `<xs:complexType name="T">
     <xs:attributeGroup ref="OtherAttrs"/>
   </xs:complexType>`;
 
-/** An annotation with application information and a documentation entry. */
-const ANNOTATION = `<xs:annotation><xs:appinfo>tool data</xs:appinfo><xs:documentation>Old</xs:documentation></xs:annotation>`;
-
 /**
  * Returns the names that the attribute group references of the complexType `T` refer to.
  *
@@ -91,16 +87,6 @@ const COMMON_ATTRS_REF = `<xs:attributeGroup ref="CommonAttrs"/>`;
  */
 function complexTypeT(schemaObj: schema): topLevelComplexType {
   return (schemaObj.complexType ?? []).find((ct) => ct.name === "T")!;
-}
-
-/**
- * Asserts that an annotation has the single documentation `New` and still its one appinfo.
- *
- * @param annotation - The annotation
- */
-function expectNewDocumentationAndKeptAppinfo(annotation: annotationType | undefined): void {
-  expect((annotation?.documentation ?? []).map((d) => d.value)).toEqual(["New"]);
-  expect(annotation?.appinfo ?? []).toHaveLength(1);
 }
 
 describe("AttributeGroup Executors", () => {
@@ -277,32 +263,6 @@ describe("AttributeGroup Executors", () => {
         expect((schemaObj.attributeGroup ?? [])[0]!.name).toBe("NewName");
       });
 
-      test("should update documentation of an attribute group", () => {
-        const schemaObj = schemaWith(`<xs:attributeGroup name="DocGroup"/>`);
-
-        modifyAttributeGroup(schemaObj, {
-          groupId: "/attributeGroup:DocGroup",
-          documentation: "New documentation",
-        });
-
-        const ag = (schemaObj.attributeGroup ?? [])[0]!;
-        expect(ag.annotation?.documentation?.[0]!.value).toBe("New documentation");
-      });
-
-      test("should update name and documentation together", () => {
-        const schemaObj = schemaWith(`<xs:attributeGroup name="OldGroup"/>`);
-
-        modifyAttributeGroup(schemaObj, {
-          groupId: "/attributeGroup:OldGroup",
-          groupName: "UpdatedGroup",
-          documentation: "Updated docs",
-        });
-
-        const ag = (schemaObj.attributeGroup ?? [])[0]!;
-        expect(ag.name).toBe("UpdatedGroup");
-        expect(ag.annotation?.documentation?.[0]!.value).toBe("Updated docs");
-      });
-
       test("should leave unchanged properties untouched", () => {
         const schemaObj = schemaWith(`<xs:attributeGroup name="StableGroup"/>`);
 
@@ -323,19 +283,6 @@ describe("AttributeGroup Executors", () => {
 
         const ct = (schemaObj.complexType ?? [])[0]!;
         expect((ct.attributeGroup ?? [])[0]!.ref).toBe("AttrsB");
-      });
-
-      test("should set documentation annotation on an attribute group reference", () => {
-        const schemaObj = readTestSchema(PERSON_TYPE_WITH_REF_XSD);
-
-        modifyAttributeGroup(schemaObj, {
-          groupId: "/complexType:PersonType/attributeGroupRef:CommonAttrs[0]",
-          documentation: "Ref annotation",
-        });
-
-        const ct = (schemaObj.complexType ?? [])[0]!;
-        const agRef = (ct.attributeGroup ?? [])[0]!;
-        expect(agRef.annotation?.documentation?.[0]!.value).toBe("Ref annotation");
       });
     });
   });
@@ -428,30 +375,6 @@ describe("AttributeGroup Executors", () => {
       const complexType = unmarshal(schema, marshal(schemaObj)).element![0]!.complexType!;
       expect(complexType.complexContent?.extension?.attributeGroup?.map((r) => r.ref)).toEqual(["CommonAttrs"]);
       expect(complexType.attributeGroup ?? []).toEqual([]);
-    });
-  });
-
-  describe("documentation in an existing annotation", () => {
-    test("should replace the documentation of a definition and keep its appinfo", () => {
-      const schemaObj = schemaWith(`<xs:attributeGroup name="CommonAttrs">${ANNOTATION}</xs:attributeGroup>`);
-
-      modifyAttributeGroup(schemaObj, { groupId: "/attributeGroup:CommonAttrs", documentation: "New" });
-
-      expectNewDocumentationAndKeptAppinfo(schemaObj.attributeGroup?.[0]!.annotation);
-    });
-
-    test("should replace the documentation of a reference and keep its appinfo", () => {
-      const schemaObj = schemaWithAttrGroups(
-        `<xs:complexType name="T"><xs:attributeGroup ref="CommonAttrs">${ANNOTATION}</xs:attributeGroup></xs:complexType>`
-      );
-
-      modifyAttributeGroup(schemaObj, {
-        groupId: "/complexType:T/attributeGroupRef:CommonAttrs[0]",
-        documentation: "New",
-      });
-
-      const t = (schemaObj.complexType ?? []).find((ct) => ct.name === "T");
-      expectNewDocumentationAndKeptAppinfo(t?.attributeGroup?.[0]!.annotation);
     });
   });
 });

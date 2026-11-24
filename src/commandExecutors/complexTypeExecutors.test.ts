@@ -245,18 +245,6 @@ describe("ComplexType Executors", () => {
       expect(topLevelComplexTypes(schemaObj)[0]!.mixed).toBe(true);
     });
 
-    test("should update documentation", () => {
-      const schemaObj = schemaWith(`
-  <xs:complexType name="DocType"><xs:sequence/></xs:complexType>`);
-
-      modifyComplexType(schemaObj, {
-        typeId: "/complexType:DocType",
-        documentation: "Updated documentation.",
-      });
-
-      expect(topLevelComplexTypes(schemaObj)[0]!.annotation!.documentation![0]!.value).toBe("Updated documentation.");
-    });
-
     test("should change the content model to choice", () => {
       const schemaObj = schemaWith(`
   <xs:complexType name="FlexType"><xs:sequence/></xs:complexType>`);
@@ -522,20 +510,6 @@ describe("ComplexType Executors", () => {
       const restriction = topLevelElements(schemaObj)[0]!.complexType!.complexContent!.restriction!;
       expect(restriction.base).toBe("PersonType");
       expect(restriction.sequence?.element?.[0]?.name).toBe("name");
-    });
-
-    test("should update documentation on an anonymous complexType", () => {
-      const schemaObj = schemaWith(`
-  <xs:element name="order"><xs:complexType><xs:sequence/></xs:complexType></xs:element>`);
-
-      modifyComplexType(schemaObj, {
-        typeId: "/element:order/anonymousComplexType[0]",
-        documentation: "Represents an order.",
-      });
-
-      expect(topLevelElements(schemaObj)[0]!.complexType!.annotation!.documentation![0]!.value).toBe(
-        "Represents an order."
-      );
     });
   });
 

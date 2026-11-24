@@ -4,7 +4,7 @@ title: Commands
 description: The edit commands - payload fields, the rules the validators enforce, what the executors change in the schema, and where the webview sends them.
 tags: [commands, payload, validation, reference]
 status: draft
-generated: { by: human:neumaennl, at: 2026-11-24T09:10:41Z }
+generated: { by: human:neumaennl, at: 2026-11-24T10:38:26Z }
 sources:
   - id: commands
     resource: ../shared/commands/index.ts
@@ -58,7 +58,7 @@ This reference describes every edit command: its payload, the rules that the val
 - **Occurrences.** `minOccurs` is a non-negative integer, `maxOccurs` a non-negative integer or `"unbounded"`, and `minOccurs` must not exceed `maxOccurs`. They are written only when given, and never on top-level elements.
 - **Names.** Names must match `isValidXmlName()` in `shared/qNames.ts`: an ASCII letter or `_`, then letters, digits, `_`, `-` or `.` (see [Known issues](known-issues.md#name-validation-is-ascii-only)). A `ref` is a QName whose prefix and local name each match it. It must name a top-level component of the schema itself, without a prefix or with a prefix of its target namespace, such as `tns:Address`; renames, the check for references before a removal and the validation of `ref` all treat these two forms alike.
 - **Types.** A type name (`elementType`, `baseType`, `listItemType`, union members) is accepted if it is a built-in XSD type with any prefix, a type defined in the schema, a type whose prefix belongs to an import, or any valid name if the schema has an include. Attribute types are not checked.
-- **`documentation` field.** Most add and modify payloads have an optional `documentation` string. `add*` writes it only if it is not empty. `modify*` replaces _all_ documentation entries of the node with one entry containing the string, even if it is empty; it does not remove the annotation. To edit single entries, use the [documentation commands](#annotations-and-documentation).
+- **`documentation` field.** Most add payloads have an optional `documentation` string, which becomes the first documentation entry of the new node if it is not empty. The modify payloads have none: documentation entries are changed one by one with the [documentation commands](#annotations-and-documentation), which keep the other entries and their languages.
 - **Insertion.** New nodes are appended to the end of their parent.
 - **Validator and executor.** The validator checks everything the executor relies on, and the executor does not check it again. Where the executor assumes something, it fails with an error such as "Element person not found, although the validator accepted the command" if the assumption does not hold ([ADR 003](architecture/003-validators-check-executors-assume.md)).
 - **Constraints on the result.** Besides its validator, every command is checked on its result: it is rejected if the schema would newly violate one of these constraints of XML Schema ([ADR 003](architecture/003-validators-check-executors-assume.md)):
@@ -118,7 +118,7 @@ A drop on an existing type or group creates a `modify*` command instead of an `a
 | `elementType`            | optional      | optional | Must be a known type (see [Conventions](#conventions)). Omit it to give the element an anonymous type later with `addSimpleType` or `addComplexType`. Setting it removes an anonymous type. |
 | `ref`                    | name or `ref` | optional | Name of a top-level element. Not allowed directly under the schema.                                                                                                                         |
 | `minOccurs`, `maxOccurs` | optional      | optional | Ignored for top-level elements.                                                                                                                                                             |
-| `documentation`          | optional      | optional | See [Conventions](#conventions).                                                                                                                                                            |
+| `documentation`          | optional      | —        | See [Conventions](#conventions).                                                                                                                                                            |
 | `nillable`               | -             | optional |                                                                                                                                                                                             |
 | `abstract`               | -             | optional | Only applied to top-level elements.                                                                                                                                                         |
 | `default_`, `fixed`      | -             | optional | Not both, and not on a reference. Setting one removes the other; an empty string removes the attribute. Turning an element into a reference also removes `default`, `fixed` and `nillable`. |
@@ -137,7 +137,7 @@ A drop on an existing type or group creates a `modify*` command instead of an `a
 | `ref`                        | name or `ref` | optional | Name of a top-level attribute. Not allowed directly under the schema.                                                                                                                                |
 | `required`                   | optional      | optional | Written as `use="required"` or `use="optional"`, only on attributes inside a complex type.                                                                                                           |
 | `defaultValue`, `fixedValue` | optional      | optional | Not both, and not with `ref`. In `modify*`, setting one removes the other; an empty string is written as an empty value.                                                                             |
-| `documentation`              | optional      | optional | See [Conventions](#conventions).                                                                                                                                                                     |
+| `documentation`              | optional      | —        | See [Conventions](#conventions).                                                                                                                                                                     |
 
 `removeAttribute` takes only `attributeId`.[^validators][^executors]
 
@@ -155,7 +155,7 @@ New attributes and attribute group references (`addAttributeGroup`) are written 
 | `restrictions`        | restriction    | restriction    | Facets, see [Restriction facets](#restriction-facets).                                                                                                                        |
 | `listItemType`        | list           | list           | Item type of a list.                                                                                                                                                          |
 | `unionMemberTypes`    | union          | union          | Member types of a union; not empty, no empty entries.                                                                                                                         |
-| `documentation`       | optional       | optional       | See [Conventions](#conventions).                                                                                                                                              |
+| `documentation`       | optional       | —              | See [Conventions](#conventions).                                                                                                                                              |
 
 The fields decide the kind of the body (`SimpleTypeDerivationKind`): `baseType` or `restrictions` make a restriction, `listItemType` a list, `unionMemberTypes` a union. Exactly one kind is allowed. `addSimpleType` needs a body. In `modifySimpleType`, body fields replace the body, also with another kind; without body fields, the body stays as it is. `restrictions` without `baseType` change only the facets of an existing restriction, which keeps its base, also an inline simple type; a list, a union or a new type needs `baseType` ("Cannot apply restrictions without a base type", "Base type cannot be empty"). A `baseType` replaces the base, also an inline simple type. `modifySimpleType` rejects a `typeName` for an anonymous type.
 
@@ -188,7 +188,7 @@ A restriction without `restrictions` has no facets, which XSD allows. If `restri
 | `derivationKind`      | optional       | optional       | `extension` (default) or `restriction` (`ComplexTypeDerivationKind`). Needs a base type, from the payload or the existing type ("Derivation kind requires a base type").                                                                                                                                           |
 | `mixed`               | optional       | optional       |                                                                                                                                                                                                                                                                                                                    |
 | `abstract`            | optional       | optional       | Only applied to top-level types.                                                                                                                                                                                                                                                                                   |
-| `documentation`       | optional       | optional       | See [Conventions](#conventions).                                                                                                                                                                                                                                                                                   |
+| `documentation`       | optional       | —              | See [Conventions](#conventions).                                                                                                                                                                                                                                                                                   |
 
 The complex type commands cannot create or change simple content: for a complex type with `simpleContent`, `modifyComplexType` rejects `baseType`, `derivationKind` and `contentModel` (see [Known issues](known-issues.md#complex-types-with-simple-content-cannot-be-created-or-derived)). Creating an anonymous complex type removes the `type` attribute and an anonymous simple type of its element. `removeComplexType` takes only `typeId` and does not check whether the type is still used.[^validators][^executors]
 
@@ -203,32 +203,32 @@ The complex type commands cannot create or change simple content: for a complex 
 
 `groupId` in `removeGroup` and `modifyGroup` can name three kinds of node, and `modifyGroup` accepts different fields for each:
 
-| `groupId`        | Example                                   | `modifyGroup` fields                                                                                                                                                                              |
-| ---------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Group definition | `/group:Address`                          | `groupName`, `contentModel`, `documentation`. The new name must be unique. Renaming updates the references.                                                                                       |
-| Group reference  | `…/group:sequence[0]/groupRef:Address[0]` | `ref`, `minOccurs`, `maxOccurs`, `documentation`                                                                                                                                                  |
-| Compositor       | `…/group:sequence[0]`                     | `minOccurs`, `maxOccurs`, `documentation`. The compositor of a group definition (`/group:Address/group:sequence[0]`) has no occurrences in XML Schema, so only `documentation` is accepted there. |
+| `groupId`        | Example                                   | `modifyGroup` fields                                                                                                                                            |
+| ---------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Group definition | `/group:Address`                          | `groupName`, `contentModel`. The new name must be unique. Renaming updates the references.                                                                      |
+| Group reference  | `…/group:sequence[0]/groupRef:Address[0]` | `ref`, `minOccurs`, `maxOccurs`                                                                                                                                 |
+| Compositor       | `…/group:sequence[0]`                     | `minOccurs`, `maxOccurs`. The compositor of a group definition (`/group:Address/group:sequence[0]`) has no occurrences in XML Schema, so it cannot be modified. |
 
 `removeGroup` on a compositor removes it from the complex type, the group definition or the compositor that contains it. A group definition cannot be removed while a reference points to it.[^validators][^executors]
 
 # Attribute groups
 
-`addAttributeGroup`, `removeAttributeGroup` and `modifyAttributeGroup` are defined in `attributeGroup.ts`.[^attribute-group] They work like the group commands with fewer fields: a definition has `groupName`, a reference `ref` and `parentId` (a complex type or an attribute group), both can have `documentation`. Like attributes, the references of a complex type with complex or simple content are those of its extension or restriction. `modifyAttributeGroup` changes `groupName`, `ref` or `documentation`; renaming a definition updates the references and checks for an existing attribute group with the new name. A definition cannot be removed while a reference points to it.[^validators][^executors]
+`addAttributeGroup`, `removeAttributeGroup` and `modifyAttributeGroup` are defined in `attributeGroup.ts`.[^attribute-group] They work like the group commands with fewer fields: a definition has `groupName`, a reference `ref` and `parentId` (a complex type or an attribute group), both can have `documentation`. Like attributes, the references of a complex type with complex or simple content are those of its extension or restriction. `modifyAttributeGroup` changes the `groupName` of a definition or the `ref` of a reference; renaming a definition updates the references and checks for an existing attribute group with the new name. A definition cannot be removed while a reference points to it.[^validators][^executors]
 
 # Annotations and documentation
 
 The six commands in `annotation.ts` edit `xs:annotation` and its `xs:documentation` entries.[^annotation] The IDs follow the annotation scheme in [Schema model](schema-model.md#node-ids).
 
-| Command               | Fields                                       | Effect                                                                                                                 |
-| --------------------- | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `addAnnotation`       | `targetId`, `documentation?`, `appInfo?`     | Adds an annotation to the schema (`/schema`) or replaces the annotation of a node.                                     |
-| `removeAnnotation`    | `annotationId`                               | Removes the annotation.                                                                                                |
-| `modifyAnnotation`    | `annotationId`, `documentation?`, `appInfo?` | `documentation` replaces all documentation entries with one, `appInfo` replaces the content of the first `xs:appinfo`. |
-| `addDocumentation`    | `targetId`, `content`, `lang?`               | Adds a documentation entry to the annotation of a node, creating the annotation if needed. `lang` becomes `xml:lang`.  |
-| `removeDocumentation` | `documentationId`                            | Removes one entry.                                                                                                     |
-| `modifyDocumentation` | `documentationId`, `content?`, `lang?`       | Changes one entry; an empty `lang` removes `xml:lang`.                                                                 |
+| Command               | Fields                                   | Effect                                                                                                                |
+| --------------------- | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `addAnnotation`       | `targetId`, `documentation?`, `appInfo?` | Adds an annotation to the schema (`/schema`) or replaces the annotation of a node.                                    |
+| `removeAnnotation`    | `annotationId`                           | Removes the annotation.                                                                                               |
+| `modifyAnnotation`    | `annotationId`, `appInfo?`               | `appInfo` replaces the content of the first `xs:appinfo`.                                                             |
+| `addDocumentation`    | `targetId`, `content`, `lang?`           | Adds a documentation entry to the annotation of a node, creating the annotation if needed. `lang` becomes `xml:lang`. |
+| `removeDocumentation` | `documentationId`                        | Removes one entry.                                                                                                    |
+| `modifyDocumentation` | `documentationId`, `content?`, `lang?`   | Changes one entry; an empty `lang` removes `xml:lang`.                                                                |
 
-A `lang` must be a value of `xs:language`, such as `en` or `de-CH`; the empty string removes `xml:lang` (`modifyDocumentation`) or adds none (`addDocumentation`). The properties panel checks its language field with the same rule. The properties panel uses these commands for the documentation of the selected node, not the `documentation` field of the `modify*` commands.[^validators][^executors]
+A `lang` must be a value of `xs:language`, such as `en` or `de-CH`; the empty string removes `xml:lang` (`modifyDocumentation`) or adds none (`addDocumentation`). The properties panel checks its language field with the same rule. The properties panel uses these commands for the documentation of the selected node.[^validators][^executors]
 
 # Imports, includes and namespaces
 

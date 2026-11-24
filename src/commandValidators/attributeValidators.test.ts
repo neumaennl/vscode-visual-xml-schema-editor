@@ -417,7 +417,7 @@ describe("Attribute Validators", () => {
     test("should accept modifying an attribute reference identified by the referenced name", () => {
       const command: ModifyAttributeCommand = {
         type: "modifyAttribute",
-        payload: { attributeId: "/complexType:T/attribute:lang", documentation: "Language of the content" },
+        payload: { attributeId: "/complexType:T/attribute:lang", required: true },
       };
 
       const result = validateModifyAttribute(command, schemaWith(ATTRIBUTES));

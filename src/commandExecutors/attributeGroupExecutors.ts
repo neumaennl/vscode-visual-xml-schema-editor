@@ -13,7 +13,7 @@ import type {
 import { namedAttributeGroup, attributeGroupRef } from "../../shared/types.js";
 import { parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy.js";
 import { assumeValidated, locateValidated } from "./assumeValidated.js";
-import { createAnnotation, setDocumentation } from "./annotationUtils.js";
+import { createAnnotation } from "./annotationUtils.js";
 import { renameOwnReferences } from "../schemaReferences/referenceRewrites.js";
 import type { AttributeContainer } from "../../shared/schemaUtils.js";
 import { getAttributeContainer } from "../../shared/schemaUtils.js";
@@ -118,7 +118,7 @@ export function executeRemoveAttributeGroup(command: RemoveAttributeGroupCommand
  * @throws An {@link Error} if the attribute group or its parent is not found
  */
 export function executeModifyAttributeGroup(command: ModifyAttributeGroupCommand, schemaObj: schema): void {
-  const { groupId, groupName, documentation, ref } = command.payload;
+  const { groupId, groupName, ref } = command.payload;
   const parsed = parseSchemaId(groupId);
 
   if (parsed.nodeType === SchemaNodeType.AttributeGroupRef) {
@@ -129,9 +129,6 @@ export function executeModifyAttributeGroup(command: ModifyAttributeGroupCommand
     );
     if (ref !== undefined) {
       target.ref = ref;
-    }
-    if (documentation !== undefined) {
-      setDocumentation(target, documentation);
     }
     return;
   }
@@ -144,8 +141,5 @@ export function executeModifyAttributeGroup(command: ModifyAttributeGroupCommand
   if (groupName !== undefined) {
     renameOwnReferences("attributeGroup", attrGroup.name, groupName, schemaObj);
     attrGroup.name = groupName;
-  }
-  if (documentation !== undefined) {
-    setDocumentation(attrGroup, documentation);
   }
 }

@@ -84,8 +84,6 @@ export interface ModifyGroupPayload {
   groupName?: string;
   /** New content model (optional). Not applicable for references. */
   contentModel?: ContentModel;
-  /** New documentation (optional). Applies to both group definitions and group references (xs:annotation). */
-  documentation?: string;
   /**
    * New ref target for a group reference (optional).
    * Only applicable when `groupId` points to a group reference.

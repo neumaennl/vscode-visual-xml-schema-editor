@@ -116,8 +116,6 @@ export interface ModifySimpleTypePayload {
   unionMemberTypes?: string[];
   /** New restrictions (optional) */
   restrictions?: RestrictionFacets;
-  /** New documentation (optional) */
-  documentation?: string;
 }
 
 /**

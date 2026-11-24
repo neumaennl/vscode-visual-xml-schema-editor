@@ -210,7 +210,7 @@ export function validateModifyAttributeGroup(
     if (groupName !== undefined) {
       return {
         valid: false,
-        error: "Cannot use groupName when modifying an attribute group reference — use ref or documentation instead",
+        error: "Cannot use groupName when modifying an attribute group reference — use ref instead",
       };
     }
     return ref === undefined ? { valid: true } : validateAttrGroupReference(ref, schemaObj);
@@ -219,7 +219,7 @@ export function validateModifyAttributeGroup(
   if (ref !== undefined) {
     return {
       valid: false,
-      error: "Cannot use ref when modifying an attribute group definition — use groupName or documentation instead",
+      error: "Cannot use ref when modifying an attribute group definition — use groupName instead",
     };
   }
   if (groupName !== undefined) {

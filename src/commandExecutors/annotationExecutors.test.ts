@@ -164,40 +164,6 @@ describe("executeRemoveAnnotation", () => {
 // ─── executeModifyAnnotation ─────────────────────────────────────────────────
 
 describe("executeModifyAnnotation", () => {
-  test("should update documentation text of an existing annotation", () => {
-    const schemaObj = readTestSchema(DOCUMENTED_PERSON_XSD);
-
-    modifyAnnotation(schemaObj, { annotationId: "/element:person", documentation: "Updated." });
-
-    const elem = (schemaObj.element ?? [])[0]!;
-    expect((elem.annotation?.documentation ?? [])[0]!.value).toBe("Updated.");
-  });
-
-  test("should replace all documentation children with a single new element", () => {
-    const schemaObj = readTestSchema(TWO_DOCUMENTATIONS_XSD);
-
-    modifyAnnotation(schemaObj, { annotationId: "/element:person", documentation: "Replaced." });
-
-    const elem = (schemaObj.element ?? [])[0]!;
-    expect(valuesOf(elem.annotation?.documentation)).toEqual(["Replaced."]);
-  });
-
-  test("should create a documentation child when annotation has none, preserving appinfo", () => {
-    // Start with an annotation that only has appinfo
-    const schemaObj = schemaWith(`<xs:element name="person" type="xs:string">
-  <xs:annotation>
-    <xs:appinfo>app</xs:appinfo>
-  </xs:annotation>
-</xs:element>`);
-
-    modifyAnnotation(schemaObj, { annotationId: "/element:person", documentation: "New doc." });
-
-    const elem = (schemaObj.element ?? [])[0]!;
-    expect(valuesOf(elem.annotation?.documentation)).toEqual(["New doc."]);
-    // Existing appinfo must be preserved
-    expect(valuesOf(elem.annotation?.appinfo)).toEqual(["app"]);
-  });
-
   test("should update appinfo text", () => {
     const schemaObj = schemaWith(`<xs:element name="person" type="xs:string">
   <xs:annotation>
@@ -464,30 +430,15 @@ describe("executeRemoveAnnotation — schema root", () => {
 });
 
 describe("executeModifyAnnotation — schema root", () => {
-  test("should update documentation on the first schema annotation", () => {
-    const schemaObj = schemaWith(SCHEMA_ANNOTATION);
-
-    modifyAnnotation(schemaObj, {
-      annotationId: "/schema/annotation[0]",
-      documentation: "Updated.",
-    });
-
-    const annotations = schemaObj.annotation ?? [];
-    expect((annotations[0]!.documentation ?? [])[0]!.value).toBe("Updated.");
-  });
-
-  test("should update documentation on the second schema annotation", () => {
+  test("should change the appinfo of the second schema annotation and leave its documentation as it is", () => {
     const schemaObj = readTestSchema(TWO_ANNOTATIONS_XSD);
 
-    modifyAnnotation(schemaObj, {
-      annotationId: "/schema/annotation[1]",
-      documentation: "Second updated.",
-    });
+    modifyAnnotation(schemaObj, { annotationId: "/schema/annotation[1]", appInfo: "Second info." });
 
     const annotations = schemaObj.annotation ?? [];
-    expect((annotations[1]!.documentation ?? [])[0]!.value).toBe("Second updated.");
-    // First annotation untouched
-    expect((annotations[0]!.documentation ?? [])[0]!.value).toBe("First.");
+    expect(valuesOf(annotations[1]!.appinfo)).toEqual(["Second info."]);
+    expect(valuesOf(annotations[0]!.appinfo)).toEqual([]);
+    expect(annotations.map((annotation) => valuesOf(annotation.documentation))).toEqual([["First."], ["Second."]]);
   });
 });
 

@@ -178,25 +178,12 @@ describe("Integration: Annotation pipeline", () => {
   // ─── modifyAnnotation ──────────────────────────────────────────────────────
 
   describe("modifyAnnotation", () => {
-    test("should replace the documentation text on an annotated element", () => {
-      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_ANNOTATION, {
-        type: "modifyAnnotation",
-        payload: {
-          annotationId: "/element:person",
-          documentation: "Updated description",
-        },
-      });
-      const person = findTopLevelElement(result, "person");
-      const documentations = person.annotation!.documentation ?? [];
-      expect(documentations[0]!.value).toBe("Updated description");
-    });
-
     test("should return validation error when element does not exist", () => {
       runCommandExpectValidationFailure(
         SCHEMA_WITH_ANNOTATION,
         {
           type: "modifyAnnotation",
-          payload: { annotationId: "/element:noElement", documentation: "text" },
+          payload: { annotationId: "/element:noElement", appInfo: "text" },
         },
         "Target node not found or does not support annotations: /element:noElement"
       );

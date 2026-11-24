@@ -295,18 +295,16 @@ describe("SimpleType Executors", () => {
       expect(simpleTypes(schemaObj)[0]!.name).toBe("PersonAgeType");
     });
 
-    test("should update the base type and documentation", () => {
+    test("should update the base type", () => {
       const schemaObj = schemaWith(AGE_TYPE);
 
       modifySimpleType(schemaObj, {
         typeId: "/simpleType:AgeType",
         baseType: "xs:positiveInteger",
-        documentation: "A person's age in years",
       });
 
       const simpleType = simpleTypes(schemaObj)[0]!;
       expect(simpleType.restriction!.base).toBe("xs:positiveInteger");
-      expect(simpleType.annotation!.documentation![0]!.value).toBe("A person's age in years");
     });
 
     const modifySimpleTypeFacetCases: Array<{
@@ -540,20 +538,6 @@ describe("SimpleType Executors", () => {
         expect(simpleType.restriction!.maxInclusive![0]!.value).toBe("100");
       }
     );
-
-    test("should add documentation to an anonymous simpleType on an element", () => {
-      const schemaObj = schemaWith(`
-  <xs:element name="age">
-    <xs:simpleType><xs:restriction base="xs:integer"/></xs:simpleType>
-  </xs:element>`);
-
-      modifySimpleType(schemaObj, {
-        typeId: "/element:age/anonymousSimpleType[0]",
-        documentation: "Age in years",
-      });
-
-      expect(elements(schemaObj)[0]!.simpleType!.annotation!.documentation![0]!.value).toBe("Age in years");
-    });
   });
 
   describe("executeModifySimpleType — reference propagation", () => {

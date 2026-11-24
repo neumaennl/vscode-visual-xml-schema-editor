@@ -639,18 +639,6 @@ describe("Group Validators", () => {
       expect(result.error).toContain("Cannot use groupName or contentModel when modifying a group reference");
     });
 
-    test("should accept documentation when modifying a group reference", () => {
-      const command: ModifyGroupCommand = {
-        type: "modifyGroup",
-        payload: {
-          groupId: "/complexType:PersonType/group:sequence[0]/groupRef:PersonGroup[0]",
-          documentation: "Updated documentation on the ref",
-        },
-      };
-      const result = validateModifyGroup(command, schemaWithRef);
-      expect(result.valid).toBe(true);
-    });
-
     test("should reject invalid minOccurs when modifying a group reference", () => {
       const command: ModifyGroupCommand = {
         type: "modifyGroup",

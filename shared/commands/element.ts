@@ -74,8 +74,6 @@ export interface ModifyElementPayload {
   minOccurs?: number;
   /** New maximum occurrences (optional) */
   maxOccurs?: number | "unbounded";
-  /** New documentation (optional) */
-  documentation?: string;
   /** Whether the element is nillable (optional) */
   nillable?: boolean;
   /** Whether the element is abstract; only applicable to top-level elements (optional) */

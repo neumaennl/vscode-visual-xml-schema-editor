@@ -26,8 +26,6 @@ export interface AttributeFields {
   defaultValue?: string;
   /** Fixed value of the attribute. Not valid with ref. */
   fixedValue?: string;
-  /** Documentation of the attribute */
-  documentation?: string;
 }
 
 /**
@@ -37,6 +35,8 @@ export interface AttributeFields {
 export interface AddAttributePayload extends AttributeFields {
   /** ID of the parent element */
   parentId: string;
+  /** Documentation of the new attribute */
+  documentation?: string;
 }
 
 /**

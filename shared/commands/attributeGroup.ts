@@ -72,8 +72,6 @@ export interface ModifyAttributeGroupPayload {
    * Not applicable for references.
    */
   groupName?: string;
-  /** New documentation (optional). Applies to both definitions and references. */
-  documentation?: string;
   /**
    * New ref target for an attribute group reference (optional).
    * Only applicable when `groupId` points to a reference.

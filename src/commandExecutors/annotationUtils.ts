@@ -18,17 +18,3 @@ export function createAnnotation(text: string): annotationType {
   annotation.documentation = [doc];
   return annotation;
 }
-
-/**
- * Replaces the documentation of a node with a single entry, creating its annotation if needed. Other
- * content of the annotation, such as `xs:appinfo`, is kept.
- *
- * @param node - The node to document
- * @param text - The documentation text
- */
-export function setDocumentation(node: { annotation?: annotationType }, text: string): void {
-  node.annotation ??= new annotationType();
-  const doc = new documentationType();
-  doc.value = text;
-  node.annotation.documentation = [doc];
-}

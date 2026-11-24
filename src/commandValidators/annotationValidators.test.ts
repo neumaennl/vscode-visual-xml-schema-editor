@@ -85,7 +85,7 @@ const ANNOTATION_ID_VALIDATORS: Array<[string, (annotationId: string, schemaObj:
   [
     "modifyAnnotation",
     (annotationId, s): ValidationResult =>
-      validateModifyAnnotation({ type: "modifyAnnotation", payload: { annotationId, documentation: "Updated." } }, s),
+      validateModifyAnnotation({ type: "modifyAnnotation", payload: { annotationId, appInfo: "Updated." } }, s),
   ],
 ];
 

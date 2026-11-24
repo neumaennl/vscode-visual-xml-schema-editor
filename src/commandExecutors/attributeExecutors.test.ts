@@ -288,31 +288,6 @@ describe("Attribute Executors", () => {
       expect(personTypeAttributes(schemaObj)[0]).toMatchObject(expected);
     });
 
-    test("should add documentation to attribute", () => {
-      const schemaObj = schemaWith(personTypeWith(ID_ATTRIBUTE));
-
-      modifyAttribute(schemaObj, {
-        attributeId: "/complexType:PersonType/attribute:id",
-        documentation: "Unique person identifier",
-      });
-
-      expect(documentationOf(personTypeAttributes(schemaObj)[0])).toEqual(["Unique person identifier"]);
-    });
-
-    test("should replace the documentation of an attribute and keep its appinfo", () => {
-      const schemaObj = schemaWith(
-        personTypeWith(
-          `<xs:attribute name="id" type="xs:integer"><xs:annotation><xs:appinfo>tool data</xs:appinfo><xs:documentation>Old</xs:documentation></xs:annotation></xs:attribute>`
-        )
-      );
-
-      modifyAttribute(schemaObj, { attributeId: "/complexType:PersonType/attribute:id", documentation: "New" });
-
-      const attr = personTypeAttributes(schemaObj)[0]!;
-      expect(documentationOf(attr)).toEqual(["New"]);
-      expect(attr.annotation?.appinfo ?? []).toHaveLength(1);
-    });
-
     test("should modify a top-level attribute name", () => {
       const schemaObj = schemaWith(`<xs:attribute name="lang" type="xs:string"/>`);
 

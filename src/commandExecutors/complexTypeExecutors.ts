@@ -33,7 +33,7 @@ import { getContentContainer, getContentDerivation, isSchemaRoot } from "../../s
 import { assumeValidated } from "./assumeValidated.js";
 import { assignDefined } from "./nodeProperties.js";
 import { locateModifiedType, placeNewType, removeType } from "./typeTargets.js";
-import { createAnnotation, setDocumentation } from "./annotationUtils.js";
+import { createAnnotation } from "./annotationUtils.js";
 
 /** Structural type shared by `topLevelComplexType` and `localComplexType` for content operations. */
 interface ComplexTypeHolder {
@@ -132,15 +132,11 @@ function updateComplexTypeContents(
     contentModel?: ContentModel;
     baseType?: string;
     derivationKind?: ComplexTypeDerivationKind;
-    documentation?: string;
   }
 ): void {
-  const { mixed, contentModel, baseType, derivationKind, documentation } = updates;
+  const { mixed, contentModel, baseType, derivationKind } = updates;
   if (mixed !== undefined) {
     ct.mixed = mixed;
-  }
-  if (documentation !== undefined) {
-    setDocumentation(ct, documentation);
   }
   if (contentModel !== undefined || baseType !== undefined || derivationKind !== undefined) {
     const effectiveBase = baseType ?? getBaseType(ct);

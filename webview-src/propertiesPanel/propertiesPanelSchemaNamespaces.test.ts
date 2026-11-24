@@ -6,7 +6,7 @@
 import type { Mock } from "vitest";
 import { renderSchemaNamespaceProperties } from "./propertiesPanelSchemaNamespaces";
 import type { NamespacePrefixes, SchemaCommand } from "../../shared/types";
-import { DiagramItem, DiagramItemType } from "../diagram";
+import { type DiagramItem, getNamespacePrefixes } from "../diagram";
 import { editInput, getInputByLabel } from "../__tests__/propertiesPanelTestHelpers";
 import { diagramItem, muteDiagramBuilderLog } from "../__tests__/diagramTestHelpers";
 import { webviewSchemaFromXml, webviewSchemaWith } from "../../shared/__tests__/schemaTestHelpers";
@@ -115,26 +115,16 @@ describe("renderSchemaNamespaceProperties", () => {
     ]);
   });
 
-  test("should reject a schema node without a diagram, which the diagram builder does not create", () => {
-    const node = new DiagramItem("/schema", "schema", DiagramItemType.element);
-
-    expect(() => {
-      renderSchemaNamespaceProperties(document.createElement("div"), node, vi.fn(), vi.fn());
-    }).toThrow("The schema node belongs to no diagram");
-  });
-
   describe("the target namespace", () => {
-    test("should change the declaration of the target namespace with it and update the diagram", () => {
-      const { root, node, dispatch, rerender } = renderNamespaces();
+    test("should change the declaration of the target namespace with it", () => {
+      const { root, dispatch, rerender } = renderNamespaces();
 
       editInput(root, "targetNamespace", " urn:updated ");
 
       const declarations = { ...DECLARATIONS, tns: "urn:updated" };
       expect(dispatch).toHaveBeenCalledExactlyOnceWith(namespacesCommand("urn:updated", declarations));
-      expect(node.diagram?.schemaTargetNamespace).toBe("urn:updated");
-      expect(node.diagram?.schemaNamespacePrefixes).toEqual(declarations);
-      expect(node.diagram?.currentSchemaPrefix).toBe("tns");
-      expect(rerender).toHaveBeenCalledOnce();
+      // The panel shows the change with the schema that the extension host sends next
+      expect(rerender).not.toHaveBeenCalled();
     });
 
     test("should reject a target namespace that is not an absolute URI with a message below the field", () => {
@@ -151,12 +141,11 @@ describe("renderSchemaNamespaceProperties", () => {
     });
 
     test("should remove the declaration of a removed target namespace", () => {
-      const { root, node, dispatch } = renderNamespaces();
+      const { root, dispatch } = renderNamespaces();
 
       editInput(root, "targetNamespace", "");
 
       expect(dispatch).toHaveBeenCalledExactlyOnceWith(namespacesCommand("", { other: "urn:other", xs: XS }));
-      expect(node.diagram?.currentSchemaPrefix).toBeUndefined();
     });
 
     test.each<{ namespaces: NamespacePrefixes; prefix: string }>([
@@ -166,7 +155,7 @@ describe("renderSchemaNamespaceProperties", () => {
       "should declare a new target namespace with the prefix $prefix for the declarations $namespaces",
       ({ namespaces, prefix }) => {
         const { root, node, dispatch } = renderNamespaces(webviewSchemaWith("", namespaces));
-        const previous = { ...node.diagram?.schemaNamespacePrefixes };
+        const previous = { ...getNamespacePrefixes(node.diagram) };
 
         editInput(root, "targetNamespace", "urn:new");
 
@@ -178,7 +167,6 @@ describe("renderSchemaNamespaceProperties", () => {
             previousNamespacePrefixes: previous,
           },
         });
-        expect(node.diagram?.currentSchemaPrefix).toBe(prefix);
       }
     );
   });

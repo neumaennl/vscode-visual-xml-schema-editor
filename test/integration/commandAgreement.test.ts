@@ -17,6 +17,7 @@ import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy";
 import { CommandValidator } from "../../src/commandValidator.js";
 import { CommandExecutor } from "../../src/commandExecutor.js";
 import type { DiagramItem } from "../../webview-src/diagram/DiagramItem";
+import { getDocumentationAnnotations } from "../../webview-src/diagram/documentationAccessors";
 import { diagramItems } from "../../webview-src/__tests__/diagramTestHelpers";
 import { TEST_RESOURCES } from "../../src/__tests__/resourceTestHelpers.js";
 import { webviewSchemaFromXml } from "../../shared/__tests__/schemaTestHelpers";
@@ -99,7 +100,7 @@ function commandsForItem(item: DiagramItem): SchemaCommand[] {
     { type: "addAttribute", payload: { parentId: item.id, attributeName: "added", attributeType: "xs:string" } },
     { type: "addAnnotation", payload: { targetId: item.id, documentation: "Added" } },
     { type: "addDocumentation", payload: { targetId: item.id, content: "Added" } },
-    ...item.documentationAnnotations.flatMap((annotation): SchemaCommand[] => [
+    ...getDocumentationAnnotations(item).flatMap((annotation): SchemaCommand[] => [
       { type: "removeAnnotation", payload: { annotationId: annotation.id } },
       { type: "modifyAnnotation", payload: { annotationId: annotation.id, documentation: "Changed" } },
       { type: "addDocumentation", payload: { targetId: annotation.id, content: "Added" } },

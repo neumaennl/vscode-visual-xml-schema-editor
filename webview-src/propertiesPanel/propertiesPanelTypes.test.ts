@@ -29,6 +29,8 @@ const TYPES_XML = `<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:
   <xs:element name="short"><xs:simpleType><xs:restriction><xs:simpleType><xs:restriction base="xs:string"/></xs:simpleType></xs:restriction></xs:simpleType></xs:element>
   <xs:element name="note"><xs:complexType><xs:sequence/></xs:complexType></xs:element>
   <xs:element name="extended"><xs:complexType><xs:complexContent><xs:extension base="tns:Base"/></xs:complexContent></xs:complexType></xs:element>
+  <xs:complexType name="Price"><xs:simpleContent><xs:extension base="xs:decimal"/></xs:simpleContent></xs:complexType>
+  <xs:element name="price"><xs:complexType><xs:simpleContent><xs:restriction base="tns:Price"/></xs:simpleContent></xs:complexType></xs:element>
 </xs:schema>`;
 
 /** The type names that the fields suggest. */
@@ -83,7 +85,7 @@ describe("renderTypeProperty", () => {
       { value: "xs:int", expected: "xs:int" },
       { value: "Code", expected: "tns:Code" },
     ])("should change the type to '$value' and add the prefix to a type of the schema", ({ value, expected }) => {
-      const { root, node, dispatch } = renderType("/element:code");
+      const { root, dispatch } = renderType("/element:code");
 
       editInput(root, "Type", value);
 
@@ -91,7 +93,6 @@ describe("renderTypeProperty", () => {
         type: "modifyElement",
         payload: { elementId: "/element:code", elementType: expected },
       });
-      expect(node.type).toBe(expected);
     });
 
     test.each(["xs:string", " "])("should send nothing for the type '%s'", (value) => {
@@ -112,7 +113,7 @@ describe("renderTypeProperty", () => {
     });
 
     test("should change the base type of a restriction", () => {
-      const { root, node, dispatch } = renderType("/simpleType:Code");
+      const { root, dispatch } = renderType("/simpleType:Code");
 
       editInput(root, "Base Type", "xs:token");
 
@@ -120,7 +121,6 @@ describe("renderTypeProperty", () => {
         type: "modifySimpleType",
         payload: { typeId: "/simpleType:Code", baseType: "xs:token" },
       });
-      expect(node.type).toBe("simpleType (restricts xs:token)");
     });
 
     test.each(["xs:string", ""])("should send nothing for the base type '%s'", (value) => {
@@ -159,7 +159,7 @@ describe("renderTypeProperty", () => {
     });
 
     test("should change the base type of the inline type", () => {
-      const { root, node, dispatch } = renderType("/element:size");
+      const { root, dispatch } = renderType("/element:size");
 
       editInput(root, "Base Type", "xs:long");
 
@@ -167,7 +167,6 @@ describe("renderTypeProperty", () => {
         type: "modifySimpleType",
         payload: { typeId: "/element:size/anonymousSimpleType[0]", baseType: "xs:long" },
       });
-      expect(node.type).toBe("<anonymous simpleType> (restricts xs:long)");
     });
 
     test("should only offer a replacement type for an inline type without a base type", () => {
@@ -221,6 +220,41 @@ describe("renderTypeProperty", () => {
     );
   });
 
+  describe("complex types with simple content, whose base type no command can change yet", () => {
+    test.each([
+      {
+        id: "/complexType:Price",
+        labels: ["Type", "Base Type"],
+        type: "complexType with simpleContent (extends xs:decimal)",
+        baseType: "xs:decimal",
+      },
+      {
+        id: "/element:price",
+        labels: ["Type", "Base Type", "Replacement Type"],
+        type: "Inline complexType (restricts tns:Price)",
+        baseType: "tns:Price",
+      },
+    ])("should show the type and base type of $id read-only", ({ id, labels, type, baseType }) => {
+      const { root } = renderType(id);
+
+      expect(getLabels(root)).toEqual(labels);
+      expect(getTextByLabel(root, "Type")).toBe(type);
+      expect(getTextByLabel(root, "Base Type")).toBe(baseType);
+    });
+
+    test("should replace the inline complex type of an element with a named type", () => {
+      const { root, dispatch } = renderType("/element:price");
+
+      editInput(root, "Replacement Type", "tns:Price");
+      editInput(root, "Replacement Type", "xs:decimal");
+
+      expect(dispatch).toHaveBeenCalledExactlyOnceWith({
+        type: "modifyElement",
+        payload: { elementId: "/element:price", elementType: "xs:decimal" },
+      });
+    });
+  });
+
   describe("elements with an inline complex type", () => {
     test.each([
       { id: "/element:note", type: "Inline complexType", baseType: "" },
@@ -234,7 +268,7 @@ describe("renderTypeProperty", () => {
     });
 
     test("should derive the inline type from a base type", () => {
-      const { root, node, dispatch } = renderType("/element:note");
+      const { root, dispatch } = renderType("/element:note");
 
       editInput(root, "Base Type", "Base");
 
@@ -242,11 +276,10 @@ describe("renderTypeProperty", () => {
         type: "modifyComplexType",
         payload: { typeId: "/element:note/anonymousComplexType[0]", baseType: "tns:Base", derivationKind: "extension" },
       });
-      expect(node.type).toBe("<anonymous complexType> (extends tns:Base)");
     });
 
     test("should replace the inline type with a named type", () => {
-      const { root, node, dispatch } = renderType("/element:extended");
+      const { root, dispatch } = renderType("/element:extended");
 
       editInput(root, "Replacement Type", "tns:Derived");
 
@@ -254,9 +287,6 @@ describe("renderTypeProperty", () => {
         type: "modifyElement",
         payload: { elementId: "/element:extended", elementType: "tns:Derived" },
       });
-      expect(node.type).toBe("tns:Derived");
-      expect(node.hasAnonymousComplexType).toBe(false);
-      expect(node.complexDerivationKind).toBeUndefined();
     });
   });
 });

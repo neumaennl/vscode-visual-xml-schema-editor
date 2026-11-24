@@ -5,11 +5,18 @@
 
 import type { Diagram } from "./Diagram";
 import type { DiagramItem } from "./DiagramItem";
-import type { Point } from "./DiagramTypes";
 import { DiagramItemType } from "./DiagramTypes";
 import { isCompositorGroup } from "./groupUtils";
-import { svgLine, svgRectangle, svgPolygon } from "./SvgHelpers";
-import { renderElementShape, renderGroupShape, renderTypeShape } from "./ShapeRenderers";
+import { getMinOccurs, isReference } from "./schemaAccessors";
+import { getDocumentation } from "./documentationAccessors";
+import { svgLine, svgRectangle } from "./SvgHelpers";
+import {
+  REFERENCE_ARROW_WIDTH,
+  renderElementShape,
+  renderGroupShape,
+  renderReferenceArrow,
+  renderTypeShape,
+} from "./ShapeRenderers";
 import { renderText, renderDocumentation, renderOccurrence } from "./TextRenderers";
 
 /**
@@ -70,7 +77,7 @@ export class DiagramSvgRenderer {
     // Add tooltip for group items (sequence, choice, all)
     if (item.itemType === DiagramItemType.group) {
       const title = document.createElementNS("http://www.w3.org/2000/svg", "title");
-      title.textContent = item.name;
+      title.textContent = item.label;
       group.appendChild(title);
     }
 
@@ -85,13 +92,19 @@ export class DiagramSvgRenderer {
     // Render the main shape
     this.renderShape(item, group);
 
+    // Render the reference arrow, which the label leaves room for
+    const reference = isReference(item);
+    if (reference) {
+      renderReferenceArrow(item.elementBox, item, group);
+    }
+
     // Render text for non-group items and named groups (skip compositor symbols only)
     if (item.itemType !== DiagramItemType.group || !isCompositorGroup(item)) {
-      renderText(item, group, this.svg);
+      renderText(item, group, this.svg, reference ? REFERENCE_ARROW_WIDTH : 0);
     }
 
     // Render documentation if present
-    if (item.diagram?.showDocumentation && item.documentation) {
+    if (item.diagram.showDocumentation && getDocumentation(item)) {
       renderDocumentation(item, group);
     }
 
@@ -101,11 +114,6 @@ export class DiagramSvgRenderer {
     // Render expand button if has children
     if (item.hasChildElements) {
       this.renderExpandButton(item, group);
-    }
-
-    // Render reference arrow if needed
-    if (item.isReference) {
-      this.renderReferenceArrow(item, group);
     }
 
     this.contentGroup.appendChild(group);
@@ -179,7 +187,7 @@ export class DiagramSvgRenderer {
     // Use semi-transparent background so it works with any theme
     const backgroundBrush = `fill:${item.getStyle().backgroundColor}`;
     const foregroundPen = `stroke:${item.getStyle().lineColor};stroke-width:2`;
-    const dashed = item.minOccurrence === 0 ? ";stroke-dasharray:5,3" : "";
+    const dashed = getMinOccurs(item) === 0 ? ";stroke-dasharray:5,3" : "";
 
     switch (item.itemType) {
       case DiagramItemType.element:
@@ -227,30 +235,5 @@ export class DiagramSvgRenderer {
     }
 
     group.appendChild(buttonGroup);
-  }
-
-  /**
-   * Render reference arrow indicating item references another definition
-   * @param item - The diagram item with a reference
-   * @param group - The SVG group to append arrow to
-   */
-  private renderReferenceArrow(item: DiagramItem, group: SVGElement): void {
-    const box = item.elementBox;
-    const arrowPen = `stroke:${item.getStyle().lineColor};stroke-width:2`;
-    const baseX = box.x + 1;
-    const baseY = box.y + box.height - 1;
-    const targetX = baseX + 3;
-    const targetY = baseY - 3;
-
-    svgLine(group, arrowPen, baseX, baseY, targetX, targetY);
-
-    // Arrow head
-    const points: Point[] = [
-      { x: targetX, y: targetY },
-      { x: targetX + 2, y: targetY + 2 },
-      { x: targetX + 3, y: targetY - 3 },
-      { x: targetX - 2, y: targetY - 2 },
-    ];
-    svgPolygon(group, points, `fill:${item.getStyle().foregroundColor}`, "");
   }
 }

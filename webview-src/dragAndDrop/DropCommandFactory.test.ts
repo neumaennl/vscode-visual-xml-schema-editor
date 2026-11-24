@@ -7,19 +7,37 @@ import { DropCommandFactory } from "./DropCommandFactory";
 import { DiagramItem } from "../diagram/DiagramItem";
 import { DiagramItemGroupType, DiagramItemType } from "../diagram/DiagramTypes";
 import { DraggableSchemaConstruct } from "./DraggableSchemaConstruct";
-import { diagramItem } from "../__tests__/diagramTestHelpers";
+import { SchemaNodeType } from "../../shared/idStrategy";
+import { diagramItem, emptyDiagram, NOT_READ_SCHEMA_OBJECT, component } from "../__tests__/diagramTestHelpers";
 import { DERIVATIONS, derivedComplexTypeT, webviewSchemaWith } from "../../shared/__tests__/schemaTestHelpers";
 
+/** The item type that the diagram builder gives each kind of node in these tests. */
+const ITEM_TYPES: Partial<Record<SchemaNodeType, DiagramItemType>> = {
+  [SchemaNodeType.Schema]: DiagramItemType.element,
+  [SchemaNodeType.Element]: DiagramItemType.element,
+  [SchemaNodeType.ComplexType]: DiagramItemType.type,
+  [SchemaNodeType.SimpleType]: DiagramItemType.type,
+  [SchemaNodeType.Group]: DiagramItemType.group,
+};
+
 /**
- * Creates a diagram item whose name is the last part of its ID.
+ * Creates a diagram item whose name is the last part of its ID, with the node type and the item type that
+ * the diagram builder gives it.
  *
  * @param id - The ID of the item
- * @param itemType - The kind of item
+ * @param nodeType - The kind of schema construct that the item shows
  * @param overrides - The fields to set on the item
  * @returns The item
  */
-function makeItem(id: string, itemType: DiagramItemType, overrides: Partial<DiagramItem> = {}): DiagramItem {
-  const item = new DiagramItem(id, id.split(":").pop() ?? id, itemType);
+function makeItem(id: string, nodeType: SchemaNodeType, overrides: Partial<DiagramItem> = {}): DiagramItem {
+  const item = new DiagramItem(
+    id,
+    id.split(":").pop() ?? id,
+    ITEM_TYPES[nodeType] ?? DiagramItemType.group,
+    NOT_READ_SCHEMA_OBJECT,
+    emptyDiagram()
+  );
+  item.nodeType = nodeType;
   Object.assign(item, overrides);
   return item;
 }
@@ -50,29 +68,38 @@ type AcceptedDrop = [string, DiagramItem, DraggableSchemaConstruct, object];
 type RejectedDrop = [string, DiagramItem, DraggableSchemaConstruct];
 
 /** The schema root. */
-const ROOT = makeItem("/schema", DiagramItemType.element);
+const ROOT = makeItem("/schema", SchemaNodeType.Schema);
 /** An element without inline type. */
-const PERSON = makeItem("/element:person", DiagramItemType.element);
+const PERSON = makeItem("/element:person", SchemaNodeType.Element, {
+  schemaObject: component(`<xs:element name="person"/>`),
+});
 /** An element with an inline complex type. */
-const PERSON_WITH_COMPLEX_TYPE = makeItem("/element:person", DiagramItemType.element, {
-  hasAnonymousComplexType: true,
+const PERSON_WITH_COMPLEX_TYPE = makeItem("/element:person", SchemaNodeType.Element, {
+  schemaObject: component(`<xs:element name="person"><xs:complexType/></xs:element>`),
 });
 /** An element with an inline simple type. */
-const PERSON_WITH_SIMPLE_TYPE = makeItem("/element:person", DiagramItemType.element, { isSimpleContent: true });
+const PERSON_WITH_SIMPLE_TYPE = makeItem("/element:person", SchemaNodeType.Element, {
+  schemaObject: component(`<xs:element name="person"><xs:simpleType><xs:restriction/></xs:simpleType></xs:element>`),
+});
 /** A sequence in an element. */
-const SEQUENCE = makeItem("/element:person/group[0]", DiagramItemType.group, {
+const SEQUENCE = makeItem("/element:person/group[0]", SchemaNodeType.Group, {
   groupType: DiagramItemGroupType.Sequence,
 });
 /** A top-level group. */
-const GROUP = makeItem("/group:G", DiagramItemType.group);
+const GROUP = makeItem("/group:G", SchemaNodeType.Group);
 /** A complex type without base. */
-const CHOICE_TYPE = makeItem("/complexType:ChoiceType", DiagramItemType.type, { type: "complexType" });
+const CHOICE_TYPE = makeItem("/complexType:ChoiceType", SchemaNodeType.ComplexType, {
+  schemaObject: component(`<xs:complexType name="ChoiceType"><xs:choice/></xs:complexType>`),
+});
 /** A simple type. */
-const SIMPLE_TYPE = makeItem("/simpleType:S", DiagramItemType.type, { type: "simpleType" });
+const SIMPLE_TYPE = makeItem("/simpleType:S", SchemaNodeType.SimpleType, {
+  schemaObject: component(`<xs:simpleType name="S"><xs:restriction/></xs:simpleType>`),
+});
 /** An element with an inline complex type that extends `BasePersonType`. */
-const PERSON_EXTENDING_BASE = makeItem("/element:person", DiagramItemType.element, {
-  type: "<anonymous complexType> (extends BasePersonType)",
-  hasAnonymousComplexType: true,
+const PERSON_EXTENDING_BASE = makeItem("/element:person", SchemaNodeType.Element, {
+  schemaObject: component(`<xs:element name="person"><xs:complexType><xs:complexContent>
+  <xs:extension base="BasePersonType"/>
+</xs:complexContent></xs:complexType></xs:element>`),
 });
 
 describe("DropCommandFactory", () => {
@@ -112,7 +139,7 @@ describe("DropCommandFactory", () => {
       ...[DiagramItemGroupType.Sequence, DiagramItemGroupType.Choice, DiagramItemGroupType.All].map(
         (groupType): AcceptedDrop => [
           `an element on a ${groupType}`,
-          makeItem("/e/g[0]", DiagramItemType.group, { groupType }),
+          makeItem("/e/g[0]", SchemaNodeType.Group, { groupType }),
           C.Element,
           { type: "addElement" },
         ]
@@ -125,7 +152,9 @@ describe("DropCommandFactory", () => {
       ],
       [
         "an attribute on a named complexType",
-        makeItem("/complexType:PersonType", DiagramItemType.type, { type: "complexType" }),
+        makeItem("/complexType:PersonType", SchemaNodeType.ComplexType, {
+          schemaObject: component(`<xs:complexType name="PersonType"/>`),
+        }),
         C.Attribute,
         { type: "addAttribute", payload: { parentId: "/complexType:PersonType" } },
       ],
@@ -150,15 +179,18 @@ describe("DropCommandFactory", () => {
       ["a group on the schema root", ROOT, C.Group, { type: "addGroup", payload: { groupName: "Group1" } }],
       [
         "an anonymous simpleType restriction on a typed element",
-        makeItem("/element:code", DiagramItemType.element, { type: "CustomerCodeType" }),
+        makeItem("/element:code", SchemaNodeType.Element, {
+          schemaObject: component(`<xs:element name="code" type="CustomerCodeType"/>`),
+        }),
         C.Restriction,
         { type: "addSimpleType", payload: { parentId: "/element:code", baseType: "CustomerCodeType" } },
       ],
       [
         "a restriction that modifies an inline simpleType in place",
-        makeItem("/element:code", DiagramItemType.element, {
-          type: "<anonymous simpleType> (restricts xs:string)",
-          isSimpleContent: true,
+        makeItem("/element:code", SchemaNodeType.Element, {
+          schemaObject: component(
+            `<xs:element name="code"><xs:simpleType><xs:restriction base="xs:string"/></xs:simpleType></xs:element>`
+          ),
         }),
         C.Restriction,
         {
@@ -181,7 +213,11 @@ describe("DropCommandFactory", () => {
       ],
       [
         "a restriction that modifies a named complexType in place",
-        makeItem("/complexType:PersonType", DiagramItemType.type, { type: "complexType (extends BasePersonType)" }),
+        makeItem("/complexType:PersonType", SchemaNodeType.ComplexType, {
+          schemaObject: component(`<xs:complexType name="PersonType"><xs:complexContent>
+  <xs:extension base="BasePersonType"/>
+</xs:complexContent></xs:complexType>`),
+        }),
         C.Restriction,
         {
           type: "modifyComplexType",
@@ -199,7 +235,9 @@ describe("DropCommandFactory", () => {
       ],
       [
         "an anonymous complexType extension on a typed element",
-        makeItem("/element:person", DiagramItemType.element, { type: "PersonType" }),
+        makeItem("/element:person", SchemaNodeType.Element, {
+          schemaObject: component(`<xs:element name="person" type="PersonType"/>`),
+        }),
         C.Extension,
         {
           type: "addComplexType",
@@ -270,7 +308,9 @@ describe("DropCommandFactory", () => {
     test.each([
       [
         "a choice on a named complexType",
-        makeItem("/complexType:PersonType", DiagramItemType.type, { type: "complexType" }),
+        makeItem("/complexType:PersonType", SchemaNodeType.ComplexType, {
+          schemaObject: component(`<xs:complexType name="PersonType"/>`),
+        }),
         C.Choice,
         {
           type: "modifyComplexType",
@@ -297,7 +337,7 @@ describe("DropCommandFactory", () => {
       ],
       [
         "a choice on a top-level group",
-        makeItem("/group:PeopleGroup", DiagramItemType.group),
+        makeItem("/group:PeopleGroup", SchemaNodeType.Group),
         C.Choice,
         {
           type: "modifyGroup",
@@ -315,19 +355,24 @@ describe("DropCommandFactory", () => {
       ["an attribute on a simpleType", SIMPLE_TYPE, C.Attribute],
       ["a simpleType on a group", GROUP, C.SimpleType],
       ["a complexType on a group", GROUP, C.ComplexType],
-      ["a group on a complexType", makeItem("/complexType:C", DiagramItemType.type, { type: "complexType" }), C.Group],
+      [
+        "a group on a complexType",
+        makeItem("/complexType:C", SchemaNodeType.ComplexType, {
+          schemaObject: component(`<xs:complexType name="C"/>`),
+        }),
+        C.Group,
+      ],
       [
         "a compositor on a compositor",
-        makeItem("/complexType:PersonType/group:sequence[0]", DiagramItemType.group, {
+        makeItem("/complexType:PersonType/group:sequence[0]", SchemaNodeType.Group, {
           groupType: DiagramItemGroupType.Sequence,
         }),
         C.All,
       ],
       ...(["list", "union"] as const).map((kind): RejectedDrop => [
         `a facet on a ${kind} simpleType`,
-        makeItem("/simpleType:Values", DiagramItemType.type, {
-          type: `simpleType (${kind})`,
-          simpleTypeDerivationKind: kind,
+        makeItem("/simpleType:Values", SchemaNodeType.SimpleType, {
+          schemaObject: component(`<xs:simpleType name="Values"><xs:${kind}/></xs:simpleType>`),
         }),
         C.Enumeration,
       ]),
@@ -339,10 +384,10 @@ describe("DropCommandFactory", () => {
 
   describe("createNodeDropCommand — facets", () => {
     test("should add a default facet to a restriction simpleType", () => {
-      const item = makeItem("/simpleType:Status", DiagramItemType.type, {
-        type: "simpleType (restricts xs:string)",
-        simpleTypeDerivationKind: "restriction",
-        restrictions: { enumeration: ["active"] },
+      const item = makeItem("/simpleType:Status", SchemaNodeType.SimpleType, {
+        schemaObject: component(
+          `<xs:simpleType name="Status"><xs:restriction base="xs:string"><xs:enumeration value="active"/></xs:restriction></xs:simpleType>`
+        ),
       });
 
       const command = factory.createNodeDropCommand(item, C.MinLength);

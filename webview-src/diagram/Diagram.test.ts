@@ -5,12 +5,14 @@
 import { Diagram } from "./Diagram";
 import { DiagramItem } from "./DiagramItem";
 import { DiagramItemType } from "./DiagramTypes";
+import { schema } from "../../shared/types";
+import { emptyDiagram, NOT_READ_SCHEMA_OBJECT } from "../__tests__/diagramTestHelpers";
 
 describe("Diagram", () => {
   let diagram: Diagram;
 
   beforeEach(() => {
-    diagram = new Diagram();
+    diagram = new Diagram(new schema());
   });
 
   describe("constructor", () => {
@@ -27,7 +29,7 @@ describe("Diagram", () => {
 
   describe("addRootElement", () => {
     test("should add element to root elements", () => {
-      const item = new DiagramItem("test-1", "TestItem", DiagramItemType.element, diagram);
+      const item = new DiagramItem("test-1", "TestItem", DiagramItemType.element, NOT_READ_SCHEMA_OBJECT, diagram);
 
       diagram.addRootElement(item);
 
@@ -36,8 +38,8 @@ describe("Diagram", () => {
     });
 
     test("should set diagram reference on the element", () => {
-      const item = new DiagramItem("test-1", "TestItem", DiagramItemType.element, diagram);
-      const newDiagram = new Diagram();
+      const item = new DiagramItem("test-1", "TestItem", DiagramItemType.element, NOT_READ_SCHEMA_OBJECT, diagram);
+      const newDiagram = new Diagram(new schema());
 
       newDiagram.addRootElement(item);
 
@@ -52,10 +54,10 @@ describe("Diagram", () => {
    */
   function addTree(): Record<"schema" | "a" | "b" | "c", DiagramItem> {
     const items = {
-      schema: new DiagramItem("schema", "schema", DiagramItemType.element),
-      a: new DiagramItem("a", "a", DiagramItemType.element),
-      b: new DiagramItem("b", "b", DiagramItemType.element),
-      c: new DiagramItem("c", "c", DiagramItemType.element),
+      schema: new DiagramItem("schema", "schema", DiagramItemType.element, NOT_READ_SCHEMA_OBJECT, emptyDiagram()),
+      a: new DiagramItem("a", "a", DiagramItemType.element, NOT_READ_SCHEMA_OBJECT, emptyDiagram()),
+      b: new DiagramItem("b", "b", DiagramItemType.element, NOT_READ_SCHEMA_OBJECT, emptyDiagram()),
+      c: new DiagramItem("c", "c", DiagramItemType.element, NOT_READ_SCHEMA_OBJECT, emptyDiagram()),
     };
     items.schema.addChild(items.a);
     items.schema.addChild(items.b);
@@ -81,7 +83,9 @@ describe("Diagram", () => {
 
     test("should return the first item in document order if two have the same ID", () => {
       const items = addTree();
-      items.b.addChild(new DiagramItem("c", "second c", DiagramItemType.element));
+      items.b.addChild(
+        new DiagramItem("c", "second c", DiagramItemType.element, NOT_READ_SCHEMA_OBJECT, emptyDiagram())
+      );
 
       expect(diagram.findItem("c")).toBe(items.c);
     });
@@ -124,7 +128,7 @@ describe("Diagram", () => {
     });
 
     test("should calculate bounding box with padding", () => {
-      const item = new DiagramItem("test-1", "TestItem", DiagramItemType.element, diagram);
+      const item = new DiagramItem("test-1", "TestItem", DiagramItemType.element, NOT_READ_SCHEMA_OBJECT, diagram);
       item.location = { x: 10, y: 20 };
       item.size = { width: 100, height: 50 };
       diagram.addRootElement(item);

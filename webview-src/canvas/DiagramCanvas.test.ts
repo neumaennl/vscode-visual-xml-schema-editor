@@ -95,7 +95,7 @@ describe("DiagramCanvas", () => {
       renderPerson(canvas, svg);
 
       expect(drawnIds(svg)).toContain(PERSON_ID);
-      expect(canvas.getItem(PERSON_ID)?.name).toBe("person");
+      expect(canvas.getItem(PERSON_ID)?.label).toBe("person");
     });
 
     test.each(["showDocumentation", "alwaysShowOccurrence", "showType"] as const)(
@@ -103,7 +103,7 @@ describe("DiagramCanvas", () => {
       (option) => {
         canvas.render(PERSON_SCHEMA, { ...DEFAULT_DIAGRAM_OPTIONS, [option]: true });
 
-        expect(canvas.getItem(SCHEMA_ROOT_ID)?.diagram?.[option]).toBe(true);
+        expect(canvas.getItem(SCHEMA_ROOT_ID)?.diagram[option]).toBe(true);
       }
     );
 

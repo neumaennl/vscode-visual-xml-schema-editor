@@ -5,7 +5,14 @@
 
 import { SchemaNodeType } from "../../shared/idStrategy";
 import type { ComplexTypeDerivationKind } from "../../shared/types";
-import type { DiagramItem } from "../diagram";
+import {
+  getComplexDerivation,
+  getSimpleDerivation,
+  getTypeText,
+  hasInlineComplexType,
+  hasInlineSimpleType,
+  type DiagramItem,
+} from "../diagram";
 
 /**
  * Tells whether the node is an element with an inline (anonymous) simple type.
@@ -15,7 +22,7 @@ import type { DiagramItem } from "../diagram";
  * @returns True when the item is an element with an inline simple type
  */
 export function isInlineSimpleTypeElement(node: DiagramItem, nodeType: SchemaNodeType | null): boolean {
-  return nodeType === SchemaNodeType.Element && node.isSimpleContent;
+  return nodeType === SchemaNodeType.Element && hasInlineSimpleType(node);
 }
 
 /**
@@ -26,7 +33,7 @@ export function isInlineSimpleTypeElement(node: DiagramItem, nodeType: SchemaNod
  * @returns True when the item is an element with an inline complex type
  */
 export function isInlineComplexTypeElement(node: DiagramItem, nodeType: SchemaNodeType | null): boolean {
-  return nodeType === SchemaNodeType.Element && node.hasAnonymousComplexType;
+  return nodeType === SchemaNodeType.Element && hasInlineComplexType(node);
 }
 
 /**
@@ -49,19 +56,18 @@ export function hasInlineAnonymousElementType(node: DiagramItem, nodeType: Schem
  * @returns The text of the field
  */
 export function getReadOnlyTypeValue(node: DiagramItem, baseType: string | undefined): string {
-  if (node.hasAnonymousComplexType) {
-    const derivationRelation = node.complexDerivationKind
-      ? getDerivationRelation(node.complexDerivationKind)
-      : undefined;
+  if (hasInlineComplexType(node)) {
+    const derivationKind = getComplexDerivation(node)?.kind;
+    const derivationRelation = derivationKind ? getDerivationRelation(derivationKind) : undefined;
     return derivationRelation && baseType
       ? `Inline complexType (${derivationRelation} ${baseType})`
       : "Inline complexType";
   }
-  if (node.isSimpleContent) {
+  if (hasInlineSimpleType(node)) {
     const body = describeSimpleTypeBody(node, baseType);
     return body ? `Inline simpleType (${body})` : "Inline simpleType";
   }
-  return node.type;
+  return getTypeText(node);
 }
 
 /**
@@ -73,13 +79,12 @@ export function getReadOnlyTypeValue(node: DiagramItem, baseType: string | undef
  * @returns The description, or undefined when the body names no type
  */
 function describeSimpleTypeBody(node: DiagramItem, baseType: string | undefined): string | undefined {
-  switch (node.simpleTypeDerivationKind) {
+  const derivation = getSimpleDerivation(node);
+  switch (derivation?.kind) {
     case "list":
-      return node.simpleTypeListItemType ? `list of ${node.simpleTypeListItemType}` : undefined;
+      return derivation.itemType ? `list of ${derivation.itemType}` : undefined;
     case "union":
-      return node.simpleTypeUnionMemberTypes?.length
-        ? `union of ${node.simpleTypeUnionMemberTypes.join(", ")}`
-        : undefined;
+      return derivation.memberTypes.length > 0 ? `union of ${derivation.memberTypes.join(", ")}` : undefined;
     default:
       return baseType ? `restricts ${baseType}` : undefined;
   }
@@ -117,6 +122,6 @@ export function getTypeEditHint(
  * @param derivationKind - The derivation kind of the complex type
  * @returns `"restricts"` for a restriction, `"extends"` for an extension
  */
-export function getDerivationRelation(derivationKind: ComplexTypeDerivationKind): string {
+function getDerivationRelation(derivationKind: ComplexTypeDerivationKind): string {
   return derivationKind === "restriction" ? "restricts" : "extends";
 }

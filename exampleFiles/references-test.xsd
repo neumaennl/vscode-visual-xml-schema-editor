@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tns="urn:example:references" targetNamespace="urn:example:references" elementFormDefault="qualified">
+  <xs:element name="order">
+    <xs:annotation>
+      <xs:documentation>root element with an element reference and a group reference</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="id" type="xs:string"/>
+        <xs:element ref="tns:note" minOccurs="0"/>
+        <xs:group ref="tns:auditGroup"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="note" type="xs:string"/>
+  <xs:group name="auditGroup">
+    <xs:sequence>
+      <xs:element name="user" type="xs:string"/>
+    </xs:sequence>
+  </xs:group>
+</xs:schema>

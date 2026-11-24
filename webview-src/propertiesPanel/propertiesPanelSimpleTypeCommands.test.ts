@@ -7,7 +7,6 @@ import {
   createSimpleTypeKindCommand,
   createSimpleTypeListCommand,
   createSimpleTypeUnionCommand,
-  extractBaseType,
 } from "./propertiesPanelSimpleTypeCommands";
 import type { DiagramItem } from "../diagram";
 import { diagramItem, muteDiagramBuilderLog } from "../__tests__/diagramTestHelpers";
@@ -40,18 +39,6 @@ function simpleTypeNode(id: string): DiagramItem {
 
 describe("propertiesPanelSimpleTypeCommands", () => {
   muteDiagramBuilderLog();
-
-  describe("extractBaseType", () => {
-    test.each([
-      { typeText: "simpleType (restricts xs:string)", expected: "xs:string" },
-      { typeText: "<anonymous complexType> with complexContent (extends tns:Base)", expected: "tns:Base" },
-      { typeText: "xs:int ", expected: "xs:int" },
-      { typeText: "simpleType (list of xs:token)", expected: undefined },
-      { typeText: "tns:Word", expected: undefined },
-    ])("should extract $expected from '$typeText'", ({ typeText, expected }) => {
-      expect(extractBaseType(typeText)).toBe(expected);
-    });
-  });
 
   describe("createSimpleTypeListCommand", () => {
     test("should change the item type of a list and add the prefix to a type of the schema", () => {

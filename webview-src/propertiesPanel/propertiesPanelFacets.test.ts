@@ -6,7 +6,7 @@ import type { Mock } from "vitest";
 import { renderFacetsTab } from "./propertiesPanelFacets";
 import { addPropertyToContainer } from "./propertiesPanelDom";
 import type { SchemaCommand } from "../../shared/types";
-import type { DiagramItem } from "../diagram";
+import { getFacets, type DiagramItem } from "../diagram";
 import { editInput, getChipValuesByLabel, getInputByLabel } from "../__tests__/propertiesPanelTestHelpers";
 import { diagramItem, muteDiagramBuilderLog } from "../__tests__/diagramTestHelpers";
 import { webviewSchemaWith } from "../../shared/__tests__/schemaTestHelpers";
@@ -115,7 +115,7 @@ describe("renderFacetsTab", () => {
       { id: "/simpleType:Range", label: "Min Inclusive", value: "", facets: { minInclusive: undefined } },
     ])("should set $label of $id to '$value' and keep the other facets", ({ id, label, value, facets }) => {
       const { tab, node, dispatch } = renderFacets(id);
-      const expected = { ...node.restrictions, ...facets };
+      const expected = { ...getFacets(node), ...facets };
 
       editInput(tab, label, value);
 
@@ -123,14 +123,13 @@ describe("renderFacetsTab", () => {
         type: "modifySimpleType",
         payload: { typeId: id, restrictions: expected },
       });
-      expect(node.restrictions).toEqual(expected);
     });
 
     test("should suggest the values of the white space facet and set an entered one", () => {
       const { tab, node, dispatch } = renderFacets("/simpleType:Code");
       const input = getInputByLabel(tab, "White Space");
       const suggestions = tab.querySelector<HTMLDataListElement>(`#${input.getAttribute("list") ?? ""}`)!;
-      const expected = { ...node.restrictions, whiteSpace: "preserve" };
+      const expected = { ...getFacets(node), whiteSpace: "preserve" };
 
       expect(Array.from(suggestions.options, (option) => option.value)).toEqual(["preserve", "replace", "collapse"]);
       editInput(tab, "White Space", "preserve");
@@ -139,7 +138,6 @@ describe("renderFacetsTab", () => {
         type: "modifySimpleType",
         payload: { typeId: "/simpleType:Code", restrictions: expected },
       });
-      expect(node.restrictions).toEqual(expected);
     });
 
     test.each([
@@ -153,26 +151,23 @@ describe("renderFacetsTab", () => {
       { id: "/simpleType:Range", label: "Total Digits", value: "0", message: "totalDigits must be a positive integer" },
       { id: "/simpleType:Fixed", label: "Length", value: " ", message: "A restriction requires at least one facet" },
     ])("should reject $label '$value' of $id with a message and keep the facets", ({ id, label, value, message }) => {
-      const { tab, node, dispatch } = renderFacets(id);
-      const before = { ...node.restrictions };
+      const { tab, dispatch } = renderFacets(id);
       const input = getInputByLabel(tab, label);
       const current = input.value;
 
       editInput(tab, label, value);
 
       expect(dispatch).not.toHaveBeenCalled();
-      expect(node.restrictions).toEqual(before);
       expect(input.value).toBe(current);
       expect(input.parentElement?.querySelector(".property-message")?.textContent).toBe(message);
     });
 
     test("should reject a value that the white space facet does not allow, with a message", () => {
-      const { tab, node, dispatch } = renderFacets("/simpleType:Code");
+      const { tab, dispatch } = renderFacets("/simpleType:Code");
 
       editInput(tab, "White Space", "trim");
 
       expect(dispatch).not.toHaveBeenCalled();
-      expect(node.restrictions?.whiteSpace).toBe("collapse");
       expect(getInputByLabel(tab, "White Space").value).toBe("collapse");
       expect(getInputByLabel(tab, "White Space").parentElement?.querySelector(".property-message")?.textContent).toBe(
         "'trim' is not a value of White Space. Choose one of: preserve, replace, collapse"
@@ -208,7 +203,7 @@ describe("renderFacetsTab", () => {
 
       expect(dispatch).toHaveBeenCalledExactlyOnceWith({
         type: "modifySimpleType",
-        payload: { typeId: "/simpleType:Code", restrictions: { ...node.restrictions, enumeration: ["B"] } },
+        payload: { typeId: "/simpleType:Code", restrictions: { ...getFacets(node), enumeration: ["B"] } },
       });
     });
   });
@@ -221,7 +216,7 @@ describe("renderFacetsTab", () => {
       { label: "White Space", facets: { whiteSpace: undefined } },
     ])("should remove the $label facet and keep the others", ({ label, facets }) => {
       const { tab, node, dispatch } = renderFacets("/simpleType:Code");
-      const expected = { ...node.restrictions, ...facets };
+      const expected = { ...getFacets(node), ...facets };
 
       removeButtonOf(tab, label).click();
 

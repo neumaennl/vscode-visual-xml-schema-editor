@@ -3,7 +3,11 @@
  * its fields, and both together, which the validators of the extension host check.
  */
 
+import type { allNNI } from "./types.js";
 import type { ValidationResult } from "./validation.js";
+
+/** A value of `maxOccurs`: a non-negative integer or `unbounded`. */
+export type MaxOccurs = allNNI;
 
 /**
  * Validates `minOccurs` value.

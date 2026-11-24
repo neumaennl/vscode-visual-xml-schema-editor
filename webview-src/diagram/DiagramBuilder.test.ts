@@ -4,7 +4,9 @@
 
 import { DiagramBuilder } from "../diagram/DiagramBuilder";
 import type { DiagramItem } from "../diagram/DiagramItem";
+import { getTypeText, hasInlineComplexType } from "../diagram/typeAccessors";
 import { schema } from "../../shared/types";
+import { SchemaNodeType } from "../../shared/idStrategy";
 import { webviewSchemaWith } from "../../shared/__tests__/schemaTestHelpers";
 
 /**
@@ -46,31 +48,8 @@ describe("DiagramBuilder", () => {
       const diagram = builder.buildFromSchema(schemaObj);
 
       expect(diagram.rootElements).toHaveLength(1);
-      expect(diagram.rootElements[0]!.name).toContain("Schema:");
-      expect(diagram.rootElements[0]!.name).toContain("http://example.com/ns");
-    });
-
-    test("should expose schema-root documentation as structured annotation entries", () => {
-      const schemaObj = createTestSchema({
-        annotation: [
-          {
-            documentation: [{ value: "Schema doc 1" }, { value: "Schema doc 2" }],
-          },
-        ],
-      });
-
-      const diagram = builder.buildFromSchema(schemaObj);
-
-      expect(diagram.rootElements[0]!.documentationAnnotations).toEqual([
-        {
-          id: "/schema/annotation[0]",
-          documentationEntries: [
-            { id: "/schema/annotation[0]/documentation[0]", content: "Schema doc 1", lang: undefined },
-            { id: "/schema/annotation[0]/documentation[1]", content: "Schema doc 2", lang: undefined },
-          ],
-        },
-      ]);
-      expect(diagram.rootElements[0]!.documentation).toBe("Schema doc 1\nSchema doc 2");
+      expect(diagram.rootElements[0]!.label).toContain("Schema:");
+      expect(diagram.rootElements[0]!.label).toContain("http://example.com/ns");
     });
 
     test("should process schema elements", () => {
@@ -78,26 +57,7 @@ describe("DiagramBuilder", () => {
         `<xs:element name="Person" type="PersonType"/><xs:element name="Address" type="AddressType"/>`
       );
 
-      expect(nodes.map((node) => node.name)).toEqual(["Person", "Address"]);
-    });
-
-    test("should store the targetNamespace prefix on the diagram when available", () => {
-      const schemaObj = createTestSchema({
-        targetNamespace: "http://example.com/ns",
-        _namespacePrefixes: {
-          xs: "http://www.w3.org/2001/XMLSchema",
-          tns: "http://example.com/ns",
-        },
-      });
-
-      const diagram = builder.buildFromSchema(schemaObj);
-
-      expect(diagram.currentSchemaPrefix).toBe("tns");
-      expect(diagram.schemaTargetNamespace).toBe("http://example.com/ns");
-      expect(diagram.schemaNamespacePrefixes).toEqual({
-        xs: "http://www.w3.org/2001/XMLSchema",
-        tns: "http://example.com/ns",
-      });
+      expect(nodes.map((node) => node.label)).toEqual(["Person", "Address"]);
     });
 
     test.each([
@@ -111,7 +71,7 @@ describe("DiagramBuilder", () => {
       const nodes = topLevelNodes(content);
 
       expect(nodes).toHaveLength(1);
-      expect(nodes[0]!.type).toBe(type);
+      expect(getTypeText(nodes[0]!)).toBe(type);
     });
 
     test.each([
@@ -120,10 +80,8 @@ describe("DiagramBuilder", () => {
         "the schema has only top-level attributes, which are not rendered as separate nodes",
         `<xs:attribute name="id" type="xs:string"/>`,
       ],
-    ])("should add placeholder when %s", (_case, content) => {
-      const nodes = topLevelNodes(content);
-
-      expect(nodes.map((node) => node.name)).toEqual(["No elements found"]);
+    ])("should show only the schema node when %s", (_case, content) => {
+      expect(topLevelNodes(content)).toEqual([]);
     });
 
     test("should process multiple simple types", () => {
@@ -167,28 +125,97 @@ describe("DiagramBuilder", () => {
       ],
       ["a named type", `<xs:element name="Person" type="xs:string"/>`, false],
     ])(
-      "should process elements with %s and set hasAnonymousComplexType for inline complex types",
-      (_case, content, hasAnonymousComplexType) => {
+      "should process elements with %s, one item for the element and its inline type",
+      (_case, content, inlineComplexType) => {
         const nodes = topLevelNodes(content);
 
         expect(nodes).toHaveLength(1);
-        expect(nodes[0]!.name).toBe("Person");
-        expect(nodes[0]!.hasAnonymousComplexType).toBe(hasAnonymousComplexType);
+        expect(nodes[0]!.label).toBe("Person");
+        expect(hasInlineComplexType(nodes[0]!)).toBe(inlineComplexType);
       }
     );
 
     test("should handle schema without targetNamespace", () => {
       const diagram = builder.buildFromSchema(webviewSchemaWith(`<xs:element name="Test"/>`));
 
-      expect(diagram.rootElements[0]!.name).toContain("Schema:");
+      expect(diagram.rootElements[0]!.label).toContain("Schema:");
+    });
+  });
+
+  describe("schema objects and labels", () => {
+    /** A schema with the target namespace `urn:t` and references to its own and to imported components. */
+    const REFERENCES = `<xs:element name="person" type="xs:string"/>
+<xs:complexType name="T"><xs:sequence>
+  <xs:element ref="tns:person"/><xs:element ref="ext:item"/><xs:element name="x"/>
+  <xs:group ref="tns:G"/><xs:group ref="ext:H"/>
+</xs:sequence></xs:complexType>
+<xs:group name="G"><xs:sequence/></xs:group>`;
+
+    /**
+     * Builds the diagram of {@link REFERENCES}.
+     *
+     * @returns The diagram
+     */
+    function buildReferences(): ReturnType<DiagramBuilder["buildFromSchema"]> {
+      const schemaObj = webviewSchemaWith(REFERENCES, { tns: "urn:t", ext: "urn:ext" });
+      schemaObj.targetNamespace = "urn:t";
+      return new DiagramBuilder().buildFromSchema(schemaObj);
+    }
+
+    test("should let the diagram and each item reference the schema object it shows", () => {
+      const diagram = buildReferences();
+      const schemaObj = diagram.schema;
+
+      expect(diagram.rootElements[0]!.schemaObject).toBe(schemaObj);
+      expect(diagram.findItem("/element:person")?.schemaObject).toBe(schemaObj.element![0]);
+      expect(diagram.findItem("/group:G")?.schemaObject).toBe(schemaObj.group![0]);
+      expect(diagram.findItem("/complexType:T/group:sequence[0]")?.schemaObject).toBe(
+        schemaObj.complexType![0]!.sequence
+      );
+      expect(diagram.findItem("/complexType:T/group:sequence[0]/element:x[2]")?.schemaObject).toBe(
+        schemaObj.complexType![0]!.sequence!.element![2]
+      );
     });
 
-    test("should expose top-level attributes on schema root properties", () => {
-      const diagram = builder.buildFromSchema(
-        webviewSchemaWith(`<xs:attribute name="lang" type="xs:string"/><xs:attribute name="version" type="xs:string"/>`)
-      );
+    test("should record the kind of schema construct that each item shows, as it was found in its parent", () => {
+      const diagram = buildReferences();
+      const nodeTypes = [
+        "/schema",
+        "/element:person",
+        "/complexType:T",
+        "/complexType:T/group:sequence[0]",
+        "/group:G",
+      ].map((id) => diagram.findItem(id)?.nodeType);
+      const children = diagram
+        .findItem("/complexType:T/group:sequence[0]")!
+        .childElements.map((child) => child.nodeType);
 
-      expect(diagram.rootElements[0]!.attributes.map((attribute) => attribute.name)).toEqual(["lang", "version"]);
+      expect(nodeTypes).toEqual([
+        SchemaNodeType.Schema,
+        SchemaNodeType.Element,
+        SchemaNodeType.ComplexType,
+        SchemaNodeType.Group,
+        SchemaNodeType.Group,
+      ]);
+      expect(children).toEqual([
+        SchemaNodeType.Element,
+        SchemaNodeType.Element,
+        SchemaNodeType.Element,
+        SchemaNodeType.GroupRef,
+        SchemaNodeType.GroupRef,
+      ]);
+    });
+
+    test("should label a reference with the name of the referenced component, with a prefix of another schema", () => {
+      const sequence = buildReferences().findItem("/complexType:T/group:sequence[0]")!;
+
+      expect(sequence.childElements.map((child) => [child.id.split("/").at(-1), child.label])).toEqual([
+        ["element:unnamed[0]", "person"],
+        ["element:unnamed[1]", "ext:item"],
+        ["element:x[2]", "x"],
+        ["groupRef:tns:G[0]", "G"],
+        ["groupRef:ext:H[1]", "ext:H"],
+      ]);
     });
   });
 });

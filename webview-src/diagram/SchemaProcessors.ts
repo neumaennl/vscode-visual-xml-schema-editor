@@ -4,16 +4,11 @@
  */
 
 import { DiagramItem } from "./DiagramItem";
-import type { ComplexTypeLike, SimpleTypeLike, ContentTypeLike, GroupDefLike } from "./DiagramTypes";
+import type { ComplexTypeLike, ContentTypeLike, GroupDefLike } from "./DiagramTypes";
 import { DiagramItemType, DiagramItemGroupType } from "./DiagramTypes";
 import { generateSchemaId, parseSchemaId, SchemaNodeType, UNNAMED_NODE_NAME } from "../../shared/idStrategy";
-import {
-  extractDocumentation,
-  extractDocumentationAnnotations,
-  extractAttributes,
-  extractOccurrenceConstraints,
-} from "./DiagramBuilderHelpers";
-import { anonymousTypeId, getAttributeContainer, type TypeKind } from "../../shared/schemaUtils";
+import { anonymousTypeId, getTargetNamespacePrefixes } from "../../shared/schemaUtils";
+import { ownComponentName } from "../../shared/qNames";
 import type { localElement } from "../../shared/generated/localElement";
 import type { explicitGroup } from "../../shared/generated/explicitGroup";
 import type { all } from "../../shared/generated/all";
@@ -21,128 +16,33 @@ import type { simpleExplicitGroup } from "../../shared/generated/simpleExplicitG
 import type { allType } from "../../shared/generated/allType";
 import type { groupRef } from "../../shared/generated/groupRef";
 import type { narrowMaxMin } from "../../shared/generated/narrowMaxMin";
-import { processList, processRestriction, processUnion } from "./SchemaProcessorsSimpleTypes";
+import { hasInlineComplexType } from "./typeAccessors";
 
 /**
- * Processes an anonymous inline complex type within an element.
- * Merges the complex type structure directly into the parent element.
- *
- * @param parent - Parent element item containing the anonymous type
- * @param complexType - Anonymous complex type definition
- */
-function processAnonymousComplexType(parent: DiagramItem, complexType: ComplexTypeLike): void {
-  // Mark the parent type as anonymous complex type
-  if (!parent.type) {
-    parent.type = "<anonymous complexType>";
-  }
-
-  // Flag the parent element as owning an anonymous complex type
-  parent.hasAnonymousComplexType = true;
-
-  // Extract mixed content flag from the anonymous complex type
-  if ((complexType as { mixed?: boolean }).mixed === true) {
-    parent.isMixed = true;
-  }
-
-  mergeAnonymousTypeDocumentation(parent, "complexType", complexType.annotation);
-
-  // Process the complex type structure directly on the parent
-  processComplexType(parent, complexType);
-}
-
-/**
- * Processes an anonymous inline simple type within an element.
- * Marks the parent as having simple content and extracts base type information.
- *
- * @param parent - Parent element item containing the anonymous type
- * @param simpleType - Anonymous simple type definition
- */
-function processAnonymousSimpleType(parent: DiagramItem, simpleType: SimpleTypeLike): void {
-  // Mark the parent as having simple content
-  parent.isSimpleContent = true;
-
-  mergeAnonymousTypeDocumentation(parent, "simpleType", simpleType.annotation);
-
-  // Set type before processing restriction so += works correctly
-  if (!parent.type) {
-    parent.type = "<anonymous simpleType>";
-  }
-
-  processSimpleTypeBody(parent, simpleType);
-}
-
-/**
- * Processes the anonymous inline complexType or simpleType of an element, top-level or local.
+ * Adds the content of the anonymous complexType of an element, top-level or local, to the item of the
+ * element: the element and its inline type are one item.
  *
  * @param item - Diagram item of the element
  * @param element - The element
  */
-export function processAnonymousTypes(
-  item: DiagramItem,
-  element: { complexType?: ComplexTypeLike; simpleType?: SimpleTypeLike }
-): void {
+export function processAnonymousTypes(item: DiagramItem, element: { complexType?: ComplexTypeLike }): void {
   if (element.complexType) {
-    processAnonymousComplexType(item, element.complexType);
-  }
-  if (element.simpleType) {
-    processAnonymousSimpleType(item, element.simpleType);
+    processComplexType(item, element.complexType);
   }
 }
 
 /**
- * Processes the restriction, list or union of a simpleType to extract its derivation.
- *
- * @param item - Diagram item of the simpleType, or of the element that holds it inline
- * @param simpleType - The simpleType
- */
-export function processSimpleTypeBody(item: DiagramItem, simpleType: SimpleTypeLike): void {
-  if (simpleType.restriction) {
-    processRestriction(item, simpleType.restriction);
-  } else if (simpleType.list) {
-    processList(item, simpleType.list);
-  } else if (simpleType.union) {
-    processUnion(item, simpleType.union);
-  }
-}
-
-/**
- * Gives an element the documentation of its anonymous type if it has none of its own. The annotations
- * keep the ID of the anonymous type, so that editing them changes the type's annotation.
- *
- * @param parent - Diagram item of the element
- * @param kind - The kind of the anonymous type
- * @param annotation - The annotation of the anonymous type
- */
-function mergeAnonymousTypeDocumentation(
-  parent: DiagramItem,
-  kind: TypeKind,
-  annotation: Parameters<typeof extractDocumentation>[0]
-): void {
-  if (parent.documentation) {
-    return;
-  }
-  parent.documentationAnnotations = extractDocumentationAnnotations(anonymousTypeId(parent.id, kind), annotation);
-  parent.documentation = extractDocumentation(annotation) ?? "";
-}
-
-/**
- * Processes a complex type and adds its children to the parent item.
- * Handles complexContent, simpleContent, sequences, choices, and all groups.
+ * Adds the children of a complex type to the item that shows it: its compositor or group reference,
+ * which lives in the extension or restriction of complex content, as for the extension host.
  *
  * @param parent - Parent diagram item to add children to
  * @param complexType - Complex type definition from schema
  */
 export function processComplexType(parent: DiagramItem, complexType: ComplexTypeLike): void {
-  // Process attributes, which live in the extension or restriction of complex or simple content
-  extractAttributes(parent, getAttributeContainer(complexType));
-
   if (complexType.complexContent) {
-    parent.type += " with complexContent";
     processDerivation(parent, complexType.complexContent);
   }
   if (complexType.simpleContent) {
-    parent.isSimpleContent = true;
-    parent.type += " with simpleContent";
     processDerivation(parent, complexType.simpleContent);
   }
   processParticles(parent, complexType);
@@ -158,13 +58,9 @@ function processDerivation(
   parent: DiagramItem,
   content: { extension?: ContentTypeLike; restriction?: ContentTypeLike }
 ): void {
+  // The particles of a restriction are not shown yet (see the known issue about restricted complex content)
   if (content.extension) {
-    parent.complexDerivationKind = "extension";
-    processExtension(parent, content.extension);
-  }
-  if (content.restriction) {
-    parent.complexDerivationKind = "restriction";
-    processRestriction(parent, content.restriction);
+    processParticles(parent, content.extension);
   }
 }
 
@@ -282,80 +178,15 @@ function processGroup(
     }),
     groupName,
     DiagramItemType.group,
+    groupDef,
     parent.diagram
   );
+  groupItem.nodeType = SchemaNodeType.Group;
   groupItem.groupType = groupType;
-  groupItem.documentationAnnotations = extractDocumentationAnnotations(groupItem.id, groupDef.annotation);
-  groupItem.documentation = extractDocumentation(groupDef.annotation) ?? "";
-  const occurrenceGroupDef = groupDef as { minOccurs?: number; maxOccurs?: number | "unbounded" };
-  if (occurrenceGroupDef.minOccurs !== undefined) {
-    const parsedMin = occurrenceGroupDef.minOccurs;
-    if (!Number.isNaN(parsedMin)) {
-      groupItem.minOccurrence = parsedMin;
-    }
-  }
-  if (occurrenceGroupDef.maxOccurs !== undefined) {
-    if (occurrenceGroupDef.maxOccurs === "unbounded") {
-      groupItem.maxOccurrence = -1;
-    } else {
-      const parsedMax = occurrenceGroupDef.maxOccurs;
-      if (!Number.isNaN(parsedMax)) {
-        groupItem.maxOccurrence = parsedMax;
-      }
-    }
-  }
 
-  // Process elements within the group.
-  // Import and use createElementNode from TypeNodeCreators would create a circular dependency,
-  // so we create a lightweight element node inline with essential properties.
   const elementsArray = (groupDef.element as Array<localElement | narrowMaxMin> | undefined) ?? [];
   elementsArray.forEach((elem, elemPosition) => {
-    const item = new DiagramItem(
-      generateSchemaId({
-        nodeType: SchemaNodeType.Element,
-        name: elem.name ?? UNNAMED_NODE_NAME,
-        parentId: groupItem.id,
-        position: elemPosition,
-      }),
-      elem.name ?? UNNAMED_NODE_NAME,
-      DiagramItemType.element,
-      parent.diagram
-    );
-    if (elem.type_) {
-      item.type = elem.type_;
-    }
-    item.documentationAnnotations = extractDocumentationAnnotations(item.id, elem.annotation);
-    item.documentation = extractDocumentation(elem.annotation) ?? "";
-
-    // Extract element-level constraints
-    item.isNillable = elem.nillable === true;
-    item.elementDefault = elem.default_?.toString();
-    item.elementFixed = elem.fixed?.toString();
-
-    // Extract occurrence constraints for the element
-    if (typeof (elem as narrowMaxMin).minOccurs === "string") {
-      const parsedMin = Number((elem as narrowMaxMin).minOccurs);
-      if (!Number.isNaN(parsedMin)) {
-        item.minOccurrence = parsedMin;
-      }
-      const rawMax = (elem as narrowMaxMin).maxOccurs;
-      if (rawMax === "unbounded") {
-        item.maxOccurrence = -1;
-      } else if (rawMax !== undefined) {
-        const parsedMax = Number(rawMax);
-        if (!Number.isNaN(parsedMax)) {
-          item.maxOccurrence = parsedMax;
-        }
-      }
-    } else {
-      extractOccurrenceConstraints(item, elem as localElement);
-    }
-
-    // Local elements inside groups can also carry inline anonymous types.
-    // Process them so UI state (e.g. base-type editing) matches top-level elements.
-    processAnonymousTypes(item, elem);
-
-    groupItem.addChild(item);
+    groupItem.addChild(createLocalElementItem(elem, elemPosition, groupItem));
   });
 
   ((groupDef as { group?: groupRef[] }).group ?? []).forEach((ref, index) => {
@@ -372,6 +203,67 @@ function processGroup(
 }
 
 /**
+ * Creates the item of a local element of a compositor, with its anonymous type merged into it.
+ *
+ * @param elem - The local element
+ * @param elemPosition - The position of the element among the elements of the compositor
+ * @param groupItem - The item of the compositor
+ * @returns The item of the element
+ */
+function createLocalElementItem(
+  elem: localElement | narrowMaxMin,
+  elemPosition: number,
+  groupItem: DiagramItem
+): DiagramItem {
+  const item = new DiagramItem(
+    generateSchemaId({
+      nodeType: SchemaNodeType.Element,
+      name: elem.name ?? UNNAMED_NODE_NAME,
+      parentId: groupItem.id,
+      position: elemPosition,
+    }),
+    elementLabel(elem, groupItem),
+    DiagramItemType.element,
+    elem,
+    groupItem.diagram
+  );
+  item.nodeType = SchemaNodeType.Element;
+
+  // Local elements inside groups can also carry inline anonymous types.
+  // Process them so UI state (e.g. base-type editing) matches top-level elements.
+  processAnonymousTypes(item, elem);
+
+  return item;
+}
+
+/**
+ * Returns the text that the diagram shows for a local element: its name, or for an element reference the
+ * label of the reference.
+ *
+ * @param element - The local element
+ * @param parent - The item that holds the element, for the schema of its diagram
+ * @returns The label
+ */
+function elementLabel(element: { name?: string; ref?: string }, parent: DiagramItem): string {
+  if (element.name || !element.ref) {
+    return element.name ?? UNNAMED_NODE_NAME;
+  }
+  return referenceLabel(element.ref, parent);
+}
+
+/**
+ * Returns the text that the diagram shows for an element or group reference: the name of the referenced
+ * component, with its prefix if it is in another schema. The reference arrow marks it as a reference.
+ *
+ * @param ref - The QName of the referenced component
+ * @param parent - The item that holds the reference, for the schema of its diagram
+ * @returns The label
+ */
+function referenceLabel(ref: string, parent: DiagramItem): string {
+  return ownComponentName(ref, getTargetNamespacePrefixes(parent.diagram.schema)) ?? ref;
+}
+
+/**
  * Returns the ID that compositors and group references use as parent: the anonymous complexType of an
  * element that has one, otherwise the parent itself.
  *
@@ -379,7 +271,7 @@ function processGroup(
  * @returns The parent ID for the child's ID
  */
 function resolveEffectiveGroupParentId(parent: DiagramItem): string {
-  if (parent.itemType === DiagramItemType.element && parent.hasAnonymousComplexType) {
+  if (hasInlineComplexType(parent)) {
     return anonymousTypeId(parent.id, "complexType");
   }
   return parent.id;
@@ -401,29 +293,11 @@ function processGroupRef(parent: DiagramItem, groupReference: groupRef, position
       parentId: resolveEffectiveGroupParentId(parent),
       position,
     }),
-    refName,
+    groupReference.ref ? referenceLabel(groupReference.ref, parent) : UNNAMED_NODE_NAME,
     DiagramItemType.group,
+    groupReference,
     parent.diagram
   );
-  groupRefItem.isReference = true;
-  groupRefItem.documentationAnnotations = extractDocumentationAnnotations(groupRefItem.id, groupReference.annotation);
-  groupRefItem.documentation = extractDocumentation(groupReference.annotation) ?? "";
-  extractOccurrenceConstraints(groupRefItem, groupReference);
+  groupRefItem.nodeType = SchemaNodeType.GroupRef;
   parent.addChild(groupRefItem);
-}
-
-/**
- * Processes an extension in complexContent or simpleContent.
- * Extracts the base type, then processes child groups. The attributes are read by {@link processComplexType}.
- *
- * @param parent - Parent diagram item to extend
- * @param extension - Extension definition from schema
- */
-function processExtension(parent: DiagramItem, extension: ContentTypeLike): void {
-  // Extract base type - append to existing type info
-  if (extension.base) {
-    parent.type += ` (extends ${extension.base})`;
-  }
-
-  processParticles(parent, extension);
 }

@@ -3,9 +3,8 @@ type: Component
 title: Editor
 description: The custom editor and the webview app - how the editor opens, the page layout, the app that wires palette, diagram and properties panel together, navigation, diagram settings, the palette and the properties panel tabs.
 tags: [editor, webview, palette, properties-panel, navigation, ui]
-status: stable
-generated: { by: human:neumaennl, at: 2026-11-20T10:00:58Z }
-verified: { by: human:neumaennl, at: 2026-11-20T10:41:02Z }
+status: draft
+generated: { by: human:neumaennl, at: 2026-11-24T15:38:45Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -132,7 +131,7 @@ Items are added by dragging them onto a node in the diagram. Which schema constr
 | Docs    | All nodes (not editable for every node)                 | `xs:documentation` entries of the node's annotations                                                                   |
 | XML     | All nodes                                               | Read-only XML preview of the node                                                                                      |
 
-Which fields are editable, the draft copy and the type suggestions are described in [UX concept](ux-concept.md#properties-panel).
+Which fields are editable, how the panel shows changes and the type suggestions are described in [UX concept](ux-concept.md#properties-panel).
 
 [^manifest]: Extension manifest
 

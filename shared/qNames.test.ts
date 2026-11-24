@@ -32,8 +32,8 @@ describe("ownComponentName", () => {
     ["own:Address", ["tns", "own"], "Address"],
     ["other:Address", ["tns"], undefined],
     ["tns:Address", [], undefined],
-  ])("should return for %s with the own prefixes %j: %s", (qName, ownPrefixes, expected) => {
-    expect(ownComponentName(qName, ownPrefixes)).toBe(expected);
+  ])("should return for %s with the prefixes %j of the target namespace: %s", (qName, tnsPrefixes, expected) => {
+    expect(ownComponentName(qName, tnsPrefixes)).toBe(expected);
   });
 });
 

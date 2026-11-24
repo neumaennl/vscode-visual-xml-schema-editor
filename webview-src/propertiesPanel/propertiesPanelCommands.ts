@@ -5,7 +5,7 @@
 
 import type { SchemaCommand } from "../../shared/types";
 import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy";
-import type { DiagramItem } from "../diagram";
+import { getComplexDerivation, hasInlineSimpleType, type DiagramItem } from "../diagram";
 import { getNodeType } from "./propertiesPanelNodeKinds";
 import { resolveComplexTypeId, resolveSimpleTypeId } from "./propertiesPanelTargets";
 import { normalizeTypeReference } from "./propertiesPanelTypeReferences";
@@ -84,7 +84,7 @@ export function createTypeCommand(node: DiagramItem, nextType: string): SchemaCo
   const nodeType = getNodeType(node);
   switch (nodeType) {
     case SchemaNodeType.Element:
-      if (node.isSimpleContent) {
+      if (hasInlineSimpleType(node)) {
         return {
           type: "modifySimpleType",
           payload: {
@@ -119,7 +119,7 @@ export function createComplexBaseTypeCommand(node: DiagramItem, nextBaseType: st
     payload: {
       typeId: complexTypeId,
       baseType,
-      derivationKind: node.complexDerivationKind ?? "extension",
+      derivationKind: getComplexDerivation(node)?.kind ?? "extension",
     },
   };
 }

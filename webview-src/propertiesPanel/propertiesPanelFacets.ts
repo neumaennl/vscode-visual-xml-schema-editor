@@ -10,11 +10,10 @@ import {
   WHITE_SPACE_VALUES,
   type SINGLE_VALUE_FACETS,
 } from "../../shared/facets";
-import type { SchemaCommand } from "../../shared/types";
-import type { DiagramItem } from "../diagram";
+import type { RestrictionFacets, SchemaCommand } from "../../shared/types";
+import { getFacets, type DiagramItem } from "../diagram";
 import { createChoiceField, createEditableField } from "./propertiesPanelFields";
 import { resolveSimpleTypeId } from "./propertiesPanelTargets";
-import type { RestrictionSnapshot } from "./propertiesPanelDraft";
 import { getFacetIconStyle } from "../facetIcons";
 import { appendFacetRemoveButton, LAST_FACET_TITLE, renderValueListFacet } from "./propertiesPanelFacetLists";
 
@@ -51,7 +50,7 @@ export function renderFacetsTab(
   const root = document.createElement("div");
   root.className = "property-tab-content";
 
-  const restrictions = node.restrictions;
+  const restrictions = getFacets(node);
   const simpleTypeId = resolveSimpleTypeId(node);
   if (!simpleTypeId) {
     throw new Error(`The Facets tab is only shown for simple types, not for ${node.id}`);
@@ -65,14 +64,13 @@ export function renderFacetsTab(
     );
     return root;
   }
-  const buildAndDispatch = (updater: (next: RestrictionSnapshot) => void): void => {
-    const nextRestrictions: RestrictionSnapshot = {
+  const buildAndDispatch = (updater: (next: RestrictionFacets) => void): void => {
+    const nextRestrictions: RestrictionFacets = {
       ...restrictions,
       enumeration: restrictions.enumeration ? [...restrictions.enumeration] : undefined,
       pattern: restrictions.pattern ? [...restrictions.pattern] : undefined,
     };
     updater(nextRestrictions);
-    node.restrictions = nextRestrictions;
 
     // Without a base type, the restriction keeps its base, which may be an inline simple type
     dispatchCommand({
@@ -142,14 +140,14 @@ function appendOptionalValueFacet(
   root: HTMLElement,
   key: ValueFacetName,
   value: number | string | undefined,
-  buildAndDispatch: (updater: (next: RestrictionSnapshot) => void) => void,
+  buildAndDispatch: (updater: (next: RestrictionFacets) => void) => void,
   canRemove: boolean
 ): void {
   if (value === undefined) {
     return;
   }
   const label = VALUE_FACET_LABELS[key];
-  const assign = (draft: RestrictionSnapshot, text: string): void => {
+  const assign = (draft: RestrictionFacets, text: string): void => {
     const trimmed = text.trim();
     if (isNumericFacet(key)) {
       draft[key] = trimmed ? Number(trimmed) : undefined;

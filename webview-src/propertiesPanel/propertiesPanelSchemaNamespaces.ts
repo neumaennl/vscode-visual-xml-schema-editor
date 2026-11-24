@@ -3,7 +3,8 @@
  */
 
 import type { NamespacePrefixes, SchemaCommand } from "../../shared/types";
-import type { Diagram, DiagramItem } from "../diagram";
+import { getNamespacePrefixes, getTargetNamespace, type DiagramItem } from "../diagram";
+import { getTargetNamespacePrefixes } from "../../shared/schemaUtils";
 import {
   firstFreePrefix,
   isAbsoluteUri,
@@ -24,7 +25,6 @@ type CommandDispatcher = (command: SchemaCommand) => void;
  * @param node - Currently selected schema diagram item
  * @param dispatchCommand - Callback used to emit schema commands
  * @param rerender - Callback used to refresh the properties panel after edits
- * @throws An {@link Error} if the schema node belongs to no diagram, which holds the namespaces
  */
 export function renderSchemaNamespaceProperties(
   root: HTMLElement,
@@ -33,11 +33,8 @@ export function renderSchemaNamespaceProperties(
   rerender: () => void
 ): void {
   const { diagram } = node;
-  if (!diagram) {
-    throw new Error("The schema node belongs to no diagram");
-  }
-  const targetNamespace = diagram.schemaTargetNamespace;
-  const namespacePrefixes = { ...diagram.schemaNamespacePrefixes };
+  const targetNamespace = getTargetNamespace(diagram);
+  const namespacePrefixes = getNamespacePrefixes(diagram);
 
   root.appendChild(
     createEditableField("targetNamespace", targetNamespace, (next, reject) => {
@@ -52,10 +49,9 @@ export function renderSchemaNamespaceProperties(
         targetNamespace,
         nextTargetNamespace,
         namespacePrefixes,
-        diagram.currentSchemaPrefix
+        getTargetNamespacePrefixes(diagram.schema)[0]
       );
-      applySchemaNamespaceDraftState(
-        diagram,
+      sendSchemaNamespaces(
         nextTargetNamespace,
         nextNamespacePrefixes,
         previousNamespacePrefixes,
@@ -71,7 +67,7 @@ export function renderSchemaNamespaceProperties(
   const entries = Object.entries(namespacePrefixes).sort(([prefixA], [prefixB]) => prefixA.localeCompare(prefixB));
   for (const [prefix, namespaceUri] of entries) {
     namespacesContainer.appendChild(
-      createNamespaceRow(diagram, prefix, namespaceUri, targetNamespace, namespacePrefixes, dispatchCommand, rerender)
+      createNamespaceRow(prefix, namespaceUri, targetNamespace, namespacePrefixes, dispatchCommand, rerender)
     );
   }
 
@@ -84,14 +80,7 @@ export function renderSchemaNamespaceProperties(
     const nextNamespacePrefixes = { ...namespacePrefixes };
     const nextPrefix = firstFreePrefix(nextNamespacePrefixes);
     nextNamespacePrefixes[nextPrefix] = "urn:example:namespace";
-    applySchemaNamespaceDraftState(
-      diagram,
-      targetNamespace,
-      nextNamespacePrefixes,
-      previousNamespacePrefixes,
-      dispatchCommand,
-      rerender
-    );
+    sendSchemaNamespaces(targetNamespace, nextNamespacePrefixes, previousNamespacePrefixes, dispatchCommand, rerender);
   });
   namespacesContainer.appendChild(addButton);
 
@@ -104,7 +93,6 @@ export function renderSchemaNamespaceProperties(
  * namespace changes or removes the target namespace too. An invalid, reserved or already declared prefix
  * and a URI that is not absolute are rejected with a message below the field.
  *
- * @param diagram - The diagram of the schema
  * @param prefix - The prefix of the declaration
  * @param namespaceUri - The URI of the declaration
  * @param targetNamespace - The current target namespace
@@ -114,11 +102,10 @@ export function renderSchemaNamespaceProperties(
  * @returns The row
  */
 function createNamespaceRow(
-  diagram: Diagram,
   prefix: string,
   namespaceUri: string,
   targetNamespace: string,
-  namespacePrefixes: NamespacePrefixes,
+  namespacePrefixes: Readonly<NamespacePrefixes>,
   dispatchCommand: CommandDispatcher,
   rerender: () => void
 ): HTMLElement {
@@ -129,14 +116,14 @@ function createNamespaceRow(
   let currentNamespaceUri = namespaceUri;
   const commit = (): void => {
     const previousNamespacePrefixes = { ...namespacePrefixes };
-    const { [prefix]: _removed, ...nextNamespacePrefixes } = namespacePrefixes;
+    // A new object without the declaration, which the edited one replaces
+    const { [prefix]: _removed, ...nextNamespacePrefixes }: NamespacePrefixes = namespacePrefixes;
     if (currentNamespaceUri) {
       nextNamespacePrefixes[currentPrefix] = currentNamespaceUri;
     }
     const nextTargetNamespace =
       targetNamespace && namespacePrefixes[prefix] === targetNamespace ? currentNamespaceUri : targetNamespace;
-    applySchemaNamespaceDraftState(
-      diagram,
+    sendSchemaNamespaces(
       nextTargetNamespace,
       nextNamespacePrefixes,
       previousNamespacePrefixes,
@@ -192,8 +179,7 @@ function createNamespaceRow(
     const previousNamespacePrefixes = { ...namespacePrefixes };
     const { [prefix]: _removed, ...nextNamespacePrefixes } = namespacePrefixes;
     const nextTargetNamespace = targetNamespace && namespacePrefixes[prefix] === targetNamespace ? "" : targetNamespace;
-    applySchemaNamespaceDraftState(
-      diagram,
+    sendSchemaNamespaces(
       nextTargetNamespace,
       nextNamespacePrefixes,
       previousNamespacePrefixes,
@@ -207,21 +193,19 @@ function createNamespaceRow(
 }
 
 /**
- * Applies new namespaces to the diagram and sends them. Declarations without a URI and with a reserved
- * prefix are left out. A target namespace without a declaration is rejected and the fields are shown
- * again unchanged.
+ * Sends new namespaces; the panel shows them with the schema that the extension host sends next.
+ * Declarations without a URI and with a reserved prefix are left out. A target namespace without a
+ * declaration is rejected and the fields are shown again unchanged.
  *
- * @param diagram - The diagram of the schema
  * @param targetNamespace - The new target namespace
  * @param namespacePrefixes - The new namespace declarations
  * @param previousNamespacePrefixes - The namespace declarations before the change
  * @param dispatchCommand - Callback used to emit schema commands
  * @param rerender - Callback used to refresh the properties panel after edits
  */
-function applySchemaNamespaceDraftState(
-  diagram: Diagram,
+function sendSchemaNamespaces(
   targetNamespace: string,
-  namespacePrefixes: NamespacePrefixes,
+  namespacePrefixes: Readonly<NamespacePrefixes>,
   previousNamespacePrefixes: NamespacePrefixes,
   dispatchCommand: CommandDispatcher,
   rerender: () => void
@@ -236,11 +220,6 @@ function applySchemaNamespaceDraftState(
     return;
   }
 
-  diagram.schemaTargetNamespace = normalizedTargetNamespace;
-  diagram.schemaNamespacePrefixes = normalizedNamespacePrefixes;
-  const nextSchemaPrefix = findTargetNamespacePrefix(normalizedNamespacePrefixes, normalizedTargetNamespace);
-  diagram.currentSchemaPrefix = nextSchemaPrefix;
-
   dispatchCommand({
     type: "modifySchemaNamespaces",
     payload: {
@@ -249,7 +228,6 @@ function applySchemaNamespaceDraftState(
       previousNamespacePrefixes,
     },
   });
-  rerender();
 }
 
 /**
@@ -266,7 +244,7 @@ function applySchemaNamespaceDraftState(
 function syncTargetNamespaceWithDeclarations(
   previousTargetNamespace: string,
   nextTargetNamespace: string,
-  namespacePrefixes: NamespacePrefixes,
+  namespacePrefixes: Readonly<NamespacePrefixes>,
   preferredPrefix?: string
 ): NamespacePrefixes {
   const previousPrefix = findTargetNamespacePrefix(namespacePrefixes, previousTargetNamespace, preferredPrefix);
@@ -295,7 +273,7 @@ function syncTargetNamespaceWithDeclarations(
  * @returns The prefix, or undefined when there is no target namespace or no declaration of it
  */
 function findTargetNamespacePrefix(
-  namespacePrefixes: NamespacePrefixes,
+  namespacePrefixes: Readonly<NamespacePrefixes>,
   targetNamespace: string,
   preferredPrefix?: string
 ): string | undefined {

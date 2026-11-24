@@ -4,7 +4,7 @@
  */
 
 import { ownComponentName, splitQName } from "../../shared/qNames.js";
-import { getCurrentSchemaPrefixes } from "../../shared/schemaUtils.js";
+import { getTargetNamespacePrefixes } from "../../shared/schemaUtils.js";
 import { formChoice } from "../../shared/types.js";
 import type { NamespacePrefixes, schema } from "../../shared/types.js";
 
@@ -17,7 +17,7 @@ export interface SchemaNames {
   /** The namespace declarations of the schema element. */
   prefixes: NamespacePrefixes;
   /** The prefixes of the target namespace. */
-  ownPrefixes: string[];
+  tnsPrefixes: string[];
 }
 
 /**
@@ -31,7 +31,7 @@ export function schemaNamesOf(schemaObj: schema): SchemaNames {
     schemaObj,
     targetNamespace: schemaObj.targetNamespace?.toString() ?? "",
     prefixes: schemaObj._namespacePrefixes ?? {},
-    ownPrefixes: getCurrentSchemaPrefixes(schemaObj),
+    tnsPrefixes: getTargetNamespacePrefixes(schemaObj),
   };
 }
 
@@ -147,6 +147,6 @@ export function findOwnComponent<T extends { name?: string }>(
   components: readonly T[] | undefined,
   names: SchemaNames
 ): T | undefined {
-  const name = ownComponentName(qName, names.ownPrefixes);
+  const name = ownComponentName(qName, names.tnsPrefixes);
   return name === undefined ? undefined : components?.find((component) => component.name === name);
 }

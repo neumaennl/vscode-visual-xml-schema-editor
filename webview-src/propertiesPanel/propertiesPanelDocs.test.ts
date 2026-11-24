@@ -9,6 +9,7 @@ import type { SchemaCommand } from "../../shared/types";
 import { Diagram, DiagramItem, DiagramItemType } from "../diagram";
 import { diagramItem, muteDiagramBuilderLog } from "../__tests__/diagramTestHelpers";
 import { webviewSchemaWith } from "../../shared/__tests__/schemaTestHelpers";
+import { schema } from "../../shared/types";
 
 /**
  * Three annotations of the schema, the first with two documentation entries, the second with one and
@@ -27,12 +28,11 @@ const UNDOCUMENTED = `<xs:element name="plain" type="xs:string"/>
 <xs:complexType name="PersonType"><xs:sequence/></xs:complexType>
 <xs:group name="Contact"><xs:choice/></xs:group>`;
 
-/** The Docs tab of a node, the node, and the mocks that receive its commands and re-render it. */
+/** The Docs tab of a node, the node, and the mock that receives its commands. */
 interface DocsTab {
   tab: HTMLElement;
   node: DiagramItem;
   dispatch: Mock<(command: SchemaCommand) => void>;
-  rerender: Mock<() => void>;
 }
 
 /**
@@ -40,13 +40,12 @@ interface DocsTab {
  *
  * @param body - The content of the schema
  * @param id - The ID of the item
- * @returns The tab, the item and the mocks
+ * @returns The tab, the item and the mock
  */
 function renderDocs(body: string, id: string): DocsTab {
   const node = diagramItem(webviewSchemaWith(body), id);
   const dispatch = vi.fn<(command: SchemaCommand) => void>();
-  const rerender = vi.fn<() => void>();
-  return { tab: createDocsTab(node, dispatch, rerender), node, dispatch, rerender };
+  return { tab: createDocsTab(node, dispatch), node, dispatch };
 }
 
 /**
@@ -121,8 +120,8 @@ describe("createDocsTab", () => {
   });
 
   describe("editing the documentation", () => {
-    test("should change a documentation entry of the draft when its field is left, and send it", () => {
-      const { tab, node, dispatch, rerender } = renderDocs(DOCUMENTED, "/element:person");
+    test("should send a changed documentation entry when its field is left", () => {
+      const { tab, dispatch } = renderDocs(DOCUMENTED, "/element:person");
       const textArea = tab.querySelector("textarea")!;
 
       textArea.value = "Line one\nLine two";
@@ -132,17 +131,13 @@ describe("createDocsTab", () => {
         type: "modifyDocumentation",
         payload: { documentationId: "/element:person/documentation[0]", content: "Line one\nLine two" },
       });
-      expect(node.documentationAnnotations[0]!.documentationEntries[0]!.content).toBe("Line one\nLine two");
-      expect(node.documentation).toBe("Line one\nLine two");
-      expect(rerender).not.toHaveBeenCalled();
     });
 
     test.each([
       { id: "/schema", annotation: 1, targetId: "/schema/annotation[1]" },
       { id: "/element:person", annotation: 0, targetId: "/element:person" },
     ])("should add a documentation entry to the annotation $targetId", ({ id, annotation, targetId }) => {
-      const { tab, node, dispatch, rerender } = renderDocs(DOCUMENTED, id);
-      const entryCount = node.documentationAnnotations[annotation]!.documentationEntries.length;
+      const { tab, dispatch } = renderDocs(DOCUMENTED, id);
 
       buttonsLabeled(tab, "Add documentation")[annotation]!.click();
 
@@ -150,16 +145,10 @@ describe("createDocsTab", () => {
         type: "addDocumentation",
         payload: { targetId, content: "New documentation" },
       });
-      expect(node.documentationAnnotations[annotation]!.documentationEntries.at(-1)).toEqual({
-        id: `${targetId}/documentation[${entryCount}]`,
-        content: "New documentation",
-      });
-      expect(node.documentation).toContain("New documentation");
-      expect(rerender).toHaveBeenCalledOnce();
     });
 
-    test("should remove a documentation entry and number the remaining entries again", () => {
-      const { tab, node, dispatch, rerender } = renderDocs(DOCUMENTED, "/schema");
+    test("should remove a documentation entry", () => {
+      const { tab, dispatch } = renderDocs(DOCUMENTED, "/schema");
 
       buttonsLabeled(tab, "Remove documentation")[0]!.click();
 
@@ -167,17 +156,12 @@ describe("createDocsTab", () => {
         type: "removeDocumentation",
         payload: { documentationId: "/schema/annotation[0]/documentation[0]" },
       });
-      expect(node.documentationAnnotations[0]!.documentationEntries).toEqual([
-        { id: "/schema/annotation[0]/documentation[0]", content: "Second doc" },
-      ]);
-      expect(node.documentation).toBe("Second doc\nThird doc");
-      expect(rerender).toHaveBeenCalledOnce();
     });
   });
 
   describe("editing the annotations", () => {
-    test("should remove an annotation of the schema and number the remaining annotations again", () => {
-      const { tab, node, dispatch, rerender } = renderDocs(DOCUMENTED, "/schema");
+    test("should remove an annotation of the schema", () => {
+      const { tab, dispatch } = renderDocs(DOCUMENTED, "/schema");
 
       buttonsLabeled(tab, "Remove annotation")[0]!.click();
 
@@ -185,19 +169,10 @@ describe("createDocsTab", () => {
         type: "removeAnnotation",
         payload: { annotationId: "/schema/annotation[0]" },
       });
-      expect(node.documentationAnnotations).toEqual([
-        {
-          id: "/schema/annotation[0]",
-          documentationEntries: [{ id: "/schema/annotation[0]/documentation[0]", content: "Third doc" }],
-        },
-        { id: "/schema/annotation[1]", documentationEntries: [] },
-      ]);
-      expect(node.documentation).toBe("Third doc");
-      expect(rerender).toHaveBeenCalledOnce();
     });
 
     test("should remove the annotation of another node", () => {
-      const { tab, node, dispatch } = renderDocs(DOCUMENTED, "/element:person");
+      const { tab, dispatch } = renderDocs(DOCUMENTED, "/element:person");
 
       buttonsLabeled(tab, "Remove annotation")[0]!.click();
 
@@ -205,18 +180,14 @@ describe("createDocsTab", () => {
         type: "removeAnnotation",
         payload: { annotationId: "/element:person" },
       });
-      expect(node.documentationAnnotations).toEqual([]);
-      expect(node.documentation).toBe("");
     });
 
     test("should add an empty annotation to the schema", () => {
-      const { tab, node, dispatch, rerender } = renderDocs(DOCUMENTED, "/schema");
+      const { tab, dispatch } = renderDocs(DOCUMENTED, "/schema");
 
       buttonsLabeled(tab, "Add annotation")[0]!.click();
 
       expect(dispatch).toHaveBeenCalledExactlyOnceWith({ type: "addAnnotation", payload: { targetId: "/schema" } });
-      expect(node.documentationAnnotations.at(-1)).toEqual({ id: "/schema/annotation[3]", documentationEntries: [] });
-      expect(rerender).toHaveBeenCalledOnce();
     });
   });
 
@@ -246,28 +217,17 @@ describe("createDocsTab", () => {
       });
     });
 
-    test("should add the annotation with the documentation entry to the draft", () => {
-      const { tab, node, rerender } = renderDocs(UNDOCUMENTED, "/element:plain");
-
-      buttonsLabeled(tab, "Add documentation")[0]!.click();
-
-      expect(node.documentationAnnotations).toEqual([
-        {
-          id: "/element:plain",
-          documentationEntries: [{ id: "/element:plain/documentation[0]", content: "New documentation" }],
-        },
-      ]);
-      expect(node.documentation).toBe("New documentation");
-      expect(rerender).toHaveBeenCalledOnce();
-    });
-
     test("should reject a node that documentation cannot be added to, which the diagram does not have", () => {
       // An attribute is no node of the diagram; its ID stands for any node without a documentation target
-      const node = new DiagramItem("/complexType:T/attribute:a", "a", DiagramItemType.element, new Diagram());
-
-      expect(() => createDocsTab(node, vi.fn(), vi.fn())).toThrow(
-        "Documentation cannot be added to /complexType:T/attribute:a"
+      const node = new DiagramItem(
+        "/complexType:T/attribute:a",
+        "a",
+        DiagramItemType.element,
+        {},
+        new Diagram(new schema())
       );
+
+      expect(() => createDocsTab(node, vi.fn())).toThrow("Documentation cannot be added to /complexType:T/attribute:a");
     });
 
     test("should also offer an empty annotation for the schema", () => {

@@ -34,7 +34,7 @@ export function isSchemaRoot(parentId: string | undefined): boolean {
  * @param schemaObj - Schema whose namespace declarations should be inspected
  * @returns Non-default prefixes that resolve to `targetNamespace`
  */
-export function getCurrentSchemaPrefixes(schemaObj: schema): string[] {
+export function getTargetNamespacePrefixes(schemaObj: schema): string[] {
   const targetNamespace = schemaObj.targetNamespace?.toString();
   if (!targetNamespace) {
     return [];

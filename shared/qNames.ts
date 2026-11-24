@@ -35,12 +35,12 @@ export function splitQName(qName: string): SplitQName {
  * as the schema's own whatever the default namespace is, as the editor has always treated it.
  *
  * @param qName - The QName, such as `tns:Address`
- * @param ownPrefixes - The prefixes of the schema's target namespace
+ * @param tnsPrefixes - The prefixes of the schema's target namespace
  * @returns The local name, or undefined if the QName has another prefix
  */
-export function ownComponentName(qName: string, ownPrefixes: readonly string[]): string | undefined {
+export function ownComponentName(qName: string, tnsPrefixes: readonly string[]): string | undefined {
   const { prefix, localName } = splitQName(qName);
-  return prefix === undefined || ownPrefixes.includes(prefix) ? localName : undefined;
+  return prefix === undefined || tnsPrefixes.includes(prefix) ? localName : undefined;
 }
 
 /** The prefixes that XML reserves and that cannot be declared. */

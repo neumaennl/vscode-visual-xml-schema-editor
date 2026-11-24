@@ -148,54 +148,30 @@ describe("propertiesPanelSimpleTypeEditors", () => {
         id: "/simpleType:Code",
         kind: "list",
         payload: { listItemType: "xs:string" },
-        draft: {
-          simpleTypeDerivationKind: "list",
-          simpleTypeListItemType: "xs:string",
-          type: "simpleType (list of xs:string)",
-        },
       },
       {
         id: "/simpleType:Tokens",
         kind: "union",
         payload: { unionMemberTypes: ["xs:token"] },
-        draft: {
-          simpleTypeDerivationKind: "union",
-          simpleTypeUnionMemberTypes: ["xs:token"],
-          type: "simpleType (union of xs:token)",
-        },
       },
       {
         id: "/simpleType:Number",
         kind: "restriction",
         payload: { baseType: "xs:int" },
-        draft: {
-          simpleTypeDerivationKind: "restriction",
-          simpleTypeUnionMemberTypes: undefined,
-          type: "simpleType (restricts xs:int)",
-        },
       },
       {
         id: "/element:size",
         kind: "list",
         payload: { listItemType: "xs:int" },
-        draft: {
-          simpleTypeDerivationKind: "list",
-          restrictions: undefined,
-          type: "<anonymous simpleType> (list of xs:int)",
-        },
       },
-    ])(
-      "should switch $id to a $kind derived from its current body and show it on the draft",
-      ({ id, kind, payload, draft }) => {
-        const { root, node, dispatch } = renderEditor(id, renderSimpleTypeKindSelector);
-        const typeId = id.startsWith("/element:") ? `${id}/anonymousSimpleType[0]` : id;
+    ])("should switch $id to a $kind derived from its current body", ({ id, kind, payload }) => {
+      const { root, dispatch } = renderEditor(id, renderSimpleTypeKindSelector);
+      const typeId = id.startsWith("/element:") ? `${id}/anonymousSimpleType[0]` : id;
 
-        editInput(root, "Kind", kind);
+      editInput(root, "Kind", kind);
 
-        expect(dispatch).toHaveBeenCalledExactlyOnceWith({ type: "modifySimpleType", payload: { typeId, ...payload } });
-        expect(node).toMatchObject(draft);
-      }
-    );
+      expect(dispatch).toHaveBeenCalledExactlyOnceWith({ type: "modifySimpleType", payload: { typeId, ...payload } });
+    });
 
     test("should keep the kind of a union of inline types, which has no type to derive a list from", () => {
       const { root, dispatch } = renderEditor("/simpleType:InlineMembers", renderSimpleTypeKindSelector);
@@ -216,14 +192,13 @@ describe("propertiesPanelSimpleTypeEditors", () => {
     });
 
     test.each([
-      { id: "/simpleType:Tokens", typeId: "/simpleType:Tokens", type: "simpleType (list of xs:string)" },
+      { id: "/simpleType:Tokens", typeId: "/simpleType:Tokens" },
       {
         id: "/element:tags",
         typeId: "/element:tags/anonymousSimpleType[0]",
-        type: "<anonymous simpleType> (list of xs:string)",
       },
-    ])("should change the item type of the list of $id", ({ id, typeId, type }) => {
-      const { root, node, dispatch } = renderBodyEditor(id, renderSimpleTypeListEditor);
+    ])("should change the item type of the list of $id", ({ id, typeId }) => {
+      const { root, dispatch } = renderBodyEditor(id, renderSimpleTypeListEditor);
 
       editInput(root, "Item Type", "xs:string");
 
@@ -231,7 +206,6 @@ describe("propertiesPanelSimpleTypeEditors", () => {
         type: "modifySimpleType",
         payload: { typeId, listItemType: "xs:string" },
       });
-      expect(node.type).toBe(type);
     });
 
     test.each(["xs:token", " "])("should send nothing for the item type '%s'", (value) => {
@@ -275,14 +249,13 @@ describe("propertiesPanelSimpleTypeEditors", () => {
     });
 
     test.each([
-      { id: "/simpleType:Number", typeId: "/simpleType:Number", type: "simpleType (union of xs:int, xs:double)" },
+      { id: "/simpleType:Number", typeId: "/simpleType:Number" },
       {
         id: "/element:amount",
         typeId: "/element:amount/anonymousSimpleType[0]",
-        type: "<anonymous simpleType> (union of xs:int, xs:double)",
       },
-    ])("should change a member type of the union of $id", ({ id, typeId, type }) => {
-      const { root, node, dispatch } = renderBodyEditor(id, renderSimpleTypeUnionEditor);
+    ])("should change a member type of the union of $id", ({ id, typeId }) => {
+      const { root, dispatch } = renderBodyEditor(id, renderSimpleTypeUnionEditor);
 
       enter(getInputsByLabel(root, "Member Types")[1]!, "xs:double");
 
@@ -290,7 +263,6 @@ describe("propertiesPanelSimpleTypeEditors", () => {
         type: "modifySimpleType",
         payload: { typeId, unionMemberTypes: ["xs:int", "xs:double"] },
       });
-      expect(node.type).toBe(type);
     });
 
     test("should send nothing when a member type is entered again", () => {
@@ -368,7 +340,7 @@ describe("propertiesPanelSimpleTypeEditors", () => {
     }
 
     test("should replace the inline type with a named type", () => {
-      const { root, node, dispatch } = renderReplacement();
+      const { root, dispatch } = renderReplacement();
 
       editInput(root, "Replacement Type", "xs:string");
 
@@ -376,8 +348,6 @@ describe("propertiesPanelSimpleTypeEditors", () => {
         type: "modifyElement",
         payload: { elementId: "/element:size", elementType: "xs:string" },
       });
-      expect(node.type).toBe("xs:string");
-      expect(node.isSimpleContent).toBe(false);
     });
 
     test.each(["xs:int", " "])("should send nothing for the type '%s'", (value) => {

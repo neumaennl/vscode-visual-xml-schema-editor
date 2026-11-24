@@ -5,7 +5,7 @@
 
 import { SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy";
 import { anonymousTypeId, type TypeKind } from "../../shared/schemaUtils";
-import type { DiagramItem } from "../diagram";
+import { hasInlineComplexType, hasInlineSimpleType, type DiagramItem } from "../diagram";
 import { getNodeType } from "./propertiesPanelNodeKinds";
 
 /** The node types of the named and of the anonymous types of each kind. */
@@ -41,7 +41,7 @@ function resolveTypeId(node: DiagramItem, kind: TypeKind, hasInlineType: boolean
  * @returns The simple-type schema ID or null when no simple type applies
  */
 export function resolveSimpleTypeId(node: DiagramItem): string | null {
-  return resolveTypeId(node, "simpleType", node.isSimpleContent);
+  return resolveTypeId(node, "simpleType", hasInlineSimpleType(node));
 }
 
 /**
@@ -51,7 +51,7 @@ export function resolveSimpleTypeId(node: DiagramItem): string | null {
  * @returns The complex-type schema ID or null when no complex type applies
  */
 export function resolveComplexTypeId(node: DiagramItem): string | null {
-  return resolveTypeId(node, "complexType", node.hasAnonymousComplexType);
+  return resolveTypeId(node, "complexType", hasInlineComplexType(node));
 }
 
 /**

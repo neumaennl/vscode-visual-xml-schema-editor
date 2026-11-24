@@ -3,9 +3,8 @@ type: Process
 title: Diagram rendering
 description: How the schema object becomes the SVG diagram - the build, layout and render steps, which schema constructs become which nodes, the layout rules, the notation, the interaction, and the origin in xsddiagram.
 tags: [diagram, rendering, layout, svg, webview, xsddiagram]
-status: stable
-generated: { by: human:neumaennl, at: 2026-11-19T14:50:08Z }
-verified: { by: human:neumaennl, at: 2026-11-19T15:32:47Z }
+status: draft
+generated: { by: human:neumaennl, at: 2026-11-24T16:36:51Z }
 sources:
   - id: renderer
     resource: ../webview-src/canvas/DiagramCanvas.ts
@@ -19,15 +18,15 @@ sources:
   - id: schema-processors
     resource: ../webview-src/diagram/SchemaProcessors.ts
     title: Processing of complex types, compositors, group references and extensions
-  - id: schema-processors-simple
-    resource: ../webview-src/diagram/SchemaProcessorsSimpleTypes.ts
-    title: Processing of restrictions, lists and unions
   - id: type-node-creators
     resource: ../webview-src/diagram/TypeNodeCreators.ts
     title: Nodes for top-level elements and types
-  - id: builder-helpers
-    resource: ../webview-src/diagram/DiagramBuilderHelpers.ts
-    title: Documentation, occurrence and attribute extraction
+  - id: type-accessors
+    resource: ../webview-src/diagram/typeAccessors.ts
+    title: Types and derivations of the schema objects
+  - id: documentation-accessors
+    resource: ../webview-src/diagram/documentationAccessors.ts
+    title: Documentation of the schema objects
   - id: diagram-item
     resource: ../webview-src/diagram/DiagramItem.ts
     title: DiagramItem
@@ -88,25 +87,25 @@ If a step throws, the canvas throws the error on; the app catches it and shows i
 
 # From schema to diagram items
 
-The root of the tree is always one item for the schema itself, labelled `Schema: <targetNamespace>` (or `Schema: no namespace`). It carries the schema's documentation, and the top-level attributes are stored as its attributes. Its children are the top-level schema constructs, in this order: elements, complex types, simple types, named groups. Within each kind, the document order is kept. A schema without any of them gets the child "No elements found".[^diagram-builder]
+The root of the tree is always one item for the schema itself, labelled `Schema: <targetNamespace>` (or `Schema: no namespace`). It carries the schema's documentation, and the top-level attributes are stored as its attributes. Its children are the top-level schema constructs, in this order: elements, complex types, simple types, named groups.[^type-node-creators] Within each kind, the document order is kept. A schema without any of them shows only the schema item. Each item references the schema object that it shows (see [ADR 007](architecture/007-diagram-items-reference-schema-objects.md)).[^diagram-builder]
 
-| Schema construct             | Item type                    | Label                             | Type text (shown with `showType`)                                                           |
-| ---------------------------- | ---------------------------- | --------------------------------- | ------------------------------------------------------------------------------------------- |
-| Schema                       | `element`                    | `Schema: <namespace>`             |                                                                                             |
-| Element (top-level or local) | `element`                    | name, or "unnamed" without a name | value of `type`, or `<anonymous complexType>` / `<anonymous simpleType>` for an inline type |
-| Named complex type           | `type`                       | name                              | `complexType`                                                                               |
-| Named simple type            | `type`                       | name                              | `simpleType`                                                                                |
-| Named group                  | `group`                      | name                              |                                                                                             |
-| `sequence`, `choice`, `all`  | `group` (compositor)         | none, the symbol is drawn instead |                                                                                             |
-| Group reference              | `group`, marked as reference | value of `ref`                    |                                                                                             |
+| Schema construct             | Item type                    | Label                                                                                          | Type text (shown with `showType`)                                                           |
+| ---------------------------- | ---------------------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Schema                       | `element`                    | `Schema: <namespace>`                                                                          |                                                                                             |
+| Element (top-level or local) | `element`                    | name, or the name of the referenced element for a reference, with the prefix of another schema | value of `type`, or `<anonymous complexType>` / `<anonymous simpleType>` for an inline type |
+| Named complex type           | `type`                       | name                                                                                           | `complexType`                                                                               |
+| Named simple type            | `type`                       | name                                                                                           | `simpleType`                                                                                |
+| Named group                  | `group`                      | name                                                                                           |                                                                                             |
+| `sequence`, `choice`, `all`  | `group` (compositor)         | none, the symbol is drawn instead                                                              |                                                                                             |
+| Group reference              | `group`, marked as reference | the name of the referenced group, with the prefix of another schema                            |                                                                                             |
 
-The type text gets suffixes for content and derivation, for example `complexType with complexContent (extends Base)`:[^schema-processors][^schema-processors-simple]
+The type text is read from the schema object. It gets suffixes for content and derivation, for example `complexType with complexContent (extends Base)`:[^type-accessors]
 
 - `with complexContent` or `with simpleContent`;
 - `(extends X)`, `(restricts X)`;
 - `(list of X)` or `(list)`, `(union of A, B)` or `(union)`.
 
-**Inline types.** An anonymous complex or simple type is not a node of its own. Its content is merged into the element: the compositors of the type become children of the element, and its documentation is used if the element has none (see [Known issues](known-issues.md#inline-types-have-no-node-of-their-own)).[^schema-processors]
+**Inline types.** An anonymous complex or simple type is not a node of its own. Its content is merged into the element: the compositors of the type become children of the element, and its documentation is shown if the element has none (see [Known issues](known-issues.md#inline-types-have-no-node-of-their-own)).[^schema-processors]
 
 **Children.** Complex types, elements with an inline complex type and extensions get their compositor (`sequence`, `choice` or `all`) or group reference as a child. A compositor's children are its elements, then its group references, then nested `choice`s, then nested `sequence`s. This order is fixed and not the order of the schema (see [Known issues](known-issues.md#particles-are-not-shown-in-document-order)). A restriction of complex content shows no children (see [Known issues](known-issues.md#restricted-complex-content-is-shown-without-content)).[^schema-processors]
 
@@ -114,33 +113,29 @@ The type text gets suffixes for content and derivation, for example `complexType
 
 **Not shown as nodes:**
 
-- attributes: they are stored in `item.attributes` and shown in the properties panel; in a complex type with complex or simple content, they are read from its extension or restriction; attributes with `ref` are skipped;
+- attributes: they are read from the schema object and shown in the properties panel; in a complex type with complex or simple content, they are read from its extension or restriction;[^type-accessors] attributes with `ref` are skipped;
 - attribute groups and attribute group references (see [Known issues](known-issues.md#palette-has-no-entry-for-attribute-groups));
 - `any` and `anyAttribute`;
-- element references: shown as "unnamed" elements (see [Known issues](known-issues.md#element-references-are-not-shown-as-references));
 - imports, includes, redefines, notations and identity constraints (`key`, `keyref`, `unique`); they cannot be edited in the properties panel either (see [Known issues](known-issues.md#imports-and-includes-cannot-be-edited-in-the-editor) and [Known issues](known-issues.md#identity-constraints-notations-and-redefines-cannot-be-shown-or-edited)).
 
-**Values.** Besides the label, the builder copies the values the properties panel needs into the item: occurrence (`minOccurrence`, `maxOccurrence` with -1 for `unbounded`), documentation (all entries joined with line breaks, plus the individual entries with their IDs), `abstract`, `mixed`, `nillable`, default and fixed values, the derivation kind, list item type, union member types and the facets of restrictions. Only the occurrence, the documentation and simple content change the drawing.[^builder-helpers][^type-node-creators]
+**Values.** The occurrence, whether an item is a reference, `abstract`, `mixed`, `nillable`, the default and fixed values, the type with its derivation, the facets of restrictions, the attributes and the documentation are read from the schema object that the item references.[^type-accessors][^documentation-accessors] Only the occurrence, the documentation and simple types or simple content change the drawing.
 
 # Data model
 
 `DiagramItem` holds one node:[^diagram-item]
 
-| Group                            | Fields                                                                                                                                                                                                                                                                                                  |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Identity                         | `id` (path-based ID), `name`, `type` (type text), `itemType` (`element`, `group`, `type`), `groupType` (`sequence`, `choice`, `all`)                                                                                                                                                                    |
-| Tree                             | `parent`, `childElements`, `hasChildElements`, `showChildElements` (expanded)                                                                                                                                                                                                                           |
-| Notation                         | `minOccurrence`, `maxOccurrence`, `isReference`, `isSimpleContent`                                                                                                                                                                                                                                      |
-| Layout                           | `location`, `size`, `elementBox` (the shape), `childExpandButtonBox`, `documentationBox`, `boundingBox` (shape plus visible children)                                                                                                                                                                   |
-| Content for the properties panel | `documentation`, `documentationAnnotations`, `attributes`, `restrictions`, `isAbstract`, `isMixed`, `isNillable`, `hasAnonymousComplexType`, `elementDefault`, `elementFixed`, `complexDerivationKind`, `simpleTypeDerivationKind`, `simpleTypeListItemType`, `simpleTypeUnionMemberTypes`, `namespace` |
+| Group    | Fields                                                                                                                                                                                                                                                                              |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Identity | `id` (path-based ID), `label` (the text the diagram shows), `schemaObject` (the schema object the item shows), `nodeType` (the kind of schema construct, as the builder found it in its parent), `itemType` (`element`, `group`, `type`), `groupType` (`sequence`, `choice`, `all`) |
+| Tree     | `parent`, `childElements`, `hasChildElements`, `showChildElements` (expanded)                                                                                                                                                                                                       |
+| Notation | none; the occurrence, references and simple content are read from the schema object                                                                                                                                                                                                 |
+| Layout   | `location`, `size`, `elementBox` (the shape), `childExpandButtonBox`, `documentationBox`, `boundingBox` (shape plus visible children)                                                                                                                                               |
 
-`Diagram` holds the root items (always one, the schema), the three display options `showDocumentation`, `alwaysShowOccurrence` and `showType`, the style, the bounding box with a padding of 20, and the namespace information of the schema that the properties panel uses (`currentSchemaPrefix`, `schemaTargetNamespace`, `schemaNamespacePrefixes`, `localSchemaTypeNames`).[^diagram]
+`Diagram` holds the root items (always one, the schema), the three display options `showDocumentation`, `alwaysShowOccurrence` and `showType`, the style, the bounding box with a padding of 20, and the schema it shows; the facts about the schema that the properties panel uses, such as its target namespace, its namespace declarations and the names of its types, are read from it.[^diagram]
 
 The style is read once from VS Code's CSS variables when the module is loaded: font family, foreground, background and line colors. The colors are written into the SVG as inline styles, so the diagram does not follow a theme change until the webview is recreated (see [Known issues](known-issues.md#diagram-does-not-follow-theme-changes)). The font sizes are fixed: 10 pt for labels, 8 pt for occurrence, 9 pt for documentation.[^diagram-types]
 
-The content fields are copies of values from the schema object; the item does not reference the schema object itself. Replacing the copies with a reference is planned (see [Known issues](known-issues.md#diagram-items-copy-values-from-the-schema-objects), [#360](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/360)).
-
-Some fields come from the original and are not used; they are listed in [Known issues](known-issues.md#duplicated-and-dead-code).
+The item holds no values of the schema object: everything the diagram, the properties panel and the drop rules show or decide by is read from the schema object through the accessor modules ([ADR 007](architecture/007-diagram-items-reference-schema-objects.md)).
 
 # Layout
 
@@ -168,9 +163,9 @@ Rules:
 | Octagon                                            | Group; a compositor shows a symbol: for `sequence` three dots on a horizontal line, for `choice` and `all` three dots in a column between connecting lines that differ for the two |
 | Rectangle with beveled left corners                | Named type; the beveled area is filled for simple types and simple content                                                                                                         |
 | Dashed outline (`5,3`)                             | `minOccurs="0"`                                                                                                                                                                    |
-| Second outline offset by 3 px behind the shape     | `maxOccurs` other than 1 (also for `maxOccurs="0"`, see [Known issues](known-issues.md#items-with-maxoccurs-0-are-drawn-as-repeated))                                              |
+| Second outline offset by 3 px behind the shape     | `maxOccurs` greater than 1 or `unbounded`                                                                                                                                          |
 | `min..max` right of the shape, `∞` for `unbounded` | Occurrence; hidden for `1..1` unless `alwaysShowOccurrence` is set                                                                                                                 |
-| Small arrow at the lower left                      | Reference (only group references)                                                                                                                                                  |
+| Arrow at the lower left, left of the label         | Reference to a top-level element or group                                                                                                                                          |
 | Box with − or + right of the shape                 | Expanded or collapsed; only for items with children                                                                                                                                |
 
 [^shape-renderers][^svg-renderer][^text-renderers]
@@ -181,7 +176,7 @@ Rules:
 
 **Connectors.** For one child, the line goes from behind the expand button to the middle, down or up to the child's middle, and right to the child. For several children, a vertical line midway between the button and the children connects horizontal lines to each child.[^svg-renderer]
 
-**SVG structure.** The renderer adds a content group to the canvas group that zoom and pan transform (see [Editor](editor.md#navigation)). Each render empties the content group and adds one flat `<g class="diagram-item" data-item-id="…">` per visible item; groups are not nested. The children of an item are added before the item, so the parent is drawn on top. An item's group contains, in this order: a `<title>` (groups only), the connectors to its children, the shape, the label, the documentation, the occurrence, the expand button (`<g class="expand-button">`) and the reference arrow. Colors are inline styles; `styles.css` adds the hover, `.selected` and `.drag-over` highlights.[^svg-renderer][^styles]
+**SVG structure.** The renderer adds a content group to the canvas group that zoom and pan transform (see [Editor](editor.md#navigation)). Each render empties the content group and adds one flat `<g class="diagram-item" data-item-id="…">` per visible item; groups are not nested. The children of an item are added before the item, so the parent is drawn on top. An item's group contains, in this order: a `<title>` (groups only), the connectors to its children, the shape, the reference arrow (`<g class="reference-arrow">`), the label, which leaves room for the arrow, the documentation, the occurrence and the expand button (`<g class="expand-button">`). Colors are inline styles; `styles.css` adds the hover, `.selected` and `.drag-over` highlights.[^svg-renderer][^styles]
 
 # Interaction
 
@@ -208,7 +203,7 @@ Licensing facts: XSD Diagram is offered under GPL, LGPL or MS-PL. This repositor
 
 # Tests
 
-`DiagramBuilder.test.ts`, `SchemaProcessors.test.ts`, `TypeNodeCreators.test.ts` and `DiagramBuilderHelpers.test.ts` cover the build; `DiagramLayout.test.ts`, `DiagramItem.test.ts` and `Diagram.test.ts` the layout; `DiagramSvgRenderer.test.ts`, `ShapeRenderers.test.ts`, `TextRenderers.test.ts` and `SvgHelpers.test.ts` the drawing; `canvas/DiagramCanvas.test.ts` the expand state, the selection and clicks, `canvas/CanvasView.test.ts` zoom and pan, and `canvas/canvasDrop.test.ts` the drag events. The webview tests run in jsdom, which has no layout engine, so `getBBox()` is mocked (`setupGetBBoxMock()` in `webview-src/__tests__/svgTestHelpers.ts`).
+`DiagramBuilder.test.ts`, `SchemaProcessors.test.ts` and `TypeNodeCreators.test.ts` cover the build; `schemaAccessors.test.ts`, `typeAccessors.test.ts` and `documentationAccessors.test.ts` the reading of the schema objects; `DiagramLayout.test.ts`, `DiagramItem.test.ts` and `Diagram.test.ts` the layout; `DiagramSvgRenderer.test.ts`, `ShapeRenderers.test.ts`, `TextRenderers.test.ts` and `SvgHelpers.test.ts` the drawing; `canvas/DiagramCanvas.test.ts` the expand state, the selection and clicks, `canvas/CanvasView.test.ts` zoom and pan, and `canvas/canvasDrop.test.ts` the drag events. The webview tests run in jsdom, which has no layout engine, so `getBBox()` is mocked (`setupGetBBoxMock()` in `webview-src/__tests__/svgTestHelpers.ts`).
 
 [^renderer]: DiagramCanvas
 
@@ -218,11 +213,11 @@ Licensing facts: XSD Diagram is offered under GPL, LGPL or MS-PL. This repositor
 
 [^schema-processors]: Processing of complex types, compositors, group references and extensions
 
-[^schema-processors-simple]: Processing of restrictions, lists and unions
-
 [^type-node-creators]: Nodes for top-level elements and types
 
-[^builder-helpers]: Documentation, occurrence and attribute extraction
+[^type-accessors]: Types and derivations of the schema objects
+
+[^documentation-accessors]: Documentation of the schema objects
 
 [^diagram-item]: DiagramItem
 

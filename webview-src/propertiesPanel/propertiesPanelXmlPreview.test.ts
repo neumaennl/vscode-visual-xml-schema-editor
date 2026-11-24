@@ -36,7 +36,7 @@ const PREVIEW_NODES = `<xs:element name="code" type="xs:string" nillable="true" 
   <xs:restriction base="xs:string"><xs:enumeration value="a"/><xs:pattern value="[a-z]+"/></xs:restriction>
 </xs:simpleType>
 <xs:group name="Contact"><xs:choice><xs:element name="phone" type="xs:string"/></xs:choice></xs:group>
-<xs:complexType name="WithRef"><xs:sequence><xs:group ref="Contact" minOccurs="0"/></xs:sequence></xs:complexType>
+<xs:complexType name="WithRef"><xs:sequence><xs:group ref="Contact" minOccurs="0"/><xs:element ref="code" maxOccurs="2"/></xs:sequence></xs:complexType>
 <xs:element name="pair"><xs:complexType><xs:attribute name="key" type="xs:string"/></xs:complexType></xs:element>`;
 
 describe("buildXmlPreview", () => {
@@ -174,8 +174,20 @@ describe("buildXmlPreview", () => {
       id: "/complexType:WithRef/group:sequence[0]/groupRef:Contact[0]",
       fragment: ['<xs:group ref="Contact" minOccurs="0"/>'],
     },
+    {
+      id: "/complexType:WithRef/group:sequence[0]/element:unnamed[0]",
+      fragment: ['<xs:element ref="code" maxOccurs="2"/>'],
+    },
   ])("should show $id with its attributes, annotations, facets and one level of children", ({ id, fragment }) => {
     expect(buildXmlPreview(diagramItem(webviewSchemaWith(PREVIEW_NODES), id))).toBe(fragment.join("\n"));
+  });
+
+  test("should show an attribute with an inline simple type without a type", () => {
+    const content = `<xs:complexType name="T"><xs:attribute name="kind"><xs:simpleType><xs:restriction base="xs:string"/></xs:simpleType></xs:attribute></xs:complexType>`;
+
+    expect(buildXmlPreview(diagramItem(webviewSchemaWith(content), "/complexType:T"))).toBe(
+      ['<xs:complexType name="T">', '  <xs:attribute name="kind"/>', "</xs:complexType>"].join("\n")
+    );
   });
 
   test("should show the namespaces of the schema and declares the xs prefix that the fragment uses", () => {

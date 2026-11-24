@@ -2,7 +2,13 @@
  * Unit tests for schema utility functions.
  */
 
-import { anonymousTypeId, getAttributeContainer, getContentDerivation, isSchemaRoot } from "./schemaUtils.js";
+import {
+  anonymousTypeId,
+  getAttributeContainer,
+  getContentDerivation,
+  getTargetNamespacePrefixes,
+  isSchemaRoot,
+} from "./schemaUtils.js";
 import { DERIVATIONS, derivedComplexTypeT, schemaWith } from "./__tests__/schemaTestHelpers.js";
 
 describe("schemaUtils", () => {
@@ -41,6 +47,25 @@ describe("schemaUtils", () => {
       expect(isSchemaRoot("schema")).toBe(false);
       expect(isSchemaRoot("root")).toBe(false);
       expect(isSchemaRoot("schemas")).toBe(false);
+    });
+  });
+
+  describe("getTargetNamespacePrefixes", () => {
+    test.each([
+      [
+        "every prefix of the target namespace, in the order of the declarations",
+        "urn:t",
+        { a: "urn:t", other: "urn:o", b: "urn:t" },
+        ["a", "b"],
+      ],
+      ["no default namespace, which has no prefix", "urn:t", { "": "urn:t", tns: "urn:t" }, ["tns"]],
+      ["nothing for a target namespace without a prefix", "urn:t", { other: "urn:o" }, []],
+      ["nothing for a schema without a target namespace", undefined, { tns: "urn:t" }, []],
+    ])("should return %s", (_case, targetNamespace, namespaces, expected) => {
+      const schemaObj = schemaWith("", namespaces);
+      schemaObj.targetNamespace = targetNamespace;
+
+      expect(getTargetNamespacePrefixes(schemaObj)).toEqual(expected);
     });
   });
 

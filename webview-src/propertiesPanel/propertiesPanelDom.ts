@@ -4,7 +4,7 @@
  * can focus on state and command dispatch instead of element boilerplate.
  */
 
-import type { DiagramItem } from "../diagram";
+import type { DiagramAttribute } from "../diagram";
 
 /**
  * Appends a read-only label/value pair to the properties panel.
@@ -48,23 +48,24 @@ export function addPropertyWithElementToContainer(container: HTMLElement, label:
 }
 
 /**
- * Creates a formatted list of attribute metadata for a diagram node.
+ * Creates a formatted list of the attributes of a node. An attribute without a type has an inline simple
+ * type.
  *
- * @param node - Diagram node whose attributes should be rendered
+ * @param attributes - The attributes of the node
  * @returns A DOM list element containing the node attributes
  */
-export function createAttributeList(node: DiagramItem): HTMLElement {
+export function createAttributeList(attributes: readonly DiagramAttribute[]): HTMLElement {
   const attrList = document.createElement("ul");
   attrList.className = "attribute-list";
 
-  node.attributes.forEach((attr) => {
+  attributes.forEach((attr) => {
     const li = document.createElement("li");
 
     const nameStrong = document.createElement("strong");
     nameStrong.textContent = attr.name;
     li.appendChild(nameStrong);
 
-    li.appendChild(document.createTextNode(`: ${attr.type} `));
+    li.appendChild(document.createTextNode(`: ${attr.type ?? "inline simpleType"} `));
 
     const use = document.createElement("span");
     use.className = "attr-use";

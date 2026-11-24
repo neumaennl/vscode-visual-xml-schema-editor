@@ -1,125 +1,26 @@
 /**
- * Docs-tab helpers for the `PropertiesPanel`.
- * This module renders structured `xs:annotation` / `xs:documentation` data and keeps
- * the draft diagram node in sync while dispatching granular metadata commands.
+ * The Docs tab of the `PropertiesPanel`: the `xs:annotation` and `xs:documentation` nodes of a node, with
+ * controls that send the commands to change them. The tab shows a change when the new schema arrives.
  */
 
 import type { SchemaCommand } from "../../shared/types";
-import type { DiagramItem } from "../diagram";
+import { getDocumentationAnnotations, type DiagramItem } from "../diagram";
 import type { DiagramAnnotationEntry, DiagramDocumentationEntry } from "../diagram/DiagramTypes";
 import { resolveDocumentationTargetId } from "./propertiesPanelTargets";
 import { createEditableTextArea } from "./propertiesPanelDom";
-import { buildAnnotationId, buildDocumentationId } from "../diagram/DiagramBuilderHelpers";
 import { SCHEMA_ROOT_ID } from "../../shared/idStrategy";
+
 const NEW_DOCUMENTATION_TEXT = "New documentation";
-
-/**
- * Flattens structured annotation/documentation entries into the legacy single-string
- * form still used by the diagram renderer for backwards-compatible text display.
- *
- * @param annotations - Structured annotation entries to flatten
- * @returns Newline-joined documentation text
- */
-function flattenDocumentation(annotations: DiagramAnnotationEntry[]): string {
-  return annotations
-    .flatMap((annotation) => annotation.documentationEntries)
-    .map((entry) => entry.content)
-    .join("\n");
-}
-
-/**
- * Rebuilds annotation and documentation IDs from the current entry order so local
- * draft state stays aligned with the schema's positional metadata after add/remove edits.
- *
- * @param ownerId - Schema owner ID, or the schema-root ID for schema annotations
- * @param annotations - Annotation entries to normalize
- * @returns Normalized annotation entries with regenerated IDs
- */
-function normalizeAnnotationEntries(ownerId: string, annotations: DiagramAnnotationEntry[]): DiagramAnnotationEntry[] {
-  return annotations.map((annotation, annotationIndex) => {
-    const annotationId = buildAnnotationId(ownerId, annotationIndex);
-    return {
-      id: annotationId,
-      documentationEntries: annotation.documentationEntries.map((entry, documentationIndex) => ({
-        ...entry,
-        id: buildDocumentationId(annotationId, documentationIndex),
-      })),
-    };
-  });
-}
-
-/**
- * Resolves the owner ID that should drive ID normalization for a given annotation.
- * Schema-root annotations are indexed under the schema-root ID while other annotations keep
- * using their own annotation ID as the non-schema owner.
- *
- * @param node - Draft node currently being edited
- * @param annotation - Annotation entry being normalized
- * @returns The owner ID to pass to normalization
- */
-function getNormalizationOwnerId(node: DiagramItem, annotation: DiagramAnnotationEntry): string {
-  return node.id === SCHEMA_ROOT_ID ? SCHEMA_ROOT_ID : annotation.id;
-}
-
-/**
- * Keeps the legacy flattened `node.documentation` field synchronized with the
- * structured annotation entries so existing diagram text rendering keeps working.
- *
- * @param node - Draft node whose flattened documentation should be refreshed
- */
-function syncDocumentationText(node: DiagramItem): void {
-  node.documentation = flattenDocumentation(node.documentationAnnotations);
-}
 
 /**
  * Returns whether the currently edited node is the schema root, which is the
  * only case where the Docs tab should expose multiple `xs:annotation` nodes.
  *
- * @param node - Draft node currently shown in the `PropertiesPanel`
+ * @param node - Node currently shown in the `PropertiesPanel`
  * @returns True when the Docs tab should manage multiple annotations
  */
 function isSchemaDocsTarget(node: DiagramItem): boolean {
   return node.id === SCHEMA_ROOT_ID;
-}
-
-/**
- * Replaces a single annotation entry while keeping the surrounding annotation
- * array intact, which helps the Docs-tab handlers update nested documentation
- * lists without mutating the original draft structure in place.
- *
- * @param annotations - Current annotation entries for the draft node
- * @param targetIndex - Zero-based annotation index to replace
- * @param updateAnnotation - Callback that returns the next annotation value
- * @returns A new annotation array with the updated entry
- */
-function updateAnnotationAtIndex(
-  annotations: DiagramAnnotationEntry[],
-  targetIndex: number,
-  updateAnnotation: (annotation: DiagramAnnotationEntry) => DiagramAnnotationEntry
-): DiagramAnnotationEntry[] {
-  return annotations.map((annotation, index) => (index === targetIndex ? updateAnnotation(annotation) : annotation));
-}
-
-/**
- * Replaces the documentation-entry list of a single annotation while keeping
- * the surrounding annotation structure immutable.
- *
- * @param annotations - Current annotation entries for the draft node
- * @param targetIndex - Zero-based annotation index to update
- * @param updateEntries - Callback that returns the next documentation entries
- * @returns A new annotation array with the updated documentation list
- */
-function updateDocumentationEntriesAtIndex(
-  annotations: DiagramAnnotationEntry[],
-  targetIndex: number,
-  updateEntries: (
-    entries: DiagramAnnotationEntry["documentationEntries"]
-  ) => DiagramAnnotationEntry["documentationEntries"]
-): DiagramAnnotationEntry[] {
-  return updateAnnotationAtIndex(annotations, targetIndex, (annotation) => ({
-    ...annotation,
-    documentationEntries: updateEntries(annotation.documentationEntries),
-  }));
 }
 
 /**
@@ -166,35 +67,20 @@ function createActionButton(
   return button;
 }
 
-/** What the controls of an annotation section work on. */
-interface AnnotationSectionContext {
-  /** Draft node currently being edited */
-  node: DiagramItem;
-  /** Annotation entry of the section */
-  annotation: DiagramAnnotationEntry;
-  /** Position of the annotation within the draft node */
-  annotationIndex: number;
-  /** Callback used to emit schema-edit commands */
-  dispatchCommand: (command: SchemaCommand) => void;
-  /** Callback that re-renders the `PropertiesPanel` after structural edits */
-  rerender: () => void;
-}
-
 /**
  * Renders a documentation entry of an annotation section: its label, a button that removes it, and a
  * text area that changes its text.
  *
- * @param context - The annotation section that holds the entry
  * @param entry - The documentation entry
  * @param documentationIndex - Position of the entry within the annotation
+ * @param dispatchCommand - Callback used to emit schema-edit commands
  * @returns The rendered entry element
  */
 function createDocumentationEntry(
-  context: AnnotationSectionContext,
   entry: DiagramDocumentationEntry,
-  documentationIndex: number
+  documentationIndex: number,
+  dispatchCommand: (command: SchemaCommand) => void
 ): HTMLElement {
-  const { node, annotation, annotationIndex, dispatchCommand, rerender } = context;
   const entryWrapper = document.createElement("div");
   entryWrapper.className = "property-docs-entry";
 
@@ -210,21 +96,7 @@ function createDocumentationEntry(
       "trash",
       "Remove documentation",
       () => {
-        dispatchCommand({
-          type: "removeDocumentation",
-          payload: { documentationId: entry.id },
-        });
-        const nextAnnotations = updateDocumentationEntriesAtIndex(
-          node.documentationAnnotations,
-          annotationIndex,
-          (entries) => entries.filter((_, entryIndex) => entryIndex !== documentationIndex)
-        );
-        node.documentationAnnotations = normalizeAnnotationEntries(
-          getNormalizationOwnerId(node, annotation),
-          nextAnnotations
-        );
-        syncDocumentationText(node);
-        rerender();
+        dispatchCommand({ type: "removeDocumentation", payload: { documentationId: entry.id } });
       },
       true,
       false
@@ -233,34 +105,27 @@ function createDocumentationEntry(
   entryWrapper.appendChild(header);
 
   const textArea = createEditableTextArea(entry.content, (next) => {
-    entry.content = next;
-    syncDocumentationText(node);
-    dispatchCommand({
-      type: "modifyDocumentation",
-      payload: { documentationId: entry.id, content: next },
-    });
+    dispatchCommand({ type: "modifyDocumentation", payload: { documentationId: entry.id, content: next } });
   });
   entryWrapper.appendChild(textArea);
   return entryWrapper;
 }
 
 /**
- * Renders a single structured annotation section, including its documentation
- * entries plus add/remove controls for both documentation nodes and the annotation.
+ * Renders a single annotation section, including its documentation entries plus add and remove controls
+ * for both documentation nodes and the annotation.
  *
- * @param node - Draft node currently being edited
+ * @param node - Node currently shown in the `PropertiesPanel`
  * @param annotation - Annotation entry to render
- * @param annotationIndex - Position of the annotation within the draft node
+ * @param annotationIndex - Position of the annotation within the node
  * @param dispatchCommand - Callback used to emit schema-edit commands
- * @param rerender - Callback that re-renders the `PropertiesPanel` after structural edits
  * @returns The rendered annotation section element
  */
 function createAnnotationSection(
   node: DiagramItem,
   annotation: DiagramAnnotationEntry,
   annotationIndex: number,
-  dispatchCommand: (command: SchemaCommand) => void,
-  rerender: () => void
+  dispatchCommand: (command: SchemaCommand) => void
 ): HTMLElement {
   const section = document.createElement("section");
   section.className = "property-docs-section";
@@ -275,16 +140,7 @@ function createAnnotationSection(
       "trash",
       "Remove annotation",
       () => {
-        dispatchCommand({
-          type: "removeAnnotation",
-          payload: { annotationId: annotation.id },
-        });
-        node.documentationAnnotations = normalizeAnnotationEntries(
-          getNormalizationOwnerId(node, annotation),
-          node.documentationAnnotations.filter((_, index) => index !== annotationIndex)
-        );
-        syncDocumentationText(node);
-        rerender();
+        dispatchCommand({ type: "removeAnnotation", payload: { annotationId: annotation.id } });
       },
       true,
       false
@@ -298,37 +154,16 @@ function createAnnotationSection(
     section.appendChild(emptyState);
   }
 
-  const context = { node, annotation, annotationIndex, dispatchCommand, rerender };
   annotation.documentationEntries.forEach((entry, documentationIndex) => {
-    section.appendChild(createDocumentationEntry(context, entry, documentationIndex));
+    section.appendChild(createDocumentationEntry(entry, documentationIndex, dispatchCommand));
   });
 
   section.appendChild(
     createActionButton("add", "Add documentation", () => {
       dispatchCommand({
         type: "addDocumentation",
-        payload: {
-          targetId: annotation.id,
-          content: NEW_DOCUMENTATION_TEXT,
-        },
+        payload: { targetId: annotation.id, content: NEW_DOCUMENTATION_TEXT },
       });
-      const nextAnnotations = updateDocumentationEntriesAtIndex(
-        node.documentationAnnotations,
-        annotationIndex,
-        (entries) => [
-          ...entries,
-          {
-            id: buildDocumentationId(annotation.id, entries.length),
-            content: NEW_DOCUMENTATION_TEXT,
-          },
-        ]
-      );
-      node.documentationAnnotations = normalizeAnnotationEntries(
-        getNormalizationOwnerId(node, annotation),
-        nextAnnotations
-      );
-      syncDocumentationText(node);
-      rerender();
     })
   );
 
@@ -336,24 +171,20 @@ function createAnnotationSection(
 }
 
 /**
- * Creates the structured Docs-tab contents for a selected diagram node.
+ * Creates the Docs-tab contents for a selected diagram node.
  *
- * @param node - Draft diagram node currently shown in the `PropertiesPanel`
+ * @param node - Diagram node currently shown in the `PropertiesPanel`
  * @param dispatchCommand - Callback used to emit schema-edit commands
- * @param rerender - Callback that re-renders the `PropertiesPanel` after structural edits
  * @returns The rendered Docs-tab container
  * @throws An {@link Error} if the node has no documentation and no node that documentation can be added to;
  *   every node of the diagram has one
  */
-export function createDocsTab(
-  node: DiagramItem,
-  dispatchCommand: (command: SchemaCommand) => void,
-  rerender: () => void
-): HTMLElement {
+export function createDocsTab(node: DiagramItem, dispatchCommand: (command: SchemaCommand) => void): HTMLElement {
   const root = document.createElement("div");
   root.className = "property-tab-content property-tab-content-docs";
 
-  if (node.documentationAnnotations.length === 0) {
+  const annotations = getDocumentationAnnotations(node);
+  if (annotations.length === 0) {
     const targetId = resolveDocumentationTargetId(node);
     if (!targetId) {
       throw new Error(`Documentation cannot be added to ${node.id}`);
@@ -361,40 +192,20 @@ export function createDocsTab(
 
     root.appendChild(
       createActionButton("add", "Add documentation", () => {
-        dispatchCommand({
-          type: "addDocumentation",
-          payload: { targetId, content: NEW_DOCUMENTATION_TEXT },
-        });
-        const annotationId = buildAnnotationId(targetId, 0);
-        node.documentationAnnotations = normalizeAnnotationEntries(targetId, [
-          {
-            id: annotationId,
-            documentationEntries: [
-              {
-                id: buildDocumentationId(annotationId, 0),
-                content: NEW_DOCUMENTATION_TEXT,
-              },
-            ],
-          },
-        ]);
-        syncDocumentationText(node);
-        rerender();
+        dispatchCommand({ type: "addDocumentation", payload: { targetId, content: NEW_DOCUMENTATION_TEXT } });
       })
     );
 
-    appendAddSchemaAnnotationButton(root, node, dispatchCommand, rerender);
+    appendAddSchemaAnnotationButton(root, node, dispatchCommand);
     return root;
   }
 
-  const annotationsToRender = isSchemaDocsTarget(node)
-    ? node.documentationAnnotations
-    : node.documentationAnnotations.slice(0, 1);
-
+  const annotationsToRender = isSchemaDocsTarget(node) ? annotations : annotations.slice(0, 1);
   annotationsToRender.forEach((annotation, annotationIndex) => {
-    root.appendChild(createAnnotationSection(node, annotation, annotationIndex, dispatchCommand, rerender));
+    root.appendChild(createAnnotationSection(node, annotation, annotationIndex, dispatchCommand));
   });
 
-  appendAddSchemaAnnotationButton(root, node, dispatchCommand, rerender);
+  appendAddSchemaAnnotationButton(root, node, dispatchCommand);
   return root;
 }
 
@@ -405,26 +216,18 @@ export function createDocsTab(
  * @param root - The Docs tab
  * @param node - The diagram node being edited
  * @param dispatchCommand - Callback used to emit schema commands
- * @param rerender - Renders the tab again
  */
 function appendAddSchemaAnnotationButton(
   root: HTMLElement,
   node: DiagramItem,
-  dispatchCommand: (command: SchemaCommand) => void,
-  rerender: () => void
+  dispatchCommand: (command: SchemaCommand) => void
 ): void {
   if (!isSchemaDocsTarget(node)) {
     return;
   }
   root.appendChild(
     createActionButton("add", "Add annotation", () => {
-      const nextAnnotationIndex = node.documentationAnnotations.length;
       dispatchCommand({ type: "addAnnotation", payload: { targetId: SCHEMA_ROOT_ID } });
-      node.documentationAnnotations = normalizeAnnotationEntries(SCHEMA_ROOT_ID, [
-        ...node.documentationAnnotations,
-        { id: `${SCHEMA_ROOT_ID}/annotation[${nextAnnotationIndex}]`, documentationEntries: [] },
-      ]);
-      rerender();
     })
   );
 }

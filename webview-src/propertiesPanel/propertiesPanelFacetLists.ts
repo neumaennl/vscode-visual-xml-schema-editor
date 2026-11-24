@@ -4,7 +4,7 @@
  */
 
 import { validateFacetValue } from "../../shared/facets";
-import type { RestrictionSnapshot } from "./propertiesPanelDraft";
+import type { RestrictionFacets } from "../../shared/types";
 import type { LIST_FACETS } from "../../shared/facets";
 import { getFacetIconStyle } from "../facetIcons";
 import { createFieldMessage } from "./propertiesPanelFields";
@@ -12,7 +12,7 @@ import { addReorderHandlers, type DragState, moveValue } from "./propertiesPanel
 import type { ValidationFailure } from "../../shared/validation";
 
 /** Commits an update of the restriction draft. */
-type BuildAndDispatch = (updater: (next: RestrictionSnapshot) => void) => void;
+type BuildAndDispatch = (updater: (next: RestrictionFacets) => void) => void;
 
 /** The facets with several values. */
 export type ValueListFacet = (typeof LIST_FACETS)[number];

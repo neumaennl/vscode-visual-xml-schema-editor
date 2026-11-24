@@ -545,15 +545,16 @@ body {
   opacity: 0.9;
 }
 
+/* The highlight marks the outline of the shape, not the head of the reference arrow */
 .diagram-item.selected rect,
-.diagram-item.selected polygon {
+.diagram-item.selected polygon:not(.reference-arrow polygon) {
   stroke: var(--vscode-focusBorder) !important;
   stroke-width: 2 !important;
   filter: drop-shadow(0 0 3px var(--vscode-focusBorder));
 }
 
 .diagram-item.drag-over rect,
-.diagram-item.drag-over polygon {
+.diagram-item.drag-over polygon:not(.reference-arrow polygon) {
   stroke: var(--vscode-focusBorder) !important;
   stroke-width: 2 !important;
   stroke-dasharray: 6 3;

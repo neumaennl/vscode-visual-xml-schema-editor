@@ -35,9 +35,11 @@ export function createFieldMessage(): HTMLElement {
 }
 
 /**
- * Creates a text input that commits its value when it loses the focus; Enter commits it as well. If the
- * callback rejects the text, the message element shows why, and the input shows the last accepted value
- * again; the message disappears with the next accepted value.
+ * Creates a text input that commits its value when it loses the focus; Enter commits it as well. A value
+ * that equals the last accepted one is not committed, so leaving a field unchanged sends nothing, also when
+ * a new rendering of the panel removes the focused input. If the callback rejects the text, the message
+ * element shows why, and the input shows the last accepted value again; the message disappears with the
+ * next accepted value.
  *
  * @param value - Initial value
  * @param onCommit - Callback invoked with the committed value
@@ -51,6 +53,9 @@ function createCommitInput(value: string, onCommit: CommitHandler): CommitInput 
   const message = createFieldMessage();
   let accepted = value;
   input.addEventListener("blur", () => {
+    if (input.value === accepted) {
+      return;
+    }
     let rejection: string | undefined;
     onCommit(input.value, (reason) => {
       rejection = reason;

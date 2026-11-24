@@ -3,9 +3,8 @@ type: Process
 title: Drag and drop
 description: How a schema construct is dragged from the palette onto a diagram node - the responsibilities of palette, canvas, drag and drop and extension host, the event flow, which schema construct can be dropped on which node with which command, and the generated defaults.
 tags: [drag-and-drop, palette, canvas, drop-command-factory, webview]
-status: stable
-generated: { by: human:neumaennl, at: 2026-11-20T13:22:49Z }
-verified: { by: human:neumaennl, at: 2026-11-20T15:04:32Z }
+status: draft
+generated: { by: human:neumaennl, at: 2026-11-23T19:31:58Z }
 sources:
   - id: palette-items
     resource: ../webview-src/palette/paletteEntries.ts
@@ -84,38 +83,38 @@ The node kinds in the table are:
 
 - **Schema root:** the node with the ID `/schema`.
 - **Compositor:** a `sequence`, `choice` or `all` node.
-- **Element:** any element node. "With anonymous complex type" and "with simple content" refer to an element whose type is defined inline.
-- **Complex type, simple type:** a named type node. A simple type counts as a restriction if its label contains `restricts`; list and union types do not.
+- **Element:** any element node. "With anonymous complex type" and "with anonymous simple type" refer to an element whose type is defined inline.
+- **Complex type, simple type:** a named type node. A simple type counts as a restriction if it restricts a named base type; list and union types do not.
 - **Group:** a top-level group definition, not a group reference.
 
-| Schema construct      | Target                                                                                 | Command                                                                                                                    |
-| --------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| element               | schema root, compositor                                                                | `addElement` with a generated name and type `xs:string`                                                                    |
-| attribute             | schema root, named complex type, also a derived one                                    | `addAttribute` with a generated name and type `xs:string`                                                                  |
-|                       | element with anonymous complex type                                                    | `addAttribute` on the anonymous complex type                                                                               |
-| group                 | schema root                                                                            | `addGroup` with a generated name and content model `sequence` (a definition; references cannot be dropped)                 |
-| simpleType            | schema root                                                                            | `addSimpleType` with a generated name and base type `xs:string`                                                            |
-|                       | element                                                                                | `addSimpleType` without name: an anonymous simple type that replaces the element's type                                    |
-| complexType           | schema root                                                                            | `addComplexType` with a generated name and content model `sequence`                                                        |
-|                       | element                                                                                | `addComplexType` without name: an anonymous complex type that replaces the element's type                                  |
-| sequence, choice, all | complex type                                                                           | `modifyComplexType` with the new content model                                                                             |
-|                       | element with anonymous complex type                                                    | `modifyComplexType` on the anonymous complex type                                                                          |
-|                       | other element                                                                          | `addComplexType` with the content model: a new anonymous complex type                                                      |
-|                       | group                                                                                  | `modifyGroup` with the new content model                                                                                   |
-| restriction           | schema root                                                                            | `addSimpleType` with a generated name and base type `xs:string`                                                            |
-|                       | element with anonymous complex type                                                    | `modifyComplexType` with `derivationKind: "restriction"`                                                                   |
-|                       | element with simple content                                                            | `modifySimpleType` on the anonymous simple type                                                                            |
-|                       | other element                                                                          | `addSimpleType` without name, based on the element's type                                                                  |
-|                       | simple type                                                                            | `modifySimpleType`                                                                                                         |
-|                       | complex type                                                                           | `modifyComplexType` with `derivationKind: "restriction"`                                                                   |
-| extension             | schema root                                                                            | `addComplexType` with a generated name, content model `sequence`, base type `xs:anyType` and `derivationKind: "extension"` |
-|                       | element with anonymous complex type                                                    | `modifyComplexType` with `derivationKind: "extension"`                                                                     |
-|                       | other element                                                                          | `addComplexType` without name, derived by extension from the element's type                                                |
-|                       | complex type                                                                           | `modifyComplexType` with `derivationKind: "extension"`                                                                     |
-| facets (all twelve)   | simple type derived by restriction, element with simple content derived by restriction | `modifySimpleType` with the existing facets plus the dropped one                                                           |
-| any                   | -                                                                                      | not supported (disabled in the palette)                                                                                    |
+| Schema construct      | Target                                                                                        | Command                                                                                                                    |
+| --------------------- | --------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| element               | schema root, compositor                                                                       | `addElement` with a generated name and type `xs:string`                                                                    |
+| attribute             | schema root, named complex type, also a derived one                                           | `addAttribute` with a generated name and type `xs:string`                                                                  |
+|                       | element with anonymous complex type                                                           | `addAttribute` on the anonymous complex type                                                                               |
+| group                 | schema root                                                                                   | `addGroup` with a generated name and content model `sequence` (a definition; references cannot be dropped)                 |
+| simpleType            | schema root                                                                                   | `addSimpleType` with a generated name and base type `xs:string`                                                            |
+|                       | element                                                                                       | `addSimpleType` without name: an anonymous simple type that replaces the element's type                                    |
+| complexType           | schema root                                                                                   | `addComplexType` with a generated name and content model `sequence`                                                        |
+|                       | element                                                                                       | `addComplexType` without name: an anonymous complex type that replaces the element's type                                  |
+| sequence, choice, all | complex type                                                                                  | `modifyComplexType` with the new content model                                                                             |
+|                       | element with anonymous complex type                                                           | `modifyComplexType` on the anonymous complex type                                                                          |
+|                       | other element                                                                                 | `addComplexType` with the content model: a new anonymous complex type                                                      |
+|                       | group                                                                                         | `modifyGroup` with the new content model                                                                                   |
+| restriction           | schema root                                                                                   | `addSimpleType` with a generated name and base type `xs:string`                                                            |
+|                       | element with anonymous complex type                                                           | `modifyComplexType` with `derivationKind: "restriction"`                                                                   |
+|                       | element with anonymous simple type                                                            | `modifySimpleType` on the anonymous simple type                                                                            |
+|                       | other element                                                                                 | `addSimpleType` without name, based on the element's type                                                                  |
+|                       | simple type                                                                                   | `modifySimpleType`                                                                                                         |
+|                       | complex type                                                                                  | `modifyComplexType` with `derivationKind: "restriction"`                                                                   |
+| extension             | schema root                                                                                   | `addComplexType` with a generated name, content model `sequence`, base type `xs:anyType` and `derivationKind: "extension"` |
+|                       | element with anonymous complex type                                                           | `modifyComplexType` with `derivationKind: "extension"`                                                                     |
+|                       | other element                                                                                 | `addComplexType` without name, derived by extension from the element's type                                                |
+|                       | complex type                                                                                  | `modifyComplexType` with `derivationKind: "extension"`                                                                     |
+| facets (all twelve)   | simple type derived by restriction, element with anonymous simple type derived by restriction | `modifySimpleType` with the existing facets plus the dropped one                                                           |
+| any                   | -                                                                                             | not supported (disabled in the palette)                                                                                    |
 
-Every other combination returns `null`. In particular, nothing can be dropped on attributes or group references, and only elements can be dropped on compositors. A compositor drop on a type that already has one replaces the compositor and moves its particles into the new one (see [Commands](commands.md#complex-types)).[^drop-factory] In a derived complex type, `addAttribute` puts the attribute into the `xs:extension` or `xs:restriction` (see [Commands](commands.md#attributes)). In a restriction, the dropped attribute is not checked against the base type, so it usually makes the schema invalid (see [Known issues](known-issues.md#attributes-in-a-restriction-are-not-checked-against-the-base-type)). A facet drop is also accepted on an element whose inline complex type has simple content derived by restriction, and the command then fails (see [Known issues](known-issues.md#inline-complex-types-with-simple-content-are-treated-as-inline-simple-types)).
+Every other combination returns `null`. In particular, nothing can be dropped on attributes or group references, and only elements can be dropped on compositors. A compositor drop on a type that already has one replaces the compositor and moves its particles into the new one (see [Commands](commands.md#complex-types)).[^drop-factory] In a derived complex type, `addAttribute` puts the attribute into the `xs:extension` or `xs:restriction` (see [Commands](commands.md#attributes)). In a restriction, the dropped attribute is not checked against the base type, so it usually makes the schema invalid (see [Known issues](known-issues.md#attributes-in-a-restriction-are-not-checked-against-the-base-type)).
 
 # Defaults
 
@@ -123,7 +122,7 @@ Every other combination returns `null`. In particular, nothing can be dropped on
 
 **Types.** New elements and attributes get the type `xs:string`. New complex types get the content model `sequence`.
 
-**Base types.** For a restriction or extension, the base type is the one shown on the node, read from its label (`restricts …` or `extends …`). Without one, a restriction uses `xs:anyType` for complex types and elements with anonymous complex types, and `xs:string` otherwise; an extension uses `xs:anyType`.[^drop-type-helpers]
+**Base types.** For a restriction or extension, the base type is the base type of the node's derivation, or the type that an element names. Without one, a restriction uses `xs:anyType` for complex types and elements with anonymous complex types, and `xs:string` otherwise; an extension uses `xs:anyType`.[^drop-type-helpers]
 
 **Facets.** A dropped facet gets a default value. A dropped enumeration or pattern adds its value to the existing ones; every other facet overwrites the facet if it already exists:
 

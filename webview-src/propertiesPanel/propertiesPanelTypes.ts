@@ -5,14 +5,19 @@
 
 import type { SchemaCommand } from "../../shared/types";
 import { SchemaNodeType } from "../../shared/idStrategy";
-import type { DiagramItem } from "../diagram";
+import {
+  getBaseType,
+  getSimpleDerivation,
+  getTypeText,
+  hasInlineComplexType,
+  hasSimpleContent,
+  type DiagramItem,
+} from "../diagram";
 import { createEditableField } from "./propertiesPanelFields";
 import { createComplexBaseTypeCommand, createTypeCommand } from "./propertiesPanelCommands";
 import { getNodeType } from "./propertiesPanelNodeKinds";
 import { createTypeCommitHandler } from "./propertiesPanelTypeReferences";
-import { extractBaseType } from "./propertiesPanelSimpleTypeCommands";
 import {
-  getDerivationRelation,
   getReadOnlyTypeValue,
   getTypeEditHint,
   hasInlineAnonymousElementType,
@@ -27,6 +32,22 @@ import {
   renderSimpleTypeUnionEditor,
   renderInlineSimpleTypeReplacement,
 } from "./propertiesPanelSimpleTypeEditors";
+
+/** What the functions that render the type fields of a node need. */
+interface TypeSection {
+  /** Container to append the fields to */
+  root: HTMLElement;
+  /** Diagram node being edited */
+  node: DiagramItem;
+  /** The base type of the node's derivation, if it has one */
+  baseType: string | undefined;
+  /** Suggested type names for the editable fields */
+  typeSuggestions: string[];
+  /** Callback used to emit schema commands */
+  dispatchCommand: (command: SchemaCommand) => void;
+  /** Helper used for read-only property rows */
+  addPropertyToContainer: (container: HTMLElement, name: string, value: string) => void;
+}
 
 /**
  * Renders the type/base-type editing controls for the selected node.
@@ -44,149 +65,111 @@ export function renderTypeProperty(
   dispatchCommand: (command: SchemaCommand) => void,
   addPropertyToContainer: (container: HTMLElement, name: string, value: string) => void
 ): void {
-  if (!node.type) {
+  const typeText = getTypeText(node);
+  if (!typeText) {
     return;
   }
 
   const nodeType = getNodeType(node);
-  const baseType = extractBaseType(node.type);
+  const baseType = getBaseType(node);
+  const section: TypeSection = { root, node, baseType, typeSuggestions, dispatchCommand, addPropertyToContainer };
   const hasInlineSimpleType = isInlineSimpleTypeElement(node, nodeType);
   const hasInlineComplexType = isInlineComplexTypeElement(node, nodeType);
   const simpleTypeDerivationKind = getSimpleTypeDerivationKind(node);
 
   if (isSimpleTypeNode(nodeType, hasInlineSimpleType)) {
     renderSimpleTypeKindSelector(root, node, hasInlineSimpleType, dispatchCommand);
+    if (simpleTypeDerivationKind === "list") {
+      renderSimpleTypeListEditor({ ...section, hasInlineSimpleType });
+      return;
+    }
+    if (simpleTypeDerivationKind === "union") {
+      renderSimpleTypeUnionEditor({ ...section, hasInlineSimpleType });
+      return;
+    }
+    if (baseType) {
+      renderSimpleBaseTypeEditor(section, baseType, hasInlineSimpleType);
+      return;
+    }
   }
 
-  if (isSimpleTypeNode(nodeType, hasInlineSimpleType) && simpleTypeDerivationKind === "list") {
-    renderSimpleTypeListEditor({
-      root,
-      node,
-      hasInlineSimpleType,
-      typeSuggestions,
-      dispatchCommand,
-      addPropertyToContainer,
-    });
-    return;
-  }
-
-  if (isSimpleTypeNode(nodeType, hasInlineSimpleType) && simpleTypeDerivationKind === "union") {
-    renderSimpleTypeUnionEditor({
-      root,
-      node,
-      hasInlineSimpleType,
-      typeSuggestions,
-      dispatchCommand,
-      addPropertyToContainer,
-    });
-    return;
-  }
-
-  if (baseType && shouldRenderSimpleBaseTypeEditor(nodeType, hasInlineSimpleType)) {
-    renderSimpleBaseTypeEditor(
-      root,
-      node,
-      baseType,
-      hasInlineSimpleType,
-      typeSuggestions,
-      dispatchCommand,
-      addPropertyToContainer
-    );
+  if (hasSimpleContent(node)) {
+    renderSimpleContentType(section);
     return;
   }
 
   if (shouldRenderComplexBaseTypeEditor(nodeType, hasInlineComplexType, baseType)) {
-    renderComplexBaseTypeEditor(
-      root,
-      node,
-      baseType,
-      hasInlineComplexType,
-      typeSuggestions,
-      dispatchCommand,
-      addPropertyToContainer
-    );
+    renderComplexBaseTypeEditor(section, hasInlineComplexType);
     return;
   }
 
   if (nodeType === SchemaNodeType.SimpleType || nodeType === SchemaNodeType.AnonymousSimpleType) {
-    addPropertyToContainer(root, "Base Type", getReadOnlyTypeValue(node, baseType));
-    const typeHint = getTypeEditHint(node, nodeType, baseType);
-    if (typeHint) {
-      addPropertyToContainer(root, "Type editing", typeHint);
-    }
+    // A restriction without a base attribute restricts an inline simple type
+    const inlineBase = getSimpleDerivation(node)?.kind === "restriction" ? "Inline simpleType" : undefined;
+    addPropertyToContainer(root, "Base Type", inlineBase ?? getReadOnlyTypeValue(node, baseType));
+    addTypeEditHint(section, nodeType);
     return;
   }
 
   if (nodeType === SchemaNodeType.Element && hasInlineAnonymousElementType(node, nodeType)) {
-    const replacementHint = getTypeEditHint(node, nodeType, baseType);
-    renderInlineAnonymousTypeReplacement(
-      root,
-      node,
-      baseType,
-      typeSuggestions,
-      dispatchCommand,
-      addPropertyToContainer,
-      replacementHint
-    );
+    addPropertyToContainer(root, "Type", getReadOnlyTypeValue(node, baseType));
+    renderReplacementType(section, true);
+    addTypeEditHint(section, nodeType);
     return;
   }
 
-  const typeCommand = createTypeCommand(node, node.type);
-  if (typeCommand) {
-    root.appendChild(createTypeField(node, node.type, typeSuggestions, dispatchCommand));
+  if (createTypeCommand(node, typeText)) {
+    root.appendChild(createTypeCommandField(section, "Type", typeText, createTypeCommand, true));
     return;
   }
 
   addPropertyToContainer(root, "Type", getReadOnlyTypeValue(node, baseType));
+  addTypeEditHint(section, nodeType);
+}
 
-  const typeHint = getTypeEditHint(node, nodeType, baseType);
+/**
+ * Adds the hint below the type fields, if the node has one (see {@link getTypeEditHint}).
+ *
+ * @param section - The type section
+ * @param nodeType - The schema node type of the node
+ */
+function addTypeEditHint(section: TypeSection, nodeType: SchemaNodeType | null): void {
+  const typeHint = getTypeEditHint(section.node, nodeType, section.baseType);
   if (typeHint) {
-    addPropertyToContainer(root, "Type editing", typeHint);
+    section.addPropertyToContainer(section.root, "Type editing", typeHint);
   }
 }
 
 /**
- * Creates the editable Type field of a node whose type can be changed by a command.
+ * Creates an editable type field that sends the command that is built from the entered type.
  *
- * @param node - Diagram node being edited; its `type` is updated when a change is sent
- * @param type - Current type of the node
- * @param typeSuggestions - Suggested type names for the field
- * @param dispatchCommand - Callback used to emit schema commands
+ * @param section - The type section
+ * @param label - The label of the field
+ * @param current - The current value of the field
+ * @param createCommand - Builds the command for the entered type, or returns null when there is none
+ * @param allowEmpty - Whether an empty type is sent too, which removes the type
  * @returns The field
  */
-function createTypeField(
-  node: DiagramItem,
-  type: string,
-  typeSuggestions: string[],
-  dispatchCommand: (command: SchemaCommand) => void
+function createTypeCommandField(
+  section: TypeSection,
+  label: string,
+  current: string,
+  createCommand: (node: DiagramItem, entered: string) => SchemaCommand | null,
+  allowEmpty: boolean
 ): HTMLElement {
-  const onChange = createTypeCommitHandler(
+  const { node, typeSuggestions, dispatchCommand } = section;
+  const onCommit = createTypeCommitHandler(
     node,
-    type,
-    (normalizedNext, next) => {
-      const command = createTypeCommand(node, next);
+    current,
+    (_normalizedNext, entered) => {
+      const command = createCommand(node, entered);
       if (command) {
-        node.type = normalizedNext;
         dispatchCommand(command);
       }
     },
-    true
+    allowEmpty
   );
-  return createEditableField("Type", type, onChange, typeSuggestions);
-}
-
-/**
- * Tells whether the node gets an editable Base Type field for a simple type, if it restricts a single
- * named base type: a simple type, or an element with an inline simple type.
- *
- * @param nodeType - The schema node type of the node
- * @param hasInlineSimpleType - Whether the node is an element with an inline simple type
- * @returns True when the field is shown for a restriction of a named base type
- */
-function shouldRenderSimpleBaseTypeEditor(nodeType: SchemaNodeType | null, hasInlineSimpleType: boolean): boolean {
-  return (
-    nodeType === SchemaNodeType.SimpleType || nodeType === SchemaNodeType.AnonymousSimpleType || hasInlineSimpleType
-  );
+  return createEditableField(label, current, onCommit, typeSuggestions);
 }
 
 /**
@@ -212,52 +195,19 @@ function shouldRenderComplexBaseTypeEditor(
 }
 
 /**
- * Renders the Base Type field of a restriction, which sends the new base type and shows it on the
- * draft node. An element with an inline simple type also gets its type as a read-only row and a
- * Replacement Type field.
+ * Renders the Base Type field of a restriction, which sends the new base type. An element with an inline
+ * simple type also gets its type as a read-only row and a Replacement Type field.
  *
- * @param root - Container to append the fields to
- * @param node - The simple type, or the element with the inline simple type
+ * @param section - The type section of the simple type, or of the element with the inline simple type
  * @param baseType - The base type of the restriction
  * @param hasInlineSimpleType - Whether the node is an element with an inline simple type
- * @param typeSuggestions - Suggested type names for the fields
- * @param dispatchCommand - Callback used to emit schema commands
- * @param addPropertyToContainer - Helper used for read-only property rows
  */
-function renderSimpleBaseTypeEditor(
-  root: HTMLElement,
-  node: DiagramItem,
-  baseType: string,
-  hasInlineSimpleType: boolean,
-  typeSuggestions: string[],
-  dispatchCommand: (command: SchemaCommand) => void,
-  addPropertyToContainer: (container: HTMLElement, name: string, value: string) => void
-): void {
+function renderSimpleBaseTypeEditor(section: TypeSection, baseType: string, hasInlineSimpleType: boolean): void {
+  const { root, node, typeSuggestions, dispatchCommand, addPropertyToContainer } = section;
   if (hasInlineSimpleType) {
     addPropertyToContainer(root, "Type", getReadOnlyTypeValue(node, baseType));
   }
-  root.appendChild(
-    createEditableField(
-      "Base Type",
-      baseType,
-      createTypeCommitHandler(
-        node,
-        baseType,
-        (normalizedNext, next) => {
-          const command = createTypeCommand(node, next);
-          if (!command) {
-            return;
-          }
-          node.type = hasInlineSimpleType
-            ? `<anonymous simpleType> (restricts ${normalizedNext})`
-            : `simpleType (restricts ${normalizedNext})`;
-          dispatchCommand(command);
-        },
-        true
-      ),
-      typeSuggestions
-    )
-  );
+  root.appendChild(createTypeCommandField(section, "Base Type", baseType, createTypeCommand, true));
   if (hasInlineSimpleType) {
     renderInlineSimpleTypeReplacement(root, node, baseType, typeSuggestions, dispatchCommand);
   }
@@ -268,135 +218,44 @@ function renderSimpleBaseTypeEditor(
  * base type with the current derivation kind; an empty base type removes the derivation. An element
  * with an inline complex type also gets a Replacement Type field.
  *
- * @param root - Container to append the fields to
- * @param node - The complex type, or the element with the inline complex type
- * @param baseType - The base type of the derivation, if it has one
+ * @param section - The type section of the complex type, or of the element with the inline complex type
  * @param hasInlineComplexType - Whether the node is an element with an inline complex type
- * @param typeSuggestions - Suggested type names for the fields
- * @param dispatchCommand - Callback used to emit schema commands
- * @param addPropertyToContainer - Helper used for read-only property rows
  */
-function renderComplexBaseTypeEditor(
-  root: HTMLElement,
-  node: DiagramItem,
-  baseType: string | undefined,
-  hasInlineComplexType: boolean,
-  typeSuggestions: string[],
-  dispatchCommand: (command: SchemaCommand) => void,
-  addPropertyToContainer: (container: HTMLElement, name: string, value: string) => void
-): void {
+function renderComplexBaseTypeEditor(section: TypeSection, hasInlineComplexType: boolean): void {
+  const { root, node, baseType, addPropertyToContainer } = section;
   addPropertyToContainer(root, "Type", getReadOnlyTypeValue(node, baseType));
-  root.appendChild(
-    createEditableField(
-      "Base Type",
-      baseType ?? "",
-      createTypeCommitHandler(
-        node,
-        baseType ?? "",
-        (normalizedNext, next) => {
-          const command = createComplexBaseTypeCommand(node, next);
-          if (!command) {
-            return;
-          }
-          const prefix = hasInlineComplexType ? "<anonymous complexType>" : "complexType";
-          const derivationKind = node.complexDerivationKind ?? "extension";
-          const relation = getDerivationRelation(derivationKind);
-          node.type = normalizedNext ? `${prefix} (${relation} ${normalizedNext})` : prefix;
-          dispatchCommand(command);
-        },
-        true
-      ),
-      typeSuggestions
-    )
-  );
+  root.appendChild(createTypeCommandField(section, "Base Type", baseType ?? "", createComplexBaseTypeCommand, true));
   if (hasInlineComplexType) {
-    renderComplexReplacementType(root, node, baseType, typeSuggestions, dispatchCommand);
+    renderReplacementType(section, false);
   }
 }
 
 /**
- * Renders the Replacement Type field of an element with an inline complex type, which replaces the
- * inline type with a reference to the entered type.
+ * Renders the type of a complex type with simple content read-only: no command can change the base type
+ * of simple content yet. An element with such an inline complex type also gets a Replacement Type field.
  *
- * @param root - Container to append the field to
- * @param node - The element
- * @param baseType - The base type of the inline type, if it has one, which the field starts with
- * @param typeSuggestions - Suggested type names for the field
- * @param dispatchCommand - Callback used to emit schema commands
+ * @param section - The type section of the complex type, or of the element with the inline complex type
  */
-function renderComplexReplacementType(
-  root: HTMLElement,
-  node: DiagramItem,
-  baseType: string | undefined,
-  typeSuggestions: string[],
-  dispatchCommand: (command: SchemaCommand) => void
-): void {
-  root.appendChild(
-    createEditableField(
-      "Replacement Type",
-      baseType ?? "",
-      createTypeCommitHandler(node, baseType ?? "", (normalizedNext) => {
-        const command = createTypeCommand(node, normalizedNext);
-        if (!command) {
-          return;
-        }
-        node.type = normalizedNext;
-        node.hasAnonymousComplexType = false;
-        node.isSimpleContent = false;
-        node.complexDerivationKind = undefined;
-        dispatchCommand(command);
-      }),
-      typeSuggestions
-    )
-  );
-}
-
-/**
- * Renders the type of an element with an inline type that has no single base type as a read-only
- * row, a Replacement Type field and the hint that a replacement removes the inline type.
- *
- * @param root - Container to append the fields to
- * @param node - The element
- * @param baseType - The base type of the inline type, if it has one, which the field starts with
- * @param typeSuggestions - Suggested type names for the field
- * @param dispatchCommand - Callback used to emit schema commands
- * @param addPropertyToContainer - Helper used for read-only property rows
- * @param replacementHint - The hint shown below the field, if any
- */
-function renderInlineAnonymousTypeReplacement(
-  root: HTMLElement,
-  node: DiagramItem,
-  baseType: string | undefined,
-  typeSuggestions: string[],
-  dispatchCommand: (command: SchemaCommand) => void,
-  addPropertyToContainer: (container: HTMLElement, name: string, value: string) => void,
-  replacementHint: string | null
-): void {
+function renderSimpleContentType(section: TypeSection): void {
+  const { root, node, baseType, addPropertyToContainer } = section;
   addPropertyToContainer(root, "Type", getReadOnlyTypeValue(node, baseType));
-  root.appendChild(
-    createEditableField(
-      "Replacement Type",
-      baseType ?? "",
-      createTypeCommitHandler(
-        node,
-        baseType ?? "",
-        (normalizedNext, next) => {
-          const command = createTypeCommand(node, next);
-          if (!command) {
-            return;
-          }
-          node.type = normalizedNext;
-          node.hasAnonymousComplexType = false;
-          node.isSimpleContent = false;
-          node.complexDerivationKind = undefined;
-          dispatchCommand(command);
-        },
-        true
-      ),
-      typeSuggestions
-    )
-  );
-  if (replacementHint) {
-    addPropertyToContainer(root, "Type editing", replacementHint);
+  if (baseType) {
+    addPropertyToContainer(root, "Base Type", baseType);
   }
+  if (hasInlineComplexType(node)) {
+    renderReplacementType(section, false);
+  }
+}
+
+/**
+ * Renders the Replacement Type field of an element with an inline type, which replaces the inline type
+ * with a reference to the entered type. The field starts with the base type of the inline type.
+ *
+ * @param section - The type section of the element
+ * @param allowEmpty - Whether an empty type is sent too, which removes the type
+ */
+function renderReplacementType(section: TypeSection, allowEmpty: boolean): void {
+  section.root.appendChild(
+    createTypeCommandField(section, "Replacement Type", section.baseType ?? "", createTypeCommand, allowEmpty)
+  );
 }

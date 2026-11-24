@@ -3,9 +3,8 @@ type: Protocol
 title: Messaging
 description: The message protocol between the extension host and the webview - the messages in both directions and the order in which they arrive.
 tags: [messaging, protocol, postMessage, commands, webview]
-status: stable
-generated: { by: human:neumaennl, at: 2026-11-20T10:00:38Z }
-verified: { by: human:neumaennl, at: 2026-11-20T10:35:39Z }
+status: draft
+generated: { by: human:neumaennl, at: 2026-11-24T15:38:45Z }
 sources:
   - id: messages
     resource: ../shared/messages.ts
@@ -118,7 +117,7 @@ The validators of the extension decide whether a command is applied (see [Persis
 
 - **Drops.** While a palette item is dragged over the diagram, the canvas asks the drop rules (`DropCommandFactory.canDropOnNode()`) whether the node accepts the schema construct. Nodes that don't accept it show no drop feedback, and a drop on them sends nothing.
 - **Empty, invalid or unchanged input.** An unchanged value sends nothing. A field rejects what it can decide from its own value with a message below it and shows the current value again (see [UX concept](ux-concept.md#where-errors-appear)): an empty or invalid name, a type that the schema does not offer, an invalid facet value, an occurrence that is no non-negative integer (or `unbounded` for `maxOccurs`), an empty union, an invalid or already declared prefix, a namespace URI that is not absolute, a value that a list already contains, and a fixed value that is not one of its values. These rules are in `shared/`, and the validators check them again. `minOccurs` > `maxOccurs` and other checks that need more than one value are left to the validator.
-- **Draft copy.** The properties panel edits a copy of the selected node. After `commandResult` with `success: false`, the webview shows the node again (`refreshSelection()`), which replaces the copy with the values from the last schema, so a rejected edit disappears from the panel.
+- **Rejected edits.** The properties panel changes nothing in the webview; a field only keeps what the user typed. After `commandResult` with `success: false`, the webview shows the node again (`refreshSelection()`) with the values from the last schema, so a rejected edit disappears from the panel.
 
 References, duplicate names in the schema and rules that need more than one value are only checked by the extension. A command that breaks one of them therefore costs one round trip, and the error appears in the notification banner instead of below the field.
 

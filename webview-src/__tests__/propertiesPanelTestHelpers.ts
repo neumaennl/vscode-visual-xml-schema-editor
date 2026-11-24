@@ -8,6 +8,8 @@ import { DiagramItem } from "../diagram/DiagramItem";
 import { DiagramItemType } from "../diagram/DiagramTypes";
 import type { SchemaCommand } from "../../shared/types";
 import type { Mock } from "vitest";
+import { schema } from "../../shared/types";
+import { NOT_READ_SCHEMA_OBJECT } from "./diagramTestHelpers";
 
 /**
  * Returns the first label of the container whose text is the given label with a colon.
@@ -144,7 +146,7 @@ export interface PanelSetup {
  */
 export function createPanel(dispatchCommand?: ConstructorParameters<typeof PropertiesPanel>[1]): PanelSetup {
   const container = document.createElement("div");
-  return { container, panel: new PropertiesPanel(container, dispatchCommand), diagram: new Diagram() };
+  return { container, panel: new PropertiesPanel(container, dispatchCommand), diagram: new Diagram(new schema()) };
 }
 
 /** A panel that displays an item, and the mock that receives its commands. */
@@ -180,7 +182,9 @@ export function displayItem(container: HTMLDivElement, item: DiagramItem, tab?: 
  * @returns The item
  */
 export function itemWithPrefix(id: string, itemType = DiagramItemType.element): DiagramItem {
-  const diagram = new Diagram();
-  diagram.currentSchemaPrefix = "tns";
-  return new DiagramItem(id, "name", itemType, diagram);
+  const schemaObj = Object.assign(new schema(), {
+    targetNamespace: "urn:test",
+    _namespacePrefixes: { tns: "urn:test" },
+  });
+  return new DiagramItem(id, "name", itemType, NOT_READ_SCHEMA_OBJECT, new Diagram(schemaObj));
 }

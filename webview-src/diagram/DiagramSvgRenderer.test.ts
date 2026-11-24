@@ -7,9 +7,26 @@ import { Diagram } from "./Diagram";
 import { DiagramItem } from "./DiagramItem";
 import { DiagramItemType } from "./DiagramTypes";
 import { setupGetBBoxMock } from "../__tests__/svgTestHelpers";
+import {
+  diagramItem,
+  localElementWith,
+  muteDiagramBuilderLog,
+  component,
+  documented,
+} from "../__tests__/diagramTestHelpers";
+import { webviewSchemaWith } from "../../shared/__tests__/schemaTestHelpers";
 import { generateSchemaId, SchemaNodeType } from "../../shared/idStrategy";
+import { schema } from "../../shared/types";
+
+/** A top-level component of each kind of item. */
+const COMPONENTS: Record<DiagramItemType, string> = {
+  [DiagramItemType.element]: `<xs:element name="e"/>`,
+  [DiagramItemType.group]: `<xs:group name="G"><xs:sequence/></xs:group>`,
+  [DiagramItemType.type]: `<xs:complexType name="T"/>`,
+};
 
 describe("DiagramSvgRenderer", () => {
+  muteDiagramBuilderLog();
   let svg: SVGSVGElement;
   let renderer: DiagramSvgRenderer;
   let diagram: Diagram;
@@ -18,7 +35,7 @@ describe("DiagramSvgRenderer", () => {
     svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     document.body.appendChild(svg);
     renderer = new DiagramSvgRenderer(svg);
-    diagram = new Diagram();
+    diagram = new Diagram(new schema());
 
     // Mock getBBox for SVG text elements (not supported in jsdom)
     setupGetBBoxMock();
@@ -27,6 +44,18 @@ describe("DiagramSvgRenderer", () => {
   afterEach(() => {
     document.body.removeChild(svg);
   });
+
+  /**
+   * Creates an item in the diagram with a top-level component of its kind as its schema object.
+   *
+   * @param id - The ID of the item
+   * @param name - The name of the item
+   * @param itemType - The kind of the item
+   * @returns The item
+   */
+  function newItem(id: string, name: string, itemType = DiagramItemType.element): DiagramItem {
+    return new DiagramItem(id, name, itemType, component(COMPONENTS[itemType]), diagram);
+  }
 
   /**
    * Adds a root item to the diagram, renders the diagram and returns the group of the item.
@@ -43,7 +72,7 @@ describe("DiagramSvgRenderer", () => {
     itemType: DiagramItemType,
     properties: Partial<DiagramItem> = {}
   ): Element | null {
-    const item = new DiagramItem(id, name, itemType, diagram);
+    const item = newItem(id, name, itemType);
     item.elementBox = { x: 10, y: 10, width: 100, height: 50 };
     Object.assign(item, properties);
     diagram.addRootElement(item);
@@ -57,8 +86,8 @@ describe("DiagramSvgRenderer", () => {
    * @param properties - Further properties of the parent
    */
   function renderParentWithChild(properties: Partial<DiagramItem>): void {
-    const parent = new DiagramItem("parent", "Parent", DiagramItemType.element, diagram);
-    const child = new DiagramItem("child", "Child", DiagramItemType.element, diagram);
+    const parent = newItem("parent", "Parent");
+    const child = newItem("child", "Child");
     parent.elementBox = { x: 0, y: 0, width: 100, height: 50 };
     child.elementBox = { x: 150, y: 0, width: 100, height: 50 };
     parent.addChild(child);
@@ -91,7 +120,7 @@ describe("DiagramSvgRenderer", () => {
 
   describe("render", () => {
     test("should clear existing content before rendering", () => {
-      const root = new DiagramItem("root", "Root", DiagramItemType.element, diagram);
+      const root = newItem("root", "Root");
       root.elementBox = { x: 0, y: 0, width: 100, height: 50 };
       diagram.addRootElement(root);
 
@@ -106,7 +135,7 @@ describe("DiagramSvgRenderer", () => {
 
     test("should remove viewBox attribute", () => {
       svg.setAttribute("viewBox", "0 0 100 100");
-      const root = new DiagramItem("root", "Root", DiagramItemType.element, diagram);
+      const root = newItem("root", "Root");
       diagram.addRootElement(root);
 
       renderer.render(diagram);
@@ -115,8 +144,8 @@ describe("DiagramSvgRenderer", () => {
     });
 
     test("should render all root elements", () => {
-      const root1 = new DiagramItem("root1", "Root1", DiagramItemType.element, diagram);
-      const root2 = new DiagramItem("root2", "Root2", DiagramItemType.element, diagram);
+      const root1 = newItem("root1", "Root1");
+      const root2 = newItem("root2", "Root2");
       root1.elementBox = { x: 0, y: 0, width: 100, height: 50 };
       root2.elementBox = { x: 0, y: 60, width: 100, height: 50 };
       diagram.addRootElement(root1);
@@ -163,14 +192,30 @@ describe("DiagramSvgRenderer", () => {
     });
   });
 
+  describe("reference arrow", () => {
+    /** A sequence with an element reference, a local element and a group reference. */
+    const REFERENCES = `<xs:complexType name="T"><xs:sequence><xs:element ref="person"/><xs:element name="x"/><xs:group ref="G"/></xs:sequence></xs:complexType>`;
+
+    test.each([
+      ["a group reference", "groupRef:G[0]", DiagramItemType.group, 1],
+      ["an element reference", "element:unnamed[0]", DiagramItemType.element, 1],
+      ["a local element", "element:x[1]", DiagramItemType.element, 0],
+    ])("should draw the arrow only for references: %s", (_case, path, itemType, arrowCount) => {
+      const { schemaObject } = diagramItem(webviewSchemaWith(REFERENCES), `/complexType:T/group:sequence[0]/${path}`);
+
+      const itemElement = renderRootItem("reference", "reference", itemType, { schemaObject });
+
+      expect(itemElement?.querySelectorAll(".reference-arrow")).toHaveLength(arrowCount);
+    });
+  });
+
   describe("text rendering", () => {
     test.each([
       ["item text", false, {}],
-      ["occurrence text when not default", false, { minOccurrence: 0, maxOccurrence: -1 }],
       [
         "documentation when showDocumentation is true",
         true,
-        { documentation: "Test documentation", documentationBox: { x: 10, y: 70, width: 200, height: 60 } },
+        { schemaObject: documented("Test documentation"), documentationBox: { x: 10, y: 70, width: 200, height: 60 } },
       ],
     ])("should render %s", (_case, showDocumentation, properties) => {
       diagram.showDocumentation = showDocumentation;
@@ -178,6 +223,14 @@ describe("DiagramSvgRenderer", () => {
       const itemElement = renderRootItem("elem", "TestElement", DiagramItemType.element, properties);
 
       expect(itemElement?.querySelectorAll("text").length).toBeGreaterThan(0);
+    });
+
+    test("should render the occurrence text when it is not 1..1", () => {
+      const { schemaObject } = localElementWith('minOccurs="0" maxOccurs="unbounded"');
+
+      const itemElement = renderRootItem("elem", "TestElement", DiagramItemType.element, { schemaObject });
+
+      expect(Array.from(itemElement?.querySelectorAll("text") ?? [], (text) => text.textContent)).toContain("0..∞");
     });
 
     test("should render text for top-level named groups", () => {
@@ -198,7 +251,13 @@ describe("DiagramSvgRenderer", () => {
         position: 0,
       });
 
+      const { schemaObject } = diagramItem(
+        webviewSchemaWith(`<xs:complexType name="PersonType"><xs:sequence/></xs:complexType>`),
+        id
+      );
+
       const itemElement = renderRootItem(id, "sequence", DiagramItemType.group, {
+        schemaObject,
         elementBox: { x: 10, y: 10, width: 40, height: 20 },
       });
 

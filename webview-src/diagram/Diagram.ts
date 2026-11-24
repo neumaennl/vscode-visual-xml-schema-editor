@@ -7,7 +7,7 @@
 import type { DiagramItem } from "./DiagramItem";
 import type { Size, Rectangle, DiagramStyle } from "./DiagramTypes";
 import { enclosingRectangle, defaultDiagramStyle } from "./DiagramTypes";
-import type { NamespacePrefixes } from "../../shared/types";
+import type { schema } from "../../shared/types";
 
 /**
  * Main diagram class that holds the complete structure of an XSD visualization.
@@ -15,6 +15,9 @@ import type { NamespacePrefixes } from "../../shared/types";
 export class Diagram {
   /** Root elements of the diagram (typically the schema node) */
   public rootElements: DiagramItem[] = [];
+
+  /** The schema that the diagram shows */
+  public readonly schema: schema;
 
   /** Padding around the diagram content */
   public padding: Size = { width: 20, height: 20 };
@@ -31,26 +34,17 @@ export class Diagram {
   /** Whether to show type information */
   public showType = false;
 
-  /** Prefix bound to this schema's `targetNamespace`, when available */
-  public currentSchemaPrefix?: string;
-
-  /** Schema-level `targetNamespace` (schema root metadata) */
-  public schemaTargetNamespace = "";
-
-  /** Schema-level namespace declarations keyed by prefix */
-  public schemaNamespacePrefixes: NamespacePrefixes = {};
-
-  /** The namespaces that the schema imports, for the check of type references */
-  public importedNamespaces: readonly string[] = [];
-
-  /** Whether the schema includes other schemas, for the check of type references */
-  public hasIncludes = false;
-
-  /** Cached local simple/complex type names discovered in the current schema diagram */
-  public localSchemaTypeNames?: ReadonlySet<string>;
-
   /** Visual style settings for the diagram */
   public style: DiagramStyle = { ...defaultDiagramStyle };
+
+  /**
+   * Creates the diagram of a schema.
+   *
+   * @param schemaObj - The schema that the diagram shows
+   */
+  constructor(schemaObj: schema) {
+    this.schema = schemaObj;
+  }
 
   /**
    * Adds a root element to the diagram.

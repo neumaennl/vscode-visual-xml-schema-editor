@@ -7,9 +7,10 @@ import { DiagramItem } from "../diagram";
 import { DiagramItemType } from "../diagram/DiagramTypes";
 import { setDraggedSchemaConstruct } from "../dragAndDrop/draggedSchemaConstruct";
 import { DraggableSchemaConstruct } from "../dragAndDrop/DraggableSchemaConstruct";
+import { emptyDiagram, NOT_READ_SCHEMA_OBJECT } from "../__tests__/diagramTestHelpers";
 
 /** The node that the canvas shows. */
-const ITEM = new DiagramItem("/element:Test", "Test", DiagramItemType.element);
+const ITEM = new DiagramItem("/element:Test", "Test", DiagramItemType.element, NOT_READ_SCHEMA_OBJECT, emptyDiagram());
 
 /**
  * Creates a drag event.

@@ -6,10 +6,31 @@
 import { XSD_NAMESPACE } from "../../shared/builtInTypes";
 import { LIST_FACETS, SINGLE_VALUE_FACETS } from "../../shared/facets";
 import { SCHEMA_ROOT_ID, parseSchemaId, SchemaNodeType } from "../../shared/idStrategy";
-import type { DiagramItem } from "../diagram";
+import {
+  getAttributes,
+  getDefaultValue,
+  getDocumentationAnnotations,
+  getFacets,
+  getFixedValue,
+  getMaxOccurs,
+  getMinOccurs,
+  getName,
+  getNamespacePrefixes,
+  getTargetNamespace,
+  getReference,
+  getComplexDerivation,
+  getSimpleDerivation,
+  getTypeName,
+  hasInlineComplexType,
+  hasInlineSimpleType,
+  isAbstract,
+  isMixed,
+  isNillable,
+  isReference,
+  type DiagramItem,
+} from "../diagram";
 import { DiagramItemType } from "../diagram/DiagramTypes";
 import { getNodeType, isTopLevelElement } from "./propertiesPanelNodeKinds";
-import { extractBaseType } from "./propertiesPanelSimpleTypeCommands";
 import type { XmlAttr } from "./propertiesPanelXmlMarkup";
 import { escapeXml, optionalAttributes, pad, renderTag, toAttrString } from "./propertiesPanelXmlMarkup";
 
@@ -55,16 +76,6 @@ function renderChildNodes(children: DiagramItem[], level: number, depth: number)
 }
 
 /**
- * Writes the value of `maxOccurs`, which the diagram stores as -1 for `unbounded`.
- *
- * @param maxOccurs - The value of the diagram item
- * @returns The value of the attribute
- */
-function formatMaxOccurs(maxOccurs: number): string {
-  return maxOccurs === -1 ? "unbounded" : String(maxOccurs);
-}
-
-/**
  * Adds `minOccurs` and `maxOccurs` to attributes, by default only when they differ from 1.
  *
  * @param attributes - The attributes, which are changed
@@ -72,11 +83,13 @@ function formatMaxOccurs(maxOccurs: number): string {
  * @param includeDefaults - Whether to add them when they are 1, too
  */
 function appendOccurrenceAttributes(attributes: XmlAttr[], node: DiagramItem, includeDefaults: boolean): void {
-  if (includeDefaults || node.minOccurrence !== 1) {
-    attributes.push(["minOccurs", String(node.minOccurrence)]);
+  const minOccurs = getMinOccurs(node);
+  const maxOccurs = getMaxOccurs(node);
+  if (includeDefaults || minOccurs !== 1) {
+    attributes.push(["minOccurs", String(minOccurs)]);
   }
-  if (includeDefaults || node.maxOccurrence !== 1) {
-    attributes.push(["maxOccurs", formatMaxOccurs(node.maxOccurrence)]);
+  if (includeDefaults || maxOccurs !== 1) {
+    attributes.push(["maxOccurs", String(maxOccurs)]);
   }
 }
 
@@ -108,7 +121,7 @@ function renderDocumentationNode(content: string, lang: string | undefined, leve
  * @returns The lines of the annotations
  */
 function renderAnnotations(node: DiagramItem, level: number): string[] {
-  return node.documentationAnnotations.map((annotation) => {
+  return getDocumentationAnnotations(node).map((annotation) => {
     const documentationChildren = annotation.documentationEntries.map((entry) =>
       renderDocumentationNode(entry.content, entry.lang, level + 1)
     );
@@ -124,11 +137,11 @@ function renderAnnotations(node: DiagramItem, level: number): string[] {
  * @returns The lines of the attributes
  */
 function renderAttributeNodes(node: DiagramItem, level: number): string[] {
-  return node.attributes.map((attribute) => {
+  return getAttributes(node).map((attribute) => {
     const attrs: XmlAttr[] = [
       ["name", attribute.name],
       ...optionalAttributes([
-        ["type", attribute.type || undefined],
+        ["type", attribute.type],
         ["use", attribute.use],
         ["default", attribute.defaultValue],
         ["fixed", attribute.fixedValue],
@@ -146,7 +159,7 @@ function renderAttributeNodes(node: DiagramItem, level: number): string[] {
  * @returns The lines of the facets
  */
 function renderRestrictionFacets(node: DiagramItem, level: number): string[] {
-  const restrictions = node.restrictions;
+  const restrictions = getFacets(node);
   if (!restrictions) {
     return [];
   }
@@ -178,26 +191,18 @@ function renderRestrictionFacets(node: DiagramItem, level: number): string[] {
  * @returns The lines of the body, empty when the type has neither a base type nor facets
  */
 function renderSimpleTypeChildren(node: DiagramItem, level: number): string[] {
-  const typeLabel = node.type.trim();
-  const hasDerivedSummary = !!node.simpleTypeDerivationKind || typeLabel.includes("(");
+  const derivation = getSimpleDerivation(node);
 
-  if (node.simpleTypeDerivationKind === "list") {
-    const listAttributes: XmlAttr[] = [];
-    if (node.simpleTypeListItemType) {
-      listAttributes.push(["itemType", node.simpleTypeListItemType]);
-    }
-    return [renderTag("xs:list", listAttributes, [], level)];
+  if (derivation?.kind === "list") {
+    return [renderTag("xs:list", optionalAttributes([["itemType", derivation.itemType]]), [], level)];
   }
 
-  if (node.simpleTypeDerivationKind === "union") {
-    const unionAttributes: XmlAttr[] = [];
-    if (node.simpleTypeUnionMemberTypes?.length) {
-      unionAttributes.push(["memberTypes", node.simpleTypeUnionMemberTypes.join(" ")]);
-    }
-    return [renderTag("xs:union", unionAttributes, [], level)];
+  if (derivation?.kind === "union") {
+    const memberTypes = derivation.memberTypes.length > 0 ? derivation.memberTypes.join(" ") : undefined;
+    return [renderTag("xs:union", optionalAttributes([["memberTypes", memberTypes]]), [], level)];
   }
 
-  const baseType = hasDerivedSummary ? extractBaseType(node.type) : undefined;
+  const baseType = derivation?.base;
   const facets = renderRestrictionFacets(node, level + 1);
   if (!baseType && facets.length === 0) {
     return [];
@@ -221,14 +226,15 @@ function renderSimpleTypeChildren(node: DiagramItem, level: number): string[] {
  * @returns The lines of the content
  */
 function renderComplexTypeBody(node: DiagramItem, level: number, depth: number): string[] {
-  const baseType = extractBaseType(node.type);
-  if (baseType && node.complexDerivationKind) {
-    const derivationTag = node.complexDerivationKind === "restriction" ? "xs:restriction" : "xs:extension";
+  const derivation = getComplexDerivation(node);
+  const baseType = derivation?.base;
+  if (derivation && baseType) {
+    const derivationTag = derivation.kind === "restriction" ? "xs:restriction" : "xs:extension";
     const derivationChildren = [
       ...renderChildNodes(node.childElements, level + 2, depth),
       ...renderAttributeNodes(node, level + 2),
     ];
-    const contentTag = node.isSimpleContent ? "xs:simpleContent" : "xs:complexContent";
+    const contentTag = derivation.content === "simple" ? "xs:simpleContent" : "xs:complexContent";
 
     return [
       renderTag(contentTag, [], [renderTag(derivationTag, [["base", baseType]], derivationChildren, level + 1)], level),
@@ -248,18 +254,18 @@ function renderComplexTypeBody(node: DiagramItem, level: number, depth: number):
  * @returns The lines of the element
  */
 function renderElementNode(node: DiagramItem, nodeType: SchemaNodeType | null, level: number, depth: number): string {
-  const attributes: XmlAttr[] = [["name", node.name]];
-
-  if (node.type && !node.hasAnonymousComplexType && !node.isSimpleContent && !node.type.startsWith("<anonymous")) {
-    attributes.push(["type", node.type]);
-  }
+  const attributes = optionalAttributes([
+    ["name", getName(node)],
+    ["ref", getReference(node)],
+    ["type", getTypeName(node)],
+  ]);
 
   attributes.push(
     ...optionalAttributes([
-      ["nillable", node.isNillable ? "true" : undefined],
-      ["abstract", node.isAbstract ? "true" : undefined],
-      ["default", node.elementDefault],
-      ["fixed", node.elementFixed],
+      ["nillable", isNillable(node) ? "true" : undefined],
+      ["abstract", isAbstract(node) ? "true" : undefined],
+      ["default", getDefaultValue(node)],
+      ["fixed", getFixedValue(node)],
     ])
   );
 
@@ -270,14 +276,14 @@ function renderElementNode(node: DiagramItem, nodeType: SchemaNodeType | null, l
 
   const children: string[] = [...renderAnnotations(node, level + 1)];
 
-  if (node.hasAnonymousComplexType) {
+  if (hasInlineComplexType(node)) {
     const complexTypeAttributes: XmlAttr[] = [];
-    if (node.isMixed) {
+    if (isMixed(node)) {
       complexTypeAttributes.push(["mixed", "true"]);
     }
     const complexTypeChildren = renderComplexTypeBody(node, level + 2, depth);
     children.push(renderTag("xs:complexType", complexTypeAttributes, complexTypeChildren, level + 1));
-  } else if (node.isSimpleContent) {
+  } else if (hasInlineSimpleType(node)) {
     const simpleTypeChildren = renderSimpleTypeChildren(node, level + 2);
     children.push(renderTag("xs:simpleType", [], simpleTypeChildren, level + 1));
   } else {
@@ -297,8 +303,8 @@ function renderElementNode(node: DiagramItem, nodeType: SchemaNodeType | null, l
  * @returns The lines of the node
  */
 function renderGroupNode(node: DiagramItem, nodeType: SchemaNodeType | null, level: number, depth: number): string {
-  if (nodeType === SchemaNodeType.GroupRef || node.isReference) {
-    const attrs: XmlAttr[] = [["ref", node.name]];
+  if (nodeType === SchemaNodeType.GroupRef || isReference(node)) {
+    const attrs = optionalAttributes([["ref", getReference(node)]]);
     appendOccurrenceAttributes(attrs, node, false);
     const children = renderAnnotations(node, level + 1);
     return renderTag("xs:group", attrs, children, level);
@@ -315,7 +321,7 @@ function renderGroupNode(node: DiagramItem, nodeType: SchemaNodeType | null, lev
   }
 
   if (!parsedParentId) {
-    const attrs: XmlAttr[] = [["name", node.name]];
+    const attrs = optionalAttributes([["name", getName(node)]]);
     const children = [...renderAnnotations(node, level + 1), ...renderChildNodes(node.childElements, level + 1, depth)];
     return renderTag("xs:group", attrs, children, level);
   }
@@ -336,7 +342,7 @@ function renderGroupNode(node: DiagramItem, nodeType: SchemaNodeType | null, lev
  */
 function renderSimpleTypeNode(node: DiagramItem, level: number): string {
   const children = [...renderAnnotations(node, level + 1), ...renderSimpleTypeChildren(node, level + 1)];
-  return renderTag("xs:simpleType", [["name", node.name]], children, level);
+  return renderTag("xs:simpleType", optionalAttributes([["name", getName(node)]]), children, level);
 }
 
 /**
@@ -348,11 +354,11 @@ function renderSimpleTypeNode(node: DiagramItem, level: number): string {
  * @returns The lines of the type
  */
 function renderComplexTypeNode(node: DiagramItem, level: number, depth: number): string {
-  const attrs: XmlAttr[] = [["name", node.name]];
-  if (node.isAbstract) {
+  const attrs = optionalAttributes([["name", getName(node)]]);
+  if (isAbstract(node)) {
     attrs.push(["abstract", "true"]);
   }
-  if (node.isMixed) {
+  if (isMixed(node)) {
     attrs.push(["mixed", "true"]);
   }
 
@@ -373,7 +379,7 @@ function renderComplexTypeNode(node: DiagramItem, level: number, depth: number):
 function renderSchemaNode(node: DiagramItem, level: number, depth: number): string {
   const attrs: XmlAttr[] = [];
 
-  const namespaceEntries = Object.entries(node.diagram?.schemaNamespacePrefixes ?? {});
+  const namespaceEntries = Object.entries(getNamespacePrefixes(node.diagram));
   for (const [prefix, uri] of namespaceEntries) {
     const attrName = prefix ? `xmlns:${prefix}` : "xmlns";
     attrs.push([attrName, uri]);
@@ -383,8 +389,9 @@ function renderSchemaNode(node: DiagramItem, level: number, depth: number): stri
     attrs.push(["xmlns:xs", XSD_NAMESPACE]);
   }
 
-  if (node.diagram?.schemaTargetNamespace) {
-    attrs.push(["targetNamespace", node.diagram.schemaTargetNamespace]);
+  const targetNamespace = getTargetNamespace(node.diagram);
+  if (targetNamespace) {
+    attrs.push(["targetNamespace", targetNamespace]);
   }
 
   const children = [...renderAnnotations(node, level + 1), ...renderChildNodes(node.childElements, level + 1, depth)];

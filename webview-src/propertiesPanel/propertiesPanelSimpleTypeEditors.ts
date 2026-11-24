@@ -5,7 +5,7 @@
 
 import type { SchemaCommand, SimpleTypeDerivationKind } from "../../shared/types";
 import { SchemaNodeType } from "../../shared/idStrategy";
-import type { DiagramItem } from "../diagram";
+import { getSimpleDerivation, type DiagramItem } from "../diagram";
 import { type ChoiceOption, createChoiceField, createEditableField, createTextInput } from "./propertiesPanelFields";
 import {
   createTypeCommitHandler,
@@ -23,54 +23,14 @@ import { getReadOnlyTypeValue } from "./propertiesPanelTypeHelpers";
 /** Why the last member type of a union cannot be removed. */
 const LAST_MEMBER_TYPE_MESSAGE = "A union needs at least one member type";
 /**
- * Resolves the current simpleType derivation kind from structured diagram state. The diagram builder
- * sets the kind for every simple type with a body; other nodes count as restrictions.
+ * Returns the current derivation kind of the simple type that a node shows; a simple type without a body
+ * counts as a restriction.
  *
  * @param node - Diagram node being edited
  * @returns The current simpleType derivation kind
  */
 export function getSimpleTypeDerivationKind(node: DiagramItem): SimpleTypeDerivationKind {
-  return node.simpleTypeDerivationKind ?? "restriction";
-}
-
-/**
- * Returns the start of the type label of a simple type, as the diagram builder writes it.
- *
- * @param hasInlineSimpleType - Whether the simple type is the anonymous type of an element
- * @returns The start of the label
- */
-function typeLabelPrefix(hasInlineSimpleType: boolean): string {
-  return hasInlineSimpleType ? "<anonymous simpleType>" : "simpleType";
-}
-
-/**
- * Shows a list body on the draft node, so that the panel shows it before the diagram is rebuilt.
- *
- * @param node - The draft node
- * @param itemType - The item type of the list
- * @param hasInlineSimpleType - Whether the simple type is the anonymous type of an element
- */
-function showListBody(node: DiagramItem, itemType: string, hasInlineSimpleType: boolean): void {
-  node.simpleTypeDerivationKind = "list";
-  node.simpleTypeListItemType = itemType;
-  node.simpleTypeUnionMemberTypes = undefined;
-  node.restrictions = undefined;
-  node.type = `${typeLabelPrefix(hasInlineSimpleType)} (list of ${itemType})`;
-}
-
-/**
- * Shows a union body on the draft node, so that the panel shows it before the diagram is rebuilt.
- *
- * @param node - The draft node
- * @param memberTypes - The member types of the union
- * @param hasInlineSimpleType - Whether the simple type is the anonymous type of an element
- */
-function showUnionBody(node: DiagramItem, memberTypes: string[], hasInlineSimpleType: boolean): void {
-  node.simpleTypeDerivationKind = "union";
-  node.simpleTypeListItemType = undefined;
-  node.simpleTypeUnionMemberTypes = memberTypes;
-  node.restrictions = undefined;
-  node.type = `${typeLabelPrefix(hasInlineSimpleType)} (union of ${memberTypes.join(", ")})`;
+  return getSimpleDerivation(node)?.kind ?? "restriction";
 }
 
 /**
@@ -88,8 +48,8 @@ export function isSimpleTypeNode(nodeType: SchemaNodeType | null, hasInlineSimpl
 
 /**
  * Renders the select that switches a simpleType between restriction, list and union. The new body is
- * derived from the current one and shown on the draft node; when nothing can be derived, the select
- * goes back to the current kind.
+ * derived from the current one; when nothing can be derived, the select goes back to the current kind.
+ * The editors of the new kind appear with the schema that the extension host sends after the change.
  *
  * @param root - The tab
  * @param node - The simpleType, or the element with the inline simpleType
@@ -113,21 +73,6 @@ export function renderSimpleTypeKindSelector(
       // Nothing to derive the new body from, for example a union of inline types only
       return false;
     }
-
-    // The command builder derives the new body from the current one; a list or union has no facets
-    const payload = command.payload as { listItemType: string; unionMemberTypes: string[]; baseType: string };
-    if (nextKind === "list") {
-      showListBody(node, payload.listItemType, hasInlineSimpleType);
-    } else if (nextKind === "union") {
-      showUnionBody(node, payload.unionMemberTypes, hasInlineSimpleType);
-    } else {
-      node.simpleTypeDerivationKind = "restriction";
-      node.simpleTypeListItemType = undefined;
-      node.simpleTypeUnionMemberTypes = undefined;
-      node.restrictions = undefined;
-      node.type = `${typeLabelPrefix(hasInlineSimpleType)} (restricts ${payload.baseType})`;
-    }
-
     dispatchCommand(command);
     return true;
   });
@@ -168,7 +113,8 @@ function showInlineSimpleType(context: SimpleTypeEditorContext): void {
  */
 export function renderSimpleTypeListEditor(context: SimpleTypeEditorContext): void {
   const { root, node, hasInlineSimpleType, typeSuggestions, dispatchCommand } = context;
-  const itemType = node.simpleTypeListItemType ?? "";
+  const derivation = getSimpleDerivation(node);
+  const itemType = (derivation?.kind === "list" ? derivation.itemType : undefined) ?? "";
   showInlineSimpleType(context);
 
   root.appendChild(
@@ -177,11 +123,9 @@ export function renderSimpleTypeListEditor(context: SimpleTypeEditorContext): vo
       itemType,
       createTypeCommitHandler(node, itemType, (normalizedNext) => {
         const command = createSimpleTypeListCommand(node, normalizedNext);
-        if (!command) {
-          return;
+        if (command) {
+          dispatchCommand(command);
         }
-        showListBody(node, normalizedNext, hasInlineSimpleType);
-        dispatchCommand(command);
       }),
       typeSuggestions
     )
@@ -201,7 +145,8 @@ export function renderSimpleTypeListEditor(context: SimpleTypeEditorContext): vo
  */
 export function renderSimpleTypeUnionEditor(context: SimpleTypeEditorContext): void {
   const { root, node, hasInlineSimpleType, typeSuggestions, dispatchCommand } = context;
-  const initialMemberTypes = node.simpleTypeUnionMemberTypes ? [...node.simpleTypeUnionMemberTypes] : [];
+  const derivation = getSimpleDerivation(node);
+  const initialMemberTypes = derivation?.kind === "union" ? [...derivation.memberTypes] : [];
   const memberTypes = initialMemberTypes.length > 0 ? initialMemberTypes : [""];
   showInlineSimpleType(context);
 
@@ -233,11 +178,9 @@ export function renderSimpleTypeUnionEditor(context: SimpleTypeEditorContext): v
       return;
     }
     const command = createSimpleTypeUnionCommand(node, parsedMemberTypes);
-    if (!command) {
-      return;
+    if (command) {
+      dispatchCommand(command);
     }
-    showUnionBody(node, parsedMemberTypes, hasInlineSimpleType);
-    dispatchCommand(command);
   };
 
   const renderRows = (): void => {
@@ -346,9 +289,6 @@ export function renderInlineSimpleTypeReplacement(
             elementType: normalizedNext,
           },
         };
-        node.type = normalizedNext;
-        node.hasAnonymousComplexType = false;
-        node.isSimpleContent = false;
         dispatchCommand(command);
       }),
       typeSuggestions

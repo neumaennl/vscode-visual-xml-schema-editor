@@ -4,7 +4,6 @@
  */
 
 import type { attribute } from "../../shared/generated/attribute";
-import type { allNNI } from "../../shared/generated/types";
 import type { explicitGroup } from "../../shared/generated/explicitGroup";
 import type { all } from "../../shared/generated/all";
 import type { simpleExplicitGroup } from "../../shared/generated/simpleExplicitGroup";
@@ -12,8 +11,6 @@ import type { allType } from "../../shared/generated/allType";
 import type { groupRef } from "../../shared/generated/groupRef";
 import type { localComplexType } from "../../shared/generated/localComplexType";
 import type { topLevelComplexType } from "../../shared/generated/topLevelComplexType";
-import type { localSimpleType } from "../../shared/generated/localSimpleType";
-import type { topLevelSimpleType } from "../../shared/generated/topLevelSimpleType";
 
 export enum DiagramItemType {
   element = "element",
@@ -77,14 +74,15 @@ export interface DiagramAnnotationEntry {
   documentationEntries: DiagramDocumentationEntry[];
 }
 
-/**
- * Interface for schema elements that have occurrence constraints.
- * This includes `localElement`, `groupRef`, and other elements that can appear
- * within complex types.
- */
-export interface ElementWithOccurrence {
-  minOccurs?: number;
-  maxOccurs?: allNNI;
+/** A named attribute of a complex type or of the schema, as the properties panel shows it. */
+export interface DiagramAttribute {
+  name: string;
+  /** The `type` of the attribute; an attribute without one has an inline simple type */
+  type?: string;
+  /** `required`, `optional` or `prohibited`; top-level attributes have none */
+  use?: string;
+  defaultValue?: string;
+  fixedValue?: string;
 }
 
 /**
@@ -101,12 +99,6 @@ export interface ElementWithAttributes {
  * These types share common structure for sequences, choices, all groups, and attributes.
  */
 export type ComplexTypeLike = localComplexType | topLevelComplexType;
-
-/**
- * Union type for simple type structures (`localSimpleType`, `topLevelSimpleType`).
- * These types share common structure for restrictions.
- */
-export type SimpleTypeLike = localSimpleType | topLevelSimpleType;
 
 /**
  * Interface for extension/restriction structures that may have attributes and content model groups.

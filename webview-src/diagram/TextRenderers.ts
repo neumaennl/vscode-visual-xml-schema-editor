@@ -5,6 +5,9 @@
 
 import type { DiagramItem } from "./DiagramItem";
 import { svgText } from "./SvgHelpers";
+import { getMaxOccurs, getMinOccurs } from "./schemaAccessors";
+import { getTypeText } from "./typeAccessors";
+import { getDocumentation } from "./documentationAccessors";
 
 /** Maximum length for truncated documentation lines */
 const MAX_DOC_LINE_LENGTH = 50;
@@ -14,19 +17,22 @@ const MAX_DOC_LINE_LENGTH = 50;
  * @param item - The diagram item containing the text
  * @param group - The SVG group to append text to
  * @param svg - The SVG element for text measurement
+ * @param leftWidth - The width at the left of the box that the label leaves free, such as for the
+ *   reference arrow
  */
-export function renderText(item: DiagramItem, group: SVGElement, svg: SVGSVGElement): void {
+export function renderText(item: DiagramItem, group: SVGElement, svg: SVGSVGElement, leftWidth = 0): void {
   const box = item.elementBox;
-  const centerX = box.x + box.width / 2;
+  const centerX = box.x + (leftWidth + box.width) / 2;
   const centerY = box.y + box.height / 2;
 
-  let displayText = item.name;
-  if (item.diagram?.showType && item.type) {
-    displayText += `: ${item.type}`;
+  let displayText = item.label;
+  const typeText = getTypeText(item);
+  if (item.diagram.showType && typeText) {
+    displayText += `: ${typeText}`;
   }
 
   // Truncate text to fit in box with some padding
-  const maxWidth = box.width - 10; // 5px padding on each side
+  const maxWidth = box.width - leftWidth - 10; // 5px padding on each side
   const fontSize = item.getStyle().fontSize;
   const truncatedText = truncateText(displayText, maxWidth, fontSize, svg);
 
@@ -101,7 +107,7 @@ export function renderDocumentation(item: DiagramItem, group: SVGElement): void 
   if (box.width === 0 || box.height === 0) return;
 
   // Simple documentation rendering - just show first line
-  const lines = item.documentation.split("\n").slice(0, 3);
+  const lines = getDocumentation(item).split("\n").slice(0, 3);
   const lineHeight = item.getStyle().documentationFontSize;
 
   lines.forEach((line, i) => {
@@ -122,12 +128,13 @@ export function renderDocumentation(item: DiagramItem, group: SVGElement): void 
  * @param group - The SVG group to append text to
  */
 export function renderOccurrence(item: DiagramItem, group: SVGElement): void {
-  if (!item.diagram?.alwaysShowOccurrence && item.maxOccurrence <= 1 && item.minOccurrence === 1) {
+  const minOccurs = getMinOccurs(item);
+  const maxOccurs = getMaxOccurs(item);
+  if (!item.diagram.alwaysShowOccurrence && minOccurs === 1 && maxOccurs === 1) {
     return;
   }
 
-  const maxOccurText = item.maxOccurrence === -1 ? "∞" : item.maxOccurrence.toString();
-  const occurText = `${item.minOccurrence}..${maxOccurText}`;
+  const occurText = `${minOccurs}..${maxOccurs === "unbounded" ? "∞" : maxOccurs}`;
   const box = item.elementBox;
 
   svgText(

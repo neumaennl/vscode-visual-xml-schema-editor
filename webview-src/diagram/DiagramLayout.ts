@@ -7,6 +7,7 @@ import type { Diagram } from "./Diagram";
 import type { DiagramItem } from "./DiagramItem";
 import { isCompositorGroup } from "./groupUtils";
 import { DiagramItemType } from "./DiagramTypes";
+import { getDocumentation } from "./documentationAccessors";
 
 /**
  * Places the items of a diagram: sizes, positions, the boxes for the shape, the expand button and the
@@ -74,7 +75,7 @@ export class DiagramLayout {
     }
 
     // Add documentation box if needed
-    if (item.diagram?.showDocumentation && item.documentation) {
+    if (item.diagram.showDocumentation && getDocumentation(item)) {
       this.calculateDocumentationBox(item);
     }
 
@@ -150,7 +151,8 @@ export class DiagramLayout {
    * @param item - The item
    */
   private calculateDocumentationBox(item: DiagramItem): void {
-    if (!item.documentation) {
+    const documentation = getDocumentation(item);
+    if (!documentation) {
       item.documentationBox = { x: 0, y: 0, width: 0, height: 0 };
       return;
     }
@@ -159,7 +161,7 @@ export class DiagramLayout {
     // Simple estimation: 15 chars per line, 12 pixels per line
     const charsPerLine = 30;
     const lineHeight = 12;
-    const lines = Math.ceil(item.documentation.length / charsPerLine);
+    const lines = Math.ceil(documentation.length / charsPerLine);
     const height = Math.min(lines * lineHeight + 10, 100); // Max 100px
 
     item.documentationBox = {

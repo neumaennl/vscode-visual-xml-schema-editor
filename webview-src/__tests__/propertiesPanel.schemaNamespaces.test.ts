@@ -1,7 +1,7 @@
 /**
  * Integration tests of the properties panel for the namespace fields of the schema: they display items in a whole `PropertiesPanel`.
  * The fields are tested in `propertiesPanelSchemaNamespaces.test.ts`; this test checks that the panel
- * shows them for the schema, passes their commands on and shows the changed namespaces.
+ * shows them for the schema, passes their commands on and shows the changed namespaces with the next schema.
  */
 
 import { webviewSchemaFromXml } from "../../shared/__tests__/schemaTestHelpers";
@@ -16,7 +16,7 @@ describe("PropertiesPanel: the namespace fields of the schema", () => {
     const schemaObj = webviewSchemaFromXml(
       '<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tns="urn:original" targetNamespace="urn:original"/>'
     );
-    const { dispatch } = displayItem(container, diagramItem(schemaObj, "/schema"));
+    const { panel, dispatch } = displayItem(container, diagramItem(schemaObj, "/schema"));
 
     editInput(container, "targetNamespace", "urn:updated");
 
@@ -29,6 +29,12 @@ describe("PropertiesPanel: the namespace fields of the schema", () => {
       },
     });
     expect(getInputByLabel(container, "targetNamespace").value).toBe("urn:updated");
+
+    // The webview displays the selected node again when the new schema arrives
+    const changed = webviewSchemaFromXml(
+      '<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tns="urn:updated" targetNamespace="urn:updated"/>'
+    );
+    panel.display(diagramItem(changed, "/schema"));
     expect(
       Array.from(
         container.querySelectorAll(".property-namespace-row input"),

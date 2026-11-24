@@ -3,30 +3,37 @@
  */
 
 import { DiagramItem } from "./DiagramItem";
-import { Diagram } from "./Diagram";
-import { DiagramItemType, defaultDiagramStyle } from "./DiagramTypes";
+import { DiagramItemType } from "./DiagramTypes";
+import { emptyDiagram, NOT_READ_SCHEMA_OBJECT } from "../__tests__/diagramTestHelpers";
+
+/**
+ * Creates an element item whose label is its ID, in the diagram of an empty schema.
+ *
+ * @param id - The ID of the item
+ * @param diagram - The diagram of the item
+ * @returns The item
+ */
+function item(id: string, diagram = emptyDiagram()): DiagramItem {
+  return new DiagramItem(id, id, DiagramItemType.element, NOT_READ_SCHEMA_OBJECT, diagram);
+}
 
 describe("DiagramItem", () => {
   describe("constructor", () => {
-    test("should create a DiagramItem with required parameters", () => {
-      const item = new DiagramItem("id1", "TestElement", DiagramItemType.element);
-      expect(item.id).toBe("id1");
-      expect(item.name).toBe("TestElement");
-      expect(item.itemType).toBe(DiagramItemType.element);
-      expect(item.diagram).toBeNull();
-    });
+    test("should create a DiagramItem with its diagram", () => {
+      const diagram = emptyDiagram();
+      const created = new DiagramItem("id1", "TestElement", DiagramItemType.element, NOT_READ_SCHEMA_OBJECT, diagram);
 
-    test("should accept diagram parameter", () => {
-      const diagram = new Diagram();
-      const item = new DiagramItem("id1", "TestElement", DiagramItemType.element, diagram);
-      expect(item.diagram).toBe(diagram);
+      expect(created.id).toBe("id1");
+      expect(created.label).toBe("TestElement");
+      expect(created.itemType).toBe(DiagramItemType.element);
+      expect(created.diagram).toBe(diagram);
     });
   });
 
   describe("addChild", () => {
     test("should add child element and set parent reference", () => {
-      const parent = new DiagramItem("parent", "Parent", DiagramItemType.element);
-      const child = new DiagramItem("child", "Child", DiagramItemType.element);
+      const parent = item("parent");
+      const child = item("child");
 
       parent.addChild(child);
 
@@ -36,9 +43,9 @@ describe("DiagramItem", () => {
     });
 
     test("should add multiple children", () => {
-      const parent = new DiagramItem("parent", "Parent", DiagramItemType.element);
-      const child1 = new DiagramItem("child1", "Child1", DiagramItemType.element);
-      const child2 = new DiagramItem("child2", "Child2", DiagramItemType.element);
+      const parent = item("parent");
+      const child1 = item("child1");
+      const child2 = item("child2");
 
       parent.addChild(child1);
       parent.addChild(child2);
@@ -51,27 +58,20 @@ describe("DiagramItem", () => {
 
   describe("getStyle", () => {
     test("should return the style of the diagram", () => {
-      const diagram = new Diagram();
+      const diagram = emptyDiagram();
       diagram.style = { ...diagram.style, fontSize: 14 };
-      const item = new DiagramItem("id", "name", DiagramItemType.element, diagram);
 
-      expect(item.getStyle()).toBe(diagram.style);
-    });
-
-    test("should return the default style without a diagram", () => {
-      const item = new DiagramItem("id", "name", DiagramItemType.element);
-
-      expect(item.getStyle()).toBe(defaultDiagramStyle);
+      expect(item("id", diagram).getStyle()).toBe(diagram.style);
     });
   });
 
   describe("calculateBoundingBox", () => {
     test("should return item bounds when no children", () => {
-      const item = new DiagramItem("id1", "Test", DiagramItemType.element);
-      item.location = { x: 10, y: 20 };
-      item.size = { width: 100, height: 50 };
+      const single = item("id1");
+      single.location = { x: 10, y: 20 };
+      single.size = { width: 100, height: 50 };
 
-      const bounds = item.calculateBoundingBox();
+      const bounds = single.calculateBoundingBox();
 
       expect(bounds.x).toBe(10);
       expect(bounds.y).toBe(20);
@@ -83,12 +83,12 @@ describe("DiagramItem", () => {
       ["include child bounds when showChildElements is true", true, { x: 0, y: 0, width: 150, height: 150 }], // 50 + 100
       ["not include child bounds when showChildElements is false", false, { x: 0, y: 0, width: 100, height: 100 }],
     ])("should %s", (_case, showChildElements, expected) => {
-      const parent = new DiagramItem("parent", "Parent", DiagramItemType.element);
+      const parent = item("parent");
       parent.location = { x: 0, y: 0 };
       parent.size = { width: 100, height: 100 };
       parent.showChildElements = showChildElements;
 
-      const child = new DiagramItem("child", "Child", DiagramItemType.element);
+      const child = item("child");
       child.location = { x: 50, y: 50 };
       child.size = { width: 100, height: 100 };
       parent.addChild(child);
@@ -97,17 +97,17 @@ describe("DiagramItem", () => {
     });
 
     test("should handle nested children", () => {
-      const grandparent = new DiagramItem("gp", "GrandParent", DiagramItemType.element);
+      const grandparent = item("gp");
       grandparent.location = { x: 0, y: 0 };
       grandparent.size = { width: 50, height: 50 };
       grandparent.showChildElements = true;
 
-      const parent = new DiagramItem("parent", "Parent", DiagramItemType.element);
+      const parent = item("parent");
       parent.location = { x: 100, y: 100 };
       parent.size = { width: 50, height: 50 };
       parent.showChildElements = true;
 
-      const child = new DiagramItem("child", "Child", DiagramItemType.element);
+      const child = item("child");
       child.location = { x: 200, y: 200 };
       child.size = { width: 50, height: 50 };
 

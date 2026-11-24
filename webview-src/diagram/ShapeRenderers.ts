@@ -8,9 +8,26 @@ import type { Point, Rectangle } from "./DiagramTypes";
 import { DiagramItemGroupType } from "./DiagramTypes";
 import { svgRectangle, svgPolygon, svgCircle, svgLine } from "./SvgHelpers";
 import { isCompositorGroup } from "./groupUtils";
+import { isRepeated } from "./schemaAccessors";
+import { hasSimpleContent, isNamedSimpleType } from "./typeAccessors";
 
 /** Offset for shadow effect on multiple occurrence shapes */
 const SHADOW_OFFSET = 3;
+
+/** The size of the cut corners of a group's octagon, relative to the height of the shape */
+const GROUP_BEVEL_RATIO = 0.3;
+
+/** The extent of the reference arrow in both directions: about a third of the height of the shapes */
+const ARROW_SIZE = 14;
+
+/** The distance of the reference arrow from the outline of the shape */
+const ARROW_INSET = 3;
+
+/** The space between the reference arrow and the label */
+const ARROW_GAP = 1;
+
+/** The width at the left of a shape that the reference arrow takes, which the label leaves free */
+export const REFERENCE_ARROW_WIDTH = ARROW_INSET + ARROW_SIZE + ARROW_GAP;
 
 /**
  * Render an element as a rectangle with optional shadow for multiple occurrences
@@ -27,7 +44,7 @@ export function renderElementShape(
   item: DiagramItem,
   group: SVGElement
 ): void {
-  if (item.maxOccurrence !== 1) {
+  if (isRepeated(item)) {
     // Multiple occurrences - draw shadow
     const shadowRect = { ...rect };
     shadowRect.x += SHADOW_OFFSET;
@@ -52,7 +69,7 @@ export function renderGroupShape(
   item: DiagramItem,
   group: SVGElement
 ): void {
-  const points = beveledRectangle(rect, rect.height * 0.3, true);
+  const points = beveledRectangle(rect, rect.height * GROUP_BEVEL_RATIO, true);
   renderPolygonWithShadow(group, points, fill, stroke, item);
 
   // Draw group type indicator only for compositor groups (sequence/choice/all)
@@ -80,8 +97,8 @@ export function renderTypeShape(
   const points = beveledRectangle(rect, bevel, false);
   renderPolygonWithShadow(group, points, fill, stroke, item);
 
-  // For simple types, fill the beveled area with the stroke color
-  if (item.isSimpleContent) {
+  // For simple types and complex types with simple content, fill the beveled area with the stroke color
+  if (isNamedSimpleType(item) || hasSimpleContent(item)) {
     const bevelFillPoints: Point[] = [
       { x: rect.x, y: rect.y + bevel },
       { x: rect.x + bevel, y: rect.y },
@@ -148,11 +165,41 @@ function renderPolygonWithShadow(
   stroke: string,
   item: DiagramItem
 ): void {
-  if (item.maxOccurrence !== 1) {
+  if (isRepeated(item)) {
     const shadowPoints = points.map((p) => ({ x: p.x + SHADOW_OFFSET, y: p.y + SHADOW_OFFSET }));
     svgPolygon(group, shadowPoints, fill, stroke);
   }
   svgPolygon(group, points, fill, stroke);
+}
+
+/**
+ * Draws the arrow that marks a reference: a short line from the lower left corner of the shape up to the
+ * right, ending in a filled head. The label leaves {@link REFERENCE_ARROW_WIDTH} free for it.
+ *
+ * @param rect - The rectangle of the shape
+ * @param item - The diagram item of the reference
+ * @param group - Parent SVG group element
+ */
+export function renderReferenceArrow(rect: Rectangle, item: DiagramItem, group: SVGElement): void {
+  const start = { x: rect.x + ARROW_INSET, y: rect.y + rect.height - ARROW_INSET };
+  const tip = { x: start.x + ARROW_SIZE, y: start.y - ARROW_SIZE };
+  const headBase = { x: start.x + ARROW_SIZE / 2, y: start.y - ARROW_SIZE / 2 };
+  const headHalfWidth = ARROW_SIZE / 4;
+
+  const arrowGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  arrowGroup.setAttribute("class", "reference-arrow");
+  svgLine(arrowGroup, `stroke:${item.getStyle().lineColor};stroke-width:3`, start.x, start.y, headBase.x, headBase.y);
+  svgPolygon(
+    arrowGroup,
+    [
+      tip,
+      { x: headBase.x + headHalfWidth, y: headBase.y + headHalfWidth },
+      { x: headBase.x - headHalfWidth, y: headBase.y - headHalfWidth },
+    ],
+    `fill:${item.getStyle().lineColor}`,
+    ""
+  );
+  group.appendChild(arrowGroup);
 }
 
 /**

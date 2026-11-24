@@ -3,9 +3,8 @@ type: Known Issues
 title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
-status: stable
-generated: { by: human:neumaennl, at: 2026-11-20T15:22:36Z }
-verified: { by: human:neumaennl, at: 2026-11-20T15:25:36Z }
+status: draft
+generated: { by: human:neumaennl, at: 2026-11-24T16:36:51Z }
 ---
 
 # Purpose
@@ -38,10 +37,10 @@ Effort:
 
 ## Replacement type changes an inline restriction of an inline type
 
-- **Location:** `webview-src/propertiesPanel/propertiesPanelTypes.ts` (`renderInlineAnonymousTypeReplacement()`), `webview-src/propertiesPanel/propertiesPanelCommands.ts` (`createTypeCommand()`)
+- **Location:** `webview-src/propertiesPanel/propertiesPanelTypes.ts` (`renderReplacementType()`), `webview-src/propertiesPanel/propertiesPanelCommands.ts` (`createTypeCommand()`)
 - **Severity:** High
 - **Effort:** S
-- **Description:** An element whose inline simple type has no single base type, such as `<xs:element name="short"><xs:simpleType><xs:restriction><xs:simpleType><xs:restriction base="xs:string"/></xs:simpleType></xs:restriction></xs:simpleType></xs:element>`, shows a "Replacement Type" field with the hint that a replacement type removes the inline simple type. Entering `xs:token` sends `modifySimpleType` with `baseType: "xs:token"` for `/element:short/anonymousSimpleType[0]` instead of `modifyElement` with `elementType`: the inline type stays, and its inline base type is replaced by `xs:token`. The draft in the panel shows the element with the type `xs:token` until the diagram is rebuilt. `createTypeCommand()` builds the base type command for every element with `isSimpleContent`; the replacement of inline lists, unions and restrictions with a base type uses `renderInlineSimpleTypeReplacement()`, which sends `modifyElement`. The fix is to send `modifyElement` there as well.
+- **Description:** An element whose inline simple type has no single base type, such as `<xs:element name="short"><xs:simpleType><xs:restriction><xs:simpleType><xs:restriction base="xs:string"/></xs:simpleType></xs:restriction></xs:simpleType></xs:element>`, shows a "Replacement Type" field with the hint that a replacement type removes the inline simple type. Entering `xs:token` sends `modifySimpleType` with `baseType: "xs:token"` for `/element:short/anonymousSimpleType[0]` instead of `modifyElement` with `elementType`: the inline type stays, and its inline base type is replaced by `xs:token`. `createTypeCommand()` builds the base type command for every element with an inline simple type; the replacement of inline lists, unions and restrictions with a base type uses `renderInlineSimpleTypeReplacement()`, which sends `modifyElement`. The fix is to send `modifyElement` there as well.
 - **GitHub issue:** [#450](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/450)
 
 ## Node IDs are ambiguous and have many special cases
@@ -63,7 +62,7 @@ Effort:
 
   The webview reads IDs with its own helpers, such as `getNodeType()` and `isTopLevelElement()` in `propertiesPanelNodeKinds.ts`, instead of shared ones; `idStrategy.ts` had such helpers, but nothing used them, so they were removed.
 
-  The goal is one consistent grammar, generated and resolved by a single implementation in `shared/`. Since IDs are not stored in the XSD file, a new format needs no migration. The redesign should be planned together with [Diagram items copy values from the schema objects](#diagram-items-copy-values-from-the-schema-objects), which also changes the diagram builder.
+  The goal is one consistent grammar, generated and resolved by a single implementation in `shared/`. Since IDs are not stored in the XSD file, a new format needs no migration.
 
 - **GitHub issue:** [#348](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/348)
 
@@ -131,33 +130,12 @@ Effort:
 - **Description:** XML Schema requires that each element of a document matches exactly one particle of its content model without looking ahead ("Unique Particle Attribution"). `<xs:choice><xs:element name="a"/><xs:element name="a"/></xs:choice>`, two `a` in an `xs:all`, and a sequence `a?, a` violate it, even if both `a` have the same type. The editor does not check it, so adding or renaming elements and changing their occurrences can produce such content models. The fix is one more constraint in the check of the result (see [ADR 003](architecture/003-validators-check-executors-assume.md)). It waits for the move to xmlbind-ts 3, because the check needs the order of the children of a sequence, which xmlbind-ts 2 does not keep reliably.
 - **GitHub issue:** [#444](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/444)
 
-## Inline complex types with simple content are treated as inline simple types
-
-- **Location:** `webview-src/diagram/SchemaProcessors.ts` (`processComplexType()`, `processAnonymousSimpleType()`), `webview-src/dragAndDrop/TypeDropCommands.ts` (`isRestrictionSimpleType()`, `createFacetNodeDropCommand()`), `webview-src/propertiesPanel/propertiesPanelTypeHelpers.ts` (`isInlineSimpleTypeElement()`), `webview-src/propertiesPanel/propertiesPanelTargets.ts` (`resolveSimpleTypeId()`)
-- **Severity:** Medium
-- **Effort:** S
-- **Description:** The diagram builder sets `isSimpleContent` both on an element with an inline simple type and on an element whose inline complex type has `xs:simpleContent`. The drop rules and the properties panel read the flag as "the element has an inline simple type" and address `/element:x/anonymousSimpleType[0]`, which only exists in the first case. For the element `price` with `<xs:complexType><xs:simpleContent><xs:restriction base="B"/></xs:simpleContent></xs:complexType>`, labelled `<anonymous complexType> with simpleContent (restricts B)`:
-  - a facet drop is accepted while dragging, and then sends `modifySimpleType` for `/element:price/anonymousSimpleType[0]`, which fails;
-  - the properties panel shows the editors of an inline simple type, and changing a facet or the derivation there fails the same way.
-
-  The fix is to check `hasAnonymousComplexType` wherever the flag is read as an inline simple type, or to split the flag. The facets of a restriction of simple content cannot be edited by any command yet (see [Complex types with simple content cannot be created or derived](#complex-types-with-simple-content-cannot-be-created-or-derived)).
-
-- **GitHub issue:** [#440](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/440)
-
-## Named complex types with simple content are shown as inline simple types
-
-- **Location:** `webview-src/propertiesPanel/propertiesPanelTypeHelpers.ts` (`getReadOnlyTypeValue()`), `webview-src/propertiesPanel/propertiesPanelTypes.ts` (`renderTypeProperty()`)
-- **Severity:** Medium
-- **Effort:** S
-- **Description:** The diagram builder sets `isSimpleContent` on a named complex type with `xs:simpleContent`, such as `<xs:complexType name="Price"><xs:simpleContent><xs:extension base="xs:decimal">…</xs:extension></xs:simpleContent></xs:complexType>`, labelled `complexType with simpleContent (extends xs:decimal)`. The General tab reads the flag as an inline simple type and shows "Type: Inline simpleType (restricts xs:decimal)", which is neither inline nor a restriction. It also offers a "Base Type" field, whose change sends `modifyComplexType` with a `baseType`, which the validator rejects for types with simple content (see [Complex types with simple content cannot be created or derived](#complex-types-with-simple-content-cannot-be-created-or-derived)). Elements with such an inline complex type have the same cause (see [Inline complex types with simple content are treated as inline simple types](#inline-complex-types-with-simple-content-are-treated-as-inline-simple-types)). The fix is to show the label of the diagram builder and the base type read-only for complex types with simple content.
-- **GitHub issue:** [#451](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/451)
-
 ## Restricted complex content is shown without content
 
-- **Location:** `webview-src/diagram/SchemaProcessors.ts` (`processComplexType()`), `webview-src/diagram/SchemaProcessorsSimpleTypes.ts` (`processRestriction()`)
+- **Location:** `webview-src/diagram/SchemaProcessors.ts` (`processDerivation()`)
 - **Severity:** Medium
 - **Effort:** M
-- **Description:** For `xs:complexContent`, an `xs:extension` is processed with its compositors, but an `xs:restriction` is passed to the simple type function `processRestriction()`, which only reads facets. A complex type that restricts another one with complex content is therefore shown without children; its attributes are read like those of an extension. The function also sets `simpleTypeDerivationKind` on the complex type. The fix is to process the compositors of restrictions of complex content like those of extensions (see [Diagram rendering](diagram-rendering.md#from-schema-to-diagram-items)). See also [Diagram items copy values from the schema objects](#diagram-items-copy-values-from-the-schema-objects).
+- **Description:** For `xs:complexContent`, the compositors of an `xs:extension` become children of the type, but those of an `xs:restriction` do not. A complex type that restricts another one with complex content is therefore shown without children; its attributes are read like those of an extension. The fix is to process the compositors of restrictions of complex content like those of extensions (see [Diagram rendering](diagram-rendering.md#from-schema-to-diagram-items)).
 - **GitHub issue:** none
 
 ## Removing a simple or complex type does not check for references
@@ -175,6 +153,14 @@ Effort:
 - **Effort:** S
 - **Description:** When VS Code is restarted with a schema open in the visual editor, all nodes are collapsed. The canvas keeps the expand state across redraws in memory only; `WebviewState` contains just the schema, the view state and the diagram options. The zoom and pan are restored since the structure review [#448](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/448). The fix is to save the expand state with the other state and to pass it to the canvas when the webview is created.
 - **GitHub issue:** [#347](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/347)
+
+## The panel loses the focus when the reply to an edit arrives
+
+- **Location:** `webview-src/main.ts` (`refreshSelection()`), `webview-src/propertiesPanel/propertiesPanel.ts`
+- **Severity:** Medium
+- **Effort:** S
+- **Description:** Every reply of the extension host to a command shows the selected node again and renders the whole properties panel anew. When the user leaves a field with Tab or by clicking another field, the field sends its value, and the reply replaces the field the user moved to a few milliseconds later. The focus is gone, so what the user types next goes nowhere. If the reply comes only after the user has started typing, as with large schemas, the new field commits the half-typed value when it is removed. The panel should put the focus back on the same field after it renders the same node again. [#280](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/280) covers this together with the focus after creating a node, which has the same cause.
+- **GitHub issue:** [#280](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/280)
 
 ## Commands can overlap while an edit is applied
 
@@ -199,14 +185,6 @@ Effort:
 - **Effort:** M
 - **Description:** `xs:import` and `xs:include` are neither shown in the diagram nor in the properties panel, and the palette has no entry for them. The commands exist (`addImport`, `removeImport`, `modifyImport`, `addInclude`, `removeInclude`, `modifyInclude`, see [Commands](commands.md#imports-includes-and-namespaces)), but nothing in the webview sends them, so imports and includes can only be edited in the text editor. Other edits keep them unchanged. One option is a section in the properties panel of the schema root, next to the namespace declarations.
 - **GitHub issue:** [#359](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/359)
-
-## Element references are not shown as references
-
-- **Location:** `webview-src/diagram/SchemaProcessors.ts`
-- **Severity:** Medium
-- **Effort:** M
-- **Description:** The diagram builder does not read the `ref` attribute of local elements. An `<xs:element ref="…"/>` is shown with the name "unnamed" and is not marked as a reference. `isReference` is only set for group references. See also [Diagram items copy values from the schema objects](#diagram-items-copy-values-from-the-schema-objects).
-- **GitHub issue:** [#276](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/276)
 
 ## Name validation is ASCII-only
 
@@ -277,13 +255,13 @@ Effort:
   - The properties panel of an element mixes element and type fields: Base Type, Replacement Type, `mixed` and the Facets tab belong to the type (see [UX concept](ux-concept.md)).
   - Anonymous types cannot be selected or deleted on their own, and the element's documentation falls back to the type's documentation, which cannot be told apart.
 
-  How Altova XMLSpy shows anonymous types is unclear: its manual says that "there is no separate symbol for local complex types", which can mean that they are merged into the element or that they use the same symbol as named complex types; this was not tried in XMLSpy. The editor does not have to follow XMLSpy here. An alternative is to draw the anonymous type as a child node of the element, so that every node is exactly one schema construct. This could be a diagram option. It should be decided before the [node IDs are redesigned](#node-ids-are-ambiguous-and-have-many-special-cases). It should also be planned together with [Diagram items copy values from the schema objects](#diagram-items-copy-values-from-the-schema-objects).
+  How Altova XMLSpy shows anonymous types is unclear: its manual says that "there is no separate symbol for local complex types", which can mean that they are merged into the element or that they use the same symbol as named complex types; this was not tried in XMLSpy. The editor does not have to follow XMLSpy here. An alternative is to draw the anonymous type as a child node of the element, so that every node is exactly one schema construct. This could be a diagram option. It should be decided before the [node IDs are redesigned](#node-ids-are-ambiguous-and-have-many-special-cases).
 
 - **GitHub issue:** [#358](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/358)
 
 ## Palette has no entry for attribute groups
 
-- **Location:** `webview-src/palette/`, `webview-src/dragAndDrop/`, `webview-src/diagram/DiagramBuilderHelpers.ts` (`extractAttributes()`)
+- **Location:** `webview-src/palette/`, `webview-src/dragAndDrop/`, `webview-src/diagram/typeAccessors.ts` (`getAttributes()`)
 - **Severity:** Medium
 - **Effort:** L
 - **Description:** The palette has items for elements, attributes and groups, but none for attribute groups, so they cannot be created or referenced in the editor. The commands exist (`addAttributeGroup`, `removeAttributeGroup`, `modifyAttributeGroup`, see [Commands](commands.md#attribute-groups)), but the webview never sends them. The diagram does not show attribute groups either: it only reads `attribute`, so top-level attribute group definitions and `<xs:attributeGroup ref="…"/>` inside complex types are left out, and the only use in the webview is the duplicate-name check in `DropCommandFactory`. The fix is a palette item with drop targets for the schema (definition) and complex types (reference), showing definitions and references in the diagram, and the header delete button for them.
@@ -299,10 +277,10 @@ Effort:
 
 ## Lists and unions with inline types are shown as if they had named types
 
-- **Location:** `webview-src/diagram/SchemaProcessorsSimpleTypes.ts` (`processList()`, `processUnion()`), `webview-src/propertiesPanel/propertiesPanelXmlPreview.ts`
+- **Location:** `webview-src/diagram/typeAccessors.ts` (`getSimpleDerivation()`), `webview-src/propertiesPanel/propertiesPanelXmlPreview.ts`
 - **Severity:** Low
 - **Effort:** S
-- **Description:** For a list whose item type is an inline simple type (`<xs:list><xs:simpleType><xs:restriction base="xs:int"/></xs:simpleType></xs:list>`), `processList()` takes the base of the inline type as the item type. The diagram shows "list of xs:int", the properties panel offers `xs:int` as the item type, and the XML tab shows `<xs:list itemType="xs:int"/>`, although the list has no `itemType`. Changing the item type in the panel replaces the inline type. A union with inline member types is shown without any member types: the XML tab shows an empty `<xs:union/>`. The fix is to show inline item and member types as such, which depends on [Inline types have no node of their own](#inline-types-have-no-node-of-their-own).
+- **Description:** For a list whose item type is an inline simple type (`<xs:list><xs:simpleType><xs:restriction base="xs:int"/></xs:simpleType></xs:list>`), `getSimpleDerivation()` takes the base of the inline type as the item type. The diagram shows "list of xs:int", the properties panel offers `xs:int` as the item type, and the XML tab shows `<xs:list itemType="xs:int"/>`, although the list has no `itemType`. Changing the item type in the panel replaces the inline type. A union with inline member types is shown without any member types: the XML tab shows an empty `<xs:union/>`. The fix is to show inline item and member types as such, which depends on [Inline types have no node of their own](#inline-types-have-no-node-of-their-own).
 - **GitHub issue:** none
 
 ## Nonce uses `Math.random`
@@ -343,14 +321,6 @@ Effort:
 - **Severity:** Low
 - **Effort:** S
 - **Description:** The Docs tab shows only the text of a documentation entry, not its `xml:lang` attribute, and it has no field to set or change it. Existing values are preserved because `modifyDocumentation` is sent without `lang`, but new entries always lack a language. Both commands already accept `lang`, and in `modifyDocumentation` an empty value removes the attribute (see [Commands](commands.md#annotations-and-documentation)); only the webview is missing. The fix is a language field next to each entry that sends `lang` with `addDocumentation` and `modifyDocumentation`.
-- **GitHub issue:** none
-
-## Items with maxOccurs 0 are drawn as repeated
-
-- **Location:** `webview-src/diagram/ShapeRenderers.ts`
-- **Severity:** Low
-- **Effort:** S
-- **Description:** The shape renderers draw the second outline that marks repetition whenever `maxOccurrence !== 1`. An element, group or type with `maxOccurs="0"` (which removes it from the content model) is therefore drawn as if it could repeat. The check should be `maxOccurrence > 1 || maxOccurrence === -1` (see [Diagram rendering](diagram-rendering.md#shapes-and-notation)). See also [Diagram items copy values from the schema objects](#diagram-items-copy-values-from-the-schema-objects).
 - **GitHub issue:** none
 
 ## Documentation box size does not match the drawn text
@@ -414,7 +384,7 @@ Effort:
 - **Location:** `webview-src/propertiesPanel/propertiesPanel.ts` (`renderCardinalitySection()`), `propertiesPanelConstraints.ts` (`renderConstraintsSection()`), `propertiesPanelDocs.ts`, `propertiesPanelElementDefaults.ts`, `propertiesPanelFacets.ts`, `propertiesPanelSchemaNamespaces.ts`, `propertiesPanelSimpleTypeEditors.ts`, `propertiesPanelTypes.ts`
 - **Severity:** Low
 - **Effort:** M
-- **Description:** The properties panel builds its commands in two ways. `propertiesPanelCommands.ts` and `propertiesPanelSimpleTypeCommands.ts` have functions that take a node and return a command, such as `createRenameNodeCommand()` and `createTypeCommand()`. Twenty other commands are written out inside the event handlers that render the fields and update the draft copy: two in `propertiesPanel.ts` (cardinality), five in `propertiesPanelConstraints.ts` (nillable, abstract, mixed), seven in `propertiesPanelDocs.ts` and one or two in each of the other files listed. These can only be tested through the DOM, and changes to a command or to the values it reads (for example [#360](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/360), see [Diagram items copy values from the schema objects](#diagram-items-copy-values-from-the-schema-objects)) have to be found in all of these places. The fix is to move the construction of these commands into functions in the command modules and to leave only the draft update and the dispatch in the handlers.
+- **Description:** The properties panel builds its commands in two ways. `propertiesPanelCommands.ts` and `propertiesPanelSimpleTypeCommands.ts` have functions that take a node and return a command, such as `createRenameNodeCommand()` and `createTypeCommand()`. Twenty other commands are written out inside the event handlers that render the fields: two in `propertiesPanel.ts` (cardinality), five in `propertiesPanelConstraints.ts` (nillable, abstract, mixed), seven in `propertiesPanelDocs.ts` and one or two in each of the other files listed. These can only be tested through the DOM, and changes to a command or to the values it reads have to be found in all of these places. The fix is to move the construction of these commands into functions in the command modules and to leave only the dispatch in the handlers.
 - **GitHub issue:** [#156](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/156)
 
 ## Top-level lookups are duplicated instead of shared
@@ -438,14 +408,6 @@ Effort:
 - **Description:** The [development guidelines](development-guidelines.md#code-quality) ask to avoid code duplication, but the code base likely contains dead code, and duplicated logic that is written in different ways, which was not caught in reviews. `npm run lint` reports code that is copied, also with changed names (see [Build and packaging](build-and-packaging.md#duplicated-code)), and [#439](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/439) removed all such copies; it does not find logic that is written differently. fallow finds code that is unused across files, but not unused branches within a function (see [Build and packaging](build-and-packaging.md#unused-code)). The [duplicated top-level lookups](#top-level-lookups-are-duplicated-instead-of-shared) are an example. A systematic cleanup by an agent is planned. Besides duplicated logic within one part, the agent should look explicitly for code that the extension (`src/`) and the webview (`webview-src/`) each implement on their own, and move it to `shared/`, which both use; for example the rules where an element or attribute may be placed, which both sides check (see [Architecture](architecture.md#principles)), and the top-level lookups in `DiagramBuilder` and `DropCommandFactory`. Functions that read schema objects move into `shared/` only with the move to `xmlbind-ts` 3 ([ADR 006](architecture/006-module-structure.md#schema-objects-on-both-sides)). The structure review [#448](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/448) removed the dead code it found in the diagram, and moved the built-in types, the facets and the functions on QNames and namespace prefixes, which both sides had written down on their own, into `shared/` (`builtInTypes.ts`, `facets.ts`, `qNames.ts`).
 
 - **GitHub issue:** none
-
-## Diagram items copy values from the schema objects
-
-- **Location:** `webview-src/diagram/DiagramItem.ts`, `webview-src/diagram/SchemaProcessors*.ts`, `webview-src/diagram/TypeNodeCreators.ts`, `webview-src/propertiesPanel/propertiesPanelDraft.ts`, `webview-src/propertiesPanel/`, `webview-src/dragAndDrop/`
-- **Severity:** Low
-- **Effort:** L
-- **Description:** `DiagramItem` does not reference the schema object it represents; the builder copies about 22 values into it instead (see [Diagram rendering](diagram-rendering.md#data-model)). The renderer needs only a few of them; most are read by the properties panel and the drop code. Every new value has to be added to the item and to the builder; `createDraftNode()` copies all fields for the properties panel draft, but a new array or object needs a copy of its own there. The extraction is partly duplicated: `processGroup` builds group elements inline instead of using `createElementNode`. Values that are not copied, or copied in a reduced form, cause bugs: [Restricted complex content is shown without content](#restricted-complex-content-is-shown-without-content), [Element references are not shown as references](#element-references-are-not-shown-as-references) and [Items with maxOccurs 0 are drawn as repeated](#items-with-maxoccurs-0-are-drawn-as-repeated) come at least partly from this layer. The plan is to keep only view state on the item, add a typed reference to the schema object, and read values through one module of accessor functions. The properties panel draft must then be a deep copy of the schema object: after a failed command the webview receives no new schema, so changes to the shared object would remain. This should be planned together with [inline types](#inline-types-have-no-node-of-their-own) and the [node ID redesign](#node-ids-are-ambiguous-and-have-many-special-cases), which also change the builder.
-- **GitHub issue:** [#360](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/360)
 
 ## Complex types with simple content cannot be created or derived
 

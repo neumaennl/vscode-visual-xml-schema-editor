@@ -5,7 +5,7 @@
 
 import type { Mock } from "vitest";
 import { appendFacetRemoveButton, renderValueListFacet, type ValueListFacet } from "./propertiesPanelFacetLists";
-import type { RestrictionSnapshot } from "./propertiesPanelDraft";
+import type { RestrictionFacets } from "../../shared/types";
 import { createDataTransfer, dispatchDrag } from "../__tests__/dragTestHelpers";
 
 /** Title of the remove buttons that are disabled because the restriction needs a facet. */
@@ -14,8 +14,8 @@ const LAST_FACET_TITLE = "A restriction requires at least one facet";
 /** An editor of a facet with several values, the draft it changes and the mocks it calls. */
 interface ValueListEditor {
   root: HTMLElement;
-  draft: RestrictionSnapshot;
-  buildAndDispatch: Mock<(updater: (next: RestrictionSnapshot) => void) => void>;
+  draft: RestrictionFacets;
+  buildAndDispatch: Mock<(updater: (next: RestrictionFacets) => void) => void>;
   onRemove: Mock<() => void>;
 }
 
@@ -31,8 +31,8 @@ interface ValueListEditor {
 function renderValueList(facet: ValueListFacet, values: string[], canRemove = true): ValueListEditor {
   const root = document.createElement("div");
   document.body.appendChild(root);
-  const draft: RestrictionSnapshot = {};
-  const buildAndDispatch = vi.fn((updater: (next: RestrictionSnapshot) => void) => {
+  const draft: RestrictionFacets = {};
+  const buildAndDispatch = vi.fn((updater: (next: RestrictionFacets) => void) => {
     updater(draft);
   });
   const onRemove = vi.fn<() => void>();

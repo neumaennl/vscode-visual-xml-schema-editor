@@ -6,51 +6,41 @@
 import type { RestrictionFacets, SchemaCommand } from "../../shared/types";
 import { anonymousTypeId } from "../../shared/schemaUtils";
 import type { DiagramItem } from "../diagram";
-import { DiagramItemType, parseDerivationBaseType } from "../diagram";
+import {
+  DiagramItemType,
+  getFacets,
+  getBaseType,
+  getSimpleDerivation,
+  getTypeName,
+  hasInlineComplexType,
+  isNamedComplexType,
+} from "../diagram";
 import { type FacetSchemaConstruct, DraggableSchemaConstruct } from "./DraggableSchemaConstruct";
 
 /**
- * Returns whether the item represents a named simpleType.
+ * Returns the base type that a dropped restriction restricts: the base type of the target's derivation,
+ * or the `type` of an element, falling back to the appropriate XSD base.
  *
  * @param item - The diagram item
- * @returns True if the item is a named simpleType
- */
-export function isSimpleTypeNode(item: DiagramItem): boolean {
-  return item.itemType === DiagramItemType.type && item.type.startsWith("simpleType");
-}
-
-/**
- * Returns whether the item represents a named complexType.
- *
- * @param item - The diagram item
- * @returns True if the item is a named complexType
- */
-export function isComplexTypeNode(item: DiagramItem): boolean {
-  return item.itemType === DiagramItemType.type && item.type.startsWith("complexType");
-}
-
-/**
- * Resolves a displayed restriction base type, falling back to the appropriate XSD base.
- *
- * @param item - The diagram item
- * @returns The displayed base type, or `xs:anyType` for complex types and `xs:string` otherwise
+ * @returns The base type, or `xs:anyType` for complex types and `xs:string` otherwise
  */
 export function getRestrictionBaseType(item: DiagramItem): string {
-  const baseType = extractDisplayedBaseType(item.type);
+  const baseType = getBaseType(item) ?? getTypeName(item);
   if (baseType) {
     return baseType;
   }
-  return isComplexTypeNode(item) || item.hasAnonymousComplexType ? "xs:anyType" : "xs:string";
+  return isNamedComplexType(item) || hasInlineComplexType(item) ? "xs:anyType" : "xs:string";
 }
 
 /**
- * Resolves a displayed extension base type, defaulting to `xs:anyType`.
+ * Returns the base type that a dropped extension extends: the base type of the target's derivation, or
+ * the `type` of an element, defaulting to `xs:anyType`.
  *
  * @param item - The diagram item
- * @returns The displayed base type, or `xs:anyType`
+ * @returns The base type, or `xs:anyType`
  */
 export function getExtensionBaseType(item: DiagramItem): string {
-  return extractDisplayedBaseType(item.type) ?? "xs:anyType";
+  return getBaseType(item) ?? getTypeName(item) ?? "xs:anyType";
 }
 
 /**
@@ -67,7 +57,7 @@ export function createFacetNodeDropCommand(
   if (!isRestrictionSimpleType(item)) {
     return null;
   }
-  const existingFacets = item.restrictions ?? {};
+  const existingFacets = getFacets(item) ?? {};
   const facet = createDefaultFacet(schemaConstruct, existingFacets);
   if (!facet) {
     return null;
@@ -83,19 +73,15 @@ export function createFacetNodeDropCommand(
 }
 
 /**
- * Tells whether the item is a simple type, or an element with simple content, that is a restriction
- * and can therefore take facets.
+ * Tells whether the item is a simple type, or an element with an inline simple type, that restricts a named
+ * base type and can therefore take facets.
  *
  * @param item - The diagram item
  * @returns True if facets can be dropped on the item
  */
 function isRestrictionSimpleType(item: DiagramItem): boolean {
-  return (
-    (isSimpleTypeNode(item) || (item.itemType === DiagramItemType.element && item.isSimpleContent)) &&
-    item.simpleTypeDerivationKind !== "list" &&
-    item.simpleTypeDerivationKind !== "union" &&
-    item.type.includes("restricts")
-  );
+  const derivation = getSimpleDerivation(item);
+  return derivation?.kind === "restriction" && derivation.base !== undefined;
 }
 
 /** The pattern of the first dropped pattern facet; it accepts every value without line breaks. */
@@ -161,36 +147,4 @@ function createUniqueEnumerationValue(existingValues: readonly string[]): string
     suffix++;
   }
   return `value${suffix}`;
-}
-
-/**
- * Reads the base type from the type text that the diagram shows.
- *
- * @param typeText - The type text of a diagram item, such as `simpleType (restricts xs:string)`
- * @returns The base type of the derivation, or the text itself if it names a type, or null for labels
- * such as `complexType` that name no type
- */
-function extractDisplayedBaseType(typeText: string): string | null {
-  const baseType = parseDerivationBaseType(typeText);
-  if (baseType) {
-    return baseType;
-  }
-  const trimmed = typeText.trim();
-  return trimmed && !isPseudoTypeLabel(trimmed) ? trimmed : null;
-}
-
-/**
- * Tells whether the type text is a label of the diagram instead of the name of a type.
- *
- * @param typeText - The trimmed type text
- * @returns True for labels such as `complexType`, `simpleType with …` or `<anonymous …>`
- */
-function isPseudoTypeLabel(typeText: string): boolean {
-  return (
-    typeText === "complexType" ||
-    typeText === "simpleType" ||
-    typeText.startsWith("complexType with ") ||
-    typeText.startsWith("simpleType with ") ||
-    typeText.startsWith("<anonymous ")
-  );
 }

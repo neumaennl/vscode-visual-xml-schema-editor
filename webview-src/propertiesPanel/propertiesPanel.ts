@@ -3,9 +3,9 @@
  * Renders node properties such as name, type, cardinality, documentation, and attributes.
  */
 
-import { validateMaxOccurs, validateMinOccurs } from "../../shared/occurrences";
+import { validateMaxOccurs, validateMinOccurs, type MaxOccurs } from "../../shared/occurrences";
 import { isValidXmlName } from "../../shared/qNames";
-import type { DiagramItem } from "../diagram";
+import { getMaxOccurs, getMinOccurs, getName, getAttributes, getSimpleDerivation, type DiagramItem } from "../diagram";
 import { DiagramItemType } from "../diagram/DiagramTypes";
 import type { SchemaCommand } from "../../shared/types";
 import { canEditCardinality, getNodeType, getNodeTypeLabel } from "./propertiesPanelNodeKinds";
@@ -13,7 +13,6 @@ import { collectTypeSuggestions } from "./propertiesPanelTypeReferences";
 import { createDeleteNodeCommand, createRenameNodeCommand } from "./propertiesPanelCommands";
 import { resolveSimpleTypeId } from "./propertiesPanelTargets";
 import { SchemaNodeType } from "../../shared/idStrategy";
-import { createDraftNode } from "./propertiesPanelDraft";
 import {
   addPropertyToContainer,
   createAttributeList,
@@ -39,7 +38,6 @@ type CommandDispatcher = (command: SchemaCommand) => void;
 export class PropertiesPanel {
   private container: HTMLDivElement;
   private selectedNode: DiagramItem | null = null;
-  private draftNode: DiagramItem | null = null;
   private activeTab: PropertyTab = "general";
   private pendingRename: { sourceId: string; newName: string } | null = null;
   private readonly dispatchCommand: CommandDispatcher;
@@ -63,41 +61,37 @@ export class PropertiesPanel {
    */
   public display(node: DiagramItem): void {
     if (this.pendingRename) {
-      const renameApplied = node.name.trim() === this.pendingRename.newName;
+      const renameApplied = getName(node)?.trim() === this.pendingRename.newName;
       const selectionMoved = node.id !== this.pendingRename.sourceId;
       if (renameApplied || selectionMoved) {
         this.pendingRename = null;
       }
     }
     this.selectedNode = node;
-    this.draftNode = createDraftNode(node);
     this.render();
   }
 
   /**
-   * Renders the header, the tab bar and the active tab of the draft node, or clears the panel
+   * Renders the header, the tab bar and the active tab of the selected node, or clears the panel
    * without a node. Falls back to the General tab when the node has no Facets tab.
    */
   private render(): void {
-    if (!this.selectedNode || !this.draftNode) {
+    const node = this.selectedNode;
+    if (!node) {
       this.clear();
       return;
     }
 
-    if (this.activeTab === "facets" && !this.canShowFacetsTab(this.draftNode)) {
+    if (this.activeTab === "facets" && !this.canShowFacetsTab(node)) {
       this.activeTab = "general";
     }
 
     this.container.replaceChildren();
     this.container.appendChild(
-      createPropertiesPanelHeader(
-        getNodeTypeLabel(this.draftNode),
-        this.draftNode.id,
-        this.createDeleteHandler(this.draftNode)
-      )
+      createPropertiesPanelHeader(getNodeTypeLabel(node), node.id, this.createDeleteHandler(node))
     );
     this.container.appendChild(this.createTabBar());
-    this.container.appendChild(this.renderTabContent(this.draftNode));
+    this.container.appendChild(this.renderTabContent(node));
   }
 
   /**
@@ -117,7 +111,7 @@ export class PropertiesPanel {
   }
 
   /**
-   * Creates the tab bar with a button for each tab of the draft node; clicking one shows its tab.
+   * Creates the tab bar with a button for each tab of the selected node; clicking one shows its tab.
    *
    * @returns The tab bar
    */
@@ -147,13 +141,13 @@ export class PropertiesPanel {
   }
 
   /**
-   * Returns the tabs of the draft node: General, Facets for restrictions, Docs and XML.
+   * Returns the tabs of the selected node: General, Facets for restrictions, Docs and XML.
    *
    * @returns The IDs and labels of the tabs, in display order
    */
   private getAvailableTabs(): Array<{ id: PropertyTab; label: string }> {
     const tabs: Array<{ id: PropertyTab; label: string }> = [{ id: "general", label: "General" }];
-    if (this.draftNode && this.canShowFacetsTab(this.draftNode)) {
+    if (this.selectedNode && this.canShowFacetsTab(this.selectedNode)) {
       tabs.push({ id: "facets", label: "Facets" });
     }
     tabs.push({ id: "docs", label: "Docs" }, { id: "xml", label: "XML" });
@@ -163,7 +157,7 @@ export class PropertiesPanel {
   /**
    * Renders the active tab.
    *
-   * @param node - The draft node
+   * @param node - The selected node
    * @returns The content of the tab
    */
   private renderTabContent(node: DiagramItem): HTMLElement {
@@ -184,7 +178,7 @@ export class PropertiesPanel {
    * Renders the General tab: the name, the type fields, the namespaces of the schema, the cardinality,
    * the constraints, the default and fixed values, the namespace and the attributes, as far as the node has them.
    *
-   * @param node - The draft node
+   * @param node - The selected node
    * @returns The content of the tab
    */
   private renderGeneralTab(node: DiagramItem): HTMLElement {
@@ -192,13 +186,12 @@ export class PropertiesPanel {
     root.className = "property-tab-content";
     root.appendChild(createSectionHeader("symbol-key", "IDENTITY"));
 
-    const nameCommand = createRenameNodeCommand(node, node.name);
-    if (nameCommand) {
+    const name = getName(node);
+    if (name !== undefined && createRenameNodeCommand(node, name)) {
       root.appendChild(
-        createEditableField("Name", node.name, (next, reject) => {
+        createEditableField("Name", name, (next, reject) => {
           const trimmedName = next.trim();
-          const currentName = node.name.trim();
-          if (trimmedName === currentName) {
+          if (trimmedName === getName(node)?.trim()) {
             return;
           }
           if (!trimmedName) {
@@ -214,17 +207,16 @@ export class PropertiesPanel {
           }
           const command = createRenameNodeCommand(node, next);
           if (command) {
-            node.name = trimmedName;
             this.pendingRename = { sourceId: node.id, newName: trimmedName };
             this.dispatchCommand(command);
           }
         })
       );
     } else {
-      addPropertyToContainer(root, "Name", node.name);
+      addPropertyToContainer(root, "Name", node.label);
     }
 
-    renderTypeProperty(root, node, this.getTypeSuggestions(), this.dispatchCommand, addPropertyToContainer);
+    renderTypeProperty(root, node, collectTypeSuggestions(node), this.dispatchCommand, addPropertyToContainer);
 
     if (getNodeType(node) === SchemaNodeType.Schema) {
       renderSchemaNamespaceProperties(root, node, this.dispatchCommand, () => {
@@ -244,13 +236,10 @@ export class PropertiesPanel {
       root.appendChild(renderElementDefaultFixedSection(node, this.dispatchCommand));
     }
 
-    if (node.namespace) {
-      addPropertyToContainer(root, "Namespace", node.namespace);
-    }
-
-    if (node.attributes.length > 0) {
+    const attributes = getAttributes(node);
+    if (attributes.length > 0) {
       const attributesSection = createSection("mention", "ATTRIBUTES");
-      attributesSection.appendChild(createAttributeList(node));
+      attributesSection.appendChild(createAttributeList(attributes));
       root.appendChild(attributesSection);
     }
 
@@ -261,15 +250,13 @@ export class PropertiesPanel {
    * Renders the CARDINALITY section: `minOccurs` and `maxOccurs` fields and presets for common
    * occurrences, which send the occurrence of the node.
    *
-   * @param node - The draft node
+   * @param node - The selected node
    * @returns The section
    */
   private renderCardinalitySection(node: DiagramItem): HTMLElement {
     const section = createSection("symbol-numeric", "CARDINALITY");
 
-    const dispatchOccurrence = (minOccurs: number, maxOccurs: number | "unbounded"): void => {
-      node.minOccurrence = minOccurs;
-      node.maxOccurrence = maxOccurs === "unbounded" ? -1 : maxOccurs;
+    const dispatchOccurrence = (minOccurs: number, maxOccurs: MaxOccurs): void => {
       const nodeType = getNodeType(node);
       if (nodeType === SchemaNodeType.Element || node.itemType === DiagramItemType.element) {
         this.dispatchCommand({
@@ -290,7 +277,6 @@ export class PropertiesPanel {
           },
         });
       }
-      this.render();
     };
 
     // Side-by-side min/max inputs
@@ -298,7 +284,7 @@ export class PropertiesPanel {
     row.className = "property-row-2col";
 
     // Each value is checked on its own; minOccurs > maxOccurs is left to the validator of the extension host
-    const minCol = createInputColumn("minOccurs:", String(node.minOccurrence), (text, reject) => {
+    const minCol = createInputColumn("minOccurs:", String(getMinOccurs(node)), (text, reject) => {
       const raw = text.trim();
       const minOccurs = Number(raw);
       if (raw === "" || Number.isNaN(minOccurs)) {
@@ -310,10 +296,9 @@ export class PropertiesPanel {
         reject(result.error);
         return;
       }
-      dispatchOccurrence(minOccurs, node.maxOccurrence === -1 ? "unbounded" : node.maxOccurrence);
+      dispatchOccurrence(minOccurs, getMaxOccurs(node));
     });
-    const maxValue = node.maxOccurrence === -1 ? "unbounded" : String(node.maxOccurrence);
-    const maxCol = createInputColumn("maxOccurs:", maxValue, (text, reject) => {
+    const maxCol = createInputColumn("maxOccurs:", String(getMaxOccurs(node)), (text, reject) => {
       const raw = text.trim();
       const maxOccurs = raw === "unbounded" ? "unbounded" : Number(raw);
       if (raw === "" || Number.isNaN(maxOccurs)) {
@@ -325,7 +310,7 @@ export class PropertiesPanel {
         reject(result.error);
         return;
       }
-      dispatchOccurrence(node.minOccurrence, maxOccurs);
+      dispatchOccurrence(getMinOccurs(node), maxOccurs);
     });
 
     row.appendChild(minCol);
@@ -333,7 +318,7 @@ export class PropertiesPanel {
     section.appendChild(row);
 
     // Preset buttons
-    const presets: Array<{ label: string; min: number; max: number | "unbounded" }> = [
+    const presets: Array<{ label: string; min: number; max: MaxOccurs }> = [
       { label: "0..1", min: 0, max: 1 },
       { label: "1..1", min: 1, max: 1 },
       { label: "0..∞", min: 0, max: "unbounded" },
@@ -344,9 +329,7 @@ export class PropertiesPanel {
     presetsRow.className = "property-presets";
 
     for (const preset of presets) {
-      const isActive =
-        node.minOccurrence === preset.min &&
-        (preset.max === "unbounded" ? node.maxOccurrence === -1 : node.maxOccurrence === preset.max);
+      const isActive = getMinOccurs(node) === preset.min && getMaxOccurs(node) === preset.max;
 
       const btn = document.createElement("button");
       btn.type = "button";
@@ -365,7 +348,7 @@ export class PropertiesPanel {
   /**
    * Renders the Facets tab.
    *
-   * @param node - The draft node
+   * @param node - The selected node
    * @returns The content of the tab
    */
   private renderFacetsTab(node: DiagramItem): HTMLElement {
@@ -376,44 +359,31 @@ export class PropertiesPanel {
    * Tells whether the node has a Facets tab: a simple type, or an element with an inline simple
    * type, that is a restriction.
    *
-   * @param node - The draft node
+   * @param node - The selected node
    * @returns True when the node has facets to edit
    */
   private canShowFacetsTab(node: DiagramItem): boolean {
     if (resolveSimpleTypeId(node) === null) {
       return false;
     }
-    if (node.simpleTypeDerivationKind === "list" || node.simpleTypeDerivationKind === "union") {
-      return false;
-    }
-    return true;
+    const derivationKind = getSimpleDerivation(node)?.kind;
+    return derivationKind !== "list" && derivationKind !== "union";
   }
 
   /**
-   * Returns the type names that the type fields suggest (see {@link collectTypeSuggestions}).
+   * Renders the Docs tab.
    *
-   * @returns The type names
-   */
-  private getTypeSuggestions(): string[] {
-    return collectTypeSuggestions(this.selectedNode ?? this.draftNode);
-  }
-
-  /**
-   * Renders the Docs tab, which renders the panel again after it adds or removes entries.
-   *
-   * @param node - The draft node
+   * @param node - The selected node
    * @returns The content of the tab
    */
   private renderDocsTab(node: DiagramItem): HTMLElement {
-    return createDocsTab(node, this.dispatchCommand, () => {
-      this.render();
-    });
+    return createDocsTab(node, this.dispatchCommand);
   }
 
   /**
    * Renders the XML tab: a read-only XSD fragment of the node with a hint that it is a preview.
    *
-   * @param node - The draft node
+   * @param node - The selected node
    * @returns The content of the tab
    */
   private renderXmlTab(node: DiagramItem): HTMLElement {
@@ -440,7 +410,6 @@ export class PropertiesPanel {
    */
   public clear(): void {
     this.selectedNode = null;
-    this.draftNode = null;
     this.container.replaceChildren();
   }
 }

@@ -11,6 +11,7 @@ okf_version: "0.2"
 - [ADR 004: XML Schema 1.0 first](architecture/004-xml-schema-1-0-first.md) - The decision to support XML Schema 1.0 now and XML Schema 1.1 later, the two conditions that keep the way to 1.1 open, how 1.1 could be added, the open question about validation, and when to review it.
 - [ADR 005: Message protocol](architecture/005-message-protocol.md) - The decision to keep the messages from the webview as a union of requests, of which a schema edit is one, instead of sending schema commands directly, with the reasons, how requests that expect an answer will be matched to it, and when to review it.
 - [ADR 006: Module structure](architecture/006-module-structure.md) - The decision how the code within the extension host, the webview and the shared code is split into layers, in which direction the layers may depend on each other, what belongs into the shared code and what it may rely on, how files are named, and how fallow checks the layers.
+- [ADR 007: Diagram items reference their schema objects](architecture/007-diagram-items-reference-schema-objects.md) - The decision that the items of the diagram reference the schema objects they show instead of copying values from them, that the webview reads these objects through accessor modules, and that the properties panel only reads them, with the reasons, the consequences and when to review it.
 
 # Working on the extension
 

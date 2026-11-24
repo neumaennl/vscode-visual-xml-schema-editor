@@ -73,7 +73,7 @@ export class DiagramCanvas {
         if (command) {
           handlers.dispatch(command);
         } else {
-          handlers.failed(`Drop of '${schemaConstruct}' is not supported for '${item.name}'`);
+          handlers.failed(`Drop of '${schemaConstruct}' is not supported for '${item.label}'`);
         }
       },
     });

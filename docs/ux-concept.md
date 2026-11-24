@@ -3,9 +3,8 @@ type: Concept
 title: UX concept
 description: The interaction model of the editor - which surface adds, edits and deletes what, how facets work, and how the properties panel behaves - with a list of what the current editor does not implement yet.
 tags: [ux, editor, palette, properties-panel, facets, context-menu, toolbar]
-status: stable
-generated: { by: human:neumaennl, at: 2026-11-20T10:00:58Z }
-verified: { by: human:neumaennl, at: 2026-11-20T10:41:02Z }
+status: draft
+generated: { by: human:neumaennl, at: 2026-11-24T15:38:45Z }
 sources:
   - id: palette-items
     resource: ../webview-src/palette/paletteEntries.ts
@@ -168,15 +167,15 @@ Text fields without this restriction are only used where the value is open, such
 
 - Each documentation entry is a text field that commits on blur or Enter, like all other fields. There is no save button.
 - Documentation entries can be added and removed, each with its language (`xml:lang`). The schema root can have several annotations, which can be added and removed; other nodes show only their first annotation.
-- New documentation goes to the node itself, or for an element with an anonymous type to that type, where the diagram builder also reads it. Every node of the diagram has such a target.[^panel-docs]
+- New documentation goes to the node itself, or for an element with an anonymous type to that type, where the diagram also reads it. Every node of the diagram has such a target.[^panel-docs]
 
 ## XML
 
-The XML tab is read-only. It shows an XSD fragment for the node, generated in the webview from the panel's draft copy, so edits appear immediately. The fragment includes attributes, annotations, facets and some child nodes, and is shortened for large nodes.[^panel-xml] It states: "Preview only; it may differ from the exact schema XML. Open the schema in a text editor tab for the source of truth."
+The XML tab is read-only. It shows an XSD fragment for the node, generated in the webview from the selected node, so it shows each change with the schema that the extension host sends next. The fragment includes attributes, annotations, facets and some child nodes, and is shortened for large nodes.[^panel-xml] It states: "Preview only; it may differ from the exact schema XML. Open the schema in a text editor tab for the source of truth."
 
 ## Synchronization
 
-- The panel edits a draft copy of the selected node, so switching tabs does not reload old values from the diagram.
+- The panel shows the selected node and changes nothing itself. An edit sends a command; the panel shows the result when the extension host sends the new schema, a few milliseconds later. Until then, the edited field keeps what the user typed.
 - After every schema update, the panel finds the selected node again by its ID. The diagram keeps the node highlighted across every redraw, also after expanding or collapsing a node and after a changed diagram option. If the node no longer exists, the panel and the highlight are cleared.
 - When a command fails, the webview shows the error message, and the panel shows the node again as it was before the edit.[^webview-main]
 
@@ -201,7 +200,6 @@ The current editor does not implement these parts of the model yet:
 - **Keyboard shortcuts:** there are none (for example, Delete or arrow keys to move the selection); Enter only commits a field. Selecting nodes and common operations with the keyboard are planned for Phase 5 ([#433](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/433)).
 - **Attribute groups:** the palette has no item for them (see [Known issues](known-issues.md#palette-has-no-entry-for-attribute-groups)). The `any` item is shown but disabled.
 - **Facet checks:** neither the webview nor the extension host checks facets against the base type or forbidden combinations (see [Known issues](known-issues.md#facets-are-not-checked-against-the-base-type)).
-- **Simple content of inline complex types:** an element whose inline complex type has simple content gets the editors of an inline simple type, and changing a facet or the derivation there fails (see [Known issues](known-issues.md#inline-complex-types-with-simple-content-are-treated-as-inline-simple-types)).
 - **Deleting facets:** the last facet of a restriction cannot be deleted in the Facets tab.
 - **Empty Facets tab:** the hint still says that adding facets is "available in a future release" (see [Known issues](known-issues.md#empty-facets-tab-says-adding-facets-is-not-available-yet)).
 - **Attributes:** no field is editable (see [Known issues](known-issues.md#attribute-editing-is-half-implemented)).

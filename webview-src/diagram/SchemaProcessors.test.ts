@@ -2,163 +2,60 @@
  * Unit tests for `SchemaProcessors` module.
  */
 
-import {
-  processComplexType,
-  processSequence,
-  processChoice,
-  processAll,
-  processAnonymousTypes,
-  processSimpleTypeBody,
-} from "../diagram/SchemaProcessors";
+import { processSequence, processChoice, processAll, processAnonymousTypes } from "../diagram/SchemaProcessors";
 import { DiagramItem } from "../diagram/DiagramItem";
+import { isReference } from "../diagram/schemaAccessors";
+import { getComplexDerivation } from "../diagram/typeAccessors";
+import { getDocumentationAnnotations } from "../diagram/documentationAccessors";
 import { Diagram } from "../diagram/Diagram";
 import { DiagramItemGroupType, DiagramItemType } from "../diagram/DiagramTypes";
-import { DERIVATIONS, derivedComplexTypeT, webviewSchemaWith } from "../../shared/__tests__/schemaTestHelpers";
+import { webviewSchemaWith } from "../../shared/__tests__/schemaTestHelpers";
+import { schema } from "../../shared/types";
+import { SchemaNodeType } from "../../shared/idStrategy";
+import { NOT_READ_SCHEMA_OBJECT } from "../__tests__/diagramTestHelpers";
 
 describe("SchemaProcessors", () => {
   let diagram: Diagram;
-  let item: DiagramItem;
+
+  /**
+   * Creates the item of a named complex type in the diagram, as the parent of the content to process.
+   *
+   * @param name - The name of the type
+   * @returns The item
+   */
+  function complexTypeItem(name: string): DiagramItem {
+    return new DiagramItem(`/complexType:${name}`, name, DiagramItemType.type, NOT_READ_SCHEMA_OBJECT, diagram);
+  }
 
   beforeEach(() => {
-    diagram = new Diagram();
-    item = new DiagramItem("test-1", "TestItem", DiagramItemType.element, diagram);
+    diagram = new Diagram(new schema());
   });
 
   describe("processAnonymousTypes", () => {
-    test("should process an anonymous complexType or simpleType and ignores an element without one", () => {
-      const schemaObj = webviewSchemaWith(`<xs:element name="c"><xs:complexType mixed="true"/></xs:element>
-<xs:element name="s"><xs:simpleType><xs:restriction base="xs:string"/></xs:simpleType></xs:element>
+    test("should add the content of an anonymous complexType and nothing for an anonymous simpleType or a named type", () => {
+      const schemaObj =
+        webviewSchemaWith(`<xs:element name="c"><xs:complexType><xs:sequence/></xs:complexType></xs:element>
+<xs:element name="s"><xs:simpleType><xs:restriction base="xs:string"><xs:maxLength value="5"/></xs:restriction></xs:simpleType></xs:element>
 <xs:element name="n" type="xs:string"/>`);
-      const [complexElement, simpleElement, namedElement] = schemaObj.element ?? [];
-      const items = [complexElement, simpleElement, namedElement].map((element) => {
+      const items = (schemaObj.element ?? []).map((element) => {
         const elementItem = new DiagramItem(
-          `/element:${element!.name}`,
-          element!.name,
+          `/element:${element.name}`,
+          element.name,
           DiagramItemType.element,
+          element,
           diagram
         );
-        processAnonymousTypes(elementItem, element!);
+        processAnonymousTypes(elementItem, element);
         return elementItem;
       });
-      expect(items.map((i) => [i.hasAnonymousComplexType, i.isMixed, i.isSimpleContent])).toEqual([
-        [true, true, false],
-        [false, false, true],
-        [false, false, false],
-      ]);
-    });
-  });
 
-  describe("processSimpleTypeBody", () => {
-    test.each([
-      ["restriction", `<xs:restriction base="xs:string"/>`],
-      ["list", `<xs:list itemType="xs:int"/>`],
-      ["union", `<xs:union memberTypes="xs:int xs:string"/>`],
-    ])("should process a %s", (kind, body) => {
-      const simpleType = webviewSchemaWith(`<xs:simpleType name="S">${body}</xs:simpleType>`).simpleType?.[0];
-      processSimpleTypeBody(item, simpleType ?? {});
-      expect(item.simpleTypeDerivationKind ?? "restriction").toBe(kind);
-    });
-  });
-
-  describe("processAnonymousTypes with an anonymous simpleType", () => {
-    test("should set type before processing restriction", () => {
-      const simpleType = {
-        restriction: { base: "string" },
-      };
-
-      processAnonymousTypes(item, { simpleType });
-
-      expect(item.isSimpleContent).toBe(true);
-      expect(item.type).toContain("anonymous simpleType");
-      expect(item.type).toContain("restricts string");
-    });
-
-    test("should mark item as simple content", () => {
-      const simpleType = {};
-
-      processAnonymousTypes(item, { simpleType });
-
-      expect(item.isSimpleContent).toBe(true);
-    });
-
-    test("should extract list itemType metadata", () => {
-      const simpleType = {
-        list: { itemType: "xs:token" },
-      };
-
-      processAnonymousTypes(item, { simpleType });
-
-      expect(item.isSimpleContent).toBe(true);
-      expect(item.simpleTypeDerivationKind).toBe("list");
-      expect(item.simpleTypeListItemType).toBe("xs:token");
-      expect(item.type).toContain("list of xs:token");
-    });
-
-    test("should extract union memberTypes metadata", () => {
-      const simpleType = {
-        union: { memberTypes: "xs:string xs:integer" },
-      };
-
-      processAnonymousTypes(item, { simpleType });
-
-      expect(item.isSimpleContent).toBe(true);
-      expect(item.simpleTypeDerivationKind).toBe("union");
-      expect(item.simpleTypeUnionMemberTypes).toEqual(["xs:string", "xs:integer"]);
-      expect(item.type).toContain("union of xs:string, xs:integer");
-    });
-  });
-
-  describe("processComplexType", () => {
-    test("should process complexContent with extension", () => {
-      item.type = "complexType";
-      const complexType = {
-        complexContent: {
-          extension: { base: "BaseType" },
-        },
-      };
-
-      processComplexType(item, complexType);
-
-      expect(item.type).toBe("complexType with complexContent (extends BaseType)");
-    });
-
-    test("should append the extension to an empty type", () => {
-      item.type = "";
-
-      processComplexType(item, { complexContent: { extension: { base: "BaseType" } } });
-
-      expect(item.type).toBe(" with complexContent (extends BaseType)");
-    });
-
-    test("should process simpleContent with restriction", () => {
-      item.type = "complexType";
-      const complexType = {
-        simpleContent: {
-          restriction: { base: "string" },
-        },
-      };
-
-      processComplexType(item, complexType);
-
-      expect(item.type).toContain("with simpleContent");
-      expect(item.type).toContain("restricts string");
-      expect(item.isSimpleContent).toBe(true);
-    });
-
-    test.each(DERIVATIONS)("should read the attributes of the %s %s", (content, derivation) => {
-      const complexType = webviewSchemaWith(
-        derivedComplexTypeT(content, derivation, `<xs:attribute name="id" type="xs:integer"/>`)
-      ).complexType![0]!;
-
-      processComplexType(item, complexType);
-
-      expect(item.attributes.map((attribute) => attribute.name)).toEqual(["id"]);
+      expect(items.map((i) => i.childElements.map((child) => child.label))).toEqual([["sequence"], [], []]);
     });
   });
 
   describe("processSequence / processChoice / processAll — group IDs", () => {
     test("should generate a group ID containing 'sequence' for a sequence under a named complexType", () => {
-      const ctItem = new DiagramItem("/complexType:PersonType", "PersonType", DiagramItemType.type, diagram);
+      const ctItem = complexTypeItem("PersonType");
 
       processSequence(ctItem, { element: [{ name: "name", type_: "xs:string" }] });
 
@@ -169,7 +66,7 @@ describe("SchemaProcessors", () => {
     });
 
     test("should generate a group ID containing 'choice' for a choice under a named complexType", () => {
-      const ctItem = new DiagramItem("/complexType:ChoiceType", "ChoiceType", DiagramItemType.type, diagram);
+      const ctItem = complexTypeItem("ChoiceType");
 
       processChoice(ctItem, { element: [{ name: "opt", type_: "xs:string" }] });
 
@@ -179,7 +76,7 @@ describe("SchemaProcessors", () => {
     });
 
     test("should generate a group ID containing 'all' for an all group under a named complexType", () => {
-      const ctItem = new DiagramItem("/complexType:AllType", "AllType", DiagramItemType.type, diagram);
+      const ctItem = complexTypeItem("AllType");
 
       processAll(ctItem, { element: [{ name: "field", type_: "xs:string" }] });
 
@@ -189,9 +86,14 @@ describe("SchemaProcessors", () => {
     });
 
     test("should include anonymousComplexType in the group ID when parent is an element with anonymous CT", () => {
-      const elemItem = new DiagramItem("/element:person", "person", DiagramItemType.element, diagram);
-      // Mark as having anonymous complex type (as processAnonymousComplexType does)
-      elemItem.hasAnonymousComplexType = true;
+      const elemItem = new DiagramItem(
+        "/element:person",
+        "person",
+        DiagramItemType.element,
+        { complexType: {} },
+        diagram
+      );
+      elemItem.nodeType = SchemaNodeType.Element;
 
       processSequence(elemItem, { element: [{ name: "name", type_: "xs:string" }] });
 
@@ -200,7 +102,7 @@ describe("SchemaProcessors", () => {
     });
 
     test("should give child elements inside a group IDs with the correct group parent", () => {
-      const ctItem = new DiagramItem("/complexType:PersonType", "PersonType", DiagramItemType.type, diagram);
+      const ctItem = complexTypeItem("PersonType");
 
       processSequence(ctItem, {
         element: [
@@ -215,15 +117,15 @@ describe("SchemaProcessors", () => {
     });
 
     test("should add an empty group to the parent so it can act as a drop target", () => {
-      const ctItem = new DiagramItem("/complexType:EmptyType", "EmptyType", DiagramItemType.type, diagram);
+      const ctItem = complexTypeItem("EmptyType");
 
       processSequence(ctItem, { element: [] });
       expect(ctItem.childElements).toHaveLength(1);
       expect(ctItem.childElements[0]!.groupType).toBe(DiagramItemGroupType.Sequence);
     });
 
-    test("should mark local group elements with inline anonymous complexType and extension base", () => {
-      const ctItem = new DiagramItem("/complexType:ContainerType", "ContainerType", DiagramItemType.type, diagram);
+    test("should process the extension of the anonymous complexType of a local element", () => {
+      const ctItem = complexTypeItem("ContainerType");
 
       processSequence(ctItem, {
         element: [
@@ -243,29 +145,27 @@ describe("SchemaProcessors", () => {
 
       const sequence = ctItem.childElements[0]!;
       const meta = sequence.childElements[0]!;
-      expect(meta.name).toBe("meta");
-      expect(meta.hasAnonymousComplexType).toBe(true);
-      expect(meta.complexDerivationKind).toBe("extension");
-      expect(meta.type).toContain("extends xs:anyType");
+      expect(meta.label).toBe("meta");
+      expect(getComplexDerivation(meta)).toEqual({ kind: "extension", base: "xs:anyType", content: "complex" });
+      expect(meta.childElements.map((child) => child.label)).toEqual(["sequence"]);
     });
 
     test("should render nested group references inside sequence groups", () => {
-      const ctItem = new DiagramItem("/complexType:PersonType", "PersonType", DiagramItemType.type, diagram);
+      const ctItem = complexTypeItem("PersonType");
 
-      processSequence(ctItem, {
-        group: [{ ref: "SharedGroup", minOccurs: 0, maxOccurs: "unbounded" }],
-      });
+      const reference = { ref: "SharedGroup", minOccurs: 0, maxOccurs: "unbounded" as const };
+
+      processSequence(ctItem, { group: [reference] });
 
       const sequence = ctItem.childElements[0]!;
       expect(sequence.childElements).toHaveLength(1);
       expect(sequence.childElements[0]!.id).toBe("/complexType:PersonType/group:sequence[0]/groupRef:SharedGroup[0]");
-      expect(sequence.childElements[0]!.minOccurrence).toBe(0);
-      expect(sequence.childElements[0]!.maxOccurrence).toBe(-1);
-      expect(sequence.childElements[0]!.isReference).toBe(true);
+      expect(sequence.childElements[0]!.schemaObject).toBe(reference);
+      expect(isReference(sequence.childElements[0]!)).toBe(true);
     });
 
     test("should render nested compositors using schema positions", () => {
-      const ctItem = new DiagramItem("/complexType:PersonType", "PersonType", DiagramItemType.type, diagram);
+      const ctItem = complexTypeItem("PersonType");
 
       processSequence(ctItem, {
         element: [{ name: "first", type_: "xs:string" }],
@@ -277,7 +177,7 @@ describe("SchemaProcessors", () => {
     });
 
     test("should extract compositor documentation for properties-panel docs editing", () => {
-      const ctItem = new DiagramItem("/complexType:PersonType", "PersonType", DiagramItemType.type, diagram);
+      const ctItem = complexTypeItem("PersonType");
 
       processSequence(ctItem, {
         annotation: {
@@ -286,8 +186,7 @@ describe("SchemaProcessors", () => {
       });
 
       const sequence = ctItem.childElements[0]!;
-      expect(sequence.documentation).toBe("Sequence docs");
-      expect(sequence.documentationAnnotations).toEqual([
+      expect(getDocumentationAnnotations(sequence)).toEqual([
         {
           id: "/complexType:PersonType/group:sequence[0]",
           documentationEntries: [
@@ -304,11 +203,11 @@ describe("SchemaProcessors", () => {
 
   describe("processAnonymousTypes with an anonymous complexType — group IDs", () => {
     test("should produce sequence ID with anonymousComplexType segment", () => {
-      const elemItem = new DiagramItem("/element:person", "person", DiagramItemType.element, diagram);
+      const person = { name: "person", complexType: { sequence: { element: [{ name: "name", type_: "xs:string" }] } } };
+      const elemItem = new DiagramItem("/element:person", "person", DiagramItemType.element, person, diagram);
+      elemItem.nodeType = SchemaNodeType.Element;
 
-      processAnonymousTypes(elemItem, {
-        complexType: { sequence: { element: [{ name: "name", type_: "xs:string" }] } },
-      });
+      processAnonymousTypes(elemItem, person);
 
       const seq = elemItem.childElements[0]!;
       expect(seq.id).toBe("/element:person/anonymousComplexType[0]/group:sequence[0]");

@@ -9,41 +9,46 @@ import {
 } from "./propertiesPanelTypeReferences";
 import { itemWithPrefix } from "../__tests__/propertiesPanelTestHelpers";
 import { DiagramItem } from "../diagram";
+import type { NamespacePrefixes } from "../../shared/types";
+import {
+  diagramItem,
+  muteDiagramBuilderLog,
+  emptyDiagram,
+  NOT_READ_SCHEMA_OBJECT,
+} from "../__tests__/diagramTestHelpers";
+import { webviewSchemaWith } from "../../shared/__tests__/schemaTestHelpers";
 import { DiagramItemType } from "../diagram/DiagramTypes";
 
+/** A schema with the target namespace `urn:test`, a simple type `Code`, a complex type `Person` and an element `root`. */
+const TYPES = `<xs:simpleType name="Code"><xs:restriction base="xs:string"/></xs:simpleType>
+<xs:complexType name="Person"><xs:sequence/></xs:complexType>
+<xs:element name="root"/>`;
+
 /**
- * Creates an item in a diagram with the prefix `tns` whose roots are a simple type `Code`, a complex type
- * `Person` with a nested element and the element `root`.
+ * Returns the element `root` in the diagram of {@link TYPES}.
  *
- * @returns An item of that diagram
- * @throws An {@link Error} if `itemWithPrefix()` creates no diagram
+ * @param prefixes - The namespace declarations of the schema; by default `tns` for its target namespace
+ * @returns The item
  */
-function itemInSchemaWithTypes(): DiagramItem {
-  const item = itemWithPrefix("/element:root");
-  const diagram = item.diagram;
-  if (!diagram) throw new Error("itemWithPrefix() creates no diagram");
-  const person = new DiagramItem("/complexType:Person", " Person ", DiagramItemType.type, diagram);
-  person.childElements.push(
-    new DiagramItem("/complexType:Person/group:sequence[0]", "sequence", DiagramItemType.group, diagram)
-  );
-  diagram.rootElements.push(
-    new DiagramItem("/simpleType:Code", "Code", DiagramItemType.type, diagram),
-    person,
-    new DiagramItem("/simpleType:Unnamed", "", DiagramItemType.type, diagram),
-    item
-  );
-  return item;
+function itemInSchemaWithTypes(prefixes: NamespacePrefixes = { tns: "urn:test" }): DiagramItem {
+  const schemaObj = webviewSchemaWith(TYPES, prefixes);
+  schemaObj.targetNamespace = "urn:test";
+  return diagramItem(schemaObj, "/element:root");
 }
 
 describe("collectTypeSuggestions", () => {
-  test("should suggest the 44 built-in data types without a node", () => {
-    const suggestions = collectTypeSuggestions(null);
+  muteDiagramBuilderLog();
+
+  test("should suggest the 44 built-in data types in a schema without types", () => {
+    const suggestions = collectTypeSuggestions(
+      new DiagramItem("/element:a", "a", DiagramItemType.element, NOT_READ_SCHEMA_OBJECT, emptyDiagram())
+    );
     expect(suggestions).toHaveLength(44);
     expect(suggestions).toEqual(expect.arrayContaining(["xs:string", "xs:ID", "xs:unsignedInt", "xs:gYear"]));
     expect(suggestions).not.toContain("xs:anyType");
   });
 
-  test("should add the trimmed names of the types of the schema with and without the prefix of its target namespace", () => {
+  test("should add the names of the types of the schema with and without the prefix of its target namespace", () => {
     expect(collectTypeSuggestions(itemInSchemaWithTypes()).slice(44)).toEqual([
       "Code",
       "tns:Code",
@@ -51,21 +56,11 @@ describe("collectTypeSuggestions", () => {
       "tns:Person",
     ]);
   });
-
-  test("should collect the type names of the diagram once and cache them", () => {
-    const item = itemInSchemaWithTypes();
-    collectTypeSuggestions(item);
-    item.diagram?.rootElements.push(new DiagramItem("/simpleType:Later", "Later", DiagramItemType.type));
-    expect(collectTypeSuggestions(item)).not.toContain("Later");
-    expect([...(item.diagram?.localSchemaTypeNames ?? [])]).toEqual(["Code", "Person"]);
-  });
-
-  test("should suggest only the built-in data types for an item without a diagram", () => {
-    expect(collectTypeSuggestions(new DiagramItem("/element:a", "a", DiagramItemType.element))).toHaveLength(44);
-  });
 });
 
 describe("normalizeTypeReference", () => {
+  muteDiagramBuilderLog();
+
   test.each([
     ["a type of the schema", " Code ", "tns:Code"],
     ["a prefixed type", "other:Code", "other:Code"],
@@ -76,10 +71,8 @@ describe("normalizeTypeReference", () => {
     expect(normalizeTypeReference(itemInSchemaWithTypes(), entered)).toBe(expected);
   });
 
-  test("should not add a prefix when the schema has none", () => {
-    const item = itemInSchemaWithTypes();
-    if (item.diagram) item.diagram.currentSchemaPrefix = " ";
-    expect(normalizeTypeReference(item, "Code")).toBe("Code");
+  test("should not add a prefix when the schema declares none for its target namespace", () => {
+    expect(normalizeTypeReference(itemInSchemaWithTypes({}), "Code")).toBe("Code");
   });
 });
 

@@ -1,7 +1,7 @@
 /**
  * Integration tests of the properties panel for the Docs tab: they display items in a whole `PropertiesPanel`.
  * The tab itself is tested in `propertiesPanelDocs.test.ts`; these tests check that the panel shows it
- * for the selected node, passes its commands on and renders it again after a change.
+ * for the selected node, passes its commands on and shows a change with the next schema.
  */
 
 import { findButton, displayItem } from "./propertiesPanelTestHelpers";
@@ -30,11 +30,28 @@ describe("PropertiesPanel: the Docs tab", () => {
     });
   });
 
-  test("should show added documentation at once", () => {
+  test("should send added documentation and show it with the schema that the extension host sends next", () => {
     const container = document.createElement("div");
-    displayItem(container, diagramItem(webviewSchemaWith(ELEMENTS), "/element:plain"), "Docs");
+    const { panel, dispatch } = displayItem(
+      container,
+      diagramItem(webviewSchemaWith(ELEMENTS), "/element:plain"),
+      "Docs"
+    );
 
     findButton(container, "Add documentation")?.click();
+
+    expect(dispatch).toHaveBeenCalledExactlyOnceWith({
+      type: "addDocumentation",
+      payload: { targetId: "/element:plain", content: "New documentation" },
+    });
+    expect(container.querySelector("textarea")).toBeNull();
+
+    // The webview displays the selected node again when the new schema arrives
+    const changed = ELEMENTS.replace(
+      `<xs:element name="plain" type="xs:string"/>`,
+      `<xs:element name="plain" type="xs:string"><xs:annotation><xs:documentation>New documentation</xs:documentation></xs:annotation></xs:element>`
+    );
+    panel.display(diagramItem(webviewSchemaWith(changed), "/element:plain"));
 
     expect(container.querySelector("textarea")?.value).toBe("New documentation");
   });

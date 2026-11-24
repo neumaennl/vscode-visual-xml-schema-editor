@@ -4,9 +4,11 @@
 
 import { renderText, renderDocumentation, renderOccurrence } from "./TextRenderers";
 import { DiagramItem } from "./DiagramItem";
+import { SchemaNodeType } from "../../shared/idStrategy";
 import type { Diagram } from "./Diagram";
 import { DiagramItemType } from "./DiagramTypes";
 import { setupGetBBoxMock } from "../__tests__/svgTestHelpers";
+import { component, documented, localElementWith, muteDiagramBuilderLog } from "../__tests__/diagramTestHelpers";
 
 describe("TextRenderers", () => {
   let mockGroup: SVGElement;
@@ -48,9 +50,16 @@ describe("TextRenderers", () => {
    * @returns The item
    */
   function makeItem(properties: Partial<DiagramItem>, diagramOptions: Partial<Diagram> = {}): DiagramItem {
-    const item = new DiagramItem("test-id", "Test", DiagramItemType.element);
+    const diagram = Object.assign({}, mockDiagram, diagramOptions);
+    const item = new DiagramItem(
+      "test-id",
+      "Test",
+      DiagramItemType.element,
+      component(`<xs:element name="Test"/>`),
+      diagram
+    );
+    item.nodeType = SchemaNodeType.Element;
     Object.assign(item, properties);
-    item.diagram = Object.assign({}, mockDiagram, diagramOptions);
     return item;
   }
 
@@ -59,16 +68,21 @@ describe("TextRenderers", () => {
     const LONG_NAME = "ThisIsAVeryLongElementNameThatShouldBeTruncated";
 
     test.each([
-      ["the item name", { name: "TestElement", elementBox: { x: 0, y: 0, width: 100, height: 50 } }, {}, "TestElement"],
+      [
+        "the item name",
+        { label: "TestElement", elementBox: { x: 0, y: 0, width: 100, height: 50 } },
+        {},
+        "TestElement",
+      ],
       [
         "the item name with type when showType is true",
-        { name: "TestElement", type: "string", elementBox: { x: 0, y: 0, width: 200, height: 50 } },
+        { label: "TestElement", schemaObject: { type_: "string" }, elementBox: { x: 0, y: 0, width: 200, height: 50 } },
         { showType: true },
         "TestElement: string",
       ],
       [
         "no type when showType is false",
-        { name: "TestElement", type: "string", elementBox: { x: 0, y: 0, width: 200, height: 50 } },
+        { label: "TestElement", schemaObject: { type_: "string" }, elementBox: { x: 0, y: 0, width: 200, height: 50 } },
         {},
         "TestElement",
       ],
@@ -78,8 +92,22 @@ describe("TextRenderers", () => {
       expect(mockGroup.querySelector("text")?.textContent).toBe(expected);
     });
 
+    test.each([
+      // Centered in the box of 100 × 50, where the label of 14 characters (84 in the test SVG) fits
+      ["in the middle of the box", 0, 50, "x".repeat(14)],
+      // Centered in the part right of the space for the reference arrow, which leaves less room
+      ["right of the space that it leaves free", 21.5, 60.75, "xxxxxxxx..."],
+    ])("should center the label %s", (_case, leftWidth, x, shown) => {
+      const elementBox = { x: 0, y: 0, width: 100, height: 50 };
+      renderText(makeItem({ label: "x".repeat(14), elementBox }), mockGroup, mockSvg, leftWidth);
+
+      const text = mockGroup.querySelector("text")!;
+      expect(Number(text.getAttribute("x"))).toBe(x);
+      expect(text.firstChild?.textContent).toBe(shown);
+    });
+
     test("should truncate long text and add a tooltip with the full text", () => {
-      renderText(makeItem({ name: LONG_NAME, elementBox: { x: 0, y: 0, width: 50, height: 30 } }), mockGroup, mockSvg);
+      renderText(makeItem({ label: LONG_NAME, elementBox: { x: 0, y: 0, width: 50, height: 30 } }), mockGroup, mockSvg);
 
       const text = mockGroup.querySelector("text");
       expect(text?.textContent).toContain("...");
@@ -91,28 +119,28 @@ describe("TextRenderers", () => {
     test.each([
       ["a short text into a small box", "Long text", 40],
       ["a text with ellipsis that is as long as fits", "0123456789ABCDEFGHIJKLMNOP", 110],
-    ])("should truncate %s", (_case, name, width) => {
-      renderText(makeItem({ name, elementBox: { x: 0, y: 0, width, height: 30 } }), mockGroup, mockSvg);
+    ])("should truncate %s", (_case, label, width) => {
+      renderText(makeItem({ label, elementBox: { x: 0, y: 0, width, height: 30 } }), mockGroup, mockSvg);
 
       const text = mockGroup.querySelector("text")?.firstChild?.textContent ?? "";
       expect(text.endsWith("...")).toBe(true);
-      expect(text.length).toBeLessThan(name.length + 3);
+      expect(text.length).toBeLessThan(label.length + 3);
     });
 
     test("should render an empty name", () => {
-      renderText(makeItem({ name: "", elementBox: { x: 0, y: 0, width: 110, height: 30 } }), mockGroup, mockSvg);
+      renderText(makeItem({ label: "", elementBox: { x: 0, y: 0, width: 110, height: 30 } }), mockGroup, mockSvg);
 
       expect(mockGroup.querySelector("text")?.textContent).toBe("");
     });
 
     test("should not add tooltip when text is not truncated", () => {
-      renderText(makeItem({ name: "Short", elementBox: { x: 0, y: 0, width: 200, height: 50 } }), mockGroup, mockSvg);
+      renderText(makeItem({ label: "Short", elementBox: { x: 0, y: 0, width: 200, height: 50 } }), mockGroup, mockSvg);
 
       expect(mockGroup.querySelector("text")?.querySelector("title")).toBeFalsy();
     });
 
     test("should center text in element box", () => {
-      renderText(makeItem({ name: "Test", elementBox: { x: 10, y: 20, width: 100, height: 50 } }), mockGroup, mockSvg);
+      renderText(makeItem({ label: "Test", elementBox: { x: 10, y: 20, width: 100, height: 50 } }), mockGroup, mockSvg);
 
       const text = mockGroup.querySelector("text");
       expect(text?.getAttribute("x")).toBe("60"); // 10 + 100/2
@@ -127,7 +155,7 @@ describe("TextRenderers", () => {
       ["at most 3 lines", "Line 1\nLine 2\nLine 3\nLine 4\nLine 5", 150, ["Line 1", "Line 2", "Line 3"]],
     ])("should render %s of documentation", (_case, documentation, height, expected) => {
       renderDocumentation(
-        makeItem({ documentation, documentationBox: { x: 10, y: 100, width: 200, height } }),
+        makeItem({ schemaObject: documented(documentation), documentationBox: { x: 10, y: 100, width: 200, height } }),
         mockGroup
       );
 
@@ -136,7 +164,10 @@ describe("TextRenderers", () => {
 
     test("should truncate long documentation lines", () => {
       renderDocumentation(
-        makeItem({ documentation: "A".repeat(100), documentationBox: { x: 10, y: 100, width: 200, height: 50 } }),
+        makeItem({
+          schemaObject: documented("A".repeat(100)),
+          documentationBox: { x: 10, y: 100, width: 200, height: 50 },
+        }),
         mockGroup
       );
 
@@ -148,24 +179,38 @@ describe("TextRenderers", () => {
       ["zero width", { x: 0, y: 0, width: 0, height: 50 }],
       ["zero height", { x: 0, y: 0, width: 100, height: 0 }],
     ])("should not render when documentation box has %s", (_case, documentationBox) => {
-      renderDocumentation(makeItem({ documentation: "Some documentation", documentationBox }), mockGroup);
+      renderDocumentation(makeItem({ schemaObject: documented("Some documentation"), documentationBox }), mockGroup);
 
       expect(mockGroup.querySelectorAll("text")).toHaveLength(0);
     });
   });
 
   describe("renderOccurrence", () => {
+    muteDiagramBuilderLog();
+
+    /**
+     * Returns a local element with the given occurrences, drawn in a box of 100 × 50 at (10, 10).
+     *
+     * @param occurrences - The occurrence attributes of the element
+     * @returns The item
+     */
+    function elementWith(occurrences: string): DiagramItem {
+      const item = localElementWith(occurrences);
+      item.elementBox = { x: 10, y: 10, width: 100, height: 50 };
+      return item;
+    }
+
     test.each([
-      ["0..∞ for unbounded max", 0, -1, {}, "0..∞"],
-      ["a specific range", 1, 5, {}, "1..5"],
-      ["no occurrence for default 1..1 when alwaysShowOccurrence is false", 1, 1, {}, undefined],
-      ["the default 1..1 when alwaysShowOccurrence is true", 1, 1, { alwaysShowOccurrence: true }, "1..1"],
-      ["0..1", 0, 1, {}, "0..1"],
-    ])("should render %s", (_case, minOccurrence, maxOccurrence, diagramOptions, expected) => {
-      const item = makeItem(
-        { minOccurrence, maxOccurrence, elementBox: { x: 10, y: 10, width: 100, height: 50 } },
-        diagramOptions
-      );
+      ["0..∞ for unbounded max", 'minOccurs="0" maxOccurs="unbounded"', false, "0..∞"],
+      ["1..∞ for unbounded max", 'maxOccurs="unbounded"', false, "1..∞"],
+      ["a specific range", 'maxOccurs="5"', false, "1..5"],
+      ["no occurrence for default 1..1 when alwaysShowOccurrence is false", "", false, undefined],
+      ["the default 1..1 when alwaysShowOccurrence is true", "", true, "1..1"],
+      ["0..1", 'minOccurs="0"', false, "0..1"],
+      ["0..0 for maxOccurs 0", 'minOccurs="0" maxOccurs="0"', false, "0..0"],
+    ])("should render %s", (_case, occurrences, alwaysShowOccurrence, expected) => {
+      const item = elementWith(occurrences);
+      item.diagram.alwaysShowOccurrence = alwaysShowOccurrence;
 
       renderOccurrence(item, mockGroup);
 
@@ -173,10 +218,10 @@ describe("TextRenderers", () => {
     });
 
     test("should position text relative to element box", () => {
-      renderOccurrence(
-        makeItem({ minOccurrence: 0, maxOccurrence: -1, elementBox: { x: 20, y: 30, width: 80, height: 40 } }),
-        mockGroup
-      );
+      const item = elementWith('minOccurs="0" maxOccurs="unbounded"');
+      item.elementBox = { x: 20, y: 30, width: 80, height: 40 };
+
+      renderOccurrence(item, mockGroup);
 
       const text = mockGroup.querySelector("text");
       expect(text?.getAttribute("x")).toBe("105"); // 20 + 80 + 5

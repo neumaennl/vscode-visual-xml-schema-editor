@@ -13,8 +13,46 @@ import {
   editInput,
   displayItem,
 } from "../__tests__/propertiesPanelTestHelpers";
+import { diagramItem, muteDiagramBuilderLog, NOT_READ_SCHEMA_OBJECT } from "../__tests__/diagramTestHelpers";
+import { webviewSchemaWith } from "../../shared/__tests__/schemaTestHelpers";
+
+/**
+ * Returns the item of the top-level element `person` in a schema that has only this element.
+ *
+ * @returns The item
+ */
+function personItem(): DiagramItem {
+  return diagramItem(webviewSchemaWith(`<xs:element name="person"/>`), "/element:person");
+}
+
+/** A component of each kind whose properties the panel shows, with a sequence in the complex type and the group. */
+const KINDS = `<xs:element name="item"/>
+<xs:complexType name="PersonType"><xs:sequence/></xs:complexType>
+<xs:group name="PersonGroup"><xs:sequence/></xs:group>
+<xs:simpleType name="CodeType"><xs:restriction base="xs:string"/></xs:simpleType>`;
+
+/** A complex type whose sequence and local element `item` have `minOccurs` 1 and `maxOccurs` 3. */
+const OCCURRENCES = `<xs:complexType name="T"><xs:sequence minOccurs="1" maxOccurs="3">
+  <xs:element name="item" minOccurs="1" maxOccurs="3"/>
+</xs:sequence></xs:complexType>`;
+
+/** The ID of the sequence in {@link OCCURRENCES}. */
+const SEQUENCE_ID = "/complexType:T/group:sequence[0]";
+
+/** The ID of the local element `item` in {@link OCCURRENCES}. */
+const ITEM_ID = `${SEQUENCE_ID}/element:item[0]`;
+
+/**
+ * Returns the item of the local element `item` with `minOccurs` 1 and `maxOccurs` 3.
+ *
+ * @returns The item
+ */
+function itemWithOccurrences(): DiagramItem {
+  return diagramItem(webviewSchemaWith(OCCURRENCES), ITEM_ID);
+}
 
 describe("PropertiesPanel", () => {
+  muteDiagramBuilderLog();
   let { container, panel, diagram } = createPanel();
 
   beforeEach(() => {
@@ -22,8 +60,7 @@ describe("PropertiesPanel", () => {
   });
 
   test("should render tabs and general values for selected node", () => {
-    const item = new DiagramItem("test-1", "TestItem", DiagramItemType.element, diagram);
-    item.type = "xs:string";
+    const item = diagramItem(webviewSchemaWith(`<xs:element name="TestItem" type="xs:string"/>`), "/element:TestItem");
 
     panel.display(item);
 
@@ -36,7 +73,7 @@ describe("PropertiesPanel", () => {
   });
 
   test("should render a node-type header above the tab bar", () => {
-    const item = new DiagramItem("/element:person", "person", DiagramItemType.element, diagram);
+    const item = personItem();
 
     panel.display(item);
 
@@ -47,10 +84,7 @@ describe("PropertiesPanel", () => {
   });
 
   test("should dispatch removeElement when the header delete button is clicked", () => {
-    const { dispatch } = displayItem(
-      container,
-      new DiagramItem("/element:person", "person", DiagramItemType.element, diagram)
-    );
+    const { dispatch } = displayItem(container, personItem());
 
     const deleteButton = container.querySelector<HTMLButtonElement>("button[title='Delete node']")!;
     expect(deleteButton.classList.contains("property-docs-action-icon-only")).toBe(true);
@@ -65,7 +99,7 @@ describe("PropertiesPanel", () => {
   test("should dispatch removeGroup when deleting a compositor group", () => {
     const { dispatch } = displayItem(
       container,
-      new DiagramItem("/complexType:PersonType/group:sequence[0]", "sequence", DiagramItemType.group, diagram)
+      diagramItem(webviewSchemaWith(KINDS), "/complexType:PersonType/group:sequence[0]")
     );
 
     const deleteButton = container.querySelector<HTMLButtonElement>("button[title='Delete node']")!;
@@ -78,18 +112,15 @@ describe("PropertiesPanel", () => {
   });
 
   test("should not render a header delete button for schema nodes", () => {
-    const schemaRoot = new DiagramItem(SCHEMA_ROOT_ID, "schema", DiagramItemType.group, diagram);
-
-    panel.display(schemaRoot);
+    panel.display(diagramItem(webviewSchemaWith(KINDS), SCHEMA_ROOT_ID));
 
     expect(container.querySelector("button[title='Delete node']")).toBeNull();
   });
 
   test("should render attributes safely without innerHTML interpolation", () => {
-    const item = new DiagramItem("test-1", "TestItem", DiagramItemType.element, diagram);
-    item.attributes = [{ name: "<unsafe>", type: "string", use: "required" }];
+    const content = `<xs:complexType name="T"><xs:attribute name="&lt;unsafe&gt;" type="xs:string" use="required"/></xs:complexType>`;
 
-    panel.display(item);
+    panel.display(diagramItem(webviewSchemaWith(content), "/complexType:T"));
 
     expect(container.textContent).toContain("ATTRIBUTES");
     expect(container.textContent).toContain("<unsafe>");
@@ -97,22 +128,25 @@ describe("PropertiesPanel", () => {
   });
 
   test.each([
-    ["schema", SCHEMA_ROOT_ID, DiagramItemType.group],
-    ["element", "/element:person", DiagramItemType.element],
-    ["complex type", "/complexType:PersonType", DiagramItemType.type],
-  ])("should render an Attributes section for a %s with attributes", (_, id, itemType) => {
-    const item = new DiagramItem(id, "TestItem", itemType, diagram);
-    item.attributes = [{ name: "status", type: "xs:string" }];
+    ["schema", SCHEMA_ROOT_ID],
+    ["element with an inline complex type", "/element:person"],
+    ["complex type", "/complexType:PersonType"],
+  ])("should render an Attributes section for a %s with attributes", (_, id) => {
+    const content = `<xs:attribute name="status" type="xs:string"/>
+<xs:element name="person"><xs:complexType><xs:attribute name="status" type="xs:string"/></xs:complexType></xs:element>
+<xs:complexType name="PersonType"><xs:attribute name="status" type="xs:string"/></xs:complexType>`;
 
-    panel.display(item);
+    panel.display(diagramItem(webviewSchemaWith(content), id));
 
     expect(container.textContent).toContain("ATTRIBUTES");
     expect(container.textContent).toContain("status");
   });
 
   test("should not render the child count", () => {
-    const item = new DiagramItem("/element:person", "person", DiagramItemType.element, diagram);
-    item.childElements = [new DiagramItem("/element:person/element:name", "name", DiagramItemType.element, diagram)];
+    const item = personItem();
+    item.childElements = [
+      new DiagramItem("/element:person/element:name", "name", DiagramItemType.element, NOT_READ_SCHEMA_OBJECT, diagram),
+    ];
 
     panel.display(item);
 
@@ -127,10 +161,7 @@ describe("PropertiesPanel", () => {
     ],
     ["not dispatch a rename command when the name is unchanged", " person ", []],
   ])("should %s", (_case, name, calls) => {
-    const { dispatch } = displayItem(
-      container,
-      new DiagramItem("/element:person", "person", DiagramItemType.element, diagram)
-    );
+    const { dispatch } = displayItem(container, personItem());
 
     editInput(container, "Name", name);
 
@@ -138,14 +169,11 @@ describe("PropertiesPanel", () => {
   });
 
   test("should not dispatch duplicate rename commands for the same node/name replay", () => {
-    const { panel: shownPanel, dispatch } = displayItem(
-      container,
-      new DiagramItem("/element:person", "person", DiagramItemType.element, diagram)
-    );
+    const { panel: shownPanel, dispatch } = displayItem(container, personItem());
     editInput(container, "Name", "customer");
 
     // Simulate stale re-display that still references the old node id/name.
-    shownPanel.display(new DiagramItem("/element:person", "person", DiagramItemType.element, diagram));
+    shownPanel.display(personItem());
     editInput(container, "Name", "customer");
 
     expect(dispatch).toHaveBeenCalledTimes(1);
@@ -160,6 +188,7 @@ describe("PropertiesPanel", () => {
       "/complexType:PersonType/group:sequence[0]",
       "sequence",
       DiagramItemType.group,
+      {},
       diagram
     );
 
@@ -175,25 +204,10 @@ describe("PropertiesPanel", () => {
   });
 
   test.each([
-    [
-      "modifyElement",
-      "a local element",
-      "/element:root/element:item[0]",
-      DiagramItemType.element,
-      { elementId: "/element:root/element:item[0]" },
-    ],
-    [
-      "modifyGroup",
-      "a compositor",
-      "/complexType:PersonType/group:sequence[0]",
-      DiagramItemType.group,
-      { groupId: "/complexType:PersonType/group:sequence[0]" },
-    ],
-  ])("should dispatch %s when minOccurs of %s is changed", (type, _case, id, itemType, target) => {
-    const item = new DiagramItem(id, "item", itemType, diagram);
-    item.minOccurrence = 1;
-    item.maxOccurrence = 3;
-    const { dispatch } = displayItem(container, item);
+    ["modifyElement", "a local element", ITEM_ID, { elementId: ITEM_ID }],
+    ["modifyGroup", "a compositor", SEQUENCE_ID, { groupId: SEQUENCE_ID }],
+  ])("should dispatch %s when minOccurs of %s is changed", (type, _case, id, target) => {
+    const { dispatch } = displayItem(container, diagramItem(webviewSchemaWith(OCCURRENCES), id));
 
     editInput(container, "minOccurs", "0");
 
@@ -207,10 +221,7 @@ describe("PropertiesPanel", () => {
     ["an empty name", "  ", "Enter a name"],
     ["a name that is no valid XML name", "1person", "Name must be a valid XML name"],
   ])("should reject %s with a message and show the current name again", (_case, name, message) => {
-    const { dispatch } = displayItem(
-      container,
-      new DiagramItem("/element:person", "person", DiagramItemType.element, diagram)
-    );
+    const { dispatch } = displayItem(container, personItem());
 
     editInput(container, "Name", name);
 
@@ -222,18 +233,14 @@ describe("PropertiesPanel", () => {
   });
 
   test.each(["unbounded", " unbounded "])("should accept maxOccurs %j without a message", (text) => {
-    const item = new DiagramItem("/element:root/element:item[0]", "item", DiagramItemType.element, diagram);
-    item.minOccurrence = 1;
-    item.maxOccurrence = 3;
-    const { dispatch } = displayItem(container, item);
+    const { dispatch } = displayItem(container, itemWithOccurrences());
 
     editInput(container, "maxOccurs", text);
 
     expect(dispatch).toHaveBeenCalledExactlyOnceWith({
       type: "modifyElement",
-      payload: { elementId: "/element:root/element:item[0]", minOccurs: 1, maxOccurs: "unbounded" },
+      payload: { elementId: ITEM_ID, minOccurs: 1, maxOccurs: "unbounded" },
     });
-    expect(getInputByLabel(container, "maxOccurs").value).toBe("unbounded");
     expect(container.querySelector(".property-message:not([hidden])")).toBeNull();
   });
 
@@ -245,10 +252,7 @@ describe("PropertiesPanel", () => {
     ["minOccurs", "1.5", "1", "minOccurs must be an integer"],
     ["maxOccurs", "-2", "3", "maxOccurs must be a non-negative integer or 'unbounded'"],
   ])("should reject %s %j with a message and show the current value again", (label, text, current, message) => {
-    const item = new DiagramItem("/element:root/element:item[0]", "item", DiagramItemType.element, diagram);
-    item.minOccurrence = 1;
-    item.maxOccurrence = 3;
-    const { dispatch } = displayItem(container, item);
+    const { dispatch } = displayItem(container, itemWithOccurrences());
 
     editInput(container, label, text);
 
@@ -260,29 +264,21 @@ describe("PropertiesPanel", () => {
   });
 
   test.each([
-    ["top-level elements", "/element:item", DiagramItemType.element],
-    ["schema nodes", SCHEMA_ROOT_ID, DiagramItemType.group],
-    ["the actual schema root item", SCHEMA_ROOT_ID, DiagramItemType.element],
-    ["complexType nodes", "/complexType:PersonType", DiagramItemType.type],
-    ["the compositor of a group definition", "/group:PersonGroup/group:sequence[0]", DiagramItemType.group],
-    ["simpleType nodes", "/simpleType:CodeType", DiagramItemType.type],
-  ])("should not show cardinality fields for %s", (_case, id, itemType) => {
-    const item = new DiagramItem(id, "item", itemType, diagram);
-    item.minOccurrence = 0;
-    item.maxOccurrence = 7;
-
-    panel.display(item);
+    ["top-level elements", "/element:item"],
+    ["the schema", SCHEMA_ROOT_ID],
+    ["complexType nodes", "/complexType:PersonType"],
+    ["the compositor of a group definition", "/group:PersonGroup/group:sequence[0]"],
+    ["simpleType nodes", "/simpleType:CodeType"],
+  ])("should not show cardinality fields for %s", (_case, id) => {
+    panel.display(diagramItem(webviewSchemaWith(KINDS), id));
 
     expect(hasLabel(container, "minOccurs")).toBe(false);
     expect(hasLabel(container, "maxOccurs")).toBe(false);
     expect(hasLabel(container, "Cardinality")).toBe(false);
   });
 
-  test("should keep edited draft values visible when switching tabs", () => {
-    const item = new DiagramItem("/element:root/element:item[0]", "item", DiagramItemType.element, diagram);
-    item.minOccurrence = 1;
-    item.maxOccurrence = 3;
-    displayItem(container, item);
+  test("should show the values of the schema on every tab until the schema with the sent change arrives", () => {
+    displayItem(container, itemWithOccurrences());
     editInput(container, "maxOccurs", "7");
 
     const xmlTab = findButton(container, "XML");
@@ -293,18 +289,44 @@ describe("PropertiesPanel", () => {
     expect(xmlHint?.textContent).toContain("Preview only");
     expect(xmlHint?.textContent).toContain("text editor tab");
     expect(xmlPreview?.textContent).toContain("<xs:element");
-    expect(xmlPreview?.textContent).toContain('maxOccurs="7"');
+    expect(xmlPreview?.textContent).toContain('maxOccurs="3"');
     expect(xmlPreview?.textContent).not.toContain('"id":');
 
     const generalTab = findButton(container, "General");
     generalTab?.click();
 
-    expect(getInputByLabel(container, "maxOccurs").value).toBe("7");
+    expect(getInputByLabel(container, "maxOccurs").value).toBe("3");
+  });
+
+  test.each([
+    [
+      "a simple type that is a restriction",
+      `<xs:simpleType name="t"><xs:restriction base="xs:string"/></xs:simpleType>`,
+      "/simpleType:t",
+      true,
+    ],
+    [
+      "an element with an inline simple type",
+      `<xs:element name="t"><xs:simpleType><xs:restriction base="xs:int"/></xs:simpleType></xs:element>`,
+      "/element:t",
+      true,
+    ],
+    ["a list", `<xs:simpleType name="t"><xs:list itemType="xs:int"/></xs:simpleType>`, "/simpleType:t", false],
+    // Its restriction belongs to the simple content of a complex type, not to an inline simple type
+    [
+      "an element whose inline complex type has simple content",
+      `<xs:element name="t"><xs:complexType><xs:simpleContent><xs:extension base="xs:decimal"/></xs:simpleContent></xs:complexType></xs:element>`,
+      "/element:t",
+      false,
+    ],
+  ])("should offer the Facets tab only where it applies: %s", (_case, content, id, offered) => {
+    panel.display(diagramItem(webviewSchemaWith(content), id));
+
+    expect(findButton(container, "Facets") !== undefined).toBe(offered);
   });
 
   test("should remove all rendered content on clear", () => {
-    const item = new DiagramItem("test-1", "TestItem", DiagramItemType.element, diagram);
-    panel.display(item);
+    panel.display(personItem());
 
     panel.clear();
 

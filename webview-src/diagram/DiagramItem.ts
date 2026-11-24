@@ -3,11 +3,12 @@
  * Ported from XSD Diagram project
  */
 
-import type { DiagramItemType, DiagramAnnotationEntry, Point, Size, Rectangle } from "./DiagramTypes";
+import type { DiagramItemType, Point, Size, Rectangle } from "./DiagramTypes";
 import type { DiagramStyle } from "./DiagramTypes";
-import { DiagramItemGroupType, defaultDiagramStyle, enclosingRectangle } from "./DiagramTypes";
+import { DiagramItemGroupType, enclosingRectangle } from "./DiagramTypes";
 import type { Diagram } from "./Diagram";
-import type { ComplexTypeDerivationKind, RestrictionFacets, SimpleTypeDerivationKind } from "../../shared/types";
+import type { SchemaNodeType } from "../../shared/idStrategy";
+import type { DiagramSchemaObject } from "./schemaAccessors";
 
 /**
  * A node of the diagram: an element, group, type or the schema, with what the diagram shows of it, its
@@ -16,36 +17,24 @@ import type { ComplexTypeDerivationKind, RestrictionFacets, SimpleTypeDerivation
 export class DiagramItem {
   // Identity and hierarchy
   public id: string;
-  public name: string;
-  public type = "";
+  /** The text that the diagram shows for the item, such as its name or `sequence`. */
+  public label: string;
+  /** The schema object that the item stands for; read it with the functions of the accessor modules. */
+  public schemaObject: DiagramSchemaObject;
   public itemType: DiagramItemType;
+  /**
+   * The kind of schema construct that the item shows, as the diagram builder found it in its parent, such
+   * as a complex type in the `complexType` list of the schema. Unlike the schema object, it tells a named
+   * complex type without content from a simple type.
+   */
+  public nodeType?: SchemaNodeType;
   public groupType: DiagramItemGroupType = DiagramItemGroupType.Sequence;
   public parent: DiagramItem | null = null;
   public childElements: DiagramItem[] = [];
 
-  // Occurrence constraints
-  public minOccurrence = 1;
-  public maxOccurrence = 1; // -1 for unbounded
-
   // Display properties
-  // jscpd:ignore-start -- distinct flags of the same type, not duplicated logic
   public showChildElements = false;
   public hasChildElements = false;
-  public isReference = false;
-  public isSimpleContent = false;
-  public isAbstract = false;
-  public isNillable = false;
-  public isMixed = false;
-  public hasAnonymousComplexType = false;
-  // jscpd:ignore-end
-  public complexDerivationKind?: ComplexTypeDerivationKind;
-  public simpleTypeDerivationKind?: SimpleTypeDerivationKind;
-  public simpleTypeListItemType?: string;
-  public simpleTypeUnionMemberTypes?: string[];
-
-  // Default/fixed value constraints (element-level)
-  public elementDefault?: string;
-  public elementFixed?: string;
 
   // Layout properties
   public location: Point = { x: 0, y: 0 };
@@ -55,40 +44,29 @@ export class DiagramItem {
   public childExpandButtonBox: Rectangle = { x: 0, y: 0, width: 0, height: 0 };
   public boundingBox: Rectangle = { x: 0, y: 0, width: 0, height: 0 };
 
-  // Documentation
-  public documentation = "";
-  public documentationAnnotations: DiagramAnnotationEntry[] = [];
-
-  // Namespace
-  public namespace = "";
-
-  // Attributes
-  public attributes: Array<{
-    name: string;
-    type: string;
-    use?: string;
-    defaultValue?: string;
-    fixedValue?: string;
-  }> = [];
-
-  // Restrictions (for simpleType restrictions)
-  public restrictions?: RestrictionFacets;
-
-  // Reference to diagram for accessing settings
-  public diagram: Diagram | null = null;
+  /** The diagram that the item belongs to, which references the schema and holds the display options */
+  public diagram: Diagram;
 
   /**
    * Creates a diagram item.
    *
    * @param id - The ID of the schema node
-   * @param name - The name that the diagram shows
+   * @param label - The text that the diagram shows
    * @param itemType - The kind of item
+   * @param schemaObject - The schema object that the item stands for
    * @param diagram - The diagram that the item belongs to, if any
    */
-  constructor(id: string, name: string, itemType: DiagramItemType, diagram: Diagram | null = null) {
+  constructor(
+    id: string,
+    label: string,
+    itemType: DiagramItemType,
+    schemaObject: DiagramSchemaObject,
+    diagram: Diagram
+  ) {
     this.id = id;
-    this.name = name;
+    this.label = label;
     this.itemType = itemType;
+    this.schemaObject = schemaObject;
     this.diagram = diagram;
   }
 
@@ -104,12 +82,12 @@ export class DiagramItem {
   }
 
   /**
-   * Get the style of the diagram, or the default style if the item belongs to no diagram
+   * Get the style of the diagram
    *
    * @returns The style
    */
   public getStyle(): DiagramStyle {
-    return this.diagram?.style ?? defaultDiagramStyle;
+    return this.diagram.style;
   }
 
   /**

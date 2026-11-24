@@ -5,7 +5,7 @@
 
 import type { schema } from "../../shared/types.js";
 import { ownComponentName, splitQName } from "../../shared/qNames.js";
-import { getCurrentSchemaPrefixes } from "../../shared/schemaUtils.js";
+import { getTargetNamespacePrefixes } from "../../shared/schemaUtils.js";
 import type { QNameKind } from "./qNameReferences.js";
 import { forEachQNameReference } from "./qNameReferences.js";
 
@@ -20,10 +20,10 @@ import { forEachQNameReference } from "./qNameReferences.js";
  * @returns Whether a reference was found
  */
 export function isReferenced(schemaObj: schema, kind: QNameKind, name: string): boolean {
-  const ownPrefixes = getCurrentSchemaPrefixes(schemaObj);
+  const tnsPrefixes = getTargetNamespacePrefixes(schemaObj);
   let referenced = false;
   forEachQNameReference(schemaObj, (reference) => {
-    if (reference.kind === kind && ownComponentName(reference.value, ownPrefixes) === name) {
+    if (reference.kind === kind && ownComponentName(reference.value, tnsPrefixes) === name) {
       referenced = true;
     }
   });

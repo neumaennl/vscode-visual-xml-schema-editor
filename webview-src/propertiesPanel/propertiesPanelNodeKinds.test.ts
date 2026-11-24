@@ -6,6 +6,7 @@ import { SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy";
 import { DiagramItem } from "../diagram";
 import { DiagramItemType } from "../diagram/DiagramTypes";
 import { canEditCardinality, getNodeType, getNodeTypeLabel, isTopLevelElement } from "./propertiesPanelNodeKinds";
+import { emptyDiagram, NOT_READ_SCHEMA_OBJECT } from "../__tests__/diagramTestHelpers";
 
 /** An ID that `parseSchemaId()` rejects, so that the functions fall back to the item type. */
 const UNPARSABLE_ID = "not-a-schema-id";
@@ -18,7 +19,7 @@ const UNPARSABLE_ID = "not-a-schema-id";
  * @returns The item
  */
 function item(id: string, itemType = DiagramItemType.element): DiagramItem {
-  return new DiagramItem(id, "name", itemType);
+  return new DiagramItem(id, "name", itemType, NOT_READ_SCHEMA_OBJECT, emptyDiagram());
 }
 
 describe("getNodeType", () => {

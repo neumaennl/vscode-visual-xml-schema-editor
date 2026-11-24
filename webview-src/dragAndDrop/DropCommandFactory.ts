@@ -1,16 +1,16 @@
 import type { schema, SchemaCommand } from "../../shared/types";
 import type { DiagramItem } from "../diagram";
-import { DiagramItemType } from "../diagram";
+import {
+  DiagramItemType,
+  hasInlineComplexType,
+  hasInlineSimpleType,
+  isNamedComplexType,
+  isNamedSimpleType,
+} from "../diagram";
 import { parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy";
 import { anonymousTypeId, isSchemaRoot } from "../../shared/schemaUtils";
 import { isFacetSchemaConstruct, DraggableSchemaConstruct } from "./DraggableSchemaConstruct";
-import {
-  createFacetNodeDropCommand,
-  getExtensionBaseType,
-  getRestrictionBaseType,
-  isComplexTypeNode,
-  isSimpleTypeNode,
-} from "./TypeDropCommands";
+import { createFacetNodeDropCommand, getExtensionBaseType, getRestrictionBaseType } from "./TypeDropCommands";
 
 /**
  * Creates schema commands from drag-and-drop actions.
@@ -180,7 +180,7 @@ export class DropCommandFactory {
    * @returns Command or null if the target cannot hold attributes
    */
   private createAttributeNodeDropCommand(item: DiagramItem, reserveNames: boolean): SchemaCommand | null {
-    if (isSchemaRoot(item.id) || isComplexTypeNode(item)) {
+    if (isSchemaRoot(item.id) || isNamedComplexType(item)) {
       return {
         type: "addAttribute",
         payload: {
@@ -190,7 +190,7 @@ export class DropCommandFactory {
         },
       };
     }
-    if (item.itemType === DiagramItemType.element && item.hasAnonymousComplexType) {
+    if (hasInlineComplexType(item)) {
       const anonCtId = anonymousTypeId(item.id, "complexType");
       return {
         type: "addAttribute",
@@ -262,7 +262,7 @@ export class DropCommandFactory {
     item: DiagramItem,
     contentModel: "sequence" | "choice" | "all"
   ): SchemaCommand | null {
-    if (isComplexTypeNode(item)) {
+    if (isNamedComplexType(item)) {
       return {
         type: "modifyComplexType",
         payload: {
@@ -273,7 +273,7 @@ export class DropCommandFactory {
     }
 
     if (item.itemType === DiagramItemType.element) {
-      if (item.hasAnonymousComplexType) {
+      if (hasInlineComplexType(item)) {
         return {
           type: "modifyComplexType",
           payload: {
@@ -329,7 +329,7 @@ export class DropCommandFactory {
     const baseType = isRestriction ? getRestrictionBaseType(item) : getExtensionBaseType(item);
     const isElement = item.itemType === DiagramItemType.element;
 
-    if ((isElement && item.hasAnonymousComplexType) || (!isElement && isComplexTypeNode(item))) {
+    if ((isElement && hasInlineComplexType(item)) || (!isElement && isNamedComplexType(item))) {
       const typeId = isElement ? anonymousTypeId(item.id, "complexType") : item.id;
       return { type: "modifyComplexType", payload: { typeId, baseType, derivationKind } };
     }
@@ -340,11 +340,11 @@ export class DropCommandFactory {
       };
     }
     if (isElement) {
-      return item.isSimpleContent
+      return hasInlineSimpleType(item)
         ? { type: "modifySimpleType", payload: { typeId: anonymousTypeId(item.id, "simpleType"), baseType } }
         : { type: "addSimpleType", payload: { parentId: item.id, baseType } };
     }
-    if (isRestriction && isSimpleTypeNode(item)) {
+    if (isRestriction && isNamedSimpleType(item)) {
       return { type: "modifySimpleType", payload: { typeId: item.id, baseType } };
     }
     return null;

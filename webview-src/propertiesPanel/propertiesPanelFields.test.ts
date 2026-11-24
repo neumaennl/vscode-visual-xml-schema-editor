@@ -31,15 +31,44 @@ describe("createInputColumn: the committing input", () => {
     expect(onCommit).toHaveBeenCalledWith("new", expect.any(Function));
   });
 
+  test.each([
+    ["the input loses the focus", "old"],
+    ["the value was changed back", "new"],
+  ])("should not commit an unchanged value when %s", (_case, accepted) => {
+    const onCommit = vi.fn();
+    const input = columnInput("old", onCommit);
+    input.value = accepted;
+    input.dispatchEvent(new FocusEvent("blur"));
+    onCommit.mockClear();
+
+    input.value = accepted;
+    input.dispatchEvent(new FocusEvent("blur"));
+
+    expect(onCommit).not.toHaveBeenCalled();
+  });
+
+  test("should not commit when a new rendering removes the focused input, which Chromium then blurs", () => {
+    const onCommit = vi.fn();
+    const input = columnInput("old", onCommit);
+    document.body.appendChild(input);
+    input.focus();
+
+    input.remove();
+    input.dispatchEvent(new FocusEvent("blur"));
+
+    expect(onCommit).not.toHaveBeenCalled();
+  });
+
   test("should leave the input with Enter, which commits the value", () => {
     const onCommit = vi.fn();
     const input = columnInput("old", onCommit);
     document.body.appendChild(input);
     input.focus();
+    input.value = "new";
     const enter = new KeyboardEvent("keydown", { key: "Enter", cancelable: true });
     input.dispatchEvent(enter);
     expect(enter.defaultPrevented).toBe(true);
-    expect(onCommit).toHaveBeenCalledWith("old", expect.any(Function));
+    expect(onCommit).toHaveBeenCalledWith("new", expect.any(Function));
     input.remove();
   });
 
@@ -59,8 +88,9 @@ describe("createInputColumn", () => {
     expect(column.querySelector("label")?.textContent).toBe("default");
     const input = column.querySelector("input");
     expect(input?.placeholder).toBe("—");
+    input!.value = "y";
     input?.dispatchEvent(new FocusEvent("blur"));
-    expect(onCommit).toHaveBeenCalledWith("x", expect.any(Function));
+    expect(onCommit).toHaveBeenCalledWith("y", expect.any(Function));
   });
 
   test("should have no placeholder unless one is given", () => {

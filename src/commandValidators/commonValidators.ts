@@ -9,7 +9,7 @@ import type { ParsedSchemaId } from "../../shared/idStrategy.js";
 import { parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy.js";
 import { locateNodeById } from "../schemaNavigator.js";
 import { ownComponentName, splitQName, isValidXmlName } from "../../shared/qNames.js";
-import { getCurrentSchemaPrefixes, type TypeKind } from "../../shared/schemaUtils.js";
+import { getTargetNamespacePrefixes, type TypeKind } from "../../shared/schemaUtils.js";
 import { findIdentifiedChild } from "../commandUtils.js";
 import type { ValidationFailure, ValidationResult } from "../../shared/validation.js";
 
@@ -50,7 +50,7 @@ export function validateReference(
   if (!isValidXmlName(localName) || (prefix !== undefined && !isValidXmlName(prefix))) {
     return { valid: false, error: `${REFERENCED_KIND_LABELS[kind]} ref must be a valid QName` };
   }
-  const name = ownComponentName(ref, getCurrentSchemaPrefixes(schemaObj));
+  const name = ownComponentName(ref, getTargetNamespacePrefixes(schemaObj));
   if (name === undefined) {
     return { valid: false, error: notFoundError };
   }

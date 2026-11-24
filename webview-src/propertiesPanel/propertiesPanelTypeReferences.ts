@@ -4,64 +4,42 @@
  */
 
 import { BUILT_IN_DATATYPES, isBuiltInTypeName } from "../../shared/builtInTypes";
-import { SchemaNodeType } from "../../shared/idStrategy";
+import { getTargetNamespacePrefixes } from "../../shared/schemaUtils";
 import { splitQName } from "../../shared/qNames";
 import { type TypeReferenceContext, validateTypeReference } from "../../shared/typeReferences";
-import type { DiagramItem } from "../diagram";
+import {
+  getImportedNamespaces,
+  getLocalTypeNames,
+  getNamespacePrefixes,
+  hasIncludes,
+  type DiagramItem,
+} from "../diagram";
 import type { CommitHandler } from "./propertiesPanelFields";
-import { getNodeType } from "./propertiesPanelNodeKinds";
 
 /**
- * Collects and caches top-level/local simpleType and complexType names from the active diagram.
+ * Returns the names of the named simple and complex types of a node's schema.
  *
- * @param node - Any diagram node that belongs to the currently rendered diagram
- * @returns A set of discovered local schema type names
+ * @param node - A diagram item of the schema
+ * @returns The names
  */
-function collectLocalSchemaTypeNames(node: DiagramItem): ReadonlySet<string> {
-  const cached = node.diagram?.localSchemaTypeNames;
-  if (cached) {
-    return cached;
-  }
-
-  const names = new Set<string>();
-  const visit = (item: DiagramItem): void => {
-    const itemNodeType = getNodeType(item);
-    if ((itemNodeType === SchemaNodeType.SimpleType || itemNodeType === SchemaNodeType.ComplexType) && item.name) {
-      const localName = item.name.trim();
-      if (localName) {
-        names.add(localName);
-      }
-    }
-    for (const child of item.childElements) {
-      visit(child);
-    }
-  };
-  for (const root of node.diagram?.rootElements ?? []) {
-    visit(root);
-  }
-  if (node.diagram) {
-    node.diagram.localSchemaTypeNames = names;
-  }
-  return names;
+function localTypeNamesOf(node: DiagramItem): ReadonlySet<string> {
+  return new Set(getLocalTypeNames(node.diagram));
 }
 
 /**
  * Returns the type names that the type fields suggest: the built-in data types of XML Schema and the types of
  * the node's schema, with and without the prefix of its target namespace.
  *
- * @param node - A diagram item of the schema, or null for the built-in types only
+ * @param node - A diagram item of the schema
  * @returns The type names
  */
-export function collectTypeSuggestions(node: DiagramItem | null): string[] {
+export function collectTypeSuggestions(node: DiagramItem): string[] {
   const suggestions = new Set(BUILT_IN_DATATYPES.map((localName) => `xs:${localName}`));
-  if (!node) {
-    return Array.from(suggestions);
-  }
-  const currentSchemaPrefix = node.diagram?.currentSchemaPrefix;
-  for (const localName of collectLocalSchemaTypeNames(node)) {
+  const targetNamespacePrefix = getTargetNamespacePrefixes(node.diagram.schema)[0];
+  for (const localName of localTypeNamesOf(node)) {
     suggestions.add(localName);
-    if (currentSchemaPrefix) {
-      suggestions.add(`${currentSchemaPrefix}:${localName}`);
+    if (targetNamespacePrefix) {
+      suggestions.add(`${targetNamespacePrefix}:${localName}`);
     }
   }
   return Array.from(suggestions);
@@ -84,13 +62,12 @@ export function normalizeTypeReference(node: DiagramItem, nextType: string): str
     return typeName;
   }
 
-  const currentSchemaPrefix = node.diagram?.currentSchemaPrefix?.trim();
-  if (!currentSchemaPrefix || isBuiltInTypeName(typeName)) {
+  const targetNamespacePrefix = getTargetNamespacePrefixes(node.diagram.schema)[0];
+  if (!targetNamespacePrefix || isBuiltInTypeName(typeName)) {
     return typeName;
   }
 
-  const localSchemaTypeNames = collectLocalSchemaTypeNames(node);
-  return localSchemaTypeNames.has(typeName) ? `${currentSchemaPrefix}:${typeName}` : typeName;
+  return localTypeNamesOf(node).has(typeName) ? `${targetNamespacePrefix}:${typeName}` : typeName;
 }
 
 /**
@@ -100,11 +77,12 @@ export function normalizeTypeReference(node: DiagramItem, nextType: string): str
  * @returns The type names, namespace declarations, imported namespaces and includes of the schema
  */
 export function typeReferenceContextOf(node: DiagramItem): TypeReferenceContext {
+  const { diagram } = node;
   return {
-    localTypeNames: [...collectLocalSchemaTypeNames(node)],
-    namespacePrefixes: node.diagram?.schemaNamespacePrefixes ?? {},
-    importedNamespaces: node.diagram?.importedNamespaces ?? [],
-    hasIncludes: node.diagram?.hasIncludes ?? false,
+    localTypeNames: [...localTypeNamesOf(node)],
+    namespacePrefixes: getNamespacePrefixes(diagram),
+    importedNamespaces: getImportedNamespaces(diagram),
+    hasIncludes: hasIncludes(diagram),
   };
 }
 

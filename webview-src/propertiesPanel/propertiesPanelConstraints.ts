@@ -3,7 +3,7 @@
  * content toggles of elements and complex types.
  */
 
-import type { DiagramItem } from "../diagram";
+import { hasInlineComplexType, isAbstract, isMixed, isNillable, type DiagramItem } from "../diagram";
 import type { SchemaCommand } from "../../shared/types";
 import { SchemaNodeType } from "../../shared/idStrategy";
 import { anonymousTypeId } from "../../shared/schemaUtils";
@@ -14,7 +14,7 @@ import { createSection, createToggleRow } from "./propertiesPanelDom";
  * Renders the CONSTRAINTS section: the nillable, abstract and mixed content toggles that apply to
  * the element or complex type.
  *
- * @param node - The draft node, which is changed with the toggles
+ * @param node - The selected node
  * @param dispatchCommand - Callback used to emit schema-edit commands
  * @returns The section
  */
@@ -28,8 +28,7 @@ export function renderConstraintsSection(
   if (nodeType === SchemaNodeType.Element) {
     // Nillable toggle (all elements)
     section.appendChild(
-      createToggleRow("Nillable", node.isNillable, (next) => {
-        node.isNillable = next;
+      createToggleRow("Nillable", isNillable(node), (next) => {
         dispatchCommand({
           type: "modifyElement",
           payload: { elementId: node.id, nillable: next },
@@ -40,8 +39,7 @@ export function renderConstraintsSection(
     // Abstract toggle (top-level elements only)
     if (isTopLevelElement(node)) {
       section.appendChild(
-        createToggleRow("Abstract", node.isAbstract, (next) => {
-          node.isAbstract = next;
+        createToggleRow("Abstract", isAbstract(node), (next) => {
           dispatchCommand({
             type: "modifyElement",
             payload: { elementId: node.id, abstract: next },
@@ -51,11 +49,10 @@ export function renderConstraintsSection(
     }
 
     // Mixed content toggle (element with anonymous complex type)
-    if (node.hasAnonymousComplexType) {
+    if (hasInlineComplexType(node)) {
       const anonComplexTypeId = anonymousTypeId(node.id, "complexType");
       section.appendChild(
-        createToggleRow("Mixed content", node.isMixed, (next) => {
-          node.isMixed = next;
+        createToggleRow("Mixed content", isMixed(node), (next) => {
           dispatchCommand({
             type: "modifyComplexType",
             payload: { typeId: anonComplexTypeId, mixed: next },
@@ -67,8 +64,7 @@ export function renderConstraintsSection(
 
   if (nodeType === SchemaNodeType.ComplexType) {
     section.appendChild(
-      createToggleRow("Abstract", node.isAbstract, (next) => {
-        node.isAbstract = next;
+      createToggleRow("Abstract", isAbstract(node), (next) => {
         dispatchCommand({
           type: "modifyComplexType",
           payload: { typeId: node.id, abstract: next },
@@ -79,8 +75,7 @@ export function renderConstraintsSection(
 
   if (nodeType === SchemaNodeType.ComplexType) {
     section.appendChild(
-      createToggleRow("Mixed content", node.isMixed, (next) => {
-        node.isMixed = next;
+      createToggleRow("Mixed content", isMixed(node), (next) => {
         dispatchCommand({
           type: "modifyComplexType",
           payload: { typeId: node.id, mixed: next },
@@ -95,7 +90,7 @@ export function renderConstraintsSection(
 /**
  * Tells whether the node has constraints to edit, which elements and complex types have.
  *
- * @param node - The draft node
+ * @param node - The selected node
  * @returns True for elements and complex types
  */
 export function canShowConstraintsSection(node: DiagramItem): boolean {

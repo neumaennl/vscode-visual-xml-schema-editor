@@ -3,27 +3,9 @@
  */
 
 import type { SchemaCommand } from "../../shared/types";
-import type { DiagramItem } from "../diagram";
-import { parseDerivationBaseType } from "../diagram";
+import { getSimpleDerivation, type DiagramItem, type SimpleDerivation } from "../diagram";
 import { resolveSimpleTypeId } from "./propertiesPanelTargets";
 import { normalizeTypeReference } from "./propertiesPanelTypeReferences";
-
-/**
- * Extracts the simple base type from the user-facing type label shown in the panel.
- *
- * @param typeText - Display text from the Type field
- * @returns The extracted base type or undefined when none can be inferred
- */
-export function extractBaseType(typeText: string): string | undefined {
-  const baseType = parseDerivationBaseType(typeText);
-  if (baseType) {
-    return baseType;
-  }
-  if (typeText.startsWith("xs:")) {
-    return typeText.trim();
-  }
-  return undefined;
-}
 
 /**
  * Builds a simpleType list item-type update command for the selected node.
@@ -79,6 +61,24 @@ export function createSimpleTypeUnionCommand(node: DiagramItem, nextMemberTypes:
 }
 
 /**
+ * Returns the type that a simple type's body names, from which another body can be derived: the item type
+ * of a list, the first member type of a union or the base type of a restriction.
+ *
+ * @param derivation - The body
+ * @returns The type, or `undefined` if the body names none
+ */
+function typeOfBody(derivation: SimpleDerivation | undefined): string | undefined {
+  switch (derivation?.kind) {
+    case "list":
+      return derivation.itemType;
+    case "union":
+      return derivation.memberTypes[0];
+    default:
+      return derivation?.base;
+  }
+}
+
+/**
  * Builds the command that switches a simple type to another derivation kind. The new body is derived
  * from the current one: from the item type of a list, the first member type of a union or the base
  * type of a restriction. The properties panel only calls it with a kind other than the current one,
@@ -93,8 +93,7 @@ export function createSimpleTypeKindCommand(
   nextKind: "restriction" | "list" | "union"
 ): SchemaCommand | null {
   const simpleTypeId = resolveSimpleTypeId(node);
-  const baseType =
-    (node.simpleTypeListItemType ?? "") || (node.simpleTypeUnionMemberTypes?.[0] ?? "") || extractBaseType(node.type);
+  const baseType = typeOfBody(getSimpleDerivation(node));
   if (!simpleTypeId || !baseType) {
     return null;
   }

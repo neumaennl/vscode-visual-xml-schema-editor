@@ -54,25 +54,21 @@ describe("renderElementDefaultFixedSection", () => {
   });
 
   test.each([
-    { label: "default", value: "C", field: "elementDefault", expected: "C", payload: { default_: "C" } },
-    { label: "fixed", value: "C", field: "elementFixed", expected: "C", payload: { fixed: "C" } },
-    { label: "default", value: "", field: "elementDefault", expected: undefined, payload: { default_: "" } },
-    { label: "fixed", value: "", field: "elementFixed", expected: undefined, payload: { fixed: "" } },
-  ] as const)(
-    "should set the $label value of the draft to '$value' and send it",
-    ({ label, value, field, expected, payload }) => {
-      const node = diagramItem(webviewSchemaWith(ELEMENTS), "/element:code");
-      const dispatch = vi.fn<(command: SchemaCommand) => void>();
-      const input = inputOf(renderElementDefaultFixedSection(node, dispatch), label);
+    { label: "default", value: "C", payload: { default_: "C" } },
+    { label: "fixed", value: "C", payload: { fixed: "C" } },
+    { label: "default", value: "", payload: { default_: "" } },
+    { label: "fixed", value: "", payload: { fixed: "" } },
+  ] as const)("should send the $label value '$value'", ({ label, value, payload }) => {
+    const node = diagramItem(webviewSchemaWith(ELEMENTS), "/element:code");
+    const dispatch = vi.fn<(command: SchemaCommand) => void>();
+    const input = inputOf(renderElementDefaultFixedSection(node, dispatch), label);
 
-      input.value = value;
-      input.dispatchEvent(new FocusEvent("blur"));
+    input.value = value;
+    input.dispatchEvent(new FocusEvent("blur"));
 
-      expect(node[field]).toBe(expected);
-      expect(dispatch).toHaveBeenCalledExactlyOnceWith({
-        type: "modifyElement",
-        payload: { elementId: "/element:code", ...payload },
-      });
-    }
-  );
+    expect(dispatch).toHaveBeenCalledExactlyOnceWith({
+      type: "modifyElement",
+      payload: { elementId: "/element:code", ...payload },
+    });
+  });
 });

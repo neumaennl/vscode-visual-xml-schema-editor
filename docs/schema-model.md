@@ -3,9 +3,8 @@ type: Data Model
 title: Schema model
 description: The object model of an XSD file - classes generated from the XSD meta-schema, XML binding with xmlbind-ts, and the path-based IDs that identify schema nodes.
 tags: [schema-model, data-model, xmlbind-ts, code-generation, ids, navigation]
-status: stable
-generated: { by: human:neumaennl, at: 2026-11-20T13:22:02Z }
-verified: { by: human:neumaennl, at: 2026-11-20T15:04:32Z }
+status: draft
+generated: { by: human:neumaennl, at: 2026-11-24T14:23:17Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -52,9 +51,9 @@ sources:
   - id: schema-processors
     resource: ../webview-src/diagram/SchemaProcessors.ts
     title: Diagram schema processors
-  - id: builder-helpers
-    resource: ../webview-src/diagram/DiagramBuilderHelpers.ts
-    title: Diagram builder helpers
+  - id: documentation-accessors
+    resource: ../webview-src/diagram/documentationAccessors.ts
+    title: Documentation of the schema objects
   - id: schema-executors
     resource: ../src/commandExecutors/schemaExecutors.ts
     title: Schema-level command executors
@@ -83,7 +82,7 @@ The classes also have properties that are not in the meta-schema and are filled 
 | `_anyAttributes`     | Attributes from other namespaces (`openAttrs`).                                                                                                                       |
 | `_any`               | Arbitrary child content, for example the content of `xs:documentation` and `xs:appinfo`.                                                                              |
 
-The executors keep `schema._namespacePrefixes` in sync with the imports: adding an import always registers a prefix (an explicit one or a generated `ns0`, `ns1`, …), and removing or changing an import removes or updates it.[^schema-executors] `getCurrentSchemaPrefixes()` returns the prefixes that map to the schema's own target namespace.[^schema-utils]
+The executors keep `schema._namespacePrefixes` in sync with the imports: adding an import always registers a prefix (an explicit one or a generated `ns0`, `ns1`, …), and removing or changing an import removes or updates it.[^schema-executors] `getTargetNamespacePrefixes()` returns the prefixes that map to the schema's own target namespace.[^schema-utils]
 
 # XML binding with xmlbind-ts
 
@@ -122,7 +121,7 @@ The schema root has the ID `/schema` (`SCHEMA_ROOT_ID`). `isSchemaRoot()` treats
 - **Derivation is skipped.** For a complex type with `complexContent` or `simpleContent`, the content of the `extension` or `restriction` is addressed as if it were a direct child of the complex type: the compositor, the attributes and the attribute group references, for example `/complexType:T/attribute:id` for an attribute in the extension. `getContentContainer()` in `shared/schemaUtils.ts` decides where this content lives; the navigator, the commands and the diagram builder use it.[^navigator][^schema-utils]
 - **Local elements** have both name and position, the position counting only the elements of the same compositor: `/complexType:PersonType/group:sequence[0]/element:first[0]`. Local elements without a name get the name `unnamed`.[^schema-processors]
 - **Group references** use `groupRef` with the referenced name and the position among the group references of the parent: `…/group:sequence[0]/groupRef:SharedGroup[0]`. Both are required; `removeGroup` and `modifyGroup` reject an ID without them ("Invalid groupRef ID").
-- **Annotations of the schema root** have their own IDs: `/schema/annotation[0]` and `/schema/annotation[0]/documentation[1]`. The shorthand `/schema/documentation[N]` addresses the documentation entries of the first schema annotation.[^annotation-executors] For all other components, the annotation ID is the component's ID, and documentation entries are `<component ID>/documentation[N]`.[^builder-helpers]
+- **Annotations of the schema root** have their own IDs: `/schema/annotation[0]` and `/schema/annotation[0]/documentation[1]`. The shorthand `/schema/documentation[N]` addresses the documentation entries of the first schema annotation.[^annotation-executors] For all other components, the annotation ID is the component's ID, and documentation entries are `<component ID>/documentation[N]`.[^documentation-accessors]
 - **Imports and includes** are addressed by position: `/import[0]`, `/include[0]`.[^schema-executors]
 
 | Node                       | Example ID                                                          |
@@ -139,7 +138,7 @@ The schema root has the ID `/schema` (`SCHEMA_ROOT_ID`). `isSchemaRoot()` treats
 
 ## Who generates and who resolves IDs
 
-- **Generating.** The webview's diagram builder (`DiagramBuilder`, `SchemaProcessors*`, `TypeNodeCreators`, `DiagramBuilderHelpers`) gives every diagram item its ID while building the diagram (see [Diagram rendering](diagram-rendering.md)). The properties panel and the drop handling put these IDs into the commands they send.
+- **Generating.** The webview's diagram builder (`DiagramBuilder`, `SchemaProcessors*`, `TypeNodeCreators`) gives every diagram item its ID while building the diagram (see [Diagram rendering](diagram-rendering.md)). The properties panel and the drop handling put these IDs into the commands they send.
 - **Resolving.** The validators and executors in the extension host resolve IDs against the schema object with `locateNodeById()` from `src/schemaNavigator.ts`.[^navigator]
 
 `locateNodeById()` walks the segments from the schema root and returns the node the ID points to (as `parent`, because commands usually add to or change children of it) together with an internal type name such as `topLevelComplexType` or `sequence`. It supports these steps:[^navigator]
@@ -194,4 +193,4 @@ These are listed in [Known issues](known-issues.md#node-ids-are-ambiguous-and-ha
 
 [^navigator]: [Schema navigator](../src/schemaNavigator.ts)
 
-[^builder-helpers]: [Diagram builder helpers](../webview-src/diagram/DiagramBuilderHelpers.ts)
+[^documentation-accessors]: [Documentation of the schema objects](../webview-src/diagram/documentationAccessors.ts)

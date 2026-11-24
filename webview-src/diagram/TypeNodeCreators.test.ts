@@ -2,138 +2,37 @@
  * Unit tests for `TypeNodeCreators` module.
  */
 
-import { createElementNode, createComplexTypeNode, createSimpleTypeNode, createTopLevelNode } from "./TypeNodeCreators";
+import { createTopLevelNode } from "./TypeNodeCreators";
+import { getDocumentation } from "./documentationAccessors";
 import { Diagram } from "./Diagram";
 import { DiagramItemType } from "./DiagramTypes";
-import {
-  topLevelElement,
-  topLevelComplexType,
-  topLevelSimpleType,
-  annotationType,
-  documentationType,
-} from "../../shared/types";
+import { annotationType, documentationType, schema } from "../../shared/types";
+import type { namedGroup } from "../../shared/types";
 import { SchemaNodeType } from "../../shared/idStrategy";
 
 describe("TypeNodeCreators", () => {
   let diagram: Diagram;
 
   beforeEach(() => {
-    diagram = new Diagram();
+    diagram = new Diagram(new schema());
   });
 
   describe("createTopLevelNode", () => {
     test("should return null for a component without name", () => {
-      expect(createTopLevelNode({}, SchemaNodeType.Group, DiagramItemType.group, diagram)).toBeNull();
+      expect(createTopLevelNode({} as namedGroup, SchemaNodeType.Group, DiagramItemType.group, diagram)).toBeNull();
     });
 
-    test("should create the item with its ID, name and documentation", () => {
+    test("should create the item with its ID, name, schema object and documentation", () => {
       const annotation = new annotationType();
       annotation.documentation = [Object.assign(new documentationType(), { value: "About G" })];
-      const item = createTopLevelNode({ name: "G", annotation }, SchemaNodeType.Group, DiagramItemType.group, diagram);
+      const group = { name: "G", annotation };
+      const item = createTopLevelNode(group, SchemaNodeType.Group, DiagramItemType.group, diagram);
       expect(item?.id).toBe("/group:G");
-      expect(item?.name).toBe("G");
+      expect(item?.schemaObject).toBe(group);
+      expect(item?.label).toBe("G");
       expect(item?.itemType).toBe(DiagramItemType.group);
       expect(item?.diagram).toBe(diagram);
-      expect(item?.documentation).toBe("About G");
-    });
-  });
-
-  describe("createElementNode", () => {
-    test("should return null for element without name", () => {
-      const element = new topLevelElement();
-      // Don't set name - it will be undefined
-      expect(createElementNode(element, diagram)).toBeNull();
-    });
-
-    test("should create element node with name", () => {
-      const element = new topLevelElement();
-      element.name = "TestElement";
-      const node = createElementNode(element, diagram);
-
-      expect(node).not.toBeNull();
-      expect(node!.name).toBe("TestElement");
-      expect(node!.itemType).toBe(DiagramItemType.element);
-    });
-
-    test("should extract type information", () => {
-      const element = new topLevelElement();
-      element.name = "TestElement";
-      element.type_ = "string";
-      const node = createElementNode(element, diagram);
-
-      expect(node!.type).toBe("string");
-    });
-
-    test("should extract documentation from annotation", () => {
-      const element = new topLevelElement();
-      element.name = "TestElement";
-      element.annotation = {
-        documentation: [{ value: "Test doc" }],
-      };
-      const node = createElementNode(element, diagram);
-
-      expect(node!.documentation).toBe("Test doc");
-    });
-  });
-
-  describe("createComplexTypeNode", () => {
-    test("should return null for type without name", () => {
-      const complexType = new topLevelComplexType();
-      // Don't set name - it will be undefined
-      expect(createComplexTypeNode(complexType, diagram)).toBeNull();
-    });
-
-    test("should create complex type node", () => {
-      const complexType = new topLevelComplexType();
-      complexType.name = "PersonType";
-      const node = createComplexTypeNode(complexType, diagram);
-
-      expect(node).not.toBeNull();
-      expect(node!.name).toBe("PersonType");
-      expect(node!.itemType).toBe(DiagramItemType.type);
-      expect(node!.type).toBe("complexType");
-    });
-
-    test("should extract documentation", () => {
-      const complexType = new topLevelComplexType();
-      complexType.name = "PersonType";
-      complexType.annotation = {
-        documentation: [{ value: "A person type" }],
-      };
-      const node = createComplexTypeNode(complexType, diagram);
-
-      expect(node!.documentation).toBe("A person type");
-    });
-  });
-
-  describe("createSimpleTypeNode", () => {
-    test("should return null for type without name", () => {
-      const simpleType = new topLevelSimpleType();
-      // Don't set name - it will be undefined
-      expect(createSimpleTypeNode(simpleType, diagram)).toBeNull();
-    });
-
-    test("should create simple type node", () => {
-      const simpleType = new topLevelSimpleType();
-      simpleType.name = "AgeType";
-      const node = createSimpleTypeNode(simpleType, diagram);
-
-      expect(node).not.toBeNull();
-      expect(node!.name).toBe("AgeType");
-      expect(node!.itemType).toBe(DiagramItemType.type);
-      expect(node!.type).toBe("simpleType");
-      expect(node!.isSimpleContent).toBe(true);
-    });
-
-    test("should extract documentation", () => {
-      const simpleType = new topLevelSimpleType();
-      simpleType.name = "AgeType";
-      simpleType.annotation = {
-        documentation: [{ value: "Age restriction" }],
-      };
-      const node = createSimpleTypeNode(simpleType, diagram);
-
-      expect(node!.documentation).toBe("Age restriction");
+      expect(getDocumentation(item!)).toBe("About G");
     });
   });
 });

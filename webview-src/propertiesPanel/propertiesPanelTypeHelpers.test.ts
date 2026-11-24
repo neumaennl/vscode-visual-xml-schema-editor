@@ -3,7 +3,6 @@
  */
 
 import {
-  getDerivationRelation,
   getReadOnlyTypeValue,
   getTypeEditHint,
   hasInlineAnonymousElementType,
@@ -109,14 +108,5 @@ describe("propertiesPanelTypeHelpers", () => {
         expect(getTypeEditHint(typedNode(id), nodeType, baseType)).toBe(expected);
       }
     );
-  });
-
-  describe("getDerivationRelation", () => {
-    test.each([
-      { kind: "restriction", expected: "restricts" },
-      { kind: "extension", expected: "extends" },
-    ] as const)("should describe $kind as '$expected'", ({ kind, expected }) => {
-      expect(getDerivationRelation(kind)).toBe(expected);
-    });
   });
 });

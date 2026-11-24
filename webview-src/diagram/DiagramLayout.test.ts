@@ -6,6 +6,8 @@ import { DiagramLayout } from "./DiagramLayout";
 import { Diagram } from "./Diagram";
 import { DiagramItem } from "./DiagramItem";
 import { DiagramItemType } from "./DiagramTypes";
+import { schema } from "../../shared/types";
+import { documented, NOT_READ_SCHEMA_OBJECT } from "../__tests__/diagramTestHelpers";
 
 describe("DiagramLayout", () => {
   let layout: DiagramLayout;
@@ -13,7 +15,7 @@ describe("DiagramLayout", () => {
 
   beforeEach(() => {
     layout = new DiagramLayout();
-    diagram = new Diagram();
+    diagram = new Diagram(new schema());
   });
 
   /**
@@ -25,7 +27,7 @@ describe("DiagramLayout", () => {
    * @returns The item
    */
   function layoutRootItem(id: string, itemType: DiagramItemType, properties: Partial<DiagramItem> = {}): DiagramItem {
-    const item = new DiagramItem(id, id, itemType, diagram);
+    const item = new DiagramItem(id, id, itemType, NOT_READ_SCHEMA_OBJECT, diagram);
     Object.assign(item, properties);
     diagram.addRootElement(item);
     layout.layout(diagram);
@@ -43,10 +45,10 @@ describe("DiagramLayout", () => {
     showChildElements: boolean,
     childCount = 1
   ): { parent: DiagramItem; children: DiagramItem[] } {
-    const parent = new DiagramItem("parent", "Parent", DiagramItemType.element, diagram);
+    const parent = new DiagramItem("parent", "Parent", DiagramItemType.element, NOT_READ_SCHEMA_OBJECT, diagram);
     const children = Array.from(
       { length: childCount },
-      (_, i) => new DiagramItem(`child${i}`, `Child${i}`, DiagramItemType.element, diagram)
+      (_, i) => new DiagramItem(`child${i}`, `Child${i}`, DiagramItemType.element, NOT_READ_SCHEMA_OBJECT, diagram)
     );
     children.forEach((child) => {
       parent.addChild(child);
@@ -59,7 +61,7 @@ describe("DiagramLayout", () => {
 
   describe("layout", () => {
     test("should layout diagram with single root element", () => {
-      const root = new DiagramItem("root", "Root", DiagramItemType.element, diagram);
+      const root = new DiagramItem("root", "Root", DiagramItemType.element, NOT_READ_SCHEMA_OBJECT, diagram);
       diagram.addRootElement(root);
 
       layout.layout(diagram);
@@ -71,8 +73,8 @@ describe("DiagramLayout", () => {
     });
 
     test("should layout multiple root elements vertically", () => {
-      const root1 = new DiagramItem("root1", "Root1", DiagramItemType.element, diagram);
-      const root2 = new DiagramItem("root2", "Root2", DiagramItemType.element, diagram);
+      const root1 = new DiagramItem("root1", "Root1", DiagramItemType.element, NOT_READ_SCHEMA_OBJECT, diagram);
+      const root2 = new DiagramItem("root2", "Root2", DiagramItemType.element, NOT_READ_SCHEMA_OBJECT, diagram);
       diagram.addRootElement(root1);
       diagram.addRootElement(root2);
 
@@ -83,7 +85,7 @@ describe("DiagramLayout", () => {
     });
 
     test("should calculate overall bounding box", () => {
-      const root = new DiagramItem("root", "Root", DiagramItemType.element, diagram);
+      const root = new DiagramItem("root", "Root", DiagramItemType.element, NOT_READ_SCHEMA_OBJECT, diagram);
       diagram.addRootElement(root);
 
       layout.layout(diagram);
@@ -144,7 +146,7 @@ describe("DiagramLayout", () => {
     test("should add documentation box when showDocumentation is true", () => {
       diagram.showDocumentation = true;
 
-      const item = layoutRootItem("item", DiagramItemType.element, { documentation: "Test documentation" });
+      const item = layoutRootItem("item", DiagramItemType.element, { schemaObject: documented("Test documentation") });
 
       expect(item.documentationBox.width).toBeGreaterThan(0);
     });
@@ -155,7 +157,7 @@ describe("DiagramLayout", () => {
     ])("should not add documentation box when %s", (_case, showDocumentation, documentation) => {
       diagram.showDocumentation = showDocumentation;
 
-      const item = layoutRootItem("item", DiagramItemType.element, { documentation });
+      const item = layoutRootItem("item", DiagramItemType.element, { schemaObject: documented(documentation) });
 
       expect(item.documentationBox).toMatchObject({ width: 0, height: 0 });
     });

@@ -5,7 +5,7 @@
 
 import type { schema } from "../../shared/types.js";
 import { ownComponentName, splitQName } from "../../shared/qNames.js";
-import { getCurrentSchemaPrefixes } from "../../shared/schemaUtils.js";
+import { getTargetNamespacePrefixes } from "../../shared/schemaUtils.js";
 import type { QNameKind } from "./qNameReferences.js";
 import { forEachQNameReference } from "./qNameReferences.js";
 
@@ -21,9 +21,9 @@ import { forEachQNameReference } from "./qNameReferences.js";
  */
 export function renameOwnReferences(kind: QNameKind, oldName: string, newName: string, schemaObj: schema): void {
   if (oldName === newName) return;
-  const ownPrefixes = getCurrentSchemaPrefixes(schemaObj);
+  const tnsPrefixes = getTargetNamespacePrefixes(schemaObj);
   forEachQNameReference(schemaObj, (reference) => {
-    if (reference.kind !== kind || ownComponentName(reference.value, ownPrefixes) !== oldName) {
+    if (reference.kind !== kind || ownComponentName(reference.value, tnsPrefixes) !== oldName) {
       return;
     }
     const { prefix } = splitQName(reference.value);

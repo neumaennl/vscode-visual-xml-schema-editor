@@ -22,7 +22,7 @@ import type {
   topLevelElement,
   topLevelSimpleType,
 } from "../../shared/types";
-import type { MaxOccurs } from "../../shared/occurrences";
+import { parseMaxOccurs, UNBOUNDED, type MaxOccurs } from "../../shared/occurrences";
 import type { DiagramItem } from "./DiagramItem";
 import type { Diagram } from "./Diagram";
 
@@ -157,11 +157,14 @@ export function getMinOccurs(item: DiagramItem): number {
  * Returns the `maxOccurs` of an element, compositor or group reference.
  *
  * @param item - The diagram item
- * @returns The value, 1 if the schema object does not set it
+ * @returns The value, 1 if the schema object does not set it or sets no valid value
  */
 export function getMaxOccurs(item: DiagramItem): MaxOccurs {
   const maxOccurs = (item.schemaObject as Occurrences).maxOccurs;
-  return maxOccurs === "unbounded" ? maxOccurs : readOccurs(maxOccurs);
+  if (maxOccurs === undefined) {
+    return 1;
+  }
+  return parseMaxOccurs(maxOccurs) ?? 1;
 }
 
 /**
@@ -173,7 +176,7 @@ export function getMaxOccurs(item: DiagramItem): MaxOccurs {
  */
 export function isRepeated(item: DiagramItem): boolean {
   const maxOccurs = getMaxOccurs(item);
-  return maxOccurs === "unbounded" || maxOccurs > 1;
+  return maxOccurs === UNBOUNDED || maxOccurs > 1;
 }
 
 // ===== Facts about the schema that a diagram shows =====

@@ -17,6 +17,7 @@ import { assumeValidated, assumptionFailed, locateValidated } from "./assumeVali
 import { appendTo, assignDefined, removeFrom } from "./nodeProperties.js";
 import { createAnnotation } from "./annotationUtils.js";
 import { renameReferencesInTargetNamespace } from "../schemaReferences/referenceRewrites.js";
+import type { MaxOccurs } from "../../shared/occurrences.js";
 
 // ===== Element Group Executors =====
 
@@ -105,7 +106,7 @@ export function executeModifyGroup(command: ModifyGroupCommand, schemaObj: schem
 
   if (parsed.nodeType === SchemaNodeType.Group && parsed.parentId) {
     const location = locateValidated(schemaObj, groupId);
-    const compositor = location.parent as { minOccurs?: number; maxOccurs?: number | "unbounded" };
+    const compositor = location.parent as { minOccurs?: number; maxOccurs?: MaxOccurs };
     assignDefined(compositor, { minOccurs, maxOccurs });
     return;
   }
@@ -164,12 +165,7 @@ interface ComplexTypeWithGroupRef {
  * @param documentation - The documentation of the reference, if any
  * @returns The group reference
  */
-function buildGroupRef(
-  ref: string,
-  minOccurs?: number,
-  maxOccurs?: number | "unbounded",
-  documentation?: string
-): groupRef {
+function buildGroupRef(ref: string, minOccurs?: number, maxOccurs?: MaxOccurs, documentation?: string): groupRef {
   const grpRef = assignDefined(new groupRef(), { ref, minOccurs, maxOccurs });
   if (documentation) {
     grpRef.annotation = createAnnotation(documentation);

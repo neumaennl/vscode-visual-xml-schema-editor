@@ -4,6 +4,7 @@
  */
 
 import type { BaseCommand } from "./base.js";
+import type { MaxOccurs } from "../occurrences.js";
 
 /**
  * Payload for adding a new element to the schema.
@@ -26,7 +27,7 @@ export interface AddElementPayload {
   /** Minimum occurrences (default: 1) */
   minOccurs?: number;
   /** Maximum occurrences (default: 1, use 'unbounded' for unlimited) */
-  maxOccurs?: number | "unbounded";
+  maxOccurs?: MaxOccurs;
   /** Optional documentation for the element */
   documentation?: string;
 }
@@ -73,7 +74,7 @@ export interface ModifyElementPayload {
   /** New minimum occurrences (optional) */
   minOccurs?: number;
   /** New maximum occurrences (optional) */
-  maxOccurs?: number | "unbounded";
+  maxOccurs?: MaxOccurs;
   /** Whether the element is nillable (optional) */
   nillable?: boolean;
   /** Whether the element is abstract; only applicable to top-level elements (optional) */

@@ -3,7 +3,13 @@
  * Renders node properties such as name, type, cardinality, documentation, and attributes.
  */
 
-import { validateMaxOccurs, validateMinOccurs, type MaxOccurs } from "../../shared/occurrences";
+import {
+  parseMaxOccurs,
+  UNBOUNDED,
+  validateMaxOccurs,
+  validateMinOccurs,
+  type MaxOccurs,
+} from "../../shared/occurrences";
 import { isValidXmlName } from "../../shared/qNames";
 import { getMaxOccurs, getMinOccurs, getName, getAttributes, getSimpleDerivation, type DiagramItem } from "../diagram";
 import { DiagramItemType } from "../diagram/DiagramTypes";
@@ -299,9 +305,8 @@ export class PropertiesPanel {
       dispatchOccurrence(minOccurs, getMaxOccurs(node));
     });
     const maxCol = createInputColumn("maxOccurs:", String(getMaxOccurs(node)), (text, reject) => {
-      const raw = text.trim();
-      const maxOccurs = raw === "unbounded" ? "unbounded" : Number(raw);
-      if (raw === "" || Number.isNaN(maxOccurs)) {
+      const maxOccurs = parseMaxOccurs(text);
+      if (maxOccurs === undefined) {
         reject("maxOccurs must be a number or unbounded");
         return;
       }
@@ -321,8 +326,8 @@ export class PropertiesPanel {
     const presets: Array<{ label: string; min: number; max: MaxOccurs }> = [
       { label: "0..1", min: 0, max: 1 },
       { label: "1..1", min: 1, max: 1 },
-      { label: "0..∞", min: 0, max: "unbounded" },
-      { label: "1..∞", min: 1, max: "unbounded" },
+      { label: "0..∞", min: 0, max: UNBOUNDED },
+      { label: "1..∞", min: 1, max: UNBOUNDED },
     ];
 
     const presetsRow = document.createElement("div");

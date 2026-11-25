@@ -4,6 +4,7 @@
 
 import type { BaseCommand } from "./base.js";
 import type { ContentModel } from "./complexType.js";
+import type { MaxOccurs } from "../occurrences.js";
 
 /**
  * Payload for adding a group definition or a group reference.
@@ -41,7 +42,7 @@ export interface AddGroupPayload {
   /** Minimum occurrences. Only applicable for group references. */
   minOccurs?: number;
   /** Maximum occurrences. Only applicable for group references. */
-  maxOccurs?: number | "unbounded";
+  maxOccurs?: MaxOccurs;
 }
 
 /**
@@ -92,7 +93,7 @@ export interface ModifyGroupPayload {
   /** New minimum occurrences (optional). Only applicable for group references. */
   minOccurs?: number;
   /** New maximum occurrences (optional). Only applicable for group references. */
-  maxOccurs?: number | "unbounded";
+  maxOccurs?: MaxOccurs;
 }
 
 /**

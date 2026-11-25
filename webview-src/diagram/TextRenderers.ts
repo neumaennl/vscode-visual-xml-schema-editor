@@ -8,6 +8,7 @@ import { svgText } from "./SvgHelpers";
 import { getMaxOccurs, getMinOccurs } from "./schemaAccessors";
 import { getTypeText } from "./typeAccessors";
 import { getDocumentation } from "./documentationAccessors";
+import { UNBOUNDED } from "../../shared/occurrences";
 
 /** Maximum length for truncated documentation lines */
 const MAX_DOC_LINE_LENGTH = 50;
@@ -134,7 +135,7 @@ export function renderOccurrence(item: DiagramItem, group: SVGElement): void {
     return;
   }
 
-  const occurText = `${minOccurs}..${maxOccurs === "unbounded" ? "∞" : maxOccurs}`;
+  const occurText = `${minOccurs}..${maxOccurs === UNBOUNDED ? "∞" : maxOccurs}`;
   const box = item.elementBox;
 
   svgText(

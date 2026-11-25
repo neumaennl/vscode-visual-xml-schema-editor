@@ -17,6 +17,7 @@ import { renameReferencesInTargetNamespace } from "../schemaReferences/reference
 import { createAnnotation } from "./annotationUtils.js";
 import { appendTo, removeFrom } from "./nodeProperties.js";
 import { identifyChild } from "../commandUtils.js";
+import type { MaxOccurs } from "../../shared/occurrences.js";
 
 /** An element of any kind: top-level in the schema, local in a sequence or choice, or local in an all. */
 type AnyElement = topLevelElement | localElement | narrowMaxMin;
@@ -139,7 +140,7 @@ function setOccurrences(
   element: AnyElement,
   parentType: string,
   minOccurs: number | undefined,
-  maxOccurs: number | "unbounded" | undefined
+  maxOccurs: MaxOccurs | undefined
 ): void {
   if (parentType === "schema") {
     return;

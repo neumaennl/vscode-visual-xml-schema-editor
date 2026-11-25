@@ -2,6 +2,7 @@
 
 ## 2026-11-25
 
+- **Update**: `shared/occurrences.ts` defines `UNBOUNDED` and `parseMaxOccurs()`, which the properties panel and the diagram use to read `maxOccurs`; the payloads, the executors and the checks of occurrences use the type `MaxOccurs`, so the checks no longer accept any text as `maxOccurs` ([#448](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/448)).
 - **Update**: [Known issues](known-issues.md#drops-derive-from-base-types-of-the-wrong-kind): "Drops derive from base types of the wrong kind" is new: an extension dropped on an element with a simple type and a restriction dropped on an element with a complex type write invalid XSD.
 
 ## 2026-11-24

@@ -2,7 +2,14 @@
  * Unit tests of `occurrences`.
  */
 
-import { validateMaxOccurs, validateMinOccurs, validateOccurrences } from "./occurrences.js";
+import {
+  parseMaxOccurs,
+  UNBOUNDED,
+  validateMaxOccurs,
+  validateMinOccurs,
+  validateOccurrences,
+  type MaxOccurs,
+} from "./occurrences.js";
 import { expectInvalid } from "./__tests__/validationTestHelpers.js";
 
 describe("validateOccurrences", () => {
@@ -15,7 +22,7 @@ describe("validateOccurrences", () => {
     expect(validateOccurrences(value, undefined).valid).toBe(true);
   });
 
-  test.each([0, 1, 10, "unbounded"])("should accept the maxOccurs %s without minOccurs", (value) => {
+  test.each<MaxOccurs>([0, 1, 10, UNBOUNDED])("should accept the maxOccurs %s without minOccurs", (value) => {
     expect(validateOccurrences(undefined, value).valid).toBe(true);
   });
 
@@ -81,5 +88,22 @@ describe("validateMinOccurs and validateMaxOccurs", () => {
     [2.5, false],
   ] as const)("should check maxOccurs %s on its own: %s", (value, valid) => {
     expect(validateMaxOccurs(value).valid).toBe(valid);
+  });
+});
+
+describe("parseMaxOccurs", () => {
+  test.each([
+    ["unbounded", UNBOUNDED],
+    [" unbounded ", UNBOUNDED],
+    ["3", 3],
+    [" 0 ", 0],
+    ["1.5", 1.5],
+    [2, 2],
+    ["", undefined],
+    ["  ", undefined],
+    ["many", undefined],
+    ["Unbounded", undefined],
+  ])("should read %j as %j", (value, expected) => {
+    expect(parseMaxOccurs(value)).toBe(expected);
   });
 });

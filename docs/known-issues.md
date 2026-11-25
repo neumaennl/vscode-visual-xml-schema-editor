@@ -3,8 +3,9 @@ type: Known Issues
 title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
-status: draft
+status: stable
 generated: { by: human:neumaennl, at: 2026-11-25T08:16:27Z }
+verified: { by: human:neumaennl, at: 2026-11-25T08:43:29Z }
 ---
 
 # Purpose

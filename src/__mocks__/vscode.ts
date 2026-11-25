@@ -51,7 +51,7 @@ export const workspace = {
   onDidChangeTextDocument: vi.fn(() => ({ dispose: vi.fn() })),
   onDidChangeConfiguration: vi.fn(() => ({ dispose: vi.fn() })),
   getConfiguration: vi.fn(() => ({
-    get: vi.fn((key: string, defaultValue?: unknown) => defaultValue),
+    get: vi.fn((_key: string, defaultValue?: unknown) => defaultValue),
   })),
   getWorkspaceFolder: vi.fn(),
   workspaceFolders: [],

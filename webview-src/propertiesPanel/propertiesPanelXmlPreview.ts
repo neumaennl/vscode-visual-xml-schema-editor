@@ -261,12 +261,12 @@ function renderComplexTypeBody(node: DiagramItem, level: number, depth: number):
  * Writes an `xs:element` with its attributes, annotations and inline type or children.
  *
  * @param node - The element
- * @param nodeType - The schema node type of the element
  * @param level - The indentation level
  * @param depth - How many levels below the selected node the node is
  * @returns The lines of the element
  */
-function renderElementNode(node: DiagramItem, nodeType: SchemaNodeType | null, level: number, depth: number): string {
+function renderElementNode(node: DiagramItem, level: number, depth: number): string {
+  const nodeType = getNodeType(node);
   const attributes = optionalAttributes([
     ["name", getName(node)],
     ["ref", getReference(node)],
@@ -310,12 +310,12 @@ function renderElementNode(node: DiagramItem, nodeType: SchemaNodeType | null, l
  * Writes a group reference, a named group, or a compositor (`xs:sequence`, `xs:choice` or `xs:all`).
  *
  * @param node - The group, group reference or compositor
- * @param nodeType - The schema node type of the node
  * @param level - The indentation level
  * @param depth - How many levels below the selected node the node is
  * @returns The lines of the node
  */
-function renderGroupNode(node: DiagramItem, nodeType: SchemaNodeType | null, level: number, depth: number): string {
+function renderGroupNode(node: DiagramItem, level: number, depth: number): string {
+  const nodeType = getNodeType(node);
   if (nodeType === SchemaNodeType.GroupRef || isReference(node)) {
     const attrs = optionalAttributes([["ref", getReference(node)]]);
     appendOccurrenceAttributes(attrs, node, false);
@@ -425,7 +425,7 @@ function renderNode(node: DiagramItem, level: number, depth: number): string {
   }
 
   if (nodeType === SchemaNodeType.Element || node.itemType === DiagramItemType.element) {
-    return renderElementNode(node, nodeType, level, depth);
+    return renderElementNode(node, level, depth);
   }
 
   if (
@@ -433,7 +433,7 @@ function renderNode(node: DiagramItem, level: number, depth: number): string {
     nodeType === SchemaNodeType.GroupRef ||
     node.itemType === DiagramItemType.group
   ) {
-    return renderGroupNode(node, nodeType, level, depth);
+    return renderGroupNode(node, level, depth);
   }
 
   if (nodeType === SchemaNodeType.SimpleType) {

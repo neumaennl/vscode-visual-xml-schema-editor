@@ -5,7 +5,7 @@
 
 import type { SchemaCommand, SimpleTypeDerivationKind } from "../../shared/types";
 import { SchemaNodeType } from "../../shared/idStrategy";
-import { getSimpleDerivation, type DiagramItem } from "../diagram";
+import { getSimpleDerivation, hasInlineSimpleType, type DiagramItem } from "../diagram";
 import { type ChoiceOption, createChoiceField, createEditableField, createTextInput } from "./propertiesPanelFields";
 import {
   createTypeCommitHandler,
@@ -19,6 +19,7 @@ import {
   createSimpleTypeUnionCommand,
 } from "./propertiesPanelSimpleTypeCommands";
 import { getReadOnlyTypeValue } from "./propertiesPanelTypeHelpers";
+import { getNodeType } from "./propertiesPanelNodeKinds";
 
 /** Why the last member type of a union cannot be removed. */
 const LAST_MEMBER_TYPE_MESSAGE = "A union needs at least one member type";
@@ -36,13 +37,15 @@ export function getSimpleTypeDerivationKind(node: DiagramItem): SimpleTypeDeriva
 /**
  * Returns whether a node should be treated as a simpleType in the properties panel.
  *
- * @param nodeType - The schema node type of the node
- * @param hasInlineSimpleType - Whether the node is an element with an inline simpleType
+ * @param node - The node
  * @returns True for simple types and elements with an inline simpleType
  */
-export function isSimpleTypeNode(nodeType: SchemaNodeType | null, hasInlineSimpleType: boolean): boolean {
+export function isSimpleTypeNode(node: DiagramItem): boolean {
+  const nodeType = getNodeType(node);
   return (
-    nodeType === SchemaNodeType.SimpleType || nodeType === SchemaNodeType.AnonymousSimpleType || hasInlineSimpleType
+    nodeType === SchemaNodeType.SimpleType ||
+    nodeType === SchemaNodeType.AnonymousSimpleType ||
+    hasInlineSimpleType(node)
   );
 }
 
@@ -53,13 +56,11 @@ export function isSimpleTypeNode(nodeType: SchemaNodeType | null, hasInlineSimpl
  *
  * @param root - The tab
  * @param node - The simpleType, or the element with the inline simpleType
- * @param hasInlineSimpleType - Whether the node is an element with an inline simpleType
  * @param dispatchCommand - Callback used to emit schema commands
  */
 export function renderSimpleTypeKindSelector(
   root: HTMLElement,
   node: DiagramItem,
-  hasInlineSimpleType: boolean,
   dispatchCommand: (command: SchemaCommand) => void
 ): void {
   const options: ReadonlyArray<ChoiceOption<SimpleTypeDerivationKind>> = [
@@ -85,8 +86,6 @@ export interface SimpleTypeEditorContext {
   root: HTMLElement;
   /** The simpleType, or the element with the inline simpleType */
   node: DiagramItem;
-  /** Whether the node is an element with an inline simpleType */
-  hasInlineSimpleType: boolean;
   /** Type names offered in the type fields */
   typeSuggestions: string[];
   /** Callback used to emit schema commands */
@@ -101,8 +100,8 @@ export interface SimpleTypeEditorContext {
  * @param context - The editor context
  */
 function showInlineSimpleType(context: SimpleTypeEditorContext): void {
-  if (context.hasInlineSimpleType) {
-    context.addPropertyToContainer(context.root, "Type", getReadOnlyTypeValue(context.node, undefined));
+  if (hasInlineSimpleType(context.node)) {
+    context.addPropertyToContainer(context.root, "Type", getReadOnlyTypeValue(context.node));
   }
 }
 
@@ -112,7 +111,7 @@ function showInlineSimpleType(context: SimpleTypeEditorContext): void {
  * @param context - The editor context
  */
 export function renderSimpleTypeListEditor(context: SimpleTypeEditorContext): void {
-  const { root, node, hasInlineSimpleType, typeSuggestions, dispatchCommand } = context;
+  const { root, node, typeSuggestions, dispatchCommand } = context;
   const derivation = getSimpleDerivation(node);
   const itemType = (derivation?.kind === "list" ? derivation.itemType : undefined) ?? "";
   showInlineSimpleType(context);
@@ -131,7 +130,7 @@ export function renderSimpleTypeListEditor(context: SimpleTypeEditorContext): vo
     )
   );
 
-  if (hasInlineSimpleType) {
+  if (hasInlineSimpleType(node)) {
     renderInlineSimpleTypeReplacement(root, node, itemType, typeSuggestions, dispatchCommand);
   }
 }
@@ -144,7 +143,7 @@ export function renderSimpleTypeListEditor(context: SimpleTypeEditorContext): vo
  * @param context - The editor context
  */
 export function renderSimpleTypeUnionEditor(context: SimpleTypeEditorContext): void {
-  const { root, node, hasInlineSimpleType, typeSuggestions, dispatchCommand } = context;
+  const { root, node, typeSuggestions, dispatchCommand } = context;
   const derivation = getSimpleDerivation(node);
   const initialMemberTypes = derivation?.kind === "union" ? [...derivation.memberTypes] : [];
   const memberTypes = initialMemberTypes.length > 0 ? initialMemberTypes : [""];
@@ -256,7 +255,7 @@ export function renderSimpleTypeUnionEditor(context: SimpleTypeEditorContext): v
   unionEditor.appendChild(editorBody);
   root.appendChild(unionEditor);
 
-  if (hasInlineSimpleType) {
+  if (hasInlineSimpleType(node)) {
     renderInlineSimpleTypeReplacement(root, node, normalizedCurrent[0] ?? "", typeSuggestions, dispatchCommand);
   }
 }

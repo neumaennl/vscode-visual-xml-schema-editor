@@ -19,14 +19,14 @@ const TYPE_NODE_TYPES: Record<TypeKind, readonly [SchemaNodeType, SchemaNodeType
  *
  * @param node - Diagram item to inspect
  * @param kind - The kind of the type
- * @param hasInlineType - Whether the node, if it is an element, has an anonymous type of the kind
  * @returns The type's schema ID, or null when no type of the kind applies
  */
-function resolveTypeId(node: DiagramItem, kind: TypeKind, hasInlineType: boolean): string | null {
+function resolveTypeId(node: DiagramItem, kind: TypeKind): string | null {
   const nodeType = getNodeType(node);
   if (nodeType !== null && TYPE_NODE_TYPES[kind].includes(nodeType)) {
     return node.id;
   }
+  const hasInlineType = kind === "simpleType" ? hasInlineSimpleType(node) : hasInlineComplexType(node);
   if (nodeType === SchemaNodeType.Element && hasInlineType) {
     return anonymousTypeId(node.id, kind);
   }
@@ -40,7 +40,7 @@ function resolveTypeId(node: DiagramItem, kind: TypeKind, hasInlineType: boolean
  * @returns The simple-type schema ID or null when no simple type applies
  */
 export function resolveSimpleTypeId(node: DiagramItem): string | null {
-  return resolveTypeId(node, "simpleType", hasInlineSimpleType(node));
+  return resolveTypeId(node, "simpleType");
 }
 
 /**
@@ -50,7 +50,7 @@ export function resolveSimpleTypeId(node: DiagramItem): string | null {
  * @returns The complex-type schema ID or null when no complex type applies
  */
 export function resolveComplexTypeId(node: DiagramItem): string | null {
-  return resolveTypeId(node, "complexType", hasInlineComplexType(node));
+  return resolveTypeId(node, "complexType");
 }
 
 /**

@@ -10,6 +10,7 @@ import {
   getSimpleDerivation,
   getTypeText,
   hasInlineComplexType,
+  hasInlineSimpleType,
   hasSimpleContent,
   type DiagramItem,
 } from "../diagram";
@@ -17,13 +18,7 @@ import { createEditableField } from "./propertiesPanelFields";
 import { createComplexBaseTypeCommand, createTypeCommand } from "./propertiesPanelCommands";
 import { getNodeType } from "./propertiesPanelNodeKinds";
 import { createTypeCommitHandler } from "./propertiesPanelTypeReferences";
-import {
-  getReadOnlyTypeValue,
-  getTypeEditHint,
-  hasInlineAnonymousElementType,
-  isInlineComplexTypeElement,
-  isInlineSimpleTypeElement,
-} from "./propertiesPanelTypeHelpers";
+import { getReadOnlyTypeValue, getTypeEditHint } from "./propertiesPanelTypeHelpers";
 import {
   getSimpleTypeDerivationKind,
   isSimpleTypeNode,
@@ -39,8 +34,6 @@ interface TypeSection {
   root: HTMLElement;
   /** Diagram node being edited */
   node: DiagramItem;
-  /** The base type of the node's derivation, if it has one */
-  baseType: string | undefined;
   /** Suggested type names for the editable fields */
   typeSuggestions: string[];
   /** Callback used to emit schema commands */
@@ -72,23 +65,21 @@ export function renderTypeProperty(
 
   const nodeType = getNodeType(node);
   const baseType = getBaseType(node);
-  const section: TypeSection = { root, node, baseType, typeSuggestions, dispatchCommand, addPropertyToContainer };
-  const hasInlineSimpleType = isInlineSimpleTypeElement(node, nodeType);
-  const hasInlineComplexType = isInlineComplexTypeElement(node, nodeType);
+  const section: TypeSection = { root, node, typeSuggestions, dispatchCommand, addPropertyToContainer };
   const simpleTypeDerivationKind = getSimpleTypeDerivationKind(node);
 
-  if (isSimpleTypeNode(nodeType, hasInlineSimpleType)) {
-    renderSimpleTypeKindSelector(root, node, hasInlineSimpleType, dispatchCommand);
+  if (isSimpleTypeNode(node)) {
+    renderSimpleTypeKindSelector(root, node, dispatchCommand);
     if (simpleTypeDerivationKind === "list") {
-      renderSimpleTypeListEditor({ ...section, hasInlineSimpleType });
+      renderSimpleTypeListEditor(section);
       return;
     }
     if (simpleTypeDerivationKind === "union") {
-      renderSimpleTypeUnionEditor({ ...section, hasInlineSimpleType });
+      renderSimpleTypeUnionEditor(section);
       return;
     }
     if (baseType) {
-      renderSimpleBaseTypeEditor(section, baseType, hasInlineSimpleType);
+      renderSimpleBaseTypeEditor(section, baseType);
       return;
     }
   }
@@ -98,23 +89,23 @@ export function renderTypeProperty(
     return;
   }
 
-  if (shouldRenderComplexBaseTypeEditor(nodeType, hasInlineComplexType, baseType)) {
-    renderComplexBaseTypeEditor(section, hasInlineComplexType);
+  if (shouldRenderComplexBaseTypeEditor(node)) {
+    renderComplexBaseTypeEditor(section);
     return;
   }
 
   if (nodeType === SchemaNodeType.SimpleType || nodeType === SchemaNodeType.AnonymousSimpleType) {
     // A restriction without a base attribute restricts an inline simple type
     const inlineBase = getSimpleDerivation(node)?.kind === "restriction" ? "Inline simpleType" : undefined;
-    addPropertyToContainer(root, "Base Type", inlineBase ?? getReadOnlyTypeValue(node, baseType));
-    addTypeEditHint(section, nodeType);
+    addPropertyToContainer(root, "Base Type", inlineBase ?? getReadOnlyTypeValue(node));
+    addTypeEditHint(section);
     return;
   }
 
-  if (nodeType === SchemaNodeType.Element && hasInlineAnonymousElementType(node, nodeType)) {
-    addPropertyToContainer(root, "Type", getReadOnlyTypeValue(node, baseType));
+  if (hasInlineComplexType(node) || hasInlineSimpleType(node)) {
+    addPropertyToContainer(root, "Type", getReadOnlyTypeValue(node));
     renderReplacementType(section, true);
-    addTypeEditHint(section, nodeType);
+    addTypeEditHint(section);
     return;
   }
 
@@ -123,18 +114,17 @@ export function renderTypeProperty(
     return;
   }
 
-  addPropertyToContainer(root, "Type", getReadOnlyTypeValue(node, baseType));
-  addTypeEditHint(section, nodeType);
+  addPropertyToContainer(root, "Type", getReadOnlyTypeValue(node));
+  addTypeEditHint(section);
 }
 
 /**
  * Adds the hint below the type fields, if the node has one (see {@link getTypeEditHint}).
  *
  * @param section - The type section
- * @param nodeType - The schema node type of the node
  */
-function addTypeEditHint(section: TypeSection, nodeType: SchemaNodeType | null): void {
-  const typeHint = getTypeEditHint(section.node, nodeType, section.baseType);
+function addTypeEditHint(section: TypeSection): void {
+  const typeHint = getTypeEditHint(section.node);
   if (typeHint) {
     section.addPropertyToContainer(section.root, "Type editing", typeHint);
   }
@@ -176,22 +166,16 @@ function createTypeCommandField(
  * Tells whether the node gets an editable Base Type field for a complex type: a derived complex type,
  * or an element with an inline complex type, which may get a base type.
  *
- * @param nodeType - The schema node type of the node
- * @param hasInlineComplexType - Whether the node is an element with an inline complex type
- * @param baseType - The base type of the derivation, if it has one
+ * @param node - The node
  * @returns True when the field is shown
  */
-function shouldRenderComplexBaseTypeEditor(
-  nodeType: SchemaNodeType | null,
-  hasInlineComplexType: boolean,
-  baseType: string | undefined
-): boolean {
-  return (
-    (nodeType === SchemaNodeType.ComplexType ||
-      nodeType === SchemaNodeType.AnonymousComplexType ||
-      hasInlineComplexType) &&
-    (!!baseType || hasInlineComplexType)
-  );
+function shouldRenderComplexBaseTypeEditor(node: DiagramItem): boolean {
+  if (hasInlineComplexType(node)) {
+    return true;
+  }
+  const nodeType = getNodeType(node);
+  const isComplexType = nodeType === SchemaNodeType.ComplexType || nodeType === SchemaNodeType.AnonymousComplexType;
+  return isComplexType && getBaseType(node) !== undefined;
 }
 
 /**
@@ -200,15 +184,14 @@ function shouldRenderComplexBaseTypeEditor(
  *
  * @param section - The type section of the simple type, or of the element with the inline simple type
  * @param baseType - The base type of the restriction
- * @param hasInlineSimpleType - Whether the node is an element with an inline simple type
  */
-function renderSimpleBaseTypeEditor(section: TypeSection, baseType: string, hasInlineSimpleType: boolean): void {
+function renderSimpleBaseTypeEditor(section: TypeSection, baseType: string): void {
   const { root, node, typeSuggestions, dispatchCommand, addPropertyToContainer } = section;
-  if (hasInlineSimpleType) {
-    addPropertyToContainer(root, "Type", getReadOnlyTypeValue(node, baseType));
+  if (hasInlineSimpleType(node)) {
+    addPropertyToContainer(root, "Type", getReadOnlyTypeValue(node));
   }
   root.appendChild(createTypeCommandField(section, "Base Type", baseType, createTypeCommand, true));
-  if (hasInlineSimpleType) {
+  if (hasInlineSimpleType(node)) {
     renderInlineSimpleTypeReplacement(root, node, baseType, typeSuggestions, dispatchCommand);
   }
 }
@@ -219,13 +202,13 @@ function renderSimpleBaseTypeEditor(section: TypeSection, baseType: string, hasI
  * with an inline complex type also gets a Replacement Type field.
  *
  * @param section - The type section of the complex type, or of the element with the inline complex type
- * @param hasInlineComplexType - Whether the node is an element with an inline complex type
  */
-function renderComplexBaseTypeEditor(section: TypeSection, hasInlineComplexType: boolean): void {
-  const { root, node, baseType, addPropertyToContainer } = section;
-  addPropertyToContainer(root, "Type", getReadOnlyTypeValue(node, baseType));
-  root.appendChild(createTypeCommandField(section, "Base Type", baseType ?? "", createComplexBaseTypeCommand, true));
-  if (hasInlineComplexType) {
+function renderComplexBaseTypeEditor(section: TypeSection): void {
+  const { root, node, addPropertyToContainer } = section;
+  addPropertyToContainer(root, "Type", getReadOnlyTypeValue(node));
+  const baseType = getBaseType(node) ?? "";
+  root.appendChild(createTypeCommandField(section, "Base Type", baseType, createComplexBaseTypeCommand, true));
+  if (hasInlineComplexType(node)) {
     renderReplacementType(section, false);
   }
 }
@@ -237,8 +220,9 @@ function renderComplexBaseTypeEditor(section: TypeSection, hasInlineComplexType:
  * @param section - The type section of the complex type, or of the element with the inline complex type
  */
 function renderSimpleContentType(section: TypeSection): void {
-  const { root, node, baseType, addPropertyToContainer } = section;
-  addPropertyToContainer(root, "Type", getReadOnlyTypeValue(node, baseType));
+  const { root, node, addPropertyToContainer } = section;
+  addPropertyToContainer(root, "Type", getReadOnlyTypeValue(node));
+  const baseType = getBaseType(node);
   if (baseType) {
     addPropertyToContainer(root, "Base Type", baseType);
   }
@@ -256,6 +240,6 @@ function renderSimpleContentType(section: TypeSection): void {
  */
 function renderReplacementType(section: TypeSection, allowEmpty: boolean): void {
   section.root.appendChild(
-    createTypeCommandField(section, "Replacement Type", section.baseType ?? "", createTypeCommand, allowEmpty)
+    createTypeCommandField(section, "Replacement Type", getBaseType(section.node) ?? "", createTypeCommand, allowEmpty)
   );
 }

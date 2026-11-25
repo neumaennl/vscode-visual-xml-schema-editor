@@ -13,7 +13,6 @@ import {
   renderSimpleTypeUnionEditor,
 } from "./propertiesPanelSimpleTypeEditors";
 import { addPropertyToContainer } from "./propertiesPanelDom";
-import { SchemaNodeType } from "../../shared/idStrategy";
 import type { SchemaCommand } from "../../shared/types";
 import type { DiagramItem } from "../diagram";
 import {
@@ -23,7 +22,7 @@ import {
   getInputsByLabel,
   getTextByLabel,
 } from "../__tests__/propertiesPanelTestHelpers";
-import { diagramItem, muteDiagramBuilderLog } from "../__tests__/diagramTestHelpers";
+import { diagramItem, muteDiagramBuilderLog, anonymousSimpleTypeItem } from "../__tests__/diagramTestHelpers";
 import { webviewSchemaWith } from "../../shared/__tests__/schemaTestHelpers";
 
 /** Named and anonymous list, union and restriction types, and an element with a named type. */
@@ -48,7 +47,6 @@ interface SimpleTypeEditor {
 
 /**
  * Renders an editor for the diagram item with the given ID in the diagram of {@link SIMPLE_TYPES}.
- * The item counts as an element with an inline simple type if its ID starts with `/element:`.
  *
  * @param id - The ID of the item
  * @param render - Renders the editor into the container
@@ -56,17 +54,12 @@ interface SimpleTypeEditor {
  */
 function renderEditor(
   id: string,
-  render: (
-    root: HTMLElement,
-    node: DiagramItem,
-    hasInlineSimpleType: boolean,
-    dispatch: Mock<(command: SchemaCommand) => void>
-  ) => void
+  render: (root: HTMLElement, node: DiagramItem, dispatch: Mock<(command: SchemaCommand) => void>) => void
 ): SimpleTypeEditor {
   const root = document.createElement("div");
   const node = diagramItem(webviewSchemaWith(SIMPLE_TYPES), id);
   const dispatch = vi.fn<(command: SchemaCommand) => void>();
-  render(root, node, id.startsWith("/element:"), dispatch);
+  render(root, node, dispatch);
   return { root, node, dispatch };
 }
 
@@ -78,8 +71,8 @@ function renderEditor(
  * @returns The editor
  */
 function renderBodyEditor(id: string, editor: typeof renderSimpleTypeListEditor): SimpleTypeEditor {
-  return renderEditor(id, (root, node, hasInlineSimpleType, dispatchCommand) => {
-    editor({ root, node, hasInlineSimpleType, typeSuggestions: SUGGESTIONS, dispatchCommand, addPropertyToContainer });
+  return renderEditor(id, (root, node, dispatchCommand) => {
+    editor({ root, node, typeSuggestions: SUGGESTIONS, dispatchCommand, addPropertyToContainer });
   });
 }
 
@@ -120,17 +113,18 @@ describe("propertiesPanelSimpleTypeEditors", () => {
 
   describe("isSimpleTypeNode", () => {
     test.each([
-      { nodeType: SchemaNodeType.SimpleType, inline: false, expected: true },
-      { nodeType: SchemaNodeType.AnonymousSimpleType, inline: false, expected: true },
-      { nodeType: SchemaNodeType.Element, inline: true, expected: true },
-      { nodeType: SchemaNodeType.Element, inline: false, expected: false },
-      { nodeType: SchemaNodeType.ComplexType, inline: false, expected: false },
-    ])(
-      "should return $expected for $nodeType with an inline simple type: $inline",
-      ({ nodeType, inline, expected }) => {
-        expect(isSimpleTypeNode(nodeType, inline)).toBe(expected);
-      }
-    );
+      ["/simpleType:Code", true],
+      ["/element:size", true],
+      ["/element:plain", false],
+    ])("should return for %s: %s", (id, expected) => {
+      expect(isSimpleTypeNode(diagramItem(webviewSchemaWith(SIMPLE_TYPES), id))).toBe(expected);
+    });
+
+    test("should treat an anonymous simple type as a simple type", () => {
+      const node = anonymousSimpleTypeItem(diagramItem(webviewSchemaWith(SIMPLE_TYPES), "/element:size"));
+
+      expect(isSimpleTypeNode(node)).toBe(true);
+    });
   });
 
   describe("renderSimpleTypeKindSelector", () => {
@@ -334,7 +328,7 @@ describe("propertiesPanelSimpleTypeEditors", () => {
      * @returns The editor
      */
     function renderReplacement(): SimpleTypeEditor {
-      return renderEditor("/element:size", (root, node, _hasInlineSimpleType, dispatch) => {
+      return renderEditor("/element:size", (root, node, dispatch) => {
         renderInlineSimpleTypeReplacement(root, node, "xs:int", SUGGESTIONS, dispatch);
       });
     }

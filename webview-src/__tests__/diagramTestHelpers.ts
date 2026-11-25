@@ -6,9 +6,12 @@
 import type { schema } from "../../shared/types";
 import { Diagram } from "../diagram/Diagram";
 import { DiagramBuilder } from "../diagram/DiagramBuilder";
-import type { DiagramItem } from "../diagram/DiagramItem";
+import { DiagramItem } from "../diagram/DiagramItem";
+import { DiagramItemType } from "../diagram/DiagramTypes";
+import { anonymousTypeId } from "../../shared/idStrategy";
 import type { DiagramSchemaObject } from "../diagram/schemaAccessors";
 import { webviewSchemaWith } from "../../shared/__tests__/schemaTestHelpers";
+import type { ElementObject } from "../../shared/schemaObjects";
 
 /**
  * The schema object of items whose test never reads it, such as tests of the tree or the layout. Reading
@@ -63,6 +66,27 @@ export function diagramItem(schemaObj: schema, id: string): DiagramItem {
     return expect.fail(`No diagram item ${id}`);
   }
   return item;
+}
+
+/**
+ * Creates the item of the inline simple type of an element. The diagram shows no items for inline types, but
+ * the properties panel addresses them by their IDs.
+ *
+ * @param element - The item of an element with an inline simple type
+ * @returns The item, with the inline type as its schema object
+ */
+export function anonymousSimpleTypeItem(element: DiagramItem): DiagramItem {
+  const inlineType = (element.schemaObject as ElementObject).simpleType;
+  if (!inlineType) {
+    return expect.fail(`${element.id} has no inline simple type`);
+  }
+  return new DiagramItem(
+    anonymousTypeId(element.id, "simpleType"),
+    "",
+    DiagramItemType.type,
+    inlineType,
+    element.diagram
+  );
 }
 
 /**

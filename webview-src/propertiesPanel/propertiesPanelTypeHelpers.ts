@@ -6,6 +6,7 @@
 import { SchemaNodeType } from "../../shared/idStrategy";
 import type { ComplexTypeDerivationKind } from "../../shared/types";
 import {
+  getBaseType,
   getComplexDerivation,
   getSimpleDerivation,
   getTypeText,
@@ -13,58 +14,24 @@ import {
   hasInlineSimpleType,
   type DiagramItem,
 } from "../diagram";
-
-/**
- * Tells whether the node is an element with an inline (anonymous) simple type.
- *
- * @param node - Diagram item to inspect
- * @param nodeType - Schema node type of the item
- * @returns True when the item is an element with an inline simple type
- */
-export function isInlineSimpleTypeElement(node: DiagramItem, nodeType: SchemaNodeType | null): boolean {
-  return nodeType === SchemaNodeType.Element && hasInlineSimpleType(node);
-}
-
-/**
- * Tells whether the node is an element with an inline (anonymous) complex type.
- *
- * @param node - Diagram item to inspect
- * @param nodeType - Schema node type of the item
- * @returns True when the item is an element with an inline complex type
- */
-export function isInlineComplexTypeElement(node: DiagramItem, nodeType: SchemaNodeType | null): boolean {
-  return nodeType === SchemaNodeType.Element && hasInlineComplexType(node);
-}
-
-/**
- * Tells whether the node is an element with an inline simple or complex type.
- *
- * @param node - Diagram item to inspect
- * @param nodeType - Schema node type of the item
- * @returns True when the item is an element with an inline type
- */
-export function hasInlineAnonymousElementType(node: DiagramItem, nodeType: SchemaNodeType | null): boolean {
-  return isInlineComplexTypeElement(node, nodeType) || isInlineSimpleTypeElement(node, nodeType);
-}
+import { getNodeType } from "./propertiesPanelNodeKinds";
 
 /**
  * Returns the text of a read-only Type or Base Type field: a summary of an inline complex type with its
  * base type, of an inline simple type with its base type, item type or member types, or the type of the node.
  *
  * @param node - Diagram item to describe
- * @param baseType - Base type of an inline restriction or derived complex type, if it has one
  * @returns The text of the field
  */
-export function getReadOnlyTypeValue(node: DiagramItem, baseType: string | undefined): string {
+export function getReadOnlyTypeValue(node: DiagramItem): string {
   if (hasInlineComplexType(node)) {
-    const derivationKind = getComplexDerivation(node)?.kind;
-    const derivationRelation = derivationKind ? getDerivationRelation(derivationKind) : undefined;
-    return derivationRelation && baseType
-      ? `Inline complexType (${derivationRelation} ${baseType})`
+    const derivation = getComplexDerivation(node);
+    return derivation?.base
+      ? `Inline complexType (${getDerivationRelation(derivation.kind)} ${derivation.base})`
       : "Inline complexType";
   }
   if (hasInlineSimpleType(node)) {
-    const body = describeSimpleTypeBody(node, baseType);
+    const body = describeSimpleTypeBody(node);
     return body ? `Inline simpleType (${body})` : "Inline simpleType";
   }
   return getTypeText(node);
@@ -75,18 +42,19 @@ export function getReadOnlyTypeValue(node: DiagramItem, baseType: string | undef
  * restriction, the item type of a list or the member types of a union.
  *
  * @param node - Diagram item with the simple type
- * @param baseType - Base type of a restriction, if it has one
  * @returns The description, or undefined when the body names no type
  */
-function describeSimpleTypeBody(node: DiagramItem, baseType: string | undefined): string | undefined {
+function describeSimpleTypeBody(node: DiagramItem): string | undefined {
   const derivation = getSimpleDerivation(node);
   switch (derivation?.kind) {
     case "list":
       return derivation.itemType ? `list of ${derivation.itemType}` : undefined;
     case "union":
       return derivation.memberTypes.length > 0 ? `union of ${derivation.memberTypes.join(", ")}` : undefined;
+    case "restriction":
+      return derivation.base ? `restricts ${derivation.base}` : undefined;
     default:
-      return baseType ? `restricts ${baseType}` : undefined;
+      return undefined;
   }
 }
 
@@ -95,22 +63,20 @@ function describeSimpleTypeBody(node: DiagramItem, baseType: string | undefined)
  * that a simple type has no single base type to edit.
  *
  * @param node - Diagram item being edited
- * @param nodeType - Schema node type of the item
- * @param baseType - Base type of the simple type, if it has one
  * @returns The hint, or null when there is none
  */
-export function getTypeEditHint(
-  node: DiagramItem,
-  nodeType: SchemaNodeType | null,
-  baseType: string | undefined
-): string | null {
-  if (isInlineComplexTypeElement(node, nodeType)) {
+export function getTypeEditHint(node: DiagramItem): string | null {
+  const nodeType = getNodeType(node);
+  if (hasInlineComplexType(node)) {
     return "Setting a replacement type removes the current inline complexType from this element.";
   }
-  if (isInlineSimpleTypeElement(node, nodeType)) {
+  if (hasInlineSimpleType(node)) {
     return "Setting a replacement type removes the current inline simpleType from this element.";
   }
-  if ((nodeType === SchemaNodeType.SimpleType || nodeType === SchemaNodeType.AnonymousSimpleType) && !baseType) {
+  if (
+    (nodeType === SchemaNodeType.SimpleType || nodeType === SchemaNodeType.AnonymousSimpleType) &&
+    !getBaseType(node)
+  ) {
     return "This simpleType does not expose a single base type that can be edited here.";
   }
   return null;

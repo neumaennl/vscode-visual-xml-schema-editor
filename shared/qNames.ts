@@ -73,6 +73,28 @@ export function localNameIfInTargetNamespace(
   return expandedName?.namespace === (targetNamespace ?? "") ? expandedName.localName : undefined;
 }
 
+/**
+ * Writes a name in a namespace as a QName with the namespace declarations of a schema, the reverse of
+ * {@link resolveQName}: with the first prefix declared for the namespace, or without a prefix if the
+ * default namespace is that namespace (for no namespace: if there is no default namespace).
+ *
+ * @param namespace - The namespace URI, or the empty string for no namespace
+ * @param localName - The local name
+ * @param namespacePrefixes - The namespace declarations, with the empty prefix for the default namespace
+ * @returns The QName, or `undefined` if the declarations offer no way to write it
+ */
+export function qualifiedName(
+  namespace: string,
+  localName: string,
+  namespacePrefixes: Readonly<NamespacePrefixes>
+): string | undefined {
+  const prefix = prefixesForNamespace(namespacePrefixes, namespace).find((candidate) => candidate !== "");
+  if (prefix !== undefined) {
+    return `${prefix}:${localName}`;
+  }
+  return (namespacePrefixes[""] ?? "") === namespace ? localName : undefined;
+}
+
 /** The prefixes that XML reserves and that cannot be declared. */
 const RESERVED_PREFIXES: ReadonlySet<string> = new Set(["xml", "xmlns"]);
 

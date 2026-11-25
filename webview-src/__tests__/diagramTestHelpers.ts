@@ -3,7 +3,7 @@
  * user can select.
  */
 
-import { schema } from "../../shared/types";
+import type { schema } from "../../shared/types";
 import { Diagram } from "../diagram/Diagram";
 import { DiagramBuilder } from "../diagram/DiagramBuilder";
 import type { DiagramItem } from "../diagram/DiagramItem";
@@ -24,12 +24,13 @@ export const NOT_READ_SCHEMA_OBJECT: DiagramSchemaObject = new Proxy(
 );
 
 /**
- * Creates the diagram of an empty schema, for items whose test needs no particular schema.
+ * Creates the diagram of an empty schema, for items whose test needs no particular schema. Like every parsed
+ * schema, it declares the namespace of XML Schema, as `xs`.
  *
  * @returns The diagram
  */
 export function emptyDiagram(): Diagram {
-  return new Diagram(new schema());
+  return new Diagram(webviewSchemaWith(""));
 }
 
 /**

@@ -39,7 +39,7 @@ const PERSON_ELEMENT = `<xs:element name="person" type="xs:string"/>`;
 function addTestElement(payload: Partial<AddElementPayload> = {}): AddElementCommand {
   return {
     type: "addElement",
-    payload: { parentId: "/schema", elementName: "test", elementType: "string", ...payload },
+    payload: { parentId: "/schema", elementName: "test", elementType: "xs:string", ...payload },
   };
 }
 

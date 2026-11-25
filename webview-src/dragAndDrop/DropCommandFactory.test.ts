@@ -9,7 +9,14 @@ import { DiagramItemGroupType, DiagramItemType } from "../diagram/DiagramTypes";
 import { DraggableSchemaConstruct } from "./DraggableSchemaConstruct";
 import { SchemaNodeType } from "../../shared/idStrategy";
 import { diagramItem, emptyDiagram, NOT_READ_SCHEMA_OBJECT, component } from "../__tests__/diagramTestHelpers";
-import { DERIVATIONS, derivedComplexTypeT, webviewSchemaWith } from "../../shared/__tests__/schemaTestHelpers";
+import {
+  DERIVATIONS,
+  derivedComplexTypeT,
+  webviewSchemaFromXml,
+  webviewSchemaWith,
+} from "../../shared/__tests__/schemaTestHelpers";
+import { XSD_NAMESPACE } from "../../shared/builtInTypes";
+import { Diagram } from "../diagram/Diagram";
 
 /** The item type that the diagram builder gives each kind of node in these tests. */
 const ITEM_TYPES: Partial<Record<SchemaNodeType, DiagramItemType>> = {
@@ -131,6 +138,30 @@ describe("DropCommandFactory", () => {
     test("should return null for unsupported top-level schema construct", () => {
       expect(factory.createNodeDropCommand(ROOT, C.Any)).toBeNull();
     });
+  });
+
+  describe("createNodeDropCommand in a schema with the prefix xsd for XML Schema", () => {
+    /**
+     * Returns the schema root of a schema that declares the namespace of XML Schema as `xsd`.
+     *
+     * @returns The item
+     */
+    const xsdRoot = (): DiagramItem =>
+      makeItem("/schema", SchemaNodeType.Schema, {
+        diagram: new Diagram(webviewSchemaFromXml(`<xsd:schema xmlns:xsd="${XSD_NAMESPACE}"/>`)),
+      });
+
+    test.each([
+      [C.Element, "elementType", "xsd:string"],
+      [C.Attribute, "attributeType", "xsd:string"],
+      [C.Restriction, "baseType", "xsd:string"],
+      [C.Extension, "baseType", "xsd:anyType"],
+    ])(
+      "should write the built-in type of a dropped %s with the prefix of the schema",
+      (schemaConstruct, field, type) => {
+        expect(factory.createNodeDropCommand(xsdRoot(), schemaConstruct)?.payload).toMatchObject({ [field]: type });
+      }
+    );
   });
 
   describe("createNodeDropCommand", () => {

@@ -190,7 +190,7 @@ describe("buildXmlPreview", () => {
     );
   });
 
-  test("should show the namespaces of the schema and declares the xs prefix that the fragment uses", () => {
+  test("should show the namespaces of the schema and write the tags with its prefix for XML Schema", () => {
     const schemaObj =
       webviewSchemaFromXml(`<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="urn:default" targetNamespace="urn:target">
   <xsd:element name="a" type="xsd:string"/>
@@ -198,10 +198,22 @@ describe("buildXmlPreview", () => {
 
     expect(buildXmlPreview(diagramItem(schemaObj, "/schema"))).toBe(
       [
-        '<xs:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="urn:default" xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="urn:target">',
-        '  <xs:element name="a" type="xsd:string"/>',
-        "</xs:schema>",
+        '<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="urn:default" targetNamespace="urn:target">',
+        '  <xsd:element name="a" type="xsd:string"/>',
+        "</xsd:schema>",
       ].join("\n")
+    );
+  });
+
+  test("should write the tags without a prefix if XML Schema is the default namespace", () => {
+    const schemaObj = webviewSchemaFromXml(`<schema xmlns="http://www.w3.org/2001/XMLSchema">
+  <element name="a" type="string"/>
+</schema>`);
+
+    expect(buildXmlPreview(diagramItem(schemaObj, "/schema"))).toBe(
+      ['<schema xmlns="http://www.w3.org/2001/XMLSchema">', '  <element name="a" type="string"/>', "</schema>"].join(
+        "\n"
+      )
     );
   });
 

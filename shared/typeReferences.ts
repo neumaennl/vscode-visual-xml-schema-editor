@@ -4,9 +4,9 @@
  * properties panel and the validators of the extension host use the same rule.
  */
 
-import { isBuiltInTypeName } from "./builtInTypes.js";
+import { isBuiltInTypeName, XSD_NAMESPACE } from "./builtInTypes.js";
 import type { NamespacePrefixes } from "./commands/schema.js";
-import { isValidXmlName, splitQName } from "./qNames.js";
+import { isValidXmlName, localNameIfInTargetNamespace, resolveQName } from "./qNames.js";
 import type { ValidationResult } from "./validation.js";
 
 /** What a schema offers to type references. */
@@ -15,17 +15,20 @@ export interface TypeReferenceContext {
   localTypeNames: readonly string[];
   /** The namespace declarations of the schema */
   namespacePrefixes: Readonly<NamespacePrefixes>;
+  /** The target namespace of the schema, or `undefined` if it has none */
+  targetNamespace: string | undefined;
   /** The namespaces that the schema imports */
   importedNamespaces: readonly string[];
-  /** Whether the schema includes other schemas, whose types are referenced without a prefix */
+  /** Whether the schema includes other schemas, whose types are in the target namespace too */
   hasIncludes: boolean;
 }
 
 /**
- * Checks a type reference: it names a built-in type, a type of the schema, a type of an imported schema
- * with a prefix of its namespace, or, without a prefix, a type of an included schema. The schemas that are
- * imported or included are not read, so their types are accepted by name (see "References to included and
- * imported schemas are not checked" in `docs/known-issues.md`).
+ * Checks a type reference, resolved with the namespace declarations of the schema (see `resolveQName()`):
+ * it names a built-in type in the namespace of XML Schema, a type of the schema or of an included schema in
+ * the target namespace, or a type in an imported namespace. The schemas that are imported or included are
+ * not read, so their types are accepted by name (see "References to included and imported schemas are not
+ * checked" in `docs/known-issues.md`).
  *
  * @param typeName - The type reference, such as `xs:string` or `tns:Address`
  * @param context - What the schema offers
@@ -36,21 +39,26 @@ export function validateTypeReference(typeName: string, context: TypeReferenceCo
   if (!trimmedType) {
     return { valid: false, error: "Type is required" };
   }
-  const { prefix, localName } = splitQName(trimmedType);
-
-  // A built-in XSD type, with any prefix or none (see "Built-in types are recognized by their local name
-  // only" in docs/known-issues.md)
-  if (isBuiltInTypeName(localName) || context.localTypeNames.includes(localName)) {
-    return { valid: true };
-  }
-  if (prefix !== undefined) {
-    const namespaceUri = context.namespacePrefixes[prefix];
-    if (namespaceUri !== undefined && context.importedNamespaces.includes(namespaceUri)) {
+  const expandedName = resolveQName(trimmedType, context.namespacePrefixes);
+  if (expandedName && isValidXmlName(expandedName.localName)) {
+    const { namespace, localName } = expandedName;
+    if (namespace === XSD_NAMESPACE && isBuiltInTypeName(localName)) {
       return { valid: true };
     }
-  } else if (context.hasIncludes && isValidXmlName(localName)) {
-    // Included schemas share the target namespace, so their types are referenced without a prefix
-    return { valid: true };
+    const nameInTargetNamespace = localNameIfInTargetNamespace(
+      trimmedType,
+      context.namespacePrefixes,
+      context.targetNamespace
+    );
+    if (
+      nameInTargetNamespace !== undefined &&
+      (context.localTypeNames.includes(nameInTargetNamespace) || context.hasIncludes)
+    ) {
+      return { valid: true };
+    }
+    if (context.importedNamespaces.includes(namespace)) {
+      return { valid: true };
+    }
   }
   return {
     valid: false,

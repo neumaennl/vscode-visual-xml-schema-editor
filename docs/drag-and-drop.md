@@ -3,9 +3,8 @@ type: Process
 title: Drag and drop
 description: How a schema construct is dragged from the palette onto a diagram node - the responsibilities of palette, canvas, drag and drop and extension host, the event flow, which schema construct can be dropped on which node with which command, and the generated defaults.
 tags: [drag-and-drop, palette, canvas, drop-command-factory, webview]
-status: stable
-generated: { by: human:neumaennl, at: 2026-11-23T19:31:58Z }
-verified: { by: human:neumaennl, at: 2026-11-24T17:27:00Z }
+status: draft
+generated: { by: human:neumaennl, at: 2026-11-24T19:52:35Z }
 sources:
   - id: palette-items
     resource: ../webview-src/palette/paletteEntries.ts
@@ -121,7 +120,7 @@ Every other combination returns `null`. In particular, nothing can be dropped on
 
 **Names.** New named schema constructs get the names `Element1`, `Attribute1`, `Group1`, `SimpleType1` and `ComplexType1`; the number is the lowest one that is not in use. The factory keeps the names of all top-level elements, attributes, simple types, complex types, groups and attribute groups, refreshed on every schema update. A name is reserved as soon as a command is created, so two drops before the next update do not get the same name; the checks during `dragover` do not reserve names.[^drop-factory] Names of local elements and attributes are not considered, so a drop can repeat a local name of the drop target (see [Known issues](known-issues.md#generated-names-ignore-local-names-in-the-drop-target)).
 
-**Types.** New elements and attributes get the type `xs:string`. New complex types get the content model `sequence`.
+**Types.** New elements and attributes get the type `xs:string`. New complex types get the content model `sequence`. A built-in type is written with the prefix that the schema declares for the namespace of XML Schema, such as `xsd:string`, or without one if that namespace is the default namespace; this document writes `xs`.
 
 **Base types.** For a restriction or extension, the base type is the base type of the node's derivation, or the type that an element names. Without one, a restriction uses `xs:anyType` for complex types and elements with anonymous complex types, and `xs:string` otherwise; an extension uses `xs:anyType`.[^drop-type-helpers]
 

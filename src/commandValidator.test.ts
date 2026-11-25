@@ -11,6 +11,7 @@ import type { SchemaCommand } from "../shared/types.js";
 import { schema } from "../shared/types.js";
 import type { ValidationResult } from "../shared/validation.js";
 import { expectInvalid } from "../shared/__tests__/validationTestHelpers.js";
+import { emptySchema } from "../shared/__tests__/schemaTestHelpers.js";
 import type { Mock } from "vitest";
 
 /** A validator mock. */
@@ -46,8 +47,8 @@ function validatorNameOf(command: SchemaCommand): string {
 
 /** A command of several kinds, each of which must reach its own validator. */
 const DELEGATED_COMMANDS: SchemaCommand[] = [
-  { type: "addElement", payload: { parentId: "/schema", elementName: "testElement", elementType: "string" } },
-  { type: "addSimpleType", payload: { typeName: "testType", baseType: "string" } },
+  { type: "addElement", payload: { parentId: "/schema", elementName: "testElement", elementType: "xs:string" } },
+  { type: "addSimpleType", payload: { typeName: "testType", baseType: "xs:string" } },
   { type: "addGroup", payload: { groupName: "testGroup", contentModel: "sequence" } },
   { type: "addAnnotation", payload: { targetId: "element1", documentation: "Test annotation" } },
   { type: "addImport", payload: { namespace: "http://example.com/imported", schemaLocation: "imported.xsd" } },
@@ -117,7 +118,8 @@ describe("CommandValidator", () => {
 
   describe("default constructor behavior", () => {
     test("should use actual validators when no mocks are provided", () => {
-      const result = new CommandValidator().validate(DELEGATED_COMMANDS[0]!, mockSchema);
+      // A parsed schema, which declares the namespace of XML Schema like every real one
+      const result = new CommandValidator().validate(DELEGATED_COMMANDS[0]!, emptySchema());
 
       expect(result.valid).toBe(true);
     });

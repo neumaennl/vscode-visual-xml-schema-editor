@@ -3,7 +3,7 @@
  * Converts a selected diagram node into an XSD fragment string.
  */
 
-import { XSD_NAMESPACE } from "../../shared/builtInTypes";
+import { xsdQName } from "../../shared/builtInTypes";
 import { LIST_FACETS, SINGLE_VALUE_FACETS } from "../../shared/facets";
 import { SCHEMA_ROOT_ID, parseSchemaId, SchemaNodeType } from "../../shared/idStrategy";
 import {
@@ -94,23 +94,36 @@ function appendOccurrenceAttributes(attributes: XmlAttr[], node: DiagramItem, in
 }
 
 /**
+ * Writes the name of a schema element, such as `element`, with the prefix that the schema of a node uses
+ * for the namespace of XML Schema (see `xsdQName()`).
+ *
+ * @param node - A node of the schema
+ * @param localName - The name of the schema element
+ * @returns The tag name, such as `xs:element`
+ */
+function xsdTag(node: DiagramItem, localName: string): string {
+  return xsdQName(localName, getNamespacePrefixes(node.diagram));
+}
+
+/**
  * Writes an `xs:documentation` element on one line.
  *
+ * @param node - The node that the documentation belongs to
  * @param content - The text of the documentation
  * @param lang - The language (`xml:lang`), if it has one
  * @param level - The indentation level
  * @returns The line
  */
-function renderDocumentationNode(content: string, lang: string | undefined, level: number): string {
+function renderDocumentationNode(node: DiagramItem, content: string, lang: string | undefined, level: number): string {
+  const tag = xsdTag(node, "documentation");
   const attrs: XmlAttr[] = [];
   if (lang) {
     attrs.push(["xml:lang", lang]);
   }
   if (!content) {
-    return renderTag("xs:documentation", attrs, [], level);
+    return renderTag(tag, attrs, [], level);
   }
-  const prefix = pad(level);
-  return `${prefix}<xs:documentation${toAttrString(attrs)}>${escapeXml(content)}</xs:documentation>`;
+  return `${pad(level)}<${tag}${toAttrString(attrs)}>${escapeXml(content)}</${tag}>`;
 }
 
 /**
@@ -123,9 +136,9 @@ function renderDocumentationNode(content: string, lang: string | undefined, leve
 function renderAnnotations(node: DiagramItem, level: number): string[] {
   return getDocumentationAnnotations(node).map((annotation) => {
     const documentationChildren = annotation.documentationEntries.map((entry) =>
-      renderDocumentationNode(entry.content, entry.lang, level + 1)
+      renderDocumentationNode(node, entry.content, entry.lang, level + 1)
     );
-    return renderTag("xs:annotation", [], documentationChildren, level);
+    return renderTag(xsdTag(node, "annotation"), [], documentationChildren, level);
   });
 }
 
@@ -147,7 +160,7 @@ function renderAttributeNodes(node: DiagramItem, level: number): string[] {
         ["fixed", attribute.fixedValue],
       ]),
     ];
-    return renderTag("xs:attribute", attrs, [], level);
+    return renderTag(xsdTag(node, "attribute"), attrs, [], level);
   });
 }
 
@@ -168,14 +181,14 @@ function renderRestrictionFacets(node: DiagramItem, level: number): string[] {
 
   for (const facetName of LIST_FACETS) {
     for (const value of restrictions[facetName] ?? []) {
-      facets.push(renderTag(`xs:${facetName}`, [["value", value]], [], level));
+      facets.push(renderTag(xsdTag(node, facetName), [["value", value]], [], level));
     }
   }
 
   for (const facetName of SINGLE_VALUE_FACETS) {
     const value = restrictions[facetName];
     if (value !== undefined) {
-      facets.push(renderTag(`xs:${facetName}`, [["value", String(value)]], [], level));
+      facets.push(renderTag(xsdTag(node, facetName), [["value", String(value)]], [], level));
     }
   }
 
@@ -194,12 +207,12 @@ function renderSimpleTypeChildren(node: DiagramItem, level: number): string[] {
   const derivation = getSimpleDerivation(node);
 
   if (derivation?.kind === "list") {
-    return [renderTag("xs:list", optionalAttributes([["itemType", derivation.itemType]]), [], level)];
+    return [renderTag(xsdTag(node, "list"), optionalAttributes([["itemType", derivation.itemType]]), [], level)];
   }
 
   if (derivation?.kind === "union") {
     const memberTypes = derivation.memberTypes.length > 0 ? derivation.memberTypes.join(" ") : undefined;
-    return [renderTag("xs:union", optionalAttributes([["memberTypes", memberTypes]]), [], level)];
+    return [renderTag(xsdTag(node, "union"), optionalAttributes([["memberTypes", memberTypes]]), [], level)];
   }
 
   const baseType = derivation?.base;
@@ -213,7 +226,7 @@ function renderSimpleTypeChildren(node: DiagramItem, level: number): string[] {
     restrictionAttributes.push(["base", baseType]);
   }
 
-  return [renderTag("xs:restriction", restrictionAttributes, facets, level)];
+  return [renderTag(xsdTag(node, "restriction"), restrictionAttributes, facets, level)];
 }
 
 /**
@@ -229,12 +242,12 @@ function renderComplexTypeBody(node: DiagramItem, level: number, depth: number):
   const derivation = getComplexDerivation(node);
   const baseType = derivation?.base;
   if (derivation && baseType) {
-    const derivationTag = derivation.kind === "restriction" ? "xs:restriction" : "xs:extension";
+    const derivationTag = xsdTag(node, derivation.kind);
     const derivationChildren = [
       ...renderChildNodes(node.childElements, level + 2, depth),
       ...renderAttributeNodes(node, level + 2),
     ];
-    const contentTag = derivation.content === "simple" ? "xs:simpleContent" : "xs:complexContent";
+    const contentTag = xsdTag(node, derivation.content === "simple" ? "simpleContent" : "complexContent");
 
     return [
       renderTag(contentTag, [], [renderTag(derivationTag, [["base", baseType]], derivationChildren, level + 1)], level),
@@ -282,15 +295,15 @@ function renderElementNode(node: DiagramItem, nodeType: SchemaNodeType | null, l
       complexTypeAttributes.push(["mixed", "true"]);
     }
     const complexTypeChildren = renderComplexTypeBody(node, level + 2, depth);
-    children.push(renderTag("xs:complexType", complexTypeAttributes, complexTypeChildren, level + 1));
+    children.push(renderTag(xsdTag(node, "complexType"), complexTypeAttributes, complexTypeChildren, level + 1));
   } else if (hasInlineSimpleType(node)) {
     const simpleTypeChildren = renderSimpleTypeChildren(node, level + 2);
-    children.push(renderTag("xs:simpleType", [], simpleTypeChildren, level + 1));
+    children.push(renderTag(xsdTag(node, "simpleType"), [], simpleTypeChildren, level + 1));
   } else {
     children.push(...renderChildNodes(node.childElements, level + 1, depth));
   }
 
-  return renderTag("xs:element", attributes, children, level);
+  return renderTag(xsdTag(node, "element"), attributes, children, level);
 }
 
 /**
@@ -307,7 +320,7 @@ function renderGroupNode(node: DiagramItem, nodeType: SchemaNodeType | null, lev
     const attrs = optionalAttributes([["ref", getReference(node)]]);
     appendOccurrenceAttributes(attrs, node, false);
     const children = renderAnnotations(node, level + 1);
-    return renderTag("xs:group", attrs, children, level);
+    return renderTag(xsdTag(node, "group"), attrs, children, level);
   }
 
   let parsedParentId: string | undefined;
@@ -323,14 +336,14 @@ function renderGroupNode(node: DiagramItem, nodeType: SchemaNodeType | null, lev
   if (!parsedParentId) {
     const attrs = optionalAttributes([["name", getName(node)]]);
     const children = [...renderAnnotations(node, level + 1), ...renderChildNodes(node.childElements, level + 1, depth)];
-    return renderTag("xs:group", attrs, children, level);
+    return renderTag(xsdTag(node, "group"), attrs, children, level);
   }
 
   const compositor = parsedName === "choice" || parsedName === "all" ? parsedName : "sequence";
   const attrs: XmlAttr[] = [];
   appendOccurrenceAttributes(attrs, node, false);
   const children = [...renderAnnotations(node, level + 1), ...renderChildNodes(node.childElements, level + 1, depth)];
-  return renderTag(`xs:${compositor}`, attrs, children, level);
+  return renderTag(xsdTag(node, compositor), attrs, children, level);
 }
 
 /**
@@ -342,7 +355,7 @@ function renderGroupNode(node: DiagramItem, nodeType: SchemaNodeType | null, lev
  */
 function renderSimpleTypeNode(node: DiagramItem, level: number): string {
   const children = [...renderAnnotations(node, level + 1), ...renderSimpleTypeChildren(node, level + 1)];
-  return renderTag("xs:simpleType", optionalAttributes([["name", getName(node)]]), children, level);
+  return renderTag(xsdTag(node, "simpleType"), optionalAttributes([["name", getName(node)]]), children, level);
 }
 
 /**
@@ -364,12 +377,12 @@ function renderComplexTypeNode(node: DiagramItem, level: number, depth: number):
 
   const children = [...renderAnnotations(node, level + 1), ...renderComplexTypeBody(node, level + 1, depth)];
 
-  return renderTag("xs:complexType", attrs, children, level);
+  return renderTag(xsdTag(node, "complexType"), attrs, children, level);
 }
 
 /**
- * Writes the `xs:schema` element with the namespace declarations of the diagram, which always
- * declare the `xs` prefix that the fragment uses, the target namespace, the annotations and the children.
+ * Writes the `xs:schema` element with the namespace declarations of the schema, which include the one for
+ * XML Schema that the tags use, the target namespace, the annotations and the children.
  *
  * @param node - The schema node
  * @param level - The indentation level
@@ -379,14 +392,9 @@ function renderComplexTypeNode(node: DiagramItem, level: number, depth: number):
 function renderSchemaNode(node: DiagramItem, level: number, depth: number): string {
   const attrs: XmlAttr[] = [];
 
-  const namespaceEntries = Object.entries(getNamespacePrefixes(node.diagram));
-  for (const [prefix, uri] of namespaceEntries) {
+  for (const [prefix, uri] of Object.entries(getNamespacePrefixes(node.diagram))) {
     const attrName = prefix ? `xmlns:${prefix}` : "xmlns";
     attrs.push([attrName, uri]);
-  }
-
-  if (!namespaceEntries.some(([prefix]) => prefix === "xs")) {
-    attrs.push(["xmlns:xs", XSD_NAMESPACE]);
   }
 
   const targetNamespace = getTargetNamespace(node.diagram);
@@ -396,7 +404,7 @@ function renderSchemaNode(node: DiagramItem, level: number, depth: number): stri
 
   const children = [...renderAnnotations(node, level + 1), ...renderChildNodes(node.childElements, level + 1, depth)];
 
-  return renderTag("xs:schema", attrs, children, level);
+  return renderTag(xsdTag(node, "schema"), attrs, children, level);
 }
 
 /**

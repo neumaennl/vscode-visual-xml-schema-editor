@@ -11,6 +11,7 @@ import {
   normalizeNamespacePrefixes,
   localNameIfInTargetNamespace,
   prefixesForNamespace,
+  qualifiedName,
   resolveQName,
   splitQName,
 } from "./qNames.js";
@@ -58,6 +59,26 @@ describe("localNameIfInTargetNamespace", () => {
       expect(localNameIfInTargetNamespace(qName, declarations, targetNamespace)).toBe(expected);
     }
   );
+});
+
+describe("qualifiedName", () => {
+  test.each([
+    ["a declared prefix", "urn:t", { tns: "urn:t" }, "tns:A"],
+    ["a prefix rather than the default namespace", "urn:d", { "": "urn:d", d: "urn:d" }, "d:A"],
+    ["the default namespace", "urn:d", DECLARATIONS, "A"],
+    ["no namespace, without a default namespace", "", { tns: "urn:t" }, "A"],
+    ["no namespace, with a default namespace", "", { "": "urn:d" }, undefined],
+    ["a namespace without a declaration", "urn:x", DECLARATIONS, undefined],
+  ])("should write a name in %s", (_case, namespace, declarations, expected) => {
+    expect(qualifiedName(namespace, "A", declarations)).toBe(expected);
+  });
+
+  test("should write what resolves back to the namespace", () => {
+    expect(resolveQName(qualifiedName("urn:t", "A", DECLARATIONS)!, DECLARATIONS)).toEqual({
+      namespace: "urn:t",
+      localName: "A",
+    });
+  });
 });
 
 describe("isReservedPrefix", () => {

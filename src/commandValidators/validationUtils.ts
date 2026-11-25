@@ -21,6 +21,7 @@ export function validateTypeInSchema(
     import_?: Array<{ namespace?: string }>;
     include?: Array<{ schemaLocation?: string }>;
     _namespacePrefixes?: NamespacePrefixes;
+    targetNamespace?: string;
   }
 ): ValidationResult {
   return validateTypeReference(typeName, {
@@ -28,6 +29,7 @@ export function validateTypeInSchema(
       type.name === undefined ? [] : [type.name]
     ),
     namespacePrefixes: schemaObj._namespacePrefixes ?? {},
+    targetNamespace: schemaObj.targetNamespace,
     importedNamespaces: (schemaObj.import_ ?? []).flatMap((imp) =>
       imp.namespace === undefined ? [] : [imp.namespace]
     ),

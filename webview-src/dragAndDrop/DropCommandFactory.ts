@@ -10,7 +10,12 @@ import {
 import { parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy";
 import { anonymousTypeId, isSchemaRoot } from "../../shared/schemaUtils";
 import { isFacetSchemaConstruct, DraggableSchemaConstruct } from "./DraggableSchemaConstruct";
-import { createFacetNodeDropCommand, getExtensionBaseType, getRestrictionBaseType } from "./TypeDropCommands";
+import {
+  builtInType,
+  createFacetNodeDropCommand,
+  getExtensionBaseType,
+  getRestrictionBaseType,
+} from "./TypeDropCommands";
 
 /**
  * Creates schema commands from drag-and-drop actions.
@@ -50,11 +55,13 @@ export class DropCommandFactory {
    * Creates the command for a restriction or extension dropped on the schema root: a new top-level
    * simple type that restricts `xs:string`, or a new top-level complex type that extends `xs:anyType`.
    *
+   * @param item - The schema root
    * @param schemaConstruct - Restriction or Extension
    * @param reserveNames - Whether the new name is reserved, so that the next drop gets another one
    * @returns The command
    */
   private createTopLevelDerivationCommand(
+    item: DiagramItem,
     schemaConstruct: DraggableSchemaConstruct.Restriction | DraggableSchemaConstruct.Extension,
     reserveNames: boolean
   ): SchemaCommand {
@@ -64,7 +71,7 @@ export class DropCommandFactory {
         payload: {
           parentId: SCHEMA_ROOT_ID,
           typeName: this.nextName("SimpleType", reserveNames),
-          baseType: "xs:string",
+          baseType: builtInType(item, "string"),
         },
       };
     }
@@ -74,7 +81,7 @@ export class DropCommandFactory {
         parentId: SCHEMA_ROOT_ID,
         typeName: this.nextName("ComplexType", reserveNames),
         contentModel: "sequence",
-        baseType: "xs:anyType",
+        baseType: builtInType(item, "anyType"),
         derivationKind: "extension",
       },
     };
@@ -164,7 +171,7 @@ export class DropCommandFactory {
         payload: {
           parentId: item.id,
           elementName: this.nextName("Element", reserveNames),
-          elementType: "xs:string",
+          elementType: builtInType(item, "string"),
         },
       };
     }
@@ -186,7 +193,7 @@ export class DropCommandFactory {
         payload: {
           parentId: item.id,
           attributeName: this.nextName("Attribute", reserveNames),
-          attributeType: "xs:string",
+          attributeType: builtInType(item, "string"),
         },
       };
     }
@@ -197,7 +204,7 @@ export class DropCommandFactory {
         payload: {
           parentId: anonCtId,
           attributeName: this.nextName("Attribute", reserveNames),
-          attributeType: "xs:string",
+          attributeType: builtInType(item, "string"),
         },
       };
     }
@@ -224,7 +231,10 @@ export class DropCommandFactory {
     }
     if (schemaConstruct === DraggableSchemaConstruct.SimpleType) {
       const typeName = isRoot ? { typeName: this.nextName("SimpleType", reserveNames) } : {};
-      return { type: "addSimpleType", payload: { parentId: item.id, ...typeName, baseType: "xs:string" } };
+      return {
+        type: "addSimpleType",
+        payload: { parentId: item.id, ...typeName, baseType: builtInType(item, "string") },
+      };
     }
     const typeName = isRoot ? { typeName: this.nextName("ComplexType", reserveNames) } : {};
     return { type: "addComplexType", payload: { parentId: item.id, ...typeName, contentModel: "sequence" } };
@@ -322,7 +332,7 @@ export class DropCommandFactory {
     schemaConstruct: DraggableSchemaConstruct.Restriction | DraggableSchemaConstruct.Extension
   ): SchemaCommand | null {
     if (isSchemaRoot(item.id)) {
-      return this.createTopLevelDerivationCommand(schemaConstruct, reserveNames);
+      return this.createTopLevelDerivationCommand(item, schemaConstruct, reserveNames);
     }
     const isRestriction = schemaConstruct === DraggableSchemaConstruct.Restriction;
     const derivationKind = isRestriction ? "restriction" : "extension";

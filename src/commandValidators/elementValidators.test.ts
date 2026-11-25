@@ -9,6 +9,8 @@ import { validateAddElement, validateRemoveElement, validateModifyElement } from
 import type { ValidationResult } from "../../shared/validation.js";
 import { expectInvalid } from "../../shared/__tests__/validationTestHelpers.js";
 import { schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
+import { schemaInTargetNamespace } from "../__tests__/constraintTestHelpers.js";
+import { XSD_NAMESPACE } from "../../shared/builtInTypes.js";
 import { readTestSchema } from "../__tests__/resourceTestHelpers.js";
 
 /** An import of the namespace `http://example.com/external`. */
@@ -41,7 +43,7 @@ describe("Element Validators", () => {
         payload: {
           parentId: "/schema",
           elementName: "testElement",
-          elementType: "string",
+          elementType: "xs:decimal",
         },
       };
 
@@ -63,7 +65,7 @@ describe("Element Validators", () => {
       expect(result.valid).toBe(true);
     });
 
-    test("should accept built-in XSD types with xsd: prefix", () => {
+    test("should accept built-in XSD types with another prefix that the schema declares for XML Schema", () => {
       const command: AddElementCommand = {
         type: "addElement",
         payload: {
@@ -73,36 +75,30 @@ describe("Element Validators", () => {
         },
       };
 
-      const result = validateAddElement(command, schemaObj);
+      const result = validateAddElement(command, schemaWith("", { xsd: XSD_NAMESPACE }));
       expect(result.valid).toBe(true);
     });
 
-    test("should accept built-in XSD types with any custom prefix", () => {
+    // The name of a built-in type only names it in the namespace of XML Schema
+    test.each([
+      ["a prefix that is not declared", "myprefix:int"],
+      ["no prefix, without a default namespace", "int"],
+    ])("should reject a built-in type name with %s", (_case, elementType) => {
       const command: AddElementCommand = {
         type: "addElement",
-        payload: {
-          parentId: "/schema",
-          elementName: "testElement",
-          elementType: "myprefix:int",
-        },
+        payload: { parentId: "/schema", elementName: "testElement", elementType },
       };
 
-      const result = validateAddElement(command, schemaObj);
-      expect(result.valid).toBe(true);
+      expect(validateAddElement(command, schemaObj).valid).toBe(false);
     });
 
-    test("should accept built-in XSD types without prefix", () => {
+    test("should accept built-in XSD types without prefix if XML Schema is the default namespace", () => {
       const command: AddElementCommand = {
         type: "addElement",
-        payload: {
-          parentId: "/schema",
-          elementName: "testElement",
-          elementType: "int",
-        },
+        payload: { parentId: "/schema", elementName: "testElement", elementType: "int" },
       };
 
-      const result = validateAddElement(command, schemaObj);
-      expect(result.valid).toBe(true);
+      expect(validateAddElement(command, readTestSchema("xsd-as-default-namespace.xsd")).valid).toBe(true);
     });
 
     test("should reject invalid element type", () => {
@@ -172,14 +168,12 @@ describe("Element Validators", () => {
     });
 
     test("should accept user-defined type with prefix", () => {
-      const prefixes = { tns: "http://example.com/types" };
-      const customSchema = schemaWith(
+      const customSchema = schemaInTargetNamespace(
         `<xs:complexType name="PersonType">
   <xs:sequence>
     <xs:element name="name" type="xs:string"/>
   </xs:sequence>
-</xs:complexType>`,
-        prefixes
+</xs:complexType>`
       );
 
       const command: AddElementCommand = {
@@ -187,7 +181,7 @@ describe("Element Validators", () => {
         payload: {
           parentId: "/schema",
           elementName: "person",
-          elementType: "tns:PersonType",
+          elementType: "t:PersonType",
         },
       };
 

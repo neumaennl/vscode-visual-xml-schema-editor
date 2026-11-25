@@ -3,6 +3,7 @@
  */
 
 import type { Mock } from "vitest";
+import { XSD_NAMESPACE } from "../shared/builtInTypes";
 
 // Mock the VS Code API before importing
 const mockPostMessage = vi.fn();
@@ -90,7 +91,7 @@ describe("SchemaEditorApp", () => {
   test("should handle updateSchema message", async () => {
     const send = await loadMain();
 
-    send("updateSchema", { element: [{ name: "test" }] });
+    send("updateSchema", { _namespacePrefixes: { xs: XSD_NAMESPACE }, element: [{ name: "test" }] });
 
     // Verify state is saved
     expect(mockSetState).toHaveBeenCalled();
@@ -136,7 +137,7 @@ describe("SchemaEditorApp", () => {
   test("should draw a saved schema with the saved zoom and pan", async () => {
     mockGetState.mockReturnValue({
       viewState: { zoom: 1.5, panX: 100, panY: 50 },
-      schema: { element: [{ name: "test" }] },
+      schema: { _namespacePrefixes: { xs: XSD_NAMESPACE }, element: [{ name: "test" }] },
     });
 
     await import("./main");
@@ -172,7 +173,7 @@ describe("SchemaEditorApp", () => {
   test("should highlight the selected node when it is clicked", async () => {
     const send = await loadMain();
 
-    send("updateSchema", { element: [{ name: "test" }] });
+    send("updateSchema", { _namespacePrefixes: { xs: XSD_NAMESPACE }, element: [{ name: "test" }] });
 
     const node = document.querySelector("[data-item-id]");
     expect(node).toBeTruthy();

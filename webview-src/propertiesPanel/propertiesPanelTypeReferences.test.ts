@@ -16,7 +16,8 @@ import {
   emptyDiagram,
   NOT_READ_SCHEMA_OBJECT,
 } from "../__tests__/diagramTestHelpers";
-import { webviewSchemaWith } from "../../shared/__tests__/schemaTestHelpers";
+import { webviewSchemaFromXml, webviewSchemaWith } from "../../shared/__tests__/schemaTestHelpers";
+import { XSD_NAMESPACE } from "../../shared/builtInTypes";
 import { DiagramItemType } from "../diagram/DiagramTypes";
 
 /** A schema with the target namespace `urn:test`, a simple type `Code`, a complex type `Person` and an element `root`. */
@@ -64,11 +65,19 @@ describe("normalizeTypeReference", () => {
   test.each([
     ["a type of the schema", " Code ", "tns:Code"],
     ["a prefixed type", "other:Code", "other:Code"],
-    ["a built-in type", "string", "string"],
+    ["a built-in type without a prefix", "string", "xs:string"],
     ["an unknown type", "Unknown", "Unknown"],
     ["an empty type", "   ", ""],
   ])("should normalize %s", (_case, entered, expected) => {
     expect(normalizeTypeReference(itemInSchemaWithTypes(), entered)).toBe(expected);
+  });
+
+  test("should write a built-in type with the prefix that the schema declares for XML Schema", () => {
+    const schemaObj = webviewSchemaFromXml(
+      `<xsd:schema xmlns:xsd="${XSD_NAMESPACE}"><xsd:element name="root"/></xsd:schema>`
+    );
+
+    expect(normalizeTypeReference(diagramItem(schemaObj, "/element:root"), "string")).toBe("xsd:string");
   });
 
   test("should not add a prefix when the schema declares none for its target namespace", () => {

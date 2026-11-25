@@ -3,9 +3,8 @@ type: Concept
 title: UX concept
 description: The interaction model of the editor - which surface adds, edits and deletes what, how facets work, and how the properties panel behaves - with a list of what the current editor does not implement yet.
 tags: [ux, editor, palette, properties-panel, facets, context-menu, toolbar]
-status: stable
-generated: { by: human:neumaennl, at: 2026-11-24T15:38:45Z }
-verified: { by: human:neumaennl, at: 2026-11-24T17:27:00Z }
+status: draft
+generated: { by: human:neumaennl, at: 2026-11-24T19:52:35Z }
 sources:
   - id: palette-items
     resource: ../webview-src/palette/paletteEntries.ts
@@ -133,7 +132,7 @@ The panel header has a delete button for the selected node.[^panel-commands]
 - **An error that the properties panel finds itself** is shown directly below the field, which shows the current value again; the message disappears with the next accepted value.
 - **An error that the extension host finds** when it rejects a command is shown in the notification banner, and the panel shows the node again as it was. The banner shows the whole message: long messages wrap, and a message longer than the banner can show scrolls.
 
-The panel checks everything it can decide from the value of one field: names, type references (a built-in type, a type of the schema, a type of an imported schema with its prefix, or a type of an included schema), the values of the facets, occurrences, namespace prefixes and URIs, and values that a list of an enumeration or a pattern already contains. It uses the same rules as the extension host, from `shared/`; the extension host checks them again, and checks everything that needs more than one field, such as duplicate names or `minOccurs` > `maxOccurs`. The last member type of a union and the last facet of a restriction cannot be removed; their remove buttons are disabled.
+The panel checks everything it can decide from the value of one field: names, type references (a built-in type in the namespace of XML Schema, a type of the schema or of an included schema in its target namespace, or a type of an imported schema, each resolved with the namespace declarations of the schema), the values of the facets, occurrences, namespace prefixes and URIs, and values that a list of an enumeration or a pattern already contains. It uses the same rules as the extension host, from `shared/`; the extension host checks them again, and checks everything that needs more than one field, such as duplicate names or `minOccurs` > `maxOccurs`. The last member type of a union and the last facet of a restriction cannot be removed; their remove buttons are disabled.
 
 ## Fields with fixed values
 
@@ -161,8 +160,8 @@ Text fields without this restriction are only used where the value is open, such
 - An element with `type="…"` has an editable **Type** field.
 - An element with an anonymous simple type has an editable **Base Type** field and the Facets tab. An element with an anonymous complex type derived by extension has an editable **Base Type** field. Both offer a **Replacement Type** field that replaces the anonymous type with a reference to a named type.
 - Dropping an anonymous simple or complex type on an element with `type="…"` replaces the reference with the anonymous type instead of failing.
-- Dropping **restriction** on a node creates or changes a restriction; dropping **extension** creates or changes a complex type extension. The base type is the one shown on the node; without one, it is `xs:string` for simple types and `xs:anyType` for complex types and extensions.[^drop-type-helpers]
-- Type and Base Type fields suggest the 44 built-in data types of XML Schema 1.0 (not `anyType` and `anySimpleType`, which cannot be the base of a simple type) and the types of the current schema, with and without the schema's prefix. Any other value can be typed, for types from imported or included schemas.[^panel-types]
+- Dropping **restriction** on a node creates or changes a restriction; dropping **extension** creates or changes a complex type extension. The base type is the one shown on the node; without one, it is `xs:string` for simple types and `xs:anyType` for complex types and extensions, with the schema's prefix for XML Schema.[^drop-type-helpers]
+- Type and Base Type fields suggest the 44 built-in data types of XML Schema 1.0 (not `anyType` and `anySimpleType`, which cannot be the base of a simple type), with the schema's prefix for XML Schema, and the types of the current schema, with and without the prefix of its target namespace. A name without a prefix is written as a reference when the field is left: a type of the schema as `tns:Address`, a built-in type as `xs:string`, each with the prefixes that the schema declares. Any other value can be typed, for types from imported or included schemas.[^panel-types]
 
 ## Docs
 
@@ -172,7 +171,7 @@ Text fields without this restriction are only used where the value is open, such
 
 ## XML
 
-The XML tab is read-only. It shows an XSD fragment for the node, generated in the webview from the selected node, so it shows each change with the schema that the extension host sends next. The fragment includes attributes, annotations, facets and some child nodes, and is shortened for large nodes.[^panel-xml] It states: "Preview only; it may differ from the exact schema XML. Open the schema in a text editor tab for the source of truth."
+The XML tab is read-only. It shows an XSD fragment for the node, generated in the webview from the selected node, so it shows each change with the schema that the extension host sends next. The fragment includes attributes, annotations, facets and some child nodes, is written with the schema's prefix for XML Schema, and is shortened for large nodes.[^panel-xml] It states: "Preview only; it may differ from the exact schema XML. Open the schema in a text editor tab for the source of truth."
 
 ## Synchronization
 

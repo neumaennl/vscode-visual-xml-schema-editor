@@ -1,12 +1,13 @@
 import { validateTypeInSchema } from "./validationUtils.js";
+import { XSD_NAMESPACE } from "../../shared/builtInTypes.js";
 
 describe("validateTypeInSchema", () => {
-  const emptySchema = {};
+  const emptySchema = { _namespacePrefixes: { xs: XSD_NAMESPACE } };
 
-  test("should accept built-in XSD types", () => {
+  test("should accept built-in XSD types with the prefix of their namespace", () => {
     expect(validateTypeInSchema("xs:string", emptySchema).valid).toBe(true);
     expect(validateTypeInSchema("xs:integer", emptySchema).valid).toBe(true);
-    expect(validateTypeInSchema("string", emptySchema).valid).toBe(true);
+    expect(validateTypeInSchema("string", emptySchema).valid).toBe(false);
   });
 
   test("should accept user-defined simpleType in schema", () => {

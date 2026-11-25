@@ -3,6 +3,7 @@
  * elements, including the facets of a restriction, and what the drop target tells about its type.
  */
 
+import { xsdQName } from "../../shared/builtInTypes";
 import type { RestrictionFacets, SchemaCommand } from "../../shared/types";
 import { anonymousTypeId } from "../../shared/schemaUtils";
 import type { DiagramItem } from "../diagram";
@@ -10,12 +11,24 @@ import {
   DiagramItemType,
   getFacets,
   getBaseType,
+  getNamespacePrefixes,
   getSimpleDerivation,
   getTypeName,
   hasInlineComplexType,
   isNamedComplexType,
 } from "../diagram";
 import { type FacetSchemaConstruct, DraggableSchemaConstruct } from "./DraggableSchemaConstruct";
+
+/**
+ * Writes a built-in type as the schema of an item writes it, such as `xs:string` (see `xsdQName()`).
+ *
+ * @param item - An item of the schema
+ * @param localName - The name of the built-in type, such as `string`
+ * @returns The reference to the type
+ */
+export function builtInType(item: DiagramItem, localName: string): string {
+  return xsdQName(localName, getNamespacePrefixes(item.diagram));
+}
 
 /**
  * Returns the base type that a dropped restriction restricts: the base type of the target's derivation,
@@ -29,7 +42,7 @@ export function getRestrictionBaseType(item: DiagramItem): string {
   if (baseType) {
     return baseType;
   }
-  return isNamedComplexType(item) || hasInlineComplexType(item) ? "xs:anyType" : "xs:string";
+  return builtInType(item, isNamedComplexType(item) || hasInlineComplexType(item) ? "anyType" : "string");
 }
 
 /**
@@ -40,7 +53,7 @@ export function getRestrictionBaseType(item: DiagramItem): string {
  * @returns The base type, or `xs:anyType`
  */
 export function getExtensionBaseType(item: DiagramItem): string {
-  return getBaseType(item) ?? getTypeName(item) ?? "xs:anyType";
+  return getBaseType(item) ?? getTypeName(item) ?? builtInType(item, "anyType");
 }
 
 /**

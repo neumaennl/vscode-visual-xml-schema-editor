@@ -4,7 +4,7 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: draft
-generated: { by: human:neumaennl, at: 2026-11-24T18:58:14Z }
+generated: { by: human:neumaennl, at: 2026-11-25T08:16:27Z }
 ---
 
 # Purpose
@@ -193,19 +193,6 @@ Effort:
 - **Effort:** M
 - **Description:** `isValidXmlName()` is the regular expression `/^[a-zA-Z_][\w.-]*$/`. XML names may contain non-ASCII letters (`Straße`, `名前`), which are rejected, in names and in the prefix and local name of a `ref`. The fix is a check for NCNames following the XML specification.
 - **GitHub issue:** none
-
-## Built-in types are recognized by their local name only
-
-- **Location:** `shared/typeReferences.ts` (`validateTypeReference()`), `webview-src/propertiesPanel/propertiesPanelTypeReferences.ts` (`collectTypeSuggestions()`, `normalizeTypeReference()`)
-- **Severity:** Medium
-- **Effort:** S
-- **Description:** A type reference names a built-in type only if its prefix declares the namespace of XML Schema, or if it has no prefix and the default namespace is the namespace of XML Schema. The editor ignores the prefix on both sides:
-  - `validateTypeReference()`, which the validators and the properties panel share, accepts every reference whose local name is a built-in type or a type of the schema, whatever the prefix: `type="tns:string"`, `type="foo:string"` with an undeclared `foo`, or `ext:Address` for a local type `Address` are accepted.
-  - The properties panel suggests the built-in types with the prefix `xs`, which is wrong in a schema that declares the namespace with another prefix such as `xsd`, and `normalizeTypeReference()` keeps a built-in type that is entered without a prefix, such as `string`, without one, which is only valid if the default namespace is the namespace of XML Schema.
-
-  The fix is to resolve the prefix with the namespace declarations of the schema (`shared/qNames.ts`) and to use the schema's own prefix for the namespace of XML Schema; the structure review [#448](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/448) does this when it replaces the fixed `xs:` prefix in the webview.
-
-- **GitHub issue:** [#448](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/448)
 
 ## Mixed content toggle ignores simple content, `complexContent` and the base type
 

@@ -1,5 +1,9 @@
 # Knowledge Bundle Update Log
 
+## 2026-11-25
+
+- **Update**: [Known issues](known-issues.md#drops-derive-from-base-types-of-the-wrong-kind): "Drops derive from base types of the wrong kind" is new: an extension dropped on an element with a simple type and a restriction dropped on an element with a complex type write invalid XSD.
+
 ## 2026-11-24
 
 - **Update**: the editor writes and checks built-in types with the schema's own prefix for the namespace of XML Schema instead of a fixed `xs` ([#448](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/448)). `validateTypeReference()` resolves a type reference with the namespace declarations, so a built-in type only counts in the namespace of XML Schema and a type of the schema only in its target namespace; the type fields, the defaults of the drop rules and the XML preview use the schema's prefix (`qualifiedName()` in `shared/qNames.ts`, `xsdQName()` in `shared/builtInTypes.ts`). [UX concept](ux-concept.md#properties-panel) and [Drag and drop](drag-and-drop.md#defaults) describe it; the known issue "Built-in types are recognized by their local name only" is removed from [Known issues](known-issues.md).

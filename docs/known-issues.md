@@ -208,6 +208,14 @@ Effort:
 
 - **GitHub issue:** none
 
+## Drops derive from base types of the wrong kind
+
+- **Location:** `webview-src/dragAndDrop/TypeDropCommands.ts` (`getRestrictionBaseType()`, `getExtensionBaseType()`), `webview-src/dragAndDrop/DropCommandFactory.ts` (`createDerivationNodeDropCommand()`), `src/commandValidators/complexTypeValidators.ts`, `src/commandValidators/simpleTypeValidators.ts`
+- **Severity:** Medium
+- **Effort:** M
+- **Description:** A restriction or extension dropped on a node derives from the base type of the node's derivation or from the `type` of an element, without checking whether that type is simple or complex. The executors build a simple restriction for a simple type and `complexContent` for a complex type, so two drops write invalid XSD: an extension dropped on an element with a simple type, such as `type="xs:string"`, creates a complex type with `complexContent` that extends a simple type, which needs `simpleContent`; a restriction dropped on an element with a complex type creates a simple type that restricts a complex type. The validators accept both, because they only check that the base type exists. Without a base type, the defaults are sound: `xs:anyType` for complex types, which is their implicit base, and `xs:string` for simple types, which have none. The fix is to tell simple and complex base types apart, which is possible for built-in types and the schema's own types but not for imported ones, to derive an extension of a simple type with `simpleContent`, which depends on [Complex types with simple content cannot be created or derived](#complex-types-with-simple-content-cannot-be-created-or-derived), and to let the validators reject a derivation from a base type of the wrong kind.
+- **GitHub issue:** none
+
 ## Facets are not checked against the base type
 
 - **Location:** `src/commandValidators/simpleTypeValidators.ts` (`validateSimpleTypeBody()`), `webview-src/propertiesPanel/propertiesPanelFacets.ts`

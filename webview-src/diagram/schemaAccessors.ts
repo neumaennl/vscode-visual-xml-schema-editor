@@ -11,9 +11,7 @@ import type {
   allType,
   explicitGroup,
   groupRef,
-  localComplexType,
   localElement,
-  localSimpleType,
   namedGroup,
   narrowMaxMin,
   schema,
@@ -25,6 +23,7 @@ import type {
 import { parseMaxOccurs, UNBOUNDED, type MaxOccurs } from "../../shared/occurrences";
 import type { DiagramItem } from "./DiagramItem";
 import type { Diagram } from "./Diagram";
+import type { NamedComponent, ReferenceHolder, ElementObject } from "../../shared/schemaObjects";
 
 /**
  * The schema object that a diagram item stands for: the schema, an element (whose item also shows its
@@ -44,15 +43,6 @@ export type DiagramSchemaObject =
   | allType
   | groupRef;
 
-/** An element: top-level, local, or local in an `xs:all`. */
-export type ElementObject = topLevelElement | localElement | narrowMaxMin;
-
-/** A named complex type or the inline complex type of an element. */
-export type ComplexTypeObject = topLevelComplexType | localComplexType;
-
-/** A named simple type or the inline simple type of an element. */
-export type SimpleTypeObject = topLevelSimpleType | localSimpleType;
-
 /**
  * Returns the name of the schema component that an item stands for.
  *
@@ -60,7 +50,7 @@ export type SimpleTypeObject = topLevelSimpleType | localSimpleType;
  * @returns The name, or `undefined` if the component has none, such as a reference or a compositor
  */
 export function getName(item: DiagramItem): string | undefined {
-  return (item.schemaObject as { name?: string }).name;
+  return (item.schemaObject as NamedComponent).name;
 }
 
 /**
@@ -70,7 +60,7 @@ export function getName(item: DiagramItem): string | undefined {
  * @returns The QName of the referenced component, or `undefined` if the item is no reference
  */
 export function getReference(item: DiagramItem): string | undefined {
-  return (item.schemaObject as { ref?: string }).ref;
+  return (item.schemaObject as ReferenceHolder).ref;
 }
 
 /**

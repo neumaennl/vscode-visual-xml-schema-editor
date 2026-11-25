@@ -15,8 +15,8 @@ import { attribute, topLevelAttribute } from "../../shared/types.js";
 import { assumeValidated, assumptionFailed, locateValidated } from "./assumeValidated.js";
 import { parseSchemaId, SCHEMA_ROOT_ID } from "../../shared/idStrategy.js";
 import { createAnnotation } from "./annotationUtils.js";
-import type { AttributeContainer } from "../../shared/schemaUtils.js";
-import { getAttributeContainer } from "../../shared/schemaUtils.js";
+import type { AttributeContainer } from "../../shared/schemaObjects.js";
+import { getAttributeContainer } from "../../shared/schemaObjects.js";
 import { appendTo, removeFrom } from "./nodeProperties.js";
 import { identifyChild } from "../commandUtils.js";
 

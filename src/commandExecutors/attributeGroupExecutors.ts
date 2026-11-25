@@ -15,8 +15,8 @@ import { parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idSt
 import { assumeValidated, locateValidated } from "./assumeValidated.js";
 import { createAnnotation } from "./annotationUtils.js";
 import { renameReferencesInTargetNamespace } from "../schemaReferences/referenceRewrites.js";
-import type { AttributeContainer } from "../../shared/schemaUtils.js";
-import { getAttributeContainer } from "../../shared/schemaUtils.js";
+import type { AttributeContainer } from "../../shared/schemaObjects.js";
+import { getAttributeContainer } from "../../shared/schemaObjects.js";
 import { findAttributeGroupRef } from "../commandUtils.js";
 import { appendTo, removeFrom } from "./nodeProperties.js";
 

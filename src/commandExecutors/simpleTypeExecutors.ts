@@ -13,6 +13,7 @@ import type {
   RestrictionFacets,
   SimpleTypeDerivationKind,
   annotationType,
+  SimpleTypeBodyChanges,
 } from "../../shared/types.js";
 import {
   topLevelSimpleType,
@@ -27,7 +28,7 @@ import {
   whiteSpaceType,
   patternType,
 } from "../../shared/types.js";
-import { isSchemaRoot } from "../../shared/schemaUtils.js";
+import { isSchemaRoot } from "../../shared/idStrategy.js";
 import { assumeValidated } from "./assumeValidated.js";
 import { locateModifiedType, placeNewType, removeType } from "./typeTargets.js";
 import { createAnnotation } from "./annotationUtils.js";
@@ -110,12 +111,7 @@ function buildRestriction(base: string, facets?: RestrictionFacets): restriction
  */
 function updateTypeContents(
   simpleType: { restriction?: restrictionType; list?: listType; union?: unionType; annotation?: annotationType },
-  updates: {
-    baseType?: string;
-    listItemType?: string;
-    unionMemberTypes?: string[];
-    restrictions?: RestrictionFacets;
-  }
+  updates: SimpleTypeBodyChanges
 ): void {
   const { baseType, listItemType, unionMemberTypes, restrictions } = updates;
 
@@ -134,12 +130,7 @@ function updateTypeContents(
  * @param body - The body fields of the payload
  * @returns The kind, or `undefined` if the payload has no body fields
  */
-function derivationKindOf(body: {
-  baseType?: string;
-  listItemType?: string;
-  unionMemberTypes?: string[];
-  restrictions?: RestrictionFacets;
-}): SimpleTypeDerivationKind | undefined {
+function derivationKindOf(body: SimpleTypeBodyChanges): SimpleTypeDerivationKind | undefined {
   if (body.listItemType !== undefined) return "list";
   if (body.unionMemberTypes !== undefined) return "union";
   if (body.baseType !== undefined || body.restrictions !== undefined) return "restriction";
@@ -155,12 +146,7 @@ function derivationKindOf(body: {
  */
 function applySimpleTypeBody(
   simpleType: { restriction?: restrictionType; list?: listType; union?: unionType },
-  updates: {
-    baseType?: string;
-    listItemType?: string;
-    unionMemberTypes?: string[];
-    restrictions?: RestrictionFacets;
-  },
+  updates: SimpleTypeBodyChanges,
   derivationKind: SimpleTypeDerivationKind
 ): void {
   const { baseType, listItemType, unionMemberTypes, restrictions } = updates;

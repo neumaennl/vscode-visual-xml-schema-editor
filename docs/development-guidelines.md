@@ -3,9 +3,8 @@ type: Guideline
 title: Development guidelines
 description: Rules for everyone who changes the extension - code size, code quality, formatting and ESLint, structure reviews, TypeScript and naming, VS Code and Node versions, TSDoc, tests, documentation and the knowledge bundle, issues, what to check before committing, and commits.
 tags: [guidelines, conventions, code-quality, typescript, documentation, workflow]
-status: stable
-generated: { by: human:neumaennl, at: 2026-11-18T15:12:15Z }
-verified: { by: human:neumaennl, at: 2026-11-18T19:48:12Z }
+status: draft
+generated: { by: human:neumaennl, at: 2026-11-25T10:01:34Z }
 sources:
   - id: eslint
     resource: ../eslint.config.mjs
@@ -83,6 +82,8 @@ The reports of the duplicate check and the unused-code check are inputs. The rev
 - Unused variables, imports, parameters and private class members are errors (ESLint), and so is unreachable code (TypeScript). Prefix a parameter that must exist but is not used with `_`.[^tsconfig][^eslint]
 - An index access, such as `items[0]` or `prefixes[prefix]`, may return `undefined` (`noUncheckedIndexedAccess`). Check the value, or avoid the index with `for…of`, `forEach()`, `find()` or `at()`. Groups of a regular expression are read with `requireGroup()` from `shared/regexUtils.ts`. In tests, a non-null assertion (`items[0]!`) is fine, because a wrong assumption makes the test fail.[^tsconfig]
 - Define interfaces or types for all data structures. Commands and messages are discriminated unions (see [Commands](commands.md) and [Messaging](messaging.md)).
+- **Named types.** Name a type where it stands for a concept, for example in an exported signature or where it is used more than once, instead of writing the same anonymous type, such as `{ name?: string }`, in several places. Before defining a new type, look for an existing one and use it, or a part of it (`Pick`): the types of `shared/`, of the module you work in and the generated schema classes and their unions (see [ADR 007](architecture/007-diagram-items-reference-schema-objects.md)). A one-off shape of a local value needs no name. A parameter takes the type that its callers pass; narrow it (`Pick`, a structural type) only if callers pass objects of different types.
+- **Casts.** A cast states what an object is. Cast to a class or type only if the object is one; to read a field that only some members of a union have, narrow the union with `in` instead, and where a cast cannot be avoided, name only the part that is read.
 - Names: PascalCase for classes, interfaces and types; camelCase for functions, methods and variables; UPPER_CASE for module-level constants. Names say what something is or does.
 - Length of names: clarity comes first, but keep them short. Aim for less than 15 characters; 25 to 30 is the upper limit. `createElement` is better than `createElementWithChildren`; `createElementNodeWithProcessingOfAnonymousTypes` is too long, `cen` too cryptic.
 - Functions that check a command or a part of it are called `validate...()`, for example `validateRestrictionFacets()`, and return a `ValidationResult`, also when the command is valid, not `null` or a bare error.
@@ -127,7 +128,7 @@ New and changed code is tested. A unit test tests the module it sits next to and
 
 The documentation of the extension is the knowledge bundle in `docs/`, in the Open Knowledge Format; [the index](index.md) lists its documents.[^okf]
 
-- **Keep it current.** When a change affects what a document describes, update the document in the same change. Then set its `generated` to the person responsible for the content (`by: human:<GitHub user>`, also when an agent wrote the text) and the current time (UTC), set `status: draft` and remove `verified`, and add an entry to [the log](log.md), newest date first. When the maintainer has approved the document, set `status: stable` and add `verified` with `by: human:<GitHub user>` and the time. A change that only reformats a document, such as running Prettier, does not change what it says: the document keeps its status, and one log entry records the reformatting of all documents.
+- **Keep it current.** When a change affects what a document describes, update the document in the same change. Then set its `generated` to the person responsible for the content (`by: human:<GitHub user>`, also when an agent wrote the text) and the current time (UTC), set `status: draft` and remove `verified`, and add an entry to [the log](log.md), newest date first. A log entry says which documents changed and what they now say, with the reason where it is not obvious; a change of the code without a change of a document gets no entry, it is described in the commit message, and a notable one in the changelog. When the maintainer has approved the document, set `status: stable` and add `verified` with `by: human:<GitHub user>` and the time. A change that only reformats a document, such as running Prettier, does not change what it says: the document keeps its status, and one log entry records the reformatting of all documents.
 - **Known issues.** Record problems you find outside the current task in [Known issues](known-issues.md), sorted by severity and effort, and remove them when they are fixed. A change to the known issues is a change like any other.
 - **New documents** get front matter (`type`, `title`, a one-sentence `description`, `tags`, `status`, `generated`, `sources`), an entry in [the index](index.md) with the same description, and a log entry.
 - **Sources.** Each source has an `id`, a relative `resource` and a `title`. Important statements get a footnote `[^id]` whose text is the title of the source. Separate the footnote definitions with blank lines.

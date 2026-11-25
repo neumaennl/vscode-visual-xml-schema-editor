@@ -6,8 +6,7 @@
  */
 
 import type { annotationType } from "../../shared/generated/annotationType";
-import { SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy";
-import { anonymousTypeId, type TypeKind } from "../../shared/schemaUtils";
+import { SCHEMA_ROOT_ID, SchemaNodeType, anonymousTypeId, type TypeKind } from "../../shared/idStrategy";
 import type { DiagramItem } from "./DiagramItem";
 import type { DiagramAnnotationEntry } from "./DiagramTypes";
 

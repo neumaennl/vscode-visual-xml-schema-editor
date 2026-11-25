@@ -28,18 +28,12 @@ import type {
   ModifyDocumentationCommand,
 } from "../../shared/types.js";
 import { annotationType, documentationType, appinfoType } from "../../shared/types.js";
-import { isSchemaRoot } from "../../shared/schemaUtils.js";
+import { isSchemaRoot } from "../../shared/idStrategy.js";
 import { assumeValidated, locateValidated } from "./assumeValidated.js";
 import { parseDocumentationId, parseSchemaAnnotationId, parseSchemaDocumentationId } from "../commandUtils.js";
+import type { AnnotatableNode } from "../../shared/schemaObjects.js";
 
 export { parseDocumentationId, parseSchemaAnnotationId, parseSchemaDocumentationId };
-
-// ===== Structural types =====
-
-/** Any non-schema component that can carry a single `xs:annotation` child. */
-interface AnnotatableNode {
-  annotation?: annotationType;
-}
 
 // ===== Helper functions =====
 

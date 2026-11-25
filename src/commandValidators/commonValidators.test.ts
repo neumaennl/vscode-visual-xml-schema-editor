@@ -2,7 +2,7 @@
  * Unit tests for the checks that validators of several areas share.
  */
 
-import type { ChildKind, NamedChild } from "./commonValidators.js";
+import type { ChildKind } from "./commonValidators.js";
 import {
   locateChild,
   locateReferenceOrDefinition,
@@ -21,12 +21,14 @@ import { expectInvalid } from "../../shared/__tests__/validationTestHelpers.js";
 import { schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
 import { unmarshal } from "@neumaennl/xmlbind-ts";
 import { schema } from "../../shared/types.js";
+import type { NamedChild, ElementHolder } from "../../shared/schemaObjects.js";
+import type { ValidationResult } from "../../shared/validation.js";
 
 /** Elements of the schema and of sequences, as the element validators define them. */
 const ELEMENTS: ChildKind = {
   label: "Element",
   validParents: ["schema", "sequence"],
-  getChildren: (parent) => (parent as { element?: NamedChild[] }).element ?? [],
+  getChildren: (parent) => (parent as ElementHolder<NamedChild>).element ?? [],
 };
 
 /** A schema with a top-level element `a`, a complexType `T` with local elements and a simpleType `S`. */
@@ -80,7 +82,7 @@ describe("validateReference", () => {
 describe("locateReferenceOrDefinition", () => {
   const locate = (
     id: string,
-    referenceResult: { valid: true } | { valid: false; error: string } = { valid: true }
+    referenceResult: ValidationResult = { valid: true }
   ): ReturnType<typeof locateReferenceOrDefinition> =>
     locateReferenceOrDefinition(
       parseSchemaId(id),

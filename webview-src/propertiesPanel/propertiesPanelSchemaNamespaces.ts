@@ -4,7 +4,7 @@
 
 import type { NamespacePrefixes, SchemaCommand } from "../../shared/types";
 import { getNamespacePrefixes, getTargetNamespace, type DiagramItem } from "../diagram";
-import { getTargetNamespacePrefixes } from "../../shared/schemaUtils";
+import { getTargetNamespacePrefixes } from "../../shared/schemaObjects";
 import {
   firstFreePrefix,
   isAbsoluteUri,

@@ -8,7 +8,7 @@ import type {
   RemoveComplexTypeCommand,
   ModifyComplexTypeCommand,
   ComplexTypeDerivationKind,
-  ContentModel,
+  Compositor,
 } from "../../shared/types.js";
 import {
   validateAddComplexType,
@@ -16,7 +16,7 @@ import {
   validateModifyComplexType,
 } from "./complexTypeValidators.js";
 import type { ValidationResult } from "../../shared/validation.js";
-import { expectInvalid } from "../../shared/__tests__/validationTestHelpers.js";
+import { expectInvalid, type RuleCase } from "../../shared/__tests__/validationTestHelpers.js";
 import { emptySchema, schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
 import { readTestSchema } from "../__tests__/resourceTestHelpers.js";
 
@@ -42,7 +42,7 @@ const REF_ID = "/element:person/anonymousComplexType[0]/group:sequence[0]/elemen
 const CONTACT_TYPE_ID = "/element:contact/anonymousComplexType[0]";
 
 /** A content model that the payload type does not allow, as a message from the webview could have. */
-const UNKNOWN_CONTENT_MODEL = "bogus" as ContentModel;
+const UNKNOWN_CONTENT_MODEL = "bogus" as Compositor;
 
 /** A derivation kind that the payload type does not allow, as a message from the webview could have. */
 const UNKNOWN_DERIVATION_KIND = "bogus" as ComplexTypeDerivationKind;
@@ -385,7 +385,7 @@ describe("ComplexType Validators", () => {
 });
 
 describe("Complex type rules", () => {
-  test.each<{ rule: string; result: ValidationResult; error: string }>([
+  test.each<RuleCase>([
     {
       rule: "an anonymous type in a missing parent",
       result: validateAdd({ parentId: "/element:missing", contentModel: "sequence" }),

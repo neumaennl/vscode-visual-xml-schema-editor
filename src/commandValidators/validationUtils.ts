@@ -3,7 +3,7 @@
  */
 
 import { validateTypeReference } from "../../shared/typeReferences.js";
-import type { NamespacePrefixes } from "../../shared/types.js";
+import type { schema } from "../../shared/types.js";
 import type { ValidationResult } from "../../shared/validation.js";
 
 /**
@@ -13,21 +13,9 @@ import type { ValidationResult } from "../../shared/validation.js";
  * @param schemaObj - The schema
  * @returns The validation result
  */
-export function validateTypeInSchema(
-  typeName: string,
-  schemaObj: {
-    simpleType?: Array<{ name?: string }>;
-    complexType?: Array<{ name?: string }>;
-    import_?: Array<{ namespace?: string }>;
-    include?: Array<{ schemaLocation?: string }>;
-    _namespacePrefixes?: NamespacePrefixes;
-    targetNamespace?: string;
-  }
-): ValidationResult {
+export function validateTypeInSchema(typeName: string, schemaObj: schema): ValidationResult {
   return validateTypeReference(typeName, {
-    localTypeNames: [...(schemaObj.simpleType ?? []), ...(schemaObj.complexType ?? [])].flatMap((type) =>
-      type.name === undefined ? [] : [type.name]
-    ),
+    localTypeNames: [...(schemaObj.simpleType ?? []), ...(schemaObj.complexType ?? [])].map((type) => type.name),
     namespacePrefixes: schemaObj._namespacePrefixes ?? {},
     targetNamespace: schemaObj.targetNamespace,
     importedNamespaces: (schemaObj.import_ ?? []).flatMap((imp) =>

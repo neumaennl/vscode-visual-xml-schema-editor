@@ -4,6 +4,7 @@
 
 import { XSD_NAMESPACE } from "./builtInTypes.js";
 import { type TypeReferenceContext, validateTypeReference } from "./typeReferences.js";
+import type { ValidationFailure } from "./validation.js";
 
 /**
  * A schema with the target namespace `urn:t` and its type `Address`, the prefixes `xs` and `xsd` of XML Schema,
@@ -23,7 +24,7 @@ const CONTEXT: TypeReferenceContext = {
  * @param type - The type reference
  * @returns The validation result
  */
-function unknownType(type: string): { valid: false; error: string } {
+function unknownType(type: string): ValidationFailure {
   return {
     valid: false,
     error: `Unknown type '${type}': use a built-in type, a type of this schema, a type of an imported schema with its prefix, or a type of an included schema`,

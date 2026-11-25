@@ -10,9 +10,7 @@ import type {
   topLevelComplexType,
   topLevelSimpleType,
 } from "../../shared/types.js";
-import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
-import type { TypeKind } from "../../shared/schemaUtils.js";
-import { isSchemaRoot } from "../../shared/schemaUtils.js";
+import { isSchemaRoot, parseSchemaId, SchemaNodeType, type TypeKind } from "../../shared/idStrategy.js";
 import { assumeValidated, locateValidated } from "./assumeValidated.js";
 import { appendTo, removeFrom } from "./nodeProperties.js";
 import { renameReferencesInTargetNamespace } from "../schemaReferences/referenceRewrites.js";
@@ -29,9 +27,6 @@ interface TypeHolder {
   simpleType?: object;
   complexType?: object;
 }
-
-/** The top-level types of the schema, as far as these helpers use them. */
-type TypesOfSchema = Record<TypeKind, Array<{ name: string }> | undefined>;
 
 /**
  * Returns the label of a kind of type for error messages.
@@ -76,7 +71,7 @@ function locateAnonymousTypeHolder(schemaObj: schema, typeId: string, kind: Type
  */
 export function placeNewType(schemaObj: schema, parentId: string | undefined, kind: TypeKind, type: object): void {
   if (parentId === undefined || isSchemaRoot(parentId)) {
-    appendTo(schemaObj as TypesOfSchema, kind, type as { name: string });
+    appendTo(schemaObj, kind, type as topLevelSimpleType | topLevelComplexType);
     return;
   }
   const holder = locateValidated(schemaObj, parentId).parent as TypeHolder;
@@ -100,7 +95,7 @@ export function removeType(schemaObj: schema, typeId: string, kind: TypeKind): v
     return;
   }
   const name = parseSchemaId(typeId).name;
-  removeFrom(schemaObj as TypesOfSchema, kind, (type) => type.name === name, `${labelOf(kind)} ${typeId}`);
+  removeFrom(schemaObj, kind, (type) => type.name === name, `${labelOf(kind)} ${typeId}`);
 }
 
 /**
@@ -125,7 +120,7 @@ export function locateModifiedType<K extends TypeKind>(
   }
   const name = parseSchemaId(typeId).name;
   const type = assumeValidated(
-    ((schemaObj as TypesOfSchema)[kind] ?? []).find((t) => t.name === name),
+    (schemaObj[kind] ?? []).find((t: topLevelSimpleType | topLevelComplexType) => t.name === name),
     `${labelOf(kind)} ${typeId}`
   );
   if (typeName !== undefined) {

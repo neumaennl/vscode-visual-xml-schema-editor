@@ -12,13 +12,8 @@ import type {
   AddComplexTypeCommand,
   RemoveComplexTypeCommand,
   ModifyComplexTypeCommand,
-  ContentModel,
+  Compositor,
   ComplexTypeDerivationKind,
-  groupRef,
-  annotationType,
-  attribute,
-  attributeGroupRef,
-  wildcard,
 } from "../../shared/types.js";
 import {
   topLevelComplexType,
@@ -29,35 +24,23 @@ import {
   explicitGroup,
   all,
 } from "../../shared/types.js";
-import { getContentContainer, getContentDerivation, isSchemaRoot } from "../../shared/schemaUtils.js";
+import { isSchemaRoot } from "../../shared/idStrategy.js";
+import {
+  getContentDerivation,
+  getParticleContainer,
+  type ComplexTypeObject,
+  type ParticleContainer,
+} from "../../shared/schemaObjects.js";
 import { assumeValidated } from "./assumeValidated.js";
 import { assignDefined } from "./nodeProperties.js";
 import { locateModifiedType, placeNewType, removeType } from "./typeTargets.js";
 import { createAnnotation } from "./annotationUtils.js";
 
-/** Structural type shared by `topLevelComplexType` and `localComplexType` for content operations. */
-interface ComplexTypeHolder {
-  mixed?: boolean;
-  annotation?: annotationType;
-  group?: groupRef;
-  sequence?: explicitGroup;
-  choice?: explicitGroup;
-  all?: all;
-  attribute?: attribute[];
-  attributeGroup?: attributeGroupRef[];
-  anyAttribute?: wildcard;
-  complexContent?: complexContentType;
-}
-
-interface ComplexTypeContentState {
-  group?: groupRef;
-  sequence?: explicitGroup;
-  choice?: explicitGroup;
-  all?: all;
-  attribute?: attribute[];
-  attributeGroup?: attributeGroupRef[];
-  anyAttribute?: wildcard;
-}
+/** The content of a complex type that a change of its structure keeps: compositor, group reference and attributes. */
+type CapturedContent = Pick<
+  ParticleContainer,
+  "sequence" | "choice" | "all" | "group" | "attribute" | "attributeGroup" | "anyAttribute"
+>;
 
 /**
  * Executes an `addComplexType` command.
@@ -126,10 +109,10 @@ export function executeModifyComplexType(command: ModifyComplexTypeCommand, sche
  * @param updates - The properties to apply
  */
 function updateComplexTypeContents(
-  ct: ComplexTypeHolder,
+  ct: ComplexTypeObject,
   updates: {
     mixed?: boolean;
-    contentModel?: ContentModel;
+    contentModel?: Compositor;
     baseType?: string;
     derivationKind?: ComplexTypeDerivationKind;
   }
@@ -158,8 +141,8 @@ function updateComplexTypeContents(
  * @param derivationKind - Whether the complexContent wrapper is an extension or a restriction
  */
 function applyContentStructure(
-  ct: ComplexTypeHolder,
-  contentModel: ContentModel | undefined,
+  ct: ComplexTypeObject,
+  contentModel: Compositor | undefined,
   baseType?: string,
   derivationKind: ComplexTypeDerivationKind = "extension"
 ): void {
@@ -198,19 +181,22 @@ function applyContentStructure(
  * @param ct - The complexType holder to inspect
  * @returns The base type name or undefined
  */
-function getBaseType(ct: ComplexTypeHolder): string | undefined {
-  return getContentDerivation<{ base?: string }>(ct)?.base;
+function getBaseType(ct: ComplexTypeObject): string | undefined {
+  return getContentDerivation(ct)?.base;
 }
 
 /**
- * Infers the current content model of a complexType from the compositor in its content container
- * (see {@link getContentContainer}).
+ * Infers the current content model of a complexType from the compositor in its particle container
+ * (see {@link getParticleContainer}).
  *
  * @param ct - The complexType holder to inspect
- * @returns The current `ContentModel` or undefined if none is set
+ * @returns The compositor, or undefined if the complex type has none
  */
-function getContentModel(ct: ComplexTypeHolder): ContentModel | undefined {
-  const content = getContentContainer<ComplexTypeContentState>(ct);
+function getContentModel(ct: ComplexTypeObject): Compositor | undefined {
+  const content = getParticleContainer(ct);
+  if (!content) {
+    return undefined;
+  }
   if (content.sequence) {
     return "sequence";
   }
@@ -230,7 +216,7 @@ function getContentModel(ct: ComplexTypeHolder): ContentModel | undefined {
  * @param ct - The complexType holder to inspect
  * @returns The derivation kind, or undefined if the type has no complexContent
  */
-function getDerivationKind(ct: ComplexTypeHolder): ComplexTypeDerivationKind | undefined {
+function getDerivationKind(ct: ComplexTypeObject): ComplexTypeDerivationKind | undefined {
   if (ct.complexContent?.extension) {
     return "extension";
   }
@@ -247,12 +233,13 @@ function getDerivationKind(ct: ComplexTypeHolder): ComplexTypeDerivationKind | u
  * @param ct - The complexType
  * @returns The compositor, group reference and attributes of the content
  */
-function captureContentState(ct: ComplexTypeHolder): ComplexTypeContentState {
+function captureContentState(ct: ComplexTypeObject): CapturedContent {
   // Content may live directly on the complexType or inside an existing
   // complexContent/extension|restriction wrapper. Capture whichever structure
   // is active so derivation-mode switches can rebuild the holder without
   // discarding the current compositor or attribute content.
-  const source = getContentContainer<ComplexTypeContentState>(ct);
+  // A complex type with simple content is never restructured: the validator rejects such changes
+  const source = assumeValidated(getParticleContainer(ct), "Complex content of the complex type");
   // Copy properties because the source object will be mutated when rebuilding
   // derivation wrappers in executeModifyComplexType.
   const { sequence, choice, all, group, attribute, attributeGroup, anyAttribute } = source;
@@ -268,9 +255,9 @@ function captureContentState(ct: ComplexTypeHolder): ComplexTypeContentState {
  * @param existingContent - The content captured before the rebuild
  */
 function restoreContentState(
-  target: ComplexTypeContentState,
-  contentModel: ContentModel | undefined,
-  existingContent: ComplexTypeContentState
+  target: ParticleContainer,
+  contentModel: Compositor | undefined,
+  existingContent: CapturedContent
 ): void {
   if (contentModel === "sequence") {
     target.sequence = existingContent.sequence ?? new explicitGroup();

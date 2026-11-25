@@ -9,7 +9,8 @@ import type {
   AddGroupCommand,
   RemoveGroupCommand,
   ModifyGroupCommand,
-  ContentModel,
+  Compositor,
+  explicitGroup,
 } from "../../shared/types.js";
 import { namedGroup, allType, simpleExplicitGroup, groupRef } from "../../shared/types.js";
 import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
@@ -18,6 +19,7 @@ import { appendTo, assignDefined, removeFrom } from "./nodeProperties.js";
 import { createAnnotation } from "./annotationUtils.js";
 import { renameReferencesInTargetNamespace } from "../schemaReferences/referenceRewrites.js";
 import type { MaxOccurs } from "../../shared/occurrences.js";
+import type { ComplexTypeObject } from "../../shared/schemaObjects.js";
 
 // ===== Element Group Executors =====
 
@@ -139,23 +141,6 @@ export function executeModifyGroup(command: ModifyGroupCommand, schemaObj: schem
 
 // ===== Element Group Helper Functions =====
 
-/** Structural type shared by `namedGroup` for content model operations. */
-interface GroupHolder {
-  all?: allType;
-  choice?: simpleExplicitGroup;
-  sequence?: simpleExplicitGroup;
-}
-
-/** Structural type for a compositor (sequence or choice) that holds group refs. */
-interface CompositorWithGroupRefs {
-  group?: groupRef[];
-}
-
-/** Structural type for a complexType that can hold a direct group ref. */
-interface ComplexTypeWithGroupRef {
-  group?: groupRef;
-}
-
 /**
  * Builds a new `groupRef` instance with the given properties.
  *
@@ -183,9 +168,9 @@ function buildGroupRef(ref: string, minOccurs?: number, maxOccurs?: MaxOccurs, d
  */
 function addGroupRefToParent(parent: unknown, parentType: string, grpRef: groupRef): void {
   if (parentType === "sequence" || parentType === "choice") {
-    appendTo(parent as CompositorWithGroupRefs, "group", grpRef);
+    appendTo(parent as explicitGroup, "group", grpRef);
   } else if (parentType === "topLevelComplexType" || parentType === "localComplexType") {
-    (parent as ComplexTypeWithGroupRef).group = grpRef;
+    (parent as ComplexTypeObject).group = grpRef;
   } else {
     assumptionFailed(`Parent of type '${parentType}' for a group reference`);
   }
@@ -211,13 +196,13 @@ function removeGroupRefFromParent(
   if (parentType === "sequence" || parentType === "choice") {
     // The validator ensures that the ID has the ref and the position of the reference
     removeFrom(
-      parent as CompositorWithGroupRefs,
+      parent as explicitGroup,
       "group",
       (r, index) => r.ref === name && index === position,
       `Group reference ${groupId}`
     );
   } else if (parentType === "topLevelComplexType" || parentType === "localComplexType") {
-    const ct = parent as ComplexTypeWithGroupRef;
+    const ct = parent as ComplexTypeObject;
     assumeValidated(ct.group, `Group reference ${groupId}`);
     ct.group = undefined;
   } else {
@@ -241,12 +226,12 @@ function findGroupRefInParent(
   position: number | undefined
 ): groupRef | undefined {
   if (parentType === "sequence" || parentType === "choice") {
-    const refs = (parent as CompositorWithGroupRefs).group ?? [];
+    const refs = (parent as explicitGroup).group ?? [];
     // The validator ensures that the ID has the ref and the position of the reference
     return refs.find((r, index) => r.ref === name && index === position);
   }
   if (parentType === "topLevelComplexType" || parentType === "localComplexType") {
-    return (parent as ComplexTypeWithGroupRef).group;
+    return (parent as ComplexTypeObject).group;
   }
   return undefined;
 }
@@ -271,7 +256,7 @@ interface CompositorHolder {
  * @throws An {@link Error} if the parent does not hold the compositor
  */
 function removeCompositorGroupFromParent(parent: unknown, groupKind: string, targetGroup: unknown): void {
-  const kind = groupKind as "sequence" | "choice" | "all";
+  const kind = groupKind as Compositor;
   const removeFrom = (holder: CompositorHolder | undefined): boolean => {
     if (!holder) return false;
     const current = holder[kind];
@@ -302,7 +287,7 @@ function removeCompositorGroupFromParent(parent: unknown, groupKind: string, tar
  * @param grp - The group holder to update
  * @param contentModel - The content model to apply
  */
-function applyGroupContentModel(grp: GroupHolder, contentModel: ContentModel): void {
+function applyGroupContentModel(grp: namedGroup, contentModel: Compositor): void {
   grp.all = undefined;
   grp.choice = undefined;
   grp.sequence = undefined;

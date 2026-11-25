@@ -8,23 +8,21 @@ import type {
   AddComplexTypeCommand,
   RemoveComplexTypeCommand,
   ModifyComplexTypeCommand,
+  Compositor,
 } from "../../shared/types.js";
 import type { ValidationResult } from "../../shared/validation.js";
 import { validateTypeInSchema } from "./validationUtils.js";
-import { isSchemaRoot } from "../../shared/schemaUtils.js";
+import { isSchemaRoot } from "../../shared/idStrategy.js";
 import {
   locateType,
   validateInlineTypeParent,
   validateNewTypeName,
   validateUnusedTypeName,
 } from "./commonValidators.js";
+import type { ComplexTypeObject } from "../../shared/schemaObjects.js";
 
-/**
- * Valid content models for `ComplexType` elements.
- * Only compositor models are supported in Phase 1 (sequence, choice, all).
- * Note: `ContentModel` type in `shared/commands/complexType.ts` defines: `"sequence"` | `"choice"` | `"all"`
- */
-export const VALID_COMPLEX_TYPE_CONTENT_MODELS = ["sequence", "choice", "all"] as const;
+/** The compositors that the content model of a complex type can start with (see `Compositor`). */
+export const VALID_COMPLEX_TYPE_CONTENT_MODELS = ["sequence", "choice", "all"] as const satisfies readonly Compositor[];
 
 /** Valid derivation kinds for complex types that use a base type. */
 export const VALID_COMPLEX_TYPE_DERIVATION_KINDS = ["extension", "restriction"] as const;
@@ -77,19 +75,6 @@ function validateDerivationKind(derivationKind: string | undefined): ValidationR
 }
 
 /**
- * Structural type for the parts of an existing complex type that decide which changes of its
- * derivation and content are possible.
- */
-interface ExistingComplexType {
-  simpleContent?: unknown;
-  group?: unknown;
-  complexContent?: {
-    extension?: { base?: string; group?: unknown };
-    restriction?: { base?: string; group?: unknown };
-  };
-}
-
-/**
  * Validates the base type and the derivation kind of a new or changed complex type. A derivation kind
  * needs a base type, from the payload or, when modifying, from the existing type.
  *
@@ -100,7 +85,7 @@ interface ExistingComplexType {
  */
 function validateComplexTypeDerivation(
   payload: { baseType?: string; derivationKind?: string },
-  existing: ExistingComplexType | undefined,
+  existing: ComplexTypeObject | undefined,
   schemaObj: schema
 ): ValidationResult {
   const baseType = payload.baseType?.trim();
@@ -133,7 +118,7 @@ function validateComplexTypeDerivation(
  */
 function validateComplexTypeContentChange(
   payload: { baseType?: string; derivationKind?: string; contentModel?: string },
-  existing: ExistingComplexType,
+  existing: ComplexTypeObject,
   typeId: string
 ): ValidationResult {
   const changesContent =

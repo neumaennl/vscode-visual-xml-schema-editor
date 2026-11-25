@@ -3,9 +3,8 @@ type: Architecture
 title: Architecture
 description: How the extension host, the webview and the shared code work together to provide a visual editor for XML Schema (XSD) files, what xmlbind-ts is responsible for and what the editor is, and the design decisions behind the command-based design.
 tags: [architecture, extension-host, webview, shared, design-decisions]
-status: stable
-generated: { by: human:neumaennl, at: 2026-11-20T13:22:26Z }
-verified: { by: human:neumaennl, at: 2026-11-20T15:04:32Z }
+status: draft
+generated: { by: human:neumaennl, at: 2026-11-25T09:00:21Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -163,8 +162,8 @@ shared/                   Used by both sides
   generated/              Classes generated from schema/XMLSchema.xsd (do not edit)
   commands/               Command type definitions
   messages.ts             Message type definitions
-  idStrategy.ts           Generating and parsing node IDs
-  schemaUtils.ts          Small helpers (schema root detection, prefixes)
+  idStrategy.ts           Generating and parsing node IDs, the schema root and the IDs of anonymous types
+  schemaObjects.ts        The shape of the schema objects that both sides read, and where their content lives
   types.ts                Re-exports of all of the above
   regexUtils.ts           Reading the groups of regular expression matches
 schema/XMLSchema.xsd      The XSD meta-schema the model classes are generated from

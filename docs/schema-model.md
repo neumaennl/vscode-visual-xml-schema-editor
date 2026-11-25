@@ -3,9 +3,8 @@ type: Data Model
 title: Schema model
 description: The object model of an XSD file - classes generated from the XSD meta-schema, XML binding with xmlbind-ts, and the path-based IDs that identify schema nodes.
 tags: [schema-model, data-model, xmlbind-ts, code-generation, ids, navigation]
-status: stable
-generated: { by: human:neumaennl, at: 2026-11-24T14:23:17Z }
-verified: { by: human:neumaennl, at: 2026-11-24T17:27:00Z }
+status: draft
+generated: { by: human:neumaennl, at: 2026-11-25T09:00:21Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -28,9 +27,9 @@ sources:
   - id: shared-types
     resource: ../shared/types.ts
     title: Shared type exports
-  - id: schema-utils
-    resource: ../shared/schemaUtils.ts
-    title: Shared schema utilities
+  - id: schema-objects
+    resource: ../shared/schemaObjects.ts
+    title: Shared shape of the schema objects
   - id: id-strategy
     resource: ../shared/idStrategy.ts
     title: ID strategy
@@ -83,7 +82,7 @@ The classes also have properties that are not in the meta-schema and are filled 
 | `_anyAttributes`     | Attributes from other namespaces (`openAttrs`).                                                                                                                       |
 | `_any`               | Arbitrary child content, for example the content of `xs:documentation` and `xs:appinfo`.                                                                              |
 
-The executors keep `schema._namespacePrefixes` in sync with the imports: adding an import always registers a prefix (an explicit one or a generated `ns0`, `ns1`, …), and removing or changing an import removes or updates it.[^schema-executors] `getTargetNamespacePrefixes()` returns the prefixes that map to the schema's own target namespace.[^schema-utils]
+The executors keep `schema._namespacePrefixes` in sync with the imports: adding an import always registers a prefix (an explicit one or a generated `ns0`, `ns1`, …), and removing or changing an import removes or updates it.[^schema-executors] `getTargetNamespacePrefixes()` returns the prefixes that map to the schema's own target namespace.[^schema-objects]
 
 # XML binding with xmlbind-ts
 
@@ -110,7 +109,7 @@ An ID is a sequence of segments starting with `/`. Each segment has the form `ty
 - `name` is optional. It can carry a namespace as `{namespace}name`; `/` and `:` inside the braces do not split the ID.
 - `[position]` is optional and zero-based. It counts siblings of the same kind.
 
-The schema root has the ID `/schema` (`SCHEMA_ROOT_ID`). `isSchemaRoot()` treats `undefined` and `/schema` as the root.[^schema-utils]
+The schema root has the ID `/schema` (`SCHEMA_ROOT_ID`). `isSchemaRoot()` treats `undefined` and `/schema` as the root.[^id-strategy]
 
 `SchemaNodeType` has these values: `schema`, `element`, `complexType`, `simpleType`, `group`, `groupRef`, `attributeGroup`, `attributeGroupRef`, `attribute`, `anonymousComplexType`, `anonymousSimpleType`, `import`, `include`, `annotation`, `documentation`.[^id-strategy]
 
@@ -119,7 +118,7 @@ The schema root has the ID `/schema` (`SCHEMA_ROOT_ID`). `isSchemaRoot()` treats
 - **Top-level components** have a name and no position: `/element:person`, `/complexType:PersonType`, `/group:PersonGroup`.
 - **Compositors** use the node type `group` with the compositor as the name: `group:sequence[0]`, `group:choice[0]`, `group:all[0]`. This is how the navigator tells a compositor from a named group.[^schema-processors]
 - **Anonymous types** are a segment of their own: `/element:person/anonymousComplexType[0]`. The compositor of an anonymous complex type follows it: `/element:person/anonymousComplexType[0]/group:sequence[0]`.
-- **Derivation is skipped.** For a complex type with `complexContent` or `simpleContent`, the content of the `extension` or `restriction` is addressed as if it were a direct child of the complex type: the compositor, the attributes and the attribute group references, for example `/complexType:T/attribute:id` for an attribute in the extension. `getContentContainer()` in `shared/schemaUtils.ts` decides where this content lives; the navigator, the commands and the diagram builder use it.[^navigator][^schema-utils]
+- **Derivation is skipped.** For a complex type with `complexContent` or `simpleContent`, the content of the `extension` or `restriction` is addressed as if it were a direct child of the complex type: the compositor, the attributes and the attribute group references, for example `/complexType:T/attribute:id` for an attribute in the extension. `getContentContainer()` in `shared/schemaObjects.ts` decides where this content lives; the navigator, the commands and the diagram builder use it.[^navigator][^schema-objects]
 - **Local elements** have both name and position, the position counting only the elements of the same compositor: `/complexType:PersonType/group:sequence[0]/element:first[0]`. Local elements without a name get the name `unnamed`.[^schema-processors]
 - **Group references** use `groupRef` with the referenced name and the position among the group references of the parent: `…/group:sequence[0]/groupRef:SharedGroup[0]`. Both are required; `removeGroup` and `modifyGroup` reject an ID without them ("Invalid groupRef ID").
 - **Annotations of the schema root** have their own IDs: `/schema/annotation[0]` and `/schema/annotation[0]/documentation[1]`. The shorthand `/schema/documentation[N]` addresses the documentation entries of the first schema annotation.[^annotation-executors] For all other components, the annotation ID is the component's ID, and documentation entries are `<component ID>/documentation[N]`.[^documentation-accessors]
@@ -176,7 +175,7 @@ These are listed in [Known issues](known-issues.md#node-ids-are-ambiguous-and-ha
 
 [^generated-open-attrs]: [Generated base class openAttrs](../shared/generated/openAttrs.ts)
 
-[^schema-utils]: [Shared schema utilities](../shared/schemaUtils.ts)
+[^schema-objects]: [Shared shape of the schema objects](../shared/schemaObjects.ts)
 
 [^schema-executors]: [Schema-level command executors](../src/commandExecutors/schemaExecutors.ts)
 

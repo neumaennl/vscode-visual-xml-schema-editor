@@ -38,6 +38,18 @@ import { buildXmlPreview } from "./propertiesPanelXmlPreview";
 type PropertyTab = "general" | "facets" | "docs" | "xml";
 type CommandDispatcher = (command: SchemaCommand) => void;
 
+/** A rename that was sent and is not in the schema yet: the node it renames and its new name. */
+interface PendingRename {
+  sourceId: string;
+  newName: string;
+}
+
+/** A tab of the panel and the label of its button. */
+interface TabEntry {
+  id: PropertyTab;
+  label: string;
+}
+
 /**
  * Manages the properties panel UI that displays details about selected diagram nodes.
  */
@@ -45,7 +57,7 @@ export class PropertiesPanel {
   private container: HTMLDivElement;
   private selectedNode: DiagramItem | null = null;
   private activeTab: PropertyTab = "general";
-  private pendingRename: { sourceId: string; newName: string } | null = null;
+  private pendingRename: PendingRename | null = null;
   private readonly dispatchCommand: CommandDispatcher;
 
   /**
@@ -151,8 +163,8 @@ export class PropertiesPanel {
    *
    * @returns The IDs and labels of the tabs, in display order
    */
-  private getAvailableTabs(): Array<{ id: PropertyTab; label: string }> {
-    const tabs: Array<{ id: PropertyTab; label: string }> = [{ id: "general", label: "General" }];
+  private getAvailableTabs(): TabEntry[] {
+    const tabs: TabEntry[] = [{ id: "general", label: "General" }];
     if (this.selectedNode && this.canShowFacetsTab(this.selectedNode)) {
       tabs.push({ id: "facets", label: "Facets" });
     }

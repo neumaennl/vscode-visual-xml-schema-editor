@@ -7,7 +7,7 @@
  */
 
 import type { schema } from "../../shared/types.js";
-import { locateNodeById } from "../schemaNavigator.js";
+import { locateNodeById, type LocatedNode } from "../schemaNavigator.js";
 
 /**
  * Returns a value that the validator guarantees, such as a node that it found or a field that it requires.
@@ -59,7 +59,7 @@ export function assumeRemoved<T>(items: T[], remaining: T[], what: string): T[] 
  * @returns The node and its type
  * @throws An {@link Error} if the node is not found
  */
-export function locateValidated(schemaObj: schema, nodeId: string): { parent: unknown; parentType: string } {
+export function locateValidated(schemaObj: schema, nodeId: string): LocatedNode {
   const location = locateNodeById(schemaObj, nodeId);
   if (!location.found) {
     return assumptionFailed(`Node ${nodeId} not found`);

@@ -3,22 +3,9 @@
  * models, as the constraints of XML Schema see them.
  */
 
-import type { formChoice, localComplexType, schema, topLevelComplexType } from "../../shared/types.js";
+import type { schema, Compositor, groupRef } from "../../shared/types.js";
 import { findComponentInTargetNamespace, forEachReferencedComponent, type SchemaNames } from "./schemaNames.js";
-
-/** A named or anonymous complex type. */
-export type ComplexTypeDefinition = topLevelComplexType | localComplexType;
-
-/** An element declaration or reference, as far as the constraints look at it. */
-export interface ElementParticle {
-  name?: string;
-  ref?: string;
-  type_?: string;
-  form?: formChoice;
-  substitutionGroup?: string;
-  simpleType?: object;
-  complexType?: localComplexType;
-}
+import type { ComplexTypeObject, LocalElementObject } from "../../shared/schemaObjects.js";
 
 /**
  * A node that can hold element particles: a complex type, the extension or restriction of its content, a
@@ -26,15 +13,15 @@ export interface ElementParticle {
  * holds several.
  */
 interface ParticleHolder {
-  element?: ElementParticle[];
-  group?: { ref?: string } | Array<{ ref?: string }>;
+  element?: LocalElementObject[];
+  group?: groupRef | groupRef[];
   all?: ParticleHolder | ParticleHolder[];
   choice?: ParticleHolder | ParticleHolder[];
   sequence?: ParticleHolder | ParticleHolder[];
 }
 
 /** The compositors that a particle holder can contain. */
-const COMPOSITORS = ["all", "choice", "sequence"] as const;
+const COMPOSITORS = ["all", "choice", "sequence"] as const satisfies readonly Compositor[];
 
 /**
  * Returns a value that is one item or a list as a list.
@@ -56,7 +43,7 @@ function asList<T>(value: T | T[] | undefined): T[] {
  * @param complexType - The complex type
  * @returns The node that holds the particles
  */
-function particleHolderOf(complexType: ComplexTypeDefinition): ParticleHolder {
+function particleHolderOf(complexType: ComplexTypeObject): ParticleHolder {
   const content = complexType.complexContent;
   return content?.extension ?? content?.restriction ?? complexType;
 }
@@ -68,7 +55,7 @@ function particleHolderOf(complexType: ComplexTypeDefinition): ParticleHolder {
  * @param holder - The node
  * @param visit - Called for each element particle
  */
-function forEachDescendantElement(holder: ParticleHolder, visit: (element: ElementParticle) => void): void {
+function forEachDescendantElement(holder: ParticleHolder, visit: (element: LocalElementObject) => void): void {
   asList(holder.element).forEach(visit);
   for (const compositor of COMPOSITORS) {
     for (const nested of asList(holder[compositor])) {
@@ -89,7 +76,7 @@ function forEachDescendantElement(holder: ParticleHolder, visit: (element: Eleme
 function forEachElementOfModel(
   holder: ParticleHolder,
   names: SchemaNames,
-  visit: (element: ElementParticle) => void,
+  visit: (element: LocalElementObject) => void,
   visitedGroups: Set<object>
 ): void {
   asList(holder.element).forEach(visit);
@@ -112,9 +99,9 @@ function forEachElementOfModel(
  * @param names - The names of the schema
  * @returns The chain of types, the given one last
  */
-function extensionChain(complexType: ComplexTypeDefinition, names: SchemaNames): ComplexTypeDefinition[] {
-  const chain: ComplexTypeDefinition[] = [];
-  let current: ComplexTypeDefinition | undefined = complexType;
+function extensionChain(complexType: ComplexTypeObject, names: SchemaNames): ComplexTypeObject[] {
+  const chain: ComplexTypeObject[] = [];
+  let current: ComplexTypeObject | undefined = complexType;
   while (current && !chain.includes(current)) {
     chain.unshift(current);
     const base: string | undefined = current.complexContent?.extension?.base;
@@ -133,9 +120,9 @@ function extensionChain(complexType: ComplexTypeDefinition, names: SchemaNames):
  * @param visit - Called for each element particle
  */
 export function forEachElementOfComplexType(
-  complexType: ComplexTypeDefinition,
+  complexType: ComplexTypeObject,
   names: SchemaNames,
-  visit: (element: ElementParticle) => void
+  visit: (element: LocalElementObject) => void
 ): void {
   const visitedGroups = new Set<object>();
   for (const type of extensionChain(complexType, names)) {
@@ -153,14 +140,14 @@ export function forEachElementOfComplexType(
  */
 export function forEachComplexType(
   schemaObj: schema,
-  visit: (complexType: ComplexTypeDefinition, description: string) => void
+  visit: (complexType: ComplexTypeObject, description: string) => void
 ): void {
-  const visitAnonymous = (element: ElementParticle): void => {
+  const visitAnonymous = (element: LocalElementObject): void => {
     if (element.complexType) {
       visitComplexType(element.complexType, `the complex type of element '${element.name ?? element.ref ?? ""}'`);
     }
   };
-  const visitComplexType = (complexType: ComplexTypeDefinition, description: string): void => {
+  const visitComplexType = (complexType: ComplexTypeObject, description: string): void => {
     visit(complexType, description);
     forEachDescendantElement(particleHolderOf(complexType), visitAnonymous);
   };

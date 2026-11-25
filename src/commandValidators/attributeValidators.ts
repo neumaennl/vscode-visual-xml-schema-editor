@@ -11,7 +11,7 @@ import type {
   AttributeFields,
 } from "../../shared/types.js";
 import type { ValidationResult } from "../../shared/validation.js";
-import { getAttributeContainer } from "../../shared/schemaUtils.js";
+import { getAttributeContainer } from "../../shared/schemaObjects.js";
 import type { ChildKind } from "./commonValidators.js";
 import { locateChild, validateNewChild, validateReference, validateUniqueTopLevelName } from "./commonValidators.js";
 

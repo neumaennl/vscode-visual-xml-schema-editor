@@ -5,8 +5,7 @@
 
 import { hasInlineComplexType, isAbstract, isMixed, isNillable, type DiagramItem } from "../diagram";
 import type { SchemaCommand } from "../../shared/types";
-import { SchemaNodeType } from "../../shared/idStrategy";
-import { anonymousTypeId } from "../../shared/schemaUtils";
+import { SchemaNodeType, anonymousTypeId } from "../../shared/idStrategy";
 import { getNodeType, isTopLevelElement } from "./propertiesPanelNodeKinds";
 import { createSection, createToggleRow } from "./propertiesPanelDom";
 

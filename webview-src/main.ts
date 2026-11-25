@@ -1,7 +1,7 @@
 // Tells Vite to write webview/styles.css, which the HTML of the webview loads with <link>.
 // The bundle itself contains no CSS and injects none.
 import "./styles.css";
-import { DiagramCanvas } from "./canvas/DiagramCanvas";
+import { DiagramCanvas, type ViewChange } from "./canvas/DiagramCanvas";
 import { PropertiesPanel } from "./propertiesPanel/propertiesPanel";
 import type { schema, WebviewMessage } from "../shared/types";
 import type { ViewState } from "./canvas/CanvasView";
@@ -188,7 +188,10 @@ class SchemaEditorApp {
    * Set up toolbar button event handlers
    */
   private setupToolbar(): void {
-    const actions = { zoomIn: "zoomIn", zoomOut: "zoomOut", fitView: "fit" } as const;
+    const actions = { zoomIn: "zoomIn", zoomOut: "zoomOut", fitView: "fit" } as const satisfies Record<
+      string,
+      ViewChange
+    >;
     for (const [buttonId, action] of Object.entries(actions)) {
       document.getElementById(buttonId)?.addEventListener("click", () => {
         this.canvas.changeView(action);

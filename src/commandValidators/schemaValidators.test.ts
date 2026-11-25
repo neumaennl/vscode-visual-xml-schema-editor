@@ -20,7 +20,7 @@ import {
   validateModifySchemaNamespaces,
 } from "./schemaValidators.js";
 import type { ValidationResult } from "../../shared/validation.js";
-import { expectInvalid } from "../../shared/__tests__/validationTestHelpers.js";
+import { expectInvalid, type RuleCase } from "../../shared/__tests__/validationTestHelpers.js";
 import { emptySchema, schemaWith, schemaWithIncludes } from "../../shared/__tests__/schemaTestHelpers.js";
 import { readTestSchema } from "../__tests__/resourceTestHelpers.js";
 
@@ -660,7 +660,7 @@ describe("Import and namespace rules", () => {
   /** The schema with one import of `http://example.com/ns1`, bound to the prefix `ext`. */
   const schemaWithImport = schemaWith(NS1_IMPORT, EXT_PREFIX);
 
-  test.each<{ rule: string; result: ValidationResult; error: string }>([
+  test.each<RuleCase>([
     {
       rule: "an empty prefix for a new import",
       result: validateAddImport(

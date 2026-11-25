@@ -9,14 +9,10 @@ import type { ParsedSchemaId } from "../../shared/idStrategy.js";
 import { parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy.js";
 import { locateNodeById } from "../schemaNavigator.js";
 import { localNameIfInTargetNamespace, splitQName, isValidXmlName } from "../../shared/qNames.js";
-import type { TypeKind } from "../../shared/schemaUtils.js";
+import { type TypeKind } from "../../shared/idStrategy.js";
+import type { NamedChild, NamedComponent } from "../../shared/schemaObjects.js";
 import { findIdentifiedChild } from "../commandUtils.js";
-import type { ValidationFailure, ValidationResult } from "../../shared/validation.js";
-
-/** A top-level component, as far as the checks look at it. */
-interface NamedComponent {
-  name?: string;
-}
+import type { ValidationFailure, ValidationResult, ValidationSuccess } from "../../shared/validation.js";
 
 /** The kinds of top-level components that a `ref` can refer to. */
 export type ReferencedKind = "element" | "attribute" | "group" | "attributeGroup";
@@ -95,7 +91,7 @@ export function locateReferenceOrDefinition(
   validateReferenceExists: () => ValidationResult,
   definitions: NamedComponent[] | undefined,
   notFoundError: string
-): ValidationFailure | ({ valid: true } & ReferenceOrDefinition) {
+): ValidationFailure | (ValidationSuccess & ReferenceOrDefinition) {
   if (parsed.nodeType === referenceType) {
     const refResult = validateReferenceExists();
     return refResult.valid ? { valid: true, target: "reference" } : refResult;
@@ -115,7 +111,7 @@ export function locateReferenceOrDefinition(
 export function parseRequiredId(
   id: string,
   label: string
-): ValidationFailure | { valid: true; parsed: ParsedSchemaId } {
+): ValidationFailure | (ValidationSuccess & { parsed: ParsedSchemaId }) {
   if (!id.trim()) {
     return { valid: false, error: `${label} ID cannot be empty` };
   }
@@ -132,7 +128,7 @@ export function parseRequiredId(
  * @returns The validation result
  */
 export function validateDefinitionRemoval(
-  located: ValidationFailure | { valid: true; target: string; name?: string },
+  located: ValidationFailure | (ValidationSuccess & { target: string; name?: string }),
   label: string,
   isReferenced: (name: string) => boolean
 ): ValidationResult {
@@ -143,12 +139,6 @@ export function validateDefinitionRemoval(
     return { valid: false, error: `${label} is still referenced and cannot be removed: ${located.name}` };
   }
   return { valid: true };
-}
-
-/** A local element or attribute, as far as the checks look at it. */
-export interface NamedChild {
-  name?: string;
-  ref?: string;
 }
 
 /** Elements or attributes, for {@link locateChild}. */
@@ -331,8 +321,14 @@ export function validateInlineTypeParent(
   return { valid: true };
 }
 
+/** A type that {@link locateType} found, and whether it is anonymous. */
+export interface FoundType<T> {
+  type: T;
+  anonymous: boolean;
+}
+
 /** The result of {@link locateType}: the type and whether it is anonymous, or the validation failure. */
-export type LocatedType<T> = ValidationFailure | { valid: true; type: T; anonymous: boolean };
+export type LocatedType<T> = ValidationFailure | (ValidationSuccess & FoundType<T>);
 
 /**
  * Locates the anonymous simpleType or complexType that an ID such as `/element:a/anonymousSimpleType[0]`
@@ -431,7 +427,7 @@ export function validateUnusedTypeName(typeName: string, schemaObj: schema, rena
  */
 export function validateNewTypeName(
   typeName: string | undefined,
-  located: { anonymous: boolean; type: unknown },
+  located: FoundType<unknown>,
   kind: TypeKind,
   schemaObj: schema
 ): ValidationResult {

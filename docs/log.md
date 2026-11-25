@@ -2,7 +2,7 @@
 
 ## 2026-11-25
 
-- **Update**: `shared/occurrences.ts` defines `UNBOUNDED` and `parseMaxOccurs()`, which the properties panel and the diagram use to read `maxOccurs`; the payloads, the executors and the checks of occurrences use the type `MaxOccurs`, so the checks no longer accept any text as `maxOccurs` ([#448](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/448)).
+- **Update**: [Schema model](schema-model.md), [Testing](testing.md) and [Architecture](architecture.md) name `shared/schemaObjects.ts`, formerly `shared/schemaUtils.ts`, and [Schema model](schema-model.md) names `idStrategy.ts` for `isSchemaRoot()`. The [development guidelines](development-guidelines.md#typescript) have new rules: "Named types", to name types that stand for a concept, reuse existing ones and not narrow them without need, and "Casts", to cast only to what an object is; [Testing](testing.md#expected-results) requires realistic test data, for which production code is not adapted. [Commands](commands.md#complex-types) calls the type of `contentModel` `Compositor`, the term of XML Schema ([#448](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/448)). The rule "Keep it current" says what a log entry contains: the changed documents and what they now say, not changes of the code.
 - **Update**: [Known issues](known-issues.md#drops-derive-from-base-types-of-the-wrong-kind): "Drops derive from base types of the wrong kind" is new: an extension dropped on an element with a simple type and a restriction dropped on an element with a complex type write invalid XSD.
 
 ## 2026-11-24

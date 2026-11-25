@@ -10,7 +10,7 @@ import type {
 } from "../../shared/types.js";
 import { validateAddSimpleType, validateRemoveSimpleType, validateModifySimpleType } from "./simpleTypeValidators.js";
 import type { ValidationResult } from "../../shared/validation.js";
-import { expectInvalid } from "../../shared/__tests__/validationTestHelpers.js";
+import { expectInvalid, type RuleCase } from "../../shared/__tests__/validationTestHelpers.js";
 import { emptySchema, schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
 
 /**
@@ -634,7 +634,7 @@ describe("Anonymous SimpleType in Attributes Validators", () => {
 });
 
 describe("Simple type rules", () => {
-  test.each<{ rule: string; result: ValidationResult; error: string }>([
+  test.each<RuleCase>([
     {
       rule: "facets that are all undefined",
       result: validateAdd({

@@ -3,9 +3,8 @@ type: Reference
 title: Commands
 description: The edit commands - payload fields, the rules the validators enforce, what the executors change in the schema, and where the webview sends them.
 tags: [commands, payload, validation, reference]
-status: stable
-generated: { by: human:neumaennl, at: 2026-11-24T18:58:14Z }
-verified: { by: human:neumaennl, at: 2026-11-25T08:43:29Z }
+status: draft
+generated: { by: human:neumaennl, at: 2026-11-25T09:23:17Z }
 sources:
   - id: commands
     resource: ../shared/commands/index.ts
@@ -184,7 +183,7 @@ A restriction without `restrictions` has no facets, which XSD allows. If `restri
 | --------------------- | -------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `parentId` / `typeId` | optional       | required       | Parent for an anonymous type: an element without `ref` and without an anonymous type.                                                                                                                                                                                                                              |
 | `typeName`            | top-level only | top-level only | Must be unique among the simple and complex types like in `addSimpleType`, also when renamed. Renaming updates references like `modifySimpleType`.                                                                                                                                                                 |
-| `contentModel`        | required       | optional       | `sequence`, `choice` or `all` (`ContentModel`). Changing it replaces the compositor and moves its particles into the new one. Rejected for a type whose particle is a group reference, because a complex type has at most one particle.                                                                            |
+| `contentModel`        | required       | optional       | `sequence`, `choice` or `all` (`Compositor`). Changing it replaces the compositor and moves its particles into the new one. Rejected for a type whose particle is a group reference, because a complex type has at most one particle.                                                                              |
 | `baseType`            | optional       | optional       | Checked like the other type names (see [Conventions](#conventions)). Wraps the content in `complexContent` with an `extension` or `restriction` of this type: the compositor, or for a type without one, its group reference and attributes as they are. An empty string removes the base and unwraps the content. |
 | `derivationKind`      | optional       | optional       | `extension` (default) or `restriction` (`ComplexTypeDerivationKind`). Needs a base type, from the payload or the existing type ("Derivation kind requires a base type").                                                                                                                                           |
 | `mixed`               | optional       | optional       |                                                                                                                                                                                                                                                                                                                    |

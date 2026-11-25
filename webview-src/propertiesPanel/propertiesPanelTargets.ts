@@ -3,8 +3,7 @@
  * anonymous type of an element, which is no diagram item of its own.
  */
 
-import { SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy";
-import { anonymousTypeId, type TypeKind } from "../../shared/schemaUtils";
+import { SCHEMA_ROOT_ID, SchemaNodeType, anonymousTypeId, type TypeKind } from "../../shared/idStrategy";
 import { hasInlineComplexType, hasInlineSimpleType, type DiagramItem } from "../diagram";
 import { getNodeType } from "./propertiesPanelNodeKinds";
 

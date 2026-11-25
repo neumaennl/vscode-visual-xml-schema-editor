@@ -5,9 +5,10 @@
 import type { BaseCommand } from "./base.js";
 
 /**
- * Content model for complex types.
+ * The compositor of a model group: a sequence, a choice or an all. The content model of a complex type or a
+ * group definition has one at its top.
  */
-export type ContentModel = "sequence" | "choice" | "all";
+export type Compositor = "sequence" | "choice" | "all";
 
 /**
  * Derivation mode for complex types that use a base type.
@@ -28,7 +29,7 @@ export interface AddComplexTypePayload {
   /** Name of the complex type. Required for top-level types; ignored for anonymous. */
   typeName?: string;
   /** Content model (sequence, choice, all) */
-  contentModel: ContentModel;
+  contentModel: Compositor;
   /** Whether the type is abstract. Only applicable to top-level types. */
   abstract?: boolean;
   /** Base type for extension (optional) */
@@ -74,7 +75,7 @@ export interface ModifyComplexTypePayload {
   /** New name for the type (optional) */
   typeName?: string;
   /** New content model (optional) */
-  contentModel?: ContentModel;
+  contentModel?: Compositor;
   /** New abstract status (optional) */
   abstract?: boolean;
   /** New base type (optional) */

@@ -9,8 +9,9 @@ import type {
   RemoveGroupCommand,
   ModifyGroupCommand,
   complexType,
+  explicitGroup,
 } from "../../shared/types.js";
-import type { ValidationFailure, ValidationResult } from "../../shared/validation.js";
+import type { ValidationFailure, ValidationResult, ValidationSuccess } from "../../shared/validation.js";
 import { validateOccurrences } from "../../shared/occurrences.js";
 import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
 import { locateNodeById } from "../schemaNavigator.js";
@@ -84,7 +85,7 @@ function validateGroupRefExists(groupId: string, schemaObj: schema): ValidationR
     }
   }
   if (location.parentType === "sequence" || location.parentType === "choice") {
-    const refs = (location.parent as { group?: Array<{ ref?: string }> }).group ?? [];
+    const refs = (location.parent as explicitGroup).group ?? [];
     if (!refs.some((r, index) => r.ref === parsed.name && index === parsed.position)) {
       return { valid: false, error: `GroupRef not found: ${groupId}` };
     }
@@ -209,7 +210,7 @@ type GroupTarget = { target: "compositor"; compositorParentId: string } | Refere
  * @param schemaObj - The schema
  * @returns What the ID identifies, or the validation failure
  */
-function locateGroup(groupId: string, schemaObj: schema): ValidationFailure | ({ valid: true } & GroupTarget) {
+function locateGroup(groupId: string, schemaObj: schema): ValidationFailure | (ValidationSuccess & GroupTarget) {
   const parsedId = parseRequiredId(groupId, "Group");
   if (!parsedId.valid) {
     return parsedId;

@@ -237,6 +237,12 @@ export function executeModifyInclude(command: ModifyIncludeCommand, schemaObj: s
   findModuleEntry(includeId, schemaObj.include, "Include").schemaLocation = schemaLocation;
 }
 
+/** A prefix that a change of the namespace declarations renames. */
+interface PrefixRename {
+  oldPrefix: string;
+  newPrefix: string;
+}
+
 /**
  * Finds the prefixes that were renamed: a removed prefix whose namespace an added prefix now declares.
  * Each added prefix is used for one rename at most.
@@ -248,7 +254,7 @@ export function executeModifyInclude(command: ModifyIncludeCommand, schemaObj: s
 function detectPrefixRenames(
   previousNamespacePrefixes: Readonly<NamespacePrefixes>,
   nextNamespacePrefixes: Readonly<NamespacePrefixes>
-): Array<{ oldPrefix: string; newPrefix: string }> {
+): PrefixRename[] {
   const removedPrefixes = Object.keys(previousNamespacePrefixes).filter(
     (prefix) => !Object.prototype.hasOwnProperty.call(nextNamespacePrefixes, prefix)
   );
@@ -256,7 +262,7 @@ function detectPrefixRenames(
     (prefix) => !Object.prototype.hasOwnProperty.call(previousNamespacePrefixes, prefix)
   );
   const usedAddedPrefixes = new Set<string>();
-  const renames: Array<{ oldPrefix: string; newPrefix: string }> = [];
+  const renames: PrefixRename[] = [];
   for (const oldPrefix of removedPrefixes) {
     const previousNamespaceUri = previousNamespacePrefixes[oldPrefix];
     const candidatePrefix = addedPrefixes.find(

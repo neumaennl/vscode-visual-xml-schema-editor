@@ -3,7 +3,7 @@
  */
 
 import type { BaseCommand } from "./base.js";
-import type { ContentModel } from "./complexType.js";
+import type { Compositor } from "./complexType.js";
 import type { MaxOccurs } from "../occurrences.js";
 
 /**
@@ -25,7 +25,7 @@ export interface AddGroupPayload {
    * Content model for the group. Required when creating a definition.
    * Ignored when creating a reference.
    */
-  contentModel?: ContentModel;
+  contentModel?: Compositor;
   /** Optional documentation. Applies to both group definitions and group references (xs:annotation). */
   documentation?: string;
   /**
@@ -84,7 +84,7 @@ export interface ModifyGroupPayload {
   /** New name for the group definition (optional). Not applicable for references. */
   groupName?: string;
   /** New content model (optional). Not applicable for references. */
-  contentModel?: ContentModel;
+  contentModel?: Compositor;
   /**
    * New ref target for a group reference (optional).
    * Only applicable when `groupId` points to a group reference.

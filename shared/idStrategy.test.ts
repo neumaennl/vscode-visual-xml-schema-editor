@@ -2,7 +2,7 @@
  * Unit tests for ID strategy implementation.
  */
 
-import { generateSchemaId, parseSchemaId, SchemaNodeType } from "./idStrategy.js";
+import { anonymousTypeId, generateSchemaId, isSchemaRoot, parseSchemaId, SchemaNodeType } from "./idStrategy.js";
 
 describe("generateSchemaId", () => {
   describe("Top-level nodes", () => {
@@ -313,5 +313,43 @@ describe("Edge cases", () => {
     expect(id).toBe("/element:parent/element:first[0]");
     const parsed = parseSchemaId(id);
     expect(parsed.position).toBe(0);
+  });
+});
+
+describe("anonymousTypeId", () => {
+  test.each([
+    ["simpleType", "/element:a/anonymousSimpleType[0]"],
+    ["complexType", "/element:a/anonymousComplexType[0]"],
+  ] as const)("should return the ID of the anonymous %s", (kind, expected) => {
+    expect(anonymousTypeId("/element:a", kind)).toBe(expected);
+  });
+});
+
+describe("isSchemaRoot", () => {
+  test("should return true for undefined", () => {
+    expect(isSchemaRoot(undefined)).toBe(true);
+  });
+
+  test('should return true for "/schema"', () => {
+    expect(isSchemaRoot("/schema")).toBe(true);
+  });
+
+  test("should return false for empty string", () => {
+    expect(isSchemaRoot("")).toBe(false);
+  });
+
+  test("should return false for element IDs", () => {
+    expect(isSchemaRoot("/element:age")).toBe(false);
+    expect(isSchemaRoot("/element:person/element:name")).toBe(false);
+  });
+
+  test("should return false for attribute IDs", () => {
+    expect(isSchemaRoot("/attribute:color")).toBe(false);
+  });
+
+  test("should return false for other non-root strings", () => {
+    expect(isSchemaRoot("schema")).toBe(false);
+    expect(isSchemaRoot("root")).toBe(false);
+    expect(isSchemaRoot("schemas")).toBe(false);
   });
 });

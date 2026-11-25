@@ -12,26 +12,33 @@ import type {
   simpleExplicitGroup,
   all as allGroup,
   allType,
-  attribute,
   localSimpleType,
+  Compositor,
 } from "../shared/types.js";
-import { parseSchemaId, SchemaNodeType, toNodeType } from "../shared/idStrategy.js";
-import { getContentContainer, isSchemaRoot } from "../shared/schemaUtils.js";
+import { parseSchemaId, SchemaNodeType, toNodeType, isSchemaRoot } from "../shared/idStrategy.js";
+import {
+  getContentContainer,
+  getParticleContainer,
+  type NamedChild,
+  type NamedComponent,
+} from "../shared/schemaObjects.js";
 import { requireGroup } from "../shared/regexUtils.js";
 import { findIdentifiedChild } from "./commandUtils.js";
+
+/** A node that was found, and its type. */
+export interface LocatedNode {
+  /** The node: the schema, a complex type, a sequence and so on */
+  parent: unknown;
+  /** The type of the node, for example `topLevelComplexType` or `sequence` */
+  parentType: string;
+}
 
 /**
  * Result of a node location operation: the node and its type if it was found, otherwise an error.
  * The node is called `parent` because callers usually add children to it.
  */
 export type NodeLocation =
-  | {
-      found: true;
-      /** The node: the schema, a complex type, a sequence and so on */
-      parent: unknown;
-      /** The type of the node, for example `topLevelComplexType` or `sequence` */
-      parentType: string;
-    }
+  | ({ found: true } & LocatedNode)
   | {
       found: false;
       /** Why the node was not found */
@@ -220,7 +227,7 @@ function navigateFromSchema(
   if (!kind) {
     return { found: false };
   }
-  const components: Array<{ name?: string }> = schemaObj[kind.property] ?? [];
+  const components: NamedComponent[] = schemaObj[kind.property] ?? [];
   const node = findIdentifiedChild(components, name, position);
   return node ? { found: true, node, nodeType: kind.nodeType } : { found: false };
 }
@@ -290,7 +297,7 @@ function navigateFromComplexType(
   }
 
   if (nodeType === SchemaNodeType.Attribute) {
-    const attrs = getContentContainer<ComplexTypeContent>(complexType).attribute ?? [];
+    const attrs = getContentContainer(complexType).attribute ?? [];
     const attr = findIdentifiedChild(attrs, name, position);
     if (attr) {
       return { found: true, node: attr, nodeType: "attribute" };
@@ -301,19 +308,8 @@ function navigateFromComplexType(
 }
 
 /**
- * The content that a complex type, or the extension or restriction of its content, can hold. An
- * extension or restriction of simple content has attributes but no compositors.
- */
-interface ComplexTypeContent {
-  sequence?: explicitGroup;
-  choice?: explicitGroup;
-  all?: allGroup;
-  attribute?: attribute[];
-}
-
-/**
  * Returns the compositor of the given kind of a complex type, which lives in the extension or restriction
- * of its content if it has complex content (see {@link getContentContainer}).
+ * of its content if it has complex content (see {@link getParticleContainer}).
  *
  * @param complexType - The complex type
  * @param groupKind - The kind of compositor
@@ -321,9 +317,9 @@ interface ComplexTypeContent {
  */
 function resolveComplexTypeGroup(
   complexType: topLevelComplexType | localComplexType,
-  groupKind: "sequence" | "choice" | "all"
+  groupKind: Compositor
 ): explicitGroup | allGroup | undefined {
-  return getContentContainer<ComplexTypeContent>(complexType)[groupKind];
+  return getParticleContainer(complexType)?.[groupKind];
 }
 
 /**
@@ -370,22 +366,23 @@ function navigateFromGroup(
   position?: number
 ): NavigationResult {
   if (nodeType === SchemaNodeType.Element) {
-    const elements: Array<{ name?: string; ref?: string }> = group.element ?? [];
+    const elements: NamedChild[] = group.element ?? [];
     const element = findIdentifiedChild(elements, name, position);
     if (element) {
       return { found: true, node: element, nodeType: "localElement" };
     }
   }
 
-  if (nodeType === SchemaNodeType.Group && name === "choice") {
-    const choice = ((group as { choice?: explicitGroup[] }).choice ?? [])[position ?? 0];
+  // Only sequences and choices nest other compositors, not an all
+  if (nodeType === SchemaNodeType.Group && name === "choice" && "choice" in group) {
+    const choice = (group.choice ?? [])[position ?? 0];
     if (choice) {
       return { found: true, node: choice, nodeType: "choice" };
     }
   }
 
-  if (nodeType === SchemaNodeType.Group && name === "sequence") {
-    const sequence = ((group as { sequence?: explicitGroup[] }).sequence ?? [])[position ?? 0];
+  if (nodeType === SchemaNodeType.Group && name === "sequence" && "sequence" in group) {
+    const sequence = (group.sequence ?? [])[position ?? 0];
     if (sequence) {
       return { found: true, node: sequence, nodeType: "sequence" };
     }

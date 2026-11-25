@@ -11,10 +11,11 @@ import type {
   ModifySimpleTypeCommand,
   RestrictionFacets,
   SimpleTypeDerivationKind,
+  SimpleTypeBodyChanges,
 } from "../../shared/types.js";
 import type { ValidationResult } from "../../shared/validation.js";
 import { validateTypeInSchema } from "./validationUtils.js";
-import { isSchemaRoot } from "../../shared/schemaUtils.js";
+import { isSchemaRoot } from "../../shared/idStrategy.js";
 import {
   locateType,
   validateInlineTypeParent,
@@ -100,12 +101,7 @@ function bodyKindOf(simpleType: {
  * @returns The validation result; a change without a body is valid for an existing type
  */
 function validateSimpleTypeBody(
-  payload: {
-    baseType?: string;
-    listItemType?: string;
-    unionMemberTypes?: string[];
-    restrictions?: RestrictionFacets;
-  },
+  payload: SimpleTypeBodyChanges,
   schemaObj: schema,
   existingBodyKind?: SimpleTypeDerivationKind
 ): ValidationResult {

@@ -3,9 +3,9 @@
  * two attribute uses with the same name.
  */
 
-import { getContentDerivation } from "../../shared/schemaUtils.js";
+import { getContentDerivation, type ComplexTypeObject, type AttributeContainer } from "../../shared/schemaObjects.js";
 import type { attribute, schema } from "../../shared/types.js";
-import { forEachComplexType, type ComplexTypeDefinition } from "./contentModels.js";
+import { forEachComplexType } from "./contentModels.js";
 import type { ConstraintViolation } from "./constraintViolation.js";
 import {
   findComponentInTargetNamespace,
@@ -18,12 +18,6 @@ import {
   type SchemaNames,
 } from "./schemaNames.js";
 
-/** A node that holds attributes and attribute group references. */
-interface AttributeHolder {
-  attribute?: attribute[];
-  attributeGroup?: Array<{ ref?: string }>;
-}
-
 /**
  * Adds the attribute uses of a node: its attributes, except prohibited ones, and the attribute uses of
  * the attribute groups that it references, recursively. Each `xs:attribute` is one use, also a reference;
@@ -35,7 +29,7 @@ interface AttributeHolder {
  * @param visitedGroups - The attribute groups that were already visited
  */
 function addAttributeUses(
-  holder: AttributeHolder,
+  holder: AttributeContainer,
   names: SchemaNames,
   uses: Set<attribute>,
   visitedGroups: Set<object>
@@ -65,14 +59,14 @@ function addAttributeUses(
  * @param names - The names of the schema
  * @returns The attribute uses
  */
-function attributeUsesOfComplexType(complexType: ComplexTypeDefinition, names: SchemaNames): Set<attribute> {
+function attributeUsesOfComplexType(complexType: ComplexTypeObject, names: SchemaNames): Set<attribute> {
   const uses = new Set<attribute>();
   const visitedTypes = new Set<object>();
   const visitedGroups = new Set<object>();
-  let current: ComplexTypeDefinition | undefined = complexType;
+  let current: ComplexTypeObject | undefined = complexType;
   while (current && !visitedTypes.has(current)) {
     visitedTypes.add(current);
-    addAttributeUses(getContentDerivation<AttributeHolder>(current) ?? current, names, uses, visitedGroups);
+    addAttributeUses(getContentDerivation(current) ?? current, names, uses, visitedGroups);
     const base: string | undefined = (current.complexContent?.extension ?? current.simpleContent?.extension)?.base;
     current = base ? findComponentInTargetNamespace(base, names.schemaObj.complexType, names) : undefined;
   }

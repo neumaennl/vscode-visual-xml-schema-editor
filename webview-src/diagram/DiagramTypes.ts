@@ -3,14 +3,10 @@
  * Based on https://github.com/dgis/xsddiagram
  */
 
-import type { attribute } from "../../shared/generated/attribute";
 import type { explicitGroup } from "../../shared/generated/explicitGroup";
 import type { all } from "../../shared/generated/all";
 import type { simpleExplicitGroup } from "../../shared/generated/simpleExplicitGroup";
 import type { allType } from "../../shared/generated/allType";
-import type { groupRef } from "../../shared/generated/groupRef";
-import type { localComplexType } from "../../shared/generated/localComplexType";
-import type { topLevelComplexType } from "../../shared/generated/topLevelComplexType";
 
 export enum DiagramItemType {
   element = "element",
@@ -83,33 +79,6 @@ export interface DiagramAttribute {
   use?: string;
   defaultValue?: string;
   fixedValue?: string;
-}
-
-/**
- * Interface for schema elements that have attribute definitions.
- * This includes complexType, extension, and restriction definitions.
- * Uses the generated attribute class directly.
- */
-export interface ElementWithAttributes {
-  attribute?: attribute[];
-}
-
-/**
- * Union type for complex type structures (`localComplexType`, `topLevelComplexType`).
- * These types share common structure for sequences, choices, all groups, and attributes.
- */
-export type ComplexTypeLike = localComplexType | topLevelComplexType;
-
-/**
- * Interface for extension/restriction structures that may have attributes and content model groups.
- * This interface allows processing both complex and simple content extensions/restrictions uniformly.
- */
-export interface ContentTypeLike extends ElementWithAttributes {
-  base?: string;
-  group?: groupRef;
-  sequence?: explicitGroup;
-  choice?: explicitGroup;
-  all?: all;
 }
 
 /**

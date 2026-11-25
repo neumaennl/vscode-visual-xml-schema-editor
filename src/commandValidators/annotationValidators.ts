@@ -22,11 +22,12 @@ import type {
   ModifyDocumentationCommand,
   annotationType,
 } from "../../shared/types.js";
-import type { ValidationFailure, ValidationResult } from "../../shared/validation.js";
+import type { ValidationFailure, ValidationResult, ValidationSuccess } from "../../shared/validation.js";
 import { locateNodeById } from "../schemaNavigator.js";
-import { isSchemaRoot } from "../../shared/schemaUtils.js";
+import { isSchemaRoot } from "../../shared/idStrategy.js";
 import { validateLanguage } from "../../shared/languages.js";
 import { parseDocumentationId, parseSchemaAnnotationId, parseSchemaDocumentationId } from "../commandUtils.js";
+import type { AnnotatableNode } from "../../shared/schemaObjects.js";
 
 // ===== Internal helpers =====
 
@@ -41,12 +42,12 @@ import { parseDocumentationId, parseSchemaAnnotationId, parseSchemaDocumentation
 function locateAnnotatable(
   schemaObj: schema,
   nodeId: string
-): ValidationFailure | { valid: true; target: { annotation?: annotationType } } {
+): ValidationFailure | (ValidationSuccess & { target: AnnotatableNode }) {
   const location = locateNodeById(schemaObj, nodeId);
   if (!location.found || location.parentType === "schema") {
     return { valid: false, error: `Target node not found or does not support annotations: ${nodeId}` };
   }
-  return { valid: true, target: location.parent as { annotation?: annotationType } };
+  return { valid: true, target: location.parent as AnnotatableNode };
 }
 
 /**
@@ -85,7 +86,7 @@ function locateAnnotation(
 function validateAddTarget(
   targetId: string,
   schemaObj: schema,
-  checkComponent: (target: { annotation?: annotationType }) => ValidationResult
+  checkComponent: (target: AnnotatableNode) => ValidationResult
 ): ValidationResult {
   if (!targetId.trim()) {
     return { valid: false, error: "Target ID cannot be empty" };

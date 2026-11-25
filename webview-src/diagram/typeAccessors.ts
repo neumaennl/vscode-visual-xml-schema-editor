@@ -11,8 +11,17 @@ import { SchemaNodeType } from "../../shared/idStrategy";
 import { isWhiteSpaceValue, LIST_FACETS, SINGLE_VALUE_FACETS } from "../../shared/facets";
 import type { DiagramItem } from "./DiagramItem";
 import type { DiagramAttribute } from "./DiagramTypes";
-import type { ComplexTypeObject, ElementObject, SimpleTypeObject } from "./schemaAccessors";
-import { getAttributeContainer, type AttributeContainer } from "../../shared/schemaUtils";
+import {
+  getAttributeContainer,
+  type AttributeContainer,
+  type Named,
+  type ComplexTypeObject,
+  type ElementObject,
+  type SimpleTypeObject,
+} from "../../shared/schemaObjects";
+
+/** The content of a complex type that derives from a base type: simple content or complex content. */
+export type ContentKind = "simple" | "complex";
 
 /** The derivation of a complex type from a base type. */
 export interface ComplexDerivation {
@@ -21,7 +30,7 @@ export interface ComplexDerivation {
   /** The base type, if the derivation names one */
   base?: string;
   /** Whether the derivation is the content of `xs:simpleContent` or of `xs:complexContent` */
-  content: "simple" | "complex";
+  content: ContentKind;
 }
 
 /** The body of a simple type: a restriction of a base type, a list or a union. */
@@ -156,7 +165,7 @@ function attributeHolderOf(item: DiagramItem): AttributeContainer | undefined {
 export function getAttributes(item: DiagramItem): DiagramAttribute[] {
   const attributes = attributeHolderOf(item)?.attribute ?? [];
   return attributes
-    .filter((attribute): attribute is attribute & { name: string } => !!attribute.name)
+    .filter((attribute): attribute is attribute & Named => !!attribute.name)
     .map((attribute) => ({
       name: attribute.name,
       type: attribute.type_,

@@ -4,10 +4,22 @@
  */
 
 import { DiagramItem } from "./DiagramItem";
-import type { ComplexTypeLike, ContentTypeLike, GroupDefLike } from "./DiagramTypes";
+import type { GroupDefLike } from "./DiagramTypes";
 import { DiagramItemType, DiagramItemGroupType } from "./DiagramTypes";
-import { generateSchemaId, parseSchemaId, SchemaNodeType, UNNAMED_NODE_NAME } from "../../shared/idStrategy";
-import { anonymousTypeId, getContentContainer } from "../../shared/schemaUtils";
+import {
+  generateSchemaId,
+  parseSchemaId,
+  SchemaNodeType,
+  UNNAMED_NODE_NAME,
+  anonymousTypeId,
+} from "../../shared/idStrategy";
+import {
+  getParticleContainer,
+  type ComplexTypeObject,
+  type ElementObject,
+  type NamedChild,
+  type ParticleContainer,
+} from "../../shared/schemaObjects";
 import { localNameIfInTargetNamespace } from "../../shared/qNames";
 import { getNamespacePrefixes, getTargetNamespace } from "./schemaAccessors";
 import type { localElement } from "../../shared/generated/localElement";
@@ -26,7 +38,7 @@ import { hasInlineComplexType } from "./typeAccessors";
  * @param item - Diagram item of the element
  * @param element - The element
  */
-export function processAnonymousTypes(item: DiagramItem, element: { complexType?: ComplexTypeLike }): void {
+export function processAnonymousTypes(item: DiagramItem, element: ElementObject): void {
   if (element.complexType) {
     processComplexType(item, element.complexType);
   }
@@ -39,8 +51,12 @@ export function processAnonymousTypes(item: DiagramItem, element: { complexType?
  * @param parent - Parent diagram item to add children to
  * @param complexType - Complex type definition from schema
  */
-export function processComplexType(parent: DiagramItem, complexType: ComplexTypeLike): void {
-  processParticles(parent, getContentContainer<ContentTypeLike>(complexType));
+export function processComplexType(parent: DiagramItem, complexType: ComplexTypeObject): void {
+  // Simple content has no particles
+  const particles = getParticleContainer(complexType);
+  if (particles) {
+    processParticles(parent, particles);
+  }
 }
 
 /**
@@ -48,12 +64,9 @@ export function processComplexType(parent: DiagramItem, complexType: ComplexType
  * reference.
  *
  * @param parent - Diagram item to add the children to
- * @param holder - The complex type or extension
+ * @param holder - The complex type, or the extension or restriction of its complex content
  */
-function processParticles(
-  parent: DiagramItem,
-  holder: Pick<ContentTypeLike, "sequence" | "choice" | "all" | "group">
-): void {
+function processParticles(parent: DiagramItem, holder: ParticleContainer): void {
   if (holder.sequence) {
     processSequence(parent, holder.sequence);
   }
@@ -168,15 +181,22 @@ function processGroup(
     groupItem.addChild(createLocalElementItem(elem, elemPosition, groupItem));
   });
 
-  ((groupDef as { group?: groupRef[] }).group ?? []).forEach((ref, index) => {
-    processGroupRef(groupItem, ref, index);
-  });
-  ((groupDef as { choice?: explicitGroup[] }).choice ?? []).forEach((choice, index) => {
-    processChoice(groupItem, choice, index);
-  });
-  ((groupDef as { sequence?: explicitGroup[] }).sequence ?? []).forEach((seq, index) => {
-    processSequence(groupItem, seq, index);
-  });
+  // Only sequences and choices hold group references and nest other compositors, not an all
+  if ("group" in groupDef) {
+    (groupDef.group ?? []).forEach((ref, index) => {
+      processGroupRef(groupItem, ref, index);
+    });
+  }
+  if ("choice" in groupDef) {
+    (groupDef.choice ?? []).forEach((choice, index) => {
+      processChoice(groupItem, choice, index);
+    });
+  }
+  if ("sequence" in groupDef) {
+    (groupDef.sequence ?? []).forEach((seq, index) => {
+      processSequence(groupItem, seq, index);
+    });
+  }
 
   parent.addChild(groupItem);
 }
@@ -223,7 +243,7 @@ function createLocalElementItem(
  * @param parent - The item that holds the element, for the schema of its diagram
  * @returns The label
  */
-function elementLabel(element: { name?: string; ref?: string }, parent: DiagramItem): string {
+function elementLabel(element: NamedChild, parent: DiagramItem): string {
   if (element.name || !element.ref) {
     return element.name ?? UNNAMED_NODE_NAME;
   }

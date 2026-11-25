@@ -118,6 +118,12 @@ export interface ModifySimpleTypePayload {
   restrictions?: RestrictionFacets;
 }
 
+/** The fields of a simple type payload that define its body: a restriction, a list or a union. */
+export type SimpleTypeBodyChanges = Pick<
+  ModifySimpleTypePayload,
+  "baseType" | "listItemType" | "unionMemberTypes" | "restrictions"
+>;
+
 /**
  * Command to modify a simple type.
  */

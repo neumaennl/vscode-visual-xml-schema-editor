@@ -14,6 +14,7 @@
 import type { attributeGroupRef } from "../shared/types.js";
 import { requireGroup } from "../shared/regexUtils.js";
 import { UNNAMED_NODE_NAME } from "../shared/idStrategy.js";
+import type { NamedChild } from "../shared/schemaObjects.js";
 
 /**
  * Parses a schema-annotation ID of the form `"/schema/annotation[N]"`.
@@ -26,6 +27,24 @@ export function parseSchemaAnnotationId(id: string): number | null {
   return match ? parseInt(requireGroup(match, 1), 10) : null;
 }
 
+/** The position of a documentation entry of the schema: the annotation and the entry in it. */
+export interface SchemaDocumentationPosition {
+  annotationIndex: number;
+  documentationIndex: number;
+}
+
+/** The position of a documentation entry of a component: the annotated component and the entry. */
+export interface DocumentationPosition {
+  elementId: string;
+  documentationIndex: number;
+}
+
+/** A predicate that identifies a child by its name or position, and a description of it for messages. */
+export interface ChildMatcher {
+  matches: (child: NamedChild, index: number) => boolean;
+  what: string;
+}
+
 /**
  * Parses a schema-level documentation ID of the form
  * `"/schema/annotation[N]/documentation[M]"`.
@@ -33,7 +52,7 @@ export function parseSchemaAnnotationId(id: string): number | null {
  * @param id - The ID
  * @returns Annotation and documentation indices, or null if the format does not match.
  */
-export function parseSchemaDocumentationId(id: string): { annotationIndex: number; documentationIndex: number } | null {
+export function parseSchemaDocumentationId(id: string): SchemaDocumentationPosition | null {
   const match = /^\/schema\/annotation\[(\d+)\]\/documentation\[(\d+)\]$/.exec(id);
   if (!match) {
     return null;
@@ -51,10 +70,7 @@ export function parseSchemaDocumentationId(id: string): { annotationIndex: numbe
  * @returns The annotated-element path and the 0-based documentation index.
  * @throws An {@link Error} if the format is invalid.
  */
-export function parseDocumentationId(documentationId: string): {
-  elementId: string;
-  documentationIndex: number;
-} {
+export function parseDocumentationId(documentationId: string): DocumentationPosition {
   const match = /^(.+)\/documentation\[(\d+)\]$/.exec(documentationId);
   // The greedy `.+` is intentional: with the `$` anchor the engine backtracks to
   // match the LAST `/documentation[N]` in the string, so the captured element
@@ -96,7 +112,7 @@ export function findAttributeGroupRef(
  * @param name - The name from the ID
  * @returns Whether the name names the child
  */
-function isNamedBy(child: { name?: string; ref?: string }, name: string): boolean {
+function isNamedBy(child: NamedChild, name: string): boolean {
   return child.name === name || child.ref === name || (name === UNNAMED_NODE_NAME && !child.name);
 }
 
@@ -113,7 +129,7 @@ function isNamedBy(child: { name?: string; ref?: string }, name: string): boolea
  * @returns Whether the child matches; never if the ID has neither a name nor a position
  */
 function isIdentifiedChild(
-  child: { name?: string; ref?: string },
+  child: NamedChild,
   index: number,
   name: string | undefined,
   position: number | undefined
@@ -133,7 +149,7 @@ function isIdentifiedChild(
  * @param position - The position from the ID, if it has one
  * @returns The child, or `undefined` if none matches
  */
-export function findIdentifiedChild<T extends { name?: string; ref?: string }>(
+export function findIdentifiedChild<T extends NamedChild>(
   children: T[],
   name: string | undefined,
   position: number | undefined
@@ -151,11 +167,7 @@ export function findIdentifiedChild<T extends { name?: string; ref?: string }>(
  * @returns A predicate that matches the child, and a description such as `Element person` or
  * `Element at position 2`
  */
-export function identifyChild(
-  label: string,
-  name: string | undefined,
-  position: number | undefined
-): { matches: (child: { name?: string; ref?: string }, index: number) => boolean; what: string } {
+export function identifyChild(label: string, name: string | undefined, position: number | undefined): ChildMatcher {
   return {
     matches: (child, index) => isIdentifiedChild(child, index, name, position),
     what: name !== undefined ? `${label} ${name}` : `${label} at position ${position ?? "(none)"}`,

@@ -7,8 +7,9 @@ import type { schema, AddElementCommand, RemoveElementCommand, ModifyElementComm
 import type { ValidationResult } from "../../shared/validation.js";
 import { validateTypeInSchema } from "./validationUtils.js";
 import { validateOccurrences } from "../../shared/occurrences.js";
-import type { ChildKind, NamedChild } from "./commonValidators.js";
+import type { ChildKind } from "./commonValidators.js";
 import { locateChild, validateNewChild, validateReference, validateUniqueTopLevelName } from "./commonValidators.js";
+import type { NamedChild, ElementHolder } from "../../shared/schemaObjects.js";
 
 /** Parent types that can contain child elements. */
 const VALID_ELEMENT_PARENTS = ["schema", "sequence", "choice", "all"] as const;
@@ -20,7 +21,7 @@ const VALID_ELEMENT_PARENTS = ["schema", "sequence", "choice", "all"] as const;
 const ELEMENTS: ChildKind = {
   label: "Element",
   validParents: VALID_ELEMENT_PARENTS,
-  getChildren: (parent) => (parent as { element?: NamedChild[] }).element ?? [],
+  getChildren: (parent) => (parent as ElementHolder<NamedChild>).element ?? [],
 };
 
 /**

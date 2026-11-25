@@ -6,6 +6,7 @@
 import { localNameIfInTargetNamespace, resolveQName } from "../../shared/qNames.js";
 import { formChoice } from "../../shared/types.js";
 import type { NamespacePrefixes, schema } from "../../shared/types.js";
+import type { NamedComponent, ReferenceHolder } from "../../shared/schemaObjects.js";
 
 /** What resolving the names of a schema needs: the schema, its target namespace and its namespace declarations. */
 export interface SchemaNames {
@@ -109,8 +110,8 @@ export function localDeclarationName(
  * @param visited - The components that were already visited; the visited ones are added
  * @param visit - Called for each component
  */
-export function forEachReferencedComponent<T extends { name?: string }>(
-  references: ReadonlyArray<{ ref?: string }>,
+export function forEachReferencedComponent<T extends NamedComponent>(
+  references: readonly ReferenceHolder[],
   components: readonly T[] | undefined,
   names: SchemaNames,
   visited: Set<object>,
@@ -133,7 +134,7 @@ export function forEachReferencedComponent<T extends { name?: string }>(
  * @param names - The names of the schema
  * @returns The component, or `undefined` if the QName refers to another schema or to no component
  */
-export function findComponentInTargetNamespace<T extends { name?: string }>(
+export function findComponentInTargetNamespace<T extends NamedComponent>(
   qName: string,
   components: readonly T[] | undefined,
   names: SchemaNames

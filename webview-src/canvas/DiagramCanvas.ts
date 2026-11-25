@@ -34,6 +34,9 @@ export interface CanvasHandlers {
 /** The class of the selected node. */
 const SELECTED_CLASS = "selected";
 
+/** A change of the view that the toolbar offers: zoom in or out, or fit the diagram into the canvas. */
+export type ViewChange = "zoomIn" | "zoomOut" | "fit";
+
 /**
  * Draws the diagram of a schema and keeps what belongs to the canvas once: the diagram, the selected
  * node and the view.
@@ -136,7 +139,7 @@ export class DiagramCanvas {
    *
    * @param action - Zoom in or out from the center of the canvas, or fit the diagram into the canvas
    */
-  public changeView(action: "zoomIn" | "zoomOut" | "fit"): void {
+  public changeView(action: ViewChange): void {
     if (!this.diagram) {
       return;
     }

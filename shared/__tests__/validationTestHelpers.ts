@@ -5,6 +5,13 @@
  */
 import type { ValidationResult, ValidationFailure } from "../validation.js";
 
+/** A rule of a validator, the result of a command that breaks it, and the error that the rule gives. */
+export interface RuleCase {
+  rule: string;
+  result: ValidationResult;
+  error: string;
+}
+
 /**
  * Asserts that a `ValidationResult` represents a failure and narrows its type to
  * `ValidationFailure`, enabling access to the required `.error` property.

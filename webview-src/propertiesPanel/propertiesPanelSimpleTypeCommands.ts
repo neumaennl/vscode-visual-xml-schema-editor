@@ -2,7 +2,7 @@
  * Command-building helpers for simpleType editing in the properties panel.
  */
 
-import type { SchemaCommand } from "../../shared/types";
+import type { SchemaCommand, SimpleTypeDerivationKind } from "../../shared/types";
 import { getSimpleDerivation, type DiagramItem, type SimpleDerivation } from "../diagram";
 import { resolveSimpleTypeId } from "./propertiesPanelTargets";
 import { normalizeTypeReference } from "./propertiesPanelTypeReferences";
@@ -90,7 +90,7 @@ function typeOfBody(derivation: SimpleDerivation | undefined): string | undefine
  */
 export function createSimpleTypeKindCommand(
   node: DiagramItem,
-  nextKind: "restriction" | "list" | "union"
+  nextKind: SimpleTypeDerivationKind
 ): SchemaCommand | null {
   const simpleTypeId = resolveSimpleTypeId(node);
   const baseType = typeOfBody(getSimpleDerivation(node));

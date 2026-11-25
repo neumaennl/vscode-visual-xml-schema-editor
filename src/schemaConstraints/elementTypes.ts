@@ -5,7 +5,7 @@
 
 import { XSD_NAMESPACE } from "../../shared/builtInTypes.js";
 import type { schema, topLevelElement } from "../../shared/types.js";
-import { forEachComplexType, forEachElementOfComplexType, type ElementParticle } from "./contentModels.js";
+import { forEachComplexType, forEachElementOfComplexType } from "./contentModels.js";
 import type { ConstraintViolation } from "./constraintViolation.js";
 import {
   findComponentInTargetNamespace,
@@ -16,6 +16,7 @@ import {
   topLevelName,
   type SchemaNames,
 } from "./schemaNames.js";
+import type { ElementObject, LocalElementObject } from "../../shared/schemaObjects.js";
 
 /**
  * The type of an element declaration: a key that is equal for the same type, the resolved name of a
@@ -42,7 +43,7 @@ const ANY_TYPE: ElementType = { key: `{${XSD_NAMESPACE}}anyType`, label: "no typ
  * @returns The type, or `undefined` if it is the type of a declaration in another schema
  */
 function typeOfDeclaration(
-  declaration: ElementParticle,
+  declaration: ElementObject,
   names: SchemaNames,
   visited = new Set<object>()
 ): ElementType | undefined {
@@ -53,7 +54,8 @@ function typeOfDeclaration(
   if (anonymousType) {
     return { key: anonymousType, label: ANONYMOUS_LABEL };
   }
-  if (declaration.substitutionGroup) {
+  // Only a top-level element can be a member of a substitution group
+  if ("substitutionGroup" in declaration && declaration.substitutionGroup) {
     const head = findComponentInTargetNamespace(declaration.substitutionGroup, names.schemaObj.element, names);
     if (!head || visited.has(head)) {
       return undefined;
@@ -72,7 +74,7 @@ function typeOfDeclaration(
  * @param names - The names of the schema
  * @returns The name, and the type unless it is unknown because the declaration is in another schema
  */
-function nameAndType(element: ElementParticle, names: SchemaNames): { name: string; type?: ElementType } {
+function nameAndType(element: LocalElementObject, names: SchemaNames): { name: string; type?: ElementType } {
   if (element.ref) {
     const target: topLevelElement | undefined = findComponentInTargetNamespace(
       element.ref,

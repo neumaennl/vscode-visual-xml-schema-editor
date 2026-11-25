@@ -11,10 +11,10 @@ import type {
   RemoveAttributeGroupCommand,
   ModifyAttributeGroupCommand,
 } from "../../shared/types.js";
-import type { ValidationFailure, ValidationResult } from "../../shared/validation.js";
+import type { ValidationFailure, ValidationResult, ValidationSuccess } from "../../shared/validation.js";
 import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
 import { locateNodeById } from "../schemaNavigator.js";
-import { getAttributeContainer } from "../../shared/schemaUtils.js";
+import { getAttributeContainer } from "../../shared/schemaObjects.js";
 import { findAttributeGroupRef } from "../commandUtils.js";
 import type { ReferenceOrDefinition } from "./commonValidators.js";
 import {
@@ -74,7 +74,7 @@ function validateAttrGroupRefExists(groupId: string, schemaObj: schema): Validat
 function locateAttributeGroup(
   groupId: string,
   schemaObj: schema
-): ValidationFailure | ({ valid: true } & ReferenceOrDefinition) {
+): ValidationFailure | (ValidationSuccess & ReferenceOrDefinition) {
   const parsedId = parseRequiredId(groupId, "Attribute group");
   if (!parsedId.valid) {
     return parsedId;

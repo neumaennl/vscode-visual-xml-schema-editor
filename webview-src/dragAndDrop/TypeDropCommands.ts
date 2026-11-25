@@ -5,7 +5,7 @@
 
 import { xsdQName } from "../../shared/builtInTypes";
 import type { RestrictionFacets, SchemaCommand } from "../../shared/types";
-import { anonymousTypeId } from "../../shared/schemaUtils";
+import { anonymousTypeId } from "../../shared/idStrategy";
 import type { DiagramItem } from "../diagram";
 import {
   DiagramItemType,

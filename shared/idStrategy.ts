@@ -320,3 +320,39 @@ function parseQualifiedName(qualifiedName: string): {
   }
   return { name: qualifiedName };
 }
+
+/**
+ * Returns true when `parentId` designates the schema root rather than a
+ * specific child node.
+ *
+ * The two accepted values are considered equivalent schema-root selectors:
+ * - `undefined` — no ID provided, defaults to the schema root
+ * - `"/schema"` — the canonical schema root ID
+ *
+ * **Annotation command ID conventions for the schema root:**
+ * Schema-root annotations use special composite IDs rather than a plain `"schema"` ID:
+ * - `"/schema/annotation[N]"` — identifies the N-th (0-based) `xs:annotation` child on the schema
+ * - `"/schema/annotation[N]/documentation[M]"` — the M-th `xs:documentation` of the N-th schema annotation
+ * - `"/schema/documentation[N]"` — shorthand for the N-th doc of the first schema annotation
+ *
+ * @param parentId - The parent ID to test
+ * @returns true if the ID refers to the schema root
+ */
+export function isSchemaRoot(parentId: string | undefined): boolean {
+  return parentId === undefined || parentId === SCHEMA_ROOT_ID;
+}
+
+/** The two kinds of types, named like the property that holds an anonymous type in its element or attribute. */
+export type TypeKind = "simpleType" | "complexType";
+
+/**
+ * Returns the ID of the anonymous type of an element or attribute, such as `/element:a/anonymousSimpleType[0]`.
+ *
+ * @param parentId - The ID of the element or attribute
+ * @param kind - The kind of the anonymous type
+ * @returns The ID of the anonymous type
+ */
+export function anonymousTypeId(parentId: string, kind: TypeKind): string {
+  const nodeType = kind === "simpleType" ? SchemaNodeType.AnonymousSimpleType : SchemaNodeType.AnonymousComplexType;
+  return generateSchemaId({ nodeType, parentId, position: 0 });
+}

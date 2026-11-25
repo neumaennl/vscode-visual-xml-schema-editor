@@ -19,6 +19,7 @@ import type {
   RemoveIncludeCommand,
   ModifyIncludeCommand,
   ModifySchemaNamespacesCommand,
+  AddImportPayload,
 } from "../../shared/types.js";
 import {
   schema,
@@ -144,7 +145,7 @@ function schemaWithPrefixedImport(namespace: string, schemaLocation: string, pre
  * @param imports - The imports
  * @returns The schema
  */
-function schemaWithImports(...imports: Array<{ namespace: string; schemaLocation: string; prefix?: string }>): schema {
+function schemaWithImports(...imports: AddImportPayload[]): schema {
   const prefixes = Object.fromEntries(imports.flatMap((i) => (i.prefix ? [[i.prefix, i.namespace]] : [])));
   const importXml = imports
     .map((i) => `<xs:import namespace="${i.namespace}" schemaLocation="${i.schemaLocation}"/>`)

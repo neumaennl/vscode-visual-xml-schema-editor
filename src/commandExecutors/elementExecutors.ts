@@ -18,9 +18,7 @@ import { createAnnotation } from "./annotationUtils.js";
 import { appendTo, removeFrom } from "./nodeProperties.js";
 import { identifyChild } from "../commandUtils.js";
 import type { MaxOccurs } from "../../shared/occurrences.js";
-
-/** An element of any kind: top-level in the schema, local in a sequence or choice, or local in an all. */
-type AnyElement = topLevelElement | localElement | narrowMaxMin;
+import type { ElementHolder, ElementObject } from "../../shared/schemaObjects.js";
 
 /** The changes of a `modifyElement` command. */
 type ElementChanges = Omit<ModifyElementPayload, "elementId">;
@@ -94,11 +92,11 @@ export function executeModifyElement(command: ModifyElementCommand, schemaObj: s
  * @returns The parent as a holder of elements
  * @throws An {@link Error} if the parent cannot hold elements
  */
-function elementsOf(parent: unknown, parentType: string): { element?: AnyElement[] } {
+function elementsOf(parent: unknown, parentType: string): ElementHolder<ElementObject> {
   if (!["schema", "sequence", "choice", "all"].includes(parentType)) {
     return assumptionFailed(`Parent of type '${parentType}' for an element`);
   }
-  return parent as { element?: AnyElement[] };
+  return parent as ElementHolder<ElementObject>;
 }
 
 /**
@@ -109,7 +107,7 @@ function elementsOf(parent: unknown, parentType: string): { element?: AnyElement
  * @param parentType - Type of the parent container
  * @returns New element instance
  */
-function createNewElement(payload: AddElementCommand["payload"], parentType: string): AnyElement {
+function createNewElement(payload: AddElementCommand["payload"], parentType: string): ElementObject {
   const { elementName, elementType, ref, minOccurs, maxOccurs, documentation } = payload;
   const element =
     parentType === "schema" ? new topLevelElement() : parentType === "all" ? new narrowMaxMin() : new localElement();
@@ -137,7 +135,7 @@ function createNewElement(payload: AddElementCommand["payload"], parentType: str
  * @param maxOccurs - The new maximum occurrences, if any
  */
 function setOccurrences(
-  element: AnyElement,
+  element: ElementObject,
   parentType: string,
   minOccurs: number | undefined,
   maxOccurs: MaxOccurs | undefined
@@ -173,7 +171,7 @@ function setOccurrences(
  * elements and the occurrences only to local ones, and an empty `default_` or `fixed` clears it
  * @param parentType - Type of the parent container
  */
-function updateElementProperties(element: AnyElement, changes: ElementChanges, parentType: string): void {
+function updateElementProperties(element: ElementObject, changes: ElementChanges, parentType: string): void {
   const { elementName, elementType, ref, minOccurs, maxOccurs, nillable, abstract, default_, fixed } = changes;
   if (ref !== undefined) {
     // Switching to a reference: clear name and type

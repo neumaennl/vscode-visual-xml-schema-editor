@@ -1,4 +1,4 @@
-import type { schema, SchemaCommand } from "../../shared/types";
+import type { schema, SchemaCommand, Compositor } from "../../shared/types";
 import type { DiagramItem } from "../diagram";
 import {
   DiagramItemType,
@@ -7,8 +7,8 @@ import {
   isNamedComplexType,
   isNamedSimpleType,
 } from "../diagram";
-import { parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy";
-import { anonymousTypeId, isSchemaRoot } from "../../shared/schemaUtils";
+import { parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType, anonymousTypeId, isSchemaRoot } from "../../shared/idStrategy";
+import { type NamedComponent } from "../../shared/schemaObjects";
 import { isFacetSchemaConstruct, DraggableSchemaConstruct } from "./DraggableSchemaConstruct";
 import {
   builtInType,
@@ -268,10 +268,7 @@ export class DropCommandFactory {
    * @param contentModel - The dropped compositor
    * @returns Command or null if the target cannot hold a compositor
    */
-  private createCompositorNodeDropCommand(
-    item: DiagramItem,
-    contentModel: "sequence" | "choice" | "all"
-  ): SchemaCommand | null {
+  private createCompositorNodeDropCommand(item: DiagramItem, contentModel: Compositor): SchemaCommand | null {
     if (isNamedComplexType(item)) {
       return {
         type: "modifyComplexType",
@@ -383,7 +380,7 @@ export class DropCommandFactory {
    *
    * @param nodes - Named schema collection
    */
-  private addNamedNodesToSet(nodes: Array<{ name?: string }> | undefined): void {
+  private addNamedNodesToSet(nodes: NamedComponent[] | undefined): void {
     (nodes ?? []).forEach((node) => {
       if (node.name) {
         this.schemaTopLevelNames.add(node.name);

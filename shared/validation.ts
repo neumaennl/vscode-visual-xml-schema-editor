@@ -17,3 +17,9 @@ export interface ValidationFailure {
 
 /** Discriminated union of all possible validation outcomes. */
 export type ValidationResult = ValidationSuccess | ValidationFailure;
+
+/**
+ * The result of a check that, when it passes, also gives what it found, such as the node that an ID
+ * identifies.
+ */
+export type ValidationResultWith<T> = ValidationFailure | (ValidationSuccess & T);

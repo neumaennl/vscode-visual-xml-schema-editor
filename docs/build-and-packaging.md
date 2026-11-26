@@ -1,11 +1,10 @@
 ---
 type: Build Process
 title: Build and packaging
-description: How the extension is built, run, linted, packaged and checked - the build outputs and tsconfig files, the npm scripts, the scripts in TypeScript, running it in VS Code, the VSIX and its check, the generated schema classes, dependencies and the Node version, ESLint, the checks for duplicated and unused code and for the layers, the formatting with Prettier, CI, and planned changes.
+description: How the extension is built, run, linted, packaged and checked - the build outputs and tsconfig files, the npm scripts, the scripts in TypeScript, running it in VS Code, the VSIX and its check, the generated schema classes, dependencies and the Node version, ESLint, the checks for duplicated and unused code, for the layers and for repeated anonymous types, the formatting with Prettier, CI, and planned changes.
 tags: [build, packaging, vsix, vite, typescript, eslint, jscpd, fallow, prettier, ci, dependencies]
-status: stable
-generated: { by: human:neumaennl, at: 2026-11-20T13:21:09Z }
-verified: { by: human:neumaennl, at: 2026-11-20T15:04:32Z }
+status: draft
+generated: { by: human:neumaennl, at: 2026-11-26T09:04:59Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -66,6 +65,9 @@ sources:
     title: ESLint configuration
   - id: jscpd
     resource: ../.jscpd.json
+  - id: check-anonymous-types
+    resource: ../scripts/check-anonymous-types.ts
+    title: Check for repeated anonymous types
     title: jscpd configuration
   - id: fallow
     resource: ../.fallowrc.jsonc
@@ -132,7 +134,7 @@ The whole package is an ES module (`"type": "module"`), so Node and Vite load `v
 | `npm run compile`                               | `compile-extension` (`tsc -p ./tsconfig.extension.json`) and then `compile-webview` (`tsc --noEmit -p tsconfig.webview.json` and `vite build --mode production`).     |
 | `npm run watch`                                 | Runs `watch-extension` (`tsc -watch`) and `watch-webview` (`vite build --watch --mode development`) side by side with `concurrently`.                                 |
 | `npm run clean`                                 | Deletes `out/` and `webview/`.                                                                                                                                        |
-| `npm run lint`, `npm run lint:fix`              | Runs ESLint, jscpd, fallow and the check of the formatting on the repository (see [Lint](#lint)), or fixes what ESLint can.                                           |
+| `npm run lint`, `npm run lint:fix`              | Runs ESLint, jscpd, fallow, the check for repeated anonymous types and the check of the formatting on the repository (see [Lint](#lint)), or fixes what ESLint can.   |
 | `npm run format`                                | Formats all files with Prettier (see [Formatting](#formatting)).                                                                                                      |
 | `npm run package`                               | Builds the VSIX with `vsce package`; `vscode:prepublish` runs `npm run compile` first.                                                                                |
 | `npm run package:verify`                        | Checks the VSIX (see [Packaging](#packaging)).                                                                                                                        |
@@ -143,7 +145,7 @@ The test scripts and `npm run typecheck` are described in [Testing](testing.md#r
 
 # Scripts
 
-`scripts/` contains the scripts behind `package:verify`, `vscode:check` and `vscode:update`: `verify-vsix.ts`, `vscode-version.ts`, and their modules in `scripts/lib/`. They are TypeScript, and Node runs them directly: it removes the types before it runs a file ("type stripping", without a flag since Node 23.6 and 22.18; the scripts run on the version from `.nvmrc`). This needs no build step, but sets three rules, which `tsconfig.nodeTools.json` checks:[^tsconfig-node-tools]
+`scripts/` contains the scripts behind `package:verify`, `vscode:check` and `vscode:update`: `verify-vsix.ts`, `vscode-version.ts`, and their modules in `scripts/lib/`, and `check-anonymous-types.ts`, which `npm run lint` runs (see [Anonymous types](#anonymous-types)). They are TypeScript, and Node runs them directly: it removes the types before it runs a file ("type stripping", without a flag since Node 23.6 and 22.18; the scripts run on the version from `.nvmrc`). This needs no build step, but sets three rules, which `tsconfig.nodeTools.json` checks:[^tsconfig-node-tools]
 
 - Relative imports name the file with its extension, for example `./lib/node-setup.ts`.
 - Imports of types only use `import type`.
@@ -213,15 +215,16 @@ The script reads the GitHub API, `raw.githubusercontent.com` (VS Code's `.npmrc`
 - ESLint;
 - the copy-paste detector jscpd (see [Duplicated code](#duplicated-code));
 - fallow, once for the whole project and once in production mode (see [Unused code](#unused-code));
+- the check for repeated anonymous types (see [Anonymous types](#anonymous-types));
 - Prettier, which checks the formatting with `prettier --check .` (see [Formatting](#formatting)).
 
 How `concurrently` runs them:
 
 - all checks always run to the end, so one run reports all problems;
 - the run fails if one of them fails;
-- `--group` prints the output of each check as one block, labeled `[eslint]`, `[jscpd]`, `[fallow]`, `[fallow-production]`, `[fallow-architecture]` and `[prettier]`.
+- `--group` prints the output of each check as one block, labeled `[eslint]`, `[jscpd]`, `[fallow]`, `[fallow-production]`, `[fallow-architecture]`, `[anonymous-types]` and `[prettier]`.
 
-To run one check alone, use `npx eslint .`, `npx jscpd`, `npx fallow dead-code --no-cache --fail-on-issues`, `npx fallow dead-code --production --no-cache --fail-on-issues`, `npx fallow architecture --no-cache` or `npx prettier --check .`. They read the same configuration as `npm run lint`. `npm run lint:fix` runs only ESLint, because jscpd and fallow fix nothing; `npm run format` fixes the formatting.
+To run one check alone, use `npx eslint .`, `npx jscpd`, `npx fallow dead-code --no-cache --fail-on-issues`, `npx fallow dead-code --production --no-cache --fail-on-issues`, `npx fallow architecture --no-cache`, `node scripts/check-anonymous-types.ts` or `npx prettier --check .`. They read the same configuration as `npm run lint`. `npm run lint:fix` runs only ESLint, because jscpd and fallow fix nothing; `npm run format` fixes the formatting.
 
 ## ESLint
 
@@ -229,7 +232,7 @@ To run one check alone, use `npx eslint .`, `npx jscpd`, `npx fallow dead-code -
 
 - It ignores the build outputs `out/` and `webview/`, the reports of the tests in `coverage/` and `test-results/`, `.vscode-test/`, `node_modules/` and generated code.
 - Only `.ts` and `.mjs` files are allowed; `.js`, `.cjs`, `.mts` and `.cts` files are errors. Without this rule, ESLint would skip `.mts` and `.cts` files without notice, because no other part of the configuration matches them. `eslint.config.mjs` and `.vscode-test.mjs` are the only JavaScript files; `.mjs` files in every folder are checked with the recommended JavaScript rules of ESLint; `vscode-test` cannot load a TypeScript configuration. All other code, including the scripts in `scripts/` and the configurations of Vite and Vitest, is TypeScript (`.ts`). ESLint cannot load a TypeScript configuration without the extra dependency `jiti` (Node would need an unstable flag), so `eslint.config.mjs` stays JavaScript for now; check again when ESLint can do it. The rule therefore does not forbid `.mjs` files yet.
-- TypeScript files are checked with the type information from the tsconfig files listed in [Build outputs](#build-outputs), with the recommended rules of ESLint and the strict and stylistic rules of `typescript-eslint`, including the ones that need type information (`strict-type-checked` and `stylistic-type-checked`). Among them, checks that the types make unnecessary are errors (`no-unnecessary-condition`, for example `x ?? []` on an array that is never `undefined`), and so are non-null assertions (`x!`), `||` where `??` is meant (`prefer-nullish-coalescing`) and promises that are neither awaited nor handled. In addition, return types must be declared, `any` is an error, types are imported with `import type` (`consistent-type-imports`), template literals may contain strings and numbers but not values such as `undefined` (`restrict-template-expressions`), a `switch` on a union or enum must handle every case, by listing it or with a `default` branch (`switch-exhaustiveness-check` with `considerDefaultExhaustiveForUnions`), and `unknown` in type assertions and variable annotations is forbidden (`no-restricted-syntax`); an exception needs an `eslint-disable-next-line` comment with a reason.
+- TypeScript files are checked with the type information from the tsconfig files listed in [Build outputs](#build-outputs), with the recommended rules of ESLint and the strict and stylistic rules of `typescript-eslint`, including the ones that need type information (`strict-type-checked` and `stylistic-type-checked`). Among them, checks that the types make unnecessary are errors (`no-unnecessary-condition`, for example `x ?? []` on an array that is never `undefined`), and so are non-null assertions (`x!`), `||` where `??` is meant (`prefer-nullish-coalescing`) and promises that are neither awaited nor handled. In addition, return types must be declared, `any` is an error, types are imported with `import type` (`consistent-type-imports`), template literals may contain strings and numbers but not values such as `undefined` (`restrict-template-expressions`), a `switch` on a union or enum must handle every case, by listing it or with a `default` branch (`switch-exhaustiveness-check` with `considerDefaultExhaustiveForUnions`), and `unknown` in type assertions and variable annotations is forbidden (`no-restricted-syntax`); an exception needs an `eslint-disable-next-line` comment with a reason. In test files, the same rule also forbids `new schema()` and casts to `schema`, so that tests take their schemas from the helpers (see [Testing](testing.md#expected-results)); the helpers in `__tests__/` are not test files and may build schemas. Because a later setting of a rule replaces an earlier one, this setting repeats the ban on `unknown`.
 - Unused code within a file is found by ESLint: unused variables, imports and parameters (`@typescript-eslint/no-unused-vars`; names that start with `_` are allowed) and private class members that are never used (`@typescript-eslint/no-unused-private-class-members`, which unlike the rule of ESLint also checks members declared with `private`). TypeScript reports unreachable code: all tsconfig files set `allowUnreachableCode: false`, and none sets `noUnusedLocals`, which would report the same as ESLint. They also set `noUncheckedIndexedAccess`, so that an index access may return `undefined`; this also gives `no-unnecessary-condition` the right types for checks such as `items[0]?.name`. Unused code across files is found by fallow (see [Unused code](#unused-code)).
 - The size limits of the [development guidelines](development-guidelines.md#code-size): `max-lines` allows 500 lines per file and `max-lines-per-function` 120 lines per function, blank lines and comments included. Test helpers and mocks have the same limits; test files have their own (see below).
 - TSDoc, as the [development guidelines](development-guidelines.md#tsdoc) ask: `tsdoc/syntax` of `eslint-plugin-tsdoc` checks the syntax of the comments, which includes the hyphen between the name and the description of a parameter; the rules of `eslint-plugin-jsdoc` check that function declarations, methods and classes have a comment, and that it describes every parameter, the return value and the errors thrown. Arrow functions and function expressions, mostly small local helpers and callbacks, need no comment. Destructured parameters are not checked, because TSDoc describes their fields at their type.
@@ -296,6 +299,16 @@ Its limits:
 - Members with decorators are not checked, because a decorator can use them.
 - The production mode also leaves out the configurations of the build tools. `readTarget()` in `scripts/lib/compiler-target.ts`, which only `vite.config.ts` uses, therefore has an ignore comment.
 - fallow finds unused files, exports and members, not unused branches within a function, such as the cases of a `switch` that no caller reaches. The coverage report shows them (see [Testing](testing.md#coverage)), so compare it before and after a change that removes code.
+
+## Anonymous types
+
+`scripts/check-anonymous-types.ts` checks the rule "Named types" of the [development guidelines](development-guidelines.md#typescript): it parses the production code of `shared/`, `src/` and `webview-src/`, without the generated classes, tests, test helpers and mocks, and fails if the same anonymous type occurs more than once, with the places of each one.[^check-anonymous-types]
+
+- **Counted:** object types, unions, tuples and function types written where a type is expected. The definition of a named type (`type X = …`) is no anonymous type.
+- **Not counted:** types that a name would not explain: `X | undefined` and `X | null`, unions of primitive types such as `number | string`, functions without parameters that return such a type, such as `() => void`, and the empty object type.
+- **Same type:** whitespace, comments and the order of the members of a union do not count; the names of parameters do, because `(next: string) => void` and `(message: string) => void` stand for different things.
+
+ESLint has no rule for this, because a rule sees one file at a time.
 
 ## Layers
 
@@ -411,6 +424,8 @@ The [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-sc
 [^eslint]: ESLint configuration
 
 [^jscpd]: jscpd configuration
+
+[^check-anonymous-types]: Check for repeated anonymous types
 
 [^fallow]: fallow configuration
 

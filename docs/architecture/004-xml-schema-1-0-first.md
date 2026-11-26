@@ -3,9 +3,8 @@ type: Architecture Decision Record
 title: "ADR 004: XML Schema 1.0 first"
 description: The decision to support XML Schema 1.0 now and XML Schema 1.1 later, the two conditions that keep the way to 1.1 open, how 1.1 could be added, the open question about validation, and when to review it.
 tags: [adr, architecture, schema-model, xsd-1.1, validation]
-status: stable
-generated: { by: human:neumaennl, at: 2026-11-19T14:50:08Z }
-verified: { by: human:neumaennl, at: 2026-11-19T15:32:47Z }
+status: draft
+generated: { by: human:neumaennl, at: 2026-11-26T13:27:07Z }
 sources:
   - id: meta-schema
     resource: ../../schema/XMLSchema.xsd
@@ -47,12 +46,12 @@ Validating schemas is planned through the Red Hat XML extension and its language
 ## Consequences
 
 - The palette, the commands and the properties panel cover XML Schema 1.0 only.
-- Until condition 1 is met, editing a schema that uses 1.1 constructs loses them.
+- Until condition 1 is met, editing a schema that uses schema constructs of XSD 1.1 loses them.
 - New code that handles XPath, `xs:all` or wildcards follows condition 2.
 
 ## Rejected alternatives
 
-- **Generating the classes from the 1.1 schema for schemas now.** The editor would have to decide for every 1.1 construct how it is shown and edited, and validation of 1.1 is unclear, while nobody has asked for 1.1 yet.
+- **Generating the classes from the 1.1 schema for schemas now.** The editor would have to decide for every schema construct of XSD 1.1 how it is shown and edited, and validation of 1.1 is unclear, while nobody has asked for 1.1 yet.
 
 ## Review
 

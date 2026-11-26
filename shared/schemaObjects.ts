@@ -28,6 +28,7 @@ import type {
   topLevelComplexType,
   topLevelElement,
   topLevelSimpleType,
+  topLevelAttribute,
 } from "./types.js";
 
 /**
@@ -106,6 +107,12 @@ export function getParticleContainer(complexType: ComplexTypeObject): ParticleCo
 /** A model group with a compositor: a sequence or choice, or an `xs:all`. */
 export type CompositorObject = explicitGroup | simpleExplicitGroup | all | allType;
 
+/**
+ * A sequence or a choice, which can hold other compositors: in a complex type or another compositor, or as
+ * the compositor of a group definition.
+ */
+export type SequenceOrChoiceObject = explicitGroup | simpleExplicitGroup;
+
 /** A node that holds at most one compositor directly: a complex type, its complex content or a group definition. */
 export type CompositorHolder = ParticleContainer | namedGroup;
 
@@ -147,6 +154,12 @@ export type ComplexTypeObject = topLevelComplexType | localComplexType;
 
 /** A named simple type or the inline simple type of an element. */
 export type SimpleTypeObject = topLevelSimpleType | localSimpleType;
+
+/** A named type: a top-level simple or complex type. */
+export type NamedTypeObject = topLevelSimpleType | topLevelComplexType;
+
+/** An attribute: top-level or local. */
+export type AttributeObject = topLevelAttribute | attribute;
 
 /** A schema component as far as its name is read. */
 export interface NamedComponent {

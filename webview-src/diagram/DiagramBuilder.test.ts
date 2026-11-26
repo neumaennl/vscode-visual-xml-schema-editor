@@ -5,22 +5,9 @@
 import { DiagramBuilder } from "../diagram/DiagramBuilder";
 import type { DiagramItem } from "../diagram/DiagramItem";
 import { getTypeText, hasInlineComplexType } from "../diagram/typeAccessors";
-import { schema } from "../../shared/types";
 import { SchemaNodeType } from "../../shared/idStrategy";
-import { webviewSchemaWith } from "../../shared/__tests__/schemaTestHelpers";
-
-/**
- * Creates a valid schema object for testing.
- * Properly typed to match the schema class structure.
- *
- * @param overrides - The fields to set on the schema
- * @returns The schema
- */
-function createTestSchema(overrides: Partial<schema> = {}): schema {
-  const testSchema = new schema();
-  Object.assign(testSchema, overrides);
-  return testSchema;
-}
+import { webviewSchemaFromXml, webviewSchemaWith } from "../../shared/__tests__/schemaTestHelpers";
+import { XSD_NAMESPACE } from "../../shared/builtInTypes";
 
 describe("DiagramBuilder", () => {
   let builder: DiagramBuilder;
@@ -41,9 +28,9 @@ describe("DiagramBuilder", () => {
 
   describe("buildFromSchema", () => {
     test("should create diagram with schema root node", () => {
-      const schemaObj = createTestSchema({
-        targetNamespace: "http://example.com/ns",
-      });
+      const schemaObj = webviewSchemaFromXml(
+        `<xs:schema xmlns:xs="${XSD_NAMESPACE}" targetNamespace="http://example.com/ns"/>`
+      );
 
       const diagram = builder.buildFromSchema(schemaObj);
 

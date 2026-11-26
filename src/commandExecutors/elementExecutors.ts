@@ -178,8 +178,8 @@ function updateElementProperties(element: ElementObject, changes: ElementChanges
     (element as localElement).ref = ref;
     element.name = undefined;
     element.type_ = undefined;
-    (element as localElement | topLevelElement).simpleType = undefined;
-    (element as localElement | topLevelElement).complexType = undefined;
+    element.simpleType = undefined;
+    element.complexType = undefined;
     // XML Schema allows none of these on a reference
     (element as localElement).default_ = undefined;
     (element as localElement).fixed = undefined;
@@ -192,8 +192,8 @@ function updateElementProperties(element: ElementObject, changes: ElementChanges
     }
     if (elementType !== undefined) {
       element.type_ = elementType;
-      (element as localElement | topLevelElement).simpleType = undefined;
-      (element as localElement | topLevelElement).complexType = undefined;
+      element.simpleType = undefined;
+      element.complexType = undefined;
     }
   }
 
@@ -201,7 +201,7 @@ function updateElementProperties(element: ElementObject, changes: ElementChanges
 
   // Update nillable flag
   if (nillable !== undefined) {
-    (element as topLevelElement | localElement).nillable = nillable ? true : undefined;
+    element.nillable = nillable ? true : undefined;
   }
 
   // Update abstract flag (top-level elements only)
@@ -210,7 +210,7 @@ function updateElementProperties(element: ElementObject, changes: ElementChanges
   }
 
   // Update default and fixed value; an empty string removes the value
-  const valueHolder = element as topLevelElement | localElement;
+  const valueHolder = element;
   if (default_ !== undefined) {
     valueHolder.default_ = default_ || undefined;
   }

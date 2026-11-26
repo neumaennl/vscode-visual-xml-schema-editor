@@ -3,12 +3,11 @@
  */
 
 import { DiagramLayout } from "./DiagramLayout";
-import { Diagram } from "./Diagram";
+import type { Diagram } from "./Diagram";
 import { createCompositorItem, DiagramItem } from "./DiagramItem";
 import { explicitGroup } from "../../shared/types";
 import { DiagramItemType } from "./DiagramTypes";
-import { schema } from "../../shared/types";
-import { documented, NOT_READ_SCHEMA_OBJECT } from "../__tests__/diagramTestHelpers";
+import { documented, NOT_READ_SCHEMA_OBJECT, emptyDiagram } from "../__tests__/diagramTestHelpers";
 
 describe("DiagramLayout", () => {
   let layout: DiagramLayout;
@@ -16,7 +15,7 @@ describe("DiagramLayout", () => {
 
   beforeEach(() => {
     layout = new DiagramLayout();
-    diagram = new Diagram(new schema());
+    diagram = emptyDiagram();
   });
 
   /**

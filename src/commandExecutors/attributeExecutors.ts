@@ -15,7 +15,7 @@ import { attribute, topLevelAttribute } from "../../shared/types.js";
 import { assumeValidated, assumptionFailed, locateValidated } from "./assumeValidated.js";
 import { parseSchemaId, SCHEMA_ROOT_ID } from "../../shared/idStrategy.js";
 import { createAnnotation } from "./annotationUtils.js";
-import type { AttributeContainer } from "../../shared/schemaObjects.js";
+import type { AttributeContainer, AttributeObject } from "../../shared/schemaObjects.js";
 import { getAttributeContainer } from "../../shared/schemaObjects.js";
 import { appendTo, removeFrom } from "./nodeProperties.js";
 import { identifyChild } from "../commandUtils.js";
@@ -61,8 +61,7 @@ export function executeRemoveAttribute(command: RemoveAttributeCommand, schemaOb
 export function executeModifyAttribute(command: ModifyAttributeCommand, schemaObj: schema): void {
   const parsed = parseSchemaId(command.payload.attributeId);
   const location = locateValidated(schemaObj, parsed.parentId ?? SCHEMA_ROOT_ID);
-  const attributes: Array<topLevelAttribute | attribute> =
-    attributesOf(location.parent, location.parentType).attribute ?? [];
+  const attributes: AttributeObject[] = attributesOf(location.parent, location.parentType).attribute ?? [];
   const child = identifyChild("Attribute", parsed.name, parsed.position);
   const attr = assumeValidated(attributes.find(child.matches), child.what);
   updateAttributeProperties(attr, command.payload, location.parentType === "schema");
@@ -98,9 +97,9 @@ function attributesOf(parent: unknown, parentType: string): AttributeContainer {
 function createNewAttribute(
   fields: AttributeFields & Pick<AddAttributePayload, "documentation">,
   isTopLevel: boolean
-): topLevelAttribute | attribute {
+): AttributeObject {
   const { attributeName, attributeType, ref, required, defaultValue, fixedValue, documentation } = fields;
-  let newAttr: topLevelAttribute | attribute;
+  let newAttr: AttributeObject;
   if (isTopLevel) {
     newAttr = new topLevelAttribute();
     newAttr.name = assumeValidated(attributeName, "Attribute name");
@@ -139,11 +138,7 @@ function createNewAttribute(
  * @param changes - The changes of the `modifyAttribute` command
  * @param topLevel - Whether the attribute is a top-level attribute of the schema
  */
-function updateAttributeProperties(
-  attr: topLevelAttribute | attribute,
-  changes: AttributeFields,
-  topLevel: boolean
-): void {
+function updateAttributeProperties(attr: AttributeObject, changes: AttributeFields, topLevel: boolean): void {
   const { attributeName, attributeType, ref, required, defaultValue, fixedValue } = changes;
   if (ref !== undefined) {
     // Switching to a reference: clear name and type

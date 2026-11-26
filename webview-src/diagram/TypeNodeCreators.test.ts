@@ -2,11 +2,12 @@
  * Unit tests for `TypeNodeCreators` module.
  */
 
+import { emptyDiagram } from "../__tests__/diagramTestHelpers";
 import { createTopLevelNode } from "./TypeNodeCreators";
 import { getDocumentation } from "./documentationAccessors";
-import { Diagram } from "./Diagram";
+import type { Diagram } from "./Diagram";
 import { DiagramItemType } from "./DiagramTypes";
-import { annotationType, documentationType, schema } from "../../shared/types";
+import { annotationType, documentationType } from "../../shared/types";
 import type { namedGroup } from "../../shared/types";
 import { SchemaNodeType } from "../../shared/idStrategy";
 
@@ -14,7 +15,7 @@ describe("TypeNodeCreators", () => {
   let diagram: Diagram;
 
   beforeEach(() => {
-    diagram = new Diagram(new schema());
+    diagram = emptyDiagram();
   });
 
   describe("createTopLevelNode", () => {

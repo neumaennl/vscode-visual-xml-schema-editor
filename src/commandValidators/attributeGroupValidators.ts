@@ -11,7 +11,7 @@ import type {
   RemoveAttributeGroupCommand,
   ModifyAttributeGroupCommand,
 } from "../../shared/types.js";
-import type { ValidationFailure, ValidationResult, ValidationSuccess } from "../../shared/validation.js";
+import type { ValidationResult, ValidationResultWith } from "../../shared/validation.js";
 import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
 import { locateNodeById } from "../schemaNavigator.js";
 import { getAttributeContainer } from "../../shared/schemaObjects.js";
@@ -71,10 +71,7 @@ function validateAttrGroupRefExists(groupId: string, schemaObj: schema): Validat
  * @param schemaObj - The schema
  * @returns What the ID identifies, or the validation failure
  */
-function locateAttributeGroup(
-  groupId: string,
-  schemaObj: schema
-): ValidationFailure | (ValidationSuccess & ReferenceOrDefinition) {
+function locateAttributeGroup(groupId: string, schemaObj: schema): ValidationResultWith<ReferenceOrDefinition> {
   const parsedId = parseRequiredId(groupId, "Attribute group");
   if (!parsedId.valid) {
     return parsedId;

@@ -7,6 +7,12 @@ import { COMPOSITORS, type schema, type groupRef } from "../../shared/types.js";
 import { findComponentInTargetNamespace, forEachReferencedComponent, type SchemaNames } from "./schemaNames.js";
 import type { ComplexTypeObject, LocalElementObject } from "../../shared/schemaObjects.js";
 
+/** A value that is one item or a list of them, as the schema classes hold particles. */
+type OneOrMany<T> = T | T[];
+
+/** Called for each element particle of a content model. */
+export type ElementVisitor = (element: LocalElementObject) => void;
+
 /**
  * A node that can hold element particles: a complex type, the extension or restriction of its content, a
  * compositor or a group definition. A complex type holds one compositor or group reference; a compositor
@@ -14,10 +20,10 @@ import type { ComplexTypeObject, LocalElementObject } from "../../shared/schemaO
  */
 export interface ParticleHolder {
   element?: LocalElementObject[];
-  group?: groupRef | groupRef[];
-  all?: ParticleHolder | ParticleHolder[];
-  choice?: ParticleHolder | ParticleHolder[];
-  sequence?: ParticleHolder | ParticleHolder[];
+  group?: OneOrMany<groupRef>;
+  all?: OneOrMany<ParticleHolder>;
+  choice?: OneOrMany<ParticleHolder>;
+  sequence?: OneOrMany<ParticleHolder>;
 }
 
 /**
@@ -26,7 +32,7 @@ export interface ParticleHolder {
  * @param value - The value
  * @returns The items
  */
-function asList<T>(value: T | T[] | undefined): T[] {
+function asList<T>(value: OneOrMany<T> | undefined): T[] {
   if (value === undefined) {
     return [];
   }
@@ -52,7 +58,7 @@ export function particleHolderOf(complexType: ComplexTypeObject): ParticleHolder
  * @param holder - The node
  * @param visit - Called for each element particle
  */
-function forEachDescendantElement(holder: ParticleHolder, visit: (element: LocalElementObject) => void): void {
+function forEachDescendantElement(holder: ParticleHolder, visit: ElementVisitor): void {
   asList(holder.element).forEach(visit);
   for (const compositor of COMPOSITORS) {
     for (const nested of asList(holder[compositor])) {
@@ -91,7 +97,7 @@ export function forEachGroupReferenceInCompositors(holder: ParticleHolder, visit
 function forEachElementOfModel(
   holder: ParticleHolder,
   names: SchemaNames,
-  visit: (element: LocalElementObject) => void,
+  visit: ElementVisitor,
   visitedGroups: Set<object>
 ): void {
   asList(holder.element).forEach(visit);
@@ -137,7 +143,7 @@ function extensionChain(complexType: ComplexTypeObject, names: SchemaNames): Com
 export function forEachElementOfComplexType(
   complexType: ComplexTypeObject,
   names: SchemaNames,
-  visit: (element: LocalElementObject) => void
+  visit: ElementVisitor
 ): void {
   const visitedGroups = new Set<object>();
   for (const type of extensionChain(complexType, names)) {

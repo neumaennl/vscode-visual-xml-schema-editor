@@ -10,12 +10,19 @@ import {
   WHITE_SPACE_VALUES,
   type SINGLE_VALUE_FACETS,
 } from "../../shared/facets";
-import type { RestrictionFacets, SchemaCommand } from "../../shared/types";
+import type { RestrictionFacets } from "../../shared/types";
 import { getFacets, type DiagramItem } from "../diagram";
 import { createChoiceField, createEditableField } from "./propertiesPanelFields";
 import { resolveSimpleTypeId } from "./propertiesPanelTargets";
 import { getFacetIconStyle } from "../facetIcons";
-import { appendFacetRemoveButton, LAST_FACET_TITLE, renderValueListFacet } from "./propertiesPanelFacetLists";
+import {
+  appendFacetRemoveButton,
+  LAST_FACET_TITLE,
+  renderValueListFacet,
+  type BuildAndDispatch,
+} from "./propertiesPanelFacetLists";
+import type { CommandDispatcher } from "./propertiesPanelCommands";
+import type { PropertyRowAdder } from "./propertiesPanelDom";
 
 /** The single-value facets that the Facets tab shows as text fields; `whiteSpace` has a field of its own. */
 type ValueFacetName = Exclude<(typeof SINGLE_VALUE_FACETS)[number], "whiteSpace">;
@@ -44,8 +51,8 @@ const VALUE_FACET_LABELS = {
  */
 export function renderFacetsTab(
   node: DiagramItem,
-  dispatchCommand: (command: SchemaCommand) => void,
-  addPropertyToContainer: (container: HTMLElement, name: string, value: string) => void
+  dispatchCommand: CommandDispatcher,
+  addPropertyToContainer: PropertyRowAdder
 ): HTMLElement {
   const root = document.createElement("div");
   root.className = "property-tab-content";
@@ -64,7 +71,7 @@ export function renderFacetsTab(
     );
     return root;
   }
-  const buildAndDispatch = (updater: (next: RestrictionFacets) => void): void => {
+  const buildAndDispatch: BuildAndDispatch = (updater) => {
     const nextRestrictions: RestrictionFacets = {
       ...restrictions,
       enumeration: restrictions.enumeration ? [...restrictions.enumeration] : undefined,
@@ -140,7 +147,7 @@ function appendOptionalValueFacet(
   root: HTMLElement,
   key: ValueFacetName,
   value: number | string | undefined,
-  buildAndDispatch: (updater: (next: RestrictionFacets) => void) => void,
+  buildAndDispatch: BuildAndDispatch,
   canRemove: boolean
 ): void {
   if (value === undefined) {

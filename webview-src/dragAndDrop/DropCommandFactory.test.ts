@@ -420,10 +420,10 @@ describe("DropCommandFactory", () => {
       ],
       // XML Schema allows no all in a sequence or a choice, and no compositor in an all
       ["an all on a sequence", SEQUENCE, C.All],
-      ...[C.Sequence, C.Choice, C.All].map((construct): RejectedDrop => [
-        `a ${construct} on an all`,
+      ...[C.Sequence, C.Choice, C.All].map((schemaConstruct): RejectedDrop => [
+        `a ${schemaConstruct} on an all`,
         makeItem("/complexType:T/all[0]", SchemaNodeType.All),
-        construct,
+        schemaConstruct,
       ]),
       ...(["list", "union"] as const).map((kind): RejectedDrop => [
         `a facet on a ${kind} simpleType`,

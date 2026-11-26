@@ -93,7 +93,7 @@ describe("isReferenced", () => {
   });
 
   test("should search objects created by commands, which lack the arrays that unmarshalling creates", () => {
-    const created = new schema();
+    const created = emptySchema();
     created.complexType = [Object.assign(new topLevelComplexType(), { name: "T", sequence: new explicitGroup() })];
     expect(isReferenced(created, "group", "G")).toBe(false);
   });

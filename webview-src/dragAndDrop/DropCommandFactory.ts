@@ -17,6 +17,9 @@ import {
   getRestrictionBaseType,
 } from "./TypeDropCommands";
 
+/** The schema constructs that derive a type: a restriction or an extension. */
+type DerivationSchemaConstruct = DraggableSchemaConstruct.Restriction | DraggableSchemaConstruct.Extension;
+
 /**
  * Creates schema commands from drag-and-drop actions.
  * Encapsulates default naming and name-collision handling.
@@ -62,7 +65,7 @@ export class DropCommandFactory {
    */
   private createTopLevelDerivationCommand(
     item: DiagramItem,
-    schemaConstruct: DraggableSchemaConstruct.Restriction | DraggableSchemaConstruct.Extension,
+    schemaConstruct: DerivationSchemaConstruct,
     reserveNames: boolean
   ): SchemaCommand {
     if (schemaConstruct === DraggableSchemaConstruct.Restriction) {
@@ -333,7 +336,7 @@ export class DropCommandFactory {
   private createDerivationNodeDropCommand(
     item: DiagramItem,
     reserveNames: boolean,
-    schemaConstruct: DraggableSchemaConstruct.Restriction | DraggableSchemaConstruct.Extension
+    schemaConstruct: DerivationSchemaConstruct
   ): SchemaCommand | null {
     if (isSchemaRoot(item.id)) {
       return this.createTopLevelDerivationCommand(item, schemaConstruct, reserveNames);

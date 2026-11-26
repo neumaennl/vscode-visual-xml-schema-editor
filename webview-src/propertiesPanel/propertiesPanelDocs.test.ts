@@ -6,11 +6,10 @@
 import type { Mock } from "vitest";
 import { createDocsTab } from "./propertiesPanelDocs";
 import type { SchemaCommand } from "../../shared/types";
-import { Diagram, DiagramItem, DiagramItemType } from "../diagram";
-import { diagramItem, muteDiagramBuilderLog } from "../__tests__/diagramTestHelpers";
+import { DiagramItem, DiagramItemType } from "../diagram";
+import { diagramItem, muteDiagramBuilderLog, emptyDiagram } from "../__tests__/diagramTestHelpers";
 import { editInput, getInputByLabel } from "../__tests__/propertiesPanelTestHelpers";
 import { webviewSchemaWith } from "../../shared/__tests__/schemaTestHelpers";
-import { schema } from "../../shared/types";
 
 /**
  * Three annotations of the schema, the first with two documentation entries, the second with one and
@@ -268,13 +267,7 @@ describe("createDocsTab", () => {
 
     test("should reject a node that documentation cannot be added to, which the diagram does not have", () => {
       // An attribute is no node of the diagram; its ID stands for any node without a documentation target
-      const node = new DiagramItem(
-        "/complexType:T/attribute:a",
-        "a",
-        DiagramItemType.element,
-        {},
-        new Diagram(new schema())
-      );
+      const node = new DiagramItem("/complexType:T/attribute:a", "a", DiagramItemType.element, {}, emptyDiagram());
 
       expect(() => createDocsTab(node, vi.fn())).toThrow("Documentation cannot be added to /complexType:T/attribute:a");
     });

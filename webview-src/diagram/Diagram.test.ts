@@ -2,17 +2,16 @@
  * Unit tests for Diagram class.
  */
 
-import { Diagram } from "./Diagram";
+import type { Diagram } from "./Diagram";
 import { DiagramItem } from "./DiagramItem";
 import { DiagramItemType } from "./DiagramTypes";
-import { schema } from "../../shared/types";
 import { emptyDiagram, NOT_READ_SCHEMA_OBJECT } from "../__tests__/diagramTestHelpers";
 
 describe("Diagram", () => {
   let diagram: Diagram;
 
   beforeEach(() => {
-    diagram = new Diagram(new schema());
+    diagram = emptyDiagram();
   });
 
   describe("constructor", () => {
@@ -39,7 +38,7 @@ describe("Diagram", () => {
 
     test("should set diagram reference on the element", () => {
       const item = new DiagramItem("test-1", "TestItem", DiagramItemType.element, NOT_READ_SCHEMA_OBJECT, diagram);
-      const newDiagram = new Diagram(new schema());
+      const newDiagram = emptyDiagram();
 
       newDiagram.addRootElement(item);
 

@@ -2,7 +2,7 @@
  * Schema-root namespace editing helpers for the properties panel.
  */
 
-import type { NamespacePrefixes, SchemaCommand } from "../../shared/types";
+import type { NamespacePrefixes } from "../../shared/types";
 import { getNamespacePrefixes, getTargetNamespace, type DiagramItem } from "../diagram";
 import { getTargetNamespacePrefixes } from "../../shared/schemaObjects";
 import {
@@ -15,8 +15,7 @@ import {
 } from "../../shared/qNames";
 import { addPropertyWithElementToContainer } from "./propertiesPanelDom";
 import { createEditableField, createTextInput } from "./propertiesPanelFields";
-
-type CommandDispatcher = (command: SchemaCommand) => void;
+import type { CommandDispatcher } from "./propertiesPanelCommands";
 
 /**
  * Renders schema-root namespace fields and wires edits to `modifySchemaNamespaces` commands.

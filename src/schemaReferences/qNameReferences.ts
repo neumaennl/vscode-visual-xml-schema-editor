@@ -30,6 +30,9 @@ export interface QNameReference {
   replace(newValue: string): void;
 }
 
+/** Called for each QName reference of a schema. */
+export type QNameReferenceVisitor = (reference: QNameReference) => void;
+
 /** The properties that always hold a QName, and what it refers to. */
 const QNAME_PROPERTIES = new Map<string, QNameKind>([
   ["type_", "type"],
@@ -55,7 +58,7 @@ type SchemaNode = object;
  * @param schemaObj - The schema to walk
  * @param visit - Called with every QName; it may replace the QName
  */
-export function forEachQNameReference(schemaObj: schema, visit: (reference: QNameReference) => void): void {
+export function forEachQNameReference(schemaObj: schema, visit: QNameReferenceVisitor): void {
   walk(schemaObj, undefined, visit);
 }
 
@@ -66,7 +69,7 @@ export function forEachQNameReference(schemaObj: schema, visit: (reference: QNam
  * @param holderKey - The property of the parent that holds the node, which decides what a `ref` refers to
  * @param visit - The visitor
  */
-function walk(node: SchemaNode, holderKey: string | undefined, visit: (reference: QNameReference) => void): void {
+function walk(node: SchemaNode, holderKey: string | undefined, visit: QNameReferenceVisitor): void {
   for (const [key, value] of Object.entries(node)) {
     // Properties that start with `_` are what xmlbind-ts adds besides the schema's own content, such
     // as foreign attributes and wildcard content (see isNode()); annotations hold arbitrary XML
@@ -99,7 +102,7 @@ function visitProperty(
   key: string,
   holderKey: string | undefined,
   value: string,
-  visit: (reference: QNameReference) => void
+  visit: QNameReferenceVisitor
 ): void {
   if (key === "memberTypes") {
     visitMemberTypes(node, value, visit);
@@ -128,7 +131,7 @@ function visitProperty(
  * @param value - The space-separated list
  * @param visit - The visitor
  */
-function visitMemberTypes(node: SchemaNode, value: string, visit: (reference: QNameReference) => void): void {
+function visitMemberTypes(node: SchemaNode, value: string, visit: QNameReferenceVisitor): void {
   const members = value.split(/\s+/).filter((member) => member.length > 0);
   members.forEach((member, index) => {
     visit({
@@ -149,7 +152,7 @@ function visitMemberTypes(node: SchemaNode, value: string, visit: (reference: QN
  * @param value - The expression
  * @param visit - The visitor
  */
-function visitXPath(node: SchemaNode, value: string, visit: (reference: QNameReference) => void): void {
+function visitXPath(node: SchemaNode, value: string, visit: QNameReferenceVisitor): void {
   const parts = splitXPath(value);
   parts.forEach((part, index) => {
     if (index % 2 === 0) {

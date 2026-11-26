@@ -8,7 +8,7 @@ import type { ValidatorFunctions } from "./commandValidator.js";
 import { CommandValidator } from "./commandValidator.js";
 import type { CommandHandler } from "./commandHandlers.js";
 import type { SchemaCommand } from "../shared/types.js";
-import { schema } from "../shared/types.js";
+import type { schema } from "../shared/types.js";
 import type { ValidationResult } from "../shared/validation.js";
 import { expectInvalid } from "../shared/__tests__/validationTestHelpers.js";
 import { emptySchema } from "../shared/__tests__/schemaTestHelpers.js";
@@ -69,7 +69,7 @@ describe("CommandValidator", () => {
   let validator: CommandValidator;
 
   beforeEach(() => {
-    mockSchema = new schema();
+    mockSchema = emptySchema();
     const { validators, mocks } = createMockValidators();
     mockValidators = mocks;
     validator = new CommandValidator(validators);

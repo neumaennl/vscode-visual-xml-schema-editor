@@ -15,7 +15,7 @@ import {
   type DiagramItem,
 } from "../diagram";
 import { createEditableField } from "./propertiesPanelFields";
-import { createComplexBaseTypeCommand, createTypeCommand } from "./propertiesPanelCommands";
+import { createComplexBaseTypeCommand, createTypeCommand, type CommandDispatcher } from "./propertiesPanelCommands";
 import { getNodeType } from "./propertiesPanelNodeKinds";
 import { createTypeCommitHandler } from "./propertiesPanelTypeReferences";
 import { getReadOnlyTypeValue, getTypeEditHint } from "./propertiesPanelTypeHelpers";
@@ -27,6 +27,7 @@ import {
   renderSimpleTypeUnionEditor,
   renderInlineSimpleTypeReplacement,
 } from "./propertiesPanelSimpleTypeEditors";
+import type { PropertyRowAdder } from "./propertiesPanelDom";
 
 /** What the functions that render the type fields of a node need. */
 interface TypeSection {
@@ -37,9 +38,9 @@ interface TypeSection {
   /** Suggested type names for the editable fields */
   typeSuggestions: string[];
   /** Callback used to emit schema commands */
-  dispatchCommand: (command: SchemaCommand) => void;
+  dispatchCommand: CommandDispatcher;
   /** Helper used for read-only property rows */
-  addPropertyToContainer: (container: HTMLElement, name: string, value: string) => void;
+  addPropertyToContainer: PropertyRowAdder;
 }
 
 /**
@@ -55,8 +56,8 @@ export function renderTypeProperty(
   root: HTMLElement,
   node: DiagramItem,
   typeSuggestions: string[],
-  dispatchCommand: (command: SchemaCommand) => void,
-  addPropertyToContainer: (container: HTMLElement, name: string, value: string) => void
+  dispatchCommand: CommandDispatcher,
+  addPropertyToContainer: PropertyRowAdder
 ): void {
   const typeText = getTypeText(node);
   if (!typeText) {

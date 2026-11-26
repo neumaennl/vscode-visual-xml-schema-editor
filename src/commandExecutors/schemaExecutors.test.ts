@@ -23,7 +23,6 @@ import type {
 } from "../../shared/types.js";
 import {
   schema,
-  importType,
   topLevelComplexType,
   topLevelSimpleType,
   restrictionType,
@@ -591,16 +590,11 @@ describe("executeModifyImport", () => {
   });
 
   test("should rename only the specific prefix, leaving any other prefix for the same namespace intact", () => {
-    // Simulate a schema that has two prefixes bound to the same namespace
-    const s = new schema();
-    s._namespacePrefixes = {
+    // A schema that has two prefixes bound to the same namespace
+    const s = schemaWith(`<xs:import namespace="http://example.com/ns" schemaLocation="ns.xsd"/>`, {
       ext: "http://example.com/ns",
       ext2: "http://example.com/ns",
-    };
-    const imp = new importType();
-    imp.namespace = "http://example.com/ns";
-    imp.schemaLocation = "ns.xsd";
-    s.import_ = [imp];
+    });
 
     // Explicitly rename "ext" → "newpfx" (oldPrefix identifies which one)
     executeModifyImport(
@@ -612,10 +606,10 @@ describe("executeModifyImport", () => {
     );
 
     // "ext" is renamed to "newpfx"
-    expect(s._namespacePrefixes.newpfx).toBe("http://example.com/ns");
-    expect(s._namespacePrefixes.ext).toBeUndefined();
+    expect(s._namespacePrefixes?.newpfx).toBe("http://example.com/ns");
+    expect(s._namespacePrefixes?.ext).toBeUndefined();
     // "ext2" (the other prefix for the same namespace) remains untouched
-    expect(s._namespacePrefixes.ext2).toBe("http://example.com/ns");
+    expect(s._namespacePrefixes?.ext2).toBe("http://example.com/ns");
   });
 });
 

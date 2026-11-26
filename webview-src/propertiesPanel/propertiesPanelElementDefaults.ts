@@ -2,10 +2,11 @@
  * Default/fixed section rendering helpers for element nodes in the `PropertiesPanel`.
  */
 
-import type { ModifyElementPayload, SchemaCommand } from "../../shared/types";
+import type { ModifyElementPayload } from "../../shared/types";
 import { getDefaultValue, getFixedValue, type DiagramItem } from "../diagram";
 import { createSection } from "./propertiesPanelDom";
 import { createInputColumn } from "./propertiesPanelFields";
+import type { CommandDispatcher } from "./propertiesPanelCommands";
 
 /** The part of a `modifyElement` payload that sets the default or the fixed value. */
 type ValuePayload = Pick<ModifyElementPayload, "default_" | "fixed">;
@@ -31,10 +32,7 @@ const VALUE_FIELDS = [
  * @param dispatchCommand - Callback used to emit schema commands
  * @returns The rendered default/fixed section
  */
-export function renderElementDefaultFixedSection(
-  node: DiagramItem,
-  dispatchCommand: (command: SchemaCommand) => void
-): HTMLElement {
+export function renderElementDefaultFixedSection(node: DiagramItem, dispatchCommand: CommandDispatcher): HTMLElement {
   const section = createSection("wand", "DEFAULT & FIXED");
 
   const row = document.createElement("div");

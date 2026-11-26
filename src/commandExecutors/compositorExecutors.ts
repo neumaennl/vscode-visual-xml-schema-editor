@@ -9,7 +9,6 @@ import type {
   RemoveCompositorCommand,
   ModifyCompositorCommand,
   Compositor,
-  simpleExplicitGroup,
   namedGroup,
   all,
 } from "../../shared/types.js";
@@ -25,6 +24,7 @@ import {
   type ComplexTypeObject,
   type CompositorObject,
   type HeldCompositor,
+  type SequenceOrChoiceObject,
 } from "../../shared/schemaObjects.js";
 
 /**
@@ -41,7 +41,7 @@ export function executeAddCompositor(command: AddCompositorCommand, schemaObj: s
     assumptionFailed(`An all in ${parentId}`);
   }
   // The validator ensures that the parent is a sequence or a choice
-  const parent = locateValidated(schemaObj, parentId).parent as explicitGroup | simpleExplicitGroup;
+  const parent = locateValidated(schemaObj, parentId).parent as SequenceOrChoiceObject;
   appendTo(parent, compositor, assignDefined(new explicitGroup(), { minOccurs, maxOccurs }));
 }
 
@@ -134,7 +134,7 @@ function replaceCompositor(
       if (kind === "all" || next === "all") {
         return assumptionFailed(`An all in a ${parentType}`);
       }
-      const holder = parent as explicitGroup | simpleExplicitGroup;
+      const holder = parent as SequenceOrChoiceObject;
       removeFrom(holder, kind, (candidate) => candidate === current, `Compositor ${kind} in its parent`);
       const replacement = withContentOf(new explicitGroup(), current);
       appendTo(holder, next, replacement);

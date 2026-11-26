@@ -12,7 +12,7 @@ import { localNameIfInTargetNamespace, splitQName, isValidXmlName } from "../../
 import { type TypeKind } from "../../shared/idStrategy.js";
 import type { NamedChild, NamedComponent } from "../../shared/schemaObjects.js";
 import { findIdentifiedChild } from "../commandUtils.js";
-import type { ValidationFailure, ValidationResult, ValidationSuccess } from "../../shared/validation.js";
+import type { ValidationFailure, ValidationResult, ValidationResultWith } from "../../shared/validation.js";
 
 /**
  * Validates the compositor of a command: it must be `sequence`, `choice` or `all`.
@@ -106,7 +106,7 @@ export function locateReferenceOrDefinition(
   validateReferenceExists: () => ValidationResult,
   definitions: NamedComponent[] | undefined,
   notFoundError: string
-): ValidationFailure | (ValidationSuccess & ReferenceOrDefinition) {
+): ValidationResultWith<ReferenceOrDefinition> {
   if (parsed.nodeType === referenceType) {
     const refResult = validateReferenceExists();
     return refResult.valid ? { valid: true, target: "reference" } : refResult;
@@ -123,10 +123,7 @@ export function locateReferenceOrDefinition(
  * @param label - What the ID identifies, capitalized, for the error message, such as `"Group"`
  * @returns The parsed ID, or the validation failure
  */
-export function parseRequiredId(
-  id: string,
-  label: string
-): ValidationFailure | (ValidationSuccess & { parsed: ParsedSchemaId }) {
+export function parseRequiredId(id: string, label: string): ValidationResultWith<{ parsed: ParsedSchemaId }> {
   if (!id.trim()) {
     return { valid: false, error: `${label} ID cannot be empty` };
   }
@@ -143,7 +140,7 @@ export function parseRequiredId(
  * @returns The validation result
  */
 export function validateDefinitionRemoval(
-  located: ValidationFailure | (ValidationSuccess & { target: string; name?: string }),
+  located: ValidationResultWith<{ target: string; name?: string }>,
   label: string,
   isReferenced: (name: string) => boolean
 ): ValidationResult {
@@ -343,7 +340,7 @@ export interface FoundType<T> {
 }
 
 /** The result of {@link locateType}: the type and whether it is anonymous, or the validation failure. */
-export type LocatedType<T> = ValidationFailure | (ValidationSuccess & FoundType<T>);
+export type LocatedType<T> = ValidationResultWith<FoundType<T>>;
 
 /**
  * Locates the anonymous simpleType or complexType that an ID such as `/element:a/anonymousSimpleType[0]`

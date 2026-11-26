@@ -22,7 +22,7 @@ import type {
   ModifyDocumentationCommand,
   annotationType,
 } from "../../shared/types.js";
-import type { ValidationFailure, ValidationResult, ValidationSuccess } from "../../shared/validation.js";
+import type { ValidationFailure, ValidationResult, ValidationResultWith } from "../../shared/validation.js";
 import { locateNodeById } from "../schemaNavigator.js";
 import { isSchemaRoot } from "../../shared/idStrategy.js";
 import { validateLanguage } from "../../shared/languages.js";
@@ -39,10 +39,7 @@ import type { AnnotatableNode } from "../../shared/schemaObjects.js";
  * @param nodeId - The ID of the component
  * @returns The component, or the validation failure if it does not exist or does not support annotations
  */
-function locateAnnotatable(
-  schemaObj: schema,
-  nodeId: string
-): ValidationFailure | (ValidationSuccess & { target: AnnotatableNode }) {
+function locateAnnotatable(schemaObj: schema, nodeId: string): ValidationResultWith<{ target: AnnotatableNode }> {
   const location = locateNodeById(schemaObj, nodeId);
   if (!location.found || location.parentType === "schema") {
     return { valid: false, error: `Target node not found or does not support annotations: ${nodeId}` };

@@ -13,10 +13,9 @@ import {
 import { isValidXmlName } from "../../shared/qNames";
 import { getMaxOccurs, getMinOccurs, getName, getAttributes, getSimpleDerivation, type DiagramItem } from "../diagram";
 import { DiagramItemType } from "../diagram/DiagramTypes";
-import type { SchemaCommand } from "../../shared/types";
 import { canEditCardinality, getNodeType, getNodeTypeLabel } from "./propertiesPanelNodeKinds";
 import { collectTypeSuggestions } from "./propertiesPanelTypeReferences";
-import { createDeleteNodeCommand, createRenameNodeCommand } from "./propertiesPanelCommands";
+import { createDeleteNodeCommand, createRenameNodeCommand, type CommandDispatcher } from "./propertiesPanelCommands";
 import { resolveSimpleTypeId } from "./propertiesPanelTargets";
 import { SchemaNodeType } from "../../shared/idStrategy";
 import {
@@ -37,7 +36,6 @@ import { buildXmlPreview } from "./propertiesPanelXmlPreview";
 import { createCompositorField } from "./propertiesPanelCompositor";
 
 type PropertyTab = "general" | "facets" | "docs" | "xml";
-type CommandDispatcher = (command: SchemaCommand) => void;
 
 /** A rename that was sent and is not in the schema yet: the node it renames and its new name. */
 interface PendingRename {

@@ -7,12 +7,11 @@ import { DiagramItem } from "../diagram/DiagramItem";
 import { isReference } from "../diagram/schemaAccessors";
 import { getComplexDerivation } from "../diagram/typeAccessors";
 import { getDocumentationAnnotations } from "../diagram/documentationAccessors";
-import { Diagram } from "../diagram/Diagram";
+import type { Diagram } from "../diagram/Diagram";
 import { DiagramItemType } from "../diagram/DiagramTypes";
 import { webviewSchemaWith } from "../../shared/__tests__/schemaTestHelpers";
-import { schema } from "../../shared/types";
 import { SchemaNodeType } from "../../shared/idStrategy";
-import { NOT_READ_SCHEMA_OBJECT } from "../__tests__/diagramTestHelpers";
+import { NOT_READ_SCHEMA_OBJECT, emptyDiagram } from "../__tests__/diagramTestHelpers";
 
 describe("SchemaProcessors", () => {
   let diagram: Diagram;
@@ -28,7 +27,7 @@ describe("SchemaProcessors", () => {
   }
 
   beforeEach(() => {
-    diagram = new Diagram(new schema());
+    diagram = emptyDiagram();
   });
 
   describe("processAnonymousTypes", () => {

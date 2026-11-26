@@ -14,7 +14,7 @@ import type {
 } from "../../shared/types.js";
 import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
 import { prefixesForNamespace, isAbsoluteUri, validatePrefix } from "../../shared/qNames.js";
-import type { ValidationResult, ValidationFailure, ValidationSuccess } from "../../shared/validation.js";
+import type { ValidationResult, ValidationResultWith } from "../../shared/validation.js";
 import { isAnyPrefixReferenced } from "../schemaReferences/referenceChecks.js";
 
 // ===== Helpers =====
@@ -49,7 +49,7 @@ function validateModuleId<T extends object>(
   id: string,
   kind: "import" | "include",
   entries: T[] | undefined
-): ValidationFailure | (ValidationSuccess & { position: number; entry: T }) {
+): ValidationResultWith<{ position: number; entry: T }> {
   let parsed;
   try {
     parsed = parseSchemaId(id);

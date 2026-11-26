@@ -3,22 +3,17 @@
  * elements and attributes hold inline, and top-level types in the schema.
  */
 
-import type {
-  localComplexType,
-  localSimpleType,
-  schema,
-  topLevelComplexType,
-  topLevelSimpleType,
-} from "../../shared/types.js";
+import type { schema } from "../../shared/types.js";
 import { isSchemaRoot, parseSchemaId, SchemaNodeType, type TypeKind } from "../../shared/idStrategy.js";
 import { assumeValidated, locateValidated } from "./assumeValidated.js";
 import { appendTo, removeFrom } from "./nodeProperties.js";
 import { renameReferencesInTargetNamespace } from "../schemaReferences/referenceRewrites.js";
+import type { SimpleTypeObject, ComplexTypeObject, NamedTypeObject } from "../../shared/schemaObjects.js";
 
 /** The types of each kind, top-level or anonymous. */
 interface TypesOfKind {
-  simpleType: topLevelSimpleType | localSimpleType;
-  complexType: topLevelComplexType | localComplexType;
+  simpleType: SimpleTypeObject;
+  complexType: ComplexTypeObject;
 }
 
 /** An element or attribute that can hold an anonymous type instead of a named one. */
@@ -71,7 +66,7 @@ function locateAnonymousTypeHolder(schemaObj: schema, typeId: string, kind: Type
  */
 export function placeNewType(schemaObj: schema, parentId: string | undefined, kind: TypeKind, type: object): void {
   if (parentId === undefined || isSchemaRoot(parentId)) {
-    appendTo(schemaObj, kind, type as topLevelSimpleType | topLevelComplexType);
+    appendTo(schemaObj, kind, type as NamedTypeObject);
     return;
   }
   const holder = locateValidated(schemaObj, parentId).parent as TypeHolder;
@@ -120,7 +115,7 @@ export function locateModifiedType<K extends TypeKind>(
   }
   const name = parseSchemaId(typeId).name;
   const type = assumeValidated(
-    (schemaObj[kind] ?? []).find((t: topLevelSimpleType | topLevelComplexType) => t.name === name),
+    (schemaObj[kind] ?? []).find((t: NamedTypeObject) => t.name === name),
     `${labelOf(kind)} ${typeId}`
   );
   if (typeName !== undefined) {

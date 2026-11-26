@@ -3,14 +3,7 @@
  * Provides functions to find schema nodes by their XPath-like IDs.
  */
 
-import type {
-  schema,
-  topLevelComplexType,
-  localComplexType,
-  namedGroup,
-  explicitGroup,
-  localSimpleType,
-} from "../shared/types.js";
+import type { schema, localComplexType, namedGroup, explicitGroup, localSimpleType } from "../shared/types.js";
 import { compositorOfNodeType, parseSchemaId, SchemaNodeType, toNodeType, isSchemaRoot } from "../shared/idStrategy.js";
 import {
   getContentContainer,
@@ -18,6 +11,7 @@ import {
   type NamedChild,
   type NamedComponent,
   type CompositorObject,
+  type ComplexTypeObject,
 } from "../shared/schemaObjects.js";
 import { requireGroup } from "../shared/regexUtils.js";
 import { findIdentifiedChild } from "./commandUtils.js";
@@ -180,7 +174,7 @@ function navigateToChild(parent: unknown, parentType: string, segmentInfo: Segme
   ) {
     return navigateToAnonymousType(parent as AnonymousTypeHolder, nodeType);
   } else if (parentType === "topLevelComplexType" || parentType === "localComplexType") {
-    return navigateFromComplexType(parent as topLevelComplexType | localComplexType, nodeType, name, position);
+    return navigateFromComplexType(parent as ComplexTypeObject, nodeType, name, position);
   } else if (parentType === "namedGroup") {
     return navigateFromNamedGroup(parent as namedGroup, nodeType, position);
   } else if (parentType === "sequence" || parentType === "choice" || parentType === "all") {
@@ -262,7 +256,7 @@ function navigateToAnonymousType(holder: AnonymousTypeHolder, nodeType: SchemaNo
  * @returns The child and its kind, or `found: false` if the complex type has no such child
  */
 function navigateFromComplexType(
-  complexType: topLevelComplexType | localComplexType,
+  complexType: ComplexTypeObject,
   nodeType: SchemaNodeType,
   name?: string,
   position?: number

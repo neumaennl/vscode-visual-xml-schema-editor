@@ -76,6 +76,31 @@ const maxTernaryLines = {
 // only names no-unexpected-multiline of the recommended rules, which it cannot
 // check automatically. It stays on, because it reports statements that a missing
 // semicolon joins with the next line.
+/**
+ * Forbids `unknown` in type assertions (`x as unknown`) and in variable-type annotations (`const x: unknown`).
+ * Both are escape hatches that bypass type safety. Function-parameter and interface-field annotations are
+ * not targeted by these selectors. If genuinely unavoidable, add eslint-disable-next-line with a
+ * justification.
+ */
+const NO_UNKNOWN_CASTS = {
+  selector:
+    'TSAsExpression[typeAnnotation.type="TSUnknownKeyword"], VariableDeclarator[id.typeAnnotation.typeAnnotation.type="TSUnknownKeyword"]',
+  message:
+    "Avoid `unknown` in type assertions and variable-type annotations. If unavoidable, add eslint-disable-next-line with a justification.",
+};
+
+/**
+ * Forbids tests to build schemas themselves: they take them from the helpers in `__tests__/`, which parse
+ * XSD text, so that the schema objects are what the editor gets from a file (see "Expected results" in
+ * docs/testing.md). The helpers themselves are not test files and may build schemas.
+ */
+const NO_HAND_BUILT_SCHEMAS = {
+  selector:
+    'NewExpression[callee.name="schema"], TSAsExpression[typeAnnotation.typeName.name="schema"], TSTypeAssertion[typeAnnotation.typeName.name="schema"]',
+  message:
+    "Take test schemas from the helpers (emptySchema(), schemaWith(), webviewSchemaWith(), …) instead of building or casting them.",
+};
+
 /** The project boundaries: which folders the code of a folder must not import. */
 const PROJECT_BOUNDARIES = [
   { folder: "shared", allowed: "shared", forbidden: ["src", "webview-src", "test", "scripts"] },
@@ -233,20 +258,8 @@ export default defineConfig([
       // T[] for simple element types, Array<…> and ReadonlyArray<…> for complex ones, which would need
       // parentheses otherwise, such as Array<keyof T> instead of (keyof T)[].
       "@typescript-eslint/array-type": ["error", { default: "array-simple" }],
-      // Disallow `unknown` in type assertions (`x as unknown`) and in variable-type
-      // annotations (`const x: unknown`). Both are escape hatches that bypass type
-      // safety. Function-parameter and interface-field annotations are not targeted
-      // by these selectors. If genuinely unavoidable, add eslint-disable-next-line
-      // with a justification.
-      "no-restricted-syntax": [
-        "error",
-        {
-          selector:
-            'TSAsExpression[typeAnnotation.type="TSUnknownKeyword"], VariableDeclarator[id.typeAnnotation.typeAnnotation.type="TSUnknownKeyword"]',
-          message:
-            "Avoid `unknown` in type assertions and variable-type annotations. If unavoidable, add eslint-disable-next-line with a justification.",
-        },
-      ],
+      // No casts to `unknown` (see NO_UNKNOWN_CASTS)
+      "no-restricted-syntax": ["error", NO_UNKNOWN_CASTS],
     },
   },
   // Vitest tests, their helpers and mocks (must come before webview config to avoid conflicts)
@@ -307,6 +320,8 @@ export default defineConfig([
       // A test may assert with ! that a value exists: if it does not, the test fails (see "TypeScript" in
       // docs/development-guidelines.md). Test helpers and mocks check their values like other code.
       "@typescript-eslint/no-non-null-assertion": "off",
+      // The options replace those of the TypeScript files, so the ban on casts to `unknown` is repeated
+      "no-restricted-syntax": ["error", NO_UNKNOWN_CASTS, NO_HAND_BUILT_SCHEMAS],
     },
   },
   // Tests in the extension host: Mocha (TDD interface) and the mock webview, which runs in the browser

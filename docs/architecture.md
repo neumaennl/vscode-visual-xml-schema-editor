@@ -4,7 +4,7 @@ title: Architecture
 description: How the extension host, the webview and the shared code work together to provide a visual editor for XML Schema (XSD) files, what xmlbind-ts is responsible for and what the editor is, and the design decisions behind the command-based design.
 tags: [architecture, extension-host, webview, shared, design-decisions]
 status: draft
-generated: { by: human:neumaennl, at: 2026-11-25T09:00:21Z }
+generated: { by: human:neumaennl, at: 2026-11-26T13:27:07Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -115,7 +115,7 @@ The rule of thumb: if an application that binds a completely different XML forma
 | Parsing and writing XML, and the choice of the libraries that do it                                                                                  | xmlbind-ts | Generic.                                                   |
 | Decorators, the `xsd2ts` generator, and the conversion of values to the type of their field                                                          | xmlbind-ts | Generic binding mechanics.                                 |
 | Keeping the source on a round trip: order, comments, processing instructions, prefixes, attribute order, quotes, empty-element style and indentation | xmlbind-ts | Every application that writes a document back needs it.    |
-| Keeping content that no field maps, such as XSD 1.1 constructs or foreign elements                                                                   | xmlbind-ts | The same.                                                  |
+| Keeping content that no field maps, such as schema constructs of XSD 1.1 or foreign elements                                                         | xmlbind-ts | The same.                                                  |
 | Reporting what a round trip drops or changes                                                                                                         | xmlbind-ts | Only the library sees it. It reports facts, not decisions. |
 | What happens to a schema that does not survive a round trip unchanged: warn, read-only, or refuse to save                                            | Editor     | A product decision.                                        |
 | Which schema for schemas the classes are generated from (XSD 1.0), and keeping them up to date                                                       | Editor     | XSD-specific.                                              |

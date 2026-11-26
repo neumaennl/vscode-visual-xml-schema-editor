@@ -12,7 +12,7 @@ import type {
   complexType,
   explicitGroup,
 } from "../../shared/types.js";
-import type { ValidationFailure, ValidationResult, ValidationSuccess } from "../../shared/validation.js";
+import type { ValidationResult, ValidationResultWith } from "../../shared/validation.js";
 import { validateOccurrences } from "../../shared/occurrences.js";
 import { isCompositorNodeType, parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
 import { locateNodeById } from "../schemaNavigator.js";
@@ -196,10 +196,7 @@ export function validateAddGroup(command: AddGroupCommand, schemaObj: schema): V
  * @param schemaObj - The schema
  * @returns What the ID identifies, or the validation failure
  */
-function locateGroup(
-  groupId: string,
-  schemaObj: schema
-): ValidationFailure | (ValidationSuccess & ReferenceOrDefinition) {
+function locateGroup(groupId: string, schemaObj: schema): ValidationResultWith<ReferenceOrDefinition> {
   const parsedId = parseRequiredId(groupId, "Group");
   if (!parsedId.valid) {
     return parsedId;

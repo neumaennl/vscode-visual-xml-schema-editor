@@ -3,7 +3,7 @@
  */
 
 import { DiagramSvgRenderer } from "./DiagramSvgRenderer";
-import { Diagram } from "./Diagram";
+import type { Diagram } from "./Diagram";
 import { createCompositorItem, DiagramItem } from "./DiagramItem";
 import { DiagramItemType } from "./DiagramTypes";
 import { setupGetBBoxMock } from "../__tests__/svgTestHelpers";
@@ -13,10 +13,10 @@ import {
   muteDiagramBuilderLog,
   component,
   documented,
+  emptyDiagram,
 } from "../__tests__/diagramTestHelpers";
 import { webviewSchemaWith } from "../../shared/__tests__/schemaTestHelpers";
 import { generateSchemaId, SchemaNodeType } from "../../shared/idStrategy";
-import { schema } from "../../shared/types";
 
 /** A top-level component of each kind of item; a compositor is no top-level component. */
 const COMPONENTS: Record<Exclude<DiagramItemType, DiagramItemType.compositor>, string> = {
@@ -39,7 +39,7 @@ describe("DiagramSvgRenderer", () => {
     svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     document.body.appendChild(svg);
     renderer = new DiagramSvgRenderer(svg);
-    diagram = new Diagram(new schema());
+    diagram = emptyDiagram();
 
     // Mock getBBox for SVG text elements (not supported in jsdom)
     setupGetBBoxMock();

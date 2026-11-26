@@ -3,12 +3,13 @@
  * gets from the change.
  */
 
-import type { Compositor, SchemaCommand } from "../../shared/types";
+import type { Compositor } from "../../shared/types";
 import { compositorNodeType, generateSchemaId, parseSchemaId } from "../../shared/idStrategy";
 import { getMaxOccurs, getMinOccurs, type DiagramItem } from "../diagram";
 import { DiagramItemType } from "../diagram/DiagramTypes";
 import { validateOccurrencesInAll } from "../../shared/occurrences";
 import { createChoiceField, type ChoiceOption } from "./propertiesPanelFields";
+import type { CommandDispatcher } from "./propertiesPanelCommands";
 
 /** The kinds of compositors, in the order the field suggests them. */
 const COMPOSITOR_OPTIONS: ReadonlyArray<ChoiceOption<Compositor>> = [
@@ -57,7 +58,7 @@ function canBecomeAll(node: DiagramItem): boolean {
 export function createCompositorField(
   node: DiagramItem,
   compositor: Compositor,
-  dispatchCommand: (command: SchemaCommand) => void
+  dispatchCommand: CommandDispatcher
 ): HTMLElement {
   const options = compositor === "all" || canBecomeAll(node) ? COMPOSITOR_OPTIONS : WITHOUT_ALL;
   return createChoiceField("Compositor", compositor, options, (next) => {

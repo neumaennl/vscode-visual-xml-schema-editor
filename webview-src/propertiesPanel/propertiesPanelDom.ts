@@ -6,6 +6,9 @@
 
 import type { DiagramAttribute } from "../diagram";
 
+/** Appends a read-only label/value pair, such as {@link addPropertyToContainer}. */
+export type PropertyRowAdder = (container: HTMLElement, label: string, value: string) => void;
+
 /**
  * Appends a read-only label/value pair to the properties panel.
  *

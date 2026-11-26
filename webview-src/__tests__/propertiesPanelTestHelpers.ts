@@ -8,10 +8,9 @@ import { DiagramItem } from "../diagram/DiagramItem";
 import { DiagramItemType } from "../diagram/DiagramTypes";
 import type { SchemaCommand } from "../../shared/types";
 import type { Mock } from "vitest";
-import { schema } from "../../shared/types";
 import { NOT_READ_SCHEMA_OBJECT } from "./diagramTestHelpers";
 import { XSD_NAMESPACE } from "../../shared/builtInTypes";
-import { webviewSchemaWith } from "../../shared/__tests__/schemaTestHelpers";
+import { webviewSchemaFromXml, webviewSchemaWith } from "../../shared/__tests__/schemaTestHelpers";
 
 /**
  * Returns the first label of the container whose text is the given label with a colon.
@@ -188,9 +187,8 @@ export function displayItem(container: HTMLDivElement, item: DiagramItem, tab?: 
  * @returns The item
  */
 export function itemWithPrefix(id: string, itemType = DiagramItemType.element): DiagramItem {
-  const schemaObj = Object.assign(new schema(), {
-    targetNamespace: "urn:test",
-    _namespacePrefixes: { xs: XSD_NAMESPACE, tns: "urn:test" },
-  });
+  const schemaObj = webviewSchemaFromXml(
+    `<xs:schema xmlns:xs="${XSD_NAMESPACE}" xmlns:tns="urn:test" targetNamespace="urn:test"/>`
+  );
   return new DiagramItem(id, "name", itemType, NOT_READ_SCHEMA_OBJECT, new Diagram(schemaObj));
 }

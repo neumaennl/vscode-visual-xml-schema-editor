@@ -4,7 +4,7 @@ title: Testing
 description: How the extension is tested - running the tests and the type check, the five Vitest projects, mocks and helpers, conventions for tests, mocks, helper functions and helper classes, which tests to write for typical changes, coverage, CI, the smoke tests in the extension host with a mock webview, and how the current tests compare with the testing strategy of ADR 001.
 tags: [testing, vitest, mocks, coverage, ci, conventions]
 status: draft
-generated: { by: human:neumaennl, at: 2026-11-25T10:01:34Z }
+generated: { by: human:neumaennl, at: 2026-11-26T09:04:59Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -190,7 +190,7 @@ Existing tests that do not follow these conventions yet are listed in [Known iss
 
 - A test describes the intended behavior, as the documentation in `docs/` (for example [Commands](commands.md)), XML Schema or an ADR defines it, not the behavior that the code happens to have. If the code does something else, fix the code or record a [known issue](known-issues.md); never write a test that confirms wrong behavior.
 - A test only uses input that can reach the code in real use: IDs in the form that the webview generates (see [Schema model](schema-model.md#node-ids)), and nothing that a validator already rejects before an executor runs. Tests of an executor may use such input to check the error of an assumption that does not hold (see [ADR 003](architecture/003-validators-check-executors-assume.md)).
-- Test data is realistic: schemas are parsed from XML or built with the test helpers (see [Mocks and helpers](#mocks-and-helpers)), so they have what every parsed schema has, such as the declaration of the namespace of XML Schema. Production code is not made more permissive, and its types are not narrowed, so that tests can use incomplete objects.
+- Test data is realistic: schemas are parsed from XML or built with the test helpers (see [Mocks and helpers](#mocks-and-helpers)), so they have what every parsed schema has, such as the declaration of the namespace of XML Schema. ESLint rejects `new schema()` and casts to `schema` in test files (see [Build and packaging](build-and-packaging.md#eslint)). Production code is not made more permissive, and its types are not narrowed, so that tests can use incomplete objects.
 - Where the documentation does not define a detail, such as the wording of an error message, a test may check the current value.
 
 ## Files and structure

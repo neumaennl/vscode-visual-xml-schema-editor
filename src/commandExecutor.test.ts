@@ -5,7 +5,8 @@
 
 import { CommandExecutor } from "./commandExecutor.js";
 import type { SchemaCommand } from "../shared/types.js";
-import { formChoice, schema, topLevelElement } from "../shared/types.js";
+import type { schema } from "../shared/types.js";
+import { emptySchema, schemaWith } from "../shared/__tests__/schemaTestHelpers.js";
 
 describe("CommandExecutor", () => {
   let executor: CommandExecutor;
@@ -13,12 +14,7 @@ describe("CommandExecutor", () => {
 
   beforeEach(() => {
     executor = new CommandExecutor();
-    mockSchema = {
-      targetNamespace: "http://example.com/schema",
-      version: "1.0",
-      elementFormDefault: formChoice.qualified,
-      attributeFormDefault: formChoice.unqualified,
-    };
+    mockSchema = emptySchema();
   });
 
   describe("execute() method", () => {
@@ -76,12 +72,7 @@ describe("CommandExecutor", () => {
     });
 
     test("should delegate modifyElement execution", () => {
-      // Add an element first so we have something to modify
-      const testSchema = new schema();
-      const element = new topLevelElement();
-      element.name = "testElement";
-      element.type_ = "string";
-      testSchema.element = [element];
+      const testSchema = schemaWith(`<xs:element name="testElement" type="xs:string"/>`);
 
       const command: SchemaCommand = {
         type: "modifyElement",

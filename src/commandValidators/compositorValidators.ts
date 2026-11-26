@@ -5,18 +5,16 @@
 import type {
   schema,
   Compositor,
-  explicitGroup,
-  simpleExplicitGroup,
   AddCompositorCommand,
   RemoveCompositorCommand,
   ModifyCompositorCommand,
 } from "../../shared/types.js";
-import type { ValidationFailure, ValidationResult, ValidationSuccess } from "../../shared/validation.js";
+import type { ValidationResult, ValidationResultWith } from "../../shared/validation.js";
 import { validateOccurrences, validateOccurrencesInAll, type MaxOccurs } from "../../shared/occurrences.js";
 import { compositorOfNodeType, isCompositorNodeType, parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
 import { locateNodeById } from "../schemaNavigator.js";
 import { parseRequiredId, validateCompositor } from "./commonValidators.js";
-import type { CompositorObject, HeldCompositor } from "../../shared/schemaObjects.js";
+import type { CompositorObject, HeldCompositor, SequenceOrChoiceObject } from "../../shared/schemaObjects.js";
 
 /** What holds a compositor: a complex type (directly or in its complex content), a group definition or another compositor. */
 type CompositorParent = "complexType" | "groupDefinition" | "compositor";
@@ -40,7 +38,7 @@ function locateCompositor(
   compositorId: string,
   schemaObj: schema,
   label = "Compositor"
-): ValidationFailure | (ValidationSuccess & LocatedCompositor) {
+): ValidationResultWith<LocatedCompositor> {
   const parsedId = parseRequiredId(compositorId, label);
   if (!parsedId.valid) {
     return parsedId;
@@ -97,7 +95,7 @@ export function validateCompositorReplacement(
     return { valid: true };
   }
   // Only an all holds nothing but elements
-  const compositor = current.compositor as explicitGroup | simpleExplicitGroup;
+  const compositor = current.compositor as SequenceOrChoiceObject;
   const hasOtherParticles = [compositor.group, compositor.choice, compositor.sequence, compositor.any_].some(
     (particles) => (particles?.length ?? 0) > 0
   );

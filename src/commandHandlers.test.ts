@@ -5,7 +5,7 @@
 import type { CommandHandlers } from "./commandHandlers.js";
 import { findCommandHandler } from "./commandHandlers.js";
 import type { SchemaCommand } from "../shared/types.js";
-import { schema } from "../shared/types.js";
+import { emptySchema } from "../shared/__tests__/schemaTestHelpers.js";
 
 type Handlers = CommandHandlers<"handle", string>;
 
@@ -23,7 +23,7 @@ describe("findCommandHandler", () => {
     const found = findCommandHandler<"handle", string>(handlers, "handle", command);
 
     expect(found).toBe(handler);
-    expect(found?.(command, new schema())).toBe("handled");
+    expect(found?.(command, emptySchema())).toBe("handled");
   });
 
   test("should return undefined for a command type without a handler", () => {

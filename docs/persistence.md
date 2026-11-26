@@ -3,9 +3,8 @@ type: Process
 title: Persistence
 description: How edits reach the XSD file - the command pipeline, the document edit, what serialization changes, undo and save, and how changes from outside reach the diagram.
 tags: [persistence, command-pipeline, workspace-edit, serialization, undo, xmlbind-ts]
-status: stable
-generated: { by: human:neumaennl, at: 2026-11-20T13:22:26Z }
-verified: { by: human:neumaennl, at: 2026-11-20T15:04:32Z }
+status: draft
+generated: { by: human:neumaennl, at: 2026-11-26T13:27:07Z }
 sources:
   - id: extension
     resource: ../src/extension.ts
@@ -111,7 +110,7 @@ Changed:
 
 Lost:
 
-- Content that the generated classes do not map, such as XSD 1.1 constructs (`xs:assert`) and foreign elements at the top level. A comment after such content moves.
+- Content that the generated classes do not map, such as schema constructs of XSD 1.1 (`xs:assert`) and foreign elements at the top level. A comment after such content moves.
 - Processing instructions, a document type declaration and comments after the root element.
 - Namespace declarations below the root element, so QNames that use such a prefix no longer resolve.
 

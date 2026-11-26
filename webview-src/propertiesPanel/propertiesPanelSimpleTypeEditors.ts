@@ -20,6 +20,8 @@ import {
 } from "./propertiesPanelSimpleTypeCommands";
 import { getReadOnlyTypeValue } from "./propertiesPanelTypeHelpers";
 import { getNodeType } from "./propertiesPanelNodeKinds";
+import type { CommandDispatcher } from "./propertiesPanelCommands";
+import type { PropertyRowAdder } from "./propertiesPanelDom";
 
 /** Why the last member type of a union cannot be removed. */
 const LAST_MEMBER_TYPE_MESSAGE = "A union needs at least one member type";
@@ -61,7 +63,7 @@ export function isSimpleTypeNode(node: DiagramItem): boolean {
 export function renderSimpleTypeKindSelector(
   root: HTMLElement,
   node: DiagramItem,
-  dispatchCommand: (command: SchemaCommand) => void
+  dispatchCommand: CommandDispatcher
 ): void {
   const options: ReadonlyArray<ChoiceOption<SimpleTypeDerivationKind>> = [
     { value: "restriction", label: "Restriction" },
@@ -89,9 +91,9 @@ export interface SimpleTypeEditorContext {
   /** Type names offered in the type fields */
   typeSuggestions: string[];
   /** Callback used to emit schema commands */
-  dispatchCommand: (command: SchemaCommand) => void;
+  dispatchCommand: CommandDispatcher;
   /** Helper used for read-only property rows */
-  addPropertyToContainer: (container: HTMLElement, name: string, value: string) => void;
+  addPropertyToContainer: PropertyRowAdder;
 }
 
 /**
@@ -274,7 +276,7 @@ export function renderInlineSimpleTypeReplacement(
   node: DiagramItem,
   baseType: string,
   typeSuggestions: string[],
-  dispatchCommand: (command: SchemaCommand) => void
+  dispatchCommand: CommandDispatcher
 ): void {
   root.appendChild(
     createEditableField(

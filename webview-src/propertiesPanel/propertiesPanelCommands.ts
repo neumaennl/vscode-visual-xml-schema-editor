@@ -10,6 +10,9 @@ import { getNodeType } from "./propertiesPanelNodeKinds";
 import { resolveComplexTypeId, resolveSimpleTypeId } from "./propertiesPanelTargets";
 import { normalizeTypeReference } from "./propertiesPanelTypeReferences";
 
+/** Sends a schema command, which the properties panel built from an edit, to the extension host. */
+export type CommandDispatcher = (command: SchemaCommand) => void;
+
 /**
  * Builds a rename command for the selected node.
  *

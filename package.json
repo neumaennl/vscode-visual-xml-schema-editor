@@ -92,7 +92,7 @@
     "pretest:extension-host": "npm run compile-extension && npm run stage:extension-host",
     "stage:extension-host": "rimraf .vscode-test/out && tsc -p tsconfig.extension-host-test.json && node scripts/stage-extension-host-test.ts",
     "test:extension-host": "vscode-test",
-    "lint": "concurrently --group --names eslint,jscpd,fallow,fallow-production,fallow-architecture,prettier \"eslint .\" \"jscpd\" \"fallow dead-code --no-cache --fail-on-issues\" \"fallow dead-code --production --no-cache --fail-on-issues\" \"fallow architecture --no-cache\" \"prettier --check .\"",
+    "lint": "concurrently --group --names eslint,jscpd,fallow,fallow-production,fallow-architecture,anonymous-types,prettier \"eslint .\" \"jscpd\" \"fallow dead-code --no-cache --fail-on-issues\" \"fallow dead-code --production --no-cache --fail-on-issues\" \"fallow architecture --no-cache\" \"node scripts/check-anonymous-types.ts\" \"prettier --check .\"",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "package": "vsce package",

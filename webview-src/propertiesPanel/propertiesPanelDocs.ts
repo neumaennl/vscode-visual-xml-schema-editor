@@ -3,7 +3,6 @@
  * controls that send the commands to change them. The tab shows a change when the new schema arrives.
  */
 
-import type { SchemaCommand } from "../../shared/types";
 import { getDocumentationAnnotations, type DiagramItem } from "../diagram";
 import type { DiagramAnnotationEntry, DiagramDocumentationEntry } from "../diagram/DiagramTypes";
 import { resolveDocumentationTargetId } from "./propertiesPanelTargets";
@@ -11,6 +10,7 @@ import { createEditableTextArea } from "./propertiesPanelDom";
 import { createEditableField } from "./propertiesPanelFields";
 import { validateLanguage } from "../../shared/languages";
 import { SCHEMA_ROOT_ID } from "../../shared/idStrategy";
+import type { CommandDispatcher } from "./propertiesPanelCommands";
 
 const NEW_DOCUMENTATION_TEXT = "New documentation";
 
@@ -77,10 +77,7 @@ function createActionButton(
  * @param dispatchCommand - Callback used to emit schema-edit commands
  * @returns The field
  */
-function createLanguageField(
-  entry: DiagramDocumentationEntry,
-  dispatchCommand: (command: SchemaCommand) => void
-): HTMLElement {
+function createLanguageField(entry: DiagramDocumentationEntry, dispatchCommand: CommandDispatcher): HTMLElement {
   const current = entry.lang ?? "";
   const field = createEditableField("Language", current, (next, reject) => {
     const lang = next.trim();
@@ -113,7 +110,7 @@ function createLanguageField(
 function createDocumentationEntry(
   entry: DiagramDocumentationEntry,
   documentationIndex: number,
-  dispatchCommand: (command: SchemaCommand) => void
+  dispatchCommand: CommandDispatcher
 ): HTMLElement {
   const entryWrapper = document.createElement("div");
   entryWrapper.className = "property-docs-entry";
@@ -160,7 +157,7 @@ function createAnnotationSection(
   node: DiagramItem,
   annotation: DiagramAnnotationEntry,
   annotationIndex: number,
-  dispatchCommand: (command: SchemaCommand) => void
+  dispatchCommand: CommandDispatcher
 ): HTMLElement {
   const section = document.createElement("section");
   section.className = "property-docs-section";
@@ -214,7 +211,7 @@ function createAnnotationSection(
  * @throws An {@link Error} if the node has no documentation and no node that documentation can be added to;
  *   every node of the diagram has one
  */
-export function createDocsTab(node: DiagramItem, dispatchCommand: (command: SchemaCommand) => void): HTMLElement {
+export function createDocsTab(node: DiagramItem, dispatchCommand: CommandDispatcher): HTMLElement {
   const root = document.createElement("div");
   root.className = "property-tab-content property-tab-content-docs";
 
@@ -255,7 +252,7 @@ export function createDocsTab(node: DiagramItem, dispatchCommand: (command: Sche
 function appendAddSchemaAnnotationButton(
   root: HTMLElement,
   node: DiagramItem,
-  dispatchCommand: (command: SchemaCommand) => void
+  dispatchCommand: CommandDispatcher
 ): void {
   if (!isSchemaDocsTarget(node)) {
     return;

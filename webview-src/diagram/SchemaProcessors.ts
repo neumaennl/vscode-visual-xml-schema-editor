@@ -19,16 +19,14 @@ import {
   type NamedChild,
   type ParticleContainer,
   type CompositorObject,
+  type SequenceOrChoiceObject,
+  type LocalElementObject,
 } from "../../shared/schemaObjects";
 import { localNameIfInTargetNamespace } from "../../shared/qNames";
 import { getNamespacePrefixes, getTargetNamespace } from "./schemaAccessors";
-import type { localElement } from "../../shared/generated/localElement";
-import type { explicitGroup } from "../../shared/generated/explicitGroup";
 import type { all } from "../../shared/generated/all";
-import type { simpleExplicitGroup } from "../../shared/generated/simpleExplicitGroup";
 import type { allType } from "../../shared/generated/allType";
 import type { groupRef } from "../../shared/generated/groupRef";
-import type { narrowMaxMin } from "../../shared/generated/narrowMaxMin";
 import { hasInlineComplexType } from "./typeAccessors";
 import type { Compositor } from "../../shared/types";
 
@@ -92,7 +90,7 @@ function processParticles(parent: DiagramItem, holder: ParticleContainer): void 
  */
 export function processSequence(
   parent: DiagramItem,
-  sequence: explicitGroup | simpleExplicitGroup,
+  sequence: SequenceOrChoiceObject,
   positionOverride?: number
 ): void {
   processCompositor(parent, sequence, "sequence", positionOverride);
@@ -106,11 +104,7 @@ export function processSequence(
  * @param positionOverride - The position of the compositor in its parent's ID; without it, the compositors
  *   of the same kind that the parent already has are counted
  */
-export function processChoice(
-  parent: DiagramItem,
-  choice: explicitGroup | simpleExplicitGroup,
-  positionOverride?: number
-): void {
+export function processChoice(parent: DiagramItem, choice: SequenceOrChoiceObject, positionOverride?: number): void {
   processCompositor(parent, choice, "choice", positionOverride);
 }
 
@@ -152,7 +146,7 @@ function processCompositor(
     parent.diagram
   );
 
-  const elementsArray = (modelGroup.element as Array<localElement | narrowMaxMin> | undefined) ?? [];
+  const elementsArray = (modelGroup.element as LocalElementObject[] | undefined) ?? [];
   elementsArray.forEach((elem, elemPosition) => {
     compositorItem.addChild(createLocalElementItem(elem, elemPosition, compositorItem));
   });
@@ -185,11 +179,7 @@ function processCompositor(
  * @param groupItem - The item of the compositor
  * @returns The item of the element
  */
-function createLocalElementItem(
-  elem: localElement | narrowMaxMin,
-  elemPosition: number,
-  groupItem: DiagramItem
-): DiagramItem {
+function createLocalElementItem(elem: LocalElementObject, elemPosition: number, groupItem: DiagramItem): DiagramItem {
   const item = new DiagramItem(
     generateSchemaId({
       nodeType: SchemaNodeType.Element,

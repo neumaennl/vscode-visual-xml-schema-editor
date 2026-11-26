@@ -11,8 +11,14 @@ import { createFieldMessage } from "./propertiesPanelFields";
 import { addReorderHandlers, type DragState, moveValue } from "./propertiesPanelValueReorder";
 import type { ValidationFailure } from "../../shared/validation";
 
-/** Commits an update of the restriction draft. */
-type BuildAndDispatch = (updater: (next: RestrictionFacets) => void) => void;
+/** Changes a copy of the facets of a restriction. */
+export type FacetsUpdater = (next: RestrictionFacets) => void;
+
+/** Applies a change to a copy of the facets and sends the facets. */
+export type BuildAndDispatch = (updater: FacetsUpdater) => void;
+
+/** Called once with the entered value, or with `null` when the input is cancelled. */
+type ValueInputFinish = (value: string | null) => void;
 
 /** The facets with several values. */
 export type ValueListFacet = (typeof LIST_FACETS)[number];
@@ -249,7 +255,7 @@ function appendAddControl(
   list: HTMLElement,
   addText: string | null,
   onStart: () => void,
-  onFinish: (value: string | null) => void
+  onFinish: ValueInputFinish
 ): void {
   if (addText === null) {
     const input = createValueInput("", "New value", onFinish);
@@ -301,7 +307,7 @@ function createValueChip(value: string, canRemove: boolean, onEdit: () => void, 
  * @param onFinish - Called once, with the trimmed value or with `null` when the input is cancelled
  * @returns The text field
  */
-function createValueInput(value: string, label: string, onFinish: (value: string | null) => void): HTMLInputElement {
+function createValueInput(value: string, label: string, onFinish: ValueInputFinish): HTMLInputElement {
   const input = document.createElement("input");
   input.type = "text";
   input.className = "property-value-input";

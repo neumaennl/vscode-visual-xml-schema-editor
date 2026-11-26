@@ -4,10 +4,10 @@
  */
 
 import { hasInlineComplexType, isAbstract, isMixed, isNillable, type DiagramItem } from "../diagram";
-import type { SchemaCommand } from "../../shared/types";
 import { SchemaNodeType, anonymousTypeId } from "../../shared/idStrategy";
 import { getNodeType, isTopLevelElement } from "./propertiesPanelNodeKinds";
 import { createSection, createToggleRow } from "./propertiesPanelDom";
+import type { CommandDispatcher } from "./propertiesPanelCommands";
 
 /**
  * Renders the CONSTRAINTS section: the nillable, abstract and mixed content toggles that apply to
@@ -17,10 +17,7 @@ import { createSection, createToggleRow } from "./propertiesPanelDom";
  * @param dispatchCommand - Callback used to emit schema-edit commands
  * @returns The section
  */
-export function renderConstraintsSection(
-  node: DiagramItem,
-  dispatchCommand: (command: SchemaCommand) => void
-): HTMLElement {
+export function renderConstraintsSection(node: DiagramItem, dispatchCommand: CommandDispatcher): HTMLElement {
   const section = createSection("lock", "CONSTRAINTS");
 
   const nodeType = getNodeType(node);

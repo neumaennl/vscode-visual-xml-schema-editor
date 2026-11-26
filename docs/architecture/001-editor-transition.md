@@ -3,8 +3,9 @@ type: Architecture Decision Record
 title: "ADR 001: Editor transition architecture"
 description: The decision to turn the viewer into an editor whose webview sends commands that the extension host validates, executes and writes to the XSD file, with the roadmap and the deviations of the implementation from the design.
 tags: [adr, architecture, commands, roadmap]
-status: draft
+status: stable
 generated: { by: human:neumaennl, at: 2026-11-26T14:03:12Z }
+verified: { by: human:neumaennl, at: 2026-11-26T14:29:55Z }
 ---
 
 # ADR 001: Editor Transition Architecture

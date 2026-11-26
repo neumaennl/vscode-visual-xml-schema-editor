@@ -3,8 +3,9 @@ type: Architecture Decision Record
 title: "ADR 006: Module structure"
 description: The decision how the code within the extension host, the webview and the shared code is split into layers, in which direction the layers may depend on each other, what belongs into the shared code and what it may rely on, how files are named, and how fallow checks the layers.
 tags: [adr, architecture, structure, dependencies, shared]
-status: draft
+status: stable
 generated: { by: human:neumaennl, at: 2026-11-26T14:03:12Z }
+verified: { by: human:neumaennl, at: 2026-11-26T14:29:55Z }
 sources:
   - id: guidelines
     resource: ../development-guidelines.md

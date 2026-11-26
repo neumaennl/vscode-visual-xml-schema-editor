@@ -3,8 +3,9 @@ type: Process
 title: Diagram rendering
 description: How the schema object becomes the SVG diagram - the build, layout and render steps, which schema constructs become which nodes, the layout rules, the notation, the interaction, and the origin in xsddiagram.
 tags: [diagram, rendering, layout, svg, webview, xsddiagram]
-status: draft
+status: stable
 generated: { by: human:neumaennl, at: 2026-11-26T13:58:35Z }
+verified: { by: human:neumaennl, at: 2026-11-26T14:29:55Z }
 sources:
   - id: renderer
     resource: ../webview-src/canvas/DiagramCanvas.ts

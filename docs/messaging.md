@@ -3,8 +3,9 @@ type: Protocol
 title: Messaging
 description: The message protocol between the extension host and the webview - the messages in both directions and the order in which they arrive.
 tags: [messaging, protocol, postMessage, commands, webview]
-status: draft
+status: stable
 generated: { by: human:neumaennl, at: 2026-11-26T13:48:20Z }
+verified: { by: human:neumaennl, at: 2026-11-26T14:29:55Z }
 sources:
   - id: messages
     resource: ../shared/messages.ts

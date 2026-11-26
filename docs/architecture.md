@@ -3,8 +3,9 @@ type: Architecture
 title: Architecture
 description: How the extension host, the webview and the shared code work together to provide a visual editor for XML Schema (XSD) files, what xmlbind-ts is responsible for and what the editor is, and the design decisions behind the command-based design.
 tags: [architecture, extension-host, webview, shared, design-decisions]
-status: draft
+status: stable
 generated: { by: human:neumaennl, at: 2026-11-26T14:03:12Z }
+verified: { by: human:neumaennl, at: 2026-11-26T14:29:55Z }
 sources:
   - id: manifest
     resource: ../package.json

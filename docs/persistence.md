@@ -3,8 +3,9 @@ type: Process
 title: Persistence
 description: How edits reach the XSD file - the command pipeline, the document edit, what serialization changes, undo and save, and how changes from outside reach the diagram.
 tags: [persistence, command-pipeline, workspace-edit, serialization, undo, xmlbind-ts]
-status: draft
+status: stable
 generated: { by: human:neumaennl, at: 2026-11-26T13:48:20Z }
+verified: { by: human:neumaennl, at: 2026-11-26T14:29:55Z }
 sources:
   - id: extension
     resource: ../src/extension.ts

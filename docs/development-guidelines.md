@@ -3,8 +3,9 @@ type: Guideline
 title: Development guidelines
 description: Rules for everyone who changes the extension - code size, code quality, formatting and ESLint, structure reviews, TypeScript and naming, VS Code and Node versions, TSDoc, tests, documentation and the knowledge bundle, issues, what to check before committing, and commits.
 tags: [guidelines, conventions, code-quality, typescript, documentation, workflow]
-status: draft
+status: stable
 generated: { by: human:neumaennl, at: 2026-11-26T14:09:14Z }
+verified: { by: human:neumaennl, at: 2026-11-26T14:29:55Z }
 sources:
   - id: eslint
     resource: ../eslint.config.mjs

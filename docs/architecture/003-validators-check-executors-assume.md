@@ -3,8 +3,9 @@ type: Architecture Decision Record
 title: "ADR 003: Validators check, executors assume"
 description: The decision that the validators check everything an executor relies on and the executors do not check it again, how an executor states what it assumes, why this is safe, the scenarios that were examined, how a test keeps validators and executors in agreement, and why the pipeline checks the resulting schema for the constraints that span it.
 tags: [adr, architecture, commands, validation, error-handling, testing]
-status: draft
+status: stable
 generated: { by: human:neumaennl, at: 2026-11-26T14:03:12Z }
+verified: { by: human:neumaennl, at: 2026-11-26T14:29:55Z }
 sources:
   - id: command-processor
     resource: ../../src/commandProcessor.ts

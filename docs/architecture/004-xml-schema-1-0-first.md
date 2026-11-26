@@ -3,8 +3,9 @@ type: Architecture Decision Record
 title: "ADR 004: XML Schema 1.0 first"
 description: The decision to support XML Schema 1.0 now and XML Schema 1.1 later, the two conditions that keep the way to 1.1 open, how 1.1 could be added, the open question about validation, and when to review it.
 tags: [adr, architecture, schema-model, xsd-1.1, validation]
-status: draft
+status: stable
 generated: { by: human:neumaennl, at: 2026-11-26T13:27:07Z }
+verified: { by: human:neumaennl, at: 2026-11-26T14:29:55Z }
 sources:
   - id: meta-schema
     resource: ../../schema/XMLSchema.xsd

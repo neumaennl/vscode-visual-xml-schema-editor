@@ -3,8 +3,9 @@ type: Testing Strategy
 title: Testing
 description: How the extension is tested - running the tests and the type check, the five Vitest projects, mocks and helpers, conventions for tests, mocks, helper functions and helper classes, which tests to write for typical changes, coverage, CI, the smoke tests in the extension host with a mock webview, and how the current tests compare with the testing strategy of ADR 001.
 tags: [testing, vitest, mocks, coverage, ci, conventions]
-status: draft
+status: stable
 generated: { by: human:neumaennl, at: 2026-11-26T14:09:14Z }
+verified: { by: human:neumaennl, at: 2026-11-26T14:29:55Z }
 sources:
   - id: manifest
     resource: ../package.json

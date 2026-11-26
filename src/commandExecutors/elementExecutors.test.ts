@@ -22,10 +22,10 @@ const ORDER_TYPE_WITH_PERSON_REF = `<xs:element name="person" type="xs:string"/>
 </xs:complexType>`;
 
 /** The ID of the sequence of `OrderType`. */
-const ORDER_SEQUENCE_ID = "/complexType:OrderType/group:sequence[0]";
+const ORDER_SEQUENCE_ID = "/complexType:OrderType/sequence[0]";
 
 /** The ID of the sequence of the anonymous complexType of the element `person`. */
-const PERSON_SEQUENCE_ID = "/element:person/anonymousComplexType[0]/group:sequence[0]";
+const PERSON_SEQUENCE_ID = "/element:person/anonymousComplexType[0]/sequence[0]";
 
 /**
  * Returns an element `person` whose anonymous complexType has a sequence with the given elements.
@@ -125,7 +125,7 @@ describe("Element Executors", () => {
       const schemaObj = readTestSchema("worker-type-extends-person-type.xsd");
 
       addElement(schemaObj, {
-        parentId: "/complexType:WorkerType/group:sequence[0]",
+        parentId: "/complexType:WorkerType/sequence[0]",
         elementName: "department",
         elementType: "xs:string",
       });

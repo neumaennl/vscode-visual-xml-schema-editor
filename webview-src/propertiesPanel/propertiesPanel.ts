@@ -34,6 +34,7 @@ import { renderTypeProperty } from "./propertiesPanelTypes";
 import { renderElementDefaultFixedSection } from "./propertiesPanelElementDefaults";
 import { canShowConstraintsSection, renderConstraintsSection } from "./propertiesPanelConstraints";
 import { buildXmlPreview } from "./propertiesPanelXmlPreview";
+import { createCompositorField } from "./propertiesPanelCompositor";
 
 type PropertyTab = "general" | "facets" | "docs" | "xml";
 type CommandDispatcher = (command: SchemaCommand) => void;
@@ -230,6 +231,8 @@ export class PropertiesPanel {
           }
         })
       );
+    } else if (node.compositor) {
+      root.appendChild(createCompositorField(node, node.compositor, this.dispatchCommand));
     } else {
       addPropertyToContainer(root, "Name", node.label);
     }
@@ -281,6 +284,15 @@ export class PropertiesPanel {
           type: "modifyElement",
           payload: {
             elementId: node.id,
+            minOccurs,
+            maxOccurs,
+          },
+        });
+      } else if (node.compositor) {
+        this.dispatchCommand({
+          type: "modifyCompositor",
+          payload: {
+            compositorId: node.id,
             minOccurs,
             maxOccurs,
           },

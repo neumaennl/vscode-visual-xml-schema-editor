@@ -98,7 +98,7 @@ export function anonymousSimpleTypeItem(element: DiagramItem): DiagramItem {
  */
 export function localElementWith(attributes: string): DiagramItem {
   const content = `<xs:complexType name="T"><xs:sequence><xs:element name="e" ${attributes}/></xs:sequence></xs:complexType>`;
-  return diagramItem(webviewSchemaWith(content), "/complexType:T/group:sequence[0]/element:e[0]");
+  return diagramItem(webviewSchemaWith(content), "/complexType:T/sequence[0]/element:e[0]");
 }
 
 /**

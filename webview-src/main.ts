@@ -3,7 +3,8 @@
 import "./styles.css";
 import { DiagramCanvas, type ViewChange } from "./canvas/DiagramCanvas";
 import { PropertiesPanel } from "./propertiesPanel/propertiesPanel";
-import type { schema, WebviewMessage } from "../shared/types";
+import { compositorIdAfterChange } from "./propertiesPanel/propertiesPanelCompositor";
+import type { schema, SchemaCommand, WebviewMessage } from "../shared/types";
 import type { ViewState } from "./canvas/CanvasView";
 import type { DiagramItem } from "./diagram";
 import type { ExtensionMessage, DiagramOptions } from "../shared/messages";
@@ -37,6 +38,8 @@ class SchemaEditorApp {
   private diagramOptions: DiagramOptions;
   private notificationBar: HTMLElement | null = null;
   private selectedNodeId: string | null = null;
+  /** The ID that the selected node gets from a command that changes it, which the selection follows. */
+  private selectionAfterCommand: string | null = null;
 
   /**
    * Create and initialize the schema editor application
@@ -74,6 +77,7 @@ class SchemaEditorApp {
     this.propertiesPanel = new PropertiesPanel(
       document.getElementById("properties-content") as HTMLDivElement,
       (command) => {
+        this.selectionAfterCommand = this.idAfterCommand(command) ?? this.selectionAfterCommand;
         this.vscode.postMessage({ command: "executeCommand", data: command });
       }
     );
@@ -164,15 +168,34 @@ class SchemaEditorApp {
   }
 
   /**
+   * Returns the ID that the node of a command gets from it, for a command that changes the ID: a compositor
+   * whose kind changes.
+   *
+   * @param command - The command that the properties panel sends
+   * @returns The new ID, or `null` if the command does not change the ID of its node
+   */
+  private idAfterCommand(command: SchemaCommand): string | null {
+    if (command.type !== "modifyCompositor" || command.payload.compositor === undefined) {
+      return null;
+    }
+    const item = this.canvas.getItem(command.payload.compositorId);
+    const { compositor } = command.payload;
+    return item && item.compositor !== compositor ? compositorIdAfterChange(item, compositor) : null;
+  }
+
+  /**
    * Shows the selected node again after the diagram was rebuilt, or clears the selection if the node is
-   * gone.
+   * gone. If a command gave the node a new ID, the selection follows it; if the command was rejected, the
+   * node keeps its ID.
    */
   private refreshSelection(): void {
+    const idAfterCommand = this.selectionAfterCommand;
+    this.selectionAfterCommand = null;
     if (!this.selectedNodeId) {
       return;
     }
 
-    const selectedItem = this.canvas.getItem(this.selectedNodeId);
+    const selectedItem = this.canvas.getItem(idAfterCommand) ?? this.canvas.getItem(this.selectedNodeId);
     if (!selectedItem) {
       this.selectedNodeId = null;
       this.canvas.select(null);
@@ -180,6 +203,7 @@ class SchemaEditorApp {
       return;
     }
 
+    this.selectedNodeId = selectedItem.id;
     this.canvas.select(selectedItem.id);
     this.propertiesPanel.display(selectedItem);
   }

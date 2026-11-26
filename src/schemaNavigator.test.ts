@@ -74,7 +74,7 @@ describe("SchemaNavigator", () => {
       test("should locate sequence within complex type", () => {
         const schemaObj = readTestSchema(PERSON_TYPE_WITH_NAME_XSD);
 
-        const result = locateNodeById(schemaObj, "/complexType:PersonType/group:sequence[0]");
+        const result = locateNodeById(schemaObj, "/complexType:PersonType/sequence[0]");
 
         expect(result).toMatchObject({ found: true, parentType: "sequence" });
       });
@@ -86,19 +86,19 @@ describe("SchemaNavigator", () => {
   </xs:choice>
 </xs:complexType>`);
 
-        const result = locateNodeById(schemaObj, "/complexType:ChoiceType/group:choice[0]");
+        const result = locateNodeById(schemaObj, "/complexType:ChoiceType/choice[0]");
 
         expect(result).toMatchObject({ found: true, parentType: "choice" });
       });
 
-      test("should locate all group within complex type", () => {
+      test("should locate the all within a complex type", () => {
         const schemaObj = schemaWith(`<xs:complexType name="AllType">
   <xs:all>
     <xs:element name="field1" type="xs:string"/>
   </xs:all>
 </xs:complexType>`);
 
-        const result = locateNodeById(schemaObj, "/complexType:AllType/group:all[0]");
+        const result = locateNodeById(schemaObj, "/complexType:AllType/all[0]");
 
         expect(result).toMatchObject({ found: true, parentType: "all" });
       });
@@ -106,7 +106,7 @@ describe("SchemaNavigator", () => {
       test("should locate sequence within complexContent extension via group path", () => {
         const schemaObj = readTestSchema("person-type-extends-base-type.xsd");
 
-        const result = locateNodeById(schemaObj, "/complexType:PersonType/group:sequence[0]");
+        const result = locateNodeById(schemaObj, "/complexType:PersonType/sequence[0]");
 
         expect(result).toMatchObject({ found: true, parentType: "sequence" });
       });
@@ -115,10 +115,21 @@ describe("SchemaNavigator", () => {
   <xs:complexContent><xs:restriction base="xs:anyType"><xs:sequence/></xs:restriction></xs:complexContent>
 </xs:complexType>`);
 
-        const result = locateNodeById(schemaObj, "/complexType:RestrictedType/group:sequence[0]");
+        const result = locateNodeById(schemaObj, "/complexType:RestrictedType/sequence[0]");
 
         expect(result).toMatchObject({ found: true, parentType: "sequence" });
       });
+
+      // A complex type holds at most one compositor, so only position 0 names it
+      test.each(["/complexType:T/sequence[1]", "/group:G/sequence[1]"])(
+        "should not locate a compositor that a complex type or group holds directly at %s",
+        (id) => {
+          const schemaObj = schemaWith(`<xs:complexType name="T"><xs:sequence/></xs:complexType>
+<xs:group name="G"><xs:sequence/></xs:group>`);
+
+          expect(locateNodeById(schemaObj, id).found).toBe(false);
+        }
+      );
 
       test("should locate an attribute within complexContent extension", () => {
         const schemaObj = schemaWith(`<xs:complexType name="T">
@@ -147,7 +158,7 @@ describe("SchemaNavigator", () => {
       test("should locate sequence within anonymous complex type", () => {
         const schemaObj = readTestSchema(PERSON_WITH_NAME_XSD);
 
-        const result = locateNodeById(schemaObj, "/element:person/anonymousComplexType[0]/group:sequence[0]");
+        const result = locateNodeById(schemaObj, "/element:person/anonymousComplexType[0]/sequence[0]");
 
         expect(result).toMatchObject({ found: true, parentType: "sequence" });
       });
@@ -161,12 +172,12 @@ describe("SchemaNavigator", () => {
   </xs:complexType>
 </xs:element>`);
 
-        const result = locateNodeById(schemaObj, "/element:payment/anonymousComplexType[0]/group:choice[0]");
+        const result = locateNodeById(schemaObj, "/element:payment/anonymousComplexType[0]/choice[0]");
 
         expect(result).toMatchObject({ found: true, parentType: "choice" });
       });
 
-      test("should locate all group within anonymous complex type", () => {
+      test("should locate the all within an anonymous complex type", () => {
         const schemaObj = schemaWith(`<xs:element name="config">
   <xs:complexType>
     <xs:all>
@@ -175,7 +186,7 @@ describe("SchemaNavigator", () => {
   </xs:complexType>
 </xs:element>`);
 
-        const result = locateNodeById(schemaObj, "/element:config/anonymousComplexType[0]/group:all[0]");
+        const result = locateNodeById(schemaObj, "/element:config/anonymousComplexType[0]/all[0]");
 
         expect(result).toMatchObject({ found: true, parentType: "all" });
       });
@@ -185,10 +196,7 @@ describe("SchemaNavigator", () => {
       test("should locate element within sequence by name", () => {
         const schemaObj = readTestSchema(PERSON_NAME_AND_AGE_XSD);
 
-        const result = locateNodeById(
-          schemaObj,
-          "/element:person/anonymousComplexType[0]/group:sequence[0]/element:name"
-        );
+        const result = locateNodeById(schemaObj, "/element:person/anonymousComplexType[0]/sequence[0]/element:name");
 
         expect(result).toMatchObject({ found: true, parentType: "localElement", parent: { name: "name" } });
       });
@@ -196,10 +204,7 @@ describe("SchemaNavigator", () => {
       test("should locate element within sequence by position", () => {
         const schemaObj = readTestSchema(PERSON_NAME_AND_AGE_XSD);
 
-        const result = locateNodeById(
-          schemaObj,
-          "/element:person/anonymousComplexType[0]/group:sequence[0]/element[0]"
-        );
+        const result = locateNodeById(schemaObj, "/element:person/anonymousComplexType[0]/sequence[0]/element[0]");
 
         expect(result).toMatchObject({ found: true, parentType: "localElement", parent: { name: "name" } });
       });
@@ -226,21 +231,18 @@ describe("SchemaNavigator", () => {
         expect(result).toMatchObject({ found: true, parentType: "namedGroup", parent: { name: "PersonGroup" } });
       });
 
-      test("should locate sequence via group:sequence[N] path under named group", () => {
+      test("should locate sequence via sequence[N] path under named group", () => {
         const schemaObj = schemaWith(PERSON_GROUP_WITH_NAME_ELEMENT);
 
-        const result = locateNodeById(schemaObj, "/group:PersonGroup/group:sequence[0]");
+        const result = locateNodeById(schemaObj, "/group:PersonGroup/sequence[0]");
 
         expect(result).toMatchObject({ found: true, parentType: "sequence" });
       });
 
-      test("should locate element inside sequence via full group:sequence[N] path", () => {
+      test("should locate element inside sequence via full sequence[N] path", () => {
         const schemaObj = readTestSchema(PERSON_NAME_AND_AGE_XSD);
 
-        const result = locateNodeById(
-          schemaObj,
-          "/element:person/anonymousComplexType[0]/group:sequence[0]/element:name[0]"
-        );
+        const result = locateNodeById(schemaObj, "/element:person/anonymousComplexType[0]/sequence[0]/element:name[0]");
 
         expect(result).toMatchObject({ found: true, parentType: "localElement", parent: { name: "name" } });
       });
@@ -271,7 +273,7 @@ describe("SchemaNavigator", () => {
   <xs:choice/>
 </xs:complexType>`);
 
-        const result = locateNodeById(schemaObj, "/complexType:PersonType/group:sequence[0]");
+        const result = locateNodeById(schemaObj, "/complexType:PersonType/sequence[0]");
 
         expect(result.found).toBe(false);
       });
@@ -285,12 +287,12 @@ describe("SchemaNavigator", () => {
         ["/attribute:lang/anonymousSimpleType[0]", "localSimpleType"],
         ["/complexType:ItemType/attribute:id", "attribute"],
         ["/complexType:ItemType/attribute:id/anonymousSimpleType[0]", "localSimpleType"],
-        ["/complexType:ItemType/group:sequence[0]/group:choice[0]", "choice"],
-        ["/complexType:ItemType/group:sequence[0]/group:sequence[0]", "sequence"],
-        ["/group:ChoiceGroup/group:choice[0]", "choice"],
-        ["/group:AllGroup/group:all[0]", "all"],
+        ["/complexType:ItemType/sequence[0]/choice[0]", "choice"],
+        ["/complexType:ItemType/sequence[0]/sequence[0]", "sequence"],
+        ["/group:ChoiceGroup/choice[0]", "choice"],
+        ["/group:AllGroup/all[0]", "all"],
         [
-          "/element:order/anonymousComplexType[0]/group:sequence[0]/element:line[0]/anonymousComplexType[0]",
+          "/element:order/anonymousComplexType[0]/sequence[0]/element:line[0]/anonymousComplexType[0]",
           "localComplexType",
         ],
       ])("should locate %s as %s", (id, parentType) => {
@@ -310,10 +312,10 @@ describe("SchemaNavigator", () => {
         "/attribute:plainAttribute/anonymousSimpleType[0]",
         "/simpleType:CodeType/anonymousSimpleType[0]",
         "/complexType:ItemType/attribute:missing",
-        "/complexType:ItemType/group:sequence[0]/group:sequence[0]/group:choice[0]",
-        "/complexType:ItemType/group:sequence[0]/element:missing[0]",
-        "/group:ChoiceGroup/group:sequence[0]",
-        "/group:ChoiceGroup/group:all[0]",
+        "/complexType:ItemType/sequence[0]/sequence[0]/choice[0]",
+        "/complexType:ItemType/sequence[0]/element:missing[0]",
+        "/group:ChoiceGroup/sequence[0]",
+        "/group:ChoiceGroup/all[0]",
       ])("should not find %s", (id) => {
         const result = locateNodeById(readTestSchema(NAVIGABLE_NODES_XSD), id);
 
@@ -356,7 +358,7 @@ describe("elements with the same name", () => {
 </xs:sequence></xs:complexType>`);
 
   test("should find an element by its position, not by its name", () => {
-    const result = locateNodeById(REPEATED, "/complexType:T/group:sequence[0]/element:a[2]");
+    const result = locateNodeById(REPEATED, "/complexType:T/sequence[0]/element:a[2]");
 
     expect(result.found && result.parent).toBe(REPEATED.complexType![0]!.sequence!.element![2]);
   });
@@ -364,7 +366,7 @@ describe("elements with the same name", () => {
   test("should find nothing for an ID whose name does not fit the element at its position", () => {
     const result = locateNodeById(
       REPEATED,
-      "/complexType:T/group:sequence[0]/element:b[2]/anonymousComplexType[0]/group:sequence[0]/element:c[0]"
+      "/complexType:T/sequence[0]/element:b[2]/anonymousComplexType[0]/sequence[0]/element:c[0]"
     );
 
     expect(result.found).toBe(false);
@@ -373,7 +375,7 @@ describe("elements with the same name", () => {
   test("should find the content of the second of two elements with the same name", () => {
     const result = locateNodeById(
       REPEATED,
-      "/complexType:T/group:sequence[0]/element:a[2]/anonymousComplexType[0]/group:sequence[0]/element:c[0]"
+      "/complexType:T/sequence[0]/element:a[2]/anonymousComplexType[0]/sequence[0]/element:c[0]"
     );
 
     expect(result).toMatchObject({ found: true, parentType: "localElement", parent: { name: "c" } });

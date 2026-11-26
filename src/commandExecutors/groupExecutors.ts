@@ -1,7 +1,6 @@
 /**
- * Executors for group commands (element groups and attribute groups).
- * Implements add, remove, and modify operations for schema groups,
- * covering both top-level group definitions and group references.
+ * Executors for the group commands: adding, removing and modifying top-level group definitions and group
+ * references.
  */
 
 import type {
@@ -9,14 +8,14 @@ import type {
   AddGroupCommand,
   RemoveGroupCommand,
   ModifyGroupCommand,
-  Compositor,
   explicitGroup,
 } from "../../shared/types.js";
-import { namedGroup, allType, simpleExplicitGroup, groupRef } from "../../shared/types.js";
+import { namedGroup, groupRef } from "../../shared/types.js";
 import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
 import { assumeValidated, assumptionFailed, locateValidated } from "./assumeValidated.js";
 import { appendTo, assignDefined, removeFrom } from "./nodeProperties.js";
 import { createAnnotation } from "./annotationUtils.js";
+import { setGroupCompositor } from "./compositorReplacement.js";
 import { renameReferencesInTargetNamespace } from "../schemaReferences/referenceRewrites.js";
 import type { MaxOccurs } from "../../shared/occurrences.js";
 import type { ComplexTypeObject } from "../../shared/schemaObjects.js";
@@ -27,7 +26,7 @@ import type { ComplexTypeObject } from "../../shared/schemaObjects.js";
  * Executes an `addGroup` command.
  *
  * Two modes depending on whether `payload.ref` is set:
- * - **Definition mode** (`groupName` + `contentModel`): creates a top-level named group.
+ * - **Definition mode** (`groupName` + `compositor`): creates a top-level named group.
  * - **Reference mode** (`ref` + `parentId`): creates `xs:group ref="..."` inside the
  *   compositor or complexType identified by `parentId`.
  *
@@ -36,7 +35,7 @@ import type { ComplexTypeObject } from "../../shared/schemaObjects.js";
  * @throws An {@link Error} if the parent node is not found (reference mode) or unsupported
  */
 export function executeAddGroup(command: AddGroupCommand, schemaObj: schema): void {
-  const { groupName, contentModel, documentation, ref, parentId, minOccurs, maxOccurs } = command.payload;
+  const { groupName, compositor, documentation, ref, parentId, minOccurs, maxOccurs } = command.payload;
 
   if (ref !== undefined) {
     // Reference mode: add xs:group ref="..." to a compositor or complexType
@@ -53,7 +52,7 @@ export function executeAddGroup(command: AddGroupCommand, schemaObj: schema): vo
   if (documentation) {
     grp.annotation = createAnnotation(documentation);
   }
-  applyGroupContentModel(grp, assumeValidated(contentModel, "Content model"));
+  setGroupCompositor(grp, assumeValidated(compositor, "Compositor"));
 
   appendTo(schemaObj, "group", grp);
 }
@@ -63,7 +62,7 @@ export function executeAddGroup(command: AddGroupCommand, schemaObj: schema): vo
  *
  * The `groupId` is used for both:
  * - `/group:Name` — removes the top-level named group definition.
- * - `/complexType:X/group:sequence[0]/groupRef:Name[0]` — removes the group reference.
+ * - `/complexType:X/sequence[0]/groupRef:Name[0]` — removes the group reference.
  *
  * @param command - The `removeGroup` command to execute
  * @param schemaObj - The schema object to modify
@@ -72,13 +71,6 @@ export function executeAddGroup(command: AddGroupCommand, schemaObj: schema): vo
 export function executeRemoveGroup(command: RemoveGroupCommand, schemaObj: schema): void {
   const { groupId } = command.payload;
   const parsed = parseSchemaId(groupId);
-
-  if (parsed.nodeType === SchemaNodeType.Group && parsed.parentId && parsed.name) {
-    const groupLocation = locateValidated(schemaObj, groupId);
-    const parentLocation = locateValidated(schemaObj, parsed.parentId);
-    removeCompositorGroupFromParent(parentLocation.parent, parsed.name, groupLocation.parent);
-    return;
-  }
 
   if (parsed.nodeType === SchemaNodeType.GroupRef) {
     // Reference mode: remove xs:group ref="..." from its parent compositor
@@ -96,22 +88,15 @@ export function executeRemoveGroup(command: RemoveGroupCommand, schemaObj: schem
  *
  * The `groupId` is used for both:
  * - `/group:Name` — modifies the top-level named group definition.
- * - `/complexType:X/group:sequence[0]/groupRef:Name[0]` — modifies the group reference.
+ * - `/complexType:X/sequence[0]/groupRef:Name[0]` — modifies the group reference.
  *
  * @param command - The `modifyGroup` command to execute
  * @param schemaObj - The schema object to modify
  * @throws An {@link Error} if the group or its parent is not found
  */
 export function executeModifyGroup(command: ModifyGroupCommand, schemaObj: schema): void {
-  const { groupId, groupName, contentModel, ref, minOccurs, maxOccurs } = command.payload;
+  const { groupId, groupName, compositor, ref, minOccurs, maxOccurs } = command.payload;
   const parsed = parseSchemaId(groupId);
-
-  if (parsed.nodeType === SchemaNodeType.Group && parsed.parentId) {
-    const location = locateValidated(schemaObj, groupId);
-    const compositor = location.parent as { minOccurs?: number; maxOccurs?: MaxOccurs };
-    assignDefined(compositor, { minOccurs, maxOccurs });
-    return;
-  }
 
   if (parsed.nodeType === SchemaNodeType.GroupRef) {
     // Reference mode: modify xs:group ref="..." in its parent compositor
@@ -134,8 +119,8 @@ export function executeModifyGroup(command: ModifyGroupCommand, schemaObj: schem
     renameReferencesInTargetNamespace("group", grp.name, groupName, schemaObj);
     grp.name = groupName;
   }
-  if (contentModel !== undefined) {
-    applyGroupContentModel(grp, contentModel);
+  if (compositor !== undefined) {
+    setGroupCompositor(grp, compositor);
   }
 }
 
@@ -234,69 +219,4 @@ function findGroupRefInParent(
     return (parent as ComplexTypeObject).group;
   }
   return undefined;
-}
-
-/**
- * Structural type for the holders of a compositor: a complex type (directly or in its complex content), a
- * group definition, or another compositor, which holds its nested compositors in arrays.
- */
-interface CompositorHolder {
-  sequence?: unknown;
-  choice?: unknown;
-  all?: unknown;
-  complexContent?: { extension?: CompositorHolder; restriction?: CompositorHolder };
-}
-
-/**
- * Removes a compositor from the node that holds it.
- *
- * @param parent - The node that holds the compositor
- * @param groupKind - The kind of the compositor: `sequence`, `choice` or `all`
- * @param targetGroup - The compositor to remove
- * @throws An {@link Error} if the parent does not hold the compositor
- */
-function removeCompositorGroupFromParent(parent: unknown, groupKind: string, targetGroup: unknown): void {
-  const kind = groupKind as Compositor;
-  const removeFrom = (holder: CompositorHolder | undefined): boolean => {
-    if (!holder) return false;
-    const current = holder[kind];
-    if (current === targetGroup) {
-      holder[kind] = undefined;
-      return true;
-    }
-    if (Array.isArray(current) && current.includes(targetGroup)) {
-      const remaining = current.filter((group) => group !== targetGroup);
-      holder[kind] = remaining.length > 0 ? remaining : undefined;
-      return true;
-    }
-    return false;
-  };
-
-  const holder = parent as CompositorHolder;
-  const removed =
-    removeFrom(holder) ||
-    removeFrom(holder.complexContent?.extension) ||
-    removeFrom(holder.complexContent?.restriction);
-  assumeValidated(removed || undefined, `Compositor ${groupKind} in its parent`);
-}
-
-/**
- * Sets the content model compositor on a `namedGroup`, clearing any previously
- * set compositor first.
- *
- * @param grp - The group holder to update
- * @param contentModel - The content model to apply
- */
-function applyGroupContentModel(grp: namedGroup, contentModel: Compositor): void {
-  grp.all = undefined;
-  grp.choice = undefined;
-  grp.sequence = undefined;
-
-  if (contentModel === "sequence") {
-    grp.sequence = new simpleExplicitGroup();
-  } else if (contentModel === "choice") {
-    grp.choice = new simpleExplicitGroup();
-  } else {
-    grp.all = new allType();
-  }
 }

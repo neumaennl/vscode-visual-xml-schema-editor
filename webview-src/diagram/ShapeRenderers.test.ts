@@ -2,10 +2,12 @@
  * Tests for shape rendering functions
  */
 
+import type { Compositor } from "../../shared/types";
 import {
   REFERENCE_ARROW_WIDTH,
   renderElementShape,
   renderGroupShape,
+  renderCompositorShape,
   renderReferenceArrow,
   renderTypeShape,
 } from "./ShapeRenderers";
@@ -37,7 +39,7 @@ const PARTICLES = `<xs:complexType name="T"><xs:sequence>
  * @returns The item
  */
 function particle(path: string): DiagramItem {
-  return diagramItem(webviewSchemaWith(PARTICLES), `/complexType:T/group:sequence[0]${path}`);
+  return diagramItem(webviewSchemaWith(PARTICLES), `/complexType:T/sequence[0]${path}`);
 }
 
 /**
@@ -98,7 +100,7 @@ describe("ShapeRenderers", () => {
   describe("renderGroupShape", () => {
     test.each([
       ["an octagon for a compositor without maxOccurs", "", 1],
-      ["a shadow for a compositor with maxOccurs unbounded", "/group:choice[0]", 2],
+      ["a shadow for a compositor with maxOccurs unbounded", "/choice[0]", 2],
     ])("should render %s", (_case, path, polygonCount) => {
       renderGroupShape(RECT, "fill:green", "stroke:black", particle(path), mockGroup);
 
@@ -166,29 +168,30 @@ describe("ShapeRenderers", () => {
     );
   });
 
-  describe("renderGroupShape of a compositor: group type indicator", () => {
+  describe("renderCompositorShape", () => {
     /**
      * Returns the diagram item of a compositor in a named complex type.
      *
      * @param name - The compositor
      * @returns The item
      */
-    function compositor(name: string): DiagramItem {
+    function compositor(name: Compositor): DiagramItem {
       return diagramItem(
         webviewSchemaWith(`<xs:complexType name="T"><xs:${name}/></xs:complexType>`),
-        `/complexType:T/group:${name}[0]`
+        `/complexType:T/${name}[0]`
       );
     }
 
-    test.each([
+    test.each<[Compositor, number]>([
       ["sequence", 1], // One horizontal line
       ["choice", 6], // The line and the trident
       ["all", 8], // The lines and the tridents
     ])("should render %s indicator with three dots and its lines", (name, lineCount) => {
-      renderGroupShape(
+      renderCompositorShape(
         { x: 10, y: 10, width: 100, height: 50 },
         "fill:green",
         "stroke:black",
+        name,
         compositor(name),
         mockGroup
       );
@@ -197,7 +200,7 @@ describe("ShapeRenderers", () => {
       expect(mockGroup.querySelectorAll("line")).toHaveLength(lineCount);
     });
 
-    test("should render no indicator for a group that is not a compositor", () => {
+    test("should render no indicator with the shape of a group", () => {
       const item = diagramItem(webviewSchemaWith(`<xs:group name="G"><xs:sequence/></xs:group>`), "/group:G");
 
       renderGroupShape({ x: 10, y: 10, width: 100, height: 50 }, "fill:green", "stroke:black", item, mockGroup);
@@ -208,7 +211,7 @@ describe("ShapeRenderers", () => {
     test("should render centered on rectangle", () => {
       const rect: Rectangle = { x: 50, y: 50, width: 100, height: 60 };
 
-      renderGroupShape(rect, "fill:green", "stroke:black", compositor("sequence"), mockGroup);
+      renderCompositorShape(rect, "fill:green", "stroke:black", "sequence", compositor("sequence"), mockGroup);
 
       // Check that elements are centered (centerX=100, centerY=80)
       const line = mockGroup.querySelector("line");

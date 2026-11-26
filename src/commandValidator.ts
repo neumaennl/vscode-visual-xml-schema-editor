@@ -14,6 +14,7 @@ import * as attributeValidators from "./commandValidators/attributeValidators.js
 import * as simpleTypeValidators from "./commandValidators/simpleTypeValidators.js";
 import * as complexTypeValidators from "./commandValidators/complexTypeValidators.js";
 import * as groupValidators from "./commandValidators/groupValidators.js";
+import * as compositorValidators from "./commandValidators/compositorValidators.js";
 import * as attributeGroupValidators from "./commandValidators/attributeGroupValidators.js";
 import * as annotationValidators from "./commandValidators/annotationValidators.js";
 import * as schemaValidators from "./commandValidators/schemaValidators.js";
@@ -34,6 +35,7 @@ const defaultValidators: ValidatorFunctions = {
   ...simpleTypeValidators,
   ...complexTypeValidators,
   ...groupValidators,
+  ...compositorValidators,
   ...attributeGroupValidators,
   ...annotationValidators,
   ...schemaValidators,

@@ -18,13 +18,13 @@ describe("Integration: ComplexType pipeline", () => {
   // ─── addComplexType ────────────────────────────────────────────────────────
 
   describe("addComplexType", () => {
-    test("should add a top-level named complexType with a sequence content model", () => {
+    test("should add a top-level named complexType with the compositor sequence", () => {
       const result = runCommandExpectSuccessSchema(emptySchemaXml(), {
         type: "addComplexType",
         payload: {
           parentId: "/schema",
           typeName: "OrderType",
-          contentModel: "sequence",
+          compositor: "sequence",
         },
       });
       const types = result.complexType ?? [];
@@ -36,13 +36,13 @@ describe("Integration: ComplexType pipeline", () => {
       expect(orderType!.all).toBeUndefined();
     });
 
-    test("should add a complexType with a choice content model", () => {
+    test("should add a complexType with the compositor choice", () => {
       const result = runCommandExpectSuccessSchema(emptySchemaXml(), {
         type: "addComplexType",
         payload: {
           parentId: "/schema",
           typeName: "ChoiceType",
-          contentModel: "choice",
+          compositor: "choice",
         },
       });
       const choiceType = (result.complexType ?? []).find((t) => t.name === "ChoiceType");
@@ -52,13 +52,13 @@ describe("Integration: ComplexType pipeline", () => {
       expect(choiceType!.sequence).toBeUndefined();
     });
 
-    test("should add a complexType with an all content model", () => {
+    test("should add a complexType with the compositor all", () => {
       const result = runCommandExpectSuccessSchema(emptySchemaXml(), {
         type: "addComplexType",
         payload: {
           parentId: "/schema",
           typeName: "AllType",
-          contentModel: "all",
+          compositor: "all",
         },
       });
       const allType = (result.complexType ?? []).find((t) => t.name === "AllType");
@@ -74,7 +74,7 @@ describe("Integration: ComplexType pipeline", () => {
         payload: {
           parentId: "/schema",
           typeName: "BaseType",
-          contentModel: "sequence",
+          compositor: "sequence",
           abstract: true,
         },
       });
@@ -89,7 +89,7 @@ describe("Integration: ComplexType pipeline", () => {
         emptySchemaXml(),
         {
           type: "addComplexType",
-          payload: { parentId: "/schema", typeName: "123Bad", contentModel: "sequence" },
+          payload: { parentId: "/schema", typeName: "123Bad", compositor: "sequence" },
         },
         "Type name must be a valid XML name"
       );
@@ -100,7 +100,7 @@ describe("Integration: ComplexType pipeline", () => {
         SCHEMA_WITH_COMPLEXTYPE,
         {
           type: "addComplexType",
-          payload: { parentId: "/schema", typeName: "PersonType", contentModel: "sequence" },
+          payload: { parentId: "/schema", typeName: "PersonType", compositor: "sequence" },
         },
         "Complex type 'PersonType' already exists in schema"
       );

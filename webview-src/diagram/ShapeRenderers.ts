@@ -5,11 +5,10 @@
 
 import type { DiagramItem } from "./DiagramItem";
 import type { Point, Rectangle } from "./DiagramTypes";
-import { DiagramItemGroupType } from "./DiagramTypes";
 import { svgRectangle, svgPolygon, svgCircle, svgLine } from "./SvgHelpers";
-import { isCompositorGroup } from "./groupUtils";
 import { isRepeated } from "./schemaAccessors";
 import { hasSimpleContent, isNamedSimpleType } from "./typeAccessors";
+import type { Compositor } from "../../shared/types";
 
 /** Offset for shadow effect on multiple occurrence shapes */
 const SHADOW_OFFSET = 3;
@@ -55,7 +54,8 @@ export function renderElementShape(
 }
 
 /**
- * Render a group as an octagon shape with optional shadow for multiple occurrences
+ * Render a group definition or a group reference as an octagon shape with optional shadow for multiple
+ * occurrences
  * @param rect - Rectangle dimensions and position
  * @param fill - Fill style string
  * @param stroke - Stroke style string
@@ -71,11 +71,28 @@ export function renderGroupShape(
 ): void {
   const points = beveledRectangle(rect, rect.height * GROUP_BEVEL_RATIO, true);
   renderPolygonWithShadow(group, points, fill, stroke, item);
+}
 
-  // Draw group type indicator only for compositor groups (sequence/choice/all)
-  if (isCompositorGroup(item)) {
-    renderGroupTypeIndicator(item, rect, group);
-  }
+/**
+ * Render a compositor like a group, as an octagon shape with optional shadow for multiple occurrences, with
+ * the symbol of its kind inside
+ * @param rect - Rectangle dimensions and position
+ * @param fill - Fill style string
+ * @param stroke - Stroke style string
+ * @param compositor - The kind of the compositor
+ * @param item - Diagram item being rendered
+ * @param group - Parent SVG group element
+ */
+export function renderCompositorShape(
+  rect: Rectangle,
+  fill: string,
+  stroke: string,
+  compositor: Compositor,
+  item: DiagramItem,
+  group: SVGElement
+): void {
+  renderGroupShape(rect, fill, stroke, item, group);
+  renderCompositorIndicator(compositor, item, rect, group);
 }
 
 /**
@@ -112,19 +129,26 @@ export function renderTypeShape(
 }
 
 /**
- * Render a group type indicator symbol (sequence/choice/all) inside the group shape
- * @param item - Diagram item with group type information
+ * Draws the symbol of a compositor (sequence, choice or all) inside its shape.
+ *
+ * @param compositor - The compositor
+ * @param item - The diagram item of the compositor, for its style
  * @param rect - Rectangle dimensions and position
  * @param group - Parent SVG group element
  */
-function renderGroupTypeIndicator(item: DiagramItem, rect: Rectangle, group: SVGElement): void {
+function renderCompositorIndicator(
+  compositor: Compositor,
+  item: DiagramItem,
+  rect: Rectangle,
+  group: SVGElement
+): void {
   const foregroundPen = `stroke:${item.getStyle().lineColor};stroke-width:1`;
   const foregroundBrush = `fill:${item.getStyle().foregroundColor}`;
   const centerX = rect.x + rect.width / 2;
   const centerY = rect.y + rect.height / 2;
 
-  switch (item.groupType) {
-    case DiagramItemGroupType.Sequence: {
+  switch (compositor) {
+    case "sequence": {
       // Three dots in a row with horizontal line
       const dotSize = 2;
       const spacing = dotSize * 3;
@@ -137,12 +161,12 @@ function renderGroupTypeIndicator(item: DiagramItem, rect: Rectangle, group: SVG
       break;
     }
 
-    case DiagramItemGroupType.Choice:
+    case "choice":
       // Choice indicator: a bent line on the left, the dots and a fork on the right
       renderForkIndicator(group, foregroundPen, foregroundBrush, centerX, centerY, "choice");
       break;
 
-    case DiagramItemGroupType.All:
+    case "all":
       // All indicator: the dots between two forks
       renderForkIndicator(group, foregroundPen, foregroundBrush, centerX, centerY, "all");
       break;

@@ -73,6 +73,9 @@ export function resolveDocumentationTargetId(node: DiagramItem): string | null {
     case SchemaNodeType.ComplexType:
     case SchemaNodeType.Group:
     case SchemaNodeType.GroupRef:
+    case SchemaNodeType.Sequence:
+    case SchemaNodeType.Choice:
+    case SchemaNodeType.All:
       return node.id;
     default:
       return null;

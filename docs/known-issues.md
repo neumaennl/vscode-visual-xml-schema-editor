@@ -3,9 +3,8 @@ type: Known Issues
 title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
-status: stable
-generated: { by: human:neumaennl, at: 2026-11-25T08:16:27Z }
-verified: { by: human:neumaennl, at: 2026-11-25T08:43:29Z }
+status: draft
+generated: { by: human:neumaennl, at: 2026-11-26T07:43:26Z }
 ---
 
 # Purpose
@@ -55,7 +54,6 @@ Effort:
   Others are special cases that make the scheme harder to use and to extend:
   - Top-level components, imports and includes are not under `/schema` (`/element:x`, `/import[0]`), but schema-root annotations are (`/schema/annotation[0]`).
   - There are three annotation schemes: a component's annotation uses the component's ID, schema-root annotations are numbered, and `/schema/documentation[N]` is a shorthand for the first schema annotation.
-  - Compositors reuse the node type `group` (`group:sequence[0]`) instead of having their own node types.
   - `complexContent` derivation is skipped, so the `extension` or `restriction` has no segment of its own.
   - Top-level components have a name and no position; local elements have both.
   - The last segment of annotations, imports, includes and references is resolved by the individual validators and executors instead of one resolver.
@@ -173,7 +171,7 @@ Effort:
 
 ## Particles are not shown in document order
 
-- **Location:** `webview-src/diagram/SchemaProcessors.ts` (`processGroup()`)
+- **Location:** `webview-src/diagram/SchemaProcessors.ts` (`processCompositor()`)
 - **Severity:** Medium
 - **Effort:** M
 - **Description:** The generated classes store the particles of a compositor in one array per kind, and the diagram builder adds them kind by kind: first the elements, then the group references, then nested `choice`s, then nested `sequence`s. A `sequence` of `a`, a `choice` and `b` is therefore shown as `a`, `b`, `choice`, which gives the wrong order for a sequence. The node IDs are not affected, because positions are counted per kind. xmlbind-ts records the local names of the child elements in document order (`_elementOrder`), from which the diagram builder could restore the order when the children are added (see [Diagram rendering](diagram-rendering.md#from-schema-to-diagram-items)). But xmlbind-ts does not use this order completely when it writes the document, so after the first command the file itself can have the wrong order (see [Commands can change or lose content outside the edit](#commands-can-change-or-lose-content-outside-the-edit)).
@@ -215,6 +213,14 @@ Effort:
 - **Severity:** Medium
 - **Effort:** M
 - **Description:** A restriction or extension dropped on a node derives from the base type of the node's derivation or from the `type` of an element, without checking whether that type is simple or complex. The executors build a simple restriction for a simple type and `complexContent` for a complex type, so two drops write invalid XSD: an extension dropped on an element with a simple type, such as `type="xs:string"`, creates a complex type with `complexContent` that extends a simple type, which needs `simpleContent`; a restriction dropped on an element with a complex type creates a simple type that restricts a complex type. The validators accept both, because they only check that the base type exists. Without a base type, the defaults are sound: `xs:anyType` for complex types, which is their implicit base, and `xs:string` for simple types, which have none. The fix is to tell simple and complex base types apart, which is possible for built-in types and the schema's own types but not for imported ones, to derive an extension of a simple type with `simpleContent`, which depends on [Complex types with simple content cannot be created or derived](#complex-types-with-simple-content-cannot-be-created-or-derived), and to let the validators reject a derivation from a base type of the wrong kind.
+- **GitHub issue:** none
+
+## An all is not checked against the derivation
+
+- **Location:** `src/commandValidators/compositorValidators.ts` (`validateCompositorReplacement()`), `src/commandValidators/complexTypeValidators.ts`, `webview-src/propertiesPanel/propertiesPanelCompositor.ts`
+- **Severity:** Medium
+- **Effort:** M
+- **Description:** XML Schema 1.0 allows an `all` in the extension of a complex type only if the base type has empty content, and a type whose content is an `all` can only be extended without particles. The editor does not check the derivation: an `all` set as the compositor of an extension of a base type with particles, with `modifyCompositor`, `modifyComplexType` or a compositor drop, and an extension with particles of a type with an `all` are accepted and written to the file, which makes the schema invalid. The fix is a constraint on the result that follows the base types of the schema (see [Commands](commands.md#conventions)); a base type of another schema cannot be checked, because the editor does not read it.
 - **GitHub issue:** none
 
 ## Facets are not checked against the base type
@@ -402,7 +408,7 @@ Effort:
 - **Location:** `shared/commands/complexType.ts` (`AddComplexTypePayload`, `ModifyComplexTypePayload`), `src/commandValidators/complexTypeValidators.ts` (`validateModifyComplexType()`), `src/commandExecutors/complexTypeExecutors.ts`
 - **Severity:** Low
 - **Effort:** L
-- **Description:** A complex type with `xs:simpleContent` has text content of a simple type plus attributes, for example a price with a currency. The complex type commands only know complex content: `addComplexType` requires a `contentModel` and always creates a compositor, and the executor only builds `complexContent`, so a `baseType` or `contentModel` for a type with simple content would add a `complexContent` next to the `simpleContent`, which is invalid. `modifyComplexType` therefore rejects `baseType`, `derivationKind` and `contentModel` for such types (see [Commands](commands.md#complex-types)). Such types can be shown and renamed, and their documentation can be edited, but a type with simple content cannot be created, its base type and derivation cannot be changed, and an existing type cannot be switched between simple and complex content. A related problem is the [mixed content toggle](#mixed-content-toggle-ignores-simple-content-complexcontent-and-the-base-type). The fix needs a way to choose simple content in the payloads, for example a content kind, and an executor that builds `simpleContent` with an `extension` or `restriction` of a simple base type.
+- **Description:** A complex type with `xs:simpleContent` has text content of a simple type plus attributes, for example a price with a currency. The complex type commands only know complex content: `addComplexType` requires a `compositor` and always creates a compositor, and the executor only builds `complexContent`, so a `baseType` or `compositor` for a type with simple content would add a `complexContent` next to the `simpleContent`, which is invalid. `modifyComplexType` therefore rejects `baseType`, `derivationKind` and `compositor` for such types (see [Commands](commands.md#complex-types)). Such types can be shown and renamed, and their documentation can be edited, but a type with simple content cannot be created, its base type and derivation cannot be changed, and an existing type cannot be switched between simple and complex content. A related problem is the [mixed content toggle](#mixed-content-toggle-ignores-simple-content-complexcontent-and-the-base-type). The fix needs a way to choose simple content in the payloads, for example a content kind, and an executor that builds `simpleContent` with an `extension` or `restriction` of a simple base type.
 - **GitHub issue:** none
 
 ## Identity constraints, notations and redefines cannot be shown or edited

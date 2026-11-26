@@ -182,4 +182,60 @@ describe("SchemaEditorApp", () => {
 
     expect(node?.classList.contains("selected")).toBe(true);
   });
+
+  /**
+   * Returns a schema, as the extension host sends it, with a complex type `T` whose compositor holds `a`.
+   *
+   * @param compositor - The kind of the compositor
+   * @returns The schema
+   */
+  function schemaWithCompositor(compositor: "sequence" | "choice"): object {
+    return {
+      _namespacePrefixes: { xs: XSD_NAMESPACE },
+      complexType: [{ name: "T", [compositor]: { element: [{ name: "a", type_: "xs:string" }] } }],
+    };
+  }
+
+  /**
+   * Selects the compositor of `T`: expands the schema and `T`, which are drawn collapsed, and clicks the
+   * compositor.
+   *
+   * @param id - The ID of the compositor
+   */
+  function selectCompositor(id: string): void {
+    for (const parentId of ["/schema", "/complexType:T"]) {
+      document
+        .querySelector(`[data-item-id="${parentId}"] .expand-button`)
+        ?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    }
+    document.querySelector(`[data-item-id="${id}"]`)?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+  }
+
+  test.each([
+    ["accepted", schemaWithCompositor("choice"), "/complexType:T/choice[0]", "Choice"],
+    ["rejected", undefined, "/complexType:T/sequence[0]", "Sequence"],
+  ])("should keep the compositor selected when the change of its kind is %s", async (_case, reply, id, shown) => {
+    const send = await loadMain();
+    send("updateSchema", schemaWithCompositor("sequence"));
+    selectCompositor("/complexType:T/sequence[0]");
+
+    const field = Array.from(document.querySelectorAll("#properties-content .property")).find(
+      (row) => row.querySelector("label")?.textContent === "Compositor:"
+    );
+    const input = field?.querySelector("input");
+    expect(input).toBeTruthy();
+    input!.value = "Choice";
+    input!.dispatchEvent(new Event("blur"));
+    if (reply) {
+      send("updateSchema", reply);
+    } else {
+      send("commandResult", { success: false, error: "Rejected" });
+    }
+
+    expect(document.querySelector(`[data-item-id="${id}"]`)?.classList.contains("selected")).toBe(true);
+    const shownField = Array.from(document.querySelectorAll("#properties-content .property")).find(
+      (row) => row.querySelector("label")?.textContent === "Compositor:"
+    );
+    expect(shownField?.querySelector("input")?.value).toBe(shown);
+  });
 });

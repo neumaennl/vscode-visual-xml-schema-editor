@@ -5,9 +5,9 @@
 
 import { DropCommandFactory } from "./DropCommandFactory";
 import { DiagramItem } from "../diagram/DiagramItem";
-import { DiagramItemGroupType, DiagramItemType } from "../diagram/DiagramTypes";
+import { DiagramItemType } from "../diagram/DiagramTypes";
 import { DraggableSchemaConstruct } from "./DraggableSchemaConstruct";
-import { SchemaNodeType } from "../../shared/idStrategy";
+import { compositorNodeType, SchemaNodeType } from "../../shared/idStrategy";
 import { diagramItem, emptyDiagram, NOT_READ_SCHEMA_OBJECT, component } from "../__tests__/diagramTestHelpers";
 import {
   DERIVATIONS,
@@ -17,6 +17,7 @@ import {
 } from "../../shared/__tests__/schemaTestHelpers";
 import { XSD_NAMESPACE } from "../../shared/builtInTypes";
 import { Diagram } from "../diagram/Diagram";
+import { COMPOSITORS } from "../../shared/types";
 
 /** The item type that the diagram builder gives each kind of node in these tests. */
 const ITEM_TYPES: Partial<Record<SchemaNodeType, DiagramItemType>> = {
@@ -25,6 +26,10 @@ const ITEM_TYPES: Partial<Record<SchemaNodeType, DiagramItemType>> = {
   [SchemaNodeType.ComplexType]: DiagramItemType.type,
   [SchemaNodeType.SimpleType]: DiagramItemType.type,
   [SchemaNodeType.Group]: DiagramItemType.group,
+  [SchemaNodeType.GroupRef]: DiagramItemType.group,
+  [SchemaNodeType.Sequence]: DiagramItemType.compositor,
+  [SchemaNodeType.Choice]: DiagramItemType.compositor,
+  [SchemaNodeType.All]: DiagramItemType.compositor,
 };
 
 /**
@@ -89,9 +94,7 @@ const PERSON_WITH_SIMPLE_TYPE = makeItem("/element:person", SchemaNodeType.Eleme
   schemaObject: component(`<xs:element name="person"><xs:simpleType><xs:restriction/></xs:simpleType></xs:element>`),
 });
 /** A sequence in an element. */
-const SEQUENCE = makeItem("/element:person/group[0]", SchemaNodeType.Group, {
-  groupType: DiagramItemGroupType.Sequence,
-});
+const SEQUENCE = makeItem("/element:person/anonymousComplexType[0]/sequence[0]", SchemaNodeType.Sequence);
 /** A top-level group. */
 const GROUP = makeItem("/group:G", SchemaNodeType.Group);
 /** A complex type without base. */
@@ -167,14 +170,12 @@ describe("DropCommandFactory", () => {
   describe("createNodeDropCommand", () => {
     test.each<AcceptedDrop>([
       ["an element on the schema root", ROOT, C.Element, { type: "addElement", payload: { parentId: "/schema" } }],
-      ...[DiagramItemGroupType.Sequence, DiagramItemGroupType.Choice, DiagramItemGroupType.All].map(
-        (groupType): AcceptedDrop => [
-          `an element on a ${groupType}`,
-          makeItem("/e/g[0]", SchemaNodeType.Group, { groupType }),
-          C.Element,
-          { type: "addElement" },
-        ]
-      ),
+      ...COMPOSITORS.map((compositor): AcceptedDrop => [
+        `an element on a ${compositor}`,
+        makeItem(`/complexType:T/${compositor}[0]`, compositorNodeType(compositor)),
+        C.Element,
+        { type: "addElement" },
+      ]),
       [
         "an attribute on the schema root",
         ROOT,
@@ -275,7 +276,7 @@ describe("DropCommandFactory", () => {
           payload: {
             parentId: "/element:person",
             baseType: "PersonType",
-            contentModel: "sequence",
+            compositor: "sequence",
             derivationKind: "extension",
           },
         },
@@ -345,7 +346,7 @@ describe("DropCommandFactory", () => {
         C.Choice,
         {
           type: "modifyComplexType",
-          payload: { typeId: "/complexType:PersonType", contentModel: "choice" },
+          payload: { typeId: "/complexType:PersonType", compositor: "choice" },
         },
       ],
       [
@@ -354,7 +355,7 @@ describe("DropCommandFactory", () => {
         C.All,
         {
           type: "modifyComplexType",
-          payload: { typeId: "/element:person/anonymousComplexType[0]", contentModel: "all" },
+          payload: { typeId: "/element:person/anonymousComplexType[0]", compositor: "all" },
         },
       ],
       [
@@ -363,7 +364,7 @@ describe("DropCommandFactory", () => {
         C.Sequence,
         {
           type: "addComplexType",
-          payload: { parentId: "/element:person", contentModel: "sequence" },
+          payload: { parentId: "/element:person", compositor: "sequence" },
         },
       ],
       [
@@ -372,15 +373,39 @@ describe("DropCommandFactory", () => {
         C.Choice,
         {
           type: "modifyGroup",
-          payload: { groupId: "/group:PeopleGroup", contentModel: "choice" },
+          payload: { groupId: "/group:PeopleGroup", compositor: "choice" },
         },
       ],
-    ])("should set the content model for %s", (_case, item, schemaConstruct, expected) => {
+    ])("should set the compositor for %s", (_case, item, schemaConstruct, expected) => {
+      expect(factory.createNodeDropCommand(item, schemaConstruct)).toEqual(expected);
+    });
+
+    test.each<AcceptedDrop>([
+      [
+        "a choice on a sequence",
+        SEQUENCE,
+        C.Choice,
+        { type: "addCompositor", payload: { parentId: SEQUENCE.id, compositor: "choice" } },
+      ],
+      [
+        "a sequence on a choice",
+        makeItem("/complexType:T/choice[0]", SchemaNodeType.Choice),
+        C.Sequence,
+        { type: "addCompositor", payload: { parentId: "/complexType:T/choice[0]", compositor: "sequence" } },
+      ],
+    ])("should add a compositor for %s", (_case, item, schemaConstruct, expected) => {
       expect(factory.createNodeDropCommand(item, schemaConstruct)).toEqual(expected);
     });
 
     test.each<RejectedDrop>([
       ["an element on a simpleType", SIMPLE_TYPE, C.Element],
+      // Elements go into the compositor of a group definition, not into the definition or a reference
+      ["an element on a group definition", GROUP, C.Element],
+      [
+        "an element on a group reference",
+        makeItem("/complexType:T/sequence[0]/groupRef:G[0]", SchemaNodeType.GroupRef),
+        C.Element,
+      ],
       ["an attribute on a plain element", PERSON, C.Attribute],
       ["an attribute on a sequence", SEQUENCE, C.Attribute],
       ["an attribute on a simpleType", SIMPLE_TYPE, C.Attribute],
@@ -393,13 +418,13 @@ describe("DropCommandFactory", () => {
         }),
         C.Group,
       ],
-      [
-        "a compositor on a compositor",
-        makeItem("/complexType:PersonType/group:sequence[0]", SchemaNodeType.Group, {
-          groupType: DiagramItemGroupType.Sequence,
-        }),
-        C.All,
-      ],
+      // XML Schema allows no all in a sequence or a choice, and no compositor in an all
+      ["an all on a sequence", SEQUENCE, C.All],
+      ...[C.Sequence, C.Choice, C.All].map((construct): RejectedDrop => [
+        `a ${construct} on an all`,
+        makeItem("/complexType:T/all[0]", SchemaNodeType.All),
+        construct,
+      ]),
       ...(["list", "union"] as const).map((kind): RejectedDrop => [
         `a facet on a ${kind} simpleType`,
         makeItem("/simpleType:Values", SchemaNodeType.SimpleType, {

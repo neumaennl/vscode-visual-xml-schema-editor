@@ -140,7 +140,7 @@ describe("CommandExecutor", () => {
         type: "addComplexType",
         payload: {
           typeName: "testComplexType",
-          contentModel: "sequence",
+          compositor: "sequence",
         },
       };
 
@@ -155,7 +155,7 @@ describe("CommandExecutor", () => {
         type: "addGroup",
         payload: {
           groupName: "testGroup",
-          contentModel: "sequence",
+          compositor: "sequence",
         },
       };
 

@@ -3,12 +3,12 @@
  */
 
 import { isValidXmlName } from "../../shared/qNames.js";
+import { validateCompositorReplacement } from "./compositorValidators.js";
 import type {
   schema,
   AddComplexTypeCommand,
   RemoveComplexTypeCommand,
   ModifyComplexTypeCommand,
-  Compositor,
 } from "../../shared/types.js";
 import type { ValidationResult } from "../../shared/validation.js";
 import { validateTypeInSchema } from "./validationUtils.js";
@@ -18,38 +18,15 @@ import {
   validateInlineTypeParent,
   validateNewTypeName,
   validateUnusedTypeName,
+  validateCompositor,
 } from "./commonValidators.js";
-import type { ComplexTypeObject } from "../../shared/schemaObjects.js";
-
-/** The compositors that the content model of a complex type can start with (see `Compositor`). */
-export const VALID_COMPLEX_TYPE_CONTENT_MODELS = ["sequence", "choice", "all"] as const satisfies readonly Compositor[];
+import { getHeldCompositor, getParticleContainer, type ComplexTypeObject } from "../../shared/schemaObjects.js";
 
 /** Valid derivation kinds for complex types that use a base type. */
 export const VALID_COMPLEX_TYPE_DERIVATION_KINDS = ["extension", "restriction"] as const;
 
 /** Container types that may hold an anonymous complexType inline. */
 const INLINE_COMPLEX_TYPE_PARENT_TYPES = ["topLevelElement", "localElement"];
-
-/**
- * Validates a content model value against the provided list of valid models.
- * Returns a validation error if the model is missing or unsupported.
- *
- * @param contentModel - The content model of the command
- * @param validModels - The content models that the command allows
- * @returns The validation result
- */
-function validateContentModel(contentModel: string | undefined, validModels: readonly string[]): ValidationResult {
-  if (!contentModel) {
-    return { valid: false, error: "Content model is required" };
-  }
-  if (!validModels.includes(contentModel)) {
-    return {
-      valid: false,
-      error: `Content model must be one of: ${validModels.join(", ")}`,
-    };
-  }
-  return { valid: true };
-}
 
 /**
  * Validates the derivation kind of a complex type payload.
@@ -107,9 +84,9 @@ function validateComplexTypeDerivation(
 }
 
 /**
- * Validates a change of the base type, the derivation kind or the content model of an existing complex type.
+ * Validates a change of the base type, the derivation kind or the compositor of an existing complex type.
  * The editor does not support simple content yet, and a complex type has at most one particle, so a
- * content model cannot be added next to a group reference.
+ * compositor cannot be added next to a group reference.
  *
  * @param payload - The changed fields of the payload
  * @param existing - The existing complex type
@@ -117,24 +94,24 @@ function validateComplexTypeDerivation(
  * @returns The validation result
  */
 function validateComplexTypeContentChange(
-  payload: { baseType?: string; derivationKind?: string; contentModel?: string },
+  payload: { baseType?: string; derivationKind?: string; compositor?: string },
   existing: ComplexTypeObject,
   typeId: string
 ): ValidationResult {
   const changesContent =
-    payload.baseType !== undefined || payload.derivationKind !== undefined || payload.contentModel !== undefined;
+    payload.baseType !== undefined || payload.derivationKind !== undefined || payload.compositor !== undefined;
   if (changesContent && existing.simpleContent) {
     return {
       valid: false,
-      error: `'${typeId}' has simple content, whose base type, derivation and content model cannot be changed yet`,
+      error: `'${typeId}' has simple content, whose base type, derivation and compositor cannot be changed yet`,
     };
   }
   const groupRef =
     existing.group ?? existing.complexContent?.extension?.group ?? existing.complexContent?.restriction?.group;
-  if (payload.contentModel !== undefined && groupRef) {
+  if (payload.compositor !== undefined && groupRef) {
     return {
       valid: false,
-      error: `'${typeId}' already has a particle (a group reference) and cannot get a content model`,
+      error: `'${typeId}' already has a particle (a group reference) and cannot get a compositor`,
     };
   }
   return { valid: true };
@@ -142,14 +119,14 @@ function validateComplexTypeContentChange(
 
 /**
  * Validates an `addComplexType` command: an anonymous type needs an element as parent, a top-level type a
- * new valid name. The content model, the derivation kind and the derivation must be valid.
+ * new valid name. The compositor, the derivation kind and the derivation must be valid.
  *
  * @param command - The command
  * @param schemaObj - The schema
  * @returns The validation result
  */
 export function validateAddComplexType(command: AddComplexTypeCommand, schemaObj: schema): ValidationResult {
-  const { parentId, typeName, contentModel, derivationKind } = command.payload;
+  const { parentId, typeName, compositor, derivationKind } = command.payload;
   const isTopLevel = isSchemaRoot(parentId);
 
   if (parentId !== undefined && !isTopLevel) {
@@ -159,8 +136,8 @@ export function validateAddComplexType(command: AddComplexTypeCommand, schemaObj
   } else if (typeName === undefined || !isValidXmlName(typeName)) {
     return { valid: false, error: "Type name must be a valid XML name" };
   }
-  const contentModelResult = validateContentModel(contentModel, VALID_COMPLEX_TYPE_CONTENT_MODELS);
-  if (!contentModelResult.valid) return contentModelResult;
+  const compositorResult = validateCompositor(compositor);
+  if (!compositorResult.valid) return compositorResult;
   const derivationKindResult = validateDerivationKind(derivationKind);
   if (!derivationKindResult.valid) return derivationKindResult;
   const derivationResult = validateComplexTypeDerivation(command.payload, undefined, schemaObj);
@@ -182,22 +159,25 @@ export function validateRemoveComplexType(command: RemoveComplexTypeCommand, sch
 
 /**
  * Validates a `modifyComplexType` command: the type must exist, a new name must be valid and unused, and
- * the new content model, derivation kind and derivation must be valid and fit the current content.
+ * the new compositor, derivation kind and derivation must be valid and fit the current content.
  *
  * @param command - The command
  * @param schemaObj - The schema
  * @returns The validation result
  */
 export function validateModifyComplexType(command: ModifyComplexTypeCommand, schemaObj: schema): ValidationResult {
-  const { typeId, typeName, contentModel, derivationKind } = command.payload;
+  const { typeId, typeName, compositor, derivationKind } = command.payload;
   const located = locateType(typeId, schemaObj, "complexType", schemaObj.complexType);
   if (!located.valid) return located;
 
   const nameResult = validateNewTypeName(typeName, located, "complexType", schemaObj);
   if (!nameResult.valid) return nameResult;
-  if (contentModel !== undefined) {
-    const contentModelResult = validateContentModel(contentModel, VALID_COMPLEX_TYPE_CONTENT_MODELS);
-    if (!contentModelResult.valid) return contentModelResult;
+  if (compositor !== undefined) {
+    const compositorResult = validateCompositor(compositor);
+    if (!compositorResult.valid) return compositorResult;
+    const content = getParticleContainer(located.type);
+    const replacementResult = validateCompositorReplacement(content && getHeldCompositor(content), compositor);
+    if (!replacementResult.valid) return replacementResult;
   }
   const derivationKindResult = validateDerivationKind(derivationKind);
   if (!derivationKindResult.valid) return derivationKindResult;

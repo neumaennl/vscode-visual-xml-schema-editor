@@ -70,7 +70,7 @@ describe("buildXmlPreview", () => {
       ],
     },
     {
-      id: "/element:note/anonymousComplexType[0]/group:sequence[0]",
+      id: "/element:note/anonymousComplexType[0]/sequence[0]",
       fragment: [
         "<xs:sequence>",
         '  <xs:element name="b" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>',
@@ -171,11 +171,11 @@ describe("buildXmlPreview", () => {
       ],
     },
     {
-      id: "/complexType:WithRef/group:sequence[0]/groupRef:Contact[0]",
+      id: "/complexType:WithRef/sequence[0]/groupRef:Contact[0]",
       fragment: ['<xs:group ref="Contact" minOccurs="0"/>'],
     },
     {
-      id: "/complexType:WithRef/group:sequence[0]/element:unnamed[0]",
+      id: "/complexType:WithRef/sequence[0]/element:unnamed[0]",
       fragment: ['<xs:element ref="code" maxOccurs="2"/>'],
     },
   ])("should show $id with its attributes, annotations, facets and one level of children", ({ id, fragment }) => {
@@ -219,7 +219,7 @@ describe("buildXmlPreview", () => {
 
   test("should show at most 50 children and marks the rest as truncated", () => {
     const elements = Array.from({ length: 51 }, (_, index) => `<xs:element name="e${index}" type="xs:string"/>`);
-    const sequenceId = "/complexType:Many/group:sequence[0]";
+    const sequenceId = "/complexType:Many/sequence[0]";
 
     const schemaObj = webviewSchemaWith(
       `<xs:complexType name="Many"><xs:sequence>${elements.join("")}</xs:sequence></xs:complexType>`

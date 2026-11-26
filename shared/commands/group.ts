@@ -10,7 +10,7 @@ import type { MaxOccurs } from "../occurrences.js";
  * Payload for adding a group definition or a group reference.
  *
  * Two modes, mutually exclusive:
- * - **Definition** (`groupName` + `contentModel`): creates a top-level `xs:group name="..."`.
+ * - **Definition** (`groupName` + `compositor`): creates a top-level `xs:group name="..."`.
  *   Always created at the schema root; `parentId` must not be provided in this mode.
  * - **Reference** (`ref` + `parentId`): creates `xs:group ref="..."` inside the compositor
  *   or complexType identified by `parentId`.
@@ -22,16 +22,16 @@ export interface AddGroupPayload {
    */
   groupName?: string;
   /**
-   * Content model for the group. Required when creating a definition.
+   * The compositor of the group. Required when creating a definition.
    * Ignored when creating a reference.
    */
-  contentModel?: Compositor;
+  compositor?: Compositor;
   /** Optional documentation. Applies to both group definitions and group references (xs:annotation). */
   documentation?: string;
   /**
    * Name of the group to reference.
    * When provided, creates `xs:group ref="..."` inside `parentId`.
-   * Mutually exclusive with `groupName`/`contentModel`.
+   * Mutually exclusive with `groupName`/`compositor`.
    */
   ref?: string;
   /**
@@ -54,10 +54,9 @@ export interface AddGroupCommand extends BaseCommand<AddGroupPayload> {
 }
 
 /**
- * Payload for removing a group definition or a group reference.
- * The `groupId` field works for both:
+ * Payload for removing a group definition or a group reference. The `groupId` addresses both:
  * - `/group:PersonGroup` — removes the top-level named group definition.
- * - `/complexType:X/group:sequence[0]/groupRef:PersonGroup[0]` — removes the group reference.
+ * - `/complexType:X/sequence[0]/groupRef:PersonGroup[0]` — removes the group reference.
  */
 export interface RemoveGroupPayload {
   /** ID of the group definition or group reference to remove */
@@ -73,18 +72,17 @@ export interface RemoveGroupCommand extends BaseCommand<RemoveGroupPayload> {
 }
 
 /**
- * Payload for modifying a group definition or a group reference.
- * The `groupId` field works for both:
+ * Payload for modifying a group definition or a group reference. The `groupId` addresses both:
  * - `/group:PersonGroup` — modifies the top-level named group definition.
- * - `/complexType:X/group:sequence[0]/groupRef:PersonGroup[0]` — modifies the group reference.
+ * - `/complexType:X/sequence[0]/groupRef:PersonGroup[0]` — modifies the group reference.
  */
 export interface ModifyGroupPayload {
   /** ID of the group definition or group reference to modify */
   groupId: string;
   /** New name for the group definition (optional). Not applicable for references. */
   groupName?: string;
-  /** New content model (optional). Not applicable for references. */
-  contentModel?: Compositor;
+  /** New compositor (optional). Not applicable for references. */
+  compositor?: Compositor;
   /**
    * New ref target for a group reference (optional).
    * Only applicable when `groupId` points to a group reference.

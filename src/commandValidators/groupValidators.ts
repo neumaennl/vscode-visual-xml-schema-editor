@@ -1,8 +1,9 @@
 /**
- * Validators for group commands (Group and AttributeGroup).
+ * Validators for the group commands: group definitions and group references.
  */
 
 import { isValidXmlName } from "../../shared/qNames.js";
+import { validateCompositorReplacement } from "./compositorValidators.js";
 import type {
   schema,
   AddGroupCommand,
@@ -13,22 +14,18 @@ import type {
 } from "../../shared/types.js";
 import type { ValidationFailure, ValidationResult, ValidationSuccess } from "../../shared/validation.js";
 import { validateOccurrences } from "../../shared/occurrences.js";
-import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
+import { isCompositorNodeType, parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
 import { locateNodeById } from "../schemaNavigator.js";
 import type { ReferenceOrDefinition } from "./commonValidators.js";
 import {
   locateReferenceOrDefinition,
   parseRequiredId,
+  validateCompositor,
   validateDefinitionRemoval,
   validateReference,
 } from "./commonValidators.js";
 import { isReferenced } from "../schemaReferences/referenceChecks.js";
-
-/**
- * Valid content models for Group elements.
- * Groups can only use structure models (sequence, choice, all).
- */
-export const VALID_GROUP_CONTENT_MODELS = ["sequence", "choice", "all"] as const;
+import { getHeldCompositor } from "../../shared/schemaObjects.js";
 
 // ===== Group Reference Helpers =====
 
@@ -108,7 +105,7 @@ function complexTypeHasParticle(ct: ComplexTypeWithParticles): boolean {
 /**
  * Validates an `addGroup` command. A group reference needs a parent that can hold it (a sequence,
  * choice, or complexType without a particle), refers to a named group and has consistent occurrences.
- * A group definition has a new valid name and a valid content model, and no parent or occurrences.
+ * A group definition has a new valid name and a valid compositor, and no parent or occurrences.
  *
  * @param command - The command
  * @param schemaObj - The schema
@@ -117,11 +114,11 @@ function complexTypeHasParticle(ct: ComplexTypeWithParticles): boolean {
 export function validateAddGroup(command: AddGroupCommand, schemaObj: schema): ValidationResult {
   if (command.payload.ref !== undefined) {
     // Reference mode validation — reject definition-mode fields
-    if (command.payload.groupName !== undefined || command.payload.contentModel !== undefined) {
+    if (command.payload.groupName !== undefined || command.payload.compositor !== undefined) {
       return {
         valid: false,
         error:
-          "Cannot combine ref with groupName or contentModel — use ref for group references, groupName/contentModel for group definitions",
+          "Cannot combine ref with groupName or compositor — use ref for group references, groupName/compositor for group definitions",
       };
     }
     const parentId = command.payload.parentId;
@@ -170,21 +167,16 @@ export function validateAddGroup(command: AddGroupCommand, schemaObj: schema): V
     return {
       valid: false,
       error:
-        "Cannot combine groupName/contentModel with parentId, minOccurs, or maxOccurs — use ref for group references",
+        "Cannot combine groupName/compositor with parentId, minOccurs, or maxOccurs — use ref for group references",
     };
   }
   const { groupName } = command.payload;
   if (groupName === undefined || !isValidXmlName(groupName)) {
     return { valid: false, error: "Group name must be a valid XML name" };
   }
-  if (!command.payload.contentModel) {
-    return { valid: false, error: "Content model is required" };
-  }
-  if (!VALID_GROUP_CONTENT_MODELS.includes(command.payload.contentModel)) {
-    return {
-      valid: false,
-      error: `Content model must be one of: ${VALID_GROUP_CONTENT_MODELS.join(", ")}`,
-    };
+  const compositorResult = validateCompositor(command.payload.compositor);
+  if (!compositorResult.valid) {
+    return compositorResult;
   }
   const exists = (schemaObj.group ?? []).some((g) => g.name === groupName);
   if (exists) {
@@ -197,31 +189,25 @@ export function validateAddGroup(command: AddGroupCommand, schemaObj: schema): V
 }
 
 /**
- * What a group ID identifies: a compositor (`…/group:sequence[N]`) with the ID of its parent, a group
- * reference, or a group definition with its name.
- */
-type GroupTarget = { target: "compositor"; compositorParentId: string } | ReferenceOrDefinition;
-
-/**
- * Validates that the group that a group ID identifies exists. Used by both `validateRemoveGroup` and
- * `validateModifyGroup`.
+ * Validates that the group definition or group reference that a group ID identifies exists. Used by both
+ * `validateRemoveGroup` and `validateModifyGroup`. Compositors have commands of their own.
  *
- * @param groupId - The ID of a compositor, a group reference or a group definition
+ * @param groupId - The ID of a group reference or a group definition
  * @param schemaObj - The schema
  * @returns What the ID identifies, or the validation failure
  */
-function locateGroup(groupId: string, schemaObj: schema): ValidationFailure | (ValidationSuccess & GroupTarget) {
+function locateGroup(
+  groupId: string,
+  schemaObj: schema
+): ValidationFailure | (ValidationSuccess & ReferenceOrDefinition) {
   const parsedId = parseRequiredId(groupId, "Group");
   if (!parsedId.valid) {
     return parsedId;
   }
   const parsed = parsedId.parsed;
 
-  if (parsed.nodeType === SchemaNodeType.Group && parsed.parentId) {
-    if (!locateNodeById(schemaObj, groupId).found) {
-      return { valid: false, error: `Group not found: ${groupId}` };
-    }
-    return { valid: true, target: "compositor", compositorParentId: parsed.parentId };
+  if (isCompositorNodeType(parsed.nodeType)) {
+    return { valid: false, error: `'${groupId}' is a compositor, which has commands of its own` };
   }
   return locateReferenceOrDefinition(
     parsed,
@@ -233,8 +219,8 @@ function locateGroup(groupId: string, schemaObj: schema): ValidationFailure | (V
 }
 
 /**
- * Validates a `removeGroup` command: the group definition, reference or compositor must exist, and a
- * definition must not be referenced any more.
+ * Validates a `removeGroup` command: the group definition or reference must exist, and a definition must
+ * not be referenced any more.
  *
  * @param command - The command
  * @param schemaObj - The schema
@@ -247,38 +233,6 @@ export function validateRemoveGroup(command: RemoveGroupCommand, schemaObj: sche
 }
 
 /**
- * Validates the changes of a `modifyGroup` command to a compositor.
- *
- * @param payload - The payload of the command
- * @param compositorParentId - The ID of the parent of the compositor
- * @returns The validation result
- */
-function validateCompositorChange(
-  payload: ModifyGroupCommand["payload"],
-  compositorParentId: string
-): ValidationResult {
-  if (payload.groupName !== undefined || payload.contentModel !== undefined || payload.ref !== undefined) {
-    return {
-      valid: false,
-      error: "Compositor groups only support minOccurs and maxOccurs updates",
-    };
-  }
-  // XML Schema allows no occurrences on the compositor of a group definition
-  const parentOfCompositor = parseSchemaId(compositorParentId);
-  if (
-    (payload.minOccurs !== undefined || payload.maxOccurs !== undefined) &&
-    parentOfCompositor.nodeType === SchemaNodeType.Group &&
-    !parentOfCompositor.parentId
-  ) {
-    return {
-      valid: false,
-      error: "The compositor of a group definition cannot have minOccurs or maxOccurs",
-    };
-  }
-  return validateOccurrences(payload.minOccurs, payload.maxOccurs);
-}
-
-/**
  * Validates the changes of a `modifyGroup` command to a group reference: a new `ref` must name a group
  * definition, and the occurrences must be valid.
  *
@@ -287,11 +241,11 @@ function validateCompositorChange(
  * @returns The validation result
  */
 function validateReferenceChange(payload: ModifyGroupCommand["payload"], schemaObj: schema): ValidationResult {
-  if (payload.groupName !== undefined || payload.contentModel !== undefined) {
+  if (payload.groupName !== undefined || payload.compositor !== undefined) {
     return {
       valid: false,
       error:
-        "Cannot use groupName or contentModel when modifying a group reference — use ref, minOccurs or maxOccurs instead",
+        "Cannot use groupName or compositor when modifying a group reference — use ref, minOccurs or maxOccurs instead",
     };
   }
   if (payload.ref !== undefined) {
@@ -321,7 +275,7 @@ function validateDefinitionChange(
     return {
       valid: false,
       error:
-        "Cannot use ref, minOccurs, or maxOccurs when modifying a group definition — use groupName or contentModel instead",
+        "Cannot use ref, minOccurs, or maxOccurs when modifying a group definition — use groupName or compositor instead",
     };
   }
   const { groupName } = payload;
@@ -335,18 +289,20 @@ function validateDefinitionChange(
   ) {
     return { valid: false, error: `Group name already exists: ${groupName}` };
   }
-  if (payload.contentModel !== undefined && !VALID_GROUP_CONTENT_MODELS.includes(payload.contentModel)) {
-    return {
-      valid: false,
-      error: `Content model must be one of: ${VALID_GROUP_CONTENT_MODELS.join(", ")}`,
-    };
+  if (payload.compositor === undefined) {
+    return { valid: true };
   }
-  return { valid: true };
+  const compositorResult = validateCompositor(payload.compositor);
+  if (!compositorResult.valid) {
+    return compositorResult;
+  }
+  const group = (schemaObj.group ?? []).find((g) => g.name === currentName);
+  return validateCompositorReplacement(group && getHeldCompositor(group), payload.compositor);
 }
 
 /**
  * Validates a `modifyGroup` command: what the ID identifies must exist, and the changes must fit it, a
- * compositor, a group reference or a group definition.
+ * group reference or a group definition.
  *
  * @param command - The command
  * @param schemaObj - The schema
@@ -358,8 +314,6 @@ export function validateModifyGroup(command: ModifyGroupCommand, schemaObj: sche
     return located;
   }
   switch (located.target) {
-    case "compositor":
-      return validateCompositorChange(command.payload, located.compositorParentId);
     case "reference":
       return validateReferenceChange(command.payload, schemaObj);
     case "definition":

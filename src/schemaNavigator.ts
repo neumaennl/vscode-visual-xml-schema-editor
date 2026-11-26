@@ -9,18 +9,15 @@ import type {
   localComplexType,
   namedGroup,
   explicitGroup,
-  simpleExplicitGroup,
-  all as allGroup,
-  allType,
   localSimpleType,
-  Compositor,
 } from "../shared/types.js";
-import { parseSchemaId, SchemaNodeType, toNodeType, isSchemaRoot } from "../shared/idStrategy.js";
+import { compositorOfNodeType, parseSchemaId, SchemaNodeType, toNodeType, isSchemaRoot } from "../shared/idStrategy.js";
 import {
   getContentContainer,
   getParticleContainer,
   type NamedChild,
   type NamedComponent,
+  type CompositorObject,
 } from "../shared/schemaObjects.js";
 import { requireGroup } from "../shared/regexUtils.js";
 import { findIdentifiedChild } from "./commandUtils.js";
@@ -59,8 +56,8 @@ export type NodeLocation =
  * locateNodeById(schema, "/schema") // Returns { found: true, parent: schema, parentType: "schema" }
  *
  * // Find a sequence within a complex type
- * locateNodeById(schema, "/complexType:PersonType/group:sequence[0]")
- * // Returns the sequence group where elements can be added
+ * locateNodeById(schema, "/complexType:PersonType/sequence[0]")
+ * // Returns the sequence, where elements can be added
  * ```
  */
 export function locateNodeById(schemaObj: schema, nodeId: string): NodeLocation {
@@ -185,9 +182,9 @@ function navigateToChild(parent: unknown, parentType: string, segmentInfo: Segme
   } else if (parentType === "topLevelComplexType" || parentType === "localComplexType") {
     return navigateFromComplexType(parent as topLevelComplexType | localComplexType, nodeType, name, position);
   } else if (parentType === "namedGroup") {
-    return navigateFromNamedGroup(parent as namedGroup, nodeType, name, position);
+    return navigateFromNamedGroup(parent as namedGroup, nodeType, position);
   } else if (parentType === "sequence" || parentType === "choice" || parentType === "all") {
-    return navigateFromGroup(parent as explicitGroup, nodeType, name, position);
+    return navigateFromCompositor(parent as explicitGroup, nodeType, name, position);
   }
 
   return { found: false };
@@ -260,8 +257,8 @@ function navigateToAnonymousType(holder: AnonymousTypeHolder, nodeType: SchemaNo
  *
  * @param complexType - The complex type
  * @param nodeType - The node type of the child
- * @param name - The kind of compositor (`sequence`, `choice` or `all`), or the name of an attribute
- * @param position - The position of an attribute, which wins over its name
+ * @param name - The name of an attribute
+ * @param position - The position of an attribute, which wins over its name, or of the compositor, which must be 0 or missing
  * @returns The child and its kind, or `found: false` if the complex type has no such child
  */
 function navigateFromComplexType(
@@ -270,29 +267,12 @@ function navigateFromComplexType(
   name?: string,
   position?: number
 ): NavigationResult {
-  // Complex types can have sequence, choice, or all as children
-  if (nodeType === SchemaNodeType.Group && name === "sequence") {
-    const sequence = resolveComplexTypeGroup(complexType, "sequence");
-    if (sequence) {
-      return {
-        found: true,
-        node: sequence,
-        nodeType: "sequence",
-      };
-    }
-  } else if (nodeType === SchemaNodeType.Group && name === "choice") {
-    const choice = resolveComplexTypeGroup(complexType, "choice");
-    if (choice) {
-      return {
-        found: true,
-        node: choice,
-        nodeType: "choice",
-      };
-    }
-  } else if (nodeType === SchemaNodeType.Group && name === "all") {
-    const all = resolveComplexTypeGroup(complexType, "all");
-    if (all) {
-      return { found: true, node: all, nodeType: "all" };
+  // Complex types can have a sequence, a choice or an all as child, at most one, at position 0
+  const compositor = compositorOfNodeType(nodeType);
+  if (compositor && (position ?? 0) === 0) {
+    const node = getParticleContainer(complexType)?.[compositor];
+    if (node) {
+      return { found: true, node, nodeType: compositor };
     }
   }
 
@@ -308,65 +288,40 @@ function navigateFromComplexType(
 }
 
 /**
- * Returns the compositor of the given kind of a complex type, which lives in the extension or restriction
- * of its content if it has complex content (see {@link getParticleContainer}).
- *
- * @param complexType - The complex type
- * @param groupKind - The kind of compositor
- * @returns The compositor, or undefined if the complex type has none of this kind
- */
-function resolveComplexTypeGroup(
-  complexType: topLevelComplexType | localComplexType,
-  groupKind: Compositor
-): explicitGroup | allGroup | undefined {
-  return getParticleContainer(complexType)?.[groupKind];
-}
-
-/**
  * Navigate from a named group to its compositor.
  *
  * @param group - The named group
- * @param nodeType - The node type of the child; only `Group` is found
- * @param name - The kind of compositor: `sequence`, `choice` or `all`
- * @param _position - Not used: a named group has one compositor, which its kind identifies
+ * @param nodeType - The node type of the child; only compositors are found
+ * @param position - The position of the compositor, which must be 0 or missing
  * @returns The compositor and its kind, or `found: false` if the group has no such compositor
  */
-function navigateFromNamedGroup(
-  group: namedGroup,
-  nodeType: SchemaNodeType,
-  name?: string,
-  _position?: number
-): NavigationResult {
-  if (nodeType === SchemaNodeType.Group && name === "sequence" && group.sequence) {
-    return { found: true, node: group.sequence, nodeType: "sequence" };
+function navigateFromNamedGroup(group: namedGroup, nodeType: SchemaNodeType, position?: number): NavigationResult {
+  const compositor = compositorOfNodeType(nodeType);
+  // A named group has one compositor, at position 0
+  if (compositor === undefined || (position ?? 0) !== 0) {
+    return { found: false };
   }
-  if (nodeType === SchemaNodeType.Group && name === "choice" && group.choice) {
-    return { found: true, node: group.choice, nodeType: "choice" };
-  }
-  if (nodeType === SchemaNodeType.Group && name === "all" && group.all) {
-    return { found: true, node: group.all, nodeType: "all" };
-  }
-
-  return { found: false };
+  const node = group[compositor];
+  return node ? { found: true, node, nodeType: compositor } : { found: false };
 }
 
 /**
- * Navigate from a group (sequence/choice/all) to a child element or a nested choice or sequence.
+ * Navigate from a compositor (sequence, choice or all) to a child element or a nested choice or sequence.
  *
- * @param group - The compositor
+ * @param compositor - The compositor
  * @param nodeType - The node type of the child
- * @param name - The name of an element, or the kind of a nested compositor (`choice` or `sequence`)
+ * @param name - The name of an element
  * @param position - The position of an element, which wins over its name, or of a nested compositor
  * @returns The child and its kind, or `found: false` if the compositor has no such child
  */
-function navigateFromGroup(
-  group: explicitGroup | simpleExplicitGroup | allGroup | allType,
+function navigateFromCompositor(
+  compositor: CompositorObject,
   nodeType: SchemaNodeType,
   name?: string,
   position?: number
 ): NavigationResult {
   if (nodeType === SchemaNodeType.Element) {
-    const elements: NamedChild[] = group.element ?? [];
+    const elements: NamedChild[] = compositor.element ?? [];
     const element = findIdentifiedChild(elements, name, position);
     if (element) {
       return { found: true, node: element, nodeType: "localElement" };
@@ -374,15 +329,15 @@ function navigateFromGroup(
   }
 
   // Only sequences and choices nest other compositors, not an all
-  if (nodeType === SchemaNodeType.Group && name === "choice" && "choice" in group) {
-    const choice = (group.choice ?? [])[position ?? 0];
+  if (nodeType === SchemaNodeType.Choice && "choice" in compositor) {
+    const choice = (compositor.choice ?? [])[position ?? 0];
     if (choice) {
       return { found: true, node: choice, nodeType: "choice" };
     }
   }
 
-  if (nodeType === SchemaNodeType.Group && name === "sequence" && "sequence" in group) {
-    const sequence = (group.sequence ?? [])[position ?? 0];
+  if (nodeType === SchemaNodeType.Sequence && "sequence" in compositor) {
+    const sequence = (compositor.sequence ?? [])[position ?? 0];
     if (sequence) {
       return { found: true, node: sequence, nodeType: "sequence" };
     }

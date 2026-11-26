@@ -40,7 +40,7 @@ const SCHEMA = schemaWith(`<xs:element name="a" type="xs:string"/>
 </xs:sequence></xs:complexType>
 <xs:simpleType name="S"><xs:restriction base="xs:string"/></xs:simpleType>`);
 
-const SEQUENCE_ID = "/complexType:T/group:sequence[0]";
+const SEQUENCE_ID = "/complexType:T/sequence[0]";
 
 /** A schema with the target namespace `urn:t` and the prefixes `tns` for it and `other` for `urn:o`. */
 const SCHEMA_WITH_TARGET_NAMESPACE = unmarshal(
@@ -245,8 +245,8 @@ describe("locateChild", () => {
     ["an empty ID", " ", "Element ID cannot be empty"],
     [
       "a missing parent",
-      "/complexType:X/group:sequence[0]/element:a",
-      "Parent node not found for element: /complexType:X/group:sequence[0]/element:a",
+      "/complexType:X/sequence[0]/element:a",
+      "Parent node not found for element: /complexType:X/sequence[0]/element:a",
     ],
     [
       "a parent of the wrong type",

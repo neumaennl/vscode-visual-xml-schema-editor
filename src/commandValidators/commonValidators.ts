@@ -4,7 +4,7 @@
  * ID identifies.
  */
 
-import type { schema } from "../../shared/types.js";
+import { COMPOSITORS, isCompositor, type schema } from "../../shared/types.js";
 import type { ParsedSchemaId } from "../../shared/idStrategy.js";
 import { parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy.js";
 import { locateNodeById } from "../schemaNavigator.js";
@@ -13,6 +13,21 @@ import { type TypeKind } from "../../shared/idStrategy.js";
 import type { NamedChild, NamedComponent } from "../../shared/schemaObjects.js";
 import { findIdentifiedChild } from "../commandUtils.js";
 import type { ValidationFailure, ValidationResult, ValidationSuccess } from "../../shared/validation.js";
+
+/**
+ * Validates the compositor of a command: it must be `sequence`, `choice` or `all`.
+ *
+ * @param compositor - The compositor of the command
+ * @returns The validation result
+ */
+export function validateCompositor(compositor: string | undefined): ValidationResult {
+  if (!compositor) {
+    return { valid: false, error: "Compositor is required" };
+  }
+  return isCompositor(compositor)
+    ? { valid: true }
+    : { valid: false, error: `Compositor must be one of: ${COMPOSITORS.join(", ")}` };
+}
 
 /** The kinds of top-level components that a `ref` can refer to. */
 export type ReferencedKind = "element" | "attribute" | "group" | "attributeGroup";

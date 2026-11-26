@@ -37,7 +37,7 @@ const OCCURRENCES = `<xs:complexType name="T"><xs:sequence minOccurs="1" maxOccu
 </xs:sequence></xs:complexType>`;
 
 /** The ID of the sequence in {@link OCCURRENCES}. */
-const SEQUENCE_ID = "/complexType:T/group:sequence[0]";
+const SEQUENCE_ID = "/complexType:T/sequence[0]";
 
 /** The ID of the local element `item` in {@link OCCURRENCES}. */
 const ITEM_ID = `${SEQUENCE_ID}/element:item[0]`;
@@ -96,18 +96,18 @@ describe("PropertiesPanel", () => {
     });
   });
 
-  test("should dispatch removeGroup when deleting a compositor group", () => {
+  test("should dispatch removeCompositor when deleting a compositor", () => {
     const { dispatch } = displayItem(
       container,
-      diagramItem(webviewSchemaWith(KINDS), "/complexType:PersonType/group:sequence[0]")
+      diagramItem(webviewSchemaWith(KINDS), "/complexType:PersonType/sequence[0]")
     );
 
     const deleteButton = container.querySelector<HTMLButtonElement>("button[title='Delete node']")!;
     deleteButton.click();
 
     expect(dispatch).toHaveBeenCalledWith({
-      type: "removeGroup",
-      payload: { groupId: "/complexType:PersonType/group:sequence[0]" },
+      type: "removeCompositor",
+      payload: { compositorId: "/complexType:PersonType/sequence[0]" },
     });
   });
 
@@ -183,29 +183,93 @@ describe("PropertiesPanel", () => {
     });
   });
 
-  test("should show non-editable name for compositor groups", () => {
-    const item = new DiagramItem(
-      "/complexType:PersonType/group:sequence[0]",
+  test("should show the kind of a compositor in a Compositor field instead of a name", () => {
+    displayItem(container, diagramItem(webviewSchemaWith(OCCURRENCES), SEQUENCE_ID));
+
+    expect(getInputByLabel(container, "Compositor").value).toBe("Sequence");
+    expect(container.textContent).not.toContain("Name:");
+  });
+
+  test.each([
+    [
+      "a sequence of optional elements to an all",
+      `<xs:complexType name="T"><xs:sequence><xs:element name="a" minOccurs="0"/></xs:sequence></xs:complexType>`,
+      SEQUENCE_ID,
+      "All",
+      "all",
+    ],
+    [
+      "a nested choice to a sequence",
+      `<xs:complexType name="N"><xs:sequence><xs:choice/></xs:sequence></xs:complexType>`,
+      "/complexType:N/sequence[0]/choice[0]",
+      "Sequence",
       "sequence",
-      DiagramItemType.group,
-      {},
-      diagram
+    ],
+  ])("should dispatch modifyCompositor when changing %s", (_case, schema, id, entered, compositor) => {
+    const { dispatch } = displayItem(container, diagramItem(webviewSchemaWith(schema), id));
+
+    editInput(container, "Compositor", entered);
+
+    expect(dispatch).toHaveBeenCalledWith({ type: "modifyCompositor", payload: { compositorId: id, compositor } });
+  });
+
+  // XML Schema 1.0 allows an all only at the top, with nothing but elements that occur at most once
+  test.each([
+    [
+      "a nested compositor",
+      `<xs:complexType name="T"><xs:sequence><xs:choice/></xs:sequence></xs:complexType>`,
+      "/complexType:T/sequence[0]/choice[0]",
+      "Choice",
+    ],
+    [
+      "a sequence with a nested choice",
+      `<xs:complexType name="T"><xs:sequence><xs:choice/></xs:sequence></xs:complexType>`,
+      SEQUENCE_ID,
+      "Sequence",
+    ],
+    ["a sequence with a repeated element", OCCURRENCES, SEQUENCE_ID, "Sequence"],
+    [
+      "a repeated sequence",
+      `<xs:complexType name="T"><xs:sequence maxOccurs="2"><xs:element name="a"/></xs:sequence></xs:complexType>`,
+      SEQUENCE_ID,
+      "Sequence",
+    ],
+    [
+      "a sequence with a wildcard",
+      `<xs:complexType name="T"><xs:sequence><xs:any/></xs:sequence></xs:complexType>`,
+      SEQUENCE_ID,
+      "Sequence",
+    ],
+  ])("should not offer an all for %s", (_case, schema, id, current) => {
+    const { dispatch } = displayItem(container, diagramItem(webviewSchemaWith(schema), id));
+
+    editInput(container, "Compositor", "All");
+
+    expect(dispatch).not.toHaveBeenCalled();
+    expect(getInputByLabel(container, "Compositor").value).toBe(current);
+    expect(
+      getInputByLabel(container, "Compositor").parentElement?.querySelector(".property-message")?.textContent
+    ).toBe("'All' is not a value of Compositor. Choose one of: Sequence, Choice");
+  });
+
+  test("should offer an all for an all", () => {
+    const id = "/complexType:T/all[0]";
+    displayItem(
+      container,
+      diagramItem(
+        webviewSchemaWith(
+          `<xs:complexType name="T"><xs:all><xs:element name="a" maxOccurs="2"/></xs:all></xs:complexType>`
+        ),
+        id
+      )
     );
 
-    panel.display(item);
-
-    const nameRow = Array.from(container.querySelectorAll(".property")).find(
-      (row) => row.querySelector("label")?.textContent === "Name:"
-    );
-    const nameInput = nameRow?.querySelector("input");
-    expect(nameInput).toBeNull();
-    expect(container.textContent).toContain("Name:");
-    expect(container.textContent).toContain("sequence");
+    expect(getInputByLabel(container, "Compositor").value).toBe("All");
   });
 
   test.each([
     ["modifyElement", "a local element", ITEM_ID, { elementId: ITEM_ID }],
-    ["modifyGroup", "a compositor", SEQUENCE_ID, { groupId: SEQUENCE_ID }],
+    ["modifyCompositor", "a compositor", SEQUENCE_ID, { compositorId: SEQUENCE_ID }],
   ])("should dispatch %s when minOccurs of %s is changed", (type, _case, id, target) => {
     const { dispatch } = displayItem(container, diagramItem(webviewSchemaWith(OCCURRENCES), id));
 
@@ -267,7 +331,7 @@ describe("PropertiesPanel", () => {
     ["top-level elements", "/element:item"],
     ["the schema", SCHEMA_ROOT_ID],
     ["complexType nodes", "/complexType:PersonType"],
-    ["the compositor of a group definition", "/group:PersonGroup/group:sequence[0]"],
+    ["the compositor of a group definition", "/group:PersonGroup/sequence[0]"],
     ["simpleType nodes", "/simpleType:CodeType"],
   ])("should not show cardinality fields for %s", (_case, id) => {
     panel.display(diagramItem(webviewSchemaWith(KINDS), id));

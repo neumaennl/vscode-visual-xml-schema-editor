@@ -250,10 +250,10 @@ describe("createDocsTab", () => {
       { id: "/simpleType:Word", targetId: "/simpleType:Word" },
       { id: "/complexType:PersonType", targetId: "/complexType:PersonType" },
       { id: "/group:Contact", targetId: "/group:Contact" },
-      { id: "/group:Contact/group:choice[0]", targetId: "/group:Contact/group:choice[0]" },
+      { id: "/group:Contact/choice[0]", targetId: "/group:Contact/choice[0]" },
       {
-        id: "/element:person/anonymousComplexType[0]/group:sequence[0]/groupRef:Contact[0]",
-        targetId: "/element:person/anonymousComplexType[0]/group:sequence[0]/groupRef:Contact[0]",
+        id: "/element:person/anonymousComplexType[0]/sequence[0]/groupRef:Contact[0]",
+        targetId: "/element:person/anonymousComplexType[0]/sequence[0]/groupRef:Contact[0]",
       },
     ])("should send documentation for $id to $targetId", ({ id, targetId }) => {
       const { tab, dispatch } = renderDocs(UNDOCUMENTED, id);

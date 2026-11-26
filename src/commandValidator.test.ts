@@ -49,10 +49,10 @@ function validatorNameOf(command: SchemaCommand): string {
 const DELEGATED_COMMANDS: SchemaCommand[] = [
   { type: "addElement", payload: { parentId: "/schema", elementName: "testElement", elementType: "xs:string" } },
   { type: "addSimpleType", payload: { typeName: "testType", baseType: "xs:string" } },
-  { type: "addGroup", payload: { groupName: "testGroup", contentModel: "sequence" } },
+  { type: "addGroup", payload: { groupName: "testGroup", compositor: "sequence" } },
   { type: "addAnnotation", payload: { targetId: "element1", documentation: "Test annotation" } },
   { type: "addImport", payload: { namespace: "http://example.com/imported", schemaLocation: "imported.xsd" } },
-  { type: "modifyComplexType", payload: { typeId: "type1", contentModel: "sequence" } },
+  { type: "modifyComplexType", payload: { typeId: "type1", compositor: "sequence" } },
   { type: "removeAttributeGroup", payload: { groupId: "attrGroup1" } },
   {
     type: "modifySchemaNamespaces",

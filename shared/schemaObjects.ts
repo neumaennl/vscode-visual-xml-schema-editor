@@ -4,7 +4,12 @@
  */
 
 import { prefixesForNamespace } from "./qNames.js";
+import type { Compositor } from "./commands/complexType.js";
 import type {
+  all,
+  allType,
+  explicitGroup,
+  simpleExplicitGroup,
   annotationType,
   attribute,
   attributeGroupRef,
@@ -17,6 +22,7 @@ import type {
   localComplexType,
   localElement,
   localSimpleType,
+  namedGroup,
   narrowMaxMin,
   schema,
   topLevelComplexType,
@@ -95,6 +101,39 @@ export function getParticleContainer(complexType: ComplexTypeObject): ParticleCo
     return undefined;
   }
   return complexType.complexContent?.extension ?? complexType.complexContent?.restriction ?? complexType;
+}
+
+/** A model group with a compositor: a sequence or choice, or an `xs:all`. */
+export type CompositorObject = explicitGroup | simpleExplicitGroup | all | allType;
+
+/** A node that holds at most one compositor directly: a complex type, its complex content or a group definition. */
+export type CompositorHolder = ParticleContainer | namedGroup;
+
+/** A compositor with its kind. */
+export interface HeldCompositor {
+  /** The kind of the compositor */
+  kind: Compositor;
+  /** The compositor */
+  compositor: CompositorObject;
+}
+
+/**
+ * Returns the compositor that a complex type, its complex content or a group definition holds directly.
+ *
+ * @param holder - The holder; for a complex type, the particle container (see {@link getParticleContainer})
+ * @returns The compositor with its kind, or `undefined` if the holder has none
+ */
+export function getHeldCompositor(holder: CompositorHolder): HeldCompositor | undefined {
+  if (holder.sequence) {
+    return { kind: "sequence", compositor: holder.sequence };
+  }
+  if (holder.choice) {
+    return { kind: "choice", compositor: holder.choice };
+  }
+  if (holder.all) {
+    return { kind: "all", compositor: holder.all };
+  }
+  return undefined;
 }
 
 /** A local element, which can be a particle of a content model: in a sequence or choice, or in an `xs:all`. */

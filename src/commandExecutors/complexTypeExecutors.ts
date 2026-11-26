@@ -3,7 +3,7 @@
  * Implements add, remove, and modify operations for complex schema types.
  *
  * Supports both top-level named types and anonymous types embedded within elements,
- * with content models (sequence, choice, all), abstract/mixed flags, base type
+ * with compositors (sequence, choice, all), abstract/mixed flags, base type
  * extension, and documentation.
  */
 
@@ -21,18 +21,18 @@ import {
   complexContentType,
   complexRestrictionType,
   extensionType,
-  explicitGroup,
-  all,
 } from "../../shared/types.js";
 import { isSchemaRoot } from "../../shared/idStrategy.js";
 import {
   getContentDerivation,
+  getHeldCompositor,
   getParticleContainer,
   type ComplexTypeObject,
   type ParticleContainer,
 } from "../../shared/schemaObjects.js";
 import { assumeValidated } from "./assumeValidated.js";
 import { assignDefined } from "./nodeProperties.js";
+import { setComplexTypeCompositor } from "./compositorReplacement.js";
 import { locateModifiedType, placeNewType, removeType } from "./typeTargets.js";
 import { createAnnotation } from "./annotationUtils.js";
 
@@ -46,7 +46,7 @@ type CapturedContent = Pick<
  * Executes an `addComplexType` command.
  * When `payload.parentId` points to an element (not schema root), creates an anonymous
  * complexType inside that element. Otherwise creates a top-level named complexType.
- * When `baseType` is provided the content model is nested inside a
+ * When `baseType` is provided the compositor is nested inside a
  * `complexContent > extension` wrapper.
  *
  * @param command - The `addComplexType` command to execute
@@ -54,8 +54,7 @@ type CapturedContent = Pick<
  * @throws An {@link Error} if the parent element is not found (anonymous case)
  */
 export function executeAddComplexType(command: AddComplexTypeCommand, schemaObj: schema): void {
-  const { parentId, typeName, contentModel, abstract, baseType, derivationKind, mixed, documentation } =
-    command.payload;
+  const { parentId, typeName, compositor, abstract, baseType, derivationKind, mixed, documentation } = command.payload;
   const ct = isSchemaRoot(parentId)
     ? assignDefined(new topLevelComplexType(), { name: assumeValidated(typeName, "Type name"), abstract })
     : new localComplexType();
@@ -63,7 +62,7 @@ export function executeAddComplexType(command: AddComplexTypeCommand, schemaObj:
   if (documentation) {
     ct.annotation = createAnnotation(documentation);
   }
-  applyContentStructure(ct, contentModel, baseType, derivationKind);
+  applyContentStructure(ct, compositor, baseType, derivationKind);
   placeNewType(schemaObj, parentId, "complexType", ct);
 }
 
@@ -112,19 +111,19 @@ function updateComplexTypeContents(
   ct: ComplexTypeObject,
   updates: {
     mixed?: boolean;
-    contentModel?: Compositor;
+    compositor?: Compositor;
     baseType?: string;
     derivationKind?: ComplexTypeDerivationKind;
   }
 ): void {
-  const { mixed, contentModel, baseType, derivationKind } = updates;
+  const { mixed, compositor, baseType, derivationKind } = updates;
   if (mixed !== undefined) {
     ct.mixed = mixed;
   }
-  if (contentModel !== undefined || baseType !== undefined || derivationKind !== undefined) {
+  if (compositor !== undefined || baseType !== undefined || derivationKind !== undefined) {
     const effectiveBase = baseType ?? getBaseType(ct);
     // Without a compositor, the content (a group reference, attributes or nothing) is moved as it is
-    const effectiveModel = contentModel ?? getContentModel(ct);
+    const effectiveModel = compositor ?? getCompositor(ct);
     const effectiveDerivationKind = derivationKind ?? getDerivationKind(ct) ?? "extension";
     applyContentStructure(ct, effectiveModel, effectiveBase, effectiveDerivationKind);
   }
@@ -135,14 +134,14 @@ function updateComplexTypeContents(
  * on a complexType holder, clearing any previously set content first.
  *
  * @param ct - The complexType holder to update
- * @param contentModel - The content model to apply, or `undefined` for a type without a compositor
+ * @param compositor - The compositor to apply, or `undefined` for a type without one
  * @param baseType - Optional base type; when truthy wraps the compositor in
  *   a `complexContent`/`extension` element
  * @param derivationKind - Whether the complexContent wrapper is an extension or a restriction
  */
 function applyContentStructure(
   ct: ComplexTypeObject,
-  contentModel: Compositor | undefined,
+  compositor: Compositor | undefined,
   baseType?: string,
   derivationKind: ComplexTypeDerivationKind = "extension"
 ): void {
@@ -161,17 +160,17 @@ function applyContentStructure(
     if (derivationKind === "restriction") {
       const restriction = new complexRestrictionType();
       restriction.base = baseType;
-      restoreContentState(restriction, contentModel, existingContent);
+      restoreContentState(restriction, compositor, existingContent);
       cc.restriction = restriction;
     } else {
       const ext = new extensionType();
       ext.base = baseType;
-      restoreContentState(ext, contentModel, existingContent);
+      restoreContentState(ext, compositor, existingContent);
       cc.extension = ext;
     }
     ct.complexContent = cc;
   } else {
-    restoreContentState(ct, contentModel, existingContent);
+    restoreContentState(ct, compositor, existingContent);
   }
 }
 
@@ -186,27 +185,15 @@ function getBaseType(ct: ComplexTypeObject): string | undefined {
 }
 
 /**
- * Infers the current content model of a complexType from the compositor in its particle container
+ * Returns the compositor of a complexType from its particle container
  * (see {@link getParticleContainer}).
  *
  * @param ct - The complexType holder to inspect
  * @returns The compositor, or undefined if the complex type has none
  */
-function getContentModel(ct: ComplexTypeObject): Compositor | undefined {
+function getCompositor(ct: ComplexTypeObject): Compositor | undefined {
   const content = getParticleContainer(ct);
-  if (!content) {
-    return undefined;
-  }
-  if (content.sequence) {
-    return "sequence";
-  }
-  if (content.choice) {
-    return "choice";
-  }
-  if (content.all) {
-    return "all";
-  }
-  return undefined;
+  return content && getHeldCompositor(content)?.kind;
 }
 
 /**
@@ -247,24 +234,23 @@ function captureContentState(ct: ComplexTypeObject): CapturedContent {
 }
 
 /**
- * Puts captured content into a rebuilt content structure. The compositor of the given kind is kept, or
- * created if the type had another one; the group reference and the attributes are kept as they are.
+ * Puts captured content into a rebuilt content structure. The compositor is kept, or replaced with one of
+ * the given kind that takes over its content; the group reference and the attributes are kept as they are.
  *
  * @param target - The complexType or its new extension or restriction
- * @param contentModel - The compositor of the rebuilt structure, or undefined for none
+ * @param compositor - The compositor of the rebuilt structure, or undefined for none
  * @param existingContent - The content captured before the rebuild
  */
 function restoreContentState(
   target: ParticleContainer,
-  contentModel: Compositor | undefined,
+  compositor: Compositor | undefined,
   existingContent: CapturedContent
 ): void {
-  if (contentModel === "sequence") {
-    target.sequence = existingContent.sequence ?? new explicitGroup();
-  } else if (contentModel === "choice") {
-    target.choice = existingContent.choice ?? new explicitGroup();
-  } else if (contentModel === "all") {
-    target.all = existingContent.all ?? new all();
+  if (compositor) {
+    target.sequence = existingContent.sequence;
+    target.choice = existingContent.choice;
+    target.all = existingContent.all;
+    setComplexTypeCompositor(target, compositor);
   }
   target.group = existingContent.group;
   target.attribute = existingContent.attribute;

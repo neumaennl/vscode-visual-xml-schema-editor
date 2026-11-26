@@ -84,11 +84,7 @@ describe("propertiesPanelTargets", () => {
       ["a simple type", "/simpleType:S", "/simpleType:S"],
       ["a complex type", "/complexType:T", "/complexType:T"],
       ["a group", "/group:G", "/group:G"],
-      [
-        "a group reference",
-        "/complexType:T/group:sequence[0]/groupRef:G[0]",
-        "/complexType:T/group:sequence[0]/groupRef:G[0]",
-      ],
+      ["a group reference", "/complexType:T/sequence[0]/groupRef:G[0]", "/complexType:T/sequence[0]/groupRef:G[0]"],
       ["an attribute", "/attribute:a", null],
     ])("should target %s", (_case, id, expected) => {
       expect(resolveDocumentationTargetId(item(id))).toBe(expected);

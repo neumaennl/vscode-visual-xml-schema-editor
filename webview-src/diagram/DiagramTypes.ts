@@ -3,21 +3,16 @@
  * Based on https://github.com/dgis/xsddiagram
  */
 
-import type { explicitGroup } from "../../shared/generated/explicitGroup";
-import type { all } from "../../shared/generated/all";
-import type { simpleExplicitGroup } from "../../shared/generated/simpleExplicitGroup";
-import type { allType } from "../../shared/generated/allType";
-
+/** The kinds of diagram items, which differ in shape, size and labeling. */
 export enum DiagramItemType {
+  /** An element */
   element = "element",
+  /** A group definition or a group reference */
   group = "group",
+  /** A compositor: a sequence, a choice or an all, which shows a symbol instead of a label */
+  compositor = "compositor",
+  /** A named type */
   type = "type",
-}
-
-export enum DiagramItemGroupType {
-  Sequence = "sequence",
-  Choice = "choice",
-  All = "all",
 }
 
 export interface Point {
@@ -80,13 +75,6 @@ export interface DiagramAttribute {
   defaultValue?: string;
   fixedValue?: string;
 }
-
-/**
- * Union type for group structures that need expansion.
- * Represents sequence, choice, or all group structures.
- * Includes the generated schema types directly.
- */
-export type GroupDefLike = explicitGroup | simpleExplicitGroup | all | allType;
 
 export interface DiagramStyle {
   fontFamily: string;

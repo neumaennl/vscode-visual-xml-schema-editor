@@ -8,7 +8,21 @@ import type { BaseCommand } from "./base.js";
  * The compositor of a model group: a sequence, a choice or an all. The content model of a complex type or a
  * group definition has one at its top.
  */
-export type Compositor = "sequence" | "choice" | "all";
+export type Compositor = (typeof COMPOSITORS)[number];
+
+/** The compositors of XML Schema. */
+export const COMPOSITORS = ["sequence", "choice", "all"] as const;
+
+/**
+ * Tells whether a value is a compositor, such as the compositor of a command, which reaches the extension
+ * host as data that the type system has not checked.
+ *
+ * @param value - The value
+ * @returns Whether the value is `sequence`, `choice` or `all`
+ */
+export function isCompositor(value: string): value is Compositor {
+  return (COMPOSITORS as readonly string[]).includes(value);
+}
 
 /**
  * Derivation mode for complex types that use a base type.
@@ -28,8 +42,8 @@ export interface AddComplexTypePayload {
   parentId?: string;
   /** Name of the complex type. Required for top-level types; ignored for anonymous. */
   typeName?: string;
-  /** Content model (sequence, choice, all) */
-  contentModel: Compositor;
+  /** The compositor of the content (sequence, choice or all) */
+  compositor: Compositor;
   /** Whether the type is abstract. Only applicable to top-level types. */
   abstract?: boolean;
   /** Base type for extension (optional) */
@@ -74,8 +88,8 @@ export interface ModifyComplexTypePayload {
   typeId: string;
   /** New name for the type (optional) */
   typeName?: string;
-  /** New content model (optional) */
-  contentModel?: Compositor;
+  /** New compositor of the content (optional) */
+  compositor?: Compositor;
   /** New abstract status (optional) */
   abstract?: boolean;
   /** New base type (optional) */

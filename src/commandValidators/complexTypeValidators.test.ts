@@ -36,13 +36,13 @@ const COMPLEX_TYPE_PARENTS = `<xs:attribute name="lang" type="xs:language"/>
 <xs:element name="contact"><xs:complexType><xs:group ref="Contact"/></xs:complexType></xs:element>`;
 
 /** The ID of the reference to `plain` in the anonymous complex type of `person`. */
-const REF_ID = "/element:person/anonymousComplexType[0]/group:sequence[0]/element:plain[0]";
+const REF_ID = "/element:person/anonymousComplexType[0]/sequence[0]/element:plain[0]";
 
 /** The ID of the anonymous complex type of `contact`, whose particle is a group reference. */
 const CONTACT_TYPE_ID = "/element:contact/anonymousComplexType[0]";
 
-/** A content model that the payload type does not allow, as a message from the webview could have. */
-const UNKNOWN_CONTENT_MODEL = "bogus" as Compositor;
+/** A compositor that the payload type does not allow, as a message from the webview could have. */
+const UNKNOWN_COMPOSITOR = "bogus" as Compositor;
 
 /** A derivation kind that the payload type does not allow, as a message from the webview could have. */
 const UNKNOWN_DERIVATION_KIND = "bogus" as ComplexTypeDerivationKind;
@@ -87,7 +87,7 @@ describe("ComplexType Validators", () => {
     test("should accept a valid top-level addComplexType command", () => {
       const command: AddComplexTypeCommand = {
         type: "addComplexType",
-        payload: { typeName: "PersonType", contentModel: "sequence" },
+        payload: { typeName: "PersonType", compositor: "sequence" },
       };
       const result = validateAddComplexType(command, emptySchemaObj);
       expect(result.valid).toBe(true);
@@ -96,25 +96,25 @@ describe("ComplexType Validators", () => {
     test("should reject addComplexType with missing typeName", () => {
       const command: AddComplexTypeCommand = {
         type: "addComplexType",
-        payload: { typeName: "", contentModel: "sequence" },
+        payload: { typeName: "", compositor: "sequence" },
       };
       const result = validateAddComplexType(command, emptySchemaObj);
       expectInvalid(result);
       expect(result.error).toBe("Type name must be a valid XML name");
     });
 
-    test("should reject addComplexType with missing contentModel", () => {
-      // eslint-disable-next-line no-restricted-syntax -- `contentModel` absent intentionally; TypeScript requires it, but it is omitted to test the validator rejection
+    test("should reject addComplexType with missing compositor", () => {
+      // eslint-disable-next-line no-restricted-syntax -- `compositor` absent intentionally; TypeScript requires it, but it is omitted to test the validator rejection
       const command = { type: "addComplexType", payload: { typeName: "TestType" } } as unknown as AddComplexTypeCommand;
       const result = validateAddComplexType(command, emptySchemaObj);
       expectInvalid(result);
-      expect(result.error).toBe("Content model is required");
+      expect(result.error).toBe("Compositor is required");
     });
 
     test("should reject addComplexType when type name already exists", () => {
       const command: AddComplexTypeCommand = {
         type: "addComplexType",
-        payload: { typeName: "PersonType", contentModel: "choice" },
+        payload: { typeName: "PersonType", compositor: "choice" },
       };
       const result = validateAddComplexType(command, schemaWithPersonType);
       expectInvalid(result);
@@ -125,7 +125,7 @@ describe("ComplexType Validators", () => {
     test("should accept an anonymous addComplexType command, also in place of a type attribute", () => {
       const command: AddComplexTypeCommand = {
         type: "addComplexType",
-        payload: { parentId: "/element:person", contentModel: "sequence" },
+        payload: { parentId: "/element:person", compositor: "sequence" },
       };
 
       expect(validateAddComplexType(command, schemaWithElement).valid).toBe(true);
@@ -137,7 +137,7 @@ describe("ComplexType Validators", () => {
     test("should reject anonymous addComplexType when parent element not found", () => {
       const command: AddComplexTypeCommand = {
         type: "addComplexType",
-        payload: { parentId: "/element:nonExistent", contentModel: "sequence" },
+        payload: { parentId: "/element:nonExistent", compositor: "sequence" },
       };
       const result = validateAddComplexType(command, emptySchemaObj);
       expectInvalid(result);
@@ -148,7 +148,7 @@ describe("ComplexType Validators", () => {
       const schemaWithInlineCT = schemaWith(PERSON_ELEMENT_WITH_EMPTY_SEQUENCE);
       const command: AddComplexTypeCommand = {
         type: "addComplexType",
-        payload: { parentId: "/element:person", contentModel: "choice" },
+        payload: { parentId: "/element:person", compositor: "choice" },
       };
       const result = validateAddComplexType(command, schemaWithInlineCT);
       expectInvalid(result);
@@ -158,7 +158,7 @@ describe("ComplexType Validators", () => {
     test("should reject addComplexType with a derivation kind but no base type", () => {
       const command: AddComplexTypeCommand = {
         type: "addComplexType",
-        payload: { typeName: "OrderType", contentModel: "sequence", derivationKind: "restriction" },
+        payload: { typeName: "OrderType", compositor: "sequence", derivationKind: "restriction" },
       };
       const result = validateAddComplexType(command, emptySchemaObj);
       expectInvalid(result);
@@ -277,7 +277,7 @@ describe("ComplexType Validators", () => {
     });
 
     test.each([
-      { field: "contentModel", expected: "Content model must be one of" },
+      { field: "compositor", expected: "Compositor must be one of" },
       { field: "derivationKind", expected: "Derivation kind must be one of" },
     ])("should reject modifyComplexType with an invalid $field", ({ field, expected }) => {
       // eslint-disable-next-line no-restricted-syntax -- the value "invalid" is outside the union of the field; cast needed to test validator rejection
@@ -317,9 +317,9 @@ describe("ComplexType Validators", () => {
         "Base type",
       ],
       [
-        "a content model for a type whose particle is a group reference",
+        "a compositor for a type whose particle is a group reference",
         (): schema => readTestSchema("person-type-with-group-ref.xsd"),
-        { typeId: "/complexType:PersonType", contentModel: "sequence" as const },
+        { typeId: "/complexType:PersonType", compositor: "sequence" as const },
         "already has a particle",
       ],
       [
@@ -341,7 +341,7 @@ describe("ComplexType Validators", () => {
         type: "modifyComplexType",
         payload: {
           typeId: "/element:person/anonymousComplexType[0]",
-          contentModel: "choice",
+          compositor: "choice",
         },
       };
       const result = validateModifyComplexType(command, schemaWithInlineCT);
@@ -388,41 +388,41 @@ describe("Complex type rules", () => {
   test.each<RuleCase>([
     {
       rule: "an anonymous type in a missing parent",
-      result: validateAdd({ parentId: "/element:missing", contentModel: "sequence" }),
+      result: validateAdd({ parentId: "/element:missing", compositor: "sequence" }),
       error: "Parent not found: /element:missing",
     },
     {
       rule: "an anonymous type in an attribute",
-      result: validateAdd({ parentId: "/attribute:lang", contentModel: "sequence" }),
+      result: validateAdd({ parentId: "/attribute:lang", compositor: "sequence" }),
       error: "Parent of type 'topLevelAttribute' cannot contain a complexType",
     },
     {
       rule: "an anonymous type in an element reference",
-      result: validateAdd({ parentId: REF_ID, contentModel: "sequence" }),
+      result: validateAdd({ parentId: REF_ID, compositor: "sequence" }),
       error: `'${REF_ID}' has a ref attribute and cannot carry an inline complexType`,
     },
     {
-      rule: "an unknown content model for an anonymous type",
-      result: validateAdd({ parentId: "/element:plain", contentModel: UNKNOWN_CONTENT_MODEL }),
-      error: "Content model must be one of: sequence, choice, all",
+      rule: "an unknown compositor for an anonymous type",
+      result: validateAdd({ parentId: "/element:plain", compositor: UNKNOWN_COMPOSITOR }),
+      error: "Compositor must be one of: sequence, choice, all",
     },
     {
       rule: "an unknown derivation kind for an anonymous type",
       result: validateAdd({
         parentId: "/element:plain",
-        contentModel: "sequence",
+        compositor: "sequence",
         derivationKind: UNKNOWN_DERIVATION_KIND,
       }),
       error: "Derivation kind must be one of: extension, restriction",
     },
     {
       rule: "a derivation kind without a base type for an anonymous type",
-      result: validateAdd({ parentId: "/element:plain", contentModel: "sequence", derivationKind: "extension" }),
+      result: validateAdd({ parentId: "/element:plain", compositor: "sequence", derivationKind: "extension" }),
       error: "Derivation kind requires a base type",
     },
     {
       rule: "a top-level type without a name",
-      result: validateAdd({ parentId: "/schema", contentModel: "sequence" }),
+      result: validateAdd({ parentId: "/schema", compositor: "sequence" }),
       error: "Type name must be a valid XML name",
     },
     {
@@ -430,15 +430,15 @@ describe("Complex type rules", () => {
       result: validateAdd({
         parentId: "/schema",
         typeName: "T",
-        contentModel: "sequence",
+        compositor: "sequence",
         derivationKind: UNKNOWN_DERIVATION_KIND,
       }),
       error: "Derivation kind must be one of: extension, restriction",
     },
     {
-      rule: "an unknown content model when changing an anonymous type",
-      result: validateModify({ typeId: CONTACT_TYPE_ID, contentModel: UNKNOWN_CONTENT_MODEL }),
-      error: "Content model must be one of: sequence, choice, all",
+      rule: "an unknown compositor when changing an anonymous type",
+      result: validateModify({ typeId: CONTACT_TYPE_ID, compositor: UNKNOWN_COMPOSITOR }),
+      error: "Compositor must be one of: sequence, choice, all",
     },
     {
       rule: "an unknown derivation kind when changing an anonymous type",
@@ -446,9 +446,9 @@ describe("Complex type rules", () => {
       error: "Derivation kind must be one of: extension, restriction",
     },
     {
-      rule: "a content model next to the group reference of an anonymous type",
-      result: validateModify({ typeId: CONTACT_TYPE_ID, contentModel: "sequence" }),
-      error: `'${CONTACT_TYPE_ID}' already has a particle (a group reference) and cannot get a content model`,
+      rule: "a compositor next to the group reference of an anonymous type",
+      result: validateModify({ typeId: CONTACT_TYPE_ID, compositor: "sequence" }),
+      error: `'${CONTACT_TYPE_ID}' already has a particle (a group reference) and cannot get a compositor`,
     },
   ])("should reject $rule", ({ result, error }) => {
     expect(result).toEqual({ valid: false, error });
@@ -482,10 +482,26 @@ describe("names of complex types that other types have", () => {
 
   test("should reject a new complex type with the name of a simple type", () => {
     const result = validateAddComplexType(
-      { type: "addComplexType", payload: { typeName: "S", contentModel: "sequence" } },
+      { type: "addComplexType", payload: { typeName: "S", compositor: "sequence" } },
       TYPES
     );
     expectInvalid(result);
     expect(result.error).toBe("Simple type 'S' already exists in schema");
+  });
+});
+
+describe("compositors that cannot become an all", () => {
+  test("should reject an all for a complex type whose sequence holds a choice", () => {
+    const schemaObj = schemaWith(
+      `<xs:complexType name="T"><xs:sequence><xs:choice><xs:element name="a" type="xs:string"/></xs:choice></xs:sequence></xs:complexType>`
+    );
+
+    const result = validateModifyComplexType(
+      { type: "modifyComplexType", payload: { typeId: "/complexType:T", compositor: "all" } },
+      schemaObj
+    );
+
+    expectInvalid(result);
+    expect(result.error).toBe("A sequence with particles other than elements cannot become an all");
   });
 });

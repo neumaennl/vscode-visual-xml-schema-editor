@@ -29,7 +29,7 @@ describe("getNodeType", () => {
     ["/complexType:T", SchemaNodeType.ComplexType],
     ["/simpleType:S", SchemaNodeType.SimpleType],
     ["/group:G", SchemaNodeType.Group],
-    ["/complexType:T/group:sequence[0]/groupRef:G[0]", SchemaNodeType.GroupRef],
+    ["/complexType:T/sequence[0]/groupRef:G[0]", SchemaNodeType.GroupRef],
   ])("should read the node type of %s from the ID", (id, expected) => {
     expect(getNodeType(item(id))).toBe(expected);
   });
@@ -50,7 +50,7 @@ describe("getNodeTypeLabel", () => {
     ["/complexType:T", "Complex Type"],
     ["/simpleType:S", "Simple Type"],
     ["/group:G", "Group"],
-    ["/complexType:T/group:sequence[0]/groupRef:G[0]", "Group Reference"],
+    ["/complexType:T/sequence[0]/groupRef:G[0]", "Group Reference"],
   ])("should label %s as %s", (id, expected) => {
     expect(getNodeTypeLabel(item(id))).toBe(expected);
   });
@@ -63,7 +63,7 @@ describe("getNodeTypeLabel", () => {
 describe("isTopLevelElement", () => {
   test.each([
     ["/element:a", true],
-    ["/complexType:T/group:sequence[0]/element:a[0]", false],
+    ["/complexType:T/sequence[0]/element:a[0]", false],
     ["/complexType:T", false],
     [UNPARSABLE_ID, false],
   ])("should return for %s: %s", (id, expected) => {
@@ -77,12 +77,12 @@ describe("canEditCardinality", () => {
   test.each([
     [SCHEMA_ROOT_ID, element, false],
     ["/element:a", element, false],
-    ["/complexType:T/group:sequence[0]/element:a[0]", element, true],
-    ["/complexType:T/group:sequence[0]/groupRef:G[0]", group, true],
-    ["/complexType:T/group:sequence[0]", group, true],
-    ["/element:a/anonymousComplexType[0]/group:choice[0]", group, true],
-    ["/complexType:T/group:sequence[0]/group:all[0]", group, true],
-    ["/group:G/group:sequence[0]", group, false],
+    ["/complexType:T/sequence[0]/element:a[0]", element, true],
+    ["/complexType:T/sequence[0]/groupRef:G[0]", group, true],
+    ["/complexType:T/sequence[0]", group, true],
+    ["/element:a/anonymousComplexType[0]/choice[0]", group, true],
+    ["/complexType:T/sequence[0]/all[0]", group, true],
+    ["/group:G/sequence[0]", group, false],
     ["/group:G", group, false],
     ["/complexType:T", type, false],
     ["/simpleType:S", type, false],

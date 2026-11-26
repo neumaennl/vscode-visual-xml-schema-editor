@@ -3,9 +3,8 @@ type: Concept
 title: UX concept
 description: The interaction model of the editor - which surface adds, edits and deletes what, how facets work, and how the properties panel behaves - with a list of what the current editor does not implement yet.
 tags: [ux, editor, palette, properties-panel, facets, context-menu, toolbar]
-status: stable
-generated: { by: human:neumaennl, at: 2026-11-24T19:52:35Z }
-verified: { by: human:neumaennl, at: 2026-11-25T08:43:29Z }
+status: draft
+generated: { by: human:neumaennl, at: 2026-11-26T07:43:26Z }
 sources:
   - id: palette-items
     resource: ../webview-src/palette/paletteEntries.ts
@@ -116,15 +115,16 @@ XSD allows several `xs:pattern` facets in one restriction. They are alternatives
 
 The panel shows an editable field only where the selected node supports the matching command:[^properties-panel]
 
-| Node         | Editable fields                                                                                                                                                                                                            |
-| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Element      | Name; Type (explicit type) or Base Type and Replacement Type (anonymous type); minOccurs and maxOccurs (local elements only); default and fixed value; nillable; abstract (top-level only); mixed (anonymous complex type) |
-| Simple type  | Name; Base Type, if a single base type can be resolved                                                                                                                                                                     |
-| Complex type | Name; Base Type, if the type is derived by extension; abstract; mixed                                                                                                                                                      |
-| Group        | Name                                                                                                                                                                                                                       |
-| Attribute    | Name, type, use, default and fixed value                                                                                                                                                                                   |
+| Node         | Editable fields                                                                                                                                                                                                                                       |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Element      | Name; Type (explicit type) or Base Type and Replacement Type (anonymous type); minOccurs and maxOccurs (local elements only); default and fixed value; nillable; abstract (top-level only); mixed (anonymous complex type)                            |
+| Simple type  | Name; Base Type, if a single base type can be resolved                                                                                                                                                                                                |
+| Complex type | Name; Base Type, if the type is derived by extension; abstract; mixed                                                                                                                                                                                 |
+| Group        | Name                                                                                                                                                                                                                                                  |
+| Compositor   | Compositor (`sequence`, `choice` or `all`; `all` only where XML Schema allows it, not in another compositor and not for particles other than elements or for repeated ones); minOccurs and maxOccurs, except for the compositor of a group definition |
+| Attribute    | Name, type, use, default and fixed value                                                                                                                                                                                                              |
 
-Computed values are shown as read-only text, for example the namespace, the group type, the anonymous-type indicator and summary labels such as `simpleType (restricts xs:string)`. The schema root shows its namespace declarations (see [Editor](editor.md#properties-panel)).
+Computed values are shown as read-only text, for example the namespace, the anonymous-type indicator and summary labels such as `simpleType (restricts xs:string)`. The schema root shows its namespace declarations (see [Editor](editor.md#properties-panel)).
 
 The panel header has a delete button for the selected node.[^panel-commands]
 
@@ -205,7 +205,7 @@ The current editor does not implement these parts of the model yet:
 - **Empty Facets tab:** the hint still says that adding facets is "available in a future release" (see [Known issues](known-issues.md#empty-facets-tab-says-adding-facets-is-not-available-yet)).
 - **Attributes:** no field is editable (see [Known issues](known-issues.md#attribute-editing-is-half-implemented)).
 - **Mixed content:** the toggle is also shown for simple content, ignores `mixed` on `xs:complexContent` and does not check the base type (see [Known issues](known-issues.md#mixed-content-toggle-ignores-simple-content-complexcontent-and-the-base-type)).
-- **Deleting nodes:** the header delete button exists only for elements, named simple and complex types, groups and group references; attributes, compositors and anonymous types cannot be deleted.
+- **Deleting nodes:** the header delete button exists only for elements, named simple and complex types, groups, group references and compositors; attributes and anonymous types cannot be deleted.
 - **Toolbar:** implemented as described; restyling it and adding more actions for the whole diagram, such as exporting the diagram as an image, are planned ([#155](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/155)).
 
 [^palette-items]: Palette item definitions

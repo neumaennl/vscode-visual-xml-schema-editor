@@ -16,10 +16,7 @@ import {
 import { expectLinesInOrder } from "./textTestHelpers.js";
 import { emptySchemaXml, schemaXmlWith } from "../../shared/__tests__/schemaTestHelpers.js";
 
-/**
- * Group references in anonymous complex types, documented particles, and compositors in
- * complex content and in other compositors.
- */
+/** Group references in anonymous complex types and documented particles. */
 const GROUP_PARTICLES = schemaXmlWith(`<xs:group name="Contact">
   <xs:annotation><xs:documentation>Old</xs:documentation></xs:annotation>
   <xs:sequence/>
@@ -27,13 +24,7 @@ const GROUP_PARTICLES = schemaXmlWith(`<xs:group name="Contact">
 <xs:element name="person"><xs:complexType>
   <xs:group ref="Contact"><xs:annotation><xs:documentation>Old</xs:documentation></xs:annotation></xs:group>
 </xs:complexType></xs:element>
-<xs:element name="empty"><xs:complexType/></xs:element>
-<xs:complexType name="Choices">
-  <xs:sequence><xs:annotation><xs:documentation>Old</xs:documentation></xs:annotation><xs:choice/><xs:choice/></xs:sequence>
-</xs:complexType>
-<xs:complexType name="Restricted">
-  <xs:complexContent><xs:restriction base="xs:anyType"><xs:sequence/></xs:restriction></xs:complexContent>
-</xs:complexType>`);
+<xs:element name="empty"><xs:complexType/></xs:element>`);
 
 /** A schema with a target namespace, declared with the prefix `tns`, and the group `G`, which `T` references. */
 const NAMESPACED_GROUP = `<?xml version="1.0" encoding="UTF-8"?>
@@ -50,10 +41,10 @@ describe("Integration: Group pipeline", () => {
   // ─── addGroup ──────────────────────────────────────────────────────────────
 
   describe("addGroup", () => {
-    test("should add a top-level named group with a sequence content model", () => {
+    test("should add a top-level named group with the compositor sequence", () => {
       const result = runCommandExpectSuccessSchema(emptySchemaXml(), {
         type: "addGroup",
-        payload: { groupName: "AddressGroup", contentModel: "sequence" },
+        payload: { groupName: "AddressGroup", compositor: "sequence" },
       });
       const groups = result.group ?? [];
       const addressGroup = groups.find((g) => g.name === "AddressGroup");
@@ -63,10 +54,10 @@ describe("Integration: Group pipeline", () => {
       expect(addressGroup!.choice).toBeUndefined();
     });
 
-    test("should add a group with a choice content model", () => {
+    test("should add a group with the compositor choice", () => {
       const result = runCommandExpectSuccessSchema(emptySchemaXml(), {
         type: "addGroup",
-        payload: { groupName: "ChoiceGroup", contentModel: "choice" },
+        payload: { groupName: "ChoiceGroup", compositor: "choice" },
       });
       const choiceGroup = (result.group ?? []).find((g) => g.name === "ChoiceGroup");
 
@@ -80,7 +71,7 @@ describe("Integration: Group pipeline", () => {
         SCHEMA_WITH_GROUP,
         {
           type: "addGroup",
-          payload: { groupName: "ContactGroup", contentModel: "sequence" },
+          payload: { groupName: "ContactGroup", compositor: "sequence" },
         },
         "Group name already exists: ContactGroup"
       );
@@ -91,7 +82,7 @@ describe("Integration: Group pipeline", () => {
         emptySchemaXml(),
         {
           type: "addGroup",
-          payload: { groupName: "bad group", contentModel: "sequence" },
+          payload: { groupName: "bad group", compositor: "sequence" },
         },
         "Group name must be a valid XML name"
       );
@@ -129,19 +120,6 @@ describe("Integration: Group pipeline", () => {
         "Group is still referenced and cannot be removed: G"
       );
     });
-
-    test("should remove a compositor nested in another compositor", () => {
-      const result = runCommandExpectSuccessSchema(
-        schemaXmlWith(`<xs:complexType name="T">
-  <xs:sequence><xs:choice><xs:element name="a" type="xs:string"/></xs:choice></xs:sequence>
-</xs:complexType>`),
-        { type: "removeGroup", payload: { groupId: "/complexType:T/group:sequence[0]/group:choice[0]" } }
-      );
-      const sequence = (result.complexType ?? [])[0]!.sequence;
-
-      expect(sequence).toBeDefined();
-      expect(sequence?.choice ?? []).toHaveLength(0);
-    });
   });
 
   // ─── modifyGroup ───────────────────────────────────────────────────────────
@@ -178,14 +156,6 @@ describe("Integration: Group pipeline", () => {
           payload: { groupId: "/group:Ghost", groupName: "Other" },
         },
         "Group not found: /group:Ghost"
-      );
-    });
-
-    test("should return validation error for occurrences on the compositor of a group definition", () => {
-      runCommandExpectValidationFailure(
-        SCHEMA_WITH_GROUP,
-        { type: "modifyGroup", payload: { groupId: "/group:ContactGroup/group:sequence[0]", minOccurs: 0 } },
-        "The compositor of a group definition cannot have minOccurs or maxOccurs"
       );
     });
   });
@@ -319,24 +289,6 @@ describe("Integration: AttributeGroup pipeline", () => {
       });
 
       expect(result.element?.find((el) => el.name === "person")?.complexType?.group).toBeUndefined();
-    });
-
-    test("should remove one of two compositors nested in a sequence", () => {
-      const result = runCommandExpectSuccessSchema(GROUP_PARTICLES, {
-        type: "removeGroup",
-        payload: { groupId: "/complexType:Choices/group:sequence[0]/group:choice[1]" },
-      });
-
-      expect(result.complexType?.[0]?.sequence?.choice).toHaveLength(1);
-    });
-
-    test("should remove the compositor of a complexContent restriction", () => {
-      const result = runCommandExpectSuccessSchema(GROUP_PARTICLES, {
-        type: "removeGroup",
-        payload: { groupId: "/complexType:Restricted/group:sequence[0]" },
-      });
-
-      expect(result.complexType?.[1]?.complexContent?.restriction?.sequence).toBeUndefined();
     });
   });
 });

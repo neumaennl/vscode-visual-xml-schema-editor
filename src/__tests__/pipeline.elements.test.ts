@@ -28,10 +28,10 @@ const ELEMENT_AND_ALL_GROUP = schemaXmlWith(`<xs:element name="item" type="xs:st
 </xs:sequence></xs:complexType>`);
 
 /** The ID of the local element `code` of `CodeType`. */
-const CODE_ID = "/complexType:CodeType/group:sequence[0]/element:code[0]";
+const CODE_ID = "/complexType:CodeType/sequence[0]/element:code[0]";
 
 /** The ID of the `all` group of `ConfigType`. */
-const ALL_GROUP_ID = "/complexType:ConfigType/group:all[0]";
+const ALL_GROUP_ID = "/complexType:ConfigType/all[0]";
 
 describe("Integration: Element pipeline", () => {
   // ─── addElement ────────────────────────────────────────────────────────────
@@ -229,18 +229,18 @@ describe("Integration: Element pipeline", () => {
       runCommandExpectValidationFailure(ELEMENT_AND_ALL_GROUP, { type: "modifyElement", payload }, error);
     });
 
-    test("should add an element to an all group with occurrences", () => {
+    test("should add an element to an all with occurrences", () => {
       const result = runCommandExpectSuccessSchema(ELEMENT_AND_ALL_GROUP, {
         type: "addElement",
         payload: { parentId: ALL_GROUP_ID, elementName: "retries", elementType: "xs:int", minOccurs: 0, maxOccurs: 1 },
       });
 
-      // The generated class of an element in an all group (narrowMaxMin) has string occurrences
+      // The generated class of an element in an all (narrowMaxMin) has string occurrences
       const retries = result.complexType?.[0]?.all?.element?.find((el) => el.name === "retries");
       expect(retries).toMatchObject({ minOccurs: "0", maxOccurs: "1" });
     });
 
-    test("should change the occurrences of an element in an all group", () => {
+    test("should change the occurrences of an element in an all", () => {
       const result = runCommandExpectSuccessSchema(ELEMENT_AND_ALL_GROUP, {
         type: "modifyElement",
         payload: { elementId: `${ALL_GROUP_ID}/element:timeout[0]`, minOccurs: 0, maxOccurs: 1 },

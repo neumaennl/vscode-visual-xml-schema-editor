@@ -8,7 +8,7 @@ import { isReference } from "../diagram/schemaAccessors";
 import { getComplexDerivation } from "../diagram/typeAccessors";
 import { getDocumentationAnnotations } from "../diagram/documentationAccessors";
 import { Diagram } from "../diagram/Diagram";
-import { DiagramItemGroupType, DiagramItemType } from "../diagram/DiagramTypes";
+import { DiagramItemType } from "../diagram/DiagramTypes";
 import { webviewSchemaWith } from "../../shared/__tests__/schemaTestHelpers";
 import { schema } from "../../shared/types";
 import { SchemaNodeType } from "../../shared/idStrategy";
@@ -61,8 +61,8 @@ describe("SchemaProcessors", () => {
 
       expect(ctItem.childElements).toHaveLength(1);
       const seq = ctItem.childElements[0]!;
-      expect(seq.groupType).toBe(DiagramItemGroupType.Sequence);
-      expect(seq.id).toBe("/complexType:PersonType/group:sequence[0]");
+      expect(seq.compositor).toBe("sequence");
+      expect(seq.id).toBe("/complexType:PersonType/sequence[0]");
     });
 
     test("should generate a group ID containing 'choice' for a choice under a named complexType", () => {
@@ -71,18 +71,18 @@ describe("SchemaProcessors", () => {
       processChoice(ctItem, { element: [{ name: "opt", type_: "xs:string" }] });
 
       const choice = ctItem.childElements[0]!;
-      expect(choice.groupType).toBe(DiagramItemGroupType.Choice);
-      expect(choice.id).toBe("/complexType:ChoiceType/group:choice[0]");
+      expect(choice.compositor).toBe("choice");
+      expect(choice.id).toBe("/complexType:ChoiceType/choice[0]");
     });
 
-    test("should generate a group ID containing 'all' for an all group under a named complexType", () => {
+    test("should generate a group ID containing 'all' for an all under a named complexType", () => {
       const ctItem = complexTypeItem("AllType");
 
       processAll(ctItem, { element: [{ name: "field", type_: "xs:string" }] });
 
       const allGroup = ctItem.childElements[0]!;
-      expect(allGroup.groupType).toBe(DiagramItemGroupType.All);
-      expect(allGroup.id).toBe("/complexType:AllType/group:all[0]");
+      expect(allGroup.compositor).toBe("all");
+      expect(allGroup.id).toBe("/complexType:AllType/all[0]");
     });
 
     test("should include anonymousComplexType in the group ID when parent is an element with anonymous CT", () => {
@@ -98,7 +98,7 @@ describe("SchemaProcessors", () => {
       processSequence(elemItem, { element: [{ name: "name", type_: "xs:string" }] });
 
       const seq = elemItem.childElements[0]!;
-      expect(seq.id).toBe("/element:person/anonymousComplexType[0]/group:sequence[0]");
+      expect(seq.id).toBe("/element:person/anonymousComplexType[0]/sequence[0]");
     });
 
     test("should give child elements inside a group IDs with the correct group parent", () => {
@@ -112,8 +112,8 @@ describe("SchemaProcessors", () => {
       });
 
       const seq = ctItem.childElements[0]!;
-      expect(seq.childElements[0]!.id).toBe("/complexType:PersonType/group:sequence[0]/element:first[0]");
-      expect(seq.childElements[1]!.id).toBe("/complexType:PersonType/group:sequence[0]/element:last[1]");
+      expect(seq.childElements[0]!.id).toBe("/complexType:PersonType/sequence[0]/element:first[0]");
+      expect(seq.childElements[1]!.id).toBe("/complexType:PersonType/sequence[0]/element:last[1]");
     });
 
     test("should add an empty group to the parent so it can act as a drop target", () => {
@@ -121,7 +121,7 @@ describe("SchemaProcessors", () => {
 
       processSequence(ctItem, { element: [] });
       expect(ctItem.childElements).toHaveLength(1);
-      expect(ctItem.childElements[0]!.groupType).toBe(DiagramItemGroupType.Sequence);
+      expect(ctItem.childElements[0]!.compositor).toBe("sequence");
     });
 
     test("should process the extension of the anonymous complexType of a local element", () => {
@@ -150,7 +150,7 @@ describe("SchemaProcessors", () => {
       expect(meta.childElements.map((child) => child.label)).toEqual(["sequence"]);
     });
 
-    test("should render nested group references inside sequence groups", () => {
+    test("should render nested group references inside sequences", () => {
       const ctItem = complexTypeItem("PersonType");
 
       const reference = { ref: "SharedGroup", minOccurs: 0, maxOccurs: "unbounded" as const };
@@ -159,7 +159,7 @@ describe("SchemaProcessors", () => {
 
       const sequence = ctItem.childElements[0]!;
       expect(sequence.childElements).toHaveLength(1);
-      expect(sequence.childElements[0]!.id).toBe("/complexType:PersonType/group:sequence[0]/groupRef:SharedGroup[0]");
+      expect(sequence.childElements[0]!.id).toBe("/complexType:PersonType/sequence[0]/groupRef:SharedGroup[0]");
       expect(sequence.childElements[0]!.schemaObject).toBe(reference);
       expect(isReference(sequence.childElements[0]!)).toBe(true);
     });
@@ -173,7 +173,7 @@ describe("SchemaProcessors", () => {
       });
 
       const sequence = ctItem.childElements[0]!;
-      expect(sequence.childElements[1]!.id).toBe("/complexType:PersonType/group:sequence[0]/group:choice[0]");
+      expect(sequence.childElements[1]!.id).toBe("/complexType:PersonType/sequence[0]/choice[0]");
     });
 
     test("should extract compositor documentation for properties-panel docs editing", () => {
@@ -188,10 +188,10 @@ describe("SchemaProcessors", () => {
       const sequence = ctItem.childElements[0]!;
       expect(getDocumentationAnnotations(sequence)).toEqual([
         {
-          id: "/complexType:PersonType/group:sequence[0]",
+          id: "/complexType:PersonType/sequence[0]",
           documentationEntries: [
             {
-              id: "/complexType:PersonType/group:sequence[0]/documentation[0]",
+              id: "/complexType:PersonType/sequence[0]/documentation[0]",
               content: "Sequence docs",
               lang: undefined,
             },
@@ -210,7 +210,7 @@ describe("SchemaProcessors", () => {
       processAnonymousTypes(elemItem, person);
 
       const seq = elemItem.childElements[0]!;
-      expect(seq.id).toBe("/element:person/anonymousComplexType[0]/group:sequence[0]");
+      expect(seq.id).toBe("/element:person/anonymousComplexType[0]/sequence[0]");
     });
   });
 });

@@ -12,6 +12,7 @@
  */
 
 import { requireGroup } from "./regexUtils.js";
+import type { Compositor } from "./commands/complexType.js";
 
 /**
  * Type of schema node for ID generation.
@@ -27,6 +28,12 @@ export enum SchemaNodeType {
   SimpleType = "simpleType",
   /** Element group definition */
   Group = "group",
+  /** Compositor `xs:sequence` */
+  Sequence = "sequence",
+  /** Compositor `xs:choice` */
+  Choice = "choice",
+  /** Compositor `xs:all` */
+  All = "all",
   /** Schema node type for a group reference (`xs:group ref="..."`) */
   GroupRef = "groupRef",
   /** Attribute group definition */
@@ -355,4 +362,44 @@ export type TypeKind = "simpleType" | "complexType";
 export function anonymousTypeId(parentId: string, kind: TypeKind): string {
   const nodeType = kind === "simpleType" ? SchemaNodeType.AnonymousSimpleType : SchemaNodeType.AnonymousComplexType;
   return generateSchemaId({ nodeType, parentId, position: 0 });
+}
+
+/** The node types of the compositors, whose values are the kinds of the compositors. */
+export type CompositorNodeType = SchemaNodeType.Sequence | SchemaNodeType.Choice | SchemaNodeType.All;
+
+/**
+ * Tells whether a node type is that of a compositor.
+ *
+ * @param nodeType - The node type
+ * @returns True for `sequence`, `choice` and `all`
+ */
+export function isCompositorNodeType(nodeType: SchemaNodeType): nodeType is CompositorNodeType {
+  return nodeType === SchemaNodeType.Sequence || nodeType === SchemaNodeType.Choice || nodeType === SchemaNodeType.All;
+}
+
+/**
+ * Returns the kind of compositor that a node type stands for.
+ *
+ * @param nodeType - The node type
+ * @returns The kind of compositor, or `undefined` if the node type is not that of a compositor
+ */
+export function compositorOfNodeType(nodeType: SchemaNodeType): Compositor | undefined {
+  return isCompositorNodeType(nodeType) ? nodeType : undefined;
+}
+
+/** The node type of each kind of compositor. */
+const COMPOSITOR_NODE_TYPES: Readonly<Record<Compositor, CompositorNodeType>> = {
+  sequence: SchemaNodeType.Sequence,
+  choice: SchemaNodeType.Choice,
+  all: SchemaNodeType.All,
+};
+
+/**
+ * Returns the node type of a kind of compositor.
+ *
+ * @param compositor - The kind of compositor
+ * @returns The node type
+ */
+export function compositorNodeType(compositor: Compositor): CompositorNodeType {
+  return COMPOSITOR_NODE_TYPES[compositor];
 }

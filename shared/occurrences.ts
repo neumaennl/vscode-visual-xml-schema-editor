@@ -128,3 +128,29 @@ export function validateOccurrences(minOccurs: number | undefined, maxOccurs: Ma
   // Validate constraint
   return validateOccurrenceConstraint(minOccurs, maxOccurs);
 }
+
+/**
+ * Validates the occurrences that XML Schema 1.0 allows for an `all` and for the elements in it: `minOccurs`
+ * 0 or 1, and `maxOccurs` 1 for an `all` and 0 or 1 for an element. Values that are not given are not
+ * checked.
+ *
+ * @param minOccurs - The `minOccurs` value
+ * @param maxOccurs - The `maxOccurs` value
+ * @param of - Whether the values are those of an `all` or of an element in an `all`
+ * @returns Validation result
+ */
+export function validateOccurrencesInAll(
+  minOccurs: number | undefined,
+  maxOccurs: MaxOccurs | undefined,
+  of: "all" | "element"
+): ValidationResult {
+  const what = of === "all" ? "an all" : "an element in an all";
+  if (minOccurs !== undefined && minOccurs !== 0 && minOccurs !== 1) {
+    return { valid: false, error: `minOccurs of ${what} must be 0 or 1` };
+  }
+  const allowedMax: MaxOccurs[] = of === "all" ? [1] : [0, 1];
+  if (maxOccurs !== undefined && !allowedMax.includes(maxOccurs)) {
+    return { valid: false, error: `maxOccurs of ${what} must be ${allowedMax.join(" or ")}` };
+  }
+  return validateOccurrenceConstraint(minOccurs, maxOccurs);
+}

@@ -12,6 +12,7 @@ export * from "./attribute.js";
 export * from "./simpleType.js";
 export * from "./complexType.js";
 export * from "./group.js";
+export * from "./compositor.js";
 export * from "./attributeGroup.js";
 export * from "./annotation.js";
 export * from "./schema.js";
@@ -22,6 +23,7 @@ import type { AttributeCommand } from "./attribute.js";
 import type { SimpleTypeCommand } from "./simpleType.js";
 import type { ComplexTypeCommand } from "./complexType.js";
 import type { GroupCommand } from "./group.js";
+import type { CompositorCommand } from "./compositor.js";
 import type { AttributeGroupCommand } from "./attributeGroup.js";
 import type { AnnotationCommand, DocumentationCommand } from "./annotation.js";
 import type { ImportCommand, IncludeCommand, ModifySchemaNamespacesCommand } from "./schema.js";
@@ -36,6 +38,7 @@ export type SchemaCommand =
   | SimpleTypeCommand
   | ComplexTypeCommand
   | GroupCommand
+  | CompositorCommand
   | AttributeGroupCommand
   | AnnotationCommand
   | DocumentationCommand

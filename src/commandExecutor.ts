@@ -12,6 +12,7 @@ import * as attributeExecutors from "./commandExecutors/attributeExecutors.js";
 import * as simpleTypeExecutors from "./commandExecutors/simpleTypeExecutors.js";
 import * as complexTypeExecutors from "./commandExecutors/complexTypeExecutors.js";
 import * as groupExecutors from "./commandExecutors/groupExecutors.js";
+import * as compositorExecutors from "./commandExecutors/compositorExecutors.js";
 import * as attributeGroupExecutors from "./commandExecutors/attributeGroupExecutors.js";
 import * as annotationExecutors from "./commandExecutors/annotationExecutors.js";
 import * as schemaExecutors from "./commandExecutors/schemaExecutors.js";
@@ -42,6 +43,7 @@ export class CommandExecutor {
       ...simpleTypeExecutors,
       ...complexTypeExecutors,
       ...groupExecutors,
+      ...compositorExecutors,
       ...attributeGroupExecutors,
       ...annotationExecutors,
       ...schemaExecutors,

@@ -4,7 +4,7 @@
 
 import { DiagramSvgRenderer } from "./DiagramSvgRenderer";
 import { Diagram } from "./Diagram";
-import { DiagramItem } from "./DiagramItem";
+import { createCompositorItem, DiagramItem } from "./DiagramItem";
 import { DiagramItemType } from "./DiagramTypes";
 import { setupGetBBoxMock } from "../__tests__/svgTestHelpers";
 import {
@@ -18,12 +18,16 @@ import { webviewSchemaWith } from "../../shared/__tests__/schemaTestHelpers";
 import { generateSchemaId, SchemaNodeType } from "../../shared/idStrategy";
 import { schema } from "../../shared/types";
 
-/** A top-level component of each kind of item. */
-const COMPONENTS: Record<DiagramItemType, string> = {
+/** A top-level component of each kind of item; a compositor is no top-level component. */
+const COMPONENTS: Record<Exclude<DiagramItemType, DiagramItemType.compositor>, string> = {
   [DiagramItemType.element]: `<xs:element name="e"/>`,
   [DiagramItemType.group]: `<xs:group name="G"><xs:sequence/></xs:group>`,
   [DiagramItemType.type]: `<xs:complexType name="T"/>`,
 };
+
+/** The sequence of a complex type, the schema object of the compositor items. */
+const SEQUENCE = webviewSchemaWith(`<xs:complexType name="T"><xs:sequence/></xs:complexType>`).complexType![0]!
+  .sequence!;
 
 describe("DiagramSvgRenderer", () => {
   muteDiagramBuilderLog();
@@ -46,7 +50,8 @@ describe("DiagramSvgRenderer", () => {
   });
 
   /**
-   * Creates an item in the diagram with a top-level component of its kind as its schema object.
+   * Creates an item in the diagram with a top-level component of its kind as its schema object; a
+   * compositor item is a sequence.
    *
    * @param id - The ID of the item
    * @param name - The name of the item
@@ -54,6 +59,9 @@ describe("DiagramSvgRenderer", () => {
    * @returns The item
    */
   function newItem(id: string, name: string, itemType = DiagramItemType.element): DiagramItem {
+    if (itemType === DiagramItemType.compositor) {
+      return createCompositorItem(id, "sequence", SEQUENCE, diagram);
+    }
     return new DiagramItem(id, name, itemType, component(COMPONENTS[itemType]), diagram);
   }
 
@@ -162,6 +170,7 @@ describe("DiagramSvgRenderer", () => {
     test.each([
       ["element", DiagramItemType.element, "rect"],
       ["group", DiagramItemType.group, "polygon"],
+      ["compositor", DiagramItemType.compositor, "polygon"],
       ["type", DiagramItemType.type, "polygon"],
     ])("should render a %s item with its shape", (name, itemType, shape) => {
       const itemElement = renderRootItem(name, name, itemType);
@@ -170,12 +179,34 @@ describe("DiagramSvgRenderer", () => {
       expect(itemElement?.querySelector(shape)).toBeTruthy();
     });
 
-    test("should render group item with tooltip", () => {
-      const itemElement = renderRootItem("grp", "Group", DiagramItemType.group, {
+    test("should render the symbol of a compositor item", () => {
+      const itemElement = renderRootItem("/complexType:T/sequence[0]", "sequence", DiagramItemType.compositor);
+
+      // The three dots of the sequence symbol
+      expect(itemElement?.querySelectorAll("circle")).toHaveLength(3);
+    });
+
+    test("should fail for a compositor item without a compositor node type", () => {
+      const item = new DiagramItem(
+        "/complexType:T/sequence[0]",
+        "sequence",
+        DiagramItemType.compositor,
+        SEQUENCE,
+        diagram
+      );
+      diagram.addRootElement(item);
+
+      expect(() => {
+        renderer.render(diagram);
+      }).toThrow("Compositor item /complexType:T/sequence[0] has no compositor node type");
+    });
+
+    test("should render the label of a compositor item as its tooltip", () => {
+      const itemElement = renderRootItem("/complexType:T/sequence[0]", "sequence", DiagramItemType.compositor, {
         elementBox: { x: 10, y: 10, width: 40, height: 20 },
       });
 
-      expect(itemElement?.querySelector("title")?.textContent).toBe("Group");
+      expect(itemElement?.querySelector("title")?.textContent).toBe("sequence");
     });
 
     test.each([true, false])("should render children only when showChildElements is true (%s)", (showChildElements) => {
@@ -201,7 +232,7 @@ describe("DiagramSvgRenderer", () => {
       ["an element reference", "element:unnamed[0]", DiagramItemType.element, 1],
       ["a local element", "element:x[1]", DiagramItemType.element, 0],
     ])("should draw the arrow only for references: %s", (_case, path, itemType, arrowCount) => {
-      const { schemaObject } = diagramItem(webviewSchemaWith(REFERENCES), `/complexType:T/group:sequence[0]/${path}`);
+      const { schemaObject } = diagramItem(webviewSchemaWith(REFERENCES), `/complexType:T/sequence[0]/${path}`);
 
       const itemElement = renderRootItem("reference", "reference", itemType, { schemaObject });
 
@@ -243,10 +274,9 @@ describe("DiagramSvgRenderer", () => {
       expect(itemElement?.querySelector("text")?.textContent).toContain("PersonGroup");
     });
 
-    test("should not render text for compositor groups", () => {
+    test("should not render text for compositors", () => {
       const id = generateSchemaId({
-        nodeType: SchemaNodeType.Group,
-        name: "sequence",
+        nodeType: SchemaNodeType.Sequence,
         parentId: "/complexType:PersonType",
         position: 0,
       });
@@ -256,8 +286,9 @@ describe("DiagramSvgRenderer", () => {
         id
       );
 
-      const itemElement = renderRootItem(id, "sequence", DiagramItemType.group, {
+      const itemElement = renderRootItem(id, "sequence", DiagramItemType.compositor, {
         schemaObject,
+        nodeType: SchemaNodeType.Sequence,
         elementBox: { x: 10, y: 10, width: 40, height: 20 },
       });
 

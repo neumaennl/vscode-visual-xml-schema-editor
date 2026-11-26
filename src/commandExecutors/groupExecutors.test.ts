@@ -40,9 +40,6 @@ function removeGroup(schemaObj: schema, payload: RemoveGroupCommand["payload"]):
   executeRemoveGroup({ type: "removeGroup", payload }, schemaObj);
 }
 
-/** The file with a complexType `PersonType` with the local element `name`. */
-const PERSON_TYPE_WITH_NAME_XSD = "person-type-with-name-element.xsd";
-
 /** The file with two groups and an empty complexType `PersonType`. */
 const TWO_GROUPS_AND_PERSON_XSD = "two-groups-and-empty-person-type.xsd";
 
@@ -67,10 +64,10 @@ function firstGroupRefDocumentation(schemaObj: schema): Array<string | undefined
 
 describe("Group Executors", () => {
   describe("executeAddGroup", () => {
-    test.each(["sequence", "choice", "all"] as const)("should add a group with a %s content model", (model) => {
+    test.each(["sequence", "choice", "all"] as const)("should add a group with the compositor %s", (model) => {
       const schemaObj = emptySchema();
 
-      addGroup(schemaObj, { groupName: "PersonGroup", contentModel: model });
+      addGroup(schemaObj, { groupName: "PersonGroup", compositor: model });
 
       expect(schemaObj.group).toHaveLength(1);
       const grp = schemaObj.group![0]!;
@@ -83,7 +80,7 @@ describe("Group Executors", () => {
 
       addGroup(schemaObj, {
         groupName: "DocGroup",
-        contentModel: "sequence",
+        compositor: "sequence",
         documentation: "A documented group",
       });
 
@@ -99,7 +96,7 @@ describe("Group Executors", () => {
 
       addGroup(schemaObj, {
         groupName: "NewGroup",
-        contentModel: "choice",
+        compositor: "choice",
       });
 
       expect(schemaObj.group ?? []).toHaveLength(2);
@@ -111,7 +108,7 @@ describe("Group Executors", () => {
 
       addGroup(schemaObj, {
         groupName: "MyGroup",
-        contentModel: "sequence",
+        compositor: "sequence",
       });
 
       const groups = unmarshal(schema, marshal(schemaObj)).group ?? [];
@@ -149,16 +146,6 @@ describe("Group Executors", () => {
       expect(schemaObj.group ?? []).toHaveLength(1);
       expect((schemaObj.group ?? [])[0]!.name).toBe("GroupB");
     });
-
-    test("should remove a compositor group from a complexType", () => {
-      const schemaObj = readTestSchema(PERSON_TYPE_WITH_NAME_XSD);
-
-      removeGroup(schemaObj, {
-        groupId: "/complexType:PersonType/group:sequence[0]",
-      });
-
-      expect((schemaObj.complexType ?? [])[0]!.sequence).toBeUndefined();
-    });
   });
 
   describe("executeModifyGroup", () => {
@@ -193,23 +180,23 @@ describe("Group Executors", () => {
       expect((schemaObj.complexType ?? [])[0]!.group!.ref).toBe("NewName");
     });
 
-    test("should change the content model of a group", () => {
+    test("should change the compositor of a group and keep its particles", () => {
       const schemaObj = schemaWith(`<xs:group name="MyGroup">
-  <xs:sequence/>
+  <xs:sequence><xs:element name="a" type="xs:string"/></xs:sequence>
 </xs:group>`);
 
       modifyGroup(schemaObj, {
         groupId: "/group:MyGroup",
-        contentModel: "choice",
+        compositor: "choice",
       });
 
       const grp = (schemaObj.group ?? [])[0]!;
-      expect(grp.choice).toBeDefined();
+      expect(grp.choice?.element?.[0]?.name).toBe("a");
       expect(grp.sequence).toBeUndefined();
       expect(grp.all).toBeUndefined();
     });
 
-    test("should update the name and the content model together", () => {
+    test("should update the name and the compositor together", () => {
       const schemaObj = schemaWith(`<xs:group name="OriginalGroup">
   <xs:sequence/>
 </xs:group>`);
@@ -217,7 +204,7 @@ describe("Group Executors", () => {
       modifyGroup(schemaObj, {
         groupId: "/group:OriginalGroup",
         groupName: "UpdatedGroup",
-        contentModel: "all",
+        compositor: "all",
       });
 
       const grp = (schemaObj.group ?? [])[0]!;
@@ -240,20 +227,6 @@ describe("Group Executors", () => {
       expect(grp.name).toBe("StableGroup");
       expect(grp.sequence).toBeDefined();
     });
-
-    test("should modify occurrence constraints on a compositor group", () => {
-      const schemaObj = readTestSchema(PERSON_TYPE_WITH_NAME_XSD);
-
-      modifyGroup(schemaObj, {
-        groupId: "/complexType:PersonType/group:sequence[0]",
-        minOccurs: 0,
-        maxOccurs: "unbounded",
-      });
-
-      const sequence = (schemaObj.complexType ?? [])[0]!.sequence;
-      expect(sequence?.minOccurs).toBe(0);
-      expect(sequence?.maxOccurs).toBe("unbounded");
-    });
   });
 
   describe("Group References (via addGroup/removeGroup/modifyGroup)", () => {
@@ -263,7 +236,7 @@ describe("Group Executors", () => {
 
         addGroup(schemaObj, {
           ref: "PersonGroup",
-          parentId: "/complexType:PersonType/group:sequence[0]",
+          parentId: "/complexType:PersonType/sequence[0]",
         });
 
         const ct = (schemaObj.complexType ?? [])[0]!;
@@ -277,7 +250,7 @@ describe("Group Executors", () => {
 
         addGroup(schemaObj, {
           ref: "PersonGroup",
-          parentId: "/complexType:PersonType/group:sequence[0]",
+          parentId: "/complexType:PersonType/sequence[0]",
           minOccurs: 0,
           maxOccurs: "unbounded",
         });
@@ -292,11 +265,11 @@ describe("Group Executors", () => {
         const schemaObj = readTestSchema(TWO_GROUPS_AND_PERSON_XSD);
 
         executeAddGroup(
-          { type: "addGroup", payload: { ref: "PersonGroup", parentId: "/complexType:PersonType/group:sequence[0]" } },
+          { type: "addGroup", payload: { ref: "PersonGroup", parentId: "/complexType:PersonType/sequence[0]" } },
           schemaObj
         );
         executeAddGroup(
-          { type: "addGroup", payload: { ref: "AddressGroup", parentId: "/complexType:PersonType/group:sequence[0]" } },
+          { type: "addGroup", payload: { ref: "AddressGroup", parentId: "/complexType:PersonType/sequence[0]" } },
           schemaObj
         );
 
@@ -324,7 +297,7 @@ describe("Group Executors", () => {
 
         addGroup(schemaObj, {
           ref: "PersonGroup",
-          parentId: "/complexType:PersonType/group:sequence[0]",
+          parentId: "/complexType:PersonType/sequence[0]",
           documentation: "A person group ref annotation",
         });
 
@@ -336,7 +309,7 @@ describe("Group Executors", () => {
       test("should remove a group reference from a sequence", () => {
         const schemaObj = schemaWith(PERSON_TYPE_WITH_GROUP_REF);
 
-        removeGroup(schemaObj, { groupId: "/complexType:PersonType/group:sequence[0]/groupRef:PersonGroup[0]" });
+        removeGroup(schemaObj, { groupId: "/complexType:PersonType/sequence[0]/groupRef:PersonGroup[0]" });
 
         const refs = (schemaObj.complexType ?? [])[0]!.sequence?.group ?? [];
         expect(refs).toHaveLength(0);
@@ -345,7 +318,7 @@ describe("Group Executors", () => {
       test("should remove only the matching group reference, leaving others intact", () => {
         const schemaObj = readTestSchema("person-type-with-two-group-refs-in-sequence.xsd");
 
-        removeGroup(schemaObj, { groupId: "/complexType:PersonType/group:sequence[0]/groupRef:PersonGroup[0]" });
+        removeGroup(schemaObj, { groupId: "/complexType:PersonType/sequence[0]/groupRef:PersonGroup[0]" });
 
         const refs = (schemaObj.complexType ?? [])[0]!.sequence!.group ?? [];
         expect(refs).toHaveLength(1);
@@ -367,7 +340,7 @@ describe("Group Executors", () => {
         const schemaObj = schemaWith(PERSON_TYPE_WITH_GROUP_REF);
 
         modifyGroup(schemaObj, {
-          groupId: "/complexType:PersonType/group:sequence[0]/groupRef:PersonGroup[0]",
+          groupId: "/complexType:PersonType/sequence[0]/groupRef:PersonGroup[0]",
           ref: "AddressGroup",
         });
 
@@ -379,7 +352,7 @@ describe("Group Executors", () => {
         const schemaObj = schemaWith(PERSON_TYPE_WITH_GROUP_REF);
 
         modifyGroup(schemaObj, {
-          groupId: "/complexType:PersonType/group:sequence[0]/groupRef:PersonGroup[0]",
+          groupId: "/complexType:PersonType/sequence[0]/groupRef:PersonGroup[0]",
           minOccurs: 0,
           maxOccurs: "unbounded",
         });

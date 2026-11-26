@@ -7,6 +7,7 @@
 import type { AddAttributePayload, RemoveAttributePayload, ModifyAttributePayload } from "./attribute.js";
 import type { AddElementPayload, RemoveElementPayload, ModifyElementPayload } from "./element.js";
 import type { AddGroupPayload, RemoveGroupPayload, ModifyGroupPayload } from "./group.js";
+import type { RemoveCompositorPayload, ModifyCompositorPayload } from "./compositor.js";
 import type { RemoveAttributeGroupPayload, ModifyAttributeGroupPayload } from "./attributeGroup.js";
 import type {
   AddAnnotationPayload,
@@ -43,17 +44,19 @@ describe("Command types", () => {
       expectTypeOf<Omit<ModifyAttributePayload, "attributeId">>().not.toExtend<ModifyAttributePayload>();
     });
 
-    test("should require the IDs of group and attribute group commands", () => {
+    test("should require the IDs of group, compositor and attribute group commands", () => {
       expectTypeOf<Omit<RemoveGroupPayload, "groupId">>().not.toExtend<RemoveGroupPayload>();
       expectTypeOf<Omit<ModifyGroupPayload, "groupId">>().not.toExtend<ModifyGroupPayload>();
+      expectTypeOf<Omit<RemoveCompositorPayload, "compositorId">>().not.toExtend<RemoveCompositorPayload>();
+      expectTypeOf<Omit<ModifyCompositorPayload, "compositorId">>().not.toExtend<ModifyCompositorPayload>();
       expectTypeOf<Omit<RemoveAttributeGroupPayload, "groupId">>().not.toExtend<RemoveAttributeGroupPayload>();
       expectTypeOf<Omit<ModifyAttributeGroupPayload, "groupId">>().not.toExtend<ModifyAttributeGroupPayload>();
     });
 
-    test("should require the IDs of type commands and the content model of a new complex type", () => {
+    test("should require the IDs of type commands and the compositor of a new complex type", () => {
       expectTypeOf<Omit<RemoveSimpleTypePayload, "typeId">>().not.toExtend<RemoveSimpleTypePayload>();
       expectTypeOf<Omit<ModifySimpleTypePayload, "typeId">>().not.toExtend<ModifySimpleTypePayload>();
-      expectTypeOf<Omit<AddComplexTypePayload, "contentModel">>().not.toExtend<AddComplexTypePayload>();
+      expectTypeOf<Omit<AddComplexTypePayload, "compositor">>().not.toExtend<AddComplexTypePayload>();
       expectTypeOf<Omit<RemoveComplexTypePayload, "typeId">>().not.toExtend<RemoveComplexTypePayload>();
       expectTypeOf<Omit<ModifyComplexTypePayload, "typeId">>().not.toExtend<ModifyComplexTypePayload>();
     });

@@ -3,12 +3,14 @@
  * Ported from XSD Diagram project
  */
 
-import type { DiagramItemType, Point, Size, Rectangle } from "./DiagramTypes";
+import type { Point, Size, Rectangle } from "./DiagramTypes";
 import type { DiagramStyle } from "./DiagramTypes";
-import { DiagramItemGroupType, enclosingRectangle } from "./DiagramTypes";
+import { DiagramItemType, enclosingRectangle } from "./DiagramTypes";
 import type { Diagram } from "./Diagram";
-import type { SchemaNodeType } from "../../shared/idStrategy";
+import { compositorNodeType, compositorOfNodeType, type SchemaNodeType } from "../../shared/idStrategy";
 import type { DiagramSchemaObject } from "./schemaAccessors";
+import type { CompositorObject } from "../../shared/schemaObjects";
+import type { Compositor } from "../../shared/types";
 
 /**
  * A node of the diagram: an element, group, type or the schema, with what the diagram shows of it, its
@@ -28,7 +30,6 @@ export class DiagramItem {
    * complex type without content from a simple type.
    */
   public nodeType?: SchemaNodeType;
-  public groupType: DiagramItemGroupType = DiagramItemGroupType.Sequence;
   public parent: DiagramItem | null = null;
   public childElements: DiagramItem[] = [];
 
@@ -71,6 +72,15 @@ export class DiagramItem {
   }
 
   /**
+   * The kind of compositor of a sequence, choice or all, which its node type tells; other items have none.
+   *
+   * @returns The kind of compositor, or `undefined` for other items
+   */
+  public get compositor(): Compositor | undefined {
+    return this.nodeType === undefined ? undefined : compositorOfNodeType(this.nodeType);
+  }
+
+  /**
    * Add a child element to this diagram item
    *
    * @param child - The child
@@ -102,4 +112,25 @@ export class DiagramItem {
 
     return this.boundingBox;
   }
+}
+
+/**
+ * Creates the item of a compositor. Its item type and its node type both say that it is a compositor, and
+ * the node type tells which one, so they are set together here.
+ *
+ * @param id - The ID of the compositor
+ * @param compositor - The kind of the compositor, which is also its label
+ * @param schemaObject - The compositor in the schema
+ * @param diagram - The diagram that the item belongs to
+ * @returns The item
+ */
+export function createCompositorItem(
+  id: string,
+  compositor: Compositor,
+  schemaObject: CompositorObject,
+  diagram: Diagram
+): DiagramItem {
+  const item = new DiagramItem(id, compositor, DiagramItemType.compositor, schemaObject, diagram);
+  item.nodeType = compositorNodeType(compositor);
+  return item;
 }

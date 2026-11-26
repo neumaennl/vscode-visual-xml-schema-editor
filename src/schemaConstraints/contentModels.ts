@@ -3,7 +3,7 @@
  * models, as the constraints of XML Schema see them.
  */
 
-import type { schema, Compositor, groupRef } from "../../shared/types.js";
+import { COMPOSITORS, type schema, type groupRef } from "../../shared/types.js";
 import { findComponentInTargetNamespace, forEachReferencedComponent, type SchemaNames } from "./schemaNames.js";
 import type { ComplexTypeObject, LocalElementObject } from "../../shared/schemaObjects.js";
 
@@ -12,16 +12,13 @@ import type { ComplexTypeObject, LocalElementObject } from "../../shared/schemaO
  * compositor or a group definition. A complex type holds one compositor or group reference; a compositor
  * holds several.
  */
-interface ParticleHolder {
+export interface ParticleHolder {
   element?: LocalElementObject[];
   group?: groupRef | groupRef[];
   all?: ParticleHolder | ParticleHolder[];
   choice?: ParticleHolder | ParticleHolder[];
   sequence?: ParticleHolder | ParticleHolder[];
 }
-
-/** The compositors that a particle holder can contain. */
-const COMPOSITORS = ["all", "choice", "sequence"] as const satisfies readonly Compositor[];
 
 /**
  * Returns a value that is one item or a list as a list.
@@ -43,7 +40,7 @@ function asList<T>(value: T | T[] | undefined): T[] {
  * @param complexType - The complex type
  * @returns The node that holds the particles
  */
-function particleHolderOf(complexType: ComplexTypeObject): ParticleHolder {
+export function particleHolderOf(complexType: ComplexTypeObject): ParticleHolder {
   const content = complexType.complexContent;
   return content?.extension ?? content?.restriction ?? complexType;
 }
@@ -60,6 +57,24 @@ function forEachDescendantElement(holder: ParticleHolder, visit: (element: Local
   for (const compositor of COMPOSITORS) {
     for (const nested of asList(holder[compositor])) {
       forEachDescendantElement(nested, visit);
+    }
+  }
+}
+
+/**
+ * Calls a function for each group reference in the compositors of a node and in their nested compositors,
+ * but not for a group reference that a complex type holds directly.
+ *
+ * @param holder - The node
+ * @param visit - Called for each group reference
+ */
+export function forEachGroupReferenceInCompositors(holder: ParticleHolder, visit: (reference: groupRef) => void): void {
+  for (const compositor of COMPOSITORS) {
+    for (const nested of asList(holder[compositor])) {
+      for (const reference of asList(nested.group)) {
+        visit(reference);
+      }
+      forEachGroupReferenceInCompositors(nested, visit);
     }
   }
 }

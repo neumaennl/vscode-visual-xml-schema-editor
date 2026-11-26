@@ -3,13 +3,13 @@
  */
 
 /** The constraints of XML Schema that the editor checks across the schema. */
-export type ConstraintRule = "elementTypes" | "attributeUses";
+export type ConstraintRule = "elementTypes" | "attributeUses" | "allGroupReferences";
 
 /** A violation of a constraint of XML Schema in one schema component. */
 export interface ConstraintViolation {
   /** The constraint. */
   rule: ConstraintRule;
-  /** The complex type or attribute group that violates the constraint. */
+  /** The complex type, attribute group or group definition that violates the constraint. */
   container: object;
   /** The expanded name that the violation is about, such as `{urn:t}a`. */
   name: string;

@@ -4,7 +4,8 @@
 
 import { DiagramLayout } from "./DiagramLayout";
 import { Diagram } from "./Diagram";
-import { DiagramItem } from "./DiagramItem";
+import { createCompositorItem, DiagramItem } from "./DiagramItem";
+import { explicitGroup } from "../../shared/types";
 import { DiagramItemType } from "./DiagramTypes";
 import { schema } from "../../shared/types";
 import { documented, NOT_READ_SCHEMA_OBJECT } from "../__tests__/diagramTestHelpers";
@@ -27,7 +28,10 @@ describe("DiagramLayout", () => {
    * @returns The item
    */
   function layoutRootItem(id: string, itemType: DiagramItemType, properties: Partial<DiagramItem> = {}): DiagramItem {
-    const item = new DiagramItem(id, id, itemType, NOT_READ_SCHEMA_OBJECT, diagram);
+    const item =
+      itemType === DiagramItemType.compositor
+        ? createCompositorItem(id, "sequence", new explicitGroup(), diagram)
+        : new DiagramItem(id, id, itemType, NOT_READ_SCHEMA_OBJECT, diagram);
     Object.assign(item, properties);
     diagram.addRootElement(item);
     layout.layout(diagram);
@@ -96,12 +100,13 @@ describe("DiagramLayout", () => {
   });
 
   describe("item sizing", () => {
-    test.each([
-      ["element", "elem", DiagramItemType.element, { width: 120, height: 40 }], // ELEMENT_WIDTH, ELEMENT_HEIGHT
-      ["type", "type", DiagramItemType.type, { width: 120, height: 40 }],
-      ["compositor", "/complexType:T/group:sequence[0]", DiagramItemType.group, { width: 40, height: 20 }], // GROUP_WIDTH, GROUP_HEIGHT
-    ])("should size %s items correctly", (_case, id, itemType, size) => {
-      expect(layoutRootItem(id, itemType).size).toMatchObject(size);
+    test.each<[string, string, DiagramItemType, Partial<DiagramItem>, object]>([
+      ["element", "elem", DiagramItemType.element, {}, { width: 120, height: 40 }], // ELEMENT_WIDTH, ELEMENT_HEIGHT
+      ["type", "type", DiagramItemType.type, {}, { width: 120, height: 40 }],
+      // GROUP_WIDTH, GROUP_HEIGHT
+      ["compositor", "/complexType:T/sequence[0]", DiagramItemType.compositor, {}, { width: 40, height: 20 }],
+    ])("should size %s items correctly", (_case, id, itemType, properties, size) => {
+      expect(layoutRootItem(id, itemType, properties).size).toMatchObject(size);
     });
   });
 

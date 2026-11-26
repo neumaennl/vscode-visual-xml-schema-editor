@@ -3,12 +3,11 @@
  * Handles processing of complex types, sequences, choices, extensions, and restrictions.
  */
 
-import { DiagramItem } from "./DiagramItem";
-import type { GroupDefLike } from "./DiagramTypes";
-import { DiagramItemType, DiagramItemGroupType } from "./DiagramTypes";
+import { createCompositorItem, DiagramItem } from "./DiagramItem";
+import { DiagramItemType } from "./DiagramTypes";
 import {
+  compositorNodeType,
   generateSchemaId,
-  parseSchemaId,
   SchemaNodeType,
   UNNAMED_NODE_NAME,
   anonymousTypeId,
@@ -19,6 +18,7 @@ import {
   type ElementObject,
   type NamedChild,
   type ParticleContainer,
+  type CompositorObject,
 } from "../../shared/schemaObjects";
 import { localNameIfInTargetNamespace } from "../../shared/qNames";
 import { getNamespacePrefixes, getTargetNamespace } from "./schemaAccessors";
@@ -30,6 +30,7 @@ import type { allType } from "../../shared/generated/allType";
 import type { groupRef } from "../../shared/generated/groupRef";
 import type { narrowMaxMin } from "../../shared/generated/narrowMaxMin";
 import { hasInlineComplexType } from "./typeAccessors";
+import type { Compositor } from "../../shared/types";
 
 /**
  * Adds the content of the anonymous complexType of an element, top-level or local, to the item of the
@@ -82,8 +83,7 @@ function processParticles(parent: DiagramItem, holder: ParticleContainer): void 
 }
 
 /**
- * Processes a sequence group in the schema.
- * Creates a sequence group container and processes its elements.
+ * Adds the item of a sequence and its particles to its parent.
  *
  * @param parent - Parent diagram item to add the sequence to
  * @param sequence - Sequence definition from schema
@@ -95,12 +95,11 @@ export function processSequence(
   sequence: explicitGroup | simpleExplicitGroup,
   positionOverride?: number
 ): void {
-  processGroup(parent, sequence, "sequence", DiagramItemGroupType.Sequence, positionOverride);
+  processCompositor(parent, sequence, "sequence", positionOverride);
 }
 
 /**
- * Processes a choice group in the schema.
- * Creates a choice group container and processes its elements.
+ * Adds the item of a choice and its particles to its parent.
  *
  * @param parent - Parent diagram item to add the choice to
  * @param choice - Choice definition from schema
@@ -112,93 +111,70 @@ export function processChoice(
   choice: explicitGroup | simpleExplicitGroup,
   positionOverride?: number
 ): void {
-  processGroup(parent, choice, "choice", DiagramItemGroupType.Choice, positionOverride);
+  processCompositor(parent, choice, "choice", positionOverride);
 }
 
 /**
- * Processes an all group in the schema.
- * Creates an all group container and processes its elements.
+ * Adds the item of an all and its particles to its parent.
  *
- * @param parent - Parent diagram item to add the all group to
- * @param all - All group definition from schema
+ * @param parent - Parent diagram item to add the all to
+ * @param all - The all from the schema
  * @param positionOverride - The position of the compositor in its parent's ID; without it, the compositors
  *   of the same kind that the parent already has are counted
  */
 export function processAll(parent: DiagramItem, all: all | allType, positionOverride?: number): void {
-  processGroup(parent, all, "all", DiagramItemGroupType.All, positionOverride);
+  processCompositor(parent, all, "all", positionOverride);
 }
 
 /**
- * Generic function to process a group (sequence, choice, or all).
- * Creates a group container and processes child elements.
+ * Adds the item of a compositor (sequence, choice or all) and its particles to its parent.
  *
  * @param parent - Parent diagram item
- * @param groupDef - Group definition from schema
- * @param groupName - Name of the group type for display
- * @param groupType - Type of the group (Sequence, Choice, or All)
+ * @param modelGroup - The model group from the schema
+ * @param compositor - Its compositor, which is also the type in its ID and its label
  * @param positionOverride - The position of the compositor in its parent's ID; without it, the compositors
  *   of the same kind that the parent already has are counted
  */
-function processGroup(
+function processCompositor(
   parent: DiagramItem,
-  groupDef: GroupDefLike,
-  groupName: string,
-  groupType: DiagramItemGroupType,
+  modelGroup: CompositorObject,
+  compositor: Compositor,
   positionOverride?: number
 ): void {
-  const position =
-    positionOverride ??
-    parent.childElements.filter((child) => {
-      try {
-        const parsed = parseSchemaId(child.id);
-        return parsed.nodeType === SchemaNodeType.Group && parsed.name === groupName;
-      } catch {
-        return false;
-      }
-    }).length;
-  const groupParentId = resolveEffectiveGroupParentId(parent);
+  const position = positionOverride ?? parent.childElements.filter((child) => child.compositor === compositor).length;
+  const parentId = resolveParticleParentId(parent);
 
-  // Create the group item with its final ID upfront.
-  // Including `groupName` as the `name` lets the navigator distinguish
-  // sequence / choice / all when resolving the ID path.
-  const groupItem = new DiagramItem(
-    generateSchemaId({
-      nodeType: SchemaNodeType.Group,
-      name: groupName,
-      parentId: groupParentId,
-      position,
-    }),
-    groupName,
-    DiagramItemType.group,
-    groupDef,
+  // The kind of the compositor is its node type, the type in its ID
+  const compositorItem = createCompositorItem(
+    generateSchemaId({ nodeType: compositorNodeType(compositor), parentId, position }),
+    compositor,
+    modelGroup,
     parent.diagram
   );
-  groupItem.nodeType = SchemaNodeType.Group;
-  groupItem.groupType = groupType;
 
-  const elementsArray = (groupDef.element as Array<localElement | narrowMaxMin> | undefined) ?? [];
+  const elementsArray = (modelGroup.element as Array<localElement | narrowMaxMin> | undefined) ?? [];
   elementsArray.forEach((elem, elemPosition) => {
-    groupItem.addChild(createLocalElementItem(elem, elemPosition, groupItem));
+    compositorItem.addChild(createLocalElementItem(elem, elemPosition, compositorItem));
   });
 
   // Only sequences and choices hold group references and nest other compositors, not an all
-  if ("group" in groupDef) {
-    (groupDef.group ?? []).forEach((ref, index) => {
-      processGroupRef(groupItem, ref, index);
+  if ("group" in modelGroup) {
+    (modelGroup.group ?? []).forEach((ref, index) => {
+      processGroupRef(compositorItem, ref, index);
     });
   }
-  if ("choice" in groupDef) {
-    (groupDef.choice ?? []).forEach((choice, index) => {
-      processChoice(groupItem, choice, index);
+  if ("choice" in modelGroup) {
+    (modelGroup.choice ?? []).forEach((choice, index) => {
+      processChoice(compositorItem, choice, index);
     });
   }
-  if ("sequence" in groupDef) {
-    (groupDef.sequence ?? []).forEach((seq, index) => {
-      processSequence(groupItem, seq, index);
+  if ("sequence" in modelGroup) {
+    (modelGroup.sequence ?? []).forEach((seq, index) => {
+      processSequence(compositorItem, seq, index);
     });
   }
 
-  parent.addChild(groupItem);
+  parent.addChild(compositorItem);
 }
 
 /**
@@ -270,7 +246,7 @@ function referenceLabel(ref: string, parent: DiagramItem): string {
  * @param parent - The diagram item that holds the compositor or group reference
  * @returns The parent ID for the child's ID
  */
-function resolveEffectiveGroupParentId(parent: DiagramItem): string {
+function resolveParticleParentId(parent: DiagramItem): string {
   if (hasInlineComplexType(parent)) {
     return anonymousTypeId(parent.id, "complexType");
   }
@@ -290,7 +266,7 @@ function processGroupRef(parent: DiagramItem, groupReference: groupRef, position
     generateSchemaId({
       nodeType: SchemaNodeType.GroupRef,
       name: refName,
-      parentId: resolveEffectiveGroupParentId(parent),
+      parentId: resolveParticleParentId(parent),
       position,
     }),
     groupReference.ref ? referenceLabel(groupReference.ref, parent) : UNNAMED_NODE_NAME,

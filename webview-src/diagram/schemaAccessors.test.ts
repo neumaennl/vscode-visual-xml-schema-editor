@@ -41,7 +41,7 @@ const OCCURRENCES = `<xs:complexType name="T"><xs:sequence maxOccurs="unbounded"
 <xs:group name="G"><xs:all><xs:element name="a" minOccurs="0" maxOccurs="1"/></xs:all></xs:group>`;
 
 /** The ID of the sequence in {@link OCCURRENCES}. */
-const SEQUENCE_ID = "/complexType:T/group:sequence[0]";
+const SEQUENCE_ID = "/complexType:T/sequence[0]";
 
 /**
  * Creates an item with a schema object.
@@ -83,7 +83,7 @@ describe("occurrences", () => {
     ["an optional element that repeats", `${SEQUENCE_ID}/element:optional[1]`, 0, 5, true],
     ["an element with maxOccurs 0", `${SEQUENCE_ID}/element:removed[2]`, 0, 0, false],
     ["a group reference", `${SEQUENCE_ID}/groupRef:G[0]`, 1, "unbounded", true],
-    ["an element in an all, with occurrences as strings", "/group:G/group:all[0]/element:a[0]", 0, 1, false],
+    ["an element in an all, with occurrences as strings", "/group:G/all[0]/element:a[0]", 0, 1, false],
   ])("should read the occurrences of %s", (_case, id, minOccurs, maxOccurs, repeated) => {
     const item = diagramItem(webviewSchemaWith(OCCURRENCES), id);
 

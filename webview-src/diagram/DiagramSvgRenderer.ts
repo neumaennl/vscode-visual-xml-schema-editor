@@ -6,7 +6,6 @@
 import type { Diagram } from "./Diagram";
 import type { DiagramItem } from "./DiagramItem";
 import { DiagramItemType } from "./DiagramTypes";
-import { isCompositorGroup } from "./groupUtils";
 import { getMinOccurs, isReference } from "./schemaAccessors";
 import { getDocumentation } from "./documentationAccessors";
 import { svgLine, svgRectangle } from "./SvgHelpers";
@@ -14,6 +13,7 @@ import {
   REFERENCE_ARROW_WIDTH,
   renderElementShape,
   renderGroupShape,
+  renderCompositorShape,
   renderReferenceArrow,
   renderTypeShape,
 } from "./ShapeRenderers";
@@ -74,8 +74,8 @@ export class DiagramSvgRenderer {
     group.setAttribute("data-item-id", item.id);
     group.setAttribute("class", "diagram-item");
 
-    // Add tooltip for group items (sequence, choice, all)
-    if (item.itemType === DiagramItemType.group) {
+    // A compositor shows a symbol instead of its label, so the label is its tooltip
+    if (item.itemType === DiagramItemType.compositor) {
       const title = document.createElementNS("http://www.w3.org/2000/svg", "title");
       title.textContent = item.label;
       group.appendChild(title);
@@ -98,8 +98,8 @@ export class DiagramSvgRenderer {
       renderReferenceArrow(item.elementBox, item, group);
     }
 
-    // Render text for non-group items and named groups (skip compositor symbols only)
-    if (item.itemType !== DiagramItemType.group || !isCompositorGroup(item)) {
+    // A compositor shows its symbol instead of a label
+    if (item.itemType !== DiagramItemType.compositor) {
       renderText(item, group, this.svg, reference ? REFERENCE_ARROW_WIDTH : 0);
     }
 
@@ -181,6 +181,8 @@ export class DiagramSvgRenderer {
    * Render the main shape based on item type
    * @param item - The diagram item to render
    * @param group - The SVG group to append shape to
+   * @throws An {@link Error} if a compositor item has no compositor node type, which
+   *   `createCompositorItem()` prevents
    */
   private renderShape(item: DiagramItem, group: SVGElement): void {
     const box = item.elementBox;
@@ -197,6 +199,16 @@ export class DiagramSvgRenderer {
       case DiagramItemType.group:
         renderGroupShape(box, backgroundBrush, foregroundPen + dashed, item, group);
         break;
+
+      case DiagramItemType.compositor: {
+        const { compositor } = item;
+        if (!compositor) {
+          // createCompositorItem() sets the node type of every compositor item
+          throw new Error(`Compositor item ${item.id} has no compositor node type`);
+        }
+        renderCompositorShape(box, backgroundBrush, foregroundPen + dashed, compositor, item, group);
+        break;
+      }
 
       case DiagramItemType.type:
         renderTypeShape(box, backgroundBrush, foregroundPen + dashed, item, group);

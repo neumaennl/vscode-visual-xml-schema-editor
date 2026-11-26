@@ -60,12 +60,9 @@ function renderType(id: string): TypeFields {
 describe("renderTypeProperty", () => {
   muteDiagramBuilderLog();
 
-  test.each(["/schema", "/group:Contact", "/group:Contact/group:sequence[0]"])(
-    "should show no type fields for %s",
-    (id) => {
-      expect(renderType(id).root.childElementCount).toBe(0);
-    }
-  );
+  test.each(["/schema", "/group:Contact", "/group:Contact/sequence[0]"])("should show no type fields for %s", (id) => {
+    expect(renderType(id).root.childElementCount).toBe(0);
+  });
 
   describe("elements with a named type", () => {
     test("should show the type in a field with suggestions", () => {

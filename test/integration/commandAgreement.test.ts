@@ -72,6 +72,19 @@ function commandsForNode(id: string): SchemaCommand[] {
         { type: "removeGroup", payload: { groupId: id } },
         { type: "modifyGroup", payload: { groupId: id, minOccurs: 0 } },
       ];
+    case SchemaNodeType.Sequence:
+    case SchemaNodeType.Choice:
+    case SchemaNodeType.All:
+      return [
+        { type: "removeCompositor", payload: { compositorId: id } },
+        { type: "modifyCompositor", payload: { compositorId: id, minOccurs: 0 } },
+        // Another kind, so that the command changes something
+        {
+          type: "modifyCompositor",
+          payload: { compositorId: id, compositor: nodeType === SchemaNodeType.Choice ? "sequence" : "choice" },
+        },
+        { type: "addCompositor", payload: { parentId: id, compositor: "choice" } },
+      ];
     case SchemaNodeType.AttributeGroup:
     case SchemaNodeType.AttributeGroupRef:
       return [

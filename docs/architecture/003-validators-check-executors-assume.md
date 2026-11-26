@@ -3,9 +3,8 @@ type: Architecture Decision Record
 title: "ADR 003: Validators check, executors assume"
 description: The decision that the validators check everything an executor relies on and the executors do not check it again, how an executor states what it assumes, why this is safe, the scenarios that were examined, how a test keeps validators and executors in agreement, and why the pipeline checks the resulting schema for the constraints that span it.
 tags: [adr, architecture, commands, validation, error-handling, testing]
-status: stable
-generated: { by: human:neumaennl, at: 2026-11-20T13:21:09Z }
-verified: { by: human:neumaennl, at: 2026-11-20T15:04:32Z }
+status: draft
+generated: { by: human:neumaennl, at: 2026-11-25T14:29:17Z }
 sources:
   - id: command-processor
     resource: ../../src/commandProcessor.ts
@@ -67,7 +66,9 @@ The examination also found where validators and executors disagreed. The validat
 - `modifyComplexType` accepted a `derivationKind` for a type without a base type, which has nothing to derive from. The validator now rejects it, also in `addComplexType`.
 - `modifyComplexType` ignored a `baseType` for a type without a compositor, for example one whose content is a group reference. The executor now wraps the content in `complexContent` as it is.
 
-The same code had three more gaps that produced invalid XSD instead of a no-op, so the validator now rejects them: a `baseType` that names no known type, a `contentModel` for a type whose particle is a group reference, and changes of the derivation or content model of a type with simple content, which the editor does not support yet.
+Since [#448](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/448), compositors have commands of their own, `addCompositor`, `modifyCompositor` and `removeCompositor`, which took over the rules of `modifyGroup` and `removeGroup` for compositors.
+
+The same code had three more gaps that produced invalid XSD instead of a no-op, so the validator now rejects them: a `baseType` that names no known type, a `compositor` for a type whose particle is a group reference, and changes of the derivation or content model of a type with simple content, which the editor does not support yet.
 
 ## Consequences
 

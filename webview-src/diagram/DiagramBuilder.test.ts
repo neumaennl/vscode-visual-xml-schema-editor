@@ -100,7 +100,7 @@ describe("DiagramBuilder", () => {
 
       expect(nodes).toHaveLength(1);
       expect(nodes[0]!.id).toBe("/group:PersonGroup");
-      expect(nodes[0]!.childElements[0]!.id).toBe("/group:PersonGroup/group:sequence[0]");
+      expect(nodes[0]!.childElements[0]!.id).toBe("/group:PersonGroup/sequence[0]");
     });
 
     test("should render group references inside named groups", () => {
@@ -109,7 +109,7 @@ describe("DiagramBuilder", () => {
       );
 
       const sequence = nodes[0]!.childElements[0]!;
-      expect(sequence.childElements[0]!.id).toBe("/group:ContainerGroup/group:sequence[0]/groupRef:SharedGroup[0]");
+      expect(sequence.childElements[0]!.id).toBe("/group:ContainerGroup/sequence[0]/groupRef:SharedGroup[0]");
     });
 
     test.each([
@@ -145,10 +145,8 @@ describe("DiagramBuilder", () => {
         );
 
         const sequence = nodes[0]!.childElements[0]!;
-        expect(sequence.id).toBe("/complexType:T/group:sequence[0]");
-        expect(sequence.childElements.map((child) => child.id)).toEqual([
-          "/complexType:T/group:sequence[0]/element:x[0]",
-        ]);
+        expect(sequence.id).toBe("/complexType:T/sequence[0]");
+        expect(sequence.childElements.map((child) => child.id)).toEqual(["/complexType:T/sequence[0]/element:x[0]"]);
       }
     );
 
@@ -186,32 +184,24 @@ describe("DiagramBuilder", () => {
       expect(diagram.rootElements[0]!.schemaObject).toBe(schemaObj);
       expect(diagram.findItem("/element:person")?.schemaObject).toBe(schemaObj.element![0]);
       expect(diagram.findItem("/group:G")?.schemaObject).toBe(schemaObj.group![0]);
-      expect(diagram.findItem("/complexType:T/group:sequence[0]")?.schemaObject).toBe(
-        schemaObj.complexType![0]!.sequence
-      );
-      expect(diagram.findItem("/complexType:T/group:sequence[0]/element:x[2]")?.schemaObject).toBe(
+      expect(diagram.findItem("/complexType:T/sequence[0]")?.schemaObject).toBe(schemaObj.complexType![0]!.sequence);
+      expect(diagram.findItem("/complexType:T/sequence[0]/element:x[2]")?.schemaObject).toBe(
         schemaObj.complexType![0]!.sequence!.element![2]
       );
     });
 
     test("should record the kind of schema construct that each item shows, as it was found in its parent", () => {
       const diagram = buildReferences();
-      const nodeTypes = [
-        "/schema",
-        "/element:person",
-        "/complexType:T",
-        "/complexType:T/group:sequence[0]",
-        "/group:G",
-      ].map((id) => diagram.findItem(id)?.nodeType);
-      const children = diagram
-        .findItem("/complexType:T/group:sequence[0]")!
-        .childElements.map((child) => child.nodeType);
+      const nodeTypes = ["/schema", "/element:person", "/complexType:T", "/complexType:T/sequence[0]", "/group:G"].map(
+        (id) => diagram.findItem(id)?.nodeType
+      );
+      const children = diagram.findItem("/complexType:T/sequence[0]")!.childElements.map((child) => child.nodeType);
 
       expect(nodeTypes).toEqual([
         SchemaNodeType.Schema,
         SchemaNodeType.Element,
         SchemaNodeType.ComplexType,
-        SchemaNodeType.Group,
+        SchemaNodeType.Sequence,
         SchemaNodeType.Group,
       ]);
       expect(children).toEqual([
@@ -224,7 +214,7 @@ describe("DiagramBuilder", () => {
     });
 
     test("should label a reference with the name of the referenced component, with a prefix of another schema", () => {
-      const sequence = buildReferences().findItem("/complexType:T/group:sequence[0]")!;
+      const sequence = buildReferences().findItem("/complexType:T/sequence[0]")!;
 
       expect(sequence.childElements.map((child) => [child.id.split("/").at(-1), child.label])).toEqual([
         ["element:unnamed[0]", "person"],

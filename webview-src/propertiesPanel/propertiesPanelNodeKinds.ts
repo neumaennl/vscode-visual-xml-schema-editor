@@ -3,7 +3,7 @@
  * kind, and what the properties panel may change on it.
  */
 
-import { SCHEMA_ROOT_ID, parseSchemaId, SchemaNodeType } from "../../shared/idStrategy";
+import { SCHEMA_ROOT_ID, isCompositorNodeType, parseSchemaId, SchemaNodeType } from "../../shared/idStrategy";
 import type { DiagramItem } from "../diagram";
 import { DiagramItemType } from "../diagram/DiagramTypes";
 
@@ -54,6 +54,10 @@ export function getNodeTypeLabel(node: DiagramItem): string {
       return "Group";
     case SchemaNodeType.GroupRef:
       return "Group Reference";
+    case SchemaNodeType.Sequence:
+    case SchemaNodeType.Choice:
+    case SchemaNodeType.All:
+      return "Compositor";
     default:
       return node.itemType;
   }
@@ -91,20 +95,10 @@ export function canEditCardinality(node: DiagramItem): boolean {
   if (nodeType === SchemaNodeType.GroupRef) {
     return true;
   }
-  if (nodeType === SchemaNodeType.Group) {
-    try {
-      const parsed = parseSchemaId(node.id);
-      const isCompositor = parsed.name === "sequence" || parsed.name === "choice" || parsed.name === "all";
-      if (!isCompositor || parsed.parentId === undefined) {
-        return false;
-      }
-      // XML Schema allows no occurrences on the compositor of a group definition
-      const parent = parseSchemaId(parsed.parentId);
-      const isInGroupDefinition = parent.nodeType === SchemaNodeType.Group && parent.parentId === undefined;
-      return !isInGroupDefinition;
-    } catch {
-      return false;
-    }
+  if (nodeType !== null && isCompositorNodeType(nodeType)) {
+    // XML Schema allows no occurrences on the compositor of a group definition
+    const { parentId } = parseSchemaId(node.id);
+    return parentId !== undefined && parseSchemaId(parentId).nodeType !== SchemaNodeType.Group;
   }
   return false;
 }

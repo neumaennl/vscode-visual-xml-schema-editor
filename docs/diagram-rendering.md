@@ -3,9 +3,8 @@ type: Process
 title: Diagram rendering
 description: How the schema object becomes the SVG diagram - the build, layout and render steps, which schema constructs become which nodes, the layout rules, the notation, the interaction, and the origin in xsddiagram.
 tags: [diagram, rendering, layout, svg, webview, xsddiagram]
-status: stable
-generated: { by: human:neumaennl, at: 2026-11-24T16:36:51Z }
-verified: { by: human:neumaennl, at: 2026-11-24T17:27:00Z }
+status: draft
+generated: { by: human:neumaennl, at: 2026-11-25T15:00:22Z }
 sources:
   - id: renderer
     resource: ../webview-src/canvas/DiagramCanvas.ts
@@ -97,7 +96,7 @@ The root of the tree is always one item for the schema itself, labelled `Schema:
 | Named complex type           | `type`                       | name                                                                                           | `complexType`                                                                               |
 | Named simple type            | `type`                       | name                                                                                           | `simpleType`                                                                                |
 | Named group                  | `group`                      | name                                                                                           |                                                                                             |
-| `sequence`, `choice`, `all`  | `group` (compositor)         | none, the symbol is drawn instead                                                              |                                                                                             |
+| `sequence`, `choice`, `all`  | `compositor`                 | none, the symbol is drawn instead                                                              |                                                                                             |
 | Group reference              | `group`, marked as reference | the name of the referenced group, with the prefix of another schema                            |                                                                                             |
 
 The type text is read from the schema object. It gets suffixes for content and derivation, for example `complexType with complexContent (extends Base)`:[^type-accessors]
@@ -125,12 +124,12 @@ The type text is read from the schema object. It gets suffixes for content and d
 
 `DiagramItem` holds one node:[^diagram-item]
 
-| Group    | Fields                                                                                                                                                                                                                                                                              |
-| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Identity | `id` (path-based ID), `label` (the text the diagram shows), `schemaObject` (the schema object the item shows), `nodeType` (the kind of schema construct, as the builder found it in its parent), `itemType` (`element`, `group`, `type`), `groupType` (`sequence`, `choice`, `all`) |
-| Tree     | `parent`, `childElements`, `hasChildElements`, `showChildElements` (expanded)                                                                                                                                                                                                       |
-| Notation | none; the occurrence, references and simple content are read from the schema object                                                                                                                                                                                                 |
-| Layout   | `location`, `size`, `elementBox` (the shape), `childExpandButtonBox`, `documentationBox`, `boundingBox` (shape plus visible children)                                                                                                                                               |
+| Group    | Fields                                                                                                                                                                                                                                                                                                                             |
+| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Identity | `id` (path-based ID), `label` (the text the diagram shows), `schemaObject` (the schema object the item shows), `nodeType` (the kind of schema construct, as the builder found it in its parent; for a compositor `sequence`, `choice` or `all`, which `compositor` returns), `itemType` (`element`, `group`, `compositor`, `type`) |
+| Tree     | `parent`, `childElements`, `hasChildElements`, `showChildElements` (expanded)                                                                                                                                                                                                                                                      |
+| Notation | none; the occurrence, references and simple content are read from the schema object                                                                                                                                                                                                                                                |
+| Layout   | `location`, `size`, `elementBox` (the shape), `childExpandButtonBox`, `documentationBox`, `boundingBox` (shape plus visible children)                                                                                                                                                                                              |
 
 `Diagram` holds the root items (always one, the schema), the three display options `showDocumentation`, `alwaysShowOccurrence` and `showType`, the style, the bounding box with a padding of 20, and the schema it shows; the facts about the schema that the properties panel uses, such as its target namespace, its namespace declarations and the names of its types, are read from it.[^diagram]
 
@@ -158,16 +157,16 @@ Rules:
 
 # Shapes and notation
 
-| Shape                                              | Meaning                                                                                                                                                                            |
-| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Rectangle                                          | Element, also the schema root                                                                                                                                                      |
-| Octagon                                            | Group; a compositor shows a symbol: for `sequence` three dots on a horizontal line, for `choice` and `all` three dots in a column between connecting lines that differ for the two |
-| Rectangle with beveled left corners                | Named type; the beveled area is filled for simple types and simple content                                                                                                         |
-| Dashed outline (`5,3`)                             | `minOccurs="0"`                                                                                                                                                                    |
-| Second outline offset by 3 px behind the shape     | `maxOccurs` greater than 1 or `unbounded`                                                                                                                                          |
-| `min..max` right of the shape, `∞` for `unbounded` | Occurrence; hidden for `1..1` unless `alwaysShowOccurrence` is set                                                                                                                 |
-| Arrow at the lower left, left of the label         | Reference to a top-level element or group                                                                                                                                          |
-| Box with − or + right of the shape                 | Expanded or collapsed; only for items with children                                                                                                                                |
+| Shape                                              | Meaning                                                                                                                                                                                              |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Rectangle                                          | Element, also the schema root                                                                                                                                                                        |
+| Octagon                                            | Group; a compositor has the same shape with a symbol: for `sequence` three dots on a horizontal line, for `choice` and `all` three dots in a column between connecting lines that differ for the two |
+| Rectangle with beveled left corners                | Named type; the beveled area is filled for simple types and simple content                                                                                                                           |
+| Dashed outline (`5,3`)                             | `minOccurs="0"`                                                                                                                                                                                      |
+| Second outline offset by 3 px behind the shape     | `maxOccurs` greater than 1 or `unbounded`                                                                                                                                                            |
+| `min..max` right of the shape, `∞` for `unbounded` | Occurrence; hidden for `1..1` unless `alwaysShowOccurrence` is set                                                                                                                                   |
+| Arrow at the lower left, left of the label         | Reference to a top-level element or group                                                                                                                                                            |
+| Box with − or + right of the shape                 | Expanded or collapsed; only for items with children                                                                                                                                                  |
 
 [^shape-renderers][^svg-renderer][^text-renderers]
 
@@ -177,7 +176,7 @@ Rules:
 
 **Connectors.** For one child, the line goes from behind the expand button to the middle, down or up to the child's middle, and right to the child. For several children, a vertical line midway between the button and the children connects horizontal lines to each child.[^svg-renderer]
 
-**SVG structure.** The renderer adds a content group to the canvas group that zoom and pan transform (see [Editor](editor.md#navigation)). Each render empties the content group and adds one flat `<g class="diagram-item" data-item-id="…">` per visible item; groups are not nested. The children of an item are added before the item, so the parent is drawn on top. An item's group contains, in this order: a `<title>` (groups only), the connectors to its children, the shape, the reference arrow (`<g class="reference-arrow">`), the label, which leaves room for the arrow, the documentation, the occurrence and the expand button (`<g class="expand-button">`). Colors are inline styles; `styles.css` adds the hover, `.selected` and `.drag-over` highlights.[^svg-renderer][^styles]
+**SVG structure.** The renderer adds a content group to the canvas group that zoom and pan transform (see [Editor](editor.md#navigation)). Each render empties the content group and adds one flat `<g class="diagram-item" data-item-id="…">` per visible item; groups are not nested. The children of an item are added before the item, so the parent is drawn on top. An item's group contains, in this order: a `<title>` with the label (compositors only, which show no label), the connectors to its children, the shape, the reference arrow (`<g class="reference-arrow">`), the label, which leaves room for the arrow, the documentation, the occurrence and the expand button (`<g class="expand-button">`). Colors are inline styles; `styles.css` adds the hover, `.selected` and `.drag-over` highlights.[^svg-renderer][^styles]
 
 # Interaction
 

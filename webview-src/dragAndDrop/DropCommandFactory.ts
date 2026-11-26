@@ -7,7 +7,7 @@ import {
   isNamedComplexType,
   isNamedSimpleType,
 } from "../diagram";
-import { parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType, anonymousTypeId, isSchemaRoot } from "../../shared/idStrategy";
+import { SCHEMA_ROOT_ID, SchemaNodeType, anonymousTypeId, isSchemaRoot } from "../../shared/idStrategy";
 import { type NamedComponent } from "../../shared/schemaObjects";
 import { isFacetSchemaConstruct, DraggableSchemaConstruct } from "./DraggableSchemaConstruct";
 import {
@@ -80,7 +80,7 @@ export class DropCommandFactory {
       payload: {
         parentId: SCHEMA_ROOT_ID,
         typeName: this.nextName("ComplexType", reserveNames),
-        contentModel: "sequence",
+        compositor: "sequence",
         baseType: builtInType(item, "anyType"),
         derivationKind: "extension",
       },
@@ -165,7 +165,7 @@ export class DropCommandFactory {
    * @returns Command or null if the target cannot hold elements
    */
   private createElementNodeDropCommand(item: DiagramItem, reserveNames: boolean): SchemaCommand | null {
-    if (isSchemaRoot(item.id) || item.itemType === DiagramItemType.group) {
+    if (isSchemaRoot(item.id) || item.itemType === DiagramItemType.compositor) {
       return {
         type: "addElement",
         payload: {
@@ -237,7 +237,7 @@ export class DropCommandFactory {
       };
     }
     const typeName = isRoot ? { typeName: this.nextName("ComplexType", reserveNames) } : {};
-    return { type: "addComplexType", payload: { parentId: item.id, ...typeName, contentModel: "sequence" } };
+    return { type: "addComplexType", payload: { parentId: item.id, ...typeName, compositor: "sequence" } };
   }
 
   /**
@@ -253,7 +253,7 @@ export class DropCommandFactory {
         type: "addGroup",
         payload: {
           groupName: this.nextName("Group", reserveNames),
-          contentModel: "sequence",
+          compositor: "sequence",
         },
       };
     }
@@ -262,19 +262,20 @@ export class DropCommandFactory {
 
   /**
    * Creates the command that sets the compositor of a complexType, of the anonymous complexType of an
-   * element (which gets one if it has none), or of a named group.
+   * element (which gets one if it has none), or of a named group, or that adds a sequence or a choice to
+   * a sequence or a choice.
    *
    * @param item - Drop target node
-   * @param contentModel - The dropped compositor
+   * @param compositor - The dropped compositor
    * @returns Command or null if the target cannot hold a compositor
    */
-  private createCompositorNodeDropCommand(item: DiagramItem, contentModel: Compositor): SchemaCommand | null {
+  private createCompositorNodeDropCommand(item: DiagramItem, compositor: Compositor): SchemaCommand | null {
     if (isNamedComplexType(item)) {
       return {
         type: "modifyComplexType",
         payload: {
           typeId: item.id,
-          contentModel,
+          compositor,
         },
       };
     }
@@ -285,7 +286,7 @@ export class DropCommandFactory {
           type: "modifyComplexType",
           payload: {
             typeId: anonymousTypeId(item.id, "complexType"),
-            contentModel,
+            compositor,
           },
         };
       }
@@ -293,19 +294,25 @@ export class DropCommandFactory {
         type: "addComplexType",
         payload: {
           parentId: item.id,
-          contentModel,
+          compositor,
         },
       };
     }
 
-    if (this.isNamedGroupDefinition(item)) {
+    // Group references have the node type `groupRef`, compositors their own
+    if (item.nodeType === SchemaNodeType.Group) {
       return {
         type: "modifyGroup",
         payload: {
           groupId: item.id,
-          contentModel,
+          compositor,
         },
       };
+    }
+
+    // XML Schema allows sequences and choices in sequences and choices, but no all, and nothing in an all
+    if ((item.compositor === "sequence" || item.compositor === "choice") && compositor !== "all") {
+      return { type: "addCompositor", payload: { parentId: item.id, compositor } };
     }
 
     return null;
@@ -343,7 +350,7 @@ export class DropCommandFactory {
     if (isElement && !isRestriction) {
       return {
         type: "addComplexType",
-        payload: { parentId: item.id, contentModel: "sequence", baseType, derivationKind },
+        payload: { parentId: item.id, compositor: "sequence", baseType, derivationKind },
       };
     }
     if (isElement) {
@@ -355,24 +362,6 @@ export class DropCommandFactory {
       return { type: "modifySimpleType", payload: { typeId: item.id, baseType } };
     }
     return null;
-  }
-
-  /**
-   * Tells whether the item is a named group definition, not a group reference or a compositor.
-   *
-   * @param item - The diagram item
-   * @returns True for a top-level named group
-   */
-  private isNamedGroupDefinition(item: DiagramItem): boolean {
-    if (item.itemType !== DiagramItemType.group) {
-      return false;
-    }
-    try {
-      const parsed = parseSchemaId(item.id);
-      return parsed.nodeType === SchemaNodeType.Group && parsed.parentId === undefined;
-    } catch {
-      return false;
-    }
   }
 
   /**

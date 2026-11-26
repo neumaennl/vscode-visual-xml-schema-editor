@@ -5,7 +5,6 @@
 
 import type { Diagram } from "./Diagram";
 import type { DiagramItem } from "./DiagramItem";
-import { isCompositorGroup } from "./groupUtils";
 import { DiagramItemType } from "./DiagramTypes";
 import { getDocumentation } from "./documentationAccessors";
 
@@ -98,17 +97,10 @@ export class DiagramLayout {
         };
         break;
 
-      case DiagramItemType.group:
-        if (isCompositorGroup(item)) {
-          item.size = {
-            width: this.GROUP_WIDTH,
-            height: this.GROUP_HEIGHT,
-          };
-          break;
-        }
+      case DiagramItemType.compositor:
         item.size = {
-          width: this.ELEMENT_WIDTH,
-          height: this.ELEMENT_HEIGHT,
+          width: this.GROUP_WIDTH,
+          height: this.GROUP_HEIGHT,
         };
         break;
 

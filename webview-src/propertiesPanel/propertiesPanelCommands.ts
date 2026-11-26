@@ -4,7 +4,7 @@
  */
 
 import type { SchemaCommand } from "../../shared/types";
-import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy";
+import { SchemaNodeType } from "../../shared/idStrategy";
 import { getComplexDerivation, hasInlineSimpleType, type DiagramItem } from "../diagram";
 import { getNodeType } from "./propertiesPanelNodeKinds";
 import { resolveComplexTypeId, resolveSimpleTypeId } from "./propertiesPanelTargets";
@@ -30,17 +30,8 @@ export function createRenameNodeCommand(node: DiagramItem, newName: string): Sch
       return { type: "modifySimpleType", payload: { typeId: node.id, typeName: name } };
     case SchemaNodeType.ComplexType:
       return { type: "modifyComplexType", payload: { typeId: node.id, typeName: name } };
-    case SchemaNodeType.Group: {
-      try {
-        const parsed = parseSchemaId(node.id);
-        if (parsed.parentId) {
-          return null;
-        }
-      } catch {
-        return null;
-      }
+    case SchemaNodeType.Group:
       return { type: "modifyGroup", payload: { groupId: node.id, groupName: name } };
-    }
     default:
       return null;
   }
@@ -64,6 +55,10 @@ export function createDeleteNodeCommand(node: DiagramItem): SchemaCommand | null
     case SchemaNodeType.Group:
     case SchemaNodeType.GroupRef:
       return { type: "removeGroup", payload: { groupId: node.id } };
+    case SchemaNodeType.Sequence:
+    case SchemaNodeType.Choice:
+    case SchemaNodeType.All:
+      return { type: "removeCompositor", payload: { compositorId: node.id } };
     default:
       return null;
   }

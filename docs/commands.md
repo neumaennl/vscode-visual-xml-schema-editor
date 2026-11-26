@@ -4,7 +4,7 @@ title: Commands
 description: The edit commands - payload fields, the rules the validators enforce, what the executors change in the schema, and where the webview sends them.
 tags: [commands, payload, validation, reference]
 status: draft
-generated: { by: human:neumaennl, at: 2026-11-25T09:23:17Z }
+generated: { by: human:neumaennl, at: 2026-11-25T14:29:17Z }
 sources:
   - id: commands
     resource: ../shared/commands/index.ts
@@ -24,6 +24,9 @@ sources:
   - id: group
     resource: ../shared/commands/group.ts
     title: Group commands
+  - id: compositor
+    resource: ../shared/commands/compositor.ts
+    title: Compositor commands
   - id: attribute-group
     resource: ../shared/commands/attributeGroup.ts
     title: Attribute group commands
@@ -55,7 +58,7 @@ This reference describes every edit command: its payload, the rules that the val
 - **Name or reference.** Elements, attributes, groups and attribute groups are either declared with a name or refer to a top-level declaration with `ref`. A payload uses one or the other: `ref` together with a name or type is rejected. In `modify*`, setting `ref` removes the name and type, and setting a name removes `ref`.
 - **Top-level or anonymous.** `addSimpleType` and `addComplexType` create a named top-level type when `parentId` is omitted or `/schema`, and an anonymous type inside the element or attribute that `parentId` names. Anonymous types have no `typeName`. (The doc comments in `simpleType.ts` and `complexType.ts` say "Omit or set to 'schema'"; only `/schema` works, see [Known issues](known-issues.md#node-ids-are-ambiguous-and-have-many-special-cases).)
 - **Definition or reference mode.** `addGroup` and `addAttributeGroup` either define a top-level group (name, no `parentId`) or add a reference to one (`ref` and `parentId`).
-- **Occurrences.** `minOccurs` is a non-negative integer, `maxOccurs` a non-negative integer or `"unbounded"`, and `minOccurs` must not exceed `maxOccurs`. They are written only when given, and never on top-level elements.
+- **Occurrences.** `minOccurs` is a non-negative integer, `maxOccurs` a non-negative integer or `"unbounded"`, and `minOccurs` must not exceed `maxOccurs`. They are written only when given, and never on top-level elements. XML Schema 1.0 restricts them for an `all` to `minOccurs` 0 or 1 and `maxOccurs` 1, and for the elements in an `all` to 0 or 1 each.
 - **Names.** Names must match `isValidXmlName()` in `shared/qNames.ts`: an ASCII letter or `_`, then letters, digits, `_`, `-` or `.` (see [Known issues](known-issues.md#name-validation-is-ascii-only)). A `ref` is a QName whose prefix and local name each match it. It must name a top-level component of the schema itself, so it must resolve to the target namespace with the namespace declarations of the schema: with a prefix declared for the target namespace, such as `tns:Address`, or without a prefix if the default namespace is the target namespace, or if the schema has neither. Renames, the check for references before a removal, the constraints of XML Schema and the validation of `ref` all resolve references this way (`localNameIfInTargetNamespace()` in `shared/qNames.ts`).
 - **Types.** A type name (`elementType`, `baseType`, `listItemType`, union members) is accepted if it is a built-in XSD type with any prefix, a type defined in the schema, a type whose prefix belongs to an import, or any valid name if the schema has an include. Attribute types are not checked.
 - **`documentation` field.** Most add payloads have an optional `documentation` string, which becomes the first documentation entry of the new node if it is not empty. The modify payloads have none: documentation entries are changed one by one with the [documentation commands](#annotations-and-documentation), which keep the other entries and their languages.
@@ -64,6 +67,7 @@ This reference describes every edit command: its payload, the rules that the val
 - **Constraints on the result.** Besides its validator, every command is checked on its result: it is rejected if the schema would newly violate one of these constraints of XML Schema ([ADR 003](architecture/003-validators-check-executors-assume.md)):
   - Elements with the same name in the content model of a complex type, including its nested compositors, referenced groups and the content of an extended base type, have the same type. So a sequence `a, b, a` is allowed if both `a` have the same type.
   - A complex type, including its attribute groups and an extended base type, and an attribute group have each attribute only once.
+  - A group definition whose compositor is an `all` is only referenced as the whole content of a complex type, with `minOccurs` 0 or 1 and `maxOccurs` 1, not in a sequence or a choice.
   - Unique Particle Attribution is not checked yet (see [Known issues](known-issues.md#unique-particle-attribution-is-not-checked)).
 - **Removal.** Removing a group, attribute group or import is rejected while it is still referenced, however the reference is written. Removing an element, attribute or type is not checked and can leave references that point nowhere.
 
@@ -88,6 +92,9 @@ This reference describes every edit command: its payload, the rules that the val
 | Groups (`group.ts`)                    | `addGroup`               | `parentId?`       | Palette drop                     |
 |                                        | `removeGroup`            | `groupId`         | Properties panel (delete)        |
 |                                        | `modifyGroup`            | `groupId`         | Properties panel, palette drop   |
+| Compositors (`compositor.ts`)          | `addCompositor`          | `parentId`        | Palette drop                     |
+|                                        | `removeCompositor`       | `compositorId`    | Properties panel (delete)        |
+|                                        | `modifyCompositor`       | `compositorId`    | Properties panel                 |
 | Attribute groups (`attributeGroup.ts`) | `addAttributeGroup`      | `parentId?`       | -                                |
 |                                        | `removeAttributeGroup`   | `groupId`         | -                                |
 |                                        | `modifyAttributeGroup`   | `groupId`         | -                                |
@@ -105,7 +112,7 @@ This reference describes every edit command: its payload, the rules that the val
 |                                        | `modifyInclude`          | `includeId`       | -                                |
 |                                        | `modifySchemaNamespaces` | none              | Properties panel (namespaces)    |
 
-A drop on an existing type or group creates a `modify*` command instead of an `add*` command; for example, a compositor dropped on a complex type, or on an element with an anonymous complex type, becomes `modifyComplexType` with a new content model (see [Drag and drop](drag-and-drop.md)).[^drop-factory] That attributes can only be added is listed in [Known issues](known-issues.md#attribute-editing-is-half-implemented).
+A drop on an existing type or group creates a `modify*` command instead of an `add*` command; for example, a compositor dropped on a complex type, or on an element with an anonymous complex type, becomes `modifyComplexType` with a new compositor (see [Drag and drop](drag-and-drop.md)).[^drop-factory] That attributes can only be added is listed in [Known issues](known-issues.md#attribute-editing-is-half-implemented).
 
 # Elements
 
@@ -179,18 +186,18 @@ A restriction without `restrictions` has no facets, which XSD allows. If `restri
 
 `addComplexType`, `removeComplexType` and `modifyComplexType` are defined in `complexType.ts`.[^complex-type]
 
-| Field                 | add            | modify         | Meaning and rules                                                                                                                                                                                                                                                                                                  |
-| --------------------- | -------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `parentId` / `typeId` | optional       | required       | Parent for an anonymous type: an element without `ref` and without an anonymous type.                                                                                                                                                                                                                              |
-| `typeName`            | top-level only | top-level only | Must be unique among the simple and complex types like in `addSimpleType`, also when renamed. Renaming updates references like `modifySimpleType`.                                                                                                                                                                 |
-| `contentModel`        | required       | optional       | `sequence`, `choice` or `all` (`Compositor`). Changing it replaces the compositor and moves its particles into the new one. Rejected for a type whose particle is a group reference, because a complex type has at most one particle.                                                                              |
-| `baseType`            | optional       | optional       | Checked like the other type names (see [Conventions](#conventions)). Wraps the content in `complexContent` with an `extension` or `restriction` of this type: the compositor, or for a type without one, its group reference and attributes as they are. An empty string removes the base and unwraps the content. |
-| `derivationKind`      | optional       | optional       | `extension` (default) or `restriction` (`ComplexTypeDerivationKind`). Needs a base type, from the payload or the existing type ("Derivation kind requires a base type").                                                                                                                                           |
-| `mixed`               | optional       | optional       |                                                                                                                                                                                                                                                                                                                    |
-| `abstract`            | optional       | optional       | Only applied to top-level types.                                                                                                                                                                                                                                                                                   |
-| `documentation`       | optional       | —              | See [Conventions](#conventions).                                                                                                                                                                                                                                                                                   |
+| Field                 | add            | modify         | Meaning and rules                                                                                                                                                                                                                                                                                                                                                                   |
+| --------------------- | -------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `parentId` / `typeId` | optional       | required       | Parent for an anonymous type: an element without `ref` and without an anonymous type.                                                                                                                                                                                                                                                                                               |
+| `typeName`            | top-level only | top-level only | Must be unique among the simple and complex types like in `addSimpleType`, also when renamed. Renaming updates references like `modifySimpleType`.                                                                                                                                                                                                                                  |
+| `compositor`          | required       | optional       | `sequence`, `choice` or `all` (`Compositor`). Changing it replaces the compositor with one of the new kind, which takes over its particles, annotation and occurrences; an `all` only takes elements whose occurrences an `all` allows (see [Conventions](#conventions)). Rejected for a type whose particle is a group reference, because a complex type has at most one particle. |
+| `baseType`            | optional       | optional       | Checked like the other type names (see [Conventions](#conventions)). Wraps the content in `complexContent` with an `extension` or `restriction` of this type: the compositor, or for a type without one, its group reference and attributes as they are. An empty string removes the base and unwraps the content.                                                                  |
+| `derivationKind`      | optional       | optional       | `extension` (default) or `restriction` (`ComplexTypeDerivationKind`). Needs a base type, from the payload or the existing type ("Derivation kind requires a base type").                                                                                                                                                                                                            |
+| `mixed`               | optional       | optional       |                                                                                                                                                                                                                                                                                                                                                                                     |
+| `abstract`            | optional       | optional       | Only applied to top-level types.                                                                                                                                                                                                                                                                                                                                                    |
+| `documentation`       | optional       | —              | See [Conventions](#conventions).                                                                                                                                                                                                                                                                                                                                                    |
 
-The complex type commands cannot create or change simple content: for a complex type with `simpleContent`, `modifyComplexType` rejects `baseType`, `derivationKind` and `contentModel` (see [Known issues](known-issues.md#complex-types-with-simple-content-cannot-be-created-or-derived)). Creating an anonymous complex type removes the `type` attribute and an anonymous simple type of its element. `removeComplexType` takes only `typeId` and does not check whether the type is still used.[^validators][^executors]
+The complex type commands cannot create or change simple content: for a complex type with `simpleContent`, `modifyComplexType` rejects `baseType`, `derivationKind` and `compositor` (see [Known issues](known-issues.md#complex-types-with-simple-content-cannot-be-created-or-derived)). Creating an anonymous complex type removes the `type` attribute and an anonymous simple type of its element. `removeComplexType` takes only `typeId` and does not check whether the type is still used.[^validators][^executors]
 
 # Groups
 
@@ -198,18 +205,25 @@ The complex type commands cannot create or change simple content: for a complex 
 
 | Mode       | Fields                                                          | Rules                                                                                                             |
 | ---------- | --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| Definition | `groupName`, `contentModel`, `documentation?`                   | Top-level; the name must be unique. `parentId` and occurrences are not allowed.                                   |
+| Definition | `groupName`, `compositor`, `documentation?`                     | Top-level; the name must be unique. `parentId` and occurrences are not allowed.                                   |
 | Reference  | `ref`, `parentId`, `minOccurs?`, `maxOccurs?`, `documentation?` | `ref` must name a group definition. Parent: a `sequence`, a `choice`, or a complex type that has no particle yet. |
 
-`groupId` in `removeGroup` and `modifyGroup` can name three kinds of node, and `modifyGroup` accepts different fields for each:
+`groupId` in `removeGroup` and `modifyGroup` names a group definition or a group reference, and `modifyGroup` accepts different fields for each. Compositors have commands of their own (see [Compositors](#compositors)).
 
-| `groupId`        | Example                                   | `modifyGroup` fields                                                                                                                                            |
-| ---------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Group definition | `/group:Address`                          | `groupName`, `contentModel`. The new name must be unique. Renaming updates the references.                                                                      |
-| Group reference  | `…/group:sequence[0]/groupRef:Address[0]` | `ref`, `minOccurs`, `maxOccurs`                                                                                                                                 |
-| Compositor       | `…/group:sequence[0]`                     | `minOccurs`, `maxOccurs`. The compositor of a group definition (`/group:Address/group:sequence[0]`) has no occurrences in XML Schema, so it cannot be modified. |
+| `groupId`        | Example                             | `modifyGroup` fields                                                                     |
+| ---------------- | ----------------------------------- | ---------------------------------------------------------------------------------------- |
+| Group definition | `/group:Address`                    | `groupName`, `compositor`. The new name must be unique. Renaming updates the references. |
+| Group reference  | `…/sequence[0]/groupRef:Address[0]` | `ref`, `minOccurs`, `maxOccurs`                                                          |
 
-`removeGroup` on a compositor removes it from the complex type, the group definition or the compositor that contains it. A group definition cannot be removed while a reference points to it.[^validators][^executors]
+A group definition cannot be removed while a reference points to it.[^validators][^executors]
+
+# Compositors
+
+`addCompositor`, `removeCompositor` and `modifyCompositor` are defined in `compositor.ts`.[^compositor] The compositor that a complex type or a group definition holds directly is set and replaced through the `compositor` field of the complex type and group commands; the compositor commands handle the compositors in other compositors and the occurrences.
+
+- `addCompositor` adds a `sequence` or a `choice` with optional occurrences to the `sequence` or `choice` that `parentId` names. XML Schema allows no `all` there and no compositor in an `all`. The new compositor comes after the compositors of its kind, so the diagram and the file can show it in a different place among the other particles (see [Known issues](known-issues.md#particles-are-not-shown-in-document-order)).
+- `removeCompositor` removes the compositor that `compositorId` names, such as `…/sequence[0]`, from the complex type or the compositor that contains it. The compositor of a group definition cannot be removed, because a group definition needs one.
+- `modifyCompositor` changes the kind of the compositor with `compositor`, and `minOccurs` and `maxOccurs`. The new compositor takes over the particles, the annotation and the occurrences, as when the compositor of a complex type changes (see [Complex types](#complex-types)). A compositor in another compositor cannot become an `all` and moves to the end of the compositors of its new kind. The compositor of a group definition (`/group:Address/sequence[0]`) has no occurrences in XML Schema, so they cannot be set.[^validators][^executors]
 
 # Attribute groups
 
@@ -322,6 +336,8 @@ Each command type has a string literal as `type`, so `SchemaCommand` is a discri
 [^complex-type]: [Complex type commands](../shared/commands/complexType.ts)
 
 [^group]: [Group commands](../shared/commands/group.ts)
+
+[^compositor]: [Compositor commands](../shared/commands/compositor.ts)
 
 [^attribute-group]: [Attribute group commands](../shared/commands/attributeGroup.ts)
 

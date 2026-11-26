@@ -6,7 +6,8 @@ import { isValidXmlName } from "../../shared/qNames.js";
 import type { schema, AddElementCommand, RemoveElementCommand, ModifyElementCommand } from "../../shared/types.js";
 import type { ValidationResult } from "../../shared/validation.js";
 import { validateTypeInSchema } from "./validationUtils.js";
-import { validateOccurrences } from "../../shared/occurrences.js";
+import { validateOccurrences, validateOccurrencesInAll } from "../../shared/occurrences.js";
+import { locateNodeById } from "../schemaNavigator.js";
 import type { ChildKind } from "./commonValidators.js";
 import { locateChild, validateNewChild, validateReference, validateUniqueTopLevelName } from "./commonValidators.js";
 import type { NamedChild, ElementHolder } from "../../shared/schemaObjects.js";
@@ -107,7 +108,10 @@ export function validateAddElement(command: AddElementCommand, schemaObj: schema
     return parentResult;
   }
 
-  // Validate occurrences
+  const parent = locateNodeById(schemaObj, parentId);
+  if (parent.found && parent.parentType === "all") {
+    return validateOccurrencesInAll(minOccurs, maxOccurs, "element");
+  }
   return validateOccurrences(minOccurs, maxOccurs);
 }
 
@@ -173,6 +177,8 @@ export function validateModifyElement(command: ModifyElementCommand, schemaObj: 
     return { valid: false, error: "A reference element cannot have a default or fixed value" };
   }
 
-  // Validate occurrences
+  if (located.parentType === "all") {
+    return validateOccurrencesInAll(minOccurs, maxOccurs, "element");
+  }
   return validateOccurrences(minOccurs, maxOccurs);
 }

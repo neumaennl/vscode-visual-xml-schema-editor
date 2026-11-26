@@ -24,7 +24,7 @@ const SIMPLE_TYPE_PARENTS = `<xs:simpleType name="AgeType"><xs:restriction base=
 <xs:complexType name="PersonType"/>`;
 
 /** The ID of the reference to `plain` in the anonymous complex type of `person`. */
-const REF_ID = "/element:person/anonymousComplexType[0]/group:sequence[0]/element:plain[0]";
+const REF_ID = "/element:person/anonymousComplexType[0]/sequence[0]/element:plain[0]";
 
 /** The error for the type name `Unknown`, which names no type. */
 const UNKNOWN_TYPE_ERROR =

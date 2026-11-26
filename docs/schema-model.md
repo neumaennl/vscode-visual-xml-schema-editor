@@ -4,7 +4,7 @@ title: Schema model
 description: The object model of an XSD file - classes generated from the XSD meta-schema, XML binding with xmlbind-ts, and the path-based IDs that identify schema nodes.
 tags: [schema-model, data-model, xmlbind-ts, code-generation, ids, navigation]
 status: draft
-generated: { by: human:neumaennl, at: 2026-11-25T09:00:21Z }
+generated: { by: human:neumaennl, at: 2026-11-25T14:29:17Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -116,25 +116,25 @@ The schema root has the ID `/schema` (`SCHEMA_ROOT_ID`). `isSchemaRoot()` treats
 ## Conventions
 
 - **Top-level components** have a name and no position: `/element:person`, `/complexType:PersonType`, `/group:PersonGroup`.
-- **Compositors** use the node type `group` with the compositor as the name: `group:sequence[0]`, `group:choice[0]`, `group:all[0]`. This is how the navigator tells a compositor from a named group.[^schema-processors]
-- **Anonymous types** are a segment of their own: `/element:person/anonymousComplexType[0]`. The compositor of an anonymous complex type follows it: `/element:person/anonymousComplexType[0]/group:sequence[0]`.
+- **Compositors** have the node types `sequence`, `choice` and `all` and a position, but no name: `sequence[0]`, `choice[1]`, `all[0]`. The position counts the compositors of the same kind in the parent.[^schema-processors]
+- **Anonymous types** are a segment of their own: `/element:person/anonymousComplexType[0]`. The compositor of an anonymous complex type follows it: `/element:person/anonymousComplexType[0]/sequence[0]`.
 - **Derivation is skipped.** For a complex type with `complexContent` or `simpleContent`, the content of the `extension` or `restriction` is addressed as if it were a direct child of the complex type: the compositor, the attributes and the attribute group references, for example `/complexType:T/attribute:id` for an attribute in the extension. `getContentContainer()` in `shared/schemaObjects.ts` decides where this content lives; the navigator, the commands and the diagram builder use it.[^navigator][^schema-objects]
-- **Local elements** have both name and position, the position counting only the elements of the same compositor: `/complexType:PersonType/group:sequence[0]/element:first[0]`. Local elements without a name get the name `unnamed`.[^schema-processors]
-- **Group references** use `groupRef` with the referenced name and the position among the group references of the parent: `…/group:sequence[0]/groupRef:SharedGroup[0]`. Both are required; `removeGroup` and `modifyGroup` reject an ID without them ("Invalid groupRef ID").
+- **Local elements** have both name and position, the position counting only the elements of the same compositor: `/complexType:PersonType/sequence[0]/element:first[0]`. Local elements without a name get the name `unnamed`.[^schema-processors]
+- **Group references** use `groupRef` with the referenced name and the position among the group references of the parent: `…/sequence[0]/groupRef:SharedGroup[0]`. Both are required; `removeGroup` and `modifyGroup` reject an ID without them ("Invalid groupRef ID").
 - **Annotations of the schema root** have their own IDs: `/schema/annotation[0]` and `/schema/annotation[0]/documentation[1]`. The shorthand `/schema/documentation[N]` addresses the documentation entries of the first schema annotation.[^annotation-executors] For all other components, the annotation ID is the component's ID, and documentation entries are `<component ID>/documentation[N]`.[^documentation-accessors]
 - **Imports and includes** are addressed by position: `/import[0]`, `/include[0]`.[^schema-executors]
 
-| Node                       | Example ID                                                          |
-| -------------------------- | ------------------------------------------------------------------- |
-| Schema root                | `/schema`                                                           |
-| Top-level element          | `/element:person`                                                   |
-| Top-level complex type     | `/complexType:PersonType`                                           |
-| Sequence of a complex type | `/complexType:PersonType/group:sequence[0]`                         |
-| Element in that sequence   | `/complexType:PersonType/group:sequence[0]/element:first[0]`        |
-| Anonymous complex type     | `/element:person/anonymousComplexType[0]`                           |
-| Group reference            | `/complexType:PersonType/group:sequence[0]/groupRef:SharedGroup[0]` |
-| Schema documentation       | `/schema/annotation[0]/documentation[0]`                            |
-| Import                     | `/import[0]`                                                        |
+| Node                       | Example ID                                                    |
+| -------------------------- | ------------------------------------------------------------- |
+| Schema root                | `/schema`                                                     |
+| Top-level element          | `/element:person`                                             |
+| Top-level complex type     | `/complexType:PersonType`                                     |
+| Sequence of a complex type | `/complexType:PersonType/sequence[0]`                         |
+| Element in that sequence   | `/complexType:PersonType/sequence[0]/element:first[0]`        |
+| Anonymous complex type     | `/element:person/anonymousComplexType[0]`                     |
+| Group reference            | `/complexType:PersonType/sequence[0]/groupRef:SharedGroup[0]` |
+| Schema documentation       | `/schema/annotation[0]/documentation[0]`                      |
+| Import                     | `/import[0]`                                                  |
 
 ## Who generates and who resolves IDs
 
@@ -143,14 +143,14 @@ The schema root has the ID `/schema` (`SCHEMA_ROOT_ID`). `isSchemaRoot()` treats
 
 `locateNodeById()` walks the segments from the schema root and returns the node the ID points to (as `parent`, because commands usually add to or change children of it) together with an internal type name such as `topLevelComplexType` or `sequence`. It supports these steps:[^navigator]
 
-| From         | To                                                                                                             |
-| ------------ | -------------------------------------------------------------------------------------------------------------- |
-| schema       | top-level `element`, `complexType`, `simpleType`, `group`, `attributeGroup`, `attribute`                       |
-| element      | `anonymousComplexType`, `anonymousSimpleType`                                                                  |
-| complex type | `group:sequence`, `group:choice`, `group:all`, `attribute` (also through `complexContent` and `simpleContent`) |
-| named group  | `group:sequence`, `group:choice`, `group:all`                                                                  |
-| attribute    | `anonymousSimpleType`                                                                                          |
-| compositor   | `element`, nested `group:sequence`, `group:choice`                                                             |
+| From         | To                                                                                           |
+| ------------ | -------------------------------------------------------------------------------------------- |
+| schema       | top-level `element`, `complexType`, `simpleType`, `group`, `attributeGroup`, `attribute`     |
+| element      | `anonymousComplexType`, `anonymousSimpleType`                                                |
+| complex type | `sequence`, `choice`, `all`, `attribute` (also through `complexContent` and `simpleContent`) |
+| named group  | `sequence`, `choice`, `all`                                                                  |
+| attribute    | `anonymousSimpleType`                                                                        |
+| compositor   | `element`, nested `sequence`, `choice`                                                       |
 
 When a segment has a position, the node is found by position, and the name of the segment must match its name or `ref`, or be `unnamed` for a node without a name; an ID that no longer fits the schema finds nothing. Without a position, the node is found by name or `ref`. So elements with the same name in one compositor, and element references, are found as well. Annotations, imports, includes, group references and attribute group references are resolved by the respective validators and executors, which resolve the parent with `locateNodeById()` and handle the last segment themselves.
 
@@ -159,7 +159,7 @@ When a segment has a position, the node is found by position, and the name of th
 These are listed in [Known issues](known-issues.md#node-ids-are-ambiguous-and-have-many-special-cases) and tracked in [#348](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/348):
 
 - The navigator has its own segment parser that does not handle `{namespace}` names.
-- The scheme has special cases: compositors reuse the `group` type, derivation is skipped, schema-root annotations follow other rules than all other annotations, and top-level components are not under `/schema`.
+- The scheme has special cases: derivation is skipped, schema-root annotations follow other rules than all other annotations, and top-level components are not under `/schema`.
 
 # Citations
 

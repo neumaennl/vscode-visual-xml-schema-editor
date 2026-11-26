@@ -5,7 +5,7 @@
 
 import { xsdQName } from "../../shared/builtInTypes";
 import { LIST_FACETS, SINGLE_VALUE_FACETS } from "../../shared/facets";
-import { SCHEMA_ROOT_ID, parseSchemaId, SchemaNodeType } from "../../shared/idStrategy";
+import { SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy";
 import {
   getAttributes,
   getDefaultValue,
@@ -323,23 +323,13 @@ function renderGroupNode(node: DiagramItem, level: number, depth: number): strin
     return renderTag(xsdTag(node, "group"), attrs, children, level);
   }
 
-  let parsedParentId: string | undefined;
-  let parsedName: string | undefined;
-  try {
-    const parsed = parseSchemaId(node.id);
-    parsedParentId = parsed.parentId;
-    parsedName = parsed.name;
-  } catch {
-    parsedParentId = undefined;
-  }
-
-  if (!parsedParentId) {
+  const { compositor } = node;
+  if (!compositor) {
     const attrs = optionalAttributes([["name", getName(node)]]);
     const children = [...renderAnnotations(node, level + 1), ...renderChildNodes(node.childElements, level + 1, depth)];
     return renderTag(xsdTag(node, "group"), attrs, children, level);
   }
 
-  const compositor = parsedName === "choice" || parsedName === "all" ? parsedName : "sequence";
   const attrs: XmlAttr[] = [];
   appendOccurrenceAttributes(attrs, node, false);
   const children = [...renderAnnotations(node, level + 1), ...renderChildNodes(node.childElements, level + 1, depth)];
@@ -431,7 +421,8 @@ function renderNode(node: DiagramItem, level: number, depth: number): string {
   if (
     nodeType === SchemaNodeType.Group ||
     nodeType === SchemaNodeType.GroupRef ||
-    node.itemType === DiagramItemType.group
+    node.itemType === DiagramItemType.group ||
+    node.itemType === DiagramItemType.compositor
   ) {
     return renderGroupNode(node, level, depth);
   }

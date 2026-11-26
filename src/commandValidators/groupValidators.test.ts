@@ -117,7 +117,7 @@ describe("Group Validators", () => {
         type: "addGroup",
         payload: {
           groupName: "",
-          contentModel: "sequence",
+          compositor: "sequence",
         },
       };
 
@@ -126,12 +126,12 @@ describe("Group Validators", () => {
       expect(result.error).toBe("Group name must be a valid XML name");
     });
 
-    test("should reject addGroup with missing contentModel", () => {
+    test("should reject addGroup with missing compositor", () => {
       const command = { type: "addGroup", payload: { groupName: "TestGroup" } } as AddGroupCommand;
 
       const result = validateAddGroup(command, schemaObj);
       expectInvalid(result);
-      expect(result.error).toBe("Content model is required");
+      expect(result.error).toBe("Compositor is required");
     });
 
     test("should reject addGroup when group name already exists", () => {
@@ -143,7 +143,7 @@ describe("Group Validators", () => {
         type: "addGroup",
         payload: {
           groupName: "ExistingGroup",
-          contentModel: "sequence",
+          compositor: "sequence",
         },
       };
 
@@ -157,7 +157,7 @@ describe("Group Validators", () => {
         type: "addGroup",
         payload: {
           groupName: "NewGroup",
-          contentModel: "sequence",
+          compositor: "sequence",
         },
       };
 
@@ -168,23 +168,23 @@ describe("Group Validators", () => {
     test("should reject addGroup when both ref and groupName are provided", () => {
       const command = {
         type: "addGroup",
-        payload: { ref: "SomeGroup", groupName: "AlsoAGroup", parentId: "/complexType:PersonType/group:sequence[0]" },
+        payload: { ref: "SomeGroup", groupName: "AlsoAGroup", parentId: "/complexType:PersonType/sequence[0]" },
       } as AddGroupCommand;
 
       const result = validateAddGroup(command, schemaObj);
       expectInvalid(result);
-      expect(result.error).toContain("Cannot combine ref with groupName or contentModel");
+      expect(result.error).toContain("Cannot combine ref with groupName or compositor");
     });
 
-    test("should reject addGroup when both ref and contentModel are provided", () => {
+    test("should reject addGroup when both ref and compositor are provided", () => {
       const command = {
         type: "addGroup",
-        payload: { ref: "SomeGroup", contentModel: "sequence", parentId: "/complexType:PersonType/group:sequence[0]" },
+        payload: { ref: "SomeGroup", compositor: "sequence", parentId: "/complexType:PersonType/sequence[0]" },
       } as AddGroupCommand;
 
       const result = validateAddGroup(command, schemaObj);
       expectInvalid(result);
-      expect(result.error).toContain("Cannot combine ref with groupName or contentModel");
+      expect(result.error).toContain("Cannot combine ref with groupName or compositor");
     });
 
     test("should reject addGroup definition when parentId is provided alongside groupName", () => {
@@ -192,25 +192,25 @@ describe("Group Validators", () => {
         type: "addGroup",
         payload: {
           groupName: "SomeGroup",
-          contentModel: "sequence",
-          parentId: "/complexType:PersonType/group:sequence[0]",
+          compositor: "sequence",
+          parentId: "/complexType:PersonType/sequence[0]",
         },
       } as AddGroupCommand;
 
       const result = validateAddGroup(command, schemaObj);
       expectInvalid(result);
-      expect(result.error).toContain("Cannot combine groupName/contentModel with parentId");
+      expect(result.error).toContain("Cannot combine groupName/compositor with parentId");
     });
 
     test("should reject addGroup definition when minOccurs is provided alongside groupName", () => {
       const command = {
         type: "addGroup",
-        payload: { groupName: "SomeGroup", contentModel: "sequence", minOccurs: 0 },
+        payload: { groupName: "SomeGroup", compositor: "sequence", minOccurs: 0 },
       } as AddGroupCommand;
 
       const result = validateAddGroup(command, schemaObj);
       expectInvalid(result);
-      expect(result.error).toContain("Cannot combine groupName/contentModel with parentId");
+      expect(result.error).toContain("Cannot combine groupName/compositor with parentId");
     });
   });
 
@@ -257,18 +257,17 @@ describe("Group Validators", () => {
       expect(result.valid).toBe(true);
     });
 
-    test("should accept removing a compositor group", () => {
-      const schemaWithCompositor = readTestSchema(PERSON_TYPE_WITH_NAME_XSD);
-
+    test("should reject a compositor, which has commands of its own", () => {
       const command: RemoveGroupCommand = {
         type: "removeGroup",
         payload: {
-          groupId: "/complexType:PersonType/group:sequence[0]",
+          groupId: "/complexType:PersonType/sequence[0]",
         },
       };
 
-      const result = validateRemoveGroup(command, schemaWithCompositor);
-      expect(result.valid).toBe(true);
+      const result = validateRemoveGroup(command, readTestSchema(PERSON_TYPE_WITH_NAME_XSD));
+      expectInvalid(result);
+      expect(result.error).toBe("'/complexType:PersonType/sequence[0]' is a compositor, which has commands of its own");
     });
   });
 
@@ -333,36 +332,18 @@ describe("Group Validators", () => {
       expect(result.error).toBe("Group not found: /group:MyGroup");
     });
 
-    test("should accept occurrence updates for compositor groups", () => {
-      const schemaWithCompositor = readTestSchema(PERSON_TYPE_WITH_NAME_XSD);
-
+    test("should reject a compositor, which has commands of its own", () => {
       const command: ModifyGroupCommand = {
         type: "modifyGroup",
         payload: {
-          groupId: "/complexType:PersonType/group:sequence[0]",
+          groupId: "/complexType:PersonType/sequence[0]",
           minOccurs: 0,
-          maxOccurs: "unbounded",
         },
       };
 
-      const result = validateModifyGroup(command, schemaWithCompositor);
-      expect(result.valid).toBe(true);
-    });
-
-    test("should reject renaming a compositor group", () => {
-      const schemaWithCompositor = readTestSchema(PERSON_TYPE_WITH_NAME_XSD);
-
-      const command: ModifyGroupCommand = {
-        type: "modifyGroup",
-        payload: {
-          groupId: "/complexType:PersonType/group:sequence[0]",
-          groupName: "renamed",
-        },
-      };
-
-      const result = validateModifyGroup(command, schemaWithCompositor);
+      const result = validateModifyGroup(command, readTestSchema(PERSON_TYPE_WITH_NAME_XSD));
       expectInvalid(result);
-      expect(result.error).toContain("Compositor groups only support");
+      expect(result.error).toBe("'/complexType:PersonType/sequence[0]' is a compositor, which has commands of its own");
     });
   });
 
@@ -391,7 +372,7 @@ describe("Group Validators", () => {
     test("should reject when ref is not a valid XML name", () => {
       const command: AddGroupCommand = {
         type: "addGroup",
-        payload: { ref: "123-invalid", parentId: "/complexType:PersonType/group:sequence[0]" },
+        payload: { ref: "123-invalid", parentId: "/complexType:PersonType/sequence[0]" },
       };
       const result = validateAddGroup(command, schemaWithGroup);
       expectInvalid(result);
@@ -401,7 +382,7 @@ describe("Group Validators", () => {
     test("should reject when referenced group does not exist", () => {
       const command: AddGroupCommand = {
         type: "addGroup",
-        payload: { ref: "NoSuchGroup", parentId: "/complexType:PersonType/group:sequence[0]" },
+        payload: { ref: "NoSuchGroup", parentId: "/complexType:PersonType/sequence[0]" },
       };
       const result = validateAddGroup(command, schemaWithGroup);
       expectInvalid(result);
@@ -411,7 +392,7 @@ describe("Group Validators", () => {
     test("should reject when parent node does not exist", () => {
       const command: AddGroupCommand = {
         type: "addGroup",
-        payload: { ref: "PersonGroup", parentId: "/complexType:NoSuchType/group:sequence[0]" },
+        payload: { ref: "PersonGroup", parentId: "/complexType:NoSuchType/sequence[0]" },
       };
       const result = validateAddGroup(command, schemaWithGroup);
       expectInvalid(result);
@@ -421,7 +402,7 @@ describe("Group Validators", () => {
     test("should accept a valid group reference", () => {
       const command: AddGroupCommand = {
         type: "addGroup",
-        payload: { ref: "PersonGroup", parentId: "/complexType:PersonType/group:sequence[0]" },
+        payload: { ref: "PersonGroup", parentId: "/complexType:PersonType/sequence[0]" },
       };
       const result = validateAddGroup(command, schemaWithGroup);
       expect(result.valid).toBe(true);
@@ -432,7 +413,7 @@ describe("Group Validators", () => {
         type: "addGroup",
         payload: {
           ref: "PersonGroup",
-          parentId: "/complexType:PersonType/group:sequence[0]",
+          parentId: "/complexType:PersonType/sequence[0]",
           documentation: "This is a group ref annotation",
         },
       };
@@ -445,7 +426,7 @@ describe("Group Validators", () => {
         type: "addGroup",
         payload: {
           ref: "PersonGroup",
-          parentId: "/complexType:PersonType/group:sequence[0]",
+          parentId: "/complexType:PersonType/sequence[0]",
           minOccurs: 0,
           maxOccurs: "unbounded",
         },
@@ -459,7 +440,7 @@ describe("Group Validators", () => {
         type: "addGroup",
         payload: {
           ref: "PersonGroup",
-          parentId: "/complexType:PersonType/group:sequence[0]",
+          parentId: "/complexType:PersonType/sequence[0]",
           minOccurs: -1,
         },
       };
@@ -472,7 +453,7 @@ describe("Group Validators", () => {
         type: "addGroup",
         payload: {
           ref: "PersonGroup",
-          parentId: "/complexType:PersonType/group:sequence[0]",
+          parentId: "/complexType:PersonType/sequence[0]",
           minOccurs: 5,
           maxOccurs: 2,
         },
@@ -520,7 +501,7 @@ describe("Group Validators", () => {
     test("should accept removing a group reference when parent exists", () => {
       const command: RemoveGroupCommand = {
         type: "removeGroup",
-        payload: { groupId: "/complexType:PersonType/group:sequence[0]/groupRef:PersonGroup[0]" },
+        payload: { groupId: "/complexType:PersonType/sequence[0]/groupRef:PersonGroup[0]" },
       };
       const result = validateRemoveGroup(command, schemaWithRef);
       expect(result.valid).toBe(true);
@@ -529,7 +510,7 @@ describe("Group Validators", () => {
     test("should reject when parent of group reference does not exist", () => {
       const command: RemoveGroupCommand = {
         type: "removeGroup",
-        payload: { groupId: "/complexType:NoSuchType/group:sequence[0]/groupRef:PersonGroup[0]" },
+        payload: { groupId: "/complexType:NoSuchType/sequence[0]/groupRef:PersonGroup[0]" },
       };
       const result = validateRemoveGroup(command, schemaWithRef);
       expectInvalid(result);
@@ -580,7 +561,7 @@ describe("Group Validators", () => {
       const command: ModifyGroupCommand = {
         type: "modifyGroup",
         payload: {
-          groupId: "/complexType:PersonType/group:sequence[0]/groupRef:PersonGroup[0]",
+          groupId: "/complexType:PersonType/sequence[0]/groupRef:PersonGroup[0]",
           minOccurs: 0,
         },
       };
@@ -592,7 +573,7 @@ describe("Group Validators", () => {
       const command: ModifyGroupCommand = {
         type: "modifyGroup",
         payload: {
-          groupId: "/complexType:PersonType/group:sequence[0]/groupRef:PersonGroup[0]",
+          groupId: "/complexType:PersonType/sequence[0]/groupRef:PersonGroup[0]",
           ref: "AddressGroup",
         },
       };
@@ -604,7 +585,7 @@ describe("Group Validators", () => {
       const command: ModifyGroupCommand = {
         type: "modifyGroup",
         payload: {
-          groupId: "/complexType:PersonType/group:sequence[0]/groupRef:PersonGroup[0]",
+          groupId: "/complexType:PersonType/sequence[0]/groupRef:PersonGroup[0]",
           ref: "NonExistentGroup",
         },
       };
@@ -617,33 +598,33 @@ describe("Group Validators", () => {
       const command = {
         type: "modifyGroup",
         payload: {
-          groupId: "/complexType:PersonType/group:sequence[0]/groupRef:PersonGroup[0]",
+          groupId: "/complexType:PersonType/sequence[0]/groupRef:PersonGroup[0]",
           groupName: "RenamedGroup",
         },
       } as ModifyGroupCommand;
       const result = validateModifyGroup(command, schemaWithRef);
       expectInvalid(result);
-      expect(result.error).toContain("Cannot use groupName or contentModel when modifying a group reference");
+      expect(result.error).toContain("Cannot use groupName or compositor when modifying a group reference");
     });
 
-    test("should reject when contentModel is used with a group reference ID", () => {
+    test("should reject when compositor is used with a group reference ID", () => {
       const command = {
         type: "modifyGroup",
         payload: {
-          groupId: "/complexType:PersonType/group:sequence[0]/groupRef:PersonGroup[0]",
-          contentModel: "choice",
+          groupId: "/complexType:PersonType/sequence[0]/groupRef:PersonGroup[0]",
+          compositor: "choice",
         },
       } as ModifyGroupCommand;
       const result = validateModifyGroup(command, schemaWithRef);
       expectInvalid(result);
-      expect(result.error).toContain("Cannot use groupName or contentModel when modifying a group reference");
+      expect(result.error).toContain("Cannot use groupName or compositor when modifying a group reference");
     });
 
     test("should reject invalid minOccurs when modifying a group reference", () => {
       const command: ModifyGroupCommand = {
         type: "modifyGroup",
         payload: {
-          groupId: "/complexType:PersonType/group:sequence[0]/groupRef:PersonGroup[0]",
+          groupId: "/complexType:PersonType/sequence[0]/groupRef:PersonGroup[0]",
           minOccurs: -1,
         },
       };
@@ -758,7 +739,7 @@ describe("Group Validators", () => {
     test("should accept removing a reference identified by name and position", () => {
       const command: RemoveGroupCommand = {
         type: "removeGroup",
-        payload: { groupId: "/complexType:T/group:sequence[0]/groupRef:OtherGroup[1]" },
+        payload: { groupId: "/complexType:T/sequence[0]/groupRef:OtherGroup[1]" },
       };
 
       const result = validateRemoveGroup(command, schemaWithGroups(TWO_REFS));
@@ -767,9 +748,9 @@ describe("Group Validators", () => {
 
     // The diagram builder always generates groupRef IDs with name and position
     test.each([
-      "/complexType:T/group:sequence[0]/groupRef:OtherGroup",
-      "/complexType:T/group:sequence[0]/groupRef[1]",
-      "/complexType:T/group:sequence[0]/groupRef",
+      "/complexType:T/sequence[0]/groupRef:OtherGroup",
+      "/complexType:T/sequence[0]/groupRef[1]",
+      "/complexType:T/sequence[0]/groupRef",
     ])("should reject removing a reference whose ID %s lacks the name or the position", (groupId) => {
       const result = validateRemoveGroup({ type: "removeGroup", payload: { groupId } }, schemaWithGroups(TWO_REFS));
 
@@ -779,12 +760,12 @@ describe("Group Validators", () => {
     test("should reject removing a reference whose name is at another position", () => {
       const command: RemoveGroupCommand = {
         type: "removeGroup",
-        payload: { groupId: "/complexType:T/group:sequence[0]/groupRef:OtherGroup[0]" },
+        payload: { groupId: "/complexType:T/sequence[0]/groupRef:OtherGroup[0]" },
       };
 
       const result = validateRemoveGroup(command, schemaWithGroups(TWO_REFS));
       expectInvalid(result);
-      expect(result.error).toBe("GroupRef not found: /complexType:T/group:sequence[0]/groupRef:OtherGroup[0]");
+      expect(result.error).toBe("GroupRef not found: /complexType:T/sequence[0]/groupRef:OtherGroup[0]");
     });
 
     test("should reject removing a reference ID without a parent", () => {
@@ -801,12 +782,12 @@ describe("Group Validators", () => {
     test("should reject modifying a reference that is not in the sequence", () => {
       const command: ModifyGroupCommand = {
         type: "modifyGroup",
-        payload: { groupId: "/complexType:T/group:sequence[0]/groupRef:Missing[0]", ref: "OtherGroup" },
+        payload: { groupId: "/complexType:T/sequence[0]/groupRef:Missing[0]", ref: "OtherGroup" },
       };
 
       const result = validateModifyGroup(command, schemaWithGroups(TWO_REFS));
       expectInvalid(result);
-      expect(result.error).toBe("GroupRef not found: /complexType:T/group:sequence[0]/groupRef:Missing[0]");
+      expect(result.error).toBe("GroupRef not found: /complexType:T/sequence[0]/groupRef:Missing[0]");
     });
 
     test("should reject modifying a reference ID without a parent", () => {
@@ -823,18 +804,18 @@ describe("Group Validators", () => {
     test("should reject modifying a reference whose parent does not exist", () => {
       const command: ModifyGroupCommand = {
         type: "modifyGroup",
-        payload: { groupId: "/complexType:Missing/group:sequence[0]/groupRef:CommonGroup[0]", ref: "OtherGroup" },
+        payload: { groupId: "/complexType:Missing/sequence[0]/groupRef:CommonGroup[0]", ref: "OtherGroup" },
       };
 
       const result = validateModifyGroup(command, schemaWithGroups(TWO_REFS));
       expectInvalid(result);
-      expect(result.error).toBe("Parent node not found: /complexType:Missing/group:sequence[0]");
+      expect(result.error).toBe("Parent node not found: /complexType:Missing/sequence[0]");
     });
 
     test("should reject a new ref that is not a valid XML name", () => {
       const command: ModifyGroupCommand = {
         type: "modifyGroup",
-        payload: { groupId: "/complexType:T/group:sequence[0]/groupRef:CommonGroup[0]", ref: "123-invalid" },
+        payload: { groupId: "/complexType:T/sequence[0]/groupRef:CommonGroup[0]", ref: "123-invalid" },
       };
 
       const result = validateModifyGroup(command, schemaWithGroups(TWO_REFS));
@@ -843,7 +824,7 @@ describe("Group Validators", () => {
     });
   });
 
-  describe("parents and content models", () => {
+  describe("parents and compositors", () => {
     test("should reject a group reference directly in an element", () => {
       const command: AddGroupCommand = {
         type: "addGroup",
@@ -858,7 +839,7 @@ describe("Group Validators", () => {
     test("should reject a group reference in an all, which XML Schema 1.0 does not allow", () => {
       const command: AddGroupCommand = {
         type: "addGroup",
-        payload: { ref: "CommonGroup", parentId: "/complexType:T/group:all[0]" },
+        payload: { ref: "CommonGroup", parentId: "/complexType:T/all[0]" },
       };
 
       const result = validateAddGroup(command, schemaWithGroups(`<xs:complexType name="T"><xs:all/></xs:complexType>`));
@@ -869,7 +850,7 @@ describe("Group Validators", () => {
     test("should reject a definition without groupName and ref", () => {
       const command: AddGroupCommand = {
         type: "addGroup",
-        payload: { contentModel: "sequence" },
+        payload: { compositor: "sequence" },
       };
 
       const result = validateAddGroup(command, schemaObj);
@@ -877,16 +858,16 @@ describe("Group Validators", () => {
       expect(result.error).toBe("Group name must be a valid XML name");
     });
 
-    test("should reject a definition with a content model other than sequence, choice or all", () => {
-      // eslint-disable-next-line no-restricted-syntax -- an invalid content model, as the webview could send it, which TypeScript does not allow
+    test("should reject a definition with a compositor other than sequence, choice or all", () => {
+      // eslint-disable-next-line no-restricted-syntax -- an invalid compositor, as the webview could send it, which TypeScript does not allow
       const command = {
         type: "addGroup",
-        payload: { groupName: "NewGroup", contentModel: "simpleContent" },
+        payload: { groupName: "NewGroup", compositor: "simpleContent" },
       } as unknown as AddGroupCommand;
 
       const result = validateAddGroup(command, schemaObj);
       expectInvalid(result);
-      expect(result.error).toBe("Content model must be one of: sequence, choice, all");
+      expect(result.error).toBe("Compositor must be one of: sequence, choice, all");
     });
 
     test("should reject renaming a definition to an invalid XML name", () => {
@@ -900,16 +881,16 @@ describe("Group Validators", () => {
       expect(result.error).toBe("Group name must be a valid XML name");
     });
 
-    test("should reject changing a definition to a content model other than sequence, choice or all", () => {
-      // eslint-disable-next-line no-restricted-syntax -- an invalid content model, as the webview could send it, which TypeScript does not allow
+    test("should reject changing a definition to a compositor other than sequence, choice or all", () => {
+      // eslint-disable-next-line no-restricted-syntax -- an invalid compositor, as the webview could send it, which TypeScript does not allow
       const command = {
         type: "modifyGroup",
-        payload: { groupId: "/group:CommonGroup", contentModel: "simpleContent" },
+        payload: { groupId: "/group:CommonGroup", compositor: "simpleContent" },
       } as unknown as ModifyGroupCommand;
 
       const result = validateModifyGroup(command, schemaWithGroups(""));
       expectInvalid(result);
-      expect(result.error).toBe("Content model must be one of: sequence, choice, all");
+      expect(result.error).toBe("Compositor must be one of: sequence, choice, all");
     });
   });
 });
@@ -933,5 +914,21 @@ describe("names of group definitions that another group has", () => {
     };
 
     expect(validateModifyGroup(command, schemaWithGroups(""))).toEqual({ valid: true });
+  });
+});
+
+describe("compositors of group definitions that cannot become an all", () => {
+  test("should reject an all for a group definition with a repeated element", () => {
+    const schemaObj = schemaWith(
+      `<xs:group name="G"><xs:sequence><xs:element name="a" type="xs:string" maxOccurs="2"/></xs:sequence></xs:group>`
+    );
+
+    const result = validateModifyGroup(
+      { type: "modifyGroup", payload: { groupId: "/group:G", compositor: "all" } },
+      schemaObj
+    );
+
+    expectInvalid(result);
+    expect(result.error).toBe("Element 'a': maxOccurs of an element in an all must be 0 or 1");
   });
 });

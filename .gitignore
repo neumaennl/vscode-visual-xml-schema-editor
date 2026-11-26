@@ -6,3 +6,4 @@ webview/
 .DS_Store
 test-results/
 coverage/
+*.tsbuildinfo

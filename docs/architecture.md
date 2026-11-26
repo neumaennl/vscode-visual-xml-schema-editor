@@ -4,7 +4,7 @@ title: Architecture
 description: How the extension host, the webview and the shared code work together to provide a visual editor for XML Schema (XSD) files, what xmlbind-ts is responsible for and what the editor is, and the design decisions behind the command-based design.
 tags: [architecture, extension-host, webview, shared, design-decisions]
 status: draft
-generated: { by: human:neumaennl, at: 2026-11-26T13:27:07Z }
+generated: { by: human:neumaennl, at: 2026-11-26T14:03:12Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -87,10 +87,10 @@ The `shared/` code is imported by both sides and compiled into each separately. 
 
 # Runtime flow
 
-1. **Open.** VS Code calls `SchemaEditorProvider.resolveCustomTextEditor`. The provider sets up the webview HTML, parses the document text into a schema object and sends it to the webview (`updateSchema`), together with the diagram settings (`updateDiagramOptions`).[^webview-provider]
+1. **Open.** The provider sets up the webview HTML, parses the document text into a schema object and sends it to the webview (`updateSchema`), together with the diagram settings (`updateDiagramOptions`).[^webview-provider]
 2. **Render.** The webview builds a diagram model from the schema object, lays it out and renders it as SVG. See [Diagram rendering](diagram-rendering.md).
 3. **Edit.** A user action (drop from the palette, change in the properties panel) becomes a command. The webview sends it as an `executeCommand` message. See [Messaging](messaging.md).
-4. **Execute.** The provider passes the command and the current document text to the `CommandProcessor`, which orchestrates the steps: `parseSchema()` parses the XML into a schema object, `CommandValidator` validates the command, `CommandExecutor` executes it on that object, and `serializeSchema()` serializes the result, which is parsed again as a check.[^command-processor] See [Persistence](persistence.md).
+4. **Execute.** The provider passes the command and the current document text to the `CommandProcessor`, which parses the XML into a schema object, validates the command, executes it on that object, checks the result and serializes it, and parses the XML again as a check.[^command-processor] See [Persistence](persistence.md).
 5. **Write back.** On success, the provider replaces the whole document text with the new XML in one `WorkspaceEdit` and reports `commandResult`.
 6. **Refresh.** The document change fires `onDidChangeTextDocument`, and the provider parses the document again and sends a fresh `updateSchema`. The same path handles changes made in the text editor or by other tools.
 
@@ -129,9 +129,9 @@ The rule of thumb: if an application that binds a completely different XML forma
 | Package                 | Used by        | Purpose                                                                                                                                 |
 | ----------------------- | -------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | `@neumaennl/xmlbind-ts` | Extension host | `unmarshal` (XML → objects) and `marshal` (objects → XML) for the generated schema classes; the `xsd2ts` generator used to create them. |
-| `@vscode/codicons`      | Webview        | Icon font, loaded from `node_modules` through `webview.asWebviewUri`.                                                                   |
+| `@vscode/codicons`      | Webview        | Icon font of VS Code.                                                                                                                   |
 
-The build outputs are `out/` (extension host and shared code, compiled by `tsc` to ES modules, because the package has `"type": "module"`; relative imports have the `.js` extension) and `webview/` (the Vite bundle `main.js`, an ES module, plus `styles.css`).[^vite-config] See [Build and packaging](build-and-packaging.md).
+The build outputs are `out/` (extension host and shared code, compiled by `tsc`) and `webview/` (the Vite bundle of the webview).[^vite-config] See [Build and packaging](build-and-packaging.md).
 
 # Source layout
 
@@ -145,6 +145,7 @@ src/                      Extension host
   commandHandlers.ts      Finds the validator or executor of a command
   schemaXml.ts            parseSchema() and serializeSchema(): XML to schema object and back
   schemaNavigator.ts      Resolves IDs to nodes in the schema object
+  commandUtils.ts         Finding the child of a node that an ID names
   commandValidators/      Validation rules per schema construct
   commandExecutors/       Execution per schema construct
   schemaReferences/       Finds, checks and rewrites the QNames of a schema
@@ -165,6 +166,8 @@ shared/                   Used by both sides
   idStrategy.ts           Generating and parsing node IDs, the schema root and the IDs of anonymous types
   schemaObjects.ts        The shape of the schema objects that both sides read, and where their content lives
   types.ts                Re-exports of all of the above
+  validation.ts, qNames.ts, typeReferences.ts, occurrences.ts, facets.ts, languages.ts, builtInTypes.ts
+                          Checks of single values that both sides use, and the built-in types of XML Schema
   regexUtils.ts           Reading the groups of regular expression matches
 schema/XMLSchema.xsd      The XSD meta-schema the model classes are generated from
 test/                     Tests outside the three projects

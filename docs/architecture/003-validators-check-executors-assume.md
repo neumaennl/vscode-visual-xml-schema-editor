@@ -4,7 +4,7 @@ title: "ADR 003: Validators check, executors assume"
 description: The decision that the validators check everything an executor relies on and the executors do not check it again, how an executor states what it assumes, why this is safe, the scenarios that were examined, how a test keeps validators and executors in agreement, and why the pipeline checks the resulting schema for the constraints that span it.
 tags: [adr, architecture, commands, validation, error-handling, testing]
 status: draft
-generated: { by: human:neumaennl, at: 2026-11-25T14:29:17Z }
+generated: { by: human:neumaennl, at: 2026-11-26T14:03:12Z }
 sources:
   - id: command-processor
     resource: ../../src/commandProcessor.ts
@@ -38,7 +38,7 @@ Every command has a validator and an executor (see [Commands](../commands.md)). 
 - **The validator checks everything the executor relies on:** that the parent and the target exist, that the parent can hold the new node, that the payload is complete and consistent, and the rules of XML Schema and of the editor that concern the command itself. If an executor relies on something that the validator does not check, the validator is extended.
 - **The pipeline checks the resulting schema.** What a command does to the rest of the schema is checked on the result. After the executor, `CommandProcessor` rejects the command if the result cannot be read again, or if it violates a constraint of XML Schema that spans the schema and that the schema did not violate before, such as that elements with the same name in a content model must have the same type.[^command-processor] A schema that is already invalid can still be edited elsewhere.
 - **The executor does not repeat these checks.** It assumes that the command is valid.
-- **Where the types need such an assumption, the executor states it** with the helpers in `src/commandExecutors/assumeValidated.ts`:[^assume-validated] `assumeValidated(value, what)` returns a value that the validator guarantees, `assumeRemoved()` checks that a removal removed something, `locateValidated()` locates a node that the validator found, and `assumptionFailed()` marks a branch that a valid command cannot reach. If an assumption does not hold, the command fails with an error such as "Element person not found, although the validator accepted the command".
+- **Where the types need such an assumption, the executor states it** with the helpers in `src/commandExecutors/assumeValidated.ts`, for example for a value or a node that the validator found, or a branch that a valid command cannot reach.[^assume-validated] If an assumption does not hold, the command fails with an error such as "Element person not found, although the validator accepted the command".
 - **`CommandProcessor` turns every exception into a runtime failure.** The document stays unchanged, and the webview shows the message.
 - **A test keeps validators and executors in agreement.** `test/integration/commandAgreement.test.ts` builds the diagram of every schema in `src/__tests__/test-resources` and `exampleFiles`, creates the commands that the webview can send for its nodes, and applies every command that the validator accepts. The executor must neither throw nor leave the schema unchanged.[^command-agreement-test]
 

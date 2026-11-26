@@ -4,7 +4,7 @@ title: "ADR 001: Editor transition architecture"
 description: The decision to turn the viewer into an editor whose webview sends commands that the extension host validates, executes and writes to the XSD file, with the roadmap and the deviations of the implementation from the design.
 tags: [adr, architecture, commands, roadmap]
 status: draft
-generated: { by: human:neumaennl, at: 2026-11-26T13:27:07Z }
+generated: { by: human:neumaennl, at: 2026-11-26T14:03:12Z }
 ---
 
 # ADR 001: Editor Transition Architecture
@@ -581,10 +581,10 @@ Each phase has a GitHub issue ([#16](https://github.com/neumaennl/vscode-visual-
 - [x] Implement annotation and documentation commands (add, remove, modify)
 - [x] Implement import and include commands (add, remove, modify) — imports with namespace/schemaLocation/prefix and namespace-prefix sync; includes with schemaLocation for same-namespace schema composition
 - [x] Connect commands to document edits via [WorkspaceEdit](https://code.visualstudio.com/api/references/vscode-api#WorkspaceEdit) (VS Code's API for programmatic text edits with undo/redo support)
-- [x] Harden command validation and error reporting — validators return a discriminated `ValidationResult` union (`{ valid: true }` | `{ valid: false, error: string }`); `CommandExecutionResult` is a discriminated union (`CommandExecutionSuccess | CommandExecutionValidationFailure | CommandExecutionRuntimeFailure`) that makes `errorKind` required on failure and restricts `stack` to the `'runtime'` variant; `SchemaEditorProvider` routes them to `commandResult` vs. `error` messages respectively
+- [x] Harden command validation and error reporting — validators return a result instead of throwing, and the webview gets validation failures and runtime failures as different messages
 - [x] Test with simple schema modifications — covered by integration tests in `src/__tests__/`
 - [x] Verify undo/redo functionality — edits applied via `WorkspaceEdit`; VS Code owns the undo/redo stack; verified in `src/__tests__/pipeline.workspaceEdit.test.ts`
-- [x] Write integration tests for all schema construct editing flows — `src/__tests__/pipeline.*.test.ts` covers all 9 Phase 2 construct groups (elements, attributes, simpleTypes, complexTypes, groups, attributeGroups, annotations+documentation, imports, includes) plus WorkspaceEdit/error-routing integration via `SchemaEditorProvider`
+- [x] Write integration tests for all schema construct editing flows — the pipeline tests in `src/__tests__/` cover every kind of schema construct, the `WorkspaceEdit` and the error messages
 
 **Success Criteria**: Can programmatically add, remove, and modify **all** schema constructs (elements, attributes, simpleTypes, complexTypes, groups, attributeGroups, annotations, documentation, imports, includes) with proper VS Code integration.
 

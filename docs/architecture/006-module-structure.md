@@ -3,9 +3,8 @@ type: Architecture Decision Record
 title: "ADR 006: Module structure"
 description: The decision how the code within the extension host, the webview and the shared code is split into layers, in which direction the layers may depend on each other, what belongs into the shared code and what it may rely on, how files are named, and how fallow checks the layers.
 tags: [adr, architecture, structure, dependencies, shared]
-status: stable
-generated: { by: human:neumaennl, at: 2026-11-20T13:21:09Z }
-verified: { by: human:neumaennl, at: 2026-11-20T15:04:32Z }
+status: draft
+generated: { by: human:neumaennl, at: 2026-11-26T14:03:12Z }
 sources:
   - id: guidelines
     resource: ../development-guidelines.md
@@ -83,14 +82,14 @@ The two sides do not see the same objects. The extension host works with the obj
 
 `xmlbind-ts` is being reimplemented as version 3 ([#444](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/444)). It will still generate classes from XML Schemas and use them to marshal and unmarshal documents, but how its objects look inside is not known yet; they might, for example, link children to their parents, which JSON cannot carry. So the code assumes as little as possible about them:
 
-- Code that reads schema objects takes structural types, such as `{ name?: string }`, decides by values (`value !== undefined`), never by whether a key exists (`in`, `Object.hasOwn()`, `Object.keys()`) or by the class (`instanceof`), and does not create instances of the generated classes outside the executors.
+- Code that reads schema objects types them with the generated classes and their named unions (see [ADR 007](007-diagram-items-reference-schema-objects.md)). It decides by values (`value !== undefined`), never by whether a key exists (`Object.hasOwn()`, `Object.keys()`) or by the class (`instanceof`); `in` may narrow a union for the compiler, but the decision reads the value. It does not create instances of the generated classes outside the executors.
 - In the webview, only the diagram builder and one module of accessor functions read the schema objects (see [#360](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/360)).
 - Tests of the webview use the schema in the form the webview gets it: a test helper in `shared/__tests__/` sends the result of `unmarshal()` through JSON.
 - Functions that read schema objects and that both sides need, such as the lookup of top-level components and the rules where a schema construct may be placed, move into `shared/` with the move to version 3, when the objects are known. #444 then also checks what the webview receives.
 
 ### Names
 
-- The command types in `shared/commands/`, the validators and the executors are split by the same schema constructs and named after them: `element`, `attribute`, `simpleType`, `complexType`, `group`, `attributeGroup`, `annotation` (with documentation) and `schema` (imports, includes and namespaces). There are no barrel modules within a project besides `shared/types.ts`, `shared/commands/index.ts` and `webview-src/diagram/index.ts`.
+- The command types in `shared/commands/`, the validators and the executors are split by the same schema constructs and named after them: `element`, `attribute`, `simpleType`, `complexType`, `group`, `compositor`, `attributeGroup`, `annotation` (with documentation) and `schema` (imports, includes and namespaces). There are no barrel modules within a project besides `shared/types.ts`, `shared/commands/index.ts` and `webview-src/diagram/index.ts`.
 - A module is named after what it does, not after the module that uses it: helpers that several modules use get a name of their own instead of `…Utils` or `…Helpers` of one user.
 
 ### Checks

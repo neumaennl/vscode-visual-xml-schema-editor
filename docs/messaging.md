@@ -3,9 +3,8 @@ type: Protocol
 title: Messaging
 description: The message protocol between the extension host and the webview - the messages in both directions and the order in which they arrive.
 tags: [messaging, protocol, postMessage, commands, webview]
-status: stable
-generated: { by: human:neumaennl, at: 2026-11-24T15:38:45Z }
-verified: { by: human:neumaennl, at: 2026-11-24T17:27:00Z }
+status: draft
+generated: { by: human:neumaennl, at: 2026-11-26T13:48:20Z }
 sources:
   - id: messages
     resource: ../shared/messages.ts
@@ -43,7 +42,7 @@ interface Message<TCommand extends string, TData> {
 
 `WebviewMessage` is the union of the messages from the webview, `ExtensionMessage` the union of the messages to the webview. Neither side checks incoming messages at runtime; the provider casts them to `WebviewMessage`, and the contents of a command are checked later by the validator.
 
-The provider sends through `safePostMessage()`, which catches and logs errors of `postMessage` instead of reporting them to the webview, to avoid an endless loop of error messages.[^webview-provider]
+When the provider cannot send a message, it logs the error instead of reporting it to the webview, which would start an endless loop of error messages.[^webview-provider]
 
 # Messages
 
@@ -116,9 +115,9 @@ The webview shows the error and restores the properties panel from the last sche
 
 The validators of the extension decide whether a command is applied (see [Persistence](persistence.md#command-pipeline)). The webview checks what it can decide from the diagram and from the value of one field, to give immediate feedback:[^webview-main]
 
-- **Drops.** While a palette item is dragged over the diagram, the canvas asks the drop rules (`DropCommandFactory.canDropOnNode()`) whether the node accepts the schema construct. Nodes that don't accept it show no drop feedback, and a drop on them sends nothing.
+- **Drops.** While a palette item is dragged over the diagram, the canvas asks the drop rules whether the node accepts the schema construct. Nodes that don't accept it show no drop feedback, and a drop on them sends nothing.
 - **Empty, invalid or unchanged input.** An unchanged value sends nothing. A field rejects what it can decide from its own value with a message below it and shows the current value again (see [UX concept](ux-concept.md#where-errors-appear)): an empty or invalid name, a type that the schema does not offer, an invalid facet value, an occurrence that is no non-negative integer (or `unbounded` for `maxOccurs`), an empty union, an invalid or already declared prefix, a namespace URI that is not absolute, a value that a list already contains, and a fixed value that is not one of its values. These rules are in `shared/`, and the validators check them again. `minOccurs` > `maxOccurs` and other checks that need more than one value are left to the validator.
-- **Rejected edits.** The properties panel changes nothing in the webview; a field only keeps what the user typed. After `commandResult` with `success: false`, the webview shows the node again (`refreshSelection()`) with the values from the last schema, so a rejected edit disappears from the panel.
+- **Rejected edits.** The properties panel changes nothing in the webview; a field only keeps what the user typed. After `commandResult` with `success: false`, the webview shows the node again with the values from the last schema, so a rejected edit disappears from the panel.
 
 References, duplicate names in the schema and rules that need more than one value are only checked by the extension. A command that breaks one of them therefore costs one round trip, and the error appears in the notification banner instead of below the field.
 
@@ -133,7 +132,7 @@ interface BaseCommand<T> {
 }
 ```
 
-`SchemaCommand` in `shared/commands/index.ts` is the union of all 31 command types. Existing nodes are addressed by a path-based ID in the payload (see [Schema model](schema-model.md#node-ids)); new top-level schema constructs have no parent ID or an optional one. [Commands](commands.md) lists the commands with their payloads and rules, and where the webview sends them.
+`SchemaCommand` in `shared/commands/index.ts` is the union of all 34 command types. Existing nodes are addressed by a path-based ID in the payload (see [Schema model](schema-model.md#node-ids)); new top-level schema constructs have no parent ID or an optional one. [Commands](commands.md) lists the commands with their payloads and rules, and where the webview sends them.
 
 # Limitations
 
@@ -141,7 +140,7 @@ interface BaseCommand<T> {
 - **Full updates.** Every change sends the whole schema, and the webview rebuilds the whole diagram. Incremental updates are not implemented.
 - **No results for runtime failures.** A command that fails at runtime produces an `error` message instead of a `commandResult`, so the webview does not restore the selection as it does for validation failures.
 - **One message from the webview.** The webview only sends schema commands so far. The message union is kept for requests that are not edits, such as opening a definition ([ADR 005](architecture/005-message-protocol.md)).
-- **Unused commands.** 12 of the 31 commands are not sent by any UI yet (see [Commands](commands.md#overview)).
+- **Unused commands.** 12 of the 34 commands are not sent by any UI yet (see [Commands](commands.md#overview)).
 
 [^messages]: [Message types](../shared/messages.ts)
 

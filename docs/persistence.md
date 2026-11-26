@@ -4,7 +4,7 @@ title: Persistence
 description: How edits reach the XSD file - the command pipeline, the document edit, what serialization changes, undo and save, and how changes from outside reach the diagram.
 tags: [persistence, command-pipeline, workspace-edit, serialization, undo, xmlbind-ts]
 status: draft
-generated: { by: human:neumaennl, at: 2026-11-26T13:27:07Z }
+generated: { by: human:neumaennl, at: 2026-11-26T13:48:20Z }
 sources:
   - id: extension
     resource: ../src/extension.ts
@@ -69,24 +69,24 @@ sequenceDiagram
 
 `execute()` is synchronous and returns a result object instead of throwing. The provider maps the outcome to messages:[^webview-provider][^workspace-edit-test]
 
-| Outcome            | Cause                                                                                              | Message to the webview                                                                                           |
-| ------------------ | -------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| Success            | Edit applied                                                                                       | `commandResult` `{ success: true }`, plus `updateSchema` from the document change                                |
-| Validation failure | The validator rejected the command, or its result violates a constraint that spans the schema      | `commandResult` `{ success: false, error }`                                                                      |
-| Runtime failure    | An exception in parsing, executing or serializing, for example because the document does not parse | `error` with code `COMMAND_EXECUTION_ERROR` and stack trace; the message starts with "Command execution failed:" |
-| Edit rejected      | `applyEdit()` returned `false`                                                                     | `error` with code `COMMAND_EXECUTION_ERROR`                                                                      |
+| Outcome            | Cause                                                                                              | Message to the webview                                                            |
+| ------------------ | -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| Success            | Edit applied                                                                                       | `commandResult` `{ success: true }`, plus `updateSchema` from the document change |
+| Validation failure | The validator rejected the command, or its result violates a constraint that spans the schema      | `commandResult` `{ success: false, error }`                                       |
+| Runtime failure    | An exception in parsing, executing or serializing, for example because the document does not parse | `error` with code `COMMAND_EXECUTION_ERROR`                                       |
+| Edit rejected      | `applyEdit()` returned `false`                                                                     | `error` with code `COMMAND_EXECUTION_ERROR`                                       |
 
 On `commandResult` with `success: false` and on `error`, the webview shows the message in its notification bar; the diagram stays as it is. A successful `commandResult` or the next `updateSchema` hides the notification.[^webview-main]
 
 # Writing the document
 
-The provider always replaces the whole document, from the start to the end of the last line (an empty document counts as one empty line).[^webview-provider] There is no minimal edit and no check of the document version: the range is computed from the document as it was when the command arrived.
+The provider always replaces the whole document.[^webview-provider] There is no minimal edit and no check of the document version: the range is computed from the document as it was when the command arrived.
 
 Because of this, each command changes the text of the entire file, even if it only adds one element. How much changes depends on serialization (next section), not on the command.
 
 # What serialization changes
 
-`marshal` from `xmlbind-ts` writes the XML.[^xmlbind-ts] Compared to a hand-written file, the first command after opening changes the following (checked by running commands through `CommandProcessor`):
+`marshal` from `xmlbind-ts` writes the XML.[^xmlbind-ts] Compared to a hand-written file, the first command after opening changes the following:
 
 Kept:
 
@@ -101,7 +101,7 @@ Changed:
 - Indentation becomes two spaces.
 - Attributes are reordered, and single quotes become double quotes.
 - Empty elements written as `<a></a>` become `<a/>`.
-- The document ends with exactly one line break, and a document without an XML declaration starts with its first comment or the root element, without empty lines before it. `marshal` of `xmlbind-ts` 2.4 does not end the document with a line break and starts a document without an XML declaration with one; `serializeSchema()` corrects both (see [Known issues](known-issues.md#the-editor-corrects-the-line-breaks-of-the-output)).[^schema-xml]
+- The document ends with exactly one line break, and a document without an XML declaration starts with its first comment or the root element, without empty lines before it. The editor corrects these line breaks of `xmlbind-ts` itself (see [Known issues](known-issues.md#the-editor-corrects-the-line-breaks-of-the-output)).[^schema-xml]
 - Character references such as `&#65;` or `&#x263A;` are written as the characters they stand for, except `&#13;`, which stays a reference because a literal carriage return would be read as a line break.
 - Leading and trailing whitespace in text content such as `documentation` is trimmed. This is intended.
 - Children of one kind that occur in more than one run are written together, which changes the meaning of a `sequence`, and comments between them move.
@@ -126,7 +126,7 @@ The provider subscribes to `onDidChangeTextDocument` and reacts to every change 
 
 For each change, the provider:
 
-1. Parses the whole document with `unmarshal`. There is no debounce, so typing in the text editor parses the document on every keystroke. Each parse also logs the content length, the first 200 characters and the parsed object to the console.
+1. Parses the whole document. There is no debounce, so typing in the text editor parses the document on every keystroke, and each parse is logged to the console.
 2. On success, sends `updateSchema` with the complete schema object. The webview re-renders the diagram, hides the notification, restores the selection by its ID and saves its state.[^webview-main]
 3. On failure, sends `error` with the parser message. The webview shows the message and keeps the last diagram that could be parsed. While the document does not parse, every command fails with a runtime error, because the pipeline parses the same text.
 

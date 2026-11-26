@@ -4,7 +4,7 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: draft
-generated: { by: human:neumaennl, at: 2026-11-26T13:27:07Z }
+generated: { by: human:neumaennl, at: 2026-11-26T14:13:37Z }
 ---
 
 # Purpose
@@ -59,7 +59,7 @@ Effort:
   - The last segment of annotations, imports, includes and references is resolved by the individual validators and executors instead of one resolver.
   - The doc comments of `parentId` in `shared/commands/simpleType.ts` and `complexType.ts` say "Omit or set to 'schema'", but `isSchemaRoot()` only accepts `/schema`; `parentId: "schema"` fails with "Parent not found: schema".
 
-  The webview reads IDs with its own helpers, such as `getNodeType()` and `isTopLevelElement()` in `propertiesPanelNodeKinds.ts`, instead of shared ones; `idStrategy.ts` had such helpers, but nothing used them, so they were removed.
+  The webview reads IDs with its own helpers, such as `getNodeType()` and `isTopLevelElement()` in `propertiesPanelNodeKinds.ts`, instead of shared ones.
 
   The goal is one consistent grammar, generated and resolved by a single implementation in `shared/`. Since IDs are not stored in the XSD file, a new format needs no migration.
 
@@ -150,7 +150,7 @@ Effort:
 - **Location:** `webview-src/canvas/DiagramCanvas.ts` (`render()`), `webview-src/main.ts` (`WebviewState`)
 - **Severity:** Medium
 - **Effort:** S
-- **Description:** When VS Code is restarted with a schema open in the visual editor, all nodes are collapsed. The canvas keeps the expand state across redraws in memory only; `WebviewState` contains just the schema, the view state and the diagram options. The zoom and pan are restored since the structure review [#448](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/448). The fix is to save the expand state with the other state and to pass it to the canvas when the webview is created.
+- **Description:** When VS Code is restarted with a schema open in the visual editor, all nodes are collapsed. The canvas keeps the expand state across redraws in memory only; `WebviewState` contains just the schema, the view state (zoom and pan) and the diagram options. The fix is to save the expand state with the other state and to pass it to the canvas when the webview is created.
 - **GitHub issue:** [#347](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/347)
 
 ## The panel loses the focus when the reply to an edit arrives
@@ -253,7 +253,7 @@ Effort:
 - **Severity:** Medium
 - **Effort:** L
 - **Description:** An anonymous (inline) complex or simple type is not drawn as a node; its content is merged into the element (see [Diagram rendering](diagram-rendering.md#from-schema-to-diagram-items)). In the schema model and the node IDs, however, the anonymous type has its own segment (`/element:person/anonymousComplexType[0]`, see [Schema model](schema-model.md#conventions)). So one diagram node stands for two schema constructs, and every part of the editor has to decide which of the two is meant:
-  - The drop rules have extra cases for "element with anonymous complex type" and "element with simple content", which turn a drop on the element into a command on its type (see [Drag and drop](drag-and-drop.md)).
+  - The drop rules have extra cases for "element with anonymous complex type" and "element with anonymous simple type", which turn a drop on the element into a command on its type (see [Drag and drop](drag-and-drop.md)).
   - The properties panel of an element mixes element and type fields: Base Type, Replacement Type, `mixed` and the Facets tab belong to the type (see [UX concept](ux-concept.md)).
   - Anonymous types cannot be selected or deleted on their own, and the element's documentation falls back to the type's documentation, which cannot be told apart.
 
@@ -375,10 +375,10 @@ Effort:
 
 ## Properties panel builds commands in its event handlers
 
-- **Location:** `webview-src/propertiesPanel/propertiesPanel.ts` (`renderCardinalitySection()`), `propertiesPanelConstraints.ts` (`renderConstraintsSection()`), `propertiesPanelDocs.ts`, `propertiesPanelElementDefaults.ts`, `propertiesPanelFacets.ts`, `propertiesPanelSchemaNamespaces.ts`, `propertiesPanelSimpleTypeEditors.ts`, `propertiesPanelTypes.ts`
+- **Location:** `webview-src/propertiesPanel/propertiesPanel.ts` (`renderCardinalitySection()`), `propertiesPanelConstraints.ts` (`renderConstraintsSection()`), `propertiesPanelDocs.ts`, `propertiesPanelCompositor.ts`, `propertiesPanelElementDefaults.ts`, `propertiesPanelFacets.ts`, `propertiesPanelSchemaNamespaces.ts`, `propertiesPanelSimpleTypeEditors.ts`
 - **Severity:** Low
 - **Effort:** M
-- **Description:** The properties panel builds its commands in two ways. `propertiesPanelCommands.ts` and `propertiesPanelSimpleTypeCommands.ts` have functions that take a node and return a command, such as `createRenameNodeCommand()` and `createTypeCommand()`. Twenty other commands are written out inside the event handlers that render the fields: two in `propertiesPanel.ts` (cardinality), five in `propertiesPanelConstraints.ts` (nillable, abstract, mixed), seven in `propertiesPanelDocs.ts` and one or two in each of the other files listed. These can only be tested through the DOM, and changes to a command or to the values it reads have to be found in all of these places. The fix is to move the construction of these commands into functions in the command modules and to leave only the dispatch in the handlers.
+- **Description:** The properties panel builds its commands in two ways. `propertiesPanelCommands.ts` and `propertiesPanelSimpleTypeCommands.ts` have functions that take a node and return a command, such as `createRenameNodeCommand()` and `createTypeCommand()`. Twenty other commands are written out inside the event handlers that render the fields: three in `propertiesPanel.ts` (cardinality), five in `propertiesPanelConstraints.ts` (nillable, abstract, mixed), seven in `propertiesPanelDocs.ts` and one in each of the other files listed. These can only be tested through the DOM, and changes to a command or to the values it reads have to be found in all of these places. The fix is to move the construction of these commands into functions in the command modules and to leave only the dispatch in the handlers.
 - **GitHub issue:** [#156](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/156)
 
 ## Top-level lookups are duplicated instead of shared
@@ -386,7 +386,7 @@ Effort:
 - **Location:** `src/commandValidators/`, `src/commandExecutors/`, `src/schemaNavigator.ts`, `webview-src/diagram/DiagramBuilder.ts`, `webview-src/dragAndDrop/DropCommandFactory.ts`
 - **Severity:** Low
 - **Effort:** L
-- **Description:** There are no shared functions that look up top-level components in a schema object. `SchemaModelManager` had query methods, but only tests called them, so [#439](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/439) removed them: they worked on the schema stored in the manager, while validators and executors got a cloned schema object, and the webview cannot use code from `src/`. #439 also merged the lookups that were copies of each other within the validators, the executors and the navigator. The parts still look up components on their own:
+- **Description:** There are no shared functions that look up top-level components in a schema object, so the parts look them up on their own:
   - More than ten places in the validators and executors look up a top-level component by name with `(schemaObj.<kind> ?? []).some(…)` or `.find(…)`, and the navigator has a table of the top-level kinds.
   - `DiagramBuilder` and `DropCommandFactory` collect the same lists in the webview.
 
@@ -399,7 +399,7 @@ Effort:
 - **Location:** whole repository
 - **Severity:** Low
 - **Effort:** L
-- **Description:** The [development guidelines](development-guidelines.md#code-quality) ask to avoid code duplication, but the code base likely contains dead code, and duplicated logic that is written in different ways, which was not caught in reviews. `npm run lint` reports code that is copied, also with changed names (see [Build and packaging](build-and-packaging.md#duplicated-code)), and [#439](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/439) removed all such copies; it does not find logic that is written differently. fallow finds code that is unused across files, but not unused branches within a function (see [Build and packaging](build-and-packaging.md#unused-code)). The [duplicated top-level lookups](#top-level-lookups-are-duplicated-instead-of-shared) are an example. A systematic cleanup by an agent is planned. Besides duplicated logic within one part, the agent should look explicitly for code that the extension (`src/`) and the webview (`webview-src/`) each implement on their own, and move it to `shared/`, which both use; for example the rules where an element or attribute may be placed, which both sides check (see [Architecture](architecture.md#principles)), and the top-level lookups in `DiagramBuilder` and `DropCommandFactory`. Functions that read schema objects move into `shared/` only with the move to `xmlbind-ts` 3 ([ADR 006](architecture/006-module-structure.md#schema-objects-on-both-sides)). The structure review [#448](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/448) removed the dead code it found in the diagram, and moved the built-in types, the facets and the functions on QNames and namespace prefixes, which both sides had written down on their own, into `shared/` (`builtInTypes.ts`, `facets.ts`, `qNames.ts`).
+- **Description:** The [development guidelines](development-guidelines.md#code-quality) ask to avoid code duplication, but the code base likely contains dead code, and duplicated logic that is written in different ways, which was not caught in reviews. `npm run lint` reports code that is copied, also with changed names (see [Build and packaging](build-and-packaging.md#duplicated-code)); it does not find logic that is written differently. fallow finds code that is unused across files, but not unused branches within a function (see [Build and packaging](build-and-packaging.md#unused-code)). The [duplicated top-level lookups](#top-level-lookups-are-duplicated-instead-of-shared) are an example. A systematic cleanup by an agent is planned. Besides duplicated logic within one part, the agent should look explicitly for code that the extension (`src/`) and the webview (`webview-src/`) each implement on their own, and move it to `shared/`, which both use; for example the rules where an element or attribute may be placed, which both sides check (see [Architecture](architecture.md#principles)), and the top-level lookups in `DiagramBuilder` and `DropCommandFactory`. Functions that read schema objects move into `shared/` only with the move to `xmlbind-ts` 3 ([ADR 006](architecture/006-module-structure.md#schema-objects-on-both-sides)).
 
 - **GitHub issue:** none
 
@@ -432,7 +432,7 @@ Effort:
 - **Location:** `tsconfig.extension.json` (build of `out/`), `package.json` (runtime dependencies)
 - **Severity:** Low
 - **Effort:** L
-- **Description:** `tsc` compiles the extension host file by file into `out/`, and `vsce` packages the runtime dependencies from `node_modules/` as they are. The VSIX therefore contains about 270 JavaScript files: about 135 from `out/`, 99 of them the generated schema classes, and about 140 from `node_modules/`, mainly `@neumaennl/xmlbind-ts` and `fast-xml-parser`, including `commander`, which `xmlbind-ts` only needs for its `xsd2ts` command line. `vsce package` warns about this in every CI run ("This extension consists of … files, out of which … are JavaScript files. For performance reasons, you should bundle your extension"). Loading many files makes the activation slower, which happens when the first schema is opened in the visual editor. The webview is already one bundle (see [Build and packaging](build-and-packaging.md#the-webview-build)). Bundling the extension host, for example with Vite, which the project already uses, would put it into one file; it also affects the source maps, `package:verify`, the staging of the tests in the extension host, the watch task and the launch configurations, and has to keep the legacy decorators and `reflect-metadata` working.
+- **Description:** `tsc` compiles the extension host file by file into `out/`, and `vsce` packages the runtime dependencies from `node_modules/` as they are. The VSIX therefore contains about 270 JavaScript files: about 135 from `out/`, 99 of them the generated schema classes, and about 140 from `node_modules/`, mainly `@neumaennl/xmlbind-ts` and `fast-xml-parser`, including `commander`, which `xmlbind-ts` only needs for its `xsd2ts` command line. `vsce package` warns about this in every CI run ("This extension consists of … files, out of which … are JavaScript files. For performance reasons, you should bundle your extension"). Loading many files makes the activation slower, which happens when the first schema is opened in the visual editor. The webview is already one bundle (see [Build and packaging](build-and-packaging.md#the-webview-build)). Bundling the extension host, for example with Vite, which the project already uses, would put it into one file; it also affects the source maps, `package:verify`, the staging of the tests in the extension host, the watch task and the launch configurations, and has to keep the legacy decorators working.
 - **GitHub issue:** none
 
 # Documentation

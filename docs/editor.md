@@ -3,9 +3,8 @@ type: Component
 title: Editor
 description: The custom editor and the webview app - how the editor opens, the page layout, the app that wires palette, diagram and properties panel together, navigation, diagram settings, the palette and the properties panel tabs.
 tags: [editor, webview, palette, properties-panel, navigation, ui]
-status: stable
-generated: { by: human:neumaennl, at: 2026-11-24T15:38:45Z }
-verified: { by: human:neumaennl, at: 2026-11-24T17:27:00Z }
+status: draft
+generated: { by: human:neumaennl, at: 2026-11-26T13:58:35Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -54,19 +53,19 @@ The extension contributes the custom editor `visualXmlSchemaEditor.editor` for `
 - "Open With…" → "Visual XML Schema Editor",
 - the explorer context menu entry "Open in Visual XML Schema Editor" (command `visualXmlSchemaEditor.openEditor`), shown for `.xsd` files.
 
-`SchemaEditorProvider` implements `CustomTextEditorProvider`, so the editor works on the regular text document. Saving, undo/redo and the dirty marker are handled by VS Code. The webview is registered with `retainContextWhenHidden: true`, and one document can only be open in one visual editor at a time (`supportsMultipleEditorsPerDocument: false`).[^extension]
+The editor is a custom text editor, so it works on the regular text document, and VS Code handles saving, undo/redo and the dirty marker. The webview keeps its content while it is hidden, and a document can only be open in one visual editor at a time.[^extension]
 
 # Webview page
 
 The provider generates the HTML page. It allows scripts, restricts local resources to the extension folder, and sets a Content Security Policy with `default-src 'none'` and a nonce for the script. It loads `webview/main.js`, `webview/styles.css` and the Codicon CSS.[^webview-provider]
 
-| Area        | Element                | Content                              |
-| ----------- | ---------------------- | ------------------------------------ |
-| Left        | `#palette-panel`       | Palette of schema constructs         |
-| Center, top | `#notification-bar`    | Error messages, in full, dismissible |
-| Center, top | `#toolbar`             | Zoom In, Zoom Out, Fit View          |
-| Center      | `#schema-canvas` (SVG) | The diagram                          |
-| Right       | `#properties-panel`    | Properties of the selected node      |
+| Area        | Content                              |
+| ----------- | ------------------------------------ |
+| Left        | Palette of schema constructs         |
+| Center, top | Error messages, in full, dismissible |
+| Center, top | Toolbar: Zoom In, Zoom Out, Fit View |
+| Center      | The diagram (SVG)                    |
+| Right       | Properties of the selected node      |
 
 The styles use VS Code theme CSS variables, so the editor follows the active color theme.
 
@@ -85,11 +84,11 @@ The styles use VS Code theme CSS variables, so the editor follows the active col
 
 All edits are sent as `executeCommand` messages. See [Messaging](messaging.md).
 
-**State.** The app saves the last schema, the view state (zoom, pan) and the diagram options with `vscode.setState`, and reads them at startup, so the diagram reappears at once, with the saved zoom and pan, when the webview is recreated. The expand state is not saved (see [Known issues](known-issues.md#expand-state-is-not-restored-after-reopening)). The selection is kept in memory only; the canvas keeps the selected node selected across every redraw, and after an `updateSchema` the app shows the node with the same ID again in the properties panel, or clears it if the node is gone (see [UX concept](ux-concept.md#synchronization)).
+**State.** The app saves the last schema, the view state (zoom, pan) and the diagram options with `vscode.setState`, and reads them at startup, so the diagram reappears at once, with the saved zoom and pan, when the webview is recreated. The expand state is not saved (see [Known issues](known-issues.md#expand-state-is-not-restored-after-reopening)). The selection is kept in memory only; the canvas keeps the selected node selected across every redraw, and after an `updateSchema` the app shows the node with the same ID again in the properties panel, follows it to its new ID if an edit changed it, or clears it if the node is gone (see [UX concept](ux-concept.md#synchronization)).
 
 # Navigation
 
-Zoom and pan are handled by the canvas, which keeps the view state in one place (`CanvasView`) and reports every change to the app, which saves it:[^canvas-view]
+Zoom and pan are handled by the canvas, which reports every change to the app, which saves it:[^canvas-view]
 
 - Mouse wheel: zoom around the cursor.
 - Toolbar: Zoom In and Zoom Out (around the center), Fit View (fit the whole diagram into the canvas).

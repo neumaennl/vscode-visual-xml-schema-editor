@@ -4,7 +4,7 @@ title: Diagram rendering
 description: How the schema object becomes the SVG diagram - the build, layout and render steps, which schema constructs become which nodes, the layout rules, the notation, the interaction, and the origin in xsddiagram.
 tags: [diagram, rendering, layout, svg, webview, xsddiagram]
 status: draft
-generated: { by: human:neumaennl, at: 2026-11-25T15:00:22Z }
+generated: { by: human:neumaennl, at: 2026-11-26T13:58:35Z }
 sources:
   - id: renderer
     resource: ../webview-src/canvas/DiagramCanvas.ts
@@ -79,7 +79,7 @@ flowchart LR
     T --> L
 ```
 
-A new schema or a changed diagram option calls `render()`, which runs all three steps. Before the build, it saves `showChildElements` of every item by ID; after the build, it sets it again on the items with the same ID. Since the IDs are paths (see [Schema model](schema-model.md#node-ids)), nodes stay expanded after an edit, unless the edit changes their path, for example by a rename. New items start collapsed, so a newly opened schema shows only the root node. Expanding or collapsing a node only lays out and draws the existing diagram again.[^renderer]
+A new schema or a changed diagram option runs all three steps. The expand state is kept by ID across the build. Since the IDs are paths (see [Schema model](schema-model.md#node-ids)), nodes stay expanded after an edit, unless the edit changes their path, for example by a rename. New items start collapsed, so a newly opened schema shows only the root node. Expanding or collapsing a node only lays out and draws the existing diagram again.[^renderer]
 
 There is no incremental update: every step works on the whole diagram (see [Known issues](known-issues.md#diagram-is-rebuilt-in-full-on-every-change)).
 
@@ -129,9 +129,9 @@ The type text is read from the schema object. It gets suffixes for content and d
 | Identity | `id` (path-based ID), `label` (the text the diagram shows), `schemaObject` (the schema object the item shows), `nodeType` (the kind of schema construct, as the builder found it in its parent; for a compositor `sequence`, `choice` or `all`, which `compositor` returns), `itemType` (`element`, `group`, `compositor`, `type`) |
 | Tree     | `parent`, `childElements`, `hasChildElements`, `showChildElements` (expanded)                                                                                                                                                                                                                                                      |
 | Notation | none; the occurrence, references and simple content are read from the schema object                                                                                                                                                                                                                                                |
-| Layout   | `location`, `size`, `elementBox` (the shape), `childExpandButtonBox`, `documentationBox`, `boundingBox` (shape plus visible children)                                                                                                                                                                                              |
+| Layout   | the position and size of the shape, the expand button, the documentation and the bounding box (shape plus visible children)                                                                                                                                                                                                        |
 
-`Diagram` holds the root items (always one, the schema), the three display options `showDocumentation`, `alwaysShowOccurrence` and `showType`, the style, the bounding box with a padding of 20, and the schema it shows; the facts about the schema that the properties panel uses, such as its target namespace, its namespace declarations and the names of its types, are read from it.[^diagram]
+`Diagram` holds the root items (always one, the schema), the three display options `showDocumentation`, `alwaysShowOccurrence` and `showType`, the style, the bounding box, and the schema it shows; the facts about the schema that the properties panel uses, such as its target namespace, its namespace declarations and the names of its types, are read from it.[^diagram]
 
 The style is read once from VS Code's CSS variables when the module is loaded: font family, foreground, background and line colors. The colors are written into the SVG as inline styles, so the diagram does not follow a theme change until the webview is recreated (see [Known issues](known-issues.md#diagram-does-not-follow-theme-changes)). The font sizes are fixed: 10 pt for labels, 8 pt for occurrence, 9 pt for documentation.[^diagram-types]
 
@@ -148,12 +148,10 @@ The layout is a simple tree layout from left to right. Sizes are fixed and do no
 
 Rules:
 
-- The expand button (12 × 12) sits 5 px to the right of the shape, centered vertically.
-- The children of an expanded item start at the shape's right edge + 22 (button and gaps) + a spacing of 40 for one child or 80 for several children (room for the vertical connector).
-- The first child is centered on the parent's middle; each further child is placed below the previous one, at the previous child's bounding box height + 20. So a parent is aligned with its first child, not with the middle of all children.
-- An item's bounding box covers its shape and the bounding boxes of its visible children. It does not include the documentation, the expand button or the occurrence text.
-- Root items are stacked from y = 0, with 20 px between them.
-- With `showDocumentation`, an item with documentation gets a documentation box 5 px below its shape, 200 px wide. Its height is estimated as 12 px per 30 characters + 10, at most 100. The box is not part of the bounding box, so the documentation overlaps the next item (see [Known issues](known-issues.md#documentation-overlaps-the-next-item)), and the estimate does not match the drawn text (see [Known issues](known-issues.md#documentation-box-size-does-not-match-the-drawn-text)).
+- The expand button sits right of the shape, the children of an expanded item to the right of it, with more room for several children, which a vertical connector joins.
+- The first child is centered on the parent's middle, and each further child is placed below the previous one. So a parent is aligned with its first child, not with the middle of all children.
+- An item's bounding box covers its shape and the bounding boxes of its visible children, but not the documentation, the expand button or the occurrence text.
+- With `showDocumentation`, an item with documentation gets a documentation box below its shape, whose height is estimated from the length of the text. The box is not part of the bounding box, so the documentation overlaps the next item (see [Known issues](known-issues.md#documentation-overlaps-the-next-item)), and the estimate does not match the drawn text (see [Known issues](known-issues.md#documentation-box-size-does-not-match-the-drawn-text)).
 
 # Shapes and notation
 
@@ -170,7 +168,7 @@ Rules:
 
 [^shape-renderers][^svg-renderer][^text-renderers]
 
-**Text.** The label is the name, followed by `: <type text>` when `showType` is set. It is bold and centered. If it does not fit into the shape minus 10 px, it is cut with "…" (binary search with `getBBox()`), and the full text becomes the tooltip. Compositors have no label; their name (`sequence`, `choice`, `all`) is the tooltip of the item.[^text-renderers]
+**Text.** The label is the name, followed by `: <type text>` when `showType` is set. It is bold and centered. If it does not fit into the shape minus 10 px, it is cut with "…", and the full text becomes the tooltip. Compositors have no label; their name (`sequence`, `choice`, `all`) is the tooltip of the item.[^text-renderers]
 
 **Documentation.** With `showDocumentation`, the first three lines of the documentation are drawn in the documentation box, each cut after 50 characters. Lines are not wrapped, and cut text is not marked (see [Known issues](known-issues.md#documentation-in-the-diagram-is-cut-off-and-hard-to-read)).[^text-renderers]
 
@@ -180,16 +178,16 @@ Rules:
 
 # Interaction
 
-All mouse handling on nodes is done with one listener per event type on the canvas. The listener finds the item with `closest("[data-item-id]")` and looks it up by ID in the current diagram.[^renderer]
+All mouse handling on nodes is done with one listener per event type on the canvas, which finds the item by the ID of the clicked SVG group in the current diagram.[^renderer]
 
 - **Expand button.** A click inside `.expand-button` toggles `showChildElements` and lays out and draws the diagram again. If that fails, the app shows the error in the notification bar.
 - **Selection.** A click elsewhere on an item selects it: the canvas remembers its ID and moves the `.selected` class to it, and the properties panel shows it. Every draw creates the items anew, so the canvas marks the selected node again after each one: after an `updateSchema`, after expanding or collapsing and after a changed diagram option.[^webview-main]
 - **Drop targets.** During a palette drag, `dragover` adds `.drag-over` to valid targets, and `drop` hands the item to the drop handler (see [Drag and drop](drag-and-drop.md#flow)).
-- **Zoom and pan** change the transform of the canvas group; `CanvasView` keeps them in one place, and `fit()` scales and moves the group so that the whole diagram fits with 24 px padding. The mouse and toolbar handling is described in [Editor](editor.md#navigation).
+- **Zoom and pan** change the transform of the canvas group; "fit" scales and moves it so that the whole diagram fits. The mouse and toolbar handling is described in [Editor](editor.md#navigation).
 
 # Origin
 
-The diagram code is a TypeScript port of parts of [XSD Diagram](https://github.com/dgis/xsddiagram) by Régis Cosnier, a C# desktop program that draws XSD files.[^xsddiagram] The port was written by GitHub Copilot. Seven files carry a "Ported from XSD Diagram" comment: `DiagramTypes.ts`, `index.ts`, `DiagramItem.ts`, `Diagram.ts`, `DiagramBuilder.ts`, `DiagramLayout.ts` and `DiagramSvgRenderer.ts`. The main correspondences are:
+The diagram code is a TypeScript port of parts of [XSD Diagram](https://github.com/dgis/xsddiagram) by Régis Cosnier, a C# desktop program that draws XSD files.[^xsddiagram] The port was written by GitHub Copilot; the ported files carry a "Ported from XSD Diagram" comment. The main correspondences are:
 
 | XSD Diagram (C#)                              | Port                                                                                    |
 | --------------------------------------------- | --------------------------------------------------------------------------------------- |
@@ -203,7 +201,7 @@ Licensing facts: XSD Diagram is offered under GPL, LGPL or MS-PL. This repositor
 
 # Tests
 
-`DiagramBuilder.test.ts`, `SchemaProcessors.test.ts` and `TypeNodeCreators.test.ts` cover the build; `schemaAccessors.test.ts`, `typeAccessors.test.ts` and `documentationAccessors.test.ts` the reading of the schema objects; `DiagramLayout.test.ts`, `DiagramItem.test.ts` and `Diagram.test.ts` the layout; `DiagramSvgRenderer.test.ts`, `ShapeRenderers.test.ts`, `TextRenderers.test.ts` and `SvgHelpers.test.ts` the drawing; `canvas/DiagramCanvas.test.ts` the expand state, the selection and clicks, `canvas/CanvasView.test.ts` zoom and pan, and `canvas/canvasDrop.test.ts` the drag events. The webview tests run in jsdom, which has no layout engine, so `getBBox()` is mocked (`setupGetBBoxMock()` in `webview-src/__tests__/svgTestHelpers.ts`).
+The tests of the diagram are next to its modules, those of the canvas in `webview-src/canvas/`. The webview tests run in jsdom, which has no layout engine, so the measuring of text (`getBBox()`) is mocked (see [Testing](testing.md#mocks-and-helpers)).
 
 [^renderer]: DiagramCanvas
 

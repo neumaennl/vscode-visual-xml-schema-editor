@@ -4,7 +4,7 @@ title: Schema model
 description: The object model of an XSD file - classes generated from the XSD meta-schema, XML binding with xmlbind-ts, and the path-based IDs that identify schema nodes.
 tags: [schema-model, data-model, xmlbind-ts, code-generation, ids, navigation]
 status: draft
-generated: { by: human:neumaennl, at: 2026-11-26T13:48:20Z }
+generated: { by: human:neumaennl, at: 2026-11-26T13:58:35Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -39,9 +39,6 @@ sources:
   - id: schema-xml
     resource: ../src/schemaXml.ts
     title: Conversion between XML and schema objects
-  - id: command-processor
-    resource: ../src/commandProcessor.ts
-    title: CommandProcessor
   - id: webview-provider
     resource: ../src/webviewProvider.ts
     title: Custom editor provider
@@ -180,8 +177,6 @@ These are listed in [Known issues](known-issues.md#node-ids-are-ambiguous-and-ha
 [^schema-xml]: [Conversion between XML and schema objects](../src/schemaXml.ts)
 
 [^webview-provider]: [Custom editor provider](../src/webviewProvider.ts)
-
-[^command-processor]: [CommandProcessor](../src/commandProcessor.ts)
 
 [^id-strategy]: [ID strategy](../shared/idStrategy.ts)
 

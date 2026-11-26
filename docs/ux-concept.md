@@ -4,7 +4,7 @@ title: UX concept
 description: The interaction model of the editor - which surface adds, edits and deletes what, how facets work, and how the properties panel behaves - with a list of what the current editor does not implement yet.
 tags: [ux, editor, palette, properties-panel, facets, context-menu, toolbar]
 status: draft
-generated: { by: human:neumaennl, at: 2026-11-26T07:43:26Z }
+generated: { by: human:neumaennl, at: 2026-11-26T13:58:35Z }
 sources:
   - id: palette-items
     resource: ../webview-src/palette/paletteEntries.ts
@@ -177,7 +177,7 @@ The XML tab is read-only. It shows an XSD fragment for the node, generated in th
 ## Synchronization
 
 - The panel shows the selected node and changes nothing itself. An edit sends a command; the panel shows the result when the extension host sends the new schema, a few milliseconds later. Until then, the edited field keeps what the user typed.
-- After every schema update, the panel finds the selected node again by its ID. The diagram keeps the node highlighted across every redraw, also after expanding or collapsing a node and after a changed diagram option. If the node no longer exists, the panel and the highlight are cleared.
+- After every schema update, the panel finds the selected node again by its ID. An edit that gives the node a new ID, such as a compositor whose kind changes, keeps it selected under the new ID. The diagram keeps the node highlighted across every redraw, also after expanding or collapsing a node and after a changed diagram option. If the node no longer exists, the panel and the highlight are cleared.
 - When a command fails, the webview shows the error message, and the panel shows the node again as it was before the edit.[^webview-main]
 
 # Context menu and toolbar

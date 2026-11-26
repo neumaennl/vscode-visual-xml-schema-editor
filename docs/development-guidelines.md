@@ -4,7 +4,7 @@ title: Development guidelines
 description: Rules for everyone who changes the extension - code size, code quality, formatting and ESLint, structure reviews, TypeScript and naming, VS Code and Node versions, TSDoc, tests, documentation and the knowledge bundle, issues, what to check before committing, and commits.
 tags: [guidelines, conventions, code-quality, typescript, documentation, workflow]
 status: draft
-generated: { by: human:neumaennl, at: 2026-11-26T09:04:59Z }
+generated: { by: human:neumaennl, at: 2026-11-26T14:09:14Z }
 sources:
   - id: eslint
     resource: ../eslint.config.mjs
@@ -83,7 +83,7 @@ The reports of the duplicate check and the unused-code check are inputs. The rev
 - An index access, such as `items[0]` or `prefixes[prefix]`, may return `undefined` (`noUncheckedIndexedAccess`). Check the value, or avoid the index with `for…of`, `forEach()`, `find()` or `at()`. Groups of a regular expression are read with `requireGroup()` from `shared/regexUtils.ts`. In tests, a non-null assertion (`items[0]!`) is fine, because a wrong assumption makes the test fail.[^tsconfig]
 - Define interfaces or types for all data structures. Commands and messages are discriminated unions (see [Commands](commands.md) and [Messaging](messaging.md)).
 - **Named types.** Name a type where it stands for a concept, for example in an exported signature or where it is used more than once, instead of writing the same anonymous type, such as `{ name?: string }`, in several places. Before defining a new type, look for an existing one and use it, or a part of it (`Pick`): the types of `shared/`, of the module you work in and the generated schema classes and their unions (see [ADR 007](architecture/007-diagram-items-reference-schema-objects.md)). A one-off shape of a local value needs no name. A parameter takes the type that its callers pass; narrow it (`Pick`, a structural type) only if callers pass objects of different types. `npm run lint` reports an anonymous type that occurs more than once in the production code (see [Build and packaging](build-and-packaging.md#anonymous-types)).
-- **Casts.** A cast states what an object is. Cast to a class or type only if the object is one; to read a field that only some members of a union have, narrow the union with `in` instead, and where a cast cannot be avoided, name only the part that is read.
+- **Casts.** A cast states what an object is. Cast to a class or type only if the object is one; to read a field that only some members of a union have, narrow the union with `in` instead, but decide by the value of the field, not by whether the key exists (see [ADR 006](architecture/006-module-structure.md#schema-objects-on-both-sides)); where a cast cannot be avoided, name only the part that is read.
 - Names: PascalCase for classes, interfaces and types; camelCase for functions, methods and variables; UPPER_CASE for module-level constants. Names say what something is or does.
 - Length of names: clarity comes first, but keep them short. Aim for less than 15 characters; 25 to 30 is the upper limit. `createElement` is better than `createElementWithChildren`; `createElementNodeWithProcessingOfAnonymousTypes` is too long, `cen` too cryptic.
 - Functions that check a command or a part of it are called `validate...()`, for example `validateRestrictionFacets()`, and return a `ValidationResult`, also when the command is valid, not `null` or a bare error.
@@ -140,10 +140,11 @@ The documentation of the extension is the knowledge bundle in `docs/`, in the Op
 # Issues
 
 - When you start working on an issue, move it to "In Progress" on the project board [Visual XML Schema Editor](https://github.com/users/neumaennl/projects/1). How agents use the board is described in [the agent instructions for the project board](agent-instructions/project-board.md). If you cannot change the board, tell the maintainer.
+- Closing keywords such as `Closes #440` close an issue only when the commit reaches the default branch `main`. On other branches, such as the editor branch, which is merged into `main` long after its issues are done, name the issue without a keyword, for example `(#440)`, and close it by hand after the push, with a comment that names the commit.
 
 # Before committing
 
-1. `npm run lint` passes: ESLint reports no errors, jscpd no duplicated code, fallow no unused code and Prettier no unformatted files, which `npm run format` fixes.
+1. `npm run lint` passes (see [Lint](build-and-packaging.md#lint)); `npm run format` fixes the formatting.
 2. `npm test` passes; it first compiles the extension and the webview and type-checks the tests and the scripts (`pretest`).[^manifest]
 3. After changes to activation, the registration of the custom editor or the message handling, `npm run test:extension-host` passes (see [Testing](testing.md#tests-in-the-extension-host)).
 4. The changes follow these guidelines.
@@ -154,7 +155,7 @@ The documentation of the extension is the knowledge bundle in `docs/`, in the Op
 
 - Each commit has one purpose and a clear message.
 - Work that the maintainer approves step by step is committed locally after each approved step; drafts that are not approved yet stay uncommitted.
-- When all steps are done, the message of the first commit is reworded to describe the whole change, and the later commits are marked as `fixup` with `git rebase -i`. Do not use `squash`, because it combines the messages. The commits stay separate instead if each of them has a purpose of its own and the maintainer agrees, for example a check and the cleanups it requires; then the last commit closes the issue. Push only after the maintainer has agreed.
+- When all steps are done, the message of the first commit is reworded to describe the whole change, and the later commits are marked as `fixup` with `git rebase -i`. Do not use `squash`, because it combines the messages. The commits stay separate instead if each of them has a purpose of its own and the maintainer agrees, for example a check and the cleanups it requires; then the last commit finishes the issue (see [Issues](#issues) for closing it). Push only after the maintainer has agreed.
 - If work in progress was pushed, ask whether the next commit is a new one or a `fixup` of the pushed one; a `fixup` then needs a force push.
 
 [^eslint]: ESLint configuration

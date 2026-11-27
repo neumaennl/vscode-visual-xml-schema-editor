@@ -260,6 +260,10 @@ export default defineConfig([
       "@typescript-eslint/array-type": ["error", { default: "array-simple" }],
       // No casts to `unknown` (see NO_UNKNOWN_CASTS)
       "no-restricted-syntax": ["error", NO_UNKNOWN_CASTS],
+      // Off until the move to xmlbind-ts 3 (#444), which turns it on again. The webview receives the
+      // schema as JSON, which has no classes, so it reads plain objects typed as the generated classes,
+      // and the executors and the tests build such objects as literals.
+      "@typescript-eslint/no-unsafe-class-instance-assignment": "off",
     },
   },
   // Vitest tests, their helpers and mocks (must come before webview config to avoid conflicts)

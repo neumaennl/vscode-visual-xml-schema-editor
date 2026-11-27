@@ -1,5 +1,9 @@
 # Knowledge Bundle Update Log
 
+## 2026-11-27
+
+- **Update**: [Build and packaging](build-and-packaging.md#eslint): `no-unsafe-class-instance-assignment`, new in `typescript-eslint` 8.73.0, is off until the move to xmlbind-ts 3 ([#444](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/444)), because the webview works with the schema as JSON.
+
 ## 2026-11-26
 
 - **Update**: the older entries of this log are cut down to the documents that changed and what they now say, as the rule "Keep it current" of the [development guidelines](development-guidelines.md#documentation) asks; entries that only described changes of the code are gone, and the commit messages keep that history ([#448](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/448)).

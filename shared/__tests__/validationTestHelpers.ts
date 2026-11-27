@@ -1,7 +1,7 @@
 /**
  * Shared assertion helpers for validation tests.
  * Provides TypeScript-narrowing assertion functions for `ValidationResult`.
- * Uses plain throws (not test framework matchers).
+ * They assert with `expect`, so that their checks count as assertions of the test.
  */
 import type { ValidationResult, ValidationFailure } from "../validation.js";
 
@@ -15,11 +15,10 @@ export interface RuleCase {
 /**
  * Asserts that a `ValidationResult` represents a failure and narrows its type to
  * `ValidationFailure`, enabling access to the required `.error` property.
- * Throws a plain Error (surfaced as a test failure) when `valid` is true.
  *
  * @param result - The validation result
- * @throws An {@link Error} if the result is valid
+ * @throws The assertion error of `expect`, which fails the test, when `valid` is true
  */
 export function expectInvalid(result: ValidationResult): asserts result is ValidationFailure {
-  if (result.valid) throw new Error("Expected validation to fail but it passed");
+  expect(result.valid, "Expected validation to fail but it passed").toBe(false);
 }

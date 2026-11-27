@@ -117,7 +117,7 @@
     "eslint": "^10.15.0",
     "eslint-plugin-jsdoc": "^65.5.3",
     "eslint-plugin-tsdoc": "^0.5.4",
-    "fallow": "^3.47.0",
+    "fallow": "^3.48.0",
     "globals": "^17.14.0",
     "jsdom": "^31.0.1",
     "prettier": "3.10.1",

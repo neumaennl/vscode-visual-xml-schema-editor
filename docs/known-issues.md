@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-26T14:13:37Z }
-verified: { by: human:neumaennl, at: 2026-11-26T14:29:55Z }
+generated: { by: human:neumaennl, at: 2026-11-27T08:33:28Z }
+verified: { by: human:neumaennl, at: 2026-11-27T08:34:31Z }
 ---
 
 # Purpose
@@ -144,7 +144,7 @@ Effort:
 - **Severity:** Medium
 - **Effort:** M
 - **Description:** Removing a top-level simple or complex type is accepted even if elements, attributes or other types still use it (`validateRemoveSimpleType()` has a `TODO Phase 2` for this). The schema is left with `type` and `base` values that point nowhere. The properties panel sends these commands when a type is deleted. The same applies to top-level elements and attributes that are still referenced with `ref` or `substitutionGroup`. Groups, attribute groups and imports already reject the removal while they are referenced; types, elements and attributes need the same check (see [Commands](commands.md#conventions)).
-- **GitHub issue:** none
+- **GitHub issue:** [#477](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/477)
 
 ## Expand state is not restored after reopening
 
@@ -192,7 +192,7 @@ Effort:
 - **Severity:** Medium
 - **Effort:** M
 - **Description:** `isValidXmlName()` is the regular expression `/^[a-zA-Z_][\w.-]*$/`. XML names may contain non-ASCII letters (`Straße`, `名前`), which are rejected, in names and in the prefix and local name of a `ref`. The fix is a check for NCNames following the XML specification.
-- **GitHub issue:** none
+- **GitHub issue:** [#478](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/478)
 
 ## Mixed content toggle ignores simple content, `complexContent` and the base type
 
@@ -214,7 +214,7 @@ Effort:
 - **Severity:** Medium
 - **Effort:** M
 - **Description:** A restriction or extension dropped on a node derives from the base type of the node's derivation or from the `type` of an element, without checking whether that type is simple or complex. The executors build a simple restriction for a simple type and `complexContent` for a complex type, so two drops write invalid XSD: an extension dropped on an element with a simple type, such as `type="xs:string"`, creates a complex type with `complexContent` that extends a simple type, which needs `simpleContent`; a restriction dropped on an element with a complex type creates a simple type that restricts a complex type. The validators accept both, because they only check that the base type exists. Without a base type, the defaults are sound: `xs:anyType` for complex types, which is their implicit base, and `xs:string` for simple types, which have none. The fix is to tell simple and complex base types apart, which is possible for built-in types and the schema's own types but not for imported ones, to derive an extension of a simple type with `simpleContent`, which depends on [Complex types with simple content cannot be created or derived](#complex-types-with-simple-content-cannot-be-created-or-derived), and to let the validators reject a derivation from a base type of the wrong kind.
-- **GitHub issue:** none
+- **GitHub issue:** [#475](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/475)
 
 ## An all is not checked against the derivation
 
@@ -222,7 +222,7 @@ Effort:
 - **Severity:** Medium
 - **Effort:** M
 - **Description:** XML Schema 1.0 allows an `all` in the extension of a complex type only if the base type has empty content, and a type whose content is an `all` can only be extended without particles. The editor does not check the derivation: an `all` set as the compositor of an extension of a base type with particles, with `modifyCompositor`, `modifyComplexType` or a compositor drop, and an extension with particles of a type with an `all` are accepted and written to the file, which makes the schema invalid. The fix is a constraint on the result that follows the base types of the schema (see [Commands](commands.md#conventions)); a base type of another schema cannot be checked, because the editor does not read it.
-- **GitHub issue:** none
+- **GitHub issue:** [#476](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/476)
 
 ## Facets are not checked against the base type
 

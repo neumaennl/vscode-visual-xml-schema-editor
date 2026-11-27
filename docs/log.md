@@ -2,6 +2,7 @@
 
 ## 2026-11-27
 
+- **Update**: [Known issues](known-issues.md) link the new issues of four entries: [Drops derive from base types of the wrong kind](known-issues.md#drops-derive-from-base-types-of-the-wrong-kind) ([#475](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/475)), [An all is not checked against the derivation](known-issues.md#an-all-is-not-checked-against-the-derivation) ([#476](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/476)), [Removing a simple or complex type does not check for references](known-issues.md#removing-a-simple-or-complex-type-does-not-check-for-references) ([#477](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/477)) and [Name validation is ASCII-only](known-issues.md#name-validation-is-ascii-only) ([#478](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/478)).
 - **Update**: [Build and packaging](build-and-packaging.md#eslint): `no-unsafe-class-instance-assignment`, new in `typescript-eslint` 8.73.0, is off until the move to xmlbind-ts 3 ([#444](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/444)), because the webview works with the schema as JSON.
 
 ## 2026-11-26

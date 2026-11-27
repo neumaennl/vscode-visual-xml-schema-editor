@@ -23,6 +23,7 @@ import {
   schemaWithAttrGroups,
   DERIVATIONS,
   derivedComplexTypeT,
+  rereadSchema,
 } from "../../shared/__tests__/schemaTestHelpers.js";
 import { readTestSchema } from "../__tests__/resourceTestHelpers.js";
 
@@ -141,8 +142,7 @@ describe("AttributeGroup Executors", () => {
         addAttributeGroup(schemaObj, { ref: "CommonAttrs", parentId: "/complexType:PersonType" });
 
         const ct = (schemaObj.complexType ?? [])[0]!;
-        expect(ct.attributeGroup ?? []).toHaveLength(1);
-        expect((ct.attributeGroup ?? [])[0]!.ref).toBe("CommonAttrs");
+        expect((ct.attributeGroup ?? []).map((agRef) => agRef.ref)).toEqual(["CommonAttrs"]);
       });
 
       test("should add an attribute group ref with documentation", () => {
@@ -209,8 +209,7 @@ describe("AttributeGroup Executors", () => {
 
         removeAttributeGroup(schemaObj, { groupId: "/attributeGroup:GroupA" });
 
-        expect(schemaObj.attributeGroup ?? []).toHaveLength(1);
-        expect((schemaObj.attributeGroup ?? [])[0]!.name).toBe("GroupB");
+        expect((schemaObj.attributeGroup ?? []).map((group) => group.name)).toEqual(["GroupB"]);
       });
     });
 
@@ -235,8 +234,7 @@ describe("AttributeGroup Executors", () => {
         removeAttributeGroup(schemaObj, { groupId: "/complexType:PersonType/attributeGroupRef:AttrsA[0]" });
 
         const ct = (schemaObj.complexType ?? [])[0]!;
-        expect(ct.attributeGroup ?? []).toHaveLength(1);
-        expect((ct.attributeGroup ?? [])[0]!.ref).toBe("AttrsB");
+        expect((ct.attributeGroup ?? []).map((agRef) => agRef.ref)).toEqual(["AttrsB"]);
       });
 
       test("should remove an attribute group ref from a namedAttributeGroup", () => {
@@ -372,7 +370,7 @@ describe("AttributeGroup Executors", () => {
         schemaObj
       );
 
-      const complexType = unmarshal(schema, marshal(schemaObj)).element![0]!.complexType!;
+      const complexType = rereadSchema(schemaObj).element![0]!.complexType!;
       expect(complexType.complexContent?.extension?.attributeGroup?.map((r) => r.ref)).toEqual(["CommonAttrs"]);
       expect(complexType.attributeGroup ?? []).toEqual([]);
     });

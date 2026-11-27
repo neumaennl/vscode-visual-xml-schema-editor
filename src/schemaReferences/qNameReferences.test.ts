@@ -2,24 +2,16 @@
  * Unit tests for `forEachQNameReference()`, the walk over every QName of a schema.
  */
 
-import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { readFileSync } from "node:fs";
 import { unmarshal } from "@neumaennl/xmlbind-ts";
 import { schema } from "../../shared/types.js";
 import { schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
-import { readTestSchema, TEST_RESOURCES } from "../__tests__/resourceTestHelpers.js";
+import { allTestSchemaFiles, readTestSchema } from "../__tests__/resourceTestHelpers.js";
 import type { QNameReference } from "./qNameReferences.js";
 import { forEachQNameReference } from "./qNameReferences.js";
 
 /** The schema with a QName in every place where XML Schema allows one. */
 const QNAME_IN_EVERY_PLACE = "qname-in-every-place.xsd";
-
-/** The paths of all schemas in the test resources and the example files. */
-const ALL_SCHEMA_FILES = [TEST_RESOURCES, join(import.meta.dirname, "../../exampleFiles")].flatMap((folder) =>
-  readdirSync(folder)
-    .filter((name) => name.endsWith(".xsd"))
-    .map((name) => join(folder, name))
-);
 
 /**
  * Returns whether a value looks like a QName: not empty, without whitespace and with at most one colon.
@@ -123,7 +115,7 @@ describe("forEachQNameReference", () => {
 
   // Guards the assumptions about the objects that xmlbind-ts creates (see isNode()): if the walk
   // reported something that is not a reference, its value would rarely look like a QName
-  test.each(ALL_SCHEMA_FILES)("should only visit values that look like QNames in %s", (file) => {
+  test.each(allTestSchemaFiles())("should only visit values that look like QNames in %s", (file) => {
     const schemaObj = unmarshal(schema, readFileSync(file, "utf8"));
     const notQNames: string[] = [];
 

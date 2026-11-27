@@ -32,6 +32,7 @@ import type { SchemaCommand } from "./index.js";
 
 describe("Command types", () => {
   describe("required fields", () => {
+    // fallow-ignore-start code-duplication -- fallow does not compare the type arguments of calls (fallow-rs/fallow#5401)
     test("should require the parent and the IDs of element commands", () => {
       expectTypeOf<Omit<AddElementPayload, "parentId">>().not.toExtend<AddElementPayload>();
       expectTypeOf<Omit<RemoveElementPayload, "elementId">>().not.toExtend<RemoveElementPayload>();
@@ -84,6 +85,7 @@ describe("Command types", () => {
         Omit<ModifySchemaNamespacesPayload, "namespacePrefixes">
       >().not.toExtend<ModifySchemaNamespacesPayload>();
     });
+    // fallow-ignore-end code-duplication
   });
 
   describe("maxOccurs", () => {

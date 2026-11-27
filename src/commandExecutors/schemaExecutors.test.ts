@@ -42,7 +42,7 @@ import {
   executeModifyInclude,
   executeModifySchemaNamespaces,
 } from "./schemaExecutors.js";
-import { emptySchema, schemaWith, schemaWithIncludes } from "../../shared/__tests__/schemaTestHelpers.js";
+import { emptySchema, schemaWith, schemaWithIncludes, rereadSchema } from "../../shared/__tests__/schemaTestHelpers.js";
 
 /**
  * Executes an `addImport` command.
@@ -656,7 +656,7 @@ describe("executeAddInclude", () => {
 
     addInclude(schemaObj, { schemaLocation: "included.xsd" });
 
-    const includes = unmarshal(schema, marshal(schemaObj)).include ?? [];
+    const includes = rereadSchema(schemaObj).include ?? [];
     expect(includes).toHaveLength(1);
     expect(includes[0]!.schemaLocation).toBe("included.xsd");
   });

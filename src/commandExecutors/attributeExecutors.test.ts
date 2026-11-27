@@ -3,7 +3,7 @@
  * Tests the implementation of add, remove, and modify attribute execution logic.
  */
 
-import { unmarshal, marshal } from "@neumaennl/xmlbind-ts";
+import { marshal } from "@neumaennl/xmlbind-ts";
 import type {
   attribute,
   topLevelAttribute,
@@ -11,9 +11,15 @@ import type {
   AddAttributePayload,
   ModifyAttributePayload,
 } from "../../shared/types.js";
-import { schema } from "../../shared/types.js";
+import type { schema } from "../../shared/types.js";
 import { executeAddAttribute, executeRemoveAttribute, executeModifyAttribute } from "./attributeExecutors.js";
-import { emptySchema, schemaWith, DERIVATIONS, derivedComplexTypeT } from "../../shared/__tests__/schemaTestHelpers.js";
+import {
+  emptySchema,
+  schemaWith,
+  DERIVATIONS,
+  derivedComplexTypeT,
+  rereadSchema,
+} from "../../shared/__tests__/schemaTestHelpers.js";
 import { readTestSchema } from "../__tests__/resourceTestHelpers.js";
 
 /** The file with a complexType `PersonType` with the local element `name`. */
@@ -330,7 +336,7 @@ ${personTypeWith(`<xs:attribute name="locale" type="xs:string"/>`)}`);
         documentation: "Person ID",
       });
 
-      const reparsed = unmarshal(schema, marshal(schemaObj));
+      const reparsed = rereadSchema(schemaObj);
       expect(personTypeAttributes(reparsed)[0]).toMatchObject({ name: "id", use: "required" });
     });
 
@@ -344,7 +350,7 @@ ${personTypeWith(`<xs:attribute name="locale" type="xs:string"/>`)}`);
         required: true,
       });
 
-      const reparsed = unmarshal(schema, marshal(schemaObj));
+      const reparsed = rereadSchema(schemaObj);
       expect(personTypeAttributes(reparsed)[0]).toMatchObject({
         name: "personId",
         type_: "xs:string",
@@ -404,7 +410,7 @@ ${personTypeWith(`<xs:attribute name="locale" type="xs:string"/>`)}`);
         attributeType: "xs:string",
       });
 
-      const complexType = unmarshal(schema, marshal(schemaObj)).element![0]!.complexType!;
+      const complexType = rereadSchema(schemaObj).element![0]!.complexType!;
       expect(complexType.complexContent?.extension?.attribute?.map((a) => a.name)).toEqual(["lang"]);
       expect(complexType.attribute ?? []).toEqual([]);
     });

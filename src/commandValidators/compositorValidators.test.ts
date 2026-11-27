@@ -89,9 +89,7 @@ describe("validateAddCompositor", () => {
       error: "minOccurs must be <= maxOccurs",
     },
   ])("should reject $case", ({ payload, error }) => {
-    const result = validateAddCompositor(addCompositor(payload), schemaWith(COMPOSITORS));
-    expectInvalid(result);
-    expect(result.error).toBe(error);
+    expect(validateAddCompositor(addCompositor(payload), schemaWith(COMPOSITORS))).toEqual({ valid: false, error });
   });
 
   test("should reject a compositor other than sequence, choice or all", () => {
@@ -129,9 +127,10 @@ describe("validateRemoveCompositor", () => {
       error: "Compositor not found: /complexType:PersonType/choice[0]",
     },
   ])("should reject '$compositorId'", ({ compositorId, error }) => {
-    const result = validateRemoveCompositor(removeCompositor(compositorId), schemaWith(COMPOSITORS));
-    expectInvalid(result);
-    expect(result.error).toBe(error);
+    expect(validateRemoveCompositor(removeCompositor(compositorId), schemaWith(COMPOSITORS))).toEqual({
+      valid: false,
+      error,
+    });
   });
 });
 
@@ -236,9 +235,10 @@ describe("validateModifyCompositor (kind)", () => {
       error: "maxOccurs of an all must be 1",
     },
   ])("should reject changing $case", ({ payload, error }) => {
-    const result = validateModifyCompositor(modifyCompositor(payload), schemaWith(KIND_CHANGES));
-    expectInvalid(result);
-    expect(result.error).toBe(error);
+    expect(validateModifyCompositor(modifyCompositor(payload), schemaWith(KIND_CHANGES))).toEqual({
+      valid: false,
+      error,
+    });
   });
 
   test("should accept changing a repeated sequence to an all with new occurrences", () => {

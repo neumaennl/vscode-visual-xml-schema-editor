@@ -3,11 +3,11 @@
  * Tests the implementation of add, remove, and modify element execution logic.
  */
 
-import { unmarshal, marshal } from "@neumaennl/xmlbind-ts";
+import { marshal } from "@neumaennl/xmlbind-ts";
 import type { AddElementPayload, ModifyElementPayload, localElement } from "../../shared/types.js";
-import { schema } from "../../shared/types.js";
+import type { schema } from "../../shared/types.js";
 import { executeAddElement, executeRemoveElement, executeModifyElement } from "./elementExecutors.js";
-import { emptySchema, schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
+import { emptySchema, schemaWith, rereadSchema } from "../../shared/__tests__/schemaTestHelpers.js";
 import { readTestSchema } from "../__tests__/resourceTestHelpers.js";
 
 /** The file with an element `person` and a complexType `OrderType`. */
@@ -290,7 +290,7 @@ describe("Element Executors", () => {
         elementType: "xs:int",
       });
 
-      const reparsed = unmarshal(schema, marshal(schemaObj));
+      const reparsed = rereadSchema(schemaObj);
       expect(reparsed.element?.[0]).toMatchObject({ name: "employee", type_: "xs:int" });
     });
   });

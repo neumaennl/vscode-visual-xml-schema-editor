@@ -7,7 +7,16 @@
  */
 
 import type { schema } from "../../shared/types.js";
+import { parseSchemaId, SCHEMA_ROOT_ID, type ParsedSchemaId } from "../../shared/idStrategy.js";
 import { locateNodeById, type LocatedNode } from "../schemaNavigator.js";
+import { identifyChild, type ChildMatcher } from "../commandUtils.js";
+
+/** A child that the validator found: its parsed ID, its parent, and a matcher that identifies it. */
+export interface LocatedChild {
+  parsed: ParsedSchemaId;
+  location: LocatedNode;
+  child: ChildMatcher;
+}
 
 /**
  * Returns a value that the validator guarantees, such as a node that it found or a field that it requires.
@@ -65,4 +74,23 @@ export function locateValidated(schemaObj: schema, nodeId: string): LocatedNode 
     return assumptionFailed(`Node ${nodeId} not found`);
   }
   return location;
+}
+
+/**
+ * Locates the parent of a child that the validator found, and identifies the child by its name or
+ * position. A child without a parent in its ID is a top-level child of the schema.
+ *
+ * @param schemaObj - The schema object
+ * @param childId - The ID of the child
+ * @param label - What the child is, for the error messages, for example `Element`
+ * @returns The parsed ID, the parent and a matcher for the child
+ * @throws An {@link Error} if the parent is not found
+ */
+export function locateChildValidated(schemaObj: schema, childId: string, label: string): LocatedChild {
+  const parsed = parseSchemaId(childId);
+  return {
+    parsed,
+    location: locateValidated(schemaObj, parsed.parentId ?? SCHEMA_ROOT_ID),
+    child: identifyChild(label, parsed.name, parsed.position),
+  };
 }

@@ -424,15 +424,24 @@ describe("Attribute Validators", () => {
       expect(result.valid).toBe(true);
     });
 
-    test("should reject changing an attribute to a reference with an invalid name", () => {
+    test.each([
+      {
+        case: "changing an attribute to a reference with an invalid name",
+        changes: { ref: "123-invalid" },
+        error: "Attribute ref must be a valid QName",
+      },
+      {
+        case: "renaming an attribute to an invalid name",
+        changes: { attributeName: "123-invalid" },
+        error: "Attribute name must be a valid XML name",
+      },
+    ])("should reject $case", ({ changes, error }) => {
       const command: ModifyAttributeCommand = {
         type: "modifyAttribute",
-        payload: { attributeId: "/complexType:T/attribute:code", ref: "123-invalid" },
+        payload: { attributeId: "/complexType:T/attribute:code", ...changes },
       };
 
-      const result = validateModifyAttribute(command, schemaWith(ATTRIBUTES));
-      expectInvalid(result);
-      expect(result.error).toBe("Attribute ref must be a valid QName");
+      expect(validateModifyAttribute(command, schemaWith(ATTRIBUTES))).toEqual({ valid: false, error });
     });
 
     test("should accept changing an attribute to a reference to an existing top-level attribute", () => {
@@ -448,17 +457,6 @@ describe("Attribute Validators", () => {
         )
       );
       expect(result.valid).toBe(true);
-    });
-
-    test("should reject renaming an attribute to an invalid name", () => {
-      const command: ModifyAttributeCommand = {
-        type: "modifyAttribute",
-        payload: { attributeId: "/complexType:T/attribute:code", attributeName: "123-invalid" },
-      };
-
-      const result = validateModifyAttribute(command, schemaWith(ATTRIBUTES));
-      expectInvalid(result);
-      expect(result.error).toBe("Attribute name must be a valid XML name");
     });
   });
 

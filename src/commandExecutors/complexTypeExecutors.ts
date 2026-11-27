@@ -34,7 +34,7 @@ import { assumeValidated } from "./assumeValidated.js";
 import { assignDefined } from "./nodeProperties.js";
 import { setComplexTypeCompositor } from "./compositorReplacement.js";
 import { locateModifiedType, placeNewType, removeType } from "./typeTargets.js";
-import { createAnnotation } from "./annotationUtils.js";
+import { annotate } from "./annotationUtils.js";
 
 /** The content of a complex type that a change of its structure keeps: compositor, group reference and attributes. */
 type CapturedContent = Pick<
@@ -59,9 +59,7 @@ export function executeAddComplexType(command: AddComplexTypeCommand, schemaObj:
     ? assignDefined(new topLevelComplexType(), { name: assumeValidated(typeName, "Type name"), abstract })
     : new localComplexType();
   assignDefined(ct, { mixed });
-  if (documentation) {
-    ct.annotation = createAnnotation(documentation);
-  }
+  annotate(ct, documentation);
   applyContentStructure(ct, compositor, baseType, derivationKind);
   placeNewType(schemaObj, parentId, "complexType", ct);
 }

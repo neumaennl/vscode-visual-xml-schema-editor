@@ -12,13 +12,11 @@ import type {
   AddAttributePayload,
 } from "../../shared/types.js";
 import { attribute, topLevelAttribute } from "../../shared/types.js";
-import { assumeValidated, assumptionFailed, locateValidated } from "./assumeValidated.js";
-import { parseSchemaId, SCHEMA_ROOT_ID } from "../../shared/idStrategy.js";
-import { createAnnotation } from "./annotationUtils.js";
+import { assumeValidated, assumptionFailed, locateChildValidated, locateValidated } from "./assumeValidated.js";
+import { annotate } from "./annotationUtils.js";
 import type { AttributeContainer, AttributeObject } from "../../shared/schemaObjects.js";
 import { getAttributeContainer } from "../../shared/schemaObjects.js";
 import { appendTo, removeFrom } from "./nodeProperties.js";
-import { identifyChild } from "../commandUtils.js";
 
 /**
  * Executes an `addAttribute` command.
@@ -44,9 +42,7 @@ export function executeAddAttribute(command: AddAttributeCommand, schemaObj: sch
  * @throws An {@link Error} if parent or attribute not found
  */
 export function executeRemoveAttribute(command: RemoveAttributeCommand, schemaObj: schema): void {
-  const parsed = parseSchemaId(command.payload.attributeId);
-  const location = locateValidated(schemaObj, parsed.parentId ?? SCHEMA_ROOT_ID);
-  const child = identifyChild("Attribute", parsed.name, parsed.position);
+  const { location, child } = locateChildValidated(schemaObj, command.payload.attributeId, "Attribute");
   removeFrom(attributesOf(location.parent, location.parentType), "attribute", child.matches, child.what);
 }
 
@@ -59,10 +55,8 @@ export function executeRemoveAttribute(command: RemoveAttributeCommand, schemaOb
  * @throws An {@link Error} if parent or attribute not found
  */
 export function executeModifyAttribute(command: ModifyAttributeCommand, schemaObj: schema): void {
-  const parsed = parseSchemaId(command.payload.attributeId);
-  const location = locateValidated(schemaObj, parsed.parentId ?? SCHEMA_ROOT_ID);
+  const { location, child } = locateChildValidated(schemaObj, command.payload.attributeId, "Attribute");
   const attributes: AttributeObject[] = attributesOf(location.parent, location.parentType).attribute ?? [];
-  const child = identifyChild("Attribute", parsed.name, parsed.position);
   const attr = assumeValidated(attributes.find(child.matches), child.what);
   updateAttributeProperties(attr, command.payload, location.parentType === "schema");
 }
@@ -123,9 +117,7 @@ function createNewAttribute(
   if (fixedValue !== undefined) {
     newAttr.fixed = fixedValue;
   }
-  if (documentation) {
-    newAttr.annotation = createAnnotation(documentation);
-  }
+  annotate(newAttr, documentation);
   return newAttr;
 }
 

@@ -126,30 +126,27 @@ function parseSegment(segment: string): SegmentInfo {
   // Check for position indicator [N]
   const positionMatch = /^([^[]+)\[(\d+)\]$/.exec(segment);
   if (positionMatch) {
-    const typeOrTypeName = requireGroup(positionMatch, 1);
     const position = parseInt(requireGroup(positionMatch, 2), 10);
-
-    // Check if it has a name (type:name format)
-    const colonIndex = typeOrTypeName.indexOf(":");
-    if (colonIndex > 0) {
-      const nodeType = toNodeType(typeOrTypeName.substring(0, colonIndex));
-      const name = typeOrTypeName.substring(colonIndex + 1);
-      return { nodeType, name, position };
-    } else {
-      return { nodeType: toNodeType(typeOrTypeName), position };
-    }
+    return { ...parseTypeAndName(requireGroup(positionMatch, 1)), position };
   }
+  return parseTypeAndName(segment);
+}
 
-  // Check for type:name format
-  const colonIndex = segment.indexOf(":");
+/**
+ * Parse the part of a path segment before its position: a node type, optionally followed by a colon and
+ * a name.
+ *
+ * @param typeOrTypeName - The node type, such as `sequence`, or the type and the name, such as `element:name`
+ * @returns The node type, and the name if there is one
+ */
+function parseTypeAndName(typeOrTypeName: string): SegmentInfo {
+  const colonIndex = typeOrTypeName.indexOf(":");
   if (colonIndex > 0) {
-    const nodeType = toNodeType(segment.substring(0, colonIndex));
-    const name = segment.substring(colonIndex + 1);
+    const nodeType = toNodeType(typeOrTypeName.substring(0, colonIndex));
+    const name = typeOrTypeName.substring(colonIndex + 1);
     return { nodeType, name };
   }
-
-  // Just a type
-  return { nodeType: toNodeType(segment) };
+  return { nodeType: toNodeType(typeOrTypeName) };
 }
 
 /**

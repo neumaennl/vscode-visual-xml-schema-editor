@@ -29,7 +29,6 @@ icon.svg
 *.vsix
 eslint.config.mjs
 .fallowrc.jsonc
-.jscpd.json
 .vscode-test.mjs
 vitest.config.ts
 vite.config.ts

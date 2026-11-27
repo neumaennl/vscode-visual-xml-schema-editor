@@ -3,7 +3,6 @@
  * Tests the implementation of add, remove, and modify simple type execution logic.
  */
 
-import { marshal, unmarshal } from "@neumaennl/xmlbind-ts";
 import type {
   AddSimpleTypeCommand,
   ModifySimpleTypeCommand,
@@ -13,9 +12,9 @@ import type {
   topLevelAttribute,
   topLevelElement,
 } from "../../shared/types.js";
-import { schema } from "../../shared/types.js";
+import type { schema } from "../../shared/types.js";
 import { executeAddSimpleType, executeModifySimpleType, executeRemoveSimpleType } from "./simpleTypeExecutors.js";
-import { emptySchema, schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
+import { emptySchema, schemaWith, rereadSchema } from "../../shared/__tests__/schemaTestHelpers.js";
 
 /** A simpleType `AgeType` that restricts `xs:integer`. */
 const AGE_TYPE = `<xs:simpleType name="AgeType"><xs:restriction base="xs:integer"/></xs:simpleType>`;
@@ -122,7 +121,7 @@ describe("SimpleType Executors", () => {
       expect(added.name).toBe("NameType");
       expect(added.restriction!.base).toBe("xs:string");
 
-      const reparsed = unmarshal(schema, marshal(schemaObj));
+      const reparsed = rereadSchema(schemaObj);
       expect(simpleTypes(reparsed)[0]!.name).toBe("NameType");
       expect(simpleTypes(reparsed)[0]!.restriction!.base).toBe("xs:string");
     });
@@ -369,7 +368,7 @@ describe("SimpleType Executors", () => {
         restrictions: { pattern: ["[A-Z]{3}", "[0-9]{3}"], maxLength: 3 },
       });
 
-      const restriction = simpleTypes(unmarshal(schema, marshal(schemaObj)))[0]!.restriction!;
+      const restriction = simpleTypes(rereadSchema(schemaObj))[0]!.restriction!;
       expect(restriction.pattern!.map((value) => value.value)).toEqual(["[A-Z]{3}", "[0-9]{3}"]);
       expect(restriction.maxLength![0]!.value).toBe(3);
     });
@@ -459,7 +458,7 @@ describe("SimpleType Executors", () => {
       expect(element.simpleType!.annotation!.documentation![0]!.value).toBe("Allowed age values");
       expect(element.simpleType!.restriction!.maxInclusive![0]!.value).toBe("120");
 
-      const reparsed = unmarshal(schema, marshal(schemaObj));
+      const reparsed = rereadSchema(schemaObj);
       expect(elements(reparsed)[0]!.simpleType!.restriction!.base).toBe("xs:integer");
     });
 

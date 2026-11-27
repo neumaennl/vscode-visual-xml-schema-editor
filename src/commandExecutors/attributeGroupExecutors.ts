@@ -13,7 +13,8 @@ import type {
 import { namedAttributeGroup, attributeGroupRef } from "../../shared/types.js";
 import { parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy.js";
 import { assumeValidated, locateValidated } from "./assumeValidated.js";
-import { createAnnotation } from "./annotationUtils.js";
+import { annotate } from "./annotationUtils.js";
+import { removeGroupDefinitionOrReference } from "./groupRemoval.js";
 import { renameReferencesInTargetNamespace } from "../schemaReferences/referenceRewrites.js";
 import type { AttributeContainer } from "../../shared/schemaObjects.js";
 import { getAttributeContainer } from "../../shared/schemaObjects.js";
@@ -63,9 +64,7 @@ export function executeAddAttributeGroup(command: AddAttributeGroupCommand, sche
     const location = locateValidated(schemaObj, parentId ?? SCHEMA_ROOT_ID);
     const agRef = new attributeGroupRef();
     agRef.ref = ref;
-    if (documentation) {
-      agRef.annotation = createAnnotation(documentation);
-    }
+    annotate(agRef, documentation);
     // In a complex type with complex or simple content, the reference goes to its extension or restriction
     appendTo(getAttributeContainer(location.parent), "attributeGroup", agRef);
     return;
@@ -74,9 +73,7 @@ export function executeAddAttributeGroup(command: AddAttributeGroupCommand, sche
   // Definition mode: add a top-level named attribute group
   const attrGroup = new namedAttributeGroup();
   attrGroup.name = assumeValidated(groupName, "Attribute group name");
-  if (documentation) {
-    attrGroup.annotation = createAnnotation(documentation);
-  }
+  annotate(attrGroup, documentation);
   appendTo(schemaObj, "attributeGroup", attrGroup);
 }
 
@@ -93,17 +90,11 @@ export function executeAddAttributeGroup(command: AddAttributeGroupCommand, sche
  */
 export function executeRemoveAttributeGroup(command: RemoveAttributeGroupCommand, schemaObj: schema): void {
   const { groupId } = command.payload;
-  const parsed = parseSchemaId(groupId);
-
-  if (parsed.nodeType === SchemaNodeType.AttributeGroupRef) {
+  removeGroupDefinitionOrReference(schemaObj, groupId, "attributeGroup", () => {
     // Reference mode: remove xs:attributeGroup ref="..." from its parent
     const { holder, target } = locateAttrGroupRef(schemaObj, groupId);
     removeFrom(holder, "attributeGroup", (r) => r === target, `Attribute group reference ${groupId}`);
-    return;
-  }
-
-  // Definition mode: remove top-level named attribute group
-  removeFrom(schemaObj, "attributeGroup", (g) => g.name === parsed.name, `Attribute group ${groupId}`);
+  });
 }
 
 /**

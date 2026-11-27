@@ -4,8 +4,8 @@ title: Known issues
 description: Problems found in the extension that are not fixed yet, with links to GitHub issues where they exist.
 tags: [known-issues, maintenance, technical-debt]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-27T08:33:28Z }
-verified: { by: human:neumaennl, at: 2026-11-27T08:34:31Z }
+generated: { by: human:neumaennl, at: 2026-11-27T13:43:28Z }
+verified: { by: human:neumaennl, at: 2026-11-27T13:50:16Z }
 ---
 
 # Purpose
@@ -350,13 +350,13 @@ Effort:
 - **Description:** Since version 2.4.0, `marshal` starts its output with a line break unless it starts with the XML declaration, and no longer ends it with one ([xmlbind-ts](https://github.com/neumaennl/xmlbind-ts/blob/main/docs/known-issues.md#the-output-of-marshal-starts-with-a-line-break)). Every command would therefore remove the line break at the end of the file and put an empty line at the start of a schema without an XML declaration. `serializeSchema()` removes the leading line break and ends the output with exactly one (see [Persistence](persistence.md#what-serialization-changes)). Keeping the formatting of the source belongs to `xmlbind-ts` (see [Architecture](architecture.md#responsibilities-of-xmlbind-ts-and-the-editor)), and 2.x gets no more fixes, so the editor works around it until it moves to version 3, whose output has to keep the line breaks of the source; then `fixOutputLineBreaks()` is removed.
 - **GitHub issue:** [#444](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/444)
 
-## Unused protected class members are not detected
+## Type arguments of calls are not compared for duplicated code
 
-- **Location:** `shared/`, `src/`, `webview-src/`, `scripts/`, `.fallowrc.jsonc`
+- **Location:** `shared/commands/commandTypes.test-d.ts`, `fallow` (`fallow dupes`)
 - **Severity:** Low
 - **Effort:** S
-- **Description:** fallow finds unused public and static class members, but the installed version skips protected members (see [Build and packaging](build-and-packaging.md#unused-code)). ESLint only finds unused private members. So a protected member that nothing uses goes unnoticed. fallow has a rule for them, `unused-protected-class-members` ([fallow-rs/fallow#4624](https://github.com/fallow-rs/fallow/issues/4624)), but no released version contains it yet. When one does, update fallow, set the rule to `error` in `.fallowrc.jsonc`, remove the findings, and remove this entry.
-- **GitHub issue:** none
+- **Description:** fallow leaves out the type arguments of calls when it compares code for duplicates, so calls that differ only in them look like copies of each other ([fallow-rs/fallow#5401](https://github.com/fallow-rs/fallow/issues/5401)). The type tests of the required fields of the commands consist of such calls, `expectTypeOf<…>().not.toExtend<…>()`, and would be reported as clones. They are put between `fallow-ignore-start code-duplication` and `fallow-ignore-end code-duplication`, with the reason. fallow does not report such a range when it is no longer needed, so when a released version of fallow compares type arguments, update fallow, remove the two comments, check that no clone is reported, and remove this entry.
+- **GitHub issue:** [#481](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/481)
 
 ## Node types in IDs are not checked
 

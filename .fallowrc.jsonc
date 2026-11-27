@@ -85,5 +85,26 @@
     "require-suppression-reason": "error",
     // An ignore comment that no longer suppresses anything fails the run.
     "stale-suppressions": "error",
+    // A protected class member that neither its class nor a subclass uses.
+    "unused-protected-class-members": "error",
+  },
+  // The check for duplicated code, `fallow dupes`. It also skips `ignorePatterns`.
+  "duplicates": {
+    // A clone has at least 50 tokens and 5 lines.
+    "minTokens": 50,
+    "minLines": 5,
+    // Check the tests too. The default ignores test files and folders such as `__tests__/`, and `out/`.
+    "ignoreDefaults": false,
+    // Skip imports and re-exports: with names ignored, any two long ones would match.
+    "ignoreImports": true,
+    "normalization": {
+      // Find copies with renamed variables, but only if each name stands for one name
+      // in the other copy: `a = b + c` matches `x = y + z`, but not `x = x + x`.
+      "ignoreIdentifiers": true,
+      "consistentIdentifiers": true,
+      // Compare strings, the text of template literals, and numbers.
+      "ignoreStringValues": false,
+      "ignoreNumericValues": false,
+    },
   },
 }

@@ -2,10 +2,10 @@
 type: Build Process
 title: Build and packaging
 description: How the extension is built, run, linted, packaged and checked - the build outputs and tsconfig files, the npm scripts, the scripts in TypeScript, running it in VS Code, the VSIX and its check, the generated schema classes, dependencies and the Node version, ESLint, the checks for duplicated and unused code, for the layers and for repeated anonymous types, the formatting with Prettier, CI, and planned changes.
-tags: [build, packaging, vsix, vite, typescript, eslint, jscpd, fallow, prettier, ci, dependencies]
+tags: [build, packaging, vsix, vite, typescript, eslint, fallow, prettier, ci, dependencies]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-27T08:00:25Z }
-verified: { by: human:neumaennl, at: 2026-11-27T08:16:47Z }
+generated: { by: human:neumaennl, at: 2026-11-27T13:43:08Z }
+verified: { by: human:neumaennl, at: 2026-11-27T13:50:16Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -64,12 +64,9 @@ sources:
   - id: eslint
     resource: ../eslint.config.mjs
     title: ESLint configuration
-  - id: jscpd
-    resource: ../.jscpd.json
   - id: check-anonymous-types
     resource: ../scripts/check-anonymous-types.ts
     title: Check for repeated anonymous types
-    title: jscpd configuration
   - id: fallow
     resource: ../.fallowrc.jsonc
     title: fallow configuration
@@ -135,7 +132,7 @@ The whole package is an ES module (`"type": "module"`), so Node and Vite load `v
 | `npm run compile`                               | `compile-extension` (`tsc -p ./tsconfig.extension.json`) and then `compile-webview` (`tsc --noEmit -p tsconfig.webview.json` and `vite build --mode production`).     |
 | `npm run watch`                                 | Runs `watch-extension` (`tsc -watch`) and `watch-webview` (`vite build --watch --mode development`) side by side with `concurrently`.                                 |
 | `npm run clean`                                 | Deletes `out/` and `webview/`.                                                                                                                                        |
-| `npm run lint`, `npm run lint:fix`              | Runs ESLint, jscpd, fallow, the check for repeated anonymous types and the check of the formatting on the repository (see [Lint](#lint)), or fixes what ESLint can.   |
+| `npm run lint`, `npm run lint:fix`              | Runs ESLint, fallow, the check for repeated anonymous types and the check of the formatting on the repository (see [Lint](#lint)), or fixes what ESLint can.          |
 | `npm run format`                                | Formats all files with Prettier (see [Formatting](#formatting)).                                                                                                      |
 | `npm run package`                               | Builds the VSIX with `vsce package`; `vscode:prepublish` runs `npm run compile` first.                                                                                |
 | `npm run package:verify`                        | Checks the VSIX (see [Packaging](#packaging)).                                                                                                                        |
@@ -175,7 +172,7 @@ What goes into the VSIX is controlled by `.vscodeignore`:[^vscodeignore]
 
 # Generated schema classes
 
-The classes in `shared/generated/` describe XML Schema itself and are used to read and write XSD files (see [Schema model](schema-model.md)). `npm run generate-classes-from-schema` creates them with `xsd2ts` from `@neumaennl/xmlbind-ts`, using `schema/XMLSchema.xsd`, after deleting the existing `.ts` files in that folder; the README there stays. They are not edited by hand; ESLint, jscpd, fallow and Prettier ignore them, and the coverage report leaves them out. After an update of `xmlbind-ts`, they are generated again and committed.[^manifest][^eslint]
+The classes in `shared/generated/` describe XML Schema itself and are used to read and write XSD files (see [Schema model](schema-model.md)). `npm run generate-classes-from-schema` creates them with `xsd2ts` from `@neumaennl/xmlbind-ts`, using `schema/XMLSchema.xsd`, after deleting the existing `.ts` files in that folder; the README there stays. They are not edited by hand; ESLint, fallow and Prettier ignore them, and the coverage report leaves them out. After an update of `xmlbind-ts`, they are generated again and committed.[^manifest][^eslint]
 
 # Dependencies and Node
 
@@ -214,8 +211,7 @@ The script reads the GitHub API, `raw.githubusercontent.com` (VS Code's `.npmrc`
 `npm run lint` runs these checks in parallel, with `concurrently`:[^manifest]
 
 - ESLint;
-- the copy-paste detector jscpd (see [Duplicated code](#duplicated-code));
-- fallow, once for the whole project and once in production mode (see [Unused code](#unused-code));
+- fallow, once for duplicated code (see [Duplicated code](#duplicated-code)), for unused code once for the whole project and once in production mode (see [Unused code](#unused-code)), and once for the layers (see [Layers](#layers));
 - the check for repeated anonymous types (see [Anonymous types](#anonymous-types));
 - Prettier, which checks the formatting with `prettier --check .` (see [Formatting](#formatting)).
 
@@ -223,9 +219,9 @@ How `concurrently` runs them:
 
 - all checks always run to the end, so one run reports all problems;
 - the run fails if one of them fails;
-- `--group` prints the output of each check as one block, labeled `[eslint]`, `[jscpd]`, `[fallow]`, `[fallow-production]`, `[fallow-architecture]`, `[anonymous-types]` and `[prettier]`.
+- `--group` prints the output of each check as one block, labeled `[eslint]`, `[fallow-dupes]`, `[fallow]`, `[fallow-production]`, `[fallow-architecture]`, `[anonymous-types]` and `[prettier]`.
 
-To run one check alone, use `npx eslint .`, `npx jscpd`, `npx fallow dead-code --no-cache --fail-on-issues`, `npx fallow dead-code --production --no-cache --fail-on-issues`, `npx fallow architecture --no-cache`, `node scripts/check-anonymous-types.ts` or `npx prettier --check .`. They read the same configuration as `npm run lint`. `npm run lint:fix` runs only ESLint, because jscpd and fallow fix nothing; `npm run format` fixes the formatting.
+To run one check alone, use `npx eslint .`, `npx fallow dupes --no-cache --fail-on-issues`, `npx fallow dead-code --no-cache --fail-on-issues`, `npx fallow dead-code --production --no-cache --fail-on-issues`, `npx fallow architecture --no-cache`, `node scripts/check-anonymous-types.ts` or `npx prettier --check .`. They read the same configuration as `npm run lint`. `npm run lint:fix` runs only ESLint, because fallow fixes nothing; `npm run format` fixes the formatting.
 
 ## ESLint
 
@@ -248,20 +244,26 @@ To run one check alone, use `npx eslint .`, `npx jscpd`, `npx fallow dead-code -
 
 ## Duplicated code
 
-jscpd checks the TypeScript and JavaScript files of the whole repository, including the tests. It skips what `.gitignore` excludes, such as `out/`, `webview/`, `coverage/` and `node_modules/`, and the generated schema classes in `shared/generated/`. Its settings are the same as in [xmlbind-ts](https://github.com/neumaennl/xmlbind-ts/blob/reimplementation/docs/build-and-release.md#duplicated-code), except for imports:[^jscpd]
+`fallow dupes` checks the TypeScript and JavaScript files of the whole repository, including the tests. It skips what `.gitignore` excludes, such as `out/`, `webview/`, `coverage/` and `node_modules/`, and the generated schema classes in `shared/generated/`. Its settings are in the `duplicates` section of `.fallowrc.jsonc` and are the same as in [xmlbind-ts](https://github.com/neumaennl/xmlbind-ts/blob/reimplementation/docs/build-and-release.md#duplicated-code):[^fallow]
 
-- **Size.** A clone is a block of at least 50 tokens and 5 lines that appears more than once. Tokens are keywords, names, operators, punctuation and literals; whitespace and comments do not count. 50 tokens are about 5 to 7 lines of code. Below that, jscpd mostly finds repetition that is fine, such as the setup of tests.
-- **Names.** Names are ignored, so a copy with renamed variables is found. Each name must stand for one name in the other block: `a = b + c` matches `x = y + z`, but not `x = x + x`.
-- **Literals.** Strings and numbers are compared. Code that differs only in them is not a clone, such as the cases of a `switch` or tests with different data.
-- **Imports.** Import statements are skipped (`ignorePattern`). [Prettier](#formatting) puts each name of a long import on its own line, and since names are ignored, any two long imports would match.
-- **Failing.** Every clone fails the run. There is no threshold of duplicated lines, because a percentage changes as the code grows.
-- **No files.** A run that finds no files fails, so that a broken configuration does not pass unnoticed.
+- **Size.** A clone is a block of at least 50 tokens and 5 lines that appears more than once. Tokens are keywords, names, operators, punctuation and literals; whitespace and comments do not count. 50 tokens are about 5 to 7 lines of code. Below that, the check mostly finds repetition that is fine, such as the setup of tests.
+- **Names.** Names are ignored, so a copy with renamed variables is found (`ignoreIdentifiers`). Each name must stand for one name in the other block (`consistentIdentifiers`): `a = b + c` matches `x = y + z`, but not `x = x + x`.
+- **Literals.** Strings, numbers and the text of template literals are compared. Code that differs only in them is not a clone, such as the cases of a `switch` or tests with different data.
+- **Imports.** Imports and re-exports are skipped (`ignoreImports`). [Prettier](#formatting) puts each name of a long import on its own line, and since names are ignored, any two long imports or re-exports would match.
+- **Tests.** `ignoreDefaults` is off. Otherwise fallow would leave out test files and folders such as `__tests__/` and `__mocks__/`.
+- **Failing.** `--fail-on-issues` makes every clone fail the run; without it, `fallow dupes` only reports them. There is no threshold of duplicated lines, because a percentage changes as the code grows. `--no-cache` keeps fallow from writing a cache into the checkout.
+- **No files.** A run that finds no files does not fail. fallow finds its files the same way for duplicated and for [unused code](#unused-code): from the root of the project, following `.gitignore` and `ignorePatterns`. So there is no list of paths or formats that could be wrong. Only a far too broad ignore pattern could leave no files, and that would be a visible change to `.fallowrc.jsonc`.
 
-jscpd only finds code that is written the same way. Logic that the extension and the webview each implement in their own way is not found (see [Duplicated and dead code](known-issues.md#duplicated-and-dead-code)).
+The check only finds code that is written the same way. Logic that the extension and the webview each implement in their own way is not found (see [Duplicated and dead code](known-issues.md#duplicated-and-dead-code)). fallow leaves out the type arguments of calls, so calls that differ only in them look like copies (see [Type arguments of calls are not compared for duplicated code](known-issues.md#type-arguments-of-calls-are-not-compared-for-duplicated-code)).
 
-Code that has to stay duplicated is put between `// jscpd:ignore-start` and `// jscpd:ignore-end`, with a comment that gives the reason (see [Code quality](development-guidelines.md#code-quality)). There are two such blocks: the list of flags in `DiagramItem`, which are distinct fields of the same type, and the calls in `DiagramBuilder` that process the top-level components of each kind with one function.
+Code that has to stay duplicated is put between two comments, each on its own line, with the reason after `--` (see [Code quality](development-guidelines.md#code-quality)):
 
-fallow, which checks for [unused code](#unused-code), can find duplicates as well. The installed version cannot check that renamed names map one to one, and it does not compare the text of template literals. So jscpd stays until a released version of fallow can do both ([#460](https://github.com/neumaennl/vscode-visual-xml-schema-editor/issues/460)).
+```typescript
+// fallow-ignore-start code-duplication -- <reason>
+// fallow-ignore-end code-duplication
+```
+
+`fallow dead-code` fails if the reason is missing (`require-suppression-reason`, see [Unused code](#unused-code)). Unlike `fallow-ignore-next-line`, such a range is not reported when it becomes stale: when the code between the comments is no longer duplicated, nothing fails. So check the comments when you change the code between them. There is one such range, around the type tests of the required fields of the commands.
 
 ## Unused code
 
@@ -269,7 +271,7 @@ ESLint and TypeScript only find unused code within one file (see [ESLint](#eslin
 
 - files that nothing imports;
 - exports and types that no other module imports, also when the same file uses them;
-- public and static class members and enum members that nothing uses;
+- public, protected and static class members and enum members that nothing uses;
 - dependencies in `package.json` that no code uses, and packages that code uses but `package.json` does not list.
 
 fallow finds the entry points itself, in `package.json` and in the configurations of the tools, such as Vite and Vitest. It reads the code without type information. Its rules are the same as in [xmlbind-ts](https://github.com/neumaennl/xmlbind-ts/blob/reimplementation/docs/build-and-release.md#unused-code). `.fallowrc.jsonc` adds what fallow cannot find by itself, each with a comment that gives the reason:[^fallow]
@@ -280,7 +282,7 @@ fallow finds the entry points itself, in `package.json` and in the configuration
 - Two dependencies count as used: `@vscode/codicons`, whose stylesheet `webviewProvider.ts` loads by path, and `@vscode/test-electron`, which `@vscode/test-cli` imports without declaring it.
 - `resolveCustomTextEditor()` counts as used in a class that implements `vscode.CustomTextEditorProvider`, because VS Code calls it.
 
-`npm run lint` runs fallow three times:
+Besides `fallow dupes` (see [Duplicated code](#duplicated-code)), `npm run lint` runs fallow three times:
 
 - **`fallow dead-code`** checks the whole project, including the tests.
 - **`fallow dead-code --production`** leaves out the tests, the support entry points, the configurations of the tools and the devDependencies. It finds code that only tests use, such as an export that only a test imports, or a method that only tests call.
@@ -288,14 +290,16 @@ fallow finds the entry points itself, in `package.json` and in the configuration
 
 The two runs of `fallow dead-code` use `--fail-on-issues`, so every finding fails the run, also the kinds that fallow only reports as warnings by default, such as an unused devDependency. There is no baseline. `--no-cache` keeps fallow from writing a cache into the checkout.
 
-`.fallowrc.jsonc` sets two rules:[^fallow]
+`.fallowrc.jsonc` sets three rules:[^fallow]
 
 - `require-suppression-reason`: an ignore comment must give its reason after `--`, as in `// fallow-ignore-next-line unused-export -- <reason>`;
-- `stale-suppressions` as an error: an ignore comment that no longer suppresses anything fails the run, so it is removed when it is no longer needed.
+- `stale-suppressions` as an error: an ignore comment that no longer suppresses anything fails the run, so it is removed when it is no longer needed;
+- `unused-protected-class-members` as an error: a protected member that neither its class nor a subclass uses is a finding. fallow does not report it by default.
 
 Its limits:
 
-- fallow does not check protected class members (see [Unused protected class members are not detected](known-issues.md#unused-protected-class-members-are-not-detected)). ESLint checks private members.
+- fallow does not check private members. ESLint does.
+- Protected members that are declared as constructor parameters, as in `constructor(protected readonly x: X)`, are not checked.
 - Without type information, fallow does not see that a member is used when it is called by a computed name, such as `obj[name]()`, through a class field ([fallow#4799](https://github.com/fallow-rs/fallow/issues/4799)). Such a member needs an ignore comment with the reason.
 - Members with decorators are not checked, because a decorator can use them.
 - The production mode also leaves out the configurations of the build tools. `readTarget()` in `scripts/lib/compiler-target.ts`, which only `vite.config.ts` uses, therefore has an ignore comment.
@@ -360,7 +364,7 @@ No ESLint rule clashes with Prettier. This was checked with `npx eslint-config-p
 - The rule reports statements that a missing semicolon joins with the next line. It stays on.
 - In rare cases, Prettier breaks a chain of calls before an index access such as `[i]`, and the rule reports that. Then split the expression into two statements.
 
-The size rules count lines, including the line breaks that Prettier adds (see [ESLint](#eslint)). Code that the formatting pushes past a limit is split like any other code that is too long. The same holds for jscpd: code that Prettier spreads over more lines can become a clone (see [Duplicated code](#duplicated-code)).
+The size rules count lines, including the line breaks that Prettier adds (see [ESLint](#eslint)). Code that the formatting pushes past a limit is split like any other code that is too long. The same holds for the check of duplicated code: code that Prettier spreads over more lines can become a clone (see [Duplicated code](#duplicated-code)).
 
 `.git-blame-ignore-revs` lists the commits that only reformat the code, such as the one that formatted the whole repository with Prettier:
 
@@ -423,8 +427,6 @@ The [Tech Stack Modernization](https://github.com/neumaennl/vscode-visual-xml-sc
 [^vscode-test-config]: Configuration of vscode-test
 
 [^eslint]: ESLint configuration
-
-[^jscpd]: jscpd configuration
 
 [^check-anonymous-types]: Check for repeated anonymous types
 

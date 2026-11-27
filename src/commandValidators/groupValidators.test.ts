@@ -165,52 +165,33 @@ describe("Group Validators", () => {
       expect(result.valid).toBe(true);
     });
 
-    test("should reject addGroup when both ref and groupName are provided", () => {
-      const command = {
-        type: "addGroup",
+    test.each([
+      {
+        case: "both ref and groupName are provided",
         payload: { ref: "SomeGroup", groupName: "AlsoAGroup", parentId: "/complexType:PersonType/sequence[0]" },
-      } as AddGroupCommand;
-
-      const result = validateAddGroup(command, schemaObj);
-      expectInvalid(result);
-      expect(result.error).toContain("Cannot combine ref with groupName or compositor");
-    });
-
-    test("should reject addGroup when both ref and compositor are provided", () => {
-      const command = {
-        type: "addGroup",
+        error: "Cannot combine ref with groupName or compositor",
+      },
+      {
+        case: "both ref and compositor are provided",
         payload: { ref: "SomeGroup", compositor: "sequence", parentId: "/complexType:PersonType/sequence[0]" },
-      } as AddGroupCommand;
-
-      const result = validateAddGroup(command, schemaObj);
-      expectInvalid(result);
-      expect(result.error).toContain("Cannot combine ref with groupName or compositor");
-    });
-
-    test("should reject addGroup definition when parentId is provided alongside groupName", () => {
-      const command = {
-        type: "addGroup",
-        payload: {
-          groupName: "SomeGroup",
-          compositor: "sequence",
-          parentId: "/complexType:PersonType/sequence[0]",
-        },
-      } as AddGroupCommand;
-
-      const result = validateAddGroup(command, schemaObj);
-      expectInvalid(result);
-      expect(result.error).toContain("Cannot combine groupName/compositor with parentId");
-    });
-
-    test("should reject addGroup definition when minOccurs is provided alongside groupName", () => {
-      const command = {
-        type: "addGroup",
+        error: "Cannot combine ref with groupName or compositor",
+      },
+      {
+        case: "a definition has a parentId",
+        payload: { groupName: "SomeGroup", compositor: "sequence", parentId: "/complexType:PersonType/sequence[0]" },
+        error: "Cannot combine groupName/compositor with parentId",
+      },
+      {
+        case: "a definition has minOccurs",
         payload: { groupName: "SomeGroup", compositor: "sequence", minOccurs: 0 },
-      } as AddGroupCommand;
+        error: "Cannot combine groupName/compositor with parentId",
+      },
+    ])("should reject addGroup when $case", ({ payload, error }) => {
+      const command = { type: "addGroup", payload } as AddGroupCommand;
 
       const result = validateAddGroup(command, schemaObj);
       expectInvalid(result);
-      expect(result.error).toContain("Cannot combine groupName/compositor with parentId");
+      expect(result.error).toContain(error);
     });
   });
 

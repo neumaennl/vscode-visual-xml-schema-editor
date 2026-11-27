@@ -11,6 +11,8 @@ import {
   runCommandExpectValidationFailure,
 } from "./pipelineTestHelpers.js";
 import { emptySchemaXml, schemaXmlWith } from "../../shared/__tests__/schemaTestHelpers.js";
+import { parseSchemaId } from "../../shared/idStrategy.js";
+import type { ModifySimpleTypePayload, topLevelSimpleType } from "../../shared/types.js";
 
 /** A list simpleType `Codes` of tokens. */
 const LIST_TYPE = `<xs:simpleType name="Codes"><xs:list itemType="xs:token"/></xs:simpleType>`;
@@ -22,6 +24,19 @@ const INLINE_BASE_TYPE = `<xs:simpleType name="ShortCode">
     <xs:maxLength value="8"/>
   </xs:restriction>
 </xs:simpleType>`;
+
+/**
+ * Runs a `modifySimpleType` command that keeps the name of the type, and returns the changed type.
+ *
+ * @param xml - The XML of the schema
+ * @param payload - The payload of the command
+ * @returns The top-level simpleType with the name in `typeId`, if the schema still has it
+ */
+function modifySimpleType(xml: string, payload: ModifySimpleTypePayload): topLevelSimpleType | undefined {
+  const result = runCommandExpectSuccessSchema(xml, { type: "modifySimpleType", payload });
+  const { name } = parseSchemaId(payload.typeId);
+  return (result.simpleType ?? []).find((t) => t.name === name);
+}
 
 describe("Integration: SimpleType pipeline", () => {
   // ─── addSimpleType ─────────────────────────────────────────────────────────
@@ -174,44 +189,39 @@ describe("Integration: SimpleType pipeline", () => {
     });
 
     test("should change the base type of a simpleType", () => {
-      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_SIMPLETYPE, {
-        type: "modifySimpleType",
-        payload: { typeId: "/simpleType:StatusType", baseType: "xs:token" },
+      const statusType = modifySimpleType(SCHEMA_WITH_SIMPLETYPE, {
+        typeId: "/simpleType:StatusType",
+        baseType: "xs:token",
       });
-      const statusType = (result.simpleType ?? []).find((t) => t.name === "StatusType");
 
-      expect(statusType).toBeDefined();
-      expect(statusType!.restriction!.base).toBe("xs:token");
+      expect(statusType?.restriction?.base).toBe("xs:token");
     });
 
     test("should change only the facets and keeps the base type", () => {
-      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_SIMPLETYPE, {
-        type: "modifySimpleType",
-        payload: { typeId: "/simpleType:StatusType", restrictions: { enumeration: ["on", "off"] } },
-      });
-      const restriction = (result.simpleType ?? []).find((t) => t.name === "StatusType")?.restriction;
+      const restriction = modifySimpleType(SCHEMA_WITH_SIMPLETYPE, {
+        typeId: "/simpleType:StatusType",
+        restrictions: { enumeration: ["on", "off"] },
+      })?.restriction;
 
       expect(restriction?.base).toBe("xs:string");
       expect(restriction?.enumeration?.map((e) => e.value)).toEqual(["on", "off"]);
     });
 
     test("should change only the facets and keeps an inline base type", () => {
-      const result = runCommandExpectSuccessSchema(schemaXmlWith(INLINE_BASE_TYPE), {
-        type: "modifySimpleType",
-        payload: { typeId: "/simpleType:ShortCode", restrictions: { maxLength: 4 } },
-      });
-      const restriction = (result.simpleType ?? []).find((t) => t.name === "ShortCode")?.restriction;
+      const restriction = modifySimpleType(schemaXmlWith(INLINE_BASE_TYPE), {
+        typeId: "/simpleType:ShortCode",
+        restrictions: { maxLength: 4 },
+      })?.restriction;
 
       expect(restriction?.simpleType?.restriction?.base).toBe("xs:token");
       expect(restriction?.maxLength?.[0]?.value).toBe(4);
     });
 
     test("should replace an inline base type with a named one", () => {
-      const result = runCommandExpectSuccessSchema(schemaXmlWith(INLINE_BASE_TYPE), {
-        type: "modifySimpleType",
-        payload: { typeId: "/simpleType:ShortCode", baseType: "xs:string" },
-      });
-      const restriction = (result.simpleType ?? []).find((t) => t.name === "ShortCode")?.restriction;
+      const restriction = modifySimpleType(schemaXmlWith(INLINE_BASE_TYPE), {
+        typeId: "/simpleType:ShortCode",
+        baseType: "xs:string",
+      })?.restriction;
 
       expect(restriction?.base).toBe("xs:string");
       expect(restriction?.simpleType).toBeUndefined();
@@ -219,18 +229,13 @@ describe("Integration: SimpleType pipeline", () => {
     });
 
     test("should switch an existing simpleType from restriction to list", () => {
-      const result = runCommandExpectSuccessSchema(SCHEMA_WITH_SIMPLETYPE, {
-        type: "modifySimpleType",
-        payload: {
-          typeId: "/simpleType:StatusType",
-          listItemType: "xs:token",
-        },
+      const statusType = modifySimpleType(SCHEMA_WITH_SIMPLETYPE, {
+        typeId: "/simpleType:StatusType",
+        listItemType: "xs:token",
       });
-      const statusType = (result.simpleType ?? []).find((t) => t.name === "StatusType");
 
-      expect(statusType).toBeDefined();
-      expect(statusType!.list?.itemType).toBe("xs:token");
-      expect(statusType!.restriction).toBeUndefined();
+      expect(statusType).toMatchObject({ list: { itemType: "xs:token" } });
+      expect(statusType?.restriction).toBeUndefined();
     });
 
     test("should rename a list simpleType and keeps its item type", () => {

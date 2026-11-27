@@ -3,11 +3,10 @@
  * Tests the implementation of add, remove, and modify complex type execution logic.
  */
 
-import { marshal, unmarshal } from "@neumaennl/xmlbind-ts";
 import type { AddComplexTypeCommand, ModifyComplexTypeCommand, RemoveComplexTypeCommand } from "../../shared/types.js";
-import { schema } from "../../shared/types.js";
+import type { schema } from "../../shared/types.js";
 import { executeAddComplexType, executeModifyComplexType, executeRemoveComplexType } from "./complexTypeExecutors.js";
-import { emptySchema, schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
+import { emptySchema, schemaWith, rereadSchema } from "../../shared/__tests__/schemaTestHelpers.js";
 
 /** A complexType `EmployeeType` that extends `PersonType`. */
 const EMPLOYEE_TYPE = `<xs:complexType name="EmployeeType">
@@ -187,7 +186,7 @@ describe("ComplexType Executors", () => {
 
       addComplexType(schemaObj, { typeName: "PersonType", compositor: "sequence" });
 
-      const reparsed = unmarshal(schema, marshal(schemaObj));
+      const reparsed = rereadSchema(schemaObj);
       const complexType = topLevelComplexTypes(reparsed)[0]!;
       expect(complexType.name).toBe("PersonType");
       expect(complexType.sequence).toBeDefined();
@@ -328,9 +327,11 @@ describe("ComplexType Executors", () => {
 
       const complexContent = topLevelComplexTypes(schemaObj)[0]!.complexContent!;
       expect(complexContent.restriction).toBeUndefined();
-      expect(complexContent.extension?.base).toBe("EmployeeType");
-      expect((complexContent.extension?.sequence?.element ?? []).map((element) => element.name)).toEqual(["name"]);
-      expect((complexContent.extension?.attribute ?? []).map((attribute) => attribute.name)).toEqual(["id"]);
+      expect(complexContent.extension).toMatchObject({
+        base: "EmployeeType",
+        sequence: { element: [{ name: "name" }] },
+        attribute: [{ name: "id" }],
+      });
     });
 
     test("should change the compositor of a restricting complexType and keeps its base and attributes", () => {
@@ -340,10 +341,9 @@ describe("ComplexType Executors", () => {
 
       const complexContent = topLevelComplexTypes(schemaObj)[0]!.complexContent!;
       expect(complexContent.extension).toBeUndefined();
-      expect(complexContent.restriction?.base).toBe("EmployeeType");
+      expect(complexContent.restriction).toMatchObject({ base: "EmployeeType", attribute: [{ name: "id" }] });
       expect(complexContent.restriction?.choice).toBeDefined();
       expect(complexContent.restriction?.sequence).toBeUndefined();
-      expect((complexContent.restriction?.attribute ?? []).map((attribute) => attribute.name)).toEqual(["id"]);
     });
 
     test("should update an existing extension base type", () => {
@@ -444,7 +444,7 @@ describe("ComplexType Executors", () => {
         compositor: "sequence",
       });
 
-      const reparsed = unmarshal(schema, marshal(schemaObj));
+      const reparsed = rereadSchema(schemaObj);
       expect(topLevelElements(reparsed)[0]!.complexType!.sequence).toBeDefined();
     });
 

@@ -53,8 +53,7 @@ describe("serializeSchema", () => {
   test("should write the XML of a schema that parses to the same content", () => {
     const reparsed = parseSchema(serializeSchema(parseSchema(SCHEMA_WITH_TARGET_NAMESPACE)));
 
-    expect(reparsed.targetNamespace).toBe("http://example.com/test");
-    expect(reparsed.element?.map((element) => element.name)).toEqual(["root", "item"]);
+    expect(reparsed).toEqual(parseSchema(SCHEMA_WITH_TARGET_NAMESPACE));
   });
 
   test("should start with the XML declaration and end with one line break", () => {

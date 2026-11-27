@@ -8,8 +8,7 @@
  * accepts. The executor must neither throw nor leave the schema unchanged.
  */
 
-import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { readFileSync } from "node:fs";
 import { marshal, unmarshal } from "@neumaennl/xmlbind-ts";
 import { schema } from "../../shared/types";
 import type { SchemaCommand } from "../../shared/types";
@@ -19,18 +18,8 @@ import { CommandExecutor } from "../../src/commandExecutor.js";
 import type { DiagramItem } from "../../webview-src/diagram/DiagramItem";
 import { getDocumentationAnnotations } from "../../webview-src/diagram/documentationAccessors";
 import { diagramItems } from "../../webview-src/__tests__/diagramTestHelpers";
-import { TEST_RESOURCES } from "../../src/__tests__/resourceTestHelpers.js";
+import { allTestSchemaFiles } from "../../src/__tests__/resourceTestHelpers.js";
 import { webviewSchemaFromXml } from "../../shared/__tests__/schemaTestHelpers";
-
-/** The folders with the schemas of the test. */
-const SCHEMA_FOLDERS = [TEST_RESOURCES, join(import.meta.dirname, "../../exampleFiles")];
-
-/** The paths of all schemas of the test. */
-const SCHEMA_FILES = SCHEMA_FOLDERS.flatMap((folder) =>
-  readdirSync(folder)
-    .filter((name) => name.endsWith(".xsd"))
-    .map((name) => join(folder, name))
-);
 
 /**
  * Returns the commands that change or remove the node of a diagram item, depending on its kind.
@@ -178,7 +167,7 @@ describe("Integration: validators and executors agree", () => {
     vi.spyOn(console, "log").mockImplementation(() => undefined);
   });
 
-  test.each(SCHEMA_FILES)("should apply every command that the validator accepts to %s", (file) => {
+  test.each(allTestSchemaFiles())("should apply every command that the validator accepts to %s", (file) => {
     const xml = readFileSync(file, "utf8");
     const commands = [
       ...diagramItems(webviewSchemaFromXml(xml)).flatMap(commandsForItem),

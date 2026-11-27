@@ -51,7 +51,6 @@ export class DiagramBuilder {
     schemaNode.nodeType = SchemaNodeType.Schema;
 
     // Process the top-level components with their content
-    // jscpd:ignore-start -- calls of one function with the collection of each kind, not duplicated logic
     processChildCollection(
       schemaNode,
       schemaObj.element,
@@ -73,7 +72,6 @@ export class DiagramBuilder {
       (grp) => createTopLevelNode(grp, SchemaNodeType.Group, DiagramItemType.group, diagram),
       processNamedGroup
     );
-    // jscpd:ignore-end
 
     diagram.addRootElement(schemaNode);
     return diagram;

@@ -3,7 +3,7 @@
  * The helpers that return a schema object create a new one on every call, so that one test cannot change the schema of another.
  */
 
-import { unmarshal } from "@neumaennl/xmlbind-ts";
+import { marshal, unmarshal } from "@neumaennl/xmlbind-ts";
 import { XSD_NAMESPACE } from "../builtInTypes.js";
 import { type NamespacePrefixes, schema } from "../types.js";
 
@@ -42,6 +42,17 @@ export function emptySchemaXml(): string {
  */
 export function schemaWith(body: string, namespaces: Readonly<NamespacePrefixes> = {}): schema {
   return unmarshal(schema, schemaXmlWith(body, namespaces));
+}
+
+/**
+ * Marshals a schema object and unmarshals the XML again, as when the extension writes a changed schema to the
+ * document and reads it back: the result shows where the XML puts what a test changed.
+ *
+ * @param schemaObj - The schema object
+ * @returns A new schema object, read from the XML of the given one
+ */
+export function rereadSchema(schemaObj: schema): schema {
+  return unmarshal(schema, marshal(schemaObj));
 }
 
 /**

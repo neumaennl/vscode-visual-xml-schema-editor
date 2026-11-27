@@ -128,20 +128,11 @@ describe("Extension", () => {
       );
     });
 
-    test("should show an error when the active editor shows a file that is not an XSD file", async () => {
-      setActiveEditor("/test/notes.txt");
-      const handler = activateAndGetOpenEditorHandler(mockContext);
-
-      await handler();
-
-      expect(vscode.commands.executeCommand).not.toHaveBeenCalled();
-      expect(vscode.window.showErrorMessage).toHaveBeenCalledWith(
-        "Please select an XSD file to open in the visual editor."
-      );
-    });
-
-    test("should show an error when no editor is active", async () => {
-      setActiveEditor(undefined);
+    test.each([
+      ["the active editor shows a file that is not an XSD file", "/test/notes.txt"],
+      ["no editor is active", undefined],
+    ])("should show an error when %s", async (_case, activeFile) => {
+      setActiveEditor(activeFile);
       const handler = activateAndGetOpenEditorHandler(mockContext);
 
       await handler();

@@ -3,11 +3,10 @@
  * Tests the implementation of add, remove, and modify group execution logic.
  */
 
-import { unmarshal, marshal } from "@neumaennl/xmlbind-ts";
 import type { AddGroupCommand, RemoveGroupCommand, ModifyGroupCommand } from "../../shared/types.js";
-import { schema } from "../../shared/types.js";
+import type { schema } from "../../shared/types.js";
 import { executeAddGroup, executeRemoveGroup, executeModifyGroup } from "./groupExecutors.js";
-import { emptySchema, schemaWith } from "../../shared/__tests__/schemaTestHelpers.js";
+import { emptySchema, schemaWith, rereadSchema } from "../../shared/__tests__/schemaTestHelpers.js";
 import { readTestSchema } from "../__tests__/resourceTestHelpers.js";
 
 /**
@@ -111,7 +110,7 @@ describe("Group Executors", () => {
         compositor: "sequence",
       });
 
-      const groups = unmarshal(schema, marshal(schemaObj)).group ?? [];
+      const groups = rereadSchema(schemaObj).group ?? [];
       expect(groups).toHaveLength(1);
       expect(groups[0]!.name).toBe("MyGroup");
       expect(groups[0]!.sequence).toBeDefined();
@@ -143,8 +142,7 @@ describe("Group Executors", () => {
         groupId: "/group:GroupA",
       });
 
-      expect(schemaObj.group ?? []).toHaveLength(1);
-      expect((schemaObj.group ?? [])[0]!.name).toBe("GroupB");
+      expect((schemaObj.group ?? []).map((group) => group.name)).toEqual(["GroupB"]);
     });
   });
 

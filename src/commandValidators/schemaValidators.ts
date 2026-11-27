@@ -122,6 +122,46 @@ function validateSchemaLocation(schemaLocation: string): ValidationResult {
   return { valid: true };
 }
 
+/**
+ * Validates that no other import of the schema imports a namespace yet.
+ *
+ * @param namespace - The namespace, trimmed
+ * @param imports - The imports of the schema
+ * @param modifiedPosition - The position of the import that a `modifyImport` command changes, which is not
+ * compared
+ * @returns The validation result
+ */
+function validateNamespaceNotImported(
+  namespace: string,
+  imports: schema["import_"],
+  modifiedPosition?: number
+): ValidationResult {
+  if ((imports ?? []).some((imp, index) => index !== modifiedPosition && imp.namespace === namespace)) {
+    return { valid: false, error: `An import for namespace '${namespace}' already exists` };
+  }
+  return { valid: true };
+}
+
+/**
+ * Validates that no other include of the schema includes a schema location yet.
+ *
+ * @param schemaLocation - The schema location, trimmed
+ * @param includes - The includes of the schema
+ * @param modifiedPosition - The position of the include that a `modifyInclude` command changes, which is
+ * not compared
+ * @returns The validation result
+ */
+function validateLocationNotIncluded(
+  schemaLocation: string,
+  includes: schema["include"],
+  modifiedPosition?: number
+): ValidationResult {
+  if ((includes ?? []).some((inc, index) => index !== modifiedPosition && inc.schemaLocation === schemaLocation)) {
+    return { valid: false, error: `An include for schema location '${schemaLocation}' already exists` };
+  }
+  return { valid: true };
+}
+
 // ===== Import Command Validation =====
 
 /**
@@ -141,11 +181,8 @@ export function validateAddImport(command: AddImportCommand, schemaObj: schema):
   const locationResult = validateSchemaLocation(schemaLocation);
   if (!locationResult.valid) return locationResult;
 
-  // Check if an import for this namespace already exists
-  const existingImports = schemaObj.import_ ?? [];
-  if (existingImports.some((imp) => imp.namespace === namespace.trim())) {
-    return { valid: false, error: `An import for namespace '${namespace.trim()}' already exists` };
-  }
+  const uniqueResult = validateNamespaceNotImported(namespace.trim(), schemaObj.import_);
+  if (!uniqueResult.valid) return uniqueResult;
 
   // Validate prefix, if provided
   if (prefix !== undefined) {
@@ -210,18 +247,13 @@ export function validateModifyImport(command: ModifyImportCommand, schemaObj: sc
   const idResult = validateModuleId(importId, "import", schemaObj.import_);
   if (!idResult.valid) return idResult;
 
-  const imports = schemaObj.import_ ?? [];
-  const position = idResult.position;
-
   if (namespace !== undefined) {
     const namespaceResult = validateImportNamespace(namespace);
     if (!namespaceResult.valid) return namespaceResult;
     // Check that changing the namespace won't create a duplicate
-    const currentNamespace = idResult.entry.namespace;
-    if (namespace.trim() !== currentNamespace) {
-      if (imports.some((imp, i) => i !== position && imp.namespace === namespace.trim())) {
-        return { valid: false, error: `An import for namespace '${namespace.trim()}' already exists` };
-      }
+    if (namespace.trim() !== idResult.entry.namespace) {
+      const uniqueResult = validateNamespaceNotImported(namespace.trim(), schemaObj.import_, idResult.position);
+      if (!uniqueResult.valid) return uniqueResult;
     }
   }
 
@@ -289,13 +321,7 @@ export function validateAddInclude(command: AddIncludeCommand, schemaObj: schema
   const locationResult = validateSchemaLocation(schemaLocation);
   if (!locationResult.valid) return locationResult;
 
-  // Check if an include with this schemaLocation already exists
-  const existingIncludes = schemaObj.include ?? [];
-  if (existingIncludes.some((inc) => inc.schemaLocation === schemaLocation.trim())) {
-    return { valid: false, error: `An include for schema location '${schemaLocation.trim()}' already exists` };
-  }
-
-  return { valid: true };
+  return validateLocationNotIncluded(schemaLocation.trim(), schemaObj.include);
 }
 
 /**
@@ -335,18 +361,7 @@ export function validateModifyInclude(command: ModifyIncludeCommand, schemaObj: 
   const locationResult = validateSchemaLocation(schemaLocation);
   if (!locationResult.valid) return locationResult;
 
-  // Check if another include already uses this schemaLocation
-  const trimmedLocation = schemaLocation.trim();
-  const includes = schemaObj.include ?? [];
-  const currentPosition = idResult.position;
-  if (includes.some((inc, index) => index !== currentPosition && inc.schemaLocation === trimmedLocation)) {
-    return {
-      valid: false,
-      error: `An include for schema location '${trimmedLocation}' already exists`,
-    };
-  }
-
-  return { valid: true };
+  return validateLocationNotIncluded(schemaLocation.trim(), schemaObj.include, idResult.position);
 }
 
 /**

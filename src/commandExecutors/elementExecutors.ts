@@ -11,12 +11,11 @@ import type {
   ModifyElementPayload,
 } from "../../shared/types.js";
 import { topLevelElement, localElement, narrowMaxMin } from "../../shared/types.js";
-import { assumeValidated, assumptionFailed, locateValidated } from "./assumeValidated.js";
-import { parseSchemaId, SCHEMA_ROOT_ID, SchemaNodeType } from "../../shared/idStrategy.js";
+import { assumeValidated, assumptionFailed, locateChildValidated, locateValidated } from "./assumeValidated.js";
+import { SchemaNodeType } from "../../shared/idStrategy.js";
 import { renameReferencesInTargetNamespace } from "../schemaReferences/referenceRewrites.js";
-import { createAnnotation } from "./annotationUtils.js";
+import { annotate } from "./annotationUtils.js";
 import { appendTo, removeFrom } from "./nodeProperties.js";
-import { identifyChild } from "../commandUtils.js";
 import type { MaxOccurs } from "../../shared/occurrences.js";
 import type { ElementHolder, ElementObject } from "../../shared/schemaObjects.js";
 
@@ -44,9 +43,7 @@ export function executeAddElement(command: AddElementCommand, schemaObj: schema)
  * @throws An {@link Error} if parent node or element not found
  */
 export function executeRemoveElement(command: RemoveElementCommand, schemaObj: schema): void {
-  const parsed = parseSchemaId(command.payload.elementId);
-  const location = locateValidated(schemaObj, parsed.parentId ?? SCHEMA_ROOT_ID);
-  const child = identifyChild("Element", parsed.name, parsed.position);
+  const { location, child } = locateChildValidated(schemaObj, command.payload.elementId, "Element");
   removeFrom(elementsOf(location.parent, location.parentType), "element", child.matches, child.what);
 }
 
@@ -59,8 +56,7 @@ export function executeRemoveElement(command: RemoveElementCommand, schemaObj: s
  */
 export function executeModifyElement(command: ModifyElementCommand, schemaObj: schema): void {
   const { elementId, ...changes } = command.payload;
-  const parsed = parseSchemaId(elementId);
-  const location = locateValidated(schemaObj, parsed.parentId ?? SCHEMA_ROOT_ID);
+  const { parsed, location, child } = locateChildValidated(schemaObj, elementId, "Element");
 
   // When a top-level element is renamed, update all element refs and
   // substitutionGroup references pointing to the old name.
@@ -73,7 +69,6 @@ export function executeModifyElement(command: ModifyElementCommand, schemaObj: s
     renameReferencesInTargetNamespace("element", parsed.name, changes.elementName, schemaObj);
   }
 
-  const child = identifyChild("Element", parsed.name, parsed.position);
   const element = assumeValidated(
     (elementsOf(location.parent, location.parentType).element ?? []).find(child.matches),
     child.what
@@ -119,9 +114,7 @@ function createNewElement(payload: AddElementCommand["payload"], parentType: str
     element.type_ = elementType;
   }
   setOccurrences(element, parentType, minOccurs, maxOccurs);
-  if (documentation) {
-    element.annotation = createAnnotation(documentation);
-  }
+  annotate(element, documentation);
   return element;
 }
 

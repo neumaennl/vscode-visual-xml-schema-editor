@@ -4,15 +4,12 @@ title: Development guidelines
 description: Rules for everyone who changes the extension - code size, code quality, formatting and ESLint, structure reviews, TypeScript and naming, VS Code and Node versions, TSDoc, tests, documentation and the knowledge bundle, issues, what to check before committing, and commits.
 tags: [guidelines, conventions, code-quality, typescript, documentation, workflow]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-26T14:09:14Z }
-verified: { by: human:neumaennl, at: 2026-11-26T14:29:55Z }
+generated: { by: human:neumaennl, at: 2026-11-27T13:43:28Z }
+verified: { by: human:neumaennl, at: 2026-11-27T13:50:16Z }
 sources:
   - id: eslint
     resource: ../eslint.config.mjs
     title: ESLint configuration
-  - id: jscpd
-    resource: ../.jscpd.json
-    title: jscpd configuration
   - id: fallow
     resource: ../.fallowrc.jsonc
     title: fallow configuration
@@ -49,14 +46,14 @@ Blank lines, comments and the line breaks that Prettier adds count as well. ESLi
 
 # Code quality
 
-- Avoid duplicated code. Move it into a shared function, class or module. `npm run lint` reports duplicated code with jscpd, also in tests and also when names were changed (see [Build and packaging](build-and-packaging.md#duplicated-code)).[^jscpd]
+- Avoid duplicated code. Move it into a shared function, class or module. `npm run lint` reports duplicated code with fallow, also in tests and also when names were changed (see [Build and packaging](build-and-packaging.md#duplicated-code)).[^fallow]
 - Remove code that nothing uses. `npm run lint` reports unused files, exports, class members and dependencies with fallow, also code that only tests use (see [Build and packaging](build-and-packaging.md#unused-code)).[^fallow]
 - Export only what other modules use. Tests use a module through its exports; do not export something only so that a test can call it.
 - A conditional expression (`a ? b : c`) spans at most three lines. Write a longer one, for example one with array or object literals in its branches or a nested one, as `if`/`else`. The local ESLint rule `style/max-ternary-lines` checks this.[^eslint]
 - Prettier formats the code, the configuration files and the documentation. `npm run format` formats all files, and VS Code formats them on save; `npm run lint` checks the formatting (see [Build and packaging](build-and-packaging.md#formatting)).[^prettier]
 - `npm run lint` must report no errors, and as few warnings as possible. `npm run lint:fix` fixes what it can. The rules are described in [Build and packaging](build-and-packaging.md#lint).[^eslint]
 - Disable an ESLint rule only as a last resort, with an `eslint-disable-next-line` comment that gives the reason.
-- Exclude duplicated code from jscpd only as a last resort. Put `// jscpd:ignore-start` and `// jscpd:ignore-end` around it, with a comment that gives the reason.
+- Exclude duplicated code from the check only as a last resort. Put `// fallow-ignore-start code-duplication -- <reason>` and `// fallow-ignore-end code-duplication` around it, each on its own line.
 - Suppress a finding of fallow only as a last resort, with a `fallow-ignore-next-line` or `fallow-ignore-file` comment that gives the reason after `--`. fallow checks that the reason is there.[^fallow]
 - Have the changes reviewed by Copilot code review and handle its comments. If you do not follow a comment, give the reason.
 - After changes made because of review comments, request another review. Merge a pull request only when the last review has no findings, or when each remaining finding is dismissed for a good reason, given as a reply to the comment.
@@ -160,8 +157,6 @@ The documentation of the extension is the knowledge bundle in `docs/`, in the Op
 - If work in progress was pushed, ask whether the next commit is a new one or a `fixup` of the pushed one; a `fixup` then needs a force push.
 
 [^eslint]: ESLint configuration
-
-[^jscpd]: jscpd configuration
 
 [^fallow]: fallow configuration
 

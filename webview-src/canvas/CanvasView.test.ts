@@ -47,12 +47,21 @@ describe("CanvasView", () => {
     onChange = vi.fn<(viewState: ViewState) => void>();
   });
 
+  /**
+   * Checks that a view still has the saved view state and has not reported a change.
+   *
+   * @param view - The view
+   */
+  function expectSavedViewKept(view: CanvasView): void {
+    expect(view.viewState).toEqual(SAVED);
+    expect(onChange).not.toHaveBeenCalled();
+  }
+
   test("should apply a saved view state when it is created, without reporting it", () => {
     const view = new CanvasView(svg, group, SAVED, onChange);
 
     expect(group.getAttribute("transform")).toBe("translate(30, 40) scale(2)");
-    expect(view.viewState).toEqual(SAVED);
-    expect(onChange).not.toHaveBeenCalled();
+    expectSavedViewKept(view);
   });
 
   describe("centerIfNotPositioned", () => {
@@ -71,8 +80,7 @@ describe("CanvasView", () => {
 
       view.centerIfNotPositioned();
 
-      expect(view.viewState).toEqual(SAVED);
-      expect(onChange).not.toHaveBeenCalled();
+      expectSavedViewKept(view);
     });
   });
 
@@ -106,8 +114,7 @@ describe("CanvasView", () => {
 
     view.fit();
 
-    expect(view.viewState).toEqual(SAVED);
-    expect(onChange).not.toHaveBeenCalled();
+    expectSavedViewKept(view);
   });
 
   test("should pan with the left button on the background and report the new view when the button is released", () => {

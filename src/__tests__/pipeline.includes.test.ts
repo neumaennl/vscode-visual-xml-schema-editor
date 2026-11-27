@@ -73,17 +73,14 @@ describe("Integration: Include pipeline", () => {
   describe("removeInclude", () => {
     test("should remove an include by position ID", () => {
       const result = runCommandExpectSuccessSchema(SCHEMA_WITH_INCLUDE, REMOVE_FIRST_INCLUDE);
-      const includes = result.include ?? [];
 
-      expect(includes.some((i) => i.schemaLocation === "base.xsd")).toBe(false);
+      expect(result.include ?? []).toEqual([]);
     });
 
     test("should remove one include and preserves the other", () => {
       const result = runCommandExpectSuccessSchema(SCHEMA_TWO_INCLUDES, REMOVE_FIRST_INCLUDE);
-      const includes = result.include ?? [];
 
-      expect(includes.some((i) => i.schemaLocation === "base.xsd")).toBe(false);
-      expect(includes.some((i) => i.schemaLocation === "common.xsd")).toBe(true);
+      expect((result.include ?? []).map((include) => include.schemaLocation)).toEqual(["common.xsd"]);
     });
 
     test("should return validation error when include ID is out of range", () => {

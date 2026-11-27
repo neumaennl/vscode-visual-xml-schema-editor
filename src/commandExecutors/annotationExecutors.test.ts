@@ -244,24 +244,16 @@ describe("executeRemoveDocumentation", () => {
     expect(elem.annotation?.documentation).toBeUndefined();
   });
 
-  test("should remove the first of two documentation elements leaving the second", () => {
+  test.each([
+    ["first", 0, "de"],
+    ["second", 1, "en"],
+  ])("should remove the %s of two documentation elements leaving the other", (_which, index, remainingLang) => {
     const schemaObj = readTestSchema(TWO_DOCUMENTATIONS_XSD);
 
-    removeDocumentation(schemaObj, { documentationId: "/element:person/documentation[0]" });
+    removeDocumentation(schemaObj, { documentationId: `/element:person/documentation[${index}]` });
 
     const documentations = (schemaObj.element ?? [])[0]!.annotation?.documentation ?? [];
-    expect(documentations).toHaveLength(1);
-    expect(documentations[0]!._anyAttributes?.["xml:lang"]).toBe("de");
-  });
-
-  test("should remove the second of two documentation elements leaving the first", () => {
-    const schemaObj = readTestSchema(TWO_DOCUMENTATIONS_XSD);
-
-    removeDocumentation(schemaObj, { documentationId: "/element:person/documentation[1]" });
-
-    const documentations = (schemaObj.element ?? [])[0]!.annotation?.documentation ?? [];
-    expect(documentations).toHaveLength(1);
-    expect(documentations[0]!._anyAttributes?.["xml:lang"]).toBe("en");
+    expect(documentations.map((doc) => doc._anyAttributes?.["xml:lang"])).toEqual([remainingLang]);
   });
 
   test("should throw for an invalid documentationId format", () => {

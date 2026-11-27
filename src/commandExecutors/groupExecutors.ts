@@ -14,7 +14,8 @@ import { namedGroup, groupRef } from "../../shared/types.js";
 import { parseSchemaId, SchemaNodeType } from "../../shared/idStrategy.js";
 import { assumeValidated, assumptionFailed, locateValidated } from "./assumeValidated.js";
 import { appendTo, assignDefined, removeFrom } from "./nodeProperties.js";
-import { createAnnotation } from "./annotationUtils.js";
+import { annotate } from "./annotationUtils.js";
+import { removeGroupDefinitionOrReference } from "./groupRemoval.js";
 import { setGroupCompositor } from "./compositorReplacement.js";
 import { renameReferencesInTargetNamespace } from "../schemaReferences/referenceRewrites.js";
 import type { MaxOccurs } from "../../shared/occurrences.js";
@@ -49,9 +50,7 @@ export function executeAddGroup(command: AddGroupCommand, schemaObj: schema): vo
   // Definition mode: add a top-level named group
   const grp = new namedGroup();
   grp.name = assumeValidated(groupName, "Group name");
-  if (documentation) {
-    grp.annotation = createAnnotation(documentation);
-  }
+  annotate(grp, documentation);
   setGroupCompositor(grp, assumeValidated(compositor, "Compositor"));
 
   appendTo(schemaObj, "group", grp);
@@ -70,17 +69,11 @@ export function executeAddGroup(command: AddGroupCommand, schemaObj: schema): vo
  */
 export function executeRemoveGroup(command: RemoveGroupCommand, schemaObj: schema): void {
   const { groupId } = command.payload;
-  const parsed = parseSchemaId(groupId);
-
-  if (parsed.nodeType === SchemaNodeType.GroupRef) {
+  removeGroupDefinitionOrReference(schemaObj, groupId, "group", (parsed) => {
     // Reference mode: remove xs:group ref="..." from its parent compositor
     const location = locateValidated(schemaObj, assumeValidated(parsed.parentId, `Parent of ${groupId}`));
     removeGroupRefFromParent(location.parent, location.parentType, parsed.name, parsed.position, groupId);
-    return;
-  }
-
-  // Definition mode: remove top-level named group
-  removeFrom(schemaObj, "group", (g) => g.name === parsed.name, `Group ${groupId}`);
+  });
 }
 
 /**
@@ -137,9 +130,7 @@ export function executeModifyGroup(command: ModifyGroupCommand, schemaObj: schem
  */
 function buildGroupRef(ref: string, minOccurs?: number, maxOccurs?: MaxOccurs, documentation?: string): groupRef {
   const grpRef = assignDefined(new groupRef(), { ref, minOccurs, maxOccurs });
-  if (documentation) {
-    grpRef.annotation = createAnnotation(documentation);
-  }
+  annotate(grpRef, documentation);
   return grpRef;
 }
 

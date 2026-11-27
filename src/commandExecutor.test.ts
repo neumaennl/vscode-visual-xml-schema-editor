@@ -184,8 +184,10 @@ describe("CommandExecutor", () => {
         executor.execute(command, mockSchema);
       }).not.toThrow();
 
-      expect(mockSchema.annotation ?? []).toHaveLength(1);
-      expect(((mockSchema.annotation ?? [])[0]!.documentation ?? [])[0]!.value).toBe("Test schema annotation");
+      const annotations = mockSchema.annotation ?? [];
+      expect(annotations.map((annotation) => annotation.documentation?.map((doc) => doc.value))).toEqual([
+        ["Test schema annotation"],
+      ]);
     });
 
     test("should delegate addDocumentation execution successfully", () => {
@@ -236,8 +238,7 @@ describe("CommandExecutor", () => {
         executor.execute(command, mockSchema);
       }).not.toThrow();
 
-      expect(mockSchema.include ?? []).toHaveLength(1);
-      expect((mockSchema.include ?? [])[0]!.schemaLocation).toBe("included.xsd");
+      expect((mockSchema.include ?? []).map((include) => include.schemaLocation)).toEqual(["included.xsd"]);
     });
   });
 });

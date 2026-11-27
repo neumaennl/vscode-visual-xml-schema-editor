@@ -31,7 +31,7 @@ import {
 import { isSchemaRoot } from "../../shared/idStrategy.js";
 import { assumeValidated } from "./assumeValidated.js";
 import { locateModifiedType, placeNewType, removeType } from "./typeTargets.js";
-import { createAnnotation } from "./annotationUtils.js";
+import { annotate } from "./annotationUtils.js";
 
 /**
  * Executes an `addSimpleType` command.
@@ -48,9 +48,7 @@ export function executeAddSimpleType(command: AddSimpleTypeCommand, schemaObj: s
     ? Object.assign(new topLevelSimpleType(), { name: assumeValidated(typeName, "Type name") })
     : new localSimpleType();
   applySimpleTypeBody(simpleType, body, assumeValidated(derivationKindOf(body), "Simple type body"));
-  if (documentation) {
-    simpleType.annotation = createAnnotation(documentation);
-  }
+  annotate(simpleType, documentation);
   placeNewType(schemaObj, parentId, "simpleType", simpleType);
 }
 

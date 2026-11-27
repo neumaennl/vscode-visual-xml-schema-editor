@@ -4,17 +4,23 @@
  */
 
 import { annotationType, documentationType } from "../../shared/types.js";
+import type { AnnotatableNode } from "../../shared/schemaObjects.js";
 
 /**
- * Creates an annotation containing a single documentation entry.
+ * Gives a new component an annotation with a single documentation entry, if a command adds it with
+ * documentation.
  *
- * @param text - The documentation text
- * @returns A new `annotationType` instance with the text
+ * @param node - The new component
+ * @param documentation - The documentation text; without it, or when it is empty, the component gets no
+ * annotation
  */
-export function createAnnotation(text: string): annotationType {
-  const annotation = new annotationType();
+export function annotate(node: AnnotatableNode, documentation: string | undefined): void {
+  if (!documentation) {
+    return;
+  }
   const doc = new documentationType();
-  doc.value = text;
+  doc.value = documentation;
+  const annotation = new annotationType();
   annotation.documentation = [doc];
-  return annotation;
+  node.annotation = annotation;
 }

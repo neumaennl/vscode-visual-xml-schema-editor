@@ -4,8 +4,8 @@ title: Build and packaging
 description: How the extension is built, run, linted, packaged and checked - the build outputs and tsconfig files, the npm scripts, the scripts in TypeScript, running it in VS Code, the VSIX and its check, the generated schema classes, dependencies and the Node version, ESLint, the checks for duplicated and unused code, for the layers and for repeated anonymous types, the formatting with Prettier, CI, and planned changes.
 tags: [build, packaging, vsix, vite, typescript, eslint, fallow, prettier, ci, dependencies]
 status: stable
-generated: { by: human:neumaennl, at: 2026-11-27T13:43:08Z }
-verified: { by: human:neumaennl, at: 2026-11-27T13:50:16Z }
+generated: { by: human:neumaennl, at: 2026-11-27T14:05:05Z }
+verified: { by: human:neumaennl, at: 2026-11-27T14:43:12Z }
 sources:
   - id: manifest
     resource: ../package.json
@@ -263,7 +263,7 @@ Code that has to stay duplicated is put between two comments, each on its own li
 // fallow-ignore-end code-duplication
 ```
 
-`fallow dead-code` fails if the reason is missing (`require-suppression-reason`, see [Unused code](#unused-code)). Unlike `fallow-ignore-next-line`, such a range is not reported when it becomes stale: when the code between the comments is no longer duplicated, nothing fails. So check the comments when you change the code between them. There is one such range, around the type tests of the required fields of the commands.
+`fallow dead-code` fails if the reason is missing (`require-suppression-reason`, see [Unused code](#unused-code)). Unlike the other kinds of ignore comments, fallow never reports a `code-duplication` comment as stale, whether it is a range, `fallow-ignore-next-line` or `fallow-ignore-file` ([fallow-rs/fallow#5406](https://github.com/fallow-rs/fallow/issues/5406)). So when the code is no longer duplicated, nothing fails; check the comments when you change the code they cover. There is one such range, around the type tests of the required fields of the commands.
 
 ## Unused code
 
